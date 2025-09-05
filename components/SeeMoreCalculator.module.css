@@ -1,0 +1,106 @@
+/* 레이드 버튼 그리드 */
+.raidGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+/* 레이드 버튼 스타일 */
+.raidButton {
+  min-height: 60px;
+  padding: 10px 15px;
+  border: 2px solid;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.raidButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.raidButtonContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.raidName {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.raidLevel {
+  font-size: 11px;
+}
+
+/* 손익에 따른 색깔 구분 */
+.profitRaid {
+  border-color: #28a745 !important;
+  background-color: rgba(40, 167, 69, 0.1) !important;
+}
+
+.profitRaid:hover {
+  background-color: rgba(40, 167, 69, 0.2) !important;
+}
+
+.lossRaid {
+  border-color: #dc3545 !important;
+  background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+.lossRaid:hover {
+  background-color: rgba(220, 53, 69, 0.2) !important;
+}
+
+.neutralRaid {
+  border-color: #6c757d !important;
+  background-color: rgba(108, 117, 125, 0.1) !important;
+}
+
+.neutralRaid:hover {
+  background-color: rgba(108, 117, 125, 0.2) !important;
+}
+
+/* 선택된 레이드 카드 */
+.selectedRaidCard {
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+}
+
+.rewardInfo {
+  min-height: 100px;
+  padding: 20px;
+  text-align: center;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .raidGrid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+  
+  .raidButton {
+    min-height: 50px;
+    padding: 8px 10px;
+  }
+  
+  .raidName {
+    font-size: 12px;
+  }
+  
+  .raidLevel {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  .raidGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

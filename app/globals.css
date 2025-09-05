@@ -1,12 +1,24 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4f7f9;
+  --foreground: #1a202c;
+  --primary: #3498db;
+  --primary-hover: #2980b9;
+  --secondary: #e74c3c;
+  --card-background: #ffffff;
+  --card-border: #e2e8f0;
+  --text-secondary: #718096;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1a202c;
+    --foreground: #edf2f7;
+    --primary: #3498db;
+    --primary-hover: #2980b9;
+    --secondary: #e74c3c;
+    --card-background: #2d3748;
+    --card-border: #4a5568;
+    --text-secondary: #a0aec0;
   }
 }
 
@@ -19,7 +31,6 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -35,8 +46,93 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+.main-container {
+  transition: all 0.5s ease-in-out;
+}
+
+.title {
+  font-weight: 700;
+  color: var(--primary);
+  padding: 2rem 0;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.raid-table {
+  font-size: 0.8rem;
+}
+
+.raid-table th,
+.raid-table td {
+  padding: 0.5rem;
+  vertical-align: middle;
+}
+
+.character-search-input {
+  border-radius: 0.5rem 0 0 0.5rem;
+  border-color: var(--card-border);
+}
+
+.character-search-button {
+  border-radius: 0 0.5rem 0.5rem 0;
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.character-search-button:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.character-card {
+  border-radius: 0.75rem;
+  border: 1px solid var(--card-border);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.character-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.character-card.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.character-name {
+  font-weight: 700;
+}
+
+.character-level {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.character-checkbox {
+  margin-left: auto;
+}
+
+.character-raid-card {
+  border-radius: 0.75rem;
+  border: 1px solid var(--card-border);
+}
+
+.character-raid-header {
+  background-color: var(--card-background);
+  border-bottom: 1px solid var(--card-border);
+}
+
+.raid-group-accordion .accordion-header,
+.raid-difficulty-accordion .accordion-header {
+  background-color: var(--card-background);
+}
+
+.total-gold-card {
+  border-radius: 0.75rem;
+  border: 1px solid var(--card-border);
+  background-color: var(--primary);
+  color: white;
 }

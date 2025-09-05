@@ -1,95 +1,75 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
+
+import { useState } from 'react';
+import { Container, Row, Col, Button, Card } from 'react-bootstrap';
+import CharacterSearch from '@/components/CharacterSearch';
+import RaidCalculator from '@/components/RaidCalculator';
+import SeeMoreCalculator from '@/components/SeeMoreCalculator';
+import styles from './page.module.css';
+
+type Character = {
+  characterName: string;
+  itemLevel: number;
+};
+
+type RaidInfo = {
+  id: string;
+  name: string;
+  difficulty: 'normal' | 'hard';
+};
+
+const RAIDS: RaidInfo[] = [
+  { id: 'jongmak_hard', name: '종막', difficulty: 'hard' },
+  { id: 'jongmak_normal', name: '종막', difficulty: 'normal' },
+  { id: '4mak_hard', name: '4막', difficulty: 'hard' },
+  { id: '4mak_normal', name: '4막', difficulty: 'normal' },
+];
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
+  const [searched, setSearched] = useState(false);
+  const [selectedRaid, setSelectedRaid] = useState<string | null>(null);
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  const handleSearch = () => {
+    setSearched(true);
+  };
+
+  const handleRaidSelect = (raidId: string) => {
+    setSelectedRaid(selectedRaid === raidId ? null : raidId);
+  };
+
+  const getDifficultyText = (difficulty: 'normal' | 'hard') => {
+    return difficulty === 'hard' ? '하드' : '노말';
+  };
+
+  const getDifficultyClass = (difficulty: 'normal' | 'hard') => {
+    return difficulty === 'hard' ? styles.hardButton : styles.normalButton;
+  };
+
+  return (
+    <div className={`main-container ${searched ? 'searched' : ''}`}>
+      <Container fluid className="mt-5">
+        <Row className="justify-content-center">
+          <Col xl={10} lg={11} md={12}>
+            <h1 className="text-center mb-4 title">로스트아크 골드 계산기</h1>
+            <CharacterSearch onSelectionChange={setSelectedCharacters} onSearch={handleSearch} />
+            
+            <div className="mt-4">
+              <RaidCalculator selectedCharacters={selectedCharacters} />
+            </div>
+
+            {/* 더보기 계산기 섹션 */}
+            <div className="mt-5">
+              <h2 className="text-center mb-4">더보기 손익 계산</h2>
+              <SeeMoreCalculator />
+            </div>
+
+          </Col>
+        </Row>
+        <footer className="text-center text-muted mt-5">
+          <p>&copy; {new Date().getFullYear()} Lost Ark Gold Calculator. All rights reserved.</p>
+        </footer>
+      </Container>
     </div>
   );
 }
