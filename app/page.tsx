@@ -51,7 +51,12 @@ export default function Home() {
       <Container fluid className="mt-5">
         <Row className="justify-content-center">
           <Col xl={10} lg={11} md={12}>
-            <h1 className="text-center mb-4 title">로스트아크 골드 계산기</h1>
+            <div className="text-center mb-4">
+              <h1 className="title mb-2">원정대 주급 계산</h1>
+              <p className="text-muted mb-4" style={{fontSize: '1.1rem', fontWeight: '400'}}>
+                캐릭터 닉네임 검색해서 원정대 주급 계산
+              </p>
+            </div>
             <CharacterSearch onSelectionChange={setSelectedCharacters} onSearch={handleSearch} />
             
             <div className="mt-4">
@@ -60,8 +65,39 @@ export default function Home() {
 
             {/* 더보기 계산기 섹션 */}
             <div className="mt-5">
-              <h2 className="text-center mb-4">더보기 손익 계산</h2>
-              <SeeMoreCalculator />
+              <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden'}}>
+                <Card.Header 
+                  className="text-center py-4 border-0" 
+                  style={{
+                    background: 'linear-gradient(145deg, #f8f9ff 0%, #e8ecff 100%)',
+                    borderBottom: '1px solid rgba(99, 102, 241, 0.1)'
+                  }}
+                >
+                  <div>
+                    <h2 
+                      className="mb-1" 
+                      style={{
+                        fontWeight: '700', 
+                        fontSize: '1.75rem',
+                        background: 'linear-gradient(145deg, #4f46e5, #7c3aed)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        letterSpacing: '-0.025em',
+                        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+                      }}
+                    >
+                      하남자 특 손익 따짐
+                    </h2>
+                    <p className="text-muted mb-0" style={{fontSize: '0.95rem', fontWeight: '400'}}>
+                      더보기 손익 계산
+                    </p>
+                  </div>
+                </Card.Header>
+                <Card.Body className="p-4" style={{backgroundColor: '#fafbff'}}>
+                  <SeeMoreCalculator />
+                </Card.Body>
+              </Card>
             </div>
 
           </Col>

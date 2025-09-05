@@ -167,8 +167,6 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
   if (selectedCharacters.length === 0) {
     return (
       <div className="text-center p-5">
-        <h2 className="mb-3">로스트아크 골드 계산기</h2>
-        <p className="text-muted">원정대 캐릭터명을 검색하여 골드 수입을 계산하세요.</p>
       </div>
     );
   }
@@ -210,7 +208,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {raid.gates.map(gate => (
+                                    {raid.gates.map((gate: any) => (
                                       <tr key={`${raid.name}-${gate.gate}`}>
                                         <td>{gate.gate}관</td>
                                         <td onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}>

@@ -64,19 +64,21 @@ export default function CharacterSearch({ onSelectionChange, onSearch }: Charact
   return (
     <>
       <Form onSubmit={handleSearch}>
-        <InputGroup className="mb-3">
-          <Form.Control
-            placeholder="캐릭터명을 입력하세요"
-            aria-label="캐릭터명을 입력하세요"
-            value={characterName}
-            onChange={(e) => setCharacterName(e.target.value)}
-            disabled={isLoading}
-            className="character-search-input"
-          />
-          <Button variant="primary" type="submit" disabled={isLoading} className="character-search-button">
-            {isLoading ? '검색 중...' : '검색'}
-          </Button>
-        </InputGroup>
+        <div className="d-flex justify-content-center">
+          <InputGroup className="mb-3" style={{maxWidth: '500px'}}>
+            <Form.Control
+              placeholder="캐릭터명을 입력하세요"
+              aria-label="캐릭터명을 입력하세요"
+              value={characterName}
+              onChange={(e) => setCharacterName(e.target.value)}
+              disabled={isLoading}
+              className="character-search-input"
+            />
+            <Button variant="primary" type="submit" disabled={isLoading} className="character-search-button">
+              {isLoading ? '검색 중...' : '검색'}
+            </Button>
+          </InputGroup>
+        </div>
       </Form>
       {characters.length > 0 && (
         <Row>

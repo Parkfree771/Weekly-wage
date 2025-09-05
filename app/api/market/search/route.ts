@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     },
   };
 
+  // 재련 재료 카테고리 코드 (카테고리 50010 = 재련 재료)
   const requestBody = {
     Sort: 'GRADE',
     CategoryCode: 50010,

@@ -14,34 +14,131 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: '서버에 API 키가 설정되지 않았습니다.' }, { status: 500 });
   }
 
-  const apiUrl = `https://developer-lostark.game.onstove.com/markets/items/${itemId}`;
-
-  const options = {
-    headers: {
-      'accept': 'application/json',
-      'authorization': `Bearer ${apiKey}`,
-    },
-  };
-
   try {
-    const response = await axios.get(apiUrl, options);
+    console.log(`Fetching price for item ID: ${itemId}`);
     
-    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-      const itemData = response.data[0];
-      
-      // Get latest average price from Stats array (index 0 is today/latest)
+    // First, try direct item API to get detailed price info
+    const directResponse = await axios.get(`https://developer-lostark.game.onstove.com/markets/items/${itemId}`, {
+      headers: {
+        'accept': 'application/json',
+        'authorization': `Bearer ${apiKey}`,
+      },
+    });
+
+    if (directResponse.data && Array.isArray(directResponse.data) && directResponse.data.length > 0) {
+      const itemData = directResponse.data[0];
       let averagePrice = 0;
-      if (itemData.Stats && itemData.Stats.length > 0) {
+      
+      // 전날 거래 평균가 우선 사용
+      if (itemData.YDayAvgPrice && itemData.YDayAvgPrice > 0) {
+        averagePrice = itemData.YDayAvgPrice;
+        console.log(`Direct API - Using yesterday average: ${averagePrice}`);
+      } 
+      // 전날 평균가가 없으면 통계 평균가 사용
+      else if (itemData.Stats && itemData.Stats.length > 0 && itemData.Stats[0].AvgPrice > 0) {
         averagePrice = itemData.Stats[0].AvgPrice;
+        console.log(`Direct API - Using stats average: ${averagePrice}`);
+      }
+      // 마지막 대안으로 현재 최저가 사용
+      else if (itemData.CurrentMinPrice && itemData.CurrentMinPrice > 0) {
+        averagePrice = itemData.CurrentMinPrice;
+        console.log(`Direct API - Using current min: ${averagePrice}`);
       }
       
-      return NextResponse.json({ itemId, averagePrice });
-    } else {
-      // Return a 0 price if item has no market data
-      return NextResponse.json({ itemId, averagePrice: 0 });
+      console.log(`Direct API - Final price for ${itemId}: ${averagePrice}`);
+      
+      return NextResponse.json({ 
+        itemId, 
+        averagePrice,
+        debug: {
+          itemName: itemData.Name,
+          currentMinPrice: itemData.CurrentMinPrice,
+          yDayAvgPrice: itemData.YDayAvgPrice,
+          statsAvgPrice: itemData.Stats?.[0]?.AvgPrice || null,
+          statsDate: itemData.Stats?.[0]?.Date || null
+        }
+      });
     }
 
+    // If direct API fails, fallback to search method  
+    console.log(`Direct API returned no data for ${itemId}, trying search method`);
+    
+    const searchResponse = await axios.post('https://developer-lostark.game.onstove.com/markets/items', {
+      Sort: 'GRADE',
+      CategoryCode: 50010, // 재련 재료
+      ItemName: '',
+      PageNo: 1,
+      SortCondition: 'ASC',
+    }, {
+      headers: {
+        'accept': 'application/json',
+        'authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (searchResponse.data && searchResponse.data.Items && searchResponse.data.Items.length > 0) {
+      const targetItem = searchResponse.data.Items.find((item: any) => item.Id === parseInt(itemId));
+      
+      if (targetItem) {
+        // Try to get detailed info for this item
+        try {
+          const detailResponse = await axios.get(`https://developer-lostark.game.onstove.com/markets/items/${targetItem.Id}`, {
+            headers: {
+              'accept': 'application/json',
+              'authorization': `Bearer ${apiKey}`,
+            },
+          });
+
+          if (detailResponse.data && Array.isArray(detailResponse.data) && detailResponse.data.length > 0) {
+            const detail = detailResponse.data[0];
+            let price = detail.YDayAvgPrice || detail.CurrentMinPrice || 0;
+            if (detail.Stats && detail.Stats[0] && price === 0) {
+              price = detail.Stats[0].AvgPrice || 0;
+            }
+            
+            console.log(`Search method - Found price for ${itemId}: ${price}`);
+            
+            return NextResponse.json({ 
+              itemId, 
+              averagePrice: price,
+              debug: {
+                itemName: detail.Name,
+                yDayAvgPrice: detail.YDayAvgPrice,
+                currentMinPrice: detail.CurrentMinPrice,
+                statsAvgPrice: detail.Stats?.[0]?.AvgPrice || null,
+                bundleCount: targetItem.BundleCount
+              }
+            });
+          }
+        } catch (detailError) {
+          console.log('Detail API failed, using auction info');
+        }
+        
+        // Fallback to auction info
+        let auctionPrice = 0;
+        if (targetItem.AuctionInfo) {
+          auctionPrice = targetItem.AuctionInfo.BuyPrice || targetItem.AuctionInfo.StartPrice || 0;
+        }
+        
+        return NextResponse.json({ 
+          itemId, 
+          averagePrice: auctionPrice,
+          debug: {
+            itemName: targetItem.Name,
+            auctionInfo: targetItem.AuctionInfo,
+            bundleCount: targetItem.BundleCount,
+            method: 'auction'
+          }
+        });
+      }
+    }
+    
+    console.log(`No data found for item ${itemId}`);
+    return NextResponse.json({ itemId, averagePrice: 0 });
+
   } catch (error: any) {
+    console.error(`Error fetching price for item ${itemId}:`, error);
     if (error.response) {
       return NextResponse.json(
         { message: error.response.data?.Message || '아이템 가격 정보를 가져오는 데 실패했습니다.' },
