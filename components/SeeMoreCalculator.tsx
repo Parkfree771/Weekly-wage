@@ -21,116 +21,11 @@ const SeeMoreCalculator: React.FC = () => {
   const [profitData, setProfitData] = useState<{ [key: string]: RaidProfitData[] }>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [priceType, setPriceType] = useState<'yesterday' | 'current'>('yesterday');
 
   const handleRaidSelect = (raidName: string) => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
   };
 
-  // 레이드별 수익 계산 (전날 평균가 사용)
-  const calculateRaidProfits = async () => {
-    setLoading(true);
-    try {
-      console.log('Starting price calculation with yesterday average prices...');
-      
-      const searchPrices: { [itemId: number]: number } = {};
-      
-      // Get prices using both ID-based and name-based methods for better coverage
-      const pricePromises = Object.entries(MATERIAL_NAMES).map(async ([key, itemName]) => {
-        const itemId = MATERIAL_IDS[key as keyof typeof MATERIAL_IDS];
-        
-        // Try search by name first (more reliable)
-        let price = await marketPriceService.getItemPriceByName(itemName);
-        
-        // If search by name fails, try ID-based as fallback
-        if (price === 0) {
-          console.log(`Search by name failed for ${itemName}, trying ID-based method...`);
-          price = await marketPriceService.getItemPrice(itemId);
-        }
-        
-        console.log(`Final price for ${itemName} (ID: ${itemId}): ${price}`);
-        return { itemId, price };
-      });
-      
-      const priceResults = await Promise.all(pricePromises);
-      priceResults.forEach(({ itemId, price }) => {
-        searchPrices[itemId] = price;
-      });
-      
-      console.log('All fetched prices (yesterday average):', searchPrices);
-      
-      setPriceType('yesterday');
-      
-      const newProfitData: { [key: string]: RaidProfitData[] } = {};
-      
-      // Group rewards by raid name
-      const groupedRewards = raidRewards.reduce((acc, reward) => {
-        if (!acc[reward.raidName]) {
-          acc[reward.raidName] = [];
-        }
-        acc[reward.raidName].push(reward);
-        return acc;
-      }, {} as { [key: string]: typeof raidRewards });
-      
-      Object.entries(groupedRewards).forEach(([raidName, rewards]) => {
-        newProfitData[raidName] = rewards.map(reward => {
-          const materialsWithPrices = reward.materials.map(material => {
-            // API에서 이미 계산된 단위가격을 그대로 사용
-            const unitPrice = searchPrices[material.itemId] || 0;
-            const totalPrice = unitPrice * material.amount;
-            
-            console.log(`${material.itemName} - API단위가격: ${unitPrice}, 수량: ${material.amount}, 총가격: ${totalPrice}`);
-            
-            return {
-              ...material,
-              unitPrice: unitPrice,
-              totalPrice: Math.round(totalPrice)
-            };
-          });
-          
-          const totalValue = materialsWithPrices.reduce((sum, mat) => sum + mat.totalPrice, 0);
-          const raidInfo = raids.find(r => r.name === raidName);
-          const gateInfo = raidInfo?.gates.find(g => g.gate === reward.gate);
-          const moreGold = gateInfo?.moreGold || 0;
-          const profitLoss = totalValue - moreGold;
-          
-          console.log(`${raidName} ${reward.gate}관문 - 총 가치: ${totalValue}, 더보기 비용: ${moreGold}, 손익: ${profitLoss}`);
-          
-          return {
-            raidName,
-            gate: reward.gate,
-            totalValue,
-            moreGold,
-            profitLoss,
-            materials: materialsWithPrices
-          };
-        });
-      });
-      
-      setProfitData(newProfitData);
-      setLastUpdated(new Date());
-      console.log('Successfully calculated raid profits:', newProfitData);
-    } catch (error) {
-      console.error('Failed to calculate raid profits:', error);
-      // Set some fallback data to show the UI works
-      const fallbackData: { [key: string]: RaidProfitData[] } = {};
-      Object.keys(raids.reduce((acc, raid) => ({ ...acc, [raid.name]: true }), {})).forEach(raidName => {
-        fallbackData[raidName] = raidRewards
-          .filter(reward => reward.raidName === raidName)
-          .map(reward => ({
-            raidName,
-            gate: reward.gate,
-            totalValue: 0,
-            moreGold: raids.find(r => r.name === raidName)?.gates.find(g => g.gate === reward.gate)?.moreGold || 0,
-            profitLoss: 0,
-            materials: reward.materials.map(mat => ({ ...mat, unitPrice: 0, totalPrice: 0 }))
-          }));
-      });
-      setProfitData(fallbackData);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // 거래 평균가로 수익 계산 (사용자가 새로고침 버튼 클릭 시)
   const calculateRaidProfitsWithCurrentPrices = async () => {
@@ -157,8 +52,6 @@ const SeeMoreCalculator: React.FC = () => {
       });
       
       console.log('All fetched prices (trading average):', searchPrices);
-      
-      setPriceType('current');
       
       // 동일한 계산 로직 사용
       const newProfitData: { [key: string]: RaidProfitData[] } = {};
@@ -216,7 +109,7 @@ const SeeMoreCalculator: React.FC = () => {
   };
   
   useEffect(() => {
-    calculateRaidProfits();
+    calculateRaidProfitsWithCurrentPrices();
   }, []);
   
   // 손익 계산 함수
@@ -270,24 +163,12 @@ const SeeMoreCalculator: React.FC = () => {
       <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
         <div className="d-flex gap-2">
           <Button 
-            variant={priceType === 'yesterday' ? "primary" : "outline-primary"} 
-            size="sm" 
-            onClick={calculateRaidProfits}
-            disabled={loading}
-          >
-            {loading && priceType === 'yesterday' ? (
-              <><Spinner animation="border" size="sm" className="me-2" />로딩 중...</>
-            ) : (
-              '전날 평균가'
-            )}
-          </Button>
-          <Button 
-            variant={priceType === 'current' ? "success" : "outline-success"} 
+            variant="success" 
             size="sm" 
             onClick={calculateRaidProfitsWithCurrentPrices}
             disabled={loading}
           >
-            {loading && priceType === 'current' ? (
+            {loading ? (
               <><Spinner animation="border" size="sm" className="me-2" />로딩 중...</>
             ) : (
               '거래 평균가'
@@ -297,9 +178,15 @@ const SeeMoreCalculator: React.FC = () => {
         
         <div className="text-end">
           <small className="text-muted d-block">
-            {priceType === 'yesterday' ? 
-              '전날 거래 평균가 (매일 06:01 갱신)' : 
-              '거래 평균가 (API 제공 데이터)'
+            {lastUpdated ? 
+              `최종 갱신: ${lastUpdated.toLocaleString('ko-KR', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit'
+              })}` : 
+              '가격 정보를 불러오는 중...'
             }
           </small>
         </div>

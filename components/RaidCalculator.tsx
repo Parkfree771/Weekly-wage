@@ -67,25 +67,40 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
     setGateSelection(initialSelection);
   }, [selectedCharacters]);
 
+  const getHeaderCheckState = (characterName: string, raidName: string, selection: 'withMore' | 'withoutMore') => {
+    const raid = raids.find(r => r.name === raidName);
+    if (!raid || !gateSelection[characterName]?.[raidName]) return false;
+    
+    return raid.gates.every(gate => 
+      gateSelection[characterName][raidName][gate.gate] === selection
+    );
+  };
+
   const handleHeaderChange = (characterName: string, raidName: string, selection: 'withMore' | 'withoutMore') => {
     setGateSelection(prev => {
       const newGateSelection = JSON.parse(JSON.stringify(prev));
-      const allSelected = groupedRaids[raidName.split(' ')[0]]
-        .flatMap(r => r.gates)
-        .every(gate => newGateSelection[characterName]?.[raidName]?.[gate.gate] === selection);
+      const raid = raids.find(r => r.name === raidName)!;
+      const allSelected = raid.gates.every(gate => 
+        newGateSelection[characterName]?.[raidName]?.[gate.gate] === selection
+      );
 
       const newSelection = allSelected ? 'none' : selection;
 
-      for (const r of groupedRaids[raidName.split(' ')[0]]) {
-        for (const g of r.gates) {
-          if (newGateSelection[characterName]?.[r.name]) {
-            newGateSelection[characterName][r.name][g.gate] = 'none';
+      // Only change gates in this specific raid, not the entire group
+      for (const gate of raid.gates) {
+        // If selecting a gate, deselect the same gate number in other difficulties of the same group
+        if (newSelection !== 'none') {
+          const groupName = raidName.split(' ')[0];
+          for (const r of groupedRaids[groupName]) {
+            if (r.name !== raidName) {
+              const sameGate = r.gates.find(g => g.gate === gate.gate);
+              if (sameGate && newGateSelection[characterName]?.[r.name]) {
+                newGateSelection[characterName][r.name][gate.gate] = 'none';
+              }
+            }
           }
         }
-      }
-
-      for (const g of raids.find(r => r.name === raidName)!.gates) {
-        newGateSelection[characterName][raidName][g.gate] = newSelection;
+        newGateSelection[characterName][raidName][gate.gate] = newSelection;
       }
 
       return newGateSelection;
@@ -99,15 +114,15 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
 
       const newGateSelection = JSON.parse(JSON.stringify(prev));
 
-      // Deselect other difficulties in the same group
+      // Only prevent selecting the same gate with different difficulties in the same group
       if (newSelection !== 'none') {
         const groupName = raidName.split(' ')[0];
         for (const r of groupedRaids[groupName]) {
           if (r.name !== raidName) {
-            for (const g of r.gates) {
-              if (newGateSelection[characterName]?.[r.name]) {
-                newGateSelection[characterName][r.name][g.gate] = 'none';
-              }
+            // Only deselect the same gate number, not all gates
+            const sameGate = r.gates.find(g => g.gate === gate);
+            if (sameGate && newGateSelection[characterName]?.[r.name]) {
+              newGateSelection[characterName][r.name][gate] = 'none';
             }
           }
         }
@@ -203,8 +218,22 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                                   <thead>
                                     <tr>
                                       <th>관문</th>
-                                      <th><Form.Check type="checkbox" label="클골" onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')} /></th>
-                                      <th><Form.Check type="checkbox" label="클골(더보기o)" onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')} /></th>
+                                      <th>
+                                        <Form.Check 
+                                          type="checkbox" 
+                                          label="클골" 
+                                          checked={getHeaderCheckState(character.characterName, raid.name, 'withMore')}
+                                          onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')} 
+                                        />
+                                      </th>
+                                      <th>
+                                        <Form.Check 
+                                          type="checkbox" 
+                                          label="클골(더보기o)" 
+                                          checked={getHeaderCheckState(character.characterName, raid.name, 'withoutMore')}
+                                          onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')} 
+                                        />
+                                      </th>
                                     </tr>
                                   </thead>
                                   <tbody>
