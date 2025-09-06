@@ -7,25 +7,17 @@
   margin-top: 32px;
 }
 
-.button {
-  background-color: var(--foreground);
-  color: var(--background);
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.loadingInfo {
+  margin: 16px 0;
+  text-align: center;
+  color: #666;
+  font-style: italic;
 }
 
-.button:hover {
-  filter: brightness(0.9);
-}
-
-.button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+.updateInfo {
+  margin-top: 8px;
+  margin-bottom: 16px;
+  color: #666;
 }
 
 .result {

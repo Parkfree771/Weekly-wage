@@ -136,3 +136,21 @@ a {
   background-color: var(--primary);
   color: white;
 }
+
+/* 푸터 호버 효과 */
+.hover-primary:hover {
+  color: var(--primary) !important;
+  text-decoration: underline !important;
+  transition: all 0.2s ease-in-out;
+}
+
+/* 푸터 스타일 개선 */
+footer {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+footer .text-primary {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

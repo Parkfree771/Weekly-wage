@@ -26,23 +26,34 @@ const SeeMoreCalculator: React.FC = () => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
   };
 
+  // 컴포넌트 마운트시 및 5분마다 자동 갱신
+  useEffect(() => {
+    calculateRaidProfitsWithCurrentPrices();
+    
+    const interval = setInterval(() => {
+      calculateRaidProfitsWithCurrentPrices();
+    }, 5 * 60 * 1000); // 5분마다 실행
+    
+    return () => clearInterval(interval);
+  }, []);
 
-  // 거래 평균가로 수익 계산 (사용자가 새로고침 버튼 클릭 시)
+
+  // 최근 거래가로 수익 계산 (자동으로 5분마다 실행)
   const calculateRaidProfitsWithCurrentPrices = async () => {
     setLoading(true);
     try {
-      console.log('Starting price calculation with trading average prices...');
+      console.log('Starting price calculation with current prices...');
       
       const searchPrices: { [itemId: number]: number } = {};
       
-      // 거래 평균가를 가져오기 위한 API 호출
+      // 최근 거래가 가져오기 (5분 캐시 사용)
       const pricePromises = Object.entries(MATERIAL_NAMES).map(async ([key, itemName]) => {
         const itemId = MATERIAL_IDS[key as keyof typeof MATERIAL_IDS];
         
-        // 거래 평균가 API 호출
+        // 5분 캐시를 활용한 최근 거래가 가져오기
         let price = await marketPriceService.getCurrentLowestPrice(itemName);
         
-        console.log(`Trading average price for ${itemName}: ${price}`);
+        console.log(`Current price for ${itemName}: ${price}`);
         return { itemId, price };
       });
       
@@ -51,7 +62,7 @@ const SeeMoreCalculator: React.FC = () => {
         searchPrices[itemId] = price;
       });
       
-      console.log('All fetched prices (trading average):', searchPrices);
+      console.log('All fetched prices (current prices):', searchPrices);
       
       // 동일한 계산 로직 사용
       const newProfitData: { [key: string]: RaidProfitData[] } = {};
@@ -159,21 +170,15 @@ const SeeMoreCalculator: React.FC = () => {
         ))}
       </div>
 
-      {/* 가격 정보 및 새로고침 버튼 */}
+      {/* 가격 정보 및 갱신 상태 */}
       <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
         <div className="d-flex gap-2">
-          <Button 
-            variant="success" 
-            size="sm" 
-            onClick={calculateRaidProfitsWithCurrentPrices}
-            disabled={loading}
-          >
-            {loading ? (
-              <><Spinner animation="border" size="sm" className="me-2" />로딩 중...</>
-            ) : (
-              '거래 평균가'
-            )}
-          </Button>
+          {loading && (
+            <div className="d-flex align-items-center text-muted">
+              <Spinner animation="border" size="sm" className="me-2" />
+              <span>최근 거래가 갱신 중...</span>
+            </div>
+          )}
         </div>
         
         <div className="text-end">
@@ -184,8 +189,9 @@ const SeeMoreCalculator: React.FC = () => {
                 month: '2-digit', 
                 day: '2-digit', 
                 hour: '2-digit', 
-                minute: '2-digit'
-              })}` : 
+                minute: '2-digit',
+                second: '2-digit'
+              })} (5분마다 자동갱신)` : 
               '가격 정보를 불러오는 중...'
             }
           </small>
