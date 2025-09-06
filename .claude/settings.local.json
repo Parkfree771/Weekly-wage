@@ -7,7 +7,8 @@
       "Read(/C:\\Users\\park yu ro\\Desktop\\project4\\components/**)",
       "Read(/C:\\Users\\park yu ro\\Desktop\\project4\\app\\api\\market\\search/**)",
       "Bash(npm run build:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []
