@@ -26,15 +26,29 @@ const SeeMoreCalculator: React.FC = () => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
   };
 
-  // 컴포넌트 마운트시 및 5분마다 자동 갱신
+  // 컴포넌트 마운트시 및 1시간마다 정각 갱신
   useEffect(() => {
     calculateRaidProfitsWithCurrentPrices();
     
-    const interval = setInterval(() => {
-      calculateRaidProfitsWithCurrentPrices();
-    }, 5 * 60 * 1000); // 5분마다 실행
+    // 다음 정각까지의 시간 계산
+    const now = new Date();
+    const nextHour = new Date(now);
+    nextHour.setHours(now.getHours() + 1, 0, 0, 0);
+    const timeUntilNextHour = nextHour.getTime() - now.getTime();
     
-    return () => clearInterval(interval);
+    // 첫 번째 타이머: 다음 정각까지
+    const firstTimer = setTimeout(() => {
+      calculateRaidProfitsWithCurrentPrices();
+      
+      // 이후 1시간마다 정각 갱신
+      const interval = setInterval(() => {
+        calculateRaidProfitsWithCurrentPrices();
+      }, 60 * 60 * 1000); // 1시간마다 실행
+      
+      return () => clearInterval(interval);
+    }, timeUntilNextHour);
+    
+    return () => clearTimeout(firstTimer);
   }, []);
 
 
@@ -184,14 +198,7 @@ const SeeMoreCalculator: React.FC = () => {
         <div className="text-end">
           <small className="text-muted d-block">
             {lastUpdated ? 
-              `최종 갱신: ${lastUpdated.toLocaleString('ko-KR', { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit', 
-                hour: '2-digit', 
-                minute: '2-digit',
-                second: '2-digit'
-              })} (5분마다 자동갱신)` : 
+              `최신 거래 평균가 (매시 정각 갱신) | 게임과 다소 차이가 있을 수 있으니 양해 부탁드립니다` : 
               '가격 정보를 불러오는 중...'
             }
           </small>

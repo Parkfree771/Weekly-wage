@@ -12,7 +12,7 @@ type PriceCache = {
 
 class MarketPriceService {
   private cache: PriceCache = {};
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+  private readonly CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
 
   private isExpired(timestamp: number): boolean {
     return Date.now() - timestamp > this.CACHE_DURATION;

@@ -172,7 +172,7 @@ export default function Home() {
                         </p>
                         <div className="small text-muted">
                           <div>🌐 <strong>사이트:</strong> lostarkweeklygold.kr</div>
-                          <div>🔄 <strong>갱신:</strong> 5분마다 자동</div>
+                          <div>🔄 <strong>갱신:</strong> 매시 정각</div>
                           <div>📊 <strong>데이터:</strong> 로스트아크 공식 API</div>
                         </div>
                       </Col>
