@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lostarkweeklygold.kr/sitemap.xml
