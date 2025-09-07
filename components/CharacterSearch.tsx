@@ -25,6 +25,7 @@ export default function CharacterSearch({ onSelectionChange, onSearch }: Charact
   const [checkedState, setCheckedState] = useState<boolean[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [showAll, setShowAll] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +80,7 @@ export default function CharacterSearch({ onSelectionChange, onSearch }: Charact
           setCharacters(sortedCharacters);
           const newCheckedState = sortedCharacters.map((_, index) => index < 6);
           setCheckedState(newCheckedState);
+          setShowAll(false);
           setRetryCount(0);
           break; // 성공 시 루프 종료
         } else {
@@ -165,43 +167,66 @@ export default function CharacterSearch({ onSelectionChange, onSearch }: Charact
         )}
       </Form>
       {characters.length > 0 && (
-        <Row>
-          {characters.map((char, index) => (
-            <Col lg={4} md={6} sm={6} xs={12} key={char.characterName} className="mb-3">
-              <Card
-                className={`character-card ${checkedState[index] ? 'selected' : ''}`}
-                onClick={() => handleCheckboxChange(index)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleCheckboxChange(index);
-                  }
-                }}
-                aria-label={`${char.characterName} 레벨 ${char.itemLevel} ${checkedState[index] ? '선택됨' : '선택 안됨'}`}
-              >
-                <Card.Body>
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <div className="character-name" aria-hidden="true">{char.characterName}</div>
-                      <div className="character-level" aria-hidden="true">Lv. {char.itemLevel.toLocaleString()}</div>
+        <div>
+          <Row>
+            {characters.slice(0, showAll ? characters.length : 9).map((char, index) => (
+              <Col lg={4} md={6} sm={6} xs={12} key={char.characterName} className="mb-3">
+                <Card
+                  className={`character-card ${checkedState[index] ? 'selected' : ''}`}
+                  onClick={() => handleCheckboxChange(index)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleCheckboxChange(index);
+                    }
+                  }}
+                  aria-label={`${char.characterName} 레벨 ${char.itemLevel} ${checkedState[index] ? '선택됨' : '선택 안됨'}`}
+                >
+                  <Card.Body>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div className="character-name" aria-hidden="true">{char.characterName}</div>
+                        <div className="character-level" aria-hidden="true">Lv. {char.itemLevel.toLocaleString()}</div>
+                      </div>
+                      <Form.Check
+                        type="checkbox"
+                        id={`character-checkbox-${index}`}
+                        checked={checkedState[index]}
+                        onChange={() => {}}
+                        className="character-checkbox"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                      />
                     </div>
-                    <Form.Check
-                      type="checkbox"
-                      id={`character-checkbox-${index}`}
-                      checked={checkedState[index]}
-                      onChange={() => {}}
-                      className="character-checkbox"
-                      tabIndex={-1}
-                      aria-hidden="true"
-                    />
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+          {characters.length > 9 && (
+            <div className="d-flex justify-content-center mt-3 mb-4">
+              <Button 
+                variant={showAll ? "outline-primary" : "primary"}
+                onClick={() => setShowAll(!showAll)}
+                className="show-more-button"
+              >
+                {showAll ? (
+                  <>
+                    <i className="bi bi-chevron-up me-2"></i>
+                    접기 ({characters.length - 9}개 숨기기)
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-chevron-down me-2"></i>
+                    더보기 ({characters.length - 9}개 더 있음)
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
       )}
     </>
   );
