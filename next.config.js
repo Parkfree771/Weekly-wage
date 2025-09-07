@@ -46,7 +46,16 @@ const nextConfig = {
         ],
       },
       {
-        source: '/api/:path*',
+        source: '/api/lostark',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/api/market/:path*',
         headers: [
           {
             key: 'Cache-Control',
