@@ -170,7 +170,7 @@ export default function CharacterSearch({ onSelectionChange, onSearch }: Charact
         <div>
           <Row>
             {characters.slice(0, showAll ? characters.length : 9).map((char, index) => (
-              <Col lg={4} md={6} sm={6} xs={12} key={char.characterName} className="mb-3">
+              <Col lg={4} md={6} sm={6} xs={6} key={char.characterName} className="mb-3">
                 <Card
                   className={`character-card ${checkedState[index] ? 'selected' : ''}`}
                   onClick={() => handleCheckboxChange(index)}

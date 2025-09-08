@@ -142,9 +142,9 @@ const SeeMoreCalculator: React.FC = () => {
     const raidData = profitData[raidName];
     if (!raidData) return 0;
     
-    // Return average profit/loss for all gates
+    // Return total profit/loss for all gates
     const totalProfitLoss = raidData.reduce((sum, gate) => sum + gate.profitLoss, 0);
-    return totalProfitLoss / raidData.length;
+    return totalProfitLoss;
   };
 
   // 손익에 따른 CSS 클래스 결정
