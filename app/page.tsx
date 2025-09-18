@@ -5,6 +5,7 @@ import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import RaidCalculator from '@/components/RaidCalculator';
 import SeeMoreCalculator from '@/components/SeeMoreCalculator';
+import RaidSynergyAnalyzer from '@/components/RaidSynergyAnalyzer';
 import styles from './page.module.css';
 
 type Character = {
@@ -92,6 +93,37 @@ export default function Home() {
                 </Card>
               </div>
             )}
+
+            {/* 공격대 시너지 분석기 섹션 */}
+            <div className="mt-4">
+              <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden'}}>
+                <Card.Header 
+                  className="text-center py-3 border-0" 
+                  style={{
+                    background: 'linear-gradient(145deg, #fff0e6 0%, #ffe4cc 100%)',
+                    borderBottom: '1px solid rgba(251, 146, 60, 0.1)'
+                  }}
+                >
+                  <h3 
+                    className="mb-0" 
+                    style={{
+                      fontWeight: '600', 
+                      fontSize: 'clamp(1.2rem, 2.5vw, 1.4rem)',
+                      background: 'linear-gradient(145deg, #ea580c, #dc2626)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      letterSpacing: '-0.025em'
+                    }}
+                  >
+                    공격대 시너지 분석
+                  </h3>
+                </Card.Header>
+                <Card.Body className="p-3 p-md-4" style={{backgroundColor: '#fefbf7'}}>
+                  <RaidSynergyAnalyzer />
+                </Card.Body>
+              </Card>
+            </div>
 
             {/* 더보기 효율 계산기 섹션 */}
             <div className="mt-4">

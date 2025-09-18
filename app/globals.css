@@ -342,3 +342,25 @@ footer .text-primary {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* RaidSynergyAnalyzer Mobile Optimization */
+@media (max-width: 768px) {
+  .raid-synergy-analyzer .card-header h5,
+  .raid-synergy-analyzer .card-header h6 {
+    font-size: 1.1rem;
+  }
+
+  .raid-synergy-analyzer .btn-sm {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .raid-synergy-analyzer .small {
+    font-size: 0.8rem;
+  }
+
+  .raid-synergy-analyzer .badge {
+    font-size: 0.7rem;
+    padding: 0.25em 0.5em;
+  }
+}

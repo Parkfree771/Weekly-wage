@@ -174,11 +174,22 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error(`Error searching current price for ${itemName}:`, error);
     if (error.response) {
+      // Handle 503 Service Unavailable specifically
+      if (error.response.status === 503) {
+        console.warn(`External API is unavailable (503). Returning 0 price for ${itemName}.`);
+        return NextResponse.json({ 
+          itemName: itemName || `itemId:${itemId}`, 
+          price: 0,
+          error: '외부 API 서비스가 현재 사용 불가능합니다 (503).'
+        });
+      }
+      // For other client/server errors, forward the response
       return NextResponse.json(
         { message: error.response.data?.Message || '현재 가격 검색에 실패했습니다.' },
         { status: error.response.status }
       );
     } else {
+      // Handle network errors or other unexpected issues
       return NextResponse.json({ message: 'API 요청 중 알 수 없는 오류가 발생했습니다.' }, { status: 500 });
     }
   }
