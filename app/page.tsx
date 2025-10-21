@@ -54,8 +54,8 @@ export default function Home() {
         <Row className="justify-content-center">
           <Col xl={11} lg={12} md={12}>
             <div className="text-center mb-3 mb-md-4">
-              <h1 className="title mb-2" style={{fontSize: 'clamp(1.8rem, 4vw, 2.5rem)'}}>로스트아크 주간 골드 계산</h1>
-              <p className="text-muted mb-3" style={{fontSize: 'clamp(0.9rem, 2vw, 1.1rem)', fontWeight: '400'}}>
+              <h1 className="title mb-2" style={{fontSize: 'clamp(1.5rem, 3.5vw, 2rem)'}}>로스트아크 주간 골드 계산</h1>
+              <p className="text-muted mb-3" style={{fontSize: 'clamp(0.85rem, 1.8vw, 1rem)', fontWeight: '400'}}>
                 원정대 주간 골드 수익과 더보기 보상 손익을 계산해보세요
               </p>
             </div>
@@ -63,20 +63,20 @@ export default function Home() {
             
             {/* 검색 후 원정대 주급 계산기 */}
             {searched && selectedCharacters.length > 0 && (
-              <div className="mt-3 mt-md-4">
+              <div className="mt-2 mt-md-3">
                 <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden'}}>
-                  <Card.Header 
-                    className="text-center py-3 border-0" 
+                  <Card.Header
+                    className="text-center py-2 border-0"
                     style={{
                       background: 'linear-gradient(145deg, #f0f9ff 0%, #dbeafe 100%)',
                       borderBottom: '1px solid rgba(59, 130, 246, 0.1)'
                     }}
                   >
-                    <h3 
-                      className="mb-0" 
+                    <h3
+                      className="mb-0"
                       style={{
-                        fontWeight: '600', 
-                        fontSize: 'clamp(1.2rem, 2.5vw, 1.4rem)',
+                        fontWeight: '600',
+                        fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
                         background: 'linear-gradient(145deg, #2563eb, #1d4ed8)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
@@ -87,7 +87,7 @@ export default function Home() {
                       원정대 주간 골드 계산
                     </h3>
                   </Card.Header>
-                  <Card.Body className="p-3 p-md-4" style={{backgroundColor: '#fafbff'}}>
+                  <Card.Body className="p-2 p-md-3" style={{backgroundColor: '#fafbff'}}>
                     <RaidCalculator selectedCharacters={selectedCharacters} />
                   </Card.Body>
                 </Card>
@@ -95,19 +95,19 @@ export default function Home() {
             )}
 
             {/* 공격대 시너지 분석기 섹션 */}
-            <div className="mt-4">
+            {/* <div className="mt-4">
               <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden'}}>
-                <Card.Header 
-                  className="text-center py-3 border-0" 
+                <Card.Header
+                  className="text-center py-3 border-0"
                   style={{
                     background: 'linear-gradient(145deg, #fff0e6 0%, #ffe4cc 100%)',
                     borderBottom: '1px solid rgba(251, 146, 60, 0.1)'
                   }}
                 >
-                  <h3 
-                    className="mb-0" 
+                  <h3
+                    className="mb-0"
                     style={{
-                      fontWeight: '600', 
+                      fontWeight: '600',
                       fontSize: 'clamp(1.2rem, 2.5vw, 1.4rem)',
                       background: 'linear-gradient(145deg, #ea580c, #dc2626)',
                       WebkitBackgroundClip: 'text',
@@ -123,23 +123,23 @@ export default function Home() {
                   <RaidSynergyAnalyzer />
                 </Card.Body>
               </Card>
-            </div>
+            </div> */}
 
             {/* 더보기 효율 계산기 섹션 */}
-            <div className="mt-4">
+            <div className="mt-3">
               <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden'}}>
-                <Card.Header 
-                  className="text-center py-3 border-0" 
+                <Card.Header
+                  className="text-center py-2 border-0"
                   style={{
                     background: 'linear-gradient(145deg, #f8f9ff 0%, #e8ecff 100%)',
                     borderBottom: '1px solid rgba(99, 102, 241, 0.1)'
                   }}
                 >
-                  <h3 
-                    className="mb-0" 
+                  <h3
+                    className="mb-0"
                     style={{
-                      fontWeight: '600', 
-                      fontSize: 'clamp(1.2rem, 2.5vw, 1.4rem)',
+                      fontWeight: '600',
+                      fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
                       background: 'linear-gradient(145deg, #4f46e5, #7c3aed)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
@@ -150,7 +150,7 @@ export default function Home() {
                     더보기 손익 계산
                   </h3>
                 </Card.Header>
-                <Card.Body className="p-3 p-md-4" style={{backgroundColor: '#fafbff'}}>
+                <Card.Body className="p-2 p-md-3" style={{backgroundColor: '#fafbff'}}>
                   <SeeMoreCalculator />
                 </Card.Body>
               </Card>

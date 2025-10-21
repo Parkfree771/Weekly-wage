@@ -68,7 +68,7 @@ a {
 .title {
   font-weight: 700;
   color: var(--primary);
-  padding: 2rem 0;
+  padding: 1.5rem 0;
   background: linear-gradient(45deg, var(--primary), var(--secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -95,8 +95,8 @@ a {
   border: 2px solid #e2e8f0;
   border-right: none;
   border-radius: 12px 0 0 12px;
-  padding: 0.875rem 1.25rem;
-  font-size: 1.1rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   transition: all 0.2s ease;
 }
@@ -120,11 +120,11 @@ a {
   border-left: none;
   border-radius: 0 12px 12px 0;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  padding: 0.875rem 1.5rem;
+  padding: 0.7rem 1.2rem;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
   transition: all 0.2s ease;
-  min-width: 120px;
+  min-width: 100px;
 }
 
 .simple-search-button:hover:not(:disabled) {

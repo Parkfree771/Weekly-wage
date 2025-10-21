@@ -44,7 +44,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
       const characterRaids = raids
         .filter(raid => character.itemLevel >= raid.level)
         .sort((a, b) => b.level - a.level);
-      
+
       const selectedGroups: string[] = [];
 
       raids.forEach(raid => {
@@ -56,10 +56,31 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
 
       for (const raid of characterRaids) {
         const groupName = raid.name.split(' ')[0];
-        if (selectedGroups.length < 3 && !selectedGroups.includes(groupName)) {
+
+        // 같은 그룹에서 이미 선택된 경우 건너뛰기
+        if (selectedGroups.includes(groupName)) {
+          continue;
+        }
+
+        // 종막 또는 4막인 경우 더보기o (골드 적게)로 체크
+        if (groupName === '종막' || groupName === '4막') {
+          selectedGroups.push(groupName);
+          for (const gate of raid.gates) {
+            initialSelection[character.characterName][raid.name][gate.gate] = 'withoutMore';
+          }
+        } else if (groupName === '3막') {
+          // 3막은 클리어 골드(더보기 없이)로 체크
           selectedGroups.push(groupName);
           for (const gate of raid.gates) {
             initialSelection[character.characterName][raid.name][gate.gate] = 'withMore';
+          }
+        } else {
+          // 기존 로직: 최대 3개 그룹까지
+          if (selectedGroups.length < 3) {
+            selectedGroups.push(groupName);
+            for (const gate of raid.gates) {
+              initialSelection[character.characterName][raid.name][gate.gate] = 'withMore';
+            }
           }
         }
       }
@@ -179,6 +200,21 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
     return totalGold;
   };
 
+  const hasMoreSelected = (characterName: string, groupName: string) => {
+    if (!gateSelection[characterName]) return false;
+
+    for (const raidName in gateSelection[characterName]) {
+      if (raidName.startsWith(groupName)) {
+        for (const gate in gateSelection[characterName][raidName]) {
+          if (gateSelection[characterName][raidName][gate] === 'withoutMore') {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
+
   if (selectedCharacters.length === 0) {
     return (
       <div className="text-center p-5">
@@ -203,6 +239,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                       <Accordion.Header>
                         {groupName}
                         <Badge bg="success" className="ms-2">{calculateRaidGroupGold(character.characterName, groupName).toLocaleString()} G</Badge>
+                        {hasMoreSelected(character.characterName, groupName) && <Badge bg="danger" className="ms-2">더보기</Badge>}
                       </Accordion.Header>
                       <Accordion.Body>
                         <Accordion flush>
@@ -219,19 +256,19 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                                     <tr>
                                       <th>관문</th>
                                       <th>
-                                        <Form.Check 
-                                          type="checkbox" 
-                                          label="클골" 
+                                        <Form.Check
+                                          type="checkbox"
+                                          label="클골"
                                           checked={getHeaderCheckState(character.characterName, raid.name, 'withMore')}
-                                          onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')} 
+                                          onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')}
                                         />
                                       </th>
                                       <th>
-                                        <Form.Check 
-                                          type="checkbox" 
-                                          label="클골(더보기o)" 
+                                        <Form.Check
+                                          type="checkbox"
+                                          label="더보기⭕"
                                           checked={getHeaderCheckState(character.characterName, raid.name, 'withoutMore')}
-                                          onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')} 
+                                          onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')}
                                         />
                                       </th>
                                     </tr>
