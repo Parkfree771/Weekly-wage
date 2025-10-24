@@ -16,19 +16,23 @@ export function getAdminApp(): App {
     if (apps.length > 0) {
       adminApp = apps[0];
     } else {
-      // 환경 변수에서 서비스 계정 키 읽기
-      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      // 개별 환경 변수에서 서비스 계정 정보 읽기
+      const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+      const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+      const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
 
-      if (!serviceAccount) {
-        throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY 환경 변수가 설정되지 않았습니다.');
+      if (!projectId || !clientEmail || !privateKey) {
+        throw new Error('Firebase Admin 환경 변수가 설정되지 않았습니다. FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, FIREBASE_ADMIN_PRIVATE_KEY를 확인하세요.');
       }
 
       try {
-        const serviceAccountJson = JSON.parse(serviceAccount);
-
         adminApp = initializeApp({
-          credential: cert(serviceAccountJson),
-          projectId: serviceAccountJson.project_id,
+          credential: cert({
+            projectId,
+            clientEmail,
+            privateKey: privateKey.replace(/\\n/g, '\n'), // \n 문자열을 실제 줄바꿈으로 변환
+          }),
+          projectId,
         });
       } catch (error) {
         console.error('Firebase Admin 초기화 오류:', error);
