@@ -11,7 +11,9 @@
       "Bash(cp:*)",
       "Bash(npm install:*)",
       "Read(//c/Users/park yu ro/Desktop/project4/components/**)",
-      "Read(//c/Users/park yu ro/Desktop/project4/**)"
+      "Read(//c/Users/park yu ro/Desktop/project4/**)",
+      "Bash(node test-search.js:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

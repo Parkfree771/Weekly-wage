@@ -6,6 +6,7 @@ import CharacterSearch from '@/components/CharacterSearch';
 import RaidCalculator from '@/components/RaidCalculator';
 import SeeMoreCalculator from '@/components/SeeMoreCalculator';
 import RaidSynergyAnalyzer from '@/components/RaidSynergyAnalyzer';
+import PriceHistoryChart from '@/components/PriceHistoryChart';
 import styles from './page.module.css';
 
 type Character = {
@@ -124,6 +125,15 @@ export default function Home() {
                 </Card.Body>
               </Card>
             </div> */}
+
+            {/* 가격 추이 그래프 섹션 */}
+            <div className="mt-3">
+              <PriceHistoryChart
+                itemId="6861012"
+                itemName="아비도스 융화 재료"
+                autoCollect={false}
+              />
+            </div>
 
             {/* 더보기 효율 계산기 섹션 */}
             <div className="mt-3">
