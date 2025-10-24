@@ -6,7 +6,8 @@ import CharacterSearch from '@/components/CharacterSearch';
 import RaidCalculator from '@/components/RaidCalculator';
 import SeeMoreCalculator from '@/components/SeeMoreCalculator';
 import RaidSynergyAnalyzer from '@/components/RaidSynergyAnalyzer';
-import PriceHistoryChart from '@/components/PriceHistoryChart';
+import CompactPriceChart from '@/components/CompactPriceChart';
+import { TRACKED_ITEMS } from '@/lib/items-to-track';
 import styles from './page.module.css';
 
 type Character = {
@@ -128,11 +129,37 @@ export default function Home() {
 
             {/* 가격 추이 그래프 섹션 */}
             <div className="mt-3">
-              <PriceHistoryChart
-                itemId="6861012"
-                itemName="아비도스 융화 재료"
-                autoCollect={false}
-              />
+              <Row className="justify-content-center">
+                <Col xl={9} lg={10} md={12}>
+                  <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden'}}>
+                    <Card.Header
+                      className="text-center py-2 border-0"
+                      style={{
+                        background: 'linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%)',
+                        borderBottom: '1px solid rgba(34, 197, 94, 0.1)'
+                      }}
+                    >
+                      <h3
+                        className="mb-0"
+                        style={{
+                          fontWeight: '600',
+                          fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
+                          background: 'linear-gradient(145deg, #16a34a, #15803d)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                          letterSpacing: '-0.025em'
+                        }}
+                      >
+                        거래소 & 경매장 가격 추이
+                      </h3>
+                    </Card.Header>
+                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: '#fafbff'}}>
+                      <CompactPriceChart items={TRACKED_ITEMS} />
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
             </div>
 
             {/* 더보기 효율 계산기 섹션 */}

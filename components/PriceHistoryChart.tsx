@@ -82,14 +82,13 @@ export default function PriceHistoryChart({
     return () => clearInterval(interval);
   }, [autoCollect, collectInterval]);
 
-  // 차트 데이터 포맷팅
+  // 차트 데이터 포맷팅 (날짜만 표시 - 일별 데이터이므로)
   const chartData = history.map((entry) => ({
-    time: new Date(entry.timestamp).toLocaleString('ko-KR', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+    time: new Date(entry.timestamp).toLocaleDateString('ko-KR', {
+      month: 'short',
+      day: 'numeric',
     }),
+    fullDate: new Date(entry.timestamp).toLocaleDateString('ko-KR'),
     price: entry.price,
   }));
 
@@ -205,50 +204,48 @@ export default function PriceHistoryChart({
             )}
 
             {/* 차트 */}
-            <div style={{ width: '100%', height: '300px' }}>
+            <div style={{ width: '100%', height: '200px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="time"
-                    tick={{ fontSize: 11 }}
-                    angle={-45}
+                    tick={{ fontSize: 10 }}
+                    angle={-30}
                     textAnchor="end"
-                    height={80}
+                    height={60}
                   />
                   <YAxis
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 9 }}
                     tickFormatter={formatPrice}
+                    width={50}
                   />
                   <Tooltip
                     formatter={(value: number) => [formatPrice(value) + ' G', '가격']}
+                    labelFormatter={(label) => {
+                      const index = chartData.findIndex(d => d.time === label);
+                      return index >= 0 ? chartData[index].fullDate : label;
+                    }}
                     contentStyle={{
                       backgroundColor: 'rgba(255, 255, 255, 0.95)',
                       border: '1px solid #16a34a',
                       borderRadius: '8px',
+                      fontSize: '11px'
                     }}
                   />
-                  <Legend />
                   <Line
                     type="monotone"
                     dataKey="price"
                     stroke="#16a34a"
                     strokeWidth={2}
-                    dot={{ fill: '#16a34a', r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="가격"
+                    dot={false}
+                    activeDot={{ r: 4 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
-
-            <div className="text-center mt-2">
-              <small className="text-muted">
-                총 {history.length}개의 데이터 포인트
-              </small>
             </div>
           </>
         )}

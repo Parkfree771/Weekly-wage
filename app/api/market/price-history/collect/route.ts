@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { savePriceData } from '@/lib/firestore';
+import { savePriceData } from '@/lib/firestore-admin';
 
 // 특정 아이템의 현재 가격을 가져와서 Firestore에 저장
 export async function POST(request: Request) {

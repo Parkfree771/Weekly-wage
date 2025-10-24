@@ -1,18 +1,5 @@
-// Firestore 헬퍼 함수들
-import {
-  collection,
-  addDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  getDocs,
-  Timestamp,
-  doc,
-  setDoc,
-  getDoc,
-} from 'firebase/firestore';
-import { db } from './firebase';
+// Firestore Admin 헬퍼 함수들 (서버 사이드 전용)
+import { getAdminFirestore, Timestamp, FieldValue } from './firebase-admin';
 
 // 가격 데이터 타입
 export type PriceEntry = {
@@ -34,7 +21,6 @@ export type TempPriceEntry = {
 const PRICE_HISTORY_COLLECTION = 'priceHistory';
 const DAILY_PRICE_COLLECTION = 'dailyPrices'; // 일별 평균가
 const TODAY_TEMP_COLLECTION = 'todayTemp'; // 오늘 임시 수집 데이터
-const TEMP_AUCTION_COLLECTION = 'tempAuction'; // 경매장 임시 수집 (사용 안 함, todayTemp 통합)
 
 /**
  * 로스트아크 날짜 계산 (오전 6시 기준)
@@ -66,7 +52,8 @@ export async function savePriceData(
   itemName?: string
 ): Promise<void> {
   try {
-    await addDoc(collection(db, PRICE_HISTORY_COLLECTION), {
+    const db = getAdminFirestore();
+    await db.collection(PRICE_HISTORY_COLLECTION).add({
       itemId,
       itemName,
       price,
@@ -79,70 +66,6 @@ export async function savePriceData(
 }
 
 /**
- * 특정 아이템의 가격 히스토리 조회
- */
-export async function getPriceHistory(
-  itemId: string,
-  limitCount: number = 100
-): Promise<PriceEntry[]> {
-  try {
-    const q = query(
-      collection(db, PRICE_HISTORY_COLLECTION),
-      where('itemId', '==', itemId),
-      orderBy('timestamp', 'desc'),
-      limit(limitCount)
-    );
-
-    const querySnapshot = await getDocs(q);
-    const history: PriceEntry[] = [];
-
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      history.push({
-        itemId: data.itemId,
-        itemName: data.itemName,
-        price: data.price,
-        timestamp: data.timestamp,
-      });
-    });
-
-    // 오래된 순서로 정렬 (차트용)
-    return history.reverse();
-  } catch (error) {
-    console.error('가격 히스토리 조회 오류:', error);
-    throw error;
-  }
-}
-
-/**
- * 여러 아이템의 최신 가격 조회
- */
-export async function getLatestPrices(itemIds: string[]): Promise<Map<string, number>> {
-  const latestPrices = new Map<string, number>();
-
-  for (const itemId of itemIds) {
-    try {
-      const q = query(
-        collection(db, PRICE_HISTORY_COLLECTION),
-        where('itemId', '==', itemId),
-        orderBy('timestamp', 'desc'),
-        limit(1)
-      );
-
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        const data = querySnapshot.docs[0].data();
-        latestPrices.set(itemId, data.price);
-      }
-    } catch (error) {
-      console.error(`아이템 ${itemId} 최신 가격 조회 오류:`, error);
-    }
-  }
-
-  return latestPrices;
-}
-
-/**
  * 전날 평균가 저장 (거래소 YDayAvgPrice용)
  */
 export async function saveYesterdayPrice(
@@ -151,17 +74,18 @@ export async function saveYesterdayPrice(
   itemName?: string
 ): Promise<void> {
   try {
+    const db = getAdminFirestore();
     const lostArkDate = getLostArkDate();
     const yesterday = new Date(lostArkDate);
     yesterday.setDate(yesterday.getDate() - 1);
     const dateKey = formatDateKey(yesterday);
 
-    const docRef = doc(db, DAILY_PRICE_COLLECTION, `${itemId}_${dateKey}`);
+    const docRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${itemId}_${dateKey}`);
 
     // 이미 저장된 데이터가 있는지 확인
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
-      await setDoc(docRef, {
+    const docSnap = await docRef.get();
+    if (!docSnap.exists) {
+      await docRef.set({
         itemId,
         itemName,
         price,
@@ -184,17 +108,18 @@ export async function addTodayTempPrice(
   itemName?: string
 ): Promise<void> {
   try {
+    const db = getAdminFirestore();
     const lostArkDate = getLostArkDate();
     const dateKey = formatDateKey(lostArkDate);
 
-    const docRef = doc(db, TODAY_TEMP_COLLECTION, `${itemId}_${dateKey}`);
-    const docSnap = await getDoc(docRef);
+    const docRef = db.collection(TODAY_TEMP_COLLECTION).doc(`${itemId}_${dateKey}`);
+    const docSnap = await docRef.get();
 
-    if (docSnap.exists()) {
+    if (docSnap.exists) {
       const data = docSnap.data();
-      const prices = [...data.prices, price];
+      const prices = [...(data?.prices || []), price];
 
-      await setDoc(docRef, {
+      await docRef.set({
         itemId,
         itemName,
         prices,
@@ -202,7 +127,7 @@ export async function addTodayTempPrice(
         lastUpdated: Timestamp.now(),
       });
     } else {
-      await setDoc(docRef, {
+      await docRef.set({
         itemId,
         itemName,
         prices: [price],
@@ -221,26 +146,27 @@ export async function addTodayTempPrice(
  */
 export async function finalizeYesterdayData(): Promise<void> {
   try {
+    const db = getAdminFirestore();
     const now = new Date();
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
     const yesterdayKey = formatDateKey(yesterday);
 
     // 전날 임시 데이터 가져오기
-    const tempQuery = query(
-      collection(db, TODAY_TEMP_COLLECTION),
-      where('lastUpdated', '>=', Timestamp.fromDate(yesterday))
-    );
+    const tempSnapshot = await db.collection(TODAY_TEMP_COLLECTION)
+      .where('lastUpdated', '>=', Timestamp.fromDate(yesterday))
+      .get();
 
-    const snapshot = await getDocs(tempQuery);
+    const batch = db.batch();
 
-    for (const docSnap of snapshot.docs) {
-      const data = docSnap.data();
+    tempSnapshot.docs.forEach((doc) => {
+      const data = doc.data();
       if (data.prices && data.prices.length > 0) {
         const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
 
-        const dailyDocRef = doc(db, DAILY_PRICE_COLLECTION, `${data.itemId}_${yesterdayKey}`);
-        await setDoc(dailyDocRef, {
+        const dailyDocRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${data.itemId}_${yesterdayKey}`);
+        batch.set(dailyDocRef, {
           itemId: data.itemId,
           itemName: data.itemName,
           price: avgPrice,
@@ -248,57 +174,11 @@ export async function finalizeYesterdayData(): Promise<void> {
           timestamp: Timestamp.now(),
         });
       }
-    }
+    });
+
+    await batch.commit();
   } catch (error) {
     console.error('전날 데이터 확정 오류:', error);
-    throw error;
-  }
-}
-
-/**
- * 경매장 임시 가격 추가 (하루 5회 수집용)
- */
-export async function addTempAuctionPrice(
-  itemId: string,
-  price: number,
-  itemName?: string
-): Promise<void> {
-  try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dateKey = today.toISOString().split('T')[0];
-
-    const docRef = doc(db, TEMP_AUCTION_COLLECTION, `${itemId}_${dateKey}`);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      const prices = [...data.prices, price];
-
-      await setDoc(docRef, {
-        itemId,
-        itemName,
-        prices,
-        count: prices.length,
-        lastUpdated: Timestamp.now(),
-      });
-
-      // 5회 수집 완료시 평균 계산하여 일별 가격에 저장
-      if (prices.length >= 5) {
-        const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-        await saveDailyPrice(itemId, avgPrice, itemName);
-      }
-    } else {
-      await setDoc(docRef, {
-        itemId,
-        itemName,
-        prices: [price],
-        count: 1,
-        lastUpdated: Timestamp.now(),
-      });
-    }
-  } catch (error) {
-    console.error('임시 경매장 가격 저장 오류:', error);
     throw error;
   }
 }
@@ -312,18 +192,19 @@ export async function getDailyPriceHistory(
   days: number = 30
 ): Promise<PriceEntry[]> {
   try {
-    // 1. 확정된 일별 평균가 조회
-    const dailyQuery = query(
-      collection(db, DAILY_PRICE_COLLECTION),
-      where('itemId', '==', itemId),
-      orderBy('timestamp', 'desc'),
-      limit(days)
-    );
-
-    const dailySnapshot = await getDocs(dailyQuery);
+    const db = getAdminFirestore();
     const history: PriceEntry[] = [];
 
-    dailySnapshot.forEach((doc) => {
+    console.log(`[getDailyPriceHistory] Fetching history for itemId: ${itemId}`);
+
+    // 1. 확정된 일별 평균가 조회 (인덱스 문제 방지를 위해 orderBy 제거)
+    const dailySnapshot = await db.collection(DAILY_PRICE_COLLECTION)
+      .where('itemId', '==', itemId)
+      .get();
+
+    console.log(`[getDailyPriceHistory] Found ${dailySnapshot.docs.length} daily price records`);
+
+    dailySnapshot.docs.forEach((doc) => {
       const data = doc.data();
       // date 필드를 사용하여 정확한 날짜로 timestamp 생성
       const dateStr = data.date; // YYYY-MM-DD 형식
@@ -340,12 +221,13 @@ export async function getDailyPriceHistory(
     // 2. 오늘의 임시 데이터가 있으면 누적 평균 추가
     const lostArkDate = getLostArkDate();
     const todayKey = formatDateKey(lostArkDate);
-    const todayDocRef = doc(db, TODAY_TEMP_COLLECTION, `${itemId}_${todayKey}`);
-    const todayDoc = await getDoc(todayDocRef);
+    const todayDocRef = db.collection(TODAY_TEMP_COLLECTION).doc(`${itemId}_${todayKey}`);
+    const todayDoc = await todayDocRef.get();
 
-    if (todayDoc.exists()) {
+    if (todayDoc.exists) {
       const data = todayDoc.data();
-      if (data.prices && data.prices.length > 0) {
+      console.log(`[getDailyPriceHistory] Found today's temp data:`, data);
+      if (data && data.prices && data.prices.length > 0) {
         const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
         const todayTimestamp = Timestamp.fromDate(lostArkDate);
 
@@ -356,10 +238,18 @@ export async function getDailyPriceHistory(
           timestamp: todayTimestamp,
         });
       }
+    } else {
+      console.log(`[getDailyPriceHistory] No today's temp data found for ${itemId}_${todayKey}`);
     }
 
     // 날짜순 정렬 (오래된 것부터)
-    return history.sort((a, b) => a.timestamp.seconds - b.timestamp.seconds);
+    const sorted = history.sort((a, b) => a.timestamp.seconds - b.timestamp.seconds);
+
+    // 최근 days 개만 반환
+    const result = sorted.slice(-days);
+    console.log(`[getDailyPriceHistory] Returning ${result.length} entries`);
+
+    return result;
   } catch (error) {
     console.error('일별 가격 히스토리 조회 오류:', error);
     throw error;

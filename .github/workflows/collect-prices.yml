@@ -2,8 +2,8 @@ name: Collect Prices
 
 on:
   schedule:
-    # 매시간 정각에 실행 (UTC 기준)
-    - cron: '0 * * * *'
+    # 30분마다 실행 (UTC 기준)
+    - cron: '0,30 * * * *'
   # 수동 실행도 가능
   workflow_dispatch:
 
