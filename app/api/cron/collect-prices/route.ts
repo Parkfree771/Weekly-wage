@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { saveYesterdayPrice, addTodayTempPrice, finalizeYesterdayData } from '@/lib/firestore-admin';
+import { saveYesterdayPrice, addTodayTempPrice, finalizeYesterdayData, saveHistoricalPrice } from '@/lib/firestore-admin';
 import { TRACKED_ITEMS } from '@/lib/items-to-track';
 
 // 자동 가격 수집 엔드포인트 (GitHub Actions용)
@@ -29,7 +29,8 @@ export async function GET(request: Request) {
   const errors = [];
 
   const now = new Date();
-  const isAt6AM = now.getHours() === 6 && now.getMinutes() < 30;
+  const isAt6AM = true; // 테스트용: 항상 전날 평균가 저장
+  // const isAt6AM = now.getHours() === 6 && now.getMinutes() < 30;
 
   // 오전 6시: 전날 데이터 확정
   if (isAt6AM) {
@@ -78,14 +79,20 @@ export async function GET(request: Request) {
           continue;
         }
 
-        // 1) 30분마다: 오늘의 평균가를 todayTemp에 저장
-        const todayStats = itemData.Stats[0]; // 가장 최근 날짜
-        const currentPrice = Math.round(todayStats.AvgPrice || 0);
+        console.log(`[Market] ${item.name} - Stats 배열 개수: ${itemData.Stats?.length || 0}`);
+        console.log(`[Market] ${item.name} - 첫번째 날짜: ${itemData.Stats?.[0]?.Date}, 마지막 날짜: ${itemData.Stats?.[itemData.Stats.length - 1]?.Date}`);
 
-        console.log(`[Market] ${item.name} Today AvgPrice:`, currentPrice, `(${todayStats.Date})`);
+        // 1) 30분마다: 오늘의 최저가를 todayTemp에 저장
+        // CurrentMinPrice가 없으면 Stats[0].AvgPrice 사용
+        let currentPrice = Math.round(itemData.CurrentMinPrice || 0);
+        if (currentPrice === 0 && itemData.Stats && itemData.Stats.length > 0) {
+          currentPrice = Math.round(itemData.Stats[0].AvgPrice || 0);
+        }
+
+        console.log(`[Market] ${item.name} Current Price:`, currentPrice);
 
         if (currentPrice > 0) {
-          // 오늘 평균가를 임시 데이터로 저장
+          // 오늘 가격을 임시 데이터로 저장
           await addTodayTempPrice(item.id, currentPrice, item.name);
 
           results.push({
@@ -94,32 +101,37 @@ export async function GET(request: Request) {
             type: item.type,
             price: currentPrice,
             timestamp: new Date().toISOString(),
-            dataType: 'market_current_avg_price'
+            dataType: 'market_current_price'
           });
         } else {
-          errors.push({ itemId: item.id, itemName: item.name, error: '현재 평균가 없음' });
+          errors.push({ itemId: item.id, itemName: item.name, error: '현재 가격 없음' });
         }
 
-        // 2) 오전 6시: 전날 평균가를 dailyPrices에 저장
-        if (isAt6AM && itemData.Stats.length >= 2) {
-          const yesterdayStats = itemData.Stats[1]; // 전날
-          const yesterdayPrice = Math.round(yesterdayStats.AvgPrice || 0);
-          console.log(`[Market] ${item.name} Yesterday AvgPrice:`, yesterdayPrice, `(${yesterdayStats.Date})`);
+        // 2) 오전 6시에만: 과거 거래 평균가들을 dailyPrices에 저장
+        if (isAt6AM && itemData.Stats && itemData.Stats.length > 1) {
+          console.log(`[Market] ${item.name} - Saving ${itemData.Stats.length - 1} historical prices`);
 
-          if (yesterdayPrice > 0) {
-            await saveYesterdayPrice(item.id, yesterdayPrice, item.name);
+          // Stats[0]은 오늘이므로 Stats[1]부터 저장 (전날 ~ 최대 30일 전까지)
+          for (let i = 1; i < itemData.Stats.length; i++) {
+            const stat = itemData.Stats[i];
+            const historicalPrice = Math.round(stat.AvgPrice || 0);
 
-            results.push({
-              itemId: item.id,
-              itemName: item.name,
-              type: item.type,
-              price: yesterdayPrice,
-              timestamp: new Date().toISOString(),
-              dataType: 'market_yesterday_average'
-            });
-          } else {
-            errors.push({ itemId: item.id, itemName: item.name, error: '전날 평균가 없음' });
+            if (historicalPrice > 0 && stat.Date) {
+              // Stats의 Date를 그대로 사용
+              await saveHistoricalPrice(item.id, historicalPrice, stat.Date, item.name);
+
+              console.log(`  [${i}] ${stat.Date}: ${historicalPrice}G`);
+            }
           }
+
+          results.push({
+            itemId: item.id,
+            itemName: item.name,
+            type: item.type,
+            count: itemData.Stats.length - 1,
+            timestamp: new Date().toISOString(),
+            dataType: 'market_historical_prices'
+          });
         }
 
       } else if (item.type === 'auction') {
@@ -148,6 +160,15 @@ export async function GET(request: Request) {
         if (items.length > 0) {
           const lowestPriceItem = items[0];
           const auctionInfo = lowestPriceItem.AuctionInfo;
+
+          console.log(`[Auction] ${item.name} AuctionInfo:`, JSON.stringify({
+            BuyPrice: auctionInfo.BuyPrice,
+            BidStartPrice: auctionInfo.BidStartPrice,
+            BidPrice: auctionInfo.BidPrice,
+            EndDate: auctionInfo.EndDate,
+            TradeAllowCount: auctionInfo.TradeAllowCount
+          }));
+
           const currentPrice = auctionInfo.BuyPrice || auctionInfo.BidStartPrice || 0;
 
           if (currentPrice > 0) {

@@ -45,11 +45,14 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
   // 차트 데이터 포맷팅
   const chartData = history.map((entry, index) => {
     const date = new Date(entry.timestamp);
+    const dayOfWeek = date.getDay(); // 0=일요일, 3=수요일
     return {
       날짜: `${date.getMonth() + 1}/${date.getDate()}`,
       시간: date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
       가격: entry.price,
-      rawTime: date.getTime()
+      rawTime: date.getTime(),
+      isWednesday: dayOfWeek === 3, // 수요일 여부
+      fullDate: date
     };
   });
 
@@ -71,6 +74,16 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
     max: Math.max(...history.map(h => h.price)),
     avg: history.reduce((sum, h) => sum + h.price, 0) / history.length,
   } : null;
+
+  // Y축 범위 계산 (가격 범위의 10% 여유)
+  const yAxisDomain = stats ? (() => {
+    const priceRange = stats.max - stats.min;
+    const padding = Math.max(priceRange * 0.1, 1); // 최소 1골드 여유
+    return [
+      Math.floor(stats.min - padding),
+      Math.ceil(stats.max + padding)
+    ];
+  })() : ['auto', 'auto'];
 
   // 변화율 계산
   const changeRate = history.length >= 2
@@ -246,14 +259,43 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
 
                     <XAxis
                       dataKey="날짜"
-                      tick={{
-                        fontSize: 16,
-                        fill: '#374151',
-                        fontWeight: '700'
+                      tick={(props) => {
+                        const { x, y, payload } = props;
+                        const dataIndex = chartData.findIndex(d => d.날짜 === payload.value);
+                        const isWednesday = dataIndex >= 0 ? chartData[dataIndex].isWednesday : false;
+
+                        return (
+                          <g transform={`translate(${x},${y})`}>
+                            <text
+                              x={0}
+                              y={0}
+                              dy={16}
+                              textAnchor="end"
+                              fill="#374151"
+                              fontSize={16}
+                              fontWeight="700"
+                              transform="rotate(-35)"
+                            >
+                              {payload.value}
+                            </text>
+                            {isWednesday && (
+                              <text
+                                x={0}
+                                y={18}
+                                dy={16}
+                                textAnchor="end"
+                                fill="#ef4444"
+                                fontSize={12}
+                                fontWeight="700"
+                                transform="rotate(-35)"
+                              >
+                                수요일
+                              </text>
+                            )}
+                          </g>
+                        );
                       }}
-                      angle={-35}
-                      textAnchor="end"
-                      height={60}
+                      height={80}
                       stroke="#6b7280"
                       strokeWidth={2}
                       tickLine={{ stroke: '#9ca3af', strokeWidth: 2 }}
@@ -268,7 +310,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                       }}
                       tickFormatter={formatPrice}
                       width={90}
-                      domain={['dataMin - 500', 'dataMax + 500']}
+                      domain={yAxisDomain}
                       stroke="#6b7280"
                       strokeWidth={2}
                       tickLine={{ stroke: '#9ca3af', strokeWidth: 2 }}

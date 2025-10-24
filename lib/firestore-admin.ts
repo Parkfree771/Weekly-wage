@@ -75,9 +75,10 @@ export async function saveYesterdayPrice(
 ): Promise<void> {
   try {
     const db = getAdminFirestore();
-    const lostArkDate = getLostArkDate();
-    const yesterday = new Date(lostArkDate);
-    yesterday.setDate(yesterday.getDate() - 1);
+    // 로스트아크 기준 오늘 날짜를 구한 후, 전날 날짜 계산
+    const today = getLostArkDate(); // 오늘 (24일 6시 이후면 24일)
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1); // 전날 (23일)
     const dateKey = formatDateKey(yesterday);
 
     const docRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${itemId}_${dateKey}`);
@@ -95,6 +96,36 @@ export async function saveYesterdayPrice(
     }
   } catch (error) {
     console.error('전날 평균가 저장 오류:', error);
+    throw error;
+  }
+}
+
+/**
+ * 과거 특정 날짜의 평균가 저장 (거래소 Stats 배열용)
+ */
+export async function saveHistoricalPrice(
+  itemId: string,
+  price: number,
+  dateStr: string, // YYYY-MM-DD 형식
+  itemName?: string
+): Promise<void> {
+  try {
+    const db = getAdminFirestore();
+    const docRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${itemId}_${dateStr}`);
+
+    // 이미 저장된 데이터가 있는지 확인
+    const docSnap = await docRef.get();
+    if (!docSnap.exists) {
+      await docRef.set({
+        itemId,
+        itemName,
+        price,
+        date: dateStr,
+        timestamp: Timestamp.now(),
+      });
+    }
+  } catch (error) {
+    console.error('과거 평균가 저장 오류:', error);
     throw error;
   }
 }
@@ -147,36 +178,56 @@ export async function addTodayTempPrice(
 export async function finalizeYesterdayData(): Promise<void> {
   try {
     const db = getAdminFirestore();
-    const now = new Date();
-    const yesterday = new Date(now);
+
+    // 로스트아크 기준 오늘 날짜
+    const lostArkToday = getLostArkDate();
+
+    // 로스트아크 기준 전날 날짜 계산
+    const yesterday = new Date(lostArkToday);
     yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(0, 0, 0, 0);
     const yesterdayKey = formatDateKey(yesterday);
 
-    // 전날 임시 데이터 가져오기
-    const tempSnapshot = await db.collection(TODAY_TEMP_COLLECTION)
-      .where('lastUpdated', '>=', Timestamp.fromDate(yesterday))
-      .get();
+    console.log(`[finalizeYesterdayData] 전날 데이터 확정 시작: ${yesterdayKey}`);
+
+    // 전날의 todayTemp 문서를 직접 조회 (문서명이 itemId_날짜 형식)
+    const tempSnapshot = await db.collection(TODAY_TEMP_COLLECTION).get();
 
     const batch = db.batch();
+    let count = 0;
 
     tempSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      if (data.prices && data.prices.length > 0) {
+      const docId = doc.id; // 예: "auction_gem_fear_8_2025-10-23"
+
+      // 문서 ID에서 날짜 추출
+      const docDateMatch = docId.match(/_(\d{4}-\d{2}-\d{2})$/);
+      if (!docDateMatch) return;
+
+      const docDate = docDateMatch[1];
+
+      // 전날 날짜와 일치하는 문서만 처리
+      if (docDate === yesterdayKey && data.prices && data.prices.length > 0) {
         const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
 
         const dailyDocRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${data.itemId}_${yesterdayKey}`);
         batch.set(dailyDocRef, {
           itemId: data.itemId,
           itemName: data.itemName,
-          price: avgPrice,
+          price: Math.round(avgPrice),
           date: yesterdayKey,
           timestamp: Timestamp.now(),
         });
+
+        console.log(`  확정: ${data.itemName} - ${data.prices.length}개 평균 = ${Math.round(avgPrice)}G`);
+        count++;
+
+        // 확정 후 todayTemp 문서 삭제 (선택사항)
+        // batch.delete(doc.ref);
       }
     });
 
     await batch.commit();
+    console.log(`[finalizeYesterdayData] 완료: ${count}개 아이템 데이터 확정`);
   } catch (error) {
     console.error('전날 데이터 확정 오류:', error);
     throw error;
@@ -206,9 +257,9 @@ export async function getDailyPriceHistory(
 
     dailySnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      // date 필드를 사용하여 정확한 날짜로 timestamp 생성
+      // date 필드를 사용하여 정확한 날짜로 timestamp 생성 (UTC 기준)
       const dateStr = data.date; // YYYY-MM-DD 형식
-      const timestamp = Timestamp.fromDate(new Date(dateStr + 'T00:00:00'));
+      const timestamp = Timestamp.fromDate(new Date(dateStr + 'T00:00:00Z'));
 
       history.push({
         itemId: data.itemId,

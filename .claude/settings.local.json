@@ -13,7 +13,11 @@
       "Read(//c/Users/park yu ro/Desktop/project4/components/**)",
       "Read(//c/Users/park yu ro/Desktop/project4/**)",
       "Bash(node test-search.js:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
