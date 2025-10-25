@@ -117,6 +117,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
             variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
             onClick={() => setSelectedItem(item)}
             size="sm"
+            className="d-none d-md-inline-block"
             style={{
               borderRadius: '20px',
               padding: '8px 16px',
@@ -134,12 +135,34 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
             )}
           </Button>
         ))}
+        {/* 모바일 버튼 */}
+        {items.map((item) => (
+          <Button
+            key={item.id}
+            variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
+            onClick={() => setSelectedItem(item)}
+            size="sm"
+            className="d-md-none"
+            style={{
+              borderRadius: '16px',
+              padding: '6px 12px',
+              fontWeight: selectedItem.id === item.id ? '600' : '500',
+              fontSize: '0.75rem',
+              transition: 'all 0.2s ease',
+              boxShadow: selectedItem.id === item.id ? '0 2px 6px rgba(22, 163, 74, 0.25)' : 'none',
+              minWidth: '75px'
+            }}
+          >
+            {item.name}
+          </Button>
+        ))}
       </div>
 
       {/* 차트 카드 */}
       <Card className="border-0 shadow-sm" style={{ borderRadius: '16px' }}>
+        {/* 데스크톱 헤더 */}
         <Card.Header
-          className="py-3 border-0"
+          className="py-3 border-0 d-none d-md-block"
           style={{
             background: 'linear-gradient(135deg, #ffffff 0%, #f8fffe 100%)',
             borderBottom: '2px solid #e5e7eb',
@@ -167,6 +190,34 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
           </div>
         </Card.Header>
 
+        {/* 모바일 헤더 */}
+        <Card.Header
+          className="py-2 border-0 d-md-none"
+          style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fffe 100%)',
+            borderBottom: '1.5px solid #e5e7eb',
+          }}
+        >
+          <div className="text-center">
+            <h6 className="mb-1" style={{ fontWeight: '700', color: '#16a34a', fontSize: '0.95rem' }}>
+              {selectedItem.name}
+            </h6>
+            <small className="text-muted" style={{ fontSize: '0.7rem' }}>
+              {selectedItem.type === 'market' ? '거래소' : '경매장'} • 최근 30일
+            </small>
+            {stats && (
+              <div className="mt-2">
+                <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#16a34a' }}>
+                  {formatTooltipPrice(stats.current)}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: changeRate >= 0 ? '#ef4444' : '#3b82f6' }}>
+                  {changeRate >= 0 ? '▲' : '▼'} {Math.abs(changeRate).toFixed(1)}%
+                </div>
+              </div>
+            )}
+          </div>
+        </Card.Header>
+
         <Card.Body className="p-2 p-md-3" style={{ backgroundColor: '#fafffe' }}>
           {loading ? (
             <div className="text-center py-5">
@@ -181,9 +232,9 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
             </div>
           ) : (
             <>
-              {/* 통계 */}
+              {/* 통계 - 데스크톱 */}
               {stats && (
-                <div className="row g-2 mb-3">
+                <div className="row g-2 mb-3 d-none d-md-flex">
                   <div className="col-6 col-md-3">
                     <div className="text-center p-2" style={{
                       backgroundColor: '#f0fdf4',
@@ -235,8 +286,50 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                 </div>
               )}
 
-              {/* 차트 */}
-              <div style={{ width: '100%', height: '400px' }}>
+              {/* 통계 - 모바일 */}
+              {stats && (
+                <div className="row g-2 mb-3 d-md-none">
+                  <div className="col-6">
+                    <div className="text-center p-2" style={{
+                      backgroundColor: '#eff6ff',
+                      borderRadius: '8px',
+                      border: '1px solid #dbeafe'
+                    }}>
+                      <small className="text-muted d-block mb-1" style={{ fontSize: '0.65rem' }}>최저가</small>
+                      <strong style={{ fontSize: '0.8rem', color: '#3b82f6' }}>
+                        {formatTooltipPrice(stats.min)}
+                      </strong>
+                    </div>
+                  </div>
+                  <div className="col-6">
+                    <div className="text-center p-2" style={{
+                      backgroundColor: '#fef2f2',
+                      borderRadius: '8px',
+                      border: '1px solid #fecaca'
+                    }}>
+                      <small className="text-muted d-block mb-1" style={{ fontSize: '0.65rem' }}>최고가</small>
+                      <strong style={{ fontSize: '0.8rem', color: '#ef4444' }}>
+                        {formatTooltipPrice(stats.max)}
+                      </strong>
+                    </div>
+                  </div>
+                  <div className="col-12">
+                    <div className="text-center p-2" style={{
+                      backgroundColor: '#faf5ff',
+                      borderRadius: '8px',
+                      border: '1px solid #e9d5ff'
+                    }}>
+                      <small className="text-muted d-block mb-1" style={{ fontSize: '0.65rem' }}>평균가</small>
+                      <strong style={{ fontSize: '0.8rem', color: '#a855f7' }}>
+                        {formatTooltipPrice(Math.round(stats.avg))}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 차트 - 반응형 */}
+              <div className="d-none d-md-block" style={{ width: '100%', height: '400px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={chartData}
@@ -359,6 +452,135 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                         strokeWidth: 4
                       }}
                       fill="url(#colorPrice)"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* 모바일 차트 */}
+              <div className="d-md-none" style={{ width: '100%', height: '280px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={chartData}
+                    margin={{ top: 10, right: 5, left: -10, bottom: 5 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#16a34a" stopOpacity={0.05}/>
+                      </linearGradient>
+                    </defs>
+
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#d1d5db"
+                      strokeWidth={0.5}
+                      vertical={false}
+                      horizontal={true}
+                    />
+
+                    <XAxis
+                      dataKey="날짜"
+                      tick={(props) => {
+                        const { x, y, payload } = props;
+                        const dataIndex = chartData.findIndex(d => d.날짜 === payload.value);
+                        const isWednesday = dataIndex >= 0 ? chartData[dataIndex].isWednesday : false;
+
+                        return (
+                          <g transform={`translate(${x},${y})`}>
+                            <text
+                              x={0}
+                              y={0}
+                              dy={10}
+                              textAnchor="end"
+                              fill="#6b7280"
+                              fontSize={9}
+                              fontWeight="600"
+                              transform="rotate(-45)"
+                            >
+                              {payload.value}
+                            </text>
+                            {isWednesday && (
+                              <text
+                                x={0}
+                                y={10}
+                                dy={10}
+                                textAnchor="end"
+                                fill="#ef4444"
+                                fontSize={7}
+                                fontWeight="700"
+                                transform="rotate(-45)"
+                              >
+                                수
+                              </text>
+                            )}
+                          </g>
+                        );
+                      }}
+                      height={55}
+                      stroke="#9ca3af"
+                      strokeWidth={1}
+                      tickLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
+                      axisLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
+                    />
+
+                    <YAxis
+                      tick={{
+                        fontSize: 9,
+                        fill: '#6b7280',
+                        fontWeight: '600'
+                      }}
+                      tickFormatter={formatPrice}
+                      width={45}
+                      domain={yAxisDomain}
+                      stroke="#9ca3af"
+                      strokeWidth={1}
+                      tickLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
+                      axisLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
+                    />
+
+                    <Tooltip
+                      formatter={(value: number) => [formatTooltipPrice(value), '가격']}
+                      labelFormatter={(label) => {
+                        const item = chartData.find(d => d.날짜 === label);
+                        return `${label} ${item?.시간 || ''}`;
+                      }}
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                        border: '2px solid #16a34a',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        padding: '8px 10px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        fontWeight: '600'
+                      }}
+                      labelStyle={{
+                        fontWeight: '700',
+                        color: '#16a34a',
+                        marginBottom: '4px',
+                        fontSize: '12px'
+                      }}
+                      cursor={{ stroke: '#16a34a', strokeWidth: 1, strokeDasharray: '3 3' }}
+                    />
+
+                    <Line
+                      type="monotone"
+                      dataKey="가격"
+                      stroke="#16a34a"
+                      strokeWidth={2.5}
+                      dot={{
+                        r: 3,
+                        fill: '#16a34a',
+                        strokeWidth: 2,
+                        stroke: '#fff'
+                      }}
+                      activeDot={{
+                        r: 6,
+                        fill: '#22c55e',
+                        stroke: '#fff',
+                        strokeWidth: 2
+                      }}
+                      fill="url(#colorPriceMobile)"
                     />
                   </LineChart>
                 </ResponsiveContainer>
