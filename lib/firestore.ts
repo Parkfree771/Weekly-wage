@@ -347,12 +347,13 @@ export async function getDailyPriceHistory(
       const data = todayDoc.data();
       if (data.prices && data.prices.length > 0) {
         const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
+        const roundedAvgPrice = Math.round(avgPrice * 10) / 10; // 소수점 첫째 자리까지
         const todayTimestamp = Timestamp.fromDate(lostArkDate);
 
         history.push({
           itemId: data.itemId,
           itemName: data.itemName,
-          price: Math.round(avgPrice),
+          price: roundedAvgPrice,
           timestamp: todayTimestamp,
         });
       }

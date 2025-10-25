@@ -84,9 +84,9 @@ export async function GET(request: Request) {
 
         // 1) 30분마다: 오늘의 최저가를 todayTemp에 저장
         // CurrentMinPrice가 없으면 Stats[0].AvgPrice 사용
-        let currentPrice = Math.round(itemData.CurrentMinPrice || 0);
+        let currentPrice = itemData.CurrentMinPrice || 0;
         if (currentPrice === 0 && itemData.Stats && itemData.Stats.length > 0) {
-          currentPrice = Math.round(itemData.Stats[0].AvgPrice || 0);
+          currentPrice = itemData.Stats[0].AvgPrice || 0;
         }
 
         console.log(`[Market] ${item.name} Current Price:`, currentPrice);
@@ -114,7 +114,7 @@ export async function GET(request: Request) {
           // Stats[0]은 오늘이므로 Stats[1]부터 저장 (전날 ~ 최대 30일 전까지)
           for (let i = 1; i < itemData.Stats.length; i++) {
             const stat = itemData.Stats[i];
-            const historicalPrice = Math.round(stat.AvgPrice || 0);
+            const historicalPrice = stat.AvgPrice || 0;
 
             if (historicalPrice > 0 && stat.Date) {
               // Stats의 Date를 그대로 사용

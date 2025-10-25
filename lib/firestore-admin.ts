@@ -208,17 +208,21 @@ export async function finalizeYesterdayData(): Promise<void> {
       // 전날 날짜와 일치하는 문서만 처리
       if (docDate === yesterdayKey && data.prices && data.prices.length > 0) {
         const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
+        // 아비도스 융화재료(6861012)만 소수점 첫째 자리까지, 나머지는 정수
+        const roundedAvgPrice = data.itemId === '6861012'
+          ? Math.round(avgPrice * 10) / 10
+          : Math.round(avgPrice);
 
         const dailyDocRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${data.itemId}_${yesterdayKey}`);
         batch.set(dailyDocRef, {
           itemId: data.itemId,
           itemName: data.itemName,
-          price: Math.round(avgPrice),
+          price: roundedAvgPrice,
           date: yesterdayKey,
           timestamp: Timestamp.now(),
         });
 
-        console.log(`  확정: ${data.itemName} - ${data.prices.length}개 평균 = ${Math.round(avgPrice)}G`);
+        console.log(`  확정: ${data.itemName} - ${data.prices.length}개 평균 = ${roundedAvgPrice}G`);
         count++;
 
         // 확정 후 todayTemp 문서 삭제 (선택사항)
@@ -261,10 +265,15 @@ export async function getDailyPriceHistory(
       const dateStr = data.date; // YYYY-MM-DD 형식
       const timestamp = Timestamp.fromDate(new Date(dateStr + 'T00:00:00Z'));
 
+      // 아비도스 융화재료(6861012)만 소수점 첫째 자리까지, 나머지는 정수
+      const price = data.itemId === '6861012'
+        ? Math.round(data.price * 10) / 10
+        : Math.round(data.price);
+
       history.push({
         itemId: data.itemId,
         itemName: data.itemName,
-        price: Math.round(data.price),
+        price: price,
         timestamp: timestamp,
       });
     });
@@ -280,12 +289,16 @@ export async function getDailyPriceHistory(
       console.log(`[getDailyPriceHistory] Found today's temp data:`, data);
       if (data && data.prices && data.prices.length > 0) {
         const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
+        // 아비도스 융화재료(6861012)만 소수점 첫째 자리까지, 나머지는 정수
+        const roundedAvgPrice = data.itemId === '6861012'
+          ? Math.round(avgPrice * 10) / 10
+          : Math.round(avgPrice);
         const todayTimestamp = Timestamp.fromDate(lostArkDate);
 
         history.push({
           itemId: data.itemId,
           itemName: data.itemName,
-          price: Math.round(avgPrice),
+          price: roundedAvgPrice,
           timestamp: todayTimestamp,
         });
       }

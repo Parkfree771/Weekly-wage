@@ -48,7 +48,6 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
     const dayOfWeek = date.getDay(); // 0=일요일, 3=수요일
     return {
       날짜: `${date.getMonth() + 1}/${date.getDate()}`,
-      시간: date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
       가격: entry.price,
       rawTime: date.getTime(),
       isWednesday: dayOfWeek === 3, // 수요일 여부
@@ -57,15 +56,21 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
   });
 
   const formatPrice = (value: number) => {
-    if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `${(value / 1000).toFixed(1)}K`;
+    // 모든 아이템 전체 가격으로 표시 (축약 없음)
+    // 아비도스 융화재료만 소수점 첫째 자리, 나머지는 정수
+    if (selectedItem?.id === '6861012' && value < 1000) {
+      return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     }
-    return value.toLocaleString('ko-KR');
+    return Math.round(value).toLocaleString('ko-KR');
   };
 
-  const formatTooltipPrice = (value: number) => value.toLocaleString('ko-KR') + ' G';
+  const formatTooltipPrice = (value: number) => {
+    // 아비도스 융화재료만 소수점 첫째 자리까지, 나머지는 정수
+    if (selectedItem?.id === '6861012' && value < 1000) {
+      return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G';
+    }
+    return value.toLocaleString('ko-KR') + ' G';
+  };
 
   // 통계 계산
   const stats = history.length > 0 ? {
@@ -75,15 +80,56 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
     avg: history.reduce((sum, h) => sum + h.price, 0) / history.length,
   } : null;
 
-  // Y축 범위 계산 (가격 범위의 10% 여유)
-  const yAxisDomain = stats ? (() => {
+  // Y축 범위 및 틱 설정
+  const yAxisConfig = stats ? (() => {
     const priceRange = stats.max - stats.min;
-    const padding = Math.max(priceRange * 0.1, 1); // 최소 1골드 여유
-    return [
-      Math.floor(stats.min - padding),
-      Math.ceil(stats.max + padding)
-    ];
-  })() : ['auto', 'auto'];
+    const isAbidos = selectedItem?.id === '6861012';
+
+    // 가격대에 따른 적절한 단위 결정
+    let tickUnit = 1;
+    let tickCount = 6;
+
+    if (stats.max >= 1000000) {
+      // 100만 이상: 10만 단위
+      tickUnit = 100000;
+      tickCount = 6;
+    } else if (stats.max >= 100000) {
+      // 10만~100만: 1만 단위
+      tickUnit = 10000;
+      tickCount = 6;
+    } else if (stats.max >= 10000) {
+      // 1만~10만: 1000 단위
+      tickUnit = 1000;
+      tickCount = 6;
+    } else if (stats.max >= 1000) {
+      // 1000~1만: 100 단위
+      tickUnit = 100;
+      tickCount = 6;
+    } else if (stats.max >= 100) {
+      // 100~1000: 10 단위
+      tickUnit = 10;
+      tickCount = 6;
+    } else {
+      // 100 미만: 1 단위 (아비도스용)
+      tickUnit = isAbidos ? 0.1 : 1;
+      tickCount = 6;
+    }
+
+    const padding = Math.max(priceRange * 0.1, tickUnit);
+
+    // 단위에 맞춰 반올림
+    const minValue = isAbidos && stats.max < 100
+      ? Math.floor((stats.min - padding) * 10) / 10
+      : Math.floor((stats.min - padding) / tickUnit) * tickUnit;
+    const maxValue = isAbidos && stats.max < 100
+      ? Math.ceil((stats.max + padding) * 10) / 10
+      : Math.ceil((stats.max + padding) / tickUnit) * tickUnit;
+
+    return {
+      domain: [minValue, maxValue],
+      tickCount: tickCount
+    };
+  })() : { domain: ['auto', 'auto'], tickCount: 5 };
 
   // 변화율 계산
   const changeRate = history.length >= 2
@@ -279,7 +325,10 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                     }}>
                       <small className="text-muted d-block mb-1" style={{ fontSize: '0.7rem' }}>평균가</small>
                       <strong style={{ fontSize: '0.95rem', color: '#a855f7' }}>
-                        {formatTooltipPrice(Math.round(stats.avg))}
+                        {selectedItem?.id === '6861012' && stats.avg < 1000
+                          ? stats.avg.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G'
+                          : formatTooltipPrice(Math.round(stats.avg))
+                        }
                       </strong>
                     </div>
                   </div>
@@ -321,7 +370,10 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                     }}>
                       <small className="text-muted d-block mb-1" style={{ fontSize: '0.65rem' }}>평균가</small>
                       <strong style={{ fontSize: '0.8rem', color: '#a855f7' }}>
-                        {formatTooltipPrice(Math.round(stats.avg))}
+                        {selectedItem?.id === '6861012' && stats.avg < 1000
+                          ? stats.avg.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G'
+                          : formatTooltipPrice(Math.round(stats.avg))
+                        }
                       </strong>
                     </div>
                   </div>
@@ -333,7 +385,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={chartData}
-                    margin={{ top: 15, right: 15, left: 0, bottom: 5 }}
+                    margin={{ top: 15, right: 15, left: stats && stats.max >= 1000000 ? 20 : 0, bottom: 5 }}
                   >
                     <defs>
                       <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
@@ -397,13 +449,14 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
 
                     <YAxis
                       tick={{
-                        fontSize: 16,
+                        fontSize: stats && stats.max >= 1000000 ? 14 : 16,
                         fill: '#374151',
                         fontWeight: '700'
                       }}
                       tickFormatter={formatPrice}
-                      width={90}
-                      domain={yAxisDomain}
+                      width={stats && stats.max >= 1000000 ? 150 : stats && stats.max >= 100000 ? 130 : 110}
+                      domain={yAxisConfig.domain}
+                      tickCount={yAxisConfig.tickCount}
                       stroke="#6b7280"
                       strokeWidth={2}
                       tickLine={{ stroke: '#9ca3af', strokeWidth: 2 }}
@@ -412,10 +465,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
 
                     <Tooltip
                       formatter={(value: number) => [formatTooltipPrice(value), '가격']}
-                      labelFormatter={(label) => {
-                        const item = chartData.find(d => d.날짜 === label);
-                        return `${label} ${item?.시간 || ''}`;
-                      }}
+                      labelFormatter={(label) => label}
                       contentStyle={{
                         backgroundColor: 'rgba(255, 255, 255, 0.98)',
                         border: '3px solid #16a34a',
@@ -462,7 +512,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={chartData}
-                    margin={{ top: 10, right: 5, left: -10, bottom: 5 }}
+                    margin={{ top: 10, right: 5, left: stats && stats.max >= 100000 ? 5 : -10, bottom: 5 }}
                   >
                     <defs>
                       <linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1">
@@ -526,13 +576,14 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
 
                     <YAxis
                       tick={{
-                        fontSize: 9,
+                        fontSize: stats && stats.max >= 1000000 ? 7 : 9,
                         fill: '#6b7280',
                         fontWeight: '600'
                       }}
                       tickFormatter={formatPrice}
-                      width={45}
-                      domain={yAxisDomain}
+                      width={stats && stats.max >= 1000000 ? 90 : stats && stats.max >= 100000 ? 75 : 60}
+                      domain={yAxisConfig.domain}
+                      tickCount={yAxisConfig.tickCount}
                       stroke="#9ca3af"
                       strokeWidth={1}
                       tickLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
@@ -541,10 +592,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
 
                     <Tooltip
                       formatter={(value: number) => [formatTooltipPrice(value), '가격']}
-                      labelFormatter={(label) => {
-                        const item = chartData.find(d => d.날짜 === label);
-                        return `${label} ${item?.시간 || ''}`;
-                      }}
+                      labelFormatter={(label) => label}
                       contentStyle={{
                         backgroundColor: 'rgba(255, 255, 255, 0.98)',
                         border: '2px solid #16a34a',
