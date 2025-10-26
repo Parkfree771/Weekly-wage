@@ -29,8 +29,8 @@ export async function GET(request: Request) {
   const errors = [];
 
   const now = new Date();
-  const isAt6AM = true; // 테스트용: 항상 전날 평균가 저장
-  // const isAt6AM = now.getHours() === 6 && now.getMinutes() < 30;
+  const isAt6AM = now.getHours() === 6 && now.getMinutes() < 30;
+  // const isAt6AM = true; // 테스트용: 항상 전날 평균가 저장
 
   // 오전 6시: 전날 데이터 확정
   if (isAt6AM) {
