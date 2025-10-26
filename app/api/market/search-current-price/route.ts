@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import axios from 'axios';
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -23,15 +22,18 @@ export async function POST(request: Request) {
     if (itemId) {
       console.log(`Getting current price by itemId: ${itemId}`);
       searchMethod = 'direct';
-      const detailResponse = await axios.get(`https://developer-lostark.game.onstove.com/markets/items/${itemId}`, {
+      const detailResponse = await fetch(`https://developer-lostark.game.onstove.com/markets/items/${itemId}`, {
         headers: {
           'accept': 'application/json',
           'authorization': `Bearer ${apiKey}`,
         },
       });
-      
-      if (detailResponse.data && Array.isArray(detailResponse.data) && detailResponse.data.length > 0) {
-        const detail = detailResponse.data[0];
+
+      if (detailResponse.ok) {
+        const data = await detailResponse.json();
+
+        if (data && Array.isArray(data) && data.length > 0) {
+          const detail = data[0];
         
         let price = 0;
         // 1순위: Stats 최신 평균가, 2순위: CurrentMinPrice, 3순위: YDayAvgPrice
@@ -47,35 +49,29 @@ export async function POST(request: Request) {
         } else {
           console.log(`No price data available for item ${itemId}`);
         }
-        
-        return NextResponse.json({ 
-          itemName: detail.Name, 
-          price: price,
-          itemId: itemId,
-          debug: {
+
+
+          return NextResponse.json({
             itemName: detail.Name,
-            grade: detail.Grade,
-            currentMinPrice: detail.CurrentMinPrice,
-            yDayAvgPrice: detail.YDayAvgPrice,
-            statsAvgPrice: detail.Stats?.[0]?.AvgPrice || null,
-            priceType: 'current',
-            method: searchMethod
-          }
-        });
+            price: price,
+            itemId: itemId,
+            debug: {
+              itemName: detail.Name,
+              grade: detail.Grade,
+              currentMinPrice: detail.CurrentMinPrice,
+              yDayAvgPrice: detail.YDayAvgPrice,
+              statsAvgPrice: detail.Stats?.[0]?.AvgPrice || null,
+              priceType: 'current',
+              method: searchMethod
+            }
+          });
+        }
       }
     }
-    
+
     // If itemName is provided or itemId failed, use search API
     if (itemName) {
       const apiUrl = 'https://developer-lostark.game.onstove.com/markets/items';
-
-      const options = {
-        headers: {
-          'accept': 'application/json',
-          'authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      };
 
       const requestBody = {
         Sort: 'GRADE',
@@ -85,31 +81,49 @@ export async function POST(request: Request) {
         SortCondition: 'ASC',
       };
 
-      const response = await axios.post(apiUrl, requestBody, options);
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        console.log(`Search API failed for ${itemName}`);
+        return NextResponse.json({ itemName: itemName || `itemId:${itemId}`, price: 0 });
+      }
+
+      const searchData = await response.json();
       searchMethod = 'search';
-      
-      console.log(`Current price search for ${itemName}: Found ${response.data?.Items?.length || 0} items`);
-      
-      if (response.data && response.data.Items && response.data.Items.length > 0) {
+
+      console.log(`Current price search for ${itemName}: Found ${searchData?.Items?.length || 0} items`);
+
+      if (searchData && searchData.Items && searchData.Items.length > 0) {
         // Find exact match or first item that contains the name
-        targetItem = response.data.Items.find((item: any) => item.Name === itemName) || 
-                        response.data.Items.find((item: any) => item.Name.includes(itemName)) ||
-                        response.data.Items[0];
+        targetItem = searchData.Items.find((item: any) => item.Name === itemName) ||
+                        searchData.Items.find((item: any) => item.Name.includes(itemName)) ||
+                        searchData.Items[0];
         
         console.log(`Current price target item: ${targetItem.Name} (ID: ${targetItem.Id})`);
         
         // Try to get detailed price information
         let price = 0;
         try {
-          const detailResponse = await axios.get(`https://developer-lostark.game.onstove.com/markets/items/${targetItem.Id}`, {
+          const detailResponse = await fetch(`https://developer-lostark.game.onstove.com/markets/items/${targetItem.Id}`, {
             headers: {
               'accept': 'application/json',
               'authorization': `Bearer ${apiKey}`,
             },
           });
-          
-          if (detailResponse.data && Array.isArray(detailResponse.data) && detailResponse.data.length > 0) {
-            const detail = detailResponse.data[0];
+
+          if (detailResponse.ok) {
+            const detailData = await detailResponse.json();
+
+            if (detailData && Array.isArray(detailData) && detailData.length > 0) {
+              const detail = detailData[0];
             
             // 1순위: Stats 최신 평균가, 2순위: CurrentMinPrice, 3순위: YDayAvgPrice
             if (detail.Stats && detail.Stats.length > 0 && detail.Stats[0].AvgPrice > 0) {
@@ -124,8 +138,10 @@ export async function POST(request: Request) {
             } else {
               console.log(`No price data available for search result`);
             }
-            
-            console.log(`Current price API - Final price: ${price}`);
+
+
+              console.log(`Current price API - Final price: ${price}`);
+            }
           }
         } catch (detailError) {
           console.log('Detail API failed for current price, no fallback - only using current min price');
@@ -173,24 +189,10 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error(`Error searching current price for ${itemName}:`, error);
-    if (error.response) {
-      // Handle 503 Service Unavailable specifically
-      if (error.response.status === 503) {
-        console.warn(`External API is unavailable (503). Returning 0 price for ${itemName}.`);
-        return NextResponse.json({ 
-          itemName: itemName || `itemId:${itemId}`, 
-          price: 0,
-          error: '외부 API 서비스가 현재 사용 불가능합니다 (503).'
-        });
-      }
-      // For other client/server errors, forward the response
-      return NextResponse.json(
-        { message: error.response.data?.Message || '현재 가격 검색에 실패했습니다.' },
-        { status: error.response.status }
-      );
-    } else {
-      // Handle network errors or other unexpected issues
-      return NextResponse.json({ message: 'API 요청 중 알 수 없는 오류가 발생했습니다.' }, { status: 500 });
-    }
+    return NextResponse.json({
+      itemName: itemName || `itemId:${itemId}`,
+      price: 0,
+      error: 'API 요청 중 오류가 발생했습니다.'
+    }, { status: 500 });
   }
 }

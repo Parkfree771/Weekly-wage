@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import axios from 'axios';
 
 // 경매장 아이템 검색 및 최저가 조회
 export async function POST(request: Request) {
@@ -22,25 +21,34 @@ export async function POST(request: Request) {
     }
 
     // 경매장 검색
-    const response = await axios.post(
+    const response = await fetch(
       'https://developer-lostark.game.onstove.com/auctions/items',
       {
-        ItemName: itemName,
-        CategoryCode: categoryCode || null,
-        PageNo: 0,
-        SortCondition: 'ASC',
-        Sort: 'BUY_PRICE'
-      },
-      {
+        method: 'POST',
         headers: {
           accept: 'application/json',
           authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          ItemName: itemName,
+          CategoryCode: categoryCode || null,
+          PageNo: 0,
+          SortCondition: 'ASC',
+          Sort: 'BUY_PRICE'
+        })
       }
     );
 
-    const items = response.data?.Items || [];
+    if (!response.ok) {
+      return NextResponse.json(
+        { message: '경매장 검색에 실패했습니다.' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    const items = data?.Items || [];
 
     if (items.length === 0) {
       return NextResponse.json(
@@ -58,7 +66,7 @@ export async function POST(request: Request) {
       itemName: lowestPriceItem.Name,
       grade: lowestPriceItem.Grade,
       lowestPrice: auctionInfo.BuyPrice || auctionInfo.BidStartPrice,
-      totalCount: response.data.TotalCount,
+      totalCount: data.TotalCount,
       item: {
         name: lowestPriceItem.Name,
         grade: lowestPriceItem.Grade,

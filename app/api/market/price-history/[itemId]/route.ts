@@ -1,6 +1,32 @@
 import { NextResponse } from 'next/server';
+import { unstable_cache } from 'next/cache';
 import { getDailyPriceHistory } from '@/lib/firestore-admin';
 import { Timestamp } from 'firebase-admin/firestore';
+
+// 캐시된 가격 히스토리 조회 함수 (5분간 캐싱)
+const getCachedPriceHistory = unstable_cache(
+  async (itemId: string) => {
+    console.log(`[Cache Miss] Fetching price history for itemId: ${itemId}`);
+    const priceEntries = await getDailyPriceHistory(itemId, 30);
+
+    // Timestamp를 ISO 문자열로 변환
+    const history = priceEntries.map((entry) => ({
+      price: entry.price,
+      timestamp: entry.timestamp.toDate().toISOString(),
+    }));
+
+    return {
+      itemId,
+      history,
+      count: history.length,
+    };
+  },
+  ['price-history'],
+  {
+    revalidate: 300, // 5분간 캐싱
+    tags: ['price-history']
+  }
+);
 
 export async function GET(
   request: Request,
@@ -18,24 +44,11 @@ export async function GET(
       );
     }
 
-    // Firestore에서 일별 가격 히스토리 조회 (최근 30일)
-    // 확정된 전날 평균가들 + 오늘의 누적 평균
-    console.log('[API] Calling getDailyPriceHistory...');
-    const priceEntries = await getDailyPriceHistory(itemId, 30);
-    console.log(`[API] Got ${priceEntries.length} price entries`);
+    // 캐시된 데이터 조회 (5분간 캐싱)
+    const data = await getCachedPriceHistory(itemId);
+    console.log(`[API] Returning ${data.history.length} history entries (from cache or fresh)`);
 
-    // Timestamp를 ISO 문자열로 변환
-    const history = priceEntries.map((entry) => ({
-      price: entry.price,
-      timestamp: entry.timestamp.toDate().toISOString(),
-    }));
-
-    console.log(`[API] Returning ${history.length} history entries`);
-    return NextResponse.json({
-      itemId,
-      history,
-      count: history.length,
-    });
+    return NextResponse.json(data);
   } catch (error: any) {
     console.error('[API] 가격 히스토리 조회 오류:', error);
     console.error('[API] Error stack:', error.stack);

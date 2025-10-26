@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import axios from 'axios';
 import { savePriceData } from '@/lib/firestore-admin';
 
 // 특정 아이템의 현재 가격을 가져와서 Firestore에 저장
@@ -23,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     // 로스트아크 API에서 현재 가격 가져오기
-    const response = await axios.get(
+    const response = await fetch(
       `https://developer-lostark.game.onstove.com/markets/items/${itemId}`,
       {
         headers: {
@@ -33,14 +32,23 @@ export async function POST(request: Request) {
       }
     );
 
-    if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+    if (!response.ok) {
+      return NextResponse.json(
+        { message: '아이템 정보를 가져오는데 실패했습니다.' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return NextResponse.json(
         { message: '아이템 정보를 찾을 수 없습니다.' },
         { status: 404 }
       );
     }
 
-    const itemData = response.data[0];
+    const itemData = data[0];
     let currentPrice = 0;
 
     // 가격 우선순위: 전날 평균가 > 통계 평균가 > 현재 최저가

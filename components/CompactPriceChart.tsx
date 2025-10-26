@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, Button, ButtonGroup, Spinner, Badge } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import axios from 'axios';
 import { TrackedItem } from '@/lib/items-to-track';
 
 type PriceEntry = {
@@ -20,7 +19,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 가격 히스토리 불러오기
+  // 가격 히스토리 불러오기 (최적화: fetch API 사용)
   useEffect(() => {
     if (!selectedItem?.id) {
       setLoading(false);
@@ -30,10 +29,17 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`/api/market/price-history/${selectedItem.id}`);
-        setHistory(response.data.history || []);
+        const response = await fetch(`/api/market/price-history/${selectedItem.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setHistory(data.history || []);
+        } else {
+          console.error('가격 히스토리 조회 실패:', response.status);
+          setHistory([]);
+        }
       } catch (err) {
         console.error('가격 히스토리 조회 오류:', err);
+        setHistory([]);
       } finally {
         setLoading(false);
       }
@@ -42,46 +48,55 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
     fetchHistory();
   }, [selectedItem]);
 
-  // 차트 데이터 포맷팅
-  const chartData = history.map((entry, index) => {
-    const date = new Date(entry.timestamp);
-    const dayOfWeek = date.getDay(); // 0=일요일, 3=수요일
-    return {
-      날짜: `${date.getMonth() + 1}/${date.getDate()}`,
-      가격: entry.price,
-      rawTime: date.getTime(),
-      isWednesday: dayOfWeek === 3, // 수요일 여부
-      fullDate: date
-    };
-  });
+  // 차트 데이터 포맷팅 (메모이제이션으로 최적화)
+  const chartData = useMemo(() => {
+    return history.map((entry, index) => {
+      const date = new Date(entry.timestamp);
+      const dayOfWeek = date.getDay(); // 0=일요일, 3=수요일
+      return {
+        날짜: `${date.getMonth() + 1}/${date.getDate()}`,
+        가격: entry.price,
+        rawTime: date.getTime(),
+        isWednesday: dayOfWeek === 3, // 수요일 여부
+        fullDate: date
+      };
+    });
+  }, [history]);
 
-  const formatPrice = (value: number) => {
+  const formatPrice = useCallback((value: number) => {
     // 모든 아이템 전체 가격으로 표시 (축약 없음)
     // 아비도스 융화재료만 소수점 첫째 자리, 나머지는 정수
     if (selectedItem?.id === '6861012' && value < 1000) {
       return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     }
     return Math.round(value).toLocaleString('ko-KR');
-  };
+  }, [selectedItem?.id]);
 
-  const formatTooltipPrice = (value: number) => {
+  const formatTooltipPrice = useCallback((value: number) => {
     // 아비도스 융화재료만 소수점 첫째 자리까지, 나머지는 정수
     if (selectedItem?.id === '6861012' && value < 1000) {
       return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G';
     }
     return value.toLocaleString('ko-KR') + ' G';
-  };
+  }, [selectedItem?.id]);
 
-  // 통계 계산
-  const stats = history.length > 0 ? {
-    current: history[history.length - 1].price,
-    min: Math.min(...history.map(h => h.price)),
-    max: Math.max(...history.map(h => h.price)),
-    avg: history.reduce((sum, h) => sum + h.price, 0) / history.length,
-  } : null;
+  // 통계 계산 (메모이제이션으로 최적화)
+  const stats = useMemo(() => {
+    if (history.length === 0) return null;
 
-  // Y축 범위 및 틱 설정
-  const yAxisConfig = stats ? (() => {
+    return {
+      current: history[history.length - 1].price,
+      min: Math.min(...history.map(h => h.price)),
+      max: Math.max(...history.map(h => h.price)),
+      avg: history.reduce((sum, h) => sum + h.price, 0) / history.length,
+    };
+  }, [history]);
+
+  // Y축 범위 및 틱 설정 (메모이제이션으로 최적화)
+  const yAxisConfig = useMemo(() => {
+    if (!stats) return { domain: ['auto', 'auto'], tickCount: 5 };
+
+    return (() => {
     const priceRange = stats.max - stats.min;
     const isAbidos = selectedItem?.id === '6861012';
 
@@ -129,12 +144,15 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
       domain: [minValue, maxValue],
       tickCount: tickCount
     };
-  })() : { domain: ['auto', 'auto'], tickCount: 5 };
+    })();
+  }, [stats, selectedItem?.id]);
 
-  // 변화율 계산
-  const changeRate = history.length >= 2
-    ? ((history[history.length - 1].price - history[0].price) / history[0].price) * 100
-    : 0;
+  // 변화율 계산 (메모이제이션으로 최적화)
+  const changeRate = useMemo(() => {
+    return history.length >= 2
+      ? ((history[history.length - 1].price - history[0].price) / history[0].price) * 100
+      : 0;
+  }, [history]);
 
   // 아이템이 없거나 선택된 아이템이 없으면 에러 표시
   if (!items || items.length === 0) {

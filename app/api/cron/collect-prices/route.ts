@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import axios from 'axios';
 import { saveYesterdayPrice, addTodayTempPrice, finalizeYesterdayData, saveHistoricalPrice } from '@/lib/firestore-admin';
 import { TRACKED_ITEMS } from '@/lib/items-to-track';
 
@@ -50,7 +49,7 @@ export async function GET(request: Request) {
         // 거래소 아이템
         console.log(`[Market] Fetching ${item.name} (${item.id})...`);
 
-        const response = await axios.get(
+        const response = await fetch(
           `https://developer-lostark.game.onstove.com/markets/items/${item.id}`,
           {
             headers: {
@@ -60,14 +59,21 @@ export async function GET(request: Request) {
           }
         );
 
-        if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+        if (!response.ok) {
+          errors.push({ itemId: item.id, itemName: item.name, error: `API 오류: ${response.status}` });
+          continue;
+        }
+
+        const data = await response.json();
+
+        if (!data || !Array.isArray(data) || data.length === 0) {
           errors.push({ itemId: item.id, itemName: item.name, error: '아이템 정보를 찾을 수 없음' });
           continue;
         }
 
         // 거래 가능한 버전 찾기 (TradeRemainCount가 null이 아니거나 Stats에 데이터가 있는 것)
         let itemData = null;
-        for (const variant of response.data) {
+        for (const variant of data) {
           if (variant.Stats && variant.Stats.length > 0 && variant.Stats[0].AvgPrice > 0) {
             itemData = variant;
             break;
@@ -138,25 +144,32 @@ export async function GET(request: Request) {
         // 경매장 아이템
         // 30분마다: 현재 최저가를 todayTemp에 저장
         // 오전 6시가 되면 finalizeYesterdayData()에서 전날 데이터를 평균 계산
-        const response = await axios.post(
+        const response = await fetch(
           'https://developer-lostark.game.onstove.com/auctions/items',
           {
-            ItemName: item.searchName,
-            CategoryCode: item.categoryCode || null,
-            PageNo: 0,
-            SortCondition: 'ASC',
-            Sort: 'BUY_PRICE'
-          },
-          {
+            method: 'POST',
             headers: {
               accept: 'application/json',
               authorization: `Bearer ${apiKey}`,
               'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({
+              ItemName: item.searchName,
+              CategoryCode: item.categoryCode || null,
+              PageNo: 0,
+              SortCondition: 'ASC',
+              Sort: 'BUY_PRICE'
+            })
           }
         );
 
-        const items = response.data?.Items || [];
+        if (!response.ok) {
+          errors.push({ itemId: item.id, error: `경매장 API 오류: ${response.status}` });
+          continue;
+        }
+
+        const auctionData = await response.json();
+        const items = auctionData?.Items || [];
         if (items.length > 0) {
           const lowestPriceItem = items[0];
           const auctionInfo = lowestPriceItem.AuctionInfo;

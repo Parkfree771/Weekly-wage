@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -66,20 +67,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <head>
-        {/* Google tag (gtag.js) */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-QBV4JHCBJF"></script>
-        <script dangerouslySetInnerHTML={{
-          __html: `
+      <body className={notoSansKr.className}>
+        {children}
+
+        {/* Google Analytics - 최적화된 로딩 */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-QBV4JHCBJF"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'G-QBV4JHCBJF');
-          `
-        }} />
-      </head>
-      <body className={notoSansKr.className}>
-        {children}
+          `}
+        </Script>
       </body>
     </html>
   );

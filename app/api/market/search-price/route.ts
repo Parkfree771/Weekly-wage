@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import axios from 'axios';
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -33,30 +32,51 @@ export async function POST(request: Request) {
   };
 
   try {
-    const response = await axios.post(apiUrl, requestBody, options);
-    
-    console.log(`Search API Response for ${itemName}: Found ${response.data?.Items?.length || 0} items`);
-    
-    if (response.data && response.data.Items && response.data.Items.length > 0) {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        { message: errorData?.Message || '아이템 검색에 실패했습니다.' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+
+    console.log(`Search API Response for ${itemName}: Found ${data?.Items?.length || 0} items`);
+
+    if (data && data.Items && data.Items.length > 0) {
       // Find exact match or first item that contains the name
-      const targetItem = response.data.Items.find((item: any) => item.Name === itemName) || 
-                      response.data.Items.find((item: any) => item.Name.includes(itemName)) ||
-                      response.data.Items[0];
+      const targetItem = data.Items.find((item: any) => item.Name === itemName) ||
+                      data.Items.find((item: any) => item.Name.includes(itemName)) ||
+                      data.Items[0];
       
       console.log(`Target item: ${targetItem.Name} (ID: ${targetItem.Id})`);
       
       // Try to get detailed price information
       let price = 0;
       try {
-        const detailResponse = await axios.get(`https://developer-lostark.game.onstove.com/markets/items/${targetItem.Id}`, {
+        const detailResponse = await fetch(`https://developer-lostark.game.onstove.com/markets/items/${targetItem.Id}`, {
           headers: {
             'accept': 'application/json',
             'authorization': `Bearer ${apiKey}`,
           },
         });
-        
-        if (detailResponse.data && Array.isArray(detailResponse.data) && detailResponse.data.length > 0) {
-          const detail = detailResponse.data[0];
+
+        if (detailResponse.ok) {
+          const detailData = await detailResponse.json();
+
+          if (detailData && Array.isArray(detailData) && detailData.length > 0) {
+            const detail = detailData[0];
           
           // 전날 거래 평균가 우선 사용
           if (detail.YDayAvgPrice && detail.YDayAvgPrice > 0) {
@@ -73,8 +93,9 @@ export async function POST(request: Request) {
             price = detail.CurrentMinPrice;
             console.log(`Using current min price: ${price}`);
           }
-          
-          console.log(`Detail API - Final price: ${price}`);
+
+            console.log(`Detail API - Final price: ${price}`);
+          }
         }
       } catch (detailError) {
         console.log('Detail API failed, trying auction info');
@@ -125,13 +146,6 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error(`Error searching for ${itemName}:`, error);
-    if (error.response) {
-      return NextResponse.json(
-        { message: error.response.data?.Message || '아이템 검색에 실패했습니다.' },
-        { status: error.response.status }
-      );
-    } else {
-      return NextResponse.json({ message: 'API 요청 중 알 수 없는 오류가 발생했습니다.' }, { status: 500 });
-    }
+    return NextResponse.json({ message: 'API 요청 중 알 수 없는 오류가 발생했습니다.' }, { status: 500 });
   }
 }

@@ -1,14 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
-import RaidCalculator from '@/components/RaidCalculator';
-import SeeMoreCalculator from '@/components/SeeMoreCalculator';
-import RaidSynergyAnalyzer from '@/components/RaidSynergyAnalyzer';
-import CompactPriceChart from '@/components/CompactPriceChart';
 import { TRACKED_ITEMS } from '@/lib/items-to-track';
 import styles from './page.module.css';
+
+// Dynamic imports로 코드 분할 - 초기 로딩 속도 개선
+const RaidCalculator = dynamic(() => import('@/components/RaidCalculator'), {
+  loading: () => (
+    <div className="text-center py-5">
+      <div className="spinner-border text-primary" role="status">
+        <span className="visually-hidden">로딩중...</span>
+      </div>
+    </div>
+  ),
+  ssr: false
+});
+
+const SeeMoreCalculator = dynamic(() => import('@/components/SeeMoreCalculator'), {
+  loading: () => (
+    <div className="text-center py-5">
+      <div className="spinner-border text-primary" role="status">
+        <span className="visually-hidden">로딩중...</span>
+      </div>
+    </div>
+  ),
+  ssr: false
+});
+
+const CompactPriceChart = dynamic(() => import('@/components/CompactPriceChart'), {
+  loading: () => (
+    <div className="text-center py-5">
+      <div className="spinner-border text-primary" role="status">
+        <span className="visually-hidden">로딩중...</span>
+      </div>
+    </div>
+  ),
+  ssr: false
+});
 
 type Character = {
   characterName: string;
