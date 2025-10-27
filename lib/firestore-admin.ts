@@ -23,24 +23,34 @@ const DAILY_PRICE_COLLECTION = 'dailyPrices'; // 일별 평균가
 const TODAY_TEMP_COLLECTION = 'todayTemp'; // 오늘 임시 수집 데이터
 
 /**
- * 로스트아크 날짜 계산 (오전 6시 기준)
+ * 로스트아크 날짜 계산 (오전 6시 기준, 한국 시간)
  * 오전 6시 이전이면 전날, 오전 6시 이후면 당일
+ * 예: 26일 오전 6시 ~ 27일 오전 6시까지가 26일
  */
 export function getLostArkDate(date: Date = new Date()): Date {
-  const result = new Date(date);
-  if (result.getHours() < 6) {
-    // 오전 6시 이전이면 전날
-    result.setDate(result.getDate() - 1);
+  // 한국 시간(KST, UTC+9)으로 변환
+  const kstOffset = 9 * 60; // 9시간을 분으로
+  const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+  const kstDate = new Date(utc + (kstOffset * 60000));
+
+  // 오전 6시 이전이면 전날
+  if (kstDate.getHours() < 6) {
+    kstDate.setDate(kstDate.getDate() - 1);
   }
-  result.setHours(0, 0, 0, 0);
-  return result;
+
+  // 시간을 00:00:00으로 설정
+  kstDate.setHours(0, 0, 0, 0);
+  return kstDate;
 }
 
 /**
- * 날짜를 YYYY-MM-DD 형식으로 변환
+ * 날짜를 YYYY-MM-DD 형식으로 변환 (한국 시간 기준)
  */
 export function formatDateKey(date: Date): string {
-  return date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -66,42 +76,8 @@ export async function savePriceData(
 }
 
 /**
- * 전날 평균가 저장 (거래소 YDayAvgPrice용)
- */
-export async function saveYesterdayPrice(
-  itemId: string,
-  price: number,
-  itemName?: string
-): Promise<void> {
-  try {
-    const db = getAdminFirestore();
-    // 로스트아크 기준 오늘 날짜를 구한 후, 전날 날짜 계산
-    const today = getLostArkDate(); // 오늘 (24일 6시 이후면 24일)
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1); // 전날 (23일)
-    const dateKey = formatDateKey(yesterday);
-
-    const docRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${itemId}_${dateKey}`);
-
-    // 이미 저장된 데이터가 있는지 확인
-    const docSnap = await docRef.get();
-    if (!docSnap.exists) {
-      await docRef.set({
-        itemId,
-        itemName,
-        price,
-        date: dateKey,
-        timestamp: Timestamp.now(),
-      });
-    }
-  } catch (error) {
-    console.error('전날 평균가 저장 오류:', error);
-    throw error;
-  }
-}
-
-/**
  * 과거 특정 날짜의 평균가 저장 (거래소 Stats 배열용)
+ * 기존 데이터가 있어도 최신 데이터로 덮어씌움
  */
 export async function saveHistoricalPrice(
   itemId: string,
@@ -113,17 +89,14 @@ export async function saveHistoricalPrice(
     const db = getAdminFirestore();
     const docRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${itemId}_${dateStr}`);
 
-    // 이미 저장된 데이터가 있는지 확인
-    const docSnap = await docRef.get();
-    if (!docSnap.exists) {
-      await docRef.set({
-        itemId,
-        itemName,
-        price,
-        date: dateStr,
-        timestamp: Timestamp.now(),
-      });
-    }
+    // 항상 최신 데이터로 업데이트 (덮어쓰기)
+    await docRef.set({
+      itemId,
+      itemName,
+      price,
+      date: dateStr,
+      timestamp: Timestamp.now(),
+    });
   } catch (error) {
     console.error('과거 평균가 저장 오류:', error);
     throw error;
@@ -131,7 +104,37 @@ export async function saveHistoricalPrice(
 }
 
 /**
- * 당일 임시 가격 추가 (30분마다)
+ * 거래소 오늘 평균가 저장 (계속 덮어쓰기)
+ * 06시가 되면 API의 전날 평균가로 교체됨
+ */
+export async function updateMarketTodayPrice(
+  itemId: string,
+  price: number,
+  itemName?: string
+): Promise<void> {
+  try {
+    const db = getAdminFirestore();
+    const lostArkDate = getLostArkDate();
+    const dateKey = formatDateKey(lostArkDate);
+
+    const docRef = db.collection(TODAY_TEMP_COLLECTION).doc(`${itemId}_${dateKey}`);
+
+    // 거래소는 평균가를 그대로 덮어쓰기 (배열 사용 안함)
+    await docRef.set({
+      itemId,
+      itemName,
+      prices: [price], // 단일 값으로 유지
+      count: 1,
+      lastUpdated: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error('거래소 오늘 평균가 저장 오류:', error);
+    throw error;
+  }
+}
+
+/**
+ * 경매장 당일 임시 가격 추가 (1시간마다 누적)
  */
 export async function addTodayTempPrice(
   itemId: string,
@@ -241,6 +244,7 @@ export async function finalizeYesterdayData(): Promise<void> {
 /**
  * 일별 가격 히스토리 조회 (차트용)
  * 확정된 전날 평균가 + 오늘의 누적 평균(임시)를 함께 반환
+ * @param days - 조회할 일수 (기본 30일, 최대 365일 가능)
  */
 export async function getDailyPriceHistory(
   itemId: string,
@@ -261,9 +265,11 @@ export async function getDailyPriceHistory(
 
     dailySnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      // date 필드를 사용하여 정확한 날짜로 timestamp 생성 (UTC 기준)
+      // date 필드를 사용하여 정확한 날짜로 timestamp 생성 (한국 시간 기준)
       const dateStr = data.date; // YYYY-MM-DD 형식
-      const timestamp = Timestamp.fromDate(new Date(dateStr + 'T00:00:00Z'));
+      // UTC 대신 한국 시간(KST)으로 timestamp 생성
+      const kstDate = new Date(dateStr + 'T00:00:00+09:00');
+      const timestamp = Timestamp.fromDate(kstDate);
 
       // 아비도스 융화재료(6861012)만 소수점 첫째 자리까지, 나머지는 정수
       const price = data.itemId === '6861012'
@@ -293,7 +299,9 @@ export async function getDailyPriceHistory(
         const roundedAvgPrice = data.itemId === '6861012'
           ? Math.round(avgPrice * 10) / 10
           : Math.round(avgPrice);
-        const todayTimestamp = Timestamp.fromDate(lostArkDate);
+        // 한국 시간(KST)으로 timestamp 생성
+        const todayKst = new Date(todayKey + 'T00:00:00+09:00');
+        const todayTimestamp = Timestamp.fromDate(todayKst);
 
         history.push({
           itemId: data.itemId,

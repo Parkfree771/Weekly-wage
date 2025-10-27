@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, Button, ButtonGroup, Spinner, Badge } from 'react-bootstrap';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { TrackedItem } from '@/lib/items-to-track';
 
 type PriceEntry = {
@@ -13,6 +13,67 @@ type PriceEntry = {
 type CompactPriceChartProps = {
   items: TrackedItem[];
 };
+
+// 아이템 이름에서 (상)과 (중)에 색상을 입히는 헬퍼 함수
+function ColoredItemName({ name }: { name: string }) {
+  // (상)은 골드색 #FFB800, (중)은 보라색 #A020F0으로 표시
+  // 숫자%와 (상)/(중) 또는 단독 (상)/(중)에 색상 적용
+  // 예1: "치명타 피해 4.0% (상)" -> "치명타 피해 " + "4.0% (상)"(골드색)
+  // 예2: "공%(상)" -> "공%" + "(상)"(골드색)
+
+  // 정규식: (숫자.숫자% 또는 단어) 바로 뒤에 (상) 또는 (중)이 오는 패턴 매칭
+  const regex = /(\d+\.?\d*%)\s*(\(상\))|(\d+\.?\d*%)\s*(\(중\))|(\(상\))|(\(중\))/g;
+
+  const parts: JSX.Element[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(name)) !== null) {
+    // 매칭되기 전 텍스트 추가
+    if (match.index > lastIndex) {
+      parts.push(<span key={`text-${lastIndex}`}>{name.substring(lastIndex, match.index)}</span>);
+    }
+
+    if (match[2] === '(상)') {
+      // "숫자% (상)" 패턴 -> 골드색
+      parts.push(
+        <span key={`match-${match.index}`} style={{ color: '#FFB800', fontWeight: '700' }}>
+          {match[1]} {match[2]}
+        </span>
+      );
+    } else if (match[4] === '(중)') {
+      // "숫자% (중)" 패턴 -> 보라색
+      parts.push(
+        <span key={`match-${match.index}`} style={{ color: '#A020F0', fontWeight: '700' }}>
+          {match[3]} {match[4]}
+        </span>
+      );
+    } else if (match[5] === '(상)') {
+      // 단독 "(상)" 패턴 -> 골드색
+      parts.push(
+        <span key={`match-${match.index}`} style={{ color: '#FFB800', fontWeight: '700' }}>
+          {match[5]}
+        </span>
+      );
+    } else if (match[6] === '(중)') {
+      // 단독 "(중)" 패턴 -> 보라색
+      parts.push(
+        <span key={`match-${match.index}`} style={{ color: '#A020F0', fontWeight: '700' }}>
+          {match[6]}
+        </span>
+      );
+    }
+
+    lastIndex = regex.lastIndex;
+  }
+
+  // 나머지 텍스트 추가
+  if (lastIndex < name.length) {
+    parts.push(<span key={`text-${lastIndex}`}>{name.substring(lastIndex)}</span>);
+  }
+
+  return <>{parts}</>;
+}
 
 export default function CompactPriceChart({ items }: CompactPriceChartProps) {
   const [selectedItem, setSelectedItem] = useState<TrackedItem | null>(items?.[0] || null);
@@ -50,17 +111,26 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
 
   // 차트 데이터 포맷팅 (메모이제이션으로 최적화)
   const chartData = useMemo(() => {
-    return history.map((entry, index) => {
+    // 날짜별로 그룹화하여 중복 제거 (같은 날짜면 마지막 데이터 사용)
+    const dateMap = new Map<string, any>();
+
+    history.forEach((entry) => {
       const date = new Date(entry.timestamp);
       const dayOfWeek = date.getDay(); // 0=일요일, 3=수요일
-      return {
-        날짜: `${date.getMonth() + 1}/${date.getDate()}`,
+      const dateKey = `${date.getMonth() + 1}/${date.getDate()}`;
+
+      // 같은 날짜면 덮어씀 (최신 데이터 우선)
+      dateMap.set(dateKey, {
+        날짜: dateKey,
         가격: entry.price,
         rawTime: date.getTime(),
         isWednesday: dayOfWeek === 3, // 수요일 여부
         fullDate: date
-      };
+      });
     });
+
+    // Map을 배열로 변환하고 시간순 정렬
+    return Array.from(dateMap.values()).sort((a, b) => a.rawTime - b.rawTime);
   }, [history]);
 
   const formatPrice = useCallback((value: number) => {
@@ -147,11 +217,19 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
     })();
   }, [stats, selectedItem?.id]);
 
-  // 변화율 계산 (메모이제이션으로 최적화)
+  // 전날 대비 변화율 계산 (메모이제이션으로 최적화)
   const changeRate = useMemo(() => {
-    return history.length >= 2
-      ? ((history[history.length - 1].price - history[0].price) / history[0].price) * 100
-      : 0;
+    if (history.length < 2) return 0;
+    const today = history[history.length - 1].price;
+    const yesterday = history[history.length - 2].price;
+    return ((today - yesterday) / yesterday) * 100;
+  }, [history]);
+
+  // 평균가 계산
+  const averagePrice = useMemo(() => {
+    if (history.length === 0) return 0;
+    const sum = history.reduce((acc, entry) => acc + entry.price, 0);
+    return sum / history.length;
   }, [history]);
 
   // 아이템이 없거나 선택된 아이템이 없으면 에러 표시
@@ -173,53 +251,124 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
 
   return (
     <div>
-      {/* 아이템 선택 버튼 */}
-      <div className="mb-3 d-flex flex-wrap gap-2 justify-content-center">
-        {items.map((item) => (
-          <Button
-            key={item.id}
-            variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
-            onClick={() => setSelectedItem(item)}
-            size="sm"
-            className="d-none d-md-inline-block"
-            style={{
-              borderRadius: '20px',
-              padding: '8px 16px',
-              fontWeight: selectedItem.id === item.id ? '600' : '500',
-              fontSize: '0.85rem',
-              transition: 'all 0.2s ease',
-              boxShadow: selectedItem.id === item.id ? '0 2px 8px rgba(22, 163, 74, 0.3)' : 'none'
-            }}
-          >
-            {item.name}
-            {selectedItem.id === item.id && (
-              <Badge bg="light" text="success" className="ms-2" style={{ fontSize: '0.7rem' }}>
-                선택됨
-              </Badge>
-            )}
-          </Button>
-        ))}
-        {/* 모바일 버튼 */}
-        {items.map((item) => (
-          <Button
-            key={item.id}
-            variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
-            onClick={() => setSelectedItem(item)}
-            size="sm"
-            className="d-md-none"
-            style={{
-              borderRadius: '16px',
-              padding: '6px 12px',
-              fontWeight: selectedItem.id === item.id ? '600' : '500',
-              fontSize: '0.75rem',
-              transition: 'all 0.2s ease',
-              boxShadow: selectedItem.id === item.id ? '0 2px 6px rgba(22, 163, 74, 0.25)' : 'none',
-              minWidth: '75px'
-            }}
-          >
-            {item.name}
-          </Button>
-        ))}
+      {/* 아이템 선택 버튼 - 데스크톱 (3줄) */}
+      <div className="mb-3 d-none d-md-block">
+        <div className="d-flex flex-wrap gap-2 justify-content-center mb-2">
+          {items.slice(0, 3).map((item) => (
+            <Button
+              key={item.id}
+              variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
+              onClick={() => setSelectedItem(item)}
+              size="sm"
+              style={{
+                borderRadius: '20px',
+                padding: '8px 16px',
+                fontWeight: selectedItem.id === item.id ? '600' : '500',
+                fontSize: '0.85rem',
+                transition: 'all 0.2s ease',
+                boxShadow: selectedItem.id === item.id ? '0 2px 8px rgba(22, 163, 74, 0.3)' : 'none',
+                flex: '1 1 auto',
+                minWidth: '150px',
+                maxWidth: '220px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <ColoredItemName name={item.name} />
+            </Button>
+          ))}
+        </div>
+        <div className="d-flex flex-wrap gap-2 justify-content-center mb-2">
+          {items.slice(3, 6).map((item) => (
+            <Button
+              key={item.id}
+              variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
+              onClick={() => setSelectedItem(item)}
+              size="sm"
+              style={{
+                borderRadius: '20px',
+                padding: '8px 16px',
+                fontWeight: selectedItem.id === item.id ? '600' : '500',
+                fontSize: '0.85rem',
+                transition: 'all 0.2s ease',
+                boxShadow: selectedItem.id === item.id ? '0 2px 8px rgba(22, 163, 74, 0.3)' : 'none',
+                flex: '1 1 auto',
+                minWidth: '150px',
+                maxWidth: '220px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <ColoredItemName name={item.name} />
+            </Button>
+          ))}
+        </div>
+        <div className="d-flex flex-wrap gap-2 justify-content-center">
+          {items.slice(6, 9).map((item) => (
+            <Button
+              key={item.id}
+              variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
+              onClick={() => setSelectedItem(item)}
+              size="sm"
+              style={{
+                borderRadius: '20px',
+                padding: '8px 16px',
+                fontWeight: selectedItem.id === item.id ? '600' : '500',
+                fontSize: '0.85rem',
+                transition: 'all 0.2s ease',
+                boxShadow: selectedItem.id === item.id ? '0 2px 8px rgba(22, 163, 74, 0.3)' : 'none',
+                flex: '1 1 auto',
+                minWidth: '150px',
+                maxWidth: '220px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <ColoredItemName name={item.name} />
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* 아이템 선택 버튼 - 모바일 (그리드 3열) */}
+      <div className="mb-3 d-md-none">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '6px',
+          padding: '0 2px'
+        }}>
+          {items.map((item) => (
+            <Button
+              key={item.id}
+              variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
+              onClick={() => setSelectedItem(item)}
+              size="sm"
+              style={{
+                borderRadius: '10px',
+                padding: '6px 2px',
+                fontWeight: selectedItem.id === item.id ? '600' : '500',
+                fontSize: '0.65rem',
+                transition: 'all 0.2s ease',
+                boxShadow: selectedItem.id === item.id ? '0 2px 6px rgba(22, 163, 74, 0.25)' : 'none',
+                minHeight: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: '1.2'
+              }}
+            >
+              <span style={{
+                display: 'block',
+                whiteSpace: 'normal',
+                wordBreak: 'keep-all',
+                lineHeight: '1.15',
+                textAlign: 'center',
+                overflow: 'hidden',
+                maxHeight: '2.5rem'
+              }}>
+                <ColoredItemName name={item.name} />
+              </span>
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* 차트 카드 */}
@@ -233,13 +382,28 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
           }}
         >
           <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h5 className="mb-1" style={{ fontWeight: '700', color: '#16a34a' }}>
-                {selectedItem.name}
-              </h5>
-              <small className="text-muted">
-                {selectedItem.type === 'market' ? '거래소' : '경매장'} • 최근 30일
-              </small>
+            <div className="d-flex align-items-center gap-2">
+              {selectedItem.icon && (
+                <img
+                  src={selectedItem.icon}
+                  alt={selectedItem.name}
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '8px',
+                    border: `2px solid ${selectedItem.iconBorderColor || '#16a34a'}`,
+                    boxShadow: `0 2px 8px ${selectedItem.iconBorderColor ? selectedItem.iconBorderColor + '33' : 'rgba(22, 163, 74, 0.2)'}`
+                  }}
+                />
+              )}
+              <div>
+                <h5 className="mb-1" style={{ fontWeight: '700', color: '#16a34a' }}>
+                  <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
+                </h5>
+                <small className="text-muted">
+                  {selectedItem.type === 'market' ? '거래소' : '경매장'} • 최근 30일
+                </small>
+              </div>
             </div>
             {stats && (
               <div className="text-end">
@@ -262,19 +426,43 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
             borderBottom: '1.5px solid #e5e7eb',
           }}
         >
-          <div className="text-center">
-            <h6 className="mb-1" style={{ fontWeight: '700', color: '#16a34a', fontSize: '0.95rem' }}>
-              {selectedItem.name}
+          <div className="d-flex flex-column align-items-center px-2">
+            {selectedItem.icon && (
+              <img
+                src={selectedItem.icon}
+                alt={selectedItem.name}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '6px',
+                  border: `2px solid ${selectedItem.iconBorderColor || '#16a34a'}`,
+                  boxShadow: `0 2px 6px ${selectedItem.iconBorderColor ? selectedItem.iconBorderColor + '33' : 'rgba(22, 163, 74, 0.2)'}`,
+                  marginBottom: '8px'
+                }}
+              />
+            )}
+            <h6
+              className="mb-1"
+              style={{
+                fontWeight: '700',
+                color: '#16a34a',
+                fontSize: '0.75rem',
+                lineHeight: '1.3',
+                wordBreak: 'keep-all',
+                whiteSpace: 'normal'
+              }}
+            >
+              <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
             </h6>
-            <small className="text-muted" style={{ fontSize: '0.7rem' }}>
+            <small className="text-muted" style={{ fontSize: '0.65rem' }}>
               {selectedItem.type === 'market' ? '거래소' : '경매장'} • 최근 30일
             </small>
             {stats && (
-              <div className="mt-2">
-                <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#16a34a' }}>
+              <div className="mt-2 d-flex justify-content-center align-items-center gap-3">
+                <div style={{ fontSize: '1rem', fontWeight: '700', color: '#16a34a' }}>
                   {formatTooltipPrice(stats.current)}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: changeRate >= 0 ? '#ef4444' : '#3b82f6' }}>
+                <div style={{ fontSize: '0.7rem', color: changeRate >= 0 ? '#ef4444' : '#3b82f6' }}>
                   {changeRate >= 0 ? '▲' : '▼'} {Math.abs(changeRate).toFixed(1)}%
                 </div>
               </div>
@@ -502,6 +690,21 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                       cursor={{ stroke: '#16a34a', strokeWidth: 2, strokeDasharray: '5 5' }}
                     />
 
+                    {/* 평균가 기준선 */}
+                    <ReferenceLine
+                      y={averagePrice}
+                      stroke="#4ade80"
+                      strokeDasharray="5 5"
+                      strokeWidth={2}
+                      label={{
+                        value: `AVG ${formatPrice(averagePrice)}`,
+                        position: 'left',
+                        fill: '#16a34a',
+                        fontSize: 13,
+                        fontWeight: '700'
+                      }}
+                    />
+
                     <Line
                       type="monotone"
                       dataKey="가격"
@@ -627,6 +830,21 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                         fontSize: '12px'
                       }}
                       cursor={{ stroke: '#16a34a', strokeWidth: 1, strokeDasharray: '3 3' }}
+                    />
+
+                    {/* 평균가 기준선 */}
+                    <ReferenceLine
+                      y={averagePrice}
+                      stroke="#4ade80"
+                      strokeDasharray="5 5"
+                      strokeWidth={1.5}
+                      label={{
+                        value: `AVG ${formatPrice(averagePrice)}`,
+                        position: 'left',
+                        fill: '#16a34a',
+                        fontSize: 9,
+                        fontWeight: '700'
+                      }}
                     />
 
                     <Line
