@@ -29,9 +29,21 @@ export type TrackedItem = {
   };
 };
 
-// 추적할 아이템 목록 (차트에 표시될 6개 아이템)
+// 카테고리 타입
+export type ItemCategory = 'fusion' | 'gem' | 'engraving' | 'accessory' | 'jewel';
+
+// 추적할 아이템 목록
 export const TRACKED_ITEMS: TrackedItem[] = [
-  // 1번째 줄 - 거래소 아이템 3개
+  // === 1. 융화재료 ===
+  {
+    id: '6861012',
+    name: '아비도스 융화 재료',
+    type: 'market',
+    icon: '/abidos-fusion.png',
+    iconBorderColor: '#ff8c00' // 오렌지
+  },
+
+  // === 2. 젬 ===
   {
     id: '67400003',
     name: '질서의 젬 : 안정',
@@ -46,44 +58,91 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     icon: '/gem-order-solid.png',
     iconBorderColor: '#d4af37' // 골드
   },
+
+  // === 3. 유물 각인서 (거래소) ===
   {
-    id: '6861012',
-    name: '아비도스 융화 재료',
+    id: '65203905',
+    name: '아드레날린',
+    displayName: '유물 각인서: 아드레날린',
     type: 'market',
-    icon: '/abidos-fusion.png',
-    iconBorderColor: '#ff8c00' // 오렌지
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35' // 주황색
+  },
+  {
+    id: '65200505',
+    name: '원한',
+    displayName: '유물 각인서: 원한',
+    type: 'market',
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35'
+  },
+  {
+    id: '65203305',
+    name: '돌격대장',
+    displayName: '유물 각인서: 돌격대장',
+    type: 'market',
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35'
+  },
+  {
+    id: '65201005',
+    name: '예리한 둔기',
+    displayName: '유물 각인서: 예리한 둔기',
+    type: 'market',
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35'
+  },
+  {
+    id: '65203505',
+    name: '질량 증가',
+    displayName: '유물 각인서: 질량 증가',
+    type: 'market',
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35'
+  },
+  {
+    id: '65202805',
+    name: '저주받은 인형',
+    displayName: '유물 각인서: 저주받은 인형',
+    type: 'market',
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35'
+  },
+  {
+    id: '65203005',
+    name: '기습의 대가',
+    displayName: '유물 각인서: 기습의 대가',
+    type: 'market',
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35'
+  },
+  {
+    id: '65203705',
+    name: '타격의 대가',
+    displayName: '유물 각인서: 타격의 대가',
+    type: 'market',
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35'
+  },
+  {
+    id: '65203405',
+    name: '각성',
+    displayName: '유물 각인서: 각성',
+    type: 'market',
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35'
+  },
+  {
+    id: '65204105',
+    name: '전문의',
+    displayName: '유물 각인서: 전문의',
+    type: 'market',
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35'
   },
 
-  // 2번째 줄 - 경매장 아이템 3개 (보석)
-  {
-    id: 'auction_gem_fear_8',
-    name: '8레벨 겁화의 보석',
-    type: 'auction',
-    searchName: '8레벨 겁화',
-    categoryCode: 210000, // 보석 카테고리
-    icon: '/gem-fear-8.png',
-    iconBorderColor: '#9333ea' // 보라색
-  },
-  {
-    id: 'auction_gem_fear_10',
-    name: '10레벨 겁화의 보석',
-    type: 'auction',
-    searchName: '10레벨 겁화',
-    categoryCode: 210000,
-    icon: '/gem-fear-10.png',
-    iconBorderColor: '#9333ea' // 보라색
-  },
-  {
-    id: 'auction_gem_flame_10',
-    name: '10레벨 작열의 보석',
-    type: 'auction',
-    searchName: '10레벨 작열',
-    categoryCode: 210000,
-    icon: '/gem-flame-10.png',
-    iconBorderColor: '#dc2626' // 빨간색
-  },
-
-  // 3번째 줄 - 경매장 장신구: 목걸이 (연마 필터)
+  // === 4. 악세 (경매장) ===
+  // 목걸이 (중/상 조합)
   {
     id: 'auction_necklace_ancient_refine3',
     name: '고대 목걸이 적주피(상), 추피(중)',
@@ -177,5 +236,144 @@ export const TRACKED_ITEMS: TrackedItem[] = [
         }
       ]
     }
+  },
+
+  // 6번째 줄 - 경매장 장신구: 목걸이 (상/상 조합)
+  {
+    id: 'auction_necklace_ancient_refine3_high',
+    name: '고대 목걸이 적주피(상), 추피(상)',
+    displayName: '고대 목걸이 [적에게 주는 피해 증가 2.0% (상), 추가 피해 2.6% (상)] 품질 70 이상, 3단계 연마',
+    type: 'auction',
+    searchName: '',
+    categoryCode: 200010, // 목걸이
+    icon: '/ancient-necklace.png',
+    iconBorderColor: '#06b6d4', // 청록색 (목걸이)
+    filters: {
+      ItemGrade: '고대',
+      ItemTier: 4,
+      ItemGradeQuality: 70,
+      ItemUpgradeLevel: 3,
+      EtcOptions: [
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 41, // 추가 피해
+          MinValue: 260, // 2.6% * 100
+          MaxValue: 260 // 정확히 2.6%
+        },
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 42, // 적에게 주는 피해 증가
+          MinValue: 200, // 2.0% * 100
+          MaxValue: 200 // 정확히 2.0%
+        }
+      ]
+    }
+  },
+
+  // 7번째 줄 - 경매장 장신구: 반지 (상/상 조합)
+  {
+    id: 'auction_ring_ancient_refine3_high',
+    name: '고대 반지 치피(상), 치적(상)',
+    displayName: '고대 반지 [치명타 피해 4.0% (상), 치명타 적중률 1.55% (상)] 품질 70 이상, 3단계 연마',
+    type: 'auction',
+    searchName: '',
+    categoryCode: 200030, // 반지
+    icon: '/ancient-ring.png',
+    iconBorderColor: '#3b82f6', // 파란색 (반지)
+    filters: {
+      ItemGrade: '고대',
+      ItemTier: 4,
+      ItemGradeQuality: 70,
+      ItemUpgradeLevel: 3,
+      EtcOptions: [
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 50, // 치명타 피해
+          MinValue: 400, // 4.0% * 100
+          MaxValue: 400 // 정확히 4.0%
+        },
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 49, // 치명타 적중률
+          MinValue: 155, // 1.55% * 100
+          MaxValue: 155 // 정확히 1.55%
+        }
+      ]
+    }
+  },
+
+  // 귀걸이 (상/상 조합)
+  {
+    id: 'auction_earring_ancient_refine3_high',
+    name: '고대 귀걸이 공%(상), 무공%(상)',
+    displayName: '고대 귀걸이 [공격력 % 1.55% (상), 무기 공격력 % 3.0% (상)] 품질 70 이상, 3단계 연마',
+    type: 'auction',
+    searchName: '',
+    categoryCode: 200020, // 귀걸이
+    icon: '/ancient-earring.png',
+    iconBorderColor: '#10b981', // 에메랄드 (귀걸이)
+    filters: {
+      ItemGrade: '고대',
+      ItemTier: 4,
+      ItemGradeQuality: 70,
+      ItemUpgradeLevel: 3,
+      EtcOptions: [
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 45, // 공격력 %
+          MinValue: 155, // 1.55% * 100
+          MaxValue: 155 // 정확히 1.55%
+        },
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 46, // 무기 공격력 %
+          MinValue: 300, // 3.0% * 100
+          MaxValue: 300 // 정확히 3.0%
+        }
+      ]
+    }
+  },
+
+  // === 5. 보석 (경매장) ===
+  {
+    id: 'auction_gem_fear_8',
+    name: '8레벨 겁화의 보석',
+    type: 'auction',
+    searchName: '8레벨 겁화',
+    categoryCode: 210000, // 보석 카테고리
+    icon: '/gem-fear-8.png',
+    iconBorderColor: '#9333ea' // 보라색
+  },
+  {
+    id: 'auction_gem_fear_10',
+    name: '10레벨 겁화의 보석',
+    type: 'auction',
+    searchName: '10레벨 겁화',
+    categoryCode: 210000,
+    icon: '/gem-fear-10.png',
+    iconBorderColor: '#9333ea' // 보라색
+  },
+  {
+    id: 'auction_gem_flame_10',
+    name: '10레벨 작열의 보석',
+    type: 'auction',
+    searchName: '10레벨 작열',
+    categoryCode: 210000,
+    icon: '/gem-flame-10.png',
+    iconBorderColor: '#dc2626' // 빨간색
   }
 ];
+
+// 카테고리별 아이템 필터 함수
+export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
+  const categoryMap: Record<ItemCategory, string[]> = {
+    fusion: ['6861012'],
+    gem: ['67400003', '67400103'],
+    engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105'],
+    accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high'],
+    jewel: ['auction_gem_fear_8', 'auction_gem_fear_10', 'auction_gem_flame_10']
+  };
+
+  const ids = categoryMap[category] || [];
+  return TRACKED_ITEMS.filter(item => ids.includes(item.id));
+}

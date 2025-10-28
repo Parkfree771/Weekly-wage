@@ -7,6 +7,7 @@ export type PriceEntry = {
   itemName?: string;
   price: number;
   timestamp: Timestamp;
+  date?: string; // YYYY-MM-DD 형식
 };
 
 // 임시 수집 데이터 타입 (경매장용)
@@ -29,17 +30,17 @@ const TODAY_TEMP_COLLECTION = 'todayTemp'; // 오늘 임시 수집 데이터
  */
 export function getLostArkDate(date: Date = new Date()): Date {
   // 한국 시간(KST, UTC+9)으로 변환
-  const kstOffset = 9 * 60; // 9시간을 분으로
-  const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-  const kstDate = new Date(utc + (kstOffset * 60000));
+  const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
+  const kstTime = date.getTime() + kstOffset;
+  const kstDate = new Date(kstTime);
 
   // 오전 6시 이전이면 전날
-  if (kstDate.getHours() < 6) {
-    kstDate.setDate(kstDate.getDate() - 1);
+  if (kstDate.getUTCHours() < 6) {
+    kstDate.setUTCDate(kstDate.getUTCDate() - 1);
   }
 
-  // 시간을 00:00:00으로 설정
-  kstDate.setHours(0, 0, 0, 0);
+  // UTC 기준으로 시간을 00:00:00으로 설정 (KST 날짜 유지)
+  kstDate.setUTCHours(0, 0, 0, 0);
   return kstDate;
 }
 
@@ -47,9 +48,9 @@ export function getLostArkDate(date: Date = new Date()): Date {
  * 날짜를 YYYY-MM-DD 형식으로 변환 (한국 시간 기준)
  */
 export function formatDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -254,22 +255,19 @@ export async function getDailyPriceHistory(
     const db = getAdminFirestore();
     const history: PriceEntry[] = [];
 
-    console.log(`[getDailyPriceHistory] Fetching history for itemId: ${itemId}`);
-
     // 1. 확정된 일별 평균가 조회 (인덱스 문제 방지를 위해 orderBy 제거)
     const dailySnapshot = await db.collection(DAILY_PRICE_COLLECTION)
       .where('itemId', '==', itemId)
       .get();
 
-    console.log(`[getDailyPriceHistory] Found ${dailySnapshot.docs.length} daily price records`);
-
     dailySnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      // date 필드를 사용하여 정확한 날짜로 timestamp 생성 (한국 시간 기준)
+      // date 필드를 사용하여 정확한 날짜로 timestamp 생성
       const dateStr = data.date; // YYYY-MM-DD 형식
-      // UTC 대신 한국 시간(KST)으로 timestamp 생성
-      const kstDate = new Date(dateStr + 'T00:00:00+09:00');
-      const timestamp = Timestamp.fromDate(kstDate);
+      // UTC 기준 00:00:00으로 timestamp 생성 (날짜 보존)
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const utcDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+      const timestamp = Timestamp.fromDate(utcDate);
 
       // 아비도스 융화재료(6861012)만 소수점 첫째 자리까지, 나머지는 정수
       const price = data.itemId === '6861012'
@@ -281,6 +279,7 @@ export async function getDailyPriceHistory(
         itemName: data.itemName,
         price: price,
         timestamp: timestamp,
+        date: dateStr, // YYYY-MM-DD 형식 추가
       });
     });
 
@@ -292,36 +291,32 @@ export async function getDailyPriceHistory(
 
     if (todayDoc.exists) {
       const data = todayDoc.data();
-      console.log(`[getDailyPriceHistory] Found today's temp data:`, data);
       if (data && data.prices && data.prices.length > 0) {
         const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
         // 아비도스 융화재료(6861012)만 소수점 첫째 자리까지, 나머지는 정수
         const roundedAvgPrice = data.itemId === '6861012'
           ? Math.round(avgPrice * 10) / 10
           : Math.round(avgPrice);
-        // 한국 시간(KST)으로 timestamp 생성
-        const todayKst = new Date(todayKey + 'T00:00:00+09:00');
-        const todayTimestamp = Timestamp.fromDate(todayKst);
+        // UTC 기준 00:00:00으로 timestamp 생성 (날짜 보존)
+        const [year, month, day] = todayKey.split('-').map(Number);
+        const todayUtc = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        const todayTimestamp = Timestamp.fromDate(todayUtc);
 
         history.push({
           itemId: data.itemId,
           itemName: data.itemName,
           price: roundedAvgPrice,
           timestamp: todayTimestamp,
+          date: todayKey, // YYYY-MM-DD 형식 추가
         });
       }
-    } else {
-      console.log(`[getDailyPriceHistory] No today's temp data found for ${itemId}_${todayKey}`);
     }
 
     // 날짜순 정렬 (오래된 것부터)
     const sorted = history.sort((a, b) => a.timestamp.seconds - b.timestamp.seconds);
 
     // 최근 days 개만 반환
-    const result = sorted.slice(-days);
-    console.log(`[getDailyPriceHistory] Returning ${result.length} entries`);
-
-    return result;
+    return sorted.slice(-days);
   } catch (error) {
     console.error('일별 가격 히스토리 조회 오류:', error);
     throw error;

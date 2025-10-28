@@ -27,8 +27,12 @@ export async function GET(request: Request) {
   const results = [];
   const errors = [];
 
+  // 한국 시간(KST) 기준으로 오전 6시인지 확인
   const now = new Date();
-  const isAt6AM = now.getHours() === 6 && now.getMinutes() < 30;
+  const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
+  const kstTime = now.getTime() + kstOffset;
+  const kstDate = new Date(kstTime);
+  const isAt6AM = kstDate.getUTCHours() === 6 && kstDate.getUTCMinutes() < 30;
   // const isAt6AM = true; // 테스트용: 항상 전날 평균가 저장
 
   // 오전 6시: 전날 데이터 확정

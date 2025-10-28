@@ -15,8 +15,6 @@ export async function POST(request: Request) {
     const lostArkToday = getLostArkDate();
     const todayKey = formatDateKey(lostArkToday);
 
-    console.log(`[cleanup] 오늘 날짜: ${todayKey}`);
-
     // todayTemp 컬렉션의 모든 문서 조회
     const tempSnapshot = await db.collection('todayTemp').get();
 
@@ -36,8 +34,6 @@ export async function POST(request: Request) {
 
       // 오늘 데이터가 아닌 경우만 처리 (과거 데이터)
       if (docDate < todayKey) {
-        console.log(`[cleanup] 처리 중: ${docId} (${docDate})`);
-
         // 1. prices 배열이 있으면 평균내서 dailyPrices에 저장
         if (data.prices && data.prices.length > 0) {
           const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
@@ -58,7 +54,6 @@ export async function POST(request: Request) {
             timestamp: Timestamp.now(),
           }, { merge: true }); // merge: true로 기존 데이터가 있으면 유지
 
-          console.log(`  ✓ 확정: ${data.itemName} (${docDate}) - ${data.prices.length}개 평균 = ${roundedAvgPrice}G`);
           finalizedCount++;
         }
 

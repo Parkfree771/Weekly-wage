@@ -3,15 +3,25 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, Button, ButtonGroup, Spinner, Badge } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
-import { TrackedItem } from '@/lib/items-to-track';
+import { TrackedItem, ItemCategory, getItemsByCategory } from '@/lib/items-to-track';
 
 type PriceEntry = {
   price: number;
   timestamp: string;
+  date?: string; // YYYY-MM-DD 형식
 };
 
 type CompactPriceChartProps = {
   items: TrackedItem[];
+};
+
+// 카테고리 메타데이터
+const CATEGORY_INFO: Record<ItemCategory, { label: string; color: string }> = {
+  fusion: { label: '융화재료', color: '#ff8c00' },
+  gem: { label: '젬', color: '#d4af37' },
+  engraving: { label: '유물 각인서', color: '#ff6b35' },
+  accessory: { label: '악세', color: '#06b6d4' },
+  jewel: { label: '보석', color: '#9333ea' }
 };
 
 // 아이템 이름에서 (상)과 (중)에 색상을 입히는 헬퍼 함수
@@ -76,9 +86,31 @@ function ColoredItemName({ name }: { name: string }) {
 }
 
 export default function CompactPriceChart({ items }: CompactPriceChartProps) {
-  const [selectedItem, setSelectedItem] = useState<TrackedItem | null>(items?.[0] || null);
+  // 기본값: 융화재료 카테고리, 첫 번째 아이템 (아비도스)
+  const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('fusion');
+  const [selectedItem, setSelectedItem] = useState<TrackedItem | null>(null);
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // 카테고리에 따른 아이템 목록
+  const categoryItems = useMemo(() => {
+    return getItemsByCategory(selectedCategory);
+  }, [selectedCategory]);
+
+  // 카테고리 변경 시 첫 번째 아이템 선택
+  useEffect(() => {
+    if (categoryItems.length > 0) {
+      setSelectedItem(categoryItems[0]);
+    }
+  }, [categoryItems]);
+
+  // 초기 로드 시 융화재료의 첫 아이템 선택
+  useEffect(() => {
+    const fusionItems = getItemsByCategory('fusion');
+    if (fusionItems.length > 0 && !selectedItem) {
+      setSelectedItem(fusionItems[0]);
+    }
+  }, []);
 
   // 가격 히스토리 불러오기 (최적화: fetch API 사용)
   useEffect(() => {
@@ -115,17 +147,33 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
     const dateMap = new Map<string, any>();
 
     history.forEach((entry) => {
-      const date = new Date(entry.timestamp);
-      const dayOfWeek = date.getDay(); // 0=일요일, 3=수요일
-      const dateKey = `${date.getMonth() + 1}/${date.getDate()}`;
+      // entry.date 필드가 있으면 그걸 사용 (YYYY-MM-DD)
+      let month: number, day: number, year: number;
+
+      if (entry.date) {
+        // API에서 보낸 date 문자열 사용 (가장 정확)
+        [year, month, day] = entry.date.split('-').map(Number);
+      } else {
+        // 없으면 timestamp에서 UTC 기준으로 추출
+        const date = new Date(entry.timestamp);
+        year = date.getUTCFullYear();
+        month = date.getUTCMonth() + 1;
+        day = date.getUTCDate();
+      }
+
+      const dateKey = `${month}/${day}`;
+
+      // 요일 계산을 위한 Date 객체 (UTC 기준)
+      const dateObj = new Date(Date.UTC(year, month - 1, day));
+      const dayOfWeek = dateObj.getUTCDay(); // 0=일요일, 3=수요일
 
       // 같은 날짜면 덮어씀 (최신 데이터 우선)
       dateMap.set(dateKey, {
         날짜: dateKey,
         가격: entry.price,
-        rawTime: date.getTime(),
+        rawTime: dateObj.getTime(),
         isWednesday: dayOfWeek === 3, // 수요일 여부
-        fullDate: date
+        fullDate: dateObj
       });
     });
 
@@ -219,11 +267,11 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
 
   // 전날 대비 변화율 계산 (메모이제이션으로 최적화)
   const changeRate = useMemo(() => {
-    if (history.length < 2) return 0;
-    const today = history[history.length - 1].price;
-    const yesterday = history[history.length - 2].price;
+    if (chartData.length < 2) return 0;
+    const today = chartData[chartData.length - 1].가격;
+    const yesterday = chartData[chartData.length - 2].가격;
     return ((today - yesterday) / yesterday) * 100;
-  }, [history]);
+  }, [chartData]);
 
   // 평균가 계산
   const averagePrice = useMemo(() => {
@@ -251,74 +299,94 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
 
   return (
     <div>
-      {/* 아이템 선택 버튼 - 데스크톱 (3줄) */}
+      {/* 카테고리 탭 - 데스크톱 */}
       <div className="mb-3 d-none d-md-block">
-        <div className="d-flex flex-wrap gap-2 justify-content-center mb-2">
-          {items.slice(0, 3).map((item) => (
+        <div className="d-flex gap-2 justify-content-center">
+          {(Object.keys(CATEGORY_INFO) as ItemCategory[]).map((cat) => (
             <Button
-              key={item.id}
-              variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
-              onClick={() => setSelectedItem(item)}
-              size="sm"
+              key={cat}
+              variant="outline-secondary"
+              onClick={() => setSelectedCategory(cat)}
               style={{
-                borderRadius: '20px',
-                padding: '8px 16px',
-                fontWeight: selectedItem.id === item.id ? '600' : '500',
-                fontSize: '0.85rem',
+                flex: '1',
+                fontWeight: selectedCategory === cat ? '700' : '600',
+                fontSize: '0.9rem',
+                borderRadius: '12px',
+                padding: '12px 20px',
+                border: `2px solid ${selectedCategory === cat ? CATEGORY_INFO[cat].color : '#e5e7eb'}`,
+                color: selectedCategory === cat ? '#fff' : '#6b7280',
+                backgroundColor: selectedCategory === cat ? CATEGORY_INFO[cat].color : '#fff',
                 transition: 'all 0.2s ease',
-                boxShadow: selectedItem.id === item.id ? '0 2px 8px rgba(22, 163, 74, 0.3)' : 'none',
-                flex: '1 1 auto',
-                minWidth: '150px',
-                maxWidth: '220px',
-                whiteSpace: 'nowrap'
+                boxShadow: selectedCategory === cat ? `0 4px 12px ${CATEGORY_INFO[cat].color}40` : 'none',
               }}
             >
-              <ColoredItemName name={item.name} />
+              {CATEGORY_INFO[cat].label}
             </Button>
           ))}
         </div>
-        <div className="d-flex flex-wrap gap-2 justify-content-center mb-2">
-          {items.slice(3, 6).map((item) => (
+      </div>
+
+      {/* 카테고리 탭 - 모바일 */}
+      <div className="mb-3 d-md-none">
+        <div className="d-flex gap-1 justify-content-center">
+          {(Object.keys(CATEGORY_INFO) as ItemCategory[]).map((cat) => (
             <Button
-              key={item.id}
-              variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
-              onClick={() => setSelectedItem(item)}
-              size="sm"
+              key={cat}
+              variant="outline-secondary"
+              onClick={() => setSelectedCategory(cat)}
               style={{
-                borderRadius: '20px',
-                padding: '8px 16px',
-                fontWeight: selectedItem.id === item.id ? '600' : '500',
-                fontSize: '0.85rem',
+                flex: '1',
+                fontWeight: selectedCategory === cat ? '700' : '600',
+                fontSize: '0.7rem',
+                borderRadius: '8px',
+                padding: '8px 4px',
+                border: `2px solid ${selectedCategory === cat ? CATEGORY_INFO[cat].color : '#e5e7eb'}`,
+                color: selectedCategory === cat ? '#fff' : '#6b7280',
+                backgroundColor: selectedCategory === cat ? CATEGORY_INFO[cat].color : '#fff',
                 transition: 'all 0.2s ease',
-                boxShadow: selectedItem.id === item.id ? '0 2px 8px rgba(22, 163, 74, 0.3)' : 'none',
-                flex: '1 1 auto',
-                minWidth: '150px',
-                maxWidth: '220px',
-                whiteSpace: 'nowrap'
+                boxShadow: selectedCategory === cat ? `0 2px 8px ${CATEGORY_INFO[cat].color}40` : 'none',
               }}
             >
-              <ColoredItemName name={item.name} />
+              {CATEGORY_INFO[cat].label}
             </Button>
           ))}
         </div>
-        <div className="d-flex flex-wrap gap-2 justify-content-center">
-          {items.slice(6, 9).map((item) => (
+      </div>
+
+      {/* 아이템 선택 버튼 - 데스크톱 */}
+      <div className="mb-3 d-none d-md-block">
+        <div style={{
+          display: selectedCategory === 'engraving' || selectedCategory === 'accessory' || selectedCategory === 'jewel' ? 'grid' : 'flex',
+          gridTemplateColumns: selectedCategory === 'engraving' ? 'repeat(5, 110px)' : selectedCategory === 'accessory' ? 'repeat(3, 1fr)' : selectedCategory === 'jewel' ? 'repeat(3, 1fr)' : undefined,
+          gap: '8px',
+          justifyContent: 'center',
+          maxWidth: selectedCategory === 'engraving' ? '600px' : selectedCategory === 'accessory' || selectedCategory === 'jewel' ? '900px' : '100%',
+          margin: '0 auto',
+          flexWrap: selectedCategory === 'fusion' || selectedCategory === 'gem' ? 'wrap' : undefined
+        }}>
+          {categoryItems.map((item) => (
             <Button
               key={item.id}
               variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
               onClick={() => setSelectedItem(item)}
               size="sm"
               style={{
-                borderRadius: '20px',
-                padding: '8px 16px',
-                fontWeight: selectedItem.id === item.id ? '600' : '500',
-                fontSize: '0.85rem',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                fontWeight: selectedItem.id === item.id ? '700' : '600',
+                fontSize: '0.875rem',
                 transition: 'all 0.2s ease',
                 boxShadow: selectedItem.id === item.id ? '0 2px 8px rgba(22, 163, 74, 0.3)' : 'none',
-                flex: '1 1 auto',
-                minWidth: '150px',
-                maxWidth: '220px',
-                whiteSpace: 'nowrap'
+                border: `2px solid ${selectedItem.id === item.id ? '#16a34a' : '#d1d5db'}`,
+                height: '42px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                minWidth: selectedCategory === 'fusion' || selectedCategory === 'gem' ? '200px' : undefined,
+                width: selectedCategory === 'engraving' ? undefined : (selectedCategory === 'fusion' || selectedCategory === 'gem' ? 'auto' : undefined)
               }}
             >
               <ColoredItemName name={item.name} />
@@ -327,42 +395,56 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
         </div>
       </div>
 
-      {/* 아이템 선택 버튼 - 모바일 (그리드 3열) */}
+      {/* 아이템 선택 버튼 - 모바일 */}
       <div className="mb-3 d-md-none">
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: (() => {
+            switch(selectedCategory) {
+              case 'engraving':
+                return 'repeat(5, 1fr)'; // 각인서: 5열 (10개 → 5개씩 2줄)
+              case 'accessory':
+                return 'repeat(2, 1fr)'; // 악세: 2열 (6개 → 3줄)
+              case 'jewel':
+                return 'repeat(3, 1fr)'; // 보석: 3열 (3개 → 1줄)
+              case 'gem':
+                return 'repeat(2, 1fr)'; // 젬: 2열 (2개 → 1줄)
+              default:
+                return 'repeat(2, 1fr)'; // 기본: 2열
+            }
+          })(),
           gap: '6px',
-          padding: '0 2px'
+          padding: '0 4px'
         }}>
-          {items.map((item) => (
+          {categoryItems.map((item) => (
             <Button
               key={item.id}
               variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
               onClick={() => setSelectedItem(item)}
               size="sm"
               style={{
-                borderRadius: '10px',
-                padding: '6px 2px',
-                fontWeight: selectedItem.id === item.id ? '600' : '500',
-                fontSize: '0.65rem',
+                borderRadius: '8px',
+                padding: selectedCategory === 'engraving' ? '6px 2px' : '8px 4px',
+                fontWeight: selectedItem.id === item.id ? '700' : '600',
+                fontSize: selectedCategory === 'engraving' ? '0.65rem' : selectedCategory === 'accessory' ? '0.65rem' : '0.7rem',
                 transition: 'all 0.2s ease',
                 boxShadow: selectedItem.id === item.id ? '0 2px 6px rgba(22, 163, 74, 0.25)' : 'none',
-                minHeight: '44px',
+                border: `2px solid ${selectedItem.id === item.id ? '#16a34a' : '#d1d5db'}`,
+                height: selectedCategory === 'engraving' ? '48px' : selectedCategory === 'accessory' ? '52px' : '46px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                lineHeight: '1.2'
+                justifyContent: 'center'
               }}
             >
               <span style={{
                 display: 'block',
                 whiteSpace: 'normal',
                 wordBreak: 'keep-all',
-                lineHeight: '1.15',
+                lineHeight: selectedCategory === 'engraving' ? '1.15' : '1.2',
                 textAlign: 'center',
                 overflow: 'hidden',
-                maxHeight: '2.5rem'
+                maxHeight: selectedCategory === 'engraving' ? '2.8rem' : '3rem',
+                padding: '0 2px'
               }}>
                 <ColoredItemName name={item.name} />
               </span>

@@ -9,11 +9,14 @@ const getCachedPriceHistory = unstable_cache(
     console.log(`[Cache Miss] Fetching price history for itemId: ${itemId}`);
     const priceEntries = await getDailyPriceHistory(itemId, 30);
 
-    // Timestamp를 ISO 문자열로 변환
-    const history = priceEntries.map((entry) => ({
-      price: entry.price,
-      timestamp: entry.timestamp.toDate().toISOString(),
-    }));
+    // Timestamp를 ISO 문자열로 변환하고 date 필드 그대로 전달
+    const history = priceEntries.map((entry) => {
+      return {
+        price: entry.price,
+        timestamp: entry.timestamp.toDate().toISOString(),
+        date: entry.date, // Firestore의 date 필드 그대로 사용 (YYYY-MM-DD)
+      };
+    });
 
     return {
       itemId,
