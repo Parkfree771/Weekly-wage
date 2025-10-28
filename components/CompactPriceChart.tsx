@@ -17,11 +17,11 @@ type CompactPriceChartProps = {
 
 // 카테고리 메타데이터
 const CATEGORY_INFO: Record<ItemCategory, { label: string; color: string }> = {
-  fusion: { label: '융화재료', color: '#ff8c00' },
-  gem: { label: '젬', color: '#d4af37' },
-  engraving: { label: '유물 각인서', color: '#ff6b35' },
-  accessory: { label: '악세', color: '#06b6d4' },
-  jewel: { label: '보석', color: '#9333ea' }
+  fusion: { label: '융화재료', color: '#ffb366' },
+  gem: { label: '젬', color: '#e8ca7a' },
+  engraving: { label: '유물 각인서', color: '#ff9b7a' },
+  accessory: { label: '악세', color: '#5fd4e8' },
+  jewel: { label: '보석', color: '#b87ff2' }
 };
 
 // 아이템 이름에서 (상)과 (중)에 색상을 입히는 헬퍼 함수
@@ -303,52 +303,66 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
       <div className="mb-3 d-none d-md-block">
         <div className="d-flex gap-2 justify-content-center">
           {(Object.keys(CATEGORY_INFO) as ItemCategory[]).map((cat) => (
-            <Button
+            <button
               key={cat}
-              variant="outline-secondary"
               onClick={() => setSelectedCategory(cat)}
               style={{
                 flex: '1',
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '0.9rem',
-                borderRadius: '12px',
-                padding: '12px 20px',
-                border: `2px solid ${selectedCategory === cat ? CATEGORY_INFO[cat].color : '#e5e7eb'}`,
-                color: selectedCategory === cat ? '#fff' : '#6b7280',
-                backgroundColor: selectedCategory === cat ? CATEGORY_INFO[cat].color : '#fff',
+                padding: '10px 16px',
+                backgroundColor: '#ffffff',
+                border: `2px solid ${selectedCategory === cat ? CATEGORY_INFO[cat].color : '#d1d5db'}`,
+                borderRadius: '10px',
+                color: selectedCategory === cat ? CATEGORY_INFO[cat].color : '#6b7280',
                 transition: 'all 0.2s ease',
-                boxShadow: selectedCategory === cat ? `0 4px 12px ${CATEGORY_INFO[cat].color}40` : 'none',
+                cursor: 'pointer',
+                letterSpacing: '0.3px'
+              }}
+              onMouseEnter={(e) => {
+                if (selectedCategory !== cat) {
+                  e.currentTarget.style.backgroundColor = '#f9fafb';
+                  e.currentTarget.style.borderColor = CATEGORY_INFO[cat].color;
+                  e.currentTarget.style.color = CATEGORY_INFO[cat].color;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedCategory !== cat) {
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.borderColor = '#d1d5db';
+                  e.currentTarget.style.color = '#6b7280';
+                }
               }}
             >
               {CATEGORY_INFO[cat].label}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
 
       {/* 카테고리 탭 - 모바일 */}
       <div className="mb-3 d-md-none">
-        <div className="d-flex gap-1 justify-content-center">
+        <div className="d-flex gap-2 justify-content-center">
           {(Object.keys(CATEGORY_INFO) as ItemCategory[]).map((cat) => (
-            <Button
+            <button
               key={cat}
-              variant="outline-secondary"
               onClick={() => setSelectedCategory(cat)}
               style={{
                 flex: '1',
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '0.7rem',
+                padding: '8px 6px',
+                backgroundColor: '#ffffff',
+                border: `2px solid ${selectedCategory === cat ? CATEGORY_INFO[cat].color : '#d1d5db'}`,
                 borderRadius: '8px',
-                padding: '8px 4px',
-                border: `2px solid ${selectedCategory === cat ? CATEGORY_INFO[cat].color : '#e5e7eb'}`,
-                color: selectedCategory === cat ? '#fff' : '#6b7280',
-                backgroundColor: selectedCategory === cat ? CATEGORY_INFO[cat].color : '#fff',
+                color: selectedCategory === cat ? CATEGORY_INFO[cat].color : '#6b7280',
                 transition: 'all 0.2s ease',
-                boxShadow: selectedCategory === cat ? `0 2px 8px ${CATEGORY_INFO[cat].color}40` : 'none',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
               }}
             >
               {CATEGORY_INFO[cat].label}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
@@ -356,100 +370,109 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
       {/* 아이템 선택 버튼 - 데스크톱 */}
       <div className="mb-3 d-none d-md-block">
         <div style={{
-          display: selectedCategory === 'engraving' || selectedCategory === 'accessory' || selectedCategory === 'jewel' ? 'grid' : 'flex',
-          gridTemplateColumns: selectedCategory === 'engraving' ? 'repeat(5, 110px)' : selectedCategory === 'accessory' ? 'repeat(3, 1fr)' : selectedCategory === 'jewel' ? 'repeat(3, 1fr)' : undefined,
+          display: 'flex',
           gap: '8px',
-          justifyContent: 'center',
-          maxWidth: selectedCategory === 'engraving' ? '600px' : selectedCategory === 'accessory' || selectedCategory === 'jewel' ? '900px' : '100%',
-          margin: '0 auto',
-          flexWrap: selectedCategory === 'fusion' || selectedCategory === 'gem' ? 'wrap' : undefined
+          justifyContent: 'flex-start',
+          flexWrap: 'wrap'
         }}>
-          {categoryItems.map((item) => (
-            <Button
-              key={item.id}
-              variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
-              onClick={() => setSelectedItem(item)}
-              size="sm"
-              style={{
-                borderRadius: '10px',
-                padding: '10px 12px',
-                fontWeight: selectedItem.id === item.id ? '700' : '600',
-                fontSize: '0.875rem',
-                transition: 'all 0.2s ease',
-                boxShadow: selectedItem.id === item.id ? '0 2px 8px rgba(22, 163, 74, 0.3)' : 'none',
-                border: `2px solid ${selectedItem.id === item.id ? '#16a34a' : '#d1d5db'}`,
-                height: '42px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                minWidth: selectedCategory === 'fusion' || selectedCategory === 'gem' ? '200px' : undefined,
-                width: selectedCategory === 'engraving' ? undefined : (selectedCategory === 'fusion' || selectedCategory === 'gem' ? 'auto' : undefined)
-              }}
-            >
-              <ColoredItemName name={item.name} />
-            </Button>
-          ))}
+          {categoryItems.map((item) => {
+            // 파스텔 톤 색상 매핑
+            const pastelColors: Record<ItemCategory, { main: string; light: string; hover: string }> = {
+              fusion: { main: '#ffb366', light: '#fff3e6', hover: '#ffa347' },
+              gem: { main: '#e8ca7a', light: '#faf5e6', hover: '#dfc05d' },
+              engraving: { main: '#ff9b7a', light: '#fff0eb', hover: '#ff8a61' },
+              accessory: { main: '#5fd4e8', light: '#e6f7fb', hover: '#3dc9e0' },
+              jewel: { main: '#b87ff2', light: '#f5ebff', hover: '#a865ea' }
+            };
+
+            const categoryColor = pastelColors[selectedCategory];
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => setSelectedItem(item)}
+                style={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '10px',
+                  padding: '10px 16px',
+                  fontWeight: selectedItem.id === item.id ? '700' : '600',
+                  fontSize: '0.875rem',
+                  transition: 'all 0.2s ease',
+                  border: `2px solid ${selectedItem.id === item.id ? categoryColor.main : '#e5e7eb'}`,
+                  color: selectedItem.id === item.id ? '#16a34a' : '#6b7280',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedItem.id !== item.id) {
+                    e.currentTarget.style.backgroundColor = categoryColor.light;
+                    e.currentTarget.style.borderColor = categoryColor.main;
+                    e.currentTarget.style.color = '#16a34a';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedItem.id !== item.id) {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                    e.currentTarget.style.borderColor = '#e5e7eb';
+                    e.currentTarget.style.color = '#6b7280';
+                  }
+                }}
+              >
+                <ColoredItemName name={item.name} />
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* 아이템 선택 버튼 - 모바일 */}
       <div className="mb-3 d-md-none">
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: (() => {
-            switch(selectedCategory) {
-              case 'engraving':
-                return 'repeat(5, 1fr)'; // 각인서: 5열 (10개 → 5개씩 2줄)
-              case 'accessory':
-                return 'repeat(2, 1fr)'; // 악세: 2열 (6개 → 3줄)
-              case 'jewel':
-                return 'repeat(3, 1fr)'; // 보석: 3열 (3개 → 1줄)
-              case 'gem':
-                return 'repeat(2, 1fr)'; // 젬: 2열 (2개 → 1줄)
-              default:
-                return 'repeat(2, 1fr)'; // 기본: 2열
-            }
-          })(),
+          display: 'flex',
           gap: '6px',
+          justifyContent: 'flex-start',
+          flexWrap: 'wrap',
           padding: '0 4px'
         }}>
-          {categoryItems.map((item) => (
-            <Button
-              key={item.id}
-              variant={selectedItem.id === item.id ? 'success' : 'outline-success'}
-              onClick={() => setSelectedItem(item)}
-              size="sm"
-              style={{
-                borderRadius: '8px',
-                padding: selectedCategory === 'engraving' ? '6px 2px' : '8px 4px',
-                fontWeight: selectedItem.id === item.id ? '700' : '600',
-                fontSize: selectedCategory === 'engraving' ? '0.65rem' : selectedCategory === 'accessory' ? '0.65rem' : '0.7rem',
-                transition: 'all 0.2s ease',
-                boxShadow: selectedItem.id === item.id ? '0 2px 6px rgba(22, 163, 74, 0.25)' : 'none',
-                border: `2px solid ${selectedItem.id === item.id ? '#16a34a' : '#d1d5db'}`,
-                height: selectedCategory === 'engraving' ? '48px' : selectedCategory === 'accessory' ? '52px' : '46px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <span style={{
-                display: 'block',
-                whiteSpace: 'normal',
-                wordBreak: 'keep-all',
-                lineHeight: selectedCategory === 'engraving' ? '1.15' : '1.2',
-                textAlign: 'center',
-                overflow: 'hidden',
-                maxHeight: selectedCategory === 'engraving' ? '2.8rem' : '3rem',
-                padding: '0 2px'
-              }}>
+          {categoryItems.map((item) => {
+            // 파스텔 톤 색상 매핑
+            const pastelColors: Record<ItemCategory, { main: string; light: string }> = {
+              fusion: { main: '#ffb366', light: '#fff3e6' },
+              gem: { main: '#e8ca7a', light: '#faf5e6' },
+              engraving: { main: '#ff9b7a', light: '#fff0eb' },
+              accessory: { main: '#5fd4e8', light: '#e6f7fb' },
+              jewel: { main: '#b87ff2', light: '#f5ebff' }
+            };
+
+            const categoryColor = pastelColors[selectedCategory];
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => setSelectedItem(item)}
+                style={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '8px',
+                  padding: '8px 10px',
+                  fontWeight: selectedItem.id === item.id ? '700' : '600',
+                  fontSize: '0.7rem',
+                  transition: 'all 0.2s ease',
+                  border: `2px solid ${selectedItem.id === item.id ? categoryColor.main : '#e5e7eb'}`,
+                  color: selectedItem.id === item.id ? '#16a34a' : '#6b7280',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
                 <ColoredItemName name={item.name} />
-              </span>
-            </Button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -568,51 +591,91 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
             <>
               {/* 통계 - 데스크톱 */}
               {stats && (
-                <div className="row g-2 mb-3 d-none d-md-flex">
-                  <div className="col-6 col-md-3">
-                    <div className="text-center p-2" style={{
-                      backgroundColor: '#f0fdf4',
+                <div className="d-none d-md-flex mb-4 justify-content-center gap-2">
+                  <div style={{ width: '260px' }}>
+                    <div className="text-center" style={{
+                      backgroundColor: '#ffffff',
                       borderRadius: '10px',
-                      border: '1px solid #dcfce7'
+                      border: '2px solid #16a34a',
+                      padding: '10px 8px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f0fdf4';
+                      e.currentTarget.style.borderColor = '#15803d';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                      e.currentTarget.style.borderColor = '#16a34a';
                     }}>
-                      <small className="text-muted d-block mb-1" style={{ fontSize: '0.7rem' }}>현재가</small>
-                      <strong style={{ fontSize: '0.95rem', color: '#16a34a' }}>
+                      <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>현재가</small>
+                      <strong style={{ fontSize: '1rem', color: '#16a34a', fontWeight: '700' }}>
                         {formatTooltipPrice(stats.current)}
                       </strong>
                     </div>
                   </div>
-                  <div className="col-6 col-md-3">
-                    <div className="text-center p-2" style={{
-                      backgroundColor: '#eff6ff',
+                  <div style={{ width: '260px' }}>
+                    <div className="text-center" style={{
+                      backgroundColor: '#ffffff',
                       borderRadius: '10px',
-                      border: '1px solid #dbeafe'
+                      border: '2px solid #3b82f6',
+                      padding: '10px 8px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#eff6ff';
+                      e.currentTarget.style.borderColor = '#2563eb';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                      e.currentTarget.style.borderColor = '#3b82f6';
                     }}>
-                      <small className="text-muted d-block mb-1" style={{ fontSize: '0.7rem' }}>최저가</small>
-                      <strong style={{ fontSize: '0.95rem', color: '#3b82f6' }}>
+                      <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>최저가</small>
+                      <strong style={{ fontSize: '1rem', color: '#3b82f6', fontWeight: '700' }}>
                         {formatTooltipPrice(stats.min)}
                       </strong>
                     </div>
                   </div>
-                  <div className="col-6 col-md-3">
-                    <div className="text-center p-2" style={{
-                      backgroundColor: '#fef2f2',
+                  <div style={{ width: '260px' }}>
+                    <div className="text-center" style={{
+                      backgroundColor: '#ffffff',
                       borderRadius: '10px',
-                      border: '1px solid #fecaca'
+                      border: '2px solid #ef4444',
+                      padding: '10px 8px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#fef2f2';
+                      e.currentTarget.style.borderColor = '#dc2626';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                      e.currentTarget.style.borderColor = '#ef4444';
                     }}>
-                      <small className="text-muted d-block mb-1" style={{ fontSize: '0.7rem' }}>최고가</small>
-                      <strong style={{ fontSize: '0.95rem', color: '#ef4444' }}>
+                      <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>최고가</small>
+                      <strong style={{ fontSize: '1rem', color: '#ef4444', fontWeight: '700' }}>
                         {formatTooltipPrice(stats.max)}
                       </strong>
                     </div>
                   </div>
-                  <div className="col-6 col-md-3">
-                    <div className="text-center p-2" style={{
-                      backgroundColor: '#faf5ff',
+                  <div style={{ width: '260px' }}>
+                    <div className="text-center" style={{
+                      backgroundColor: '#ffffff',
                       borderRadius: '10px',
-                      border: '1px solid #e9d5ff'
+                      border: '2px solid #a855f7',
+                      padding: '10px 8px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#faf5ff';
+                      e.currentTarget.style.borderColor = '#9333ea';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                      e.currentTarget.style.borderColor = '#a855f7';
                     }}>
-                      <small className="text-muted d-block mb-1" style={{ fontSize: '0.7rem' }}>평균가</small>
-                      <strong style={{ fontSize: '0.95rem', color: '#a855f7' }}>
+                      <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>평균가</small>
+                      <strong style={{ fontSize: '1rem', color: '#a855f7', fontWeight: '700' }}>
                         {selectedItem?.id === '6861012' && stats.avg < 1000
                           ? stats.avg.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G'
                           : formatTooltipPrice(Math.round(stats.avg))
@@ -625,39 +688,42 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
 
               {/* 통계 - 모바일 */}
               {stats && (
-                <div className="row g-2 mb-3 d-md-none">
+                <div className="row g-2 mb-4 d-md-none">
                   <div className="col-6">
-                    <div className="text-center p-2" style={{
-                      backgroundColor: '#eff6ff',
+                    <div className="text-center" style={{
+                      backgroundColor: '#ffffff',
                       borderRadius: '8px',
-                      border: '1px solid #dbeafe'
+                      border: '2px solid #3b82f6',
+                      padding: '8px 2px'
                     }}>
-                      <small className="text-muted d-block mb-1" style={{ fontSize: '0.65rem' }}>최저가</small>
-                      <strong style={{ fontSize: '0.8rem', color: '#3b82f6' }}>
+                      <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최저가</small>
+                      <strong style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '700' }}>
                         {formatTooltipPrice(stats.min)}
                       </strong>
                     </div>
                   </div>
                   <div className="col-6">
-                    <div className="text-center p-2" style={{
-                      backgroundColor: '#fef2f2',
+                    <div className="text-center" style={{
+                      backgroundColor: '#ffffff',
                       borderRadius: '8px',
-                      border: '1px solid #fecaca'
+                      border: '2px solid #ef4444',
+                      padding: '8px 2px'
                     }}>
-                      <small className="text-muted d-block mb-1" style={{ fontSize: '0.65rem' }}>최고가</small>
-                      <strong style={{ fontSize: '0.8rem', color: '#ef4444' }}>
+                      <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최고가</small>
+                      <strong style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: '700' }}>
                         {formatTooltipPrice(stats.max)}
                       </strong>
                     </div>
                   </div>
                   <div className="col-12">
-                    <div className="text-center p-2" style={{
-                      backgroundColor: '#faf5ff',
+                    <div className="text-center" style={{
+                      backgroundColor: '#ffffff',
                       borderRadius: '8px',
-                      border: '1px solid #e9d5ff'
+                      border: '2px solid #a855f7',
+                      padding: '8px 2px'
                     }}>
-                      <small className="text-muted d-block mb-1" style={{ fontSize: '0.65rem' }}>평균가</small>
-                      <strong style={{ fontSize: '0.8rem', color: '#a855f7' }}>
+                      <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>평균가</small>
+                      <strong style={{ fontSize: '0.8rem', color: '#a855f7', fontWeight: '700' }}>
                         {selectedItem?.id === '6861012' && stats.avg < 1000
                           ? stats.avg.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G'
                           : formatTooltipPrice(Math.round(stats.avg))
@@ -673,7 +739,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={chartData}
-                    margin={{ top: 15, right: 15, left: stats && stats.max >= 1000000 ? 20 : 0, bottom: 5 }}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
                   >
                     <defs>
                       <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
@@ -702,7 +768,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                             <text
                               x={0}
                               y={0}
-                              dy={16}
+                              dy={10}
                               textAnchor="end"
                               fill="#374151"
                               fontSize={16}
@@ -714,8 +780,8 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                             {isWednesday && (
                               <text
                                 x={0}
-                                y={18}
-                                dy={16}
+                                y={12}
+                                dy={10}
                                 textAnchor="end"
                                 fill="#ef4444"
                                 fontSize={12}
@@ -728,7 +794,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                           </g>
                         );
                       }}
-                      height={80}
+                      height={60}
                       stroke="#6b7280"
                       strokeWidth={2}
                       tickLine={{ stroke: '#9ca3af', strokeWidth: 2 }}
@@ -742,7 +808,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                         fontWeight: '700'
                       }}
                       tickFormatter={formatPrice}
-                      width={stats && stats.max >= 1000000 ? 150 : stats && stats.max >= 100000 ? 130 : 110}
+                      width={stats && stats.max >= 1000000 ? 95 : stats && stats.max >= 100000 ? 80 : 60}
                       domain={yAxisConfig.domain}
                       tickCount={yAxisConfig.tickCount}
                       stroke="#6b7280"
@@ -815,7 +881,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={chartData}
-                    margin={{ top: 10, right: 5, left: stats && stats.max >= 100000 ? 5 : -10, bottom: 5 }}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
                   >
                     <defs>
                       <linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1">
@@ -844,7 +910,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                             <text
                               x={0}
                               y={0}
-                              dy={10}
+                              dy={8}
                               textAnchor="end"
                               fill="#6b7280"
                               fontSize={9}
@@ -856,8 +922,8 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                             {isWednesday && (
                               <text
                                 x={0}
-                                y={10}
-                                dy={10}
+                                y={8}
+                                dy={8}
                                 textAnchor="end"
                                 fill="#ef4444"
                                 fontSize={7}
@@ -870,7 +936,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                           </g>
                         );
                       }}
-                      height={55}
+                      height={45}
                       stroke="#9ca3af"
                       strokeWidth={1}
                       tickLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
@@ -884,7 +950,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                         fontWeight: '600'
                       }}
                       tickFormatter={formatPrice}
-                      width={stats && stats.max >= 1000000 ? 90 : stats && stats.max >= 100000 ? 75 : 60}
+                      width={stats && stats.max >= 1000000 ? 55 : stats && stats.max >= 100000 ? 45 : 35}
                       domain={yAxisConfig.domain}
                       tickCount={yAxisConfig.tickCount}
                       stroke="#9ca3af"
