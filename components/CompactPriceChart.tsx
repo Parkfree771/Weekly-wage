@@ -424,9 +424,9 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
         <div style={{
           display: 'flex',
           gap: '6px',
-          justifyContent: 'flex-start',
-          flexWrap: 'wrap',
-          padding: '0 4px'
+          overflowX: 'auto',
+          flexWrap: 'nowrap',
+          padding: '4px'
         }}>
           {categoryItems.map((item) => {
             const categoryStyle = CATEGORY_STYLES[selectedCategory];
@@ -436,13 +436,13 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
                 style={{
-                  backgroundColor: selectedItem.id === item.id ? categoryStyle.lightBg : '#ffffff',
+                  backgroundColor: '#ffffff',
                   borderRadius: '8px',
                   padding: '8px 10px',
                   fontWeight: selectedItem.id === item.id ? '700' : '600',
                   fontSize: '0.7rem',
                   transition: 'all 0.2s ease',
-                  border: `2px solid ${selectedItem.id === item.id ? categoryStyle.color : '#e5e7eb'}`,
+                  border: `2px solid ${selectedItem.id === item.id ? categoryStyle.darkColor : '#e5e7eb'}`,
                   color: selectedItem.id === item.id ? categoryStyle.darkColor : '#6b7280',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -513,7 +513,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
             borderBottom: '1.5px solid #e5e7eb',
           }}
         >
-          <div className="d-flex justify-content-between align-items-center px-2">
+          <div className="d-flex justify-content-between align-items-center">
             <div className="d-flex align-items-center gap-2">
               {selectedItem.icon && (
                 <img
@@ -679,7 +679,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                       backgroundColor: '#ffffff',
                       borderRadius: '8px',
                       border: '2px solid #16a34a',
-                      padding: '8px 2px'
+                      padding: '4px 2px'
                     }}>
                       <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>현재가</small>
                       <strong style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: '700' }}>
@@ -692,7 +692,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                       backgroundColor: '#ffffff',
                       borderRadius: '8px',
                       border: '2px solid #3b82f6',
-                      padding: '8px 2px'
+                      padding: '4px 2px'
                     }}>
                       <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최저가</small>
                       <strong style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '700' }}>
@@ -705,7 +705,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                       backgroundColor: '#ffffff',
                       borderRadius: '8px',
                       border: '2px solid #ef4444',
-                      padding: '8px 2px'
+                      padding: '4px 2px'
                     }}>
                       <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최고가</small>
                       <strong style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: '700' }}>
@@ -718,7 +718,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                       backgroundColor: '#ffffff',
                       borderRadius: '8px',
                       border: '2px solid #a855f7',
-                      padding: '8px 2px'
+                      padding: '4px 2px'
                     }}>
                       <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>평균가</small>
                       <strong style={{ fontSize: '0.8rem', color: '#a855f7', fontWeight: '700' }}>

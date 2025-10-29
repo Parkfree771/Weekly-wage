@@ -83,6 +83,25 @@ export default function RootLayout({
             gtag('config', 'G-QBV4JHCBJF');
           `}
         </Script>
+
+        {/* SEO를 위한 JSON-LD 구조화된 데이터 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "로아 주간 골드 계산",
+            "url": "https://lostarkweeklygold.kr",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://lostarkweeklygold.kr/?q={search_term_string}"
+              },
+              "query-input": "required name=search_term_string"
+            }
+          }) }}
+        />
       </body>
     </html>
   );
