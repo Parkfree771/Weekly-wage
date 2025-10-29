@@ -30,7 +30,7 @@ const SeeMoreCalculator = dynamic(() => import('@/components/SeeMoreCalculator')
   ssr: false
 });
 
-const CompactPriceChart = dynamic(() => import('@/components/CompactPriceChart'), {
+const PriceChartContainer = dynamic(() => import('@/components/PriceChartContainer'), {
   loading: () => (
     <div className="text-center py-5">
       <div className="spinner-border text-primary" role="status">
@@ -186,7 +186,7 @@ export default function Home() {
                       </h3>
                     </Card.Header>
                     <Card.Body className="p-2 p-md-3" style={{backgroundColor: '#fafbff'}}>
-                      <CompactPriceChart items={TRACKED_ITEMS} />
+                      <PriceChartContainer />
                     </Card.Body>
                   </Card>
                 </Col>
