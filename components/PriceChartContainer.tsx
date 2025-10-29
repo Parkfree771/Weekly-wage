@@ -13,7 +13,7 @@ type PriceEntry = {
 };
 
 export default function PriceChartContainer() {
-  const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('fusion');
+  const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('gem');
   const [selectedItem, setSelectedItem] = useState<TrackedItem | null>(null);
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,15 +21,20 @@ export default function PriceChartContainer() {
   useEffect(() => {
     const categoryItems = getItemsByCategory(selectedCategory);
     if (categoryItems.length > 0) {
+      // 카테고리 변경 시 항상 첫 번째 아이템 선택
       setSelectedItem(categoryItems[0]);
     }
   }, [selectedCategory]);
 
+  // 컴포넌트 마운트 시 기본값 설정
   useEffect(() => {
-    const fusionItems = getItemsByCategory('fusion');
-    if (fusionItems.length > 0 && !selectedItem) {
-      setSelectedItem(fusionItems[0]);
-    }
+    const defaultCategory = 'gem';
+    const defaultCategoryItems = getItemsByCategory(defaultCategory);
+    // '질서의 젬 : 안정' (ID: 67400003)을 기본값으로 설정
+    const defaultItem = defaultCategoryItems.find(item => item.id === '67400003') || defaultCategoryItems[0];
+    
+    setSelectedCategory(defaultCategory);
+    setSelectedItem(defaultItem);
   }, []);
 
   useEffect(() => {

@@ -6,11 +6,14 @@ import { useMemo } from 'react';
 
 export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; }> = {
   fusion: { label: '융화재료', color: '#ffb366', darkColor: '#D97706', lightBg: '#fff7ed' },
-  gem: { label: '젬', color: '#e8ca7a', darkColor: '#CA8A04', lightBg: '#fefce8' },
+  gem: { label: '젬', color: '#8A2BE2', darkColor: '#4B0082', lightBg: '#F5EEFF' }, // 보라색 계열
   engraving: { label: '유물 각인서', color: '#ff9b7a', darkColor: '#E11D48', lightBg: '#fff1f2' },
   accessory: { label: '악세', color: '#5fd4e8', darkColor: '#0E7490', lightBg: '#ecfeff' },
-  jewel: { label: '보석', color: '#b87ff2', darkColor: '#7E22CE', lightBg: '#f5f3ff' }
+  jewel: { label: '보석', color: '#FF69B4', darkColor: '#C71585', lightBg: '#FFF0F5' } // 분홍색 계열
 };
+
+// 카테고리 표시 순서 정의
+const CATEGORY_ORDER: ItemCategory[] = ['gem', 'fusion', 'engraving', 'accessory', 'jewel'];
 
 function ColoredItemName({ name }: { name: string }) {
   const regex = /(\d+\.?\d*%)\s*(\(상\))|(\d+\.?\d*%)\s*(\(중\))|(\(상\))|(\(중\))/g;
@@ -84,15 +87,15 @@ export default function ItemSelector({
     <div>
       {/* 카테고리 탭 - 데스크톱 */}
       <div className="mb-3 d-none d-md-block">
-        <div className="d-flex gap-2 justify-content-center">
-          {(Object.keys(CATEGORY_STYLES) as ItemCategory[]).map((cat) => (
+        <div className="d-flex gap-3 justify-content-center">
+          {CATEGORY_ORDER.map((cat) => (
             <button
               key={cat}
               onClick={() => onSelectCategory(cat)}
               style={{
                 fontWeight: selectedCategory === cat ? '700' : '600',
-                fontSize: '0.9rem',
-                padding: '10px 16px',
+                fontSize: '1rem',
+                padding: '12px 24px',
                 backgroundColor: '#ffffff',
                 border: `2px solid ${selectedCategory === cat ? CATEGORY_STYLES[cat].color : '#e5e7eb'}`,
                 borderRadius: '10px',
@@ -126,7 +129,7 @@ export default function ItemSelector({
       {/* 카테고리 탭 - 모바일 */}
       <div className="mb-3 d-md-none">
         <div className="d-flex gap-2 justify-content-center">
-          {(Object.keys(CATEGORY_STYLES) as ItemCategory[]).map((cat) => (
+          {CATEGORY_ORDER.map((cat) => (
             <button
               key={cat}
               onClick={() => onSelectCategory(cat)}
@@ -152,10 +155,9 @@ export default function ItemSelector({
       {/* 아이템 선택 버튼 - 데스크톱 */}
       <div className="mb-3 d-none d-md-block">
         <div style={{
-          display: 'flex',
-          gap: '8px',
-          justifyContent: 'flex-start',
-          flexWrap: 'wrap'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          gap: '12px',
         }}>
           {categoryItems.map((item) => {
             const categoryStyle = CATEGORY_STYLES[selectedCategory];
@@ -177,7 +179,8 @@ export default function ItemSelector({
                   alignItems: 'center',
                   justifyContent: 'center',
                   whiteSpace: 'nowrap',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  width: '100%'
                 }}
                 onMouseEnter={(e) => {
                   if (selectedItem.id !== item.id) {

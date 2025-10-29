@@ -36,11 +36,18 @@ export type ItemCategory = 'fusion' | 'gem' | 'engraving' | 'accessory' | 'jewel
 export const TRACKED_ITEMS: TrackedItem[] = [
   // === 1. 융화재료 ===
   {
+    id: '6861011',
+    name: '최상급 오레하 융화 재료',
+    type: 'market',
+    icon: '/oreha-fusion-superior.png',
+    iconBorderColor: '#D97706' // 오렌지
+  },
+  {
     id: '6861012',
     name: '아비도스 융화 재료',
     type: 'market',
     icon: '/abidos-fusion.png',
-    iconBorderColor: '#ff8c00' // 오렌지
+    iconBorderColor: '#D97706' // 오렌지
   },
 
   // === 2. 젬 ===
@@ -49,14 +56,28 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '질서의 젬 : 안정',
     type: 'market',
     icon: '/gem-order-stable.png',
-    iconBorderColor: '#d4af37' // 골드
+    iconBorderColor: '#4B0082' // 보라색
   },
   {
     id: '67400103',
     name: '질서의 젬 : 견고',
     type: 'market',
     icon: '/gem-order-solid.png',
-    iconBorderColor: '#d4af37' // 골드
+    iconBorderColor: '#4B0082' // 보라색
+  },
+  {
+    id: '67410303',
+    name: '혼돈의 젬 : 침식',
+    type: 'market',
+    icon: '/gem-chaos-erosion.png',
+    iconBorderColor: '#4B0082' // 보라색
+  },
+  {
+    id: '67410403',
+    name: '혼돈의 젬 : 왜곡',
+    type: 'market',
+    icon: '/gem-chaos-distortion.png',
+    iconBorderColor: '#4B0082' // 보라색
   },
 
   // === 3. 유물 각인서 (거래소) ===
@@ -367,8 +388,8 @@ export const TRACKED_ITEMS: TrackedItem[] = [
 // 카테고리별 아이템 필터 함수
 export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
-    fusion: ['6861012'],
-    gem: ['67400003', '67400103'],
+    fusion: ['6861012', '6861011'],
+    gem: ['67400003', '67400103', '67410303', '67410403'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105'],
     accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high'],
     jewel: ['auction_gem_fear_8', 'auction_gem_fear_10', 'auction_gem_flame_10']
