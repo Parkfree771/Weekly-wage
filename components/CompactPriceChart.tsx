@@ -16,12 +16,12 @@ type CompactPriceChartProps = {
 };
 
 // 카테고리 메타데이터
-const CATEGORY_INFO: Record<ItemCategory, { label: string; color: string }> = {
-  fusion: { label: '융화재료', color: '#ffb366' },
-  gem: { label: '젬', color: '#e8ca7a' },
-  engraving: { label: '유물 각인서', color: '#ff9b7a' },
-  accessory: { label: '악세', color: '#5fd4e8' },
-  jewel: { label: '보석', color: '#b87ff2' }
+const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; }> = {
+  fusion: { label: '융화재료', color: '#ffb366', darkColor: '#D97706', lightBg: '#fff7ed' },
+  gem: { label: '젬', color: '#e8ca7a', darkColor: '#CA8A04', lightBg: '#fefce8' },
+  engraving: { label: '유물 각인서', color: '#ff9b7a', darkColor: '#E11D48', lightBg: '#fff1f2' },
+  accessory: { label: '악세', color: '#5fd4e8', darkColor: '#0E7490', lightBg: '#ecfeff' },
+  jewel: { label: '보석', color: '#b87ff2', darkColor: '#7E22CE', lightBg: '#f5f3ff' }
 };
 
 // 아이템 이름에서 (상)과 (중)에 색상을 입히는 헬퍼 함수
@@ -302,7 +302,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
       {/* 카테고리 탭 - 데스크톱 */}
       <div className="mb-3 d-none d-md-block">
         <div className="d-flex gap-2 justify-content-center">
-          {(Object.keys(CATEGORY_INFO) as ItemCategory[]).map((cat) => (
+          {(Object.keys(CATEGORY_STYLES) as ItemCategory[]).map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -311,19 +311,19 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '0.9rem',
                 padding: '10px 16px',
-                backgroundColor: '#ffffff',
-                border: `2px solid ${selectedCategory === cat ? CATEGORY_INFO[cat].color : '#d1d5db'}`,
+                backgroundColor: selectedCategory === cat ? CATEGORY_STYLES[cat].lightBg : '#ffffff',
+                border: `2px solid ${selectedCategory === cat ? CATEGORY_STYLES[cat].color : '#d1d5db'}`,
                 borderRadius: '10px',
-                color: selectedCategory === cat ? CATEGORY_INFO[cat].color : '#6b7280',
+                color: selectedCategory === cat ? CATEGORY_STYLES[cat].color : '#6b7280',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer',
                 letterSpacing: '0.3px'
               }}
               onMouseEnter={(e) => {
                 if (selectedCategory !== cat) {
-                  e.currentTarget.style.backgroundColor = '#f9fafb';
-                  e.currentTarget.style.borderColor = CATEGORY_INFO[cat].color;
-                  e.currentTarget.style.color = CATEGORY_INFO[cat].color;
+                  e.currentTarget.style.backgroundColor = CATEGORY_STYLES[cat].lightBg;
+                  e.currentTarget.style.borderColor = CATEGORY_STYLES[cat].color;
+                  e.currentTarget.style.color = CATEGORY_STYLES[cat].darkColor;
                 }
               }}
               onMouseLeave={(e) => {
@@ -334,7 +334,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                 }
               }}
             >
-              {CATEGORY_INFO[cat].label}
+              {CATEGORY_STYLES[cat].label}
             </button>
           ))}
         </div>
@@ -343,7 +343,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
       {/* 카테고리 탭 - 모바일 */}
       <div className="mb-3 d-md-none">
         <div className="d-flex gap-2 justify-content-center">
-          {(Object.keys(CATEGORY_INFO) as ItemCategory[]).map((cat) => (
+          {(Object.keys(CATEGORY_STYLES) as ItemCategory[]).map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -352,16 +352,16 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '0.7rem',
                 padding: '8px 6px',
-                backgroundColor: '#ffffff',
-                border: `2px solid ${selectedCategory === cat ? CATEGORY_INFO[cat].color : '#d1d5db'}`,
+                backgroundColor: selectedCategory === cat ? CATEGORY_STYLES[cat].lightBg : '#ffffff',
+                border: `2px solid ${selectedCategory === cat ? CATEGORY_STYLES[cat].color : '#d1d5db'}`,
                 borderRadius: '8px',
-                color: selectedCategory === cat ? CATEGORY_INFO[cat].color : '#6b7280',
+                color: selectedCategory === cat ? CATEGORY_STYLES[cat].color : '#6b7280',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap'
               }}
             >
-              {CATEGORY_INFO[cat].label}
+              {CATEGORY_STYLES[cat].label}
             </button>
           ))}
         </div>
@@ -376,16 +376,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
           flexWrap: 'wrap'
         }}>
           {categoryItems.map((item) => {
-            // 파스텔 톤 색상 매핑
-            const pastelColors: Record<ItemCategory, { main: string; light: string; hover: string }> = {
-              fusion: { main: '#ffb366', light: '#fff3e6', hover: '#ffa347' },
-              gem: { main: '#e8ca7a', light: '#faf5e6', hover: '#dfc05d' },
-              engraving: { main: '#ff9b7a', light: '#fff0eb', hover: '#ff8a61' },
-              accessory: { main: '#5fd4e8', light: '#e6f7fb', hover: '#3dc9e0' },
-              jewel: { main: '#b87ff2', light: '#f5ebff', hover: '#a865ea' }
-            };
-
-            const categoryColor = pastelColors[selectedCategory];
+            const categoryStyle = CATEGORY_STYLES[selectedCategory];
 
             return (
               <button
@@ -398,8 +389,8 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                   fontWeight: selectedItem.id === item.id ? '700' : '600',
                   fontSize: '0.875rem',
                   transition: 'all 0.2s ease',
-                  border: `2px solid ${selectedItem.id === item.id ? categoryColor.main : '#e5e7eb'}`,
-                  color: selectedItem.id === item.id ? '#16a34a' : '#6b7280',
+                  border: `2px solid ${selectedItem.id === item.id ? categoryStyle.color : '#e5e7eb'}`,
+                  color: selectedItem.id === item.id ? categoryStyle.darkColor : '#6b7280',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -408,9 +399,9 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                 }}
                 onMouseEnter={(e) => {
                   if (selectedItem.id !== item.id) {
-                    e.currentTarget.style.backgroundColor = categoryColor.light;
-                    e.currentTarget.style.borderColor = categoryColor.main;
-                    e.currentTarget.style.color = '#16a34a';
+                    e.currentTarget.style.backgroundColor = categoryStyle.lightBg;
+                    e.currentTarget.style.borderColor = categoryStyle.color;
+                    e.currentTarget.style.color = categoryStyle.darkColor;
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -438,30 +429,21 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
           padding: '0 4px'
         }}>
           {categoryItems.map((item) => {
-            // 파스텔 톤 색상 매핑
-            const pastelColors: Record<ItemCategory, { main: string; light: string }> = {
-              fusion: { main: '#ffb366', light: '#fff3e6' },
-              gem: { main: '#e8ca7a', light: '#faf5e6' },
-              engraving: { main: '#ff9b7a', light: '#fff0eb' },
-              accessory: { main: '#5fd4e8', light: '#e6f7fb' },
-              jewel: { main: '#b87ff2', light: '#f5ebff' }
-            };
-
-            const categoryColor = pastelColors[selectedCategory];
+            const categoryStyle = CATEGORY_STYLES[selectedCategory];
 
             return (
               <button
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
                 style={{
-                  backgroundColor: '#ffffff',
+                  backgroundColor: selectedItem.id === item.id ? categoryStyle.lightBg : '#ffffff',
                   borderRadius: '8px',
                   padding: '8px 10px',
                   fontWeight: selectedItem.id === item.id ? '700' : '600',
                   fontSize: '0.7rem',
                   transition: 'all 0.2s ease',
-                  border: `2px solid ${selectedItem.id === item.id ? categoryColor.main : '#e5e7eb'}`,
-                  color: selectedItem.id === item.id ? '#16a34a' : '#6b7280',
+                  border: `2px solid ${selectedItem.id === item.id ? categoryStyle.color : '#e5e7eb'}`,
+                  color: selectedItem.id === item.id ? categoryStyle.darkColor : '#6b7280',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -531,39 +513,42 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
             borderBottom: '1.5px solid #e5e7eb',
           }}
         >
-          <div className="d-flex flex-column align-items-center px-2">
-            {selectedItem.icon && (
-              <img
-                src={selectedItem.icon}
-                alt={selectedItem.name}
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '6px',
-                  border: `2px solid ${selectedItem.iconBorderColor || '#16a34a'}`,
-                  boxShadow: `0 2px 6px ${selectedItem.iconBorderColor ? selectedItem.iconBorderColor + '33' : 'rgba(22, 163, 74, 0.2)'}`,
-                  marginBottom: '8px'
-                }}
-              />
-            )}
-            <h6
-              className="mb-1"
-              style={{
-                fontWeight: '700',
-                color: '#16a34a',
-                fontSize: '0.75rem',
-                lineHeight: '1.3',
-                wordBreak: 'keep-all',
-                whiteSpace: 'normal'
-              }}
-            >
-              <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
-            </h6>
-            <small className="text-muted" style={{ fontSize: '0.65rem' }}>
-              {selectedItem.type === 'market' ? '거래소' : '경매장'} • 최근 30일
-            </small>
+          <div className="d-flex justify-content-between align-items-center px-2">
+            <div className="d-flex align-items-center gap-2">
+              {selectedItem.icon && (
+                <img
+                  src={selectedItem.icon}
+                  alt={selectedItem.name}
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '6px',
+                    border: `2px solid ${selectedItem.iconBorderColor || '#16a34a'}`,
+                    boxShadow: `0 2px 6px ${selectedItem.iconBorderColor ? selectedItem.iconBorderColor + '33' : 'rgba(22, 163, 74, 0.2)'}`
+                  }}
+                />
+              )}
+              <div>
+                <h6
+                  className="mb-0"
+                  style={{
+                    fontWeight: '700',
+                    color: '#16a34a',
+                    fontSize: '0.75rem',
+                    lineHeight: '1.3',
+                    wordBreak: 'keep-all',
+                    whiteSpace: 'normal'
+                  }}
+                >
+                  <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
+                </h6>
+                <small className="text-muted" style={{ fontSize: '0.65rem' }}>
+                  {selectedItem.type === 'market' ? '거래소' : '경매장'} • 30일
+                </small>
+              </div>
+            </div>
             {stats && (
-              <div className="mt-2 d-flex justify-content-center align-items-center gap-3">
+              <div className="text-end">
                 <div style={{ fontSize: '1rem', fontWeight: '700', color: '#16a34a' }}>
                   {formatTooltipPrice(stats.current)}
                 </div>
@@ -688,8 +673,21 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
 
               {/* 통계 - 모바일 */}
               {stats && (
-                <div className="row g-2 mb-4 d-md-none">
-                  <div className="col-6">
+                <div className="row g-2 mb-3 d-md-none">
+                  <div className="col-3">
+                    <div className="text-center" style={{
+                      backgroundColor: '#ffffff',
+                      borderRadius: '8px',
+                      border: '2px solid #16a34a',
+                      padding: '8px 2px'
+                    }}>
+                      <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>현재가</small>
+                      <strong style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: '700' }}>
+                        {formatPrice(stats.current)}
+                      </strong>
+                    </div>
+                  </div>
+                  <div className="col-3">
                     <div className="text-center" style={{
                       backgroundColor: '#ffffff',
                       borderRadius: '8px',
@@ -698,11 +696,11 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                     }}>
                       <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최저가</small>
                       <strong style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '700' }}>
-                        {formatTooltipPrice(stats.min)}
+                        {formatPrice(stats.min)}
                       </strong>
                     </div>
                   </div>
-                  <div className="col-6">
+                  <div className="col-3">
                     <div className="text-center" style={{
                       backgroundColor: '#ffffff',
                       borderRadius: '8px',
@@ -711,11 +709,11 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                     }}>
                       <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최고가</small>
                       <strong style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: '700' }}>
-                        {formatTooltipPrice(stats.max)}
+                        {formatPrice(stats.max)}
                       </strong>
                     </div>
                   </div>
-                  <div className="col-12">
+                  <div className="col-3">
                     <div className="text-center" style={{
                       backgroundColor: '#ffffff',
                       borderRadius: '8px',
@@ -724,10 +722,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                     }}>
                       <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>평균가</small>
                       <strong style={{ fontSize: '0.8rem', color: '#a855f7', fontWeight: '700' }}>
-                        {selectedItem?.id === '6861012' && stats.avg < 1000
-                          ? stats.avg.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G'
-                          : formatTooltipPrice(Math.round(stats.avg))
-                        }
+                        {formatPrice(Math.round(stats.avg))}
                       </strong>
                     </div>
                   </div>
@@ -912,9 +907,9 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                               y={0}
                               dy={8}
                               textAnchor="end"
-                              fill="#6b7280"
+                              fill="#374151"
                               fontSize={9}
-                              fontWeight="600"
+                              fontWeight="700"
                               transform="rotate(-45)"
                             >
                               {payload.value}
@@ -930,33 +925,33 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                                 fontWeight="700"
                                 transform="rotate(-45)"
                               >
-                                수
+                                수요일
                               </text>
                             )}
                           </g>
                         );
                       }}
                       height={45}
-                      stroke="#9ca3af"
-                      strokeWidth={1}
-                      tickLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
-                      axisLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
+                      stroke="#6b7280"
+                      strokeWidth={1.5}
+                      tickLine={{ stroke: '#9ca3af', strokeWidth: 1.5 }}
+                      axisLine={{ stroke: '#6b7280', strokeWidth: 1.5 }}
                     />
 
                     <YAxis
                       tick={{
                         fontSize: stats && stats.max >= 1000000 ? 7 : 9,
-                        fill: '#6b7280',
-                        fontWeight: '600'
+                        fill: '#374151',
+                        fontWeight: '700'
                       }}
                       tickFormatter={formatPrice}
                       width={stats && stats.max >= 1000000 ? 55 : stats && stats.max >= 100000 ? 45 : 35}
                       domain={yAxisConfig.domain}
                       tickCount={yAxisConfig.tickCount}
-                      stroke="#9ca3af"
-                      strokeWidth={1}
-                      tickLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
-                      axisLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
+                      stroke="#6b7280"
+                      strokeWidth={1.5}
+                      tickLine={{ stroke: '#9ca3af', strokeWidth: 1.5 }}
+                      axisLine={{ stroke: '#6b7280', strokeWidth: 1.5 }}
                     />
 
                     <Tooltip
@@ -987,7 +982,7 @@ export default function CompactPriceChart({ items }: CompactPriceChartProps) {
                       strokeDasharray="5 5"
                       strokeWidth={1.5}
                       label={{
-                        value: `AVG ${formatPrice(averagePrice)}`,
+                        value: `${formatPrice(averagePrice)}`,
                         position: 'left',
                         fill: '#16a34a',
                         fontSize: 9,
