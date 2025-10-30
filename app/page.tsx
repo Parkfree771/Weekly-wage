@@ -87,7 +87,24 @@ export default function Home() {
         <Row className="justify-content-center">
           <Col xl={11} lg={12} md={12}>
             <div className="text-center mb-3 mb-md-4">
-              <h1 className="title mb-2" style={{fontSize: 'clamp(1.5rem, 3.5vw, 2rem)'}}>로스트아크 주간 골드 계산</h1>
+              <div className="d-flex justify-content-center align-items-center gap-2 mb-2">
+                <img src="/icon.png" alt="로고" style={{ width: 'clamp(2rem, 4.5vw, 2.5rem)', height: 'auto' }} />
+<h1
+      className="title mb-0"
+      style={{
+        fontSize: 'clamp(1.5rem, 3.5vw, 2rem)',
+        fontWeight: 700,
+        // 🪨 돌색 그라디언트 텍스트
+        background: 'linear-gradient(145deg, #78716c 0%, #57534e 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+        letterSpacing: '-0.02em'
+      }}
+    >
+      로스트아크 주간 골드 계산
+    </h1>
+                 </div>
               <p className="text-muted mb-3" style={{fontSize: 'clamp(0.85rem, 1.8vw, 1rem)', fontWeight: '400'}}>
                 원정대 주간 골드 수익과 더보기 보상 손익을 계산해보세요
               </p>
@@ -159,39 +176,52 @@ export default function Home() {
             </div> */}
 
             {/* 가격 추이 그래프 섹션 */}
-            <div className="mt-3">
-              <Row className="justify-content-center">
-                <Col xl={9} lg={10} md={12}>
-                  <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden'}}>
-                    <Card.Header
-                      className="text-center py-2 border-0"
-                      style={{
-                        background: 'linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%)',
-                        borderBottom: '1px solid rgba(34, 197, 94, 0.1)'
-                      }}
-                    >
-                      <h3
-                        className="mb-0"
-                        style={{
-                          fontWeight: '600',
-                          fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                          background: 'linear-gradient(145deg, #16a34a, #15803d)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                          letterSpacing: '-0.025em'
-                        }}
-                      >
-                        거래소 & 경매장 가격 추이
-                      </h3>
-                    </Card.Header>
-                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: '#fafbff'}}>
-                      <PriceChartContainer />
-                    </Card.Body>
-                  </Card>
-                </Col>
-              </Row>
-            </div>
+            {/* 가격 추이 그래프 섹션 */}
+<div className="mt-3">
+  <Row className="justify-content-center">
+    <Col xl={9} lg={10} md={12}>
+      <Card className="border-0 shadow-lg" style={{ borderRadius: '16px', overflow: 'hidden' }}>
+        <Card.Header
+  className="text-center py-2 border-0"
+  style={{
+    background: 'linear-gradient(145deg, #f5f5f4 0%, #e7e5e4 100%)',
+    borderBottom: '1px solid rgba(120, 113, 108, 0.15)'
+  }}
+>
+  <h3
+    className="mb-0"
+    style={{
+      fontWeight: '600',
+      fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
+      // 돌맹이(바위) 톤 그라디언트
+      background: 'linear-gradient(145deg, #78716c 0%, #57534e 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+      letterSpacing: '-0.025em'
+    }}
+  >
+    거래소 & 경매장 가격 추이
+  </h3>
+</Card.Header>
+
+<Card.Body
+  className="p-2 p-md-3"
+  style={{
+    background: 'linear-gradient(180deg, #fafaf9 0%, #f4f4f5 100%)',
+    borderRadius: '0 0 0.5rem 0.5rem'
+  }}
+>
+  <PriceChartContainer />
+</Card.Body>
+
+
+
+      </Card>
+    </Col>
+  </Row>
+</div>
+
 
             {/* 더보기 효율 계산기 섹션 */}
             <div className="mt-3">

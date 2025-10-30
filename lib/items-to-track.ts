@@ -36,17 +36,17 @@ export type ItemCategory = 'fusion' | 'gem' | 'engraving' | 'accessory' | 'jewel
 export const TRACKED_ITEMS: TrackedItem[] = [
   // === 1. 융화재료 ===
   {
-    id: '6861011',
-    name: '최상급 오레하 융화 재료',
-    type: 'market',
-    icon: '/oreha-fusion-superior.png',
-    iconBorderColor: '#D97706' // 오렌지
-  },
-  {
     id: '6861012',
     name: '아비도스 융화 재료',
     type: 'market',
     icon: '/abidos-fusion.png',
+    iconBorderColor: '#D97706' // 오렌지
+  },
+  {
+    id: '6861011',
+    name: '최상급 오레하 융화 재료',
+    type: 'market',
+    icon: '/oreha-fusion-superior.png',
     iconBorderColor: '#D97706' // 오렌지
   },
 
@@ -396,5 +396,10 @@ export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   };
 
   const ids = categoryMap[category] || [];
-  return TRACKED_ITEMS.filter(item => ids.includes(item.id));
+  const itemsById = TRACKED_ITEMS.reduce((acc, item) => {
+    acc[item.id] = item;
+    return acc;
+  }, {} as Record<string, TrackedItem>);
+
+  return ids.map(id => itemsById[id]).filter((item): item is TrackedItem => !!item);
 }

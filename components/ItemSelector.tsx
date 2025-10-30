@@ -1,4 +1,3 @@
-
 'use client';
 
 import { ItemCategory, TrackedItem, getItemsByCategory } from '@/lib/items-to-track';
