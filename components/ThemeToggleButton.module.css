@@ -1,7 +1,7 @@
 .toggleButton {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
-  color: var(--text-primary);
+  color: #000000;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   cursor: pointer;
@@ -11,8 +11,49 @@
   top: 20px;
   right: 20px;
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .toggleButton:hover {
   background-color: var(--card-header-bg);
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* 다크모드일 때 아이콘 색상 */
+:global(.dark) .toggleButton {
+  color: #ffffff;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .toggleButton {
+    top: 10px;
+    right: 10px;
+    padding: 0.35rem 0.7rem;
+  }
+
+  .icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* 작은 모바일 화면 */
+@media (max-width: 480px) {
+  .toggleButton {
+    top: 8px;
+    right: 8px;
+    padding: 0.3rem 0.5rem;
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
 }
