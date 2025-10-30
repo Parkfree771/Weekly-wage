@@ -16,9 +16,10 @@ type Character = {
 type CharacterSearchProps = {
   onSelectionChange: (selectedCharacters: Character[]) => void;
   onSearch: () => void;
+  searched: boolean;
 };
 
-export default function CharacterSearch({ onSelectionChange, onSearch }: CharacterSearchProps) {
+export default function CharacterSearch({ onSelectionChange, onSearch, searched }: CharacterSearchProps) {
   const [characterName, setCharacterName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -26,6 +27,15 @@ export default function CharacterSearch({ onSelectionChange, onSearch }: Charact
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    if (!searched) {
+      setCharacterName('');
+      setCharacters([]);
+      setCheckedState([]);
+      setError(null);
+    }
+  }, [searched]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

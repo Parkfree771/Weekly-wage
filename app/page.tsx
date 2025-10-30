@@ -79,6 +79,11 @@ export default function Home() {
     return difficulty === 'hard' ? styles.hardButton : styles.normalButton;
   };
 
+  const handleReset = () => {
+    setSearched(false);
+    setSelectedCharacters([]);
+  };
+
   return (
     <div className={styles.mainContainer}>
       <ThemeToggleButton />
@@ -86,7 +91,7 @@ export default function Home() {
         <Row className="justify-content-center">
           <Col xl={11} lg={12} md={12}>
             <div className="text-center mb-3 mb-md-4">
-              <div className="d-flex justify-content-center align-items-center gap-2 mb-2">
+              <div className="d-flex justify-content-center align-items-center gap-2 mb-2" style={{ cursor: 'pointer' }} onClick={handleReset}>
                 <img src="/icon.png" alt="로고" style={{ width: 'clamp(2rem, 4.5vw, 2.5rem)', height: 'auto' }} />
                 <h1
                   className="title mb-0"
@@ -107,8 +112,16 @@ export default function Home() {
                 원정대 주간 골드 수익과 더보기 보상 손익을 계산해보세요
               </p>
             </div>
-            <CharacterSearch onSelectionChange={setSelectedCharacters} onSearch={handleSearch} />
+            <CharacterSearch onSelectionChange={setSelectedCharacters} onSearch={handleSearch} searched={searched} />
             
+            {searched && (
+              <div className="text-center mt-3">
+                <Button variant="secondary" onClick={handleReset} className="mb-3">
+                  새로 검색하기
+                </Button>
+              </div>
+            )}
+
             {/* 검색 후 원정대 주급 계산기 */}
             {searched && selectedCharacters.length > 0 && (
               <div className="mt-2 mt-md-3">
