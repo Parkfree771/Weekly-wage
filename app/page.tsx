@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
+import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { TRACKED_ITEMS } from '@/lib/items-to-track';
 import styles from './page.module.css';
 
@@ -15,8 +16,7 @@ const RaidCalculator = dynamic(() => import('@/components/RaidCalculator'), {
         <span className="visually-hidden">로딩중...</span>
       </div>
     </div>
-  ),
-  ssr: false
+  )
 });
 
 const SeeMoreCalculator = dynamic(() => import('@/components/SeeMoreCalculator'), {
@@ -26,8 +26,7 @@ const SeeMoreCalculator = dynamic(() => import('@/components/SeeMoreCalculator')
         <span className="visually-hidden">로딩중...</span>
       </div>
     </div>
-  ),
-  ssr: false
+  )
 });
 
 const PriceChartContainer = dynamic(() => import('@/components/PriceChartContainer'), {
@@ -37,8 +36,7 @@ const PriceChartContainer = dynamic(() => import('@/components/PriceChartContain
         <span className="visually-hidden">로딩중...</span>
       </div>
     </div>
-  ),
-  ssr: false
+  )
 });
 
 type Character = {
@@ -82,30 +80,30 @@ export default function Home() {
   };
 
   return (
-    <div className={`main-container ${searched ? 'searched' : ''}`}>
+    <div className={styles.mainContainer}>
+      <ThemeToggleButton />
       <Container fluid className="mt-3 mt-md-4">
         <Row className="justify-content-center">
           <Col xl={11} lg={12} md={12}>
             <div className="text-center mb-3 mb-md-4">
               <div className="d-flex justify-content-center align-items-center gap-2 mb-2">
                 <img src="/icon.png" alt="로고" style={{ width: 'clamp(2rem, 4.5vw, 2.5rem)', height: 'auto' }} />
-<h1
-      className="title mb-0"
-      style={{
-        fontSize: 'clamp(1.5rem, 3.5vw, 2rem)',
-        fontWeight: 700,
-        // 🪨 돌색 그라디언트 텍스트
-        background: 'linear-gradient(145deg, #78716c 0%, #57534e 100%)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-        letterSpacing: '-0.02em'
-      }}
-    >
-      로스트아크 주간 골드 계산
-    </h1>
-                 </div>
-              <p className="text-muted mb-3" style={{fontSize: 'clamp(0.85rem, 1.8vw, 1rem)', fontWeight: '400'}}>
+                <h1
+                  className="title mb-0"
+                  style={{
+                    fontSize: 'clamp(1.5rem, 3.5vw, 2rem)',
+                    fontWeight: 700,
+                    background: 'var(--gradient-text-stone)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    letterSpacing: '-0.02em'
+                  }}
+                >
+                  로스트아크 주간 골드 계산
+                </h1>
+              </div>
+              <p className="mb-3" style={{fontSize: 'clamp(0.85rem, 1.8vw, 1rem)', fontWeight: '400', color: 'var(--text-muted)'}}>
                 원정대 주간 골드 수익과 더보기 보상 손익을 계산해보세요
               </p>
             </div>
@@ -114,12 +112,12 @@ export default function Home() {
             {/* 검색 후 원정대 주급 계산기 */}
             {searched && selectedCharacters.length > 0 && (
               <div className="mt-2 mt-md-3">
-                <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden'}}>
+                <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                   <Card.Header
                     className="text-center py-2 border-0"
                     style={{
-                      background: 'linear-gradient(145deg, #f0f9ff 0%, #dbeafe 100%)',
-                      borderBottom: '1px solid rgba(59, 130, 246, 0.1)'
+                      background: 'var(--card-header-bg-blue)',
+                      borderBottom: '1px solid var(--border-color)'
                     }}
                   >
                     <h3
@@ -127,7 +125,7 @@ export default function Home() {
                       style={{
                         fontWeight: '600',
                         fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                        background: 'linear-gradient(145deg, #2563eb, #1d4ed8)',
+                        background: 'var(--gradient-text-blue)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                         backgroundClip: 'text',
@@ -137,100 +135,62 @@ export default function Home() {
                       원정대 주간 골드 계산
                     </h3>
                   </Card.Header>
-                  <Card.Body className="p-2 p-md-3" style={{backgroundColor: '#fafbff'}}>
+                  <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-blue)'}}>
                     <RaidCalculator selectedCharacters={selectedCharacters} />
                   </Card.Body>
                 </Card>
               </div>
             )}
 
-            {/* 공격대 시너지 분석기 섹션 */}
-            {/* <div className="mt-4">
-              <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden'}}>
-                <Card.Header
-                  className="text-center py-3 border-0"
-                  style={{
-                    background: 'linear-gradient(145deg, #fff0e6 0%, #ffe4cc 100%)',
-                    borderBottom: '1px solid rgba(251, 146, 60, 0.1)'
-                  }}
-                >
-                  <h3
-                    className="mb-0"
-                    style={{
-                      fontWeight: '600',
-                      fontSize: 'clamp(1.2rem, 2.5vw, 1.4rem)',
-                      background: 'linear-gradient(145deg, #ea580c, #dc2626)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      letterSpacing: '-0.025em'
-                    }}
-                  >
-                    공격대 시너지 분석
-                  </h3>
-                </Card.Header>
-                <Card.Body className="p-3 p-md-4" style={{backgroundColor: '#fefbf7'}}>
-                  <RaidSynergyAnalyzer />
-                </Card.Body>
-              </Card>
-            </div> */}
-
             {/* 가격 추이 그래프 섹션 */}
-            {/* 가격 추이 그래프 섹션 */}
-<div className="mt-3">
-  <Row className="justify-content-center">
-    <Col xl={9} lg={10} md={12}>
-      <Card className="border-0 shadow-lg" style={{ borderRadius: '16px', overflow: 'hidden' }}>
-        <Card.Header
-  className="text-center py-2 border-0"
-  style={{
-    background: 'linear-gradient(145deg, #f5f5f4 0%, #e7e5e4 100%)',
-    borderBottom: '1px solid rgba(120, 113, 108, 0.15)'
-  }}
->
-  <h3
-    className="mb-0"
-    style={{
-      fontWeight: '600',
-      fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-      // 돌맹이(바위) 톤 그라디언트
-      background: 'linear-gradient(145deg, #78716c 0%, #57534e 100%)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      backgroundClip: 'text',
-      letterSpacing: '-0.025em'
-    }}
-  >
-    거래소 & 경매장 가격 추이
-  </h3>
-</Card.Header>
-
-<Card.Body
-  className="p-2 p-md-3"
-  style={{
-    background: 'linear-gradient(180deg, #fafaf9 0%, #f4f4f5 100%)',
-    borderRadius: '0 0 0.5rem 0.5rem'
-  }}
->
-  <PriceChartContainer />
-</Card.Body>
-
-
-
-      </Card>
-    </Col>
-  </Row>
-</div>
-
+            <div className="mt-3">
+              <Row className="justify-content-center">
+                <Col xl={9} lg={10} md={12}>
+                  <Card className="border-0 shadow-lg" style={{ borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent' }}>
+                    <Card.Header
+                      className="text-center py-2 border-0"
+                      style={{
+                        background: 'var(--card-header-bg-stone)',
+                        borderBottom: '1px solid var(--border-color)'
+                      }}
+                    >
+                      <h3
+                        className="mb-0"
+                        style={{
+                          fontWeight: '600',
+                          fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
+                          background: 'var(--gradient-text-stone)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                          letterSpacing: '-0.025em'
+                        }}
+                      >
+                        거래소 & 경매장 가격 추이
+                      </h3>
+                    </Card.Header>
+                    <Card.Body
+                      className="p-2 p-md-3"
+                      style={{
+                        background: 'var(--card-body-bg-stone)',
+                        borderRadius: '0 0 16px 16px'
+                      }}
+                    >
+                      <PriceChartContainer />
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </div>
 
             {/* 더보기 효율 계산기 섹션 */}
             <div className="mt-3">
-              <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden'}}>
+              <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                 <Card.Header
                   className="text-center py-2 border-0"
                   style={{
-                    background: 'linear-gradient(145deg, #f8f9ff 0%, #e8ecff 100%)',
-                    borderBottom: '1px solid rgba(99, 102, 241, 0.1)'
+                    background: 'var(--card-header-bg-violet)',
+                    borderBottom: '1px solid var(--border-color)'
                   }}
                 >
                   <h3
@@ -238,7 +198,7 @@ export default function Home() {
                     style={{
                       fontWeight: '600',
                       fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                      background: 'linear-gradient(145deg, #4f46e5, #7c3aed)',
+                      background: 'var(--gradient-text-violet)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',
@@ -248,7 +208,7 @@ export default function Home() {
                     더보기 손익 계산
                   </h3>
                 </Card.Header>
-                <Card.Body className="p-2 p-md-3" style={{backgroundColor: '#fafbff'}}>
+                <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-blue)'}}>
                   <SeeMoreCalculator />
                 </Card.Body>
               </Card>
@@ -264,22 +224,23 @@ export default function Home() {
           <Row className="justify-content-center text-center">
             <Col md={8}>
               <div className="mb-2">
-                <p className="small mb-1 text-muted">
-                  &copy; {new Date().getFullYear()} <strong>로스트아크 주간 골드 계산</strong>
+                <p className="small mb-1" style={{ color: 'var(--text-muted)' }}>
+                  &copy; {new Date().getFullYear()} <strong style={{ color: 'var(--text-primary)' }}>로스트아크 주간 골드 계산</strong>
                 </p>
                 <div className="d-flex justify-content-center gap-3 mb-2">
-                  <a href="/privacy" className="text-muted text-decoration-none hover-primary small">
+                  <a href="/privacy" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
                     개인정보처리방침
                   </a>
-                  <span className="text-muted">|</span>
-                  <a href="/terms" className="text-muted text-decoration-none hover-primary small">
+                  <span style={{ color: 'var(--text-muted)' }}>|</span>
+                  <a href="/terms" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
                     이용약관
                   </a>
                 </div>
                 <Button 
                   variant="link" 
                   size="sm" 
-                  className="text-muted p-0 border-0"
+                  style={{ color: 'var(--text-muted)' }} 
+                  className="p-0 border-0"
                   onClick={() => setFooterOpen(!footerOpen)}
                 >
                   {footerOpen ? '▲ 사이트 정보 접기' : '▼ 사이트 정보 더보기'}
@@ -291,28 +252,28 @@ export default function Home() {
           {/* 확장 가능한 상세 정보 */}
           <Collapse in={footerOpen}>
             <div>
-              <hr className="my-3" style={{opacity: 0.3}} />
+              <hr className="my-3" style={{opacity: 0.3, borderColor: 'var(--border-color)'}} />
               <Row className="justify-content-center">
                 <Col lg={8} md={10}>
                   <Row className="gy-4 text-center text-md-start">
                     {/* 사이트 설명 */}
                     <Col md={6}>
-                      <h6 className="fw-semibold mb-3 text-primary">서비스 소개</h6>
-                      <p className="small text-muted mb-3">
+                      <h6 className="fw-semibold mb-3 text-primary" style={{ background: 'var(--footer-text-primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>서비스 소개</h6>
+                      <p className="small mb-3" style={{ color: 'var(--text-muted)' }}>
                         원정대 주간 골드 수익을 계산하고 더보기 보상의 손익을 분석하여
                         효율적인 로스트아크 플레이를 도와드립니다.
                       </p>
-                      <div className="small text-muted">
-                        <div>🌐 <strong>사이트:</strong> lostarkweeklygold.kr</div>
-                        <div>🔄 <strong>갱신:</strong> 매시 정각</div>
-                        <div>📊 <strong>데이터:</strong> 로스트아크 공식 API</div>
+                      <div className="small" style={{ color: 'var(--text-muted)' }}>
+                        <div>🌐 <strong style={{ color: 'var(--text-primary)' }}>사이트:</strong> lostarkweeklygold.kr</div>
+                        <div>🔄 <strong style={{ color: 'var(--text-primary)' }}>갱신:</strong> 매시 정각</div>
+                        <div>📊 <strong style={{ color: 'var(--text-primary)' }}>데이터:</strong> 로스트아크 공식 API</div>
                       </div>
                     </Col>
 
                     {/* 주요 기능 */}
                     <Col md={6}>
-                      <h6 className="fw-semibold mb-3 text-success">주요 기능</h6>
-                      <ul className="list-unstyled small text-muted">
+                      <h6 className="fw-semibold mb-3 text-success" style={{ color: 'var(--text-primary)' }}>주요 기능</h6>
+                      <ul className="list-unstyled small" style={{ color: 'var(--text-muted)' }}>
                         <li className="mb-1">✓ 캐릭터별 주간 골드 수익 계산</li>
                         <li className="mb-1">✓ 레이드 더보기 보상 손익 분석</li>
                         <li className="mb-1">✓ 실시간 거래소 가격 반영</li>
@@ -322,10 +283,10 @@ export default function Home() {
                   </Row>
                   
                   <div className="text-center mt-4">
-                    <p className="small text-muted mb-0">
+                    <p className="small mb-0" style={{ color: 'var(--text-muted)' }}>
                       본 사이트는 로스트아크 공식 서비스가 아니며, 스마일게이트와 무관한 팬사이트입니다.
                     </p>
-                    <p className="small text-muted mb-0">
+                    <p className="small mb-0" style={{ color: 'var(--text-muted)' }}>
                       Made with ❤️ for Lost Ark Players
                     </p>
                   </div>

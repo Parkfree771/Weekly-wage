@@ -2,13 +2,14 @@
 
 import { ItemCategory, TrackedItem, getItemsByCategory } from '@/lib/items-to-track';
 import { useMemo } from 'react';
+import { useTheme } from './ThemeProvider';
 
-export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; }> = {
-  fusion: { label: '융화재료', color: '#ffb366', darkColor: '#D97706', lightBg: '#fff7ed' },
-  gem: { label: '젬', color: '#8A2BE2', darkColor: '#4B0082', lightBg: '#F5EEFF' }, // 보라색 계열
-  engraving: { label: '유물 각인서', color: '#ff9b7a', darkColor: '#E11D48', lightBg: '#fff1f2' },
-  accessory: { label: '악세', color: '#5fd4e8', darkColor: '#0E7490', lightBg: '#ecfeff' },
-  jewel: { label: '보석', color: '#FF69B4', darkColor: '#C71585', lightBg: '#FFF0F5' } // 분홍색 계열
+export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; darkThemeColor: string; darkBg: string; }> = {
+  fusion: { label: '융화재료', color: '#ffb366', darkColor: '#D97706', lightBg: '#fff7ed', darkThemeColor: '#fbbf24', darkBg: '#453320' },
+  gem: { label: '젬', color: '#8A2BE2', darkColor: '#4B0082', lightBg: '#F5EEFF', darkThemeColor: '#c084fc', darkBg: '#3c2a4a' },
+  engraving: { label: '유물 각인서', color: '#ff9b7a', darkColor: '#E11D48', lightBg: '#fff1f2', darkThemeColor: '#f87171', darkBg: '#4d222a' },
+  accessory: { label: '악세', color: '#5fd4e8', darkColor: '#0E7490', lightBg: '#ecfeff', darkThemeColor: '#67e8f9', darkBg: '#1e3a4a' },
+  jewel: { label: '보석', color: '#FF69B4', darkColor: '#C71585', lightBg: '#FFF0F5', darkThemeColor: '#f472b6', darkBg: '#4a2239' }
 };
 
 // 카테고리 표시 순서 정의
@@ -74,6 +75,8 @@ export default function ItemSelector({
   onSelectCategory,
   onSelectItem,
 }: ItemSelectorProps) {
+  const { theme } = useTheme();
+
   const categoryItems = useMemo(() => {
     return getItemsByCategory(selectedCategory);
   }, [selectedCategory]);
@@ -95,10 +98,10 @@ export default function ItemSelector({
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '1rem',
                 padding: '12px 24px',
-                backgroundColor: '#ffffff',
-                border: `2px solid ${selectedCategory === cat ? CATEGORY_STYLES[cat].color : '#e5e7eb'}`,
+                backgroundColor: 'var(--card-bg)',
+                border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].color) : 'var(--border-color)'}`,
                 borderRadius: '10px',
-                color: selectedCategory === cat ? CATEGORY_STYLES[cat].darkColor : '#6b7280',
+                color: selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].darkColor) : 'var(--text-secondary)',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer',
                 letterSpacing: '0.3px'
@@ -106,16 +109,16 @@ export default function ItemSelector({
               onMouseEnter={(e) => {
                 if (selectedCategory !== cat) {
                   const categoryStyle = CATEGORY_STYLES[cat];
-                  e.currentTarget.style.backgroundColor = categoryStyle.lightBg;
-                  e.currentTarget.style.borderColor = categoryStyle.color;
-                  e.currentTarget.style.color = categoryStyle.darkColor;
+                  e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
+                  e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
+                  e.currentTarget.style.color = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
                 }
               }}
               onMouseLeave={(e) => {
                 if (selectedCategory !== cat) {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                  e.currentTarget.style.borderColor = '#e5e7eb';
-                  e.currentTarget.style.color = '#6b7280';
+                  e.currentTarget.style.backgroundColor = 'var(--card-bg)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
                 }
               }}
             >
@@ -136,10 +139,10 @@ export default function ItemSelector({
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '0.8rem',
                 padding: '8px 12px',
-                backgroundColor: '#ffffff',
-                border: `2px solid ${selectedCategory === cat ? CATEGORY_STYLES[cat].darkColor : '#e5e7eb'}`,
+                backgroundColor: 'var(--card-bg)',
+                border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].darkColor) : 'var(--border-color)'}`,
                 borderRadius: '8px',
-                color: selectedCategory === cat ? CATEGORY_STYLES[cat].darkColor : '#6b7280',
+                color: selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].darkColor) : 'var(--text-secondary)',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap'
@@ -166,14 +169,14 @@ export default function ItemSelector({
                 key={item.id}
                 onClick={() => onSelectItem(item)}
                 style={{
-                  backgroundColor: '#ffffff',
+                  backgroundColor: 'var(--card-bg)',
                   borderRadius: '10px',
                   padding: '10px 16px',
                   fontWeight: selectedItem.id === item.id ? '700' : '600',
                   fontSize: '0.875rem',
                   transition: 'all 0.2s ease',
-                  border: `2px solid ${selectedItem.id === item.id ? categoryStyle.color : '#e5e7eb'}`,
-                  color: selectedItem.id === item.id ? categoryStyle.darkColor : '#6b7280',
+                  border: `2px solid ${selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
+                  color: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -183,16 +186,16 @@ export default function ItemSelector({
                 }}
                 onMouseEnter={(e) => {
                   if (selectedItem.id !== item.id) {
-                    e.currentTarget.style.backgroundColor = categoryStyle.lightBg;
-                    e.currentTarget.style.borderColor = categoryStyle.color;
-                    e.currentTarget.style.color = categoryStyle.darkColor;
+                    e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
+                    e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
+                    e.currentTarget.style.color = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (selectedItem.id !== item.id) {
-                    e.currentTarget.style.backgroundColor = '#ffffff';
-                    e.currentTarget.style.borderColor = '#e5e7eb';
-                    e.currentTarget.style.color = '#6b7280';
+                    e.currentTarget.style.backgroundColor = 'var(--card-bg)';
+                    e.currentTarget.style.borderColor = 'var(--border-color)';
+                    e.currentTarget.style.color = 'var(--text-secondary)';
                   }
                 }}
               >
@@ -220,14 +223,14 @@ export default function ItemSelector({
                 key={item.id}
                 onClick={() => onSelectItem(item)}
                 style={{
-                  backgroundColor: '#ffffff',
+                  backgroundColor: 'var(--card-bg)',
                   borderRadius: '8px',
                   padding: '8px 10px',
                   fontWeight: selectedItem.id === item.id ? '700' : '600',
                   fontSize: '0.7rem',
                   transition: 'all 0.2s ease',
-                  border: `2px solid ${selectedItem.id === item.id ? categoryStyle.darkColor : '#e5e7eb'}`,
-                  color: selectedItem.id === item.id ? categoryStyle.darkColor : '#6b7280',
+                  border: `2px solid ${selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--border-color)'}`,
+                  color: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',

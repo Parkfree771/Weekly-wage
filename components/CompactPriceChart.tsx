@@ -1,5 +1,4 @@
-'use client';
-
+import { useTheme } from './ThemeProvider';
 import { useMemo, useCallback } from 'react';
 import { Card, Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
@@ -16,6 +15,8 @@ type CategoryStyle = {
   color: string;
   darkColor: string;
   lightBg: string;
+  darkThemeColor: string;
+  darkBg: string;
 };
 
 type CompactPriceChartProps = {
@@ -73,7 +74,30 @@ function ColoredItemName({ name }: { name: string }) {
 }
 
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle }: CompactPriceChartProps) {
-  const chartColor = categoryStyle?.darkColor || '#16a34a'; // 기본 색상
+  const { theme } = useTheme();
+
+  const chartColor = theme === 'dark'
+    ? (categoryStyle?.darkThemeColor || '#8ab4f8')
+    : (categoryStyle?.darkColor || '#16a34a');
+
+  const statBoxStyles = {
+    min: {
+        light: { bg: '#eff6ff', border: '#2563eb', text: '#3b82f6' },
+        dark: { bg: '#2d3748', border: '#60a5fa', text: '#8ab4f8' }
+    },
+    max: {
+        light: { bg: '#ccfbf1', border: '#0d9488', text: '#14b8a6' },
+        dark: { bg: '#2d3748', border: '#34d399', text: '#6ee7b7' }
+    },
+    avg: {
+        light: { bg: '#f1f5f9', border: '#334155', text: '#475569' },
+        dark: { bg: '#2d3748', border: '#94a3b8', text: '#cbd5e1' }
+    }
+  };
+
+  const minStyle = theme === 'dark' ? statBoxStyles.min.dark : statBoxStyles.min.light;
+  const maxStyle = theme === 'dark' ? statBoxStyles.max.dark : statBoxStyles.max.light;
+  const avgStyle = theme === 'dark' ? statBoxStyles.avg.dark : statBoxStyles.avg.light;
 
   const chartData = useMemo(() => {
     const dateMap = new Map<string, any>();
@@ -164,10 +188,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }
 
   return (
-    <Card className="border-0 shadow-sm" style={{ borderRadius: '16px' }}>
+    <Card className="border-0 shadow-sm" style={{ borderRadius: '16px', backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
       <Card.Header
         className="py-3 border-0 d-none d-md-block"
-        style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f8fffe 100%)', borderBottom: '2px solid #e5e7eb' }}
+        style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: '1px solid var(--border-color)' }}
       >
         <div className="d-flex justify-content-between align-items-center">
           <div className="d-flex align-items-center gap-2">
@@ -188,7 +212,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               <h5 className="mb-1" style={{ fontWeight: '700', color: chartColor }}>
                 <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
               </h5>
-              <small className="text-muted">
+              <small style={{ color: 'var(--text-muted)' }}>
                 {selectedItem.type === 'market' ? '거래소' : '경매장'} • 최근 30일
               </small>
             </div>
@@ -208,7 +232,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
       <Card.Header
         className="py-2 border-0 d-md-none"
-        style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f8fffe 100%)', borderBottom: '1.5px solid #e5e7eb' }}
+        style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: '1px solid var(--border-color)' }}
       >
         <div className="d-flex justify-content-between align-items-center">
           <div className="d-flex align-items-center gap-2">
@@ -229,7 +253,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.75rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'normal' }}>
                 <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
               </h6>
-              <small className="text-muted" style={{ fontSize: '0.65rem' }}>
+              <small style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>
                 {selectedItem.type === 'market' ? '거래소' : '경매장'} • 30일
               </small>
             </div>
@@ -247,44 +271,44 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         </div>
       </Card.Header>
 
-      <Card.Body className="p-2 p-md-3" style={{ backgroundColor: '#fafffe' }}>
+      <Card.Body className="p-2 p-md-3" style={{ backgroundColor: 'var(--card-bg)' }}>
         {loading ? (
           <div className="text-center py-5">
             <Spinner animation="border" variant="success" />
-            <p className="mt-3 text-muted">데이터 로딩 중...</p>
+            <p className="mt-3" style={{ color: 'var(--text-muted)' }}>데이터 로딩 중...</p>
           </div>
         ) : history.length === 0 ? (
           <div className="text-center py-5">
             <div style={{ fontSize: '3rem', opacity: 0.3 }}>📊</div>
-            <p className="text-muted mt-2">아직 수집된 데이터가 없습니다</p>
-            <small className="text-muted">가격 수집 후 차트가 표시됩니다</small>
+            <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>아직 수집된 데이터가 없습니다</p>
+            <small style={{ color: 'var(--text-muted)' }}>가격 수집 후 차트가 표시됩니다</small>
           </div>
         ) : (
           <>
             {stats && (
               <div className="d-none d-md-flex mb-4 justify-content-center gap-2">
                 <div style={{ width: '260px' }}>
-                  <div className="text-center" style={{ backgroundColor: '#ffffff', borderRadius: '10px', border: `2px solid ${chartColor}`, padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = categoryStyle?.lightBg || '#f0fdf4'; e.currentTarget.style.borderColor = categoryStyle?.darkColor || '#15803d'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.borderColor = chartColor; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>현재가</small>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${chartColor}`, padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4'); e.currentTarget.style.borderColor = theme === 'dark' ? (categoryStyle?.darkThemeColor || '#8ab4f8') : (categoryStyle?.darkColor || '#15803d'); }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = chartColor; }}>
+                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>현재가</small>
                     <strong style={{ fontSize: '1rem', color: chartColor, fontWeight: '700' }}>{formatTooltipPrice(stats.current)}</strong>
                   </div>
                 </div>
                 <div style={{ width: '260px' }}>
-                  <div className="text-center" style={{ backgroundColor: '#ffffff', borderRadius: '10px', border: '2px solid #3b82f6', padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#eff6ff'; e.currentTarget.style.borderColor = '#2563eb'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.borderColor = '#3b82f6'; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>최저가</small>
-                    <strong style={{ fontSize: '1rem', color: '#3b82f6', fontWeight: '700' }}>{formatTooltipPrice(stats.min)}</strong>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${minStyle.text}`, padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = minStyle.bg; e.currentTarget.style.borderColor = minStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = minStyle.text; }}>
+                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>최저가</small>
+                    <strong style={{ fontSize: '1rem', color: minStyle.text, fontWeight: '700' }}>{formatTooltipPrice(stats.min)}</strong>
                   </div>
                 </div>
                 <div style={{ width: '260px' }}>
-                  <div className="text-center" style={{ backgroundColor: '#ffffff', borderRadius: '10px', border: '2px solid #14b8a6', padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ccfbf1'; e.currentTarget.style.borderColor = '#0d9488'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.borderColor = '#14b8a6'; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>최고가</small>
-                    <strong style={{ fontSize: '1rem', color: '#14b8a6', fontWeight: '700' }}>{formatTooltipPrice(stats.max)}</strong>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${maxStyle.text}`, padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = maxStyle.bg; e.currentTarget.style.borderColor = maxStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = maxStyle.text; }}>
+                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>최고가</small>
+                    <strong style={{ fontSize: '1rem', color: maxStyle.text, fontWeight: '700' }}>{formatTooltipPrice(stats.max)}</strong>
                   </div>
                 </div>
                 <div style={{ width: '260px' }}>
-                  <div className="text-center" style={{ backgroundColor: '#ffffff', borderRadius: '10px', border: '2px solid #475569', padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.borderColor = '#334155'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.borderColor = '#475569'; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>평균가</small>
-                    <strong style={{ fontSize: '1rem', color: '#475569', fontWeight: '700' }}>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${avgStyle.text}`, padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = avgStyle.bg; e.currentTarget.style.borderColor = avgStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = avgStyle.text; }}>
+                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>평균가</small>
+                    <strong style={{ fontSize: '1rem', color: avgStyle.text, fontWeight: '700' }}>
                       {selectedItem?.id === '6861012' && stats.avg < 1000 ? stats.avg.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G' : formatTooltipPrice(Math.round(stats.avg))}
                     </strong>
                   </div>
@@ -295,27 +319,27 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
             {stats && (
               <div className="row g-2 mb-3 d-md-none">
                 <div className="col-3">
-                  <div className="text-center" style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: `2px solid ${chartColor}`, padding: '4px 2px' }}>
-                    <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>현재가</small>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: `2px solid ${chartColor}`, padding: '4px 2px' }}>
+                    <small className="d-block" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>현재가</small>
                     <strong style={{ fontSize: '0.8rem', color: chartColor, fontWeight: '700' }}>{formatPrice(stats.current)}</strong>
                   </div>
                 </div>
                 <div className="col-3">
-                  <div className="text-center" style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '2px solid #3b82f6', padding: '4px 2px' }}>
-                    <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최저가</small>
-                    <strong style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '700' }}>{formatPrice(stats.min)}</strong>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: `2px solid ${minStyle.text}`, padding: '4px 2px' }}>
+                    <small className="d-block" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최저가</small>
+                    <strong style={{ fontSize: '0.8rem', color: minStyle.text, fontWeight: '700' }}>{formatPrice(stats.min)}</strong>
                   </div>
                 </div>
                 <div className="col-3">
-                  <div className="text-center" style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '2px solid #14b8a6', padding: '4px 2px' }}>
-                    <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최고가</small>
-                    <strong style={{ fontSize: '0.8rem', color: '#14b8a6', fontWeight: '700' }}>{formatPrice(stats.max)}</strong>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: `2px solid ${maxStyle.text}`, padding: '4px 2px' }}>
+                    <small className="d-block" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최고가</small>
+                    <strong style={{ fontSize: '0.8rem', color: maxStyle.text, fontWeight: '700' }}>{formatPrice(stats.max)}</strong>
                   </div>
                 </div>
                 <div className="col-3">
-                  <div className="text-center" style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '2px solid #475569', padding: '4px 2px' }}>
-                    <small className="d-block" style={{ fontSize: '0.6rem', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>평균가</small>
-                    <strong style={{ fontSize: '0.8rem', color: '#475569', fontWeight: '700' }}>{formatPrice(Math.round(stats.avg))}</strong>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: `2px solid ${avgStyle.text}`, padding: '4px 2px' }}>
+                    <small className="d-block" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>평균가</small>
+                    <strong style={{ fontSize: '0.8rem', color: avgStyle.text, fontWeight: '700' }}>{formatPrice(Math.round(stats.avg))}</strong>
                   </div>
                 </div>
               </div>
@@ -325,12 +349,12 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
-                  <CartesianGrid strokeDasharray="5 5" stroke="#d1d5db" strokeWidth={1} vertical={true} horizontal={true} />
-                  <XAxis dataKey="날짜" tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); const isWednesday = dataIndex >= 0 ? chartData[dataIndex].isWednesday : false; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="#374151" fontSize={16} fontWeight="700" transform="rotate(-35)">{payload.value}</text>{isWednesday && (<text x={0} y={12} dy={10} textAnchor="end" fill="#ef4444" fontSize={12} fontWeight="700" transform="rotate(-35)">수요일</text>)}</g>); }} height={60} stroke="#6b7280" strokeWidth={2} tickLine={{ stroke: '#9ca3af', strokeWidth: 2 }} axisLine={{ stroke: '#6b7280', strokeWidth: 2 }} />
-                  <YAxis tick={{ fontSize: stats && stats.max >= 1000000 ? 14 : 16, fill: '#374151', fontWeight: '700' }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 95 : stats && stats.max >= 100000 ? 80 : 60} domain={yAxisConfig.domain} tickCount={yAxisConfig.tickCount} stroke="#6b7280" strokeWidth={2} tickLine={{ stroke: '#9ca3af', strokeWidth: 2 }} axisLine={{ stroke: '#6b7280', strokeWidth: 2 }} />
-                  <Tooltip formatter={(value: number) => [formatTooltipPrice(value), '가격']} labelFormatter={(label) => label} contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.98)', border: `3px solid ${chartColor}`, borderRadius: '12px', fontSize: '15px', padding: '14px 18px', boxShadow: '0 6px 16px rgba(0,0,0,0.2)', fontWeight: '600' }} labelStyle={{ fontWeight: '700', color: chartColor, marginBottom: '6px', fontSize: '16px' }} cursor={{ stroke: chartColor, strokeWidth: 2, strokeDasharray: '5 5' }} />
+                  <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical={true} horizontal={true} />
+                  <XAxis dataKey="날짜" tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); const isWednesday = dataIndex >= 0 ? chartData[dataIndex].isWednesday : false; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" transform="rotate(-35)">{payload.value}</text>{isWednesday && (<text x={0} y={12} dy={10} textAnchor="end" fill="#ef4444" fontSize={12} fontWeight="700" transform="rotate(-35)">수요일</text>)}</g>); }} height={60} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
+                  <YAxis tick={{ fontSize: stats && stats.max >= 1000000 ? 14 : 16, fill: 'var(--text-primary)', fontWeight: '700' }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 95 : stats && stats.max >= 100000 ? 80 : 60} domain={yAxisConfig.domain} tickCount={yAxisConfig.tickCount} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
+                  <Tooltip formatter={(value: number) => [formatTooltipPrice(value), '가격']} labelFormatter={(label) => label} contentStyle={{ backgroundColor: 'var(--card-bg)', border: `3px solid ${chartColor}`, borderRadius: '12px', fontSize: '15px', padding: '14px 18px', boxShadow: 'var(--shadow-lg)', fontWeight: '600', color: 'var(--text-primary)' }} labelStyle={{ fontWeight: '700', color: chartColor, marginBottom: '6px', fontSize: '16px' }} cursor={{ stroke: chartColor, strokeWidth: 2, strokeDasharray: '5 5' }} />
                   <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} label={{ value: `${formatPrice(averagePrice)}`, position: 'left', fill: chartColor, fontSize: 13, fontWeight: '700' }} />
-                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={{ r: 6, fill: chartColor, strokeWidth: 3, stroke: '#fff' }} activeDot={{ r: 9, fill: chartColor, stroke: '#fff', strokeWidth: 4 }} fill="url(#colorPrice)" />
+                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={{ r: 6, fill: chartColor, strokeWidth: 3, stroke: 'var(--card-bg)' }} activeDot={{ r: 9, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 4 }} fill="url(#colorPrice)" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -339,12 +363,12 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" strokeWidth={0.5} vertical={false} horizontal={true} />
-                  <XAxis dataKey="날짜" tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); const isWednesday = dataIndex >= 0 ? chartData[dataIndex].isWednesday : false; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="#374151" fontSize={9} fontWeight="700" transform="rotate(-45)">{payload.value}</text>{isWednesday && (<text x={0} y={8} dy={8} textAnchor="end" fill="#ef4444" fontSize={7} fontWeight="700" transform="rotate(-45)">수요일</text>)}</g>); }} height={45} stroke="#6b7280" strokeWidth={1.5} tickLine={{ stroke: '#9ca3af', strokeWidth: 1.5 }} axisLine={{ stroke: '#6b7280', strokeWidth: 1.5 }} />
-                  <YAxis tick={{ fontSize: stats && stats.max >= 1000000 ? 7 : 9, fill: '#374151', fontWeight: '700' }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 55 : stats && stats.max >= 100000 ? 45 : 35} domain={yAxisConfig.domain} tickCount={yAxisConfig.tickCount} stroke="#6b7280" strokeWidth={1.5} tickLine={{ stroke: '#9ca3af', strokeWidth: 1.5 }} axisLine={{ stroke: '#6b7280', strokeWidth: 1.5 }} />
-                  <Tooltip formatter={(value: number) => [formatTooltipPrice(value), '가격']} labelFormatter={(label) => label} contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.98)', border: `2px solid ${chartColor}`, borderRadius: '8px', fontSize: '11px', padding: '8px 10px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', fontWeight: '600' }} labelStyle={{ fontWeight: '700', color: chartColor, marginBottom: '4px', fontSize: '12px' }} cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: '3 3' }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />
+                  <XAxis dataKey="날짜" tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); const isWednesday = dataIndex >= 0 ? chartData[dataIndex].isWednesday : false; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" transform="rotate(-45)">{payload.value}</text>{isWednesday && (<text x={0} y={8} dy={8} textAnchor="end" fill="#ef4444" fontSize={7} fontWeight="700" transform="rotate(-45)">수요일</text>)}</g>); }} height={45} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
+                  <YAxis tick={{ fontSize: stats && stats.max >= 1000000 ? 7 : 9, fill: 'var(--text-primary)', fontWeight: '700' }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 55 : stats && stats.max >= 100000 ? 45 : 35} domain={yAxisConfig.domain} tickCount={yAxisConfig.tickCount} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
+                  <Tooltip formatter={(value: number) => [formatTooltipPrice(value), '가격']} labelFormatter={(label) => label} contentStyle={{ backgroundColor: 'var(--card-bg)', border: `2px solid ${chartColor}`, borderRadius: '8px', fontSize: '11px', padding: '8px 10px', boxShadow: 'var(--shadow-lg)', fontWeight: '600', color: 'var(--text-primary)' }} labelStyle={{ fontWeight: '700', color: chartColor, marginBottom: '4px', fontSize: '12px' }} cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: '3 3' }} />
                   <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} label={{ value: `${formatPrice(averagePrice)}`, position: 'left', fill: chartColor, fontSize: 9, fontWeight: '700' }} />
-                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.5} dot={{ r: 3, fill: chartColor, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, fill: chartColor, stroke: '#fff', strokeWidth: 2 }} fill="url(#colorPriceMobile)" />
+                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.5} dot={{ r: 3, fill: chartColor, strokeWidth: 2, stroke: 'var(--card-bg)' }} activeDot={{ r: 6, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} fill="url(#colorPriceMobile)" />
                 </LineChart>
               </ResponsiveContainer>
             </div>

@@ -17,11 +17,12 @@
   border-radius: 12px;
   transition: all 0.2s ease;
   position: relative;
+  color: var(--text-primary);
 }
 
 .raidButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-sm);
 }
 
 .raidButtonContent {
@@ -55,37 +56,38 @@
 
 /* 손익에 따른 색깔 구분 */
 .profitRaid {
-  border-color: #28a745 !important;
-  background-color: rgba(40, 167, 69, 0.1) !important;
+  border-color: var(--profit-color) !important;
+  background-color: var(--profit-bg) !important;
 }
 
 .profitRaid:hover {
-  background-color: rgba(40, 167, 69, 0.2) !important;
+  background-color: var(--profit-bg-hover) !important;
 }
 
 .lossRaid {
-  border-color: #dc3545 !important;
-  background-color: rgba(220, 53, 69, 0.1) !important;
+  border-color: var(--loss-color) !important;
+  background-color: var(--loss-bg) !important;
 }
 
 .lossRaid:hover {
-  background-color: rgba(220, 53, 69, 0.2) !important;
+  background-color: var(--loss-bg-hover) !important;
 }
 
 .neutralRaid {
-  border-color: #6c757d !important;
-  background-color: rgba(108, 117, 125, 0.1) !important;
+  border-color: var(--neutral-color) !important;
+  background-color: var(--neutral-bg) !important;
 }
 
 .neutralRaid:hover {
-  background-color: rgba(108, 117, 125, 0.2) !important;
+  background-color: var(--neutral-bg-hover) !important;
 }
 
 /* 선택된 레이드 카드 */
 .selectedRaidCard {
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
   border-radius: 12px;
+  background-color: var(--card-bg);
 }
 
 .rewardInfo {
@@ -96,7 +98,7 @@
 
 /* 새로고침 버튼 영역 */
 .refreshSection {
-  background-color: #f8f9fa;
+  background-color: var(--card-header-bg);
   padding: 15px;
   border-radius: 8px;
   margin: 20px 0;
@@ -105,12 +107,14 @@
 /* 테이블 스타일 개선 */
 .selectedRaidCard table {
   margin-bottom: 0;
+  color: var(--text-primary);
 }
 
 .selectedRaidCard th {
-  background-color: #f8f9fa;
+  background-color: var(--card-header-bg);
   font-weight: 600;
   border-top: none;
+  color: var(--text-primary);
 }
 
 .selectedRaidCard td {
@@ -119,21 +123,21 @@
 
 /* 게이트별 구분 */
 .gateSection {
-  border-left: 4px solid #007bff;
+  border-left: 4px solid var(--primary-brand);
   padding-left: 15px;
   margin-bottom: 25px;
 }
 
 .gateSection.profit {
-  border-left-color: #28a745;
+  border-left-color: var(--profit-color);
 }
 
 .gateSection.loss {
-  border-left-color: #dc3545;
+  border-left-color: var(--loss-color);
 }
 
 .gateSection.neutral {
-  border-left-color: #6c757d;
+  border-left-color: var(--neutral-color);
 }
 
 /* 반응형 디자인 */

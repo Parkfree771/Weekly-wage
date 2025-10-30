@@ -207,14 +207,14 @@ const SeeMoreCalculator: React.FC = () => {
       
       {/* 선택된 레이드의 더보기 정보 표시 영역 */}
       {selectedRaid && profitData[selectedRaid] && (
-        <Card className={`mt-4 ${styles.selectedRaidCard}`}>
-          <Card.Header as="h5">
+        <Card className={`mt-4 ${styles.selectedRaidCard}`} style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+          <Card.Header as="h5" style={{ backgroundColor: 'var(--card-header-bg)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>
             {selectedRaid} 더보기 보상
           </Card.Header>
           <Card.Body>
             {profitData[selectedRaid].map((gateData, index) => (
-              <div key={index} className={`${styles.gateSection} ${gateData.profitLoss > 0 ? styles.profit : gateData.profitLoss < 0 ? styles.loss : styles.neutral}`}>
-                <h6 className="mb-3">
+              <div key={index} className={`${styles.gateSection} ${gateData.profitLoss > 0 ? styles.profit : gateData.profitLoss < 0 ? styles.loss : styles.neutral}`} style={{ borderColor: 'var(--border-color)' }}>
+                <h6 className="mb-3" style={{ color: 'var(--text-primary)' }}>
                   {gateData.gate}관문 
                   <Badge 
                     bg={gateData.profitLoss > 0 ? 'success' : gateData.profitLoss < 0 ? 'danger' : 'secondary'}
@@ -224,7 +224,7 @@ const SeeMoreCalculator: React.FC = () => {
                   </Badge>
                 </h6>
                 
-                <Row className="mb-3">
+                <Row className="mb-3" style={{ color: 'var(--text-secondary)' }}>
                   <Col md={4}>
                     <strong>더보기 비용:</strong> {gateData.moreGold.toLocaleString()}골드
                   </Col>
@@ -239,7 +239,7 @@ const SeeMoreCalculator: React.FC = () => {
                   </Col>
                 </Row>
                 
-                <Table striped bordered hover size="sm">
+                <Table striped bordered hover size="sm" style={{ color: 'var(--text-primary)' }}>
                   <thead>
                     <tr>
                       <th>재료명</th>

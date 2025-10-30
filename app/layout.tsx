@@ -1,3 +1,4 @@
+import { ThemeProvider } from '@/components/ThemeProvider';
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import Script from "next/script";
@@ -68,7 +69,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={notoSansKr.className}>
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
 
         {/* Google Analytics - 최적화된 로딩 */}
         <Script

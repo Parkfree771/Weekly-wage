@@ -227,13 +227,13 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
       <Row>
         {selectedCharacters.map(character => (
           <Col md={4} key={character.characterName} className="mb-4">
-            <Card className="character-raid-card">
-              <Card.Header as="h5" className="character-raid-header">
+            <Card className="character-raid-card" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+              <Card.Header as="h5" className="character-raid-header" style={{ backgroundColor: 'var(--card-header-bg)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>
                 {character.characterName} <Badge bg="info">Lv. {character.itemLevel}</Badge>
                 <Badge bg="warning" className="ms-2">{calculateCharacterGold(character.characterName).toLocaleString()} G</Badge>
               </Card.Header>
               <Card.Body>
-                <Accordion flush>
+                <Accordion flush className="theme-accordion">
                   {Object.keys(groupedRaids).map(groupName => (
                     <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
                       <Accordion.Header>
@@ -314,7 +314,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
           </Col>
         ))}
       </Row>
-      <Card className="mt-4 total-gold-card">
+      <Card className="mt-4 total-gold-card" style={{ backgroundColor: 'var(--primary-brand)', color: 'white' }}>
         <Card.Body>
           <h4 className="text-center">총 골드: {calculateTotalGold().toLocaleString()} G</h4>
         </Card.Body>

@@ -139,12 +139,21 @@ export default function CharacterSearch({ onSelectionChange, onSearch }: Charact
               disabled={isLoading}
               className={`simple-search-input ${error ? 'is-invalid' : ''}`}
               autoComplete="off"
+              style={{ 
+                backgroundColor: 'var(--input-bg)', 
+                borderColor: 'var(--input-border)', 
+                color: 'var(--text-primary)' 
+              }}
             />
             <Button 
               variant="primary" 
               type="submit" 
               disabled={isLoading || !characterName.trim()} 
               className="simple-search-button"
+              style={{
+                backgroundColor: 'var(--primary-brand)',
+                borderColor: 'var(--primary-brand)',
+              }}
             >
               {isLoading ? (
                 <>
@@ -183,12 +192,16 @@ export default function CharacterSearch({ onSelectionChange, onSearch }: Charact
                     }
                   }}
                   aria-label={`${char.characterName} 레벨 ${char.itemLevel} ${checkedState[index] ? '선택됨' : '선택 안됨'}`}
+                  style={{
+                    backgroundColor: 'var(--card-bg)',
+                    borderColor: checkedState[index] ? 'var(--primary-brand)' : 'var(--border-color)',
+                  }}
                 >
                   <Card.Body>
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <div className="character-name" aria-hidden="true">{char.characterName}</div>
-                        <div className="character-level" aria-hidden="true">Lv. {char.itemLevel.toLocaleString()}</div>
+                        <div className="character-name" style={{ color: 'var(--text-primary)' }}>{char.characterName}</div>
+                        <div className="character-level" style={{ color: 'var(--text-secondary)' }}>Lv. {char.itemLevel.toLocaleString()}</div>
                       </div>
                       <Form.Check
                         type="checkbox"

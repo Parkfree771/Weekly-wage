@@ -1,3 +1,10 @@
+.mainContainer {
+  transition: background-color 0.3s ease, color 0.3s ease;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .seeMoreCard {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
