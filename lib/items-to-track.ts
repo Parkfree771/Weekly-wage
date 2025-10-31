@@ -161,6 +161,22 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     icon: '/engraving.png',
     iconBorderColor: '#ff6b35'
   },
+  {
+    id: '65200605',
+    name: '슈퍼차지',
+    displayName: '유물 각인서: 슈퍼차지',
+    type: 'market',
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35'
+  },
+  {
+    id: '65201505',
+    name: '결투의 대가',
+    displayName: '유물 각인서: 결투의 대가',
+    type: 'market',
+    icon: '/engraving.png',
+    iconBorderColor: '#ff6b35'
+  },
 
   // === 4. 악세 (경매장) ===
   // 목걸이 (중/상 조합)
@@ -355,6 +371,134 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     }
   },
 
+  // 서포터 목걸이 (상/중 조합)
+  {
+    id: 'auction_necklace_support_refine3',
+    name: '고대 목걸이 낙인력(상), 게이지(중)',
+    displayName: '고대 목걸이 [낙인력 800 (상), 세레나데/신앙/조화 게이지 획득량 증가 360 (중)] 품질 70 이상, 3단계 연마',
+    type: 'auction',
+    searchName: '',
+    categoryCode: 200010, // 목걸이
+    icon: '/ancient-necklace.png',
+    iconBorderColor: '#06b6d4', // 청록색 (목걸이)
+    filters: {
+      ItemGrade: '고대',
+      ItemTier: 4,
+      ItemGradeQuality: 70,
+      ItemUpgradeLevel: 3,
+      EtcOptions: [
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 44, // 낙인력
+          MinValue: 800, // 800
+          MaxValue: 800 // 정확히 800
+        },
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 43, // 세레나데, 신앙, 조화 게이지 획득량 증가
+          MinValue: 360, // 360
+          MaxValue: 600 // 600까지 (중)
+        }
+      ]
+    }
+  },
+
+  // 서포터 목걸이 (상/상 조합)
+  {
+    id: 'auction_necklace_support_refine3_high',
+    name: '고대 목걸이 낙인력(상), 게이지(상)',
+    displayName: '고대 목걸이 [낙인력 800 (상), 세레나데/신앙/조화 게이지 획득량 증가 600 (상)] 품질 70 이상, 3단계 연마',
+    type: 'auction',
+    searchName: '',
+    categoryCode: 200010, // 목걸이
+    icon: '/ancient-necklace.png',
+    iconBorderColor: '#06b6d4', // 청록색 (목걸이)
+    filters: {
+      ItemGrade: '고대',
+      ItemTier: 4,
+      ItemGradeQuality: 70,
+      ItemUpgradeLevel: 3,
+      EtcOptions: [
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 44, // 낙인력
+          MinValue: 800, // 800
+          MaxValue: 800 // 정확히 800
+        },
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 43, // 세레나데, 신앙, 조화 게이지 획득량 증가
+          MinValue: 600, // 600
+          MaxValue: 600 // 정확히 600
+        }
+      ]
+    }
+  },
+
+  // 서포터 반지 (상/중 조합)
+  {
+    id: 'auction_ring_support_refine3',
+    name: '고대 반지 아군공강(상), 아군피강(중)',
+    displayName: '고대 반지 [아군 공격력 강화 효과 300 (상), 아군 피해량 강화 효과 750 (중)] 품질 70 이상, 3단계 연마',
+    type: 'auction',
+    searchName: '',
+    categoryCode: 200030, // 반지
+    icon: '/ancient-ring.png',
+    iconBorderColor: '#3b82f6', // 파란색 (반지)
+    filters: {
+      ItemGrade: '고대',
+      ItemTier: 4,
+      ItemGradeQuality: 70,
+      ItemUpgradeLevel: 3,
+      EtcOptions: [
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 51, // 아군 공격력 강화 효과
+          MinValue: 300, // 300
+          MaxValue: 300 // 정확히 300
+        },
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 52, // 아군 피해량 강화 효과
+          MinValue: 750, // 750
+          MaxValue: 750 // 정확히 750
+        }
+      ]
+    }
+  },
+
+  // 서포터 반지 (상/상 조합)
+  {
+    id: 'auction_ring_support_refine3_high',
+    name: '고대 반지 아군공강(상), 아군피강(상)',
+    displayName: '고대 반지 [아군 공격력 강화 효과 500 (상), 아군 피해량 강화 효과 750 (상)] 품질 70 이상, 3단계 연마',
+    type: 'auction',
+    searchName: '',
+    categoryCode: 200030, // 반지
+    icon: '/ancient-ring.png',
+    iconBorderColor: '#3b82f6', // 파란색 (반지)
+    filters: {
+      ItemGrade: '고대',
+      ItemTier: 4,
+      ItemGradeQuality: 70,
+      ItemUpgradeLevel: 3,
+      EtcOptions: [
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 51, // 아군 공격력 강화 효과
+          MinValue: 500, // 500
+          MaxValue: 500 // 정확히 500
+        },
+        {
+          FirstOption: 7, // 연마 효과
+          SecondOption: 52, // 아군 피해량 강화 효과
+          MinValue: 750, // 750
+          MaxValue: 750 // 정확히 750
+        }
+      ]
+    }
+  },
+
   // === 5. 보석 (경매장) ===
   {
     id: 'auction_gem_fear_8',
@@ -363,6 +507,15 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '8레벨 겁화',
     categoryCode: 210000, // 보석 카테고리
     icon: '/gem-fear-8.png',
+    iconBorderColor: '#9333ea' // 보라색
+  },
+  {
+    id: 'auction_gem_fear_9',
+    name: '9레벨 겁화의 보석',
+    type: 'auction',
+    searchName: '9레벨 겁화',
+    categoryCode: 210000, // 보석 카테고리
+    icon: '/gem-fear-8.png', // 8레벨과 동일한 이미지
     iconBorderColor: '#9333ea' // 보라색
   },
   {
@@ -390,9 +543,9 @@ export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
     fusion: ['6861012', '6861011'],
     gem: ['67400003', '67400103', '67410303', '67410403'],
-    engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105'],
-    accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high'],
-    jewel: ['auction_gem_fear_8', 'auction_gem_fear_10', 'auction_gem_flame_10']
+    engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
+    accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high', 'auction_necklace_support_refine3', 'auction_necklace_support_refine3_high', 'auction_ring_support_refine3', 'auction_ring_support_refine3_high'],
+    jewel: ['auction_gem_fear_8', 'auction_gem_fear_9', 'auction_gem_fear_10', 'auction_gem_flame_10']
   };
 
   const ids = categoryMap[category] || [];

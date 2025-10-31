@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
@@ -92,7 +93,7 @@ export default function Home() {
           <Col xl={11} lg={12} md={12}>
             <div className="text-center mb-3 mb-md-4">
               <div className="d-flex justify-content-center align-items-center gap-2 mb-2" style={{ cursor: 'pointer' }} onClick={handleReset}>
-                <img src="/icon.png" alt="로고" style={{ width: 'clamp(2rem, 4.5vw, 2.5rem)', height: 'auto' }} />
+                <Image src="/icon.png" alt="로고" width={40} height={40} priority style={{ width: 'clamp(2rem, 4.5vw, 2.5rem)', height: 'auto' }} />
                 <h1
                   className="title mb-0"
                   style={{

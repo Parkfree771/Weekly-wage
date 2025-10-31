@@ -26,30 +26,35 @@ const SeeMoreCalculator: React.FC = () => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
   };
 
-  // 컴포넌트 마운트시 및 1시간마다 정각 갱신
+  // 컴포넌트 마운트시 및 1시간마다 정각 갱신 (중복 useEffect 통합)
   useEffect(() => {
+    // 초기 계산
     calculateRaidProfitsWithCurrentPrices();
-    
+
     // 다음 정각까지의 시간 계산
     const now = new Date();
     const nextHour = new Date(now);
     nextHour.setHours(now.getHours() + 1, 0, 0, 0);
     const timeUntilNextHour = nextHour.getTime() - now.getTime();
-    
+
     // 첫 번째 타이머: 다음 정각까지
     const firstTimer = setTimeout(() => {
       calculateRaidProfitsWithCurrentPrices();
-      
+
       // 이후 1시간마다 정각 갱신
       const interval = setInterval(() => {
         calculateRaidProfitsWithCurrentPrices();
       }, 60 * 60 * 1000); // 1시간마다 실행
-      
+
+      // cleanup 함수 등록
       return () => clearInterval(interval);
     }, timeUntilNextHour);
-    
-    return () => clearTimeout(firstTimer);
-  }, []);
+
+    // cleanup: 타이머 정리
+    return () => {
+      clearTimeout(firstTimer);
+    };
+  }, []); // 빈 의존성 배열로 중복 실행 방지
 
 
   // 최근 거래가로 수익 계산 (자동으로 5분마다 실행)
@@ -132,11 +137,7 @@ const SeeMoreCalculator: React.FC = () => {
       setLoading(false);
     }
   };
-  
-  useEffect(() => {
-    calculateRaidProfitsWithCurrentPrices();
-  }, []);
-  
+
   // 손익 계산 함수
   const calculateProfitLoss = (raidName: string): number => {
     const raidData = profitData[raidName];
