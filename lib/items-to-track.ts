@@ -375,7 +375,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   {
     id: 'auction_necklace_support_refine3',
     name: '고대 목걸이 낙인력(상), 게이지(중)',
-    displayName: '낙인력 8.0% (상)\n세레나데/신앙/조화 게이지 획득량 증가 3.6% (중)\n품질 70 이상, 3단계 연마',
+    displayName: '낙인력 8.0% (상)\n아덴 획득량 증가 3.6% (중)\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200010, // 목걸이
@@ -407,7 +407,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   {
     id: 'auction_necklace_support_refine3_high',
     name: '고대 목걸이 낙인력(상), 게이지(상)',
-    displayName: '낙인력 8.0% (상)\n세레나데/신앙/조화 게이지 획득량 증가 6.0% (상)\n품질 70 이상, 3단계 연마',
+    displayName: '낙인력 8.0% (상)\n아덴 획득량 증가 6.0% (상)\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200010, // 목걸이
