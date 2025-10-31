@@ -262,10 +262,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           </div>
           {stats && (
             <div className="text-end">
-              <div style={{ fontSize: '1rem', fontWeight: '700', color: chartColor }}>
+              <div style={{ fontSize: '1rem', fontWeight: '700', color: chartColor, whiteSpace: 'nowrap' }}>
                 {formatTooltipPrice(stats.current)}
               </div>
-              <div style={{ fontSize: '0.7rem', color: changeRate >= 0 ? '#ef4444' : '#3b82f6' }}>
+              <div style={{ fontSize: '0.7rem', color: changeRate >= 0 ? '#ef4444' : '#3b82f6', whiteSpace: 'nowrap' }}>
                 {changeRate >= 0 ? '▲' : '▼'} {Math.abs(changeRate).toFixed(1)}%
               </div>
             </div>
