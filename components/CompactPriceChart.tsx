@@ -1,5 +1,6 @@
 import { useTheme } from './ThemeProvider';
 import { useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { TrackedItem, ItemCategory } from '@/lib/items-to-track';
@@ -196,12 +197,12 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         <div className="d-flex justify-content-between align-items-center">
           <div className="d-flex align-items-center gap-2">
             {selectedItem.icon && (
-              <img
+              <Image
                 src={selectedItem.icon}
                 alt={selectedItem.name}
+                width={48}
+                height={48}
                 style={{
-                  width: '48px',
-                  height: '48px',
                   borderRadius: '8px',
                   border: `2px solid ${selectedItem.iconBorderColor || chartColor}`,
                   boxShadow: `0 2px 8px ${selectedItem.iconBorderColor ? selectedItem.iconBorderColor + '33' : chartColor + '33'}`
@@ -237,11 +238,12 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         <div className="d-flex justify-content-between align-items-center">
           <div className="d-flex align-items-center gap-2">
             {selectedItem.icon && (
-              <img
+              <Image
                 src={selectedItem.icon}
                 alt={selectedItem.name}
+                width={36}
+                height={36}
                 style={{
-                  width: '36px',
                   height: '36px',
                   borderRadius: '6px',
                   border: `2px solid ${selectedItem.iconBorderColor || chartColor}`,

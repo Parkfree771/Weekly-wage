@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Table, Form, Badge, Accordion, Row, Col } from 'react-bootstrap';
 import { raids } from '@/data/raids';
 
@@ -21,21 +21,21 @@ type GateSelection = {
   };
 };
 
-const groupRaids = () => {
-  const grouped: { [key: string]: any[] } = {};
-  raids.forEach(raid => {
-    const groupName = raid.name.split(' ')[0];
-    if (!grouped[groupName]) {
-      grouped[groupName] = [];
-    }
-    grouped[groupName].push(raid);
-  });
-  return grouped;
-};
-
 export default function RaidCalculator({ selectedCharacters }: RaidCalculatorProps) {
   const [gateSelection, setGateSelection] = useState<GateSelection>({});
-  const groupedRaids = groupRaids();
+
+  // groupRaids를 useMemo로 메모이제이션 (raids는 변경되지 않으므로 한 번만 계산)
+  const groupedRaids = useMemo(() => {
+    const grouped: { [key: string]: any[] } = {};
+    raids.forEach(raid => {
+      const groupName = raid.name.split(' ')[0];
+      if (!grouped[groupName]) {
+        grouped[groupName] = [];
+      }
+      grouped[groupName].push(raid);
+    });
+    return grouped;
+  }, []); // raids는 static이므로 빈 의존성 배열
 
   useEffect(() => {
     const initialSelection: GateSelection = {};

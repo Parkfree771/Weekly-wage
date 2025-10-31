@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Form, Button, InputGroup, Row, Col, Card } from 'react-bootstrap';
 
 type Sibling = {
@@ -122,11 +122,11 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
     }
   };
 
-  const handleCheckboxChange = (index: number) => {
+  const handleCheckboxChange = useCallback((index: number) => {
     const newCheckedState = [...checkedState];
     newCheckedState[index] = !newCheckedState[index];
     setCheckedState(newCheckedState);
-  };
+  }, [checkedState]);
 
   useEffect(() => {
     const selectedCharacters = characters.filter((_, index) => checkedState[index]);
