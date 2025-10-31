@@ -183,7 +183,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   {
     id: 'auction_necklace_ancient_refine3',
     name: '고대 목걸이 적주피(상), 추피(중)',
-    displayName: '고대 목걸이 [적에게 주는 피해 증가 2.0% (상), 추가 피해 1.6% (중)] 품질 70 이상, 3단계 연마',
+    displayName: '고대 목걸이 [적에게 주는 피해 증가 2.0% (상), 추가 피해 1.6% (중)]\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200010, // 목걸이
@@ -215,7 +215,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   {
     id: 'auction_ring_ancient_refine3',
     name: '고대 반지 치피(상), 치적(중)',
-    displayName: '고대 반지 [치명타 피해 4.0% (상), 치명타 적중률 0.95% (중)] 품질 70 이상, 3단계 연마',
+    displayName: '고대 반지 [치명타 피해 4.0% (상), 치명타 적중률 0.95% (중)]\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200030, // 반지
@@ -247,7 +247,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   {
     id: 'auction_earring_ancient_refine3',
     name: '고대 귀걸이 공%(상), 무공%(중)',
-    displayName: '고대 귀걸이 [공격력 % 1.55% (상), 무기 공격력 % 1.80% (중)] 품질 70 이상, 3단계 연마',
+    displayName: '고대 귀걸이 [공격력 % 1.55% (상), 무기 공격력 % 1.80% (중)]\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200020, // 귀걸이
@@ -279,7 +279,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   {
     id: 'auction_necklace_ancient_refine3_high',
     name: '고대 목걸이 적주피(상), 추피(상)',
-    displayName: '고대 목걸이 [적에게 주는 피해 증가 2.0% (상), 추가 피해 2.6% (상)] 품질 70 이상, 3단계 연마',
+    displayName: '고대 목걸이 [적에게 주는 피해 증가 2.0% (상), 추가 피해 2.6% (상)]\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200010, // 목걸이
@@ -311,7 +311,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   {
     id: 'auction_ring_ancient_refine3_high',
     name: '고대 반지 치피(상), 치적(상)',
-    displayName: '고대 반지 [치명타 피해 4.0% (상), 치명타 적중률 1.55% (상)] 품질 70 이상, 3단계 연마',
+    displayName: '고대 반지 [치명타 피해 4.0% (상), 치명타 적중률 1.55% (상)]\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200030, // 반지
@@ -343,7 +343,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   {
     id: 'auction_earring_ancient_refine3_high',
     name: '고대 귀걸이 공%(상), 무공%(상)',
-    displayName: '고대 귀걸이 [공격력 % 1.55% (상), 무기 공격력 % 3.0% (상)] 품질 70 이상, 3단계 연마',
+    displayName: '고대 귀걸이 [공격력 % 1.55% (상), 무기 공격력 % 3.0% (상)]\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200020, // 귀걸이
@@ -375,7 +375,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   {
     id: 'auction_necklace_support_refine3',
     name: '고대 목걸이 낙인력(상), 게이지(중)',
-    displayName: '고대 목걸이 [낙인력 800 (상), 세레나데/신앙/조화 게이지 획득량 증가 360 (중)] 품질 70 이상, 3단계 연마',
+    displayName: '고대 목걸이 [낙인력 8.0% (상), 세레나데/신앙/조화 게이지 획득량 증가 3.6% (중)]\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200010, // 목걸이
@@ -407,7 +407,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   {
     id: 'auction_necklace_support_refine3_high',
     name: '고대 목걸이 낙인력(상), 게이지(상)',
-    displayName: '고대 목걸이 [낙인력 800 (상), 세레나데/신앙/조화 게이지 획득량 증가 600 (상)] 품질 70 이상, 3단계 연마',
+    displayName: '고대 목걸이 [낙인력 8.0% (상), 세레나데/신앙/조화 게이지 획득량 증가 6.0% (상)]\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200010, // 목걸이
@@ -438,8 +438,8 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   // 서포터 반지 (상/중 조합)
   {
     id: 'auction_ring_support_refine3',
-    name: '고대 반지 아군공강(상), 아군피강(중)',
-    displayName: '고대 반지 [아군 공격력 강화 효과 300 (상), 아군 피해량 강화 효과 750 (중)] 품질 70 이상, 3단계 연마',
+    name: '고대 반지 아공강(상), 아피강(중)',
+    displayName: '고대 반지 [아군 공격력 강화 효과 3.0% (상), 아군 피해량 강화 효과 7.5% (중)]\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200030, // 반지
@@ -470,8 +470,8 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   // 서포터 반지 (상/상 조합)
   {
     id: 'auction_ring_support_refine3_high',
-    name: '고대 반지 아군공강(상), 아군피강(상)',
-    displayName: '고대 반지 [아군 공격력 강화 효과 500 (상), 아군 피해량 강화 효과 750 (상)] 품질 70 이상, 3단계 연마',
+    name: '고대 반지 아공강(상), 아피강(상)',
+    displayName: '고대 반지 [아군 공격력 강화 효과 5.0% (상), 아군 피해량 강화 효과 7.5% (상)]\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200030, // 반지

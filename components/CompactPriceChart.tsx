@@ -252,7 +252,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               />
             )}
             <div>
-              <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.75rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'normal' }}>
+              <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.75rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
                 <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
               </h6>
               <small style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>
