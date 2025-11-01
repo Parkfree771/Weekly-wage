@@ -504,37 +504,49 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     id: 'auction_gem_fear_8',
     name: '8레벨 겁화의 보석',
     type: 'auction',
-    searchName: '8레벨 겁화',
+    searchName: '8레벨 겁화의 보석',
     categoryCode: 210000, // 보석 카테고리
     icon: '/gem-fear-8.png',
-    iconBorderColor: '#9333ea' // 보라색
+    iconBorderColor: '#9333ea', // 보라색
+    filters: {
+      ItemTier: 4
+    }
   },
   {
     id: 'auction_gem_fear_9',
     name: '9레벨 겁화의 보석',
     type: 'auction',
-    searchName: '9레벨 겁화',
+    searchName: '9레벨 겁화의 보석',
     categoryCode: 210000, // 보석 카테고리
     icon: '/gem-fear-8.png', // 8레벨과 동일한 이미지
-    iconBorderColor: '#9333ea' // 보라색
+    iconBorderColor: '#9333ea', // 보라색
+    filters: {
+      ItemTier: 4
+    }
   },
   {
     id: 'auction_gem_fear_10',
     name: '10레벨 겁화의 보석',
     type: 'auction',
-    searchName: '10레벨 겁화',
+    searchName: '10레벨 겁화의 보석',
     categoryCode: 210000,
     icon: '/gem-fear-10.png',
-    iconBorderColor: '#9333ea' // 보라색
+    iconBorderColor: '#9333ea', // 보라색
+    filters: {
+      ItemTier: 4
+    }
   },
   {
     id: 'auction_gem_flame_10',
     name: '10레벨 작열의 보석',
     type: 'auction',
-    searchName: '10레벨 작열',
+    searchName: '10레벨 작열의 보석',
     categoryCode: 210000,
     icon: '/gem-flame-10.png',
-    iconBorderColor: '#dc2626' // 빨간색
+    iconBorderColor: '#dc2626', // 빨간색
+    filters: {
+      ItemTier: 4
+    }
   }
 ];
 

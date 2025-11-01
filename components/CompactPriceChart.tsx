@@ -1,5 +1,5 @@
 import { useTheme } from './ThemeProvider';
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
@@ -74,8 +74,11 @@ function ColoredItemName({ name }: { name: string }) {
   return <>{parts}</>;
 }
 
+type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
+
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle }: CompactPriceChartProps) {
   const { theme } = useTheme();
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('1m');
 
   const chartColor = theme === 'dark'
     ? (categoryStyle?.darkThemeColor || '#8ab4f8')
@@ -100,9 +103,43 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const maxStyle = theme === 'dark' ? statBoxStyles.max.dark : statBoxStyles.max.light;
   const avgStyle = theme === 'dark' ? statBoxStyles.avg.dark : statBoxStyles.avg.light;
 
+  // 기간에 따른 데이터 필터링
+  const filteredHistory = useMemo(() => {
+    if (history.length === 0) return [];
+
+    // ALL인 경우 모든 데이터 반환
+    if (selectedPeriod === 'all') return history;
+
+    const now = new Date();
+    const cutoffDate = new Date();
+
+    switch (selectedPeriod) {
+      case '7d':
+        cutoffDate.setDate(now.getDate() - 7);
+        break;
+      case '1m':
+        cutoffDate.setMonth(now.getMonth() - 1);
+        break;
+      case '3m':
+        cutoffDate.setMonth(now.getMonth() - 3);
+        break;
+      case '6m':
+        cutoffDate.setMonth(now.getMonth() - 6);
+        break;
+      case '1y':
+        cutoffDate.setFullYear(now.getFullYear() - 1);
+        break;
+    }
+
+    return history.filter(entry => {
+      const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
+      return entryDate >= cutoffDate;
+    });
+  }, [history, selectedPeriod]);
+
   const chartData = useMemo(() => {
     const dateMap = new Map<string, any>();
-    history.forEach((entry) => {
+    filteredHistory.forEach((entry) => {
       let month: number, day: number, year: number;
       if (entry.date) {
         [year, month, day] = entry.date.split('-').map(Number);
@@ -124,7 +161,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       });
     });
     return Array.from(dateMap.values()).sort((a, b) => a.rawTime - b.rawTime);
-  }, [history]);
+  }, [filteredHistory]);
 
   const formatPrice = useCallback((value: number) => {
     if (selectedItem?.id === '6861012' && value < 1000) {
@@ -141,14 +178,14 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }, [selectedItem?.id]);
 
   const stats = useMemo(() => {
-    if (history.length === 0) return null;
+    if (filteredHistory.length === 0) return null;
     return {
-      current: history[history.length - 1].price,
-      min: Math.min(...history.map(h => h.price)),
-      max: Math.max(...history.map(h => h.price)),
-      avg: history.reduce((sum, h) => sum + h.price, 0) / history.length,
+      current: filteredHistory[filteredHistory.length - 1].price,
+      min: Math.min(...filteredHistory.map(h => h.price)),
+      max: Math.max(...filteredHistory.map(h => h.price)),
+      avg: filteredHistory.reduce((sum, h) => sum + h.price, 0) / filteredHistory.length,
     };
-  }, [history]);
+  }, [filteredHistory]);
 
   const yAxisConfig = useMemo(() => {
     if (!stats) return { domain: ['auto', 'auto'], tickCount: 5 };
@@ -176,9 +213,19 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }, [chartData]);
 
   const averagePrice = useMemo(() => {
-    if (history.length === 0) return 0;
-    return history.reduce((acc, entry) => acc + entry.price, 0) / history.length;
-  }, [history]);
+    if (filteredHistory.length === 0) return 0;
+    return filteredHistory.reduce((acc, entry) => acc + entry.price, 0) / filteredHistory.length;
+  }, [filteredHistory]);
+
+  // 기간 라벨 맵핑
+  const periodLabels: Record<PeriodOption, string> = {
+    '7d': '7D',
+    '1m': '1M',
+    '3m': '3M',
+    '6m': '6M',
+    '1y': '1Y',
+    'all': 'ALL'
+  };
 
   if (!selectedItem) {
     return (
@@ -214,7 +261,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
               </h5>
               <small style={{ color: 'var(--text-muted)' }}>
-                {selectedItem.type === 'market' ? '거래소' : '경매장'} • 최근 30일
+                {selectedItem.type === 'market' ? '거래소' : '경매장'} • 최근 {periodLabels[selectedPeriod]}
               </small>
             </div>
           </div>
@@ -256,7 +303,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
               </h6>
               <small style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>
-                {selectedItem.type === 'market' ? '거래소' : '경매장'} • 30일
+                {selectedItem.type === 'market' ? '거래소' : '경매장'} • {periodLabels[selectedPeriod]}
               </small>
             </div>
           </div>
@@ -346,6 +393,68 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 </div>
               </div>
             )}
+
+            {/* 기간 선택 버튼 - 데스크톱 */}
+            <div className="d-none d-md-flex justify-content-center gap-2 mb-3">
+              {(['7d', '1m', '3m', '6m', '1y', 'all'] as PeriodOption[]).map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setSelectedPeriod(period)}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: '8px',
+                    border: selectedPeriod === period ? `2px solid ${chartColor}` : '2px solid var(--border-color)',
+                    backgroundColor: selectedPeriod === period ? (theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4')) : 'var(--card-bg)',
+                    color: selectedPeriod === period ? chartColor : 'var(--text-secondary)',
+                    fontWeight: selectedPeriod === period ? '700' : '500',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedPeriod !== period) {
+                      e.currentTarget.style.borderColor = chartColor;
+                      e.currentTarget.style.color = chartColor;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedPeriod !== period) {
+                      e.currentTarget.style.borderColor = 'var(--border-color)';
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                    }
+                  }}
+                >
+                  {periodLabels[period]}
+                </button>
+              ))}
+            </div>
+
+            {/* 기간 선택 버튼 - 모바일 */}
+            <div className="d-md-none d-flex justify-content-center gap-1 mb-2" style={{ overflowX: 'auto', padding: '4px 0' }}>
+              {(['7d', '1m', '3m', '6m', '1y', 'all'] as PeriodOption[]).map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setSelectedPeriod(period)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: selectedPeriod === period ? `2px solid ${chartColor}` : '2px solid var(--border-color)',
+                    backgroundColor: selectedPeriod === period ? (theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4')) : 'var(--card-bg)',
+                    color: selectedPeriod === period ? chartColor : 'var(--text-secondary)',
+                    fontWeight: selectedPeriod === period ? '700' : '500',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    outline: 'none',
+                    whiteSpace: 'nowrap',
+                    minWidth: '50px'
+                  }}
+                >
+                  {periodLabels[period]}
+                </button>
+              ))}
+            </div>
 
             <div className="d-none d-md-block" style={{ width: '100%', height: '400px' }}>
               <ResponsiveContainer width="100%" height="100%">
