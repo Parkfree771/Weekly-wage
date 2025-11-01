@@ -213,7 +213,7 @@ export default function ItemSelector({
           gap: '6px',
           overflowX: 'auto',
           flexWrap: 'nowrap',
-          padding: '4px'
+          padding: '8px 4px 12px 4px'
         }}>
           {categoryItems.map((item) => {
             const categoryStyle = CATEGORY_STYLES[selectedCategory];
