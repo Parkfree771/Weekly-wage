@@ -24,7 +24,7 @@ const getCachedPriceHistory = unstable_cache(
       count: history.length,
     };
   },
-  ['price-history'],
+  (itemId: string) => ['price-history', itemId], // itemId를 캐시 키에 포함
   {
     revalidate: 300, // 5분간 캐싱
     tags: ['price-history']
