@@ -200,8 +200,19 @@ export async function GET(request: Request) {
 
         console.log(`[Auction] ${item.name} - 총 ${allItems.length}개 아이템 조회됨`);
 
+        // 보석의 경우 레벨별 필터링 (searchName에 레벨 정보가 있는 경우)
+        let items = allItems;
+        if (item.searchName && (item.searchName.includes('레벨') || item.searchName.includes('보석'))) {
+          // searchName에서 레벨 추출 (예: "10레벨 겁화의 보석" -> "10레벨")
+          const levelMatch = item.searchName.match(/(\d+레벨)/);
+          if (levelMatch) {
+            const targetLevel = levelMatch[1];
+            items = allItems.filter(auctionItem => auctionItem.Name.includes(targetLevel));
+            console.log(`[Auction] ${item.name} - 레벨 필터링 후: ${items.length}개 (${targetLevel} 포함)`);
+          }
+        }
+
         // EtcOptions로 API에서 이미 필터링되었으므로 클라이언트 필터링 불필요
-        const items = allItems;
 
         if (items.length > 0) {
           const lowestPriceItem = items[0];
