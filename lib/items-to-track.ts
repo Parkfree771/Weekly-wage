@@ -545,8 +545,8 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   // 서포터 반지 (상/중 조합)
   {
     id: 'auction_ring_support_refine3',
-    name: '고대 반지 아공강(상), 아피강(중)',
-    displayName: '아군 공격력 강화 효과 3.0% (상)\n아군 피해량 강화 효과 7.5% (중)\n품질 70 이상, 3단계 연마',
+    name: '고대 반지 아피강(상), 아공강(중)',
+    displayName: '아군 피해량 강화 효과 7.5% (상)\n아군 공격력 강화 효과 3.0% (중)\n품질 70 이상, 3단계 연마',
     type: 'auction',
     searchName: '',
     categoryCode: 200030, // 반지

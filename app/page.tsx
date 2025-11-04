@@ -197,6 +197,30 @@ export default function Home() {
               </Row>
             </div>
 
+            {/* 가격 차이 안내 */}
+            <div className="mt-3">
+              <Row className="justify-content-center">
+                <Col xl={9} lg={10} md={12}>
+                  <div
+                    className="px-3 py-2 d-flex align-items-center gap-2"
+                    style={{
+                      background: 'var(--card-body-bg-stone)',
+                      borderLeft: '3px solid #fb923c',
+                      borderRadius: '8px',
+                      fontSize: 'clamp(0.8rem, 1.8vw, 0.9rem)',
+                      color: 'var(--text-secondary)',
+                      boxShadow: 'var(--shadow-sm)'
+                    }}
+                  >
+                    <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>ℹ️</span>
+                    <span style={{ lineHeight: '1.4' }}>
+                      경매장 가격 수집 빈도 차이로 인게임 가격과 다소 차이가 있을 수 있습니다. 추세 참고만 하시고 실제 가격은 인게임에서 확인 부탁드립니다.
+                    </span>
+                  </div>
+                </Col>
+              </Row>
+            </div>
+
             {/* 더보기 효율 계산기 섹션 */}
             <div className="mt-3">
               <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
