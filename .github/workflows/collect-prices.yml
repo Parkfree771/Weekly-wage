@@ -2,18 +2,39 @@ name: Collect Prices
 
 on:
   schedule:
-    # 1시간마다 실행 (UTC 기준)
+    # 거래소 아이템: 매시 정각 (UTC 기준)
     - cron: '0 * * * *'
+    # 경매장 아이템: 매시 10분 (UTC 기준)
+    - cron: '10 * * * *'
   # 수동 실행도 가능
   workflow_dispatch:
+    inputs:
+      type:
+        description: 'Item type to collect (market, auction, or all)'
+        required: false
+        default: 'all'
 
 jobs:
-  collect:
+  collect-market:
+    # 정각(00분)에만 실행
+    if: github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.type == 'market' || github.event.inputs.type == 'all'))
     runs-on: ubuntu-latest
 
     steps:
-      - name: Collect prices from API
+      - name: Collect market prices
         run: |
-          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices" \
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?type=market" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
+
+  collect-auction:
+    # 10분(10분)에만 실행
+    if: github.event.schedule == '10 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.type == 'auction' || github.event.inputs.type == 'all'))
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Collect auction prices
+        run: |
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?type=auction" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json"

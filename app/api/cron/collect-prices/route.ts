@@ -16,6 +16,10 @@ export async function GET(request: Request) {
     );
   }
 
+  // 쿼리 파라미터로 타입 필터링 지원 (market, auction, 또는 전체)
+  const { searchParams } = new URL(request.url);
+  const typeFilter = searchParams.get('type'); // 'market' | 'auction' | null (전체)
+
   const apiKey = process.env.LOSTARK_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -57,8 +61,15 @@ export async function GET(request: Request) {
     }
   }
 
+  // 타입 필터링 적용
+  const itemsToProcess = typeFilter
+    ? TRACKED_ITEMS.filter(item => item.type === typeFilter)
+    : TRACKED_ITEMS;
+
+  console.log(`[Collect Prices] 처리할 아이템: ${itemsToProcess.length}개 (타입 필터: ${typeFilter || '전체'})`);
+
   // 각 아이템의 가격 수집
-  for (const item of TRACKED_ITEMS) {
+  for (const item of itemsToProcess) {
     try {
       if (item.type === 'market') {
         // 거래소 아이템
