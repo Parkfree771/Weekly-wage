@@ -31,33 +31,48 @@ export async function GET(request: Request) {
   const results = [];
   const errors = [];
 
-  // 한국 시간(KST) 기준으로 오전 6시인지 확인
+  // 한국 시간(KST) 기준으로 시간 확인
   const now = new Date();
   const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
   const kstTime = now.getTime() + kstOffset;
   const kstDate = new Date(kstTime);
-  const isAt6AM = kstDate.getUTCHours() === 6 && kstDate.getUTCMinutes() < 30;
-  // const isAt6AM = true; // 테스트용: 항상 전날 평균가 저장
+  const currentKSTHour = kstDate.getUTCHours();
+  const currentKSTMinute = kstDate.getUTCMinutes();
 
-  // 수요일(3) 여부 확인 - 로스트아크 업데이트 날
-  const isWednesday = kstDate.getUTCDay() === 3;
+  // 시간대 확인
+  const isAt6AM = currentKSTHour === 6 && currentKSTMinute < 30; // 06:00-06:29
+  const isWednesday = kstDate.getUTCDay() === 3; // 수요일
+  const isWednesdayAt10AM = isWednesday && currentKSTHour === 10 && currentKSTMinute < 30; // 수요일 10:00-10:29
 
-  // 수요일 오전 10시인지 확인 (업데이트 이후 시간)
-  const isWednesdayAt10AM = isWednesday && kstDate.getUTCHours() === 10 && kstDate.getUTCMinutes() < 30;
+  // ========================================================================
+  // 전날 데이터 저장 타이밍 (CRITICAL - 신중하게 수정할 것)
+  // ========================================================================
 
-  // 거래소 아이템 전날 평균가 저장 타이밍
-  // - 수요일: 오전 10시 (업데이트 이후)
-  // - 기타 요일: 오전 6시
+  // === 거래소 아이템 전날 평균가 저장 타이밍 ===
+  // - 수요일: 오전 10시 00분 (로스트아크 업데이트 이후)
+  // - 기타 요일: 오전 6시 00분
+  // - 실행 조건: type=market이고 해당 시간일 때
+  // - GitHub Actions: 매시 00분 실행 → 06:00에 type=market으로 실행됨
   const shouldSaveMarketYesterday = isWednesdayAt10AM || (!isWednesday && isAt6AM);
 
-  // 오전 6시: 경매장 전날 데이터 확정 (수요일 포함 매일)
-  if (isAt6AM) {
+  // === 경매장 전날 데이터 확정 타이밍 ===
+  // - 매일 오전 6시 10분 (경매장은 매시 10분에 실행되므로)
+  // - 실행 조건: type=auction이고 06시대일 때
+  // - GitHub Actions: 매시 10분 실행 → 06:10에 type=auction으로 실행됨
+  // - 중요: type=market일 때는 실행 안됨 (06:00에 실행되는 거래소 수집 시)
+  const shouldFinalizeAuctionYesterday = isAt6AM && (typeFilter === 'auction' || typeFilter === null);
+
+  // ========================================================================
+
+  if (shouldFinalizeAuctionYesterday) {
     try {
       // 경매장 아이템의 전날 임시 데이터를 평균내서 확정
       await finalizeYesterdayData();
       results.push({ message: '전날 데이터 확정 완료 (경매장 아이템 평균 계산)' });
+      console.log(`[6시 10분] 경매장 전날 데이터 확정 완료`);
     } catch (error: any) {
       errors.push({ message: '전날 데이터 확정 실패', error: error.message });
+      console.error(`[6시 10분] 경매장 전날 데이터 확정 실패:`, error);
     }
   }
 
