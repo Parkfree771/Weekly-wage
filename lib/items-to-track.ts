@@ -30,27 +30,134 @@ export type TrackedItem = {
 };
 
 // 카테고리 타입
-export type ItemCategory = 'fusion' | 'gem' | 'engraving' | 'accessory' | 'jewel';
+export type ItemCategory = 'refine' | 'refine_additional' | 'gem' | 'engraving' | 'accessory' | 'jewel';
 
 // 추적할 아이템 목록
 export const TRACKED_ITEMS: TrackedItem[] = [
-  // === 1. 융화재료 ===
+  // === 1. 재련 재료 ===
   {
     id: '6861012',
     name: '아비도스 융화 재료',
     type: 'market',
     icon: '/abidos-fusion.png',
-    iconBorderColor: '#D97706' // 오렌지
+    iconBorderColor: '#d97706' // 노란색
   },
   {
     id: '6861011',
     name: '최상급 오레하 융화 재료',
     type: 'market',
     icon: '/oreha-fusion-superior.png',
-    iconBorderColor: '#D97706' // 오렌지
+    iconBorderColor: '#d97706' // 노란색
+  },
+  {
+    id: '66130143',
+    name: '운명의 파편 주머니(대)',
+    type: 'market',
+    icon: '/destiny-shard-bag-large.png',
+    iconBorderColor: '#d97706'
+  },
+  {
+    id: '66130133',
+    name: '명예의 파편 주머니(대)',
+    type: 'market',
+    icon: '/honor-shard-bag-large.png',
+    iconBorderColor: '#d97706'
+  },
+  {
+    id: '66102006',
+    name: '운명의 파괴석',
+    type: 'market',
+    icon: '/destiny-destruction-stone.png',
+    iconBorderColor: '#d97706'
+  },
+  {
+    id: '66102106',
+    name: '운명의 수호석',
+    type: 'market',
+    icon: '/destiny-guardian-stone.png',
+    iconBorderColor: '#d97706'
+  },
+  {
+    id: '66110225',
+    name: '운명의 돌파석',
+    type: 'market',
+    icon: '/destiny-breakthrough-stone.png',
+    iconBorderColor: '#d97706'
   },
 
-  // === 2. 젬 ===
+  // === 2. 재련 추가 재료 ===
+  {
+    id: '66112553',
+    name: '야금술 : 업화 [19-20] (무기)',
+    type: 'market',
+    icon: '/metallurgy-karma.png',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112551',
+    name: '야금술 : 업화 [15-18] (무기)',
+    type: 'market',
+    icon: '/metallurgy-karma.png',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112554',
+    name: '재봉술 : 업화 [19-20] (방어구)',
+    type: 'market',
+    icon: '/tailoring-karma.png',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112552',
+    name: '재봉술 : 업화 [15-18] (방어구)',
+    type: 'market',
+    icon: '/tailoring-karma.png',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112714',
+    name: '장인의 재봉술 : 2단계 (방어구)',
+    type: 'market',
+    icon: '/master-tailoring-2.png',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112712',
+    name: '장인의 재봉술 : 1단계 (방어구)',
+    type: 'market',
+    icon: '/master-tailoring-1.png',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112713',
+    name: '장인의 야금술 : 2단계 (무기)',
+    type: 'market',
+    icon: '/master-metallurgy-2.png',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112711',
+    name: '장인의 야금술 : 1단계 (무기)',
+    type: 'market',
+    icon: '/master-metallurgy-1.png',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66111131',
+    name: '용암의 숨결',
+    type: 'market',
+    icon: '/breath-lava.png',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66111132',
+    name: '빙하의 숨결',
+    type: 'market',
+    icon: '/breath-glacier.png',
+    iconBorderColor: '#059669'
+  },
+
+  // === 3. 젬 ===
   {
     id: '67400003',
     name: '질서의 젬 : 안정',
@@ -80,7 +187,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     iconBorderColor: '#4B0082' // 보라색
   },
 
-  // === 3. 유물 각인서 (거래소) ===
+  // === 4. 유물 각인서 (거래소) ===
   {
     id: '65203905',
     name: '아드레날린',
@@ -178,7 +285,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     iconBorderColor: '#ff6b35'
   },
 
-  // === 4. 악세 (경매장) ===
+  // === 5. 악세 (경매장) ===
   // 목걸이 (중/상 조합)
   {
     id: 'auction_necklace_ancient_refine3',
@@ -499,7 +606,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     }
   },
 
-  // === 5. 보석 (경매장) ===
+  // === 6. 보석 (경매장) ===
   {
     id: 'auction_gem_fear_8',
     name: '8레벨 겁화의 보석',
@@ -553,7 +660,8 @@ export const TRACKED_ITEMS: TrackedItem[] = [
 // 카테고리별 아이템 필터 함수
 export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
-    fusion: ['6861012', '6861011'],
+    refine: ['6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
+    refine_additional: ['66112553', '66112551', '66112554', '66112552', '66112714', '66112712', '66112713', '66112711', '66111131', '66111132'],
     gem: ['67400003', '67400103', '67410303', '67410403'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
     accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high', 'auction_necklace_support_refine3', 'auction_necklace_support_refine3_high', 'auction_ring_support_refine3', 'auction_ring_support_refine3_high'],

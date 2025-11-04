@@ -35,7 +35,18 @@ export async function GET(request: Request) {
   const isAt6AM = kstDate.getUTCHours() === 6 && kstDate.getUTCMinutes() < 30;
   // const isAt6AM = true; // 테스트용: 항상 전날 평균가 저장
 
-  // 오전 6시: 전날 데이터 확정
+  // 수요일(3) 여부 확인 - 로스트아크 업데이트 날
+  const isWednesday = kstDate.getUTCDay() === 3;
+
+  // 수요일 오전 10시인지 확인 (업데이트 이후 시간)
+  const isWednesdayAt10AM = isWednesday && kstDate.getUTCHours() === 10 && kstDate.getUTCMinutes() < 30;
+
+  // 거래소 아이템 전날 평균가 저장 타이밍
+  // - 수요일: 오전 10시 (업데이트 이후)
+  // - 기타 요일: 오전 6시
+  const shouldSaveMarketYesterday = isWednesdayAt10AM || (!isWednesday && isAt6AM);
+
+  // 오전 6시: 경매장 전날 데이터 확정 (수요일 포함 매일)
   if (isAt6AM) {
     try {
       // 경매장 아이템의 전날 임시 데이터를 평균내서 확정
@@ -91,9 +102,8 @@ export async function GET(request: Request) {
 
         console.log(`[Market] ${item.name} - Stats 배열 개수: ${itemData.Stats?.length || 0}`);
 
-        if (isAt6AM) {
-          // === 오전 6시: 전날 평균가만 저장 (Stats[1]) ===
-
+        // === 거래소 전날 평균가 저장: 수요일은 10시, 기타 요일은 6시 ===
+        if (shouldSaveMarketYesterday) {
           // Stats[1]은 어제 데이터 (이미 확정된 평균가)
           if (itemData.Stats && itemData.Stats.length > 1) {
             const yesterdayStat = itemData.Stats[1];
@@ -101,7 +111,8 @@ export async function GET(request: Request) {
 
             if (yesterdayPrice > 0 && yesterdayStat.Date) {
               await saveHistoricalPrice(item.id, yesterdayPrice, yesterdayStat.Date, item.name);
-              console.log(`[Market] ${item.name} - 전날 평균가 저장: ${yesterdayStat.Date} = ${yesterdayPrice}G`);
+              const timeInfo = isWednesday ? '10시 (수요일 업데이트 고려)' : '6시';
+              console.log(`[Market] ${item.name} - 전날 평균가 저장 (${timeInfo}): ${yesterdayStat.Date} = ${yesterdayPrice}G`);
 
               results.push({
                 itemId: item.id,

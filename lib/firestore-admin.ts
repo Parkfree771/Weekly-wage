@@ -56,20 +56,40 @@ export function formatDateKey(date: Date): string {
 
 /**
  * 새로운 가격 데이터 저장
+ * @param customDate - 과거 데이터 저장용 (선택사항, 없으면 현재 시간)
  */
 export async function savePriceData(
   itemId: string,
   price: number,
-  itemName?: string
+  itemName?: string,
+  customDate?: Date
 ): Promise<void> {
   try {
     const db = getAdminFirestore();
-    await db.collection(PRICE_HISTORY_COLLECTION).add({
-      itemId,
-      itemName,
-      price,
-      timestamp: Timestamp.now(),
-    });
+
+    // customDate가 있으면 해당 날짜로 timestamp 설정, 없으면 현재 시간
+    const timestamp = customDate ? Timestamp.fromDate(customDate) : Timestamp.now();
+
+    // customDate가 있으면 dailyPrices에 직접 저장, 없으면 기존 방식
+    if (customDate) {
+      const dateKey = formatDateKey(customDate);
+      const docRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${itemId}_${dateKey}`);
+
+      await docRef.set({
+        itemId,
+        itemName,
+        price,
+        date: dateKey,
+        timestamp: Timestamp.now(), // 저장 시점의 실제 시간
+      });
+    } else {
+      await db.collection(PRICE_HISTORY_COLLECTION).add({
+        itemId,
+        itemName,
+        price,
+        timestamp,
+      });
+    }
   } catch (error) {
     console.error('가격 저장 오류:', error);
     throw error;

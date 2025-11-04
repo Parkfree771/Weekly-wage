@@ -5,7 +5,8 @@ import { useMemo } from 'react';
 import { useTheme } from './ThemeProvider';
 
 export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; darkThemeColor: string; darkBg: string; }> = {
-  fusion: { label: '융화재료', color: '#ffb366', darkColor: '#D97706', lightBg: '#fff7ed', darkThemeColor: '#fbbf24', darkBg: '#453320' },
+  refine: { label: '재련 재료', color: '#fbbf24', darkColor: '#d97706', lightBg: '#fef3c7', darkThemeColor: '#fbbf24', darkBg: '#78350f' },
+  refine_additional: { label: '재련 추가 재료', color: '#34d399', darkColor: '#059669', lightBg: '#d1fae5', darkThemeColor: '#34d399', darkBg: '#064e3b' },
   gem: { label: '젬', color: '#8A2BE2', darkColor: '#4B0082', lightBg: '#F5EEFF', darkThemeColor: '#c084fc', darkBg: '#3c2a4a' },
   engraving: { label: '유물 각인서', color: '#ff9b7a', darkColor: '#E11D48', lightBg: '#fff1f2', darkThemeColor: '#f87171', darkBg: '#4d222a' },
   accessory: { label: '악세', color: '#5fd4e8', darkColor: '#0E7490', lightBg: '#ecfeff', darkThemeColor: '#67e8f9', darkBg: '#1e3a4a' },
@@ -13,7 +14,7 @@ export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: strin
 };
 
 // 카테고리 표시 순서 정의
-const CATEGORY_ORDER: ItemCategory[] = ['gem', 'fusion', 'engraving', 'accessory', 'jewel'];
+const CATEGORY_ORDER: ItemCategory[] = ['gem', 'refine', 'refine_additional', 'engraving', 'accessory', 'jewel'];
 
 function ColoredItemName({ name }: { name: string }) {
   const regex = /(\d+\.?\d*%)\s*(\(상\))|(\d+\.?\d*%)\s*(\(중\))|(\(상\))|(\(중\))/g;
@@ -98,7 +99,7 @@ export default function ItemSelector({
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '1rem',
                 padding: '12px 24px',
-                backgroundColor: 'var(--card-bg)',
+                backgroundColor: selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkBg : CATEGORY_STYLES[cat].lightBg) : 'var(--card-bg)',
                 border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].color) : 'var(--border-color)'}`,
                 borderRadius: '10px',
                 color: selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].darkColor) : 'var(--text-secondary)',
@@ -139,7 +140,7 @@ export default function ItemSelector({
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '0.8rem',
                 padding: '8px 12px',
-                backgroundColor: 'var(--card-bg)',
+                backgroundColor: selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkBg : CATEGORY_STYLES[cat].lightBg) : 'var(--card-bg)',
                 border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].darkColor) : 'var(--border-color)'}`,
                 borderRadius: '8px',
                 color: selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].darkColor) : 'var(--text-secondary)',
@@ -169,7 +170,7 @@ export default function ItemSelector({
                 key={item.id}
                 onClick={() => onSelectItem(item)}
                 style={{
-                  backgroundColor: 'var(--card-bg)',
+                  backgroundColor: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
                   borderRadius: '10px',
                   padding: '10px 16px',
                   fontWeight: selectedItem.id === item.id ? '700' : '600',
@@ -223,7 +224,7 @@ export default function ItemSelector({
                 key={item.id}
                 onClick={() => onSelectItem(item)}
                 style={{
-                  backgroundColor: 'var(--card-bg)',
+                  backgroundColor: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
                   borderRadius: '8px',
                   padding: '8px 10px',
                   fontWeight: selectedItem.id === item.id ? '700' : '600',
