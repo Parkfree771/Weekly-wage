@@ -40,49 +40,49 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '아비도스 융화 재료',
     type: 'market',
     icon: '/abidos-fusion.png',
-    iconBorderColor: '#d97706' // 노란색
+    iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '6861011',
     name: '최상급 오레하 융화 재료',
     type: 'market',
     icon: '/oreha-fusion-superior.png',
-    iconBorderColor: '#d97706' // 노란색
+    iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '66130143',
     name: '운명의 파편 주머니(대)',
     type: 'market',
     icon: '/destiny-shard-bag-large.png',
-    iconBorderColor: '#d97706'
+    iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '66130133',
     name: '명예의 파편 주머니(대)',
     type: 'market',
     icon: '/honor-shard-bag-large.png',
-    iconBorderColor: '#d97706'
+    iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '66102006',
     name: '운명의 파괴석',
     type: 'market',
     icon: '/destiny-destruction-stone.png',
-    iconBorderColor: '#d97706'
+    iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '66102106',
     name: '운명의 수호석',
     type: 'market',
     icon: '/destiny-guardian-stone.png',
-    iconBorderColor: '#d97706'
+    iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '66110225',
     name: '운명의 돌파석',
     type: 'market',
     icon: '/destiny-breakthrough-stone.png',
-    iconBorderColor: '#d97706'
+    iconBorderColor: '#6366f1' // 인디고
   },
 
   // === 2. 재련 추가 재료 ===

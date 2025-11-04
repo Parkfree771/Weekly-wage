@@ -86,16 +86,16 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
   const statBoxStyles = {
     min: {
-        light: { bg: '#eff6ff', border: '#2563eb', text: '#3b82f6' },
-        dark: { bg: '#2d3748', border: '#60a5fa', text: '#8ab4f8' }
+        light: { bg: '#f3f4f6', border: '#4b5563', text: '#1f2937' },
+        dark: { bg: '#2d3748', border: '#9ca3af', text: '#e5e7eb' }
     },
     max: {
-        light: { bg: '#ccfbf1', border: '#0d9488', text: '#14b8a6' },
-        dark: { bg: '#2d3748', border: '#34d399', text: '#6ee7b7' }
+        light: { bg: '#f3f4f6', border: '#4b5563', text: '#1f2937' },
+        dark: { bg: '#2d3748', border: '#9ca3af', text: '#e5e7eb' }
     },
     avg: {
-        light: { bg: '#f1f5f9', border: '#334155', text: '#475569' },
-        dark: { bg: '#2d3748', border: '#94a3b8', text: '#cbd5e1' }
+        light: { bg: '#f3f4f6', border: '#4b5563', text: '#1f2937' },
+        dark: { bg: '#2d3748', border: '#9ca3af', text: '#e5e7eb' }
     }
   };
 

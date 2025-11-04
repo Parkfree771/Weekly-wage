@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { useTheme } from './ThemeProvider';
 
 export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; darkThemeColor: string; darkBg: string; }> = {
-  refine: { label: '재련 재료', color: '#fbbf24', darkColor: '#d97706', lightBg: '#fef3c7', darkThemeColor: '#fbbf24', darkBg: '#78350f' },
+  refine: { label: '재련 재료', color: '#818cf8', darkColor: '#6366f1', lightBg: '#e0e7ff', darkThemeColor: '#818cf8', darkBg: '#3730a3' },
   refine_additional: { label: '재련 추가 재료', color: '#34d399', darkColor: '#059669', lightBg: '#d1fae5', darkThemeColor: '#34d399', darkBg: '#064e3b' },
   gem: { label: '젬', color: '#8A2BE2', darkColor: '#4B0082', lightBg: '#F5EEFF', darkThemeColor: '#c084fc', darkBg: '#3c2a4a' },
   engraving: { label: '유물 각인서', color: '#ff9b7a', darkColor: '#E11D48', lightBg: '#fff1f2', darkThemeColor: '#f87171', darkBg: '#4d222a' },
