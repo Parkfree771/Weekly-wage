@@ -1,8 +1,9 @@
 'use client';
 
 import { ItemCategory, TrackedItem, getItemsByCategory } from '@/lib/items-to-track';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTheme } from './ThemeProvider';
+import { Offcanvas } from 'react-bootstrap';
 
 export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; darkThemeColor: string; darkBg: string; }> = {
   refine: { label: '재련 재료', color: '#818cf8', darkColor: '#6366f1', lightBg: '#e0e7ff', darkThemeColor: '#818cf8', darkBg: '#3730a3' },
@@ -77,10 +78,43 @@ export default function ItemSelector({
   onSelectItem,
 }: ItemSelectorProps) {
   const { theme } = useTheme();
+  const [showItems, setShowItems] = useState(true);
+  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  const [bottomSheetCategory, setBottomSheetCategory] = useState<ItemCategory>(selectedCategory);
 
   const categoryItems = useMemo(() => {
     return getItemsByCategory(selectedCategory);
   }, [selectedCategory]);
+
+  const bottomSheetItems = useMemo(() => {
+    return getItemsByCategory(bottomSheetCategory);
+  }, [bottomSheetCategory]);
+
+  // 데스크톱용 카테고리 클릭 핸들러
+  const handleCategoryClick = (cat: ItemCategory) => {
+    if (selectedCategory === cat) {
+      // 같은 카테고리 클릭 시 토글
+      setShowItems(!showItems);
+    } else {
+      // 다른 카테고리 클릭 시 항상 표시
+      setShowItems(true);
+      onSelectCategory(cat);
+    }
+  };
+
+  // 모바일용 카테고리 클릭 핸들러 (바텀시트 열기)
+  const handleMobileCategoryClick = (cat: ItemCategory) => {
+    onSelectCategory(cat); // 선택된 카테고리 업데이트 (테두리 색 변경)
+    setBottomSheetCategory(cat);
+    setShowBottomSheet(true);
+  };
+
+  // 바텀시트에서 아이템 선택
+  const handleBottomSheetItemSelect = (item: TrackedItem) => {
+    onSelectCategory(bottomSheetCategory);
+    onSelectItem(item);
+    // 바텀시트를 닫지 않고 유지
+  };
 
   if (!selectedItem) {
     return null;
@@ -94,7 +128,7 @@ export default function ItemSelector({
           {CATEGORY_ORDER.map((cat) => (
             <button
               key={cat}
-              onClick={() => onSelectCategory(cat)}
+              onClick={() => handleCategoryClick(cat)}
               style={{
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '1rem',
@@ -130,12 +164,12 @@ export default function ItemSelector({
       </div>
 
       {/* 카테고리 탭 - 모바일 */}
-      <div className="mb-3 d-md-none">
-        <div className="d-flex gap-2 justify-content-center">
+      <div className="mb-2 d-md-none">
+        <div className="d-flex gap-2" style={{ overflowX: 'auto', paddingBottom: '8px' }}>
           {CATEGORY_ORDER.map((cat) => (
             <button
               key={cat}
-              onClick={() => onSelectCategory(cat)}
+              onClick={() => handleMobileCategoryClick(cat)}
               style={{
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '0.8rem',
@@ -146,7 +180,8 @@ export default function ItemSelector({
                 color: selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].darkColor) : 'var(--text-secondary)',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               {CATEGORY_STYLES[cat].label}
@@ -156,7 +191,7 @@ export default function ItemSelector({
       </div>
 
       {/* 아이템 선택 버튼 - 데스크톱 */}
-      <div className="mb-3 d-none d-md-block">
+      {showItems && <div className="mb-3 d-none d-md-block">
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
@@ -205,46 +240,100 @@ export default function ItemSelector({
             );
           })}
         </div>
-      </div>
+      </div>}
 
-      {/* 아이템 선택 버튼 - 모바일 */}
-      <div className="mb-3 d-md-none">
-        <div style={{
-          display: 'flex',
-          gap: '6px',
-          overflowX: 'auto',
-          flexWrap: 'nowrap',
-          padding: '8px 4px 12px 4px'
-        }}>
-          {categoryItems.map((item) => {
-            const categoryStyle = CATEGORY_STYLES[selectedCategory];
+      {/* 바텀시트 - 모바일 아이템 선택 */}
+      <Offcanvas
+        show={showBottomSheet}
+        onHide={() => setShowBottomSheet(false)}
+        placement="bottom"
+        backdrop={false}
+        scroll={true}
+        style={{
+          height: 'auto',
+          maxHeight: '40vh',
+          backgroundColor: 'var(--card-bg)',
+          color: 'var(--text-primary)',
+          borderTopLeftRadius: '20px',
+          borderTopRightRadius: '20px'
+        }}
+      >
+        <Offcanvas.Header
+          closeButton
+          style={{
+            backgroundColor: theme === 'dark'
+              ? CATEGORY_STYLES[bottomSheetCategory].darkBg
+              : CATEGORY_STYLES[bottomSheetCategory].lightBg,
+            borderBottom: `2px solid ${theme === 'dark'
+              ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor
+              : CATEGORY_STYLES[bottomSheetCategory].color}`,
+            padding: '8px 12px',
+            borderTopLeftRadius: '20px',
+            borderTopRightRadius: '20px',
+            minHeight: 'auto'
+          }}
+        >
+          <Offcanvas.Title
+            style={{
+              fontWeight: '700',
+              fontSize: '0.9rem',
+              color: theme === 'dark'
+                ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor
+                : CATEGORY_STYLES[bottomSheetCategory].darkColor
+            }}
+          >
+            {CATEGORY_STYLES[bottomSheetCategory].label}
+          </Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body style={{ padding: '12px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateRows: 'repeat(2, 1fr)',
+            gridAutoFlow: 'column',
+            gridAutoColumns: 'max-content',
+            gap: '8px',
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            paddingBottom: '8px'
+          }}>
+            {bottomSheetItems.map((item) => {
+              const categoryStyle = CATEGORY_STYLES[bottomSheetCategory];
+              const isSelected = selectedItem.id === item.id && selectedCategory === bottomSheetCategory;
 
-            return (
-              <button
-                key={item.id}
-                onClick={() => onSelectItem(item)}
-                style={{
-                  backgroundColor: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
-                  borderRadius: '8px',
-                  padding: '8px 10px',
-                  fontWeight: selectedItem.id === item.id ? '700' : '600',
-                  fontSize: '0.7rem',
-                  transition: 'all 0.2s ease',
-                  border: `2px solid ${selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--border-color)'}`,
-                  color: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                <ColoredItemName name={item.name} />
-              </button>
-            );
-          })}
-        </div>
-      </div>
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleBottomSheetItemSelect(item)}
+                  style={{
+                    backgroundColor: isSelected
+                      ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
+                      : 'var(--card-bg)',
+                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    fontWeight: isSelected ? '700' : '600',
+                    fontSize: '0.85rem',
+                    transition: 'all 0.2s ease',
+                    border: `2px solid ${isSelected
+                      ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color)
+                      : 'var(--border-color)'}`,
+                    color: isSelected
+                      ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
+                      : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    whiteSpace: 'nowrap',
+                    minHeight: '50px'
+                  }}
+                >
+                  <ColoredItemName name={item.name} />
+                </button>
+              );
+            })}
+          </div>
+        </Offcanvas.Body>
+      </Offcanvas>
     </div>
   );
 }
