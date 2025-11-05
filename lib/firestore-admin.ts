@@ -197,21 +197,29 @@ export async function addTodayTempPrice(
 }
 
 /**
- * 오전 6시에 전날 임시 데이터를 평균내서 확정
+ * 오전 5시(경매장) 또는 6시(거래소)에 임시 데이터를 평균내서 확정
+ * @param useToday - true면 당일 데이터 확정 (05시대), false면 전날 데이터 확정 (06시대)
  */
-export async function finalizeYesterdayData(): Promise<void> {
+export async function finalizeYesterdayData(useToday: boolean = false): Promise<void> {
   try {
     const db = getAdminFirestore();
 
     // 로스트아크 기준 오늘 날짜
     const lostArkToday = getLostArkDate();
 
-    // 로스트아크 기준 전날 날짜 계산
-    const yesterday = new Date(lostArkToday);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayKey = formatDateKey(yesterday);
+    // 확정할 날짜 계산
+    let targetDate: Date;
+    if (useToday) {
+      // 05시대: 당일 데이터 확정 (06:10 ~ 05:10 수집한 데이터)
+      targetDate = lostArkToday;
+    } else {
+      // 06시대 이후: 전날 데이터 확정
+      targetDate = new Date(lostArkToday);
+      targetDate.setDate(targetDate.getDate() - 1);
+    }
+    const targetKey = formatDateKey(targetDate);
 
-    console.log(`[finalizeYesterdayData] 전날 데이터 확정 시작: ${yesterdayKey}`);
+    console.log(`[finalizeYesterdayData] ${useToday ? '당일' : '전날'} 데이터 확정 시작: ${targetKey}`);
 
     // 전날의 todayTemp 문서를 직접 조회 (문서명이 itemId_날짜 형식)
     const tempSnapshot = await db.collection(TODAY_TEMP_COLLECTION).get();
@@ -229,20 +237,20 @@ export async function finalizeYesterdayData(): Promise<void> {
 
       const docDate = docDateMatch[1];
 
-      // 전날 날짜와 일치하는 문서만 처리
-      if (docDate === yesterdayKey && data.prices && data.prices.length > 0) {
+      // 대상 날짜와 일치하는 문서만 처리
+      if (docDate === targetKey && data.prices && data.prices.length > 0) {
         const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
         // 아비도스 융화재료(6861012)만 소수점 첫째 자리까지, 나머지는 정수
         const roundedAvgPrice = data.itemId === '6861012'
           ? Math.round(avgPrice * 10) / 10
           : Math.round(avgPrice);
 
-        const dailyDocRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${data.itemId}_${yesterdayKey}`);
+        const dailyDocRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${data.itemId}_${targetKey}`);
         batch.set(dailyDocRef, {
           itemId: data.itemId,
           itemName: data.itemName,
           price: roundedAvgPrice,
-          date: yesterdayKey,
+          date: targetKey,
           timestamp: Timestamp.now(),
         });
 

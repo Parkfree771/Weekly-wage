@@ -18,12 +18,45 @@ class MarketPriceService {
     return Date.now() - timestamp > this.CACHE_DURATION;
   }
 
+  /**
+   * 캐시를 무효화해야 하는 시간대인지 확인 (한국 시간 기준)
+   * - 평소(월~일): 오전 06:00~06:59
+   * - 수요일: 오전 10:00~10:59
+   */
+  private shouldBypassCache(): boolean {
+    const now = new Date();
+    // 한국 시간(KST, UTC+9) 계산
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const kstTime = now.getTime() + kstOffset;
+    const kstDate = new Date(kstTime);
+
+    const kstHour = kstDate.getUTCHours(); // KST 시간
+    const kstDay = kstDate.getUTCDay(); // 0=일요일, 3=수요일
+
+    // 수요일(3) 오전 10시~10시 59분
+    if (kstDay === 3 && kstHour === 10) {
+      console.log('[Cache Bypass] 수요일 오전 10시대 - 캐시 무시');
+      return true;
+    }
+
+    // 평소 오전 6시~6시 59분
+    if (kstHour === 6) {
+      console.log('[Cache Bypass] 오전 6시대 - 캐시 무시');
+      return true;
+    }
+
+    return false;
+  }
+
   async getItemPrice(itemId: number): Promise<number> {
     console.log(`Getting recent price for item ID: ${itemId}`);
-    
+
+    // 특정 시간대에는 캐시 무시
+    const bypassCache = this.shouldBypassCache();
+
     // Check if we have cached data that's still valid
     const cachedData = this.cache[itemId];
-    if (cachedData && !this.isExpired(cachedData.timestamp)) {
+    if (!bypassCache && cachedData && !this.isExpired(cachedData.timestamp)) {
       console.log(`Using cached recent price for ${itemId}: ${cachedData.price}`);
       return cachedData.price;
     }
@@ -97,10 +130,13 @@ class MarketPriceService {
     if (itemName === '운명의 파편') {
       searchItemName = '운명의 파편 주머니(소)';
     }
-    
+
+    // 특정 시간대에는 캐시 무시
+    const bypassCache = this.shouldBypassCache();
+
     const cacheKey = `search_${searchItemName}`;
     const cachedData = this.cache[cacheKey as any];
-    if (cachedData && !this.isExpired(cachedData.timestamp)) {
+    if (!bypassCache && cachedData && !this.isExpired(cachedData.timestamp)) {
       console.log(`Using cached price for ${searchItemName}: ${cachedData.price}`);
       return cachedData.price;
     }

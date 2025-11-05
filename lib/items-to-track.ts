@@ -173,6 +173,13 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     iconBorderColor: '#4B0082' // 보라색
   },
   {
+    id: '67400203',
+    name: '질서의 젬 : 불변',
+    type: 'market',
+    icon: '/gem-order-immutable.png',
+    iconBorderColor: '#4B0082' // 보라색
+  },
+  {
     id: '67410303',
     name: '혼돈의 젬 : 침식',
     type: 'market',
@@ -184,6 +191,13 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '혼돈의 젬 : 왜곡',
     type: 'market',
     icon: '/gem-chaos-distortion.png',
+    iconBorderColor: '#4B0082' // 보라색
+  },
+  {
+    id: '67410503',
+    name: '혼돈의 젬 : 붕괴',
+    type: 'market',
+    icon: '/gem-chaos-collapse.png',
     iconBorderColor: '#4B0082' // 보라색
   },
 
@@ -662,7 +676,7 @@ export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
     refine: ['6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
     refine_additional: ['66112553', '66112551', '66112554', '66112552', '66112714', '66112712', '66112713', '66112711', '66111131', '66111132'],
-    gem: ['67400003', '67400103', '67410303', '67410403'],
+    gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
     accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high', 'auction_necklace_support_refine3', 'auction_necklace_support_refine3_high', 'auction_ring_support_refine3', 'auction_ring_support_refine3_high'],
     jewel: ['auction_gem_fear_8', 'auction_gem_fear_9', 'auction_gem_fear_10', 'auction_gem_flame_10']
