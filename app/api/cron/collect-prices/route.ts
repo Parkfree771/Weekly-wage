@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { addTodayTempPrice, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice } from '@/lib/firestore-admin';
-import { TRACKED_ITEMS } from '@/lib/items-to-track';
+import { TRACKED_ITEMS, getItemsByCategory, ItemCategory } from '@/lib/items-to-track';
 
 // 자동 가격 수집 엔드포인트 (GitHub Actions용)
 export async function GET(request: Request) {
@@ -16,9 +16,10 @@ export async function GET(request: Request) {
     );
   }
 
-  // 쿼리 파라미터로 타입 필터링 지원 (market, auction, 또는 전체)
+  // 쿼리 파라미터로 타입 및 카테고리 필터링 지원
   const { searchParams } = new URL(request.url);
   const typeFilter = searchParams.get('type'); // 'market' | 'auction' | null (전체)
+  const categoryFilter = searchParams.get('category'); // 'refine' | 'gem' | 'engraving' | etc...
 
   const apiKey = process.env.LOSTARK_API_KEY;
   if (!apiKey) {
@@ -76,12 +77,23 @@ export async function GET(request: Request) {
     }
   }
 
-  // 타입 필터링 적용
-  const itemsToProcess = typeFilter
-    ? TRACKED_ITEMS.filter(item => item.type === typeFilter)
-    : TRACKED_ITEMS;
+  // 타입 및 카테고리 필터링 적용
+  let itemsToProcess = TRACKED_ITEMS;
 
-  console.log(`[Collect Prices] 처리할 아이템: ${itemsToProcess.length}개 (타입 필터: ${typeFilter || '전체'})`);
+  // 카테고리 필터가 있으면 카테고리로 필터링 (쉼표로 구분된 여러 카테고리 지원)
+  if (categoryFilter) {
+    const categories = categoryFilter.split(',') as ItemCategory[];
+    const categorizedItems: typeof TRACKED_ITEMS = [];
+    categories.forEach(category => {
+      categorizedItems.push(...getItemsByCategory(category.trim() as ItemCategory));
+    });
+    itemsToProcess = categorizedItems;
+  } else if (typeFilter) {
+    // 카테고리 필터가 없고 타입 필터만 있으면 타입으로 필터링
+    itemsToProcess = TRACKED_ITEMS.filter(item => item.type === typeFilter);
+  }
+
+  console.log(`[Collect Prices] 처리할 아이템: ${itemsToProcess.length}개 (타입: ${typeFilter || '전체'}, 카테고리: ${categoryFilter || '전체'})`);
 
   // 각 아이템의 가격 수집
   for (const item of itemsToProcess) {

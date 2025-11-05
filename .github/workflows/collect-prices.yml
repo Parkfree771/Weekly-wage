@@ -2,39 +2,53 @@ name: Collect Prices
 
 on:
   schedule:
-    # 거래소 아이템: 매시 정각 (UTC 기준)
+    # 거래소 - 재련 재료 + 젬: 매시 정각 (UTC 기준)
     - cron: '0 * * * *'
-    # 경매장 아이템: 매시 10분 (UTC 기준)
+    # 거래소 - 재련 추가 재료 + 각인서: 매시 5분 (UTC 기준)
+    - cron: '5 * * * *'
+    # 경매장 - 악세 + 보석: 매시 10분 (UTC 기준)
     - cron: '10 * * * *'
   # 수동 실행도 가능
   workflow_dispatch:
     inputs:
-      type:
-        description: 'Item type to collect (market, auction, or all)'
+      category:
+        description: 'Category to collect (refine,gem / refine_additional,engraving / accessory,jewel / all)'
         required: false
         default: 'all'
 
 jobs:
-  collect-market:
-    # 정각(00분)에만 실행
-    if: github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.type == 'market' || github.event.inputs.type == 'all'))
+  collect-market-refine-gem:
+    # 정각(00분): 거래소 - 재련 재료 + 젬 (11개)
+    if: github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'refine,gem')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Collect market prices
+      - name: Collect market prices (refine + gem)
         run: |
-          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?type=market" \
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine,gem" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json"
 
-  collect-auction:
-    # 10분(10분)에만 실행
-    if: github.event.schedule == '10 * * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.type == 'auction' || github.event.inputs.type == 'all'))
+  collect-market-additional-engraving:
+    # 5분: 거래소 - 재련 추가 재료 + 각인서 (22개)
+    if: github.event.schedule == '5 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'refine_additional,engraving')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Collect auction prices
+      - name: Collect market prices (refine_additional + engraving)
         run: |
-          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?type=auction" \
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine_additional,engraving" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
+
+  collect-auction-accessory-jewel:
+    # 10분: 경매장 - 악세 + 보석 (14개)
+    if: github.event.schedule == '10 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'accessory,jewel')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Collect auction prices (accessory + jewel)
+        run: |
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=accessory,jewel" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json"
