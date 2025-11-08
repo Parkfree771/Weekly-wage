@@ -11,6 +11,18 @@ type PriceEntry = {
   date?: string; // YYYY-MM-DD 형식
 };
 
+// 이벤트 정의
+type EventInfo = {
+  date: string; // YYYY-MM-DD 형식
+  label: string;
+  color?: string;
+};
+
+const EVENTS: EventInfo[] = [
+  { date: '2025-11-07', label: '7주년 라방', color: '#ff6b6b' },
+  { date: '2025-12-07', label: '로아온', color: '#ffa500' }
+];
+
 type CategoryStyle = {
   label: string;
   color: string;
@@ -152,12 +164,22 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       const dateKey = `${month}/${day}`;
       const dateObj = new Date(Date.UTC(year, month - 1, day));
       const dayOfWeek = dateObj.getUTCDay();
+      const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+      // 이벤트 찾기
+      const event = EVENTS.find(e => e.date === dateString);
+      const eventLabel = event?.label;
+      const eventColor = event?.color;
+
       dateMap.set(dateKey, {
         날짜: dateKey,
         가격: entry.price,
         rawTime: dateObj.getTime(),
         isWednesday: dayOfWeek === 3,
-        fullDate: dateObj
+        fullDate: dateObj,
+        eventLabel,
+        eventColor,
+        hasEvent: !!eventLabel || dayOfWeek === 3
       });
     });
     return Array.from(dateMap.values()).sort((a, b) => a.rawTime - b.rawTime);
@@ -217,6 +239,72 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     return filteredHistory.reduce((acc, entry) => acc + entry.price, 0) / filteredHistory.length;
   }, [filteredHistory]);
 
+  // 커스텀 점 렌더러 (이벤트 라벨 포함)
+  const CustomDot = (props: any) => {
+    const { cx, cy, payload } = props;
+    const hasEvent = payload.eventLabel || payload.isWednesday;
+    const eventLabel = payload.eventLabel || (payload.isWednesday ? '수요일' : '');
+    const eventColor = payload.eventColor || '#ef4444';
+
+    if (!hasEvent) {
+      return (
+        <circle cx={cx} cy={cy} r={6} fill={chartColor} strokeWidth={3} stroke="var(--card-bg)" />
+      );
+    }
+
+    return (
+      <g>
+        <circle cx={cx} cy={cy} r={6} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />
+        <text
+          x={cx}
+          y={cy - 15}
+          textAnchor="middle"
+          fill={eventColor}
+          fontSize={11}
+          fontWeight="700"
+          style={{
+            textShadow: '0 0 3px var(--card-bg), 0 0 3px var(--card-bg), 0 0 3px var(--card-bg)'
+          }}
+        >
+          {eventLabel}
+        </text>
+      </g>
+    );
+  };
+
+  // 모바일용 커스텀 점 렌더러
+  const CustomDotMobile = (props: any) => {
+    const { cx, cy, payload } = props;
+    const hasEvent = payload.eventLabel || payload.isWednesday;
+    const eventLabel = payload.eventLabel || (payload.isWednesday ? '수요일' : '');
+    const eventColor = payload.eventColor || '#ef4444';
+
+    if (!hasEvent) {
+      return (
+        <circle cx={cx} cy={cy} r={3} fill={chartColor} strokeWidth={2} stroke="var(--card-bg)" />
+      );
+    }
+
+    return (
+      <g>
+        <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />
+        <text
+          x={cx}
+          y={cy - 10}
+          textAnchor="middle"
+          fill={eventColor}
+          fontSize={8}
+          fontWeight="700"
+          style={{
+            textShadow: '0 0 2px var(--card-bg), 0 0 2px var(--card-bg)'
+          }}
+        >
+          {eventLabel}
+        </text>
+      </g>
+    );
+  };
+
   // 기간 라벨 맵핑
   const periodLabels: Record<PeriodOption, string> = {
     '7d': '7D',
@@ -226,6 +314,71 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     '1y': '1Y',
     'all': 'ALL'
   };
+
+  // X축에 표시할 날짜 계산 (오늘 기준 균일한 간격으로 역산)
+  const xAxisTicks = useMemo(() => {
+    if (chartData.length === 0) return [];
+
+    // 기간별 표시 간격 설정
+    let interval: number;
+    switch (selectedPeriod) {
+      case '7d':
+        interval = 1; // 매일
+        break;
+      case '1m':
+        interval = 3; // 3일 간격
+        break;
+      case '3m':
+        interval = 7; // 7일 간격
+        break;
+      case '6m':
+        interval = 14; // 14일 간격
+        break;
+      case '1y':
+        interval = 30; // 30일 간격
+        break;
+      case 'all':
+        interval = 60; // 60일 간격
+        break;
+      default:
+        interval = 1;
+    }
+
+    const ticks: string[] = [];
+    const tickSet = new Set<string>();
+
+    // 오늘 날짜부터 시작
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 차트 데이터의 시작 날짜
+    const firstDate = chartData[0].fullDate;
+
+    // 오늘부터 역산하면서 간격에 맞는 날짜 생성
+    let currentDate = new Date(today);
+
+    while (currentDate >= firstDate) {
+      const dateKey = `${currentDate.getMonth() + 1}/${currentDate.getDate()}`;
+
+      // 해당 날짜에 데이터가 있는지 확인
+      const hasData = chartData.some(d => d.날짜 === dateKey);
+
+      if (hasData && !tickSet.has(dateKey)) {
+        ticks.push(dateKey);
+        tickSet.add(dateKey);
+      }
+
+      // 간격만큼 날짜 빼기
+      currentDate.setDate(currentDate.getDate() - interval);
+    }
+
+    // 날짜 순서대로 정렬
+    return ticks.sort((a, b) => {
+      const aIndex = chartData.findIndex(d => d.날짜 === a);
+      const bIndex = chartData.findIndex(d => d.날짜 === b);
+      return aIndex - bIndex;
+    });
+  }, [chartData, selectedPeriod]);
 
   if (!selectedItem) {
     return (
@@ -461,11 +614,11 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical={true} horizontal={true} />
-                  <XAxis dataKey="날짜" tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); const isWednesday = dataIndex >= 0 ? chartData[dataIndex].isWednesday : false; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" transform="rotate(-35)">{payload.value}</text>{isWednesday && (<text x={0} y={12} dy={10} textAnchor="end" fill="#ef4444" fontSize={12} fontWeight="700" transform="rotate(-35)">수요일</text>)}</g>); }} height={60} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
+                  <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : ''); const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" transform="rotate(-35)">{payload.value}</text>{eventLabel && (<text x={0} y={12} dy={10} textAnchor="end" fill={eventColor} fontSize={12} fontWeight="700" transform="rotate(-35)">{eventLabel}</text>)}</g>); }} height={80} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
                   <YAxis tick={{ fontSize: stats && stats.max >= 1000000 ? 14 : 16, fill: 'var(--text-primary)', fontWeight: '700' }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 95 : stats && stats.max >= 100000 ? 80 : 60} domain={yAxisConfig.domain} tickCount={yAxisConfig.tickCount} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
                   <Tooltip formatter={(value: number) => [formatTooltipPrice(value), '가격']} labelFormatter={(label) => label} contentStyle={{ backgroundColor: 'var(--card-bg)', border: `3px solid ${chartColor}`, borderRadius: '12px', fontSize: '15px', padding: '14px 18px', boxShadow: 'var(--shadow-lg)', fontWeight: '600', color: 'var(--text-primary)' }} labelStyle={{ fontWeight: '700', color: chartColor, marginBottom: '6px', fontSize: '16px' }} cursor={{ stroke: chartColor, strokeWidth: 2, strokeDasharray: '5 5' }} />
                   <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} label={{ value: `${formatPrice(averagePrice)}`, position: 'left', fill: chartColor, fontSize: 13, fontWeight: '700' }} />
-                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={{ r: 6, fill: chartColor, strokeWidth: 3, stroke: 'var(--card-bg)' }} activeDot={{ r: 9, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 4 }} fill="url(#colorPrice)" />
+                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={<CustomDot />} activeDot={{ r: 9, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 4 }} fill="url(#colorPrice)" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -475,11 +628,11 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />
-                  <XAxis dataKey="날짜" tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); const isWednesday = dataIndex >= 0 ? chartData[dataIndex].isWednesday : false; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" transform="rotate(-45)">{payload.value}</text>{isWednesday && (<text x={0} y={8} dy={8} textAnchor="end" fill="#ef4444" fontSize={7} fontWeight="700" transform="rotate(-45)">수요일</text>)}</g>); }} height={45} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
+                  <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : ''); const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" transform="rotate(-45)">{payload.value}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
                   <YAxis tick={{ fontSize: stats && stats.max >= 1000000 ? 7 : 9, fill: 'var(--text-primary)', fontWeight: '700' }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 55 : stats && stats.max >= 100000 ? 50 : stats && stats.max >= 10000 ? 50 : 35} domain={yAxisConfig.domain} tickCount={yAxisConfig.tickCount} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
                   <Tooltip formatter={(value: number) => [formatTooltipPrice(value), '가격']} labelFormatter={(label) => label} contentStyle={{ backgroundColor: 'var(--card-bg)', border: `2px solid ${chartColor}`, borderRadius: '8px', fontSize: '11px', padding: '8px 10px', boxShadow: 'var(--shadow-lg)', fontWeight: '600', color: 'var(--text-primary)' }} labelStyle={{ fontWeight: '700', color: chartColor, marginBottom: '4px', fontSize: '12px' }} cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: '3 3' }} />
                   <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} label={{ value: `${formatPrice(averagePrice)}`, position: 'left', fill: chartColor, fontSize: 9, fontWeight: '700' }} />
-                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.5} dot={{ r: 3, fill: chartColor, strokeWidth: 2, stroke: 'var(--card-bg)' }} activeDot={{ r: 6, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} fill="url(#colorPriceMobile)" />
+                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.5} dot={<CustomDotMobile />} activeDot={{ r: 6, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} fill="url(#colorPriceMobile)" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
