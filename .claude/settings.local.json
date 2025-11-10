@@ -21,7 +21,11 @@
       "Bash(npm uninstall:*)",
       "Bash(timeout /t 5)",
       "Bash(curl:*)",
-      "Bash(git log --all --oneline --grep=\"gem\" -i -10)"
+      "Bash(git log --all --oneline --grep=\"gem\" -i -10)",
+      "Bash(dir /s /b .nextcache 2)",
+      "Bash(nul)",
+      "Bash(dir:*)",
+      "Bash(timeout /t 15)"
     ],
     "deny": [],
     "ask": []
