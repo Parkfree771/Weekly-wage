@@ -88,7 +88,10 @@ export async function GET(
 ) {
   try {
     const { itemId } = await context.params;
-    console.log(`[API] Received request for itemId: ${itemId}`);
+    const url = new URL(request.url);
+    const noCache = url.searchParams.get('noCache') === 'true';
+
+    console.log(`[API] Received request for itemId: ${itemId}, noCache: ${noCache}`);
 
     if (!itemId) {
       console.log('[API] Missing itemId');
@@ -98,8 +101,8 @@ export async function GET(
       );
     }
 
-    // 특정 시간대에는 캐시 우회
-    const bypassCache = shouldBypassCache();
+    // noCache 파라미터가 있거나 특정 시간대에는 캐시 우회
+    const bypassCache = noCache || shouldBypassCache();
     const data = bypassCache
       ? await getDirectPriceHistory(itemId)
       : await getCachedPriceHistory(itemId);

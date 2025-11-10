@@ -186,18 +186,18 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }, [filteredHistory]);
 
   const formatPrice = useCallback((value: number) => {
-    if (selectedItem?.id === '6861012' && value < 1000) {
+    if (value < 100) {
       return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     }
     return Math.round(value).toLocaleString('ko-KR');
-  }, [selectedItem?.id]);
+  }, []);
 
   const formatTooltipPrice = useCallback((value: number) => {
-    if (selectedItem?.id === '6861012' && value < 1000) {
+    if (value < 100) {
       return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G';
     }
     return value.toLocaleString('ko-KR') + ' G';
-  }, [selectedItem?.id]);
+  }, []);
 
   const stats = useMemo(() => {
     if (filteredHistory.length === 0) return null;
@@ -210,22 +210,56 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }, [filteredHistory]);
 
   const yAxisConfig = useMemo(() => {
-    if (!stats) return { domain: ['auto', 'auto'], tickCount: 5 };
-    const priceRange = stats.max - stats.min;
-    const isAbidos = selectedItem?.id === '6861012';
+    if (!stats) return { domain: ['auto', 'auto'], ticks: [], avgValue: null };
+
+    // 가격대에 따른 적절한 틱 단위 및 개수 결정
     let tickUnit = 1;
-    let tickCount = 6;
-    if (stats.max >= 1000000) tickUnit = 100000;
-    else if (stats.max >= 100000) tickUnit = 10000;
-    else if (stats.max >= 10000) tickUnit = 1000;
-    else if (stats.max >= 1000) tickUnit = 100;
-    else if (stats.max >= 100) tickUnit = 10;
-    else tickUnit = isAbidos ? 0.1 : 1;
-    const padding = Math.max(priceRange * 0.1, tickUnit);
-    const minValue = isAbidos && stats.max < 100 ? Math.floor((stats.min - padding) * 10) / 10 : Math.floor((stats.min - padding) / tickUnit) * tickUnit;
-    const maxValue = isAbidos && stats.max < 100 ? Math.ceil((stats.max + padding) * 10) / 10 : Math.ceil((stats.max + padding) / tickUnit) * tickUnit;
-    return { domain: [minValue, maxValue], tickCount };
-  }, [stats, selectedItem?.id]);
+    let tickCount = 7; // 평균 중심으로 위아래 각 3개씩
+
+    if (stats.avg >= 1000000) {
+      tickUnit = 200000; // 100만 이상: 20만 간격
+      tickCount = 7;
+    } else if (stats.avg >= 100000) {
+      tickUnit = 20000; // 10만~100만: 2만 간격
+      tickCount = 7;
+    } else if (stats.avg >= 10000) {
+      tickUnit = 2000; // 1만~10만: 2000 간격
+      tickCount = 7;
+    } else if (stats.avg >= 1000) {
+      tickUnit = 200; // 1000~1만: 200 간격
+      tickCount = 7;
+    } else if (stats.avg >= 100) {
+      tickUnit = 20; // 100~1000: 20 간격
+      tickCount = 7;
+    } else {
+      tickUnit = 2; // 100 미만: 2 간격
+      tickCount = 7;
+    }
+
+    // 평균가를 틱 단위에 맞게 반올림
+    const roundedAvg = Math.round(stats.avg / tickUnit) * tickUnit;
+
+    // 평균가를 중심으로 위아래로 틱 생성
+    const ticks = [];
+    const halfCount = Math.floor(tickCount / 2);
+
+    for (let i = -halfCount; i <= halfCount; i++) {
+      const tickValue = roundedAvg + (i * tickUnit);
+      if (tickValue >= 0) { // 음수 가격 방지
+        ticks.push(stats.avg < 100 ? Math.round(tickValue * 10) / 10 : Math.round(tickValue));
+      }
+    }
+
+    // 도메인은 생성된 틱의 최소/최대값
+    const minValue = ticks[0];
+    const maxValue = ticks[ticks.length - 1];
+
+    return {
+      domain: [minValue, maxValue],
+      ticks,
+      avgValue: stats.avg < 100 ? Math.round(roundedAvg * 10) / 10 : Math.round(roundedAvg)
+    };
+  }, [stats]);
 
   const changeRate = useMemo(() => {
     if (chartData.length < 2) return 0;
@@ -511,7 +545,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${avgStyle.text}`, padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = avgStyle.bg; e.currentTarget.style.borderColor = avgStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = avgStyle.text; }}>
                     <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>평균가</small>
                     <strong style={{ fontSize: '1rem', color: avgStyle.text, fontWeight: '700' }}>
-                      {selectedItem?.id === '6861012' && stats.avg < 1000 ? stats.avg.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G' : formatTooltipPrice(Math.round(stats.avg))}
+                      {stats.avg < 100 ? stats.avg.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G' : formatTooltipPrice(Math.round(stats.avg))}
                     </strong>
                   </div>
                 </div>
@@ -615,9 +649,9 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical={true} horizontal={true} />
                   <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : ''); const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" transform="rotate(-35)">{payload.value}</text>{eventLabel && (<text x={0} y={12} dy={10} textAnchor="end" fill={eventColor} fontSize={12} fontWeight="700" transform="rotate(-35)">{eventLabel}</text>)}</g>); }} height={80} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
-                  <YAxis tick={{ fontSize: stats && stats.max >= 1000000 ? 14 : 16, fill: 'var(--text-primary)', fontWeight: '700' }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 95 : stats && stats.max >= 100000 ? 80 : 60} domain={yAxisConfig.domain} tickCount={yAxisConfig.tickCount} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
+                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 14 : 16} fontWeight={isAverage ? '900' : '700'} dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 95 : stats && stats.max >= 100000 ? 80 : stats && stats.max >= 10000 ? 75 : 60} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
                   <Tooltip formatter={(value: number) => [formatTooltipPrice(value), '가격']} labelFormatter={(label) => label} contentStyle={{ backgroundColor: 'var(--card-bg)', border: `3px solid ${chartColor}`, borderRadius: '12px', fontSize: '15px', padding: '14px 18px', boxShadow: 'var(--shadow-lg)', fontWeight: '600', color: 'var(--text-primary)' }} labelStyle={{ fontWeight: '700', color: chartColor, marginBottom: '6px', fontSize: '16px' }} cursor={{ stroke: chartColor, strokeWidth: 2, strokeDasharray: '5 5' }} />
-                  <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} label={{ value: `${formatPrice(averagePrice)}`, position: 'left', fill: chartColor, fontSize: 13, fontWeight: '700' }} />
+                  <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} />
                   <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={<CustomDot />} activeDot={{ r: 9, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 4 }} fill="url(#colorPrice)" />
                 </LineChart>
               </ResponsiveContainer>
@@ -629,9 +663,9 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />
                   <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : ''); const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" transform="rotate(-45)">{payload.value}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
-                  <YAxis tick={{ fontSize: stats && stats.max >= 1000000 ? 7 : 9, fill: 'var(--text-primary)', fontWeight: '700' }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 55 : stats && stats.max >= 100000 ? 50 : stats && stats.max >= 10000 ? 50 : 35} domain={yAxisConfig.domain} tickCount={yAxisConfig.tickCount} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
+                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 7 : 9} fontWeight={isAverage ? '900' : '700'} dx={-4}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 55 : stats && stats.max >= 100000 ? 50 : stats && stats.max >= 10000 ? 55 : 35} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
                   <Tooltip formatter={(value: number) => [formatTooltipPrice(value), '가격']} labelFormatter={(label) => label} contentStyle={{ backgroundColor: 'var(--card-bg)', border: `2px solid ${chartColor}`, borderRadius: '8px', fontSize: '11px', padding: '8px 10px', boxShadow: 'var(--shadow-lg)', fontWeight: '600', color: 'var(--text-primary)' }} labelStyle={{ fontWeight: '700', color: chartColor, marginBottom: '4px', fontSize: '12px' }} cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: '3 3' }} />
-                  <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} label={{ value: `${formatPrice(averagePrice)}`, position: 'left', fill: chartColor, fontSize: 9, fontWeight: '700' }} />
+                  <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} />
                   <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.5} dot={<CustomDotMobile />} activeDot={{ r: 6, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} fill="url(#colorPriceMobile)" />
                 </LineChart>
               </ResponsiveContainer>

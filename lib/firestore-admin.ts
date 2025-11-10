@@ -297,8 +297,8 @@ export async function getDailyPriceHistory(
       const utcDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
       const timestamp = Timestamp.fromDate(utcDate);
 
-      // 아비도스 융화재료(6861012)만 소수점 첫째 자리까지, 나머지는 정수
-      const price = data.itemId === '6861012'
+      // 100골드 이하는 소수점 첫째 자리까지, 나머지는 정수
+      const price = data.price < 100
         ? Math.round(data.price * 10) / 10
         : Math.round(data.price);
 
@@ -321,8 +321,8 @@ export async function getDailyPriceHistory(
       const data = todayDoc.data();
       if (data && data.prices && data.prices.length > 0) {
         const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
-        // 아비도스 융화재료(6861012)만 소수점 첫째 자리까지, 나머지는 정수
-        const roundedAvgPrice = data.itemId === '6861012'
+        // 100골드 이하는 소수점 첫째 자리까지, 나머지는 정수
+        const roundedAvgPrice = avgPrice < 100
           ? Math.round(avgPrice * 10) / 10
           : Math.round(avgPrice);
         // UTC 기준 00:00:00으로 timestamp 생성 (날짜 보존)

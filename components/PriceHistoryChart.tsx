@@ -93,9 +93,8 @@ export default function PriceHistoryChart({
 
   // 가격 포맷팅
   const formatPrice = (value: number) => {
-    // 모든 아이템 전체 가격으로 표시 (축약 없음)
-    // 아비도스 융화재료만 소수점 첫째 자리, 나머지는 정수
-    if (itemId === '6861012' && value < 1000) {
+    // 100골드 이하는 소수점 첫째 자리까지 표시
+    if (value < 100) {
       return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     }
     return Math.round(value).toLocaleString('ko-KR');
@@ -112,7 +111,6 @@ export default function PriceHistoryChart({
   // Y축 범위 및 틱 설정
   const yAxisDomain = stats ? (() => {
     const priceRange = stats.max - stats.min;
-    const isAbidos = itemId === '6861012';
 
     // 가격대에 따른 적절한 단위 결정
     let tickUnit = 1;
@@ -127,15 +125,15 @@ export default function PriceHistoryChart({
     } else if (stats.max >= 100) {
       tickUnit = 10; // 100~1000: 10 단위
     } else {
-      tickUnit = isAbidos ? 0.1 : 1; // 100 미만
+      tickUnit = 0.1; // 100 미만
     }
 
     const padding = Math.max(priceRange * 0.1, tickUnit);
 
-    const minValue = isAbidos && stats.max < 100
+    const minValue = stats.max < 100
       ? Math.floor((stats.min - padding) * 10) / 10
       : Math.floor((stats.min - padding) / tickUnit) * tickUnit;
-    const maxValue = isAbidos && stats.max < 100
+    const maxValue = stats.max < 100
       ? Math.ceil((stats.max + padding) * 10) / 10
       : Math.ceil((stats.max + padding) / tickUnit) * tickUnit;
 
@@ -223,7 +221,7 @@ export default function PriceHistoryChart({
                   <div className="text-center p-2 bg-light rounded">
                     <small className="text-muted d-block">평균가</small>
                     <strong className="text-primary">
-                      {itemId === '6861012' && stats.avg < 1000
+                      {stats.avg < 100
                         ? stats.avg.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
                         : Math.round(stats.avg).toLocaleString('ko-KR')
                       }G
@@ -250,7 +248,7 @@ export default function PriceHistoryChart({
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
-                  margin={{ top: 5, right: 10, left: stats && stats.max >= 100000 ? 10 : 0, bottom: 5 }}
+                  margin={{ top: 5, right: 10, left: stats && stats.max >= 100000 ? 10 : stats && stats.max >= 10000 ? 5 : 0, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
@@ -263,7 +261,7 @@ export default function PriceHistoryChart({
                   <YAxis
                     tick={{ fontSize: stats && stats.max >= 1000000 ? 7 : 9 }}
                     tickFormatter={formatPrice}
-                    width={stats && stats.max >= 1000000 ? 85 : stats && stats.max >= 100000 ? 70 : 50}
+                    width={stats && stats.max >= 1000000 ? 85 : stats && stats.max >= 100000 ? 70 : stats && stats.max >= 10000 ? 65 : 50}
                     domain={yAxisDomain}
                   />
                   <Tooltip
