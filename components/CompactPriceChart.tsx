@@ -212,52 +212,54 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const yAxisConfig = useMemo(() => {
     if (!stats) return { domain: ['auto', 'auto'], ticks: [], avgValue: null };
 
-    // 가격대에 따른 적절한 틱 단위 및 개수 결정
-    let tickUnit = 1;
-    let tickCount = 7; // 평균 중심으로 위아래 각 3개씩
+    const priceRange = stats.max - stats.min;
 
-    if (stats.avg >= 1000000) {
+    // 가격대에 따른 적절한 틱 단위 결정
+    let tickUnit = 1;
+    if (stats.max >= 1000000) {
       tickUnit = 200000; // 100만 이상: 20만 간격
-      tickCount = 7;
-    } else if (stats.avg >= 100000) {
+    } else if (stats.max >= 100000) {
       tickUnit = 20000; // 10만~100만: 2만 간격
-      tickCount = 7;
-    } else if (stats.avg >= 10000) {
+    } else if (stats.max >= 10000) {
       tickUnit = 2000; // 1만~10만: 2000 간격
-      tickCount = 7;
-    } else if (stats.avg >= 1000) {
+    } else if (stats.max >= 1000) {
       tickUnit = 200; // 1000~1만: 200 간격
-      tickCount = 7;
-    } else if (stats.avg >= 100) {
+    } else if (stats.max >= 100) {
       tickUnit = 20; // 100~1000: 20 간격
-      tickCount = 7;
     } else {
       tickUnit = 2; // 100 미만: 2 간격
-      tickCount = 7;
     }
 
-    // 평균가를 틱 단위에 맞게 반올림
-    const roundedAvg = Math.round(stats.avg / tickUnit) * tickUnit;
+    // 실제 데이터 범위에 패딩 추가 (상하 10%)
+    const padding = Math.max(priceRange * 0.1, tickUnit);
+    const minWithPadding = stats.min - padding;
+    const maxWithPadding = stats.max + padding;
 
-    // 평균가를 중심으로 위아래로 틱 생성
+    // 도메인을 틱 단위에 맞춰 정렬 (최소값은 내림, 최대값은 올림)
+    const domainMin = stats.max < 100
+      ? Math.floor(minWithPadding * 10) / 10
+      : Math.floor(minWithPadding / tickUnit) * tickUnit;
+    const domainMax = stats.max < 100
+      ? Math.ceil(maxWithPadding * 10) / 10
+      : Math.ceil(maxWithPadding / tickUnit) * tickUnit;
+
+    // 일관성 있는 틱 생성 (도메인 범위 내에서 균등하게)
     const ticks = [];
-    const halfCount = Math.floor(tickCount / 2);
+    let currentTick = domainMin;
 
-    for (let i = -halfCount; i <= halfCount; i++) {
-      const tickValue = roundedAvg + (i * tickUnit);
-      if (tickValue >= 0) { // 음수 가격 방지
-        ticks.push(stats.avg < 100 ? Math.round(tickValue * 10) / 10 : Math.round(tickValue));
-      }
+    while (currentTick <= domainMax) {
+      ticks.push(stats.max < 100 ? Math.round(currentTick * 10) / 10 : Math.round(currentTick));
+      currentTick += tickUnit;
     }
 
-    // 도메인은 생성된 틱의 최소/최대값
-    const minValue = ticks[0];
-    const maxValue = ticks[ticks.length - 1];
+    // 평균가에 가장 가까운 틱 찾기 (강조용)
+    const roundedAvg = Math.round(stats.avg / tickUnit) * tickUnit;
+    const avgValue = stats.max < 100 ? Math.round(roundedAvg * 10) / 10 : Math.round(roundedAvg);
 
     return {
-      domain: [minValue, maxValue],
+      domain: [domainMin, domainMax],
       ticks,
-      avgValue: stats.avg < 100 ? Math.round(roundedAvg * 10) / 10 : Math.round(roundedAvg)
+      avgValue
     };
   }, [stats]);
 
@@ -278,7 +280,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     const { cx, cy, payload } = props;
     const hasEvent = payload.eventLabel || payload.isWednesday;
     const eventLabel = payload.eventLabel || (payload.isWednesday ? '수요일' : '');
-    const eventColor = payload.eventColor || '#ef4444';
+    // 유물 각인서 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
+    const eventColor = categoryStyle?.label === '유물 각인서'
+      ? '#3b82f6'
+      : (payload.eventColor || '#ef4444');
 
     if (!hasEvent) {
       return (
@@ -311,7 +316,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     const { cx, cy, payload } = props;
     const hasEvent = payload.eventLabel || payload.isWednesday;
     const eventLabel = payload.eventLabel || (payload.isWednesday ? '수요일' : '');
-    const eventColor = payload.eventColor || '#ef4444';
+    // 유물 각인서 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
+    const eventColor = categoryStyle?.label === '유물 각인서'
+      ? '#3b82f6'
+      : (payload.eventColor || '#ef4444');
 
     if (!hasEvent) {
       return (
