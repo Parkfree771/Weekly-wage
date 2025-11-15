@@ -30,10 +30,20 @@ async function fetchSingleItemPrice(itemId: string, apiKey: string): Promise<{ i
     // 가격 우선순위: YDayAvgPrice > Stats[0].AvgPrice > CurrentMinPrice
     if (itemData.YDayAvgPrice && itemData.YDayAvgPrice > 0) {
       price = itemData.YDayAvgPrice;
+      // YDayAvgPrice는 묶음 단위 가격이므로 개당 가격으로 환산
+      switch (itemId) {
+        case '66102106': // 수호석 (100개 단위)
+        case '66102006': // 파괴석 (100개 단위)
+          price /= 100;
+          break;
+        case '66130143': // 운명파편 (API에서는 1000개 단위 주머니)
+          price /= 1000;
+          break;
+      }
     } else if (itemData.Stats && itemData.Stats.length > 0 && itemData.Stats[0].AvgPrice > 0) {
-      price = itemData.Stats[0].AvgPrice;
+      price = itemData.Stats[0].AvgPrice; // 이미 개당 가격
     } else if (itemData.CurrentMinPrice && itemData.CurrentMinPrice > 0) {
-      price = itemData.CurrentMinPrice;
+      price = itemData.CurrentMinPrice; // 이미 개당 가격
     }
 
     return { itemId, price };

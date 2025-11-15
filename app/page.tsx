@@ -30,6 +30,16 @@ const SeeMoreCalculator = dynamic(() => import('@/components/SeeMoreCalculator')
   )
 });
 
+const RefiningCalculator = dynamic(() => import('@/components/refining/RefiningCalculator'), {
+  loading: () => (
+    <div className="text-center py-5">
+      <div className="spinner-border text-primary" role="status">
+        <span className="visually-hidden">로딩중...</span>
+      </div>
+    </div>
+  )
+});
+
 const PriceChartContainer = dynamic(() => import('@/components/PriceChartContainer'), {
   loading: () => (
     <div className="text-center py-5">
@@ -221,35 +231,36 @@ export default function Home() {
               </Row>
             </div>
 
+            {/* 재련 비용 계산기 섹션 */}
+            <div className="mt-3">
+              <Row className="justify-content-center">
+                <Col xl={9} lg={10} md={12}>
+                  <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
+                    <div style={{background:'var(--card-header-bg-stone)',borderBottom:'1px solid var(--border-color)'}} className="text-center py-2 border-0 card-header">
+                      <h3 className="mb-0" style={{fontWeight:'600',fontSize:'clamp(1.05rem, 2.2vw, 1.25rem)',background:'var(--gradient-text-stone)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',letterSpacing:'-0.025em'}}>재련 비용 계산</h3>
+                    </div>
+                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
+                      <RefiningCalculator />
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </div>
+
             {/* 더보기 효율 계산기 섹션 */}
             <div className="mt-3">
-              <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
-                <Card.Header
-                  className="text-center py-2 border-0"
-                  style={{
-                    background: 'var(--card-header-bg-violet)',
-                    borderBottom: '1px solid var(--border-color)'
-                  }}
-                >
-                  <h3
-                    className="mb-0"
-                    style={{
-                      fontWeight: '600',
-                      fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                      background: 'var(--gradient-text-violet)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      letterSpacing: '-0.025em'
-                    }}
-                  >
-                    더보기 손익 계산
-                  </h3>
-                </Card.Header>
-                <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-blue)'}}>
-                  <SeeMoreCalculator />
-                </Card.Body>
-              </Card>
+              <Row className="justify-content-center">
+                <Col xl={9} lg={10} md={12}>
+                  <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
+                    <div style={{background:'var(--card-header-bg-stone)',borderBottom:'1px solid var(--border-color)'}} className="text-center py-2 border-0 card-header">
+                      <h3 className="mb-0" style={{fontWeight:'600',fontSize:'clamp(1.05rem, 2.2vw, 1.25rem)',background:'var(--gradient-text-stone)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',letterSpacing:'-0.025em'}}>더보기 손익 계산</h3>
+                    </div>
+                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
+                      <SeeMoreCalculator />
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
             </div>
 
           </Col>

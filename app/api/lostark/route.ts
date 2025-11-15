@@ -17,6 +17,7 @@ export async function GET(request: Request) {
   const encodedCharacterName = encodeURIComponent(characterName);
   const profileUrl = `https://developer-lostark.game.onstove.com/armories/characters/${encodedCharacterName}/profiles`;
   const siblingsUrl = `https://developer-lostark.game.onstove.com/characters/${encodedCharacterName}/siblings`;
+  const equipmentUrl = `https://developer-lostark.game.onstove.com/armories/characters/${encodedCharacterName}/equipment`;
 
   const options = {
     headers: {
@@ -26,15 +27,20 @@ export async function GET(request: Request) {
   };
 
   try {
-    // 프로필 정보와 형제 캐릭터 정보를 동시에 요청합니다.
-    const [profileResponse, siblingsResponse] = await Promise.all([
+    // 프로필 정보, 형제 캐릭터 정보, 장비 정보를 동시에 요청합니다.
+    const [profileResponse, siblingsResponse, equipmentResponse] = await Promise.all([
       fetch(profileUrl, options),
       fetch(siblingsUrl, options),
+      fetch(equipmentUrl, options),
     ]);
 
-    if (!profileResponse.ok || !siblingsResponse.ok) {
-      const errorStatus = !profileResponse.ok ? profileResponse.status : siblingsResponse.status;
-      const errorResponse = !profileResponse.ok ? profileResponse : siblingsResponse;
+    if (!profileResponse.ok || !siblingsResponse.ok || !equipmentResponse.ok) {
+      const errorStatus = !profileResponse.ok ? profileResponse.status :
+                          !siblingsResponse.ok ? siblingsResponse.status :
+                          equipmentResponse.status;
+      const errorResponse = !profileResponse.ok ? profileResponse :
+                            !siblingsResponse.ok ? siblingsResponse :
+                            equipmentResponse;
       const errorData = await errorResponse.json().catch(() => ({}));
 
       return NextResponse.json(
@@ -43,15 +49,17 @@ export async function GET(request: Request) {
       );
     }
 
-    // 두 데이터를 합쳐서 클라이언트에 전달합니다.
-    const [profileData, siblingsData] = await Promise.all([
+    // 세 데이터를 합쳐서 클라이언트에 전달합니다.
+    const [profileData, siblingsData, equipmentData] = await Promise.all([
       profileResponse.json(),
       siblingsResponse.json(),
+      equipmentResponse.json(),
     ]);
 
     const responseData = {
       profile: profileData,
       siblings: siblingsData,
+      equipment: equipmentData,
     };
 
     // [진단용 로그] 받은 데이터를 서버 콘솔에 출력합니다.

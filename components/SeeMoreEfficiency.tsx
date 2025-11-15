@@ -11,16 +11,22 @@ const SeeMoreEfficiency: React.FC = () => {
       return <p>레이드를 선택하세요.</p>;
     }
 
-    // 나중에 이 부분을 주시는 정보에 맞게 수정해야 합니다.
     return (
-      <div>
+      <div className={styles.rewardsList}>
         <h3>{raid.name} 더보기 보상 목록</h3>
         <ul>
-          {raid.gates.map(gate => (
-            <li key={gate.gate}>
-              {gate.gate}관문 더보기: {gate.moreGold.toLocaleString()} 골드
-            </li>
-          ))}
+          {raid.gates.map(gate => {
+            const isProfit = gate.moreGold > 0;
+            const isLoss = gate.moreGold < 0;
+            const itemClassName = isProfit ? styles.profit : isLoss ? styles.loss : styles.neutral;
+
+            return (
+              <li key={gate.gate} className={`${styles.rewardItem} ${itemClassName}`}>
+                <span>{gate.gate}관문 더보기</span>
+                <span>{gate.moreGold.toLocaleString()} 골드</span>
+              </li>
+            );
+          })}
         </ul>
       </div>
     );

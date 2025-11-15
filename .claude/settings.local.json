@@ -25,7 +25,14 @@
       "Bash(dir /s /b .nextcache 2)",
       "Bash(nul)",
       "Bash(dir:*)",
-      "Bash(timeout /t 15)"
+      "Bash(timeout /t 15)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:namu.wiki)",
+      "WebFetch(domain:loa.icepeng.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(for id in 66112553 66112551 66112554 66112552 66112714 66112712 66112713 66112711 66111131 66111132)",
+      "Bash(do echo \"=== Item $id ===\" curl -s \"https://lostarkweeklygold.kr/api/market/price-history/$id?noCache=true\")",
+      "Bash(rd /s /q .next)"
     ],
     "deny": [],
     "ask": []

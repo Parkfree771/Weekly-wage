@@ -1,0 +1,56 @@
+.rewardItem {
+  padding: 10px 15px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.profit {
+  background-color: var(--profit-bg);
+  border-color: var(--profit-color);
+  color: var(--profit-color);
+}
+
+.loss {
+  background-color: var(--loss-bg);
+  border-color: var(--loss-color);
+  color: var(--loss-color);
+}
+
+.neutral {
+  background-color: var(--neutral-bg);
+  border-color: var(--neutral-color);
+  color: var(--neutral-color);
+}
+
+.title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .profit {
+  background-color: var(--profit-bg);
+  border-color: var(--profit-color);
+  color: var(--profit-color);
+}
+
+[data-theme="dark"] .loss {
+  background-color: var(--loss-bg);
+  border-color: var(--loss-color);
+  color: var(--loss-color);
+}
+
+[data-theme="dark"] .neutral {
+  background-color: var(--neutral-bg);
+  border-color: var(--neutral-color);
+  color: var(--neutral-color);
+}

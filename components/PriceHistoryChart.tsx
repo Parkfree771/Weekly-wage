@@ -34,7 +34,8 @@ export default function PriceHistoryChart({
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`/api/market/price-history/${itemId}`);
+      // 모든 데이터를 가져오기 (최대 999일)
+      const response = await axios.get(`/api/market/price-history/${itemId}?days=999`);
       setHistory(response.data.history || []);
     } catch (err: any) {
       console.error('가격 히스토리 조회 오류:', err);
