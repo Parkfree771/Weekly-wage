@@ -137,44 +137,56 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
     <>
       <Form onSubmit={handleSearch}>
         <div className="d-flex justify-content-center">
-          <InputGroup className="mb-3 simple-search-group" style={{maxWidth: '600px'}}>
-            <Form.Control
-              placeholder="로스트아크 캐릭터명을 입력하세요"
-              aria-label="캐릭터명을 입력하세요"
-              value={characterName}
-              onChange={(e) => {
-                setCharacterName(e.target.value);
-                if (error) setError(null);
-              }}
-              disabled={isLoading}
-              className={`simple-search-input ${error ? 'is-invalid' : ''}`}
-              autoComplete="off"
-              style={{ 
-                backgroundColor: 'var(--input-bg)', 
-                borderColor: 'var(--input-border)', 
-                color: 'var(--text-primary)' 
-              }}
-            />
-            <Button 
-              variant="primary" 
-              type="submit" 
-              disabled={isLoading || !characterName.trim()} 
-              className="simple-search-button"
-              style={{
-                backgroundColor: 'var(--primary-brand)',
-                borderColor: 'var(--primary-brand)',
-              }}
-            >
-              {isLoading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  검색 중{retryCount > 0 ? ` (${retryCount}/3)` : ''}...
-                </>
-              ) : (
-                '검색'
-              )}
-            </Button>
-          </InputGroup>
+          <div className="mb-3" style={{maxWidth: '550px', width: '100%'}}>
+            <div className="d-flex gap-2">
+              <Form.Control
+                placeholder="로스트아크 캐릭터명을 입력하세요"
+                aria-label="캐릭터명을 입력하세요"
+                value={characterName}
+                onChange={(e) => {
+                  setCharacterName(e.target.value);
+                  if (error) setError(null);
+                }}
+                disabled={isLoading}
+                autoComplete="off"
+                style={{
+                  backgroundColor: 'var(--input-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
+                  padding: 'clamp(0.5rem, 1.5vw, 0.65rem) clamp(0.9rem, 2vw, 1.1rem)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  fontWeight: '500',
+                  boxShadow: 'var(--shadow-sm)',
+                  transition: 'all 0.2s ease',
+                }}
+              />
+              <Button
+                type="submit"
+                disabled={isLoading || !characterName.trim()}
+                style={{
+                  backgroundColor: 'var(--brand-primary)',
+                  padding: 'clamp(0.5rem, 1.5vw, 0.65rem) clamp(1.2rem, 2.5vw, 1.6rem)',
+                  borderRadius: '12px',
+                  fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
+                  fontWeight: '700',
+                  border: 'none',
+                  transition: 'all 0.2s ease',
+                  boxShadow: 'var(--shadow-md)',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    검색 중{retryCount > 0 ? ` (${retryCount}/3)` : ''}...
+                  </>
+                ) : (
+                  '검색'
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
         {error && (
           <div className="d-flex justify-content-center">

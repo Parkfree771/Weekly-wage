@@ -62,9 +62,6 @@ export async function GET(request: Request) {
       equipment: equipmentData,
     };
 
-    // [진단용 로그] 받은 데이터를 서버 콘솔에 출력합니다.
-    console.log('Lost Ark API Response:', JSON.stringify(responseData, null, 2));
-
     return NextResponse.json(responseData);
 
   } catch (error: any) {

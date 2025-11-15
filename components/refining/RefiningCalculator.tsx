@@ -2254,7 +2254,7 @@ export default function RefiningCalculator() {
                                   amount={materials.빙하}
                                   color="#a855f7"
                                   cost={results.materialCosts['빙하']}
-                                  showEnableToggle={true}
+                                  showEnableToggle={false}
                                   isEnabled={advancedMaterialOptions.armorNormalBreath.enabled || advancedMaterialOptions.armorBonusBreath.enabled}
                                   onToggleEnabled={() => {}}
                                   showCheckbox={true}
@@ -2277,7 +2277,7 @@ export default function RefiningCalculator() {
                                     amount={materials.재봉술1단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['재봉술1단'] || 0}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.armorNormalBook1.enabled || advancedMaterialOptions.armorBonusBook1.enabled}
                                     onToggleEnabled={() => {}}
                                     showCheckbox={true}
@@ -2301,7 +2301,7 @@ export default function RefiningCalculator() {
                                     amount={materials.재봉술2단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['재봉술2단'] || 0}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.armorNormalBook2.enabled || advancedMaterialOptions.armorBonusBook2.enabled}
                                     onToggleEnabled={() => {}}
                                     showCheckbox={true}
@@ -2329,7 +2329,7 @@ export default function RefiningCalculator() {
                                   amount={materials.용암}
                                   color="#a855f7"
                                   cost={results.materialCosts['용암']}
-                                  showEnableToggle={true}
+                                  showEnableToggle={false}
                                   isEnabled={advancedMaterialOptions.weaponNormalBreath.enabled || advancedMaterialOptions.weaponBonusBreath.enabled}
                                   onToggleEnabled={() => {}}
                                   showCheckbox={true}
@@ -2352,7 +2352,7 @@ export default function RefiningCalculator() {
                                     amount={materials.야금술1단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['야금술1단'] || 0}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.weaponNormalBook1.enabled || advancedMaterialOptions.weaponBonusBook1.enabled}
                                     onToggleEnabled={() => {}}
                                     showCheckbox={true}
@@ -2376,7 +2376,7 @@ export default function RefiningCalculator() {
                                     amount={materials.야금술2단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['야금술2단'] || 0}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.weaponNormalBook2.enabled || advancedMaterialOptions.weaponBonusBook2.enabled}
                                     onToggleEnabled={() => {}}
                                     showCheckbox={true}
@@ -2397,11 +2397,11 @@ export default function RefiningCalculator() {
                         </div>
                       )}
 
-                      {/* 6줄: 누적 골드 + 총 소모 골드 - 2개 */}
+                      {/* 6줄: 누르는 골드 + 총 소모 골드 - 2개 */}
                       <div className="mb-4">
                         <Row className="g-3 justify-content-center">
                           <Col xs={6} sm={6} md={6} style={{ minWidth: '0' }}>
-                            <MaterialCard icon="/gold.jpg" name="누적 골드" amount={materials.누골} color="#f59e0b" />
+                            <MaterialCard icon="/gold.jpg" name="누르는 골드" amount={materials.누골} color="#f59e0b" />
                           </Col>
                           <Col xs={6} sm={6} md={6} style={{ minWidth: '0' }}>
                             <MaterialCard
