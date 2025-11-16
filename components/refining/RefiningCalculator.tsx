@@ -171,6 +171,19 @@ export default function RefiningCalculator() {
   const [searched, setSearched] = useState(false);
   const [characterInfo, setCharacterInfo] = useState<{ name: string; itemLevel: string } | null>(null);
 
+  // 모바일 감지
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // 부위별 목표 레벨 설정 (일반 강화 + 상급 재련 분리)
   const [targetLevels, setTargetLevels] = useState<Record<string, { normal: number | null, advanced: number | null }>>({});
 
@@ -1010,19 +1023,20 @@ export default function RefiningCalculator() {
                   const gradeColor = getGradeColor(eq.grade);
 
                   return (
-                    <Col key={index} xs={12} sm={6} md={4} lg={2}>
+                    <Col key={index} xs={6} sm={6} md={4} lg={2}>
                       <div style={{
-                        padding: 'clamp(0.75rem, 2vw, 1rem)',
+                        padding: isMobile ? '1rem' : 'clamp(0.75rem, 2vw, 1rem)',
                         backgroundColor: 'var(--card-body-bg-blue)',
                         borderRadius: '12px',
                         border: `2px solid ${isChanged ? 'var(--brand-primary)' : gradeColor}`,
                         transition: 'all 0.25s ease',
-                        boxShadow: isChanged ? `0 0 0 3px hsla(var(--brand-hue), var(--brand-saturation), var(--brand-lightness), 0.3)` : `0 0 0 1px ${gradeColor}33`
+                        boxShadow: isChanged ? `0 0 0 3px hsla(var(--brand-hue), var(--brand-saturation), var(--brand-lightness), 0.3)` : `0 0 0 1px ${gradeColor}33`,
+                        minHeight: isMobile ? '200px' : 'auto'
                       }}>
                         <div className="d-flex justify-content-between align-items-start mb-2">
                           <div>
                             <span style={{
-                              fontSize: 'clamp(0.8rem, 1.8vw, 0.9rem)',
+                              fontSize: isMobile ? '0.9rem' : 'clamp(0.8rem, 1.8vw, 0.9rem)',
                               fontWeight: '700',
                               color: 'var(--text-primary)',
                               display: 'block'
@@ -1030,7 +1044,7 @@ export default function RefiningCalculator() {
                               {eq.name}
                             </span>
                             <span style={{
-                              fontSize: 'clamp(0.65rem, 1.5vw, 0.75rem)',
+                              fontSize: isMobile ? '0.75rem' : 'clamp(0.65rem, 1.5vw, 0.75rem)',
                               fontWeight: '600',
                               color: gradeColor,
                               display: 'block',
@@ -1044,8 +1058,8 @@ export default function RefiningCalculator() {
                               pill
                               bg=""
                               style={{
-                                fontSize: 'clamp(0.7rem, 1.6vw, 0.8rem)',
-                                padding: '0.3rem 0.6rem',
+                                fontSize: isMobile ? '0.75rem' : 'clamp(0.7rem, 1.6vw, 0.8rem)',
+                                padding: isMobile ? '0.35rem 0.7rem' : '0.3rem 0.6rem',
                                 backgroundColor: eq.type === 'weapon' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)',
                                 color: eq.type === 'weapon' ? '#ef4444' : '#3b82f6',
                                 fontWeight: '700'
@@ -1058,8 +1072,8 @@ export default function RefiningCalculator() {
                                 pill
                                 bg=""
                                 style={{
-                                  fontSize: 'clamp(0.65rem, 1.5vw, 0.75rem)',
-                                  padding: '0.25rem 0.5rem',
+                                  fontSize: isMobile ? '0.7rem' : 'clamp(0.65rem, 1.5vw, 0.75rem)',
+                                  padding: isMobile ? '0.3rem 0.6rem' : '0.25rem 0.5rem',
                                   backgroundColor: 'rgba(168, 85, 247, 0.1)',
                                   color: '#a855f7',
                                   fontWeight: '700'
@@ -1071,7 +1085,11 @@ export default function RefiningCalculator() {
                           </div>
                         </div>
                         <InputGroup size="sm" className="mb-2">
-                          <InputGroup.Text style={{ fontSize: '0.7rem', padding: '0.2rem 0.4rem' }}>일반</InputGroup.Text>
+                          <InputGroup.Text style={{
+                            fontSize: isMobile ? '0.75rem' : '0.7rem',
+                            padding: isMobile ? '0.4rem 0.6rem' : '0.2rem 0.4rem',
+                            minWidth: isMobile ? '44px' : 'auto'
+                          }}>일반</InputGroup.Text>
                           <Form.Select
                             value={targets.normal ?? ''}
                             onChange={(e) => {
@@ -1085,10 +1103,10 @@ export default function RefiningCalculator() {
                               backgroundColor: 'var(--input-bg)',
                               borderColor: 'var(--border-color)',
                               color: targets.normal === null ? 'var(--text-muted)' : 'var(--text-primary)',
-                              fontSize: 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                              fontSize: isMobile ? '0.85rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
                               fontWeight: '600',
                               borderRadius: '8px',
-                              padding: '0.4rem 0.6rem'
+                              padding: isMobile ? '0.5rem 0.7rem' : '0.4rem 0.6rem'
                             }}
                           >
                             <option value="">목표 선택</option>
@@ -1098,7 +1116,11 @@ export default function RefiningCalculator() {
                           </Form.Select>
                         </InputGroup>
                         <InputGroup size="sm">
-                          <InputGroup.Text style={{ fontSize: '0.7rem', padding: '0.2rem 0.4rem' }}>상급</InputGroup.Text>
+                          <InputGroup.Text style={{
+                            fontSize: isMobile ? '0.75rem' : '0.7rem',
+                            padding: isMobile ? '0.4rem 0.6rem' : '0.2rem 0.4rem',
+                            minWidth: isMobile ? '44px' : 'auto'
+                          }}>상급</InputGroup.Text>
                           <Form.Select
                             value={targets.advanced ?? ''}
                             onChange={(e) => {
@@ -1113,10 +1135,10 @@ export default function RefiningCalculator() {
                               backgroundColor: 'var(--input-bg)',
                               borderColor: 'var(--border-color)',
                               color: targets.advanced === null ? 'var(--text-muted)' : 'var(--text-primary)',
-                              fontSize: 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                              fontSize: isMobile ? '0.85rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
                               fontWeight: '600',
                               borderRadius: '8px',
-                              padding: '0.4rem 0.6rem'
+                              padding: isMobile ? '0.5rem 0.7rem' : '0.4rem 0.6rem'
                             }}
                           >
                             <option value="">목표 선택</option>
@@ -1135,7 +1157,7 @@ export default function RefiningCalculator() {
 
               {/* 목표 설정 */}
               <div className="mt-4" style={{
-                padding: 'clamp(1rem, 2.5vw, 1.25rem)',
+                padding: isMobile ? '1rem' : 'clamp(1rem, 2.5vw, 1.25rem)',
                 backgroundColor: 'var(--card-body-bg-blue)',
                 borderRadius: '14px',
                 border: '1px solid var(--border-color)'
@@ -1145,9 +1167,9 @@ export default function RefiningCalculator() {
                     {/* 방어구 일괄 설정 */}
                     <div className="mb-3">
                       <div style={{
-                        fontSize: 'clamp(0.8rem, 1.7vw, 0.9rem)',
+                        fontSize: isMobile ? '0.95rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
                         color: 'var(--text-secondary)',
-                        marginBottom: '0.5rem',
+                        marginBottom: isMobile ? '0.75rem' : '0.5rem',
                         fontWeight: '600'
                       }}>
                         방어구 (일반)
@@ -1185,8 +1207,8 @@ export default function RefiningCalculator() {
                               }}
                               disabled={!hasArmor}
                               style={{
-                                fontSize: 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                padding: 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
+                                fontSize: isMobile ? '0.9rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                                padding: isMobile ? '0.6rem 1rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
                                 backgroundColor: isSelected ? 'var(--brand-primary-light)' : 'var(--card-bg)',
                                 border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-color)'}`,
                                 borderRadius: '10px',
@@ -1194,7 +1216,9 @@ export default function RefiningCalculator() {
                                 fontWeight: isSelected ? '700' : '600',
                                 cursor: hasArmor ? 'pointer' : 'not-allowed',
                                 transition: 'all 0.2s ease',
-                                opacity: hasArmor ? 1 : 0.5
+                                opacity: hasArmor ? 1 : 0.5,
+                                minHeight: isMobile ? '44px' : 'auto',
+                                minWidth: isMobile ? '56px' : 'auto'
                               }}
                             >
                               +{level}
@@ -1203,13 +1227,13 @@ export default function RefiningCalculator() {
                         })}
                       </div>
                     </div>
-                    
+
                     {/* 무기 일괄 설정 */}
                     <div className="mb-3">
                       <div style={{
-                        fontSize: 'clamp(0.8rem, 1.7vw, 0.9rem)',
+                        fontSize: isMobile ? '0.95rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
                         color: 'var(--text-secondary)',
-                        marginBottom: '0.5rem',
+                        marginBottom: isMobile ? '0.75rem' : '0.5rem',
                         fontWeight: '600'
                       }}>
                         무기 (일반)
@@ -1247,8 +1271,8 @@ export default function RefiningCalculator() {
                               }}
                               disabled={!hasWeapon}
                               style={{
-                                fontSize: 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                padding: 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
+                                fontSize: isMobile ? '0.9rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                                padding: isMobile ? '0.6rem 1rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
                                 backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.1)' : 'var(--card-bg)',
                                 border: `1px solid ${isSelected ? '#ef4444' : 'var(--border-color)'}`,
                                 borderRadius: '10px',
@@ -1256,7 +1280,9 @@ export default function RefiningCalculator() {
                                 fontWeight: isSelected ? '700' : '600',
                                 cursor: hasWeapon ? 'pointer' : 'not-allowed',
                                 transition: 'all 0.2s ease',
-                                opacity: hasWeapon ? 1 : 0.5
+                                opacity: hasWeapon ? 1 : 0.5,
+                                minHeight: isMobile ? '44px' : 'auto',
+                                minWidth: isMobile ? '56px' : 'auto'
                               }}
                             >
                               +{level}
@@ -1267,45 +1293,47 @@ export default function RefiningCalculator() {
                     </div>
 
                     {/* 상급재련 헤더 */}
-                    <div className="mb-2" style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 220px 220px',
-                      gap: '2rem',
-                      alignItems: 'center'
-                    }}>
-                      <div></div>
-                      <div style={{
-                        fontSize: 'clamp(0.85rem, 1.8vw, 1rem)',
-                        color: 'var(--text-secondary)',
-                        fontWeight: '700',
-                        textAlign: 'center',
-                        minWidth: '100px'
+                    {!isMobile && (
+                      <div className="mb-2" style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 220px 220px',
+                        gap: '2rem',
+                        alignItems: 'center'
                       }}>
-                        일반턴
+                        <div></div>
+                        <div style={{
+                          fontSize: 'clamp(0.85rem, 1.8vw, 1rem)',
+                          color: 'var(--text-secondary)',
+                          fontWeight: '700',
+                          textAlign: 'center',
+                          minWidth: '100px'
+                        }}>
+                          일반턴
+                        </div>
+                        <div style={{
+                          fontSize: 'clamp(0.85rem, 1.8vw, 1rem)',
+                          color: 'var(--text-secondary)',
+                          fontWeight: '700',
+                          textAlign: 'center',
+                          minWidth: '100px'
+                        }}>
+                          선조턴
+                        </div>
                       </div>
-                      <div style={{
-                        fontSize: 'clamp(0.85rem, 1.8vw, 1rem)',
-                        color: 'var(--text-secondary)',
-                        fontWeight: '700',
-                        textAlign: 'center',
-                        minWidth: '100px'
-                      }}>
-                        선조턴
-                      </div>
-                    </div>
+                    )}
 
                     {/* 방어구 상급 일괄 설정 */}
                     <div className="mb-3" style={{
-                      display: 'grid',
+                      display: isMobile ? 'block' : 'grid',
                       gridTemplateColumns: '1fr 220px 220px',
                       gap: '2rem',
                       alignItems: 'center'
                     }}>
-                      <div>
+                      <div style={{ marginBottom: isMobile ? '1rem' : '0' }}>
                         <div style={{
-                          fontSize: 'clamp(0.8rem, 1.7vw, 0.9rem)',
+                          fontSize: isMobile ? '0.95rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
                           color: 'var(--text-secondary)',
-                          marginBottom: '0.5rem',
+                          marginBottom: isMobile ? '0.75rem' : '0.5rem',
                           fontWeight: '600'
                         }}>
                           방어구 (상급)
@@ -1349,8 +1377,8 @@ export default function RefiningCalculator() {
                                 }}
                                 disabled={!canSelect}
                                 style={{
-                                  fontSize: 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                  padding: 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
+                                  fontSize: isMobile ? '0.9rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                                  padding: isMobile ? '0.6rem 1rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
                                   backgroundColor: isSelected ? 'var(--brand-primary-light)' : 'var(--card-bg)',
                                   border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-color)'}`,
                                   borderRadius: '10px',
@@ -1358,7 +1386,9 @@ export default function RefiningCalculator() {
                                   fontWeight: isSelected ? '700' : '600',
                                   cursor: canSelect ? 'pointer' : 'not-allowed',
                                   transition: 'all 0.2s ease',
-                                  opacity: canSelect ? 1 : 0.5
+                                  opacity: canSelect ? 1 : 0.5,
+                                  minHeight: isMobile ? '44px' : 'auto',
+                                  minWidth: isMobile ? '56px' : 'auto'
                                 }}
                               >
                                 +{level}
@@ -1369,7 +1399,18 @@ export default function RefiningCalculator() {
                       </div>
 
                       {/* 일반턴 재료 - 방어구 */}
-                      <div className="d-flex flex-column gap-2 align-items-center">
+                      {isMobile && (
+                        <div style={{
+                          fontSize: '0.85rem',
+                          color: 'var(--text-secondary)',
+                          fontWeight: '700',
+                          marginTop: '0.5rem',
+                          marginBottom: '0.5rem'
+                        }}>
+                          일반턴
+                        </div>
+                      )}
+                      <div className="d-flex flex-column gap-2 align-items-center" style={{ marginBottom: isMobile ? '1.5rem' : '0' }}>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           {/* 빙하의 숨결 - 항상 표시 */}
                           <div className="d-flex flex-column align-items-center">
@@ -1511,6 +1552,17 @@ export default function RefiningCalculator() {
                       </div>
 
                       {/* 선조턴 재료 - 방어구 */}
+                      {isMobile && (
+                        <div style={{
+                          fontSize: '0.85rem',
+                          color: 'var(--text-secondary)',
+                          fontWeight: '700',
+                          marginTop: '0.5rem',
+                          marginBottom: '0.5rem'
+                        }}>
+                          선조턴
+                        </div>
+                      )}
                       <div className="d-flex flex-column gap-2 align-items-center">
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           {/* 빙하의 숨결 - 항상 표시 */}
@@ -1655,16 +1707,16 @@ export default function RefiningCalculator() {
 
                     {/* 무기 상급 일괄 설정 */}
                     <div style={{
-                      display: 'grid',
+                      display: isMobile ? 'block' : 'grid',
                       gridTemplateColumns: '1fr 220px 220px',
                       gap: '2rem',
                       alignItems: 'center'
                     }}>
-                      <div>
+                      <div style={{ marginBottom: isMobile ? '1rem' : '0' }}>
                         <div style={{
-                          fontSize: 'clamp(0.8rem, 1.7vw, 0.9rem)',
+                          fontSize: isMobile ? '0.95rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
                           color: 'var(--text-secondary)',
-                          marginBottom: '0.5rem',
+                          marginBottom: isMobile ? '0.75rem' : '0.5rem',
                           fontWeight: '600'
                         }}>
                           무기 (상급)
@@ -1708,8 +1760,8 @@ export default function RefiningCalculator() {
                                 }}
                                 disabled={!canSelect}
                                 style={{
-                                  fontSize: 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                  padding: 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
+                                  fontSize: isMobile ? '0.9rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                                  padding: isMobile ? '0.6rem 1rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
                                   backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.1)' : 'var(--card-bg)',
                                   border: `1px solid ${isSelected ? '#ef4444' : 'var(--border-color)'}`,
                                   borderRadius: '10px',
@@ -1717,7 +1769,9 @@ export default function RefiningCalculator() {
                                   fontWeight: isSelected ? '700' : '600',
                                   cursor: canSelect ? 'pointer' : 'not-allowed',
                                   transition: 'all 0.2s ease',
-                                  opacity: canSelect ? 1 : 0.5
+                                  opacity: canSelect ? 1 : 0.5,
+                                  minHeight: isMobile ? '44px' : 'auto',
+                                  minWidth: isMobile ? '56px' : 'auto'
                                 }}
                               >
                                 +{level}
@@ -1728,7 +1782,18 @@ export default function RefiningCalculator() {
                       </div>
 
                       {/* 일반턴 재료 - 무기 */}
-                      <div className="d-flex flex-column gap-2 align-items-center">
+                      {isMobile && (
+                        <div style={{
+                          fontSize: '0.85rem',
+                          color: 'var(--text-secondary)',
+                          fontWeight: '700',
+                          marginTop: '0.5rem',
+                          marginBottom: '0.5rem'
+                        }}>
+                          일반턴
+                        </div>
+                      )}
+                      <div className="d-flex flex-column gap-2 align-items-center" style={{ marginBottom: isMobile ? '1.5rem' : '0' }}>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           {/* 용암의 숨결 - 항상 표시 */}
                           <div className="d-flex flex-column align-items-center">
@@ -1870,6 +1935,17 @@ export default function RefiningCalculator() {
                       </div>
 
                       {/* 선조턴 재료 - 무기 */}
+                      {isMobile && (
+                        <div style={{
+                          fontSize: '0.85rem',
+                          color: 'var(--text-secondary)',
+                          fontWeight: '700',
+                          marginTop: '0.5rem',
+                          marginBottom: '0.5rem'
+                        }}>
+                          선조턴
+                        </div>
+                      )}
                       <div className="d-flex flex-column gap-2 align-items-center">
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           {/* 용암의 숨결 - 항상 표시 */}
