@@ -79,11 +79,11 @@ const MaterialCard = ({
     style={{
       position: 'relative',
       backgroundColor: 'var(--card-body-bg-blue)',
-      borderRadius: '14px',
+      borderRadius: 'clamp(8px, 2vw, 14px)',
       border: '1px solid var(--border-color)',
       transition: 'all 0.25s ease',
       cursor: 'default',
-      padding: 'clamp(0.5rem, 2vw, 1rem)',
+      padding: 'clamp(0.3rem, 1.5vw, 1rem)',
       '--hover-color': color,
       opacity: showEnableToggle && !isEnabled ? 0.6 : 1,
       ...customStyle,
@@ -97,8 +97,10 @@ const MaterialCard = ({
         onChange={onToggleEnabled}
         style={{
           position: 'absolute',
-          top: '8px',
-          left: '8px',
+          top: '2px',
+          left: '2px',
+          transform: 'scale(0.55)',
+          transformOrigin: 'top left',
         }}
         className="refining-checkbox"
       />
@@ -113,9 +115,9 @@ const MaterialCard = ({
         disabled={showEnableToggle && !isEnabled}
         style={{
           position: 'absolute',
-          top: '8px',
-          right: '8px',
-          fontSize: '0.75rem',
+          top: 'clamp(3px, 1vw, 8px)',
+          right: 'clamp(3px, 1vw, 8px)',
+          fontSize: 'clamp(0.5rem, 1.5vw, 0.75rem)',
           color: 'var(--text-secondary)',
           fontWeight: '600',
         }}
@@ -124,9 +126,9 @@ const MaterialCard = ({
     )}
     <div style={{
       position: 'relative',
-      width: 'clamp(36px, 10vw, 52px)',
-      height: 'clamp(36px, 10vw, 52px)',
-      marginBottom: 'clamp(4px, 1vw, 8px)',
+      width: 'clamp(24px, 8vw, 52px)',
+      height: 'clamp(24px, 8vw, 52px)',
+      marginBottom: 'clamp(2px, 0.8vw, 8px)',
     }}>
       <Image
         src={icon}
@@ -136,17 +138,20 @@ const MaterialCard = ({
       />
     </div>
     <div style={{
-      fontSize: 'clamp(0.65rem, 2vw, 0.8rem)',
+      fontSize: 'clamp(0.5rem, 1.8vw, 0.8rem)',
       color: 'var(--text-secondary)',
-      marginBottom: 'clamp(3px, 0.8vw, 6px)',
+      marginBottom: 'clamp(2px, 0.6vw, 6px)',
       textAlign: 'center',
       whiteSpace: 'nowrap',
       fontWeight: '500',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      maxWidth: '100%',
     }}>
       {name}
     </div>
     <div style={{
-      fontSize: 'clamp(0.8rem, 2.5vw, 1.1rem)',
+      fontSize: 'clamp(0.65rem, 2.2vw, 1.1rem)',
       fontWeight: '700',
       color: amount === 0 ? 'var(--text-secondary)' : color,
       transition: 'color 0.25s ease',
@@ -154,8 +159,8 @@ const MaterialCard = ({
       {amount.toLocaleString()}
     </div>
     {cost !== undefined && (
-      <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '4px', fontWeight: '600' }}>
-        <Image src="/gold.jpg" alt="gold" width={12} height={12} style={{ marginRight: '4px' }} />
+      <div style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.75rem)', color: '#f59e0b', marginTop: 'clamp(2px, 0.5vw, 4px)', fontWeight: '600' }}>
+        <Image src="/gold.jpg" alt="gold" width={10} height={10} style={{ marginRight: '2px' }} />
         {Math.round(isBound ? 0 : cost).toLocaleString()}
       </div>
     )}
@@ -1023,46 +1028,50 @@ export default function RefiningCalculator() {
                   const gradeColor = getGradeColor(eq.grade);
 
                   return (
-                    <Col key={index} xs={6} sm={6} md={4} lg={2}>
+                    <Col key={index} xs={4} sm={6} md={4} lg={2}>
                       <div style={{
-                        padding: isMobile ? '1rem' : 'clamp(0.75rem, 2vw, 1rem)',
+                        padding: isMobile ? '0.3rem' : 'clamp(0.75rem, 2vw, 1rem)',
                         backgroundColor: 'var(--card-body-bg-blue)',
-                        borderRadius: '12px',
-                        border: `2px solid ${isChanged ? 'var(--brand-primary)' : gradeColor}`,
+                        borderRadius: isMobile ? '4px' : '12px',
+                        border: `${isMobile ? '1px' : '2px'} solid ${isChanged ? 'var(--brand-primary)' : gradeColor}`,
                         transition: 'all 0.25s ease',
-                        boxShadow: isChanged ? `0 0 0 3px hsla(var(--brand-hue), var(--brand-saturation), var(--brand-lightness), 0.3)` : `0 0 0 1px ${gradeColor}33`,
-                        minHeight: isMobile ? '200px' : 'auto'
+                        boxShadow: isChanged ? `0 0 0 ${isMobile ? '1px' : '3px'} hsla(var(--brand-hue), var(--brand-saturation), var(--brand-lightness), 0.3)` : `0 0 0 1px ${gradeColor}33`
                       }}>
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <div>
+                        <div className="d-flex justify-content-between align-items-start" style={{ marginBottom: isMobile ? '0.2rem' : '0.5rem' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <span style={{
-                              fontSize: isMobile ? '0.9rem' : 'clamp(0.8rem, 1.8vw, 0.9rem)',
+                              fontSize: isMobile ? '0.65rem' : 'clamp(0.8rem, 1.8vw, 0.9rem)',
                               fontWeight: '700',
                               color: 'var(--text-primary)',
-                              display: 'block'
+                              display: 'block',
+                              lineHeight: '1.1',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
                             }}>
                               {eq.name}
                             </span>
                             <span style={{
-                              fontSize: isMobile ? '0.75rem' : 'clamp(0.65rem, 1.5vw, 0.75rem)',
+                              fontSize: isMobile ? '0.5rem' : 'clamp(0.65rem, 1.5vw, 0.75rem)',
                               fontWeight: '600',
                               color: gradeColor,
                               display: 'block',
-                              marginTop: '2px'
+                              marginTop: '1px'
                             }}>
                               {eq.grade}
                             </span>
                           </div>
-                          <div className="d-flex flex-column gap-1 align-items-end">
+                          <div className="d-flex flex-column" style={{ gap: isMobile ? '0.1rem' : '0.25rem', alignItems: 'flex-end', marginLeft: '0.2rem' }}>
                             <Badge
                               pill
                               bg=""
                               style={{
-                                fontSize: isMobile ? '0.75rem' : 'clamp(0.7rem, 1.6vw, 0.8rem)',
-                                padding: isMobile ? '0.35rem 0.7rem' : '0.3rem 0.6rem',
+                                fontSize: isMobile ? '0.55rem' : 'clamp(0.7rem, 1.6vw, 0.8rem)',
+                                padding: isMobile ? '0.15rem 0.3rem' : '0.3rem 0.6rem',
                                 backgroundColor: eq.type === 'weapon' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)',
                                 color: eq.type === 'weapon' ? '#ef4444' : '#3b82f6',
-                                fontWeight: '700'
+                                fontWeight: '700',
+                                lineHeight: '1'
                               }}
                             >
                               +{eq.currentLevel}
@@ -1072,24 +1081,20 @@ export default function RefiningCalculator() {
                                 pill
                                 bg=""
                                 style={{
-                                  fontSize: isMobile ? '0.7rem' : 'clamp(0.65rem, 1.5vw, 0.75rem)',
-                                  padding: isMobile ? '0.3rem 0.6rem' : '0.25rem 0.5rem',
+                                  fontSize: isMobile ? '0.5rem' : 'clamp(0.65rem, 1.5vw, 0.75rem)',
+                                  padding: isMobile ? '0.1rem 0.25rem' : '0.25rem 0.5rem',
                                   backgroundColor: 'rgba(168, 85, 247, 0.1)',
                                   color: '#a855f7',
-                                  fontWeight: '700'
+                                  fontWeight: '700',
+                                  lineHeight: '1'
                                 }}
                               >
-                                상급 +{eq.currentAdvancedLevel}
+                                상+{eq.currentAdvancedLevel}
                               </Badge>
                             )}
                           </div>
                         </div>
-                        <InputGroup size="sm" className="mb-2">
-                          <InputGroup.Text style={{
-                            fontSize: isMobile ? '0.75rem' : '0.7rem',
-                            padding: isMobile ? '0.4rem 0.6rem' : '0.2rem 0.4rem',
-                            minWidth: isMobile ? '44px' : 'auto'
-                          }}>일반</InputGroup.Text>
+                        <div style={{ display: 'flex', gap: isMobile ? '0.15rem' : '0.5rem', flexDirection: isMobile ? 'column' : 'row' }}>
                           <Form.Select
                             value={targets.normal ?? ''}
                             onChange={(e) => {
@@ -1103,24 +1108,18 @@ export default function RefiningCalculator() {
                               backgroundColor: 'var(--input-bg)',
                               borderColor: 'var(--border-color)',
                               color: targets.normal === null ? 'var(--text-muted)' : 'var(--text-primary)',
-                              fontSize: isMobile ? '0.85rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                              fontSize: isMobile ? '0.6rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
                               fontWeight: '600',
-                              borderRadius: '8px',
-                              padding: isMobile ? '0.5rem 0.7rem' : '0.4rem 0.6rem'
+                              borderRadius: isMobile ? '3px' : '8px',
+                              padding: isMobile ? '0.2rem 0.25rem' : '0.4rem 0.6rem',
+                              border: isMobile ? '1px solid var(--border-color)' : undefined
                             }}
                           >
-                            <option value="">목표 선택</option>
+                            <option value="">{isMobile ? '일반' : '일반 목표'}</option>
                             {Array.from({ length: 26 - eq.currentLevel }, (_, i) => eq.currentLevel + i + 1).map(level => (
-                              <option key={level} value={level}>목표 +{level}</option>
+                              <option key={level} value={level}>+{level}</option>
                             ))}
                           </Form.Select>
-                        </InputGroup>
-                        <InputGroup size="sm">
-                          <InputGroup.Text style={{
-                            fontSize: isMobile ? '0.75rem' : '0.7rem',
-                            padding: isMobile ? '0.4rem 0.6rem' : '0.2rem 0.4rem',
-                            minWidth: isMobile ? '44px' : 'auto'
-                          }}>상급</InputGroup.Text>
                           <Form.Select
                             value={targets.advanced ?? ''}
                             onChange={(e) => {
@@ -1135,20 +1134,21 @@ export default function RefiningCalculator() {
                               backgroundColor: 'var(--input-bg)',
                               borderColor: 'var(--border-color)',
                               color: targets.advanced === null ? 'var(--text-muted)' : 'var(--text-primary)',
-                              fontSize: isMobile ? '0.85rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                              fontSize: isMobile ? '0.6rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
                               fontWeight: '600',
-                              borderRadius: '8px',
-                              padding: isMobile ? '0.5rem 0.7rem' : '0.4rem 0.6rem'
+                              borderRadius: isMobile ? '3px' : '8px',
+                              padding: isMobile ? '0.2rem 0.25rem' : '0.4rem 0.6rem',
+                              border: isMobile ? '1px solid var(--border-color)' : undefined
                             }}
                           >
-                            <option value="">목표 선택</option>
+                            <option value="">{isMobile ? '상급' : '상급 목표'}</option>
                             {[10, 20, 30, 40]
                               .filter(level => level > eq.currentAdvancedLevel)
                               .map(level => (
-                                <option key={level} value={level}>목표 +{level}</option>
+                                <option key={level} value={level}>+{level}</option>
                               ))}
                           </Form.Select>
-                        </InputGroup>
+                        </div>
                       </div>
                     </Col>
                   );
@@ -1157,25 +1157,32 @@ export default function RefiningCalculator() {
 
               {/* 목표 설정 */}
               <div className="mt-4" style={{
-                padding: isMobile ? '1rem' : 'clamp(1rem, 2.5vw, 1.25rem)',
+                padding: isMobile ? '0.6rem' : 'clamp(1rem, 2.5vw, 1.25rem)',
                 backgroundColor: 'var(--card-body-bg-blue)',
-                borderRadius: '14px',
+                borderRadius: isMobile ? '10px' : '14px',
                 border: '1px solid var(--border-color)'
               }}>
                 <Row className="align-items-start">
                   <Col md={12}>
                     {/* 방어구 일괄 설정 */}
-                    <div className="mb-3">
+                    <div style={{ marginBottom: isMobile ? '0.6rem' : '1rem' }}>
                       <div style={{
-                        fontSize: isMobile ? '0.95rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
+                        fontSize: isMobile ? '0.8rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
                         color: 'var(--text-secondary)',
-                        marginBottom: isMobile ? '0.75rem' : '0.5rem',
+                        marginBottom: isMobile ? '0.4rem' : '0.5rem',
                         fontWeight: '600'
                       }}>
                         방어구 (일반)
                       </div>
-                      <div className="d-flex flex-wrap gap-2">
-                        {Array.from({ length: 15 }, (_, i) => i + 11).map(level => {
+                      <div className={isMobile ? 'd-flex' : 'd-flex flex-wrap'} style={{ gap: isMobile ? '0.35rem' : '0.5rem', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '0.3rem' : '0' }}>
+                        {(() => {
+                          const armorEquipments = equipments.filter(eq => eq.type === 'armor');
+                          const minArmorLevel = armorEquipments.length > 0
+                            ? Math.min(...armorEquipments.map(eq => eq.currentLevel))
+                            : 10;
+                          const startLevel = Math.max(minArmorLevel, 11);
+                          return Array.from({ length: 25 - startLevel + 1 }, (_, i) => i + startLevel);
+                        })().map(level => {
                           const hasArmor = equipments.some(eq => eq.type === 'armor' && eq.currentLevel < level);
                           const isSelected = selectedArmorBulkLevel.normal === level;
 
@@ -1207,18 +1214,19 @@ export default function RefiningCalculator() {
                               }}
                               disabled={!hasArmor}
                               style={{
-                                fontSize: isMobile ? '0.9rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                padding: isMobile ? '0.6rem 1rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
+                                fontSize: isMobile ? '0.65rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                                padding: isMobile ? '0.3rem 0.5rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
                                 backgroundColor: isSelected ? 'var(--brand-primary-light)' : 'var(--card-bg)',
                                 border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-color)'}`,
-                                borderRadius: '10px',
+                                borderRadius: isMobile ? '4px' : '10px',
                                 color: isSelected ? 'var(--brand-primary-dark)' : hasArmor ? 'var(--text-secondary)' : 'var(--text-disabled)',
                                 fontWeight: isSelected ? '700' : '600',
                                 cursor: hasArmor ? 'pointer' : 'not-allowed',
                                 transition: 'all 0.2s ease',
                                 opacity: hasArmor ? 1 : 0.5,
-                                minHeight: isMobile ? '44px' : 'auto',
-                                minWidth: isMobile ? '56px' : 'auto'
+                                minHeight: isMobile ? '26px' : 'auto',
+                                minWidth: isMobile ? '38px' : 'auto',
+                                flexShrink: 0
                               }}
                             >
                               +{level}
@@ -1229,17 +1237,24 @@ export default function RefiningCalculator() {
                     </div>
 
                     {/* 무기 일괄 설정 */}
-                    <div className="mb-3">
+                    <div style={{ marginBottom: isMobile ? '0.6rem' : '1rem' }}>
                       <div style={{
-                        fontSize: isMobile ? '0.95rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
+                        fontSize: isMobile ? '0.8rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
                         color: 'var(--text-secondary)',
-                        marginBottom: isMobile ? '0.75rem' : '0.5rem',
+                        marginBottom: isMobile ? '0.4rem' : '0.5rem',
                         fontWeight: '600'
                       }}>
                         무기 (일반)
                       </div>
-                      <div className="d-flex flex-wrap gap-2">
-                        {Array.from({ length: 15 }, (_, i) => i + 11).map(level => {
+                      <div className={isMobile ? 'd-flex' : 'd-flex flex-wrap'} style={{ gap: isMobile ? '0.35rem' : '0.5rem', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '0.3rem' : '0' }}>
+                        {(() => {
+                          const weaponEquipments = equipments.filter(eq => eq.type === 'weapon');
+                          const minWeaponLevel = weaponEquipments.length > 0
+                            ? Math.min(...weaponEquipments.map(eq => eq.currentLevel))
+                            : 10;
+                          const startLevel = Math.max(minWeaponLevel, 11);
+                          return Array.from({ length: 25 - startLevel + 1 }, (_, i) => i + startLevel);
+                        })().map(level => {
                           const hasWeapon = equipments.some(eq => eq.type === 'weapon' && eq.currentLevel < level);
                           const isSelected = selectedWeaponBulkLevel.normal === level;
 
@@ -1271,18 +1286,19 @@ export default function RefiningCalculator() {
                               }}
                               disabled={!hasWeapon}
                               style={{
-                                fontSize: isMobile ? '0.9rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                padding: isMobile ? '0.6rem 1rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
+                                fontSize: isMobile ? '0.65rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                                padding: isMobile ? '0.3rem 0.5rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
                                 backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.1)' : 'var(--card-bg)',
                                 border: `1px solid ${isSelected ? '#ef4444' : 'var(--border-color)'}`,
-                                borderRadius: '10px',
+                                borderRadius: isMobile ? '4px' : '10px',
                                 color: isSelected ? '#ef4444' : hasWeapon ? 'var(--text-secondary)' : 'var(--text-disabled)',
                                 fontWeight: isSelected ? '700' : '600',
                                 cursor: hasWeapon ? 'pointer' : 'not-allowed',
                                 transition: 'all 0.2s ease',
                                 opacity: hasWeapon ? 1 : 0.5,
-                                minHeight: isMobile ? '44px' : 'auto',
-                                minWidth: isMobile ? '56px' : 'auto'
+                                minHeight: isMobile ? '26px' : 'auto',
+                                minWidth: isMobile ? '38px' : 'auto',
+                                flexShrink: 0
                               }}
                             >
                               +{level}
@@ -1323,22 +1339,28 @@ export default function RefiningCalculator() {
                     )}
 
                     {/* 방어구 상급 일괄 설정 */}
-                    <div className="mb-3" style={{
-                      display: isMobile ? 'block' : 'grid',
-                      gridTemplateColumns: '1fr 220px 220px',
-                      gap: '2rem',
-                      alignItems: 'center'
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: isMobile ? '1fr 70px 70px' : '1fr 220px 220px',
+                      gap: isMobile ? '0.4rem' : '2rem',
+                      alignItems: 'center',
+                      marginBottom: isMobile ? '0.6rem' : '1rem'
                     }}>
-                      <div style={{ marginBottom: isMobile ? '1rem' : '0' }}>
+                      <div>
                         <div style={{
-                          fontSize: isMobile ? '0.95rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
+                          fontSize: isMobile ? '0.8rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
                           color: 'var(--text-secondary)',
-                          marginBottom: isMobile ? '0.75rem' : '0.5rem',
+                          marginBottom: isMobile ? '0.4rem' : '0.5rem',
                           fontWeight: '600'
                         }}>
                           방어구 (상급)
                         </div>
-                        <div className="d-flex flex-wrap gap-2">
+                        <div style={{
+                          display: isMobile ? 'grid' : 'flex',
+                          gridTemplateColumns: isMobile ? '1fr 1fr' : undefined,
+                          gap: isMobile ? '0.35rem' : '0.5rem',
+                          flexWrap: isMobile ? undefined : 'wrap'
+                        }}>
                           {[10, 20, 30, 40].map(level => {
                             // 모든 방어구의 최소 상급재련 단계 확인
                             const armorEquipments = equipments.filter(eq => eq.type === 'armor');
@@ -1377,18 +1399,18 @@ export default function RefiningCalculator() {
                                 }}
                                 disabled={!canSelect}
                                 style={{
-                                  fontSize: isMobile ? '0.9rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                  padding: isMobile ? '0.6rem 1rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
+                                  fontSize: isMobile ? '0.55rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                                  padding: isMobile ? '0.25rem 0.4rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
                                   backgroundColor: isSelected ? 'var(--brand-primary-light)' : 'var(--card-bg)',
                                   border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-color)'}`,
-                                  borderRadius: '10px',
+                                  borderRadius: isMobile ? '3px' : '10px',
                                   color: isSelected ? 'var(--brand-primary-dark)' : canSelect ? 'var(--text-secondary)' : 'var(--text-disabled)',
                                   fontWeight: isSelected ? '700' : '600',
                                   cursor: canSelect ? 'pointer' : 'not-allowed',
                                   transition: 'all 0.2s ease',
                                   opacity: canSelect ? 1 : 0.5,
-                                  minHeight: isMobile ? '44px' : 'auto',
-                                  minWidth: isMobile ? '56px' : 'auto'
+                                  minHeight: isMobile ? '22px' : 'auto',
+                                  minWidth: isMobile ? '32px' : 'auto'
                                 }}
                               >
                                 +{level}
@@ -1399,33 +1421,23 @@ export default function RefiningCalculator() {
                       </div>
 
                       {/* 일반턴 재료 - 방어구 */}
-                      {isMobile && (
-                        <div style={{
-                          fontSize: '0.85rem',
-                          color: 'var(--text-secondary)',
-                          fontWeight: '700',
-                          marginTop: '0.5rem',
-                          marginBottom: '0.5rem'
-                        }}>
-                          일반턴
-                        </div>
-                      )}
-                      <div className="d-flex flex-column gap-2 align-items-center" style={{ marginBottom: isMobile ? '1.5rem' : '0' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div className="d-flex flex-column gap-1 align-items-center">
+                        <div style={{ fontSize: isMobile ? '0.6rem' : '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: isMobile ? '0.15rem' : '0.25rem' }}>일반턴</div>
+                        <div style={{ display: 'flex', gap: isMobile ? '0.2rem' : '0.5rem', flexDirection: 'row' }}>
                           {/* 빙하의 숨결 - 항상 표시 */}
                           <div className="d-flex flex-column align-items-center">
                             <div style={{
-                              width: '48px',
-                              height: '48px',
-                              border: '2px solid var(--border-color)',
-                              borderRadius: '10px',
+                              width: isMobile ? '22px' : '48px',
+                              height: isMobile ? '22px' : '48px',
+                              border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                              borderRadius: isMobile ? '3px' : '10px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              marginBottom: '0.5rem',
+                              marginBottom: isMobile ? '0.15rem' : '0.5rem',
                               backgroundColor: 'var(--card-bg)'
                             }}>
-                              <Image src="/breath-glacier.png" alt="빙하의 숨결" width={40} height={40} style={{ objectFit: 'contain' }} />
+                              <Image src="/breath-glacier.png" alt="빙하의 숨결" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                             </div>
                             <button
                               onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1433,15 +1445,16 @@ export default function RefiningCalculator() {
                                 armorNormalBreath: { ...prev.armorNormalBreath, enabled: !prev.armorNormalBreath.enabled }
                               }))}
                               style={{
-                                padding: '0.3rem 0.6rem',
-                                fontSize: '0.75rem',
+                                padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                fontSize: isMobile ? '0.55rem' : '0.75rem',
                                 fontWeight: '600',
                                 backgroundColor: advancedMaterialOptions.armorNormalBreath.enabled ? '#3b82f6' : '#6b7280',
                                 color: advancedMaterialOptions.armorNormalBreath.enabled ? '#ffffff' : '#9ca3af',
                                 border: 'none',
-                                borderRadius: '6px',
+                                borderRadius: isMobile ? '2px' : '6px',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               {advancedMaterialOptions.armorNormalBreath.enabled ? '사용' : '미사용'}
@@ -1474,17 +1487,17 @@ export default function RefiningCalculator() {
                                 {showBook1 && (
                                   <div className="d-flex flex-column align-items-center">
                                     <div style={{
-                                      width: '48px',
-                                      height: '48px',
-                                      border: '2px solid var(--border-color)',
-                                      borderRadius: '10px',
+                                      width: isMobile ? '22px' : '48px',
+                                      height: isMobile ? '22px' : '48px',
+                                      border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                                      borderRadius: isMobile ? '3px' : '10px',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      marginBottom: '0.5rem',
+                                      marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                       backgroundColor: 'var(--card-bg)'
                                     }}>
-                                      <Image src="/master-tailoring-1.png" alt="장인의 재봉술 1단계" width={40} height={40} style={{ objectFit: 'contain' }} />
+                                      <Image src="/master-tailoring-1.png" alt="장인의 재봉술 1단계" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                                     </div>
                                     <button
                                       onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1492,15 +1505,16 @@ export default function RefiningCalculator() {
                                         armorNormalBook1: { ...prev.armorNormalBook1, enabled: !prev.armorNormalBook1.enabled }
                                       }))}
                                       style={{
-                                        padding: '0.3rem 0.6rem',
-                                        fontSize: '0.75rem',
+                                        padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                        fontSize: isMobile ? '0.55rem' : '0.75rem',
                                         fontWeight: '600',
                                         backgroundColor: advancedMaterialOptions.armorNormalBook1.enabled ? '#3b82f6' : '#6b7280',
                                         color: advancedMaterialOptions.armorNormalBook1.enabled ? '#ffffff' : '#9ca3af',
                                         border: 'none',
-                                        borderRadius: '6px',
+                                        borderRadius: isMobile ? '2px' : '6px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        whiteSpace: 'nowrap'
                                       }}
                                     >
                                       {advancedMaterialOptions.armorNormalBook1.enabled ? '사용' : '미사용'}
@@ -1512,17 +1526,17 @@ export default function RefiningCalculator() {
                                 {showBook2 && (
                                   <div className="d-flex flex-column align-items-center">
                                   <div style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    border: '2px solid var(--border-color)',
-                                    borderRadius: '10px',
+                                    width: isMobile ? '22px' : '48px',
+                                    height: isMobile ? '22px' : '48px',
+                                    border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                                    borderRadius: isMobile ? '3px' : '10px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    marginBottom: '0.5rem',
+                                    marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                     backgroundColor: 'var(--card-bg)'
                                   }}>
-                                    <Image src="/master-tailoring-2.png" alt="장인의 재봉술 2단계" width={40} height={40} style={{ objectFit: 'contain' }} />
+                                    <Image src="/master-tailoring-2.png" alt="장인의 재봉술 2단계" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                                   </div>
                                   <button
                                     onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1530,15 +1544,16 @@ export default function RefiningCalculator() {
                                       armorNormalBook2: { ...prev.armorNormalBook2, enabled: !prev.armorNormalBook2.enabled }
                                     }))}
                                     style={{
-                                      padding: '0.3rem 0.6rem',
-                                      fontSize: '0.75rem',
+                                      padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                      fontSize: isMobile ? '0.55rem' : '0.75rem',
                                       fontWeight: '600',
                                       backgroundColor: advancedMaterialOptions.armorNormalBook2.enabled ? '#3b82f6' : '#6b7280',
                                       color: advancedMaterialOptions.armorNormalBook2.enabled ? '#ffffff' : '#9ca3af',
                                       border: 'none',
-                                      borderRadius: '6px',
+                                      borderRadius: isMobile ? '2px' : '6px',
                                       cursor: 'pointer',
-                                      transition: 'all 0.2s ease'
+                                      transition: 'all 0.2s ease',
+                                      whiteSpace: 'nowrap'
                                     }}
                                   >
                                     {advancedMaterialOptions.armorNormalBook2.enabled ? '사용' : '미사용'}
@@ -1552,33 +1567,23 @@ export default function RefiningCalculator() {
                       </div>
 
                       {/* 선조턴 재료 - 방어구 */}
-                      {isMobile && (
-                        <div style={{
-                          fontSize: '0.85rem',
-                          color: 'var(--text-secondary)',
-                          fontWeight: '700',
-                          marginTop: '0.5rem',
-                          marginBottom: '0.5rem'
-                        }}>
-                          선조턴
-                        </div>
-                      )}
-                      <div className="d-flex flex-column gap-2 align-items-center">
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div className="d-flex flex-column gap-1 align-items-center">
+                        <div style={{ fontSize: isMobile ? '0.6rem' : '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: isMobile ? '0.15rem' : '0.25rem' }}>선조턴</div>
+                        <div style={{ display: 'flex', gap: isMobile ? '0.2rem' : '0.5rem', flexDirection: 'row' }}>
                           {/* 빙하의 숨결 - 항상 표시 */}
                           <div className="d-flex flex-column align-items-center">
                             <div style={{
-                              width: '48px',
-                              height: '48px',
-                              border: '2px solid var(--border-color)',
-                              borderRadius: '10px',
+                              width: isMobile ? '22px' : '48px',
+                              height: isMobile ? '22px' : '48px',
+                              border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                              borderRadius: isMobile ? '3px' : '10px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              marginBottom: '0.5rem',
+                              marginBottom: isMobile ? '0.15rem' : '0.5rem',
                               backgroundColor: 'var(--card-bg)'
                             }}>
-                              <Image src="/breath-glacier.png" alt="빙하의 숨결" width={40} height={40} style={{ objectFit: 'contain' }} />
+                              <Image src="/breath-glacier.png" alt="빙하의 숨결" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                             </div>
                             <button
                               onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1586,15 +1591,16 @@ export default function RefiningCalculator() {
                                 armorBonusBreath: { ...prev.armorBonusBreath, enabled: !prev.armorBonusBreath.enabled }
                               }))}
                               style={{
-                                padding: '0.3rem 0.6rem',
-                                fontSize: '0.75rem',
+                                padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                fontSize: isMobile ? '0.55rem' : '0.75rem',
                                 fontWeight: '600',
                                 backgroundColor: advancedMaterialOptions.armorBonusBreath.enabled ? '#3b82f6' : '#6b7280',
                                 color: advancedMaterialOptions.armorBonusBreath.enabled ? '#ffffff' : '#9ca3af',
                                 border: 'none',
-                                borderRadius: '6px',
+                                borderRadius: isMobile ? '2px' : '6px',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               {advancedMaterialOptions.armorBonusBreath.enabled ? '사용' : '미사용'}
@@ -1627,17 +1633,17 @@ export default function RefiningCalculator() {
                                 {showBook1 && (
                                   <div className="d-flex flex-column align-items-center">
                                     <div style={{
-                                      width: '48px',
-                                      height: '48px',
-                                      border: '2px solid var(--border-color)',
-                                      borderRadius: '10px',
+                                      width: isMobile ? '22px' : '48px',
+                                      height: isMobile ? '22px' : '48px',
+                                      border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                                      borderRadius: isMobile ? '3px' : '10px',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      marginBottom: '0.5rem',
+                                      marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                       backgroundColor: 'var(--card-bg)'
                                     }}>
-                                      <Image src="/master-tailoring-1.png" alt="장인의 재봉술 1단계" width={40} height={40} style={{ objectFit: 'contain' }} />
+                                      <Image src="/master-tailoring-1.png" alt="장인의 재봉술 1단계" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                                     </div>
                                     <button
                                       onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1645,15 +1651,16 @@ export default function RefiningCalculator() {
                                         armorBonusBook1: { ...prev.armorBonusBook1, enabled: !prev.armorBonusBook1.enabled }
                                       }))}
                                       style={{
-                                        padding: '0.3rem 0.6rem',
-                                        fontSize: '0.75rem',
+                                        padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                        fontSize: isMobile ? '0.55rem' : '0.75rem',
                                         fontWeight: '600',
                                         backgroundColor: advancedMaterialOptions.armorBonusBook1.enabled ? '#3b82f6' : '#6b7280',
                                         color: advancedMaterialOptions.armorBonusBook1.enabled ? '#ffffff' : '#9ca3af',
                                         border: 'none',
-                                        borderRadius: '6px',
+                                        borderRadius: isMobile ? '2px' : '6px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        whiteSpace: 'nowrap'
                                       }}
                                     >
                                       {advancedMaterialOptions.armorBonusBook1.enabled ? '사용' : '미사용'}
@@ -1665,17 +1672,17 @@ export default function RefiningCalculator() {
                                 {showBook2 && (
                                   <div className="d-flex flex-column align-items-center">
                                   <div style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    border: '2px solid var(--border-color)',
-                                    borderRadius: '10px',
+                                    width: isMobile ? '22px' : '48px',
+                                    height: isMobile ? '22px' : '48px',
+                                    border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                                    borderRadius: isMobile ? '3px' : '10px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    marginBottom: '0.5rem',
+                                    marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                     backgroundColor: 'var(--card-bg)'
                                   }}>
-                                    <Image src="/master-tailoring-2.png" alt="장인의 재봉술 2단계" width={40} height={40} style={{ objectFit: 'contain' }} />
+                                    <Image src="/master-tailoring-2.png" alt="장인의 재봉술 2단계" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                                   </div>
                                   <button
                                     onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1683,15 +1690,16 @@ export default function RefiningCalculator() {
                                       armorBonusBook2: { ...prev.armorBonusBook2, enabled: !prev.armorBonusBook2.enabled }
                                     }))}
                                     style={{
-                                      padding: '0.3rem 0.6rem',
-                                      fontSize: '0.75rem',
+                                      padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                      fontSize: isMobile ? '0.55rem' : '0.75rem',
                                       fontWeight: '600',
                                       backgroundColor: advancedMaterialOptions.armorBonusBook2.enabled ? '#3b82f6' : '#6b7280',
                                       color: advancedMaterialOptions.armorBonusBook2.enabled ? '#ffffff' : '#9ca3af',
                                       border: 'none',
-                                      borderRadius: '6px',
+                                      borderRadius: isMobile ? '2px' : '6px',
                                       cursor: 'pointer',
-                                      transition: 'all 0.2s ease'
+                                      transition: 'all 0.2s ease',
+                                      whiteSpace: 'nowrap'
                                     }}
                                   >
                                     {advancedMaterialOptions.armorBonusBook2.enabled ? '사용' : '미사용'}
@@ -1707,21 +1715,26 @@ export default function RefiningCalculator() {
 
                     {/* 무기 상급 일괄 설정 */}
                     <div style={{
-                      display: isMobile ? 'block' : 'grid',
-                      gridTemplateColumns: '1fr 220px 220px',
-                      gap: '2rem',
+                      display: 'grid',
+                      gridTemplateColumns: isMobile ? '1fr 70px 70px' : '1fr 220px 220px',
+                      gap: isMobile ? '0.4rem' : '2rem',
                       alignItems: 'center'
                     }}>
-                      <div style={{ marginBottom: isMobile ? '1rem' : '0' }}>
+                      <div>
                         <div style={{
-                          fontSize: isMobile ? '0.95rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
+                          fontSize: isMobile ? '0.8rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
                           color: 'var(--text-secondary)',
-                          marginBottom: isMobile ? '0.75rem' : '0.5rem',
+                          marginBottom: isMobile ? '0.4rem' : '0.5rem',
                           fontWeight: '600'
                         }}>
                           무기 (상급)
                         </div>
-                        <div className="d-flex flex-wrap gap-2">
+                        <div style={{
+                          display: isMobile ? 'grid' : 'flex',
+                          gridTemplateColumns: isMobile ? '1fr 1fr' : undefined,
+                          gap: isMobile ? '0.35rem' : '0.5rem',
+                          flexWrap: isMobile ? undefined : 'wrap'
+                        }}>
                           {[10, 20, 30, 40].map(level => {
                             // 모든 무기의 최소 상급재련 단계 확인
                             const weaponEquipments = equipments.filter(eq => eq.type === 'weapon');
@@ -1760,18 +1773,18 @@ export default function RefiningCalculator() {
                                 }}
                                 disabled={!canSelect}
                                 style={{
-                                  fontSize: isMobile ? '0.9rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                  padding: isMobile ? '0.6rem 1rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
+                                  fontSize: isMobile ? '0.55rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                                  padding: isMobile ? '0.25rem 0.4rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
                                   backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.1)' : 'var(--card-bg)',
                                   border: `1px solid ${isSelected ? '#ef4444' : 'var(--border-color)'}`,
-                                  borderRadius: '10px',
+                                  borderRadius: isMobile ? '3px' : '10px',
                                   color: isSelected ? '#ef4444' : canSelect ? 'var(--text-secondary)' : 'var(--text-disabled)',
                                   fontWeight: isSelected ? '700' : '600',
                                   cursor: canSelect ? 'pointer' : 'not-allowed',
                                   transition: 'all 0.2s ease',
                                   opacity: canSelect ? 1 : 0.5,
-                                  minHeight: isMobile ? '44px' : 'auto',
-                                  minWidth: isMobile ? '56px' : 'auto'
+                                  minHeight: isMobile ? '22px' : 'auto',
+                                  minWidth: isMobile ? '32px' : 'auto'
                                 }}
                               >
                                 +{level}
@@ -1782,33 +1795,23 @@ export default function RefiningCalculator() {
                       </div>
 
                       {/* 일반턴 재료 - 무기 */}
-                      {isMobile && (
-                        <div style={{
-                          fontSize: '0.85rem',
-                          color: 'var(--text-secondary)',
-                          fontWeight: '700',
-                          marginTop: '0.5rem',
-                          marginBottom: '0.5rem'
-                        }}>
-                          일반턴
-                        </div>
-                      )}
-                      <div className="d-flex flex-column gap-2 align-items-center" style={{ marginBottom: isMobile ? '1.5rem' : '0' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div className="d-flex flex-column gap-1 align-items-center">
+                        <div style={{ fontSize: isMobile ? '0.6rem' : '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: isMobile ? '0.15rem' : '0.25rem' }}>일반턴</div>
+                        <div style={{ display: 'flex', gap: isMobile ? '0.2rem' : '0.5rem', flexDirection: 'row' }}>
                           {/* 용암의 숨결 - 항상 표시 */}
                           <div className="d-flex flex-column align-items-center">
                             <div style={{
-                              width: '48px',
-                              height: '48px',
-                              border: '2px solid var(--border-color)',
-                              borderRadius: '10px',
+                              width: isMobile ? '22px' : '48px',
+                              height: isMobile ? '22px' : '48px',
+                              border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                              borderRadius: isMobile ? '3px' : '10px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              marginBottom: '0.5rem',
+                              marginBottom: isMobile ? '0.15rem' : '0.5rem',
                               backgroundColor: 'var(--card-bg)'
                             }}>
-                              <Image src="/breath-lava.png" alt="용암의 숨결" width={40} height={40} style={{ objectFit: 'contain' }} />
+                              <Image src="/breath-lava.png" alt="용암의 숨결" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                             </div>
                             <button
                               onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1816,15 +1819,16 @@ export default function RefiningCalculator() {
                                 weaponNormalBreath: { ...prev.weaponNormalBreath, enabled: !prev.weaponNormalBreath.enabled }
                               }))}
                               style={{
-                                padding: '0.3rem 0.6rem',
-                                fontSize: '0.75rem',
+                                padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                fontSize: isMobile ? '0.55rem' : '0.75rem',
                                 fontWeight: '600',
                                 backgroundColor: advancedMaterialOptions.weaponNormalBreath.enabled ? '#3b82f6' : '#6b7280',
                                 color: advancedMaterialOptions.weaponNormalBreath.enabled ? '#ffffff' : '#9ca3af',
                                 border: 'none',
-                                borderRadius: '6px',
+                                borderRadius: isMobile ? '2px' : '6px',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               {advancedMaterialOptions.weaponNormalBreath.enabled ? '사용' : '미사용'}
@@ -1857,17 +1861,17 @@ export default function RefiningCalculator() {
                                 {showBook1 && (
                                   <div className="d-flex flex-column align-items-center">
                                     <div style={{
-                                      width: '48px',
-                                      height: '48px',
-                                      border: '2px solid var(--border-color)',
-                                      borderRadius: '10px',
+                                      width: isMobile ? '22px' : '48px',
+                                      height: isMobile ? '22px' : '48px',
+                                      border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                                      borderRadius: isMobile ? '3px' : '10px',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      marginBottom: '0.5rem',
+                                      marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                       backgroundColor: 'var(--card-bg)'
                                     }}>
-                                      <Image src="/master-metallurgy-1.png" alt="장인의 야금술 1단계" width={40} height={40} style={{ objectFit: 'contain' }} />
+                                      <Image src="/master-metallurgy-1.png" alt="장인의 야금술 1단계" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                                     </div>
                                     <button
                                       onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1875,15 +1879,16 @@ export default function RefiningCalculator() {
                                         weaponNormalBook1: { ...prev.weaponNormalBook1, enabled: !prev.weaponNormalBook1.enabled }
                                       }))}
                                       style={{
-                                        padding: '0.3rem 0.6rem',
-                                        fontSize: '0.75rem',
+                                        padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                        fontSize: isMobile ? '0.55rem' : '0.75rem',
                                         fontWeight: '600',
                                         backgroundColor: advancedMaterialOptions.weaponNormalBook1.enabled ? '#3b82f6' : '#6b7280',
                                         color: advancedMaterialOptions.weaponNormalBook1.enabled ? '#ffffff' : '#9ca3af',
                                         border: 'none',
-                                        borderRadius: '6px',
+                                        borderRadius: isMobile ? '2px' : '6px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        whiteSpace: 'nowrap'
                                       }}
                                     >
                                       {advancedMaterialOptions.weaponNormalBook1.enabled ? '사용' : '미사용'}
@@ -1895,17 +1900,17 @@ export default function RefiningCalculator() {
                                 {showBook2 && (
                                   <div className="d-flex flex-column align-items-center">
                                   <div style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    border: '2px solid var(--border-color)',
-                                    borderRadius: '10px',
+                                    width: isMobile ? '22px' : '48px',
+                                    height: isMobile ? '22px' : '48px',
+                                    border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                                    borderRadius: isMobile ? '3px' : '10px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    marginBottom: '0.5rem',
+                                    marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                     backgroundColor: 'var(--card-bg)'
                                   }}>
-                                    <Image src="/master-metallurgy-2.png" alt="장인의 야금술 2단계" width={40} height={40} style={{ objectFit: 'contain' }} />
+                                    <Image src="/master-metallurgy-2.png" alt="장인의 야금술 2단계" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                                   </div>
                                   <button
                                     onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1913,15 +1918,16 @@ export default function RefiningCalculator() {
                                       weaponNormalBook2: { ...prev.weaponNormalBook2, enabled: !prev.weaponNormalBook2.enabled }
                                     }))}
                                     style={{
-                                      padding: '0.3rem 0.6rem',
-                                      fontSize: '0.75rem',
+                                      padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                      fontSize: isMobile ? '0.55rem' : '0.75rem',
                                       fontWeight: '600',
                                       backgroundColor: advancedMaterialOptions.weaponNormalBook2.enabled ? '#3b82f6' : '#6b7280',
                                       color: advancedMaterialOptions.weaponNormalBook2.enabled ? '#ffffff' : '#9ca3af',
                                       border: 'none',
-                                      borderRadius: '6px',
+                                      borderRadius: isMobile ? '2px' : '6px',
                                       cursor: 'pointer',
-                                      transition: 'all 0.2s ease'
+                                      transition: 'all 0.2s ease',
+                                      whiteSpace: 'nowrap'
                                     }}
                                   >
                                     {advancedMaterialOptions.weaponNormalBook2.enabled ? '사용' : '미사용'}
@@ -1935,33 +1941,23 @@ export default function RefiningCalculator() {
                       </div>
 
                       {/* 선조턴 재료 - 무기 */}
-                      {isMobile && (
-                        <div style={{
-                          fontSize: '0.85rem',
-                          color: 'var(--text-secondary)',
-                          fontWeight: '700',
-                          marginTop: '0.5rem',
-                          marginBottom: '0.5rem'
-                        }}>
-                          선조턴
-                        </div>
-                      )}
-                      <div className="d-flex flex-column gap-2 align-items-center">
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div className="d-flex flex-column gap-1 align-items-center">
+                        <div style={{ fontSize: isMobile ? '0.6rem' : '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: isMobile ? '0.15rem' : '0.25rem' }}>선조턴</div>
+                        <div style={{ display: 'flex', gap: isMobile ? '0.2rem' : '0.5rem', flexDirection: 'row' }}>
                           {/* 용암의 숨결 - 항상 표시 */}
                           <div className="d-flex flex-column align-items-center">
                             <div style={{
-                              width: '48px',
-                              height: '48px',
-                              border: '2px solid var(--border-color)',
-                              borderRadius: '10px',
+                              width: isMobile ? '22px' : '48px',
+                              height: isMobile ? '22px' : '48px',
+                              border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                              borderRadius: isMobile ? '3px' : '10px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              marginBottom: '0.5rem',
+                              marginBottom: isMobile ? '0.15rem' : '0.5rem',
                               backgroundColor: 'var(--card-bg)'
                             }}>
-                              <Image src="/breath-lava.png" alt="용암의 숨결" width={40} height={40} style={{ objectFit: 'contain' }} />
+                              <Image src="/breath-lava.png" alt="용암의 숨결" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                             </div>
                             <button
                               onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1969,15 +1965,16 @@ export default function RefiningCalculator() {
                                 weaponBonusBreath: { ...prev.weaponBonusBreath, enabled: !prev.weaponBonusBreath.enabled }
                               }))}
                               style={{
-                                padding: '0.3rem 0.6rem',
-                                fontSize: '0.75rem',
+                                padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                fontSize: isMobile ? '0.55rem' : '0.75rem',
                                 fontWeight: '600',
                                 backgroundColor: advancedMaterialOptions.weaponBonusBreath.enabled ? '#3b82f6' : '#6b7280',
                                 color: advancedMaterialOptions.weaponBonusBreath.enabled ? '#ffffff' : '#9ca3af',
                                 border: 'none',
-                                borderRadius: '6px',
+                                borderRadius: isMobile ? '2px' : '6px',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               {advancedMaterialOptions.weaponBonusBreath.enabled ? '사용' : '미사용'}
@@ -2010,17 +2007,17 @@ export default function RefiningCalculator() {
                                 {showBook1 && (
                                   <div className="d-flex flex-column align-items-center">
                                     <div style={{
-                                      width: '48px',
-                                      height: '48px',
-                                      border: '2px solid var(--border-color)',
-                                      borderRadius: '10px',
+                                      width: isMobile ? '22px' : '48px',
+                                      height: isMobile ? '22px' : '48px',
+                                      border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                                      borderRadius: isMobile ? '3px' : '10px',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      marginBottom: '0.5rem',
+                                      marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                       backgroundColor: 'var(--card-bg)'
                                     }}>
-                                      <Image src="/master-metallurgy-1.png" alt="장인의 야금술 1단계" width={40} height={40} style={{ objectFit: 'contain' }} />
+                                      <Image src="/master-metallurgy-1.png" alt="장인의 야금술 1단계" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                                     </div>
                                     <button
                                       onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -2028,15 +2025,16 @@ export default function RefiningCalculator() {
                                         weaponBonusBook1: { ...prev.weaponBonusBook1, enabled: !prev.weaponBonusBook1.enabled }
                                       }))}
                                       style={{
-                                        padding: '0.3rem 0.6rem',
-                                        fontSize: '0.75rem',
+                                        padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                        fontSize: isMobile ? '0.55rem' : '0.75rem',
                                         fontWeight: '600',
                                         backgroundColor: advancedMaterialOptions.weaponBonusBook1.enabled ? '#3b82f6' : '#6b7280',
                                         color: advancedMaterialOptions.weaponBonusBook1.enabled ? '#ffffff' : '#9ca3af',
                                         border: 'none',
-                                        borderRadius: '6px',
+                                        borderRadius: isMobile ? '2px' : '6px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        whiteSpace: 'nowrap'
                                       }}
                                     >
                                       {advancedMaterialOptions.weaponBonusBook1.enabled ? '사용' : '미사용'}
@@ -2048,17 +2046,17 @@ export default function RefiningCalculator() {
                                 {showBook2 && (
                                   <div className="d-flex flex-column align-items-center">
                                     <div style={{
-                                      width: '48px',
-                                      height: '48px',
-                                      border: '2px solid var(--border-color)',
-                                      borderRadius: '10px',
+                                      width: isMobile ? '22px' : '48px',
+                                      height: isMobile ? '22px' : '48px',
+                                      border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
+                                      borderRadius: isMobile ? '3px' : '10px',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      marginBottom: '0.5rem',
+                                      marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                       backgroundColor: 'var(--card-bg)'
                                     }}>
-                                      <Image src="/master-metallurgy-2.png" alt="장인의 야금술 2단계" width={40} height={40} style={{ objectFit: 'contain' }} />
+                                      <Image src="/master-metallurgy-2.png" alt="장인의 야금술 2단계" width={isMobile ? 18 : 40} height={isMobile ? 18 : 40} style={{ objectFit: 'contain' }} />
                                     </div>
                                     <button
                                       onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -2066,15 +2064,16 @@ export default function RefiningCalculator() {
                                         weaponBonusBook2: { ...prev.weaponBonusBook2, enabled: !prev.weaponBonusBook2.enabled }
                                       }))}
                                       style={{
-                                        padding: '0.3rem 0.6rem',
-                                        fontSize: '0.75rem',
+                                        padding: isMobile ? '0.1rem 0.25rem' : '0.3rem 0.6rem',
+                                        fontSize: isMobile ? '0.55rem' : '0.75rem',
                                         fontWeight: '600',
                                         backgroundColor: advancedMaterialOptions.weaponBonusBook2.enabled ? '#3b82f6' : '#6b7280',
                                         color: advancedMaterialOptions.weaponBonusBook2.enabled ? '#ffffff' : '#9ca3af',
                                         border: 'none',
-                                        borderRadius: '6px',
+                                        borderRadius: isMobile ? '2px' : '6px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        whiteSpace: 'nowrap'
                                       }}
                                     >
                                       {advancedMaterialOptions.weaponBonusBook2.enabled ? '사용' : '미사용'}
@@ -2128,27 +2127,81 @@ export default function RefiningCalculator() {
                     <>
                       {/* 1줄: 기본 재료 - 5개 */}
                       <div className="mb-4">
-                        <Row className="g-3 justify-content-center">
-                          {requiredMats.needsArmor && (
-                            <Col xs={6} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-guardian-stone.png" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
+                        {isMobile ? (
+                          <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'center' }}>
+                            {requiredMats.needsArmor && (
+                              <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('수호석', !boundMaterials['수호석'])}>
+                                <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['수호석'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.2rem', cursor: 'pointer' }}>
+                                  <div style={{ position: 'absolute', top: '1px', right: '2px', fontSize: '0.35rem', color: boundMaterials['수호석'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
+                                  <div style={{ position: 'relative', width: '18px', height: '18px', marginBottom: '1px', marginTop: '6px' }}><Image src="/destiny-guardian-stone.png" alt="수호석" fill style={{ objectFit: 'contain' }} /></div>
+                                  <div style={{ fontSize: '0.4rem', color: 'var(--text-secondary)', marginBottom: '1px', whiteSpace: 'nowrap' }}>수호석</div>
+                                  <div style={{ fontSize: '0.5rem', fontWeight: '700', color: '#818cf8' }}>{materials.수호석.toLocaleString()}</div>
+                                  <div style={{ fontSize: '0.35rem', color: '#f59e0b', marginTop: '1px', fontWeight: '600' }}><Image src="/gold.jpg" alt="gold" width={7} height={7} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['수호석'] ? 0 : results.materialCosts['수호석']).toLocaleString()}</div>
+                                </div>
+                              </div>
+                            )}
+                            {requiredMats.needsWeapon && (
+                              <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('파괴석', !boundMaterials['파괴석'])}>
+                                <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['파괴석'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.2rem', cursor: 'pointer' }}>
+                                  <div style={{ position: 'absolute', top: '1px', right: '2px', fontSize: '0.35rem', color: boundMaterials['파괴석'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
+                                  <div style={{ position: 'relative', width: '18px', height: '18px', marginBottom: '1px', marginTop: '6px' }}><Image src="/destiny-destruction-stone.png" alt="파괴석" fill style={{ objectFit: 'contain' }} /></div>
+                                  <div style={{ fontSize: '0.4rem', color: 'var(--text-secondary)', marginBottom: '1px', whiteSpace: 'nowrap' }}>파괴석</div>
+                                  <div style={{ fontSize: '0.5rem', fontWeight: '700', color: '#818cf8' }}>{materials.파괴석.toLocaleString()}</div>
+                                  <div style={{ fontSize: '0.35rem', color: '#f59e0b', marginTop: '1px', fontWeight: '600' }}><Image src="/gold.jpg" alt="gold" width={7} height={7} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['파괴석'] ? 0 : results.materialCosts['파괴석']).toLocaleString()}</div>
+                                </div>
+                              </div>
+                            )}
+                            <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('돌파석', !boundMaterials['돌파석'])}>
+                              <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['돌파석'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.2rem', cursor: 'pointer' }}>
+                                <div style={{ position: 'absolute', top: '1px', right: '2px', fontSize: '0.35rem', color: boundMaterials['돌파석'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
+                                <div style={{ position: 'relative', width: '18px', height: '18px', marginBottom: '1px', marginTop: '6px' }}><Image src="/destiny-breakthrough-stone.png" alt="돌파석" fill style={{ objectFit: 'contain' }} /></div>
+                                <div style={{ fontSize: '0.4rem', color: 'var(--text-secondary)', marginBottom: '1px', whiteSpace: 'nowrap' }}>돌파석</div>
+                                <div style={{ fontSize: '0.5rem', fontWeight: '700', color: '#818cf8' }}>{materials.돌파석.toLocaleString()}</div>
+                                <div style={{ fontSize: '0.35rem', color: '#f59e0b', marginTop: '1px', fontWeight: '600' }}><Image src="/gold.jpg" alt="gold" width={7} height={7} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['돌파석'] ? 0 : results.materialCosts['돌파석']).toLocaleString()}</div>
+                              </div>
+                            </div>
+                            <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('운명파편', !boundMaterials['운명파편'])}>
+                              <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['운명파편'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.2rem', cursor: 'pointer' }}>
+                                <div style={{ position: 'absolute', top: '1px', right: '2px', fontSize: '0.35rem', color: boundMaterials['운명파편'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
+                                <div style={{ position: 'relative', width: '18px', height: '18px', marginBottom: '1px', marginTop: '6px' }}><Image src="/destiny-shard-bag-large.png" alt="파편" fill style={{ objectFit: 'contain' }} /></div>
+                                <div style={{ fontSize: '0.4rem', color: 'var(--text-secondary)', marginBottom: '1px', whiteSpace: 'nowrap' }}>파편</div>
+                                <div style={{ fontSize: '0.5rem', fontWeight: '700', color: '#818cf8' }}>{materials.운명파편.toLocaleString()}</div>
+                                <div style={{ fontSize: '0.35rem', color: '#f59e0b', marginTop: '1px', fontWeight: '600' }}><Image src="/gold.jpg" alt="gold" width={7} height={7} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['운명파편'] ? 0 : results.materialCosts['운명파편']).toLocaleString()}</div>
+                              </div>
+                            </div>
+                            <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('아비도스', !boundMaterials['아비도스'])}>
+                              <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['아비도스'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.2rem', cursor: 'pointer' }}>
+                                <div style={{ position: 'absolute', top: '1px', right: '2px', fontSize: '0.35rem', color: boundMaterials['아비도스'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
+                                <div style={{ position: 'relative', width: '18px', height: '18px', marginBottom: '1px', marginTop: '6px' }}><Image src="/abidos-fusion.png" alt="아비도스" fill style={{ objectFit: 'contain' }} /></div>
+                                <div style={{ fontSize: '0.4rem', color: 'var(--text-secondary)', marginBottom: '1px', whiteSpace: 'nowrap' }}>아비도스</div>
+                                <div style={{ fontSize: '0.5rem', fontWeight: '700', color: '#818cf8' }}>{materials.아비도스.toLocaleString()}</div>
+                                <div style={{ fontSize: '0.35rem', color: '#f59e0b', marginTop: '1px', fontWeight: '600' }}><Image src="/gold.jpg" alt="gold" width={7} height={7} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['아비도스'] ? 0 : results.materialCosts['아비도스']).toLocaleString()}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <Row className="g-3 justify-content-center">
+                            {requiredMats.needsArmor && (
+                              <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                                <MaterialCard icon="/destiny-guardian-stone.png" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
+                              </Col>
+                            )}
+                            {requiredMats.needsWeapon && (
+                              <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                                <MaterialCard icon="/destiny-destruction-stone.png" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} />
+                              </Col>
+                            )}
+                            <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-breakthrough-stone.png" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} />
                             </Col>
-                          )}
-                          {requiredMats.needsWeapon && (
-                            <Col xs={6} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-destruction-stone.png" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} />
+                            <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-shard-bag-large.png" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} />
                             </Col>
-                          )}
-                          <Col xs={6} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                            <MaterialCard icon="/destiny-breakthrough-stone.png" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} />
-                          </Col>
-                          <Col xs={6} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                            <MaterialCard icon="/destiny-shard-bag-large.png" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} />
-                          </Col>
-                          <Col xs={6} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                            <MaterialCard icon="/abidos-fusion.png" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} />
-                          </Col>
-                        </Row>
+                            <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/abidos-fusion.png" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} />
+                            </Col>
+                          </Row>
+                        )}
                       </div>
 
                       {/* 일반 재련 추가 재료 */}
@@ -2165,8 +2218,8 @@ export default function RefiningCalculator() {
                   </div>
                           {/* 2줄: 빙하의 숨결 + 책 3종 - 4개 */}
                           {requiredMats.needsGlacierNormal && (
-                            <Row className="g-3 justify-content-center mb-3">
-                              <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
+                            <Row className={isMobile ? 'g-2 justify-content-center mb-3' : 'g-3 justify-content-center mb-3'}>
+                              <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                 <MaterialCard
                                   icon="/breath-glacier.png"
                                   name="빙하의 숨결"
@@ -2182,7 +2235,7 @@ export default function RefiningCalculator() {
                                 />
                               </Col>
                               {requiredMats.needsArmorBook1014 && (
-                                <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
+                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/tailoring-karma.png"
                                     name="재봉술: 업화(10~14) 방어구"
@@ -2199,7 +2252,7 @@ export default function RefiningCalculator() {
                                 </Col>
                               )}
                               {requiredMats.needsArmorBook1518 && (
-                                <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
+                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/tailoring-karma.png"
                                     name="재봉술: 업화(15~18) 방어구"
@@ -2216,7 +2269,7 @@ export default function RefiningCalculator() {
                                 </Col>
                               )}
                               {requiredMats.needsArmorBook1920 && (
-                                <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
+                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/tailoring-karma.png"
                                     name="재봉술: 업화(19~20) 방어구"
@@ -2236,8 +2289,8 @@ export default function RefiningCalculator() {
                           )}
                           {/* 3줄: 용암의 숨결 + 책 3종 - 4개 */}
                           {requiredMats.needsLavaNormal && (
-                            <Row className="g-3 justify-content-center">
-                              <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
+                            <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
+                              <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                 <MaterialCard
                                   icon="/breath-lava.png"
                                   name="용암의 숨결"
@@ -2253,7 +2306,7 @@ export default function RefiningCalculator() {
                                 />
                               </Col>
                               {requiredMats.needsWeaponBook1014 && (
-                                <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
+                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/metallurgy-karma.png"
                                     name="야금술: 업화(10~14) 무기"
@@ -2270,7 +2323,7 @@ export default function RefiningCalculator() {
                                 </Col>
                               )}
                               {requiredMats.needsWeaponBook1518 && (
-                                <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
+                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/metallurgy-karma.png"
                                     name="야금술: 업화(15~18) 무기"
@@ -2287,7 +2340,7 @@ export default function RefiningCalculator() {
                                 </Col>
                               )}
                               {requiredMats.needsWeaponBook1920 && (
-                                <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
+                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/metallurgy-karma.png"
                                     name="야금술: 업화(19~20) 무기"
@@ -2322,8 +2375,8 @@ export default function RefiningCalculator() {
                           </div>
                           {/* 4줄: 빙하의 숨결 + 장인의 재봉술 1,2단계 - 3개 */}
                           {(requiredMats.needsAdvancedArmorBook1 || requiredMats.needsAdvancedArmorBook2) && (
-                            <Row className="g-3 justify-content-center mb-3">
-                              <Col xs={6} sm={4} md={4} style={{ minWidth: '0' }}>
+                            <Row className={isMobile ? 'g-2 justify-content-center mb-3' : 'g-3 justify-content-center mb-3'}>
+                              <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                 <MaterialCard
                                   icon="/breath-glacier.png"
                                   name="빙하의 숨결"
@@ -2346,7 +2399,7 @@ export default function RefiningCalculator() {
                                 />
                               </Col>
                               {requiredMats.needsAdvancedArmorBook1 && (
-                                <Col xs={6} sm={4} md={4} style={{ minWidth: '0' }}>
+                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/master-tailoring-1.png"
                                     name="장인의 재봉술 1단계"
@@ -2370,7 +2423,7 @@ export default function RefiningCalculator() {
                                 </Col>
                               )}
                               {requiredMats.needsAdvancedArmorBook2 && (
-                                <Col xs={6} sm={4} md={4} style={{ minWidth: '0' }}>
+                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/master-tailoring-2.png"
                                     name="장인의 재봉술 2단계"
@@ -2397,8 +2450,8 @@ export default function RefiningCalculator() {
                           )}
                           {/* 5줄: 용암의 숨결 + 장인의 야금술 1,2단계 - 3개 */}
                           {(requiredMats.needsAdvancedWeaponBook1 || requiredMats.needsAdvancedWeaponBook2) && (
-                            <Row className="g-3 justify-content-center">
-                              <Col xs={6} sm={4} md={4} style={{ minWidth: '0' }}>
+                            <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
+                              <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                 <MaterialCard
                                   icon="/breath-lava.png"
                                   name="용암의 숨결"
@@ -2421,7 +2474,7 @@ export default function RefiningCalculator() {
                                 />
                               </Col>
                               {requiredMats.needsAdvancedWeaponBook1 && (
-                                <Col xs={6} sm={4} md={4} style={{ minWidth: '0' }}>
+                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/master-metallurgy-1.png"
                                     name="장인의 야금술 1단계"
@@ -2445,7 +2498,7 @@ export default function RefiningCalculator() {
                                 </Col>
                               )}
                               {requiredMats.needsAdvancedWeaponBook2 && (
-                                <Col xs={6} sm={4} md={4} style={{ minWidth: '0' }}>
+                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/master-metallurgy-2.png"
                                     name="장인의 야금술 2단계"
@@ -2475,7 +2528,7 @@ export default function RefiningCalculator() {
 
                       {/* 6줄: 누르는 골드 + 총 소모 골드 - 2개 */}
                       <div className="mb-4">
-                        <Row className="g-3 justify-content-center">
+                        <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
                           <Col xs={6} sm={6} md={6} style={{ minWidth: '0' }}>
                             <MaterialCard icon="/gold.jpg" name="누르는 골드" amount={materials.누골} color="#f59e0b" />
                           </Col>

@@ -32,7 +32,8 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(for id in 66112553 66112551 66112554 66112552 66112714 66112712 66112713 66112711 66111131 66111132)",
       "Bash(do echo \"=== Item $id ===\" curl -s \"https://lostarkweeklygold.kr/api/market/price-history/$id?noCache=true\")",
-      "Bash(rd /s /q .next)"
+      "Bash(rd /s /q .next)",
+      "Bash(powershell -Command \"(Get-Content ''C:\\Users\\park yu ro\\Desktop\\project4\\components\\refining\\RefiningCalculator.tsx'' | Measure-Object -Line).Lines\")"
     ],
     "deny": [],
     "ask": []
