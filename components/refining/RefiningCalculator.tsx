@@ -35,8 +35,12 @@ type Materials = {
   아비도스: number; // 아비도스 융화 재료
   운명파편: number; // 운명의 파편
   누골: number; // 누적 골드 (강화 시도 시 드는 골드)
-  빙하: number; // 빙하의 숨결 (방어구)
-  용암: number; // 용암의 숨결 (무기)
+  빙하: number; // 빙하의 숨결 (방어구) - 전체
+  용암: number; // 용암의 숨결 (무기) - 전체
+  빙하_일반: number; // 빙하의 숨결 (일반 재련용)
+  용암_일반: number; // 용암의 숨결 (일반 재련용)
+  빙하_상급: number; // 빙하의 숨결 (상급 재련용)
+  용암_상급: number; // 용암의 숨결 (상급 재련용)
   방어구책: number; // 재봉술 책 (일반 강화용)
   무기책: number; // 야금술 책 (일반 강화용)
   재봉술1단?: number; // 장인의 재봉술 1단계 (상급 1~10)
@@ -293,6 +297,10 @@ export default function RefiningCalculator() {
     costs['운명파편'] = materials.운명파편 * ((marketPrices['66130143'] || 0) / 3000);  // 3000개 단위
     costs['빙하'] = materials.빙하 * (marketPrices['66111132'] || 0);
     costs['용암'] = materials.용암 * (marketPrices['66111131'] || 0);
+    costs['빙하_일반'] = materials.빙하_일반 * (marketPrices['66111132'] || 0);
+    costs['용암_일반'] = materials.용암_일반 * (marketPrices['66111131'] || 0);
+    costs['빙하_상급'] = materials.빙하_상급 * (marketPrices['66111132'] || 0);
+    costs['용암_상급'] = materials.용암_상급 * (marketPrices['66111131'] || 0);
     costs['방어구책'] = materials.방어구책 * (marketPrices['66112554'] || 0);  // 재봉술2단 (19-20)
     costs['무기책'] = materials.무기책 * (marketPrices['66112553'] || 0);  // 야금술2단 (19-20)
 
@@ -309,31 +317,37 @@ export default function RefiningCalculator() {
     if (!boundMaterials['아비도스']) totalMaterialCost += costs['아비도스'];
     if (!boundMaterials['운명파편']) totalMaterialCost += costs['운명파편'];
 
-    // 추가 재료 비용 계산 (일반 강화 + 상급재련)
-    // 빙하 숨결: 일반 강화 또는 상급재련(방어구 일반턴/보너스턴)에서 사용
-    const usingGlacier = materialOptions.glacierBreath.enabled ||
-                         advancedMaterialOptions.armorNormalBreath.enabled ||
-                         advancedMaterialOptions.armorBonusBreath.enabled;
-    const allGlacierBound =
-      (!materialOptions.glacierBreath.enabled || materialOptions.glacierBreath.isBound) &&
+    // 추가 재료 비용 계산 (일반 강화 + 상급재련) - 분리된 비용 적용
+    // 일반 재련 빙하 숨결
+    if (materialOptions.glacierBreath.enabled && !materialOptions.glacierBreath.isBound) {
+      totalMaterialCost += costs['빙하_일반'];
+    }
+
+    // 상급 재련 빙하 숨결 (일반턴/보너스턴)
+    const usingAdvancedGlacier = advancedMaterialOptions.armorNormalBreath.enabled ||
+                                  advancedMaterialOptions.armorBonusBreath.enabled;
+    const allAdvancedGlacierBound =
       (!advancedMaterialOptions.armorNormalBreath.enabled || advancedMaterialOptions.armorNormalBreath.isBound) &&
       (!advancedMaterialOptions.armorBonusBreath.enabled || advancedMaterialOptions.armorBonusBreath.isBound);
 
-    if (usingGlacier && !allGlacierBound) {
-      totalMaterialCost += costs['빙하'];
+    if (usingAdvancedGlacier && !allAdvancedGlacierBound) {
+      totalMaterialCost += costs['빙하_상급'];
     }
 
-    // 용암 숨결: 일반 강화 또는 상급재련(무기 일반턴/보너스턴)에서 사용
-    const usingLava = materialOptions.lavaBreath.enabled ||
-                      advancedMaterialOptions.weaponNormalBreath.enabled ||
-                      advancedMaterialOptions.weaponBonusBreath.enabled;
-    const allLavaBound =
-      (!materialOptions.lavaBreath.enabled || materialOptions.lavaBreath.isBound) &&
+    // 일반 재련 용암 숨결
+    if (materialOptions.lavaBreath.enabled && !materialOptions.lavaBreath.isBound) {
+      totalMaterialCost += costs['용암_일반'];
+    }
+
+    // 상급 재련 용암 숨결 (일반턴/보너스턴)
+    const usingAdvancedLava = advancedMaterialOptions.weaponNormalBreath.enabled ||
+                              advancedMaterialOptions.weaponBonusBreath.enabled;
+    const allAdvancedLavaBound =
       (!advancedMaterialOptions.weaponNormalBreath.enabled || advancedMaterialOptions.weaponNormalBreath.isBound) &&
       (!advancedMaterialOptions.weaponBonusBreath.enabled || advancedMaterialOptions.weaponBonusBreath.isBound);
 
-    if (usingLava && !allLavaBound) {
-      totalMaterialCost += costs['용암'];
+    if (usingAdvancedLava && !allAdvancedLavaBound) {
+      totalMaterialCost += costs['용암_상급'];
     }
 
     if (materialOptions.tailoring.enabled && !materialOptions.tailoring.isBound) {
@@ -722,7 +736,8 @@ export default function RefiningCalculator() {
 
     let totalMaterials: Materials = {
       수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0,
-      누골: 0, 빙하: 0, 용암: 0, 방어구책: 0, 무기책: 0,
+      누골: 0, 빙하: 0, 용암: 0, 빙하_일반: 0, 용암_일반: 0, 빙하_상급: 0, 용암_상급: 0,
+      방어구책: 0, 무기책: 0,
       재봉술1단: 0, 재봉술2단: 0, 야금술1단: 0, 야금술2단: 0,
     };
 
@@ -761,6 +776,7 @@ export default function RefiningCalculator() {
             totalMaterials.수호석 += (materialCostPerTry as any).수호석 * avgTries;
             if (useBreath) {
               totalMaterials.빙하 += breathCountPerTry * avgTries;
+              totalMaterials.빙하_일반 += breathCountPerTry * avgTries;
             }
             if (useBook) {
               totalMaterials.방어구책 += avgTries;
@@ -769,6 +785,7 @@ export default function RefiningCalculator() {
             totalMaterials.파괴석 += (materialCostPerTry as any).파괴석 * avgTries;
             if (useBreath) {
               totalMaterials.용암 += breathCountPerTry * avgTries;
+              totalMaterials.용암_일반 += breathCountPerTry * avgTries;
             }
             if (useBook) {
               totalMaterials.무기책 += avgTries;
@@ -817,6 +834,8 @@ export default function RefiningCalculator() {
         totalMaterials.누골 += advancedMaterials['누골'] || 0;
         totalMaterials.빙하 += advancedMaterials['빙하'] || 0;
         totalMaterials.용암 += advancedMaterials['용암'] || 0;
+        totalMaterials.빙하_상급 += advancedMaterials['빙하'] || 0;
+        totalMaterials.용암_상급 += advancedMaterials['용암'] || 0;
         totalMaterials.재봉술1단 = (totalMaterials.재봉술1단 || 0) + (advancedMaterials['재봉술1단'] || 0);
         totalMaterials.재봉술2단 = (totalMaterials.재봉술2단 || 0) + (advancedMaterials['재봉술2단'] || 0);
         totalMaterials.야금술1단 = (totalMaterials.야금술1단 || 0) + (advancedMaterials['야금술1단'] || 0);
@@ -2263,9 +2282,9 @@ export default function RefiningCalculator() {
                                 <MaterialCard
                                   icon="/breath-glacier.png"
                                   name="빙하의 숨결"
-                                  amount={materials.빙하}
+                                  amount={materials.빙하_일반}
                                   color="#34d399"
-                                  cost={results.materialCosts['빙하']}
+                                  cost={results.materialCosts['빙하_일반']}
                                   showEnableToggle={true}
                                   isEnabled={materialOptions.glacierBreath.enabled}
                                   onToggleEnabled={() => setMaterialOptions(p => ({...p, glacierBreath: {...p.glacierBreath, enabled: !p.glacierBreath.enabled}}))}
@@ -2334,9 +2353,9 @@ export default function RefiningCalculator() {
                                 <MaterialCard
                                   icon="/breath-lava.png"
                                   name="용암의 숨결"
-                                  amount={materials.용암}
+                                  amount={materials.용암_일반}
                                   color="#34d399"
-                                  cost={results.materialCosts['용암']}
+                                  cost={results.materialCosts['용암_일반']}
                                   showEnableToggle={true}
                                   isEnabled={materialOptions.lavaBreath.enabled}
                                   onToggleEnabled={() => setMaterialOptions(p => ({...p, lavaBreath: {...p.lavaBreath, enabled: !p.lavaBreath.enabled}}))}
@@ -2420,9 +2439,9 @@ export default function RefiningCalculator() {
                                 <MaterialCard
                                   icon="/breath-glacier.png"
                                   name="빙하의 숨결"
-                                  amount={materials.빙하}
+                                  amount={materials.빙하_상급}
                                   color="#a855f7"
-                                  cost={results.materialCosts['빙하']}
+                                  cost={results.materialCosts['빙하_상급']}
                                   showEnableToggle={false}
                                   isEnabled={advancedMaterialOptions.armorNormalBreath.enabled || advancedMaterialOptions.armorBonusBreath.enabled}
                                   onToggleEnabled={() => {}}
@@ -2495,9 +2514,9 @@ export default function RefiningCalculator() {
                                 <MaterialCard
                                   icon="/breath-lava.png"
                                   name="용암의 숨결"
-                                  amount={materials.용암}
+                                  amount={materials.용암_상급}
                                   color="#a855f7"
-                                  cost={results.materialCosts['용암']}
+                                  cost={results.materialCosts['용암_상급']}
                                   showEnableToggle={false}
                                   isEnabled={advancedMaterialOptions.weaponNormalBreath.enabled || advancedMaterialOptions.weaponBonusBreath.enabled}
                                   onToggleEnabled={() => {}}

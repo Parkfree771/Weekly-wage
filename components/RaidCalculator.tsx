@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Table, Form, Badge, Accordion, Row, Col } from 'react-bootstrap';
+import { Card, Table, Form, Badge, Accordion, Row, Col, Button, Collapse } from 'react-bootstrap';
 import Image from 'next/image';
 import { raids } from '@/data/raids';
 
@@ -24,6 +24,16 @@ type GateSelection = {
 
 export default function RaidCalculator({ selectedCharacters }: RaidCalculatorProps) {
   const [gateSelection, setGateSelection] = useState<GateSelection>({});
+  const [showAllRaids, setShowAllRaids] = useState<{ [key: string]: boolean }>({});
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 모바일 감지
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // groupRaids를 useMemo로 메모이제이션 (raids는 변경되지 않으므로 한 번만 계산)
   const groupedRaids = useMemo(() => {
@@ -216,6 +226,31 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
     return false;
   };
 
+  // 체크된 레이드 그룹만 필터링 (모바일용)
+  const getCheckedRaidGroups = (characterName: string) => {
+    const checkedGroups: string[] = [];
+    if (!gateSelection[characterName]) return checkedGroups;
+
+    for (const groupName in groupedRaids) {
+      let hasChecked = false;
+      for (const raid of groupedRaids[groupName]) {
+        if (gateSelection[characterName]?.[raid.name]) {
+          for (const gate of raid.gates) {
+            if (gateSelection[characterName][raid.name][gate.gate] !== 'none') {
+              hasChecked = true;
+              break;
+            }
+          }
+        }
+        if (hasChecked) break;
+      }
+      if (hasChecked) {
+        checkedGroups.push(groupName);
+      }
+    }
+    return checkedGroups;
+  };
+
   if (selectedCharacters.length === 0) {
     return (
       <div className="text-center p-5">
@@ -226,101 +261,252 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
   return (
     <>
       <Row>
-        {selectedCharacters.map(character => (
-          <Col md={4} key={character.characterName} className="mb-4">
-            <Card className="character-raid-card" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
-              <Card.Header as="h5" className="character-raid-header" style={{ backgroundColor: 'var(--card-header-bg)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>
-                {character.characterName} <Badge bg="info">Lv. {character.itemLevel}</Badge>
-                <Badge bg="warning" className="ms-2">{calculateCharacterGold(character.characterName).toLocaleString()} G</Badge>
-              </Card.Header>
-              <Card.Body>
-                <Accordion flush className="theme-accordion">
-                  {Object.keys(groupedRaids).map(groupName => (
-                    <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
-                      <Accordion.Header>
-                        {groupName}
-                        <Badge bg="success" className="ms-2">{calculateRaidGroupGold(character.characterName, groupName).toLocaleString()} G</Badge>
-                        {hasMoreSelected(character.characterName, groupName) && <Badge bg="danger" className="ms-2">더보기</Badge>}
-                      </Accordion.Header>
-                      <Accordion.Body>
-                        <Accordion flush>
-                          {groupedRaids[groupName].map(raid => (
-                            <Accordion.Item
-                              eventKey={raid.name}
-                              key={raid.name}
-                              className="raid-difficulty-accordion"
-                            >
-                              <Accordion.Header>{raid.name} <Badge bg="secondary" className="ms-2">Lv. {raid.level}</Badge></Accordion.Header>
-                              <Accordion.Body>
-                                <Table striped bordered hover responsive className="raid-table">
-                                  <thead>
-                                    <tr>
-                                      <th>관문</th>
-                                      <th>
-                                        <Form.Check
-                                          type="checkbox"
-                                          label="클골"
-                                          checked={getHeaderCheckState(character.characterName, raid.name, 'withMore')}
-                                          onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')}
-                                        />
-                                      </th>
-                                      <th>
-                                        <Form.Check
-                                          type="checkbox"
-                                          label="더보기⭕"
-                                          checked={getHeaderCheckState(character.characterName, raid.name, 'withoutMore')}
-                                          onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')}
-                                        />
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {raid.gates.map((gate: any) => (
-                                      <tr key={`${raid.name}-${gate.gate}`}>
-                                        <td>{gate.gate}관</td>
-                                        <td onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}>
+        {selectedCharacters.map(character => {
+          const checkedGroups = getCheckedRaidGroups(character.characterName);
+          const uncheckedGroups = Object.keys(groupedRaids).filter(g => !checkedGroups.includes(g));
+          const showAll = showAllRaids[character.characterName] || false;
+
+          return (
+            <Col md={4} key={character.characterName} className="mb-3 mb-md-4">
+              <Card className="character-raid-card" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+                <Card.Header
+                  className="character-raid-header d-flex align-items-center justify-content-between flex-wrap gap-1"
+                  style={{
+                    backgroundColor: 'var(--card-header-bg)',
+                    borderColor: 'var(--border-color)',
+                    color: 'var(--text-primary)',
+                    padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem'
+                  }}
+                >
+                  <div className="d-flex align-items-center gap-1">
+                    <span style={{ fontSize: isMobile ? '0.85rem' : '1rem', fontWeight: 600 }}>
+                      {character.characterName}
+                    </span>
+                    <Badge bg="info" style={{ fontSize: isMobile ? '0.6rem' : '0.7rem', padding: '0.2em 0.4em' }}>
+                      {character.itemLevel}
+                    </Badge>
+                  </div>
+                  <Badge bg="warning" style={{ fontSize: isMobile ? '0.65rem' : '0.75rem', padding: '0.25em 0.5em' }}>
+                    {calculateCharacterGold(character.characterName).toLocaleString()} G
+                  </Badge>
+                </Card.Header>
+                <Card.Body style={{ padding: isMobile ? '0.5rem' : '1rem' }}>
+                  <Accordion flush className="theme-accordion">
+                    {/* 체크된 레이드 그룹들 */}
+                    {checkedGroups.map(groupName => (
+                      <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
+                        <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '0.9rem' }}>
+                          <span style={{ fontWeight: 600 }}>{groupName}</span>
+                          <Badge bg="success" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.65rem' }}>
+                            {calculateRaidGroupGold(character.characterName, groupName).toLocaleString()} G
+                          </Badge>
+                          {hasMoreSelected(character.characterName, groupName) && (
+                            <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.6rem' }}>더보기</Badge>
+                          )}
+                        </Accordion.Header>
+                        <Accordion.Body style={{ padding: isMobile ? '0.5rem' : '1rem' }}>
+                          <Accordion flush>
+                            {groupedRaids[groupName].map(raid => (
+                              <Accordion.Item eventKey={raid.name} key={raid.name} className="raid-difficulty-accordion">
+                                <Accordion.Header style={{ fontSize: isMobile ? '0.75rem' : '0.85rem' }}>
+                                  {raid.name}
+                                  <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.6rem' }}>
+                                    {raid.level}
+                                  </Badge>
+                                </Accordion.Header>
+                                <Accordion.Body style={{ padding: isMobile ? '0.25rem' : '0.75rem' }}>
+                                  <Table striped bordered hover responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.65rem' : '0.85rem', tableLayout: 'fixed' }}>
+                                    <thead>
+                                      <tr>
+                                        <th style={{ padding: isMobile ? '0.2rem' : '0.5rem', width: isMobile ? '18%' : '20%', whiteSpace: 'nowrap' }}>관문</th>
+                                        <th style={{ padding: isMobile ? '0.2rem' : '0.5rem', width: isMobile ? '41%' : '40%' }}>
                                           <Form.Check
-                                            type="radio"
-                                            name={`${character.characterName}-${raid.name}-${gate.gate}`}
-                                            id={`${character.characterName}-${raid.name}-${gate.gate}-with-more`}
-                                            label={gate.gold.toLocaleString() + ' G'}
-                                            checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withMore'}
-                                            onChange={() => {}}
+                                            type="checkbox"
+                                            label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.8rem', whiteSpace: 'nowrap' }}>클골</span>}
+                                            checked={getHeaderCheckState(character.characterName, raid.name, 'withMore')}
+                                            onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')}
+                                            style={{ marginBottom: 0 }}
                                           />
-                                        </td>
-                                        <td onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withoutMore')}>
+                                        </th>
+                                        <th style={{ padding: isMobile ? '0.2rem' : '0.5rem', width: isMobile ? '41%' : '40%' }}>
                                           <Form.Check
-                                            type="radio"
-                                            name={`${character.characterName}-${raid.name}-${gate.gate}`}
-                                            id={`${character.characterName}-${raid.name}-${gate.gate}-without-more`}
-                                            label={(gate.gold - gate.moreGold).toLocaleString() + ' G'}
-                                            checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withoutMore'}
-                                            onChange={() => {}}
+                                            type="checkbox"
+                                            label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.8rem', whiteSpace: 'nowrap' }}>더보기</span>}
+                                            checked={getHeaderCheckState(character.characterName, raid.name, 'withoutMore')}
+                                            onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')}
+                                            style={{ marginBottom: 0 }}
                                           />
-                                        </td>
+                                        </th>
                                       </tr>
+                                    </thead>
+                                    <tbody>
+                                      {raid.gates.map((gate: any) => (
+                                        <tr key={`${raid.name}-${gate.gate}`}>
+                                          <td style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.4rem 0.5rem', whiteSpace: 'nowrap' }}>{gate.gate}관</td>
+                                          <td
+                                            onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}
+                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.4rem 0.5rem', cursor: 'pointer' }}
+                                          >
+                                            <Form.Check
+                                              type="radio"
+                                              name={`${character.characterName}-${raid.name}-${gate.gate}`}
+                                              id={`${character.characterName}-${raid.name}-${gate.gate}-with-more`}
+                                              label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.8rem', whiteSpace: 'nowrap' }}>{gate.gold.toLocaleString()}</span>}
+                                              checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withMore'}
+                                              onChange={() => {}}
+                                              style={{ marginBottom: 0 }}
+                                            />
+                                          </td>
+                                          <td
+                                            onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withoutMore')}
+                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.4rem 0.5rem', cursor: 'pointer' }}
+                                          >
+                                            <Form.Check
+                                              type="radio"
+                                              name={`${character.characterName}-${raid.name}-${gate.gate}`}
+                                              id={`${character.characterName}-${raid.name}-${gate.gate}-without-more`}
+                                              label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.8rem', whiteSpace: 'nowrap' }}>{(gate.gold - gate.moreGold).toLocaleString()}</span>}
+                                              checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withoutMore'}
+                                              onChange={() => {}}
+                                              style={{ marginBottom: 0 }}
+                                            />
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </Table>
+                                </Accordion.Body>
+                              </Accordion.Item>
+                            ))}
+                          </Accordion>
+                        </Accordion.Body>
+                      </Accordion.Item>
+                    ))}
+
+                    {/* 체크되지 않은 레이드 그룹들 (접기/펼치기) */}
+                    {uncheckedGroups.length > 0 && (
+                      <>
+                        <div className="text-center mt-2 mb-1">
+                          <Button
+                            variant="outline-secondary"
+                            size="sm"
+                            onClick={() => setShowAllRaids(prev => ({
+                              ...prev,
+                              [character.characterName]: !prev[character.characterName]
+                            }))}
+                            style={{
+                              fontSize: isMobile ? '0.65rem' : '0.75rem',
+                              padding: isMobile ? '0.2rem 0.5rem' : '0.25rem 0.75rem'
+                            }}
+                          >
+                            {showAll ? '▲ 다른 레이드 접기' : `▼ 다른 레이드 보기 (${uncheckedGroups.length}개)`}
+                          </Button>
+                        </div>
+                        <Collapse in={showAll}>
+                          <div>
+                            {uncheckedGroups.map(groupName => (
+                              <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
+                                <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '0.9rem' }}>
+                                  <span style={{ fontWeight: 600, opacity: 0.7 }}>{groupName}</span>
+                                  <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.65rem' }}>
+                                    0 G
+                                  </Badge>
+                                </Accordion.Header>
+                                <Accordion.Body style={{ padding: isMobile ? '0.5rem' : '1rem' }}>
+                                  <Accordion flush>
+                                    {groupedRaids[groupName].map(raid => (
+                                      <Accordion.Item eventKey={raid.name} key={raid.name} className="raid-difficulty-accordion">
+                                        <Accordion.Header style={{ fontSize: isMobile ? '0.75rem' : '0.85rem' }}>
+                                          {raid.name}
+                                          <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.6rem' }}>
+                                            {raid.level}
+                                          </Badge>
+                                        </Accordion.Header>
+                                        <Accordion.Body style={{ padding: isMobile ? '0.25rem' : '0.75rem' }}>
+                                          <Table striped bordered hover responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.65rem' : '0.85rem', tableLayout: 'fixed' }}>
+                                            <thead>
+                                              <tr>
+                                                <th style={{ padding: isMobile ? '0.2rem' : '0.5rem', width: isMobile ? '18%' : '20%', whiteSpace: 'nowrap' }}>관문</th>
+                                                <th style={{ padding: isMobile ? '0.2rem' : '0.5rem', width: isMobile ? '41%' : '40%' }}>
+                                                  <Form.Check
+                                                    type="checkbox"
+                                                    label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.8rem', whiteSpace: 'nowrap' }}>클골</span>}
+                                                    checked={getHeaderCheckState(character.characterName, raid.name, 'withMore')}
+                                                    onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')}
+                                                    style={{ marginBottom: 0 }}
+                                                  />
+                                                </th>
+                                                <th style={{ padding: isMobile ? '0.2rem' : '0.5rem', width: isMobile ? '41%' : '40%' }}>
+                                                  <Form.Check
+                                                    type="checkbox"
+                                                    label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.8rem', whiteSpace: 'nowrap' }}>더보기</span>}
+                                                    checked={getHeaderCheckState(character.characterName, raid.name, 'withoutMore')}
+                                                    onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')}
+                                                    style={{ marginBottom: 0 }}
+                                                  />
+                                                </th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {raid.gates.map((gate: any) => (
+                                                <tr key={`${raid.name}-${gate.gate}`}>
+                                                  <td style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.4rem 0.5rem', whiteSpace: 'nowrap' }}>{gate.gate}관</td>
+                                                  <td
+                                                    onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}
+                                                    style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.4rem 0.5rem', cursor: 'pointer' }}
+                                                  >
+                                                    <Form.Check
+                                                      type="radio"
+                                                      name={`${character.characterName}-${raid.name}-${gate.gate}`}
+                                                      id={`${character.characterName}-${raid.name}-${gate.gate}-with-more-hidden`}
+                                                      label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.8rem', whiteSpace: 'nowrap' }}>{gate.gold.toLocaleString()}</span>}
+                                                      checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withMore'}
+                                                      onChange={() => {}}
+                                                      style={{ marginBottom: 0 }}
+                                                    />
+                                                  </td>
+                                                  <td
+                                                    onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withoutMore')}
+                                                    style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.4rem 0.5rem', cursor: 'pointer' }}
+                                                  >
+                                                    <Form.Check
+                                                      type="radio"
+                                                      name={`${character.characterName}-${raid.name}-${gate.gate}`}
+                                                      id={`${character.characterName}-${raid.name}-${gate.gate}-without-more-hidden`}
+                                                      label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.8rem', whiteSpace: 'nowrap' }}>{(gate.gold - gate.moreGold).toLocaleString()}</span>}
+                                                      checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withoutMore'}
+                                                      onChange={() => {}}
+                                                      style={{ marginBottom: 0 }}
+                                                    />
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </Table>
+                                        </Accordion.Body>
+                                      </Accordion.Item>
                                     ))}
-                                  </tbody>
-                                </Table>
-                              </Accordion.Body>
-                            </Accordion.Item>
-                          ))}
-                        </Accordion>
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  ))}
-                </Accordion>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
+                                  </Accordion>
+                                </Accordion.Body>
+                              </Accordion.Item>
+                            ))}
+                          </div>
+                        </Collapse>
+                      </>
+                    )}
+                  </Accordion>
+                </Card.Body>
+              </Card>
+            </Col>
+          );
+        })}
       </Row>
-      <Card className="mt-4 total-gold-card" style={{ backgroundColor: 'var(--card-body-bg-stone)', border: '2px solid #fbbf24' }}>
-        <Card.Body>
-          <h4 className="text-center d-flex align-items-center justify-content-center gap-2" style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
-            <Image src="/gold.jpg" alt="골드" width={32} height={32} style={{ borderRadius: '4px' }} />
+      <Card className="mt-3 mt-md-4 total-gold-card" style={{ backgroundColor: 'var(--card-body-bg-stone)', border: '2px solid #fbbf24' }}>
+        <Card.Body style={{ padding: isMobile ? '0.75rem' : '1rem' }}>
+          <div className="text-center d-flex align-items-center justify-content-center gap-2" style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: isMobile ? '1rem' : '1.25rem' }}>
+            <Image src="/gold.jpg" alt="골드" width={isMobile ? 24 : 32} height={isMobile ? 24 : 32} style={{ borderRadius: '4px' }} />
             총 골드: {calculateTotalGold().toLocaleString()} G
-          </h4>
+          </div>
         </Card.Body>
       </Card>
     </>

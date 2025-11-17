@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -38,6 +38,15 @@ export default function WeeklyGoldPage() {
   const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
   const [searched, setSearched] = useState(false);
   const [footerOpen, setFooterOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 모바일 감지
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleSearch = () => {
     setSearched(true);
@@ -82,7 +91,8 @@ export default function WeeklyGoldPage() {
             {/* 캐릭터 검색 */}
             <CharacterSearch onSelectionChange={setSelectedCharacters} onSearch={handleSearch} searched={searched} />
 
-            {searched && (
+            {/* 데스크톱에서만 여기에 새로 검색하기 버튼 표시 */}
+            {searched && !isMobile && (
               <div className="text-center mt-3">
                 <Button variant="secondary" onClick={handleReset} className="mb-3">
                   새로 검색하기
@@ -120,6 +130,20 @@ export default function WeeklyGoldPage() {
                     <RaidCalculator selectedCharacters={selectedCharacters} />
                   </Card.Body>
                 </Card>
+              </div>
+            )}
+
+            {/* 모바일에서만 총 골드 밑에 새로 검색하기 버튼 표시 */}
+            {searched && isMobile && (
+              <div className="text-center mt-3">
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={handleReset}
+                  style={{ fontSize: '0.75rem', padding: '0.3rem 1rem' }}
+                >
+                  새로 검색하기
+                </Button>
               </div>
             )}
 

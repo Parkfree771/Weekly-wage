@@ -27,6 +27,15 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [showAll, setShowAll] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 모바일 감지
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (!searched) {
@@ -200,62 +209,89 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
       {characters.length > 0 && (
         <div>
           <Row>
-            {characters.slice(0, showAll ? characters.length : 9).map((char, index) => (
-              <Col lg={4} md={6} sm={6} xs={6} key={char.characterName} className="mb-3">
-                <Card
-                  className={`character-card ${checkedState[index] ? 'selected' : ''}`}
-                  onClick={() => handleCheckboxChange(index)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleCheckboxChange(index);
-                    }
-                  }}
-                  aria-label={`${char.characterName} 레벨 ${char.itemLevel} ${checkedState[index] ? '선택됨' : '선택 안됨'}`}
-                  style={{
-                    backgroundColor: 'var(--card-bg)',
-                    borderColor: checkedState[index] ? 'var(--primary-brand)' : 'var(--border-color)',
-                  }}
-                >
-                  <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <div className="character-name" style={{ color: 'var(--text-primary)' }}>{char.characterName}</div>
-                        <div className="character-level" style={{ color: 'var(--text-secondary)' }}>Lv. {char.itemLevel.toLocaleString()}</div>
+            {(() => {
+              // 모바일: 선택된 6개만 기본 표시, 데스크톱: 9개 기본 표시
+              const defaultCount = isMobile ? 6 : 9;
+              const displayChars = showAll ? characters : characters.slice(0, defaultCount);
+
+              return displayChars.map((char, index) => (
+                <Col lg={4} md={6} sm={6} xs={6} key={char.characterName} className={isMobile ? 'mb-2' : 'mb-3'}>
+                  <Card
+                    className={`character-card ${checkedState[index] ? 'selected' : ''}`}
+                    onClick={() => handleCheckboxChange(index)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleCheckboxChange(index);
+                      }
+                    }}
+                    aria-label={`${char.characterName} 레벨 ${char.itemLevel} ${checkedState[index] ? '선택됨' : '선택 안됨'}`}
+                    style={{
+                      backgroundColor: 'var(--card-bg)',
+                      borderColor: checkedState[index] ? 'var(--primary-brand)' : 'var(--border-color)',
+                    }}
+                  >
+                    <Card.Body style={{ padding: isMobile ? '0.5rem 0.6rem' : '1rem' }}>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                          <div
+                            className="character-name"
+                            style={{
+                              color: 'var(--text-primary)',
+                              fontSize: isMobile ? '0.75rem' : '1rem',
+                              fontWeight: 600,
+                              marginBottom: isMobile ? '0.1rem' : '0.25rem'
+                            }}
+                          >
+                            {char.characterName}
+                          </div>
+                          <div
+                            className="character-level"
+                            style={{
+                              color: 'var(--text-secondary)',
+                              fontSize: isMobile ? '0.65rem' : '0.875rem'
+                            }}
+                          >
+                            Lv. {char.itemLevel.toLocaleString()}
+                          </div>
+                        </div>
+                        <Form.Check
+                          type="checkbox"
+                          id={`character-checkbox-${index}`}
+                          checked={checkedState[index]}
+                          onChange={() => {}}
+                          className="character-checkbox"
+                          tabIndex={-1}
+                          aria-hidden="true"
+                          style={{ transform: isMobile ? 'scale(0.8)' : 'scale(1)' }}
+                        />
                       </div>
-                      <Form.Check
-                        type="checkbox"
-                        id={`character-checkbox-${index}`}
-                        checked={checkedState[index]}
-                        onChange={() => {}}
-                        className="character-checkbox"
-                        tabIndex={-1}
-                        aria-hidden="true"
-                      />
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ));
+            })()}
           </Row>
-          {characters.length > 9 && (
-            <div className="d-flex justify-content-center mt-3 mb-4">
-              <Button 
-                variant={showAll ? "outline-primary" : "primary"}
+          {characters.length > (isMobile ? 6 : 9) && (
+            <div className="d-flex justify-content-center mt-2 mb-3">
+              <Button
+                variant={showAll ? "outline-secondary" : "outline-primary"}
+                size="sm"
                 onClick={() => setShowAll(!showAll)}
-                className="show-more-button"
+                style={{
+                  fontSize: isMobile ? '0.7rem' : '0.85rem',
+                  padding: isMobile ? '0.3rem 0.8rem' : '0.4rem 1rem'
+                }}
               >
                 {showAll ? (
                   <>
-                    <i className="bi bi-chevron-up me-2"></i>
-                    접기 ({characters.length - 9}개 숨기기)
+                    ▲ 접기 ({characters.length - (isMobile ? 6 : 9)}개 숨기기)
                   </>
                 ) : (
                   <>
-                    <i className="bi bi-chevron-down me-2"></i>
-                    더보기 ({characters.length - 9}개 더 있음)
+                    ▼ 더보기 ({characters.length - (isMobile ? 6 : 9)}개 더 있음)
                   </>
                 )}
               </Button>
