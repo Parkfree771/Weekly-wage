@@ -54,13 +54,13 @@ export default function Home() {
 
             {/* 기능 버튼들 */}
             <div className="mb-4">
-              <Row className="justify-content-center g-3">
-                <Col xs={12} sm={6} md={5} lg={4}>
+              <Row className="justify-content-center g-2 g-sm-3">
+                <Col xs={6} sm={6} md={5} lg={4}>
                   <Link href="/weekly-gold" className="text-decoration-none">
                     <Card
-                      className="border-0 shadow-lg h-100 text-center py-4 px-3"
+                      className="border-0 shadow-lg h-100 text-center py-3 py-sm-4 px-2 px-sm-3"
                       style={{
-                        borderRadius: '16px',
+                        borderRadius: 'clamp(12px, 3vw, 16px)',
                         backgroundColor: 'var(--card-body-bg-blue)',
                         cursor: 'pointer',
                         transition: 'transform 0.2s, box-shadow 0.2s',
@@ -75,13 +75,13 @@ export default function Home() {
                       }}
                     >
                       <div className="d-flex justify-content-center mb-2">
-                        <Image src="/gold.jpg" alt="골드" width={64} height={64} style={{ borderRadius: '8px' }} />
+                        <Image src="/gold.jpg" alt="골드" width={64} height={64} style={{ borderRadius: '8px', width: 'clamp(48px, 12vw, 64px)', height: 'auto' }} />
                       </div>
                       <h3
-                        className="mb-2"
+                        className="mb-1 mb-sm-2"
                         style={{
                           fontWeight: '600',
-                          fontSize: 'clamp(1.1rem, 2.5vw, 1.3rem)',
+                          fontSize: 'clamp(0.9rem, 3vw, 1.3rem)',
                           background: 'var(--gradient-text-blue)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
@@ -90,18 +90,18 @@ export default function Home() {
                       >
                         주간 골드 계산
                       </h3>
-                      <p style={{ fontSize: 'clamp(0.8rem, 1.6vw, 0.9rem)', color: 'var(--text-muted)', marginBottom: 0 }}>
+                      <p style={{ fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', color: 'var(--text-muted)', marginBottom: 0, lineHeight: '1.3' }}>
                         원정대 주간 골드 수익과<br/>더보기 보상 손익을 계산
                       </p>
                     </Card>
                   </Link>
                 </Col>
-                <Col xs={12} sm={6} md={5} lg={4}>
+                <Col xs={6} sm={6} md={5} lg={4}>
                   <Link href="/refining" className="text-decoration-none">
                     <Card
-                      className="border-0 shadow-lg h-100 text-center py-4 px-3"
+                      className="border-0 shadow-lg h-100 text-center py-3 py-sm-4 px-2 px-sm-3"
                       style={{
-                        borderRadius: '16px',
+                        borderRadius: 'clamp(12px, 3vw, 16px)',
                         backgroundColor: 'var(--card-body-bg-stone)',
                         cursor: 'pointer',
                         transition: 'transform 0.2s, box-shadow 0.2s',
@@ -116,13 +116,13 @@ export default function Home() {
                       }}
                     >
                       <div className="d-flex justify-content-center mb-2">
-                        <Image src="/banner_share.jpg" alt="재련" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover' }} />
+                        <Image src="/banner_share.jpg" alt="재련" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(48px, 12vw, 64px)', height: 'auto' }} />
                       </div>
                       <h3
-                        className="mb-2"
+                        className="mb-1 mb-sm-2"
                         style={{
                           fontWeight: '600',
-                          fontSize: 'clamp(1.1rem, 2.5vw, 1.3rem)',
+                          fontSize: 'clamp(0.9rem, 3vw, 1.3rem)',
                           background: 'var(--gradient-text-stone)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
@@ -131,7 +131,7 @@ export default function Home() {
                       >
                         T4 재련 비용 계산
                       </h3>
-                      <p style={{ fontSize: 'clamp(0.8rem, 1.6vw, 0.9rem)', color: 'var(--text-muted)', marginBottom: 0 }}>
+                      <p style={{ fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', color: 'var(--text-muted)', marginBottom: 0, lineHeight: '1.3' }}>
                         목표 레벨까지 필요한<br/>재련 재료와 골드 계산
                       </p>
                     </Card>

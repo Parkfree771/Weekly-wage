@@ -99,7 +99,7 @@ const MaterialCard = ({
           position: 'absolute',
           top: 'clamp(2px, 0.8vw, 6px)',
           left: 'clamp(2px, 0.8vw, 6px)',
-          transform: 'scale(clamp(0.6, 1.2vw, 0.9))',
+          transform: 'scale(0.75)',
           transformOrigin: 'top left',
         }}
         className="refining-checkbox"
@@ -136,8 +136,8 @@ const MaterialCard = ({
           onChange={(e) => onBoundChange?.(name, e.target.checked)}
           disabled={showEnableToggle && !isEnabled}
           style={{
-            width: 'clamp(10px, 2vw, 14px)',
-            height: 'clamp(10px, 2vw, 14px)',
+            width: '12px',
+            height: '12px',
             cursor: showEnableToggle && !isEnabled ? 'not-allowed' : 'pointer',
           }}
           onClick={(e) => e.stopPropagation()}
