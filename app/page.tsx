@@ -47,20 +47,17 @@ export default function Home() {
                   로스트아크 골드 계산기
                 </h1>
               </div>
-              <p className="mb-4" style={{fontSize: 'clamp(0.85rem, 1.8vw, 1rem)', fontWeight: '400', color: 'var(--text-muted)'}}>
-                주간 골드 수익 계산과 재련 비용 분석을 통해 효율적인 플레이를 도와드립니다
-              </p>
             </div>
 
             {/* 기능 버튼들 */}
-            <div className="mb-4">
+            <div className="mb-4 mb-md-5 mt-2 mt-md-0">
               <Row className="justify-content-center g-2 g-sm-3">
-                <Col xs={6} sm={6} md={5} lg={4}>
+                <Col xs={5} sm={5} md={5} lg={4}>
                   <Link href="/weekly-gold" className="text-decoration-none">
                     <Card
-                      className="border-0 shadow-lg h-100 text-center py-3 py-sm-4 px-2 px-sm-3"
+                      className="border-0 shadow-lg h-100 text-center py-2 py-sm-4 px-1 px-sm-3"
                       style={{
-                        borderRadius: 'clamp(12px, 3vw, 16px)',
+                        borderRadius: 'clamp(10px, 3vw, 16px)',
                         backgroundColor: 'var(--card-body-bg-blue)',
                         cursor: 'pointer',
                         transition: 'transform 0.2s, box-shadow 0.2s',
@@ -74,14 +71,14 @@ export default function Home() {
                         e.currentTarget.style.boxShadow = '';
                       }}
                     >
-                      <div className="d-flex justify-content-center mb-2">
-                        <Image src="/gold.jpg" alt="골드" width={64} height={64} style={{ borderRadius: '8px', width: 'clamp(48px, 12vw, 64px)', height: 'auto' }} />
+                      <div className="d-flex justify-content-center mb-1 mb-sm-2">
+                        <Image src="/gold.jpg" alt="골드" width={64} height={64} style={{ borderRadius: '8px', width: 'clamp(36px, 10vw, 64px)', height: 'auto' }} />
                       </div>
                       <h3
                         className="mb-1 mb-sm-2"
                         style={{
                           fontWeight: '600',
-                          fontSize: 'clamp(0.9rem, 3vw, 1.3rem)',
+                          fontSize: 'clamp(0.8rem, 2.5vw, 1.3rem)',
                           background: 'var(--gradient-text-blue)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
@@ -90,18 +87,18 @@ export default function Home() {
                       >
                         주간 골드 계산
                       </h3>
-                      <p style={{ fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', color: 'var(--text-muted)', marginBottom: 0, lineHeight: '1.3' }}>
+                      <p style={{ fontSize: 'clamp(0.6rem, 1.8vw, 0.9rem)', color: 'var(--text-muted)', marginBottom: 0, lineHeight: '1.3' }}>
                         원정대 주간 골드 수익과<br/>더보기 보상 손익을 계산
                       </p>
                     </Card>
                   </Link>
                 </Col>
-                <Col xs={6} sm={6} md={5} lg={4}>
+                <Col xs={5} sm={5} md={5} lg={4}>
                   <Link href="/refining" className="text-decoration-none">
                     <Card
-                      className="border-0 shadow-lg h-100 text-center py-3 py-sm-4 px-2 px-sm-3"
+                      className="border-0 shadow-lg h-100 text-center py-2 py-sm-4 px-1 px-sm-3"
                       style={{
-                        borderRadius: 'clamp(12px, 3vw, 16px)',
+                        borderRadius: 'clamp(10px, 3vw, 16px)',
                         backgroundColor: 'var(--card-body-bg-stone)',
                         cursor: 'pointer',
                         transition: 'transform 0.2s, box-shadow 0.2s',
@@ -115,14 +112,14 @@ export default function Home() {
                         e.currentTarget.style.boxShadow = '';
                       }}
                     >
-                      <div className="d-flex justify-content-center mb-2">
-                        <Image src="/banner_share.jpg" alt="재련" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(48px, 12vw, 64px)', height: 'auto' }} />
+                      <div className="d-flex justify-content-center mb-1 mb-sm-2">
+                        <Image src="/banner_share.jpg" alt="재련" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(36px, 10vw, 64px)', height: 'auto' }} />
                       </div>
                       <h3
                         className="mb-1 mb-sm-2"
                         style={{
                           fontWeight: '600',
-                          fontSize: 'clamp(0.9rem, 3vw, 1.3rem)',
+                          fontSize: 'clamp(0.8rem, 2.5vw, 1.3rem)',
                           background: 'var(--gradient-text-stone)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
@@ -131,7 +128,7 @@ export default function Home() {
                       >
                         T4 재련 비용 계산
                       </h3>
-                      <p style={{ fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', color: 'var(--text-muted)', marginBottom: 0, lineHeight: '1.3' }}>
+                      <p style={{ fontSize: 'clamp(0.6rem, 1.8vw, 0.9rem)', color: 'var(--text-muted)', marginBottom: 0, lineHeight: '1.3' }}>
                         목표 레벨까지 필요한<br/>재련 재료와 골드 계산
                       </p>
                     </Card>
