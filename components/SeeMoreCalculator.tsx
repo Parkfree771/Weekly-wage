@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button, Row, Col, Table, Spinner } from 'react-bootstrap';
 import { raids } from '@/data/raids';
 import { raidRewards, MaterialReward, MATERIAL_IDS, MATERIAL_NAMES } from '@/data/raidRewards';
-import { marketPriceService } from '@/utils/marketPriceService';
 import styles from './SeeMoreCalculator.module.css';
 
 type RaidProfitData = {
@@ -16,6 +15,14 @@ type RaidProfitData = {
   materials: (MaterialReward & { unitPrice: number; totalPrice: number })[];
 };
 
+type CachedPriceData = {
+  prices: { [itemId: number]: number };
+  timestamp: number;
+};
+
+const CACHE_KEY = 'seeMorePrices';
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24시간
+
 const SeeMoreCalculator: React.FC = () => {
   const [selectedRaid, setSelectedRaid] = useState<string | null>(null);
   const [profitData, setProfitData] = useState<{ [key: string]: RaidProfitData[] }>({});
@@ -26,66 +33,147 @@ const SeeMoreCalculator: React.FC = () => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
   };
 
-  // 컴포넌트 마운트시 및 1시간마다 정각 갱신 (중복 useEffect 통합)
-  useEffect(() => {
-    // 초기 계산
-    calculateRaidProfitsWithCurrentPrices();
+  // 캐시에서 가격 데이터 가져오기
+  const getCachedPrices = (): CachedPriceData | null => {
+    if (typeof window === 'undefined') return null;
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+    try {
+      return JSON.parse(cached);
+    } catch {
+      return null;
+    }
+  };
 
-    // 다음 정각까지의 시간 계산
-    const now = new Date();
-    const nextHour = new Date(now);
-    nextHour.setHours(now.getHours() + 1, 0, 0, 0);
-    const timeUntilNextHour = nextHour.getTime() - now.getTime();
-
-    // 첫 번째 타이머: 다음 정각까지
-    const firstTimer = setTimeout(() => {
-      calculateRaidProfitsWithCurrentPrices();
-
-      // 이후 1시간마다 정각 갱신
-      const interval = setInterval(() => {
-        calculateRaidProfitsWithCurrentPrices();
-      }, 60 * 60 * 1000); // 1시간마다 실행
-
-      // cleanup 함수 등록
-      return () => clearInterval(interval);
-    }, timeUntilNextHour);
-
-    // cleanup: 타이머 정리
-    return () => {
-      clearTimeout(firstTimer);
+  // 캐시에 가격 데이터 저장
+  const setCachedPrices = (prices: { [itemId: number]: number }) => {
+    if (typeof window === 'undefined') return;
+    const data: CachedPriceData = {
+      prices,
+      timestamp: Date.now()
     };
-  }, []); // 빈 의존성 배열로 중복 실행 방지
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  };
 
+  // 오전 10시 30분인지 확인 (한국 시간)
+  const isUpdateTime = (): boolean => {
+    const now = new Date();
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const kstTime = new Date(now.getTime() + kstOffset);
+    const kstHour = kstTime.getUTCHours();
+    const kstMinute = kstTime.getUTCMinutes();
+    return kstHour === 10 && kstMinute >= 30 && kstMinute < 35;
+  };
 
-  // 최근 거래가로 수익 계산 (자동으로 5분마다 실행)
-  const calculateRaidProfitsWithCurrentPrices = async () => {
+  // 캐시가 만료되었는지 확인
+  const isCacheExpired = (timestamp: number): boolean => {
+    return Date.now() - timestamp > CACHE_DURATION;
+  };
+
+  // 컴포넌트 마운트시 캐시 확인 후 필요시 갱신
+  useEffect(() => {
+    const cached = getCachedPrices();
+
+    // 캐시가 있고 만료되지 않았으면 캐시 사용
+    if (cached && !isCacheExpired(cached.timestamp)) {
+      console.log('Using cached prices from:', new Date(cached.timestamp));
+      calculateWithPrices(cached.prices);
+      setLastUpdated(new Date(cached.timestamp));
+    } else {
+      // 캐시가 없거나 만료됐으면 새로 가져오기
+      fetchYesterdayPrices();
+    }
+
+    // 다음 오전 10시 30분까지의 시간 계산
+    const now = new Date();
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const kstNow = new Date(now.getTime() + kstOffset);
+
+    let nextUpdate = new Date(kstNow);
+    nextUpdate.setUTCHours(10, 30, 0, 0);
+
+    // 이미 10시 30분 지났으면 다음 날
+    if (kstNow.getUTCHours() > 10 || (kstNow.getUTCHours() === 10 && kstNow.getUTCMinutes() >= 30)) {
+      nextUpdate.setUTCDate(nextUpdate.getUTCDate() + 1);
+    }
+
+    const timeUntilNextUpdate = nextUpdate.getTime() - kstNow.getTime();
+    console.log(`Next price update in ${Math.round(timeUntilNextUpdate / 1000 / 60)} minutes`);
+
+    // 타이머 설정: 다음 10시 5분에 갱신
+    const timer = setTimeout(() => {
+      fetchYesterdayPrices();
+
+      // 이후 24시간마다 갱신
+      const interval = setInterval(() => {
+        fetchYesterdayPrices();
+      }, 24 * 60 * 60 * 1000);
+
+      return () => clearInterval(interval);
+    }, timeUntilNextUpdate);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 어제 평균가 가져오기
+  const fetchYesterdayPrices = async () => {
     setLoading(true);
     try {
-      console.log('Starting price calculation with current prices...');
-      
+      console.log('Fetching yesterday average prices...');
+
       const searchPrices: { [itemId: number]: number } = {};
-      
-      // 최근 거래가 가져오기 (5분 캐시 사용)
-      const pricePromises = Object.entries(MATERIAL_NAMES).map(async ([key, itemName]) => {
-        const itemId = MATERIAL_IDS[key as keyof typeof MATERIAL_IDS];
-        
-        // 5분 캐시를 활용한 최근 거래가 가져오기
-        let price = await marketPriceService.getCurrentLowestPrice(itemName);
-        
-        console.log(`Current price for ${itemName}: ${price}`);
-        return { itemId, price };
+
+      const pricePromises = Object.entries(MATERIAL_IDS).map(async ([key, itemId]) => {
+        try {
+          const response = await fetch('/api/market/yesterday-avg-price', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ itemId })
+          });
+
+          if (!response.ok) {
+            console.error(`Failed to fetch price for ${key}`);
+            return { itemId, price: 0 };
+          }
+
+          const data = await response.json();
+          console.log(`Yesterday avg price for ${key}: ${data.price}`);
+          return { itemId, price: data.price || 0 };
+        } catch (error) {
+          console.error(`Error fetching price for ${key}:`, error);
+          return { itemId, price: 0 };
+        }
       });
-      
+
       const priceResults = await Promise.all(pricePromises);
       priceResults.forEach(({ itemId, price }) => {
         searchPrices[itemId] = price;
       });
-      
-      console.log('All fetched prices (current prices):', searchPrices);
-      
+
+      console.log('All fetched yesterday average prices:', searchPrices);
+
+      // 캐시 저장
+      setCachedPrices(searchPrices);
+
+      // 계산 수행
+      calculateWithPrices(searchPrices);
+      setLastUpdated(new Date());
+
+    } catch (error) {
+      console.error('Failed to fetch yesterday average prices:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 가격으로 수익 계산
+  const calculateWithPrices = (searchPrices: { [itemId: number]: number }) => {
+    try {
+      console.log('Calculating raid profits with prices:', searchPrices);
+
       // 동일한 계산 로직 사용
       const newProfitData: { [key: string]: RaidProfitData[] } = {};
-      
+
       const groupedRewards = raidRewards.reduce((acc, reward) => {
         if (!acc[reward.raidName]) {
           acc[reward.raidName] = [];
@@ -93,30 +181,30 @@ const SeeMoreCalculator: React.FC = () => {
         acc[reward.raidName].push(reward);
         return acc;
       }, {} as { [key: string]: typeof raidRewards });
-      
+
       Object.entries(groupedRewards).forEach(([raidName, rewards]) => {
         newProfitData[raidName] = rewards.map(reward => {
           const materialsWithPrices = reward.materials.map(material => {
             const unitPrice = searchPrices[material.itemId] || 0;
             const totalPrice = unitPrice * material.amount;
-            
-            console.log(`${material.itemName} - API단위가격: ${unitPrice}, 수량: ${material.amount}, 총가격: ${totalPrice}`);
-            
+
+            console.log(`${material.itemName} - 단위가격: ${unitPrice}, 수량: ${material.amount}, 총가격: ${totalPrice}`);
+
             return {
               ...material,
               unitPrice: unitPrice,
               totalPrice: Math.round(totalPrice)
             };
           });
-          
+
           const totalValue = materialsWithPrices.reduce((sum, mat) => sum + mat.totalPrice, 0);
           const raidInfo = raids.find(r => r.name === raidName);
           const gateInfo = raidInfo?.gates.find(g => g.gate === reward.gate);
           const moreGold = gateInfo?.moreGold || 0;
           const profitLoss = totalValue - moreGold;
-          
+
           console.log(`${raidName} ${reward.gate}관문 - 총 가치: ${totalValue}, 더보기 비용: ${moreGold}, 손익: ${profitLoss}`);
-          
+
           return {
             raidName,
             gate: reward.gate,
@@ -127,14 +215,11 @@ const SeeMoreCalculator: React.FC = () => {
           };
         });
       });
-      
+
       setProfitData(newProfitData);
-      setLastUpdated(new Date());
-      console.log('Successfully calculated raid profits with trading average prices:', newProfitData);
+      console.log('Successfully calculated raid profits with yesterday average prices:', newProfitData);
     } catch (error) {
-      console.error('Failed to calculate raid profits with trading average prices:', error);
-    } finally {
-      setLoading(false);
+      console.error('Failed to calculate raid profits:', error);
     }
   };
 

@@ -14,7 +14,7 @@ export type RaidReward = {
 export const MATERIAL_IDS = {
   FATE_GUARDIAN_STONE: 66102106, // 운명의 수호석 (Bundle: 100)
   FATE_DESTRUCTION_STONE: 66102006, // 운명의 파괴석 (Bundle: 100)
-  FATE_FRAGMENT: 66130141, // 운명의 파편 주머니(소) (Bundle: 1) - 파편은 주머니 형태로 거래됨
+  FATE_FRAGMENT: 66130143, // 운명의 파편 주머니(대) (Bundle: 1) - 3000 파편
   FATE_BREAKTHROUGH_STONE: 66110225, // 운명의 돌파석 (Bundle: 1)
 };
 

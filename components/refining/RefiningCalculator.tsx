@@ -97,22 +97,21 @@ const MaterialCard = ({
         onChange={onToggleEnabled}
         style={{
           position: 'absolute',
-          top: '2px',
-          left: '2px',
-          transform: 'scale(0.55)',
+          top: 'clamp(2px, 0.8vw, 6px)',
+          left: 'clamp(2px, 0.8vw, 6px)',
+          transform: 'scale(clamp(0.6, 1.2vw, 0.9))',
           transformOrigin: 'top left',
         }}
         className="refining-checkbox"
       />
     )}
     {showCheckbox && (
-      <Form.Check
-        type="checkbox"
-        id={`bound-check-${name}`}
-        label="귀속"
-        checked={isBound}
-        onChange={(e) => onBoundChange?.(name, e.target.checked)}
-        disabled={showEnableToggle && !isEnabled}
+      <div
+        onClick={() => {
+          if (!(showEnableToggle && !isEnabled)) {
+            onBoundChange?.(name, !isBound);
+          }
+        }}
         style={{
           position: 'absolute',
           top: 'clamp(3px, 1vw, 8px)',
@@ -120,9 +119,40 @@ const MaterialCard = ({
           fontSize: 'clamp(0.5rem, 1.5vw, 0.75rem)',
           color: 'var(--text-secondary)',
           fontWeight: '600',
+          cursor: showEnableToggle && !isEnabled ? 'not-allowed' : 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '3px',
+          padding: '2px 4px',
+          borderRadius: '4px',
+          backgroundColor: isBound ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+          transition: 'background-color 0.2s ease',
         }}
-        className="refining-checkbox"
-      />
+      >
+        <input
+          type="checkbox"
+          id={`bound-check-${name}`}
+          checked={isBound}
+          onChange={(e) => onBoundChange?.(name, e.target.checked)}
+          disabled={showEnableToggle && !isEnabled}
+          style={{
+            width: 'clamp(10px, 2vw, 14px)',
+            height: 'clamp(10px, 2vw, 14px)',
+            cursor: showEnableToggle && !isEnabled ? 'not-allowed' : 'pointer',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <label
+          htmlFor={`bound-check-${name}`}
+          style={{
+            cursor: showEnableToggle && !isEnabled ? 'not-allowed' : 'pointer',
+            marginBottom: 0,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          귀속
+        </label>
+      </div>
     )}
     <div style={{
       position: 'relative',
@@ -864,7 +894,7 @@ export default function RefiningCalculator() {
   const expectedItemLevel = calculateExpectedItemLevel();
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(0.5rem, 3vw, 2rem)' }}>
+    <div style={{ margin: '0 auto' }}>
       {/* 검색창 */}
       <Form onSubmit={handleSearch} className="mb-4">
         <div className="d-flex justify-content-center">
@@ -938,7 +968,7 @@ export default function RefiningCalculator() {
 
 
       {/* 장비 정보 및 목표 레벨 설정 */}
-      {searched && equipments.length > 0 && (
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(0.5rem, 3vw, 2rem)' }}>
         <>
           {/* 캐릭터 정보 헤더 */}
           {/* 부위별 목표 레벨 설정 */}
@@ -965,8 +995,34 @@ export default function RefiningCalculator() {
               backgroundColor: 'var(--card-bg)',
               padding: 'clamp(1rem, 2.5vw, 1.5rem)'
             }}>
+              {/* 검색 전 빈 상태 */}
+              {!searched && (
+                <div style={{
+                  padding: 'clamp(2rem, 5vw, 3rem)',
+                  textAlign: 'center',
+                  color: 'var(--text-muted)'
+                }}>
+                  <div style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', marginBottom: '1rem', opacity: 0.5 }}>
+                    ⚒️
+                  </div>
+                  <p style={{
+                    fontSize: 'clamp(0.9rem, 2vw, 1rem)',
+                    fontWeight: '500',
+                    marginBottom: '0.5rem'
+                  }}>
+                    캐릭터를 검색하면 장비 정보가 표시됩니다
+                  </p>
+                  <p style={{
+                    fontSize: 'clamp(0.8rem, 1.8vw, 0.9rem)',
+                    opacity: 0.7
+                  }}>
+                    각 장비별 목표 레벨을 설정하고 필요한 재료와 비용을 확인하세요
+                  </p>
+                </div>
+              )}
+
               {/* 캐릭터 정보 */}
-              {characterInfo && (
+              {searched && equipments.length > 0 && characterInfo && (
                 <div className="mb-3">
                   <div style={{
                     padding: 'clamp(0.75rem, 2vw, 1rem)',
@@ -1019,6 +1075,8 @@ export default function RefiningCalculator() {
                 </div>
               )}
 
+              {searched && equipments.length > 0 && (
+              <>
               <Row className="g-3">
                 {equipments.map((eq, index) => {
                   const targets = targetLevels[eq.name] || { normal: null, advanced: null };
@@ -1094,7 +1152,7 @@ export default function RefiningCalculator() {
                             )}
                           </div>
                         </div>
-                        <div style={{ display: 'flex', gap: isMobile ? '0.15rem' : '0.5rem', flexDirection: isMobile ? 'column' : 'row' }}>
+                        <div style={{ display: 'flex', gap: isMobile ? '0.15rem' : '0.3rem', flexDirection: 'column' }}>
                           <Form.Select
                             value={targets.normal ?? ''}
                             onChange={(e) => {
@@ -1108,14 +1166,15 @@ export default function RefiningCalculator() {
                               backgroundColor: 'var(--input-bg)',
                               borderColor: 'var(--border-color)',
                               color: targets.normal === null ? 'var(--text-muted)' : 'var(--text-primary)',
-                              fontSize: isMobile ? '0.6rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                              fontSize: isMobile ? '0.6rem' : 'clamp(0.65rem, 1.2vw, 0.75rem)',
                               fontWeight: '600',
-                              borderRadius: isMobile ? '3px' : '8px',
-                              padding: isMobile ? '0.2rem 0.25rem' : '0.4rem 0.6rem',
-                              border: isMobile ? '1px solid var(--border-color)' : undefined
+                              borderRadius: isMobile ? '3px' : '6px',
+                              padding: isMobile ? '0.2rem 0.25rem' : '0.3rem 0.4rem',
+                              border: isMobile ? '1px solid var(--border-color)' : undefined,
+                              width: '100%'
                             }}
                           >
-                            <option value="">{isMobile ? '일반' : '일반 목표'}</option>
+                            <option value="">일반</option>
                             {Array.from({ length: 26 - eq.currentLevel }, (_, i) => eq.currentLevel + i + 1).map(level => (
                               <option key={level} value={level}>+{level}</option>
                             ))}
@@ -1134,14 +1193,15 @@ export default function RefiningCalculator() {
                               backgroundColor: 'var(--input-bg)',
                               borderColor: 'var(--border-color)',
                               color: targets.advanced === null ? 'var(--text-muted)' : 'var(--text-primary)',
-                              fontSize: isMobile ? '0.6rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
+                              fontSize: isMobile ? '0.6rem' : 'clamp(0.65rem, 1.2vw, 0.75rem)',
                               fontWeight: '600',
-                              borderRadius: isMobile ? '3px' : '8px',
-                              padding: isMobile ? '0.2rem 0.25rem' : '0.4rem 0.6rem',
-                              border: isMobile ? '1px solid var(--border-color)' : undefined
+                              borderRadius: isMobile ? '3px' : '6px',
+                              padding: isMobile ? '0.2rem 0.25rem' : '0.3rem 0.4rem',
+                              border: isMobile ? '1px solid var(--border-color)' : undefined,
+                              width: '100%'
                             }}
                           >
-                            <option value="">{isMobile ? '상급' : '상급 목표'}</option>
+                            <option value="">상급</option>
                             {[10, 20, 30, 40]
                               .filter(level => level > eq.currentAdvancedLevel)
                               .map(level => (
@@ -2090,11 +2150,13 @@ export default function RefiningCalculator() {
 
                 </Row>
               </div>
+              </>
+              )}
             </Card.Body>
           </Card>
 
           {/* 재료 소모량 표시 */}
-          {materials && (
+          {searched && equipments.length > 0 && materials && (
             <Card style={{
               backgroundColor: 'var(--card-bg)',
               border: '1px solid var(--border-color)',
@@ -2576,7 +2638,7 @@ export default function RefiningCalculator() {
             </Card>
           )}
         </>
-      )}
+      </div>
     </div>
   );
 }

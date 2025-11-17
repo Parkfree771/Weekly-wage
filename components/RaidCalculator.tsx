@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Table, Form, Badge, Accordion, Row, Col } from 'react-bootstrap';
+import Image from 'next/image';
 import { raids } from '@/data/raids';
 
 type Character = {
@@ -314,9 +315,12 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
           </Col>
         ))}
       </Row>
-      <Card className="mt-4 total-gold-card" style={{ backgroundColor: 'var(--primary-brand)', color: 'white' }}>
+      <Card className="mt-4 total-gold-card" style={{ backgroundColor: 'var(--card-body-bg-stone)', border: '2px solid #fbbf24' }}>
         <Card.Body>
-          <h4 className="text-center">총 골드: {calculateTotalGold().toLocaleString()} G</h4>
+          <h4 className="text-center d-flex align-items-center justify-content-center gap-2" style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
+            <Image src="/gold.jpg" alt="골드" width={32} height={32} style={{ borderRadius: '4px' }} />
+            총 골드: {calculateTotalGold().toLocaleString()} G
+          </h4>
         </Card.Body>
       </Card>
     </>
