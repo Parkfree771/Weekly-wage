@@ -101,6 +101,13 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     iconBorderColor: '#059669'
   },
   {
+    id: '66112543',
+    name: '야금술 : 업화 [11-14] (무기)',
+    type: 'market',
+    icon: '/metallurgy-karma.png',
+    iconBorderColor: '#059669'
+  },
+  {
     id: '66112554',
     name: '재봉술 : 업화 [19-20] (방어구)',
     type: 'market',
@@ -110,6 +117,13 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   {
     id: '66112552',
     name: '재봉술 : 업화 [15-18] (방어구)',
+    type: 'market',
+    icon: '/tailoring-karma.png',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112546',
+    name: '재봉술 : 업화 [11-14] (방어구)',
     type: 'market',
     icon: '/tailoring-karma.png',
     iconBorderColor: '#059669'
@@ -675,7 +689,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
 export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
     refine: ['6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
-    refine_additional: ['66112553', '66112551', '66112554', '66112552', '66112714', '66112712', '66112713', '66112711', '66111131', '66111132'],
+    refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112714', '66112712', '66112713', '66112711', '66111131', '66111132'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
     accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high', 'auction_necklace_support_refine3', 'auction_necklace_support_refine3_high', 'auction_ring_support_refine3', 'auction_ring_support_refine3_high'],

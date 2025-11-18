@@ -50,7 +50,7 @@ export default function Home() {
             </div>
 
             {/* 기능 버튼들 */}
-            <div className="mb-4 mb-md-5 mt-3 mt-md-4">
+            <div className="mb-2 mb-md-3 mt-3 mt-md-4">
               <Row className="justify-content-center g-2 g-sm-3">
                 <Col xs={5} sm={5} md={4} lg={3} xl={3}>
                   <Link href="/weekly-gold" className="text-decoration-none">
