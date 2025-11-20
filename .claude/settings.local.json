@@ -34,7 +34,9 @@
       "Bash(do echo \"=== Item $id ===\" curl -s \"https://lostarkweeklygold.kr/api/market/price-history/$id?noCache=true\")",
       "Bash(rd /s /q .next)",
       "Bash(powershell -Command \"(Get-Content ''C:\\Users\\park yu ro\\Desktop\\project4\\components\\refining\\RefiningCalculator.tsx'' | Measure-Object -Line).Lines\")",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(git restore:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []
