@@ -9,6 +9,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
+      url: 'https://lostarkweeklygold.kr/weekly-gold',
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: 'https://lostarkweeklygold.kr/refining',
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
       url: 'https://lostarkweeklygold.kr/privacy',
       lastModified: new Date(),
       changeFrequency: 'monthly',
