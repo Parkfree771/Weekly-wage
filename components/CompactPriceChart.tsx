@@ -280,14 +280,21 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     const { cx, cy, payload } = props;
     const hasEvent = payload.eventLabel || payload.isWednesday;
     const eventLabel = payload.eventLabel || (payload.isWednesday ? '수요일' : '');
-    // 유물 각인서 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
-    const eventColor = categoryStyle?.label === '유물 각인서'
+    // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
+    const eventColor = (categoryStyle?.label === '유물 각인서' || categoryStyle?.label === '보석')
       ? '#3b82f6'
       : (payload.eventColor || '#ef4444');
 
     if (!hasEvent) {
       return (
         <circle cx={cx} cy={cy} r={6} fill={chartColor} strokeWidth={3} stroke="var(--card-bg)" />
+      );
+    }
+
+    // ALL 기간에서는 글씨 없이 점만 표시
+    if (selectedPeriod === 'all') {
+      return (
+        <circle cx={cx} cy={cy} r={6} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />
       );
     }
 
@@ -311,16 +318,16 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     );
   };
 
-  // 모바일용 커스텀 점 렌더러
+  // 모바일용 커스텀 점 렌더러 (글씨 없이 점만 표시)
   const CustomDotMobile = (props: any) => {
     const { cx, cy, payload } = props;
     const hasEvent = payload.eventLabel || payload.isWednesday;
-    const eventLabel = payload.eventLabel || (payload.isWednesday ? '수요일' : '');
-    // 유물 각인서 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
-    const eventColor = categoryStyle?.label === '유물 각인서'
+    // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
+    const eventColor = (categoryStyle?.label === '유물 각인서' || categoryStyle?.label === '보석')
       ? '#3b82f6'
       : (payload.eventColor || '#ef4444');
 
+    // 모바일에서는 모든 이벤트 점에서 글씨 제거, 점만 표시
     if (!hasEvent) {
       return (
         <circle cx={cx} cy={cy} r={3} fill={chartColor} strokeWidth={2} stroke="var(--card-bg)" />
@@ -328,22 +335,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     }
 
     return (
-      <g>
-        <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />
-        <text
-          x={cx}
-          y={cy - 10}
-          textAnchor="middle"
-          fill={eventColor}
-          fontSize={8}
-          fontWeight="700"
-          style={{
-            textShadow: '0 0 2px var(--card-bg), 0 0 2px var(--card-bg)'
-          }}
-        >
-          {eventLabel}
-        </text>
-      </g>
+      <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />
     );
   };
 
@@ -591,7 +583,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
             {/* 기간 선택 버튼 - 데스크톱 */}
             <div className="d-none d-md-flex justify-content-center gap-2 mb-3">
-              {(['7d', '1m', '3m', '6m', '1y', 'all'] as PeriodOption[]).map((period) => (
+              {(['7d', '1m', /* '3m', '6m', '1y', */ 'all'] as PeriodOption[]).map((period) => (
                 <button
                   key={period}
                   onClick={() => setSelectedPeriod(period)}
@@ -627,7 +619,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
             {/* 기간 선택 버튼 - 모바일 */}
             <div className="d-md-none d-flex justify-content-center gap-1 mb-2" style={{ overflowX: 'auto', padding: '4px 0' }}>
-              {(['7d', '1m', '3m', '6m', '1y', 'all'] as PeriodOption[]).map((period) => (
+              {(['7d', '1m', /* '3m', '6m', '1y', */ 'all'] as PeriodOption[]).map((period) => (
                 <button
                   key={period}
                   onClick={() => setSelectedPeriod(period)}

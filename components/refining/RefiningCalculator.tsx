@@ -41,8 +41,12 @@ type Materials = {
   용암_일반: number; // 용암의 숨결 (일반 재련용)
   빙하_상급: number; // 빙하의 숨결 (상급 재련용)
   용암_상급: number; // 용암의 숨결 (상급 재련용)
-  방어구책: number; // 재봉술 책 (일반 강화용)
-  무기책: number; // 야금술 책 (일반 강화용)
+  방어구책1114?: number; // 재봉술 : 업화 [11-14]
+  방어구책1518?: number; // 재봉술 : 업화 [15-18]
+  방어구책1920?: number; // 재봉술 : 업화 [19-20]
+  무기책1114?: number; // 야금술 : 업화 [11-14]
+  무기책1518?: number; // 야금술 : 업화 [15-18]
+  무기책1920?: number; // 야금술 : 업화 [19-20]
   재봉술1단?: number; // 장인의 재봉술 1단계 (상급 1~10)
   재봉술2단?: number; // 장인의 재봉술 2단계 (상급 11~20)
   야금술1단?: number; // 장인의 야금술 1단계 (상급 1~10)
@@ -208,10 +212,10 @@ export default function RefiningCalculator() {
   const [materialOptions, setMaterialOptions] = useState({
     glacierBreath: { enabled: false, isBound: false },
     lavaBreath: { enabled: false, isBound: false },
-    tailoring: { enabled: false, isBound: false },        // 재봉술 10~14
+    tailoring: { enabled: false, isBound: false },        // 재봉술 11~14
     tailoring1518: { enabled: false, isBound: false },    // 재봉술 15~18
     tailoring1920: { enabled: false, isBound: false },    // 재봉술 19~20
-    metallurgy: { enabled: false, isBound: false },       // 야금술 10~14
+    metallurgy: { enabled: false, isBound: false },       // 야금술 11~14
     metallurgy1518: { enabled: false, isBound: false },   // 야금술 15~18
     metallurgy1920: { enabled: false, isBound: false },   // 야금술 19~20
   });
@@ -305,14 +309,20 @@ export default function RefiningCalculator() {
     costs['용암_일반'] = materials.용암_일반 * (marketPrices['66111131'] || 0);
     costs['빙하_상급'] = materials.빙하_상급 * (marketPrices['66111132'] || 0);
     costs['용암_상급'] = materials.용암_상급 * (marketPrices['66111131'] || 0);
-    costs['방어구책'] = materials.방어구책 * (marketPrices['66112554'] || 0);  // 재봉술2단 (19-20)
-    costs['무기책'] = materials.무기책 * (marketPrices['66112553'] || 0);  // 야금술2단 (19-20)
+
+    // 일반 재련 책 비용 (단계별)
+    costs['방어구책1114'] = (materials.방어구책1114 || 0) * (marketPrices['66112546'] || 0);  // 재봉술 [11-14]
+    costs['방어구책1518'] = (materials.방어구책1518 || 0) * (marketPrices['66112552'] || 0);  // 재봉술 [15-18]
+    costs['방어구책1920'] = (materials.방어구책1920 || 0) * (marketPrices['66112554'] || 0);  // 재봉술 [19-20]
+    costs['무기책1114'] = (materials.무기책1114 || 0) * (marketPrices['66112543'] || 0);  // 야금술 [11-14]
+    costs['무기책1518'] = (materials.무기책1518 || 0) * (marketPrices['66112551'] || 0);  // 야금술 [15-18]
+    costs['무기책1920'] = (materials.무기책1920 || 0) * (marketPrices['66112553'] || 0);  // 야금술 [19-20]
 
     // 상급 재련 책 비용 (1단, 2단)
-    costs['재봉술1단'] = (materials.재봉술1단 || 0) * (marketPrices['66112552'] || 0);
-    costs['재봉술2단'] = (materials.재봉술2단 || 0) * (marketPrices['66112554'] || 0);
-    costs['야금술1단'] = (materials.야금술1단 || 0) * (marketPrices['66112551'] || 0);
-    costs['야금술2단'] = (materials.야금술2단 || 0) * (marketPrices['66112553'] || 0);
+    costs['재봉술1단'] = (materials.재봉술1단 || 0) * (marketPrices['66112712'] || 0);
+    costs['재봉술2단'] = (materials.재봉술2단 || 0) * (marketPrices['66112714'] || 0);
+    costs['야금술1단'] = (materials.야금술1단 || 0) * (marketPrices['66112711'] || 0);
+    costs['야금술2단'] = (materials.야금술2단 || 0) * (marketPrices['66112713'] || 0);
 
     // 귀속 재료를 제외한 총 재료비 계산
     if (!boundMaterials['수호석']) totalMaterialCost += costs['수호석'];
@@ -354,23 +364,24 @@ export default function RefiningCalculator() {
       totalMaterialCost += costs['용암_상급'];
     }
 
+    // 일반 재련 책 비용 추가 (단계별)
     if (materialOptions.tailoring.enabled && !materialOptions.tailoring.isBound) {
-      totalMaterialCost += costs['방어구책'];
+      totalMaterialCost += costs['방어구책1114'] || 0;
     }
     if (materialOptions.tailoring1518.enabled && !materialOptions.tailoring1518.isBound) {
-      totalMaterialCost += costs['방어구책'];
+      totalMaterialCost += costs['방어구책1518'] || 0;
     }
     if (materialOptions.tailoring1920.enabled && !materialOptions.tailoring1920.isBound) {
-      totalMaterialCost += costs['방어구책'];
+      totalMaterialCost += costs['방어구책1920'] || 0;
     }
     if (materialOptions.metallurgy.enabled && !materialOptions.metallurgy.isBound) {
-      totalMaterialCost += costs['무기책'];
+      totalMaterialCost += costs['무기책1114'] || 0;
     }
     if (materialOptions.metallurgy1518.enabled && !materialOptions.metallurgy1518.isBound) {
-      totalMaterialCost += costs['무기책'];
+      totalMaterialCost += costs['무기책1518'] || 0;
     }
     if (materialOptions.metallurgy1920.enabled && !materialOptions.metallurgy1920.isBound) {
-      totalMaterialCost += costs['무기책'];
+      totalMaterialCost += costs['무기책1920'] || 0;
     }
 
     // 상급 재련 책 비용 추가 (방어구)
@@ -650,7 +661,7 @@ export default function RefiningCalculator() {
           // 레벨별 책 필요 여부 확인
           for (let level = eq.currentLevel; level < targets.normal; level++) {
             const nextLevel = level + 1;
-            if (nextLevel >= 10 && nextLevel <= 14) needsArmorBook1014 = true;
+            if (nextLevel >= 11 && nextLevel <= 14) needsArmorBook1014 = true;
             if (nextLevel >= 15 && nextLevel <= 18) needsArmorBook1518 = true;
             if (nextLevel >= 19 && nextLevel <= 20) needsArmorBook1920 = true;
           }
@@ -661,7 +672,7 @@ export default function RefiningCalculator() {
           // 레벨별 책 필요 여부 확인
           for (let level = eq.currentLevel; level < targets.normal; level++) {
             const nextLevel = level + 1;
-            if (nextLevel >= 10 && nextLevel <= 14) needsWeaponBook1014 = true;
+            if (nextLevel >= 11 && nextLevel <= 14) needsWeaponBook1014 = true;
             if (nextLevel >= 15 && nextLevel <= 18) needsWeaponBook1518 = true;
             if (nextLevel >= 19 && nextLevel <= 20) needsWeaponBook1920 = true;
           }
@@ -741,7 +752,8 @@ export default function RefiningCalculator() {
     let totalMaterials: Materials = {
       수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0,
       누골: 0, 빙하: 0, 용암: 0, 빙하_일반: 0, 용암_일반: 0, 빙하_상급: 0, 용암_상급: 0,
-      방어구책: 0, 무기책: 0,
+      방어구책1114: 0, 방어구책1518: 0, 방어구책1920: 0,
+      무기책1114: 0, 무기책1518: 0, 무기책1920: 0,
       재봉술1단: 0, 재봉술2단: 0, 야금술1단: 0, 야금술2단: 0,
     };
 
@@ -758,12 +770,16 @@ export default function RefiningCalculator() {
 
           // 레벨에 따라 적절한 책 옵션 확인
           let useBook = false;
-          if (nextLevel >= 10 && nextLevel <= 14) {
+          let bookType = '';
+          if (nextLevel >= 11 && nextLevel <= 14) {
             useBook = (eq.type === 'armor' && materialOptions.tailoring.enabled) || (eq.type === 'weapon' && materialOptions.metallurgy.enabled);
+            bookType = '1114';
           } else if (nextLevel >= 15 && nextLevel <= 18) {
             useBook = (eq.type === 'armor' && materialOptions.tailoring1518.enabled) || (eq.type === 'weapon' && materialOptions.metallurgy1518.enabled);
+            bookType = '1518';
           } else if (nextLevel >= 19 && nextLevel <= 20) {
             useBook = (eq.type === 'armor' && materialOptions.tailoring1920.enabled) || (eq.type === 'weapon' && materialOptions.metallurgy1920.enabled);
+            bookType = '1920';
           }
 
           const avgTries = getAverageTries(nextLevel, useBreath, useBook);
@@ -782,8 +798,10 @@ export default function RefiningCalculator() {
               totalMaterials.빙하 += breathCountPerTry * avgTries;
               totalMaterials.빙하_일반 += breathCountPerTry * avgTries;
             }
-            if (useBook) {
-              totalMaterials.방어구책 += avgTries;
+            if (useBook && bookType) {
+              if (bookType === '1114') totalMaterials.방어구책1114 = (totalMaterials.방어구책1114 || 0) + avgTries;
+              if (bookType === '1518') totalMaterials.방어구책1518 = (totalMaterials.방어구책1518 || 0) + avgTries;
+              if (bookType === '1920') totalMaterials.방어구책1920 = (totalMaterials.방어구책1920 || 0) + avgTries;
             }
           } else { // weapon
             totalMaterials.파괴석 += (materialCostPerTry as any).파괴석 * avgTries;
@@ -791,8 +809,10 @@ export default function RefiningCalculator() {
               totalMaterials.용암 += breathCountPerTry * avgTries;
               totalMaterials.용암_일반 += breathCountPerTry * avgTries;
             }
-            if (useBook) {
-              totalMaterials.무기책 += avgTries;
+            if (useBook && bookType) {
+              if (bookType === '1114') totalMaterials.무기책1114 = (totalMaterials.무기책1114 || 0) + avgTries;
+              if (bookType === '1518') totalMaterials.무기책1518 = (totalMaterials.무기책1518 || 0) + avgTries;
+              if (bookType === '1920') totalMaterials.무기책1920 = (totalMaterials.무기책1920 || 0) + avgTries;
             }
           }
           totalMaterials.돌파석 += materialCostPerTry.돌파석 * avgTries;
@@ -2301,10 +2321,10 @@ export default function RefiningCalculator() {
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/tailoring-karma.png"
-                                    name="재봉술: 업화(10~14) 방어구"
-                                    amount={materials.방어구책}
+                                    name="재봉술: 업화(11~14) 방어구"
+                                    amount={materials.방어구책1114 || 0}
                                     color="#34d399"
-                                    cost={results.materialCosts['방어구책']}
+                                    cost={results.materialCosts['방어구책1114'] || 0}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.tailoring.enabled}
                                     onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring: {...p.tailoring, enabled: !p.tailoring.enabled}}))}
@@ -2319,9 +2339,9 @@ export default function RefiningCalculator() {
                                   <MaterialCard
                                     icon="/tailoring-karma.png"
                                     name="재봉술: 업화(15~18) 방어구"
-                                    amount={materials.방어구책}
+                                    amount={materials.방어구책1518 || 0}
                                     color="#34d399"
-                                    cost={results.materialCosts['방어구책']}
+                                    cost={results.materialCosts['방어구책1518'] || 0}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.tailoring1518.enabled}
                                     onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring1518: {...p.tailoring1518, enabled: !p.tailoring1518.enabled}}))}
@@ -2336,9 +2356,9 @@ export default function RefiningCalculator() {
                                   <MaterialCard
                                     icon="/tailoring-karma.png"
                                     name="재봉술: 업화(19~20) 방어구"
-                                    amount={materials.방어구책}
+                                    amount={materials.방어구책1920 || 0}
                                     color="#34d399"
-                                    cost={results.materialCosts['방어구책']}
+                                    cost={results.materialCosts['방어구책1920'] || 0}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.tailoring1920.enabled}
                                     onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring1920: {...p.tailoring1920, enabled: !p.tailoring1920.enabled}}))}
@@ -2372,10 +2392,10 @@ export default function RefiningCalculator() {
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/metallurgy-karma.png"
-                                    name="야금술: 업화(10~14) 무기"
-                                    amount={materials.무기책}
+                                    name="야금술: 업화(11~14) 무기"
+                                    amount={materials.무기책1114 || 0}
                                     color="#34d399"
-                                    cost={results.materialCosts['무기책']}
+                                    cost={results.materialCosts['무기책1114'] || 0}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.metallurgy.enabled}
                                     onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy: {...p.metallurgy, enabled: !p.metallurgy.enabled}}))}
@@ -2390,9 +2410,9 @@ export default function RefiningCalculator() {
                                   <MaterialCard
                                     icon="/metallurgy-karma.png"
                                     name="야금술: 업화(15~18) 무기"
-                                    amount={materials.무기책}
+                                    amount={materials.무기책1518 || 0}
                                     color="#34d399"
-                                    cost={results.materialCosts['무기책']}
+                                    cost={results.materialCosts['무기책1518'] || 0}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.metallurgy1518.enabled}
                                     onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy1518: {...p.metallurgy1518, enabled: !p.metallurgy1518.enabled}}))}
@@ -2407,9 +2427,9 @@ export default function RefiningCalculator() {
                                   <MaterialCard
                                     icon="/metallurgy-karma.png"
                                     name="야금술: 업화(19~20) 무기"
-                                    amount={materials.무기책}
+                                    amount={materials.무기책1920 || 0}
                                     color="#34d399"
-                                    cost={results.materialCosts['무기책']}
+                                    cost={results.materialCosts['무기책1920'] || 0}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.metallurgy1920.enabled}
                                     onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy1920: {...p.metallurgy1920, enabled: !p.metallurgy1920.enabled}}))}
