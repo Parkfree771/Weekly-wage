@@ -36,7 +36,9 @@
       "Bash(powershell -Command \"(Get-Content ''C:\\Users\\park yu ro\\Desktop\\project4\\components\\refining\\RefiningCalculator.tsx'' | Measure-Object -Line).Lines\")",
       "Bash(findstr:*)",
       "Bash(git restore:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(rd /s /q node_modules.cache)",
+      "Bash(npm update:*)"
     ],
     "deny": [],
     "ask": []

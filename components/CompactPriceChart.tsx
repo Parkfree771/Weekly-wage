@@ -291,8 +291,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       );
     }
 
-    // ALL 기간에서는 글씨 없이 점만 표시
-    if (selectedPeriod === 'all') {
+    // ALL 기간에서는 수요일만 글씨 없이 점만 표시, 다른 이벤트는 글씨 표시
+    if (selectedPeriod === 'all' && payload.isWednesday && !payload.eventLabel) {
       return (
         <circle cx={cx} cy={cy} r={6} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />
       );
@@ -318,24 +318,46 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     );
   };
 
-  // 모바일용 커스텀 점 렌더러 (글씨 없이 점만 표시)
+  // 모바일용 커스텀 점 렌더러
   const CustomDotMobile = (props: any) => {
     const { cx, cy, payload } = props;
     const hasEvent = payload.eventLabel || payload.isWednesday;
+    const eventLabel = payload.eventLabel || (payload.isWednesday ? '수요일' : '');
     // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
     const eventColor = (categoryStyle?.label === '유물 각인서' || categoryStyle?.label === '보석')
       ? '#3b82f6'
       : (payload.eventColor || '#ef4444');
 
-    // 모바일에서는 모든 이벤트 점에서 글씨 제거, 점만 표시
     if (!hasEvent) {
       return (
         <circle cx={cx} cy={cy} r={3} fill={chartColor} strokeWidth={2} stroke="var(--card-bg)" />
       );
     }
 
+    // 모바일에서는 수요일만 글씨 없이 점만 표시, 다른 이벤트는 글씨 표시
+    if (payload.isWednesday && !payload.eventLabel) {
+      return (
+        <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />
+      );
+    }
+
     return (
-      <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />
+      <g>
+        <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />
+        <text
+          x={cx}
+          y={cy - 10}
+          textAnchor="middle"
+          fill={eventColor}
+          fontSize={9}
+          fontWeight="700"
+          style={{
+            textShadow: '0 0 2px var(--card-bg), 0 0 2px var(--card-bg)'
+          }}
+        >
+          {eventLabel}
+        </text>
+      </g>
     );
   };
 
