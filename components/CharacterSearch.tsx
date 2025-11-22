@@ -27,7 +27,7 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [showAll, setShowAll] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
 
   // 모바일 감지
   useEffect(() => {
@@ -207,15 +207,16 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
         )}
       </Form>
       {characters.length > 0 && (
-        <div>
+        <div className="d-flex justify-content-center">
+          <div style={{ maxWidth: isMobile ? '100%' : '75%', width: '100%' }}>
           <Row>
             {(() => {
-              // 모바일: 선택된 6개만 기본 표시, 데스크톱: 9개 기본 표시
-              const defaultCount = isMobile ? 6 : 9;
+              // 모바일: 선택된 6개만 기본 표시, 데스크톱: 6개 기본 표시
+              const defaultCount = 6;
               const displayChars = showAll ? characters : characters.slice(0, defaultCount);
 
               return displayChars.map((char, index) => (
-                <Col lg={4} md={6} sm={6} xs={6} key={char.characterName} className={isMobile ? 'mb-2' : 'mb-3'}>
+                <Col lg={4} md={4} sm={6} xs={6} key={char.characterName} className={isMobile ? 'mb-2' : 'mb-3'}>
                   <Card
                     className={`character-card ${checkedState[index] ? 'selected' : ''}`}
                     onClick={() => handleCheckboxChange(index)}
@@ -274,29 +275,58 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
               ));
             })()}
           </Row>
-          {characters.length > (isMobile ? 6 : 9) && (
-            <div className="d-flex justify-content-center mt-2 mb-3">
+          {characters.length > 6 && (
+            <div className="d-flex justify-content-center mt-2 mb-2">
               <Button
-                variant={showAll ? "outline-secondary" : "outline-primary"}
-                size="sm"
+                variant="link"
                 onClick={() => setShowAll(!showAll)}
                 style={{
-                  fontSize: isMobile ? '0.7rem' : '0.85rem',
-                  padding: isMobile ? '0.3rem 0.8rem' : '0.4rem 1rem'
+                  fontSize: isMobile ? '0.75rem' : '0.88rem',
+                  padding: isMobile ? '0.5rem 1.2rem' : '0.6rem 1.8rem',
+                  color: 'var(--text-primary)',
+                  textDecoration: 'none',
+                  fontWeight: '600',
+                  backgroundColor: showAll ? 'var(--card-header-bg)' : 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
+                  transition: 'all 0.2s ease',
+                  boxShadow: showAll ? 'var(--shadow-sm)' : 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--card-header-bg)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = showAll ? 'var(--card-header-bg)' : 'transparent';
+                  e.currentTarget.style.boxShadow = showAll ? 'var(--shadow-sm)' : 'none';
+                  e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
                 {showAll ? (
                   <>
-                    ▲ 접기 ({characters.length - (isMobile ? 6 : 9)}개 숨기기)
+                    <span style={{ marginRight: '0.5rem' }}>▲</span>
+                    접기
+                    <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9em' }}>
+                      ({characters.length - 6}개)
+                    </span>
                   </>
                 ) : (
                   <>
-                    ▼ 더보기 ({characters.length - (isMobile ? 6 : 9)}개 더 있음)
+                    <span style={{ marginRight: '0.5rem' }}>▼</span>
+                    더보기
+                    <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9em' }}>
+                      ({characters.length - 6}개)
+                    </span>
                   </>
                 )}
               </Button>
             </div>
           )}
+          </div>
         </div>
       )}
     </>

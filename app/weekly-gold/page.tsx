@@ -38,7 +38,7 @@ export default function WeeklyGoldPage() {
   const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
   const [searched, setSearched] = useState(false);
   const [footerOpen, setFooterOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
 
   // 모바일 감지
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function WeeklyGoldPage() {
       <ThemeToggleButton />
       <Container fluid className="mt-3 mt-md-4">
         <Row className="justify-content-center">
-          <Col xl={11} lg={12} md={12}>
+          <Col xl={9} lg={10} md={12}>
             <div className="text-center mb-3 mb-md-4">
               <Link href="/" className="text-decoration-none">
                 <div className="d-flex justify-content-center align-items-center gap-3 mb-2" style={{ cursor: 'pointer' }}>
@@ -91,18 +91,9 @@ export default function WeeklyGoldPage() {
             {/* 캐릭터 검색 */}
             <CharacterSearch onSelectionChange={setSelectedCharacters} onSearch={handleSearch} searched={searched} />
 
-            {/* 데스크톱에서만 여기에 새로 검색하기 버튼 표시 */}
-            {searched && !isMobile && (
-              <div className="text-center mt-3">
-                <Button variant="secondary" onClick={handleReset} className="mb-3">
-                  새로 검색하기
-                </Button>
-              </div>
-            )}
-
             {/* 검색 후 원정대 주급 계산기 */}
             {searched && selectedCharacters.length > 0 && (
-              <div className="mt-2 mt-md-3">
+              <div className="mt-3">
                 <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                   <Card.Header
                     className="text-center py-2 border-0"
@@ -133,24 +124,10 @@ export default function WeeklyGoldPage() {
               </div>
             )}
 
-            {/* 모바일에서만 총 골드 밑에 새로 검색하기 버튼 표시 */}
-            {searched && isMobile && (
-              <div className="text-center mt-3">
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  onClick={handleReset}
-                  style={{ fontSize: '0.75rem', padding: '0.3rem 1rem' }}
-                >
-                  새로 검색하기
-                </Button>
-              </div>
-            )}
-
             {/* 더보기 효율 계산기 섹션 */}
             <div className="mt-3">
               <Row className="justify-content-center">
-                <Col xl={9} lg={10} md={12}>
+                <Col xl={12} lg={12} md={12}>
                   <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                     <Card.Header
                       className="text-center py-2 border-0"

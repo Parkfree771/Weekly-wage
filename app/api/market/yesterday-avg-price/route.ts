@@ -33,9 +33,22 @@ export async function POST(request: Request) {
     if (data && Array.isArray(data) && data.length > 0) {
       const detail = data[0];
 
-      // 어제 평균가만 사용
-      let bundlePrice = detail.YDayAvgPrice || 0;
-      console.log(`Yesterday average price for ${detail.Name}: ${bundlePrice}`);
+      // Stats 배열에서 어제 평균가 가져오기 (Stats[1])
+      // Stats[0]은 오늘, Stats[1]은 어제
+      let bundlePrice = 0;
+      if (detail.Stats && Array.isArray(detail.Stats) && detail.Stats.length > 1) {
+        // 어제 데이터가 있으면 어제 평균가 사용
+        bundlePrice = detail.Stats[1].AvgPrice || 0;
+        console.log(`Yesterday average price for ${detail.Name}: ${bundlePrice} (from Stats[1])`);
+      } else if (detail.Stats && detail.Stats.length > 0) {
+        // 어제 데이터가 없으면 오늘 데이터 사용
+        bundlePrice = detail.Stats[0].AvgPrice || 0;
+        console.log(`Using today's price for ${detail.Name}: ${bundlePrice} (from Stats[0])`);
+      } else {
+        // Stats 배열이 없으면 기존 방식 사용 (호환성)
+        bundlePrice = detail.YDayAvgPrice || 0;
+        console.log(`Using legacy YDayAvgPrice for ${detail.Name}: ${bundlePrice}`);
+      }
 
       // 단위 가격 계산
       let unitPrice = bundlePrice;

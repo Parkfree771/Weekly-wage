@@ -70,17 +70,28 @@ const SeeMoreCalculator: React.FC = () => {
     return Date.now() - timestamp > CACHE_DURATION;
   };
 
+  // 캐시에 유효한 가격이 있는지 확인 (모든 가격이 0이 아닌지)
+  const hasValidPrices = (prices: { [itemId: number]: number }): boolean => {
+    const priceValues = Object.values(prices);
+    if (priceValues.length === 0) return false;
+    // 최소 하나 이상의 가격이 0보다 크면 유효
+    return priceValues.some(price => price > 0);
+  };
+
   // 컴포넌트 마운트시 캐시 확인 후 필요시 갱신
   useEffect(() => {
     const cached = getCachedPrices();
 
-    // 캐시가 있고 만료되지 않았으면 캐시 사용
-    if (cached && !isCacheExpired(cached.timestamp)) {
+    // 캐시가 있고 만료되지 않았으며 유효한 가격이 있으면 캐시 사용
+    if (cached && !isCacheExpired(cached.timestamp) && hasValidPrices(cached.prices)) {
       console.log('Using cached prices from:', new Date(cached.timestamp));
       calculateWithPrices(cached.prices);
       setLastUpdated(new Date(cached.timestamp));
     } else {
-      // 캐시가 없거나 만료됐으면 새로 가져오기
+      // 캐시가 없거나 만료됐거나 가격이 0이면 새로 가져오기
+      if (cached && !hasValidPrices(cached.prices)) {
+        console.log('Cache has invalid prices (0), fetching new prices...');
+      }
       fetchYesterdayPrices();
     }
 
@@ -152,12 +163,17 @@ const SeeMoreCalculator: React.FC = () => {
 
       console.log('All fetched yesterday average prices:', searchPrices);
 
-      // 캐시 저장
-      setCachedPrices(searchPrices);
+      // 유효한 가격이 있을 때만 캐시 저장
+      if (hasValidPrices(searchPrices)) {
+        console.log('Valid prices fetched, saving to cache');
+        setCachedPrices(searchPrices);
+        setLastUpdated(new Date());
+      } else {
+        console.warn('All prices are 0, not saving to cache');
+      }
 
-      // 계산 수행
+      // 계산 수행 (가격이 0이어도 계산은 수행)
       calculateWithPrices(searchPrices);
-      setLastUpdated(new Date());
 
     } catch (error) {
       console.error('Failed to fetch yesterday average prices:', error);
