@@ -22,16 +22,6 @@ type GateSelection = {
   };
 };
 
-// 레이드 이미지 매핑
-const raidImages: { [key: string]: string } = {
-  '베히모스': '/behemoth.jpg',
-  '에키드나': '/echidna.jpg',
-  '에기르': '/aegir.jpg',
-  '카제로스': '/kazeros.jpg',
-  '상아탑': '/ivory-tower.jpg',
-  '일리아칸': '/illiakan.jpg',
-  '아브렐슈드': '/abrelshud.jpg'
-};
 
 export default function RaidCalculator({ selectedCharacters }: RaidCalculatorProps) {
   const [gateSelection, setGateSelection] = useState<GateSelection>({});
@@ -351,15 +341,6 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                       <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
                         <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.5rem' : '0.75rem' }}>
                           <div className="d-flex align-items-center w-100">
-                            {raidImages[groupName] && (
-                              <img
-                                src={raidImages[groupName]}
-                                alt={groupName}
-                                width={isMobile ? 16 : 20}
-                                height={isMobile ? 16 : 20}
-                                style={{ marginRight: '0.4rem', borderRadius: '4px', flexShrink: 0 }}
-                              />
-                            )}
                             <span style={{ fontWeight: 600 }}>{groupName}</span>
                             <Badge bg="success" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
                               {calculateRaidGroupGold(character.characterName, groupName).toLocaleString()} G
@@ -508,15 +489,6 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                               <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
                                 <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.5rem' : '0.75rem' }}>
                                   <div className="d-flex align-items-center w-100">
-                                    {raidImages[groupName] && (
-                                      <img
-                                        src={raidImages[groupName]}
-                                        alt={groupName}
-                                        width={isMobile ? 16 : 20}
-                                        height={isMobile ? 16 : 20}
-                                        style={{ marginRight: '0.4rem', borderRadius: '4px', flexShrink: 0 }}
-                                      />
-                                    )}
                                     <span style={{ fontWeight: 600, opacity: 0.7 }}>{groupName}</span>
                                     <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
                                       0 G
