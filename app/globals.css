@@ -114,3 +114,17 @@ body {
 .refining-checkbox .form-check-input:focus {
   box-shadow: 0 0 0 3px hsla(var(--brand-hue), var(--brand-saturation), var(--brand-lightness), 0.3);
 }
+
+/* Footer Styles */
+.footer-fixed {
+  margin-top: 80px;
+  padding: 30px 0;
+  border-top: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+  .footer-fixed {
+    margin-top: 60px;
+    padding: 20px 0;
+  }
+}
