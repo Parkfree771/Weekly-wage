@@ -44,6 +44,9 @@
   --loss-bg: rgba(239, 68, 68, 0.1);
   --neutral-color: #6b7280;
   --neutral-bg: rgba(107, 114, 128, 0.1);
+
+  /* Accordion */
+  --accordion-icon-invert: 0;
 }
 
 [data-theme="dark"] {
@@ -88,6 +91,9 @@
   --loss-bg: rgba(248, 113, 113, 0.15);
   --neutral-color: #9ca3af;
   --neutral-bg: rgba(156, 163, 175, 0.15);
+
+  /* Accordion */
+  --accordion-icon-invert: 1;
 }
 
 body {
@@ -102,6 +108,50 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Input Placeholder Styles for Dark Mode */
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 1 !important;
+}
+
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+  color: var(--text-muted) !important;
+  opacity: 1 !important;
+}
+
+input::-moz-placeholder,
+textarea::-moz-placeholder {
+  color: var(--text-muted) !important;
+  opacity: 1 !important;
+}
+
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder {
+  color: var(--text-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Form Control Styles for Dark Mode */
+.form-control {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.form-control:focus {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--brand-primary) !important;
+}
+
+.form-control:disabled {
+  background-color: var(--input-bg) !important;
+  color: var(--text-disabled) !important;
+  opacity: 0.7;
+}
+
 .refining-checkbox .form-check-input {
   background-color: var(--input-bg);
   border-color: var(--border-color);
@@ -113,6 +163,131 @@ body {
 }
 .refining-checkbox .form-check-input:focus {
   box-shadow: 0 0 0 3px hsla(var(--brand-hue), var(--brand-saturation), var(--brand-lightness), 0.3);
+}
+
+/* Table Styles for Dark Mode */
+.raid-table {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.raid-table thead {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.raid-table tbody {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.raid-table th,
+.raid-table td {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.raid-table tbody tr:hover td {
+  background-color: var(--card-body-bg-blue) !important;
+}
+
+/* Override Bootstrap striped table styles */
+.raid-table.table-striped tbody tr:nth-of-type(odd) > * {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.raid-table.table-striped tbody tr:nth-of-type(even) > * {
+  background-color: var(--card-body-bg-blue) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Accordion Styles for Dark Mode */
+.theme-accordion .accordion-item {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+}
+
+.theme-accordion .accordion-button {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.theme-accordion .accordion-button:not(.collapsed) {
+  background-color: var(--card-body-bg-blue) !important;
+  color: var(--text-primary) !important;
+}
+
+.theme-accordion .accordion-button:focus {
+  box-shadow: none !important;
+  border-color: var(--border-color) !important;
+}
+
+.theme-accordion .accordion-button::after {
+  filter: invert(var(--accordion-icon-invert, 0));
+}
+
+.theme-accordion .accordion-button span,
+.theme-accordion .accordion-button div {
+  color: var(--text-primary) !important;
+}
+
+.theme-accordion .accordion-body {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.raid-group-accordion,
+.raid-difficulty-accordion {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+}
+
+.raid-group-accordion .accordion-header,
+.raid-difficulty-accordion .accordion-header {
+  background-color: var(--card-bg) !important;
+}
+
+.raid-group-accordion .accordion-button,
+.raid-difficulty-accordion .accordion-button {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.raid-group-accordion .accordion-button:not(.collapsed),
+.raid-difficulty-accordion .accordion-button:not(.collapsed) {
+  background-color: var(--card-body-bg-blue) !important;
+  color: var(--text-primary) !important;
+}
+
+.raid-group-accordion .accordion-button span,
+.raid-group-accordion .accordion-button div,
+.raid-difficulty-accordion .accordion-button span,
+.raid-difficulty-accordion .accordion-button div {
+  color: var(--text-primary) !important;
+}
+
+.raid-group-accordion .accordion-button::after,
+.raid-difficulty-accordion .accordion-button::after {
+  filter: invert(var(--accordion-icon-invert, 0));
+}
+
+.raid-group-accordion .accordion-body,
+.raid-difficulty-accordion .accordion-body {
+  background-color: var(--card-bg) !important;
+}
+
+/* Card Styles for Dark Mode */
+.character-raid-card {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.character-raid-header {
+  background-color: var(--card-header-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
 }
 
 /* Footer Styles */
