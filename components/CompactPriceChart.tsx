@@ -213,53 +213,161 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     if (!stats) return { domain: ['auto', 'auto'], ticks: [], avgValue: null };
 
     const priceRange = stats.max - stats.min;
+    const avgPrice = stats.avg;
 
-    // 가격대에 따른 적절한 틱 단위 결정
+    // 목표 틱 개수 (5-7개 정도로 제한)
+    const TARGET_TICK_COUNT = 6;
+
+    // 가격대별로 적절한 틱 단위 결정 (틱 개수를 줄이기 위해 더 큰 단위 사용)
     let tickUnit = 1;
+
+    // 100만 골드 이상
     if (stats.max >= 1000000) {
-      tickUnit = 200000; // 100만 이상: 20만 간격
-    } else if (stats.max >= 100000) {
-      tickUnit = 20000; // 10만~100만: 2만 간격
-    } else if (stats.max >= 10000) {
-      tickUnit = 2000; // 1만~10만: 2000 간격
-    } else if (stats.max >= 1000) {
-      tickUnit = 200; // 1000~1만: 200 간격
-    } else if (stats.max >= 100) {
-      tickUnit = 20; // 100~1000: 20 간격
-    } else {
-      tickUnit = 2; // 100 미만: 2 간격
+      if (priceRange >= 500000) tickUnit = 200000;
+      else if (priceRange >= 200000) tickUnit = 100000;
+      else if (priceRange >= 100000) tickUnit = 50000;
+      else tickUnit = 20000;
+    }
+    // 10만~100만 골드
+    else if (stats.max >= 100000) {
+      if (priceRange >= 50000) tickUnit = 20000;
+      else if (priceRange >= 20000) tickUnit = 10000;
+      else if (priceRange >= 10000) tickUnit = 5000;
+      else tickUnit = 2000;
+    }
+    // 1만~10만 골드
+    else if (stats.max >= 10000) {
+      if (priceRange >= 10000) tickUnit = 5000;
+      else if (priceRange >= 5000) tickUnit = 2000;
+      else if (priceRange >= 2000) tickUnit = 1000;
+      else tickUnit = 500;
+    }
+    // 1000~1만 골드
+    else if (stats.max >= 1000) {
+      if (priceRange >= 2000) tickUnit = 1000;
+      else if (priceRange >= 1000) tickUnit = 500;
+      else if (priceRange >= 500) tickUnit = 200;
+      else tickUnit = 100;
+    }
+    // 100~1000 골드
+    else if (stats.max >= 100) {
+      if (priceRange >= 200) tickUnit = 100;
+      else if (priceRange >= 100) tickUnit = 50;
+      else if (priceRange >= 50) tickUnit = 20;
+      else tickUnit = 10;
+    }
+    // 100 골드 미만
+    else {
+      if (priceRange >= 50) tickUnit = 20;
+      else if (priceRange >= 20) tickUnit = 10;
+      else if (priceRange >= 10) tickUnit = 5;
+      else if (priceRange >= 5) tickUnit = 2;
+      else if (priceRange >= 2) tickUnit = 1;
+      else if (priceRange >= 1) tickUnit = 0.5;
+      else tickUnit = 0.2;
     }
 
-    // 실제 데이터 범위에 패딩 추가 (상하 10%)
-    const padding = Math.max(priceRange * 0.1, tickUnit);
+    // 정확한 평균가를 중심 틱으로 사용 (반올림하지 않음)
+    const centerTick = avgPrice;
+
+    // 데이터 범위에 약간의 패딩 추가
+    const paddingRatio = 0.15; // 15% 패딩으로 상단 여유 확보
+    const padding = Math.max(priceRange * paddingRatio, tickUnit * 1.5);
     const minWithPadding = stats.min - padding;
     const maxWithPadding = stats.max + padding;
 
-    // 도메인을 틱 단위에 맞춰 정렬 (최소값은 내림, 최대값은 올림)
-    const domainMin = stats.max < 100
-      ? Math.floor(minWithPadding * 10) / 10
-      : Math.floor(minWithPadding / tickUnit) * tickUnit;
-    const domainMax = stats.max < 100
-      ? Math.ceil(maxWithPadding * 10) / 10
-      : Math.ceil(maxWithPadding / tickUnit) * tickUnit;
+    // 평균가(정확한 값)을 기준으로 위아래로 틱 생성
+    const ticks = [centerTick];
 
-    // 일관성 있는 틱 생성 (도메인 범위 내에서 균등하게)
-    const ticks = [];
-    let currentTick = domainMin;
+    if (stats.max < 100) {
+      // 100 미만: 부동소수점 오차 방지
+      const centerTickScaled = Math.round(centerTick * 100); // 소수점 2자리까지 정확히
+      const minScaled = Math.round(minWithPadding * 100);
+      const maxScaled = Math.round(maxWithPadding * 100);
+      let tickUnitScaled = Math.round(tickUnit * 100);
 
-    while (currentTick <= domainMax) {
-      ticks.push(stats.max < 100 ? Math.round(currentTick * 10) / 10 : Math.round(currentTick));
-      currentTick += tickUnit;
+      // 아래쪽 틱 추가
+      let currentTickScaled = centerTickScaled - tickUnitScaled;
+      while (currentTickScaled >= minScaled && ticks.length < TARGET_TICK_COUNT) {
+        ticks.unshift(currentTickScaled / 100);
+        currentTickScaled -= tickUnitScaled;
+      }
+
+      // 위쪽 틱 추가
+      currentTickScaled = centerTickScaled + tickUnitScaled;
+      while (currentTickScaled <= maxScaled && ticks.length < TARGET_TICK_COUNT) {
+        ticks.push(currentTickScaled / 100);
+        currentTickScaled += tickUnitScaled;
+      }
+
+      // 틱이 너무 많으면 간격을 2배로 늘려서 재계산
+      if (ticks.length > TARGET_TICK_COUNT) {
+        tickUnitScaled *= 2;
+        const newTicks = [centerTick];
+
+        currentTickScaled = centerTickScaled - tickUnitScaled;
+        while (currentTickScaled >= minScaled) {
+          newTicks.unshift(currentTickScaled / 100);
+          currentTickScaled -= tickUnitScaled;
+        }
+
+        currentTickScaled = centerTickScaled + tickUnitScaled;
+        while (currentTickScaled <= maxScaled) {
+          newTicks.push(currentTickScaled / 100);
+          currentTickScaled += tickUnitScaled;
+        }
+
+        ticks.length = 0;
+        ticks.push(...newTicks);
+      }
+    } else {
+      // 100 이상
+      let actualTickUnit = tickUnit;
+
+      // 아래쪽 틱 추가
+      let currentTick = centerTick - actualTickUnit;
+      while (currentTick >= minWithPadding && ticks.length < TARGET_TICK_COUNT) {
+        ticks.unshift(currentTick);
+        currentTick -= actualTickUnit;
+      }
+
+      // 위쪽 틱 추가
+      currentTick = centerTick + actualTickUnit;
+      while (currentTick <= maxWithPadding && ticks.length < TARGET_TICK_COUNT) {
+        ticks.push(currentTick);
+        currentTick += actualTickUnit;
+      }
+
+      // 틱이 너무 많으면 간격을 2배로 늘려서 재계산
+      if (ticks.length > TARGET_TICK_COUNT) {
+        actualTickUnit *= 2;
+        const newTicks = [centerTick];
+
+        currentTick = centerTick - actualTickUnit;
+        while (currentTick >= minWithPadding) {
+          newTicks.unshift(currentTick);
+          currentTick -= actualTickUnit;
+        }
+
+        currentTick = centerTick + actualTickUnit;
+        while (currentTick <= maxWithPadding) {
+          newTicks.push(currentTick);
+          currentTick += actualTickUnit;
+        }
+
+        ticks.length = 0;
+        ticks.push(...newTicks);
+      }
     }
 
-    // 평균가에 가장 가까운 틱 찾기 (강조용)
-    const roundedAvg = Math.round(stats.avg / tickUnit) * tickUnit;
-    const avgValue = stats.max < 100 ? Math.round(roundedAvg * 10) / 10 : Math.round(roundedAvg);
+    // 도메인 설정 (최소/최대 틱 기준으로 약간의 여유 추가)
+    const domainMin = ticks[0];
+    const domainMax = ticks[ticks.length - 1];
 
     return {
       domain: [domainMin, domainMax],
       ticks,
-      avgValue
+      avgValue: centerTick // 정확한 평균가 (틱으로 표시됨)
     };
   }, [stats]);
 
@@ -733,11 +841,11 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
             <div className="d-none d-md-block" style={{ width: '100%', height: '400px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                <LineChart data={chartData} margin={{ top: 25, right: 10, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical={true} horizontal={true} />
                   <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : ''); const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" transform="rotate(-35)">{payload.value}</text>{eventLabel && (<text x={0} y={12} dy={10} textAnchor="end" fill={eventColor} fontSize={12} fontWeight="700" transform="rotate(-35)">{eventLabel}</text>)}</g>); }} height={80} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
-                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 14 : 16} fontWeight={isAverage ? '900' : '700'} dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 95 : stats && stats.max >= 100000 ? 80 : stats && stats.max >= 10000 ? 75 : 60} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
+                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 14 : 16} fontWeight={isAverage ? '900' : '700'} dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 95 : stats && stats.max >= 100000 ? 80 : stats && stats.max >= 10000 ? 75 : 60} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} interval={0} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
                   <Tooltip content={<CustomTooltip />} cursor={{ stroke: chartColor, strokeWidth: 2, strokeDasharray: '5 5' }} />
                   <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} />
                   <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={<CustomDot />} activeDot={{ r: 9, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 4 }} fill="url(#colorPrice)" />
@@ -747,7 +855,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
             <div className="d-md-none" style={{ width: '100%', height: '280px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                <LineChart data={chartData} margin={{ top: 20, right: 5, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />
                   <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : ''); const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" transform="rotate(-45)">{payload.value}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />

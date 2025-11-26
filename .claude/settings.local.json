@@ -38,7 +38,11 @@
       "Bash(git restore:*)",
       "Bash(echo:*)",
       "Bash(rd /s /q node_modules.cache)",
-      "Bash(npm update:*)"
+      "Bash(npm update:*)",
+      "Bash(taskkill:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(rm:*)",
+      "Bash(npm cache clean:*)"
     ],
     "deny": [],
     "ask": []
