@@ -5,8 +5,7 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# API 라우트 1시간 캐시
-[[headers]]
-  for = "/api/*"
-  [headers.values]
-    Cache-Control = "public, max-age=3600, s-maxage=3600"
+# API 라우트 캐시 설정 제거
+# - 각 API에서 시간대별로 동적 Cache-Control 헤더 설정
+# - 날짜 변경 시간대(05~06시, 수요일 10시): 5분 캐시
+# - 평상시: 1시간 캐시

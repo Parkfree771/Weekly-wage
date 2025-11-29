@@ -5,8 +5,8 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 /**
  * 캐시를 무효화해야 하는 시간대인지 확인 (한국 시간 기준)
- * - 평소(월~일): 오전 06:00~06:59
- * - 수요일: 오전 10:00~10:59
+ * - 평소(월~일): 오전 05:00~06:59 (날짜 변경 시간대)
+ * - 수요일: 오전 10:00~10:59 (점검 후 업데이트)
  */
 function shouldBypassCache(): boolean {
   const now = new Date();
@@ -24,13 +24,38 @@ function shouldBypassCache(): boolean {
     return true;
   }
 
-  // 평소 오전 6시~6시 59분
-  if (kstHour === 6) {
-    console.log('[Cache Bypass] 오전 6시대 - 캐시 무시');
+  // 평소 오전 5시~6시 59분 (경매장 05시 + 거래소 06시 갱신)
+  if (kstHour === 5 || kstHour === 6) {
+    console.log('[Cache Bypass] 오전 5~6시대 - 캐시 무시');
     return true;
   }
 
   return false;
+}
+
+/**
+ * 시간대별 Cache-Control 헤더 반환
+ * - 날짜 변경 시간대: 5분 캐시 (빠른 갱신)
+ * - 평상시: 1시간 캐시 (API 부하 최소화)
+ */
+function getCacheControlHeader(): string {
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kstTime = now.getTime() + kstOffset;
+  const kstDate = new Date(kstTime);
+
+  const kstHour = kstDate.getUTCHours();
+  const kstDay = kstDate.getUTCDay();
+
+  // 1. 날짜 변경 시간대 (05:00~06:59, 수요일 10:00~10:59)
+  //    → 5분 캐시 - 새 데이터 빠르게 반영
+  if (kstHour === 5 || kstHour === 6 || (kstDay === 3 && kstHour === 10)) {
+    return 'public, max-age=300, s-maxage=300, stale-while-revalidate=60';
+  }
+
+  // 2. 평상시 (나머지 시간)
+  //    → 1시간 캐시 - 과부하 방지
+  return 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=600';
 }
 
 // 캐시된 가격 히스토리 조회 함수 (데이터 있는 경우만)
@@ -159,7 +184,24 @@ export async function GET(
       console.warn(`[API] No price data found for itemId: ${itemId} - Check if GitHub Actions is collecting this item`);
     }
 
-    return NextResponse.json(data);
+    // Cache-Control 헤더 결정
+    let cacheControl: string;
+
+    if (noCache) {
+      // GitHub Actions 캐시 예열용: 짧은 캐시 (5분)
+      // 시간대와 무관하게 항상 5분 캐시 적용
+      cacheControl = 'public, max-age=300, s-maxage=300, stale-while-revalidate=60';
+      console.log('[API] noCache=true - 5분 캐시 적용 (캐시 예열용)');
+    } else {
+      // 일반 사용자: 시간대별 캐시 전략
+      cacheControl = getCacheControlHeader();
+    }
+
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': cacheControl,
+      }
+    });
   } catch (error: any) {
     console.error('[API] 가격 히스토리 조회 오류:', error);
     console.error('[API] Error stack:', error.stack);
@@ -168,7 +210,12 @@ export async function GET(
         message: '가격 히스토리 조회 중 오류가 발생했습니다.',
         error: error.message
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store', // 에러는 캐시 안함
+        }
+      }
     );
   }
 }
