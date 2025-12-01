@@ -42,7 +42,8 @@
       "Bash(taskkill:*)",
       "Bash(powershell -Command:*)",
       "Bash(rm:*)",
-      "Bash(npm cache clean:*)"
+      "Bash(npm cache clean:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
