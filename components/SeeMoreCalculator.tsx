@@ -299,8 +299,8 @@ const SeeMoreCalculator: React.FC = () => {
         
         <div className="text-end">
           <small className="text-muted d-block">
-            {lastUpdated ? 
-              `최신 거래 평균가 (매시 정각 갱신) | 게임과 다소 차이가 있을 수 있으니 양해 부탁드립니다` : 
+            {lastUpdated ?
+              `전일 평균가 (매일 오전 10시 30분 갱신) | 실시간 시세와 차이가 있을 수 있습니다` :
               '가격 정보를 불러오는 중...'
             }
           </small>
