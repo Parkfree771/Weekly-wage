@@ -43,7 +43,8 @@
       "Bash(powershell -Command:*)",
       "Bash(rm:*)",
       "Bash(npm cache clean:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(rd /s /q \"node_modules\\.cache\")"
     ],
     "deny": [],
     "ask": []

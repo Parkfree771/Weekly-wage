@@ -342,11 +342,11 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                         <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.5rem' : '0.75rem' }}>
                           <div className="d-flex align-items-center w-100">
                             <span style={{ fontWeight: 600 }}>{groupName}</span>
-                            <Badge bg="success" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem', color: '#ffffff' }}>
+                            <Badge className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem', backgroundColor: '#10b981', color: '#ffffff' }}>
                               {calculateRaidGroupGold(character.characterName, groupName).toLocaleString()} G
                             </Badge>
                             {hasMoreSelected(character.characterName, groupName) && (
-                              <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.68rem' }}>더보기</Badge>
+                              <Badge className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.68rem', backgroundColor: '#ef4444', color: '#ffffff' }}>더보기</Badge>
                             )}
                           </div>
                         </Accordion.Header>
