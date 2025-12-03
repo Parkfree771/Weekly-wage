@@ -727,39 +727,39 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         ) : (
           <>
             {stats && (
-              <div className="d-none d-md-flex mb-4 justify-content-center gap-2">
-                <div style={{ width: '208px' }}>
-                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${chartColor}`, padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4'); e.currentTarget.style.borderColor = theme === 'dark' ? (categoryStyle?.darkThemeColor || '#8ab4f8') : (categoryStyle?.darkColor || '#15803d'); }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = chartColor; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>현재가</small>
-                    <strong style={{ fontSize: '1rem', color: chartColor, fontWeight: '700' }}>{formatTooltipPrice(stats.current)}</strong>
+              <div className="d-none d-md-flex mb-4 justify-content-center gap-1" style={{ flexWrap: 'nowrap', overflowX: 'auto', padding: '0 4px' }}>
+                <div style={{ minWidth: '140px', flex: '1 1 0' }}>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${chartColor}`, padding: '8px 4px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4'); e.currentTarget.style.borderColor = theme === 'dark' ? (categoryStyle?.darkThemeColor || '#8ab4f8') : (categoryStyle?.darkColor || '#15803d'); }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = chartColor; }}>
+                    <small className="d-block mb-1" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>현재가</small>
+                    <strong style={{ fontSize: '0.9rem', color: chartColor, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatTooltipPrice(stats.current)}</strong>
                   </div>
                 </div>
-                <div style={{ width: '208px' }}>
-                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6'}`, padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2d3748' : '#f3f4f6'; e.currentTarget.style.borderColor = stats.changeFromMin >= 0 ? '#dc2626' : '#2563eb'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6'; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>최저가 대비</small>
-                    <strong style={{ fontSize: '1rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+                <div style={{ minWidth: '140px', flex: '1 1 0' }}>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6'}`, padding: '8px 4px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2d3748' : '#f3f4f6'; e.currentTarget.style.borderColor = stats.changeFromMin >= 0 ? '#dc2626' : '#2563eb'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6'; }}>
+                    <small className="d-block mb-1" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>최저가 대비</small>
+                    <strong style={{ fontSize: '0.9rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', whiteSpace: 'nowrap' }}>
                       {stats.changeFromMin >= 0 ? '▲' : '▼'} {Math.abs(stats.changeFromMin).toFixed(1)}%
                     </strong>
                   </div>
                 </div>
-                <div style={{ width: '208px' }}>
-                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${minStyle.text}`, padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = minStyle.bg; e.currentTarget.style.borderColor = minStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = minStyle.text; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>최저가</small>
-                    <strong style={{ fontSize: '1rem', color: minStyle.text, fontWeight: '700' }}>{formatTooltipPrice(stats.min)}</strong>
+                <div style={{ minWidth: '140px', flex: '1 1 0' }}>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${minStyle.text}`, padding: '8px 4px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = minStyle.bg; e.currentTarget.style.borderColor = minStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = minStyle.text; }}>
+                    <small className="d-block mb-1" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>최저가</small>
+                    <strong style={{ fontSize: '0.9rem', color: minStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatTooltipPrice(stats.min)}</strong>
                   </div>
                 </div>
-                <div style={{ width: '208px' }}>
-                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${maxStyle.text}`, padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = maxStyle.bg; e.currentTarget.style.borderColor = maxStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = maxStyle.text; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>최고가</small>
-                    <strong style={{ fontSize: '1rem', color: maxStyle.text, fontWeight: '700' }}>{formatTooltipPrice(stats.max)}</strong>
-                  </div>
-                </div>
-                <div style={{ width: '208px' }}>
-                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${avgStyle.text}`, padding: '10px 8px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = avgStyle.bg; e.currentTarget.style.borderColor = avgStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = avgStyle.text; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>평균가</small>
-                    <strong style={{ fontSize: '1rem', color: avgStyle.text, fontWeight: '700' }}>
+                <div style={{ minWidth: '140px', flex: '1 1 0' }}>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${avgStyle.text}`, padding: '8px 4px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = avgStyle.bg; e.currentTarget.style.borderColor = avgStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = avgStyle.text; }}>
+                    <small className="d-block mb-1" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>평균가</small>
+                    <strong style={{ fontSize: '0.9rem', color: avgStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>
                       {stats.avg < 100 ? stats.avg.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G' : formatTooltipPrice(Math.round(stats.avg))}
                     </strong>
+                  </div>
+                </div>
+                <div style={{ minWidth: '140px', flex: '1 1 0' }}>
+                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '10px', border: `2px solid ${maxStyle.text}`, padding: '8px 4px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = maxStyle.bg; e.currentTarget.style.borderColor = maxStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = maxStyle.text; }}>
+                    <small className="d-block mb-1" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>최고가</small>
+                    <strong style={{ fontSize: '0.9rem', color: maxStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatTooltipPrice(stats.max)}</strong>
                   </div>
                 </div>
               </div>
@@ -767,39 +767,37 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
             {stats && (
               <div className="d-md-none mb-3">
-                <div className="row g-2 mb-2">
-                  <div className="col-4">
-                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: `2px solid ${chartColor}`, padding: '4px 2px' }}>
-                      <small className="d-block" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>현재가</small>
-                      <strong style={{ fontSize: '0.8rem', color: chartColor, fontWeight: '700' }}>{formatPrice(stats.current)}</strong>
+                <div className="d-flex gap-1" style={{ overflowX: 'auto', padding: '2px 0' }}>
+                  <div style={{ minWidth: '60px', flex: '1 1 0' }}>
+                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '6px', border: `1.5px solid ${chartColor}`, padding: '4px 2px' }}>
+                      <small className="d-block" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0px', marginBottom: '2px', whiteSpace: 'nowrap' }}>현재가</small>
+                      <strong style={{ fontSize: '0.65rem', color: chartColor, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatPrice(stats.current)}</strong>
                     </div>
                   </div>
-                  <div className="col-4">
-                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: `2px solid ${minStyle.text}`, padding: '4px 2px' }}>
-                      <small className="d-block" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최저가</small>
-                      <strong style={{ fontSize: '0.8rem', color: minStyle.text, fontWeight: '700' }}>{formatPrice(stats.min)}</strong>
-                    </div>
-                  </div>
-                  <div className="col-4">
-                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: `2px solid ${stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6'}`, padding: '4px 2px' }}>
-                      <small className="d-block" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.2px', marginBottom: '2px' }}>최저가 대비</small>
-                      <strong style={{ fontSize: '0.75rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+                  <div style={{ minWidth: '60px', flex: '1 1 0' }}>
+                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '6px', border: `1.5px solid ${stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6'}`, padding: '4px 2px' }}>
+                      <small className="d-block" style={{ fontSize: '0.48rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0px', marginBottom: '2px', whiteSpace: 'nowrap' }}>최저대비</small>
+                      <strong style={{ fontSize: '0.62rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', whiteSpace: 'nowrap' }}>
                         {stats.changeFromMin >= 0 ? '▲' : '▼'} {Math.abs(stats.changeFromMin).toFixed(1)}%
                       </strong>
                     </div>
                   </div>
-                </div>
-                <div className="row g-2">
-                  <div className="col-6">
-                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: `2px solid ${maxStyle.text}`, padding: '4px 2px' }}>
-                      <small className="d-block" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>최고가</small>
-                      <strong style={{ fontSize: '0.8rem', color: maxStyle.text, fontWeight: '700' }}>{formatPrice(stats.max)}</strong>
+                  <div style={{ minWidth: '60px', flex: '1 1 0' }}>
+                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '6px', border: `1.5px solid ${minStyle.text}`, padding: '4px 2px' }}>
+                      <small className="d-block" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0px', marginBottom: '2px', whiteSpace: 'nowrap' }}>최저가</small>
+                      <strong style={{ fontSize: '0.65rem', color: minStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatPrice(stats.min)}</strong>
                     </div>
                   </div>
-                  <div className="col-6">
-                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: `2px solid ${avgStyle.text}`, padding: '4px 2px' }}>
-                      <small className="d-block" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>평균가</small>
-                      <strong style={{ fontSize: '0.8rem', color: avgStyle.text, fontWeight: '700' }}>{formatPrice(Math.round(stats.avg))}</strong>
+                  <div style={{ minWidth: '60px', flex: '1 1 0' }}>
+                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '6px', border: `1.5px solid ${avgStyle.text}`, padding: '4px 2px' }}>
+                      <small className="d-block" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0px', marginBottom: '2px', whiteSpace: 'nowrap' }}>평균가</small>
+                      <strong style={{ fontSize: '0.65rem', color: avgStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatPrice(Math.round(stats.avg))}</strong>
+                    </div>
+                  </div>
+                  <div style={{ minWidth: '60px', flex: '1 1 0' }}>
+                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '6px', border: `1.5px solid ${maxStyle.text}`, padding: '4px 2px' }}>
+                      <small className="d-block" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0px', marginBottom: '2px', whiteSpace: 'nowrap' }}>최고가</small>
+                      <strong style={{ fontSize: '0.65rem', color: maxStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatPrice(stats.max)}</strong>
                     </div>
                   </div>
                 </div>

@@ -290,6 +290,39 @@ textarea:-ms-input-placeholder {
   color: var(--text-primary);
 }
 
+/* Badge Styles */
+.badge.bg-success,
+.badge.bg-success * {
+  --bs-badge-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.badge.bg-danger,
+.badge.bg-danger * {
+  --bs-badge-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.badge.bg-secondary,
+.badge.bg-secondary * {
+  --bs-badge-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* Light mode specific badge colors */
+:root .badge.bg-success,
+:root .badge.bg-danger,
+:root .badge.bg-secondary {
+  color: #ffffff !important;
+}
+
+/* Dark mode specific badge colors */
+[data-theme="dark"] .badge.bg-success,
+[data-theme="dark"] .badge.bg-danger,
+[data-theme="dark"] .badge.bg-secondary {
+  color: #ffffff !important;
+}
+
 /* Footer Styles */
 .footer-fixed {
   margin-top: 80px;
