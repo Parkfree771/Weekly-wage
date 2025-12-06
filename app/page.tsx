@@ -241,24 +241,23 @@ export default function Home() {
           {/* 간단한 기본 푸터 */}
           <Row className="justify-content-center text-center">
             <Col md={8}>
-              <div className="mb-2">
-                <p className="small mb-1" style={{ color: 'var(--text-muted)' }}>
-                  &copy; {new Date().getFullYear()} <strong style={{ color: 'var(--text-primary)' }}>로스트아크 골드 계산기</strong>
-                </p>
-                <div className="d-flex justify-content-center gap-3 mb-2">
-                  <a href="/privacy" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
-                    개인정보처리방침
-                  </a>
-                  <span style={{ color: 'var(--text-muted)' }}>|</span>
-                  <a href="/terms" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
-                    이용약관
-                  </a>
-                </div>
+              <p className="small mb-2" style={{ color: 'var(--text-muted)' }}>
+                &copy; {new Date().getFullYear()} <strong style={{ color: 'var(--text-primary)' }}>로스트아크 골드 계산기</strong>
+              </p>
+              <div className="d-flex justify-content-center align-items-center gap-2 gap-sm-3 flex-wrap">
+                <a href="/privacy" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
+                  개인정보처리방침
+                </a>
+                <span style={{ color: 'var(--text-muted)' }}>|</span>
+                <a href="/terms" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
+                  이용약관
+                </a>
+                <span style={{ color: 'var(--text-muted)' }}>|</span>
                 <Button
                   variant="link"
                   size="sm"
                   style={{ color: 'var(--text-muted)' }}
-                  className="p-0 border-0"
+                  className="p-0 border-0 small"
                   onClick={() => setFooterOpen(!footerOpen)}
                 >
                   {footerOpen ? '▲ 사이트 정보 접기' : '▼ 사이트 정보 더보기'}

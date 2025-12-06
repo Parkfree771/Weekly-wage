@@ -325,14 +325,14 @@ textarea:-ms-input-placeholder {
 
 /* Footer Styles */
 .footer-fixed {
-  margin-top: 80px;
-  padding: 30px 0;
+  margin-top: 60px;
+  padding: 20px 0;
   border-top: 1px solid var(--border-color);
 }
 
 @media (max-width: 768px) {
   .footer-fixed {
-    margin-top: 60px;
-    padding: 20px 0;
+    margin-top: 40px;
+    padding: 15px 0;
   }
 }
