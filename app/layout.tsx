@@ -73,6 +73,14 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
 
+        {/* Google AdSense */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944494802169618"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+
         {/* Google Analytics - 최적화된 로딩 */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-QBV4JHCBJF"
