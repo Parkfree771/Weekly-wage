@@ -1,12 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 import styles from './page.module.css';
+
+declare global {
+  interface Window {
+    adsbygoogle: any[];
+  }
+}
 
 // Dynamic imports로 코드 분할 - 초기 로딩 속도 개선
 const PriceChartContainer = dynamic(() => import('@/components/PriceChartContainer'), {
@@ -21,6 +27,14 @@ const PriceChartContainer = dynamic(() => import('@/components/PriceChartContain
 
 export default function Home() {
   const [footerOpen, setFooterOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (err) {
+      console.error('AdSense error:', err);
+    }
+  }, []);
 
   return (
     <div className={styles.mainContainer}>
@@ -198,6 +212,22 @@ export default function Home() {
                       경매장 가격 수집 빈도 차이로 인게임 가격과 다소 차이가 있을 수 있습니다. 추세 참고만 하시고 실제 가격은 인게임에서 확인 부탁드립니다.
                     </span>
                   </div>
+                </Col>
+              </Row>
+            </div>
+
+            {/* Google AdSense */}
+            <div className="mt-4 mb-3">
+              <Row className="justify-content-center">
+                <Col xl={9} lg={10} md={12}>
+                  <ins
+                    className="adsbygoogle"
+                    style={{ display: 'block' }}
+                    data-ad-client="ca-pub-6944494802169618"
+                    data-ad-slot="1234567890"
+                    data-ad-format="auto"
+                    data-full-width-responsive="true"
+                  />
                 </Col>
               </Row>
             </div>
