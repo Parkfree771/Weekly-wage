@@ -44,7 +44,11 @@
       "Bash(rm:*)",
       "Bash(npm cache clean:*)",
       "Bash(git log:*)",
-      "Bash(rd /s /q \"node_modules\\.cache\")"
+      "Bash(rd /s /q \"node_modules\\.cache\")",
+      "WebFetch(domain:ntl.fyi)",
+      "WebFetch(domain:www.netlify.com)",
+      "Bash(npx fix-react2shell-next)",
+      "Bash(npx fix-react2shell-next --fix)"
     ],
     "deny": [],
     "ask": []
