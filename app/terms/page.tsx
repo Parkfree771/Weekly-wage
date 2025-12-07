@@ -93,14 +93,74 @@ export default function TermsOfService() {
               <section className="mb-4">
                 <h2 className="h5 text-success mb-3">제9조 (약관의 변경)</h2>
                 <p>
-                  본 약관은 필요에 따라 변경될 수 있으며, 변경된 약관은 서비스에 
+                  본 약관은 필요에 따라 변경될 수 있으며, 변경된 약관은 서비스에
                   게시함으로써 효력을 발생합니다.
                 </p>
               </section>
 
-              <div className="alert alert-info mt-4">
-                <strong>알림:</strong> 본 서비스는 로스트아크 공식 서비스가 아니며, 
-                스마일게이트와 무관한 개인이 운영하는 팬사이트입니다.
+              <section className="mb-4">
+                <h2 className="h5 text-success mb-3">제10조 (데이터 출처 및 정확성)</h2>
+                <div className="bg-light p-3 rounded">
+                  <h6 className="fw-semibold mb-3">데이터 제공원</h6>
+                  <ul className="mb-3">
+                    <li><strong>로스트아크 공식 API:</strong> 캐릭터 정보, 레이드 보상, 거래소 가격 등</li>
+                    <li><strong>경매장 데이터:</strong> 게임 내 경매장에서 수집한 실시간 가격 정보</li>
+                    <li><strong>계산 알고리즘:</strong> 자체 개발한 골드 수익 및 손익 계산 시스템</li>
+                  </ul>
+                  <p className="small text-muted mb-0">
+                    ※ 모든 데이터는 참고용이며, 게임 업데이트나 API 변경에 따라 실제 게임 내 정보와
+                    차이가 있을 수 있습니다. 중요한 결정은 게임 내에서 직접 확인 후 진행하시기 바랍니다.
+                  </p>
+                </div>
+              </section>
+
+              <section className="mb-4">
+                <h2 className="h5 text-success mb-3">제11조 (서비스 이용료)</h2>
+                <p>
+                  본 서비스는 모든 사용자에게 무료로 제공됩니다. 단, 서비스 운영을 위해
+                  Google AdSense 광고가 게재되며, 이는 서비스 유지 및 개선을 위한 수익원으로 사용됩니다.
+                </p>
+                <ul>
+                  <li>모든 계산 기능은 무료로 제공됩니다</li>
+                  <li>회원가입 없이 모든 기능을 사용할 수 있습니다</li>
+                  <li>광고를 통해 서비스 운영비를 충당합니다</li>
+                </ul>
+              </section>
+
+              <section className="mb-4">
+                <h2 className="h5 text-success mb-3">제12조 (서비스 제공 시간)</h2>
+                <ul>
+                  <li>서비스는 연중무휴 24시간 제공을 원칙으로 합니다</li>
+                  <li>시스템 점검, 서버 업그레이드 등으로 인해 일시 중단될 수 있습니다</li>
+                  <li>로스트아크 공식 API 점검 시간에는 데이터 업데이트가 지연될 수 있습니다</li>
+                  <li>예기치 않은 시스템 장애 발생 시 복구까지 시간이 소요될 수 있습니다</li>
+                </ul>
+              </section>
+
+              <section className="mb-4">
+                <h2 className="h5 text-success mb-3">제13조 (금지행위)</h2>
+                <p>이용자는 다음 각 호의 행위를 해서는 안 됩니다:</p>
+                <ol>
+                  <li>서비스의 안정적 운영을 방해하는 행위 (과도한 API 호출, DDoS 공격 등)</li>
+                  <li>타인의 정보를 도용하거나 허위 정보를 입력하는 행위</li>
+                  <li>서비스를 통해 얻은 정보를 무단으로 상업적으로 이용하는 행위</li>
+                  <li>서비스의 소스코드를 무단으로 복제, 배포하는 행위</li>
+                  <li>법령 또는 본 약관을 위반하는 행위</li>
+                </ol>
+              </section>
+
+              <div className="alert alert-warning mt-4">
+                <h6 className="fw-semibold">중요 공지사항</h6>
+                <ul className="mb-0 small">
+                  <li>본 서비스는 로스트아크 공식 서비스가 아니며, 스마일게이트와 무관한 팬사이트입니다</li>
+                  <li>로스트아크, Lost Ark 및 관련 이미지는 스마일게이트 RPG의 등록 상표입니다</li>
+                  <li>본 사이트의 모든 계산 결과는 참고용이며, 실제 게임 플레이 시 차이가 있을 수 있습니다</li>
+                </ul>
+              </div>
+
+              <div className="alert alert-info mt-3">
+                <strong>약관 개정 안내:</strong> 약관이 변경되는 경우, 변경된 약관은 웹사이트에
+                공지하며, 변경된 약관의 시행일 이후 서비스를 계속 이용하는 경우 변경된 약관에 동의한 것으로 간주됩니다.
               </div>
 
               <div className="text-center mt-5">

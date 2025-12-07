@@ -1,18 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 import styles from './page.module.css';
-
-declare global {
-  interface Window {
-    adsbygoogle: any[];
-  }
-}
 
 // Dynamic imports로 코드 분할 - 초기 로딩 속도 개선
 const PriceChartContainer = dynamic(() => import('@/components/PriceChartContainer'), {
@@ -27,14 +21,6 @@ const PriceChartContainer = dynamic(() => import('@/components/PriceChartContain
 
 export default function Home() {
   const [footerOpen, setFooterOpen] = useState(false);
-
-  useEffect(() => {
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (err) {
-      console.error('AdSense error:', err);
-    }
-  }, []);
 
   return (
     <div className={styles.mainContainer}>
@@ -151,10 +137,12 @@ export default function Home() {
               </Row>
             </div>
 
-            {/* 가격 추이 그래프 섹션 */}
+            {/* 메인 콘텐츠와 사이드 광고 영역 */}
             <div className="mt-3">
               <Row className="justify-content-center">
-                <Col xl={9} lg={10} md={12}>
+                {/* 메인 콘텐츠 영역 */}
+                <Col xl={9} lg={8} md={12}>
+                  {/* 가격 추이 그래프 */}
                   <Card className="border-0 shadow-lg" style={{ borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent' }}>
                     <Card.Header
                       className="text-center py-2 border-0"
@@ -188,9 +176,6 @@ export default function Home() {
                       <PriceChartContainer />
                     </Card.Body>
                   </Card>
-                </Col>
-              </Row>
-            </div>
 
             {/* 가격 차이 안내 */}
             <div className="mt-3">
@@ -216,18 +201,48 @@ export default function Home() {
               </Row>
             </div>
 
-            {/* Google AdSense */}
-            <div className="mt-4 mb-3">
+            {/* 서비스 소개 섹션 */}
+            <div className="mt-4">
               <Row className="justify-content-center">
                 <Col xl={9} lg={10} md={12}>
-                  <ins
-                    className="adsbygoogle"
-                    style={{ display: 'block' }}
-                    data-ad-client="ca-pub-6944494802169618"
-                    data-ad-slot="1234567890"
-                    data-ad-format="auto"
-                    data-full-width-responsive="true"
-                  />
+                  <Card className="border-0 shadow-sm" style={{ borderRadius: '12px', backgroundColor: 'var(--card-body-bg-blue)' }}>
+                    <Card.Body className="p-3 p-md-4">
+                      <h2 className="h5 mb-3" style={{ color: 'var(--text-primary)', fontWeight: '600' }}>
+                        로스트아크 골드 계산기란?
+                      </h2>
+                      <p style={{ fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '1rem' }}>
+                        로스트아크 골드 계산기는 로스트아크 게임을 플레이하는 유저들을 위한 필수 도구입니다.
+                        원정대 전체 캐릭터의 주간 골드 수익을 자동으로 계산하고, 레이드 더보기 보상의 실시간 손익을 분석하여
+                        가장 효율적인 골드 파밍 전략을 제시합니다.
+                      </p>
+
+                      <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)', fontWeight: '600' }}>
+                        주요 기능
+                      </h3>
+                      <ul style={{ fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)', color: 'var(--text-secondary)', lineHeight: '1.8', paddingLeft: '1.2rem' }}>
+                        <li><strong>주간 골드 계산:</strong> 캐릭터명을 입력하면 원정대 전체의 주간 골드 수익을 자동으로 계산합니다.</li>
+                        <li><strong>더보기 손익 분석:</strong> 각 레이드의 더보기 보상을 현재 거래소 가격으로 환산하여 손익을 실시간으로 분석합니다.</li>
+                        <li><strong>T4 재련 비용 계산:</strong> 목표 레벨까지 필요한 재련 재료와 골드를 정확하게 계산해줍니다.</li>
+                        <li><strong>실시간 가격 추이:</strong> 주요 재료와 아이템의 거래소/경매장 가격 변동을 그래프로 확인할 수 있습니다.</li>
+                      </ul>
+
+                      <h3 className="h6 mb-2 mt-3" style={{ color: 'var(--text-primary)', fontWeight: '600' }}>
+                        데이터 출처
+                      </h3>
+                      <p style={{ fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '0.5rem' }}>
+                        모든 데이터는 로스트아크 공식 API를 통해 수집되며, 매시간 정각에 자동으로 업데이트됩니다.
+                        거래소 가격, 경매장 가격, 캐릭터 정보 등은 스마일게이트가 제공하는 공개 API를 통해 수집하여
+                        사용자에게 정확한 정보를 제공합니다.
+                      </p>
+
+                      <div className="mt-3 p-2 rounded" style={{ backgroundColor: 'var(--card-header-bg-blue)', fontSize: 'clamp(0.75rem, 1.6vw, 0.85rem)' }}>
+                        <p className="mb-0" style={{ color: 'var(--text-muted)' }}>
+                          <strong>※ 알림:</strong> 본 사이트는 로스트아크 공식 서비스가 아니며, 스마일게이트와 무관한 개인이 운영하는 팬사이트입니다.
+                          모든 계산 결과는 참고용이며, 실제 게임 내 상황과 다를 수 있습니다.
+                        </p>
+                      </div>
+                    </Card.Body>
+                  </Card>
                 </Col>
               </Row>
             </div>
