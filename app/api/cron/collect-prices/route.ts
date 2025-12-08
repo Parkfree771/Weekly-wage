@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { addTodayTempPrice, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson } from '@/lib/firestore-admin';
+import { addTodayTempPrice, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson, appendYesterdayToHistory } from '@/lib/firestore-admin';
 import { TRACKED_ITEMS, getItemsByCategory, ItemCategory } from '@/lib/items-to-track';
 
 // 자동 가격 수집 엔드포인트 (GitHub Actions용)
@@ -321,6 +321,24 @@ export async function GET(request: Request) {
     } catch (error: any) {
       errors.push({ message: '당일 데이터 확정 실패', error: error.message });
       console.error(`[5시대] 경매장 당일 데이터 확정 실패:`, error);
+    }
+  }
+
+  // ========================================================================
+  // 히스토리 JSON 업데이트 (06시 또는 수요일 10시)
+  // ========================================================================
+  // 날짜 변경 시점에 어제 확정 데이터를 history_all.json에 추가
+  const shouldAppendHistory = shouldSaveMarketYesterday; // 06시 또는 수요일 10시
+
+  if (shouldAppendHistory) {
+    try {
+      console.log('[Cron] 히스토리 JSON 업데이트 시작...');
+      await appendYesterdayToHistory();
+      results.push({ message: '히스토리 JSON 업데이트 완료' });
+    } catch (error: any) {
+      console.error('[Cron] 히스토리 JSON 업데이트 실패:', error);
+      errors.push({ message: '히스토리 JSON 업데이트 실패', error: error.message });
+      // 히스토리 업데이트 실패해도 크론 작업은 계속 진행
     }
   }
 

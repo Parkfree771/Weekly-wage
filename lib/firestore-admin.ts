@@ -432,3 +432,190 @@ export async function generateAndUploadPriceJson(): Promise<void> {
     // 대신 로그만 남기고 계속 진행
   }
 }
+
+/**
+ * 전체 히스토리 JSON 생성 (초기 마이그레이션용)
+ *
+ * dailyPrices 컬렉션의 모든 과거 확정 데이터를 history_all.json으로 생성
+ * 한 번만 실행하면 됨 (또는 전체 재생성 필요할 때)
+ */
+export async function generateHistoryJson(): Promise<void> {
+  try {
+    const db = getAdminFirestore();
+    const storage = getAdminStorage();
+
+    console.log('[generateHistoryJson] 전체 히스토리 생성 시작...');
+
+    // dailyPrices 컬렉션에서 모든 데이터 조회
+    const snapshot = await db.collection('dailyPrices').get();
+
+    // 아이템별로 그룹화: { itemId: [{date, price}, ...] }
+    const historyByItem: Record<string, Array<{date: string, price: number}>> = {};
+
+    snapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      const itemId = data.itemId;
+      const date = data.date; // YYYY-MM-DD
+      const price = data.price;
+
+      if (!itemId || !date || price === undefined) {
+        return; // 유효하지 않은 데이터 건너뛰기
+      }
+
+      if (!historyByItem[itemId]) {
+        historyByItem[itemId] = [];
+      }
+
+      historyByItem[itemId].push({ date, price });
+    });
+
+    // 각 아이템의 히스토리를 날짜순 정렬
+    Object.keys(historyByItem).forEach(itemId => {
+      historyByItem[itemId].sort((a, b) => a.date.localeCompare(b.date));
+    });
+
+    console.log(`[generateHistoryJson] ${Object.keys(historyByItem).length}개 아이템 히스토리 생성 완료`);
+
+    // JSON 문자열 생성
+    const jsonContent = JSON.stringify(historyByItem, null, 2);
+
+    // Firebase Storage에 업로드
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+    if (!bucketName) {
+      throw new Error('FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
+    }
+
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file('history_all.json');
+
+    await file.save(jsonContent, {
+      metadata: {
+        contentType: 'application/json',
+        cacheControl: 'public, max-age=3600, must-revalidate', // 1시간 캐싱
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          itemCount: String(Object.keys(historyByItem).length),
+        },
+      },
+    });
+
+    await file.makePublic();
+
+    const publicUrl = `https://storage.googleapis.com/${bucketName}/history_all.json`;
+    console.log(`[generateHistoryJson] 업로드 완료: ${publicUrl}`);
+    console.log(`[generateHistoryJson] 파일 크기: ${(jsonContent.length / 1024).toFixed(2)} KB`);
+
+  } catch (error) {
+    console.error('[generateHistoryJson] 히스토리 JSON 생성 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 어제 확정 데이터를 history_all.json에 추가
+ *
+ * 매일 06시 (또는 수요일 10시)에 실행
+ * 1. 현재 history_all.json 다운로드
+ * 2. 어제 확정된 dailyPrices 데이터 추가
+ * 3. 다시 업로드
+ */
+export async function appendYesterdayToHistory(): Promise<void> {
+  try {
+    const db = getAdminFirestore();
+    const storage = getAdminStorage();
+
+    console.log('[appendYesterdayToHistory] 어제 데이터 추가 시작...');
+
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+    if (!bucketName) {
+      throw new Error('FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
+    }
+
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file('history_all.json');
+
+    // 1. 기존 history_all.json 다운로드
+    let historyByItem: Record<string, Array<{date: string, price: number}>> = {};
+
+    try {
+      const [contents] = await file.download();
+      historyByItem = JSON.parse(contents.toString());
+      console.log(`[appendYesterdayToHistory] 기존 히스토리 로드 완료: ${Object.keys(historyByItem).length}개 아이템`);
+    } catch (error: any) {
+      if (error.code === 404) {
+        console.log('[appendYesterdayToHistory] history_all.json 없음. 새로 생성합니다.');
+        historyByItem = {};
+      } else {
+        throw error;
+      }
+    }
+
+    // 2. 어제 날짜 계산
+    const lostArkToday = getLostArkDate();
+    const yesterday = new Date(lostArkToday);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = formatDateKey(yesterday);
+
+    console.log(`[appendYesterdayToHistory] 어제 날짜: ${yesterdayKey}`);
+
+    // 3. dailyPrices에서 어제 데이터 조회
+    const snapshot = await db.collection('dailyPrices')
+      .where('date', '==', yesterdayKey)
+      .get();
+
+    let addedCount = 0;
+
+    snapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      const itemId = data.itemId;
+      const price = data.price;
+
+      if (!itemId || price === undefined) {
+        return;
+      }
+
+      // 해당 아이템 히스토리가 없으면 생성
+      if (!historyByItem[itemId]) {
+        historyByItem[itemId] = [];
+      }
+
+      // 이미 같은 날짜 데이터가 있는지 확인 (중복 방지)
+      const exists = historyByItem[itemId].some(entry => entry.date === yesterdayKey);
+      if (!exists) {
+        historyByItem[itemId].push({ date: yesterdayKey, price });
+        addedCount++;
+      }
+    });
+
+    // 4. 각 아이템 히스토리 날짜순 정렬
+    Object.keys(historyByItem).forEach(itemId => {
+      historyByItem[itemId].sort((a, b) => a.date.localeCompare(b.date));
+    });
+
+    console.log(`[appendYesterdayToHistory] ${addedCount}개 아이템 데이터 추가 완료`);
+
+    // 5. JSON 업로드
+    const jsonContent = JSON.stringify(historyByItem, null, 2);
+
+    await file.save(jsonContent, {
+      metadata: {
+        contentType: 'application/json',
+        cacheControl: 'public, max-age=3600, must-revalidate',
+        metadata: {
+          updatedAt: new Date().toISOString(),
+          lastAppendedDate: yesterdayKey,
+          itemCount: String(Object.keys(historyByItem).length),
+        },
+      },
+    });
+
+    await file.makePublic();
+
+    console.log(`[appendYesterdayToHistory] 업로드 완료`);
+    console.log(`[appendYesterdayToHistory] 파일 크기: ${(jsonContent.length / 1024).toFixed(2)} KB`);
+
+  } catch (error) {
+    console.error('[appendYesterdayToHistory] 어제 데이터 추가 실패:', error);
+    // 에러를 throw하지 않음 - 크론 작업 전체가 실패하지 않도록
+  }
+}
