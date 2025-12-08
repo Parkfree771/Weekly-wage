@@ -124,7 +124,7 @@ export default function ItemSelector({
     <div>
       {/* 카테고리 탭 - 데스크톱 */}
       <div className="mb-3 d-none d-md-block">
-        <div className="d-flex gap-3 justify-content-center">
+        <div className="d-flex gap-3 justify-content-center" style={{ maxWidth: '1400px', margin: '0 auto' }}>
           {CATEGORY_ORDER.map((cat) => (
             <button
               key={cat}
@@ -194,8 +194,10 @@ export default function ItemSelector({
       {showItems && <div className="mb-3 d-none d-md-block">
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
           gap: '12px',
+          maxWidth: '1400px',
+          margin: '0 auto'
         }}>
           {categoryItems.map((item) => {
             const categoryStyle = CATEGORY_STYLES[selectedCategory];

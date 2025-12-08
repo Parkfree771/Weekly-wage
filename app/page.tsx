@@ -138,7 +138,7 @@ export default function Home() {
             </div>
 
             {/* 가격 추이 그래프 */}
-            <Card className="border-0 shadow-lg mb-3" style={{ borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent' }}>
+            <Card className="border-0 shadow-lg mb-3" style={{ borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent', maxWidth: '1400px', margin: '0 auto 1rem auto' }}>
               <Card.Header
                 className="text-center py-2 border-0"
                 style={{
