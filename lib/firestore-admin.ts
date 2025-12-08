@@ -1,5 +1,5 @@
 // Firestore Admin 헬퍼 함수들 (서버 사이드 전용)
-import { getAdminFirestore, Timestamp, FieldValue } from './firebase-admin';
+import { getAdminFirestore, getAdminStorage, Timestamp, FieldValue } from './firebase-admin';
 
 // 가격 데이터 타입
 export type PriceEntry = {
@@ -348,5 +348,87 @@ export async function getDailyPriceHistory(
   } catch (error) {
     console.error('일별 가격 히스토리 조회 오류:', error);
     throw error;
+  }
+}
+
+/**
+ * todayTemp의 모든 가격 데이터를 JSON으로 생성하여 Firebase Storage에 업로드
+ *
+ * 동작 방식:
+ * 1. todayTemp 컬렉션의 모든 문서 조회
+ * 2. 경매장 아이템: prices 배열의 평균 계산
+ * 3. 거래소 아이템: prices[0] 값 사용 (이미 평균값)
+ * 4. { itemId: price, ... } 형태의 JSON 생성
+ * 5. Firebase Storage의 latest_prices.json에 업로드 (Public 권한)
+ */
+export async function generateAndUploadPriceJson(): Promise<void> {
+  try {
+    const db = getAdminFirestore();
+    const storage = getAdminStorage();
+
+    console.log('[generateAndUploadPriceJson] 시작...');
+
+    // 1. todayTemp 컬렉션에서 모든 가격 데이터 조회
+    const snapshot = await db.collection('todayTemp').get();
+    const prices: Record<string, number> = {};
+    let itemCount = 0;
+
+    // 2. 각 아이템의 평균 가격 계산
+    snapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      const itemId = data.itemId;
+
+      if (!itemId || !data.prices || !Array.isArray(data.prices) || data.prices.length === 0) {
+        return; // 유효하지 않은 데이터는 건너뛰기
+      }
+
+      // 평균 계산
+      const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
+
+      // 반올림 로직 (아비도스 융화재료는 소수점 첫째 자리까지)
+      const roundedPrice = itemId === '6861012'
+        ? Math.round(avgPrice * 10) / 10
+        : Math.round(avgPrice);
+
+      prices[itemId] = roundedPrice;
+      itemCount++;
+    });
+
+    console.log(`[generateAndUploadPriceJson] ${itemCount}개 아이템 가격 계산 완료`);
+
+    // 3. JSON 문자열 생성
+    const jsonContent = JSON.stringify(prices, null, 2); // 가독성을 위해 pretty-print
+
+    // 4. Firebase Storage에 업로드
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+    if (!bucketName) {
+      throw new Error('FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
+    }
+
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file('latest_prices.json');
+
+    await file.save(jsonContent, {
+      metadata: {
+        contentType: 'application/json',
+        cacheControl: 'public, max-age=60, must-revalidate', // 1분 캐싱
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          itemCount: String(itemCount),
+        },
+      },
+    });
+
+    // 5. 공개 URL 생성
+    await file.makePublic();
+
+    const publicUrl = `https://storage.googleapis.com/${bucketName}/latest_prices.json`;
+    console.log(`[generateAndUploadPriceJson] 업로드 완료: ${publicUrl}`);
+    console.log(`[generateAndUploadPriceJson] 파일 크기: ${(jsonContent.length / 1024).toFixed(2)} KB`);
+
+  } catch (error) {
+    console.error('[generateAndUploadPriceJson] JSON 생성/업로드 실패:', error);
+    // 에러를 throw하지 않음 - 크론 작업 전체가 실패하지 않도록
+    // 대신 로그만 남기고 계속 진행
   }
 }

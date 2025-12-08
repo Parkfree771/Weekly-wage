@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { addTodayTempPrice, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice } from '@/lib/firestore-admin';
+import { addTodayTempPrice, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson } from '@/lib/firestore-admin';
 import { TRACKED_ITEMS, getItemsByCategory, ItemCategory } from '@/lib/items-to-track';
 
 // 자동 가격 수집 엔드포인트 (GitHub Actions용)
@@ -322,6 +322,21 @@ export async function GET(request: Request) {
       errors.push({ message: '당일 데이터 확정 실패', error: error.message });
       console.error(`[5시대] 경매장 당일 데이터 확정 실패:`, error);
     }
+  }
+
+  // ========================================================================
+  // JSON 파일 생성 및 Storage 업로드
+  // ========================================================================
+  // 모든 데이터 수집이 완료된 후 latest_prices.json 생성
+  // 주의: 모든 아이템 저장이 완료된 후에 실행됨 (await Promise.all 보장됨)
+  try {
+    console.log('[Cron] JSON 파일 생성 시작...');
+    await generateAndUploadPriceJson();
+    results.push({ message: 'JSON 파일 생성 및 업로드 완료' });
+  } catch (error: any) {
+    console.error('[Cron] JSON 생성 실패:', error);
+    errors.push({ message: 'JSON 생성 실패', error: error.message });
+    // JSON 생성 실패해도 크론 작업은 성공으로 간주
   }
 
   return NextResponse.json({

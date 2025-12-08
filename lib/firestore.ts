@@ -366,3 +366,80 @@ export async function getDailyPriceHistory(
     throw error;
   }
 }
+
+/**
+ * Firebase Storage에서 latest_prices.json 다운로드
+ *
+ * 캐시 버스팅: ?t=${Date.now()}를 URL에 추가하여 항상 최신 데이터 가져오기
+ *
+ * @returns { [itemId: string]: number } - 아이템 ID를 키로 하는 가격 객체
+ */
+export async function getPricesFromJson(): Promise<Record<string, number>> {
+  try {
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+    if (!bucketName) {
+      throw new Error('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
+    }
+
+    // 캐시 버스팅: 현재 시간을 쿼리 파라미터로 추가
+    const timestamp = Date.now();
+    const url = `https://storage.googleapis.com/${bucketName}/latest_prices.json?t=${timestamp}`;
+
+    console.log(`[getPricesFromJson] Fetching: ${url}`);
+
+    const response = await fetch(url, {
+      cache: 'no-store', // 브라우저 캐시 비활성화
+      headers: {
+        'Cache-Control': 'no-cache',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const prices: Record<string, number> = await response.json();
+    console.log(`[getPricesFromJson] ${Object.keys(prices).length}개 아이템 가격 로드 완료`);
+
+    return prices;
+  } catch (error) {
+    console.error('[getPricesFromJson] JSON 다운로드 실패:', error);
+    throw error;
+  }
+}
+
+/**
+ * 특정 아이템의 가격 조회 (JSON 기반)
+ */
+export async function getItemPriceFromJson(itemId: string): Promise<number | null> {
+  try {
+    const prices = await getPricesFromJson();
+    return prices[itemId] ?? null;
+  } catch (error) {
+    console.error(`[getItemPriceFromJson] 아이템 ${itemId} 가격 조회 실패:`, error);
+    return null;
+  }
+}
+
+/**
+ * 여러 아이템의 가격 조회 (JSON 기반)
+ */
+export async function getMultipleItemPricesFromJson(itemIds: string[]): Promise<Map<string, number>> {
+  const priceMap = new Map<string, number>();
+
+  try {
+    const prices = await getPricesFromJson();
+
+    itemIds.forEach(itemId => {
+      const price = prices[itemId];
+      if (price !== undefined) {
+        priceMap.set(itemId, price);
+      }
+    });
+
+    return priceMap;
+  } catch (error) {
+    console.error('[getMultipleItemPricesFromJson] 가격 조회 실패:', error);
+    return priceMap; // 빈 Map 반환
+  }
+}
