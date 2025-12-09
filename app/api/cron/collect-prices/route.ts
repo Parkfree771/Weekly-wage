@@ -85,7 +85,7 @@ export async function GET(request: Request) {
   // - 시간 범위를 05:59까지 허용: API 지연, 서버 부하 등으로 작업이 늦게 끝날 수 있음
   // - 06:10부터는 새로운 날짜의 todayTemp 수집 시작
   // - 수요일: 06:10~09:10은 점검으로 건너뛰고, 10:10부터 수집 재개
-  //   → 평일 24개 vs 수요일 전날 20개 (화요일 10:10 ~ 수요일 05:10)
+  //   → 평일 24개 vs 수요일 20개 (수요일 10:10 ~ 목요일 05:10)
   const shouldFinalizeAuctionYesterday = isAt5AM && (typeFilter === 'auction' || typeFilter === null);
 
   // ========================================================================
