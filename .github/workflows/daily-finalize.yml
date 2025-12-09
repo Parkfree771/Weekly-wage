@@ -1,0 +1,32 @@
+name: Daily Data Finalize
+
+on:
+  schedule:
+    # 매일 한국 시간 오전 6시 10분 (UTC 21:10, 전날)
+    - cron: '10 21 * * *'
+  # 수동 실행
+  workflow_dispatch:
+
+jobs:
+  finalize-yesterday:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Finalize yesterday's data and update history
+        run: |
+          echo "Finalizing yesterday's data..."
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/finalize-daily" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -v
+
+      - name: Wait for finalization
+        run: sleep 10
+
+      - name: Append to history_all.json
+        run: |
+          echo "Appending to history_all.json..."
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/append-history" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -v
