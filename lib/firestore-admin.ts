@@ -272,7 +272,7 @@ export async function finalizeYesterdayData(useToday: boolean = false): Promise<
 
 /**
  * 일별 가격 히스토리 조회 (차트용)
- * 확정된 전날 평균가 + 오늘의 누적 평균(임시)를 함께 반환
+ * Firebase Storage의 JSON 파일에서 데이터 읽기 (Firestore 읽기 0회)
  * @param days - 조회할 일수 (기본 30일, 최대 365일 가능)
  */
 export async function getDailyPriceHistory(
@@ -280,63 +280,80 @@ export async function getDailyPriceHistory(
   days: number = 30
 ): Promise<PriceEntry[]> {
   try {
-    const db = getAdminFirestore();
+    const storage = getAdminStorage();
     const history: PriceEntry[] = [];
 
-    // 1. 확정된 일별 평균가 조회 (인덱스 문제 방지를 위해 orderBy 제거)
-    const dailySnapshot = await db.collection(DAILY_PRICE_COLLECTION)
-      .where('itemId', '==', itemId)
-      .get();
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+    if (!bucketName) {
+      throw new Error('FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
+    }
 
-    dailySnapshot.docs.forEach((doc) => {
-      const data = doc.data();
-      // date 필드를 사용하여 정확한 날짜로 timestamp 생성
-      const dateStr = data.date; // YYYY-MM-DD 형식
-      // UTC 기준 00:00:00으로 timestamp 생성 (날짜 보존)
-      const [year, month, day] = dateStr.split('-').map(Number);
-      const utcDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-      const timestamp = Timestamp.fromDate(utcDate);
+    const bucket = storage.bucket(bucketName);
 
-      // 100골드 이하는 소수점 첫째 자리까지, 나머지는 정수
-      const price = data.price < 100
-        ? Math.round(data.price * 10) / 10
-        : Math.round(data.price);
+    // 1. history_all.json에서 과거 확정 데이터 조회
+    try {
+      const historyFile = bucket.file('history_all.json');
+      const [historyContents] = await historyFile.download();
+      const historyByItem: Record<string, Array<{date: string, price: number}>> = JSON.parse(historyContents.toString());
 
-      history.push({
-        itemId: data.itemId,
-        itemName: data.itemName,
-        price: price,
-        timestamp: timestamp,
-        date: dateStr, // YYYY-MM-DD 형식 추가
+      // 해당 아이템의 히스토리 가져오기
+      const itemHistory = historyByItem[itemId] || [];
+
+      itemHistory.forEach((entry) => {
+        const dateStr = entry.date; // YYYY-MM-DD
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const utcDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        const timestamp = Timestamp.fromDate(utcDate);
+
+        history.push({
+          itemId: itemId,
+          price: entry.price,
+          timestamp: timestamp,
+          date: dateStr,
+        });
       });
-    });
 
-    // 2. 오늘의 임시 데이터가 있으면 누적 평균 추가
-    const lostArkDate = getLostArkDate();
-    const todayKey = formatDateKey(lostArkDate);
-    const todayDocRef = db.collection(TODAY_TEMP_COLLECTION).doc(`${itemId}_${todayKey}`);
-    const todayDoc = await todayDocRef.get();
+      console.log(`[getDailyPriceHistory] ${itemId}: history_all.json에서 ${itemHistory.length}개 과거 데이터 로드`);
+    } catch (error: any) {
+      if (error.code === 404) {
+        console.log('[getDailyPriceHistory] history_all.json 파일이 없습니다.');
+      } else {
+        console.error('[getDailyPriceHistory] history_all.json 읽기 오류:', error);
+      }
+    }
 
-    if (todayDoc.exists) {
-      const data = todayDoc.data();
-      if (data && data.prices && data.prices.length > 0) {
-        const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
-        // 100골드 이하는 소수점 첫째 자리까지, 나머지는 정수
-        const roundedAvgPrice = avgPrice < 100
-          ? Math.round(avgPrice * 10) / 10
-          : Math.round(avgPrice);
-        // UTC 기준 00:00:00으로 timestamp 생성 (날짜 보존)
+    // 2. latest_prices.json에서 오늘 데이터 추가
+    try {
+      const latestFile = bucket.file('latest_prices.json');
+      const [latestContents] = await latestFile.download();
+      const latestPrices: Record<string, number> = JSON.parse(latestContents.toString());
+
+      const todayPrice = latestPrices[itemId];
+      if (todayPrice !== undefined) {
+        const lostArkDate = getLostArkDate();
+        const todayKey = formatDateKey(lostArkDate);
+
         const [year, month, day] = todayKey.split('-').map(Number);
         const todayUtc = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
         const todayTimestamp = Timestamp.fromDate(todayUtc);
 
-        history.push({
-          itemId: data.itemId,
-          itemName: data.itemName,
-          price: roundedAvgPrice,
-          timestamp: todayTimestamp,
-          date: todayKey, // YYYY-MM-DD 형식 추가
-        });
+        // 오늘 날짜가 history에 이미 있는지 확인 (중복 방지)
+        const alreadyExists = history.some(entry => entry.date === todayKey);
+        if (!alreadyExists) {
+          history.push({
+            itemId: itemId,
+            price: todayPrice,
+            timestamp: todayTimestamp,
+            date: todayKey,
+          });
+          console.log(`[getDailyPriceHistory] ${itemId}: 오늘 데이터 추가 (${todayKey}: ${todayPrice}G)`);
+        }
+      }
+    } catch (error: any) {
+      if (error.code === 404) {
+        console.log('[getDailyPriceHistory] latest_prices.json 파일이 없습니다.');
+      } else {
+        console.error('[getDailyPriceHistory] latest_prices.json 읽기 오류:', error);
       }
     }
 
