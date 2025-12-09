@@ -25,25 +25,22 @@ export default function PriceChart({ itemIds, title = '가격 추이' }: PriceCh
         setLoading(true);
         setError(null);
 
-        // 모든 아이템의 가격 히스토리 가져오기
-        const promises = itemIds.map(item =>
-          fetch(`/api/market/price-history/${item.id}?noCache=true`)
-            .then(res => res.json())
-            .then(data => ({ ...item, history: data.history || [] }))
-        );
-
-        const results = await Promise.all(promises);
+        // Firebase Storage에서 직접 JSON 다운로드하여 모든 아이템 가격 히스토리 가져오기
+        const { getMultipleItemPriceHistory } = await import('@/lib/price-history-client');
+        const itemIdList = itemIds.map(item => item.id);
+        const historyByItem = await getMultipleItemPriceHistory(itemIdList, 30);
 
         // 날짜별로 데이터 병합
         const dateMap = new Map<string, any>();
 
-        results.forEach(result => {
-          result.history.forEach((entry: PriceHistory) => {
+        itemIds.forEach(item => {
+          const history = historyByItem[item.id] || [];
+          history.forEach((entry: PriceHistory) => {
             if (!dateMap.has(entry.date)) {
               dateMap.set(entry.date, { date: entry.date });
             }
             const dateEntry = dateMap.get(entry.date);
-            dateEntry[result.id] = entry.price;
+            dateEntry[item.id] = entry.price;
           });
         });
 

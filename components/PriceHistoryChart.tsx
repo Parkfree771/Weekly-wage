@@ -34,9 +34,10 @@ export default function PriceHistoryChart({
     try {
       setLoading(true);
       setError(null);
-      // 모든 데이터를 가져오기 (최대 999일)
-      const response = await axios.get(`/api/market/price-history/${itemId}?days=999`);
-      setHistory(response.data.history || []);
+      // Firebase Storage에서 직접 JSON 다운로드 (최대 999일)
+      const { getItemPriceHistory } = await import('@/lib/price-history-client');
+      const priceHistory = await getItemPriceHistory(itemId, 999);
+      setHistory(priceHistory);
     } catch (err: any) {
       console.error('가격 히스토리 조회 오류:', err);
       setError('가격 히스토리를 불러오는데 실패했습니다.');

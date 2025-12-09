@@ -46,15 +46,10 @@ export default function PriceChartContainer() {
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        // 모든 데이터를 가져와서 클라이언트에서 필터링 (최대 999일)
-        const response = await fetch(`/api/market/price-history/${selectedItem.id}?days=999`);
-        if (response.ok) {
-          const data = await response.json();
-          setHistory(data.history || []);
-        } else {
-          console.error('Failed to fetch price history:', response.status);
-          setHistory([]);
-        }
+        // Firebase Storage에서 직접 JSON 다운로드 (최대 999일)
+        const { getItemPriceHistory } = await import('@/lib/price-history-client');
+        const priceHistory = await getItemPriceHistory(selectedItem.id, 999);
+        setHistory(priceHistory);
       } catch (err) {
         console.error('Error fetching price history:', err);
         setHistory([]);
