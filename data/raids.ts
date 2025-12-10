@@ -35,66 +35,66 @@ export const raids = [
     name: '3막 하드',
     level: 1700,
     gates: [
-      { gate: 1, gold: 7000, moreGold: 2700 },
-      { gate: 2, gold: 11000, moreGold: 4100 },
-      { gate: 3, gold: 20000, moreGold: 5800 },
+      { gate: 1, gold: 5000, moreGold: 1650 },
+      { gate: 2, gold: 8000, moreGold: 2640 },
+      { gate: 3, gold: 14000, moreGold: 4060 },
     ],
   },
   {
     name: '3막 노말',
     level: 1680,
     gates: [
-      { gate: 1, gold: 6000, moreGold: 2400 },
-      { gate: 2, gold: 9500, moreGold: 3200 },
-      { gate: 3, gold: 12500, moreGold: 4200 },
+      { gate: 1, gold: 4000, moreGold: 1300 },
+      { gate: 2, gold: 7000, moreGold: 2350 },
+      { gate: 3, gold: 10000, moreGold: 3360 },
     ],
   },
   {
     name: '2막 하드',
     level: 1690,
     gates: [
-      { gate: 1, gold: 10000, moreGold: 4500 },
-      { gate: 2, gold: 20500, moreGold: 7200 },
+      { gate: 1, gold: 7500, moreGold: 2400 },
+      { gate: 2, gold: 15500, moreGold: 5100 },
     ],
   },
   {
     name: '2막 노말',
     level: 1670,
     gates: [
-      { gate: 1, gold: 7250, moreGold: 3240 },
-      { gate: 2, gold: 14250, moreGold: 4830 },
+      { gate: 1, gold: 5500, moreGold: 1820 },
+      { gate: 2, gold: 11000, moreGold: 3720 },
     ],
   },
   {
     name: '1막 하드',
     level: 1680,
     gates: [
-      { gate: 1, gold: 8000, moreGold: 3640 },
-      { gate: 2, gold: 16500, moreGold: 5880 },
+      { gate: 1, gold: 5500, moreGold: 1820 },
+      { gate: 2, gold: 12500, moreGold: 4150 },
     ],
   },
   {
     name: '1막 노말',
     level: 1660,
     gates: [
-      { gate: 1, gold: 4750, moreGold: 1030 },
-      { gate: 2, gold: 10750, moreGold: 2400 },
+      { gate: 1, gold: 3500, moreGold: 750 },
+      { gate: 2, gold: 8000, moreGold: 1780 },
     ],
   },
   {
     name: '서막',
     level: 1640,
     gates: [
-      { gate: 1, gold: 2800, moreGold: 920 },
-      { gate: 2, gold: 6000, moreGold: 1960 },
+      { gate: 1, gold: 2200, moreGold: 720 },
+      { gate: 2, gold: 5000, moreGold: 1630 },
     ],
   },
   {
     name: '베히모스',
     level: 1640,
     gates: [
-      { gate: 1, gold: 2800, moreGold: 920 },
-      { gate: 2, gold: 6000, moreGold: 1960 },
+      { gate: 1, gold: 2200, moreGold: 720 },
+      { gate: 2, gold: 5000, moreGold: 1630 },
     ],
   },
 ];
