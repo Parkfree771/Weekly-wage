@@ -257,13 +257,13 @@ export async function finalizeYesterdayData(useToday: boolean = false): Promise<
         console.log(`  확정: ${data.itemName} - ${data.prices.length}개 평균 = ${roundedAvgPrice}G`);
         count++;
 
-        // 확정 후 todayTemp 문서 삭제 (선택사항)
-        // batch.delete(doc.ref);
+        // 확정 후 todayTemp 문서 삭제 (데이터 안전성 확보 후 삭제)
+        batch.delete(doc.ref);
       }
     });
 
     await batch.commit();
-    console.log(`[finalizeYesterdayData] 완료: ${count}개 아이템 데이터 확정`);
+    console.log(`[finalizeYesterdayData] 완료: ${count}개 아이템 데이터 확정 및 todayTemp에서 삭제`);
   } catch (error) {
     console.error('전날 데이터 확정 오류:', error);
     throw error;
@@ -385,15 +385,38 @@ export async function generateAndUploadPriceJson(): Promise<void> {
 
     console.log('[generateAndUploadPriceJson] 시작...');
 
-    // 1. todayTemp 컬렉션에서 모든 가격 데이터 조회
+    // 로스트아크 기준 오늘 날짜
+    const today = getLostArkDate();
+    const todayKey = formatDateKey(today);
+
+    console.log(`[generateAndUploadPriceJson] 오늘 날짜: ${todayKey}`);
+
+    // 1. todayTemp 컬렉션에서 오늘 날짜 데이터만 조회 (성능 최적화)
     const snapshot = await db.collection('todayTemp').get();
     const prices: Record<string, number> = {};
     let itemCount = 0;
+    let skippedCount = 0;
 
-    // 2. 각 아이템의 평균 가격 계산
+    // 2. 각 아이템의 평균 가격 계산 (오늘 날짜만)
     snapshot.docs.forEach((doc) => {
       const data = doc.data();
+      const docId = doc.id;
       const itemId = data.itemId;
+
+      // 문서 ID에서 날짜 추출
+      const dateMatch = docId.match(/_(\d{4}-\d{2}-\d{2})$/);
+      if (!dateMatch) {
+        skippedCount++;
+        return;
+      }
+
+      const docDate = dateMatch[1];
+
+      // 오늘 날짜가 아니면 건너뛰기 (오래된 데이터 무시)
+      if (docDate !== todayKey) {
+        skippedCount++;
+        return;
+      }
 
       if (!itemId || !data.prices || !Array.isArray(data.prices) || data.prices.length === 0) {
         return; // 유효하지 않은 데이터는 건너뛰기
@@ -411,7 +434,7 @@ export async function generateAndUploadPriceJson(): Promise<void> {
       itemCount++;
     });
 
-    console.log(`[generateAndUploadPriceJson] ${itemCount}개 아이템 가격 계산 완료`);
+    console.log(`[generateAndUploadPriceJson] ${itemCount}개 아이템 가격 계산 완료 (${skippedCount}개 오래된 데이터 건너뜀)`);
 
     // 3. JSON 문자열 생성
     const jsonContent = JSON.stringify(prices, null, 2); // 가독성을 위해 pretty-print

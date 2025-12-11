@@ -577,7 +577,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         interval = 30; // 30일 간격
         break;
       case 'all':
-        interval = 60; // 60일 간격
+        interval = 30; // 30일 간격 (약 1개월)
         break;
       default:
         interval = 1;
