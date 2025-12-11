@@ -14,7 +14,6 @@ import {
 } from '../../lib/refiningData';
 import {
   calculateAdvancedRefiningMaterials,
-  T4_MATERIAL_PRICES,
   type AdvancedRefiningOptions as NewAdvancedRefiningOptions
 } from '../../lib/advancedRefiningData';
 import {
@@ -993,6 +992,22 @@ export default function RefiningCalculator() {
         <>
           {/* 캐릭터 정보 헤더 */}
           {/* 부위별 목표 레벨 설정 */}
+          {/* 업데이트 안내 */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginBottom: '0.5rem'
+          }}>
+            <span style={{
+              fontSize: 'clamp(0.65rem, 1.5vw, 0.75rem)',
+              color: 'var(--text-secondary)',
+              opacity: 0.7,
+              fontWeight: '500'
+            }}>
+              25년 12월 10일 재련 재료 & 비용 완화 업데이트 완료
+            </span>
+          </div>
+
           <Card className="mb-4" style={{
             backgroundColor: 'var(--card-bg)',
             border: '1px solid var(--border-color)',
