@@ -988,45 +988,46 @@ export default function RefiningCalculator() {
 
 
       {/* 장비 정보 및 목표 레벨 설정 */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(0.25rem, 2vw, 1.5rem)' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(0.25rem, 2vw, 1.5rem)', marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
         <>
           {/* 캐릭터 정보 헤더 */}
           {/* 부위별 목표 레벨 설정 */}
-          <Card className="mb-4" style={{
-            backgroundColor: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '16px',
-            overflow: 'hidden',
-            boxShadow: 'var(--shadow-lg)'
-          }}>
-            <Card.Header style={{
-              background: 'var(--card-body-bg-blue)',
-              borderBottom: '1px solid var(--border-color)',
-              padding: 'clamp(1rem, 2vw, 1.25rem)',
-              position: 'relative'
+          <div style={{ position: 'relative' }}>
+            <div style={{
+              position: 'absolute',
+              top: '-2rem',
+              right: '0',
+              backgroundColor: 'var(--card-bg)',
+              border: '1.5px solid var(--border-color)',
+              borderRadius: '6px',
+              padding: '0.3rem 0.6rem',
+              fontSize: '0.7rem',
+              fontWeight: '600',
+              color: 'var(--text-primary)',
+              boxShadow: 'var(--shadow-sm)',
+              zIndex: 10
             }}>
-              <h5 className="mb-0" style={{
-                color: 'var(--text-primary)',
-                fontWeight: '700',
-                fontSize: 'clamp(1.1rem, 2.2vw, 1.25rem)',
-                letterSpacing: '-0.02em'
-              }}>장비 강화 단계 및 목표 설정</h5>
-              <div style={{
-                position: 'absolute',
-                top: '0.5rem',
-                right: '1rem',
-                backgroundColor: 'var(--card-bg)',
-                border: '1.5px solid var(--border-color)',
-                borderRadius: '6px',
-                padding: '0.3rem 0.6rem',
-                fontSize: '0.7rem',
-                fontWeight: '600',
-                color: 'var(--text-primary)',
-                boxShadow: 'var(--shadow-sm)'
+              25년 12월 10일 겨울 업데이트 ❄️
+            </div>
+            <Card className="mb-4" style={{
+              backgroundColor: 'var(--card-bg)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: 'var(--shadow-lg)'
+            }}>
+              <Card.Header style={{
+                background: 'var(--card-body-bg-blue)',
+                borderBottom: '1px solid var(--border-color)',
+                padding: 'clamp(1rem, 2vw, 1.25rem)'
               }}>
-                25년 12월 10일 겨울 업데이트 ❄️
-              </div>
-            </Card.Header>
+                <h5 className="mb-0" style={{
+                  color: 'var(--text-primary)',
+                  fontWeight: '700',
+                  fontSize: 'clamp(1.1rem, 2.2vw, 1.25rem)',
+                  letterSpacing: '-0.02em'
+                }}>장비 강화 단계 및 목표 설정</h5>
+              </Card.Header>
             <Card.Body style={{
               backgroundColor: 'var(--card-bg)',
               padding: 'clamp(1rem, 2.5vw, 1.5rem)'
@@ -2190,6 +2191,7 @@ export default function RefiningCalculator() {
               )}
             </Card.Body>
           </Card>
+          </div>
 
           {/* 재료 소모량 표시 */}
           {searched && equipments.length > 0 && materials && (

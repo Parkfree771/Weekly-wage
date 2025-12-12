@@ -93,14 +93,31 @@ export default function WeeklyGoldPage() {
 
             {/* 검색 후 원정대 주급 계산기 */}
             {searched && selectedCharacters.length > 0 && (
-              <div className="mt-3">
+              <div className="mt-3" style={{ position: 'relative' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: isMobile ? '-1.8rem' : '-2rem',
+                    right: '0',
+                    backgroundColor: 'var(--card-bg)',
+                    border: '1.5px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: isMobile ? '0.25rem 0.5rem' : '0.3rem 0.6rem',
+                    fontSize: isMobile ? '0.6rem' : '0.7rem',
+                    fontWeight: '600',
+                    color: 'var(--text-primary)',
+                    boxShadow: 'var(--shadow-sm)',
+                    zIndex: 10
+                  }}
+                >
+                  25년 12월 10일 겨울 업데이트 ❄️
+                </div>
                 <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                   <Card.Header
                     className="py-2 border-0"
                     style={{
                       background: 'var(--card-header-bg-blue)',
-                      borderBottom: '1px solid var(--border-color)',
-                      position: 'relative'
+                      borderBottom: '1px solid var(--border-color)'
                     }}
                   >
                     <div className="text-center">
@@ -119,23 +136,6 @@ export default function WeeklyGoldPage() {
                         원정대 주간 골드 계산
                       </h3>
                     </div>
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: isMobile ? '0.4rem' : '0.5rem',
-                        right: isMobile ? '0.5rem' : '1rem',
-                        backgroundColor: 'var(--card-bg)',
-                        border: '1.5px solid var(--border-color)',
-                        borderRadius: '6px',
-                        padding: isMobile ? '0.25rem 0.5rem' : '0.3rem 0.6rem',
-                        fontSize: isMobile ? '0.6rem' : '0.7rem',
-                        fontWeight: '600',
-                        color: 'var(--text-primary)',
-                        boxShadow: 'var(--shadow-sm)'
-                      }}
-                    >
-                      25년 12월 10일 겨울 업데이트 ❄️
-                    </div>
                   </Card.Header>
                   <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-blue)'}}>
                     <RaidCalculator selectedCharacters={selectedCharacters} />
@@ -145,52 +145,54 @@ export default function WeeklyGoldPage() {
             )}
 
             {/* 더보기 효율 계산기 섹션 */}
-            <div className="mt-3">
+            <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
               <Row className="justify-content-center">
                 <Col xl={12} lg={12} md={12}>
-                  <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
-                    <Card.Header
-                      className="text-center py-2 border-0"
-                      style={{
-                        background: 'var(--card-header-bg-stone)',
-                        borderBottom: '1px solid var(--border-color)',
-                        position: 'relative'
-                      }}
-                    >
-                      <h3
-                        className="mb-0"
+                  <div style={{ position: 'relative' }}>
+                    <div style={{
+                      position: 'absolute',
+                      top: isMobile ? '-1.8rem' : '-2rem',
+                      right: '0',
+                      backgroundColor: 'var(--card-bg)',
+                      border: '1.5px solid var(--border-color)',
+                      borderRadius: '6px',
+                      padding: isMobile ? '0.25rem 0.5rem' : '0.3rem 0.6rem',
+                      fontSize: isMobile ? '0.6rem' : '0.7rem',
+                      fontWeight: '600',
+                      color: 'var(--text-primary)',
+                      boxShadow: 'var(--shadow-sm)',
+                      zIndex: 10
+                    }}>
+                      25년 12월 10일 겨울 업데이트 ❄️
+                    </div>
+                    <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
+                      <Card.Header
+                        className="text-center py-2 border-0"
                         style={{
-                          fontWeight: '600',
-                          fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                          background: 'var(--gradient-text-stone)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                          letterSpacing: '-0.025em'
+                          background: 'var(--card-header-bg-stone)',
+                          borderBottom: '1px solid var(--border-color)'
                         }}
                       >
-                        더보기 손익 계산
-                      </h3>
-                      <div style={{
-                        position: 'absolute',
-                        top: isMobile ? '0.4rem' : '0.5rem',
-                        right: isMobile ? '0.5rem' : '1rem',
-                        backgroundColor: 'var(--card-bg)',
-                        border: '1.5px solid var(--border-color)',
-                        borderRadius: '6px',
-                        padding: isMobile ? '0.25rem 0.5rem' : '0.3rem 0.6rem',
-                        fontSize: isMobile ? '0.6rem' : '0.7rem',
-                        fontWeight: '600',
-                        color: 'var(--text-primary)',
-                        boxShadow: 'var(--shadow-sm)'
-                      }}>
-                        25년 12월 10일 겨울 업데이트 ❄️
-                      </div>
-                    </Card.Header>
+                        <h3
+                          className="mb-0"
+                          style={{
+                            fontWeight: '600',
+                            fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
+                            background: 'var(--gradient-text-stone)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            letterSpacing: '-0.025em'
+                          }}
+                        >
+                          더보기 손익 계산
+                        </h3>
+                      </Card.Header>
                     <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
                       <SeeMoreCalculator />
                     </Card.Body>
                   </Card>
+                  </div>
                 </Col>
               </Row>
             </div>
