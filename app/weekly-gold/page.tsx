@@ -86,6 +86,22 @@ export default function WeeklyGoldPage() {
               <p className="mb-3" style={{fontSize: 'clamp(0.85rem, 1.8vw, 1rem)', fontWeight: '400', color: 'var(--text-muted)'}}>
                 원정대 주간 골드 수익과 더보기 보상 손익을 계산해보세요
               </p>
+
+              {/* SEO를 위한 정적 콘텐츠 */}
+              <noscript>
+                <div style={{padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px', margin: '1rem 0'}}>
+                  <h2>로스트아크 주간 골드 계산기</h2>
+                  <p>원정대 캐릭터들의 주간 골드 수익을 자동으로 계산하고, 레이드 더보기 보상의 손익을 실시간 거래소 가격으로 분석합니다.</p>
+                  <h3>주요 기능</h3>
+                  <ul>
+                    <li>캐릭터명 입력만으로 원정대 전체 주간 골드 수익 자동 계산</li>
+                    <li>에스더 무기, 아브렐슈드, 카양겔, 쿠크세이튼 등 모든 레이드 지원</li>
+                    <li>더보기 보상 손익 실시간 분석 (실화, 명돌, 파괴강석, 수호강석 등)</li>
+                    <li>거래소 가격 매시간 자동 업데이트</li>
+                  </ul>
+                  <p>이 페이지는 JavaScript가 필요합니다. 브라우저에서 JavaScript를 활성화해주세요.</p>
+                </div>
+              </noscript>
             </div>
 
             {/* 캐릭터 검색 */}

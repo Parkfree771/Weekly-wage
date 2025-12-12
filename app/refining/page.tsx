@@ -44,6 +44,31 @@ export default function RefiningPage() {
               <p className="mb-3" style={{fontSize: 'clamp(0.85rem, 1.8vw, 1rem)', fontWeight: '400', color: 'var(--text-muted)'}}>
                 목표 레벨까지 필요한 재련 재료와 골드를 계산해보세요
               </p>
+
+              {/* SEO를 위한 정적 콘텐츠 */}
+              <noscript>
+                <div style={{padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px', margin: '1rem 0'}}>
+                  <h2>로스트아크 T4 재련 비용 계산기</h2>
+                  <p>T4 장비 재련에 필요한 재료와 골드를 정확하게 계산합니다. 현재 레벨에서 목표 레벨까지 필요한 모든 재료를 실시간 거래소 가격으로 계산합니다.</p>
+                  <h3>계산 가능한 재료</h3>
+                  <ul>
+                    <li>명예의 파편 (T4)</li>
+                    <li>파괴강석 (찬란한 명예의 파괴강석)</li>
+                    <li>수호강석 (찬란한 명예의 수호강석)</li>
+                    <li>명예의 돌파석</li>
+                    <li>운명의 파편</li>
+                    <li>재련 골드 비용</li>
+                  </ul>
+                  <h3>주요 기능</h3>
+                  <ul>
+                    <li>현재 레벨에서 목표 레벨까지 필요한 재료 자동 계산</li>
+                    <li>실시간 거래소 가격 반영</li>
+                    <li>총 골드 비용 계산</li>
+                    <li>재료별 상세 수량 표시</li>
+                  </ul>
+                  <p>이 페이지는 JavaScript가 필요합니다. 브라우저에서 JavaScript를 활성화해주세요.</p>
+                </div>
+              </noscript>
             </div>
 
             {/* 재련 계산기 */}

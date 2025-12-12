@@ -106,14 +106,7 @@ export default function RootLayout({
             "@type": "WebSite",
             "name": "로아 주간 골드 계산",
             "url": "https://lostarkweeklygold.kr",
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": {
-                "@type": "EntryPoint",
-                "urlTemplate": "https://lostarkweeklygold.kr/?q={search_term_string}"
-              },
-              "query-input": "required name=search_term_string"
-            }
+            "description": "로스트아크 원정대 주간 골드 수익을 계산하고 레이드 더보기 보상의 손익을 실시간 거래소 가격으로 분석하는 필수 도구"
           }) }}
         />
       </body>
