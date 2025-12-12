@@ -134,7 +134,7 @@ export default function WeeklyGoldPage() {
                         boxShadow: 'var(--shadow-sm)'
                       }}
                     >
-                      겨울 업데이트
+                      25년 12월 10일 겨울 업데이트 ❄️
                     </div>
                   </Card.Header>
                   <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-blue)'}}>
@@ -153,7 +153,8 @@ export default function WeeklyGoldPage() {
                       className="text-center py-2 border-0"
                       style={{
                         background: 'var(--card-header-bg-stone)',
-                        borderBottom: '1px solid var(--border-color)'
+                        borderBottom: '1px solid var(--border-color)',
+                        position: 'relative'
                       }}
                     >
                       <h3
@@ -170,6 +171,21 @@ export default function WeeklyGoldPage() {
                       >
                         더보기 손익 계산
                       </h3>
+                      <div style={{
+                        position: 'absolute',
+                        top: isMobile ? '0.4rem' : '0.5rem',
+                        right: isMobile ? '0.5rem' : '1rem',
+                        backgroundColor: 'var(--card-bg)',
+                        border: '1.5px solid var(--border-color)',
+                        borderRadius: '6px',
+                        padding: isMobile ? '0.25rem 0.5rem' : '0.3rem 0.6rem',
+                        fontSize: isMobile ? '0.6rem' : '0.7rem',
+                        fontWeight: '600',
+                        color: 'var(--text-primary)',
+                        boxShadow: 'var(--shadow-sm)'
+                      }}>
+                        25년 12월 10일 겨울 업데이트 ❄️
+                      </div>
                     </Card.Header>
                     <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
                       <SeeMoreCalculator />

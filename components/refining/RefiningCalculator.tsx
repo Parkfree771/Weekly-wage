@@ -992,22 +992,6 @@ export default function RefiningCalculator() {
         <>
           {/* 캐릭터 정보 헤더 */}
           {/* 부위별 목표 레벨 설정 */}
-          {/* 업데이트 안내 */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            marginBottom: '0.5rem'
-          }}>
-            <span style={{
-              fontSize: 'clamp(0.65rem, 1.5vw, 0.75rem)',
-              color: 'var(--text-secondary)',
-              opacity: 0.7,
-              fontWeight: '500'
-            }}>
-              25년 12월 10일 재련 재료 & 비용 완화 업데이트 완료
-            </span>
-          </div>
-
           <Card className="mb-4" style={{
             backgroundColor: 'var(--card-bg)',
             border: '1px solid var(--border-color)',
@@ -1018,7 +1002,8 @@ export default function RefiningCalculator() {
             <Card.Header style={{
               background: 'var(--card-body-bg-blue)',
               borderBottom: '1px solid var(--border-color)',
-              padding: 'clamp(1rem, 2vw, 1.25rem)'
+              padding: 'clamp(1rem, 2vw, 1.25rem)',
+              position: 'relative'
             }}>
               <h5 className="mb-0" style={{
                 color: 'var(--text-primary)',
@@ -1026,6 +1011,21 @@ export default function RefiningCalculator() {
                 fontSize: 'clamp(1.1rem, 2.2vw, 1.25rem)',
                 letterSpacing: '-0.02em'
               }}>장비 강화 단계 및 목표 설정</h5>
+              <div style={{
+                position: 'absolute',
+                top: '0.5rem',
+                right: '1rem',
+                backgroundColor: 'var(--card-bg)',
+                border: '1.5px solid var(--border-color)',
+                borderRadius: '6px',
+                padding: '0.3rem 0.6rem',
+                fontSize: '0.7rem',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                boxShadow: 'var(--shadow-sm)'
+              }}>
+                25년 12월 10일 겨울 업데이트 ❄️
+              </div>
             </Card.Header>
             <Card.Body style={{
               backgroundColor: 'var(--card-bg)',
