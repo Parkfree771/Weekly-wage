@@ -1,9 +1,10 @@
 import { useTheme } from './ThemeProvider';
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useContext } from 'react';
 import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { TrackedItem, ItemCategory } from '@/lib/items-to-track';
+import { PriceContext } from './PriceComparisonStats';
 
 type PriceEntry = {
   price: number;
@@ -21,7 +22,7 @@ type EventInfo = {
 const EVENTS: EventInfo[] = [
   { date: '2025-11-07', label: '7주년 라방', color: '#ff6b6b' },
   { date: '2025-12-07', label: '로아온', color: '#ffa500' },
-  { date: '2025-12-10', label: '겨울 업데이트 ❄️', color: '#00BFFF' }
+  { date: '2025-12-10', label: '윈터❄️', color: '#00BFFF' }
 ];
 
 type CategoryStyle = {
@@ -91,7 +92,7 @@ type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle }: CompactPriceChartProps) {
   const { theme } = useTheme();
-  const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('1m');
+  const { selectedPeriod, setSelectedPeriod, filteredHistory } = useContext(PriceContext);
 
   const chartColor = theme === 'dark'
     ? (categoryStyle?.darkThemeColor || '#8ab4f8')
@@ -116,39 +117,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const maxStyle = theme === 'dark' ? statBoxStyles.max.dark : statBoxStyles.max.light;
   const avgStyle = theme === 'dark' ? statBoxStyles.avg.dark : statBoxStyles.avg.light;
 
-  // 기간에 따른 데이터 필터링
-  const filteredHistory = useMemo(() => {
-    if (history.length === 0) return [];
-
-    // ALL인 경우 모든 데이터 반환
-    if (selectedPeriod === 'all') return history;
-
-    const now = new Date();
-    const cutoffDate = new Date();
-
-    switch (selectedPeriod) {
-      case '7d':
-        cutoffDate.setDate(now.getDate() - 7);
-        break;
-      case '1m':
-        cutoffDate.setMonth(now.getMonth() - 1);
-        break;
-      case '3m':
-        cutoffDate.setMonth(now.getMonth() - 3);
-        break;
-      case '6m':
-        cutoffDate.setMonth(now.getMonth() - 6);
-        break;
-      case '1y':
-        cutoffDate.setFullYear(now.getFullYear() - 1);
-        break;
-    }
-
-    return history.filter(entry => {
-      const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
-      return entryDate >= cutoffDate;
-    });
-  }, [history, selectedPeriod]);
+  // filteredHistory는 이제 Context에서 가져옴 (Provider에서 필터링)
 
   const chartData = useMemo(() => {
     const dateMap = new Map<string, any>();
@@ -226,7 +195,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     const avgPrice = stats.avg;
 
     // 목표 틱 개수 (5-7개 정도로 제한)
-    const TARGET_TICK_COUNT = 6;
+    const TARGET_TICK_COUNT = 10;
 
     // 가격대별로 적절한 틱 단위 결정 (틱 개수를 줄이기 위해 더 큰 단위 사용)
     let tickUnit = 1;
@@ -371,8 +340,19 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     }
 
     // 도메인 설정 (최소/최대 틱 기준으로 약간의 여유 추가)
-    const domainMin = ticks[0];
-    const domainMax = ticks[ticks.length - 1];
+    const minTick = ticks[0];
+    const maxTick = ticks[ticks.length - 1];
+    
+    // 틱 사이의 간격을 계산합니다 (틱이 하나만 있는 경우 대비 안전장치 포함)
+    const tickGap = ticks.length > 1 ? Math.abs(ticks[1] - ticks[0]) : 0;
+    
+    // 소수점 오차로 인해 숫자가 잘리는 것을 막기 위해
+    // 틱 간격의 5% 정도만큼 위아래로 범위를 살짝 넓혀줍니다.
+    const buffer = tickGap * 0.05;
+
+    // 버퍼가 0일 경우(틱이 1개뿐일 때)를 대비해 안전하게 처리
+    const domainMin = minTick - (buffer || 0.1);
+    const domainMax = maxTick + (buffer || 0.1);
 
     return {
       domain: [domainMin, domainMax],
@@ -399,6 +379,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
     const data = payload[0].payload;
     const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : '');
+    // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
+    const eventColor = (categoryStyle?.label === '유물 각인서' || categoryStyle?.label === '보석')
+      ? '#3b82f6'
+      : (data.eventColor || '#ef4444');
 
     return (
       <div
@@ -418,7 +402,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           가격: {formatTooltipPrice(payload[0].value)}
         </div>
         {eventLabel && (
-          <div style={{ fontWeight: '700', color: '#ef4444', marginTop: '6px', fontSize: '15px' }}>
+          <div style={{ fontWeight: '700', color: eventColor, marginTop: '6px', fontSize: '15px' }}>
             {eventLabel}
           </div>
         )}
@@ -432,6 +416,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
     const data = payload[0].payload;
     const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : '');
+    // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
+    const eventColor = (categoryStyle?.label === '유물 각인서' || categoryStyle?.label === '보석')
+      ? '#3b82f6'
+      : (data.eventColor || '#ef4444');
 
     return (
       <div
@@ -451,7 +439,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           가격: {formatTooltipPrice(payload[0].value)}
         </div>
         {eventLabel && (
-          <div style={{ fontWeight: '700', color: '#ef4444', marginTop: '4px', fontSize: '11px' }}>
+          <div style={{ fontWeight: '700', color: eventColor, marginTop: '4px', fontSize: '11px' }}>
             {eventLabel}
           </div>
         )}
@@ -506,7 +494,6 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const CustomDotMobile = (props: any) => {
     const { cx, cy, payload } = props;
     const hasEvent = payload.eventLabel || payload.isWednesday;
-    const eventLabel = payload.eventLabel || (payload.isWednesday ? '수요일' : '');
     // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
     const eventColor = (categoryStyle?.label === '유물 각인서' || categoryStyle?.label === '보석')
       ? '#3b82f6'
@@ -518,30 +505,9 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       );
     }
 
-    // 모바일에서는 수요일만 글씨 없이 점만 표시, 다른 이벤트는 글씨 표시
-    if (payload.isWednesday && !payload.eventLabel) {
-      return (
-        <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />
-      );
-    }
-
+    // 모바일에서는 모든 이벤트를 글씨 없이 점만 표시
     return (
-      <g>
-        <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />
-        <text
-          x={cx}
-          y={cy - 10}
-          textAnchor="middle"
-          fill={eventColor}
-          fontSize={9}
-          fontWeight="700"
-          style={{
-            textShadow: '0 0 2px var(--card-bg), 0 0 2px var(--card-bg)'
-          }}
-        >
-          {eventLabel}
-        </text>
-      </g>
+      <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />
     );
   };
 
@@ -736,14 +702,6 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   </div>
                 </div>
                 <div style={{ minWidth: '180px', flex: '0 0 auto' }}>
-                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '9px', border: `2px solid ${stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6'}`, padding: '6px 9px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2d3748' : '#f3f4f6'; e.currentTarget.style.borderColor = stats.changeFromMin >= 0 ? '#dc2626' : '#2563eb'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6'; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>최저가 대비</small>
-                    <strong style={{ fontSize: '1rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', whiteSpace: 'nowrap' }}>
-                      {stats.changeFromMin >= 0 ? '▲' : '▼'} {Math.abs(stats.changeFromMin).toFixed(1)}%
-                    </strong>
-                  </div>
-                </div>
-                <div style={{ minWidth: '180px', flex: '0 0 auto' }}>
                   <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '9px', border: `2px solid ${minStyle.text}`, padding: '6px 9px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = minStyle.bg; e.currentTarget.style.borderColor = minStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = minStyle.text; }}>
                     <small className="d-block mb-1" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>최저가</small>
                     <strong style={{ fontSize: '1rem', color: minStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatTooltipPrice(stats.min)}</strong>
@@ -773,14 +731,6 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                     <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '6px', border: `1.5px solid ${chartColor}`, padding: '4px 2px' }}>
                       <small className="d-block" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0px', marginBottom: '2px', whiteSpace: 'nowrap' }}>현재가</small>
                       <strong style={{ fontSize: '0.65rem', color: chartColor, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatPrice(stats.current)}</strong>
-                    </div>
-                  </div>
-                  <div style={{ minWidth: '60px', flex: '1 1 0' }}>
-                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '6px', border: `1.5px solid ${stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6'}`, padding: '4px 2px' }}>
-                      <small className="d-block" style={{ fontSize: '0.48rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0px', marginBottom: '2px', whiteSpace: 'nowrap' }}>최저대비</small>
-                      <strong style={{ fontSize: '0.62rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', whiteSpace: 'nowrap' }}>
-                        {stats.changeFromMin >= 0 ? '▲' : '▼'} {Math.abs(stats.changeFromMin).toFixed(1)}%
-                      </strong>
                     </div>
                   </div>
                   <div style={{ minWidth: '60px', flex: '1 1 0' }}>

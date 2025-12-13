@@ -1,10 +1,11 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactNode, useMemo } from 'react';
 import { TrackedItem, ItemCategory, getItemsByCategory } from '@/lib/items-to-track';
 import ItemSelector, { CATEGORY_STYLES } from './ItemSelector';
 import CompactPriceChart from './CompactPriceChart';
+import { PriceContext } from './PriceComparisonStats';
 
 type PriceEntry = {
   price: number;
@@ -12,27 +13,28 @@ type PriceEntry = {
   date?: string;
 };
 
-export default function PriceChartContainer() {
+type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
+
+// Provider를 별도로 export - 실제 데이터를 관리
+export function PriceChartProvider({ children }: { children: ReactNode }) {
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('gem');
   const [selectedItem, setSelectedItem] = useState<TrackedItem | null>(null);
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('1m');
 
   useEffect(() => {
     const categoryItems = getItemsByCategory(selectedCategory);
     if (categoryItems.length > 0) {
-      // 카테고리 변경 시 항상 첫 번째 아이템 선택
       setSelectedItem(categoryItems[0]);
     }
   }, [selectedCategory]);
 
-  // 컴포넌트 마운트 시 기본값 설정
   useEffect(() => {
     const defaultCategory = 'gem';
     const defaultCategoryItems = getItemsByCategory(defaultCategory);
-    // '질서의 젬 : 안정' (ID: 67400003)을 기본값으로 설정
     const defaultItem = defaultCategoryItems.find(item => item.id === '67400003') || defaultCategoryItems[0];
-    
+
     setSelectedCategory(defaultCategory);
     setSelectedItem(defaultItem);
   }, []);
@@ -46,7 +48,6 @@ export default function PriceChartContainer() {
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        // Firebase Storage에서 직접 JSON 다운로드 (최대 999일)
         const { getItemPriceHistory } = await import('@/lib/price-history-client');
         const priceHistory = await getItemPriceHistory(selectedItem.id, 999);
         setHistory(priceHistory);
@@ -61,6 +62,37 @@ export default function PriceChartContainer() {
     fetchHistory();
   }, [selectedItem]);
 
+  const filteredHistory = useMemo(() => {
+    if (history.length === 0) return [];
+    if (selectedPeriod === 'all') return history;
+
+    const now = new Date();
+    const cutoffDate = new Date();
+
+    switch (selectedPeriod) {
+      case '7d':
+        cutoffDate.setDate(now.getDate() - 7);
+        break;
+      case '1m':
+        cutoffDate.setMonth(now.getMonth() - 1);
+        break;
+      case '3m':
+        cutoffDate.setMonth(now.getMonth() - 3);
+        break;
+      case '6m':
+        cutoffDate.setMonth(now.getMonth() - 6);
+        break;
+      case '1y':
+        cutoffDate.setFullYear(now.getFullYear() - 1);
+        break;
+    }
+
+    return history.filter(entry => {
+      const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
+      return entryDate >= cutoffDate;
+    });
+  }, [history, selectedPeriod]);
+
   const handleSelectCategory = (category: ItemCategory) => {
     setSelectedCategory(category);
   };
@@ -72,19 +104,27 @@ export default function PriceChartContainer() {
   const categoryStyle = CATEGORY_STYLES[selectedCategory];
 
   return (
-    <div>
-      <ItemSelector
-        selectedCategory={selectedCategory}
-        selectedItem={selectedItem}
-        onSelectCategory={handleSelectCategory}
-        onSelectItem={handleSelectItem}
-      />
-      <CompactPriceChart
-        selectedItem={selectedItem}
-        history={history}
-        loading={loading}
-        categoryStyle={categoryStyle}
-      />
-    </div>
+    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod }}>
+      <div>
+        <ItemSelector
+          selectedCategory={selectedCategory}
+          selectedItem={selectedItem}
+          onSelectCategory={handleSelectCategory}
+          onSelectItem={handleSelectItem}
+        />
+        <CompactPriceChart
+          selectedItem={selectedItem}
+          history={history}
+          loading={loading}
+          categoryStyle={categoryStyle}
+        />
+      </div>
+      {children}
+    </PriceContext.Provider>
   );
+}
+
+// 하위 호환성을 위한 default export (이제는 사용하지 않음)
+export default function PriceChartContainer() {
+  return null;
 }

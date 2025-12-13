@@ -1,23 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
+import PriceComparisonStats from '@/components/PriceComparisonStats';
+import { PriceChartProvider } from '@/components/PriceChartContainer';
 import styles from './page.module.css';
-
-// Dynamic imports로 코드 분할 - 초기 로딩 속도 개선
-const PriceChartContainer = dynamic(() => import('@/components/PriceChartContainer'), {
-  loading: () => (
-    <div className="text-center py-5">
-      <div className="spinner-border text-primary" role="status">
-        <span className="visually-hidden">로딩중...</span>
-      </div>
-    </div>
-  )
-});
 
 export default function Home() {
   const [footerOpen, setFooterOpen] = useState(false);
@@ -168,7 +158,9 @@ export default function Home() {
                   borderRadius: '0 0 16px 16px'
                 }}
               >
-                <PriceChartContainer />
+                <PriceChartProvider>
+                  <PriceComparisonStats />
+                </PriceChartProvider>
               </Card.Body>
             </Card>
 
