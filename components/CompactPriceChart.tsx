@@ -629,8 +629,15 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: chartColor }}>
                 {formatTooltipPrice(stats.current)}
               </div>
-              <div style={{ fontSize: '0.85rem', color: changeRate >= 0 ? '#ef4444' : '#3b82f6' }}>
-                {changeRate >= 0 ? '▲' : '▼'} {Math.abs(changeRate).toFixed(1)}%
+              <div style={{ fontSize: '1.4rem', fontWeight: '600', color: changeRate >= 0 ? '#ef4444' : '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                <Image
+                  src={changeRate >= 0 ? '/up.png' : '/down.png'}
+                  alt={changeRate >= 0 ? 'up' : 'down'}
+                  width={20}
+                  height={20}
+                  style={{ objectFit: 'contain' }}
+                />
+                {Math.abs(changeRate).toFixed(1)}%
               </div>
             </div>
           )}
@@ -671,8 +678,15 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               <div style={{ fontSize: '1rem', fontWeight: '700', color: chartColor, whiteSpace: 'nowrap' }}>
                 {formatTooltipPrice(stats.current)}
               </div>
-              <div style={{ fontSize: '0.7rem', color: changeRate >= 0 ? '#ef4444' : '#3b82f6', whiteSpace: 'nowrap' }}>
-                {changeRate >= 0 ? '▲' : '▼'} {Math.abs(changeRate).toFixed(1)}%
+              <div style={{ fontSize: '1rem', fontWeight: '600', color: changeRate >= 0 ? '#ef4444' : '#3b82f6', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px' }}>
+                <Image
+                  src={changeRate >= 0 ? '/up.png' : '/down.png'}
+                  alt={changeRate >= 0 ? 'up' : 'down'}
+                  width={16}
+                  height={16}
+                  style={{ objectFit: 'contain' }}
+                />
+                {Math.abs(changeRate).toFixed(1)}%
               </div>
             </div>
           )}
