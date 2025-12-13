@@ -173,12 +173,34 @@ export default function Home() {
                 borderRadius: '8px',
                 fontSize: 'clamp(0.8rem, 1.8vw, 0.9rem)',
                 color: 'var(--text-secondary)',
-                boxShadow: 'var(--shadow-sm)'
+                boxShadow: 'var(--shadow-sm)',
+                maxWidth: '1400px',
+                margin: '0 auto 16px auto'
               }}
             >
-              <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>ℹ️</span>
+              <img src="/warning.png" alt="warning" style={{ width: '20px', height: '20px', flexShrink: 0 }} />
               <span style={{ lineHeight: '1.4' }}>
                 경매장 가격 수집 빈도 차이로 인게임 가격과 다소 차이가 있을 수 있습니다. 추세 참고만 하시고 실제 가격은 인게임에서 확인 부탁드립니다.
+              </span>
+            </div>
+
+            {/* 지표 주의사항 */}
+            <div
+              className="px-3 py-2 d-flex align-items-center gap-2 mb-3"
+              style={{
+                background: 'var(--card-body-bg-stone)',
+                borderLeft: '3px solid #fb923c',
+                borderRadius: '8px',
+                fontSize: 'clamp(0.8rem, 1.8vw, 0.9rem)',
+                color: 'var(--text-secondary)',
+                boxShadow: 'var(--shadow-sm)',
+                maxWidth: '1400px',
+                margin: '0 auto 16px auto'
+              }}
+            >
+              <img src="/warning.png" alt="warning" style={{ width: '20px', height: '20px', flexShrink: 0 }} />
+              <span style={{ lineHeight: '1.4' }}>
+                이 지표들은 실제 주식 시장에서 사용하는 기술적 분석(RSI, 스토캐스틱)을 게임 시세에 대입한 결과입니다. 통계적인 참고 자료일 뿐, 미래의 시세를 보장하지 않습니다. 가볍게 흐름을 파악하는 용도로만 즐겨주세요.
               </span>
             </div>
 

@@ -695,19 +695,19 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           <>
             {stats && (
               <div className="d-none d-md-flex mb-3 justify-content-center gap-2" style={{ flexWrap: 'nowrap', overflowX: 'auto', padding: '0 4px' }}>
-                <div style={{ minWidth: '180px', flex: '0 0 auto' }}>
+                <div style={{ minWidth: '200px', flex: '0 0 auto' }}>
                   <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '9px', border: `2px solid ${chartColor}`, padding: '6px 9px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4'); e.currentTarget.style.borderColor = theme === 'dark' ? (categoryStyle?.darkThemeColor || '#8ab4f8') : (categoryStyle?.darkColor || '#15803d'); }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = chartColor; }}>
                     <small className="d-block mb-1" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>현재가</small>
                     <strong style={{ fontSize: '1rem', color: chartColor, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatTooltipPrice(stats.current)}</strong>
                   </div>
                 </div>
-                <div style={{ minWidth: '180px', flex: '0 0 auto' }}>
+                <div style={{ minWidth: '200px', flex: '0 0 auto' }}>
                   <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '9px', border: `2px solid ${minStyle.text}`, padding: '6px 9px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = minStyle.bg; e.currentTarget.style.borderColor = minStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = minStyle.text; }}>
                     <small className="d-block mb-1" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>최저가</small>
                     <strong style={{ fontSize: '1rem', color: minStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatTooltipPrice(stats.min)}</strong>
                   </div>
                 </div>
-                <div style={{ minWidth: '180px', flex: '0 0 auto' }}>
+                <div style={{ minWidth: '200px', flex: '0 0 auto' }}>
                   <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '9px', border: `2px solid ${avgStyle.text}`, padding: '6px 9px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = avgStyle.bg; e.currentTarget.style.borderColor = avgStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = avgStyle.text; }}>
                     <small className="d-block mb-1" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>평균가</small>
                     <strong style={{ fontSize: '1rem', color: avgStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>
@@ -715,7 +715,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                     </strong>
                   </div>
                 </div>
-                <div style={{ minWidth: '180px', flex: '0 0 auto' }}>
+                <div style={{ minWidth: '200px', flex: '0 0 auto' }}>
                   <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '9px', border: `2px solid ${maxStyle.text}`, padding: '6px 9px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = maxStyle.bg; e.currentTarget.style.borderColor = maxStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = maxStyle.text; }}>
                     <small className="d-block mb-1" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>최고가</small>
                     <strong style={{ fontSize: '1rem', color: maxStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatTooltipPrice(stats.max)}</strong>
