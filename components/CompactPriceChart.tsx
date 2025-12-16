@@ -195,7 +195,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     const avgPrice = stats.avg;
 
     // 목표 틱 개수 (5-7개 정도로 제한)
-    const TARGET_TICK_COUNT = 10;
+    const TARGET_TICK_COUNT = 15;
 
     // 가격대별로 적절한 틱 단위 결정 (틱 개수를 줄이기 위해 더 큰 단위 사용)
     let tickUnit = 1;

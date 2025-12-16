@@ -341,22 +341,94 @@ const SeeMoreCalculator: React.FC = () => {
                   </Col>
                 </Row>
                 
-                <Table striped bordered hover size="sm" style={{ color: 'var(--text-primary)' }}>
+                <Table
+                  hover
+                  size="sm"
+                  style={{
+                    color: 'var(--text-primary)',
+                    marginBottom: 0,
+                    borderCollapse: 'separate',
+                    borderSpacing: 0,
+                    overflow: 'hidden',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)'
+                  }}
+                >
                   <thead>
-                    <tr>
-                      <th>재료명</th>
-                      <th>수량</th>
-                      <th>단가</th>
-                      <th>총 가치</th>
+                    <tr style={{
+                      backgroundColor: 'var(--card-header-bg)',
+                      borderBottom: '2px solid var(--border-color)'
+                    }}>
+                      <th style={{
+                        padding: '0.75rem 1rem',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        color: 'var(--text-primary)',
+                        borderRight: '1px solid var(--border-color)'
+                      }}>재료명</th>
+                      <th style={{
+                        padding: '0.75rem 1rem',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        color: 'var(--text-primary)',
+                        borderRight: '1px solid var(--border-color)',
+                        textAlign: 'right'
+                      }}>수량</th>
+                      <th style={{
+                        padding: '0.75rem 1rem',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        color: 'var(--text-primary)',
+                        borderRight: '1px solid var(--border-color)',
+                        textAlign: 'right'
+                      }}>단가</th>
+                      <th style={{
+                        padding: '0.75rem 1rem',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        color: 'var(--text-primary)',
+                        textAlign: 'right'
+                      }}>총 가치</th>
                     </tr>
                   </thead>
                   <tbody>
                     {gateData.materials.map((material, matIndex) => (
-                      <tr key={matIndex}>
-                        <td>{material.itemName}</td>
-                        <td>{material.amount.toLocaleString()}</td>
-                        <td>{material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4)}골드</td>
-                        <td>{Math.round(material.totalPrice).toLocaleString()}골드</td>
+                      <tr
+                        key={matIndex}
+                        style={{
+                          backgroundColor: matIndex % 2 === 0 ? 'transparent' : 'var(--table-row-alternate)',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                      >
+                        <td style={{
+                          padding: '0.65rem 1rem',
+                          fontSize: '0.875rem',
+                          borderRight: '1px solid var(--border-color)',
+                          borderTop: matIndex === 0 ? 'none' : '1px solid var(--border-color)'
+                        }}>{material.itemName}</td>
+                        <td style={{
+                          padding: '0.65rem 1rem',
+                          fontSize: '0.875rem',
+                          borderRight: '1px solid var(--border-color)',
+                          borderTop: matIndex === 0 ? 'none' : '1px solid var(--border-color)',
+                          textAlign: 'right'
+                        }}>{material.amount.toLocaleString()}</td>
+                        <td style={{
+                          padding: '0.65rem 1rem',
+                          fontSize: '0.875rem',
+                          borderRight: '1px solid var(--border-color)',
+                          borderTop: matIndex === 0 ? 'none' : '1px solid var(--border-color)',
+                          textAlign: 'right',
+                          fontWeight: 500
+                        }}>{material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4)}골드</td>
+                        <td style={{
+                          padding: '0.65rem 1rem',
+                          fontSize: '0.875rem',
+                          borderTop: matIndex === 0 ? 'none' : '1px solid var(--border-color)',
+                          textAlign: 'right',
+                          fontWeight: 600,
+                          color: 'var(--brand-primary)'
+                        }}>{Math.round(material.totalPrice).toLocaleString()}골드</td>
                       </tr>
                     ))}
                   </tbody>
