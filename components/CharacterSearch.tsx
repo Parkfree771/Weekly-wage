@@ -308,7 +308,6 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
               >
                 {showAll ? (
                   <>
-                    <span style={{ marginRight: '0.5rem' }}>▲</span>
                     접기
                     <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9em' }}>
                       ({characters.length - 6}개)
@@ -316,7 +315,6 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
                   </>
                 ) : (
                   <>
-                    <span style={{ marginRight: '0.5rem' }}>▼</span>
                     더보기
                     <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9em' }}>
                       ({characters.length - 6}개)

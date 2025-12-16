@@ -28,6 +28,17 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
   const [showAllRaids, setShowAllRaids] = useState<{ [key: string]: boolean }>({});
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
 
+  // 레이드 그룹명과 이미지 파일명 매핑
+  const raidImages: { [key: string]: string } = {
+    '종막': '/abrelshud.png',
+    '4막': '/illiakan.png',
+    '3막': '/ivory-tower.png',
+    '2막': '/kazeros.png',
+    '1막': '/aegir.png',
+    '서막': '/echidna.png',
+    '베히모스': '/behemoth.png'
+  };
+
   // 모바일 감지
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -334,13 +345,31 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                     </span>
                   </div>
                 </Card.Header>
-                <Card.Body style={{ padding: isMobile ? '0.5rem' : '1.25rem 1.25rem 1rem' }}>
+                <Card.Body style={{ padding: isMobile ? '0.3rem' : '0.75rem 0.75rem 0.5rem' }}>
                   <Accordion flush className="theme-accordion">
                     {/* 체크된 레이드 그룹들 */}
                     {checkedGroups.map(groupName => (
                       <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
-                        <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.5rem' : '0.75rem' }}>
+                        <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.35rem' : '0.5rem' }}>
                           <div className="d-flex align-items-center w-100">
+                            {raidImages[groupName] && (
+                              <Image
+                                src={raidImages[groupName]}
+                                alt={groupName}
+                                width={100}
+                                height={100}
+                                quality={100}
+                                style={{
+                                  marginLeft: isMobile ? '-1rem' : '-1.25rem',
+                                  marginRight: '0.5rem',
+                                  borderRadius: '4px',
+                                  width: isMobile ? '38px' : '48px',
+                                  height: isMobile ? '38px' : '48px',
+                                  objectFit: 'cover',
+                                  flexShrink: 0
+                                }}
+                              />
+                            )}
                             <span style={{ fontWeight: 600 }}>{groupName}</span>
                             <Badge bg="success" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
                               {calculateRaidGroupGold(character.characterName, groupName).toLocaleString()} G
@@ -469,12 +498,10 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                           >
                             {showAll ? (
                               <>
-                                <span style={{ marginRight: '0.4rem' }}>▲</span>
                                 다른 레이드 접기
                               </>
                             ) : (
                               <>
-                                <span style={{ marginRight: '0.4rem' }}>▼</span>
                                 다른 레이드 보기
                                 <span style={{ marginLeft: '0.4rem', color: 'var(--text-muted)', fontSize: '0.9em' }}>
                                   ({uncheckedGroups.length}개)
@@ -487,8 +514,27 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                           <div>
                             {uncheckedGroups.map(groupName => (
                               <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
-                                <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.5rem' : '0.75rem' }}>
+                                <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.35rem' : '0.5rem' }}>
                                   <div className="d-flex align-items-center w-100">
+                                    {raidImages[groupName] && (
+                                      <Image
+                                        src={raidImages[groupName]}
+                                        alt={groupName}
+                                        width={100}
+                                        height={100}
+                                        quality={100}
+                                        style={{
+                                          marginLeft: isMobile ? '-1rem' : '-1.25rem',
+                                          marginRight: '0.5rem',
+                                          borderRadius: '4px',
+                                          opacity: 0.7,
+                                          width: isMobile ? '38px' : '48px',
+                                          height: isMobile ? '38px' : '48px',
+                                          objectFit: 'cover',
+                                          flexShrink: 0
+                                        }}
+                                      />
+                                    )}
                                     <span style={{ fontWeight: 600, opacity: 0.7 }}>{groupName}</span>
                                     <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
                                       0 G
