@@ -397,8 +397,8 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                           onClick={() => toggleCoreFarmingMore(character.characterName)}
                           className="shadow-sm"
                           style={{
-                            fontSize: isMobile ? '0.6rem' : '0.7rem',
-                            padding: isMobile ? '0.3rem 0.6rem' : '0.4rem 0.8rem',
+                            fontSize: isMobile ? '0.58rem' : '0.68rem',
+                            padding: isMobile ? '0.25rem 0.5rem' : '0.35rem 0.65rem',
                             fontWeight: 700,
                             whiteSpace: 'nowrap',
                             borderRadius: '6px',
@@ -452,7 +452,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                     {/* 체크된 레이드 그룹들 */}
                     {checkedGroups.map(groupName => (
                       <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
-                        <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.35rem' : '0.5rem' }}>
+                        <Accordion.Header style={{ fontSize: isMobile ? '0.9rem' : '1.12rem', padding: isMobile ? '0.35rem' : '0.5rem' }}>
                           <div className="d-flex align-items-center w-100">
                             {raidImages[groupName] && (
                               <Image
@@ -487,7 +487,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                               const isSelected = hasAnyGateSelected(character.characterName, raid.name);
                               return (
                               <Accordion.Item eventKey={raid.name} key={raid.name} className="raid-difficulty-accordion">
-                                <Accordion.Header style={{ fontSize: isMobile ? '0.75rem' : '0.95rem', padding: isMobile ? '0.4rem' : '0.6rem' }}>
+                                <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.4rem' : '0.6rem' }}>
                                   <span style={{ fontWeight: isSelected ? 600 : 400 }}>{raid.name}</span>
                                   <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.68rem' }}>
                                     {raid.level}
@@ -616,7 +616,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                           <div>
                             {uncheckedGroups.map(groupName => (
                               <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
-                                <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.35rem' : '0.5rem' }}>
+                                <Accordion.Header style={{ fontSize: isMobile ? '0.9rem' : '1.12rem', padding: isMobile ? '0.35rem' : '0.5rem' }}>
                                   <div className="d-flex align-items-center w-100">
                                     {raidImages[groupName] && (
                                       <Image
@@ -649,7 +649,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                                       const isSelected = hasAnyGateSelected(character.characterName, raid.name);
                                       return (
                                       <Accordion.Item eventKey={raid.name} key={raid.name} className="raid-difficulty-accordion">
-                                        <Accordion.Header style={{ fontSize: isMobile ? '0.75rem' : '0.95rem', padding: isMobile ? '0.4rem' : '0.6rem' }}>
+                                        <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.4rem' : '0.6rem' }}>
                                           <span style={{ fontWeight: isSelected ? 600 : 400 }}>{raid.name}</span>
                                           <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.68rem' }}>
                                             {raid.level}
