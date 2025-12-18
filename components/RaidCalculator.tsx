@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Table, Form, Badge, Accordion, Row, Col, Button, Collapse } from 'react-bootstrap';
 import Image from 'next/image';
 import { raids } from '@/data/raids';
+import { calculateRanking } from '@/utils/goldRanking';
 
 type Character = {
   characterName: string;
@@ -27,6 +28,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
   const [gateSelection, setGateSelection] = useState<GateSelection>({});
   const [showAllRaids, setShowAllRaids] = useState<{ [key: string]: boolean }>({});
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
+  const [coreFarmingMoreEnabled, setCoreFarmingMoreEnabled] = useState<{ [key: string]: boolean }>({}); // 캐릭터별 코어 파밍 더보기 ON/OFF
 
   // 레이드 그룹명과 이미지 파일명 매핑
   const raidImages: { [key: string]: string } = {
@@ -109,6 +111,13 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
       }
     });
     setGateSelection(initialSelection);
+
+    // 캐릭터별 코어 파밍 더보기 초기화 (기본 ON)
+    const initialCoreFarming: { [key: string]: boolean } = {};
+    selectedCharacters.forEach(character => {
+      initialCoreFarming[character.characterName] = true;
+    });
+    setCoreFarmingMoreEnabled(initialCoreFarming);
   }, [selectedCharacters]);
 
   const getHeaderCheckState = (characterName: string, raidName: string, selection: 'withMore' | 'withoutMore') => {
@@ -248,6 +257,57 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
     return false;
   };
 
+  // 전체 선택에서 더보기를 하나라도 사용했는지 확인
+  const hasAnyMoreReward = () => {
+    for (const characterName in gateSelection) {
+      for (const raidName in gateSelection[characterName]) {
+        for (const gate in gateSelection[characterName][raidName]) {
+          if (gateSelection[characterName][raidName][gate] === 'withoutMore') {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
+
+  // 캐릭터별 코어 파밍 더보기 토글 (종막/4막 일괄 변경)
+  const toggleCoreFarmingMore = (characterName: string) => {
+    const newEnabled = !coreFarmingMoreEnabled[characterName];
+
+    setCoreFarmingMoreEnabled(prev => ({
+      ...prev,
+      [characterName]: newEnabled
+    }));
+
+    setGateSelection(prev => {
+      const newGateSelection = JSON.parse(JSON.stringify(prev));
+
+      // 해당 캐릭터의 종막과 4막 관문을 변경
+      for (const raidName in newGateSelection[characterName]) {
+        // 종막 또는 4막인 경우
+        if (raidName.startsWith('종막') || raidName.startsWith('4막')) {
+          for (const gate in newGateSelection[characterName][raidName]) {
+            const currentSelection = newGateSelection[characterName][raidName][gate];
+
+            // none이 아닌 경우만 변경
+            if (currentSelection !== 'none') {
+              if (newEnabled) {
+                // ON: withMore → withoutMore (더보기 체크)
+                newGateSelection[characterName][raidName][gate] = 'withoutMore';
+              } else {
+                // OFF: withoutMore → withMore (더보기 해제)
+                newGateSelection[characterName][raidName][gate] = 'withMore';
+              }
+            }
+          }
+        }
+      }
+
+      return newGateSelection;
+    });
+  };
+
   // 체크된 레이드 그룹만 필터링 (모바일용)
   const getCheckedRaidGroups = (characterName: string) => {
     const checkedGroups: string[] = [];
@@ -292,57 +352,99 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
             <Col lg={4} md={4} key={character.characterName} className="mb-3 mb-md-4">
               <Card className="character-raid-card" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)', height: '100%' }}>
                 <Card.Header
-                  className="character-raid-header d-flex align-items-center justify-content-between"
+                  className="character-raid-header"
                   style={{
                     backgroundColor: 'var(--card-header-bg)',
                     borderColor: 'var(--border-color)',
                     color: 'var(--text-primary)',
-                    padding: isMobile ? '0.5rem 0.75rem' : '0.9rem 1.2rem',
-                    gap: '0.5rem',
-                    flexWrap: 'nowrap',
-                    overflow: 'hidden'
+                    padding: isMobile ? '0.5rem 0.75rem' : '0.9rem 1.2rem'
                   }}
                 >
-                  <div className="d-flex align-items-center gap-1" style={{ minWidth: 0, flex: '1 1 auto' }}>
-                    <span style={{
-                      fontSize: isMobile ? '0.85rem' : '1.1rem',
-                      fontWeight: 600,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {character.characterName}
-                    </span>
-                    <Badge
-                      style={{
-                        fontSize: isMobile ? '0.6rem' : '0.78rem',
-                        padding: '0.25em 0.5em',
-                        backgroundColor: '#6c757d',
-                        color: '#ffffff',
-                        fontWeight: 500,
-                        flexShrink: 0,
+                  <div className="d-flex align-items-center justify-content-between" style={{ gap: isMobile ? '0.4rem' : '0.5rem', flexWrap: 'nowrap' }}>
+                    {/* 왼쪽: 캐릭터명 + 레벨 */}
+                    <div className="d-flex align-items-center gap-1" style={{ minWidth: 0, flex: '1 1 auto' }}>
+                      <span style={{
+                        fontSize: isMobile ? '0.85rem' : '1.1rem',
+                        fontWeight: 600,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
-                      }}
-                    >
-                      Lv.{character.itemLevel}
-                    </Badge>
-                  </div>
-                  <div className="d-flex align-items-center gap-1" style={{
-                    backgroundColor: '#fef3c7',
-                    padding: '0.35em 0.6em',
-                    borderRadius: '6px',
-                    border: '1px solid #fbbf24',
-                    flexShrink: 0,
-                    whiteSpace: 'nowrap'
-                  }}>
-                    <Image src="/gold.jpg" alt="골드" width={isMobile ? 14 : 18} height={isMobile ? 14 : 18} style={{ borderRadius: '3px' }} />
-                    <span style={{
-                      fontSize: isMobile ? '0.65rem' : '0.85rem',
-                      fontWeight: 700,
-                      color: '#92400e'
-                    }}>
-                      {calculateCharacterGold(character.characterName).toLocaleString()}
-                    </span>
+                      }}>
+                        {character.characterName}
+                      </span>
+                      <Badge
+                        style={{
+                          fontSize: isMobile ? '0.6rem' : '0.78rem',
+                          padding: '0.25em 0.5em',
+                          backgroundColor: '#6c757d',
+                          color: '#ffffff',
+                          fontWeight: 500,
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Lv.{character.itemLevel}
+                      </Badge>
+                    </div>
+
+                    {/* 오른쪽: 코어 파밍 버튼 + 골드 */}
+                    <div className="d-flex align-items-center gap-2" style={{ flexShrink: 0 }}>
+                      {/* 코어 파밍 더보기 토글 버튼 (1700 레벨 이상만) */}
+                      {character.itemLevel >= 1700 && (
+                        <Button
+                          variant={coreFarmingMoreEnabled[character.characterName] ? "primary" : "secondary"}
+                          size="sm"
+                          onClick={() => toggleCoreFarmingMore(character.characterName)}
+                          className="shadow-sm"
+                          style={{
+                            fontSize: isMobile ? '0.6rem' : '0.7rem',
+                            padding: isMobile ? '0.3rem 0.6rem' : '0.4rem 0.8rem',
+                            fontWeight: 700,
+                            whiteSpace: 'nowrap',
+                            borderRadius: '6px',
+                            lineHeight: 1.3,
+                            border: coreFarmingMoreEnabled[character.characterName] ? '2px solid #0d6efd' : '2px solid #6c757d',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: coreFarmingMoreEnabled[character.characterName]
+                              ? '0 2px 6px rgba(13, 110, 253, 0.4)'
+                              : '0 1px 3px rgba(0, 0, 0, 0.2)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = coreFarmingMoreEnabled[character.characterName]
+                              ? '0 4px 10px rgba(13, 110, 253, 0.5)'
+                              : '0 3px 6px rgba(0, 0, 0, 0.3)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = coreFarmingMoreEnabled[character.characterName]
+                              ? '0 2px 6px rgba(13, 110, 253, 0.4)'
+                              : '0 1px 3px rgba(0, 0, 0, 0.2)';
+                          }}
+                        >
+                          {coreFarmingMoreEnabled[character.characterName] ? '✓ ' : ''}코어파밍 {coreFarmingMoreEnabled[character.characterName] ? 'ON' : 'OFF'}
+                        </Button>
+                      )}
+
+                      {/* 골드 */}
+                      <div className="d-flex align-items-center gap-1" style={{
+                        backgroundColor: '#fef3c7',
+                        padding: '0.35em 0.6em',
+                        borderRadius: '6px',
+                        border: '1px solid #fbbf24',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        <Image src="/gold.jpg" alt="골드" width={isMobile ? 14 : 18} height={isMobile ? 14 : 18} style={{ borderRadius: '3px' }} />
+                        <span style={{
+                          fontSize: isMobile ? '0.65rem' : '0.85rem',
+                          fontWeight: 700,
+                          color: '#92400e'
+                        }}>
+                          {calculateCharacterGold(character.characterName).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </Card.Header>
                 <Card.Body style={{ padding: isMobile ? '0.3rem' : '0.75rem 0.75rem 0.5rem' }}>
@@ -636,11 +738,65 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
           );
         })}
       </Row>
-      <Card className="mt-3 mt-md-4 total-gold-card" style={{ backgroundColor: 'var(--card-body-bg-stone)', border: '2px solid #fbbf24' }}>
-        <Card.Body style={{ padding: isMobile ? '0.75rem' : '1rem' }}>
-          <div className="text-center d-flex align-items-center justify-content-center gap-2" style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: isMobile ? '1rem' : '1.25rem' }}>
-            <Image src="/gold.jpg" alt="골드" width={isMobile ? 24 : 32} height={isMobile ? 24 : 32} style={{ borderRadius: '4px' }} />
-            총 골드: {calculateTotalGold().toLocaleString()} G
+      <Card className="mt-2 total-gold-card" style={{ backgroundColor: 'var(--card-body-bg-stone)', border: '2px solid #fbbf24' }}>
+        <Card.Body style={{ padding: isMobile ? '1rem' : '1.3rem' }}>
+          <div style={{ position: 'relative' }}>
+            {/* 가운데: 총 골드 */}
+            <div className="text-center d-flex align-items-center justify-content-center gap-2" style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: isMobile ? '1.15rem' : '1.4rem' }}>
+              <Image src="/gold.jpg" alt="골드" width={isMobile ? 28 : 36} height={isMobile ? 28 : 36} style={{ borderRadius: '5px' }} />
+              총 골드: {calculateTotalGold().toLocaleString()} G
+            </div>
+
+            {/* 오른쪽: 상위 퍼센트 정보 */}
+            {(() => {
+              const totalGold = calculateTotalGold();
+              if (totalGold > 0) {
+                // 항상 더보기 미사용 기준(Full Reward)으로 계산
+                const ranking = calculateRanking(totalGold, false);
+
+                // 퍼센트별 색상 지정 (가시성 좋은 색상)
+                let percentColor = '#6c757d'; // 회색 (기본)
+                if (ranking <= 0.01) {
+                  percentColor = '#dc3545'; // 진한 빨강 (최최상위 0.01%)
+                } else if (ranking <= 7.6) {
+                  percentColor = '#fd7e14'; // 주황 (최상위)
+                } else if (ranking <= 15.0) {
+                  percentColor = '#ffc107'; // 황금색 (상위)
+                } else if (ranking <= 23.9) {
+                  percentColor = '#0d6efd'; // 파랑 (중상위)
+                } else if (ranking <= 60.5) {
+                  percentColor = '#198754'; // 초록 (중위)
+                }
+
+                return (
+                  <div style={{
+                    position: isMobile ? 'relative' : 'absolute',
+                    right: 0,
+                    top: isMobile ? 0 : '0rem',
+                    textAlign: 'right',
+                    marginTop: isMobile ? '0.6rem' : 0
+                  }}>
+                    <p style={{
+                      fontSize: isMobile ? '0.85rem' : '1rem',
+                      color: 'var(--text-primary)',
+                      marginBottom: '0.25rem',
+                      fontWeight: 600
+                    }}>
+                      원정대 주간 골드 수급 상위 <span style={{ color: percentColor, fontWeight: 700 }}>{ranking}%</span>입니다
+                    </p>
+                    <p style={{
+                      fontSize: isMobile ? '0.68rem' : '0.78rem',
+                      color: 'var(--text-muted)',
+                      marginBottom: 0,
+                      fontStyle: 'italic'
+                    }}>
+                      * 1660 이상의 캐릭터 더보기를 하지 않는다는 가정
+                    </p>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         </Card.Body>
       </Card>
