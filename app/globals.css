@@ -108,6 +108,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* PC 화면일 때만 80% 축소 (모바일은 너무 작아지면 안 되니까) */
+@media screen and (min-width: 1024px) {
+  body {
+    zoom: 1;
+  }
+}
+
 /* Input Placeholder Styles for Dark Mode */
 input::placeholder,
 textarea::placeholder {
