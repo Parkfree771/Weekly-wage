@@ -600,8 +600,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         className="py-3 border-0 d-none d-md-block"
         style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: '1px solid var(--border-color)' }}
       >
-        <div className="d-flex justify-content-between align-items-center">
-          <div className="d-flex align-items-center gap-2">
+        <div className="d-flex align-items-center" style={{ gap: '16px' }}>
+          <div className="d-flex align-items-center gap-2" style={{ flex: '1' }}>
             {selectedItem.icon && (
               <Image
                 src={selectedItem.icon}
@@ -616,16 +616,78 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               />
             )}
             <div>
-              <h5 className="mb-1" style={{ fontWeight: '700', color: chartColor }}>
-                <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
-              </h5>
-              <small style={{ color: 'var(--text-muted)' }}>
-                {selectedItem.type === 'market' ? '거래소' : '경매장'} • 최근 {periodLabels[selectedPeriod]}
-              </small>
+              {categoryStyle?.label === '악세' && selectedItem.displayName ? (
+                (() => {
+                  const parts = selectedItem.displayName.split('\n');
+                  if (parts.length === 3) {
+                    return (
+                      <div>
+                        <h5 className="mb-0" style={{ fontWeight: '700', color: chartColor, lineHeight: '1.3', fontSize: '0.95rem' }}>
+                          <div><ColoredItemName name={parts[0]} /></div>
+                          <div><ColoredItemName name={parts[1]} /></div>
+                        </h5>
+                        <small style={{ color: 'var(--text-muted)', fontSize: '0.7rem', display: 'block', marginTop: '2px' }}>
+                          {parts[2]}, {selectedItem.type === 'market' ? '거래소' : '경매장'}
+                        </small>
+                      </div>
+                    );
+                  }
+                  return (
+                    <h5 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.95rem' }}>
+                      <ColoredItemName name={selectedItem.displayName} />
+                    </h5>
+                  );
+                })()
+              ) : (
+                <>
+                  <h5 className="mb-0" style={{ fontWeight: '700', color: chartColor }}>
+                    <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
+                  </h5>
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                    {selectedItem.type === 'market' ? '거래소' : '경매장'}
+                  </small>
+                </>
+              )}
             </div>
           </div>
+
+          <div className="d-flex justify-content-center gap-2" style={{ flex: '1' }}>
+            {(['7d', '1m', 'all'] as PeriodOption[]).map((period) => (
+              <button
+                key={period}
+                onClick={() => setSelectedPeriod(period)}
+                style={{
+                  padding: '4px 16px',
+                  borderRadius: '6px',
+                  border: selectedPeriod === period ? `2px solid ${chartColor}` : '2px solid var(--border-color)',
+                  backgroundColor: selectedPeriod === period ? (theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4')) : 'var(--card-bg)',
+                  color: selectedPeriod === period ? chartColor : 'var(--text-secondary)',
+                  fontWeight: selectedPeriod === period ? '700' : '500',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  outline: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedPeriod !== period) {
+                    e.currentTarget.style.borderColor = chartColor;
+                    e.currentTarget.style.color = chartColor;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedPeriod !== period) {
+                    e.currentTarget.style.borderColor = 'var(--border-color)';
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }
+                }}
+              >
+                {periodLabels[period]}
+              </button>
+            ))}
+          </div>
+
           {stats && (
-            <div className="text-end">
+            <div className="text-end" style={{ flex: '1' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: chartColor }}>
                 {formatTooltipPrice(stats.current)}
               </div>
@@ -646,9 +708,9 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
       <Card.Header
         className="py-2 border-0 d-md-none"
-        style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: '1px solid var(--border-color)' }}
+        style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: 'none', paddingBottom: 0 }}
       >
-        <div className="d-flex justify-content-between align-items-center">
+        <div className="d-flex align-items-center justify-content-between">
           <div className="d-flex align-items-center gap-2">
             {selectedItem.icon && (
               <Image
@@ -665,12 +727,38 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               />
             )}
             <div>
-              <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.75rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
-                <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
-              </h6>
-              <small style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>
-                {selectedItem.type === 'market' ? '거래소' : '경매장'} • {periodLabels[selectedPeriod]}
-              </small>
+              {categoryStyle?.label === '악세' && selectedItem.displayName ? (
+                (() => {
+                  const parts = selectedItem.displayName.split('\n');
+                  if (parts.length === 3) {
+                    return (
+                      <div>
+                        <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.63rem', lineHeight: '1.3', wordBreak: 'keep-all' }}>
+                          <div><ColoredItemName name={parts[0]} /></div>
+                          <div><ColoredItemName name={parts[1]} /></div>
+                        </h6>
+                        <small style={{ color: 'var(--text-muted)', fontSize: '0.58rem', display: 'block', marginTop: '2px' }}>
+                          {parts[2]}, {selectedItem.type === 'market' ? '거래소' : '경매장'}
+                        </small>
+                      </div>
+                    );
+                  }
+                  return (
+                    <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.63rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
+                      <ColoredItemName name={selectedItem.displayName} />
+                    </h6>
+                  );
+                })()
+              ) : (
+                <>
+                  <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.75rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
+                    <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
+                  </h6>
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>
+                    {selectedItem.type === 'market' ? '거래소' : '경매장'}
+                  </small>
+                </>
+              )}
             </div>
           </div>
           {stats && (
@@ -693,7 +781,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         </div>
       </Card.Header>
 
-      <Card.Body className="p-2 p-md-3" style={{ backgroundColor: 'var(--card-bg)' }}>
+      <Card.Body className="py-0 px-2 px-md-3" style={{ backgroundColor: 'var(--card-bg)' }}>
         {loading ? (
           <div className="text-center py-5">
             <Spinner animation="border" variant="success" />
@@ -707,123 +795,24 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           </div>
         ) : (
           <>
-            {stats && (
-              <div className="d-none d-md-flex mb-3 justify-content-center gap-2" style={{ flexWrap: 'nowrap', overflowX: 'auto', padding: '0 4px' }}>
-                <div style={{ minWidth: '200px', flex: '0 0 auto' }}>
-                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '9px', border: `2px solid ${chartColor}`, padding: '6px 9px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4'); e.currentTarget.style.borderColor = theme === 'dark' ? (categoryStyle?.darkThemeColor || '#8ab4f8') : (categoryStyle?.darkColor || '#15803d'); }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = chartColor; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>현재가</small>
-                    <strong style={{ fontSize: '1rem', color: chartColor, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatTooltipPrice(stats.current)}</strong>
-                  </div>
-                </div>
-                <div style={{ minWidth: '200px', flex: '0 0 auto' }}>
-                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '9px', border: `2px solid ${minStyle.text}`, padding: '6px 9px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = minStyle.bg; e.currentTarget.style.borderColor = minStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = minStyle.text; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>최저가</small>
-                    <strong style={{ fontSize: '1rem', color: minStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatTooltipPrice(stats.min)}</strong>
-                  </div>
-                </div>
-                <div style={{ minWidth: '200px', flex: '0 0 auto' }}>
-                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '9px', border: `2px solid ${avgStyle.text}`, padding: '6px 9px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = avgStyle.bg; e.currentTarget.style.borderColor = avgStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = avgStyle.text; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>평균가</small>
-                    <strong style={{ fontSize: '1rem', color: avgStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>
-                      {stats.avg < 100 ? stats.avg.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G' : formatTooltipPrice(Math.round(stats.avg))}
-                    </strong>
-                  </div>
-                </div>
-                <div style={{ minWidth: '200px', flex: '0 0 auto' }}>
-                  <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '9px', border: `2px solid ${maxStyle.text}`, padding: '6px 9px', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = maxStyle.bg; e.currentTarget.style.borderColor = maxStyle.border; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.borderColor = maxStyle.text; }}>
-                    <small className="d-block mb-1" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>최고가</small>
-                    <strong style={{ fontSize: '1rem', color: maxStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatTooltipPrice(stats.max)}</strong>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {stats && (
-              <div className="d-md-none mb-3">
-                <div className="d-flex gap-1" style={{ overflowX: 'auto', padding: '2px 0' }}>
-                  <div style={{ minWidth: '60px', flex: '1 1 0' }}>
-                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '6px', border: `1.5px solid ${chartColor}`, padding: '4px 2px' }}>
-                      <small className="d-block" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0px', marginBottom: '2px', whiteSpace: 'nowrap' }}>현재가</small>
-                      <strong style={{ fontSize: '0.65rem', color: chartColor, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatPrice(stats.current)}</strong>
-                    </div>
-                  </div>
-                  <div style={{ minWidth: '60px', flex: '1 1 0' }}>
-                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '6px', border: `1.5px solid ${minStyle.text}`, padding: '4px 2px' }}>
-                      <small className="d-block" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0px', marginBottom: '2px', whiteSpace: 'nowrap' }}>최저가</small>
-                      <strong style={{ fontSize: '0.65rem', color: minStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatPrice(stats.min)}</strong>
-                    </div>
-                  </div>
-                  <div style={{ minWidth: '60px', flex: '1 1 0' }}>
-                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '6px', border: `1.5px solid ${avgStyle.text}`, padding: '4px 2px' }}>
-                      <small className="d-block" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0px', marginBottom: '2px', whiteSpace: 'nowrap' }}>평균가</small>
-                      <strong style={{ fontSize: '0.65rem', color: avgStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatPrice(Math.round(stats.avg))}</strong>
-                    </div>
-                  </div>
-                  <div style={{ minWidth: '60px', flex: '1 1 0' }}>
-                    <div className="text-center" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '6px', border: `1.5px solid ${maxStyle.text}`, padding: '4px 2px' }}>
-                      <small className="d-block" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0px', marginBottom: '2px', whiteSpace: 'nowrap' }}>최고가</small>
-                      <strong style={{ fontSize: '0.65rem', color: maxStyle.text, fontWeight: '700', whiteSpace: 'nowrap' }}>{formatPrice(stats.max)}</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 기간 선택 버튼 - 데스크톱 */}
-            <div className="d-none d-md-flex justify-content-center gap-2 mb-3">
-              {(['7d', '1m', /* '3m', '6m', '1y', */ 'all'] as PeriodOption[]).map((period) => (
-                <button
-                  key={period}
-                  onClick={() => setSelectedPeriod(period)}
-                  style={{
-                    padding: '8px 20px',
-                    borderRadius: '8px',
-                    border: selectedPeriod === period ? `2px solid ${chartColor}` : '2px solid var(--border-color)',
-                    backgroundColor: selectedPeriod === period ? (theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4')) : 'var(--card-bg)',
-                    color: selectedPeriod === period ? chartColor : 'var(--text-secondary)',
-                    fontWeight: selectedPeriod === period ? '700' : '500',
-                    fontSize: '0.9rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    outline: 'none'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedPeriod !== period) {
-                      e.currentTarget.style.borderColor = chartColor;
-                      e.currentTarget.style.color = chartColor;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedPeriod !== period) {
-                      e.currentTarget.style.borderColor = 'var(--border-color)';
-                      e.currentTarget.style.color = 'var(--text-secondary)';
-                    }
-                  }}
-                >
-                  {periodLabels[period]}
-                </button>
-              ))}
-            </div>
-
             {/* 기간 선택 버튼 - 모바일 */}
-            <div className="d-md-none d-flex justify-content-center gap-1 mb-2" style={{ overflowX: 'auto', padding: '4px 0' }}>
-              {(['7d', '1m', /* '3m', '6m', '1y', */ 'all'] as PeriodOption[]).map((period) => (
+            <div className="d-md-none d-flex justify-content-center gap-1" style={{ margin: 0, padding: '2px 0 0 0' }}>
+              {(['7d', '1m', 'all'] as PeriodOption[]).map((period) => (
                 <button
                   key={period}
                   onClick={() => setSelectedPeriod(period)}
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    border: selectedPeriod === period ? `2px solid ${chartColor}` : '2px solid var(--border-color)',
+                    padding: '2px 10px',
+                    borderRadius: '3px',
+                    border: selectedPeriod === period ? `1px solid ${chartColor}` : '1px solid var(--border-color)',
                     backgroundColor: selectedPeriod === period ? (theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4')) : 'var(--card-bg)',
                     color: selectedPeriod === period ? chartColor : 'var(--text-secondary)',
                     fontWeight: selectedPeriod === period ? '700' : '500',
-                    fontSize: '0.75rem',
+                    fontSize: '0.65rem',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     outline: 'none',
-                    whiteSpace: 'nowrap',
-                    minWidth: '50px'
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   {periodLabels[period]}
@@ -831,7 +820,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               ))}
             </div>
 
-            <div className="d-none d-md-block" style={{ width: '100%', height: '400px' }}>
+            <div className="d-none d-md-block" style={{ width: '100%', height: '500px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 25, right: 10, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
@@ -845,7 +834,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               </ResponsiveContainer>
             </div>
 
-            <div className="d-md-none" style={{ width: '100%', height: '280px' }}>
+            <div className="d-md-none" style={{ width: '100%', height: '350px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 20, right: 5, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>

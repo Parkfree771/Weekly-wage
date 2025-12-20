@@ -28,9 +28,9 @@ export const PriceContext = createContext<PriceContextType>({
 
 const formatPrice = (value: number) => {
   if (value < 100) {
-    return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G';
+    return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' G';
   }
-  return value.toLocaleString('ko-KR') + ' G';
+  return value.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) + ' G';
 };
 
 export default function PriceComparisonStats() {
@@ -171,6 +171,89 @@ export default function PriceComparisonStats() {
         </Card.Header>
         <Card.Body className="p-3">
           <div className="row g-3">
+            {/* 통계 상자 - 첫 번째 줄 */}
+            <div className="col-md-3">
+              <div
+                style={{
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  padding: '12px',
+                  transition: 'all 0.3s ease',
+                  backgroundColor: 'transparent'
+                }}
+              >
+                <div className="text-center">
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
+                    현재가
+                  </div>
+                  <div style={{ fontSize: '1.8rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
+                    {formatPrice(stats.current)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div
+                style={{
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  padding: '12px',
+                  transition: 'all 0.3s ease',
+                  backgroundColor: 'transparent'
+                }}
+              >
+                <div className="text-center">
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
+                    평균가
+                  </div>
+                  <div style={{ fontSize: '1.8rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
+                    {formatPrice(stats.avg)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div
+                style={{
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  padding: '12px',
+                  transition: 'all 0.3s ease',
+                  backgroundColor: 'transparent'
+                }}
+              >
+                <div className="text-center">
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
+                    최저가
+                  </div>
+                  <div style={{ fontSize: '1.8rem', color: '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
+                    {formatPrice(stats.min)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div
+                style={{
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  padding: '12px',
+                  transition: 'all 0.3s ease',
+                  backgroundColor: 'transparent'
+                }}
+              >
+                <div className="text-center">
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
+                    최고가
+                  </div>
+                  <div style={{ fontSize: '1.8rem', color: '#ef4444', fontWeight: '700', lineHeight: '1' }}>
+                    {formatPrice(stats.max)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 가격 변동 분석 - 두 번째 줄 */}
             <div className="col-md-4">
               <div
                 style={{
@@ -393,26 +476,105 @@ export default function PriceComparisonStats() {
         </Card.Header>
         <Card.Body className="p-2">
           <div className="row g-2">
-            <div className="col-4">
+            {/* 통계 상자 - 첫 번째 줄 */}
+            <div className="col-3">
               <div
                 style={{
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   border: '1px solid var(--border-color)',
-                  padding: '10px 6px',
+                  padding: '6px 2px',
                   backgroundColor: 'transparent'
                 }}
               >
                 <div className="text-center">
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.45rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '3px' }}>
+                    현재가
+                  </div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
+                    {formatPrice(stats.current)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-3">
+              <div
+                style={{
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  padding: '6px 2px',
+                  backgroundColor: 'transparent'
+                }}
+              >
+                <div className="text-center">
+                  <div style={{ fontSize: '0.45rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '3px' }}>
+                    평균가
+                  </div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
+                    {formatPrice(stats.avg)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-3">
+              <div
+                style={{
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  padding: '6px 2px',
+                  backgroundColor: 'transparent'
+                }}
+              >
+                <div className="text-center">
+                  <div style={{ fontSize: '0.45rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '3px' }}>
+                    최저가
+                  </div>
+                  <div style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
+                    {formatPrice(stats.min)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-3">
+              <div
+                style={{
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  padding: '6px 2px',
+                  backgroundColor: 'transparent'
+                }}
+              >
+                <div className="text-center">
+                  <div style={{ fontSize: '0.45rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '3px' }}>
+                    최고가
+                  </div>
+                  <div style={{ fontSize: '0.65rem', color: '#ef4444', fontWeight: '700', lineHeight: '1' }}>
+                    {formatPrice(stats.max)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 가격 변동 분석 - 두 번째 줄 */}
+            <div className="col-4">
+              <div
+                style={{
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  padding: '6px 3px',
+                  backgroundColor: 'transparent'
+                }}
+              >
+                <div className="text-center">
+                  <div style={{ fontSize: '0.48rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '4px' }}>
                     최저가 대비
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                    <img src={stats.changeFromMin >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '16px', height: '16px' }} />
-                    <div style={{ fontSize: '1.1rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', marginBottom: '3px' }}>
+                    <img src={stats.changeFromMin >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '13px', height: '13px' }} />
+                    <div style={{ fontSize: '0.9rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.changeFromMin >= 0 ? '+' : ''}{stats.changeFromMin.toFixed(1)}%
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '0.42rem', color: 'var(--text-secondary)' }}>
                     {formatPrice(stats.min)}
                   </div>
                 </div>
@@ -421,23 +583,23 @@ export default function PriceComparisonStats() {
             <div className="col-4">
               <div
                 style={{
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   border: '1px solid var(--border-color)',
-                  padding: '10px 6px',
+                  padding: '6px 3px',
                   backgroundColor: 'transparent'
                 }}
               >
                 <div className="text-center">
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.48rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '4px' }}>
                     평균가 대비
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                    <img src={stats.changeFromAvg >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '16px', height: '16px' }} />
-                    <div style={{ fontSize: '1.1rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', marginBottom: '3px' }}>
+                    <img src={stats.changeFromAvg >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '13px', height: '13px' }} />
+                    <div style={{ fontSize: '0.9rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.changeFromAvg >= 0 ? '+' : ''}{stats.changeFromAvg.toFixed(1)}%
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '0.42rem', color: 'var(--text-secondary)' }}>
                     {formatPrice(stats.avg)}
                   </div>
                 </div>
@@ -446,23 +608,23 @@ export default function PriceComparisonStats() {
             <div className="col-4">
               <div
                 style={{
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   border: '1px solid var(--border-color)',
-                  padding: '10px 6px',
+                  padding: '6px 3px',
                   backgroundColor: 'transparent'
                 }}
               >
                 <div className="text-center">
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.48rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '4px' }}>
                     최고가 대비
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                    <img src={stats.changeFromMax >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '16px', height: '16px' }} />
-                    <div style={{ fontSize: '1.1rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', marginBottom: '3px' }}>
+                    <img src={stats.changeFromMax >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '13px', height: '13px' }} />
+                    <div style={{ fontSize: '0.9rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.changeFromMax >= 0 ? '+' : ''}{stats.changeFromMax.toFixed(1)}%
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '0.42rem', color: 'var(--text-secondary)' }}>
                     {formatPrice(stats.max)}
                   </div>
                 </div>
@@ -473,23 +635,23 @@ export default function PriceComparisonStats() {
             <div className="col-4">
               <div
                 style={{
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   border: '1px solid var(--border-color)',
-                  padding: '10px 6px',
+                  padding: '6px 3px',
                   backgroundColor: 'transparent'
                 }}
               >
                 <div className="text-center">
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.48rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '4px' }}>
                     연속 {stats.isRising ? '상승' : '하락'}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                    <img src={stats.isRising ? '/up.png' : '/down.png'} alt="" style={{ width: '16px', height: '16px' }} />
-                    <div style={{ fontSize: '1.1rem', color: stats.isRising ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', marginBottom: '3px' }}>
+                    <img src={stats.isRising ? '/up.png' : '/down.png'} alt="" style={{ width: '13px', height: '13px' }} />
+                    <div style={{ fontSize: '0.9rem', color: stats.isRising ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.consecutiveDays}일
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '0.42rem', color: 'var(--text-secondary)' }}>
                     {stats.isRising ? '상승세' : '하락세'}
                   </div>
                 </div>
@@ -500,20 +662,20 @@ export default function PriceComparisonStats() {
             <div className="col-4">
               <div
                 style={{
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   border: '1px solid var(--border-color)',
-                  padding: '10px 6px',
+                  padding: '6px 3px',
                   backgroundColor: 'transparent'
                 }}
               >
                 <div className="text-center">
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.48rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '4px' }}>
                     RSI
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                    <img src={stats.rsi <= 30 ? '/cold.png' : stats.rsi >= 70 ? '/hot.png' : '/soso.png'} alt="" style={{ width: '16px', height: '16px' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', marginBottom: '3px' }}>
+                    <img src={stats.rsi <= 30 ? '/cold.png' : stats.rsi >= 70 ? '/hot.png' : '/soso.png'} alt="" style={{ width: '13px', height: '13px' }} />
                     <div style={{
-                      fontSize: '1.1rem',
+                      fontSize: '0.9rem',
                       color: stats.rsi <= 30 ? '#3b82f6' : stats.rsi >= 70 ? '#ef4444' : 'var(--text-primary)',
                       fontWeight: '700',
                       lineHeight: '1'
@@ -521,16 +683,16 @@ export default function PriceComparisonStats() {
                       {stats.rsi.toFixed(1)}
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: '0.42rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1px', flexWrap: 'wrap' }}>
                     <span>{stats.rsiMessage}</span>
                     {stats.rsi <= 30 && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                        (<img src="/up.png" alt="" style={{ width: '8px', height: '8px', display: 'inline' }} />매수)
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
+                        (<img src="/up.png" alt="" style={{ width: '7px', height: '7px', display: 'inline' }} />매수)
                       </span>
                     )}
                     {stats.rsi >= 70 && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                        (<img src="/down.png" alt="" style={{ width: '8px', height: '8px', display: 'inline' }} />매도)
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
+                        (<img src="/down.png" alt="" style={{ width: '7px', height: '7px', display: 'inline' }} />매도)
                       </span>
                     )}
                   </div>
@@ -542,20 +704,20 @@ export default function PriceComparisonStats() {
             <div className="col-4">
               <div
                 style={{
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   border: '1px solid var(--border-color)',
-                  padding: '10px 6px',
+                  padding: '6px 3px',
                   backgroundColor: 'transparent'
                 }}
               >
                 <div className="text-center">
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.48rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '4px' }}>
                     Stochastic
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                    <img src={stats.stochastic <= 20 ? '/cold.png' : stats.stochastic >= 80 ? '/hot.png' : '/soso.png'} alt="" style={{ width: '16px', height: '16px' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', marginBottom: '3px' }}>
+                    <img src={stats.stochastic <= 20 ? '/cold.png' : stats.stochastic >= 80 ? '/hot.png' : '/soso.png'} alt="" style={{ width: '13px', height: '13px' }} />
                     <div style={{
-                      fontSize: '1.1rem',
+                      fontSize: '0.9rem',
                       color: stats.stochastic <= 20 ? '#3b82f6' : stats.stochastic >= 80 ? '#ef4444' : 'var(--text-primary)',
                       fontWeight: '700',
                       lineHeight: '1'
@@ -563,16 +725,16 @@ export default function PriceComparisonStats() {
                       {stats.stochastic.toFixed(1)}
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: '0.42rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1px', flexWrap: 'wrap' }}>
                     <span>{stats.stochMessage}</span>
                     {stats.stochastic <= 20 && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                        (<img src="/up.png" alt="" style={{ width: '8px', height: '8px', display: 'inline' }} />매수)
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
+                        (<img src="/up.png" alt="" style={{ width: '7px', height: '7px', display: 'inline' }} />매수)
                       </span>
                     )}
                     {stats.stochastic >= 80 && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                        (<img src="/down.png" alt="" style={{ width: '8px', height: '8px', display: 'inline' }} />매도)
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
+                        (<img src="/down.png" alt="" style={{ width: '7px', height: '7px', display: 'inline' }} />매도)
                       </span>
                     )}
                   </div>
