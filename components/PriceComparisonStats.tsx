@@ -26,9 +26,16 @@ export const PriceContext = createContext<PriceContextType>({
   setSelectedPeriod: () => {},
 });
 
-const formatPrice = (value: number) => {
+const formatPrice = (value: number, isAverage = false) => {
+  if (value >= 1000000) {
+    const manValue = value / 10000;
+    return manValue.toLocaleString('ko-KR', { maximumFractionDigits: 1 }) + '만 G';
+  }
   if (value < 100) {
     return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' G';
+  }
+  if (isAverage) {
+    return Math.floor(value).toLocaleString('ko-KR') + ' G';
   }
   return value.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) + ' G';
 };
@@ -207,7 +214,7 @@ export default function PriceComparisonStats() {
                     평균가
                   </div>
                   <div style={{ fontSize: '1.8rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
-                    {formatPrice(stats.avg)}
+                    {formatPrice(stats.avg, true)}
                   </div>
                 </div>
               </div>
@@ -301,7 +308,7 @@ export default function PriceComparisonStats() {
                     </div>
                   </div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    {formatPrice(stats.avg)}
+                    {formatPrice(stats.avg, true)}
                   </div>
                 </div>
               </div>
@@ -482,15 +489,15 @@ export default function PriceComparisonStats() {
                 style={{
                   borderRadius: '8px',
                   border: '1px solid var(--border-color)',
-                  padding: '6px 2px',
+                  padding: '10px 4px',
                   backgroundColor: 'transparent'
                 }}
               >
                 <div className="text-center">
-                  <div style={{ fontSize: '0.45rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '3px' }}>
+                  <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '4px' }}>
                     현재가
                   </div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
                     {formatPrice(stats.current)}
                   </div>
                 </div>
@@ -501,16 +508,16 @@ export default function PriceComparisonStats() {
                 style={{
                   borderRadius: '8px',
                   border: '1px solid var(--border-color)',
-                  padding: '6px 2px',
+                  padding: '10px 4px',
                   backgroundColor: 'transparent'
                 }}
               >
                 <div className="text-center">
-                  <div style={{ fontSize: '0.45rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '3px' }}>
+                  <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '4px' }}>
                     평균가
                   </div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
-                    {formatPrice(stats.avg)}
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
+                    {formatPrice(stats.avg, true)}
                   </div>
                 </div>
               </div>
@@ -520,15 +527,15 @@ export default function PriceComparisonStats() {
                 style={{
                   borderRadius: '8px',
                   border: '1px solid var(--border-color)',
-                  padding: '6px 2px',
+                  padding: '10px 4px',
                   backgroundColor: 'transparent'
                 }}
               >
                 <div className="text-center">
-                  <div style={{ fontSize: '0.45rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '3px' }}>
+                  <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '4px' }}>
                     최저가
                   </div>
-                  <div style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
+                  <div style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                     {formatPrice(stats.min)}
                   </div>
                 </div>
@@ -539,15 +546,15 @@ export default function PriceComparisonStats() {
                 style={{
                   borderRadius: '8px',
                   border: '1px solid var(--border-color)',
-                  padding: '6px 2px',
+                  padding: '10px 4px',
                   backgroundColor: 'transparent'
                 }}
               >
                 <div className="text-center">
-                  <div style={{ fontSize: '0.45rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '3px' }}>
+                  <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '4px' }}>
                     최고가
                   </div>
-                  <div style={{ fontSize: '0.65rem', color: '#ef4444', fontWeight: '700', lineHeight: '1' }}>
+                  <div style={{ fontSize: '0.85rem', color: '#ef4444', fontWeight: '700', lineHeight: '1' }}>
                     {formatPrice(stats.max)}
                   </div>
                 </div>
@@ -600,7 +607,7 @@ export default function PriceComparisonStats() {
                     </div>
                   </div>
                   <div style={{ fontSize: '0.42rem', color: 'var(--text-secondary)' }}>
-                    {formatPrice(stats.avg)}
+                    {formatPrice(stats.avg, true)}
                   </div>
                 </div>
               </div>
