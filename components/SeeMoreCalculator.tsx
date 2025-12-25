@@ -16,14 +16,6 @@ type RaidProfitData = {
   materials: (MaterialReward & { unitPrice: number; totalPrice: number })[];
 };
 
-type CachedPriceData = {
-  prices: { [itemId: number]: number };
-  timestamp: number;
-};
-
-const CACHE_KEY = 'seeMorePrices';
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24시간
-
 const SeeMoreCalculator: React.FC = () => {
   const [selectedRaid, setSelectedRaid] = useState<string | null>(null);
   const [profitData, setProfitData] = useState<{ [key: string]: RaidProfitData[] }>({});
@@ -34,105 +26,15 @@ const SeeMoreCalculator: React.FC = () => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
   };
 
-  // 캐시에서 가격 데이터 가져오기
-  const getCachedPrices = (): CachedPriceData | null => {
-    if (typeof window === 'undefined') return null;
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (!cached) return null;
-    try {
-      return JSON.parse(cached);
-    } catch {
-      return null;
-    }
-  };
-
-  // 캐시에 가격 데이터 저장
-  const setCachedPrices = (prices: { [itemId: number]: number }) => {
-    if (typeof window === 'undefined') return;
-    const data: CachedPriceData = {
-      prices,
-      timestamp: Date.now()
-    };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-  };
-
-  // 오전 10시 30분인지 확인 (한국 시간)
-  const isUpdateTime = (): boolean => {
-    const now = new Date();
-    const kstOffset = 9 * 60 * 60 * 1000;
-    const kstTime = new Date(now.getTime() + kstOffset);
-    const kstHour = kstTime.getUTCHours();
-    const kstMinute = kstTime.getUTCMinutes();
-    return kstHour === 10 && kstMinute >= 30 && kstMinute < 35;
-  };
-
-  // 캐시가 만료되었는지 확인
-  const isCacheExpired = (timestamp: number): boolean => {
-    return Date.now() - timestamp > CACHE_DURATION;
-  };
-
-  // 캐시에 유효한 가격이 있는지 확인 (모든 가격이 0이 아닌지)
-  const hasValidPrices = (prices: { [itemId: number]: number }): boolean => {
-    const priceValues = Object.values(prices);
-    if (priceValues.length === 0) return false;
-    // 최소 하나 이상의 가격이 0보다 크면 유효
-    return priceValues.some(price => price > 0);
-  };
-
-  // 컴포넌트 마운트시 캐시 확인 후 필요시 갱신
+  // 컴포넌트 마운트시 가격 가져오기
   useEffect(() => {
-    const cached = getCachedPrices();
-
-    // 캐시가 있고 만료되지 않았으며 유효한 가격이 있으면 캐시 사용
-    if (cached && !isCacheExpired(cached.timestamp) && hasValidPrices(cached.prices)) {
-      console.log('Using cached prices from:', new Date(cached.timestamp));
-      calculateWithPrices(cached.prices);
-      setLastUpdated(new Date(cached.timestamp));
-    } else {
-      // 캐시가 없거나 만료됐거나 가격이 0이면 새로 가져오기
-      if (cached && !hasValidPrices(cached.prices)) {
-        console.log('Cache has invalid prices (0), fetching new prices...');
-      }
-      fetchLatestPrices();
-    }
-
-    // 다음 오전 10시 30분까지의 시간 계산
-    const now = new Date();
-    const kstOffset = 9 * 60 * 60 * 1000;
-    const kstNow = new Date(now.getTime() + kstOffset);
-
-    let nextUpdate = new Date(kstNow);
-    nextUpdate.setUTCHours(10, 30, 0, 0);
-
-    // 이미 10시 30분 지났으면 다음 날
-    if (kstNow.getUTCHours() > 10 || (kstNow.getUTCHours() === 10 && kstNow.getUTCMinutes() >= 30)) {
-      nextUpdate.setUTCDate(nextUpdate.getUTCDate() + 1);
-    }
-
-    const timeUntilNextUpdate = nextUpdate.getTime() - kstNow.getTime();
-    console.log(`Next price update in ${Math.round(timeUntilNextUpdate / 1000 / 60)} minutes`);
-
-    // 타이머 설정: 다음 10시 30분에 갱신
-    const timer = setTimeout(() => {
-      fetchLatestPrices();
-
-      // 이후 24시간마다 갱신
-      const interval = setInterval(() => {
-        fetchLatestPrices();
-      }, 24 * 60 * 60 * 1000);
-
-      return () => clearInterval(interval);
-    }, timeUntilNextUpdate);
-
-    return () => clearTimeout(timer);
+    fetchLatestPrices();
   }, []);
 
   // latest_prices.json에서 최신 가격 가져오기
   const fetchLatestPrices = async () => {
     setLoading(true);
     try {
-      console.log('Fetching latest prices from JSON...');
-
       const { latest } = await fetchPriceData();
 
       const searchPrices: { [itemId: number]: number } = {};
@@ -142,21 +44,9 @@ const SeeMoreCalculator: React.FC = () => {
         const bundleSize = MATERIAL_BUNDLE_SIZES[itemId] || 1;
         const unitPrice = bundlePrice / bundleSize; // 묶음 가격 → 개당 가격 변환
         searchPrices[itemId] = unitPrice;
-        console.log(`${key} - 묶음가격: ${bundlePrice}, 묶음크기: ${bundleSize}, 개당가격: ${unitPrice}`);
       });
 
-      console.log('All fetched latest prices:', searchPrices);
-
-      // 유효한 가격이 있을 때만 캐시 저장
-      if (hasValidPrices(searchPrices)) {
-        console.log('Valid prices fetched, saving to cache');
-        setCachedPrices(searchPrices);
-        setLastUpdated(new Date());
-      } else {
-        console.warn('All prices are 0, not saving to cache');
-      }
-
-      // 계산 수행 (가격이 0이어도 계산은 수행)
+      setLastUpdated(new Date());
       calculateWithPrices(searchPrices);
 
     } catch (error) {
@@ -283,10 +173,18 @@ const SeeMoreCalculator: React.FC = () => {
         
         <div className="text-end">
           <small className="text-muted d-block">
-            {lastUpdated ?
-              `최신 거래소 가격 (매일 오전 10시 30분 갱신) | 실시간 시세와 차이가 있을 수 있습니다` :
-              '가격 정보를 불러오는 중...'
-            }
+            {lastUpdated ? (
+              <>
+                {lastUpdated.toLocaleString('ko-KR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false
+                })} 기준 가격 | 실시간 시세와 차이가 있을 수 있습니다
+              </>
+            ) : '가격 정보를 불러오는 중...'}
           </small>
         </div>
       </div>

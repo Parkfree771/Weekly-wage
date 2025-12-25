@@ -274,6 +274,7 @@ export default function RefiningCalculator() {
     '66112543': 0, // 야금술 책 11-14
   });
 
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const [materials, setMaterials] = useState<Materials | null>(null);
 
@@ -422,8 +423,6 @@ export default function RefiningCalculator() {
   useEffect(() => {
     const fetchMarketPrices = async () => {
       try {
-        console.log('Fetching latest prices from JSON for refining...');
-
         const { fetchPriceData } = await import('@/lib/price-history-client');
         const { latest } = await fetchPriceData();
 
@@ -436,7 +435,7 @@ export default function RefiningCalculator() {
         });
 
         setMarketPrices(prices);
-        console.log('재련 재료 가격 로드 완료 (최신 거래소 가격)');
+        setLastUpdated(new Date());
       } catch (error) {
         console.error('Failed to fetch latest prices:', error);
       }
@@ -972,6 +971,20 @@ export default function RefiningCalculator() {
             }}>
               {error}
             </div>
+          </div>
+        )}
+        {lastUpdated && (
+          <div className="d-flex justify-content-center mb-2">
+            <small style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.75rem, 1.8vw, 0.85rem)' }}>
+              {lastUpdated.toLocaleString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              })} 기준 가격 | 실시간 시세와 차이가 있을 수 있습니다
+            </small>
           </div>
         )}
       </Form>
