@@ -12,6 +12,7 @@ import {
   getBreathEffect,
   JANGIN_ACCUMULATE_DIVIDER
 } from '../../lib/refiningData';
+import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import {
   calculateAdvancedRefiningMaterials,
   type AdvancedRefiningOptions as NewAdvancedRefiningOptions
@@ -426,10 +427,12 @@ export default function RefiningCalculator() {
         const { fetchPriceData } = await import('@/lib/price-history-client');
         const { latest } = await fetchPriceData();
 
-        // latest_prices.json의 가격을 marketPrices 형식으로 변환
+        // latest_prices.json의 가격을 marketPrices 형식으로 변환 (묶음 가격 → 개당 가격)
         const prices: Record<string, number> = {};
-        Object.entries(latest).forEach(([itemId, price]) => {
-          prices[itemId] = price;
+        Object.entries(latest).forEach(([itemId, bundlePrice]) => {
+          const bundleSize = MATERIAL_BUNDLE_SIZES[Number(itemId)] || 1;
+          const unitPrice = bundlePrice / bundleSize;
+          prices[itemId] = unitPrice;
         });
 
         setMarketPrices(prices);
