@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button, Row, Col, Table, Spinner } from 'react-bootstrap';
 import { raids } from '@/data/raids';
-import { raidRewards, MaterialReward, MATERIAL_IDS, MATERIAL_NAMES } from '@/data/raidRewards';
+import { raidRewards, MaterialReward, MATERIAL_IDS, MATERIAL_NAMES, MATERIAL_BUNDLE_SIZES } from '@/data/raidRewards';
+import { fetchPriceData } from '@/lib/price-history-client';
 import styles from './SeeMoreCalculator.module.css';
 
 type RaidProfitData = {
@@ -92,7 +93,7 @@ const SeeMoreCalculator: React.FC = () => {
       if (cached && !hasValidPrices(cached.prices)) {
         console.log('Cache has invalid prices (0), fetching new prices...');
       }
-      fetchYesterdayPrices();
+      fetchLatestPrices();
     }
 
     // 다음 오전 10시 30분까지의 시간 계산
@@ -111,13 +112,13 @@ const SeeMoreCalculator: React.FC = () => {
     const timeUntilNextUpdate = nextUpdate.getTime() - kstNow.getTime();
     console.log(`Next price update in ${Math.round(timeUntilNextUpdate / 1000 / 60)} minutes`);
 
-    // 타이머 설정: 다음 10시 5분에 갱신
+    // 타이머 설정: 다음 10시 30분에 갱신
     const timer = setTimeout(() => {
-      fetchYesterdayPrices();
+      fetchLatestPrices();
 
       // 이후 24시간마다 갱신
       const interval = setInterval(() => {
-        fetchYesterdayPrices();
+        fetchLatestPrices();
       }, 24 * 60 * 60 * 1000);
 
       return () => clearInterval(interval);
@@ -126,42 +127,25 @@ const SeeMoreCalculator: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // 어제 평균가 가져오기
-  const fetchYesterdayPrices = async () => {
+  // latest_prices.json에서 최신 가격 가져오기
+  const fetchLatestPrices = async () => {
     setLoading(true);
     try {
-      console.log('Fetching yesterday average prices...');
+      console.log('Fetching latest prices from JSON...');
+
+      const { latest } = await fetchPriceData();
 
       const searchPrices: { [itemId: number]: number } = {};
 
-      const pricePromises = Object.entries(MATERIAL_IDS).map(async ([key, itemId]) => {
-        try {
-          const response = await fetch('/api/market/yesterday-avg-price', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ itemId })
-          });
-
-          if (!response.ok) {
-            console.error(`Failed to fetch price for ${key}`);
-            return { itemId, price: 0 };
-          }
-
-          const data = await response.json();
-          console.log(`Yesterday avg price for ${key}: ${data.price}`);
-          return { itemId, price: data.price || 0 };
-        } catch (error) {
-          console.error(`Error fetching price for ${key}:`, error);
-          return { itemId, price: 0 };
-        }
+      Object.entries(MATERIAL_IDS).forEach(([key, itemId]) => {
+        const bundlePrice = latest[String(itemId)] || 0;
+        const bundleSize = MATERIAL_BUNDLE_SIZES[itemId] || 1;
+        const unitPrice = bundlePrice / bundleSize; // 묶음 가격 → 개당 가격 변환
+        searchPrices[itemId] = unitPrice;
+        console.log(`${key} - 묶음가격: ${bundlePrice}, 묶음크기: ${bundleSize}, 개당가격: ${unitPrice}`);
       });
 
-      const priceResults = await Promise.all(pricePromises);
-      priceResults.forEach(({ itemId, price }) => {
-        searchPrices[itemId] = price;
-      });
-
-      console.log('All fetched yesterday average prices:', searchPrices);
+      console.log('All fetched latest prices:', searchPrices);
 
       // 유효한 가격이 있을 때만 캐시 저장
       if (hasValidPrices(searchPrices)) {
@@ -176,7 +160,7 @@ const SeeMoreCalculator: React.FC = () => {
       calculateWithPrices(searchPrices);
 
     } catch (error) {
-      console.error('Failed to fetch yesterday average prices:', error);
+      console.error('Failed to fetch latest prices:', error);
     } finally {
       setLoading(false);
     }
@@ -201,10 +185,10 @@ const SeeMoreCalculator: React.FC = () => {
       Object.entries(groupedRewards).forEach(([raidName, rewards]) => {
         newProfitData[raidName] = rewards.map(reward => {
           const materialsWithPrices = reward.materials.map(material => {
-            const unitPrice = searchPrices[material.itemId] || 0;
+            const unitPrice = searchPrices[material.itemId] || 0; // API에서 이미 개당 가격으로 반환
             const totalPrice = unitPrice * material.amount;
 
-            console.log(`${material.itemName} - 단위가격: ${unitPrice}, 수량: ${material.amount}, 총가격: ${totalPrice}`);
+            console.log(`${material.itemName} - 개당가격: ${unitPrice}, 수량: ${material.amount}, 총가격: ${totalPrice}`);
 
             return {
               ...material,
@@ -300,7 +284,7 @@ const SeeMoreCalculator: React.FC = () => {
         <div className="text-end">
           <small className="text-muted d-block">
             {lastUpdated ?
-              `전일 평균가 (매일 오전 10시 30분 갱신) | 실시간 시세와 차이가 있을 수 있습니다` :
+              `최신 거래소 가격 (매일 오전 10시 30분 갱신) | 실시간 시세와 차이가 있을 수 있습니다` :
               '가격 정보를 불러오는 중...'
             }
           </small>

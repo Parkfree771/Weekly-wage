@@ -417,38 +417,25 @@ export default function RefiningCalculator() {
 
   }, [materials, marketPrices, boundMaterials, materialOptions, advancedMaterialOptions]);
 
-  // 거래소 가격 불러오기 (전전날 데이터, 하루에 한 번만)
+  // 거래소 가격 불러오기 (latest_prices.json 사용)
   useEffect(() => {
     const fetchMarketPrices = async () => {
       try {
-        // 로컬스토리지에서 캐시된 가격과 날짜 확인
-        const cachedPrices = localStorage.getItem('refining_material_prices');
-        const cachedDate = localStorage.getItem('refining_material_prices_date');
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        console.log('Fetching latest prices from JSON for refining...');
 
-        // 캐시가 있고 오늘 날짜와 같으면 캐시 사용
-        if (cachedPrices && cachedDate === today) {
-          setMarketPrices(JSON.parse(cachedPrices));
-          return;
-        }
+        const { fetchPriceData } = await import('@/lib/price-history-client');
+        const { latest } = await fetchPriceData();
 
-        // 캐시가 없거나 오래되었으면 새로 가져오기
-        const response = await fetch('/api/market/refining-prices');
+        // latest_prices.json의 가격을 marketPrices 형식으로 변환
+        const prices: Record<string, number> = {};
+        Object.entries(latest).forEach(([itemId, price]) => {
+          prices[itemId] = price;
+        });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.prices) {
-            setMarketPrices(data.prices);
-
-            // 로컬스토리지에 캐시 저장
-            localStorage.setItem('refining_material_prices', JSON.stringify(data.prices));
-            localStorage.setItem('refining_material_prices_date', today);
-
-            console.log(`재련 재료 가격 로드 완료 (${data.targetDate} 데이터 사용)`);
-          }
-        }
+        setMarketPrices(prices);
+        console.log('재련 재료 가격 로드 완료 (최신 거래소 가격)');
       } catch (error) {
-        console.error('Failed to fetch market prices:', error);
+        console.error('Failed to fetch latest prices:', error);
       }
     };
 

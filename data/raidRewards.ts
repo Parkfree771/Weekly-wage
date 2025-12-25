@@ -20,9 +20,17 @@ export const MATERIAL_IDS = {
 
 export const MATERIAL_NAMES = {
   FATE_GUARDIAN_STONE: '운명의 수호석',
-  FATE_DESTRUCTION_STONE: '운명의 파괴석', 
+  FATE_DESTRUCTION_STONE: '운명의 파괴석',
   FATE_FRAGMENT: '운명의 파편', // UI에서는 파편으로 표시
   FATE_BREAKTHROUGH_STONE: '운명의 돌파석',
+};
+
+// 묶음 단위 - 개당 가격 계산을 위한 나눗수
+export const MATERIAL_BUNDLE_SIZES = {
+  [MATERIAL_IDS.FATE_GUARDIAN_STONE]: 100, // 수호석 100개 묶음
+  [MATERIAL_IDS.FATE_DESTRUCTION_STONE]: 100, // 파괴석 100개 묶음
+  [MATERIAL_IDS.FATE_FRAGMENT]: 3000, // 파편 3000개 묶음
+  [MATERIAL_IDS.FATE_BREAKTHROUGH_STONE]: 1, // 돌파석 1개 단위
 };
 
 export const raidRewards: RaidReward[] = [

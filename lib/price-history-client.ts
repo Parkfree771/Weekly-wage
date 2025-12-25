@@ -40,7 +40,7 @@ function getLostArkDate(date: Date = new Date()): string {
 /**
  * history_all.json과 latest_prices.json 다운로드 (캐싱)
  */
-async function fetchPriceData(): Promise<{ history: HistoryData; latest: LatestPrices }> {
+export async function fetchPriceData(): Promise<{ history: HistoryData; latest: LatestPrices }> {
   const now = Date.now();
 
   // 캐시가 유효하면 반환
