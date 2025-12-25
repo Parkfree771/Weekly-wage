@@ -247,7 +247,7 @@ export default function PriceHistoryChart({
 
             {/* 차트 */}
             <div style={{ width: '100%', height: '200px' }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                 <LineChart
                   data={chartData}
                   margin={{ top: 5, right: 10, left: stats && stats.max >= 100000 ? 10 : stats && stats.max >= 10000 ? 5 : 0, bottom: 5 }}

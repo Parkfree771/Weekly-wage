@@ -821,7 +821,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
             </div>
 
             <div className="d-none d-md-block" style={{ width: '100%', height: '500px' }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={500}>
                 <LineChart data={chartData} margin={{ top: 25, right: 10, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical={true} horizontal={true} />
@@ -835,7 +835,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
             </div>
 
             <div className="d-md-none" style={{ width: '100%', height: '350px' }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={350}>
                 <LineChart data={chartData} margin={{ top: 20, right: 5, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />

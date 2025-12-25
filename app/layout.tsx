@@ -1,5 +1,5 @@
 import { ThemeProvider } from '@/components/ThemeProvider';
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import Script from "next/script";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -9,6 +9,13 @@ const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
   weight: ["400", "700"],
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 0.8,
+  maximumScale: 2,
+  userScalable: true,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://lostarkweeklygold.kr'),

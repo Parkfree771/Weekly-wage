@@ -91,7 +91,7 @@ export default function PriceChart({ itemIds, title = '가격 추이' }: PriceCh
   return (
     <div className="price-chart-container">
       <h5 className="mb-3">{title}</h5>
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={300} minHeight={300}>
         <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis

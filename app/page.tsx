@@ -7,6 +7,7 @@ import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 import PriceComparisonStats from '@/components/PriceComparisonStats';
 import { PriceChartProvider } from '@/components/PriceChartContainer';
+import ContactForm from '@/components/ContactForm';
 import styles from './page.module.css';
 
 export default function Home() {
@@ -40,7 +41,7 @@ export default function Home() {
             </div>
 
             {/* 기능 버튼들 */}
-            <div className="mb-2 mb-md-3 mt-3 mt-md-4">
+            <div className="mb-2 mb-md-3 mt-3 mt-md-4" style={{ maxWidth: '1400px', margin: '0 auto' }}>
               <Row className="justify-content-center g-2 g-sm-3">
                 <Col xs={5} sm={5} md={4} lg={3} xl={3}>
                   <Link href="/weekly-gold" className="text-decoration-none">
@@ -164,85 +165,36 @@ export default function Home() {
               </Card.Body>
             </Card>
 
-            {/* 가격 차이 안내 */}
-            <div
-              className="px-3 py-2 d-flex align-items-center gap-2 mb-3"
-              style={{
-                background: 'var(--card-body-bg-stone)',
-                borderLeft: '3px solid #fb923c',
-                borderRadius: '8px',
-                fontSize: 'clamp(0.8rem, 1.8vw, 0.9rem)',
-                color: 'var(--text-secondary)',
-                boxShadow: 'var(--shadow-sm)',
-                maxWidth: '1400px',
-                margin: '0 auto 16px auto'
-              }}
-            >
-              <img src="/warning.png" alt="warning" style={{ width: '20px', height: '20px', flexShrink: 0 }} />
-              <span style={{ lineHeight: '1.4' }}>
-                경매장 가격 수집 빈도 차이로 인게임 가격과 다소 차이가 있을 수 있습니다. 추세 참고만 하시고 실제 가격은 인게임에서 확인 부탁드립니다.
-              </span>
+            {/* 문의하기 섹션 */}
+            <div style={{ maxWidth: '700px', margin: '0 auto 0 auto' }}>
+              <Card className="border-0 shadow-lg mb-3" style={{ borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent' }}>
+                <Card.Header
+                  className="text-center py-2 border-0"
+                  style={{
+                    background: 'var(--card-header-bg-stone)',
+                    borderBottom: '1px solid var(--border-color)'
+                  }}
+                >
+                  <h3
+                    className="mb-0"
+                    style={{
+                      fontWeight: '600',
+                      fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
+                      background: 'var(--gradient-text-stone)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      letterSpacing: '-0.025em'
+                    }}
+                  >
+                    문의하기
+                  </h3>
+                </Card.Header>
+                <Card.Body className="p-0" style={{ background: 'var(--card-body-bg-stone)', borderRadius: '0 0 16px 16px', overflow: 'hidden' }}>
+                  <ContactForm />
+                </Card.Body>
+              </Card>
             </div>
-
-            {/* 지표 주의사항 */}
-            <div
-              className="px-3 py-2 d-flex align-items-center gap-2 mb-3"
-              style={{
-                background: 'var(--card-body-bg-stone)',
-                borderLeft: '3px solid #fb923c',
-                borderRadius: '8px',
-                fontSize: 'clamp(0.8rem, 1.8vw, 0.9rem)',
-                color: 'var(--text-secondary)',
-                boxShadow: 'var(--shadow-sm)',
-                maxWidth: '1400px',
-                margin: '0 auto 16px auto'
-              }}
-            >
-              <img src="/warning.png" alt="warning" style={{ width: '20px', height: '20px', flexShrink: 0 }} />
-              <span style={{ lineHeight: '1.4' }}>
-                이 지표들은 실제 주식 시장에서 사용하는 기술적 분석(RSI, 스토캐스틱)을 게임 시세에 대입한 결과입니다. 통계적인 참고 자료일 뿐, 미래의 시세를 보장하지 않습니다. 가볍게 흐름을 파악하는 용도로만 즐겨주세요.
-              </span>
-            </div>
-
-            {/* 서비스 소개 섹션 */}
-            <Card className="border-0 shadow-sm" style={{ borderRadius: '12px', backgroundColor: 'var(--card-body-bg-blue)' }}>
-              <Card.Body className="p-3 p-md-4">
-                <h2 className="h5 mb-3" style={{ color: 'var(--text-primary)', fontWeight: '600' }}>
-                  로스트아크 골드 계산기란?
-                </h2>
-                <p style={{ fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '1rem' }}>
-                  로스트아크 골드 계산기는 로스트아크 게임을 플레이하는 유저들을 위한 필수 도구입니다.
-                  원정대 전체 캐릭터의 주간 골드 수익을 자동으로 계산하고, 레이드 더보기 보상의 실시간 손익을 분석하여
-                  가장 효율적인 골드 파밍 전략을 제시합니다.
-                </p>
-
-                <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)', fontWeight: '600' }}>
-                  주요 기능
-                </h3>
-                <ul style={{ fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)', color: 'var(--text-secondary)', lineHeight: '1.8', paddingLeft: '1.2rem' }}>
-                  <li><strong>주간 골드 계산:</strong> 캐릭터명을 입력하면 원정대 전체의 주간 골드 수익을 자동으로 계산합니다.</li>
-                  <li><strong>더보기 손익 분석:</strong> 각 레이드의 더보기 보상을 현재 거래소 가격으로 환산하여 손익을 실시간으로 분석합니다.</li>
-                  <li><strong>T4 재련 비용 계산:</strong> 목표 레벨까지 필요한 재련 재료와 골드를 정확하게 계산해줍니다.</li>
-                  <li><strong>실시간 가격 추이:</strong> 주요 재료와 아이템의 거래소/경매장 가격 변동을 그래프로 확인할 수 있습니다.</li>
-                </ul>
-
-                <h3 className="h6 mb-2 mt-3" style={{ color: 'var(--text-primary)', fontWeight: '600' }}>
-                  데이터 출처
-                </h3>
-                <p style={{ fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '0.5rem' }}>
-                  모든 데이터는 로스트아크 공식 API를 통해 수집되며, 매시간 정각에 자동으로 업데이트됩니다.
-                  거래소 가격, 경매장 가격, 캐릭터 정보 등은 스마일게이트가 제공하는 공개 API를 통해 수집하여
-                  사용자에게 정확한 정보를 제공합니다.
-                </p>
-
-                <div className="mt-3 p-2 rounded" style={{ backgroundColor: 'var(--card-header-bg-blue)', fontSize: 'clamp(0.75rem, 1.6vw, 0.85rem)' }}>
-                  <p className="mb-0" style={{ color: 'var(--text-muted)' }}>
-                    <strong>※ 알림:</strong> 본 사이트는 로스트아크 공식 서비스가 아니며, 스마일게이트와 무관한 개인이 운영하는 팬사이트입니다.
-                    모든 계산 결과는 참고용이며, 실제 게임 내 상황과 다를 수 있습니다.
-                  </p>
-                </div>
-              </Card.Body>
-            </Card>
 
           </Col>
         </Row>

@@ -23,9 +23,14 @@
 .icon {
   width: 20px;
   height: 20px;
+  filter: brightness(0);
 }
 
 /* 다크모드일 때 아이콘 색상 */
+:global([data-theme="dark"]) .icon {
+  filter: brightness(0) invert(1);
+}
+
 :global(.dark) .toggleButton {
   color: #ffffff;
 }
