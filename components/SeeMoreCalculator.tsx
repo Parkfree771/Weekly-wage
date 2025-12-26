@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Card, Badge, Button, Row, Col, Table, Spinner } from 'react-bootstrap';
 import { raids } from '@/data/raids';
 import { raidRewards, MaterialReward, MATERIAL_IDS, MATERIAL_NAMES, MATERIAL_BUNDLE_SIZES } from '@/data/raidRewards';
@@ -133,31 +134,42 @@ const SeeMoreCalculator: React.FC = () => {
 
   return (
     <div>
-      {/* 레이드 목록 버튼들 */}
-      <div className={styles.raidGrid}>
-        {raids.map((raid) => (
-          <Button
-            key={raid.name}
-            variant={selectedRaid === raid.name ? "primary" : "outline-secondary"}
-            className={`${styles.raidButton} ${getProfitLossClass(raid.name)}`}
-            onClick={() => handleRaidSelect(raid.name)}
-          >
-            <div className={styles.raidButtonContent}>
-              <span className={styles.raidName}>{raid.name}</span>
-              <div className={styles.raidInfo}>
-                <Badge bg="secondary" className={styles.raidLevel}>Lv. {raid.level}</Badge>
+      {/* 레이드 목록 카드들 */}
+      <div className={styles.raidCardsGrid}>
+        {raids.map((raid) => {
+          const profitLoss = calculateProfitLoss(raid.name);
+          const isProfit = profitLoss > 0;
+          const isLoss = profitLoss < 0;
+          const isSelected = selectedRaid === raid.name;
+
+          return (
+            <div
+              key={raid.name}
+              className={`${styles.raidCard} ${isSelected ? styles.selected : ''}`}
+              onClick={() => handleRaidSelect(raid.name)}
+            >
+              <div className={styles.imageWrapper}>
+                <Image
+                  src={raid.image || '/behemoth.png'}
+                  alt={raid.name}
+                  fill
+                  className={styles.raidImage}
+                  sizes="(max-width: 768px) 150px, 200px"
+                />
+                <div className={styles.overlay} />
+              </div>
+              <div className={styles.cardContent}>
+                <h3 className={styles.raidName}>{raid.name}</h3>
+                <p className={styles.raidLevel}>Lv. {raid.level}</p>
                 {profitData[raid.name] && (
-                  <Badge 
-                    bg={calculateProfitLoss(raid.name) > 0 ? 'success' : calculateProfitLoss(raid.name) < 0 ? 'danger' : 'secondary'}
-                    className={styles.profitBadge}
-                  >
-                    {calculateProfitLoss(raid.name) > 0 ? '+' : ''}{Math.round(calculateProfitLoss(raid.name)).toLocaleString()}골드
-                  </Badge>
+                  <div className={`${styles.goldBadge} ${isProfit ? styles.profitBadge : isLoss ? styles.lossBadge : styles.neutralBadge}`}>
+                    {isProfit ? '+' : ''}{Math.round(profitLoss).toLocaleString()}
+                  </div>
                 )}
               </div>
             </div>
-          </Button>
-        ))}
+          );
+        })}
       </div>
 
       {/* 가격 정보 및 갱신 상태 */}

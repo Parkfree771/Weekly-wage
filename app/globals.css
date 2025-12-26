@@ -47,6 +47,11 @@
 
   /* Accordion */
   --accordion-icon-invert: 0;
+
+  /* Raid Group Badge */
+  --raid-badge-bg: rgba(99, 102, 241, 0.08);
+  --raid-badge-color: #4f46e5;
+  --raid-badge-border: rgba(99, 102, 241, 0.25);
 }
 
 [data-theme="dark"] {
@@ -94,6 +99,11 @@
 
   /* Accordion */
   --accordion-icon-invert: 1;
+
+  /* Raid Group Badge */
+  --raid-badge-bg: rgba(139, 92, 246, 0.12);
+  --raid-badge-color: #a78bfa;
+  --raid-badge-border: rgba(139, 92, 246, 0.3);
 }
 
 body {

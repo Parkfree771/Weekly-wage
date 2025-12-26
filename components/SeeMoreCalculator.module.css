@@ -1,151 +1,114 @@
-/* 레이드 버튼 그리드 */
-.raidGrid {
+/* 레이드 카드 그리드 */
+.raidCardsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin: 30px 0;
-  max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0;
+  margin: 2rem auto;
+  padding: 0;
+  max-width: 1110px;
 }
 
-/* 레이드 버튼 스타일 */
-.raidButton {
-  height: 85px;
-  padding: 10px 12px;
-  border: 3px solid;
-  border-radius: 12px;
-  transition: all 0.3s ease;
+/* 레이드 카드 */
+.raidCard {
   position: relative;
-  color: var(--text-primary) !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.raidButton:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-}
-
-.raidButton:active {
-  transform: translateY(-1px);
+  transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 3px solid transparent;
+  max-width: 185px;
 }
 
-.raidButtonContent {
+.raidCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.raidCard.selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+  transform: translateY(-4px);
+}
+
+/* 이미지 래퍼 */
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.raidImage {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+/* 오버레이 */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
+  z-index: 1;
+}
+
+/* 카드 콘텐츠 */
+.cardContent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.75rem;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-}
-
-.raidInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  align-items: center;
-  width: 100%;
-}
-
-.profitBadge {
-  font-size: 0.7rem;
-  padding: 3px 6px;
-  white-space: nowrap;
+  gap: 0.2rem;
 }
 
 .raidName {
+  font-size: 1.1rem;
   font-weight: 700;
-  font-size: 14px;
-  line-height: 1.2;
+  color: white;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.raidLevel {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.goldBadge {
+  margin-top: 0.3rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
   text-align: center;
-  word-break: keep-all;
-  color: inherit !important;
+  backdrop-filter: blur(10px);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-.raidLevel {
-  font-size: 11px;
-  padding: 2px 6px;
-}
-
-/* 손익에 따른 색깔 구분 - 모든 상태에 대해 명시적으로 정의 (가시성 개선) */
-.profitRaid,
-.profitRaid:hover,
-.profitRaid:focus,
-.profitRaid:active,
-.profitRaid:focus-visible {
-  border-color: rgb(22, 163, 74) !important;
-  background-color: rgba(34, 197, 94, 0.12) !important;
-  color: rgb(22, 163, 74) !important;
-}
-
-.profitRaid:hover,
-.profitRaid:active {
-  background-color: rgba(34, 197, 94, 0.2) !important;
-  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.35) !important;
-}
-
-.lossRaid,
-.lossRaid:hover,
-.lossRaid:focus,
-.lossRaid:active,
-.lossRaid:focus-visible {
-  border-color: rgb(220, 38, 38) !important;
-  background-color: rgba(239, 68, 68, 0.12) !important;
-  color: rgb(220, 38, 38) !important;
-}
-
-.lossRaid:hover,
-.lossRaid:active {
-  background-color: rgba(239, 68, 68, 0.2) !important;
-  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35) !important;
-}
-
-.neutralRaid,
-.neutralRaid:hover,
-.neutralRaid:focus,
-.neutralRaid:active,
-.neutralRaid:focus-visible {
-  border-color: rgb(107, 114, 128) !important;
-  background-color: rgba(156, 163, 175, 0.12) !important;
-  color: rgb(75, 85, 99) !important;
-}
-
-.neutralRaid:hover,
-.neutralRaid:active {
-  background-color: rgba(156, 163, 175, 0.2) !important;
-  box-shadow: 0 8px 20px rgba(156, 163, 175, 0.35) !important;
-}
-
-/* Bootstrap 버튼 기본 스타일 오버라이드 */
-.raidButton.btn-primary,
-.raidButton.btn-primary:hover,
-.raidButton.btn-primary:focus,
-.raidButton.btn-primary:active,
-.raidButton.btn-primary:focus-visible,
-.raidButton.btn-outline-secondary,
-.raidButton.btn-outline-secondary:hover,
-.raidButton.btn-outline-secondary:focus,
-.raidButton.btn-outline-secondary:active,
-.raidButton.btn-outline-secondary:focus-visible {
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-/* 배지 스타일 개선 */
 .profitBadge {
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background-color: rgba(34, 197, 94, 0.9);
+  color: white;
 }
 
-.raidLevel {
-  opacity: 0.95;
-  font-weight: 700;
+.lossBadge {
+  background-color: rgba(239, 68, 68, 0.9);
+  color: white;
+}
+
+.neutralBadge {
+  background-color: rgba(156, 163, 175, 0.9);
+  color: white;
 }
 
 /* 선택된 레이드 카드 */
@@ -309,51 +272,41 @@
 
 /* 반응형 디자인 */
 @media (max-width: 1200px) {
-  .raidGrid {
-    grid-template-columns: repeat(3, 1fr);
-    max-width: 750px;
+  .raidCardsGrid {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 740px;
   }
 }
 
 @media (max-width: 768px) {
-  .raidGrid {
+  .raidCardsGrid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    max-width: 100%;
-    margin: 15px 0;
+    gap: 0;
+    padding: 0;
+    margin: 1.5rem auto;
+    max-width: 555px;
   }
 
-  .raidButton {
-    height: 70px;
-    padding: 6px 4px;
-    border-radius: 8px;
-    border-width: 2px;
+  .raidCard {
+    border-radius: 12px;
   }
 
-  .raidButtonContent {
-    gap: 2px;
-  }
-
-  .raidInfo {
-    gap: 2px;
+  .cardContent {
+    padding: 0.75rem;
   }
 
   .raidName {
-    font-size: 0.7rem;
-    font-weight: 700;
-    line-height: 1.1;
+    font-size: 1.2rem;
   }
 
   .raidLevel {
-    font-size: 0.58rem;
-    padding: 1px 4px;
-    font-weight: 700;
+    font-size: 1rem;
   }
 
-  .profitBadge {
-    font-size: 0.58rem;
-    padding: 2px 4px;
-    font-weight: 700;
+  .goldBadge {
+    margin-top: 0.25rem;
+    padding: 0.35rem 0.4rem;
+    font-size: 0.9rem;
   }
 
   /* 모바일 카드 스타일 */
@@ -411,33 +364,29 @@
 }
 
 @media (max-width: 576px) {
-  .raidGrid {
+  .raidCardsGrid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    gap: 0;
+    padding: 0;
+    margin: 1rem auto;
+    max-width: 450px;
   }
 
-  .raidButton {
-    height: 65px;
-    padding: 5px 3px;
-    border-width: 2px;
+  .cardContent {
+    padding: 0.5rem;
   }
 
   .raidName {
-    font-size: 0.65rem;
-    font-weight: 700;
-    line-height: 1.1;
+    font-size: 1.1rem;
   }
 
   .raidLevel {
-    font-size: 0.55rem;
-    padding: 1px 3px;
-    font-weight: 700;
+    font-size: 0.9rem;
   }
 
-  .profitBadge {
-    font-size: 0.55rem;
-    padding: 2px 3px;
-    font-weight: 700;
+  .goldBadge {
+    padding: 0.25rem 0.35rem;
+    font-size: 0.8rem;
   }
 
   /* 작은 화면용 카드 조정 */
@@ -492,46 +441,16 @@
 }
 
 /* 다크모드 개선 - 가시성 향상 */
-[data-theme="dark"] .profitRaid,
-[data-theme="dark"] .profitRaid:hover,
-[data-theme="dark"] .profitRaid:focus,
-[data-theme="dark"] .profitRaid:active {
-  background-color: rgba(34, 197, 94, 0.15) !important;
-  color: rgb(86, 239, 148) !important;
-  border-color: rgb(34, 197, 94) !important;
+[data-theme="dark"] .raidCard {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-[data-theme="dark"] .profitRaid:hover,
-[data-theme="dark"] .profitRaid:active {
-  background-color: rgba(34, 197, 94, 0.25) !important;
+[data-theme="dark"] .raidCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
-[data-theme="dark"] .lossRaid,
-[data-theme="dark"] .lossRaid:hover,
-[data-theme="dark"] .lossRaid:focus,
-[data-theme="dark"] .lossRaid:active {
-  background-color: rgba(239, 68, 68, 0.15) !important;
-  color: rgb(252, 165, 165) !important;
-  border-color: rgb(239, 68, 68) !important;
-}
-
-[data-theme="dark"] .lossRaid:hover,
-[data-theme="dark"] .lossRaid:active {
-  background-color: rgba(239, 68, 68, 0.25) !important;
-}
-
-[data-theme="dark"] .neutralRaid,
-[data-theme="dark"] .neutralRaid:hover,
-[data-theme="dark"] .neutralRaid:focus,
-[data-theme="dark"] .neutralRaid:active {
-  background-color: rgba(156, 163, 175, 0.15) !important;
-  color: rgb(229, 231, 235) !important;
-  border-color: rgb(156, 163, 175) !important;
-}
-
-[data-theme="dark"] .neutralRaid:hover,
-[data-theme="dark"] .neutralRaid:active {
-  background-color: rgba(156, 163, 175, 0.25) !important;
+[data-theme="dark"] .raidCard.selected {
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
 }
 
 [data-theme="dark"] .gateSection {
