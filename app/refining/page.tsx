@@ -19,7 +19,7 @@ export default function RefiningPage() {
                 <div className="d-flex justify-content-center align-items-center gap-3 mb-2" style={{ cursor: 'pointer' }}>
                   <Image
                     src="/banner_share.jpg"
-                    alt="재련"
+                    alt="로스트아크 T4 재련 비용 계산기"
                     width={48}
                     height={48}
                     priority

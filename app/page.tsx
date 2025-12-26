@@ -22,7 +22,7 @@ export default function Home() {
             {/* 사이트 제목 */}
             <div className="text-center mb-3 mb-md-4">
               <div className="d-flex justify-content-center align-items-center gap-2 mb-2">
-                <Image src="/icon.png" alt="로고" width={40} height={40} priority style={{ width: 'clamp(2rem, 4.5vw, 2.5rem)', height: 'auto' }} />
+                <Image src="/icon.png" alt="로스트아크 골드 계산기 로고" width={40} height={40} priority style={{ width: 'clamp(2rem, 4.5vw, 2.5rem)', height: 'auto' }} />
                 <h1
                   className="title mb-0"
                   style={{
@@ -38,6 +38,26 @@ export default function Home() {
                   로스트아크 골드 계산기
                 </h1>
               </div>
+
+              {/* SEO를 위한 정적 콘텐츠 - 검색엔진만 읽음 */}
+              <noscript>
+                <div style={{padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px', margin: '1rem 0'}}>
+                  <h2>로스트아크 주간 골드 및 재련 비용 계산</h2>
+                  <p>로스트아크의 레이드 주간 골드 수익과 T4 재련 비용을 실시간 거래소 가격으로 계산합니다.</p>
+                  <h3>지원 레이드</h3>
+                  <ul>
+                    <li><strong>카제로스 레이드:</strong> 종막, 4막, 3막, 2막, 1막</li>
+                    <li><strong>그림자 레이드:</strong> 세르카, 고통의 마녀</li>
+                  </ul>
+                  <h3>계산 가능 항목</h3>
+                  <ul>
+                    <li>원정대 주간 골드 수익 계산</li>
+                    <li>레이드 더보기 보상 손익 분석</li>
+                    <li>T4 재련 비용 및 재료 계산</li>
+                    <li>실시간 아이템 시세 확인 (명예의 파편, 파괴강석, 수호강석, 돌파석 등)</li>
+                  </ul>
+                </div>
+              </noscript>
             </div>
 
             {/* 기능 버튼들 */}
@@ -63,7 +83,7 @@ export default function Home() {
                       }}
                     >
                       <div className="d-flex justify-content-center mb-1 mb-sm-2">
-                        <Image src="/gold.jpg" alt="골드" width={64} height={64} style={{ borderRadius: '8px', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
+                        <Image src="/gold.jpg" alt="로아 주간 골드 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
                       </div>
                       <h3
                         className="mb-1 mb-sm-2"
@@ -104,7 +124,7 @@ export default function Home() {
                       }}
                     >
                       <div className="d-flex justify-content-center mb-1 mb-sm-2">
-                        <Image src="/banner_share.jpg" alt="재련" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
+                        <Image src="/banner_share.jpg" alt="로아 T4 재련 비용 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
                       </div>
                       <h3
                         className="mb-1 mb-sm-2"
