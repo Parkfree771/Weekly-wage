@@ -62,11 +62,11 @@ export default function WeeklyGoldPage() {
       <ThemeToggleButton />
       <Container fluid className="mt-3 mt-md-4">
         <Row className="justify-content-center">
-          <Col xl={7} lg={8} md={12}>
+          <Col xl={9} lg={10} md={12}>
             <div className="text-center mb-3 mb-md-4">
               <Link href="/" className="text-decoration-none">
                 <div className="d-flex justify-content-center align-items-center gap-3 mb-2" style={{ cursor: 'pointer' }}>
-                  <Image src="/gold.jpg" alt="로스트아크 주간 골드 계산기" width={48} height={48} priority style={{ borderRadius: '8px', width: 'clamp(2.5rem, 5vw, 3rem)', height: 'auto' }} />
+                  <Image src="/gold.jpg" alt="골드" width={48} height={48} priority style={{ borderRadius: '8px', width: 'clamp(2.5rem, 5vw, 3rem)', height: 'auto' }} />
                   <h1
                     className="title mb-0"
                     style={{
@@ -92,15 +92,10 @@ export default function WeeklyGoldPage() {
                 <div style={{padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px', margin: '1rem 0'}}>
                   <h2>로스트아크 주간 골드 계산기</h2>
                   <p>원정대 캐릭터들의 주간 골드 수익을 자동으로 계산하고, 레이드 더보기 보상의 손익을 실시간 거래소 가격으로 분석합니다.</p>
-                  <h3>지원하는 레이드</h3>
-                  <ul>
-                    <li><strong>카제로스 레이드:</strong> 종막, 4막, 3막, 2막, 1막</li>
-                    <li><strong>그림자 레이드:</strong> 세르카, 고통의 마녀</li>
-                  </ul>
                   <h3>주요 기능</h3>
                   <ul>
                     <li>캐릭터명 입력만으로 원정대 전체 주간 골드 수익 자동 계산</li>
-                    <li>카제로스 레이드(종막, 4막, 3막, 2막, 1막)와 그림자 레이드(세르카, 고통의 마녀) 지원</li>
+                    <li>에스더 무기, 아브렐슈드, 카양겔, 쿠크세이튼 등 모든 레이드 지원</li>
                     <li>더보기 보상 손익 실시간 분석 (실화, 명돌, 파괴강석, 수호강석 등)</li>
                     <li>거래소 가격 매시간 자동 업데이트</li>
                   </ul>
