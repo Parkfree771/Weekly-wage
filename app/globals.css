@@ -343,3 +343,376 @@ textarea:-ms-input-placeholder {
     padding: 15px 0;
   }
 }
+
+/* ==========================================================================
+   [NEW THEME] 주간 골드 페이지 전용: "Witching Hour (할로윈)"
+   ========================================================================== */
+
+/* ==========================================================================
+   [FINAL] 주간 골드 페이지 전용: "Abyssal Magma (심연의 마그마)"
+   * 수정: 쨍한 색 제거 -> 검정 & 다크 레드 오렌지
+   * 수정: 카드 크기 늘어짐 방지 (min-height 제거)
+   ========================================================================== */
+
+/* ==========================================================================
+   [FINAL FIXED] 주간 골드 페이지 전용: "Abyssal Magma (심연의 마그마)"
+   * 수정: 아코디언 본문(body) 투명화 누락 수정 (세르카 배경 100% 보임)
+   ========================================================================== */
+
+/* ==========================================================================
+   [FINAL REFINED] 주간 골드 페이지 전용: "Abyssal Magma (Simpler Ver.)"
+   * 수정 1: 카드 헤더 폰트 크기 축소 (부담스럽지 않게)
+   * 수정 2: 과한 그라디언트 제거 -> 깔끔한 단색(Solid) 적용
+   ========================================================================== */
+
+/* 1. 공통 브랜드 변수 (차분한 마그마 색상) */
+.raid-calculator-page {
+  /* 다크 오렌지 (Rust/Magma) */
+  --brand-hue: 15;
+  --brand-saturation: 85%;
+  --brand-lightness: 50%; 
+  --brand-primary: hsl(var(--brand-hue), var(--brand-saturation), var(--brand-lightness));
+}
+
+/* 2. 라이트 모드 대응 (깔끔한 웜톤) */
+:root .raid-calculator-page {
+  /* 배경: 차분한 웜 그레이 */
+  --background-start-rgb: 245, 242, 240;
+  --background-end-rgb: 235, 230, 228;
+
+  /* 카드: 불투명한 미색 */
+  --card-bg: rgba(255, 255, 255, 0.95);
+  
+  /* [수정] 헤더 배경: 그라디언트 빼고 아주 연한 단색 */
+  --card-header-bg: rgba(160, 60, 30, 0.03); 
+  
+  --border-color: rgba(160, 60, 30, 0.15);
+  --text-primary: #2b1d1a;
+  --text-muted: #75605a;
+  
+  /* 내부 배경 */
+  --card-body-bg-blue: rgba(245, 240, 235, 1);
+  --card-body-bg-stone: rgba(250, 245, 240, 1);
+  
+  /* 배경색 적용 */
+  background: linear-gradient(180deg, rgb(var(--background-start-rgb)) 0%, rgb(var(--background-end-rgb)) 100%);
+  padding: 10px 0;
+  border-radius: 12px;
+}
+
+/* 3. 다크 모드 (검정 & 심플 레드오렌지) */
+/* [수정] 3. 다크모드 스타일 */
+[data-theme="dark"] .raid-calculator-page {
+  /* 기존의 붉은색(12, 5, 5) 값을 지우고 아래 값으로 변경하세요 */
+  
+  /* 배경: 붉은기 없는 깔끔한 다크 그레이 */
+  --background-start-rgb: 45, 45, 50;  /* 약간 밝은 차콜 그레이 */
+  --background-end-rgb: 30, 30, 35;    /* 묵직한 다크 그레이 */
+  
+  /* 카드: 붉은기 뺀 중립적인 블랙 유리 */
+  --card-bg: rgba(30, 30, 35, 0.8);
+  --card-header-bg: rgba(255, 255, 255, 0.05); /* 투명한 흰색 틴트 */
+  
+  /* 내부 배경 변수도 붉은기 제거 (중요!) */
+  --card-body-bg-blue: rgba(40, 40, 45, 0.5); 
+  --card-body-bg-stone: rgba(35, 35, 40, 0.5); /* 총 골드 카드에 쓰임 */
+  
+  /* 테두리: 호박색은 유지하되 채도를 살짝 낮춤 */
+--border-color: rgba(255, 255, 255, 0.15);  
+  /* (나머지 텍스트 변수 등은 그대로 유지) */
+  --text-primary: #e0e0e0;
+  --text-muted: #a0a0a0;
+  
+  /* 배경 적용 코드는 그대로 둠 */
+  background: linear-gradient(180deg, rgb(var(--background-start-rgb)) 0%, rgb(var(--background-end-rgb)) 100%);
+}
+
+/* 4. 컴포넌트 스타일링 */
+.raid-calculator-page .card {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  
+  border: 1px solid var(--border-color) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  
+  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.3) !important;
+  border-radius: 12px !important;
+}
+
+.raid-calculator-page .card:hover {
+  /* 👇 주황색 변수 삭제 -> 흰색 투명으로 변경 */
+  border-color: rgba(255, 255, 255, 0.3) !important; 
+  
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.5) !important;
+  transition: all 0.3s ease;
+}
+
+/* 버튼: 단색 (그라디언트 X) */
+.raid-calculator-page .btn-primary {
+  background-color: #9a3412 !important; /* Burnt Orange */
+  border: 1px solid #7c2d12 !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: none !important; /* 그림자 제거 (심플하게) */
+}
+
+.raid-calculator-page .btn-primary:hover {
+  background-color: #c2410c !important; 
+  border-color: #9a3412 !important;
+}
+
+/* 5. [수정] 텍스트 스타일: 과한 그라디언트 제거 & 폰트 축소 */
+.raid-calculator-page h1.title,
+.raid-calculator-page .weekly-gold-page-title {
+  font-family: 'Pretendard', sans-serif;
+  /* 그라디언트 제거 -> 브랜드 컬러 단색 사용 */
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+  color: var(--brand-primary) !important; /* 텍스트 색상 직접 지정 */
+  text-shadow: none !important;
+  
+  /* 폰트 크기 조정 */
+  font-size: clamp(1.3rem, 3vw, 1.6rem) !important; 
+  font-weight: 700 !important;
+}
+
+/* [핵심 수정] 카드 헤더 ("원정대 주간 골드 계산" 등) 폰트 줄이기 */
+.raid-calculator-page h3,
+.raid-calculator-page .card-header h3, 
+.raid-calculator-page .weekly-gold-header-title {
+  font-family: 'Pretendard', sans-serif;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+  
+  /* 색상: 다크모드에선 밝은 회색, 라이트모드에선 진한 갈색 */
+  color: var(--text-primary) !important; 
+  text-shadow: none !important;
+  
+  /* 폰트 크기 확 줄임 */
+  font-size: 1.1rem !important; 
+  font-weight: 600 !important;
+  letter-spacing: -0.01em;
+}
+
+/* 카드 헤더 영역 자체의 패딩 조절 */
+.raid-calculator-page .card-header {
+    padding: 0.75rem 1rem !important;
+    background: var(--card-header-bg) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* 6. 체크박스 디자인 */
+.raid-calculator-page .form-check-input {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color) !important;
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.raid-calculator-page .form-check-input:checked {
+  background-color: #9a3412 !important;
+  border-color: #7c2d12 !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+}
+
+/* ==========================================================================
+   [세르카 1710+ 전용] 배경 투명화 (완벽 버전)
+   ========================================================================== */
+
+/* 1. 배경 제거 및 테두리 정리 */
+.raid-calculator-page .cerka-character.card,
+.raid-calculator-page .cerka-character .accordion,
+.raid-calculator-page .cerka-character .accordion-item,
+.raid-calculator-page .cerka-character .accordion-header,
+.raid-calculator-page .cerka-character .accordion-button,
+.raid-calculator-page .cerka-character .accordion-button:not(.collapsed),
+.raid-calculator-page .cerka-character .accordion-collapse,
+.raid-calculator-page .cerka-character .accordion-body,
+.raid-calculator-page .cerka-character .table,
+.raid-calculator-page .cerka-character .table td,
+.raid-calculator-page .cerka-character .table th,
+.raid-calculator-page .cerka-character .raid-group-accordion,
+.raid-calculator-page .cerka-character .raid-difficulty-accordion {
+    background-color: transparent !important;
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    border: none !important;
+}
+
+.raid-calculator-page .cerka-character.card {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 2. 텍스트: 흰색 + 진한 그림자 */
+.raid-calculator-page .cerka-character,
+.raid-calculator-page .cerka-character span,
+.raid-calculator-page .cerka-character div,
+.raid-calculator-page .cerka-character .accordion-button,
+.raid-calculator-page .cerka-character .form-check-label,
+.raid-calculator-page .cerka-character .badge,
+.raid-calculator-page .cerka-character th,
+.raid-calculator-page .cerka-character td {
+    color: #f0f0f0 !important;
+    text-shadow: 0 2px 4px #000000 !important;
+    font-weight: 500 !important;
+}
+
+.raid-calculator-page .cerka-character h4,
+.raid-calculator-page .cerka-character h5,
+.raid-calculator-page .cerka-character strong {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+/* 3. 구분선: 아주 희미하게 */
+.raid-calculator-page .cerka-character .card-header,
+.raid-calculator-page .cerka-character .table td,
+.raid-calculator-page .cerka-character .accordion-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 4. 세르카 전용 체크박스 */
+.raid-calculator-page .cerka-character .form-check-input {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+.raid-calculator-page .cerka-character .form-check-input:checked {
+  background-color: #c2410c !important;
+  border-color: #c2410c !important;
+  box-shadow: 0 0 10px rgba(194, 65, 12, 0.6) !important;
+}
+
+/* 5. 아코디언 화살표 */
+.raid-calculator-page .cerka-character .accordion-button::after {
+  filter: brightness(0) invert(1) drop-shadow(0 1px 2px #000);
+}
+
+/* ==========================================================================
+   [추가] 총 골드 카드(Total Gold) 강제 스타일링
+   * 인라인 스타일을 무시하고 다크모드 유리 디자인을 강제 적용합니다.
+   ========================================================================== */
+.raid-calculator-page .total-gold-card {
+  /* 배경색 변수 대신 유리 질감 강제 적용 */
+  background-color: var(--card-bg) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+}
+
+/* 텍스트 색상도 확실하게 (다크모드에서 흰색) */
+.raid-calculator-page .total-gold-card .card-body,
+.raid-calculator-page .total-gold-card div {
+  color: var(--text-primary) !important;
+}
+
+/* ==========================================================================
+   [FIX] 더보기 효율 계산기 (이미지 카드) 텍스트 색상 강제 화이트
+   * 설명: 글로벌 설정의 !important(검은 글씨)를 이기기 위해 추가
+   * [class*="raidCard"]는 CSS 모듈 클래스 이름(예: SeeMore_raidCard__xyz)을 찾아냅니다.
+   ========================================================================== */
+
+.raid-calculator-page div[class*="raidCard"] h3,
+.raid-calculator-page div[class*="raidCard"] p,
+.raid-calculator-page div[class*="raidCard"] span {
+    color: #ffffff !important; /* 무조건 흰색 강제 */
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9) !important; /* 배경이 밝아도 보이게 진한 그림자 */
+    opacity: 1 !important;
+}
+
+/* 세르카 출시일 텍스트 특별 강조 */
+.raid-calculator-page div[class*="raidCard"] p {
+    font-weight: 600 !important;
+    color: #f0f0f0 !important;
+}
+/* ==========================================================================
+   [FIX] "다른 레이드 보기" 버튼 색상 이중화 처리
+   * 일반 레이드: 기존 변수 유지 (라이트모드 검정 / 다크모드 흰색)
+   * 세르카 레이드: 배경이 어두우므로 무조건 흰색 강제
+   ========================================================================== */
+
+/* 1. 세르카 캐릭터 카드 내부의 링크 버튼(다른 레이드 보기) */
+.raid-calculator-page .cerka-character .btn-link {
+    color: #ffffff !important;  /* 흰색 강제 */
+    border-color: rgba(255, 255, 255, 0.3) !important; /* 테두리도 밝게 */
+}
+
+/* 2. 버튼 안의 갯수 표시 (5개) span 태그 */
+.raid-calculator-page .cerka-character .btn-link span {
+    color: rgba(255, 255, 255, 0.7) !important; /* 연한 흰색 */
+}
+
+/* 3. 버튼에 마우스 올렸을 때 */
+.raid-calculator-page .cerka-character .btn-link:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: #ffffff !important;
+}
+
+
+/* ==========================================================================
+   [최종] 테이블 강제 투명화 (그림자/Accent 변수 제거)
+   ========================================================================== */
+
+/* ==========================================================================
+   [수정] 아코디언 및 테이블 강제 투명화 (최종)
+   * 앞에 .raid-calculator-page를 붙여서 우선순위를 높였습니다.
+   ========================================================================== */
+
+/* 1. 아코디언 본문 배경 날리기 */
+.raid-calculator-page .accordion-body {
+    background-color: transparent !important;
+    color: white !important;
+}
+
+/* 2. 테이블 전체 투명화 (가장 강력한 설정) */
+.raid-calculator-page .table,
+.raid-calculator-page .table > tbody,
+.raid-calculator-page .table > thead,
+.raid-calculator-page .table > tr,
+.raid-calculator-page .table > :not(caption) > * > * {
+    background-color: transparent !important;
+    
+    /* 부트스트랩 줄무늬(Striped) 배경 변수 제거 */
+    --bs-table-bg: transparent !important;
+    --bs-table-accent-bg: transparent !important; 
+    --bs-table-striped-bg: transparent !important;
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.1) !important; /* 호버 시에만 살짝 흰색 */
+    
+    color: white !important; /* 글씨 흰색 강제 */
+    box-shadow: none !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 3. 관문(th), 클골/더보기(td) 텍스트 및 배경 */
+.raid-calculator-page .table th, 
+.raid-calculator-page .table td {
+    background-color: transparent !important;
+    color: white !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 4. 체크박스/라디오 버튼 옆 글씨(Label, Span) 흰색 강제 */
+.raid-calculator-page .table .form-check-label,
+.raid-calculator-page .table label,
+.raid-calculator-page .table span {
+    color: white !important;
+}
+
+/* 5. 혹시 모를 input 요소 주변 텍스트 처리 */
+.raid-calculator-page .table .form-check {
+    margin-bottom: 0;
+}
+
+/* ==========================================================================
+   [긴급 수정] 테이블 줄무늬(Striped) 강제 투명화
+   * 이게 없으면 첫 번째 줄 말고 그 다음 줄들에 회색 배경이 남습니다.
+   ========================================================================== */
+.raid-calculator-page .table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    --bs-table-accent-bg: transparent !important; /* 부트스트랩 accent 변수 제거 */
+    color: white !important;
+}

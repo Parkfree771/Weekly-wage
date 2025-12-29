@@ -1010,7 +1010,7 @@ export default function RefiningCalculator() {
               boxShadow: 'var(--shadow-sm)',
               zIndex: 10
             }}>
-              25년 12월 10일 겨울 업데이트 ❄️
+              26년 1월 7일 업데이트 예정
             </div>
             <Card className="mb-4" style={{
               backgroundColor: 'var(--card-bg)',

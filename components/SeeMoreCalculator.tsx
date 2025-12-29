@@ -60,9 +60,6 @@ const SeeMoreCalculator: React.FC = () => {
   // 가격으로 수익 계산
   const calculateWithPrices = (searchPrices: { [itemId: number]: number }) => {
     try {
-      console.log('Calculating raid profits with prices:', searchPrices);
-
-      // 동일한 계산 로직 사용
       const newProfitData: { [key: string]: RaidProfitData[] } = {};
 
       const groupedRewards = raidRewards.reduce((acc, reward) => {
@@ -76,10 +73,8 @@ const SeeMoreCalculator: React.FC = () => {
       Object.entries(groupedRewards).forEach(([raidName, rewards]) => {
         newProfitData[raidName] = rewards.map(reward => {
           const materialsWithPrices = reward.materials.map(material => {
-            const unitPrice = searchPrices[material.itemId] || 0; // API에서 이미 개당 가격으로 반환
+            const unitPrice = searchPrices[material.itemId] || 0;
             const totalPrice = unitPrice * material.amount;
-
-            console.log(`${material.itemName} - 개당가격: ${unitPrice}, 수량: ${material.amount}, 총가격: ${totalPrice}`);
 
             return {
               ...material,
@@ -94,8 +89,6 @@ const SeeMoreCalculator: React.FC = () => {
           const moreGold = gateInfo?.moreGold || 0;
           const profitLoss = totalValue - moreGold;
 
-          console.log(`${raidName} ${reward.gate}관문 - 총 가치: ${totalValue}, 더보기 비용: ${moreGold}, 손익: ${profitLoss}`);
-
           return {
             raidName,
             gate: reward.gate,
@@ -108,7 +101,6 @@ const SeeMoreCalculator: React.FC = () => {
       });
 
       setProfitData(newProfitData);
-      console.log('Successfully calculated raid profits with yesterday average prices:', newProfitData);
     } catch (error) {
       console.error('Failed to calculate raid profits:', error);
     }
@@ -118,18 +110,8 @@ const SeeMoreCalculator: React.FC = () => {
   const calculateProfitLoss = (raidName: string): number => {
     const raidData = profitData[raidName];
     if (!raidData) return 0;
-    
-    // Return total profit/loss for all gates
     const totalProfitLoss = raidData.reduce((sum, gate) => sum + gate.profitLoss, 0);
     return totalProfitLoss;
-  };
-
-  // 손익에 따른 CSS 클래스 결정
-  const getProfitLossClass = (raidName: string) => {
-    const profitLoss = calculateProfitLoss(raidName);
-    if (profitLoss > 0) return styles.profitRaid;
-    if (profitLoss < 0) return styles.lossRaid;
-    return styles.neutralRaid;
   };
 
   return (
@@ -141,14 +123,24 @@ const SeeMoreCalculator: React.FC = () => {
           const isProfit = profitLoss > 0;
           const isLoss = profitLoss < 0;
           const isSelected = selectedRaid === raid.name;
+          
+          // 세르카 레이드인지 확인
+          const isCerka = raid.name.includes('세르카');
 
           return (
             <div
-              key={raid.name}
-              className={`${styles.raidCard} ${isSelected ? styles.selected : ''}`}
-              onClick={() => !raid.disabled && handleRaidSelect(raid.name)}
-              style={{ opacity: raid.disabled ? 0.5 : 1, cursor: raid.disabled ? 'not-allowed' : 'pointer' }}
-            >
+      key={raid.name}
+      className={`${styles.raidCard} ${isSelected ? styles.selected : ''}`}
+      
+      /* 👇 [수정 1] 클릭 제한 해제 (disabled여도 클릭 됨) */
+      onClick={() => handleRaidSelect(raid.name)}
+      
+      /* 👇 [수정 2] 흐리게 만드는 스타일 삭제 (항상 선명하게) */
+      style={{ 
+        opacity: 1, 
+        cursor: 'pointer' 
+      }}
+    >
               <div className={styles.imageWrapper}>
                 <Image
                   src={raid.image || '/behemoth.webp'}
@@ -160,8 +152,31 @@ const SeeMoreCalculator: React.FC = () => {
                 <div className={styles.overlay} />
               </div>
               <div className={styles.cardContent}>
-                <h3 className={styles.raidName}>{raid.name} {raid.disabled && '(1/7 출시)'}</h3>
-                <p className={styles.raidLevel}>Lv. {raid.level}</p>
+                {/* [수정 포인트] 
+                    1. 세르카인 경우: 특별한 이름과 출시일 표시 
+                    2. 일반 레이드인 경우: 기존 방식대로 표시
+                    3. 공통: style={{ color: '#fff' }}를 추가하여 라이트모드에서도 흰색 글씨 강제
+                */}
+                {isCerka ? (
+                  <>
+                    <h3 className={styles.raidName} style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                      세르카 나이트메어
+                    </h3>
+                    <p className={styles.raidLevel} style={{ color: '#f0f0f0', opacity: 0.9, marginTop: '4px', fontWeight: 600 }}>
+                      1월 7일 출시 예정
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className={styles.raidName} style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                      {raid.name} {raid.disabled && !isCerka && '(1/7 출시)'}
+                    </h3>
+                    <p className={styles.raidLevel} style={{ color: '#f0f0f0', opacity: 0.9 }}>
+                      Lv. {raid.level}
+                    </p>
+                  </>
+                )}
+                
                 {profitData[raid.name] && (
                   <div className={`${styles.goldBadge} ${isProfit ? styles.profitBadge : isLoss ? styles.lossBadge : styles.neutralBadge}`}>
                     {isProfit ? '+' : ''}{Math.round(profitLoss).toLocaleString()}
@@ -237,17 +252,29 @@ const SeeMoreCalculator: React.FC = () => {
                 </Row>
                 
                 <Table
+
                   hover
+
                   size="sm"
+
                   style={{
+
                     color: 'var(--text-primary)',
+
                     marginBottom: 0,
+
                     borderCollapse: 'separate',
+
                     borderSpacing: 0,
+
                     overflow: 'hidden',
+
                     borderRadius: '8px',
+
                     border: '1px solid var(--border-color)'
+
                   }}
+
                 >
                   <thead>
                     <tr style={{

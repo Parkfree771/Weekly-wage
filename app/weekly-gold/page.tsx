@@ -58,7 +58,7 @@ export default function WeeklyGoldPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
+    <div className="raid-calculator-page" style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
       <ThemeToggleButton />
       <Container fluid className="mt-3 mt-md-4">
         <Row className="justify-content-center">
@@ -67,18 +67,7 @@ export default function WeeklyGoldPage() {
               <Link href="/" className="text-decoration-none">
                 <div className="d-flex justify-content-center align-items-center gap-3 mb-2" style={{ cursor: 'pointer' }}>
                   <Image src="/gold.webp" alt="골드" width={48} height={48} priority style={{ borderRadius: '8px', width: 'clamp(2.5rem, 5vw, 3rem)', height: 'auto' }} />
-                  <h1
-                    className="title mb-0"
-                    style={{
-                      fontSize: 'clamp(1.5rem, 3.5vw, 2rem)',
-                      fontWeight: 700,
-                      background: 'var(--gradient-text-blue)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      letterSpacing: '-0.02em'
-                    }}
-                  >
+                  <h1 className="weekly-gold-page-title mb-0">
                     주간 골드 계산
                   </h1>
                 </div>
@@ -126,29 +115,14 @@ export default function WeeklyGoldPage() {
                     zIndex: 10
                   }}
                 >
-                  25년 12월 10일 겨울 업데이트 ❄️
+                  26년 1월 7일 업데이트 예정
                 </div>
-                <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
+                <Card className="border-0 shadow-lg weekly-gold-header-card" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                   <Card.Header
                     className="py-2 border-0"
-                    style={{
-                      background: 'var(--card-header-bg-blue)',
-                      borderBottom: '1px solid var(--border-color)'
-                    }}
                   >
                     <div className="text-center">
-                      <h3
-                        className="mb-0"
-                        style={{
-                          fontWeight: '600',
-                          fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                          background: 'var(--gradient-text-blue)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                          letterSpacing: '-0.025em'
-                        }}
-                      >
+                      <h3 className="weekly-gold-header-title mb-0">
                         원정대 주간 골드 계산
                       </h3>
                     </div>
@@ -179,7 +153,7 @@ export default function WeeklyGoldPage() {
                       boxShadow: 'var(--shadow-sm)',
                       zIndex: 10
                     }}>
-                      25년 12월 10일 겨울 업데이트 ❄️
+                      26년 1월 7일 업데이트 예정
                     </div>
                     <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                       <Card.Header

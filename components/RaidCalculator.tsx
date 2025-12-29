@@ -342,23 +342,36 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
   }
 
   return (
-    <>
+    <div className="raid-calculator-page">
       <Row className="align-items-stretch">
         {selectedCharacters.map(character => {
           const checkedGroups = getCheckedRaidGroups(character.characterName);
           const uncheckedGroups = Object.keys(groupedRaids).filter(g => !checkedGroups.includes(g));
           const showAll = showAllRaids[character.characterName] || false;
+          const isCerka = character.itemLevel >= 1710;
 
           return (
             <Col lg={4} md={4} key={character.characterName} className="mb-3 mb-md-4">
-              <Card className="character-raid-card" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)', height: '100%' }}>
+              <Card className={`character-raid-card ${isCerka ? 'cerka-character' : ''}`} style={{ borderColor: 'var(--border-color)', height: '100%', position: 'relative', overflow: 'hidden' }}>
+
+                {isCerka && (
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
+                    <Image
+                      src="/cerka.webp"
+                      alt="세르카 배경"
+                      fill
+                      style={{ objectFit: 'cover', opacity: 1 }}
+                      priority={true}
+                    />
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.3)' }} />
+                  </div>
+                )}
                 <Card.Header
                   className="character-raid-header"
                   style={{
-                    backgroundColor: 'var(--card-header-bg)',
-                    borderColor: 'var(--border-color)',
-                    color: 'var(--text-primary)',
-                    padding: isMobile ? '0.5rem 0.75rem' : '0.9rem 1.2rem'
+                    padding: isMobile ? '0.5rem 0.75rem' : '0.9rem 1.2rem',
+                    position: 'relative',
+                    zIndex: 1
                   }}
                 >
                   <div className="d-flex align-items-center justify-content-between" style={{ gap: isMobile ? '0.4rem' : '0.5rem', flexWrap: 'nowrap' }}>
@@ -374,11 +387,10 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                         {character.characterName}
                       </span>
                       <Badge
+                        className="character-level-badge"
                         style={{
                           fontSize: isMobile ? '0.6rem' : '0.78rem',
                           padding: '0.25em 0.5em',
-                          backgroundColor: '#6c757d',
-                          color: '#ffffff',
                           fontWeight: 500,
                           flexShrink: 0,
                           whiteSpace: 'nowrap'
@@ -396,7 +408,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                           variant={coreFarmingMoreEnabled[character.characterName] ? "primary" : "secondary"}
                           size="sm"
                           onClick={() => toggleCoreFarmingMore(character.characterName)}
-                          className="shadow-sm"
+                          className="shadow-sm core-farming-button"
                           style={{
                             fontSize: isMobile ? '0.58rem' : '0.68rem',
                             padding: isMobile ? '0.25rem 0.5rem' : '0.35rem 0.65rem',
@@ -404,24 +416,26 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                             whiteSpace: 'nowrap',
                             borderRadius: '6px',
                             lineHeight: 1.3,
-                            border: coreFarmingMoreEnabled[character.characterName] ? '2px solid #0d6efd' : '2px solid #6c757d',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease',
+                            backgroundColor: coreFarmingMoreEnabled[character.characterName] ? 'var(--brand-primary)' : 'transparent',
+                            color: coreFarmingMoreEnabled[character.characterName] ? '#fff' : 'var(--text-muted)',
+                            border: coreFarmingMoreEnabled[character.characterName] ? '1px solid var(--brand-primary)' : '1px solid var(--border-color)',
                             boxShadow: coreFarmingMoreEnabled[character.characterName]
-                              ? '0 2px 6px rgba(13, 110, 253, 0.4)'
-                              : '0 1px 3px rgba(0, 0, 0, 0.2)'
+                              ? '0 0 10px rgba(253, 186, 116, 0.4)'
+                              : 'none'
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.transform = 'translateY(-1px)';
-                            e.currentTarget.style.boxShadow = coreFarmingMoreEnabled[character.characterName]
-                              ? '0 4px 10px rgba(13, 110, 253, 0.5)'
-                              : '0 3px 6px rgba(0, 0, 0, 0.3)';
+                            if (coreFarmingMoreEnabled[character.characterName]) {
+                              e.currentTarget.style.boxShadow = '0 0 15px rgba(253, 186, 116, 0.6)';
+                            }
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = coreFarmingMoreEnabled[character.characterName]
-                              ? '0 2px 6px rgba(13, 110, 253, 0.4)'
-                              : '0 1px 3px rgba(0, 0, 0, 0.2)';
+                            if (coreFarmingMoreEnabled[character.characterName]) {
+                              e.currentTarget.style.boxShadow = '0 0 10px rgba(253, 186, 116, 0.4)';
+                            }
                           }}
                         >
                           {coreFarmingMoreEnabled[character.characterName] ? '✓ ' : ''}코어파밍 {coreFarmingMoreEnabled[character.characterName] ? 'ON' : 'OFF'}
@@ -429,18 +443,15 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                       )}
 
                       {/* 골드 */}
-                      <div className="d-flex align-items-center gap-1" style={{
-                        backgroundColor: '#fef3c7',
+                      <div className="character-gold-display d-flex align-items-center gap-1" style={{
                         padding: '0.35em 0.6em',
                         borderRadius: '6px',
-                        border: '1px solid #fbbf24',
                         whiteSpace: 'nowrap'
                       }}>
                         <Image src="/gold.webp" alt="골드" width={isMobile ? 14 : 18} height={isMobile ? 14 : 18} style={{ borderRadius: '3px' }} />
                         <span style={{
                           fontSize: isMobile ? '0.65rem' : '0.85rem',
-                          fontWeight: 700,
-                          color: '#92400e'
+                          fontWeight: 700
                         }}>
                           {calculateCharacterGold(character.characterName).toLocaleString()}
                         </span>
@@ -448,7 +459,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                     </div>
                   </div>
                 </Card.Header>
-                <Card.Body style={{ padding: isMobile ? '0.3rem' : '0.75rem 0.75rem 0.5rem' }}>
+                <Card.Body style={{ padding: isMobile ? '0.3rem' : '0.75rem 0.75rem 0.5rem', position: 'relative', zIndex: 1 }}>
                   <Accordion flush className="theme-accordion">
                     {/* 체크된 레이드 그룹들 */}
                     {checkedGroups.map(groupName => (
@@ -501,7 +512,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                                   )}
                                 </Accordion.Header>
                                 <Accordion.Body style={{ padding: isMobile ? '0.25rem' : '0.9rem' }}>
-                                  <Table striped bordered hover responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.65rem' : '0.9rem', tableLayout: 'fixed' }}>
+                                  <Table bordered responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.65rem' : '0.9rem', tableLayout: 'fixed' }}>
                                     <thead>
                                       <tr>
                                         <th style={{ padding: isMobile ? '0.2rem' : '0.6rem', width: isMobile ? '18%' : '20%', whiteSpace: 'nowrap' }}>관문</th>
@@ -746,7 +757,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
           );
         })}
       </Row>
-      <Card className="mt-2 total-gold-card" style={{ backgroundColor: 'var(--card-body-bg-stone)', border: '2px solid #fbbf24' }}>
+      <Card className="mt-2 total-gold-card">
         <Card.Body style={{ padding: isMobile ? '1rem' : '1.3rem' }}>
           <div style={{ position: 'relative' }}>
             {/* 가운데: 총 골드 */}
@@ -808,6 +819,6 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
           </div>
         </Card.Body>
       </Card>
-    </>
+    </div>
   );
 }
