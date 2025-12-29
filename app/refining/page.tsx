@@ -18,7 +18,7 @@ export default function RefiningPage() {
               <Link href="/" className="text-decoration-none">
                 <div className="d-flex justify-content-center align-items-center gap-3 mb-2" style={{ cursor: 'pointer' }}>
                   <Image
-                    src="/banner_share.jpg"
+                    src="/banner_share.webp"
                     alt="로스트아크 T4 재련 비용 계산기"
                     width={48}
                     height={48}

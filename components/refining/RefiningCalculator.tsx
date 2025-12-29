@@ -176,7 +176,7 @@ const MaterialCard = ({
     </div>
     {cost !== undefined && (
       <div style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.75rem)', color: '#f59e0b', marginTop: 'clamp(2px, 0.5vw, 4px)', fontWeight: '600' }}>
-        <Image src="/gold.jpg" alt="gold" width={10} height={10} style={{ marginRight: '2px' }} />
+        <Image src="/gold.webp" alt="gold" width={10} height={10} style={{ marginRight: '2px' }} />
         {Math.round(isBound ? 0 : cost).toLocaleString()}
       </div>
     )}
@@ -1537,7 +1537,7 @@ export default function RefiningCalculator() {
                               marginBottom: isMobile ? '0.15rem' : '0.5rem',
                               backgroundColor: 'var(--card-bg)'
                             }}>
-                              <Image src="/breath-glacier.png" alt="빙하의 숨결" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                              <Image src="/breath-glacier.webp" alt="빙하의 숨결" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                             </div>
                             <button
                               onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1597,7 +1597,7 @@ export default function RefiningCalculator() {
                                       marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                       backgroundColor: 'var(--card-bg)'
                                     }}>
-                                      <Image src="/master-tailoring-1.png" alt="장인의 재봉술 1단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                                      <Image src="/master-tailoring-1.webp" alt="장인의 재봉술 1단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                                     </div>
                                     <button
                                       onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1636,7 +1636,7 @@ export default function RefiningCalculator() {
                                     marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                     backgroundColor: 'var(--card-bg)'
                                   }}>
-                                    <Image src="/master-tailoring-2.png" alt="장인의 재봉술 2단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                                    <Image src="/master-tailoring-2.webp" alt="장인의 재봉술 2단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                                   </div>
                                   <button
                                     onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1683,7 +1683,7 @@ export default function RefiningCalculator() {
                               marginBottom: isMobile ? '0.15rem' : '0.5rem',
                               backgroundColor: 'var(--card-bg)'
                             }}>
-                              <Image src="/breath-glacier.png" alt="빙하의 숨결" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                              <Image src="/breath-glacier.webp" alt="빙하의 숨결" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                             </div>
                             <button
                               onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1743,7 +1743,7 @@ export default function RefiningCalculator() {
                                       marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                       backgroundColor: 'var(--card-bg)'
                                     }}>
-                                      <Image src="/master-tailoring-1.png" alt="장인의 재봉술 1단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                                      <Image src="/master-tailoring-1.webp" alt="장인의 재봉술 1단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                                     </div>
                                     <button
                                       onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1782,7 +1782,7 @@ export default function RefiningCalculator() {
                                     marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                     backgroundColor: 'var(--card-bg)'
                                   }}>
-                                    <Image src="/master-tailoring-2.png" alt="장인의 재봉술 2단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                                    <Image src="/master-tailoring-2.webp" alt="장인의 재봉술 2단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                                   </div>
                                   <button
                                     onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1911,7 +1911,7 @@ export default function RefiningCalculator() {
                               marginBottom: isMobile ? '0.15rem' : '0.5rem',
                               backgroundColor: 'var(--card-bg)'
                             }}>
-                              <Image src="/breath-lava.png" alt="용암의 숨결" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                              <Image src="/breath-lava.webp" alt="용암의 숨결" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                             </div>
                             <button
                               onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -1971,7 +1971,7 @@ export default function RefiningCalculator() {
                                       marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                       backgroundColor: 'var(--card-bg)'
                                     }}>
-                                      <Image src="/master-metallurgy-1.png" alt="장인의 야금술 1단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                                      <Image src="/master-metallurgy-1.webp" alt="장인의 야금술 1단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                                     </div>
                                     <button
                                       onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -2010,7 +2010,7 @@ export default function RefiningCalculator() {
                                     marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                     backgroundColor: 'var(--card-bg)'
                                   }}>
-                                    <Image src="/master-metallurgy-2.png" alt="장인의 야금술 2단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                                    <Image src="/master-metallurgy-2.webp" alt="장인의 야금술 2단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                                   </div>
                                   <button
                                     onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -2057,7 +2057,7 @@ export default function RefiningCalculator() {
                               marginBottom: isMobile ? '0.15rem' : '0.5rem',
                               backgroundColor: 'var(--card-bg)'
                             }}>
-                              <Image src="/breath-lava.png" alt="용암의 숨결" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                              <Image src="/breath-lava.webp" alt="용암의 숨결" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                             </div>
                             <button
                               onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -2117,7 +2117,7 @@ export default function RefiningCalculator() {
                                       marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                       backgroundColor: 'var(--card-bg)'
                                     }}>
-                                      <Image src="/master-metallurgy-1.png" alt="장인의 야금술 1단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                                      <Image src="/master-metallurgy-1.webp" alt="장인의 야금술 1단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                                     </div>
                                     <button
                                       onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -2156,7 +2156,7 @@ export default function RefiningCalculator() {
                                       marginBottom: isMobile ? '0.15rem' : '0.5rem',
                                       backgroundColor: 'var(--card-bg)'
                                     }}>
-                                      <Image src="/master-metallurgy-2.png" alt="장인의 야금술 2단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                                      <Image src="/master-metallurgy-2.webp" alt="장인의 야금술 2단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
                                     </div>
                                     <button
                                       onClick={() => setAdvancedMaterialOptions(prev => ({
@@ -2236,10 +2236,10 @@ export default function RefiningCalculator() {
                               <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('수호석', !boundMaterials['수호석'])}>
                                 <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['수호석'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.3rem 0.15rem', cursor: 'pointer' }}>
                                   <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '0.4rem', color: boundMaterials['수호석'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
-                                  <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-guardian-stone.png" alt="수호석" fill style={{ objectFit: 'contain' }} /></div>
+                                  <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-guardian-stone.webp" alt="수호석" fill style={{ objectFit: 'contain' }} /></div>
                                   <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', marginBottom: '2px', whiteSpace: 'nowrap' }}>수호석</div>
                                   <div style={{ fontSize: '0.6rem', fontWeight: '700', color: '#818cf8' }}>{materials.수호석.toLocaleString()}</div>
-                                  <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.jpg" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['수호석'] ? 0 : results.materialCosts['수호석']).toLocaleString()}</div>
+                                  <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.webp" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['수호석'] ? 0 : results.materialCosts['수호석']).toLocaleString()}</div>
                                 </div>
                               </div>
                             )}
@@ -2247,38 +2247,38 @@ export default function RefiningCalculator() {
                               <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('파괴석', !boundMaterials['파괴석'])}>
                                 <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['파괴석'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.3rem 0.15rem', cursor: 'pointer' }}>
                                   <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '0.4rem', color: boundMaterials['파괴석'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
-                                  <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-destruction-stone.png" alt="파괴석" fill style={{ objectFit: 'contain' }} /></div>
+                                  <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-destruction-stone.webp" alt="파괴석" fill style={{ objectFit: 'contain' }} /></div>
                                   <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', marginBottom: '2px', whiteSpace: 'nowrap' }}>파괴석</div>
                                   <div style={{ fontSize: '0.6rem', fontWeight: '700', color: '#818cf8' }}>{materials.파괴석.toLocaleString()}</div>
-                                  <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.jpg" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['파괴석'] ? 0 : results.materialCosts['파괴석']).toLocaleString()}</div>
+                                  <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.webp" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['파괴석'] ? 0 : results.materialCosts['파괴석']).toLocaleString()}</div>
                                 </div>
                               </div>
                             )}
                             <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('돌파석', !boundMaterials['돌파석'])}>
                               <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['돌파석'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.3rem 0.15rem', cursor: 'pointer' }}>
                                 <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '0.4rem', color: boundMaterials['돌파석'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
-                                <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-breakthrough-stone.png" alt="돌파석" fill style={{ objectFit: 'contain' }} /></div>
+                                <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-breakthrough-stone.webp" alt="돌파석" fill style={{ objectFit: 'contain' }} /></div>
                                 <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', marginBottom: '2px', whiteSpace: 'nowrap' }}>돌파석</div>
                                 <div style={{ fontSize: '0.6rem', fontWeight: '700', color: '#818cf8' }}>{materials.돌파석.toLocaleString()}</div>
-                                <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.jpg" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['돌파석'] ? 0 : results.materialCosts['돌파석']).toLocaleString()}</div>
+                                <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.webp" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['돌파석'] ? 0 : results.materialCosts['돌파석']).toLocaleString()}</div>
                               </div>
                             </div>
                             <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('운명파편', !boundMaterials['운명파편'])}>
                               <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['운명파편'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.3rem 0.15rem', cursor: 'pointer' }}>
                                 <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '0.4rem', color: boundMaterials['운명파편'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
-                                <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-shard-bag-large.png" alt="파편" fill style={{ objectFit: 'contain' }} /></div>
+                                <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-shard-bag-large.webp" alt="파편" fill style={{ objectFit: 'contain' }} /></div>
                                 <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', marginBottom: '2px', whiteSpace: 'nowrap' }}>파편</div>
                                 <div style={{ fontSize: '0.6rem', fontWeight: '700', color: '#818cf8' }}>{materials.운명파편.toLocaleString()}</div>
-                                <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.jpg" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['운명파편'] ? 0 : results.materialCosts['운명파편']).toLocaleString()}</div>
+                                <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.webp" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['운명파편'] ? 0 : results.materialCosts['운명파편']).toLocaleString()}</div>
                               </div>
                             </div>
                             <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('아비도스', !boundMaterials['아비도스'])}>
                               <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['아비도스'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.3rem 0.15rem', cursor: 'pointer' }}>
                                 <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '0.4rem', color: boundMaterials['아비도스'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
-                                <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/abidos-fusion.png" alt="아비도스" fill style={{ objectFit: 'contain' }} /></div>
+                                <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/abidos-fusion.webp" alt="아비도스" fill style={{ objectFit: 'contain' }} /></div>
                                 <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', marginBottom: '2px', whiteSpace: 'nowrap' }}>아비도스</div>
                                 <div style={{ fontSize: '0.6rem', fontWeight: '700', color: '#818cf8' }}>{materials.아비도스.toLocaleString()}</div>
-                                <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.jpg" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['아비도스'] ? 0 : results.materialCosts['아비도스']).toLocaleString()}</div>
+                                <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.webp" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['아비도스'] ? 0 : results.materialCosts['아비도스']).toLocaleString()}</div>
                               </div>
                             </div>
                           </div>
@@ -2286,22 +2286,22 @@ export default function RefiningCalculator() {
                           <Row className="g-3 justify-content-center">
                             {requiredMats.needsArmor && (
                               <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/destiny-guardian-stone.png" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
+                                <MaterialCard icon="/destiny-guardian-stone.webp" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
                               </Col>
                             )}
                             {requiredMats.needsWeapon && (
                               <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/destiny-destruction-stone.png" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} />
+                                <MaterialCard icon="/destiny-destruction-stone.webp" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} />
                               </Col>
                             )}
                             <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-breakthrough-stone.png" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} />
+                              <MaterialCard icon="/destiny-breakthrough-stone.webp" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} />
                             </Col>
                             <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-shard-bag-large.png" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} />
+                              <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} />
                             </Col>
                             <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/abidos-fusion.png" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} />
+                              <MaterialCard icon="/abidos-fusion.webp" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} />
                             </Col>
                           </Row>
                         )}
@@ -2324,7 +2324,7 @@ export default function RefiningCalculator() {
                             <Row className={isMobile ? 'g-2 justify-content-center mb-3' : 'g-3 justify-content-center mb-3'}>
                               <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                 <MaterialCard
-                                  icon="/breath-glacier.png"
+                                  icon="/breath-glacier.webp"
                                   name="빙하의 숨결"
                                   amount={materials.빙하_일반}
                                   color="#34d399"
@@ -2340,7 +2340,7 @@ export default function RefiningCalculator() {
                               {requiredMats.needsArmorBook1014 && (
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
-                                    icon="/tailoring-karma.png"
+                                    icon="/tailoring-karma.webp"
                                     name="재봉술: 업화(11~14) 방어구"
                                     amount={materials.방어구책1114 || 0}
                                     color="#34d399"
@@ -2357,7 +2357,7 @@ export default function RefiningCalculator() {
                               {requiredMats.needsArmorBook1518 && (
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
-                                    icon="/tailoring-karma.png"
+                                    icon="/tailoring-karma.webp"
                                     name="재봉술: 업화(15~18) 방어구"
                                     amount={materials.방어구책1518 || 0}
                                     color="#34d399"
@@ -2374,7 +2374,7 @@ export default function RefiningCalculator() {
                               {requiredMats.needsArmorBook1920 && (
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
-                                    icon="/tailoring-karma.png"
+                                    icon="/tailoring-karma.webp"
                                     name="재봉술: 업화(19~20) 방어구"
                                     amount={materials.방어구책1920 || 0}
                                     color="#34d399"
@@ -2395,7 +2395,7 @@ export default function RefiningCalculator() {
                             <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
                               <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                 <MaterialCard
-                                  icon="/breath-lava.png"
+                                  icon="/breath-lava.webp"
                                   name="용암의 숨결"
                                   amount={materials.용암_일반}
                                   color="#34d399"
@@ -2411,7 +2411,7 @@ export default function RefiningCalculator() {
                               {requiredMats.needsWeaponBook1014 && (
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
-                                    icon="/metallurgy-karma.png"
+                                    icon="/metallurgy-karma.webp"
                                     name="야금술: 업화(11~14) 무기"
                                     amount={materials.무기책1114 || 0}
                                     color="#34d399"
@@ -2428,7 +2428,7 @@ export default function RefiningCalculator() {
                               {requiredMats.needsWeaponBook1518 && (
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
-                                    icon="/metallurgy-karma.png"
+                                    icon="/metallurgy-karma.webp"
                                     name="야금술: 업화(15~18) 무기"
                                     amount={materials.무기책1518 || 0}
                                     color="#34d399"
@@ -2445,7 +2445,7 @@ export default function RefiningCalculator() {
                               {requiredMats.needsWeaponBook1920 && (
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
-                                    icon="/metallurgy-karma.png"
+                                    icon="/metallurgy-karma.webp"
                                     name="야금술: 업화(19~20) 무기"
                                     amount={materials.무기책1920 || 0}
                                     color="#34d399"
@@ -2481,7 +2481,7 @@ export default function RefiningCalculator() {
                             <Row className={isMobile ? 'g-2 justify-content-center mb-3' : 'g-3 justify-content-center mb-3'}>
                               <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                 <MaterialCard
-                                  icon="/breath-glacier.png"
+                                  icon="/breath-glacier.webp"
                                   name="빙하의 숨결"
                                   amount={materials.빙하_상급}
                                   color="#a855f7"
@@ -2504,7 +2504,7 @@ export default function RefiningCalculator() {
                               {requiredMats.needsAdvancedArmorBook1 && (
                                 <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                   <MaterialCard
-                                    icon="/master-tailoring-1.png"
+                                    icon="/master-tailoring-1.webp"
                                     name="장인의 재봉술 1단계"
                                     amount={materials.재봉술1단 || 0}
                                     color="#a855f7"
@@ -2528,7 +2528,7 @@ export default function RefiningCalculator() {
                               {requiredMats.needsAdvancedArmorBook2 && (
                                 <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                   <MaterialCard
-                                    icon="/master-tailoring-2.png"
+                                    icon="/master-tailoring-2.webp"
                                     name="장인의 재봉술 2단계"
                                     amount={materials.재봉술2단 || 0}
                                     color="#a855f7"
@@ -2556,7 +2556,7 @@ export default function RefiningCalculator() {
                             <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
                               <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                 <MaterialCard
-                                  icon="/breath-lava.png"
+                                  icon="/breath-lava.webp"
                                   name="용암의 숨결"
                                   amount={materials.용암_상급}
                                   color="#a855f7"
@@ -2579,7 +2579,7 @@ export default function RefiningCalculator() {
                               {requiredMats.needsAdvancedWeaponBook1 && (
                                 <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                   <MaterialCard
-                                    icon="/master-metallurgy-1.png"
+                                    icon="/master-metallurgy-1.webp"
                                     name="장인의 야금술 1단계"
                                     amount={materials.야금술1단 || 0}
                                     color="#a855f7"
@@ -2603,7 +2603,7 @@ export default function RefiningCalculator() {
                               {requiredMats.needsAdvancedWeaponBook2 && (
                                 <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                                   <MaterialCard
-                                    icon="/master-metallurgy-2.png"
+                                    icon="/master-metallurgy-2.webp"
                                     name="장인의 야금술 2단계"
                                     amount={materials.야금술2단 || 0}
                                     color="#a855f7"
@@ -2633,11 +2633,11 @@ export default function RefiningCalculator() {
                       <div className="mb-4">
                         <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
                           <Col xs={6} sm={6} md={6} style={{ minWidth: '0' }}>
-                            <MaterialCard icon="/gold.jpg" name="누르는 골드" amount={materials.누골} color="#f59e0b" />
+                            <MaterialCard icon="/gold.webp" name="누르는 골드" amount={materials.누골} color="#f59e0b" />
                           </Col>
                           <Col xs={6} sm={6} md={6} style={{ minWidth: '0' }}>
                             <MaterialCard
-                              icon="/gold.jpg"
+                              icon="/gold.webp"
                               name="총 소모 골드"
                               amount={results.totalGold}
                               color="#f59e0b"

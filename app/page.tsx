@@ -83,7 +83,7 @@ export default function Home() {
                       }}
                     >
                       <div className="d-flex justify-content-center mb-1 mb-sm-2">
-                        <Image src="/gold.jpg" alt="로아 주간 골드 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
+                        <Image src="/gold.webp" alt="로아 주간 골드 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
                       </div>
                       <h3
                         className="mb-1 mb-sm-2"
@@ -124,7 +124,7 @@ export default function Home() {
                       }}
                     >
                       <div className="d-flex justify-content-center mb-1 mb-sm-2">
-                        <Image src="/banner_share.jpg" alt="로아 T4 재련 비용 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
+                        <Image src="/banner_share.webp" alt="로아 T4 재련 비용 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
                       </div>
                       <h3
                         className="mb-1 mb-sm-2"

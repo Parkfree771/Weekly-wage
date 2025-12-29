@@ -146,11 +146,12 @@ const SeeMoreCalculator: React.FC = () => {
             <div
               key={raid.name}
               className={`${styles.raidCard} ${isSelected ? styles.selected : ''}`}
-              onClick={() => handleRaidSelect(raid.name)}
+              onClick={() => !raid.disabled && handleRaidSelect(raid.name)}
+              style={{ opacity: raid.disabled ? 0.5 : 1, cursor: raid.disabled ? 'not-allowed' : 'pointer' }}
             >
               <div className={styles.imageWrapper}>
                 <Image
-                  src={raid.image || '/behemoth.png'}
+                  src={raid.image || '/behemoth.webp'}
                   alt={raid.name}
                   fill
                   className={styles.raidImage}
@@ -159,7 +160,7 @@ const SeeMoreCalculator: React.FC = () => {
                 <div className={styles.overlay} />
               </div>
               <div className={styles.cardContent}>
-                <h3 className={styles.raidName}>{raid.name}</h3>
+                <h3 className={styles.raidName}>{raid.name} {raid.disabled && '(1/7 출시)'}</h3>
                 <p className={styles.raidLevel}>Lv. {raid.level}</p>
                 {profitData[raid.name] && (
                   <div className={`${styles.goldBadge} ${isProfit ? styles.profitBadge : isLoss ? styles.lossBadge : styles.neutralBadge}`}>

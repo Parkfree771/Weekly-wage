@@ -39,49 +39,49 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     id: '6861012',
     name: '아비도스 융화 재료',
     type: 'market',
-    icon: '/abidos-fusion.png',
+    icon: '/abidos-fusion.webp',
     iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '6861011',
     name: '최상급 오레하 융화 재료',
     type: 'market',
-    icon: '/oreha-fusion-superior.png',
+    icon: '/oreha-fusion-superior.webp',
     iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '66130143',
     name: '운명의 파편 주머니(대)',
     type: 'market',
-    icon: '/destiny-shard-bag-large.png',
+    icon: '/destiny-shard-bag-large.webp',
     iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '66130133',
     name: '명예의 파편 주머니(대)',
     type: 'market',
-    icon: '/honor-shard-bag-large.png',
+    icon: '/honor-shard-bag-large.webp',
     iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '66102006',
     name: '운명의 파괴석',
     type: 'market',
-    icon: '/destiny-destruction-stone.png',
+    icon: '/destiny-destruction-stone.webp',
     iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '66102106',
     name: '운명의 수호석',
     type: 'market',
-    icon: '/destiny-guardian-stone.png',
+    icon: '/destiny-guardian-stone.webp',
     iconBorderColor: '#6366f1' // 인디고
   },
   {
     id: '66110225',
     name: '운명의 돌파석',
     type: 'market',
-    icon: '/destiny-breakthrough-stone.png',
+    icon: '/destiny-breakthrough-stone.webp',
     iconBorderColor: '#6366f1' // 인디고
   },
 
@@ -90,84 +90,84 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     id: '66112553',
     name: '야금술 : 업화 [19-20] (무기)',
     type: 'market',
-    icon: '/metallurgy-karma.png',
+    icon: '/metallurgy-karma.webp',
     iconBorderColor: '#059669'
   },
   {
     id: '66112551',
     name: '야금술 : 업화 [15-18] (무기)',
     type: 'market',
-    icon: '/metallurgy-karma.png',
+    icon: '/metallurgy-karma.webp',
     iconBorderColor: '#059669'
   },
   {
     id: '66112543',
     name: '야금술 : 업화 [11-14] (무기)',
     type: 'market',
-    icon: '/metallurgy-karma.png',
+    icon: '/metallurgy-karma.webp',
     iconBorderColor: '#059669'
   },
   {
     id: '66112554',
     name: '재봉술 : 업화 [19-20] (방어구)',
     type: 'market',
-    icon: '/tailoring-karma.png',
+    icon: '/tailoring-karma.webp',
     iconBorderColor: '#059669'
   },
   {
     id: '66112552',
     name: '재봉술 : 업화 [15-18] (방어구)',
     type: 'market',
-    icon: '/tailoring-karma.png',
+    icon: '/tailoring-karma.webp',
     iconBorderColor: '#059669'
   },
   {
     id: '66112546',
     name: '재봉술 : 업화 [11-14] (방어구)',
     type: 'market',
-    icon: '/tailoring-karma.png',
+    icon: '/tailoring-karma.webp',
     iconBorderColor: '#059669'
   },
   {
     id: '66112714',
     name: '장인의 재봉술 : 2단계 (방어구)',
     type: 'market',
-    icon: '/master-tailoring-2.png',
+    icon: '/master-tailoring-2.webp',
     iconBorderColor: '#059669'
   },
   {
     id: '66112712',
     name: '장인의 재봉술 : 1단계 (방어구)',
     type: 'market',
-    icon: '/master-tailoring-1.png',
+    icon: '/master-tailoring-1.webp',
     iconBorderColor: '#059669'
   },
   {
     id: '66112713',
     name: '장인의 야금술 : 2단계 (무기)',
     type: 'market',
-    icon: '/master-metallurgy-2.png',
+    icon: '/master-metallurgy-2.webp',
     iconBorderColor: '#059669'
   },
   {
     id: '66112711',
     name: '장인의 야금술 : 1단계 (무기)',
     type: 'market',
-    icon: '/master-metallurgy-1.png',
+    icon: '/master-metallurgy-1.webp',
     iconBorderColor: '#059669'
   },
   {
     id: '66111131',
     name: '용암의 숨결',
     type: 'market',
-    icon: '/breath-lava.png',
+    icon: '/breath-lava.webp',
     iconBorderColor: '#059669'
   },
   {
     id: '66111132',
     name: '빙하의 숨결',
     type: 'market',
-    icon: '/breath-glacier.png',
+    icon: '/breath-glacier.webp',
     iconBorderColor: '#059669'
   },
 
@@ -176,42 +176,42 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     id: '67400003',
     name: '질서의 젬 : 안정',
     type: 'market',
-    icon: '/gem-order-stable.png',
+    icon: '/gem-order-stable.webp',
     iconBorderColor: '#4B0082' // 보라색
   },
   {
     id: '67400103',
     name: '질서의 젬 : 견고',
     type: 'market',
-    icon: '/gem-order-solid.png',
+    icon: '/gem-order-solid.webp',
     iconBorderColor: '#4B0082' // 보라색
   },
   {
     id: '67400203',
     name: '질서의 젬 : 불변',
     type: 'market',
-    icon: '/gem-order-immutable.png',
+    icon: '/gem-order-immutable.webp',
     iconBorderColor: '#4B0082' // 보라색
   },
   {
     id: '67410303',
     name: '혼돈의 젬 : 침식',
     type: 'market',
-    icon: '/gem-chaos-erosion.png',
+    icon: '/gem-chaos-erosion.webp',
     iconBorderColor: '#4B0082' // 보라색
   },
   {
     id: '67410403',
     name: '혼돈의 젬 : 왜곡',
     type: 'market',
-    icon: '/gem-chaos-distortion.png',
+    icon: '/gem-chaos-distortion.webp',
     iconBorderColor: '#4B0082' // 보라색
   },
   {
     id: '67410503',
     name: '혼돈의 젬 : 붕괴',
     type: 'market',
-    icon: '/gem-chaos-collapse.png',
+    icon: '/gem-chaos-collapse.webp',
     iconBorderColor: '#4B0082' // 보라색
   },
 
@@ -221,7 +221,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '아드레날린',
     displayName: '유물 각인서: 아드레날린',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35' // 주황색
   },
   {
@@ -229,7 +229,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '원한',
     displayName: '유물 각인서: 원한',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35'
   },
   {
@@ -237,7 +237,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '돌격대장',
     displayName: '유물 각인서: 돌격대장',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35'
   },
   {
@@ -245,7 +245,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '예리한 둔기',
     displayName: '유물 각인서: 예리한 둔기',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35'
   },
   {
@@ -253,7 +253,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '질량 증가',
     displayName: '유물 각인서: 질량 증가',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35'
   },
   {
@@ -261,7 +261,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '저주받은 인형',
     displayName: '유물 각인서: 저주받은 인형',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35'
   },
   {
@@ -269,7 +269,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '기습의 대가',
     displayName: '유물 각인서: 기습의 대가',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35'
   },
   {
@@ -277,7 +277,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '타격의 대가',
     displayName: '유물 각인서: 타격의 대가',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35'
   },
   {
@@ -285,7 +285,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '각성',
     displayName: '유물 각인서: 각성',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35'
   },
   {
@@ -293,7 +293,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '전문의',
     displayName: '유물 각인서: 전문의',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35'
   },
   {
@@ -301,7 +301,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '슈퍼차지',
     displayName: '유물 각인서: 슈퍼차지',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35'
   },
   {
@@ -309,7 +309,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '결투의 대가',
     displayName: '유물 각인서: 결투의 대가',
     type: 'market',
-    icon: '/engraving.png',
+    icon: '/engraving.webp',
     iconBorderColor: '#ff6b35'
   },
 
@@ -322,7 +322,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '',
     categoryCode: 200010, // 목걸이
-    icon: '/ancient-necklace.png',
+    icon: '/ancient-necklace.webp',
     iconBorderColor: '#06b6d4', // 청록색 (목걸이)
     filters: {
       ItemGrade: '고대',
@@ -354,7 +354,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '',
     categoryCode: 200030, // 반지
-    icon: '/ancient-ring.png',
+    icon: '/ancient-ring.webp',
     iconBorderColor: '#3b82f6', // 파란색 (반지)
     filters: {
       ItemGrade: '고대',
@@ -386,7 +386,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '',
     categoryCode: 200020, // 귀걸이
-    icon: '/ancient-earring.png',
+    icon: '/ancient-earring.webp',
     iconBorderColor: '#10b981', // 에메랄드 (귀걸이)
     filters: {
       ItemGrade: '고대',
@@ -418,7 +418,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '',
     categoryCode: 200010, // 목걸이
-    icon: '/ancient-necklace.png',
+    icon: '/ancient-necklace.webp',
     iconBorderColor: '#06b6d4', // 청록색 (목걸이)
     filters: {
       ItemGrade: '고대',
@@ -450,7 +450,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '',
     categoryCode: 200030, // 반지
-    icon: '/ancient-ring.png',
+    icon: '/ancient-ring.webp',
     iconBorderColor: '#3b82f6', // 파란색 (반지)
     filters: {
       ItemGrade: '고대',
@@ -482,7 +482,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '',
     categoryCode: 200020, // 귀걸이
-    icon: '/ancient-earring.png',
+    icon: '/ancient-earring.webp',
     iconBorderColor: '#10b981', // 에메랄드 (귀걸이)
     filters: {
       ItemGrade: '고대',
@@ -514,7 +514,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '',
     categoryCode: 200010, // 목걸이
-    icon: '/ancient-necklace.png',
+    icon: '/ancient-necklace.webp',
     iconBorderColor: '#06b6d4', // 청록색 (목걸이)
     filters: {
       ItemGrade: '고대',
@@ -546,7 +546,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '',
     categoryCode: 200010, // 목걸이
-    icon: '/ancient-necklace.png',
+    icon: '/ancient-necklace.webp',
     iconBorderColor: '#06b6d4', // 청록색 (목걸이)
     filters: {
       ItemGrade: '고대',
@@ -578,7 +578,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '',
     categoryCode: 200030, // 반지
-    icon: '/ancient-ring.png',
+    icon: '/ancient-ring.webp',
     iconBorderColor: '#3b82f6', // 파란색 (반지)
     filters: {
       ItemGrade: '고대',
@@ -610,7 +610,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '',
     categoryCode: 200030, // 반지
-    icon: '/ancient-ring.png',
+    icon: '/ancient-ring.webp',
     iconBorderColor: '#3b82f6', // 파란색 (반지)
     filters: {
       ItemGrade: '고대',
@@ -641,7 +641,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '8레벨 겁화의 보석',
     categoryCode: 210000, // 보석 카테고리
-    icon: '/gem-fear-8.png',
+    icon: '/gem-fear-8.webp',
     iconBorderColor: '#9333ea', // 보라색
     filters: {
       ItemTier: 4
@@ -653,7 +653,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '9레벨 겁화의 보석',
     categoryCode: 210000, // 보석 카테고리
-    icon: '/gem-fear-8.png', // 8레벨과 동일한 이미지
+    icon: '/gem-fear-8.webp', // 8레벨과 동일한 이미지
     iconBorderColor: '#9333ea', // 보라색
     filters: {
       ItemTier: 4
@@ -665,7 +665,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '10레벨 겁화의 보석',
     categoryCode: 210000,
-    icon: '/gem-fear-10.png',
+    icon: '/gem-fear-10.webp',
     iconBorderColor: '#9333ea', // 보라색
     filters: {
       ItemTier: 4
@@ -677,7 +677,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '10레벨 작열의 보석',
     categoryCode: 210000,
-    icon: '/gem-flame-10.png',
+    icon: '/gem-flame-10.webp',
     iconBorderColor: '#dc2626', // 빨간색
     filters: {
       ItemTier: 4

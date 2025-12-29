@@ -66,7 +66,7 @@ export default function WeeklyGoldPage() {
             <div className="text-center mb-3 mb-md-4">
               <Link href="/" className="text-decoration-none">
                 <div className="d-flex justify-content-center align-items-center gap-3 mb-2" style={{ cursor: 'pointer' }}>
-                  <Image src="/gold.jpg" alt="골드" width={48} height={48} priority style={{ borderRadius: '8px', width: 'clamp(2.5rem, 5vw, 3rem)', height: 'auto' }} />
+                  <Image src="/gold.webp" alt="골드" width={48} height={48} priority style={{ borderRadius: '8px', width: 'clamp(2.5rem, 5vw, 3rem)', height: 'auto' }} />
                   <h1
                     className="title mb-0"
                     style={{
