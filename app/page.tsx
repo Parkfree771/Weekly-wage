@@ -28,7 +28,7 @@ export default function Home() {
                   style={{
                     fontSize: 'clamp(1.5rem, 3.5vw, 2rem)',
                     fontWeight: 700,
-                    background: 'var(--gradient-text-stone)',
+                    backgroundImage: 'var(--gradient-text-stone)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
@@ -90,7 +90,7 @@ export default function Home() {
                         style={{
                           fontWeight: '600',
                           fontSize: 'clamp(0.8rem, 2.2vw, 1.1rem)',
-                          background: 'var(--gradient-text-blue)',
+                          backgroundImage: 'var(--gradient-text-blue)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
                           backgroundClip: 'text',
@@ -131,7 +131,7 @@ export default function Home() {
                         style={{
                           fontWeight: '600',
                           fontSize: 'clamp(0.8rem, 2.2vw, 1.1rem)',
-                          background: 'var(--gradient-text-stone)',
+                          backgroundImage: 'var(--gradient-text-stone)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
                           backgroundClip: 'text',
@@ -162,7 +162,7 @@ export default function Home() {
                   style={{
                     fontWeight: '600',
                     fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                    background: 'var(--gradient-text-stone)',
+                    backgroundImage: 'var(--gradient-text-stone)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
@@ -200,7 +200,7 @@ export default function Home() {
                     style={{
                       fontWeight: '600',
                       fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                      background: 'var(--gradient-text-stone)',
+                      backgroundImage: 'var(--gradient-text-stone)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',
@@ -259,7 +259,7 @@ export default function Home() {
                   <Row className="gy-4 text-center text-md-start">
                     {/* 사이트 설명 */}
                     <Col md={6}>
-                      <h6 className="fw-semibold mb-3 text-primary" style={{ background: 'var(--footer-text-primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>서비스 소개</h6>
+                      <h6 className="fw-semibold mb-3 text-primary" style={{ backgroundImage: 'var(--footer-text-primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>서비스 소개</h6>
                       <p className="small mb-3" style={{ color: 'var(--text-muted)' }}>
                         원정대 주간 골드 수익을 계산하고 더보기 보상의 손익을 분석하여
                         효율적인 로스트아크 플레이를 도와드립니다.

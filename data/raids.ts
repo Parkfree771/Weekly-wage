@@ -1,5 +1,32 @@
 export const raids = [
   {
+    name: '세르카 나이트메어',
+    level: 1740,
+    image: '/cerka.webp',
+    gates: [
+      { gate: 1, gold: 21000, moreGold: 6720 },
+      { gate: 2, gold: 33000, moreGold: 10560 },
+    ],
+  },
+  {
+    name: '세르카 하드',
+    level: 1730,
+    image: '/cerka.webp',
+    gates: [
+      { gate: 1, gold: 17500, moreGold: 5600 },
+      { gate: 2, gold: 26500, moreGold: 8480 },
+    ],
+  },
+  {
+    name: '세르카 노말',
+    level: 1710,
+    image: '/cerka.webp',
+    gates: [
+      { gate: 1, gold: 14000, moreGold: 4480 },
+      { gate: 2, gold: 21000, moreGold: 6720 },
+    ],
+  },
+  {
     name: '종막 하드',
     level: 1730,
     image: '/abrelshud.png',

@@ -29,9 +29,21 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
   const [showAllRaids, setShowAllRaids] = useState<{ [key: string]: boolean }>({});
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
   const [coreFarmingMoreEnabled, setCoreFarmingMoreEnabled] = useState<{ [key: string]: boolean }>({}); // 캐릭터별 코어 파밍 더보기 ON/OFF
+  const [cerkaImageLoaded, setCerkaImageLoaded] = useState(false);
+
+  // 세르카 이미지 프리로드 (1710+ 캐릭터가 있을 때만)
+  useEffect(() => {
+    const hasCerkaCharacter = selectedCharacters.some(char => char.itemLevel >= 1710);
+    if (hasCerkaCharacter && !cerkaImageLoaded) {
+      const img = new window.Image();
+      img.src = '/cerka.webp';
+      img.onload = () => setCerkaImageLoaded(true);
+    }
+  }, [selectedCharacters, cerkaImageLoaded]);
 
   // 레이드 그룹명과 이미지 파일명 매핑
   const raidImages: { [key: string]: string } = {
+    '세르카': '/cerka.webp',
     '종막': '/abrelshud.png',
     '4막': '/illiakan.png',
     '3막': '/ivory-tower.png',
@@ -84,6 +96,11 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
 
         // 같은 그룹에서 이미 선택된 경우 건너뛰기
         if (selectedGroups.includes(groupName)) {
+          continue;
+        }
+
+        // 세르카는 자동 체크 안함
+        if (groupName === '세르카') {
           continue;
         }
 
@@ -350,7 +367,22 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
 
           return (
             <Col lg={4} md={4} key={character.characterName} className="mb-3 mb-md-4">
-              <Card className="character-raid-card" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)', height: '100%' }}>
+              <Card
+                className={`character-raid-card ${character.itemLevel >= 1710 ? 'cerka-character' : ''}`}
+                style={{
+                  backgroundColor: 'var(--card-bg)',
+                  borderColor: 'var(--border-color)',
+                  height: '100%',
+                  ...(character.itemLevel >= 1710 && {
+                    backgroundImage: 'url(/cerka.webp)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    imageRendering: 'auto',
+                    willChange: 'transform'
+                  })
+                }}
+              >
                 <Card.Header
                   className="character-raid-header"
                   style={{
@@ -373,11 +405,10 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                         {character.characterName}
                       </span>
                       <Badge
+                        bg="secondary"
                         style={{
                           fontSize: isMobile ? '0.6rem' : '0.78rem',
                           padding: '0.25em 0.5em',
-                          backgroundColor: '#6c757d',
-                          color: '#ffffff',
                           fontWeight: 500,
                           flexShrink: 0,
                           whiteSpace: 'nowrap'
@@ -395,7 +426,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                           variant={coreFarmingMoreEnabled[character.characterName] ? "primary" : "secondary"}
                           size="sm"
                           onClick={() => toggleCoreFarmingMore(character.characterName)}
-                          className="shadow-sm"
+                          className="shadow-sm core-farming-btn"
                           style={{
                             fontSize: isMobile ? '0.58rem' : '0.68rem',
                             padding: isMobile ? '0.25rem 0.5rem' : '0.35rem 0.65rem',
@@ -403,24 +434,14 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                             whiteSpace: 'nowrap',
                             borderRadius: '6px',
                             lineHeight: 1.3,
-                            border: coreFarmingMoreEnabled[character.characterName] ? '2px solid #0d6efd' : '2px solid #6c757d',
                             cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            boxShadow: coreFarmingMoreEnabled[character.characterName]
-                              ? '0 2px 6px rgba(13, 110, 253, 0.4)'
-                              : '0 1px 3px rgba(0, 0, 0, 0.2)'
+                            transition: 'all 0.2s ease'
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.transform = 'translateY(-1px)';
-                            e.currentTarget.style.boxShadow = coreFarmingMoreEnabled[character.characterName]
-                              ? '0 4px 10px rgba(13, 110, 253, 0.5)'
-                              : '0 3px 6px rgba(0, 0, 0, 0.3)';
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = coreFarmingMoreEnabled[character.characterName]
-                              ? '0 2px 6px rgba(13, 110, 253, 0.4)'
-                              : '0 1px 3px rgba(0, 0, 0, 0.2)';
                           }}
                         >
                           {coreFarmingMoreEnabled[character.characterName] ? '✓ ' : ''}코어파밍 {coreFarmingMoreEnabled[character.characterName] ? 'ON' : 'OFF'}
@@ -428,18 +449,15 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                       )}
 
                       {/* 골드 */}
-                      <div className="d-flex align-items-center gap-1" style={{
-                        backgroundColor: '#fef3c7',
+                      <div className="gold-box d-flex align-items-center gap-1" style={{
                         padding: '0.35em 0.6em',
                         borderRadius: '6px',
-                        border: '1px solid #fbbf24',
                         whiteSpace: 'nowrap'
                       }}>
                         <Image src="/gold.jpg" alt="골드" width={isMobile ? 14 : 18} height={isMobile ? 14 : 18} style={{ borderRadius: '3px' }} />
                         <span style={{
                           fontSize: isMobile ? '0.65rem' : '0.85rem',
-                          fontWeight: 700,
-                          color: '#92400e'
+                          fontWeight: 700
                         }}>
                           {calculateCharacterGold(character.characterName).toLocaleString()}
                         </span>

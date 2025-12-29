@@ -1,15 +1,16 @@
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 240, 242, 245;
+  /* 라이트모드: 배경은 밝게, 나머지는 세르카 테마 */
+  --foreground-rgb: 40, 40, 45;
+  --background-start-rgb: 245, 245, 247;
   --background-end-rgb: 255, 255, 255;
 
-  /* New Design System Variables */
-  --brand-hue: 220;
-  --brand-saturation: 70%;
+  /* 브랜드 컬러: 세르카의 꽃 (녹슨 구리색) */
+  --brand-hue: 15;
+  --brand-saturation: 50%;
   --brand-lightness: 55%;
   --brand-primary: hsl(var(--brand-hue), var(--brand-saturation), var(--brand-lightness));
-  --brand-primary-light: hsl(var(--brand-hue), var(--brand-saturation), 95%);
-  --brand-primary-dark: hsl(var(--brand-hue), var(--brand-saturation), 45%);
+  --brand-primary-light: hsl(var(--brand-hue), var(--brand-saturation), 85%);
+  --brand-primary-dark: hsl(var(--brand-hue), var(--brand-saturation), 35%);
 
   --text-primary: #2d3748;
   --text-secondary: #4a5568;
@@ -18,24 +19,25 @@
   --border-color: #e2e8f0;
   --input-bg: #ffffff;
   --card-bg: #ffffff;
-  --card-body-bg-blue: #f7fafc;
-  --card-body-bg-stone: #fafaf9;
+  --card-body-bg-blue: #f8f9fa;
+  --card-body-bg-stone: #f5f5f4;
+  --card-header-bg: #fafafa;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
-  /* Card Header Backgrounds */
-  --card-header-bg-blue: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
-  --card-header-bg-stone: linear-gradient(135deg, #fafaf9 0%, #f5f5f4 100%);
+  /* Card Header Backgrounds - 세르카 테마 적용 */
+  --card-header-bg-blue: linear-gradient(135deg, #f5e6dc 0%, #faf3ed 100%);
+  --card-header-bg-stone: linear-gradient(135deg, #f5f0eb 0%, #faf7f4 100%);
   --card-header-bg-violet: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
 
-  /* Text Gradients */
-  --gradient-text-blue: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  /* Text Gradients - 세르카 테마 (구리빛) */
+  --gradient-text-blue: linear-gradient(135deg, #c57b57 0%, #d69274 100%);
   --gradient-text-stone: linear-gradient(135deg, #78716c 0%, #57534e 100%);
   --gradient-text-violet: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
 
-  /* Footer */
-  --footer-text-primary-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  /* Footer - 구리빛 */
+  --footer-text-primary-gradient: linear-gradient(135deg, #c57b57 0%, #d69274 100%);
 
   /* Profit/Loss Colors */
   --profit-color: #10b981;
@@ -50,39 +52,44 @@
 }
 
 [data-theme="dark"] {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 17, 24, 39;
-  --background-end-rgb: 10, 10, 15;
+  /* Abyssal Elegance - 텍스트: 창백한 피부톤 같은 웜 화이트 */
+  --foreground-rgb: 240, 235, 235;
 
-  /* New Design System Variables */
-  --brand-saturation: 75%;
-  --brand-lightness: 60%;
+  /* Abyssal Elegance - 배경: 깊은 심해/깃털 색상(Deep Cool Grey) */
+  --background-start-rgb: 25, 28, 35;  /* 아주 어두운 블루 그레이 */
+  --background-end-rgb: 10, 11, 15;    /* 거의 검정에 가까운 네이비 */
+
+  /* 브랜드 컬러 미세 조정 (다크모드용) */
+  --brand-saturation: 60%;
+  --brand-lightness: 65%; /* 어두운 배경이라 살짝 더 밝게 */
 
   --text-primary: #e5e7eb;
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
   --text-disabled: #4b5563;
-  --border-color: #374151;
+  --border-color: #3f4451;   /* 경계선도 차가운 회색으로 */
   --input-bg: #1f2937;
-  --card-bg: #1f2937;
-  --card-body-bg-blue: #111827;
+  --card-bg: #1f2228;        /* Slate-900 계열 - 차가운 돌 색상 */
+  --card-body-bg-blue: #272a32; /* 약간 더 밝은 Slate */
   --card-body-bg-stone: #1c1917;
+  --card-header-bg: #1f2228;     /* 캐릭터 카드 헤더 배경 */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
 
-  /* Card Header Backgrounds */
-  --card-header-bg-blue: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  /* Card Header Backgrounds - 은은하고 신비롭게 */
+  /* 너무 강렬하지 않게, 어두운 자줏빛에서 짙은 구리색으로 */
+  --card-header-bg-blue: linear-gradient(135deg, #382e35 0%, #4a3835 100%);
   --card-header-bg-stone: linear-gradient(135deg, #292524 0%, #1c1917 100%);
   --card-header-bg-violet: linear-gradient(135deg, #5b21b6 0%, #6d28d9 100%);
 
-  /* Text Gradients */
-  --gradient-text-blue: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
+  /* Text Gradients - 은은한 샴페인 골드 느낌 */
+  --gradient-text-blue: linear-gradient(135deg, #e2b498 0%, #f0cdb8 100%);
   --gradient-text-stone: linear-gradient(135deg, #a8a29e 0%, #d6d3d1 100%);
   --gradient-text-violet: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
 
   /* Footer */
-  --footer-text-primary-gradient: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
+  --footer-text-primary-gradient: linear-gradient(135deg, #e2b498 0%, #f0cdb8 100%);
 
   /* Profit/Loss Colors */
   --profit-color: #34d399;
@@ -297,37 +304,42 @@ textarea:-ms-input-placeholder {
   color: var(--text-primary);
 }
 
-/* Badge Styles */
-.badge.bg-success,
-.badge.bg-success * {
-  --bs-badge-color: #ffffff !important;
+/* Badge Styles - 세르카 테마 톤 다운 */
+.badge {
+  font-weight: 500 !important;
+  letter-spacing: 0.02em;
+}
+
+/* 라이트모드 배지 */
+.badge.bg-secondary {
+  background-color: #6b7280 !important;
   color: #ffffff !important;
 }
 
-.badge.bg-danger,
-.badge.bg-danger * {
-  --bs-badge-color: #ffffff !important;
-  color: #ffffff !important;
+.badge.bg-success {
+  background-color: #4a6650 !important;
+  color: #eefdf2 !important;
 }
 
-.badge.bg-secondary,
-.badge.bg-secondary * {
-  --bs-badge-color: #ffffff !important;
-  color: #ffffff !important;
+.badge.bg-danger {
+  background-color: #8c4242 !important;
+  color: #fdf2f2 !important;
 }
 
-/* Light mode specific badge colors */
-:root .badge.bg-success,
-:root .badge.bg-danger,
-:root .badge.bg-secondary {
-  color: #ffffff !important;
-}
-
-/* Dark mode specific badge colors */
-[data-theme="dark"] .badge.bg-success,
-[data-theme="dark"] .badge.bg-danger,
+/* 다크모드 배지 */
 [data-theme="dark"] .badge.bg-secondary {
+  background-color: #4b5563 !important;
   color: #ffffff !important;
+}
+
+[data-theme="dark"] .badge.bg-success {
+  background-color: #5a7660 !important;
+  color: #f0f7f1 !important;
+}
+
+[data-theme="dark"] .badge.bg-danger {
+  background-color: #9c5252 !important;
+  color: #fffafa !important;
 }
 
 /* Footer Styles */
@@ -343,3 +355,97 @@ textarea:-ms-input-placeholder {
     padding: 15px 0;
   }
 }
+
+/* =========================================
+   세르카 테마 - 버튼 스타일 (라이트/다크 공통)
+   ========================================= */
+
+/* 버튼 - 말린 장미색 */
+.btn-primary,
+.form-check-input:checked {
+  background-color: var(--brand-primary) !important;
+  border-color: var(--brand-primary) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  filter: saturate(0.9); /* 너무 쨍하지 않게 한번 더 눌러줌 */
+}
+
+.btn-primary:hover {
+  background-color: hsl(var(--brand-hue), var(--brand-saturation), 65%) !important;
+  border-color: hsl(var(--brand-hue), var(--brand-saturation), 65%) !important;
+  box-shadow: 0 0 12px rgba(192, 120, 88, 0.4); /* 은은한 코랄빛 발광 */
+}
+
+/* 다크모드 버튼 발광 효과 */
+[data-theme="dark"] .btn-primary:hover {
+  box-shadow: 0 0 15px rgba(197, 123, 87, 0.4);
+}
+
+/* =========================================
+   세르카(1710+) 투명화 강제 적용 패치
+   ========================================= */
+
+/* 아코디언 투명화 */
+.cerka-character .raid-group-accordion,
+.cerka-character .raid-difficulty-accordion,
+.cerka-character .raid-group-accordion .accordion-header,
+.cerka-character .raid-group-accordion .accordion-button,
+.cerka-character .raid-difficulty-accordion .accordion-header,
+.cerka-character .raid-difficulty-accordion .accordion-button,
+.cerka-character .accordion-button:not(.collapsed),
+.cerka-character .accordion-button:focus,
+.cerka-character .accordion-button:active {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 테이블 투명화 */
+.cerka-character .raid-table,
+.cerka-character .raid-table th,
+.cerka-character .raid-table td {
+  background-color: transparent !important;
+}
+
+/* 텍스트 가독성 */
+.cerka-character span,
+.cerka-character div {
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.cerka-character .accordion-button span,
+.cerka-character .accordion-button div,
+.cerka-character .accordion-button .badge,
+.cerka-character .badge {
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 2px 6px rgba(0,0,0,0.6);
+}
+
+.cerka-character .badge {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* =========================================
+   골드 박스 스타일
+   ========================================= */
+.gold-box {
+  background-color: var(--card-body-bg-blue) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.gold-box span {
+  color: var(--text-primary) !important;
+}
+
+/* =========================================
+   코어 파밍 버튼 스타일
+   ========================================= */
+.core-farming-btn {
+  border-width: 2px !important;
+}
+
+.core-farming-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md) !important;
+}
+

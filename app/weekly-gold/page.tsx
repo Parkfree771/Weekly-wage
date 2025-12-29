@@ -48,6 +48,24 @@ export default function WeeklyGoldPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // 주간 골드 페이지 전체를 다크모드로 강제 설정
+  useEffect(() => {
+    const root = document.documentElement;
+    const previousTheme = localStorage.getItem('theme');
+
+    // 다크모드로 강제 설정
+    root.setAttribute('data-theme', 'dark');
+
+    // 페이지 떠날 때 원래 테마로 복구
+    return () => {
+      if (previousTheme) {
+        root.setAttribute('data-theme', previousTheme);
+      } else {
+        root.setAttribute('data-theme', 'light'); // 기본값은 라이트모드
+      }
+    };
+  }, []);
+
   const handleSearch = () => {
     setSearched(true);
   };
@@ -126,7 +144,7 @@ export default function WeeklyGoldPage() {
                     zIndex: 10
                   }}
                 >
-                  25년 12월 10일 겨울 업데이트 ❄️
+                  26년 1월 7일 업데이트 예정
                 </div>
                 <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                   <Card.Header
@@ -179,7 +197,7 @@ export default function WeeklyGoldPage() {
                       boxShadow: 'var(--shadow-sm)',
                       zIndex: 10
                     }}>
-                      25년 12월 10일 겨울 업데이트 ❄️
+                      26년 1월 7일 업데이트 예정
                     </div>
                     <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                       <Card.Header
