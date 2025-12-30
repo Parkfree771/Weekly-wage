@@ -24,26 +24,28 @@ export default function Home() {
               <div className="d-flex justify-content-center align-items-center gap-2 mb-2">
                 <Image src="/icon.png" alt="로스트아크 골드 계산기 로고" width={40} height={40} priority style={{ width: 'clamp(2rem, 4.5vw, 2.5rem)', height: 'auto' }} />
                 <h1
-                  className="title mb-0"
-                  style={{
-                    fontSize: 'clamp(1.5rem, 3.5vw, 2rem)',
-                    fontWeight: 700,
-                    background: 'var(--gradient-text-stone)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    letterSpacing: '-0.02em'
-                  }}
-                >
-                  로스트아크 골드 계산기
-                </h1>
+  className="title mb-0"
+  style={{
+    fontSize: 'clamp(1.5rem, 3.5vw, 2rem)',
+    fontWeight: 700,
+    backgroundImage: 'var(--gradient-text-stone)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    letterSpacing: '-0.02em'
+  }}
+>
+  {/* 👇 여기가 핵심입니다. 로봇과 사용자 모두에게 '세르카'를 보여줍니다 */}
+  주간 골드 계산기
+</h1>
               </div>
 
               {/* SEO를 위한 정적 콘텐츠 - 검색엔진만 읽음 */}
               <noscript>
                 <div style={{padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px', margin: '1rem 0'}}>
-                  <h2>로스트아크 주간 골드 및 재련 비용 계산</h2>
-                  <p>로스트아크의 레이드 주간 골드 수익과 T4 재련 비용을 실시간 거래소 가격으로 계산합니다.</p>
+                  <h2>세르카 레이드 보상 및 주간 골드 계산</h2>
+    {/* 설명 구체화 */}
+    <p>세르카(1710) 레이드 클리어 골드와 더보기 효율을 완벽 분석합니다. 카제로스 및 에키드나 레이드 수익도 한눈에 확인하세요.</p>
                   <h3>지원 레이드</h3>
                   <ul>
                     <li><strong>카제로스 레이드:</strong> 종막, 4막, 3막, 2막, 1막</li>

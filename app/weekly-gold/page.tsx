@@ -67,9 +67,22 @@ export default function WeeklyGoldPage() {
               <Link href="/" className="text-decoration-none">
                 <div className="d-flex justify-content-center align-items-center gap-3 mb-2" style={{ cursor: 'pointer' }}>
                   <Image src="/gold.webp" alt="골드" width={48} height={48} priority style={{ borderRadius: '8px', width: 'clamp(2.5rem, 5vw, 3rem)', height: 'auto' }} />
-                  <h1 className="weekly-gold-page-title mb-0">
-                    주간 골드 계산
-                  </h1>
+                  <h1
+  className="title mb-0"
+  style={{
+    // 폰트 크기 등 스타일은 그대로 유지
+    fontSize: 'clamp(1.5rem, 3.5vw, 2rem)',
+    fontWeight: 700,
+    background: 'var(--gradient-text-blue)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    letterSpacing: '-0.02em'
+  }}
+>
+  {/* 👇 텍스트 변경: 세르카 키워드 추가 */}
+  세르카 보상 & 주간 골드 계산
+</h1>
                 </div>
               </Link>
               <p className="mb-3" style={{fontSize: 'clamp(0.85rem, 1.8vw, 1rem)', fontWeight: '400', color: 'var(--text-muted)'}}>
@@ -77,10 +90,12 @@ export default function WeeklyGoldPage() {
               </p>
 
               {/* SEO를 위한 정적 콘텐츠 */}
-              <noscript>
-                <div style={{padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px', margin: '1rem 0'}}>
-                  <h2>로스트아크 주간 골드 계산기</h2>
-                  <p>원정대 캐릭터들의 주간 골드 수익을 자동으로 계산하고, 레이드 더보기 보상의 손익을 실시간 거래소 가격으로 분석합니다.</p>
+             <noscript>
+  <div style={{/*...*/}}>
+    {/* 제목 변경 */}
+    <h2>세르카 레이드 보상 및 주간 골드 계산기</h2>
+    {/* 설명 변경 */}
+    <p>세르카(1710) 포함 원정대 캐릭터들의 주간 골드 수익을 자동으로 계산하고...</p>
                   <h3>주요 기능</h3>
                   <ul>
                     <li>캐릭터명 입력만으로 원정대 전체 주간 골드 수익 자동 계산</li>
