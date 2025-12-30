@@ -77,10 +77,10 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: "your-google-site-verification-code",
-  },
-  other: {
-    "google-adsense-account": "ca-pub-6944494802169618",
+    google: "your-google-site-verification-code", // 구글 코드는 나중에 실제 값으로 바꾸세요
+    other: {
+      "naver-site-verification": "6873351e8c76eb0a0ac7c6d9647b5e8431bec76e", // 네이버 코드 적용됨
+    },
   },
 };
 
