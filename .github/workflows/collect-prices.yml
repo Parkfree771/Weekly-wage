@@ -29,10 +29,11 @@ jobs:
     steps:
       - name: Collect market prices (refine + gem)
         run: |
-          response=$(curl -f -s -w "\n%{http_code}" --max-time 120 \
+          response=$(curl -f -s -w "\n%{http_code}" --max-time 180 \
             -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine,gem" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json")
+            -H "Content-Type: application/json" \
+            -H "X-Netlify-Background: true")
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
 
@@ -60,10 +61,11 @@ jobs:
     steps:
       - name: Collect market prices (refine_additional + engraving)
         run: |
-          response=$(curl -f -s -w "\n%{http_code}" --max-time 120 \
+          response=$(curl -f -s -w "\n%{http_code}" --max-time 180 \
             -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine_additional,engraving" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json")
+            -H "Content-Type: application/json" \
+            -H "X-Netlify-Background: true")
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
 
@@ -83,10 +85,11 @@ jobs:
     steps:
       - name: Collect auction prices (accessory + jewel)
         run: |
-          response=$(curl -f -s -w "\n%{http_code}" --max-time 120 \
+          response=$(curl -f -s -w "\n%{http_code}" --max-time 180 \
             -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=accessory,jewel" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json")
+            -H "Content-Type: application/json" \
+            -H "X-Netlify-Background: true")
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
 

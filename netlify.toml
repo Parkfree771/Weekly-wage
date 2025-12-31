@@ -9,3 +9,17 @@
 # - 각 API에서 시간대별로 동적 Cache-Control 헤더 설정
 # - 날짜 변경 시간대(05~06시, 수요일 10시): 5분 캐시
 # - 평상시: 1시간 캐시
+
+# Functions 타임아웃 설정
+[functions]
+  # Cron 작업은 Background Functions로 실행 (최대 15분)
+  # https://docs.netlify.com/functions/background-functions/
+  node_bundler = "esbuild"
+
+  # API 라우트별 타임아웃 설정
+  # Netlify에서는 기본 10초, Pro는 26초
+  # Background Functions는 최대 15분 (900초)
+
+[[functions."api/cron/*"]]
+  # Cron API는 Background Function으로 실행
+  included_files = [".env.local"]
