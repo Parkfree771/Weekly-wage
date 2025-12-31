@@ -29,9 +29,20 @@ jobs:
     steps:
       - name: Collect market prices (refine + gem)
         run: |
-          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine,gem" \
+          response=$(curl -f -s -w "\n%{http_code}" --max-time 120 \
+            -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine,gem" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json"
+            -H "Content-Type: application/json")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" -ge 400 ]; then
+            echo "API request failed with status $http_code"
+            exit 1
+          fi
 
       - name: Force append to history (if requested)
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_append_history == 'yes'
@@ -49,9 +60,20 @@ jobs:
     steps:
       - name: Collect market prices (refine_additional + engraving)
         run: |
-          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine_additional,engraving" \
+          response=$(curl -f -s -w "\n%{http_code}" --max-time 120 \
+            -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine_additional,engraving" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json"
+            -H "Content-Type: application/json")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" -ge 400 ]; then
+            echo "API request failed with status $http_code"
+            exit 1
+          fi
 
   collect-auction-accessory-jewel:
     # 10분: 경매장 - 악세 + 보석 (14개)
@@ -61,6 +83,17 @@ jobs:
     steps:
       - name: Collect auction prices (accessory + jewel)
         run: |
-          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=accessory,jewel" \
+          response=$(curl -f -s -w "\n%{http_code}" --max-time 120 \
+            -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=accessory,jewel" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json"
+            -H "Content-Type: application/json")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" -ge 400 ]; then
+            echo "API request failed with status $http_code"
+            exit 1
+          fi
