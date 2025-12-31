@@ -2,14 +2,15 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
+// 환경 변수에서 Firebase 설정 가져오기
 const firebaseConfig = {
-  apiKey: "AIzaSyAbdxo37cflPa3fIwebIZzssJKal4qroXg",
-  authDomain: "lostark-weekly-gold.firebaseapp.com",
-  projectId: "lostark-weekly-gold",
-  storageBucket: "lostark-weekly-gold.firebasestorage.app",
-  messagingSenderId: "218166417711",
-  appId: "1:218166417711:web:910bb169c3cac50bf769da",
-  measurementId: "G-3VS67FWG8M"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Firebase 앱 초기화 (이미 초기화되어 있으면 재사용)
