@@ -351,7 +351,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
           const isCerka = character.itemLevel >= 1710;
 
           return (
-            <Col lg={4} md={4} key={character.characterName} className="mb-3 mb-md-4">
+            <Col lg={4} md={6} sm={12} key={character.characterName} className="mb-3 mb-md-4">
               <Card className={`character-raid-card ${isCerka ? 'cerka-character' : ''}`} style={{ borderColor: 'var(--border-color)', height: '100%', position: 'relative', overflow: 'hidden' }}>
 
                 {isCerka && (

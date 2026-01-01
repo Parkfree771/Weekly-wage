@@ -1,11 +1,11 @@
 /* 레이드 카드 그리드 */
 .raidCardsGrid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0;
   margin: 2rem auto;
   padding: 0;
-  max-width: 1110px;
+  max-width: 925px;
 }
 
 /* 레이드 카드 */
@@ -19,6 +19,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: 3px solid transparent;
   max-width: 185px;
+  width: 100%;
 }
 
 .raidCard:hover {
@@ -271,20 +272,27 @@
 }
 
 /* 반응형 디자인 */
-@media (max-width: 1200px) {
+@media (max-width: 1399px) {
   .raidCardsGrid {
     grid-template-columns: repeat(4, 1fr);
     max-width: 740px;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1199px) {
   .raidCardsGrid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 0;
+    max-width: 555px;
+  }
+}
+
+@media (max-width: 768px) {
+  .raidCardsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
     padding: 0;
     margin: 1.5rem auto;
-    max-width: 555px;
+    max-width: 370px;
   }
 
   .raidCard {
@@ -365,11 +373,11 @@
 
 @media (max-width: 576px) {
   .raidCardsGrid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
     padding: 0;
     margin: 1rem auto;
-    max-width: 450px;
+    max-width: 350px;
   }
 
   .cardContent {

@@ -60,9 +60,9 @@ export default function WeeklyGoldPage() {
   return (
     <div className="raid-calculator-page" style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
       <ThemeToggleButton />
-      <Container fluid className="mt-3 mt-md-4">
+      <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1800px', margin: '0 auto' }}>
         <Row className="justify-content-center">
-          <Col xl={9} lg={10} md={12}>
+          <Col xl={11} lg={11} md={12}>
             <div className="text-center mb-3 mb-md-4">
               <Link href="/" className="text-decoration-none">
                 <div className="d-flex justify-content-center align-items-center gap-3 mb-2" style={{ cursor: 'pointer' }}>
