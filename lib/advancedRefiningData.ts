@@ -39,15 +39,31 @@ export const T4_ADVANCED_TRIES_1_20: Record<string, number> = {
   'both_both': 28.6,
 };
 
-// 21~30단계 및 31~40단계용 (숨결만 가능, 책 사용 불가)
+// 21~30단계 및 31~40단계용 (숨결 + 책 조합 가능)
 export const T4_ADVANCED_TRIES_21_40: Record<string, number> = {
   // 일반턴: 아무것도 X
   'none_none': 54.8,      // 선조턴: 아무것도 X
-  'none_breath': 49.8,    // 선조턴: 숨결만
+  'none_breath': 48.2,    // 선조턴: 숨결만
+  'none_book': 45.6,      // 선조턴: 책만
+  'none_both': 41.0,      // 선조턴: 숨결 + 책
 
   // 일반턴: 숨결만
   'breath_none': 43.1,
-  'breath_breath': 40.1,
+  'breath_breath': 39.2,
+  'breath_book': 37.5,
+  'breath_both': 34.2,
+
+  // 일반턴: 책만
+  'book_none': 37.8,
+  'book_breath': 34.9,
+  'book_book': 33.5,
+  'book_both': 30.8,
+
+  // 일반턴: 숨결 + 책
+  'both_none': 31.4,
+  'both_breath': 29.3,
+  'both_book': 28.2,
+  'both_both': 26.5,
 };
 
 /**
@@ -79,7 +95,7 @@ export const T4_ARMOR_MATERIALS = {
     운명파편: 7000,
     누골: 2000,
     빙하: 20,
-    // 책 사용 불가
+    재봉술3단: 1,       // 책 사용 시 (21~30단계)
   },
   '31-40': {
     수호석: 1200,
@@ -88,7 +104,7 @@ export const T4_ARMOR_MATERIALS = {
     운명파편: 8000,
     누골: 2400,
     빙하: 24,
-    // 책 사용 불가
+    재봉술4단: 1,       // 책 사용 시 (31~40단계)
   },
 };
 
@@ -121,7 +137,7 @@ export const T4_WEAPON_MATERIALS = {
     운명파편: 11500,
     누골: 3000,
     용암: 20,
-    // 책 사용 불가
+    야금술3단: 1,       // 책 사용 시 (21~30단계)
   },
   '31-40': {
     파괴석: 1400,
@@ -130,7 +146,7 @@ export const T4_WEAPON_MATERIALS = {
     운명파편: 13000,
     누골: 4000,
     용암: 24,
-    // 책 사용 불가
+    야금술4단: 1,       // 책 사용 시 (31~40단계)
   },
 };
 
@@ -157,9 +173,13 @@ export interface AdvancedRefiningOptions {
   useNormalBreath: boolean;  // 일반 턴에 숨결 사용
   useNormalBook1: boolean;   // 일반 턴에 1단계 책 사용 (1~10)
   useNormalBook2: boolean;   // 일반 턴에 2단계 책 사용 (11~20)
+  useNormalBook3: boolean;   // 일반 턴에 3단계 책 사용 (21~30)
+  useNormalBook4: boolean;   // 일반 턴에 4단계 책 사용 (31~40)
   useBonusBreath: boolean;   // 선조 턴에 숨결 사용
   useBonusBook1: boolean;    // 선조 턴에 1단계 책 사용 (1~10)
   useBonusBook2: boolean;    // 선조 턴에 2단계 책 사용 (11~20)
+  useBonusBook3: boolean;    // 선조 턴에 3단계 책 사용 (21~30)
+  useBonusBook4: boolean;    // 선조 턴에 4단계 책 사용 (31~40)
 }
 
 /**
@@ -209,7 +229,12 @@ export function getAdvancedRefiningTries(
  */
 function getNormalKey(options: AdvancedRefiningOptions, stage: number): string {
   const useBreath = options.useNormalBreath;
-  const useBook = stage === 1 ? options.useNormalBook1 : options.useNormalBook2;
+  let useBook = false;
+
+  if (stage === 1) useBook = options.useNormalBook1;
+  else if (stage === 2) useBook = options.useNormalBook2;
+  else if (stage === 3) useBook = options.useNormalBook3;
+  else if (stage === 4) useBook = options.useNormalBook4;
 
   if (useBreath && useBook) return 'both';
   if (useBreath) return 'breath';
@@ -222,7 +247,12 @@ function getNormalKey(options: AdvancedRefiningOptions, stage: number): string {
  */
 function getBonusKey(options: AdvancedRefiningOptions, stage: number): string {
   const useBreath = options.useBonusBreath;
-  const useBook = stage === 1 ? options.useBonusBook1 : options.useBonusBook2;
+  let useBook = false;
+
+  if (stage === 1) useBook = options.useBonusBook1;
+  else if (stage === 2) useBook = options.useBonusBook2;
+  else if (stage === 3) useBook = options.useBonusBook3;
+  else if (stage === 4) useBook = options.useBonusBook4;
 
   if (useBreath && useBook) return 'both';
   if (useBreath) return 'breath';
@@ -297,17 +327,32 @@ export function calculateAdvancedRefiningMaterials(
       materials[breathKey] = (materials[breathKey] || 0) + breathAmount * actualTries * totalBreathRate;
     }
 
-    // 책 계산 (1~20단계만)
-    if (stageInfo.stage <= 2) {
-      const bookKey = isArmor
-        ? (stageInfo.stage === 1 ? '재봉술1단' : '재봉술2단')
-        : (stageInfo.stage === 1 ? '야금술1단' : '야금술2단');
+    // 책 계산 (1~40단계 전체)
+    let bookKey = '';
+    let useNormalBook = false;
+    let useBonusBook = false;
 
+    if (stageInfo.stage === 1) {
+      bookKey = isArmor ? '재봉술1단' : '야금술1단';
+      useNormalBook = options.useNormalBook1;
+      useBonusBook = options.useBonusBook1;
+    } else if (stageInfo.stage === 2) {
+      bookKey = isArmor ? '재봉술2단' : '야금술2단';
+      useNormalBook = options.useNormalBook2;
+      useBonusBook = options.useBonusBook2;
+    } else if (stageInfo.stage === 3) {
+      bookKey = isArmor ? '재봉술3단' : '야금술3단';
+      useNormalBook = options.useNormalBook3;
+      useBonusBook = options.useBonusBook3;
+    } else if (stageInfo.stage === 4) {
+      bookKey = isArmor ? '재봉술4단' : '야금술4단';
+      useNormalBook = options.useNormalBook4;
+      useBonusBook = options.useBonusBook4;
+    }
+
+    if (bookKey) {
       const bookAmount = stageMaterials[bookKey] || 0;
       if (bookAmount > 0) {
-        const useNormalBook = stageInfo.stage === 1 ? options.useNormalBook1 : options.useNormalBook2;
-        const useBonusBook = stageInfo.stage === 1 ? options.useBonusBook1 : options.useBonusBook2;
-
         const normalBookRate = useNormalBook ? 0.83894 : 0;
         const bonusBookRate = useBonusBook ? 0.16106 : 0;
         const totalBookRate = normalBookRate + bonusBookRate;
@@ -332,13 +377,15 @@ export function calculateAdvancedRefiningMaterials(
  */
 function getStageAverageTries(stage: number, options: AdvancedRefiningOptions): number {
   if (stage <= 2) {
+    // 1~20단계: 숨결 + 책 조합 고려
     const normalKey = getNormalKey(options, stage);
     const bonusKey = getBonusKey(options, stage);
     const key = `${normalKey}_${bonusKey}`;
     return T4_ADVANCED_TRIES_1_20[key] || 59.3;
   } else {
-    const normalKey = options.useNormalBreath ? 'breath' : 'none';
-    const bonusKey = options.useBonusBreath ? 'breath' : 'none';
+    // 21~40단계: 숨결 + 책 조합 고려
+    const normalKey = getNormalKey(options, stage);
+    const bonusKey = getBonusKey(options, stage);
     const key = `${normalKey}_${bonusKey}`;
     return T4_ADVANCED_TRIES_21_40[key] || 54.8;
   }
