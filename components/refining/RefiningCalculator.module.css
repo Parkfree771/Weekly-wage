@@ -1,0 +1,843 @@
+/* ========================================
+   재련 비용 계산 페이지 스타일 (세르카 스타일)
+   ======================================== */
+
+/* 메인 컨테이너 */
+.container {
+  margin: 0 auto;
+}
+
+/* ========================================
+   검색창 스타일
+   ======================================== */
+.searchWrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.searchInner {
+  margin-bottom: 0.5rem;
+  max-width: 700px;
+  width: 100%;
+}
+
+.searchInputGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.searchInput {
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  padding: clamp(0.7rem, 2vw, 0.85rem) clamp(1rem, 2.5vw, 1.25rem);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.searchInput:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  outline: none;
+}
+
+.searchButton {
+  background-color: var(--brand-primary);
+  padding: clamp(0.7rem, 2vw, 0.85rem) clamp(1.5rem, 3vw, 2rem);
+  border-radius: 12px;
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  font-weight: 700;
+  border: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+  white-space: nowrap;
+}
+
+.searchButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.searchButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* 에러 메시지 */
+.errorWrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.errorMessage {
+  max-width: 700px;
+  width: 100%;
+  padding: clamp(0.75rem, 2vw, 1rem);
+  border-radius: 12px;
+  font-size: clamp(0.85rem, 1.9vw, 0.95rem);
+  font-weight: 600;
+}
+
+.errorMessageLight {
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+}
+
+.errorMessageDark {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+/* 가격 업데이트 시간 */
+.lastUpdated {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.lastUpdatedText {
+  color: var(--text-muted);
+  font-size: clamp(0.75rem, 1.8vw, 0.85rem);
+}
+
+/* ========================================
+   카드 스타일
+   ======================================== */
+.mainCard {
+  background-color: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transition: all 0.3s ease;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cardHeader {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-bottom: none;
+  padding: clamp(1rem, 2vw, 1.25rem);
+}
+
+.cardHeaderAlt {
+  background: var(--card-body-bg-blue);
+  border-bottom: 1px solid var(--border-color);
+  padding: clamp(1rem, 2vw, 1.25rem);
+}
+
+.cardTitle {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: clamp(1.1rem, 2.2vw, 1.25rem);
+  letter-spacing: -0.02em;
+  margin-bottom: 0;
+}
+
+.cardTitleWhite {
+  color: white;
+  font-weight: 700;
+  font-size: clamp(1.1rem, 2.2vw, 1.25rem);
+  letter-spacing: -0.02em;
+  margin-bottom: 0;
+}
+
+.cardBody {
+  background-color: var(--card-bg);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+/* 빈 상태 */
+.emptyState {
+  padding: clamp(2rem, 5vw, 3rem);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.emptyStateIcon {
+  font-size: clamp(2rem, 5vw, 3rem);
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.emptyStateTitle {
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.emptyStateDesc {
+  font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+  opacity: 0.7;
+}
+
+/* ========================================
+   캐릭터 정보 (개선됨)
+   ======================================== */
+.characterInfo {
+  padding: clamp(1rem, 2.5vw, 1.35rem);
+  background-color: var(--card-bg);
+  border-radius: 14px;
+  border: 2px solid var(--border-color);
+  text-align: center;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.characterName {
+  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-right: 1rem;
+}
+
+.characterLevel {
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.expectedLevel {
+  font-size: clamp(0.85rem, 1.9vw, 1rem);
+  font-weight: 600;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.levelBadge {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  font-size: clamp(0.7rem, 1.6vw, 0.8rem);
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+/* ========================================
+   장비 카드 (개선됨)
+   ======================================== */
+.equipmentCard {
+  padding: clamp(0.85rem, 2.2vw, 1.15rem);
+  background-color: var(--card-bg);
+  border-radius: 14px;
+  border: 2px solid var(--border-color);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+.equipmentCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.equipmentCardChanged {
+  border-color: var(--brand-primary);
+  background-color: rgba(99, 102, 241, 0.03);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+  transform: translateY(-3px);
+}
+
+.equipmentCardMobile {
+  padding: 0.3rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.equipmentCardMobileChanged {
+  box-shadow: 0 0 0 1px rgba(var(--brand-hue), var(--brand-saturation), var(--brand-lightness), 0.3);
+}
+
+.equipmentName {
+  font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equipmentNameMobile {
+  font-size: 0.65rem;
+}
+
+.equipmentGrade {
+  font-size: clamp(0.65rem, 1.5vw, 0.75rem);
+  font-weight: 600;
+  display: block;
+  margin-top: 1px;
+}
+
+.equipmentGradeMobile {
+  font-size: 0.5rem;
+}
+
+.levelBadgeArmor {
+  font-size: clamp(0.72rem, 1.65vw, 0.82rem);
+  padding: 0.35rem 0.7rem;
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
+}
+
+.levelBadgeWeapon {
+  font-size: clamp(0.72rem, 1.65vw, 0.82rem);
+  padding: 0.35rem 0.7rem;
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.1);
+}
+
+.levelBadgeMobile {
+  font-size: 0.55rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+}
+
+.advancedLevelBadge {
+  font-size: clamp(0.68rem, 1.55vw, 0.78rem);
+  padding: 0.3rem 0.6rem;
+  background-color: rgba(168, 85, 247, 0.12);
+  color: #9333ea;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(168, 85, 247, 0.15);
+  box-shadow: 0 1px 3px rgba(168, 85, 247, 0.1);
+}
+
+.advancedLevelBadgeMobile {
+  font-size: 0.5rem;
+  padding: 0.1rem 0.25rem;
+  border-radius: 4px;
+}
+
+/* Select 스타일 (개선됨) */
+.equipmentSelect {
+  background-color: var(--card-bg);
+  border: 1.5px solid var(--border-color);
+  font-size: clamp(0.7rem, 1.3vw, 0.8rem);
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  width: 100%;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+}
+
+.equipmentSelect:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.equipmentSelect:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1),
+              0 2px 8px rgba(0, 0, 0, 0.08);
+  outline: none;
+}
+
+.equipmentSelectMobile {
+  font-size: 0.6rem;
+  border-radius: 4px;
+  padding: 0.25rem 0.35rem;
+  border: 1px solid var(--border-color);
+}
+
+.equipmentSelectEmpty {
+  color: var(--text-muted);
+}
+
+.equipmentSelectSelected {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* ========================================
+   목표 설정 버튼 (개선됨)
+   ======================================== */
+.bulkSettingContainer {
+  padding: clamp(1.15rem, 2.8vw, 1.5rem);
+  background-color: var(--card-bg);
+  border-radius: 16px;
+  border: 2px solid var(--border-color);
+  margin-top: 1.75rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.bulkSettingContainerMobile {
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+  margin-top: 1rem;
+}
+
+.bulkSettingLabel {
+  font-size: clamp(0.8rem, 1.7vw, 0.9rem);
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.bulkSettingLabelMobile {
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.bulkButtonGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bulkButtonGroupMobile {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 0.3rem;
+}
+
+.bulkButton {
+  font-size: clamp(0.75rem, 1.7vw, 0.85rem);
+  padding: clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem);
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.bulkButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.bulkButtonMobile {
+  font-size: 0.7rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  min-height: 30px;
+  min-width: 42px;
+  flex-shrink: 0;
+}
+
+.bulkButtonSelected {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.bulkButtonWeaponSelected {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.bulkButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  color: var(--text-disabled);
+}
+
+/* ========================================
+   재료 카드 (개선됨)
+   ======================================== */
+.materialCard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-color: var(--card-bg);
+  border-radius: clamp(10px, 2.2vw, 16px);
+  border: 2px solid var(--border-color);
+  transition: all 0.3s ease;
+  padding: clamp(0.5rem, 1.8vw, 1.2rem);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.materialCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.materialCardBound {
+  border: 2px solid #6366f1;
+  background-color: rgba(99, 102, 241, 0.02);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
+}
+
+.materialCardClickable {
+  cursor: pointer;
+}
+
+.materialCardDisabled {
+  opacity: 0.6;
+}
+
+.materialCardBoundLabel {
+  position: absolute;
+  top: clamp(4px, 1vw, 10px);
+  right: clamp(4px, 1vw, 10px);
+  font-size: clamp(0.5rem, 1.3vw, 0.75rem);
+  color: #6366f1;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: clamp(2px, 0.4vw, 4px);
+  padding: clamp(2px, 0.4vw, 4px) clamp(4px, 0.6vw, 8px);
+  border-radius: 6px;
+  background-color: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  box-shadow: 0 1px 3px rgba(99, 102, 241, 0.1);
+  transition: all 0.2s ease;
+}
+
+.materialCardBoundLabelUnbound {
+  color: var(--text-secondary);
+  background-color: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.materialCardEnableSwitch {
+  position: absolute;
+  top: clamp(2px, 0.8vw, 6px);
+  left: clamp(2px, 0.8vw, 6px);
+  transform: scale(clamp(0.5, 1vw, 0.75));
+  transform-origin: top left;
+}
+
+.materialIcon {
+  position: relative;
+  width: clamp(24px, 8vw, 52px);
+  height: clamp(24px, 8vw, 52px);
+  margin-bottom: clamp(2px, 0.8vw, 8px);
+}
+
+.materialName {
+  font-size: clamp(0.5rem, 1.8vw, 0.8rem);
+  color: var(--text-secondary);
+  margin-bottom: clamp(2px, 0.6vw, 6px);
+  text-align: center;
+  white-space: nowrap;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.materialAmount {
+  font-size: clamp(0.65rem, 2.2vw, 1.1rem);
+  font-weight: 700;
+  transition: color 0.25s ease;
+}
+
+.materialAmountZero {
+  color: var(--text-secondary);
+}
+
+.materialCost {
+  font-size: clamp(0.5rem, 1.5vw, 0.75rem);
+  color: #f59e0b;
+  margin-top: clamp(2px, 0.5vw, 4px);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ========================================
+   추가 재료 토글 (개선됨)
+   ======================================== */
+.materialToggleSection {
+  background-color: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 2px solid var(--border-color);
+  margin-top: 1.75rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.materialToggleTitle {
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.materialToggleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.materialToggleItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1.15rem;
+  background-color: var(--card-body-bg-blue);
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.materialToggleItem:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.materialToggleButton {
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.materialToggleButtonEnabled {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+.materialToggleButtonDisabled {
+  background-color: #6b7280;
+  color: #9ca3af;
+}
+
+/* ========================================
+   총 비용 카드
+   ======================================== */
+.totalCostCard {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-radius: 16px;
+  padding: clamp(1.5rem, 3vw, 2rem);
+  margin-top: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  color: white;
+}
+
+.totalCostTitle {
+  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  opacity: 0.9;
+}
+
+.totalCostAmount {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.totalCostNote {
+  font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+  opacity: 0.8;
+}
+
+/* ========================================
+   반응형 디자인
+   ======================================== */
+@media (max-width: 768px) {
+  .searchInputGroup {
+    gap: 0.35rem;
+  }
+
+  .equipmentCard {
+    padding: 0.3rem;
+    border-radius: 4px;
+    border-width: 1px;
+  }
+
+  .bulkSettingContainer {
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+  }
+
+  .materialCard {
+    border-radius: 8px;
+    padding: 0.5rem;
+  }
+
+  .materialToggleSection {
+    padding: 1rem;
+  }
+
+  .materialToggleGrid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .totalCostCard {
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .searchInput {
+    font-size: 0.85rem;
+    padding: 0.6rem 0.9rem;
+  }
+
+  .searchButton {
+    font-size: 0.85rem;
+    padding: 0.6rem 1.2rem;
+  }
+
+  .materialCard {
+    border-radius: 6px;
+    padding: 0.4rem;
+  }
+
+  .totalCostCard {
+    padding: 1rem;
+  }
+}
+
+/* ========================================
+   다크모드 지원 (개선됨)
+   ======================================== */
+[data-theme="dark"] .mainCard {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .equipmentCard {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .equipmentCard:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .equipmentCardChanged {
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+[data-theme="dark"] .materialCard {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .materialCard:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .materialCardBound {
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="dark"] .totalCostCard {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .characterInfo {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .bulkSettingContainer {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .materialToggleSection {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .materialToggleItem {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .materialToggleItem:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* ========================================
+   업데이트 배지
+   ======================================== */
+.updateBadge {
+  position: absolute;
+  top: -2rem;
+  right: 0;
+  background-color: var(--card-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+
+/* 초기화 버튼 */
+.resetButton {
+  background-color: #ef4444;
+  color: white;
+  padding: clamp(0.6rem, 1.8vw, 0.75rem) clamp(1.2rem, 2.5vw, 1.5rem);
+  border-radius: 10px;
+  font-size: clamp(0.85rem, 1.9vw, 0.95rem);
+  font-weight: 600;
+  border: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+}
+
+.resetButton:hover:not(:disabled) {
+  background-color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.resetButton:active:not(:disabled) {
+  transform: translateY(0);
+}

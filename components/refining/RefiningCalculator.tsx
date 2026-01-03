@@ -5,6 +5,7 @@ import { Form, Button, InputGroup, Row, Col, Card, Badge, ButtonGroup } from 're
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
 import { getAverageTries } from '../../lib/refiningSimulationData';
+import styles from './RefiningCalculator.module.css';
 import {
   BASE_PROBABILITY,
   ARMOR_MATERIAL_COSTS,
@@ -87,24 +88,16 @@ const MaterialCard = ({
   onToggleEnabled?: () => void;
 }) => (
   <div
-    className="h-100 d-flex flex-column align-items-center justify-content-center"
+    className={`${styles.materialCard} ${isBound ? styles.materialCardBound : ''} ${showCheckbox ? styles.materialCardClickable : ''} ${showEnableToggle && !isEnabled ? styles.materialCardDisabled : ''}`}
     onClick={() => {
       if (showCheckbox && !(showEnableToggle && !isEnabled)) {
         onBoundChange?.(name, !isBound);
       }
     }}
     style={{
-      position: 'relative',
-      backgroundColor: 'var(--card-body-bg-blue)',
-      borderRadius: 'clamp(8px, 2vw, 14px)',
-      border: isBound ? '2px solid #818cf8' : '1px solid var(--border-color)',
-      transition: 'all 0.25s ease',
-      cursor: showCheckbox ? 'pointer' : 'default',
-      padding: 'clamp(0.3rem, 1.5vw, 1rem)',
       '--hover-color': color,
-      opacity: showEnableToggle && !isEnabled ? 0.6 : 1,
       ...customStyle,
-    }}
+    } as React.CSSProperties}
   >
     {showEnableToggle && (
        <Form.Check
@@ -112,44 +105,16 @@ const MaterialCard = ({
         id={`enable-switch-${name}`}
         checked={isEnabled}
         onChange={onToggleEnabled}
-        style={{
-          position: 'absolute',
-          top: 'clamp(2px, 0.8vw, 6px)',
-          left: 'clamp(2px, 0.8vw, 6px)',
-          transform: 'scale(clamp(0.5, 1vw, 0.75))',
-          transformOrigin: 'top left',
-        }}
-        className="refining-checkbox"
+        className={`${styles.materialCardEnableSwitch} refining-checkbox`}
         onClick={(e) => e.stopPropagation()}
       />
     )}
     {showCheckbox && (
-      <div
-        style={{
-          position: 'absolute',
-          top: 'clamp(2px, 0.8vw, 8px)',
-          right: 'clamp(2px, 0.8vw, 8px)',
-          fontSize: 'clamp(0.45rem, 1.2vw, 0.75rem)',
-          color: isBound ? '#818cf8' : 'var(--text-secondary)',
-          fontWeight: '600',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'clamp(1px, 0.3vw, 3px)',
-          padding: 'clamp(1px, 0.3vw, 2px) clamp(2px, 0.5vw, 4px)',
-          borderRadius: '4px',
-          backgroundColor: isBound ? 'rgba(129, 140, 248, 0.1)' : 'transparent',
-          transition: 'all 0.2s ease',
-        }}
-      >
+      <div className={`${styles.materialCardBoundLabel} ${!isBound ? styles.materialCardBoundLabelUnbound : ''}`}>
         귀속
       </div>
     )}
-    <div style={{
-      position: 'relative',
-      width: 'clamp(24px, 8vw, 52px)',
-      height: 'clamp(24px, 8vw, 52px)',
-      marginBottom: 'clamp(2px, 0.8vw, 8px)',
-    }}>
+    <div className={styles.materialIcon}>
       <Image
         src={icon}
         alt={name}
@@ -157,29 +122,14 @@ const MaterialCard = ({
         style={{ objectFit: 'contain' }}
       />
     </div>
-    <div style={{
-      fontSize: 'clamp(0.5rem, 1.8vw, 0.8rem)',
-      color: 'var(--text-secondary)',
-      marginBottom: 'clamp(2px, 0.6vw, 6px)',
-      textAlign: 'center',
-      whiteSpace: 'nowrap',
-      fontWeight: '500',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      maxWidth: '100%',
-    }}>
+    <div className={styles.materialName}>
       {name}
     </div>
-    <div style={{
-      fontSize: 'clamp(0.65rem, 2.2vw, 1.1rem)',
-      fontWeight: '700',
-      color: amount === 0 ? 'var(--text-secondary)' : color,
-      transition: 'color 0.25s ease',
-    }}>
+    <div className={`${styles.materialAmount} ${amount === 0 ? styles.materialAmountZero : ''}`} style={{ color: amount === 0 ? undefined : color }}>
       {amount.toLocaleString()}
     </div>
     {cost !== undefined && (
-      <div style={{ fontSize: 'clamp(0.5rem, 1.5vw, 0.75rem)', color: '#f59e0b', marginTop: 'clamp(2px, 0.5vw, 4px)', fontWeight: '600' }}>
+      <div className={styles.materialCost}>
         <Image src="/gold.webp" alt="gold" width={10} height={10} style={{ marginRight: '2px' }} />
         {Math.round(isBound ? 0 : cost).toLocaleString()}
       </div>
@@ -1018,12 +968,12 @@ export default function RefiningCalculator() {
   const expectedItemLevel = calculateExpectedItemLevel();
 
   return (
-    <div style={{ margin: '0 auto' }}>
+    <div className={styles.container}>
       {/* 검색창 */}
       <Form onSubmit={handleSearch} className="mb-2">
-        <div className="d-flex justify-content-center">
-          <div className="mb-2" style={{maxWidth: '700px', width: '100%'}}>
-            <div className="d-flex gap-2">
+        <div className={styles.searchWrapper}>
+          <div className={styles.searchInner}>
+            <div className={styles.searchInputGroup}>
               <Form.Control
                 placeholder="캐릭터명을 입력하세요"
                 value={characterName}
@@ -1032,32 +982,12 @@ export default function RefiningCalculator() {
                   if (error) setError(null);
                 }}
                 disabled={isLoading}
-                style={{
-                  backgroundColor: 'var(--input-bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: 'clamp(0.9rem, 2vw, 1rem)',
-                  padding: 'clamp(0.7rem, 2vw, 0.85rem) clamp(1rem, 2.5vw, 1.25rem)',
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  fontWeight: '500',
-                  boxShadow: 'var(--shadow-sm)',
-                  transition: 'all 0.2s ease',
-                }}
+                className={styles.searchInput}
               />
               <Button
                 type="submit"
                 disabled={isLoading || !characterName.trim()}
-                style={{
-                  backgroundColor: 'var(--brand-primary)',
-                  padding: 'clamp(0.7rem, 2vw, 0.85rem) clamp(1.5rem, 3vw, 2rem)',
-                  borderRadius: '12px',
-                  fontSize: 'clamp(0.9rem, 2vw, 1rem)',
-                  fontWeight: '700',
-                  border: 'none',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-md)',
-                  whiteSpace: 'nowrap'
-                }}
+                className={styles.searchButton}
               >
                 {isLoading ? (
                   <>
@@ -1072,25 +1002,15 @@ export default function RefiningCalculator() {
           </div>
         </div>
         {error && (
-          <div className="d-flex justify-content-center mb-3">
-            <div style={{
-              maxWidth: '700px',
-              width: '100%',
-              padding: 'clamp(0.75rem, 2vw, 1rem)',
-              backgroundColor: theme === 'dark' ? 'rgba(239, 68, 68, 0.1)' : '#fee2e2',
-              border: `1px solid ${theme === 'dark' ? 'rgba(239, 68, 68, 0.5)' : '#fca5a5'}`,
-              borderRadius: '12px',
-              color: theme === 'dark' ? '#fca5a5' : '#b91c1c',
-              fontSize: 'clamp(0.85rem, 1.9vw, 0.95rem)',
-              fontWeight: '600'
-            }}>
+          <div className={styles.errorWrapper}>
+            <div className={`${styles.errorMessage} ${theme === 'dark' ? styles.errorMessageDark : styles.errorMessageLight}`}>
               {error}
             </div>
           </div>
         )}
         {lastUpdated && (
-          <div className="d-flex justify-content-center mb-2">
-            <small style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.75rem, 1.8vw, 0.85rem)' }}>
+          <div className={styles.lastUpdated}>
+            <small className={styles.lastUpdatedText}>
               {lastUpdated.toLocaleString('ko-KR', {
                 year: 'numeric',
                 month: '2-digit',
@@ -1111,66 +1031,24 @@ export default function RefiningCalculator() {
           {/* 캐릭터 정보 헤더 */}
           {/* 부위별 목표 레벨 설정 */}
           <div style={{ position: 'relative' }}>
-            <div style={{
-              position: 'absolute',
-              top: '-2rem',
-              right: '0',
-              backgroundColor: 'var(--card-bg)',
-              border: '1.5px solid var(--border-color)',
-              borderRadius: '6px',
-              padding: '0.3rem 0.6rem',
-              fontSize: '0.7rem',
-              fontWeight: '600',
-              color: 'var(--text-primary)',
-              boxShadow: 'var(--shadow-sm)',
-              zIndex: 10
-            }}>
+            <div className={styles.updateBadge}>
               26년 1월 7일 업데이트 예정
             </div>
-            <Card className="mb-4" style={{
-              backgroundColor: 'var(--card-bg)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              boxShadow: 'var(--shadow-lg)'
-            }}>
-              <Card.Header style={{
-                background: 'var(--card-body-bg-blue)',
-                borderBottom: '1px solid var(--border-color)',
-                padding: 'clamp(1rem, 2vw, 1.25rem)'
-              }}>
-                <h5 className="mb-0" style={{
-                  color: 'var(--text-primary)',
-                  fontWeight: '700',
-                  fontSize: 'clamp(1.1rem, 2.2vw, 1.25rem)',
-                  letterSpacing: '-0.02em'
-                }}>장비 강화 단계 및 목표 설정</h5>
+            <Card className={`mb-4 ${styles.mainCard}`}>
+              <Card.Header className={styles.cardHeaderAlt}>
+                <h5 className={`mb-0 ${styles.cardTitle}`}>장비 강화 단계 및 목표 설정</h5>
               </Card.Header>
-            <Card.Body style={{
-              backgroundColor: 'var(--card-bg)',
-              padding: 'clamp(1rem, 2.5vw, 1.5rem)'
-            }}>
+            <Card.Body className={styles.cardBody}>
               {/* 검색 전 빈 상태 */}
               {!searched && (
-                <div style={{
-                  padding: 'clamp(2rem, 5vw, 3rem)',
-                  textAlign: 'center',
-                  color: 'var(--text-muted)'
-                }}>
-                  <div style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', marginBottom: '1rem', opacity: 0.5 }}>
+                <div className={styles.emptyState}>
+                  <div className={styles.emptyStateIcon}>
                     ⚒️
                   </div>
-                  <p style={{
-                    fontSize: 'clamp(0.9rem, 2vw, 1rem)',
-                    fontWeight: '500',
-                    marginBottom: '0.5rem'
-                  }}>
+                  <p className={styles.emptyStateTitle}>
                     캐릭터를 검색하면 장비 정보가 표시됩니다
                   </p>
-                  <p style={{
-                    fontSize: 'clamp(0.8rem, 1.8vw, 0.9rem)',
-                    opacity: 0.7
-                  }}>
+                  <p className={styles.emptyStateDesc}>
                     각 장비별 목표 레벨을 설정하고 필요한 재료와 비용을 확인하세요
                   </p>
                 </div>
@@ -1179,49 +1057,20 @@ export default function RefiningCalculator() {
               {/* 캐릭터 정보 */}
               {searched && equipments.length > 0 && characterInfo && (
                 <div className="mb-3">
-                  <div style={{
-                    padding: 'clamp(0.75rem, 2vw, 1rem)',
-                    backgroundColor: 'var(--card-body-bg-blue)',
-                    borderRadius: '12px',
-                    border: '1px solid var(--border-color)',
-                    textAlign: 'center'
-                  }}>
+                  <div className={styles.characterInfo}>
                     <div style={{ marginBottom: '0.5rem' }}>
-                      <span style={{
-                        fontSize: 'clamp(1rem, 2.2vw, 1.2rem)',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                        marginRight: '1rem'
-                      }}>
+                      <span className={styles.characterName}>
                         {characterInfo.name}
                       </span>
-                      <span style={{
-                        fontSize: 'clamp(0.9rem, 2vw, 1.1rem)',
-                        fontWeight: '600',
-                        color: 'var(--text-secondary)'
-                      }}>
+                      <span className={styles.characterLevel}>
                         현재 아이템 레벨: {characterInfo.itemLevel}
                       </span>
                     </div>
                     {expectedItemLevel && (
-                      <div style={{
-                        fontSize: 'clamp(0.85rem, 1.9vw, 1rem)',
-                        fontWeight: '600',
-                        color: '#10b981',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem'
-                      }}>
+                      <div className={styles.expectedLevel}>
                         <span>→</span>
                         <span>예상 도달 레벨: {expectedItemLevel}</span>
-                        <Badge bg="" style={{
-                          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                          color: '#10b981',
-                          fontSize: 'clamp(0.7rem, 1.6vw, 0.8rem)',
-                          fontWeight: '700',
-                          padding: '0.25rem 0.5rem'
-                        }}>
+                        <Badge bg="" className={styles.levelBadge}>
                           +{(parseFloat(expectedItemLevel) - parseFloat(characterInfo.itemLevel.replace(/,/g, ''))).toFixed(2)}
                         </Badge>
                       </div>
@@ -1242,35 +1091,19 @@ export default function RefiningCalculator() {
 
                   return (
                     <Col key={index} xs={4} sm={6} md={4} lg={2}>
-                      <div style={{
-                        padding: isMobile ? '0.3rem' : 'clamp(0.75rem, 2vw, 1rem)',
-                        backgroundColor: 'var(--card-body-bg-blue)',
-                        borderRadius: isMobile ? '4px' : '12px',
-                        border: `${isMobile ? '1px' : '2px'} solid ${isChanged ? 'var(--brand-primary)' : gradeColor}`,
-                        transition: 'all 0.25s ease',
-                        boxShadow: isChanged ? `0 0 0 ${isMobile ? '1px' : '3px'} hsla(var(--brand-hue), var(--brand-saturation), var(--brand-lightness), 0.3)` : `0 0 0 1px ${gradeColor}33`
-                      }}>
+                      <div
+                        className={`${styles.equipmentCard} ${isMobile ? styles.equipmentCardMobile : ''} ${isChanged ? styles.equipmentCardChanged : ''} ${isChanged && isMobile ? styles.equipmentCardMobileChanged : ''}`}
+                        style={{
+                          borderColor: !isChanged ? gradeColor : undefined,
+                          boxShadow: !isChanged ? `0 0 0 1px ${gradeColor}33` : undefined
+                        }}
+                      >
                         <div className="d-flex justify-content-between align-items-start" style={{ marginBottom: isMobile ? '0.2rem' : '0.5rem' }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <span style={{
-                              fontSize: isMobile ? '0.65rem' : 'clamp(0.8rem, 1.8vw, 0.9rem)',
-                              fontWeight: '700',
-                              color: 'var(--text-primary)',
-                              display: 'block',
-                              lineHeight: '1.1',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}>
+                            <span className={`${styles.equipmentName} ${isMobile ? styles.equipmentNameMobile : ''}`}>
                               {eq.name}
                             </span>
-                            <span style={{
-                              fontSize: isMobile ? '0.5rem' : 'clamp(0.65rem, 1.5vw, 0.75rem)',
-                              fontWeight: '600',
-                              color: gradeColor,
-                              display: 'block',
-                              marginTop: '1px'
-                            }}>
+                            <span className={`${styles.equipmentGrade} ${isMobile ? styles.equipmentGradeMobile : ''}`} style={{ color: gradeColor }}>
                               {eq.grade}
                             </span>
                           </div>
@@ -1278,14 +1111,7 @@ export default function RefiningCalculator() {
                             <Badge
                               pill
                               bg=""
-                              style={{
-                                fontSize: isMobile ? '0.55rem' : 'clamp(0.7rem, 1.6vw, 0.8rem)',
-                                padding: isMobile ? '0.15rem 0.3rem' : '0.3rem 0.6rem',
-                                backgroundColor: eq.type === 'weapon' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                                color: eq.type === 'weapon' ? '#ef4444' : '#3b82f6',
-                                fontWeight: '700',
-                                lineHeight: '1'
-                              }}
+                              className={`${eq.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor} ${isMobile ? styles.levelBadgeMobile : ''}`}
                             >
                               +{eq.currentLevel}
                             </Badge>
@@ -1293,14 +1119,7 @@ export default function RefiningCalculator() {
                               <Badge
                                 pill
                                 bg=""
-                                style={{
-                                  fontSize: isMobile ? '0.5rem' : 'clamp(0.65rem, 1.5vw, 0.75rem)',
-                                  padding: isMobile ? '0.1rem 0.25rem' : '0.25rem 0.5rem',
-                                  backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                                  color: '#a855f7',
-                                  fontWeight: '700',
-                                  lineHeight: '1'
-                                }}
+                                className={`${styles.advancedLevelBadge} ${isMobile ? styles.advancedLevelBadgeMobile : ''}`}
                               >
                                 상+{eq.currentAdvancedLevel}
                               </Badge>
@@ -1317,17 +1136,7 @@ export default function RefiningCalculator() {
                                 [eq.name]: { ...prev[eq.name], normal: value === '' ? null : Number(value) }
                               }));
                             }}
-                            style={{
-                              backgroundColor: 'var(--input-bg)',
-                              borderColor: 'var(--border-color)',
-                              color: targets.normal === null ? 'var(--text-muted)' : 'var(--text-primary)',
-                              fontSize: isMobile ? '0.6rem' : 'clamp(0.65rem, 1.2vw, 0.75rem)',
-                              fontWeight: '600',
-                              borderRadius: isMobile ? '3px' : '6px',
-                              padding: isMobile ? '0.2rem 0.25rem' : '0.3rem 0.4rem',
-                              border: isMobile ? '1px solid var(--border-color)' : undefined,
-                              width: '100%'
-                            }}
+                            className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${targets.normal === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
                           >
                             <option value="">일반</option>
                             {Array.from({ length: 26 - eq.currentLevel }, (_, i) => eq.currentLevel + i + 1).map(level => (
@@ -1344,17 +1153,7 @@ export default function RefiningCalculator() {
                               }));
                             }}
                             disabled={eq.currentAdvancedLevel >= 40}
-                            style={{
-                              backgroundColor: 'var(--input-bg)',
-                              borderColor: 'var(--border-color)',
-                              color: targets.advanced === null ? 'var(--text-muted)' : 'var(--text-primary)',
-                              fontSize: isMobile ? '0.6rem' : 'clamp(0.65rem, 1.2vw, 0.75rem)',
-                              fontWeight: '600',
-                              borderRadius: isMobile ? '3px' : '6px',
-                              padding: isMobile ? '0.2rem 0.25rem' : '0.3rem 0.4rem',
-                              border: isMobile ? '1px solid var(--border-color)' : undefined,
-                              width: '100%'
-                            }}
+                            className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${targets.advanced === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
                           >
                             <option value="">상급</option>
                             {[10, 20, 30, 40]
@@ -1371,25 +1170,15 @@ export default function RefiningCalculator() {
               </Row>
 
               {/* 목표 설정 */}
-              <div className="mt-4" style={{
-                padding: isMobile ? '0' : 'clamp(1rem, 2.5vw, 1.25rem)',
-                backgroundColor: isMobile ? 'transparent' : 'var(--card-body-bg-blue)',
-                borderRadius: isMobile ? '0' : '14px',
-                border: isMobile ? 'none' : '1px solid var(--border-color)'
-              }}>
+              <div className={`mt-4 ${styles.bulkSettingContainer} ${isMobile ? styles.bulkSettingContainerMobile : ''}`}>
                 <Row className="align-items-start">
                   <Col md={12}>
                     {/* 방어구 일괄 설정 */}
                     <div style={{ marginBottom: isMobile ? '0.6rem' : '1rem' }}>
-                      <div style={{
-                        fontSize: isMobile ? '0.85rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
-                        color: 'var(--text-secondary)',
-                        marginBottom: isMobile ? '0.4rem' : '0.5rem',
-                        fontWeight: '600'
-                      }}>
+                      <div className={`${styles.bulkSettingLabel} ${isMobile ? styles.bulkSettingLabelMobile : ''}`}>
                         방어구 (일반)
                       </div>
-                      <div className={isMobile ? 'd-flex' : 'd-flex flex-wrap'} style={{ gap: isMobile ? '0.35rem' : '0.5rem', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '0.3rem' : '0' }}>
+                      <div className={`${styles.bulkButtonGroup} ${isMobile ? styles.bulkButtonGroupMobile : ''}`}>
                         {(() => {
                           const armorEquipments = equipments.filter(eq => eq.type === 'armor');
                           const minArmorLevel = armorEquipments.length > 0
@@ -1428,21 +1217,7 @@ export default function RefiningCalculator() {
                                 }
                               }}
                               disabled={!hasArmor}
-                              style={{
-                                fontSize: isMobile ? '0.7rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                padding: isMobile ? '0.35rem 0.6rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
-                                backgroundColor: isSelected ? 'var(--brand-primary-light)' : 'var(--card-bg)',
-                                border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-color)'}`,
-                                borderRadius: isMobile ? '4px' : '10px',
-                                color: isSelected ? 'var(--brand-primary-dark)' : hasArmor ? 'var(--text-secondary)' : 'var(--text-disabled)',
-                                fontWeight: isSelected ? '700' : '600',
-                                cursor: hasArmor ? 'pointer' : 'not-allowed',
-                                transition: 'all 0.2s ease',
-                                opacity: hasArmor ? 1 : 0.5,
-                                minHeight: isMobile ? '30px' : 'auto',
-                                minWidth: isMobile ? '42px' : 'auto',
-                                flexShrink: 0
-                              }}
+                              className={`${styles.bulkButton} ${isMobile ? styles.bulkButtonMobile : ''} ${isSelected ? styles.bulkButtonSelected : ''}`}
                             >
                               +{level}
                             </button>
@@ -1453,15 +1228,10 @@ export default function RefiningCalculator() {
 
                     {/* 무기 일괄 설정 */}
                     <div style={{ marginBottom: isMobile ? '0.6rem' : '1rem' }}>
-                      <div style={{
-                        fontSize: isMobile ? '0.85rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
-                        color: 'var(--text-secondary)',
-                        marginBottom: isMobile ? '0.4rem' : '0.5rem',
-                        fontWeight: '600'
-                      }}>
+                      <div className={`${styles.bulkSettingLabel} ${isMobile ? styles.bulkSettingLabelMobile : ''}`}>
                         무기 (일반)
                       </div>
-                      <div className={isMobile ? 'd-flex' : 'd-flex flex-wrap'} style={{ gap: isMobile ? '0.35rem' : '0.5rem', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '0.3rem' : '0' }}>
+                      <div className={`${styles.bulkButtonGroup} ${isMobile ? styles.bulkButtonGroupMobile : ''}`}>
                         {(() => {
                           const weaponEquipments = equipments.filter(eq => eq.type === 'weapon');
                           const minWeaponLevel = weaponEquipments.length > 0
@@ -1500,21 +1270,7 @@ export default function RefiningCalculator() {
                                 }
                               }}
                               disabled={!hasWeapon}
-                              style={{
-                                fontSize: isMobile ? '0.7rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                padding: isMobile ? '0.35rem 0.6rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
-                                backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.1)' : 'var(--card-bg)',
-                                border: `1px solid ${isSelected ? '#ef4444' : 'var(--border-color)'}`,
-                                borderRadius: isMobile ? '4px' : '10px',
-                                color: isSelected ? '#ef4444' : hasWeapon ? 'var(--text-secondary)' : 'var(--text-disabled)',
-                                fontWeight: isSelected ? '700' : '600',
-                                cursor: hasWeapon ? 'pointer' : 'not-allowed',
-                                transition: 'all 0.2s ease',
-                                opacity: hasWeapon ? 1 : 0.5,
-                                minHeight: isMobile ? '30px' : 'auto',
-                                minWidth: isMobile ? '42px' : 'auto',
-                                flexShrink: 0
-                              }}
+                              className={`${styles.bulkButton} ${isMobile ? styles.bulkButtonMobile : ''} ${isSelected ? styles.bulkButtonWeaponSelected : ''}`}
                             >
                               +{level}
                             </button>
@@ -1613,17 +1369,10 @@ export default function RefiningCalculator() {
                                   }
                                 }}
                                 disabled={!canSelect}
+                                className={`${styles.bulkButton} ${isMobile ? styles.bulkButtonMobile : ''} ${isSelected ? styles.bulkButtonSelected : ''}`}
                                 style={{
-                                  fontSize: isMobile ? '0.6rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                  padding: isMobile ? '0.3rem 0.5rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
-                                  backgroundColor: isSelected ? 'var(--brand-primary-light)' : 'var(--card-bg)',
-                                  border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-color)'}`,
-                                  borderRadius: isMobile ? '3px' : '10px',
-                                  color: isSelected ? 'var(--brand-primary-dark)' : canSelect ? 'var(--text-secondary)' : 'var(--text-disabled)',
-                                  fontWeight: isSelected ? '700' : '600',
-                                  cursor: canSelect ? 'pointer' : 'not-allowed',
-                                  transition: 'all 0.2s ease',
-                                  opacity: canSelect ? 1 : 0.5,
+                                  fontSize: isMobile ? '0.6rem' : undefined,
+                                  padding: isMobile ? '0.3rem 0.5rem' : undefined,
                                   minHeight: isMobile ? '26px' : 'auto',
                                   minWidth: isMobile ? '36px' : 'auto'
                                 }}
@@ -1659,17 +1408,11 @@ export default function RefiningCalculator() {
                                 ...prev,
                                 armorNormalBreath: { ...prev.armorNormalBreath, enabled: !prev.armorNormalBreath.enabled }
                               }))}
+                              className={advancedMaterialOptions.armorNormalBreath.enabled ? styles.materialToggleButtonEnabled : styles.materialToggleButtonDisabled}
                               style={{
-                                padding: isMobile ? '0.15rem 0.3rem' : '0.3rem 0.6rem',
-                                fontSize: isMobile ? '0.6rem' : '0.75rem',
-                                fontWeight: '600',
-                                backgroundColor: advancedMaterialOptions.armorNormalBreath.enabled ? '#3b82f6' : '#6b7280',
-                                color: advancedMaterialOptions.armorNormalBreath.enabled ? '#ffffff' : '#9ca3af',
-                                border: 'none',
-                                borderRadius: isMobile ? '2px' : '6px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                whiteSpace: 'nowrap'
+                                padding: isMobile ? '0.15rem 0.3rem' : undefined,
+                                fontSize: isMobile ? '0.6rem' : undefined,
+                                borderRadius: isMobile ? '2px' : undefined
                               }}
                             >
                               {advancedMaterialOptions.armorNormalBreath.enabled ? '사용' : '미사용'}
@@ -2155,17 +1898,10 @@ export default function RefiningCalculator() {
                                   }
                                 }}
                                 disabled={!canSelect}
+                                className={`${styles.bulkButton} ${isMobile ? styles.bulkButtonMobile : ''} ${isSelected ? styles.bulkButtonWeaponSelected : ''}`}
                                 style={{
-                                  fontSize: isMobile ? '0.6rem' : 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                                  padding: isMobile ? '0.3rem 0.5rem' : 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem)',
-                                  backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.1)' : 'var(--card-bg)',
-                                  border: `1px solid ${isSelected ? '#ef4444' : 'var(--border-color)'}`,
-                                  borderRadius: isMobile ? '3px' : '10px',
-                                  color: isSelected ? '#ef4444' : canSelect ? 'var(--text-secondary)' : 'var(--text-disabled)',
-                                  fontWeight: isSelected ? '700' : '600',
-                                  cursor: canSelect ? 'pointer' : 'not-allowed',
-                                  transition: 'all 0.2s ease',
-                                  opacity: canSelect ? 1 : 0.5,
+                                  fontSize: isMobile ? '0.6rem' : undefined,
+                                  padding: isMobile ? '0.3rem 0.5rem' : undefined,
                                   minHeight: isMobile ? '26px' : 'auto',
                                   minWidth: isMobile ? '36px' : 'auto'
                                 }}
@@ -2649,30 +2385,14 @@ export default function RefiningCalculator() {
 
           {/* 재료 소모량 표시 */}
           {searched && equipments.length > 0 && materials && (
-            <Card style={{
-              backgroundColor: 'var(--card-bg)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              boxShadow: 'var(--shadow-lg)'
-            }}>
-              <Card.Header style={{
-                background: 'var(--card-body-bg-blue)',
-                borderBottom: '1px solid var(--border-color)',
-                padding: 'clamp(1rem, 2vw, 1.25rem)'
-              }}>
-                <h5 className="mb-0" style={{
-                  color: 'var(--text-primary)',
-                  fontWeight: '700',
-                  fontSize: 'clamp(1.1rem, 2.2vw, 1.25rem)',
-                  letterSpacing: '-0.02em'
-                }}>
+            <Card className={styles.mainCard}>
+              <Card.Header className={styles.cardHeaderAlt}>
+                <h5 className={`mb-0 ${styles.cardTitle}`}>
                   예상 소모 재료
                 </h5>
               </Card.Header>
-              <Card.Body style={{
-                backgroundColor: 'var(--card-bg)',
-                padding: isMobile ? '0.75rem 0.5rem' : 'clamp(1rem, 2.5vw, 1.5rem)'
+              <Card.Body className={styles.cardBody} style={{
+                padding: isMobile ? '0.75rem 0.5rem' : undefined
               }}>
                 {(() => {
                   const requiredMats = analyzeRequiredMaterials();
