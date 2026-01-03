@@ -100,17 +100,19 @@ const MaterialCard = ({
     } as React.CSSProperties}
   >
     {showEnableToggle && (
-       <Form.Check
-        type="switch"
-        id={`enable-switch-${name}`}
-        checked={isEnabled}
-        onChange={onToggleEnabled}
-        className={`${styles.materialCardEnableSwitch} refining-checkbox`}
-        onClick={(e) => e.stopPropagation()}
-      />
+      <div className={styles.toggleWrapper} onClick={(e) => e.stopPropagation()}>
+        <label className={styles.switch}>
+          <input
+            type="checkbox"
+            checked={isEnabled}
+            onChange={onToggleEnabled}
+          />
+          <span className={styles.slider}></span>
+        </label>
+      </div>
     )}
     {showCheckbox && (
-      <div className={`${styles.materialCardBoundLabel} ${!isBound ? styles.materialCardBoundLabelUnbound : ''}`}>
+      <div className={`${styles.badgeBound} ${!isBound ? styles.badgeBoundHidden : ''}`}>
         귀속
       </div>
     )}
@@ -119,7 +121,7 @@ const MaterialCard = ({
         src={icon}
         alt={name}
         fill
-        style={{ objectFit: 'contain' }}
+        className={styles.materialIconImage}
       />
     </div>
     <div className={styles.materialName}>
@@ -130,7 +132,9 @@ const MaterialCard = ({
     </div>
     {cost !== undefined && (
       <div className={styles.materialCost}>
-        <Image src="/gold.webp" alt="gold" width={10} height={10} style={{ marginRight: '2px' }} />
+        <div className={styles.goldIconWrapper}>
+          <Image src="/gold.webp" alt="gold" width={12} height={12} />
+        </div>
         {Math.round(isBound ? 0 : cost).toLocaleString()}
       </div>
     )}
@@ -1026,11 +1030,11 @@ export default function RefiningCalculator() {
 
 
       {/* 장비 정보 및 목표 레벨 설정 */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(0.25rem, 2vw, 1.5rem)', marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
+      <div className={styles.mainWrapper}>
         <>
           {/* 캐릭터 정보 헤더 */}
           {/* 부위별 목표 레벨 설정 */}
-          <div style={{ position: 'relative' }}>
+          <div className={styles.relativeContainer}>
             <div className={styles.updateBadge}>
               26년 1월 7일 업데이트 예정
             </div>
@@ -1058,7 +1062,7 @@ export default function RefiningCalculator() {
               {searched && equipments.length > 0 && characterInfo && (
                 <div className="mb-3">
                   <div className={styles.characterInfo}>
-                    <div style={{ marginBottom: '0.5rem' }}>
+                    <div className={styles.characterInfoRow}>
                       <span className={styles.characterName}>
                         {characterInfo.name}
                       </span>
@@ -1281,57 +1285,24 @@ export default function RefiningCalculator() {
 
                     {/* 상급재련 헤더 */}
                     {!isMobile && (
-                      <div className="mb-2" style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 220px 220px',
-                        gap: '2rem',
-                        alignItems: 'center'
-                      }}>
+                      <div className={`mb-2 ${styles.bulkHeaderGrid}`}>
                         <div></div>
-                        <div style={{
-                          fontSize: 'clamp(0.85rem, 1.8vw, 1rem)',
-                          color: 'var(--text-secondary)',
-                          fontWeight: '700',
-                          textAlign: 'center',
-                          minWidth: '100px'
-                        }}>
+                        <div className={styles.bulkHeaderLabel}>
                           일반턴
                         </div>
-                        <div style={{
-                          fontSize: 'clamp(0.85rem, 1.8vw, 1rem)',
-                          color: 'var(--text-secondary)',
-                          fontWeight: '700',
-                          textAlign: 'center',
-                          minWidth: '100px'
-                        }}>
+                        <div className={styles.bulkHeaderLabel}>
                           선조턴
                         </div>
                       </div>
                     )}
 
                     {/* 방어구 상급 일괄 설정 */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: isMobile ? '1fr 75px 75px' : '1fr 220px 220px',
-                      gap: isMobile ? '0.4rem' : '2rem',
-                      alignItems: 'center',
-                      marginBottom: isMobile ? '0.6rem' : '1rem'
-                    }}>
+                    <div className={styles.bulkRowGrid}>
                       <div>
-                        <div style={{
-                          fontSize: isMobile ? '0.85rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)',
-                          color: 'var(--text-secondary)',
-                          marginBottom: isMobile ? '0.4rem' : '0.5rem',
-                          fontWeight: '600'
-                        }}>
+                        <div className={styles.bulkRowTitle}>
                           방어구 (상급)
                         </div>
-                        <div style={{
-                          display: isMobile ? 'grid' : 'flex',
-                          gridTemplateColumns: isMobile ? '1fr 1fr' : undefined,
-                          gap: isMobile ? '0.35rem' : '0.5rem',
-                          flexWrap: isMobile ? undefined : 'wrap'
-                        }}>
+                        <div className={styles.bulkRowButtons}>
                           {[10, 20, 30, 40].map(level => {
                             // 모든 방어구의 최소 상급재련 단계 확인
                             const armorEquipments = equipments.filter(eq => eq.type === 'armor');
@@ -1385,35 +1356,20 @@ export default function RefiningCalculator() {
                       </div>
 
                       {/* 일반턴 재료 - 방어구 */}
-                      <div className="d-flex flex-column gap-1 align-items-center">
-                        <div style={{ fontSize: isMobile ? '0.65rem' : '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: isMobile ? '0.15rem' : '0.25rem' }}>일반턴</div>
-                        <div style={{ display: 'flex', gap: isMobile ? '0.25rem' : '0.5rem', flexDirection: 'row' }}>
+                      <div className={styles.materialSection}>
+                        <div className={styles.materialSectionTitle}>일반턴</div>
+                        <div className={styles.materialGroup}>
                           {/* 빙하의 숨결 - 항상 표시 */}
                           <div className="d-flex flex-column align-items-center">
-                            <div style={{
-                              width: isMobile ? '26px' : '48px',
-                              height: isMobile ? '26px' : '48px',
-                              border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
-                              borderRadius: isMobile ? '3px' : '10px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginBottom: isMobile ? '0.15rem' : '0.5rem',
-                              backgroundColor: 'var(--card-bg)'
-                            }}>
-                              <Image src="/breath-glacier.webp" alt="빙하의 숨결" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                            <div className={styles.iconBox}>
+                              <Image src="/breath-glacier.webp" alt="빙하의 숨결" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} className={styles.iconBoxImage} />
                             </div>
                             <button
                               onClick={() => setAdvancedMaterialOptions(prev => ({
                                 ...prev,
                                 armorNormalBreath: { ...prev.armorNormalBreath, enabled: !prev.armorNormalBreath.enabled }
                               }))}
-                              className={advancedMaterialOptions.armorNormalBreath.enabled ? styles.materialToggleButtonEnabled : styles.materialToggleButtonDisabled}
-                              style={{
-                                padding: isMobile ? '0.15rem 0.3rem' : undefined,
-                                fontSize: isMobile ? '0.6rem' : undefined,
-                                borderRadius: isMobile ? '2px' : undefined
-                              }}
+                              className={`${styles.toggleBtn} ${advancedMaterialOptions.armorNormalBreath.enabled ? styles.toggleBtnActive : styles.toggleBtnInactive}`}
                             >
                               {advancedMaterialOptions.armorNormalBreath.enabled ? '사용' : '미사용'}
                             </button>
@@ -1450,36 +1406,15 @@ export default function RefiningCalculator() {
                                 {/* 장인의 재봉술 1단계 */}
                                 {showBook1 && (
                                   <div className="d-flex flex-column align-items-center">
-                                    <div style={{
-                                      width: isMobile ? '26px' : '48px',
-                                      height: isMobile ? '26px' : '48px',
-                                      border: isMobile ? '1px solid var(--border-color)' : '2px solid var(--border-color)',
-                                      borderRadius: isMobile ? '3px' : '10px',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      marginBottom: isMobile ? '0.15rem' : '0.5rem',
-                                      backgroundColor: 'var(--card-bg)'
-                                    }}>
-                                      <Image src="/master-tailoring-1.webp" alt="장인의 재봉술 1단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} style={{ objectFit: 'contain' }} />
+                                    <div className={styles.iconBox}>
+                                      <Image src="/master-tailoring-1.webp" alt="장인의 재봉술 1단계" width={isMobile ? 22 : 40} height={isMobile ? 22 : 40} className={styles.iconBoxImage} />
                                     </div>
                                     <button
                                       onClick={() => setAdvancedMaterialOptions(prev => ({
                                         ...prev,
                                         armorNormalBook1: { ...prev.armorNormalBook1, enabled: !prev.armorNormalBook1.enabled }
                                       }))}
-                                      style={{
-                                        padding: isMobile ? '0.15rem 0.3rem' : '0.3rem 0.6rem',
-                                        fontSize: isMobile ? '0.6rem' : '0.75rem',
-                                        fontWeight: '600',
-                                        backgroundColor: advancedMaterialOptions.armorNormalBook1.enabled ? '#3b82f6' : '#6b7280',
-                                        color: advancedMaterialOptions.armorNormalBook1.enabled ? '#ffffff' : '#9ca3af',
-                                        border: 'none',
-                                        borderRadius: isMobile ? '2px' : '6px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        whiteSpace: 'nowrap'
-                                      }}
+                                      className={`${styles.toggleBtn} ${advancedMaterialOptions.armorNormalBook1.enabled ? styles.toggleBtnActive : styles.toggleBtnInactive}`}
                                     >
                                       {advancedMaterialOptions.armorNormalBook1.enabled ? '사용' : '미사용'}
                                     </button>
