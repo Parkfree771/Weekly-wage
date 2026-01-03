@@ -2326,109 +2326,45 @@ export default function RefiningCalculator() {
                   예상 소모 재료
                 </h5>
               </Card.Header>
-              <Card.Body className={styles.cardBody} style={{
-                padding: isMobile ? '0.75rem 0.5rem' : undefined
-              }}>
+              <Card.Body className={styles.cardBody}>
                 {(() => {
                   const requiredMats = analyzeRequiredMaterials();
 
                   return (
-                    <>
-                      {/* 1줄: 기본 재료 - 5개 */}
-                      <div className="mb-4">
-                        {isMobile ? (
-                          <div style={{ display: 'flex', gap: '0.2rem', justifyContent: 'center' }}>
-                            {requiredMats.needsArmor && (
-                              <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('수호석', !boundMaterials['수호석'])}>
-                                <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['수호석'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.3rem 0.15rem', cursor: 'pointer' }}>
-                                  <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '0.4rem', color: boundMaterials['수호석'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
-                                  <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-guardian-stone.webp" alt="수호석" fill style={{ objectFit: 'contain' }} /></div>
-                                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', marginBottom: '2px', whiteSpace: 'nowrap' }}>수호석</div>
-                                  <div style={{ fontSize: '0.6rem', fontWeight: '700', color: '#818cf8' }}>{materials.수호석.toLocaleString()}</div>
-                                  <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.webp" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['수호석'] ? 0 : results.materialCosts['수호석']).toLocaleString()}</div>
-                                </div>
-                              </div>
-                            )}
-                            {requiredMats.needsWeapon && (
-                              <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('파괴석', !boundMaterials['파괴석'])}>
-                                <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['파괴석'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.3rem 0.15rem', cursor: 'pointer' }}>
-                                  <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '0.4rem', color: boundMaterials['파괴석'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
-                                  <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-destruction-stone.webp" alt="파괴석" fill style={{ objectFit: 'contain' }} /></div>
-                                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', marginBottom: '2px', whiteSpace: 'nowrap' }}>파괴석</div>
-                                  <div style={{ fontSize: '0.6rem', fontWeight: '700', color: '#818cf8' }}>{materials.파괴석.toLocaleString()}</div>
-                                  <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.webp" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['파괴석'] ? 0 : results.materialCosts['파괴석']).toLocaleString()}</div>
-                                </div>
-                              </div>
-                            )}
-                            <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('돌파석', !boundMaterials['돌파석'])}>
-                              <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['돌파석'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.3rem 0.15rem', cursor: 'pointer' }}>
-                                <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '0.4rem', color: boundMaterials['돌파석'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
-                                <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-breakthrough-stone.webp" alt="돌파석" fill style={{ objectFit: 'contain' }} /></div>
-                                <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', marginBottom: '2px', whiteSpace: 'nowrap' }}>돌파석</div>
-                                <div style={{ fontSize: '0.6rem', fontWeight: '700', color: '#818cf8' }}>{materials.돌파석.toLocaleString()}</div>
-                                <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.webp" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['돌파석'] ? 0 : results.materialCosts['돌파석']).toLocaleString()}</div>
-                              </div>
+                    <div className={styles.resultsGrid}>
+                      {/* 1. Basic Materials */}
+                      <div className={styles.resultsSection}>
+                        <div className={styles.resultsSectionTitle}>기본 재료</div>
+                        <div className={styles.materialsGrid}>
+                          {requiredMats.needsArmor && (
+                            <div className={styles.materialCardWrapper}>
+                              <MaterialCard icon="/destiny-guardian-stone.webp" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
                             </div>
-                            <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('운명파편', !boundMaterials['운명파편'])}>
-                              <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['운명파편'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.3rem 0.15rem', cursor: 'pointer' }}>
-                                <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '0.4rem', color: boundMaterials['운명파편'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
-                                <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/destiny-shard-bag-large.webp" alt="파편" fill style={{ objectFit: 'contain' }} /></div>
-                                <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', marginBottom: '2px', whiteSpace: 'nowrap' }}>파편</div>
-                                <div style={{ fontSize: '0.6rem', fontWeight: '700', color: '#818cf8' }}>{materials.운명파편.toLocaleString()}</div>
-                                <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.webp" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['운명파편'] ? 0 : results.materialCosts['운명파편']).toLocaleString()}</div>
-                              </div>
+                          )}
+                          {requiredMats.needsWeapon && (
+                            <div className={styles.materialCardWrapper}>
+                              <MaterialCard icon="/destiny-destruction-stone.webp" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} />
                             </div>
-                            <div style={{ flex: '1', minWidth: '0', maxWidth: '20%' }} onClick={() => handleBoundChange('아비도스', !boundMaterials['아비도스'])}>
-                              <div className="h-100 d-flex flex-column align-items-center justify-content-center" style={{ position: 'relative', backgroundColor: 'var(--card-body-bg-blue)', borderRadius: '6px', border: boundMaterials['아비도스'] ? '2px solid #818cf8' : '1px solid var(--border-color)', padding: '0.3rem 0.15rem', cursor: 'pointer' }}>
-                                <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '0.4rem', color: boundMaterials['아비도스'] ? '#818cf8' : 'var(--text-secondary)', fontWeight: '600' }}>귀속</div>
-                                <div style={{ position: 'relative', width: '24px', height: '24px', marginBottom: '2px', marginTop: '8px' }}><Image src="/abidos-fusion.webp" alt="아비도스" fill style={{ objectFit: 'contain' }} /></div>
-                                <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', marginBottom: '2px', whiteSpace: 'nowrap' }}>아비도스</div>
-                                <div style={{ fontSize: '0.6rem', fontWeight: '700', color: '#818cf8' }}>{materials.아비도스.toLocaleString()}</div>
-                                <div style={{ fontSize: '0.45rem', color: '#f59e0b', marginTop: '2px', fontWeight: '600' }}><Image src="/gold.webp" alt="gold" width={9} height={9} style={{ marginRight: '1px' }} />{Math.round(boundMaterials['아비도스'] ? 0 : results.materialCosts['아비도스']).toLocaleString()}</div>
-                              </div>
-                            </div>
+                          )}
+                          <div className={styles.materialCardWrapper}>
+                            <MaterialCard icon="/destiny-breakthrough-stone.webp" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} />
                           </div>
-                        ) : (
-                          <Row className="g-3 justify-content-center">
-                            {requiredMats.needsArmor && (
-                              <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/destiny-guardian-stone.webp" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
-                              </Col>
-                            )}
-                            {requiredMats.needsWeapon && (
-                              <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/destiny-destruction-stone.webp" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} />
-                              </Col>
-                            )}
-                            <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-breakthrough-stone.webp" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} />
-                            </Col>
-                            <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} />
-                            </Col>
-                            <Col sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/abidos-fusion.webp" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} />
-                            </Col>
-                          </Row>
-                        )}
+                          <div className={styles.materialCardWrapper}>
+                            <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} />
+                          </div>
+                          <div className={styles.materialCardWrapper}>
+                            <MaterialCard icon="/abidos-fusion.webp" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} />
+                          </div>
+                        </div>
                       </div>
 
-                      {/* 일반 재련 추가 재료 */}
+                      {/* 2. Normal Refining Extras */}
                       {requiredMats.hasNormalRefining && (requiredMats.needsGlacierNormal || requiredMats.needsLavaNormal) && (
-                        <div className="mb-4">
-                  <div style={{
-                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                    color: 'var(--text-secondary)',
-                    marginBottom: 'clamp(0.75rem, 2vw, 1rem)',
-                    fontWeight: '700',
-                    letterSpacing: '-0.01em'
-                  }}>
-                    일반 재련 추가 재료
-                  </div>
-                          {/* 2줄: 빙하의 숨결 + 책 3종 - 4개 */}
-                          {requiredMats.needsGlacierNormal && (
-                            <Row className={isMobile ? 'g-2 justify-content-center mb-3' : 'g-3 justify-content-center mb-3'}>
-                              <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
+                        <div className={styles.resultsSection}>
+                          <div className={styles.resultsSectionTitle}>일반 재련 추가 재료</div>
+                          <div className={styles.materialsGrid}>
+                            {requiredMats.needsGlacierNormal && (
+                              <div className={styles.materialCardWrapper}>
                                 <MaterialCard
                                   icon="/breath-glacier.webp"
                                   name="빙하의 숨결"
@@ -2442,64 +2378,61 @@ export default function RefiningCalculator() {
                                   isBound={materialOptions.glacierBreath.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, glacierBreath: {...p.glacierBreath, isBound: !p.glacierBreath.isBound}}))}
                                 />
-                              </Col>
-                              {requiredMats.needsArmorBook1014 && (
-                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/tailoring-karma.webp"
-                                    name="재봉술: 업화(11~14) 방어구"
-                                    amount={materials.방어구책1114 || 0}
-                                    color="#34d399"
-                                    cost={results.materialCosts['방어구책1114'] || 0}
-                                    showEnableToggle={true}
-                                    isEnabled={materialOptions.tailoring.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring: {...p.tailoring, enabled: !p.tailoring.enabled}}))}
-                                    showCheckbox={true}
-                                    isBound={materialOptions.tailoring.isBound}
-                                    onBoundChange={() => setMaterialOptions(p => ({...p, tailoring: {...p.tailoring, isBound: !p.tailoring.isBound}}))}
-                                  />
-                                </Col>
-                              )}
-                              {requiredMats.needsArmorBook1518 && (
-                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/tailoring-karma.webp"
-                                    name="재봉술: 업화(15~18) 방어구"
-                                    amount={materials.방어구책1518 || 0}
-                                    color="#34d399"
-                                    cost={results.materialCosts['방어구책1518'] || 0}
-                                    showEnableToggle={true}
-                                    isEnabled={materialOptions.tailoring1518.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring1518: {...p.tailoring1518, enabled: !p.tailoring1518.enabled}}))}
-                                    showCheckbox={true}
-                                    isBound={materialOptions.tailoring1518.isBound}
-                                    onBoundChange={() => setMaterialOptions(p => ({...p, tailoring1518: {...p.tailoring1518, isBound: !p.tailoring1518.isBound}}))}
-                                  />
-                                </Col>
-                              )}
-                              {requiredMats.needsArmorBook1920 && (
-                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/tailoring-karma.webp"
-                                    name="재봉술: 업화(19~20) 방어구"
-                                    amount={materials.방어구책1920 || 0}
-                                    color="#34d399"
-                                    cost={results.materialCosts['방어구책1920'] || 0}
-                                    showEnableToggle={true}
-                                    isEnabled={materialOptions.tailoring1920.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring1920: {...p.tailoring1920, enabled: !p.tailoring1920.enabled}}))}
-                                    showCheckbox={true}
-                                    isBound={materialOptions.tailoring1920.isBound}
-                                    onBoundChange={() => setMaterialOptions(p => ({...p, tailoring1920: {...p.tailoring1920, isBound: !p.tailoring1920.isBound}}))}
-                                  />
-                                </Col>
-                              )}
-                            </Row>
-                          )}
-                          {/* 3줄: 용암의 숨결 + 책 3종 - 4개 */}
-                          {requiredMats.needsLavaNormal && (
-                            <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
-                              <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
+                              </div>
+                            )}
+                            {requiredMats.needsArmorBook1014 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/tailoring-karma.webp"
+                                  name="재봉술: 업화(11~14)"
+                                  amount={materials.방어구책1114 || 0}
+                                  color="#34d399"
+                                  cost={results.materialCosts['방어구책1114'] || 0}
+                                  showEnableToggle={true}
+                                  isEnabled={materialOptions.tailoring.enabled}
+                                  onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring: {...p.tailoring, enabled: !p.tailoring.enabled}}))}
+                                  showCheckbox={true}
+                                  isBound={materialOptions.tailoring.isBound}
+                                  onBoundChange={() => setMaterialOptions(p => ({...p, tailoring: {...p.tailoring, isBound: !p.tailoring.isBound}}))}
+                                />
+                              </div>
+                            )}
+                            {requiredMats.needsArmorBook1518 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/tailoring-karma.webp"
+                                  name="재봉술: 업화(15~18)"
+                                  amount={materials.방어구책1518 || 0}
+                                  color="#34d399"
+                                  cost={results.materialCosts['방어구책1518'] || 0}
+                                  showEnableToggle={true}
+                                  isEnabled={materialOptions.tailoring1518.enabled}
+                                  onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring1518: {...p.tailoring1518, enabled: !p.tailoring1518.enabled}}))}
+                                  showCheckbox={true}
+                                  isBound={materialOptions.tailoring1518.isBound}
+                                  onBoundChange={() => setMaterialOptions(p => ({...p, tailoring1518: {...p.tailoring1518, isBound: !p.tailoring1518.isBound}}))}
+                                />
+                              </div>
+                            )}
+                            {requiredMats.needsArmorBook1920 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/tailoring-karma.webp"
+                                  name="재봉술: 업화(19~20)"
+                                  amount={materials.방어구책1920 || 0}
+                                  color="#34d399"
+                                  cost={results.materialCosts['방어구책1920'] || 0}
+                                  showEnableToggle={true}
+                                  isEnabled={materialOptions.tailoring1920.enabled}
+                                  onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring1920: {...p.tailoring1920, enabled: !p.tailoring1920.enabled}}))}
+                                  showCheckbox={true}
+                                  isBound={materialOptions.tailoring1920.isBound}
+                                  onBoundChange={() => setMaterialOptions(p => ({...p, tailoring1920: {...p.tailoring1920, isBound: !p.tailoring1920.isBound}}))}
+                                />
+                              </div>
+                            )}
+                            {requiredMats.needsLavaNormal && (
+                              <div className={styles.materialCardWrapper}>
                                 <MaterialCard
                                   icon="/breath-lava.webp"
                                   name="용암의 숨결"
@@ -2513,79 +2446,70 @@ export default function RefiningCalculator() {
                                   isBound={materialOptions.lavaBreath.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, lavaBreath: {...p.lavaBreath, isBound: !p.lavaBreath.isBound}}))}
                                 />
-                              </Col>
-                              {requiredMats.needsWeaponBook1014 && (
-                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/metallurgy-karma.webp"
-                                    name="야금술: 업화(11~14) 무기"
-                                    amount={materials.무기책1114 || 0}
-                                    color="#34d399"
-                                    cost={results.materialCosts['무기책1114'] || 0}
-                                    showEnableToggle={true}
-                                    isEnabled={materialOptions.metallurgy.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy: {...p.metallurgy, enabled: !p.metallurgy.enabled}}))}
-                                    showCheckbox={true}
-                                    isBound={materialOptions.metallurgy.isBound}
-                                    onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy: {...p.metallurgy, isBound: !p.metallurgy.isBound}}))}
-                                  />
-                                </Col>
-                              )}
-                              {requiredMats.needsWeaponBook1518 && (
-                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/metallurgy-karma.webp"
-                                    name="야금술: 업화(15~18) 무기"
-                                    amount={materials.무기책1518 || 0}
-                                    color="#34d399"
-                                    cost={results.materialCosts['무기책1518'] || 0}
-                                    showEnableToggle={true}
-                                    isEnabled={materialOptions.metallurgy1518.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy1518: {...p.metallurgy1518, enabled: !p.metallurgy1518.enabled}}))}
-                                    showCheckbox={true}
-                                    isBound={materialOptions.metallurgy1518.isBound}
-                                    onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy1518: {...p.metallurgy1518, isBound: !p.metallurgy1518.isBound}}))}
-                                  />
-                                </Col>
-                              )}
-                              {requiredMats.needsWeaponBook1920 && (
-                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/metallurgy-karma.webp"
-                                    name="야금술: 업화(19~20) 무기"
-                                    amount={materials.무기책1920 || 0}
-                                    color="#34d399"
-                                    cost={results.materialCosts['무기책1920'] || 0}
-                                    showEnableToggle={true}
-                                    isEnabled={materialOptions.metallurgy1920.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy1920: {...p.metallurgy1920, enabled: !p.metallurgy1920.enabled}}))}
-                                    showCheckbox={true}
-                                    isBound={materialOptions.metallurgy1920.isBound}
-                                    onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy1920: {...p.metallurgy1920, isBound: !p.metallurgy1920.isBound}}))}
-                                  />
-                                </Col>
-                              )}
-                            </Row>
-                          )}
+                              </div>
+                            )}
+                            {requiredMats.needsWeaponBook1014 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/metallurgy-karma.webp"
+                                  name="야금술: 업화(11~14)"
+                                  amount={materials.무기책1114 || 0}
+                                  color="#34d399"
+                                  cost={results.materialCosts['무기책1114'] || 0}
+                                  showEnableToggle={true}
+                                  isEnabled={materialOptions.metallurgy.enabled}
+                                  onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy: {...p.metallurgy, enabled: !p.metallurgy.enabled}}))}
+                                  showCheckbox={true}
+                                  isBound={materialOptions.metallurgy.isBound}
+                                  onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy: {...p.metallurgy, isBound: !p.metallurgy.isBound}}))}
+                                />
+                              </div>
+                            )}
+                            {requiredMats.needsWeaponBook1518 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/metallurgy-karma.webp"
+                                  name="야금술: 업화(15~18)"
+                                  amount={materials.무기책1518 || 0}
+                                  color="#34d399"
+                                  cost={results.materialCosts['무기책1518'] || 0}
+                                  showEnableToggle={true}
+                                  isEnabled={materialOptions.metallurgy1518.enabled}
+                                  onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy1518: {...p.metallurgy1518, enabled: !p.metallurgy1518.enabled}}))}
+                                  showCheckbox={true}
+                                  isBound={materialOptions.metallurgy1518.isBound}
+                                  onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy1518: {...p.metallurgy1518, isBound: !p.metallurgy1518.isBound}}))}
+                                />
+                              </div>
+                            )}
+                            {requiredMats.needsWeaponBook1920 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/metallurgy-karma.webp"
+                                  name="야금술: 업화(19~20)"
+                                  amount={materials.무기책1920 || 0}
+                                  color="#34d399"
+                                  cost={results.materialCosts['무기책1920'] || 0}
+                                  showEnableToggle={true}
+                                  isEnabled={materialOptions.metallurgy1920.enabled}
+                                  onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy1920: {...p.metallurgy1920, enabled: !p.metallurgy1920.enabled}}))}
+                                  showCheckbox={true}
+                                  isBound={materialOptions.metallurgy1920.isBound}
+                                  onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy1920: {...p.metallurgy1920, isBound: !p.metallurgy1920.isBound}}))}
+                                />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 
-                      {/* 상급 재련 추가 재료 */}
+                      {/* 3. Advanced Refining Extras */}
                       {(requiredMats.needsAdvancedArmorBook1 || requiredMats.needsAdvancedArmorBook2 || requiredMats.needsAdvancedArmorBook3 || requiredMats.needsAdvancedArmorBook4 || requiredMats.needsAdvancedWeaponBook1 || requiredMats.needsAdvancedWeaponBook2 || requiredMats.needsAdvancedWeaponBook3 || requiredMats.needsAdvancedWeaponBook4) && (
-                        <div className="mb-4">
-                          <div style={{
-                            fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                            color: 'var(--text-secondary)',
-                            marginBottom: 'clamp(0.75rem, 2vw, 1rem)',
-                            fontWeight: '700',
-                            letterSpacing: '-0.01em'
-                          }}>
-                            상급 재련 추가 재료
-                          </div>
-                          {/* 4줄: 빙하의 숨결 + 장인의 재봉술 1,2,3,4단계 */}
-                          {(requiredMats.needsAdvancedArmorBook1 || requiredMats.needsAdvancedArmorBook2 || requiredMats.needsAdvancedArmorBook3 || requiredMats.needsAdvancedArmorBook4) && (
-                            <Row className={isMobile ? 'g-2 justify-content-center mb-3' : 'g-3 justify-content-center mb-3'}>
-                              <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
+                        <div className={styles.resultsSection}>
+                          <div className={styles.resultsSectionTitle}>상급 재련 추가 재료</div>
+                          <div className={styles.materialsGrid}>
+                            {(requiredMats.needsAdvancedArmorBook1 || requiredMats.needsAdvancedArmorBook2 || requiredMats.needsAdvancedArmorBook3 || requiredMats.needsAdvancedArmorBook4) && (
+                              <div className={styles.materialCardWrapper}>
                                 <MaterialCard
                                   icon="/breath-glacier.webp"
                                   name="빙하의 숨결"
@@ -2606,109 +2530,106 @@ export default function RefiningCalculator() {
                                     }));
                                   }}
                                 />
-                              </Col>
-                              {requiredMats.needsAdvancedArmorBook1 && (
-                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/master-tailoring-1.webp"
-                                    name="장인의 재봉술 1단계"
-                                    amount={materials.재봉술1단 || 0}
-                                    color="#a855f7"
-                                    cost={results.materialCosts['재봉술1단'] || 0}
-                                    showEnableToggle={false}
-                                    isEnabled={advancedMaterialOptions.armorNormalBook1.enabled || advancedMaterialOptions.armorBonusBook1.enabled}
-                                    onToggleEnabled={() => {}}
-                                    showCheckbox={true}
-                                    isBound={advancedMaterialOptions.armorNormalBook1.isBound && advancedMaterialOptions.armorBonusBook1.isBound}
-                                    onBoundChange={() => {
-                                      const newBound = !(advancedMaterialOptions.armorNormalBook1.isBound && advancedMaterialOptions.armorBonusBook1.isBound);
-                                      setAdvancedMaterialOptions(p => ({
-                                        ...p,
-                                        armorNormalBook1: {...p.armorNormalBook1, isBound: newBound},
-                                        armorBonusBook1: {...p.armorBonusBook1, isBound: newBound}
-                                      }));
-                                    }}
-                                  />
-                                </Col>
-                              )}
-                              {requiredMats.needsAdvancedArmorBook2 && (
-                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/master-tailoring-2.webp"
-                                    name="장인의 재봉술 2단계"
-                                    amount={materials.재봉술2단 || 0}
-                                    color="#a855f7"
-                                    cost={results.materialCosts['재봉술2단'] || 0}
-                                    showEnableToggle={false}
-                                    isEnabled={advancedMaterialOptions.armorNormalBook2.enabled || advancedMaterialOptions.armorBonusBook2.enabled}
-                                    onToggleEnabled={() => {}}
-                                    showCheckbox={true}
-                                    isBound={advancedMaterialOptions.armorNormalBook2.isBound && advancedMaterialOptions.armorBonusBook2.isBound}
-                                    onBoundChange={() => {
-                                      const newBound = !(advancedMaterialOptions.armorNormalBook2.isBound && advancedMaterialOptions.armorBonusBook2.isBound);
-                                      setAdvancedMaterialOptions(p => ({
-                                        ...p,
-                                        armorNormalBook2: {...p.armorNormalBook2, isBound: newBound},
-                                        armorBonusBook2: {...p.armorBonusBook2, isBound: newBound}
-                                      }));
-                                    }}
-                                  />
-                                </Col>
-                              )}
-                              {requiredMats.needsAdvancedArmorBook3 && (
-                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/master-tailoring-3.webp"
-                                    name="장인의 재봉술 3단계"
-                                    amount={materials.재봉술3단 || 0}
-                                    color="#a855f7"
-                                    cost={results.materialCosts['재봉술3단'] || 0}
-                                    showEnableToggle={false}
-                                    isEnabled={advancedMaterialOptions.armorNormalBook3.enabled || advancedMaterialOptions.armorBonusBook3.enabled}
-                                    onToggleEnabled={() => {}}
-                                    showCheckbox={true}
-                                    isBound={advancedMaterialOptions.armorNormalBook3.isBound && advancedMaterialOptions.armorBonusBook3.isBound}
-                                    onBoundChange={() => {
-                                      const newBound = !(advancedMaterialOptions.armorNormalBook3.isBound && advancedMaterialOptions.armorBonusBook3.isBound);
-                                      setAdvancedMaterialOptions(p => ({
-                                        ...p,
-                                        armorNormalBook3: {...p.armorNormalBook3, isBound: newBound},
-                                        armorBonusBook3: {...p.armorBonusBook3, isBound: newBound}
-                                      }));
-                                    }}
-                                  />
-                                </Col>
-                              )}
-                              {requiredMats.needsAdvancedArmorBook4 && (
-                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/master-tailoring-4.webp"
-                                    name="장인의 재봉술 4단계"
-                                    amount={materials.재봉술4단 || 0}
-                                    color="#a855f7"
-                                    cost={results.materialCosts['재봉술4단'] || 0}
-                                    showEnableToggle={false}
-                                    isEnabled={advancedMaterialOptions.armorNormalBook4.enabled || advancedMaterialOptions.armorBonusBook4.enabled}
-                                    onToggleEnabled={() => {}}
-                                    showCheckbox={true}
-                                    isBound={advancedMaterialOptions.armorNormalBook4.isBound && advancedMaterialOptions.armorBonusBook4.isBound}
-                                    onBoundChange={() => {
-                                      const newBound = !(advancedMaterialOptions.armorNormalBook4.isBound && advancedMaterialOptions.armorBonusBook4.isBound);
-                                      setAdvancedMaterialOptions(p => ({
-                                        ...p,
-                                        armorNormalBook4: {...p.armorNormalBook4, isBound: newBound},
-                                        armorBonusBook4: {...p.armorBonusBook4, isBound: newBound}
-                                      }));
-                                    }}
-                                  />
-                                </Col>
-                              )}
-                            </Row>
-                          )}
-                          {/* 5줄: 용암의 숨결 + 장인의 야금술 1,2,3,4단계 */}
-                          {(requiredMats.needsAdvancedWeaponBook1 || requiredMats.needsAdvancedWeaponBook2 || requiredMats.needsAdvancedWeaponBook3 || requiredMats.needsAdvancedWeaponBook4) && (
-                            <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
-                              <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
+                              </div>
+                            )}
+                            {requiredMats.needsAdvancedArmorBook1 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/master-tailoring-1.webp"
+                                  name="장인의 재봉술 1단계"
+                                  amount={materials.재봉술1단 || 0}
+                                  color="#a855f7"
+                                  cost={results.materialCosts['재봉술1단'] || 0}
+                                  showEnableToggle={false}
+                                  isEnabled={advancedMaterialOptions.armorNormalBook1.enabled || advancedMaterialOptions.armorBonusBook1.enabled}
+                                  onToggleEnabled={() => {}}
+                                  showCheckbox={true}
+                                  isBound={advancedMaterialOptions.armorNormalBook1.isBound && advancedMaterialOptions.armorBonusBook1.isBound}
+                                  onBoundChange={() => {
+                                    const newBound = !(advancedMaterialOptions.armorNormalBook1.isBound && advancedMaterialOptions.armorBonusBook1.isBound);
+                                    setAdvancedMaterialOptions(p => ({
+                                      ...p,
+                                      armorNormalBook1: {...p.armorNormalBook1, isBound: newBound},
+                                      armorBonusBook1: {...p.armorBonusBook1, isBound: newBound}
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            )}
+                            {requiredMats.needsAdvancedArmorBook2 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/master-tailoring-2.webp"
+                                  name="장인의 재봉술 2단계"
+                                  amount={materials.재봉술2단 || 0}
+                                  color="#a855f7"
+                                  cost={results.materialCosts['재봉술2단'] || 0}
+                                  showEnableToggle={false}
+                                  isEnabled={advancedMaterialOptions.armorNormalBook2.enabled || advancedMaterialOptions.armorBonusBook2.enabled}
+                                  onToggleEnabled={() => {}}
+                                  showCheckbox={true}
+                                  isBound={advancedMaterialOptions.armorNormalBook2.isBound && advancedMaterialOptions.armorBonusBook2.isBound}
+                                  onBoundChange={() => {
+                                    const newBound = !(advancedMaterialOptions.armorNormalBook2.isBound && advancedMaterialOptions.armorBonusBook2.isBound);
+                                    setAdvancedMaterialOptions(p => ({
+                                      ...p,
+                                      armorNormalBook2: {...p.armorNormalBook2, isBound: newBound},
+                                      armorBonusBook2: {...p.armorBonusBook2, isBound: newBound}
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            )}
+                            {requiredMats.needsAdvancedArmorBook3 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/master-tailoring-3.webp"
+                                  name="장인의 재봉술 3단계"
+                                  amount={materials.재봉술3단 || 0}
+                                  color="#a855f7"
+                                  cost={results.materialCosts['재봉술3단'] || 0}
+                                  showEnableToggle={false}
+                                  isEnabled={advancedMaterialOptions.armorNormalBook3.enabled || advancedMaterialOptions.armorBonusBook3.enabled}
+                                  onToggleEnabled={() => {}}
+                                  showCheckbox={true}
+                                  isBound={advancedMaterialOptions.armorNormalBook3.isBound && advancedMaterialOptions.armorBonusBook3.isBound}
+                                  onBoundChange={() => {
+                                    const newBound = !(advancedMaterialOptions.armorNormalBook3.isBound && advancedMaterialOptions.armorBonusBook3.isBound);
+                                    setAdvancedMaterialOptions(p => ({
+                                      ...p,
+                                      armorNormalBook3: {...p.armorNormalBook3, isBound: newBound},
+                                      armorBonusBook3: {...p.armorBonusBook3, isBound: newBound}
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            )}
+                            {requiredMats.needsAdvancedArmorBook4 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/master-tailoring-4.webp"
+                                  name="장인의 재봉술 4단계"
+                                  amount={materials.재봉술4단 || 0}
+                                  color="#a855f7"
+                                  cost={results.materialCosts['재봉술4단'] || 0}
+                                  showEnableToggle={false}
+                                  isEnabled={advancedMaterialOptions.armorNormalBook4.enabled || advancedMaterialOptions.armorBonusBook4.enabled}
+                                  onToggleEnabled={() => {}}
+                                  showCheckbox={true}
+                                  isBound={advancedMaterialOptions.armorNormalBook4.isBound && advancedMaterialOptions.armorBonusBook4.isBound}
+                                  onBoundChange={() => {
+                                    const newBound = !(advancedMaterialOptions.armorNormalBook4.isBound && advancedMaterialOptions.armorBonusBook4.isBound);
+                                    setAdvancedMaterialOptions(p => ({
+                                      ...p,
+                                      armorNormalBook4: {...p.armorNormalBook4, isBound: newBound},
+                                      armorBonusBook4: {...p.armorBonusBook4, isBound: newBound}
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            )}
+                            {(requiredMats.needsAdvancedWeaponBook1 || requiredMats.needsAdvancedWeaponBook2 || requiredMats.needsAdvancedWeaponBook3 || requiredMats.needsAdvancedWeaponBook4) && (
+                              <div className={styles.materialCardWrapper}>
                                 <MaterialCard
                                   icon="/breath-lava.webp"
                                   name="용암의 숨결"
@@ -2729,115 +2650,116 @@ export default function RefiningCalculator() {
                                     }));
                                   }}
                                 />
-                              </Col>
-                              {requiredMats.needsAdvancedWeaponBook1 && (
-                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/master-metallurgy-1.webp"
-                                    name="장인의 야금술 1단계"
-                                    amount={materials.야금술1단 || 0}
-                                    color="#a855f7"
-                                    cost={results.materialCosts['야금술1단'] || 0}
-                                    showEnableToggle={false}
-                                    isEnabled={advancedMaterialOptions.weaponNormalBook1.enabled || advancedMaterialOptions.weaponBonusBook1.enabled}
-                                    onToggleEnabled={() => {}}
-                                    showCheckbox={true}
-                                    isBound={advancedMaterialOptions.weaponNormalBook1.isBound && advancedMaterialOptions.weaponBonusBook1.isBound}
-                                    onBoundChange={() => {
-                                      const newBound = !(advancedMaterialOptions.weaponNormalBook1.isBound && advancedMaterialOptions.weaponBonusBook1.isBound);
-                                      setAdvancedMaterialOptions(p => ({
-                                        ...p,
-                                        weaponNormalBook1: {...p.weaponNormalBook1, isBound: newBound},
-                                        weaponBonusBook1: {...p.weaponBonusBook1, isBound: newBound}
-                                      }));
-                                    }}
-                                  />
-                                </Col>
-                              )}
-                              {requiredMats.needsAdvancedWeaponBook2 && (
-                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/master-metallurgy-2.webp"
-                                    name="장인의 야금술 2단계"
-                                    amount={materials.야금술2단 || 0}
-                                    color="#a855f7"
-                                    cost={results.materialCosts['야금술2단'] || 0}
-                                    showEnableToggle={false}
-                                    isEnabled={advancedMaterialOptions.weaponNormalBook2.enabled || advancedMaterialOptions.weaponBonusBook2.enabled}
-                                    onToggleEnabled={() => {}}
-                                    showCheckbox={true}
-                                    isBound={advancedMaterialOptions.weaponNormalBook2.isBound && advancedMaterialOptions.weaponBonusBook2.isBound}
-                                    onBoundChange={() => {
-                                      const newBound = !(advancedMaterialOptions.weaponNormalBook2.isBound && advancedMaterialOptions.weaponBonusBook2.isBound);
-                                      setAdvancedMaterialOptions(p => ({
-                                        ...p,
-                                        weaponNormalBook2: {...p.weaponNormalBook2, isBound: newBound},
-                                        weaponBonusBook2: {...p.weaponBonusBook2, isBound: newBound}
-                                      }));
-                                    }}
-                                  />
-                                </Col>
-                              )}
-                              {requiredMats.needsAdvancedWeaponBook3 && (
-                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/master-metallurgy-3.webp"
-                                    name="장인의 야금술 3단계"
-                                    amount={materials.야금술3단 || 0}
-                                    color="#a855f7"
-                                    cost={results.materialCosts['야금술3단'] || 0}
-                                    showEnableToggle={false}
-                                    isEnabled={advancedMaterialOptions.weaponNormalBook3.enabled || advancedMaterialOptions.weaponBonusBook3.enabled}
-                                    onToggleEnabled={() => {}}
-                                    showCheckbox={true}
-                                    isBound={advancedMaterialOptions.weaponNormalBook3.isBound && advancedMaterialOptions.weaponBonusBook3.isBound}
-                                    onBoundChange={() => {
-                                      const newBound = !(advancedMaterialOptions.weaponNormalBook3.isBound && advancedMaterialOptions.weaponBonusBook3.isBound);
-                                      setAdvancedMaterialOptions(p => ({
-                                        ...p,
-                                        weaponNormalBook3: {...p.weaponNormalBook3, isBound: newBound},
-                                        weaponBonusBook3: {...p.weaponBonusBook3, isBound: newBound}
-                                      }));
-                                    }}
-                                  />
-                                </Col>
-                              )}
-                              {requiredMats.needsAdvancedWeaponBook4 && (
-                                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
-                                  <MaterialCard
-                                    icon="/master-metallurgy-4.webp"
-                                    name="장인의 야금술 4단계"
-                                    amount={materials.야금술4단 || 0}
-                                    color="#a855f7"
-                                    cost={results.materialCosts['야금술4단'] || 0}
-                                    showEnableToggle={false}
-                                    isEnabled={advancedMaterialOptions.weaponNormalBook4.enabled || advancedMaterialOptions.weaponBonusBook4.enabled}
-                                    onToggleEnabled={() => {}}
-                                    showCheckbox={true}
-                                    isBound={advancedMaterialOptions.weaponNormalBook4.isBound && advancedMaterialOptions.weaponBonusBook4.isBound}
-                                    onBoundChange={() => {
-                                      const newBound = !(advancedMaterialOptions.weaponNormalBook4.isBound && advancedMaterialOptions.weaponBonusBook4.isBound);
-                                      setAdvancedMaterialOptions(p => ({
-                                        ...p,
-                                        weaponNormalBook4: {...p.weaponNormalBook4, isBound: newBound},
-                                        weaponBonusBook4: {...p.weaponBonusBook4, isBound: newBound}
-                                      }));
-                                    }}
-                                  />
-                                </Col>
-                              )}
-                            </Row>
-                          )}
+                              </div>
+                            )}
+                            {requiredMats.needsAdvancedWeaponBook1 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/master-metallurgy-1.webp"
+                                  name="장인의 야금술 1단계"
+                                  amount={materials.야금술1단 || 0}
+                                  color="#a855f7"
+                                  cost={results.materialCosts['야금술1단'] || 0}
+                                  showEnableToggle={false}
+                                  isEnabled={advancedMaterialOptions.weaponNormalBook1.enabled || advancedMaterialOptions.weaponBonusBook1.enabled}
+                                  onToggleEnabled={() => {}}
+                                  showCheckbox={true}
+                                  isBound={advancedMaterialOptions.weaponNormalBook1.isBound && advancedMaterialOptions.weaponBonusBook1.isBound}
+                                  onBoundChange={() => {
+                                    const newBound = !(advancedMaterialOptions.weaponNormalBook1.isBound && advancedMaterialOptions.weaponBonusBook1.isBound);
+                                    setAdvancedMaterialOptions(p => ({
+                                      ...p,
+                                      weaponNormalBook1: {...p.weaponNormalBook1, isBound: newBound},
+                                      weaponBonusBook1: {...p.weaponBonusBook1, isBound: newBound}
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            )}
+                            {requiredMats.needsAdvancedWeaponBook2 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/master-metallurgy-2.webp"
+                                  name="장인의 야금술 2단계"
+                                  amount={materials.야금술2단 || 0}
+                                  color="#a855f7"
+                                  cost={results.materialCosts['야금술2단'] || 0}
+                                  showEnableToggle={false}
+                                  isEnabled={advancedMaterialOptions.weaponNormalBook2.enabled || advancedMaterialOptions.weaponBonusBook2.enabled}
+                                  onToggleEnabled={() => {}}
+                                  showCheckbox={true}
+                                  isBound={advancedMaterialOptions.weaponNormalBook2.isBound && advancedMaterialOptions.weaponBonusBook2.isBound}
+                                  onBoundChange={() => {
+                                    const newBound = !(advancedMaterialOptions.weaponNormalBook2.isBound && advancedMaterialOptions.weaponBonusBook2.isBound);
+                                    setAdvancedMaterialOptions(p => ({
+                                      ...p,
+                                      weaponNormalBook2: {...p.weaponNormalBook2, isBound: newBound},
+                                      weaponBonusBook2: {...p.weaponBonusBook2, isBound: newBound}
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            )}
+                            {requiredMats.needsAdvancedWeaponBook3 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/master-metallurgy-3.webp"
+                                  name="장인의 야금술 3단계"
+                                  amount={materials.야금술3단 || 0}
+                                  color="#a855f7"
+                                  cost={results.materialCosts['야금술3단'] || 0}
+                                  showEnableToggle={false}
+                                  isEnabled={advancedMaterialOptions.weaponNormalBook3.enabled || advancedMaterialOptions.weaponBonusBook3.enabled}
+                                  onToggleEnabled={() => {}}
+                                  showCheckbox={true}
+                                  isBound={advancedMaterialOptions.weaponNormalBook3.isBound && advancedMaterialOptions.weaponBonusBook3.isBound}
+                                  onBoundChange={() => {
+                                    const newBound = !(advancedMaterialOptions.weaponNormalBook3.isBound && advancedMaterialOptions.weaponBonusBook3.isBound);
+                                    setAdvancedMaterialOptions(p => ({
+                                      ...p,
+                                      weaponNormalBook3: {...p.weaponNormalBook3, isBound: newBound},
+                                      weaponBonusBook3: {...p.weaponBonusBook3, isBound: newBound}
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            )}
+                            {requiredMats.needsAdvancedWeaponBook4 && (
+                              <div className={styles.materialCardWrapper}>
+                                <MaterialCard
+                                  icon="/master-metallurgy-4.webp"
+                                  name="장인의 야금술 4단계"
+                                  amount={materials.야금술4단 || 0}
+                                  color="#a855f7"
+                                  cost={results.materialCosts['야금술4단'] || 0}
+                                  showEnableToggle={false}
+                                  isEnabled={advancedMaterialOptions.weaponNormalBook4.enabled || advancedMaterialOptions.weaponBonusBook4.enabled}
+                                  onToggleEnabled={() => {}}
+                                  showCheckbox={true}
+                                  isBound={advancedMaterialOptions.weaponNormalBook4.isBound && advancedMaterialOptions.weaponBonusBook4.isBound}
+                                  onBoundChange={() => {
+                                    const newBound = !(advancedMaterialOptions.weaponNormalBook4.isBound && advancedMaterialOptions.weaponBonusBook4.isBound);
+                                    setAdvancedMaterialOptions(p => ({
+                                      ...p,
+                                      weaponNormalBook4: {...p.weaponNormalBook4, isBound: newBound},
+                                      weaponBonusBook4: {...p.weaponBonusBook4, isBound: newBound}
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 
-                      {/* 6줄: 누르는 골드 + 총 소모 골드 - 2개 */}
-                      <div className="mb-4">
-                        <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
-                          <Col xs={6} sm={6} md={6} style={{ minWidth: '0' }}>
+                      {/* 4. Costs */}
+                      <div className={styles.resultsSection}>
+                        <div className={styles.resultsSectionTitle}>예상 비용</div>
+                        <div className={styles.materialsGrid}>
+                          <div className={styles.materialCardWrapper}>
                             <MaterialCard icon="/gold.webp" name="누르는 골드" amount={materials.누골} color="#f59e0b" />
-                          </Col>
-                          <Col xs={6} sm={6} md={6} style={{ minWidth: '0' }}>
+                          </div>
+                          <div className={styles.materialCardWrapper}>
                             <MaterialCard
                               icon="/gold.webp"
                               name="총 소모 골드"
@@ -2847,34 +2769,20 @@ export default function RefiningCalculator() {
                                 backgroundColor: theme === 'dark' ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb',
                                 borderColor: theme === 'dark' ? '#f59e0b' : '#fde68a',
                                 boxShadow: theme === 'dark' ? '0 0 20px rgba(245, 158, 11, 0.2)' : '0 4px 15px rgba(251, 191, 36, 0.2)',
-                                padding: 'clamp(1rem, 2vw, 1.5rem)'
                               }}
                             />
-                          </Col>
-                        </Row>
+                          </div>
+                        </div>
                       </div>
 
                       {/* 안내 메시지 */}
-                      <div style={{
-                        padding: 'clamp(0.75rem, 2vw, 1rem)',
-                        backgroundColor: 'var(--card-body-bg-blue)',
-                        borderRadius: '12px',
-                        borderLeft: `4px solid var(--brand-primary)`,
-                        display: 'flex',
-                        alignItems: 'start',
-                        gap: 'clamp(0.5rem, 1.5vw, 0.75rem)'
-                      }}>
+                      <div className={styles.infoBox}>
                         <span style={{ fontSize: 'clamp(1rem, 2.2vw, 1.2rem)', flexShrink: 0 }}></span>
-                        <small style={{
-                          color: 'var(--text-secondary)',
-                          fontSize: 'clamp(0.75rem, 1.7vw, 0.85rem)',
-                          lineHeight: '1.5',
-                          fontWeight: '500'
-                        }}>
+                        <small className={styles.infoBoxText}>
                           이 계산은 평균 확률과 장인의 기운 시스템을 반영한 예상 수치입니다. 실제 소모량은 확률에 따라 다를 수 있습니다.
                         </small>
                       </div>
-                    </>
+                    </div>
                   );
                 })()}
               </Card.Body>

@@ -1032,6 +1032,51 @@
 }
 
 /* ========================================
+   Results Section Layout (New)
+   ======================================== */
+.resultsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.resultsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.resultsSectionTitle {
+  font-size: clamp(0.9rem, 1.8vw, 1rem);
+  color: var(--text-secondary);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.materialsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.materialCardWrapper {
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .materialsGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .materialsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ========================================
    다크모드 지원 (개선됨)
    ======================================== */
 [data-theme="dark"] .mainCard {
