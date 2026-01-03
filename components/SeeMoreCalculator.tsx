@@ -160,7 +160,7 @@ const SeeMoreCalculator: React.FC = () => {
                 {isCerka ? (
                   <>
                     <h3 className={styles.raidName} style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
-                      세르카 나이트메어
+                      {raid.name}
                     </h3>
                     <p className={styles.raidLevel} style={{ color: '#f0f0f0', opacity: 0.9, marginTop: '4px', fontWeight: 600 }}>
                       1월 7일 출시 예정
