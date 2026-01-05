@@ -52,8 +52,8 @@ export async function GET(request: Request) {
       allDates: dailyPrices.map((d: any) => d.date),
       recent30Days,
       todayTemp,
-      oldest: dailyPrices.length > 0 ? dailyPrices[0].date : null,
-      newest: dailyPrices.length > 0 ? dailyPrices[dailyPrices.length - 1].date : null
+      oldest: dailyPrices.length > 0 ? (dailyPrices[0] as any).date : null,
+      newest: dailyPrices.length > 0 ? (dailyPrices[dailyPrices.length - 1] as any).date : null
     });
 
   } catch (error: any) {

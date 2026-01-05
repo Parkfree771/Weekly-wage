@@ -317,7 +317,7 @@ export function calculateAdvancedRefiningMaterials(
 
     // 숨결 계산
     const breathKey = isArmor ? '빙하' : '용암';
-    const breathAmount = stageMaterials[breathKey] || 0;
+    const breathAmount = (stageMaterials as any)[breathKey] || 0;
     if (breathAmount > 0) {
       // 일반 턴 숨결 사용 비율 + 선조 턴 숨결 사용 비율
       const normalBreathRate = options.useNormalBreath ? 0.83894 : 0;  // 일반 턴 비율 83.894%
@@ -351,7 +351,7 @@ export function calculateAdvancedRefiningMaterials(
     }
 
     if (bookKey) {
-      const bookAmount = stageMaterials[bookKey] || 0;
+      const bookAmount = (stageMaterials as any)[bookKey] || 0;
       if (bookAmount > 0) {
         const normalBookRate = useNormalBook ? 0.83894 : 0;
         const bonusBookRate = useBonusBook ? 0.16106 : 0;

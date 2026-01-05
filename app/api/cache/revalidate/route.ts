@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     // price-history 캐시 무효화
-    revalidateTag('price-history');
+    revalidateTag('price-history', 'max');
 
     return NextResponse.json({
       success: true,

@@ -108,7 +108,7 @@ export default function PriceChart({ itemIds, title = '가격 추이' }: PriceCh
             tickFormatter={(value) => `${value}G`}
           />
           <Tooltip
-            formatter={(value: number) => [`${value}G`, '']}
+            formatter={(value: number | undefined) => [`${value || 0}G`, '']}
             labelFormatter={(label) => `날짜: ${label}`}
           />
           <Legend />

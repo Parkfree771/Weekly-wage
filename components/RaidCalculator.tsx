@@ -157,7 +157,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
           const groupName = raidName.split(' ')[0];
           for (const r of groupedRaids[groupName]) {
             if (r.name !== raidName) {
-              const sameGate = r.gates.find(g => g.gate === gate.gate);
+              const sameGate = r.gates.find((g: any) => g.gate === gate.gate);
               if (sameGate && newGateSelection[characterName]?.[r.name]) {
                 newGateSelection[characterName][r.name][gate.gate] = 'none';
               }
@@ -184,7 +184,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
         for (const r of groupedRaids[groupName]) {
           if (r.name !== raidName) {
             // Only deselect the same gate number, not all gates
-            const sameGate = r.gates.find(g => g.gate === gate);
+            const sameGate = r.gates.find((g: any) => g.gate === gate);
             if (sameGate && newGateSelection[characterName]?.[r.name]) {
               newGateSelection[characterName][r.name][gate] = 'none';
             }

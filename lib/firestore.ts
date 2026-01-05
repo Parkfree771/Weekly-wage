@@ -284,10 +284,11 @@ export async function addTempAuctionPrice(
       });
 
       // 5회 수집 완료시 평균 계산하여 일별 가격에 저장
-      if (prices.length >= 5) {
-        const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-        await saveDailyPrice(itemId, avgPrice, itemName);
-      }
+      // TODO: saveDailyPrice 함수 구현 필요
+      // if (prices.length >= 5) {
+      //   const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+      //   await saveDailyPrice(itemId, avgPrice, itemName);
+      // }
     } else {
       await setDoc(docRef, {
         itemId,

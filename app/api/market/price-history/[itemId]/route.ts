@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { unstable_cache } from 'next/cache';
 import { getDailyPriceHistory } from '@/lib/firestore-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -59,61 +58,47 @@ function getCacheControlHeader(): string {
 }
 
 // 캐시된 가격 히스토리 조회 함수 (데이터 있는 경우만)
-const getCachedPriceHistory = unstable_cache(
-  async (itemId: string, days: number) => {
-    console.log(`[Cache Miss] Fetching price history for itemId: ${itemId}, days: ${days}`);
-    const priceEntries = await getDailyPriceHistory(itemId, days);
+async function getCachedPriceHistory(itemId: string, days: number) {
+  console.log(`[Cache Miss] Fetching price history for itemId: ${itemId}, days: ${days}`);
+  const priceEntries = await getDailyPriceHistory(itemId, days);
 
-    // Timestamp를 ISO 문자열로 변환하고 date 필드 그대로 전달
-    const history = priceEntries.map((entry) => {
-      return {
-        price: entry.price,
-        timestamp: entry.timestamp.toDate().toISOString(),
-        date: entry.date, // Firestore의 date 필드 그대로 사용 (YYYY-MM-DD)
-      };
-    });
-
+  // Timestamp를 ISO 문자열로 변환하고 date 필드 그대로 전달
+  const history = priceEntries.map((entry) => {
     return {
-      itemId,
-      history,
-      count: history.length,
-      cachedAt: new Date().toISOString(),
+      price: entry.price,
+      timestamp: entry.timestamp.toDate().toISOString(),
+      date: entry.date, // Firestore의 date 필드 그대로 사용 (YYYY-MM-DD)
     };
-  },
-  (itemId: string, days: number) => ['price-history', itemId, `days-${days}`],
-  {
-    revalidate: 3600, // 1시간 캐싱
-    tags: ['price-history']
-  }
-);
+  });
+
+  return {
+    itemId,
+    history,
+    count: history.length,
+    cachedAt: new Date().toISOString(),
+  };
+}
 
 // 빈 결과 캐시 (짧은 시간만 유지)
-const getCachedEmptyResult = unstable_cache(
-  async (itemId: string, days: number) => {
-    console.log(`[Empty Cache Miss] Checking for itemId: ${itemId}, days: ${days}`);
-    const priceEntries = await getDailyPriceHistory(itemId, days);
+async function getCachedEmptyResult(itemId: string, days: number) {
+  console.log(`[Empty Cache Miss] Checking for itemId: ${itemId}, days: ${days}`);
+  const priceEntries = await getDailyPriceHistory(itemId, days);
 
-    const history = priceEntries.map((entry) => {
-      return {
-        price: entry.price,
-        timestamp: entry.timestamp.toDate().toISOString(),
-        date: entry.date,
-      };
-    });
-
+  const history = priceEntries.map((entry) => {
     return {
-      itemId,
-      history,
-      count: history.length,
-      cachedAt: new Date().toISOString(),
+      price: entry.price,
+      timestamp: entry.timestamp.toDate().toISOString(),
+      date: entry.date,
     };
-  },
-  (itemId: string, days: number) => ['price-history-empty', itemId, `days-${days}`],
-  {
-    revalidate: 180, // 3분만 캐싱 (빈 결과는 자주 다시 확인)
-    tags: ['price-history']
-  }
-);
+  });
+
+  return {
+    itemId,
+    history,
+    count: history.length,
+    cachedAt: new Date().toISOString(),
+  };
+}
 
 // 캐시 우회용 직접 조회 함수
 async function getDirectPriceHistory(itemId: string, days: number) {

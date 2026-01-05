@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     // 캐시 태그 무효화
-    revalidateTag(tag);
+    revalidateTag(tag, 'max');
 
     console.log(`[Revalidate] 캐시 무효화 완료: ${tag}`);
 

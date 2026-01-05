@@ -1,7 +1,7 @@
 'use client';
 
 import { ItemCategory, TrackedItem, getItemsByCategory } from '@/lib/items-to-track';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTheme } from './ThemeProvider';
 import { Offcanvas } from 'react-bootstrap';
 
@@ -19,7 +19,7 @@ const CATEGORY_ORDER: ItemCategory[] = ['gem', 'refine', 'refine_additional', 'e
 
 function ColoredItemName({ name }: { name: string }) {
   const regex = /(\d+\.?\d*%)\s*(\(상\))|(\d+\.?\d*%)\s*(\(중\))|(\(상\))|(\(중\))/g;
-  const parts: JSX.Element[] = [];
+  const parts: React.JSX.Element[] = [];
   let lastIndex = 0;
   let match;
 

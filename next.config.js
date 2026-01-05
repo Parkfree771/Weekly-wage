@@ -1,13 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   outputFileTracingRoot: require('path').join(__dirname),
-  
+
   // 성능 최적화
   compress: true,
   poweredByHeader: false,

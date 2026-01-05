@@ -187,201 +187,424 @@
 }
 
 /* ========================================
-   캐릭터 정보 (개선됨)
+   캐릭터 정보 (트렌디한 프로 디자인)
    ======================================== */
 .characterInfo {
-  padding: clamp(1rem, 2.5vw, 1.35rem);
-  background-color: var(--card-bg);
-  border-radius: 14px;
+  position: relative;
+  padding: 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+  border-radius: 20px;
   border: 2px solid var(--border-color);
-  text-align: center;
-  margin-bottom: 1.25rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  animation: characterInfoSlideIn 0.5s ease-out;
+}
+
+@keyframes characterInfoSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.characterInfo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+  background-size: 200% 100%;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.characterInfoInner {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: clamp(1.2rem, 3vw, 2rem);
+  padding: clamp(1.2rem, 2.8vw, 1.6rem);
+  align-items: center;
+}
+
+.characterImageWrapper {
+  position: relative;
+  width: clamp(80px, 15vw, 120px);
+  height: clamp(80px, 15vw, 120px);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border: 3px solid transparent;
+  background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+              linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899) border-box;
+  transition: transform 0.3s ease;
+}
+
+.characterImageWrapper:hover {
+  transform: scale(1.05);
+}
+
+.characterImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.characterDetails {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 1.5vw, 1rem);
+  min-width: 0;
+}
+
+.characterNameRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(0.5rem, 1.2vw, 0.75rem);
+  flex-wrap: wrap;
 }
 
 .characterName {
-  font-size: clamp(1rem, 2.2vw, 1.2rem);
-  font-weight: 700;
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+  font-weight: 800;
   color: var(--text-primary);
-  margin-right: 1rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.characterLevelGrid {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+  flex-wrap: wrap;
+}
+
+.levelBox {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.3rem, 0.7vw, 0.4rem);
+}
+
+.levelLabel {
+  font-size: clamp(0.65rem, 1.4vw, 0.75rem);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .characterLevel {
-  font-size: clamp(0.9rem, 2vw, 1.1rem);
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.levelArrow {
+  font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+  color: #10b981;
+  animation: arrowPulse 2s ease-in-out infinite;
+  margin-top: 1.5rem;
+}
+
+@keyframes arrowPulse {
+  0%, 100% { transform: translateX(0); opacity: 1; }
+  50% { transform: translateX(4px); opacity: 0.7; }
 }
 
 .expectedLevel {
-  font-size: clamp(0.85rem, 1.9vw, 1rem);
-  font-weight: 600;
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-weight: 800;
   color: #10b981;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: 0.4rem;
 }
 
 .levelBadge {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  font-size: clamp(0.7rem, 1.6vw, 0.8rem);
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  font-size: clamp(0.7rem, 1.5vw, 0.85rem);
   font-weight: 700;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-}
-
-/* ========================================
-   장비 카드 (개선됨)
-   ======================================== */
-.equipmentCard {
-  padding: clamp(0.85rem, 2.2vw, 1.15rem);
-  background-color: var(--card-bg);
-  border-radius: 14px;
-  border: 2px solid var(--border-color);
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-  position: relative;
-}
-
-.equipmentCard:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  border-color: rgba(99, 102, 241, 0.2);
-}
-
-.equipmentCardChanged {
-  border-color: var(--brand-primary);
-  background-color: rgba(99, 102, 241, 0.03);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
-  transform: translateY(-3px);
-}
-
-.equipmentCardMobile {
-  padding: 0.3rem;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
-}
-
-.equipmentCardMobileChanged {
-  box-shadow: 0 0 0 1px rgba(var(--brand-hue), var(--brand-saturation), var(--brand-lightness), 0.3);
-}
-
-.equipmentName {
-  font-size: clamp(0.8rem, 1.8vw, 0.9rem);
-  font-weight: 700;
-  color: var(--text-primary);
-  display: block;
-  line-height: 1.1;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding: clamp(0.25rem, 0.6vw, 0.35rem) clamp(0.5rem, 1.2vw, 0.7rem);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
   white-space: nowrap;
 }
 
-.equipmentNameMobile {
-  font-size: 0.65rem;
+/* 모바일 최적화 */
+@media (max-width: 768px) {
+  .characterInfoInner {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    text-align: center;
+  }
+
+  .characterImageWrapper {
+    margin: 0 auto;
+  }
+
+  .characterNameRow {
+    justify-content: center;
+  }
+
+  .characterLevelGrid {
+    justify-content: center;
+  }
 }
 
-.equipmentGrade {
-  font-size: clamp(0.65rem, 1.5vw, 0.75rem);
-  font-weight: 600;
-  display: block;
-  margin-top: 1px;
+@media (max-width: 576px) {
+  .characterImageWrapper {
+    width: 70px;
+    height: 70px;
+    border-radius: 14px;
+    border-width: 2px;
+  }
+
+  .levelArrow {
+    display: none;
+  }
+}
+
+/* ========================================
+   장비 카드 (프로페셔널 디자인)
+   ======================================== */
+div.equipmentCard,
+.equipmentCard.equipmentCard {
+  position: relative !important;
+  padding: clamp(0.9rem, 2.3vw, 1.2rem) !important;
+  background: var(--card-bg) !important;
+  border-radius: 16px !important;
+  border: 2px solid #cbd5e1 !important;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06) !important;
+  overflow: hidden !important;
+}
+
+div.equipmentCard:hover,
+.equipmentCard.equipmentCard:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  border-color: #8b5cf6 !important;
+}
+
+div.equipmentCardChanged,
+.equipmentCardChanged.equipmentCardChanged {
+  border-color: #6366f1 !important;
+  border-width: 3px !important;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%) !important;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3) !important;
+}
+
+div.equipmentCardMobile,
+.equipmentCardMobile.equipmentCardMobile {
+  padding: 0.35rem !important;
+  border-radius: 8px !important;
+  border: 1.5px solid #cbd5e1 !important;
+}
+
+div.equipmentCardMobileChanged,
+.equipmentCardMobileChanged.equipmentCardMobileChanged {
+  border-color: #6366f1 !important;
+  border-width: 2px !important;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25) !important;
+}
+
+/* 무기/방어구 장비 카드 테두리 */
+div.equipmentCardWeapon,
+.equipmentCardWeapon.equipmentCardWeapon {
+  border-color: #ef4444 !important;
+}
+
+div.equipmentCardWeapon:hover,
+.equipmentCardWeapon.equipmentCardWeapon:hover {
+  border-color: #dc2626 !important;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15) !important;
+}
+
+div.equipmentCardArmor,
+.equipmentCardArmor.equipmentCardArmor {
+  border-color: #3b82f6 !important;
+}
+
+div.equipmentCardArmor:hover,
+.equipmentCardArmor.equipmentCardArmor:hover {
+  border-color: #2563eb !important;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15) !important;
+}
+
+span.equipmentName,
+.equipmentName.equipmentName {
+  font-size: clamp(0.85rem, 1.9vw, 0.95rem) !important;
+  font-weight: 800 !important;
+  color: #000000 !important;
+  display: block !important;
+  line-height: 1.2 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.01em !important;
+}
+
+[data-theme="dark"] span.equipmentName,
+[data-theme="dark"] .equipmentName.equipmentName {
+  color: #ffffff !important;
+}
+
+.equipmentNameMobile {
+  font-size: 0.7rem;
+}
+
+span.equipmentGrade,
+.equipmentGrade.equipmentGrade {
+  font-size: clamp(0.68rem, 1.55vw, 0.78rem) !important;
+  font-weight: 700 !important;
+  display: block !important;
+  margin-top: 2px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.02em !important;
+  opacity: 1 !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] span.equipmentGrade,
+[data-theme="dark"] .equipmentGrade.equipmentGrade {
+  color: #ffffff !important;
 }
 
 .equipmentGradeMobile {
-  font-size: 0.5rem;
+  font-size: 0.55rem;
 }
 
 .levelBadgeArmor {
-  font-size: clamp(0.72rem, 1.65vw, 0.82rem);
-  padding: 0.35rem 0.7rem;
-  background-color: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
-  font-weight: 700;
+  font-size: clamp(0.75rem, 1.7vw, 0.85rem);
+  padding: clamp(0.3rem, 0.8vw, 0.4rem) clamp(0.6rem, 1.3vw, 0.75rem);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  font-weight: 800;
   line-height: 1;
-  border-radius: 8px;
-  border: 1px solid rgba(59, 130, 246, 0.15);
-  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
 }
 
 .levelBadgeWeapon {
-  font-size: clamp(0.72rem, 1.65vw, 0.82rem);
-  padding: 0.35rem 0.7rem;
-  background-color: rgba(239, 68, 68, 0.12);
-  color: #dc2626;
-  font-weight: 700;
+  font-size: clamp(0.75rem, 1.7vw, 0.85rem);
+  padding: clamp(0.3rem, 0.8vw, 0.4rem) clamp(0.6rem, 1.3vw, 0.75rem);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  font-weight: 800;
   line-height: 1;
-  border-radius: 8px;
-  border: 1px solid rgba(239, 68, 68, 0.15);
-  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.1);
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  transition: all 0.2s ease;
 }
 
 .levelBadgeMobile {
-  font-size: 0.55rem;
-  padding: 0.15rem 0.3rem;
-  border-radius: 4px;
+  font-size: 0.6rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: 6px;
 }
 
 .advancedLevelBadge {
-  font-size: clamp(0.68rem, 1.55vw, 0.78rem);
-  padding: 0.3rem 0.6rem;
-  background-color: rgba(168, 85, 247, 0.12);
-  color: #9333ea;
-  font-weight: 700;
+  font-size: clamp(0.7rem, 1.6vw, 0.8rem);
+  padding: clamp(0.25rem, 0.7vw, 0.35rem) clamp(0.5rem, 1.2vw, 0.65rem);
+  background: linear-gradient(135deg, #a855f7, #9333ea);
+  color: white;
+  font-weight: 800;
   line-height: 1;
-  border-radius: 8px;
-  border: 1px solid rgba(168, 85, 247, 0.15);
-  box-shadow: 0 1px 3px rgba(168, 85, 247, 0.1);
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
+  transition: all 0.2s ease;
 }
 
 .advancedLevelBadgeMobile {
-  font-size: 0.5rem;
-  padding: 0.1rem 0.25rem;
-  border-radius: 4px;
+  font-size: 0.55rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: 6px;
 }
 
-/* Select 스타일 (개선됨) */
-.equipmentSelect {
-  background-color: var(--card-bg);
-  border: 1.5px solid var(--border-color);
-  font-size: clamp(0.7rem, 1.3vw, 0.8rem);
-  font-weight: 600;
-  border-radius: 8px;
-  padding: 0.4rem 0.6rem;
-  width: 100%;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-  cursor: pointer;
+/* Select 스타일 (슬림 & 모던) - 높은 우선순위 */
+select.equipmentSelect,
+.equipmentSelect.equipmentSelect,
+.form-select.equipmentSelect {
+  position: relative !important;
+  background: linear-gradient(to bottom, var(--card-bg), rgba(248, 250, 252, 0.5)) !important;
+  border: none !important;
+  font-size: clamp(0.7rem, 1.3vw, 0.78rem) !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  padding: clamp(0.35rem, 0.8vw, 0.4rem) clamp(0.5rem, 1.1vw, 0.6rem) !important;
+  width: 100% !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  cursor: pointer !important;
+  color: #000000 !important;
+  appearance: auto !important;
+  outline: none !important;
 }
 
-.equipmentSelect:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+select.equipmentSelect:hover,
+.equipmentSelect.equipmentSelect:hover,
+.form-select.equipmentSelect:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  background: linear-gradient(to bottom, var(--card-bg), rgba(0, 0, 0, 0.02)) !important;
+  transform: translateY(-1px) !important;
+  outline: none !important;
 }
 
-.equipmentSelect:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1),
-              0 2px 8px rgba(0, 0, 0, 0.08);
-  outline: none;
+select.equipmentSelect:focus,
+.equipmentSelect.equipmentSelect:focus,
+.form-select.equipmentSelect:focus,
+select.equipmentSelect:focus-visible,
+.equipmentSelect.equipmentSelect:focus-visible,
+.form-select.equipmentSelect:focus-visible {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+  outline: none !important;
+  background: linear-gradient(to bottom, var(--card-bg), rgba(0, 0, 0, 0.03)) !important;
 }
 
-.equipmentSelectMobile {
-  font-size: 0.6rem;
-  border-radius: 4px;
-  padding: 0.25rem 0.35rem;
-  border: 1px solid var(--border-color);
+select.equipmentSelectMobile,
+.equipmentSelectMobile.equipmentSelectMobile {
+  font-size: 0.62rem !important;
+  border-radius: 6px !important;
+  padding: 0.25rem 0.35rem !important;
 }
 
-.equipmentSelectEmpty {
-  color: var(--text-muted);
+select.equipmentSelectEmpty,
+.equipmentSelectEmpty.equipmentSelectEmpty {
+  color: #000000 !important;
+  font-weight: 500 !important;
+  font-style: italic !important;
 }
 
-.equipmentSelectSelected {
-  color: var(--text-primary);
-  font-weight: 700;
+select.equipmentSelectSelected,
+.equipmentSelectSelected.equipmentSelectSelected {
+  color: #000000 !important;
+  font-weight: 700 !important;
+  background: linear-gradient(to bottom, var(--card-bg), rgba(0, 0, 0, 0.03)) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* ========================================
@@ -429,52 +652,65 @@
   padding-bottom: 0.3rem;
 }
 
-.bulkButton {
-  font-size: clamp(0.75rem, 1.7vw, 0.85rem);
-  padding: clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem);
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+button.bulkButton,
+.bulkButton.bulkButton {
+  font-size: clamp(0.75rem, 1.7vw, 0.85rem) !important;
+  padding: clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem) !important;
+  background-color: #f1f5f9 !important;
+  border: 2px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  color: #334155 !important;
 }
 
-.bulkButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+button.bulkButton:hover:not(:disabled),
+.bulkButton.bulkButton:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  border-color: #8b5cf6 !important;
+  background-color: #ede9fe !important;
+  color: #6366f1 !important;
 }
 
-.bulkButtonMobile {
-  font-size: 0.7rem;
-  padding: 0.35rem 0.6rem;
-  border-radius: 4px;
-  min-height: 30px;
-  min-width: 42px;
-  flex-shrink: 0;
+button.bulkButtonMobile,
+.bulkButtonMobile.bulkButtonMobile {
+  font-size: 0.6rem !important;
+  padding: 0.3rem 0.5rem !important;
+  border-radius: 4px !important;
+  min-height: 26px !important;
+  min-width: 36px !important;
+  flex-shrink: 0 !important;
+  border-width: 2px !important;
 }
 
-.bulkButtonSelected {
-  background-color: var(--brand-primary);
-  border-color: var(--brand-primary);
-  color: white;
-  font-weight: 700;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+button.bulkButtonSelected,
+.bulkButtonSelected.bulkButtonSelected {
+  background-color: #6366f1 !important;
+  border-color: #6366f1 !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
 }
 
-.bulkButtonWeaponSelected {
-  background-color: #ef4444;
-  border-color: #ef4444;
-  color: white;
-  font-weight: 700;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+button.bulkButtonWeaponSelected,
+.bulkButtonWeaponSelected.bulkButtonWeaponSelected {
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
 }
 
-.bulkButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-  color: var(--text-disabled);
+button.bulkButton:disabled,
+.bulkButton.bulkButton:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+  color: #94a3b8 !important;
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
 }
 
 /* ========================================
@@ -693,9 +929,17 @@
   }
 
   .equipmentCard {
-    padding: 0.3rem;
-    border-radius: 4px;
-    border-width: 1px;
+    padding: 0.35rem;
+    border-radius: 8px;
+    border-width: 1.5px;
+  }
+
+  .equipmentCard:hover {
+    transform: translateY(-2px) scale(1.01);
+  }
+
+  .equipmentCardChanged {
+    transform: translateY(-2px) scale(1.01);
   }
 
   .bulkSettingContainer {
@@ -736,6 +980,11 @@
     padding: 0.6rem 1.2rem;
   }
 
+  .equipmentCard {
+    padding: 0.3rem;
+    border-radius: 6px;
+  }
+
   .materialCard {
     border-radius: 6px;
     padding: 0.4rem;
@@ -753,16 +1002,128 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-[data-theme="dark"] .equipmentCard {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+[data-theme="dark"] div.equipmentCard,
+[data-theme="dark"] .equipmentCard.equipmentCard {
+  border-color: #475569 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
 }
 
-[data-theme="dark"] .equipmentCard:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+[data-theme="dark"] div.equipmentCard:hover,
+[data-theme="dark"] .equipmentCard.equipmentCard:hover {
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
 }
 
-[data-theme="dark"] .equipmentCardChanged {
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+[data-theme="dark"] div.equipmentCardChanged,
+[data-theme="dark"] .equipmentCardChanged.equipmentCardChanged {
+  border-color: #6366f1 !important;
+  border-width: 3px !important;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.5) !important;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%) !important;
+}
+
+[data-theme="dark"] div.equipmentCardMobile,
+[data-theme="dark"] .equipmentCardMobile.equipmentCardMobile {
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] div.equipmentCardMobileChanged,
+[data-theme="dark"] .equipmentCardMobileChanged.equipmentCardMobileChanged {
+  border-color: #6366f1 !important;
+}
+
+/* 다크모드 무기/방어구 장비 카드 테두리 */
+[data-theme="dark"] div.equipmentCardWeapon,
+[data-theme="dark"] .equipmentCardWeapon.equipmentCardWeapon {
+  border-color: #ef4444 !important;
+}
+
+[data-theme="dark"] div.equipmentCardWeapon:hover,
+[data-theme="dark"] .equipmentCardWeapon.equipmentCardWeapon:hover {
+  border-color: #f87171 !important;
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3) !important;
+}
+
+[data-theme="dark"] div.equipmentCardArmor,
+[data-theme="dark"] .equipmentCardArmor.equipmentCardArmor {
+  border-color: #3b82f6 !important;
+}
+
+[data-theme="dark"] div.equipmentCardArmor:hover,
+[data-theme="dark"] .equipmentCardArmor.equipmentCardArmor:hover {
+  border-color: #60a5fa !important;
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
+}
+
+[data-theme="dark"] button.bulkButton,
+[data-theme="dark"] .bulkButton.bulkButton {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] button.bulkButton:hover:not(:disabled),
+[data-theme="dark"] .bulkButton.bulkButton:hover:not(:disabled) {
+  border-color: #8b5cf6 !important;
+  background-color: rgba(139, 92, 246, 0.2) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] button.bulkButton:disabled,
+[data-theme="dark"] .bulkButton.bulkButton:disabled {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #64748b !important;
+}
+
+[data-theme="dark"] .levelBadgeArmor,
+[data-theme="dark"] .levelBadgeWeapon,
+[data-theme="dark"] .advancedLevelBadge {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] select.equipmentSelect,
+[data-theme="dark"] .equipmentSelect.equipmentSelect,
+[data-theme="dark"] .form-select.equipmentSelect {
+  border-color: #475569 !important;
+  background: linear-gradient(to bottom, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.2)) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  outline: none !important;
+}
+
+[data-theme="dark"] select.equipmentSelect:hover,
+[data-theme="dark"] .equipmentSelect.equipmentSelect:hover,
+[data-theme="dark"] .form-select.equipmentSelect:hover {
+  border-color: #8b5cf6 !important;
+  background: linear-gradient(to bottom, rgba(30, 41, 59, 0.5), rgba(139, 92, 246, 0.08)) !important;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.25),
+              0 0 0 1px rgba(139, 92, 246, 0.2) !important;
+  outline: none !important;
+}
+
+[data-theme="dark"] select.equipmentSelect:focus,
+[data-theme="dark"] .equipmentSelect.equipmentSelect:focus,
+[data-theme="dark"] .form-select.equipmentSelect:focus,
+[data-theme="dark"] select.equipmentSelect:focus-visible,
+[data-theme="dark"] .equipmentSelect.equipmentSelect:focus-visible,
+[data-theme="dark"] .form-select.equipmentSelect:focus-visible {
+  border-color: #6366f1 !important;
+  background: linear-gradient(to bottom, rgba(30, 41, 59, 0.5), rgba(99, 102, 241, 0.1)) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2),
+              0 2px 4px rgba(99, 102, 241, 0.3) !important;
+  outline: none !important;
+}
+
+[data-theme="dark"] select.equipmentSelectSelected,
+[data-theme="dark"] .equipmentSelectSelected.equipmentSelectSelected {
+  border-color: #8b5cf6 !important;
+  background: linear-gradient(to bottom, rgba(30, 41, 59, 0.5), rgba(139, 92, 246, 0.12)) !important;
+  box-shadow: 0 1px 3px rgba(139, 92, 246, 0.3) !important;
+}
+
+[data-theme="dark"] select.equipmentSelectEmpty,
+[data-theme="dark"] .equipmentSelectEmpty.equipmentSelectEmpty {
+  color: #64748b !important;
 }
 
 [data-theme="dark"] .materialCard {
@@ -782,7 +1143,16 @@
 }
 
 [data-theme="dark"] .characterInfo {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+}
+
+[data-theme="dark"] .characterImageWrapper {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .levelBadge {
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.4);
 }
 
 [data-theme="dark"] .bulkSettingContainer {

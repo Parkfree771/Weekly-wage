@@ -1,5 +1,5 @@
 import { useTheme } from './ThemeProvider';
-import { useMemo, useCallback, useContext } from 'react';
+import React, { useMemo, useCallback, useContext } from 'react';
 import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
@@ -43,7 +43,7 @@ type CompactPriceChartProps = {
 
 function ColoredItemName({ name }: { name: string }) {
   const regex = /(\d+\.?\d*%)\s*(\(상\))|(\d+\.?\d*%)\s*(\(중\))|(\(상\))|(\(중\))/g;
-  const parts: JSX.Element[] = [];
+  const parts: React.JSX.Element[] = [];
   let lastIndex = 0;
   let match;
 

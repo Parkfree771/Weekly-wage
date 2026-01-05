@@ -144,7 +144,7 @@ export default function RefiningCalculator() {
   const [error, setError] = useState<string | null>(null);
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [searched, setSearched] = useState(false);
-  const [characterInfo, setCharacterInfo] = useState<{ name: string; itemLevel: string } | null>(null);
+  const [characterInfo, setCharacterInfo] = useState<{ name: string; itemLevel: string; image?: string } | null>(null);
 
   // 모바일 감지
   const [isMobile, setIsMobile] = useState(false);
@@ -485,7 +485,8 @@ export default function RefiningCalculator() {
       if (data.profile) {
         setCharacterInfo({
           name: data.profile.CharacterName || characterName,
-          itemLevel: data.profile.ItemAvgLevel || '알 수 없음'
+          itemLevel: data.profile.ItemAvgLevel || '알 수 없음',
+          image: data.profile.CharacterImage || undefined
         });
       }
 
@@ -552,7 +553,11 @@ export default function RefiningCalculator() {
       glacierBreath: { enabled: false, isBound: false },
       lavaBreath: { enabled: false, isBound: false },
       tailoring: { enabled: false, isBound: false },
+      tailoring1518: { enabled: false, isBound: false },
+      tailoring1920: { enabled: false, isBound: false },
       metallurgy: { enabled: false, isBound: false },
+      metallurgy1518: { enabled: false, isBound: false },
+      metallurgy1920: { enabled: false, isBound: false },
     });
     setAdvancedMaterialOptions({
       armorNormalBreath: { enabled: false, isBound: false },
@@ -923,7 +928,7 @@ export default function RefiningCalculator() {
     // 반올림 처리
     Object.keys(totalMaterials).forEach(keyStr => {
       const key = keyStr as keyof Materials;
-      totalMaterials[key] = Math.round(totalMaterials[key]);
+      totalMaterials[key] = Math.round(totalMaterials[key] || 0);
     });
 
     return totalMaterials;
@@ -1058,23 +1063,57 @@ export default function RefiningCalculator() {
               {searched && equipments.length > 0 && characterInfo && (
                 <div className="mb-3">
                   <div className={styles.characterInfo}>
-                    <div style={{ marginBottom: '0.5rem' }}>
-                      <span className={styles.characterName}>
-                        {characterInfo.name}
-                      </span>
-                      <span className={styles.characterLevel}>
-                        현재 아이템 레벨: {characterInfo.itemLevel}
-                      </span>
-                    </div>
-                    {expectedItemLevel && (
-                      <div className={styles.expectedLevel}>
-                        <span>→</span>
-                        <span>예상 도달 레벨: {expectedItemLevel}</span>
-                        <Badge bg="" className={styles.levelBadge}>
-                          +{(parseFloat(expectedItemLevel) - parseFloat(characterInfo.itemLevel.replace(/,/g, ''))).toFixed(2)}
-                        </Badge>
+                    <div className={styles.characterInfoInner}>
+                      {/* 캐릭터 이미지 */}
+                      {characterInfo.image && (
+                        <div className={styles.characterImageWrapper}>
+                          <img
+                            src={characterInfo.image}
+                            alt={characterInfo.name}
+                            className={styles.characterImage}
+                          />
+                        </div>
+                      )}
+
+                      {/* 캐릭터 상세 정보 */}
+                      <div className={styles.characterDetails}>
+                        {/* 캐릭터 이름 */}
+                        <div className={styles.characterNameRow}>
+                          <span className={styles.characterName}>
+                            {characterInfo.name}
+                          </span>
+                        </div>
+
+                        {/* 레벨 정보 그리드 */}
+                        <div className={styles.characterLevelGrid}>
+                          {/* 현재 레벨 */}
+                          <div className={styles.levelBox}>
+                            <div className={styles.levelLabel}>Current Level</div>
+                            <div className={styles.characterLevel}>
+                              {characterInfo.itemLevel}
+                            </div>
+                          </div>
+
+                          {/* 화살표 (예상 레벨이 있을 때만) */}
+                          {expectedItemLevel && (
+                            <div className={styles.levelArrow}>→</div>
+                          )}
+
+                          {/* 예상 레벨 */}
+                          {expectedItemLevel && (
+                            <div className={styles.levelBox}>
+                              <div className={styles.levelLabel}>Expected Level</div>
+                              <div className={styles.expectedLevel}>
+                                {expectedItemLevel}
+                                <span className={styles.levelBadge}>
+                                  +{(parseFloat(expectedItemLevel) - parseFloat(characterInfo.itemLevel.replace(/,/g, ''))).toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -1092,18 +1131,14 @@ export default function RefiningCalculator() {
                   return (
                     <Col key={index} xs={4} sm={6} md={4} lg={2}>
                       <div
-                        className={`${styles.equipmentCard} ${isMobile ? styles.equipmentCardMobile : ''} ${isChanged ? styles.equipmentCardChanged : ''} ${isChanged && isMobile ? styles.equipmentCardMobileChanged : ''}`}
-                        style={{
-                          borderColor: !isChanged ? gradeColor : undefined,
-                          boxShadow: !isChanged ? `0 0 0 1px ${gradeColor}33` : undefined
-                        }}
+                        className={`${styles.equipmentCard} ${isMobile ? styles.equipmentCardMobile : ''} ${isChanged ? styles.equipmentCardChanged : ''} ${isChanged && isMobile ? styles.equipmentCardMobileChanged : ''} ${eq.type === 'weapon' ? styles.equipmentCardWeapon : styles.equipmentCardArmor}`}
                       >
                         <div className="d-flex justify-content-between align-items-start" style={{ marginBottom: isMobile ? '0.2rem' : '0.5rem' }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <span className={`${styles.equipmentName} ${isMobile ? styles.equipmentNameMobile : ''}`}>
                               {eq.name}
                             </span>
-                            <span className={`${styles.equipmentGrade} ${isMobile ? styles.equipmentGradeMobile : ''}`} style={{ color: gradeColor }}>
+                            <span className={`${styles.equipmentGrade} ${isMobile ? styles.equipmentGradeMobile : ''}`}>
                               {eq.grade}
                             </span>
                           </div>
@@ -1370,12 +1405,6 @@ export default function RefiningCalculator() {
                                 }}
                                 disabled={!canSelect}
                                 className={`${styles.bulkButton} ${isMobile ? styles.bulkButtonMobile : ''} ${isSelected ? styles.bulkButtonSelected : ''}`}
-                                style={{
-                                  fontSize: isMobile ? '0.6rem' : undefined,
-                                  padding: isMobile ? '0.3rem 0.5rem' : undefined,
-                                  minHeight: isMobile ? '26px' : 'auto',
-                                  minWidth: isMobile ? '36px' : 'auto'
-                                }}
                               >
                                 +{level}
                               </button>
@@ -1408,11 +1437,17 @@ export default function RefiningCalculator() {
                                 ...prev,
                                 armorNormalBreath: { ...prev.armorNormalBreath, enabled: !prev.armorNormalBreath.enabled }
                               }))}
-                              className={advancedMaterialOptions.armorNormalBreath.enabled ? styles.materialToggleButtonEnabled : styles.materialToggleButtonDisabled}
                               style={{
-                                padding: isMobile ? '0.15rem 0.3rem' : undefined,
-                                fontSize: isMobile ? '0.6rem' : undefined,
-                                borderRadius: isMobile ? '2px' : undefined
+                                padding: isMobile ? '0.15rem 0.3rem' : '0.3rem 0.6rem',
+                                fontSize: isMobile ? '0.6rem' : '0.75rem',
+                                fontWeight: '600',
+                                backgroundColor: advancedMaterialOptions.armorNormalBreath.enabled ? '#3b82f6' : '#6b7280',
+                                color: advancedMaterialOptions.armorNormalBreath.enabled ? '#ffffff' : '#9ca3af',
+                                border: 'none',
+                                borderRadius: isMobile ? '2px' : '6px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               {advancedMaterialOptions.armorNormalBreath.enabled ? '사용' : '미사용'}
@@ -1899,12 +1934,6 @@ export default function RefiningCalculator() {
                                 }}
                                 disabled={!canSelect}
                                 className={`${styles.bulkButton} ${isMobile ? styles.bulkButtonMobile : ''} ${isSelected ? styles.bulkButtonWeaponSelected : ''}`}
-                                style={{
-                                  fontSize: isMobile ? '0.6rem' : undefined,
-                                  padding: isMobile ? '0.3rem 0.5rem' : undefined,
-                                  minHeight: isMobile ? '26px' : 'auto',
-                                  minWidth: isMobile ? '36px' : 'auto'
-                                }}
                               >
                                 +{level}
                               </button>
