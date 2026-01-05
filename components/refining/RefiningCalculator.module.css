@@ -196,7 +196,10 @@
   border-radius: 20px;
   border: 2px solid var(--border-color);
   margin-bottom: 1.5rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    10px 10px 20px rgba(0, 0, 0, 0.12),
+    -10px -10px 20px rgba(255, 255, 255, 0.6),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3);
   overflow: hidden;
   backdrop-filter: blur(10px);
   animation: characterInfoSlideIn 0.5s ease-out;
@@ -244,7 +247,10 @@
   height: clamp(80px, 15vw, 120px);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.7),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.2);
   border: 3px solid transparent;
   background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
               linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899) border-box;
@@ -253,6 +259,10 @@
 
 .characterImageWrapper:hover {
   transform: scale(1.05);
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.2),
+    -8px -8px 16px rgba(255, 255, 255, 0.8),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.3);
 }
 
 .characterImage {
@@ -385,7 +395,7 @@
 }
 
 /* ========================================
-   장비 카드 (프로페셔널 디자인)
+   장비 카드 (3D 엠보싱 디자인)
    ======================================== */
 div.equipmentCard,
 .equipmentCard.equipmentCard {
@@ -393,25 +403,31 @@ div.equipmentCard,
   padding: clamp(0.9rem, 2.3vw, 1.2rem) !important;
   background: var(--card-bg) !important;
   border-radius: 16px !important;
-  border: 2px solid #cbd5e1 !important;
+  border: none !important;
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06) !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.15),
+    -8px -8px 16px rgba(255, 255, 255, 0.7) !important;
   overflow: hidden !important;
 }
 
 div.equipmentCard:hover,
 .equipmentCard.equipmentCard:hover {
-  transform: translateY(-4px) scale(1.02) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
-  border-color: #8b5cf6 !important;
+  transform: translateY(-2px) !important;
+  box-shadow:
+    12px 12px 24px rgba(0, 0, 0, 0.2),
+    -12px -12px 24px rgba(255, 255, 255, 0.8),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3) !important;
 }
 
 div.equipmentCardChanged,
 .equipmentCardChanged.equipmentCardChanged {
-  border-color: #6366f1 !important;
-  border-width: 3px !important;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%) !important;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3) !important;
+  border: 2px solid #8b5cf6 !important;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%) !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.2),
+    -8px -8px 16px rgba(255, 255, 255, 0.8),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.4) !important;
 }
 
 div.equipmentCardMobile,
@@ -428,27 +444,39 @@ div.equipmentCardMobileChanged,
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25) !important;
 }
 
-/* 무기/방어구 장비 카드 테두리 */
+/* 무기/방어구 장비 카드 3D 효과 */
 div.equipmentCardWeapon,
 .equipmentCardWeapon.equipmentCardWeapon {
-  border-color: #ef4444 !important;
+  border: 2px solid #ef4444 !important;
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.7) !important;
 }
 
 div.equipmentCardWeapon:hover,
 .equipmentCardWeapon.equipmentCardWeapon:hover {
   border-color: #dc2626 !important;
-  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15) !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.2),
+    -8px -8px 16px rgba(255, 255, 255, 0.8),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3) !important;
 }
 
 div.equipmentCardArmor,
 .equipmentCardArmor.equipmentCardArmor {
-  border-color: #3b82f6 !important;
+  border: 2px solid #3b82f6 !important;
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.7) !important;
 }
 
 div.equipmentCardArmor:hover,
 .equipmentCardArmor.equipmentCardArmor:hover {
   border-color: #2563eb !important;
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15) !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.2),
+    -8px -8px 16px rgba(255, 255, 255, 0.8),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3) !important;
 }
 
 span.equipmentName,
@@ -657,20 +685,24 @@ button.bulkButton,
   font-size: clamp(0.75rem, 1.7vw, 0.85rem) !important;
   padding: clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 2vw, 1rem) !important;
   background-color: #f1f5f9 !important;
-  border: 2px solid #cbd5e1 !important;
+  border: none !important;
   border-radius: 10px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   transition: all 0.3s ease !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  box-shadow:
+    4px 4px 8px rgba(0, 0, 0, 0.1),
+    -4px -4px 8px rgba(255, 255, 255, 0.7) !important;
   color: #334155 !important;
 }
 
 button.bulkButton:hover:not(:disabled),
 .bulkButton.bulkButton:hover:not(:disabled) {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-  border-color: #8b5cf6 !important;
+  transform: translateY(-1px) !important;
+  box-shadow:
+    6px 6px 12px rgba(139, 92, 246, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.8),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.5) !important;
   background-color: #ede9fe !important;
   color: #6366f1 !important;
 }
@@ -689,19 +721,23 @@ button.bulkButtonMobile,
 button.bulkButtonSelected,
 .bulkButtonSelected.bulkButtonSelected {
   background-color: #6366f1 !important;
-  border-color: #6366f1 !important;
+  border: none !important;
   color: white !important;
   font-weight: 700 !important;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+  box-shadow:
+    inset 4px 4px 8px rgba(0, 0, 0, 0.3),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.2) !important;
 }
 
 button.bulkButtonWeaponSelected,
 .bulkButtonWeaponSelected.bulkButtonWeaponSelected {
   background-color: #ef4444 !important;
-  border-color: #ef4444 !important;
+  border: none !important;
   color: white !important;
   font-weight: 700 !important;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+  box-shadow:
+    inset 4px 4px 8px rgba(0, 0, 0, 0.3),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.2) !important;
 }
 
 button.bulkButton:disabled,
@@ -725,22 +761,29 @@ button.bulkButton:disabled,
   position: relative;
   background-color: var(--card-bg);
   border-radius: clamp(10px, 2.2vw, 16px);
-  border: 2px solid var(--border-color);
+  border: none;
   transition: all 0.3s ease;
   padding: clamp(0.5rem, 1.8vw, 1.2rem);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.12),
+    -6px -6px 12px rgba(255, 255, 255, 0.6);
 }
 
 .materialCard:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  border-color: rgba(99, 102, 241, 0.2);
+  transform: translateY(-2px);
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.15),
+    -8px -8px 16px rgba(255, 255, 255, 0.7),
+    inset 1px 1px 3px rgba(255, 255, 255, 0.3);
 }
 
 .materialCardBound {
   border: 2px solid #6366f1;
-  background-color: rgba(99, 102, 241, 0.02);
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
+  background-color: rgba(99, 102, 241, 0.05);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.7),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3);
 }
 
 .materialCardClickable {
@@ -749,6 +792,15 @@ button.bulkButton:disabled,
 
 .materialCardDisabled {
   opacity: 0.6;
+}
+
+.materialCardEnabled {
+  border: 2px solid #10b981;
+  background-color: rgba(16, 185, 129, 0.05);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.7),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3);
 }
 
 .materialCardBoundLabel {
@@ -789,6 +841,8 @@ button.bulkButton:disabled,
   width: clamp(24px, 8vw, 52px);
   height: clamp(24px, 8vw, 52px);
   margin-bottom: clamp(2px, 0.8vw, 8px);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .materialName {
@@ -821,6 +875,152 @@ button.bulkButton:disabled,
   display: flex;
   align-items: center;
   gap: 2px;
+}
+
+/* ========================================
+   일반턴/선조턴 헤더
+   ======================================== */
+.advancedMaterialHeader {
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  color: var(--text-primary);
+  font-weight: 800;
+  text-align: center;
+  min-width: 100px;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.advancedMaterialLabel {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  letter-spacing: -0.01em;
+}
+
+.advancedMaterialLabelMobile {
+  font-size: 0.7rem;
+  margin-bottom: 0.2rem;
+}
+
+/* 상급재련 아이템 이미지 컨테이너 */
+.advancedItemImageContainer {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.4rem;
+  background-color: var(--card-bg);
+  box-shadow:
+    4px 4px 8px rgba(0, 0, 0, 0.1),
+    -4px -4px 8px rgba(255, 255, 255, 0.7);
+}
+
+.advancedItemImageContainerMobile {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin-bottom: 0.2rem;
+  box-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.1),
+    -2px -2px 4px rgba(255, 255, 255, 0.7);
+}
+
+/* 상급재련 사용/미사용 버튼 */
+.advancedToggleButton {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  background-color: #f1f5f9;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow:
+    3px 3px 6px rgba(0, 0, 0, 0.1),
+    -3px -3px 6px rgba(255, 255, 255, 0.7);
+  color: #334155;
+  white-space: nowrap;
+}
+
+.advancedToggleButton:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    4px 4px 8px rgba(0, 0, 0, 0.12),
+    -4px -4px 8px rgba(255, 255, 255, 0.8);
+}
+
+.advancedToggleButtonEnabled {
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 700;
+  box-shadow:
+    inset 3px 3px 6px rgba(0, 0, 0, 0.3),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.2);
+}
+
+.advancedToggleButtonDisabled {
+  background-color: #e2e8f0;
+  color: #94a3b8;
+  box-shadow:
+    3px 3px 6px rgba(0, 0, 0, 0.08),
+    -3px -3px 6px rgba(255, 255, 255, 0.6);
+}
+
+.advancedToggleButtonMobile {
+  font-size: 0.55rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+}
+
+/* 다크모드 */
+[data-theme="dark"] .advancedItemImageContainer {
+  box-shadow:
+    4px 4px 8px rgba(0, 0, 0, 0.5),
+    -4px -4px 8px rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .advancedItemImageContainerMobile {
+  box-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.5),
+    -2px -2px 4px rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .advancedToggleButton {
+  background-color: #334155;
+  color: #e2e8f0;
+  box-shadow:
+    3px 3px 6px rgba(0, 0, 0, 0.4),
+    -3px -3px 6px rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .advancedToggleButton:hover {
+  box-shadow:
+    4px 4px 8px rgba(0, 0, 0, 0.5),
+    -4px -4px 8px rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .advancedToggleButtonEnabled {
+  background-color: #3b82f6;
+  color: white;
+  box-shadow:
+    inset 3px 3px 6px rgba(0, 0, 0, 0.4),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .advancedToggleButtonDisabled {
+  background-color: #1e293b;
+  color: #64748b;
+  box-shadow:
+    3px 3px 6px rgba(0, 0, 0, 0.4),
+    -3px -3px 6px rgba(255, 255, 255, 0.02);
 }
 
 /* ========================================
@@ -886,6 +1086,53 @@ button.bulkButton:disabled,
 .materialToggleButtonDisabled {
   background-color: #6b7280;
   color: #9ca3af;
+}
+
+/* ========================================
+   예상소모 재료 섹션
+   ======================================== */
+.materialsSection {
+  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.materialsSectionTitle {
+  font-size: clamp(0.9rem, 1.8vw, 1rem);
+  color: var(--text-secondary);
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.materialsGrid {
+  display: flex;
+  gap: clamp(0.2rem, 0.5vw, 0.5rem);
+  justify-content: center;
+}
+
+.materialsGridMobile {
+  gap: 0.2rem;
+}
+
+.infoMessage {
+  padding: clamp(0.75rem, 2vw, 1rem);
+  background-color: var(--card-body-bg-blue);
+  border-radius: 12px;
+  border-left: 4px solid var(--brand-primary);
+  display: flex;
+  align-items: start;
+  gap: clamp(0.5rem, 1.5vw, 0.75rem);
+}
+
+.infoMessageIcon {
+  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  flex-shrink: 0;
+}
+
+.infoMessageText {
+  color: var(--text-secondary);
+  font-size: clamp(0.75rem, 1.7vw, 0.85rem);
+  line-height: 1.5;
+  font-weight: 500;
 }
 
 /* ========================================
@@ -1004,22 +1251,28 @@ button.bulkButton:disabled,
 
 [data-theme="dark"] div.equipmentCard,
 [data-theme="dark"] .equipmentCard.equipmentCard {
-  border-color: #475569 !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+  border: none !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.5),
+    -8px -8px 16px rgba(255, 255, 255, 0.03) !important;
 }
 
 [data-theme="dark"] div.equipmentCard:hover,
 [data-theme="dark"] .equipmentCard.equipmentCard:hover {
-  border-color: #8b5cf6 !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  box-shadow:
+    12px 12px 24px rgba(0, 0, 0, 0.6),
+    -12px -12px 24px rgba(255, 255, 255, 0.05),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.08) !important;
 }
 
 [data-theme="dark"] div.equipmentCardChanged,
 [data-theme="dark"] .equipmentCardChanged.equipmentCardChanged {
-  border-color: #6366f1 !important;
-  border-width: 3px !important;
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.5) !important;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%) !important;
+  border: 2px solid #8b5cf6 !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.6),
+    -8px -8px 16px rgba(255, 255, 255, 0.05),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.1) !important;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%) !important;
 }
 
 [data-theme="dark"] div.equipmentCardMobile,
@@ -1032,41 +1285,59 @@ button.bulkButton:disabled,
   border-color: #6366f1 !important;
 }
 
-/* 다크모드 무기/방어구 장비 카드 테두리 */
+/* 다크모드 무기/방어구 장비 카드 3D 효과 */
 [data-theme="dark"] div.equipmentCardWeapon,
 [data-theme="dark"] .equipmentCardWeapon.equipmentCardWeapon {
-  border-color: #ef4444 !important;
+  border: 2px solid #ef4444 !important;
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.5),
+    -6px -6px 12px rgba(255, 255, 255, 0.03) !important;
 }
 
 [data-theme="dark"] div.equipmentCardWeapon:hover,
 [data-theme="dark"] .equipmentCardWeapon.equipmentCardWeapon:hover {
   border-color: #f87171 !important;
-  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3) !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.6),
+    -8px -8px 16px rgba(255, 255, 255, 0.05),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.08) !important;
 }
 
 [data-theme="dark"] div.equipmentCardArmor,
 [data-theme="dark"] .equipmentCardArmor.equipmentCardArmor {
-  border-color: #3b82f6 !important;
+  border: 2px solid #3b82f6 !important;
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.5),
+    -6px -6px 12px rgba(255, 255, 255, 0.03) !important;
 }
 
 [data-theme="dark"] div.equipmentCardArmor:hover,
 [data-theme="dark"] .equipmentCardArmor.equipmentCardArmor:hover {
   border-color: #60a5fa !important;
-  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.6),
+    -8px -8px 16px rgba(255, 255, 255, 0.05),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.08) !important;
 }
 
 [data-theme="dark"] button.bulkButton,
 [data-theme="dark"] .bulkButton.bulkButton {
   background-color: #334155 !important;
-  border-color: #475569 !important;
+  border: none !important;
   color: #e2e8f0 !important;
+  box-shadow:
+    4px 4px 8px rgba(0, 0, 0, 0.4),
+    -4px -4px 8px rgba(255, 255, 255, 0.03) !important;
 }
 
 [data-theme="dark"] button.bulkButton:hover:not(:disabled),
 [data-theme="dark"] .bulkButton.bulkButton:hover:not(:disabled) {
-  border-color: #8b5cf6 !important;
   background-color: rgba(139, 92, 246, 0.2) !important;
   color: #e2e8f0 !important;
+  box-shadow:
+    6px 6px 12px rgba(139, 92, 246, 0.25),
+    -6px -6px 12px rgba(255, 255, 255, 0.05),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme="dark"] button.bulkButton:disabled,
@@ -1127,15 +1398,33 @@ button.bulkButton:disabled,
 }
 
 [data-theme="dark"] .materialCard {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.4),
+    -6px -6px 12px rgba(255, 255, 255, 0.03);
 }
 
 [data-theme="dark"] .materialCard:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.5),
+    -8px -8px 16px rgba(255, 255, 255, 0.05),
+    inset 1px 1px 3px rgba(255, 255, 255, 0.08);
 }
 
 [data-theme="dark"] .materialCardBound {
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+  border: 2px solid #6366f1;
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.5),
+    -6px -6px 12px rgba(255, 255, 255, 0.03),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .materialCardEnabled {
+  border: 2px solid #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.5),
+    -6px -6px 12px rgba(255, 255, 255, 0.03),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="dark"] .totalCostCard {
@@ -1143,12 +1432,19 @@ button.bulkButton:disabled,
 }
 
 [data-theme="dark"] .characterInfo {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+  border: 2px solid var(--border-color);
+  box-shadow:
+    10px 10px 20px rgba(0, 0, 0, 0.5),
+    -10px -10px 20px rgba(255, 255, 255, 0.03),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
 }
 
 [data-theme="dark"] .characterImageWrapper {
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.5),
+    -6px -6px 12px rgba(255, 255, 255, 0.03),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.08);
 }
 
 [data-theme="dark"] .levelBadge {
