@@ -7,7 +7,6 @@ export const raids = [
       { gate: 1, gold: 21000, moreGold: 6720 },
       { gate: 2, gold: 33000, moreGold: 10560 },
     ],
-    disabled: true, // 1월 7일 업데이트 예정
   },
   {
     name: '세르카 하드',
@@ -17,7 +16,6 @@ export const raids = [
       { gate: 1, gold: 17500, moreGold: 5600 },
       { gate: 2, gold: 26500, moreGold: 8480 },
     ],
-    disabled: true, // 1월 7일 업데이트 예정
   },
   {
     name: '세르카 노말',
@@ -27,7 +25,6 @@ export const raids = [
       { gate: 1, gold: 14000, moreGold: 4480 },
       { gate: 2, gold: 21000, moreGold: 6720 },
     ],
-    disabled: true, // 1월 7일 업데이트 예정
   },
   {
     name: '종막 하드',

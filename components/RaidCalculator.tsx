@@ -68,7 +68,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
     selectedCharacters.forEach(character => {
       initialSelection[character.characterName] = {};
       const characterRaids = raids
-        .filter(raid => character.itemLevel >= raid.level && !raid.disabled)
+        .filter(raid => character.itemLevel >= raid.level)
         .sort((a, b) => b.level - a.level);
 
       const selectedGroups: string[] = [];
@@ -88,8 +88,13 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
           continue;
         }
 
-        // 종막 또는 4막인 경우 더보기o (골드 적게)로 체크
-        if (groupName === '종막' || groupName === '4막') {
+        // 최대 3개 그룹까지만 선택
+        if (selectedGroups.length >= 3) {
+          break;
+        }
+
+        // 세르카, 종막, 4막인 경우 더보기o (골드 적게)로 체크 (코어 파밍 가능)
+        if (groupName === '세르카' || groupName === '종막' || groupName === '4막') {
           selectedGroups.push(groupName);
           for (const gate of raid.gates) {
             initialSelection[character.characterName][raid.name][gate.gate] = 'withoutMore';
@@ -101,12 +106,10 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
             initialSelection[character.characterName][raid.name][gate.gate] = 'withMore';
           }
         } else {
-          // 기존 로직: 최대 3개 그룹까지
-          if (selectedGroups.length < 3) {
-            selectedGroups.push(groupName);
-            for (const gate of raid.gates) {
-              initialSelection[character.characterName][raid.name][gate.gate] = 'withMore';
-            }
+          // 나머지 레이드는 클리어 골드로 체크
+          selectedGroups.push(groupName);
+          for (const gate of raid.gates) {
+            initialSelection[character.characterName][raid.name][gate.gate] = 'withMore';
           }
         }
       }
@@ -272,7 +275,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
     return false;
   };
 
-  // 캐릭터별 코어 파밍 더보기 토글 (종막/4막 일괄 변경)
+  // 캐릭터별 코어 파밍 더보기 토글 (세르카/종막/4막 일괄 변경)
   const toggleCoreFarmingMore = (characterName: string) => {
     const newEnabled = !coreFarmingMoreEnabled[characterName];
 
@@ -284,10 +287,10 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
     setGateSelection(prev => {
       const newGateSelection = JSON.parse(JSON.stringify(prev));
 
-      // 해당 캐릭터의 종막과 4막 관문을 변경
+      // 해당 캐릭터의 세르카, 종막, 4막 관문을 변경
       for (const raidName in newGateSelection[characterName]) {
-        // 종막 또는 4막인 경우
-        if (raidName.startsWith('종막') || raidName.startsWith('4막')) {
+        // 세르카, 종막, 4막인 경우 (코어 파밍 가능 레이드)
+        if (raidName.startsWith('세르카') || raidName.startsWith('종막') || raidName.startsWith('4막')) {
           for (const gate in newGateSelection[characterName][raidName]) {
             const currentSelection = newGateSelection[characterName][raidName][gate];
 
@@ -402,8 +405,8 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
 
                     {/* 오른쪽: 코어 파밍 버튼 + 골드 */}
                     <div className="d-flex align-items-center gap-2" style={{ flexShrink: 0 }}>
-                      {/* 코어 파밍 더보기 토글 버튼 (1700 레벨 이상만) */}
-                      {character.itemLevel >= 1700 && (
+                      {/* 코어 파밍 더보기 토글 버튼 (1710 레벨 이상만 - 세르카/종막/4막 가능) */}
+                      {character.itemLevel >= 1710 && (
                         <Button
                           variant={coreFarmingMoreEnabled[character.characterName] ? "primary" : "secondary"}
                           size="sm"
@@ -499,15 +502,12 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                               const isSelected = hasAnyGateSelected(character.characterName, raid.name);
                               return (
                               <Accordion.Item eventKey={raid.name} key={raid.name} className="raid-difficulty-accordion">
-                                <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.4rem' : '0.6rem', opacity: raid.disabled ? 0.5 : 1 }}>
+                                <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.4rem' : '0.6rem' }}>
                                   <span style={{ fontWeight: isSelected ? 600 : 400 }}>{raid.name}</span>
                                   <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.68rem' }}>
                                     {raid.level}
                                   </Badge>
-                                  {raid.disabled && (
-                                    <Badge bg="warning" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.65rem' }}>1/7 출시</Badge>
-                                  )}
-                                  {isSelected && !raid.disabled && (
+                                  {isSelected && (
                                     <Badge bg="success" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.65rem' }}>✓</Badge>
                                   )}
                                 </Accordion.Header>
@@ -521,8 +521,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                                             type="checkbox"
                                             label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>클골</span>}
                                             checked={getHeaderCheckState(character.characterName, raid.name, 'withMore')}
-                                            onChange={() => !raid.disabled && handleHeaderChange(character.characterName, raid.name, 'withMore')}
-                                            disabled={raid.disabled}
+                                            onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')}
                                             style={{ marginBottom: 0 }}
                                           />
                                         </th>
@@ -531,8 +530,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                                             type="checkbox"
                                             label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>더보기</span>}
                                             checked={getHeaderCheckState(character.characterName, raid.name, 'withoutMore')}
-                                            onChange={() => !raid.disabled && handleHeaderChange(character.characterName, raid.name, 'withoutMore')}
-                                            disabled={raid.disabled}
+                                            onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')}
                                             style={{ marginBottom: 0 }}
                                           />
                                         </th>
@@ -543,8 +541,8 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                                         <tr key={`${raid.name}-${gate.gate}`}>
                                           <td style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', whiteSpace: 'nowrap' }}>{gate.gate}관</td>
                                           <td
-                                            onClick={() => !raid.disabled && handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}
-                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: raid.disabled ? 'not-allowed' : 'pointer' }}
+                                            onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}
+                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: 'pointer' }}
                                           >
                                             <Form.Check
                                               type="radio"
@@ -553,13 +551,12 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                                               label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>{gate.gold.toLocaleString()}</span>}
                                               checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withMore'}
                                               onChange={() => {}}
-                                              disabled={raid.disabled}
                                               style={{ marginBottom: 0 }}
                                             />
                                           </td>
                                           <td
-                                            onClick={() => !raid.disabled && handleGateChange(character.characterName, raid.name, gate.gate, 'withoutMore')}
-                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: raid.disabled ? 'not-allowed' : 'pointer' }}
+                                            onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withoutMore')}
+                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: 'pointer' }}
                                           >
                                             <Form.Check
                                               type="radio"
@@ -568,7 +565,6 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                                               label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>{(gate.gold - gate.moreGold).toLocaleString()}</span>}
                                               checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withoutMore'}
                                               onChange={() => {}}
-                                              disabled={raid.disabled}
                                               style={{ marginBottom: 0 }}
                                             />
                                           </td>
@@ -770,21 +766,25 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
             {(() => {
               const totalGold = calculateTotalGold();
               if (totalGold > 0) {
-                // 항상 더보기 미사용 기준(Full Reward)으로 계산
-                const ranking = calculateRanking(totalGold, false);
+                // 더보기 미사용 기준(Full Reward)으로 계산
+                const ranking = calculateRanking(totalGold);
 
                 // 퍼센트별 색상 지정 (가시성 좋은 색상)
                 let percentColor = '#6c757d'; // 회색 (기본)
-                if (ranking <= 0.01) {
-                  percentColor = '#dc3545'; // 진한 빨강 (최최상위 0.01%)
-                } else if (ranking <= 7.6) {
-                  percentColor = '#fd7e14'; // 주황 (최상위)
-                } else if (ranking <= 15.0) {
-                  percentColor = '#ffc107'; // 황금색 (상위)
-                } else if (ranking <= 23.9) {
-                  percentColor = '#0d6efd'; // 파랑 (중상위)
-                } else if (ranking <= 60.5) {
-                  percentColor = '#198754'; // 초록 (중위)
+                if (ranking <= 0.1) {
+                  percentColor = '#dc3545'; // 진한 빨강 (신계 0.1%)
+                } else if (ranking <= 1) {
+                  percentColor = '#dc3545'; // 진한 빨강 (최상위 1%)
+                } else if (ranking <= 5) {
+                  percentColor = '#fd7e14'; // 주황 (상위권 5%)
+                } else if (ranking <= 10) {
+                  percentColor = '#fd7e14'; // 주황 (고인물 10%)
+                } else if (ranking <= 20) {
+                  percentColor = '#ffc107'; // 황금색 (준상위 20%)
+                } else if (ranking <= 50) {
+                  percentColor = '#0d6efd'; // 파랑 (중위 50%)
+                } else if (ranking <= 70) {
+                  percentColor = '#198754'; // 초록 (라이트 70%)
                 }
 
                 return (

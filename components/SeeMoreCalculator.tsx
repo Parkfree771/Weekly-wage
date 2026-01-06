@@ -164,30 +164,12 @@ const SeeMoreCalculator: React.FC = () => {
                 <div className={styles.overlay} />
               </div>
               <div className={styles.cardContent}>
-                {/* [수정 포인트] 
-                    1. 세르카인 경우: 특별한 이름과 출시일 표시 
-                    2. 일반 레이드인 경우: 기존 방식대로 표시
-                    3. 공통: style={{ color: '#fff' }}를 추가하여 라이트모드에서도 흰색 글씨 강제
-                */}
-                {isCerka ? (
-                  <>
-                    <h3 className={styles.raidName} style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
-                      {raid.name}
-                    </h3>
-                    <p className={styles.raidLevel} style={{ color: '#f0f0f0', opacity: 0.9, marginTop: '4px', fontWeight: 600 }}>
-                      1월 7일 출시 예정
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h3 className={styles.raidName} style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
-                      {raid.name} {raid.disabled && !isCerka && '(1/7 출시)'}
-                    </h3>
-                    <p className={styles.raidLevel} style={{ color: '#f0f0f0', opacity: 0.9 }}>
-                      Lv. {raid.level}
-                    </p>
-                  </>
-                )}
+                <h3 className={styles.raidName} style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                  {raid.name}
+                </h3>
+                <p className={styles.raidLevel} style={{ color: '#f0f0f0', opacity: 0.9 }}>
+                  Lv. {raid.level}
+                </p>
                 
                 {profitData[raid.name] && (
                   <div className={`${styles.goldBadge} ${isProfit ? styles.profitBadge : isLoss ? styles.lossBadge : styles.neutralBadge}`}>
