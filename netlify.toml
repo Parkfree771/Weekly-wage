@@ -9,3 +9,6 @@
   node_bundler = "esbuild"
   # 주의: .env.local 파일 포함 설정은 배포 에러의 주원인이므로 제거했습니다.
   # 환경 변수는 Netlify 사이트 설정(Environment variables)에 등록해야 합니다.
+
+  [build.environment]
+  NODE_VERSION = "20"
