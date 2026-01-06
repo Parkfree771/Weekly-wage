@@ -32,7 +32,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
 
   // 레이드 그룹명과 이미지 파일명 매핑
   const raidImages: { [key: string]: string } = {
-    '세르카': '/cerka.webp',
+    '세르카': '/cerka2.webp',
     '종막': '/abrelshud.webp',
     '4막': '/illiakan.webp',
     '3막': '/ivory-tower.webp',

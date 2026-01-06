@@ -69,8 +69,6 @@ type ItemSelectorProps = {
   selectedItem: TrackedItem | null;
   onSelectCategory: (category: ItemCategory) => void;
   onSelectItem: (item: TrackedItem) => void;
-  surgeCategories?: Set<ItemCategory>;
-  surgeItems?: Set<string>;
 };
 
 export default function ItemSelector({
@@ -78,8 +76,6 @@ export default function ItemSelector({
   selectedItem,
   onSelectCategory,
   onSelectItem,
-  surgeCategories = new Set(),
-  surgeItems = new Set(),
 }: ItemSelectorProps) {
   const { theme } = useTheme();
   const [showItems, setShowItems] = useState(true);
@@ -130,14 +126,12 @@ export default function ItemSelector({
       <div className="mb-3 d-none d-md-block">
         <div className="d-flex gap-3 justify-content-center" style={{ maxWidth: '1400px', margin: '0 auto' }}>
           {CATEGORY_ORDER.map((cat) => {
-            const isSurge = surgeCategories.has(cat);
             const categoryStyle = CATEGORY_STYLES[cat];
 
             return (
             <button
               key={cat}
               onClick={() => handleCategoryClick(cat)}
-              className={isSurge ? 'surge-glow' : ''}
               style={{
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '1rem',
@@ -177,14 +171,12 @@ export default function ItemSelector({
       <div className="mb-2 d-md-none">
         <div className="d-flex gap-2" style={{ overflowX: 'auto', paddingBottom: '8px' }}>
           {CATEGORY_ORDER.map((cat) => {
-            const isSurge = surgeCategories.has(cat);
             const categoryStyle = CATEGORY_STYLES[cat];
 
             return (
             <button
               key={cat}
               onClick={() => handleMobileCategoryClick(cat)}
-              className={isSurge ? 'surge-glow' : ''}
               style={{
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '0.8rem',
@@ -217,13 +209,11 @@ export default function ItemSelector({
         }}>
           {categoryItems.map((item) => {
             const categoryStyle = CATEGORY_STYLES[selectedCategory];
-            const isItemSurge = surgeItems.has(item.id);
 
             return (
               <button
                 key={item.id}
                 onClick={() => onSelectItem(item)}
-                className={isItemSurge ? 'surge-glow' : ''}
                 style={{
                   backgroundColor: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
                   borderRadius: '10px',
@@ -319,13 +309,11 @@ export default function ItemSelector({
             {bottomSheetItems.map((item) => {
               const categoryStyle = CATEGORY_STYLES[bottomSheetCategory];
               const isSelected = selectedItem.id === item.id && selectedCategory === bottomSheetCategory;
-              const isItemSurge = surgeItems.has(item.id);
 
               return (
                 <button
                   key={item.id}
                   onClick={() => handleBottomSheetItemSelect(item)}
-                  className={isItemSurge ? 'surge-glow' : ''}
                   style={{
                     backgroundColor: isSelected
                       ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
