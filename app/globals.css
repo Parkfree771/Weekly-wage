@@ -839,3 +839,66 @@ textarea:-ms-input-placeholder {
     color: var(--text-primary) !important;
     background-color: var(--card-header-bg) !important;
 }
+
+/* ==========================================================================
+   [급등 아이템] 카테고리 버튼 Glow 애니메이션
+   * 20% 이상 급등한 아이템이 있는 카테고리에 부드러운 빛나는 효과
+   ========================================================================== */
+
+/* 그라데이션 핑 애니메이션 정의 (크기가 커지며 투명해짐) */
+/* 1. 통통 튀는 점프 (기존 애니메이션 유지) */
+/* 1. 통통 튀는 점프 (본체) */
+@keyframes elastic-jump {
+  0%, 80% { transform: scale(1, 1) translateY(0); }
+  85% { transform: scale(1.05, 0.95) translateY(0); }
+  90% { transform: scale(0.95, 1.05) translateY(-8px); }
+  95% { transform: scale(1.05, 0.95) translateY(0); }
+  100% { transform: scale(1, 1) translateY(0); }
+}
+
+/* 2. 이미지 흔들림 효과 (살짝 회전) */
+@keyframes image-wiggle {
+  0%, 100% { transform: rotate(10deg); }
+  50% { transform: rotate(-10deg); }
+}
+
+.surge-glow {
+  position: relative; /* 기준점 */
+  display: inline-block;
+  animation: elastic-jump 2.5s cubic-bezier(0.28, 0.84, 0.42, 1) infinite;
+}
+
+/* 3. hot.png 이미지 넣기 */
+.surge-glow::after {
+  content: ''; /* 텍스트 대신 빈 공간을 만듦 */
+  display: block; /* 크기를 갖기 위해 필수 */
+
+  /* [중요] 이미지 경로: public 폴더 안에 있으면 슬래시(/)로 시작하면 됩니다 */
+  /* ✅ 반드시 슬래시(/)를 써야 합니다 */
+background-image: url('/hot2.png');
+
+  /* 이미지 크기가 박스에 딱 맞게 조절됨 */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  /* 이미지 사이즈 조절 (여기서 크기 결정) */
+  width: 24px;
+  height: 24px;
+
+  /* 위치 잡기 (오른쪽 상단 모서리) */
+  position: absolute;
+  top: -12px;  /* 위로 튀어나올 정도 */
+  right: -12px; /* 오른쪽으로 튀어나올 정도 */
+
+  /* 클릭 방해 금지 */
+  pointer-events: none;
+
+}
+
+/* 모바일에서 hot2.png 이미지 숨기기 (애니메이션은 유지됨) */
+@media (max-width: 768px) {
+  .surge-glow::after {
+    display: none;
+  }
+}

@@ -69,6 +69,8 @@ type ItemSelectorProps = {
   selectedItem: TrackedItem | null;
   onSelectCategory: (category: ItemCategory) => void;
   onSelectItem: (item: TrackedItem) => void;
+  surgeCategories?: Set<ItemCategory>;
+  surgeItems?: Set<string>;
 };
 
 export default function ItemSelector({
@@ -76,6 +78,8 @@ export default function ItemSelector({
   selectedItem,
   onSelectCategory,
   onSelectItem,
+  surgeCategories = new Set(),
+  surgeItems = new Set(),
 }: ItemSelectorProps) {
   const { theme } = useTheme();
   const [showItems, setShowItems] = useState(true);
@@ -125,18 +129,23 @@ export default function ItemSelector({
       {/* 카테고리 탭 - 데스크톱 */}
       <div className="mb-3 d-none d-md-block">
         <div className="d-flex gap-3 justify-content-center" style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          {CATEGORY_ORDER.map((cat) => (
+          {CATEGORY_ORDER.map((cat) => {
+            const isSurge = surgeCategories.has(cat);
+            const categoryStyle = CATEGORY_STYLES[cat];
+
+            return (
             <button
               key={cat}
               onClick={() => handleCategoryClick(cat)}
+              className={isSurge ? 'surge-glow' : ''}
               style={{
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '1rem',
                 padding: '12px 24px',
-                backgroundColor: selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkBg : CATEGORY_STYLES[cat].lightBg) : 'var(--card-bg)',
-                border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].color) : 'var(--border-color)'}`,
+                backgroundColor: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
+                border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
                 borderRadius: '10px',
-                color: selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].darkColor) : 'var(--text-secondary)',
+                color: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer',
                 letterSpacing: '0.3px'
@@ -157,36 +166,43 @@ export default function ItemSelector({
                 }
               }}
             >
-              {CATEGORY_STYLES[cat].label}
+              {categoryStyle.label}
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       {/* 카테고리 탭 - 모바일 */}
       <div className="mb-2 d-md-none">
         <div className="d-flex gap-2" style={{ overflowX: 'auto', paddingBottom: '8px' }}>
-          {CATEGORY_ORDER.map((cat) => (
+          {CATEGORY_ORDER.map((cat) => {
+            const isSurge = surgeCategories.has(cat);
+            const categoryStyle = CATEGORY_STYLES[cat];
+
+            return (
             <button
               key={cat}
               onClick={() => handleMobileCategoryClick(cat)}
+              className={isSurge ? 'surge-glow' : ''}
               style={{
                 fontWeight: selectedCategory === cat ? '700' : '600',
                 fontSize: '0.8rem',
                 padding: '8px 12px',
-                backgroundColor: selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkBg : CATEGORY_STYLES[cat].lightBg) : 'var(--card-bg)',
-                border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].darkColor) : 'var(--border-color)'}`,
+                backgroundColor: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
+                border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--border-color)'}`,
                 borderRadius: '8px',
-                color: selectedCategory === cat ? (theme === 'dark' ? CATEGORY_STYLES[cat].darkThemeColor : CATEGORY_STYLES[cat].darkColor) : 'var(--text-secondary)',
+                color: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 flexShrink: 0
               }}
             >
-              {CATEGORY_STYLES[cat].label}
+              {categoryStyle.label}
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -201,11 +217,13 @@ export default function ItemSelector({
         }}>
           {categoryItems.map((item) => {
             const categoryStyle = CATEGORY_STYLES[selectedCategory];
+            const isItemSurge = surgeItems.has(item.id);
 
             return (
               <button
                 key={item.id}
                 onClick={() => onSelectItem(item)}
+                className={isItemSurge ? 'surge-glow' : ''}
                 style={{
                   backgroundColor: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
                   borderRadius: '10px',
@@ -301,11 +319,13 @@ export default function ItemSelector({
             {bottomSheetItems.map((item) => {
               const categoryStyle = CATEGORY_STYLES[bottomSheetCategory];
               const isSelected = selectedItem.id === item.id && selectedCategory === bottomSheetCategory;
+              const isItemSurge = surgeItems.has(item.id);
 
               return (
                 <button
                   key={item.id}
                   onClick={() => handleBottomSheetItemSelect(item)}
+                  className={isItemSurge ? 'surge-glow' : ''}
                   style={{
                     backgroundColor: isSelected
                       ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)

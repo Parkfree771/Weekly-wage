@@ -7,6 +7,9 @@ import ItemSelector, { CATEGORY_STYLES } from './ItemSelector';
 import CompactPriceChart from './CompactPriceChart';
 import { PriceContext } from './PriceComparisonStats';
 
+// 카테고리 목록
+const ALL_CATEGORIES: ItemCategory[] = ['gem', 'refine', 'refine_additional', 'engraving', 'accessory', 'jewel'];
+
 type PriceEntry = {
   price: number;
   timestamp: string;
@@ -22,6 +25,8 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('1m');
+  const [surgeCategories, setSurgeCategories] = useState<Set<ItemCategory>>(new Set());
+  const [surgeItems, setSurgeItems] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const categoryItems = getItemsByCategory(selectedCategory);
@@ -37,6 +42,44 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
 
     setSelectedCategory(defaultCategory);
     setSelectedItem(defaultItem);
+  }, []);
+
+  // 10% 이상 급등한 아이템이 있는 카테고리 및 개별 아이템 감지
+  useEffect(() => {
+    const checkSurgeItems = async () => {
+      const { getItemPriceHistory } = await import('@/lib/price-history-client');
+      const surgeCategories = new Set<ItemCategory>();
+      const surgeItemIds = new Set<string>();
+
+      for (const category of ALL_CATEGORIES) {
+        const items = getItemsByCategory(category);
+
+        // 모든 아이템 체크 (개별 아이템 버튼에도 효과 적용)
+        for (const item of items) {
+          try {
+            const priceHistory = await getItemPriceHistory(item.id, 2); // 최근 2일만 가져오기
+
+            if (priceHistory.length >= 2) {
+              const today = priceHistory[priceHistory.length - 1].price;
+              const yesterday = priceHistory[priceHistory.length - 2].price;
+              const changeRate = ((today - yesterday) / yesterday) * 100;
+
+              if (changeRate >= 20) {
+                surgeCategories.add(category);
+                surgeItemIds.add(item.id);
+              }
+            }
+          } catch (err) {
+            console.error(`Error checking surge for ${item.name}:`, err);
+          }
+        }
+      }
+
+      setSurgeCategories(surgeCategories);
+      setSurgeItems(surgeItemIds);
+    };
+
+    checkSurgeItems();
   }, []);
 
   useEffect(() => {
@@ -111,6 +154,8 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
           selectedItem={selectedItem}
           onSelectCategory={handleSelectCategory}
           onSelectItem={handleSelectItem}
+          surgeCategories={surgeCategories}
+          surgeItems={surgeItems}
         />
         <CompactPriceChart
           selectedItem={selectedItem}
