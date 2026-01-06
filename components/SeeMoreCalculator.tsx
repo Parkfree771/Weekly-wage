@@ -8,6 +8,18 @@ import { raidRewards, MaterialReward, MATERIAL_IDS, MATERIAL_NAMES, MATERIAL_BUN
 import { fetchPriceData } from '@/lib/price-history-client';
 import styles from './SeeMoreCalculator.module.css';
 
+// 재료 이름에 따른 이미지 파일명 매핑
+const getMaterialImage = (itemName: string): string => {
+  const imageMap: { [key: string]: string } = {
+    '운명의 파괴석': 'destiny-destruction-stone.webp',
+    '운명의 수호석': 'destiny-guardian-stone.webp',
+    '운명의 파편': 'destiny-shard-bag-large.webp',
+    '운명의 돌파석': 'destiny-breakthrough-stone.webp',
+  };
+
+  return imageMap[itemName] || 'default-material.webp';
+};
+
 type RaidProfitData = {
   raidName: string;
   gate: number;
@@ -224,139 +236,65 @@ const SeeMoreCalculator: React.FC = () => {
             {selectedRaid} 더보기 보상
           </Card.Header>
           <Card.Body>
-            {profitData[selectedRaid].map((gateData, index) => (
-              <div key={index} className={`${styles.gateSection} ${gateData.profitLoss > 0 ? styles.profit : gateData.profitLoss < 0 ? styles.loss : styles.neutral}`} style={{ borderColor: 'var(--border-color)' }}>
-                <h6 className="mb-3" style={{ color: 'var(--text-primary)' }}>
-                  {gateData.gate}관문 
-                  <Badge 
+            <div className={styles.gatesGrid}>
+              {profitData[selectedRaid].map((gateData, index) => (
+                <div key={index} className={`${styles.gateSection} ${gateData.profitLoss > 0 ? styles.profit : gateData.profitLoss < 0 ? styles.loss : styles.neutral}`}>
+                <h6 className={`mb-2 ${styles.gateSectionHeader}`}>
+                  {gateData.gate}관문
+                  <Badge
                     bg={gateData.profitLoss > 0 ? 'success' : gateData.profitLoss < 0 ? 'danger' : 'secondary'}
                     className="ms-2"
                   >
                     {gateData.profitLoss > 0 ? '+' : ''}{Math.round(gateData.profitLoss).toLocaleString()}골드
                   </Badge>
                 </h6>
-                
-                <Row className="mb-3" style={{ color: 'var(--text-secondary)' }}>
-                  <Col md={4}>
-                    <strong>더보기 비용:</strong> {gateData.moreGold.toLocaleString()}골드
-                  </Col>
-                  <Col md={4}>
-                    <strong>재료 가치:</strong> {Math.round(gateData.totalValue).toLocaleString()}골드
-                  </Col>
-                  <Col md={4}>
-                    <strong className={gateData.profitLoss > 0 ? 'text-success' : gateData.profitLoss < 0 ? 'text-danger' : 'text-secondary'}>
-                      {gateData.profitLoss > 0 ? '이익' : gateData.profitLoss < 0 ? '손실' : '중립'}: 
-                      {gateData.profitLoss > 0 ? '+' : ''}{Math.round(gateData.profitLoss).toLocaleString()}골드
-                    </strong>
-                  </Col>
-                </Row>
+
+                <div className={`mb-2 ${styles.gateSummaryRow}`}>
+                  <strong>더보기비용:</strong> {gateData.moreGold.toLocaleString()}골드
+                  <strong>재료 가치:</strong> {Math.round(gateData.totalValue).toLocaleString()}골드
+                  <strong>손익:</strong> {Math.round(gateData.totalValue).toLocaleString()} - {gateData.moreGold.toLocaleString()} = <span className={gateData.profitLoss > 0 ? 'text-success' : gateData.profitLoss < 0 ? 'text-danger' : 'text-secondary'} style={{ fontWeight: 700 }}>
+                    {gateData.profitLoss > 0 ? '+' : ''}{Math.round(gateData.profitLoss).toLocaleString()}골드
+                  </span>
+                </div>
                 
                 <Table
-
                   hover
-
                   size="sm"
-
-                  style={{
-
-                    color: 'var(--text-primary)',
-
-                    marginBottom: 0,
-
-                    borderCollapse: 'separate',
-
-                    borderSpacing: 0,
-
-                    overflow: 'hidden',
-
-                    borderRadius: '8px',
-
-                    border: '1px solid var(--border-color)'
-
-                  }}
-
+                  className={styles.materialTable}
                 >
                   <thead>
-                    <tr style={{
-                      backgroundColor: 'var(--card-header-bg)',
-                      borderBottom: '2px solid var(--border-color)'
-                    }}>
-                      <th style={{
-                        padding: '0.75rem 1rem',
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        color: 'var(--text-primary)',
-                        borderRight: '1px solid var(--border-color)'
-                      }}>재료명</th>
-                      <th style={{
-                        padding: '0.75rem 1rem',
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        color: 'var(--text-primary)',
-                        borderRight: '1px solid var(--border-color)',
-                        textAlign: 'right'
-                      }}>수량</th>
-                      <th style={{
-                        padding: '0.75rem 1rem',
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        color: 'var(--text-primary)',
-                        borderRight: '1px solid var(--border-color)',
-                        textAlign: 'right'
-                      }}>단가</th>
-                      <th style={{
-                        padding: '0.75rem 1rem',
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        color: 'var(--text-primary)',
-                        textAlign: 'right'
-                      }}>총 가치</th>
+                    <tr className={styles.tableHeader}>
+                      <th className={styles.tableHeaderCell}>재료</th>
+                      <th className={`${styles.tableHeaderCell} ${styles.tableHeaderCellRight}`}>수량</th>
+                      <th className={`${styles.tableHeaderCell} ${styles.tableHeaderCellRight}`}>단가</th>
+                      <th className={`${styles.tableHeaderCell} ${styles.tableHeaderCellRight}`}>총 가치</th>
                     </tr>
                   </thead>
                   <tbody>
                     {gateData.materials.map((material, matIndex) => (
-                      <tr
-                        key={matIndex}
-                        style={{
-                          backgroundColor: matIndex % 2 === 0 ? 'transparent' : 'var(--table-row-alternate)',
-                          transition: 'background-color 0.2s ease'
-                        }}
-                      >
-                        <td style={{
-                          padding: '0.65rem 1rem',
-                          fontSize: '0.875rem',
-                          borderRight: '1px solid var(--border-color)',
-                          borderTop: matIndex === 0 ? 'none' : '1px solid var(--border-color)'
-                        }}>{material.itemName}</td>
-                        <td style={{
-                          padding: '0.65rem 1rem',
-                          fontSize: '0.875rem',
-                          borderRight: '1px solid var(--border-color)',
-                          borderTop: matIndex === 0 ? 'none' : '1px solid var(--border-color)',
-                          textAlign: 'right'
-                        }}>{material.amount.toLocaleString()}</td>
-                        <td style={{
-                          padding: '0.65rem 1rem',
-                          fontSize: '0.875rem',
-                          borderRight: '1px solid var(--border-color)',
-                          borderTop: matIndex === 0 ? 'none' : '1px solid var(--border-color)',
-                          textAlign: 'right',
-                          fontWeight: 500
-                        }}>{material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4)}골드</td>
-                        <td style={{
-                          padding: '0.65rem 1rem',
-                          fontSize: '0.875rem',
-                          borderTop: matIndex === 0 ? 'none' : '1px solid var(--border-color)',
-                          textAlign: 'right',
-                          fontWeight: 600,
-                          color: 'var(--brand-primary)'
-                        }}>{Math.round(material.totalPrice).toLocaleString()}골드</td>
+                      <tr key={matIndex} className={styles.tableRow}>
+                        <td className={styles.tableCell}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Image
+                              src={`/${getMaterialImage(material.itemName)}`}
+                              alt={material.itemName}
+                              width={32}
+                              height={32}
+                              className={styles.materialIcon}
+                            />
+                            <span>{material.itemName}</span>
+                          </div>
+                        </td>
+                        <td className={`${styles.tableCell} ${styles.tableCellRight}`}>{material.amount.toLocaleString()}</td>
+                        <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellPrice}`}>{material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4)}골드</td>
+                        <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellTotal}`}>{Math.round(material.totalPrice).toLocaleString()}골드</td>
                       </tr>
                     ))}
                   </tbody>
                 </Table>
-              </div>
-            ))}
+                </div>
+              ))}
+            </div>
           </Card.Body>
         </Card>
       )}

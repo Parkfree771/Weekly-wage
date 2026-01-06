@@ -45,6 +45,9 @@
   --neutral-color: #6b7280;
   --neutral-bg: rgba(107, 114, 128, 0.1);
 
+  /* Table Colors */
+  --table-row-alternate: rgba(0, 0, 0, 0.02);
+
   /* Accordion */
   --accordion-icon-invert: 0;
 }
@@ -91,6 +94,9 @@
   --loss-bg: rgba(248, 113, 113, 0.15);
   --neutral-color: #9ca3af;
   --neutral-bg: rgba(156, 163, 175, 0.15);
+
+  /* Table Colors */
+  --table-row-alternate: rgba(255, 255, 255, 0.05);
 
   /* Accordion */
   --accordion-icon-invert: 1;
@@ -653,66 +659,183 @@ textarea:-ms-input-placeholder {
 
 
 /* ==========================================================================
-   [최종] 테이블 강제 투명화 (그림자/Accent 변수 제거)
+   [일반 캐릭터 1710 미만] 테이블 스타일 (CSS 변수 사용)
+   * 라이트/다크 모드에 따라 자동으로 색상 변경
    ========================================================================== */
 
-/* ==========================================================================
-   [수정] 아코디언 및 테이블 강제 투명화 (최종)
-   * 앞에 .raid-calculator-page를 붙여서 우선순위를 높였습니다.
-   ========================================================================== */
-
-/* 1. 아코디언 본문 배경 날리기 */
+/* 1. 일반 캐릭터 아코디언 본문 배경 */
 .raid-calculator-page .accordion-body {
     background-color: transparent !important;
-    color: white !important;
+    color: var(--text-primary) !important;
 }
 
-/* 2. 테이블 전체 투명화 (가장 강력한 설정) */
+/* 2. 일반 캐릭터 테이블 스타일 (CSS 변수 사용) */
 .raid-calculator-page .table,
 .raid-calculator-page .table > tbody,
 .raid-calculator-page .table > thead,
 .raid-calculator-page .table > tr,
 .raid-calculator-page .table > :not(caption) > * > * {
     background-color: transparent !important;
-    
+
     /* 부트스트랩 줄무늬(Striped) 배경 변수 제거 */
     --bs-table-bg: transparent !important;
-    --bs-table-accent-bg: transparent !important; 
+    --bs-table-accent-bg: transparent !important;
+    --bs-table-striped-bg: transparent !important;
+    --bs-table-hover-bg: rgba(99, 102, 241, 0.05) !important;
+
+    color: var(--text-primary) !important;
+    box-shadow: none !important;
+    border-color: var(--border-color) !important;
+}
+
+/* 3. 일반 캐릭터 관문(th), 클골/더보기(td) 텍스트 및 배경 */
+.raid-calculator-page .table th,
+.raid-calculator-page .table td {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* 4. 일반 캐릭터 체크박스/라디오 버튼 옆 글씨(Label, Span) */
+.raid-calculator-page .table .form-check-label,
+.raid-calculator-page .table label,
+.raid-calculator-page .table span {
+    color: var(--text-primary) !important;
+}
+
+/* 5. 일반 캐릭터 input 요소 주변 텍스트 처리 */
+.raid-calculator-page .table .form-check {
+    margin-bottom: 0;
+}
+
+/* 6. 일반 캐릭터 테이블 줄무늬(Striped) */
+.raid-calculator-page .table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    --bs-table-accent-bg: transparent !important;
+    color: var(--text-primary) !important;
+}
+
+/* 7. 일반 캐릭터 다크 모드 호버 효과 */
+[data-theme="dark"] .raid-calculator-page .table {
+    --bs-table-hover-bg: rgba(99, 102, 241, 0.1) !important;
+}
+
+/* ==========================================================================
+   [세르카 캐릭터 1710 이상] 테이블 강제 투명화 + 흰색 글씨
+   * 세르카 배경이 검정색이므로 흰색 글씨 필요
+   ========================================================================== */
+
+/* 1. 세르카 캐릭터 아코디언 본문 배경 */
+.raid-calculator-page .cerka-character .accordion-body {
+    background-color: transparent !important;
+    color: white !important;
+}
+
+/* 2. 세르카 캐릭터 테이블 전체 투명화 (가장 강력한 설정) */
+.raid-calculator-page .cerka-character .table,
+.raid-calculator-page .cerka-character .table > tbody,
+.raid-calculator-page .cerka-character .table > thead,
+.raid-calculator-page .cerka-character .table > tr,
+.raid-calculator-page .cerka-character .table > :not(caption) > * > * {
+    background-color: transparent !important;
+
+    /* 부트스트랩 줄무늬(Striped) 배경 변수 제거 */
+    --bs-table-bg: transparent !important;
+    --bs-table-accent-bg: transparent !important;
     --bs-table-striped-bg: transparent !important;
     --bs-table-hover-bg: rgba(255, 255, 255, 0.1) !important; /* 호버 시에만 살짝 흰색 */
-    
+
     color: white !important; /* 글씨 흰색 강제 */
     box-shadow: none !important;
     border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
-/* 3. 관문(th), 클골/더보기(td) 텍스트 및 배경 */
-.raid-calculator-page .table th, 
-.raid-calculator-page .table td {
+/* 3. 세르카 캐릭터 관문(th), 클골/더보기(td) 텍스트 및 배경 */
+.raid-calculator-page .cerka-character .table th,
+.raid-calculator-page .cerka-character .table td {
     background-color: transparent !important;
     color: white !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
-/* 4. 체크박스/라디오 버튼 옆 글씨(Label, Span) 흰색 강제 */
-.raid-calculator-page .table .form-check-label,
-.raid-calculator-page .table label,
-.raid-calculator-page .table span {
+/* 4. 세르카 캐릭터 체크박스/라디오 버튼 옆 글씨(Label, Span) 흰색 강제 */
+.raid-calculator-page .cerka-character .table .form-check-label,
+.raid-calculator-page .cerka-character .table label,
+.raid-calculator-page .cerka-character .table span {
     color: white !important;
 }
 
-/* 5. 혹시 모를 input 요소 주변 텍스트 처리 */
-.raid-calculator-page .table .form-check {
+/* 5. 세르카 캐릭터 input 요소 주변 텍스트 처리 */
+.raid-calculator-page .cerka-character .table .form-check {
     margin-bottom: 0;
 }
 
-/* ==========================================================================
-   [긴급 수정] 테이블 줄무늬(Striped) 강제 투명화
-   * 이게 없으면 첫 번째 줄 말고 그 다음 줄들에 회색 배경이 남습니다.
-   ========================================================================== */
-.raid-calculator-page .table-striped > tbody > tr:nth-of-type(odd) > * {
+/* 6. 세르카 캐릭터 테이블 줄무늬(Striped) 강제 투명화 */
+.raid-calculator-page .cerka-character .table-striped > tbody > tr:nth-of-type(odd) > * {
     background-color: transparent !important;
     box-shadow: none !important;
     --bs-table-accent-bg: transparent !important; /* 부트스트랩 accent 변수 제거 */
     color: white !important;
+}
+
+/* ==========================================================================
+   [예외 처리] 더보기 손익 계산 테이블 (SeeMoreCalculator)
+   * 위의 투명화 스타일을 덮어쓰고, 라이트/다크 모드에서 올바른 색상 표시
+   ========================================================================== */
+
+/* 더보기 손익 계산 테이블은 CSS 변수 사용 (투명화 해제) */
+.raid-calculator-page table[class*="materialTable"],
+.raid-calculator-page table[class*="materialTable"] > tbody,
+.raid-calculator-page table[class*="materialTable"] > thead,
+.raid-calculator-page table[class*="materialTable"] > tr,
+.raid-calculator-page table[class*="materialTable"] > :not(caption) > * > * {
+    background-color: initial !important;
+    --bs-table-bg: initial !important;
+    --bs-table-accent-bg: initial !important;
+    --bs-table-striped-bg: initial !important;
+    --bs-table-hover-bg: initial !important;
+    color: var(--text-primary) !important;
+    box-shadow: none !important;
+    border-color: var(--border-color) !important;
+}
+
+/* 더보기 손익 계산 테이블 헤더 */
+.raid-calculator-page table[class*="materialTable"] th {
+    background-color: var(--card-header-bg) !important;
+    color: var(--text-primary) !important;
+    border-bottom: 2px solid var(--border-color) !important;
+}
+
+/* 더보기 손익 계산 테이블 바디 */
+.raid-calculator-page table[class*="materialTable"] td {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
+    border-top: 1px solid var(--border-color) !important;
+}
+
+/* 더보기 손익 계산 테이블 호버 */
+.raid-calculator-page table[class*="materialTable"] tbody tr:hover {
+    background-color: rgba(99, 102, 241, 0.05) !important;
+}
+
+[data-theme="dark"] .raid-calculator-page table[class*="materialTable"] tbody tr:hover {
+    background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+/* 더보기 손익 계산 - 관문 제목 */
+.raid-calculator-page h6[class*="gateSectionHeader"] {
+    color: var(--text-primary) !important;
+}
+
+/* 더보기 손익 계산 - 요약 행 */
+.raid-calculator-page div[class*="gateSummaryRow"] {
+    color: var(--text-secondary) !important;
+}
+
+/* 더보기 손익 계산 - 카드 헤더 */
+.raid-calculator-page div[class*="selectedRaidCard"] .card-header,
+.raid-calculator-page div[class*="selectedRaidCard"] h5 {
+    color: var(--text-primary) !important;
+    background-color: var(--card-header-bg) !important;
 }

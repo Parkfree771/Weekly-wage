@@ -197,12 +197,20 @@
   background-color: rgba(99, 102, 241, 0.05);
 }
 
+/* 관문 그리드 레이아웃 */
+.gatesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+}
+
 /* 게이트별 구분 */
 .gateSection {
   border: 2px solid;
-  border-radius: 12px;
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
+  border-radius: 10px;
+  padding: 0.875rem;
+  margin-bottom: 0;
   background: linear-gradient(to right, rgba(255, 255, 255, 0.03), transparent);
   position: relative;
   overflow: hidden;
@@ -289,6 +297,11 @@
 }
 
 @media (max-width: 768px) {
+  .gatesGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
   .raidCardsGrid {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.3rem;
@@ -531,4 +544,119 @@
 
 [data-theme="dark"] .selectedRaidCard tbody tr:hover {
   background-color: rgba(99, 102, 241, 0.1);
+}
+
+/* 더보기 보상 테이블 스타일 */
+.gateSectionHeader {
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.gateSummaryRow {
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.gateSummaryRow strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  display: inline !important;
+  margin-bottom: 0 !important;
+  opacity: 1 !important;
+  font-size: inherit !important;
+  margin-left: 1rem;
+}
+
+.gateSummaryRow strong:first-child {
+  margin-left: 0;
+}
+
+.materialTable {
+  color: var(--text-primary);
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.tableHeader {
+  background-color: var(--card-header-bg);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.tableHeaderCell {
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-color);
+}
+
+.tableHeaderCell:last-child {
+  border-right: none;
+}
+
+.tableHeaderCellRight {
+  text-align: right;
+}
+
+.tableRow {
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.tableRow:hover {
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+[data-theme="dark"] .tableRow:hover {
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+.tableCell {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  border-right: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.tableCell:last-child {
+  border-right: none;
+}
+
+.tableRow:first-child .tableCell {
+  border-top: none;
+}
+
+.tableCellRight {
+  text-align: right;
+}
+
+.tableCellPrice {
+  font-weight: 500;
+}
+
+.tableCellTotal {
+  font-weight: 600;
+  color: var(--brand-primary);
+}
+
+.materialIcon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .materialIcon {
+    width: 24px;
+    height: 24px;
+  }
 }
