@@ -8,7 +8,7 @@ import CompactPriceChart from './CompactPriceChart';
 import { PriceContext } from './PriceComparisonStats';
 
 // 카테고리 목록
-const ALL_CATEGORIES: ItemCategory[] = ['gem', 'refine', 'refine_additional', 'engraving', 'accessory', 'jewel'];
+const ALL_CATEGORIES: ItemCategory[] = ['refine_succession', 'gem', 'refine', 'refine_additional', 'engraving', 'accessory', 'jewel'];
 
 type PriceEntry = {
   price: number;
@@ -20,7 +20,7 @@ type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
 // Provider를 별도로 export - 실제 데이터를 관리
 export function PriceChartProvider({ children }: { children: ReactNode }) {
-  const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('gem');
+  const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('refine_succession');
   const [selectedItem, setSelectedItem] = useState<TrackedItem | null>(null);
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,9 +34,9 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
   }, [selectedCategory]);
 
   useEffect(() => {
-    const defaultCategory = 'gem';
+    const defaultCategory = 'refine_succession';
     const defaultCategoryItems = getItemsByCategory(defaultCategory);
-    const defaultItem = defaultCategoryItems.find(item => item.id === '67400003') || defaultCategoryItems[0];
+    const defaultItem = defaultCategoryItems.find(item => item.id === '6861013') || defaultCategoryItems[0];
 
     setSelectedCategory(defaultCategory);
     setSelectedItem(defaultItem);

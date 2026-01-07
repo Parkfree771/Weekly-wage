@@ -2,7 +2,7 @@ name: Collect Prices
 
 on:
   schedule:
-    # 거래소 - 재련 재료 + 젬: 매시 정각 (UTC 기준)
+    # 거래소 - 계승 재련 재료 + 재련 재료 + 젬: 매시 정각 (UTC 기준)
     - cron: '0 * * * *'
     # 거래소 - 재련 추가 재료 + 각인서: 매시 5분 (UTC 기준)
     - cron: '5 * * * *'
@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       category:
-        description: 'Category to collect (refine,gem / refine_additional,engraving / accessory,jewel / all)'
+        description: 'Category to collect (refine_succession,refine,gem / refine_additional,engraving / accessory,jewel / all)'
         required: false
         default: 'all'
       force_append_history:
@@ -22,15 +22,15 @@ on:
 
 jobs:
   collect-market-refine-gem:
-    # 정각(00분): 거래소 - 재련 재료 + 젬 (11개)
-    if: github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'refine,gem')
+    # 정각(00분): 거래소 - 계승 재련 재료 + 재련 재료 + 젬 (17개)
+    if: github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'refine_succession,refine,gem')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Collect market prices (refine + gem)
+      - name: Collect market prices (refine_succession + refine + gem)
         run: |
           response=$(curl -f -s -w "\n%{http_code}" --max-time 180 \
-            -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine,gem" \
+            -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine_succession,refine,gem" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -H "X-Netlify-Background: true")
@@ -49,7 +49,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_append_history == 'yes'
         run: |
           echo "Forcing history append..."
-          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine,gem" \
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine_succession,refine,gem" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json"
 

@@ -6,6 +6,7 @@ import { useTheme } from './ThemeProvider';
 import { Offcanvas } from 'react-bootstrap';
 
 export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; darkThemeColor: string; darkBg: string; }> = {
+  refine_succession: { label: '계승 재련 재료', color: '#ea580c', darkColor: '#c2410c', lightBg: '#ffedd5', darkThemeColor: '#fb923c', darkBg: '#7c2d12' },
   refine: { label: '재련 재료', color: '#818cf8', darkColor: '#6366f1', lightBg: '#e0e7ff', darkThemeColor: '#818cf8', darkBg: '#3730a3' },
   refine_additional: { label: '재련 추가 재료', color: '#34d399', darkColor: '#059669', lightBg: '#d1fae5', darkThemeColor: '#34d399', darkBg: '#064e3b' },
   gem: { label: '젬', color: '#8A2BE2', darkColor: '#4B0082', lightBg: '#F5EEFF', darkThemeColor: '#c084fc', darkBg: '#3c2a4a' },
@@ -15,7 +16,7 @@ export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: strin
 };
 
 // 카테고리 표시 순서 정의
-const CATEGORY_ORDER: ItemCategory[] = ['gem', 'refine', 'refine_additional', 'engraving', 'accessory', 'jewel'];
+const CATEGORY_ORDER: ItemCategory[] = ['refine_succession', 'gem', 'refine', 'refine_additional', 'engraving', 'accessory', 'jewel'];
 
 function ColoredItemName({ name }: { name: string }) {
   const regex = /(\d+\.?\d*%)\s*(\(상\))|(\d+\.?\d*%)\s*(\(중\))|(\(상\))|(\(중\))/g;

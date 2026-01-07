@@ -30,10 +30,40 @@ export type TrackedItem = {
 };
 
 // 카테고리 타입
-export type ItemCategory = 'refine' | 'refine_additional' | 'gem' | 'engraving' | 'accessory' | 'jewel';
+export type ItemCategory = 'refine_succession' | 'refine' | 'refine_additional' | 'gem' | 'engraving' | 'accessory' | 'jewel';
 
 // 추적할 아이템 목록
 export const TRACKED_ITEMS: TrackedItem[] = [
+  // === 0. 계승 재련 재료 ===
+  {
+    id: '6861013',
+    name: '상급 아비도스 융화 재료',
+    type: 'market',
+    icon: '/abidos-fusion2.webp',
+    iconBorderColor: '#c2410c' // 세르카 주황
+  },
+  {
+    id: '66102007',
+    name: '운명의 파괴석 결정',
+    type: 'market',
+    icon: '/destiny-destruction-stone2.webp',
+    iconBorderColor: '#c2410c' // 세르카 주황
+  },
+  {
+    id: '66102107',
+    name: '운명의 수호석 결정',
+    type: 'market',
+    icon: '/destiny-guardian-stone2.webp',
+    iconBorderColor: '#c2410c' // 세르카 주황
+  },
+  {
+    id: '66110226',
+    name: '위대한 운명의 돌파석',
+    type: 'market',
+    icon: '/destiny-breakthrough-stone2.webp',
+    iconBorderColor: '#c2410c' // 세르카 주황
+  },
+
   // === 1. 재련 재료 ===
   {
     id: '6861012',
@@ -688,6 +718,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
 // 카테고리별 아이템 필터 함수
 export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
+    refine_succession: ['6861013', '66102007', '66102107', '66110226'],
     refine: ['6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
     refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112714', '66112712', '66112713', '66112711', '66111131', '66111132'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
