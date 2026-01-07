@@ -16,7 +16,10 @@ export type Equipment = {
   currentLevel: number; // 현재 강화 레벨 (11~25)
   currentAdvancedLevel: number; // 현재 상급 재련 단계 (0~40)
   itemLevel: number; // 아이템 레벨 (1640~1700)
-  grade: string; // 아이템 등급 (고대, 유물 등)
+  grade: string; // 아이템 등급 (고대, 유물, 에스더 등)
+  isSuccession: boolean; // 계승 장비 여부 (운명의 전율 = 계승, 운명의 업화 = 계승 전)
+  isEsther: boolean; // 에스더 장비 여부 (최상위 장비, 재련 불가)
+  originalName?: string; // 원본 장비 이름 (예: +25 운명의 전율 장갑)
 };
 
 // 장비 타입 매핑
@@ -133,19 +136,35 @@ export function parseUpgradeLevelFromName(name: string): number | null {
   return null;
 }
 
+// 장비 이름에서 계승 여부 판별
+// "운명의 전율" = 계승 장비, "운명의 업화" = 계승 전 장비
+export function isSuccessionEquipment(name: string): boolean {
+  return name.includes('전율');
+}
+
+// 에스더 장비 여부 판별
+export function isEstherEquipment(grade: string): boolean {
+  return grade === '에스더';
+}
+
 // API 응답을 재련 시뮬레이터용 장비 정보로 변환
 export function parseEquipmentData(equipmentResponse: EquipmentAPIResponse[]): Equipment[] {
   const equipments: Equipment[] = [];
   const processedTypes = new Set<string>(); // 중복 방지
 
   for (const item of equipmentResponse) {
+    // 에스더 장비 여부 확인
+    const isEsther = isEstherEquipment(item.Grade);
+
     // 아이템 레벨 파싱
     const itemLevel = parseItemLevelFromTooltip(item.Tooltip);
-    if (!itemLevel || itemLevel < 1640) continue;
+    // 에스더 장비는 아이템 레벨 제한 완화 (1600 이상), 일반 장비는 1640 이상
+    if (!itemLevel || (isEsther ? itemLevel < 1600 : itemLevel < 1640)) continue;
 
     // Name에서 강화 단계 직접 추출
     const upgradeLevel = parseUpgradeLevelFromName(item.Name);
-    if (!upgradeLevel || upgradeLevel < 10) continue;
+    // 에스더 장비는 강화 단계 제한 없음, 일반 장비는 +10 이상
+    if (!upgradeLevel || (!isEsther && upgradeLevel < 10)) continue;
 
     // 상급 재련 단계 파싱
     const advancedLevel = parseAdvancedRefiningLevelFromTooltip(item.Tooltip);
@@ -194,6 +213,9 @@ export function parseEquipmentData(equipmentResponse: EquipmentAPIResponse[]): E
       currentAdvancedLevel: advancedLevel,
       itemLevel: itemLevel,
       grade: item.Grade,
+      isSuccession: isSuccessionEquipment(item.Name),
+      isEsther: isEsther,
+      originalName: item.Name,
     });
   }
 
@@ -203,6 +225,7 @@ export function parseEquipmentData(equipmentResponse: EquipmentAPIResponse[]): E
 // 장비 등급별 색상 반환
 export function getGradeColor(grade: string): string {
   const gradeColors: Record<string, string> = {
+    '에스더': '#3dd2cc', // 청록색 (Esther - 최상위)
     '고대': '#d97706', // 주황색 (Ancient)
     '유물': '#9333ea', // 보라색 (Relic)
     '영웅': '#3b82f6', // 파란색 (Epic)

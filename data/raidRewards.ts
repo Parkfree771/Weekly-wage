@@ -17,10 +17,12 @@ export const MATERIAL_IDS = {
   FATE_DESTRUCTION_STONE: 66102006, // 운명의 파괴석 (Bundle: 100)
   FATE_FRAGMENT: 66130143, // 운명의 파편 주머니(대) (Bundle: 1) - 3000 파편
   FATE_BREAKTHROUGH_STONE: 66110225, // 운명의 돌파석 (Bundle: 1)
+  ABIDOS_FUSION: 6861012, // 아비도스 융화 재료 (Bundle: 1)
   // 계승 재료 (세르카 레이드)
   FATE_GUARDIAN_STONE_CRYSTAL: 66102107, // 운명의 수호석 결정 (Bundle: 100)
   FATE_DESTRUCTION_STONE_CRYSTAL: 66102007, // 운명의 파괴석 결정 (Bundle: 100)
   GREAT_FATE_BREAKTHROUGH_STONE: 66110226, // 위대한 운명의 돌파석 (Bundle: 1)
+  ADVANCED_ABIDOS_FUSION: 6861013, // 상급 아비도스 융화 재료 (Bundle: 1)
   // 가격 없는 특수 재료 (세르카 레이드) - ID 0은 가격 계산 제외
   CERKA_CORE: 0, // 코어 (거래 불가)
   PULSATING_THORN: 0, // 고동의 가시 (거래 불가)
@@ -31,10 +33,12 @@ export const MATERIAL_NAMES = {
   FATE_DESTRUCTION_STONE: '운명의 파괴석',
   FATE_FRAGMENT: '운명의 파편', // UI에서는 파편으로 표시
   FATE_BREAKTHROUGH_STONE: '운명의 돌파석',
+  ABIDOS_FUSION: '아비도스 융화 재료',
   // 계승 재료
   FATE_GUARDIAN_STONE_CRYSTAL: '운명의 수호석 결정',
   FATE_DESTRUCTION_STONE_CRYSTAL: '운명의 파괴석 결정',
   GREAT_FATE_BREAKTHROUGH_STONE: '위대한 운명의 돌파석',
+  ADVANCED_ABIDOS_FUSION: '상급 아비도스 융화 재료',
   // 특수 재료
   CERKA_CORE: '코어',
   PULSATING_THORN: '고동의 가시',
@@ -46,10 +50,12 @@ export const MATERIAL_BUNDLE_SIZES: { [key: number]: number } = {
   [MATERIAL_IDS.FATE_DESTRUCTION_STONE]: 100, // 파괴석 100개 묶음
   [MATERIAL_IDS.FATE_FRAGMENT]: 3000, // 파편 3000개 묶음
   [MATERIAL_IDS.FATE_BREAKTHROUGH_STONE]: 1, // 돌파석 1개 단위
+  [MATERIAL_IDS.ABIDOS_FUSION]: 1, // 아비도스 1개 단위
   // 계승 재료
   [MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL]: 100, // 수호석 결정 100개 묶음
   [MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL]: 100, // 파괴석 결정 100개 묶음
   [MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE]: 1, // 위대한 돌파석 1개 단위
+  [MATERIAL_IDS.ADVANCED_ABIDOS_FUSION]: 1, // 상급 아비도스 1개 단위
 };
 
 export const raidRewards: RaidReward[] = [

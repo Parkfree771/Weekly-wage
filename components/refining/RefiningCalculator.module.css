@@ -409,6 +409,9 @@ div.equipmentCard,
     8px 8px 16px rgba(0, 0, 0, 0.15),
     -8px -8px 16px rgba(255, 255, 255, 0.7) !important;
   overflow: hidden !important;
+  min-height: 115px !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 div.equipmentCard:hover,
@@ -435,6 +438,7 @@ div.equipmentCardMobile,
   padding: 0.35rem !important;
   border-radius: 8px !important;
   border: 1.5px solid #cbd5e1 !important;
+  min-height: 85px !important;
 }
 
 div.equipmentCardMobileChanged,
@@ -477,6 +481,109 @@ div.equipmentCardArmor:hover,
     8px 8px 16px rgba(0, 0, 0, 0.2),
     -8px -8px 16px rgba(255, 255, 255, 0.8),
     inset 2px 2px 4px rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 비활성화된 장비 카드 (다른 모드의 장비) */
+div.equipmentCardDisabled,
+.equipmentCardDisabled.equipmentCardDisabled {
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+  filter: grayscale(50%) !important;
+  border-color: #9ca3af !important;
+  box-shadow: none !important;
+}
+
+/* 계승 장비 (전율) - 특별 스타일 (주황+보라 믹스 - 세르카 이후 장비) */
+div.equipmentCardSuccession,
+.equipmentCardSuccession.equipmentCardSuccession {
+  border: 2px solid #c084fc !important;
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(168, 85, 247, 0.08) 50%, rgba(192, 132, 252, 0.08) 100%) !important;
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.7),
+    0 0 20px rgba(192, 132, 252, 0.15) !important;
+  position: relative !important;
+}
+
+
+div.equipmentCardSuccession:hover,
+.equipmentCardSuccession.equipmentCardSuccession:hover {
+  border-color: #a855f7 !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.2),
+    -8px -8px 16px rgba(255, 255, 255, 0.8),
+    0 0 30px rgba(168, 85, 247, 0.25),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 에스더 장비 - 프리미엄 스타일 */
+div.equipmentCardEsther,
+.equipmentCardEsther.equipmentCardEsther {
+  border: 2px solid #3dd2cc !important;
+  background: linear-gradient(135deg, rgba(61, 210, 204, 0.1) 0%, rgba(45, 212, 191, 0.1) 50%, rgba(20, 184, 166, 0.1) 100%) !important;
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.7),
+    0 0 25px rgba(61, 210, 204, 0.2),
+    inset 0 0 30px rgba(61, 210, 204, 0.05) !important;
+  position: relative !important;
+  animation: estherGlow 3s ease-in-out infinite !important;
+}
+
+@keyframes estherGlow {
+  0%, 100% {
+    box-shadow:
+      6px 6px 12px rgba(0, 0, 0, 0.15),
+      -6px -6px 12px rgba(255, 255, 255, 0.7),
+      0 0 25px rgba(61, 210, 204, 0.2),
+      inset 0 0 30px rgba(61, 210, 204, 0.05);
+  }
+  50% {
+    box-shadow:
+      6px 6px 12px rgba(0, 0, 0, 0.15),
+      -6px -6px 12px rgba(255, 255, 255, 0.7),
+      0 0 35px rgba(61, 210, 204, 0.35),
+      inset 0 0 40px rgba(61, 210, 204, 0.1);
+  }
+}
+
+
+div.equipmentCardEsther:hover,
+.equipmentCardEsther.equipmentCardEsther:hover {
+  border-color: #14b8a6 !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.2),
+    -8px -8px 16px rgba(255, 255, 255, 0.8),
+    0 0 40px rgba(61, 210, 204, 0.3),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 에스더 레벨 배지 */
+.levelBadgeEsther {
+  font-size: clamp(0.75rem, 1.7vw, 0.85rem);
+  padding: clamp(0.3rem, 0.8vw, 0.4rem) clamp(0.6rem, 1.3vw, 0.75rem);
+  background: linear-gradient(135deg, #3dd2cc, #14b8a6);
+  color: white;
+  font-weight: 800;
+  line-height: 1;
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(61, 210, 204, 0.3);
+  transition: all 0.2s ease;
+}
+
+/* 계승 레벨 배지 (주황+보라 믹스) */
+.levelBadgeSuccession {
+  font-size: clamp(0.75rem, 1.7vw, 0.85rem);
+  padding: clamp(0.3rem, 0.8vw, 0.4rem) clamp(0.6rem, 1.3vw, 0.75rem);
+  background: linear-gradient(135deg, #d97706, #a855f7);
+  color: white;
+  font-weight: 800;
+  line-height: 1;
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
+  transition: all 0.2s ease;
 }
 
 span.equipmentName,
@@ -1320,6 +1427,62 @@ button.bulkButton:disabled,
     inset 2px 2px 4px rgba(255, 255, 255, 0.08) !important;
 }
 
+/* 다크모드 비활성화된 장비 카드 */
+[data-theme="dark"] div.equipmentCardDisabled,
+[data-theme="dark"] .equipmentCardDisabled.equipmentCardDisabled {
+  opacity: 0.4 !important;
+  filter: grayscale(60%) !important;
+  border-color: #4b5563 !important;
+}
+
+/* 다크모드 계승 장비 카드 (주황+보라 믹스) */
+[data-theme="dark"] div.equipmentCardSuccession,
+[data-theme="dark"] .equipmentCardSuccession.equipmentCardSuccession {
+  border: 2px solid #c084fc !important;
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.15) 0%, rgba(168, 85, 247, 0.15) 50%, rgba(192, 132, 252, 0.15) 100%) !important;
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.5),
+    -6px -6px 12px rgba(255, 255, 255, 0.03),
+    0 0 25px rgba(168, 85, 247, 0.25) !important;
+}
+
+[data-theme="dark"] div.equipmentCardSuccession:hover,
+[data-theme="dark"] .equipmentCardSuccession.equipmentCardSuccession:hover {
+  border-color: #d8b4fe !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.6),
+    -8px -8px 16px rgba(255, 255, 255, 0.05),
+    0 0 35px rgba(168, 85, 247, 0.35),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.08) !important;
+}
+
+/* 다크모드 에스더 장비 카드 */
+[data-theme="dark"] div.equipmentCardEsther,
+[data-theme="dark"] .equipmentCardEsther.equipmentCardEsther {
+  border: 2px solid #3dd2cc !important;
+  background: linear-gradient(135deg, rgba(61, 210, 204, 0.15) 0%, rgba(45, 212, 191, 0.15) 50%, rgba(20, 184, 166, 0.15) 100%) !important;
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.5),
+    -6px -6px 12px rgba(255, 255, 255, 0.03),
+    0 0 30px rgba(61, 210, 204, 0.25),
+    inset 0 0 40px rgba(61, 210, 204, 0.08) !important;
+}
+
+[data-theme="dark"] div.equipmentCardEsther:hover,
+[data-theme="dark"] .equipmentCardEsther.equipmentCardEsther:hover {
+  border-color: #5eead4 !important;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.6),
+    -8px -8px 16px rgba(255, 255, 255, 0.05),
+    0 0 45px rgba(61, 210, 204, 0.35),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .levelBadgeEsther,
+[data-theme="dark"] .levelBadgeSuccession {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
 [data-theme="dark"] button.bulkButton,
 [data-theme="dark"] .bulkButton.bulkButton {
   background-color: #334155 !important;
@@ -1474,14 +1637,14 @@ button.bulkButton:disabled,
   position: absolute;
   top: -2rem;
   right: 0;
-  background-color: var(--card-bg);
-  border: 1.5px solid var(--border-color);
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  border: 1.5px solid #f59e0b;
   border-radius: 6px;
   padding: 0.3rem 0.6rem;
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--text-primary);
-  box-shadow: var(--shadow-sm);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
   z-index: 10;
 }
 

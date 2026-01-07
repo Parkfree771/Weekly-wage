@@ -1,12 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 import RefiningCalculator from '@/components/refining/RefiningCalculator';
+import styles from './refining.module.css';
+
+type RefiningMode = 'normal' | 'succession';
 
 export default function RefiningPage() {
+  const [activeMode, setActiveMode] = useState<RefiningMode>('normal');
+
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
       <ThemeToggleButton />
@@ -71,8 +77,33 @@ export default function RefiningPage() {
               </noscript>
             </div>
 
+            {/* 모드 선택 탭 */}
+            <div className={styles.tabContainer}>
+              <div className={styles.tabNav}>
+                <button
+                  className={`${styles.tabLink} ${activeMode === 'normal' ? styles.tabLinkActive : ''}`}
+                  onClick={() => setActiveMode('normal')}
+                >
+                  <span className={styles.tabText}>계승 전</span>
+                  <span className={styles.tabSubText}>일반 + 상급</span>
+                </button>
+                <button
+                  className={`${styles.tabLink} ${activeMode === 'succession' ? styles.tabLinkActive : ''}`}
+                  onClick={() => setActiveMode('succession')}
+                >
+                  <span className={styles.tabText}>계승 후</span>
+                  <span className={styles.tabSubText}>일반만</span>
+                </button>
+              </div>
+              {activeMode === 'succession' && (
+                <div className={styles.successionInfo}>
+                  <strong>계승 조건:</strong> 아이템 레벨 총합 1730 이상 + 상급재련 40단계 달성
+                </div>
+              )}
+            </div>
+
             {/* 재련 계산기 */}
-            <RefiningCalculator />
+            <RefiningCalculator mode={activeMode} />
           </Col>
         </Row>
       </Container>
