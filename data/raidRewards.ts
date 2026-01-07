@@ -63,7 +63,7 @@ export const raidRewards: RaidReward[] = [
       { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 36 },
       { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 19000 },
       { itemId: MATERIAL_IDS.PULSATING_THORN, itemName: MATERIAL_NAMES.PULSATING_THORN, amount: 10 },
-      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 0 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 3 },
     ]
   },
   {
@@ -75,7 +75,7 @@ export const raidRewards: RaidReward[] = [
       { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 60 },
       { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 32200 },
       { itemId: MATERIAL_IDS.PULSATING_THORN, itemName: MATERIAL_NAMES.PULSATING_THORN, amount: 15 },
-      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 0 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 3 },
     ]
   },
   // 세르카 하드
@@ -88,7 +88,7 @@ export const raidRewards: RaidReward[] = [
       { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 30 },
       { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 17500 },
       { itemId: MATERIAL_IDS.PULSATING_THORN, itemName: MATERIAL_NAMES.PULSATING_THORN, amount: 10 },
-      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 0 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 2 },
     ]
   },
   {
@@ -100,7 +100,7 @@ export const raidRewards: RaidReward[] = [
       { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 45 },
       { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 26820 },
       { itemId: MATERIAL_IDS.PULSATING_THORN, itemName: MATERIAL_NAMES.PULSATING_THORN, amount: 15 },
-      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 0 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 2 },
     ]
   },
   // 세르카 노말 (기존 재료 사용, 고동의 가시 없음)
@@ -112,6 +112,7 @@ export const raidRewards: RaidReward[] = [
       { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 3220 },
       { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 50 },
       { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 13650 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 2 },
     ]
   },
   {
@@ -122,6 +123,7 @@ export const raidRewards: RaidReward[] = [
       { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 4960 },
       { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 82 },
       { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 20880 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 2 },
     ]
   },
   // 종막 하드
