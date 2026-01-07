@@ -525,6 +525,11 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const xAxisTicks = useMemo(() => {
     if (chartData.length === 0) return [];
 
+    // 데이터가 1개면 그 날짜만 표시
+    if (chartData.length === 1) {
+      return [chartData[0].날짜];
+    }
+
     // 기간별 표시 간격 설정
     let interval: number;
     switch (selectedPeriod) {
