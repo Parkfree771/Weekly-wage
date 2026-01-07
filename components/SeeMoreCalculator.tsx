@@ -11,10 +11,18 @@ import styles from './SeeMoreCalculator.module.css';
 // 재료 이름에 따른 이미지 파일명 매핑
 const getMaterialImage = (itemName: string): string => {
   const imageMap: { [key: string]: string } = {
+    // 기존 재료
     '운명의 파괴석': 'destiny-destruction-stone.webp',
     '운명의 수호석': 'destiny-guardian-stone.webp',
     '운명의 파편': 'destiny-shard-bag-large.webp',
     '운명의 돌파석': 'destiny-breakthrough-stone.webp',
+    // 계승 재료 (세르카 레이드)
+    '운명의 파괴석 결정': 'destiny-destruction-stone2.webp',
+    '운명의 수호석 결정': 'destiny-guardian-stone2.webp',
+    '위대한 운명의 돌파석': 'destiny-breakthrough-stone2.webp',
+    // 특수 재료 (거래 불가)
+    '코어': 'cerka-core.webp',
+    '고동의 가시': 'pulsating-thorn.webp',
   };
 
   return imageMap[itemName] || 'default-material.webp';
@@ -267,9 +275,15 @@ const SeeMoreCalculator: React.FC = () => {
                             <span>{material.itemName}</span>
                           </div>
                         </td>
-                        <td className={`${styles.tableCell} ${styles.tableCellRight}`}>{material.amount.toLocaleString()}</td>
-                        <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellPrice}`}>{material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4)}골드</td>
-                        <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellTotal}`}>{Math.round(material.totalPrice).toLocaleString()}골드</td>
+                        <td className={`${styles.tableCell} ${styles.tableCellRight}`}>
+                          {material.amount === 0 ? '?' : material.amount.toLocaleString()}
+                        </td>
+                        <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellPrice}`}>
+                          {material.itemId === 0 ? '-' : (material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4)) + '골드'}
+                        </td>
+                        <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellTotal}`}>
+                          {material.itemId === 0 ? '-' : Math.round(material.totalPrice).toLocaleString() + '골드'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

@@ -12,10 +12,18 @@ export type RaidReward = {
 
 // 실제 Lost Ark API에서 확인된 item IDs
 export const MATERIAL_IDS = {
+  // 기존 재료 (운명)
   FATE_GUARDIAN_STONE: 66102106, // 운명의 수호석 (Bundle: 100)
   FATE_DESTRUCTION_STONE: 66102006, // 운명의 파괴석 (Bundle: 100)
   FATE_FRAGMENT: 66130143, // 운명의 파편 주머니(대) (Bundle: 1) - 3000 파편
   FATE_BREAKTHROUGH_STONE: 66110225, // 운명의 돌파석 (Bundle: 1)
+  // 계승 재료 (세르카 레이드)
+  FATE_GUARDIAN_STONE_CRYSTAL: 66102107, // 운명의 수호석 결정 (Bundle: 100)
+  FATE_DESTRUCTION_STONE_CRYSTAL: 66102007, // 운명의 파괴석 결정 (Bundle: 100)
+  GREAT_FATE_BREAKTHROUGH_STONE: 66110226, // 위대한 운명의 돌파석 (Bundle: 1)
+  // 가격 없는 특수 재료 (세르카 레이드) - ID 0은 가격 계산 제외
+  CERKA_CORE: 0, // 코어 (거래 불가)
+  PULSATING_THORN: 0, // 고동의 가시 (거래 불가)
 };
 
 export const MATERIAL_NAMES = {
@@ -23,17 +31,99 @@ export const MATERIAL_NAMES = {
   FATE_DESTRUCTION_STONE: '운명의 파괴석',
   FATE_FRAGMENT: '운명의 파편', // UI에서는 파편으로 표시
   FATE_BREAKTHROUGH_STONE: '운명의 돌파석',
+  // 계승 재료
+  FATE_GUARDIAN_STONE_CRYSTAL: '운명의 수호석 결정',
+  FATE_DESTRUCTION_STONE_CRYSTAL: '운명의 파괴석 결정',
+  GREAT_FATE_BREAKTHROUGH_STONE: '위대한 운명의 돌파석',
+  // 특수 재료
+  CERKA_CORE: '코어',
+  PULSATING_THORN: '고동의 가시',
 };
 
 // 묶음 단위 - 개당 가격 계산을 위한 나눗수
-export const MATERIAL_BUNDLE_SIZES = {
+export const MATERIAL_BUNDLE_SIZES: { [key: number]: number } = {
   [MATERIAL_IDS.FATE_GUARDIAN_STONE]: 100, // 수호석 100개 묶음
   [MATERIAL_IDS.FATE_DESTRUCTION_STONE]: 100, // 파괴석 100개 묶음
   [MATERIAL_IDS.FATE_FRAGMENT]: 3000, // 파편 3000개 묶음
   [MATERIAL_IDS.FATE_BREAKTHROUGH_STONE]: 1, // 돌파석 1개 단위
+  // 계승 재료
+  [MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL]: 100, // 수호석 결정 100개 묶음
+  [MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL]: 100, // 파괴석 결정 100개 묶음
+  [MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE]: 1, // 위대한 돌파석 1개 단위
 };
 
 export const raidRewards: RaidReward[] = [
+  // 세르카 나이트메어
+  {
+    raidName: '세르카 나이트메어',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 860 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 1720 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 36 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 19000 },
+      { itemId: MATERIAL_IDS.PULSATING_THORN, itemName: MATERIAL_NAMES.PULSATING_THORN, amount: 10 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 0 },
+    ]
+  },
+  {
+    raidName: '세르카 나이트메어',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 1430 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 2860 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 60 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 32200 },
+      { itemId: MATERIAL_IDS.PULSATING_THORN, itemName: MATERIAL_NAMES.PULSATING_THORN, amount: 15 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 0 },
+    ]
+  },
+  // 세르카 하드
+  {
+    raidName: '세르카 하드',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 750 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 1500 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 30 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 17500 },
+      { itemId: MATERIAL_IDS.PULSATING_THORN, itemName: MATERIAL_NAMES.PULSATING_THORN, amount: 10 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 0 },
+    ]
+  },
+  {
+    raidName: '세르카 하드',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 1130 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 2260 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 45 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 26820 },
+      { itemId: MATERIAL_IDS.PULSATING_THORN, itemName: MATERIAL_NAMES.PULSATING_THORN, amount: 15 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 0 },
+    ]
+  },
+  // 세르카 노말 (기존 재료 사용, 고동의 가시 없음)
+  {
+    raidName: '세르카 노말',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 1610 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 3220 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 50 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 13650 },
+    ]
+  },
+  {
+    raidName: '세르카 노말',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 2480 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 4960 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 82 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 20880 },
+    ]
+  },
   // 종막 하드
   {
     raidName: '종막 하드',

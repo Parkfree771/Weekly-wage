@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, ReactNode, useMemo } from 'react';
-import { TrackedItem, ItemCategory, getItemsByCategory } from '@/lib/items-to-track';
+import { TrackedItem, ItemCategory, getItemsByCategory, RefineAdditionalSubCategory, getItemsBySubCategory } from '@/lib/items-to-track';
 import ItemSelector, { CATEGORY_STYLES } from './ItemSelector';
 import CompactPriceChart from './CompactPriceChart';
 import { PriceContext } from './PriceComparisonStats';
@@ -21,17 +21,28 @@ type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 // Provider를 별도로 export - 실제 데이터를 관리
 export function PriceChartProvider({ children }: { children: ReactNode }) {
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('refine_succession');
+  const [selectedSubCategory, setSelectedSubCategory] = useState<RefineAdditionalSubCategory | null>(null);
   const [selectedItem, setSelectedItem] = useState<TrackedItem | null>(null);
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('1m');
 
   useEffect(() => {
-    const categoryItems = getItemsByCategory(selectedCategory);
-    if (categoryItems.length > 0) {
-      setSelectedItem(categoryItems[0]);
+    // 재련 추가 재료 카테고리일 때는 서브카테고리가 선택되어야만 아이템을 가져옴
+    if (selectedCategory === 'refine_additional') {
+      if (selectedSubCategory) {
+        const subCategoryItems = getItemsBySubCategory(selectedSubCategory);
+        if (subCategoryItems.length > 0) {
+          setSelectedItem(subCategoryItems[0]);
+        }
+      }
+    } else {
+      const categoryItems = getItemsByCategory(selectedCategory);
+      if (categoryItems.length > 0) {
+        setSelectedItem(categoryItems[0]);
+      }
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, selectedSubCategory]);
 
   useEffect(() => {
     const defaultCategory = 'refine_succession';
@@ -100,6 +111,10 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
     setSelectedCategory(category);
   };
 
+  const handleSelectSubCategory = (subCategory: RefineAdditionalSubCategory | null) => {
+    setSelectedSubCategory(subCategory);
+  };
+
   const handleSelectItem = (item: TrackedItem) => {
     setSelectedItem(item);
   };
@@ -114,6 +129,8 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
           selectedItem={selectedItem}
           onSelectCategory={handleSelectCategory}
           onSelectItem={handleSelectItem}
+          selectedSubCategory={selectedSubCategory}
+          onSelectSubCategory={handleSelectSubCategory}
         />
         <CompactPriceChart
           selectedItem={selectedItem}

@@ -32,6 +32,23 @@ export type TrackedItem = {
 // 카테고리 타입
 export type ItemCategory = 'refine_succession' | 'refine' | 'refine_additional' | 'gem' | 'engraving' | 'accessory' | 'jewel';
 
+// 재련 추가 재료 서브카테고리 타입
+export type RefineAdditionalSubCategory = 'weapon' | 'armor';
+
+// 서브카테고리 정보
+export const REFINE_ADDITIONAL_SUBCATEGORIES: Record<RefineAdditionalSubCategory, { label: string; ids: string[] }> = {
+  weapon: {
+    label: '무기 보조 재료',
+    // 야금술 아이템들 + 용암의 숨결
+    ids: ['66112553', '66112551', '66112543', '66112717', '66112715', '66112713', '66112711', '66111131']
+  },
+  armor: {
+    label: '방어구 보조 재료',
+    // 재봉술 아이템들 + 빙하의 숨결
+    ids: ['66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66111132']
+  }
+};
+
 // 추적할 아이템 목록
 export const TRACKED_ITEMS: TrackedItem[] = [
   // === 0. 계승 재련 재료 ===
@@ -159,6 +176,20 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     iconBorderColor: '#059669'
   },
   {
+    id: '66112718',
+    name: '장인의 재봉술 : 4단계 (방어구)',
+    type: 'market',
+    icon: '/master-tailoring-4.webp',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112716',
+    name: '장인의 재봉술 : 3단계 (방어구)',
+    type: 'market',
+    icon: '/master-tailoring-3.webp',
+    iconBorderColor: '#059669'
+  },
+  {
     id: '66112714',
     name: '장인의 재봉술 : 2단계 (방어구)',
     type: 'market',
@@ -170,6 +201,20 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '장인의 재봉술 : 1단계 (방어구)',
     type: 'market',
     icon: '/master-tailoring-1.webp',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112717',
+    name: '장인의 야금술 : 4단계 (무기)',
+    type: 'market',
+    icon: '/master-metallurgy-4.webp',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112715',
+    name: '장인의 야금술 : 3단계 (무기)',
+    type: 'market',
+    icon: '/master-metallurgy-3.webp',
     iconBorderColor: '#059669'
   },
   {
@@ -715,12 +760,23 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   }
 ];
 
+// 재련 추가 재료 서브카테고리별 아이템 필터 함수
+export function getItemsBySubCategory(subCategory: RefineAdditionalSubCategory): TrackedItem[] {
+  const ids = REFINE_ADDITIONAL_SUBCATEGORIES[subCategory]?.ids || [];
+  const itemsById = TRACKED_ITEMS.reduce((acc, item) => {
+    acc[item.id] = item;
+    return acc;
+  }, {} as Record<string, TrackedItem>);
+
+  return ids.map(id => itemsById[id]).filter((item): item is TrackedItem => !!item);
+}
+
 // 카테고리별 아이템 필터 함수
 export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
     refine_succession: ['6861013', '66102007', '66102107', '66110226'],
     refine: ['6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
-    refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112714', '66112712', '66112713', '66112711', '66111131', '66111132'],
+    refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
     accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high', 'auction_necklace_support_refine3', 'auction_necklace_support_refine3_high', 'auction_ring_support_refine3', 'auction_ring_support_refine3_high'],

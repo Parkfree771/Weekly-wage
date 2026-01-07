@@ -1,6 +1,6 @@
 'use client';
 
-import { ItemCategory, TrackedItem, getItemsByCategory } from '@/lib/items-to-track';
+import { ItemCategory, TrackedItem, getItemsByCategory, RefineAdditionalSubCategory, REFINE_ADDITIONAL_SUBCATEGORIES, getItemsBySubCategory } from '@/lib/items-to-track';
 import React, { useMemo, useState } from 'react';
 import { useTheme } from './ThemeProvider';
 import { Offcanvas } from 'react-bootstrap';
@@ -70,6 +70,8 @@ type ItemSelectorProps = {
   selectedItem: TrackedItem | null;
   onSelectCategory: (category: ItemCategory) => void;
   onSelectItem: (item: TrackedItem) => void;
+  selectedSubCategory: RefineAdditionalSubCategory | null;
+  onSelectSubCategory: (subCategory: RefineAdditionalSubCategory | null) => void;
 };
 
 export default function ItemSelector({
@@ -77,19 +79,30 @@ export default function ItemSelector({
   selectedItem,
   onSelectCategory,
   onSelectItem,
+  selectedSubCategory,
+  onSelectSubCategory,
 }: ItemSelectorProps) {
   const { theme } = useTheme();
   const [showItems, setShowItems] = useState(true);
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [bottomSheetCategory, setBottomSheetCategory] = useState<ItemCategory>(selectedCategory);
+  const [bottomSheetSubCategory, setBottomSheetSubCategory] = useState<RefineAdditionalSubCategory | null>(null);
 
   const categoryItems = useMemo(() => {
+    // 재련 추가 재료 카테고리이고 서브카테고리가 선택된 경우
+    if (selectedCategory === 'refine_additional' && selectedSubCategory) {
+      return getItemsBySubCategory(selectedSubCategory);
+    }
     return getItemsByCategory(selectedCategory);
-  }, [selectedCategory]);
+  }, [selectedCategory, selectedSubCategory]);
 
   const bottomSheetItems = useMemo(() => {
+    // 재련 추가 재료 카테고리이고 서브카테고리가 선택된 경우
+    if (bottomSheetCategory === 'refine_additional' && bottomSheetSubCategory) {
+      return getItemsBySubCategory(bottomSheetSubCategory);
+    }
     return getItemsByCategory(bottomSheetCategory);
-  }, [bottomSheetCategory]);
+  }, [bottomSheetCategory, bottomSheetSubCategory]);
 
   // 데스크톱용 카테고리 클릭 핸들러
   const handleCategoryClick = (cat: ItemCategory) => {
@@ -100,14 +113,34 @@ export default function ItemSelector({
       // 다른 카테고리 클릭 시 항상 표시
       setShowItems(true);
       onSelectCategory(cat);
+      // 재련 추가 재료가 아닌 경우 서브카테고리 초기화
+      if (cat !== 'refine_additional') {
+        onSelectSubCategory(null);
+      }
     }
+  };
+
+  // 서브카테고리 클릭 핸들러
+  const handleSubCategoryClick = (subCat: RefineAdditionalSubCategory) => {
+    onSelectSubCategory(subCat);
   };
 
   // 모바일용 카테고리 클릭 핸들러 (바텀시트 열기)
   const handleMobileCategoryClick = (cat: ItemCategory) => {
     onSelectCategory(cat); // 선택된 카테고리 업데이트 (테두리 색 변경)
     setBottomSheetCategory(cat);
+    // 재련 추가 재료가 아닌 경우 서브카테고리 초기화
+    if (cat !== 'refine_additional') {
+      setBottomSheetSubCategory(null);
+      onSelectSubCategory(null);
+    }
     setShowBottomSheet(true);
+  };
+
+  // 모바일용 서브카테고리 클릭 핸들러
+  const handleMobileSubCategoryClick = (subCat: RefineAdditionalSubCategory) => {
+    setBottomSheetSubCategory(subCat);
+    onSelectSubCategory(subCat);
   };
 
   // 바텀시트에서 아이템 선택
@@ -199,8 +232,56 @@ export default function ItemSelector({
         </div>
       </div>
 
+      {/* 서브카테고리 선택 - 데스크톱 (재련 추가 재료만) */}
+      {selectedCategory === 'refine_additional' && showItems && (
+        <div className="mb-3 d-none d-md-block">
+          <div className="d-flex gap-3 justify-content-center" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+            {(Object.keys(REFINE_ADDITIONAL_SUBCATEGORIES) as RefineAdditionalSubCategory[]).map((subCat) => {
+              const subCategoryInfo = REFINE_ADDITIONAL_SUBCATEGORIES[subCat];
+              const categoryStyle = CATEGORY_STYLES['refine_additional'];
+              const isSelected = selectedSubCategory === subCat;
+
+              return (
+                <button
+                  key={subCat}
+                  onClick={() => handleSubCategoryClick(subCat)}
+                  style={{
+                    fontWeight: isSelected ? '700' : '600',
+                    fontSize: '0.95rem',
+                    padding: '10px 20px',
+                    backgroundColor: isSelected ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
+                    border: `2px solid ${isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
+                    borderRadius: '10px',
+                    color: isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer',
+                    letterSpacing: '0.3px'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
+                      e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
+                      e.currentTarget.style.color = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.backgroundColor = 'var(--card-bg)';
+                      e.currentTarget.style.borderColor = 'var(--border-color)';
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                    }
+                  }}
+                >
+                  {subCategoryInfo.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* 아이템 선택 버튼 - 데스크톱 */}
-      {showItems && <div className="mb-3 d-none d-md-block">
+      {showItems && (selectedCategory !== 'refine_additional' || selectedSubCategory) && <div className="mb-3 d-none d-md-block">
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
@@ -297,6 +378,42 @@ export default function ItemSelector({
           </Offcanvas.Title>
         </Offcanvas.Header>
         <Offcanvas.Body style={{ padding: '12px' }}>
+          {/* 서브카테고리 선택 - 모바일 (재련 추가 재료만) */}
+          {bottomSheetCategory === 'refine_additional' && (
+            <div className="mb-3">
+              <div className="d-flex gap-2 justify-content-center">
+                {(Object.keys(REFINE_ADDITIONAL_SUBCATEGORIES) as RefineAdditionalSubCategory[]).map((subCat) => {
+                  const subCategoryInfo = REFINE_ADDITIONAL_SUBCATEGORIES[subCat];
+                  const categoryStyle = CATEGORY_STYLES['refine_additional'];
+                  const isSelected = bottomSheetSubCategory === subCat;
+
+                  return (
+                    <button
+                      key={subCat}
+                      onClick={() => handleMobileSubCategoryClick(subCat)}
+                      style={{
+                        fontWeight: isSelected ? '700' : '600',
+                        fontSize: '0.85rem',
+                        padding: '8px 16px',
+                        backgroundColor: isSelected ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
+                        border: `2px solid ${isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
+                        borderRadius: '8px',
+                        color: isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer',
+                        flex: 1
+                      }}
+                    >
+                      {subCategoryInfo.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 아이템 목록 (재련 추가 재료일 경우 서브카테고리 선택 후 표시) */}
+          {(bottomSheetCategory !== 'refine_additional' || bottomSheetSubCategory) && (
           <div style={{
             display: 'grid',
             gridTemplateRows: 'repeat(2, 1fr)',
@@ -343,6 +460,7 @@ export default function ItemSelector({
               );
             })}
           </div>
+          )}
         </Offcanvas.Body>
       </Offcanvas>
     </div>
