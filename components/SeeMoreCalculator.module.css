@@ -504,12 +504,52 @@
     font-size: 0.75rem;
   }
 
-  /* 재료명 열 축약 */
-  .selectedRaidCard td:first-child {
-    max-width: 80px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+/* 모바일 재료 테이블 - 이름 잘림 방지 */
+@media (max-width: 576px) {
+  .tableCell {
+    padding: 0.4rem 0.3rem;
+    font-size: 0.7rem;
+  }
+
+  .tableHeaderCell {
+    padding: 0.4rem 0.3rem;
+    font-size: 0.7rem;
+  }
+
+  .materialIcon {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* 재료명 폰트 축소하여 잘림 방지 */
+  .tableCell:first-child span {
+    font-size: 0.65rem;
     white-space: nowrap;
+  }
+}
+
+/* 아주 작은 화면 (400px 이하) */
+@media (max-width: 400px) {
+  .tableCell {
+    padding: 0.35rem 0.2rem;
+    font-size: 0.65rem;
+  }
+
+  .tableHeaderCell {
+    padding: 0.35rem 0.2rem;
+    font-size: 0.65rem;
+  }
+
+  .materialIcon {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* 재료명 더 축소 */
+  .tableCell:first-child span {
+    font-size: 0.6rem;
   }
 }
 
@@ -572,6 +612,35 @@
 
 .gateSummaryRow strong:first-child {
   margin-left: 0;
+}
+
+.summaryFirstLine,
+.summarySecondLine {
+  display: inline;
+}
+
+.summaryFirstLine strong:first-child {
+  margin-left: 0;
+}
+
+.summarySecondLine strong:first-child {
+  margin-left: 1rem;
+}
+
+/* 모바일에서 손익 줄바꿈 */
+@media (max-width: 768px) {
+  .summaryFirstLine {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .summarySecondLine {
+    display: block;
+  }
+
+  .summarySecondLine strong {
+    margin-left: 0;
+  }
 }
 
 .materialTable {

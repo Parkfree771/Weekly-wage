@@ -240,10 +240,14 @@ const SeeMoreCalculator: React.FC = () => {
                 </h6>
 
                 <div className={`mb-2 ${styles.gateSummaryRow}`}>
-                  <strong>더보기비용:</strong> {gateData.moreGold.toLocaleString()}골드
-                  <strong>재료 가치:</strong> {Math.round(gateData.totalValue).toLocaleString()}골드
-                  <strong>손익:</strong> {Math.round(gateData.totalValue).toLocaleString()} - {gateData.moreGold.toLocaleString()} = <span className={gateData.profitLoss > 0 ? 'text-success' : gateData.profitLoss < 0 ? 'text-danger' : 'text-secondary'} style={{ fontWeight: 700 }}>
-                    {gateData.profitLoss > 0 ? '+' : ''}{Math.round(gateData.profitLoss).toLocaleString()}골드
+                  <span className={styles.summaryFirstLine}>
+                    <strong>더보기비용:</strong> {gateData.moreGold.toLocaleString()}골드
+                    <strong>재료 가치:</strong> {Math.round(gateData.totalValue).toLocaleString()}골드
+                  </span>
+                  <span className={styles.summarySecondLine}>
+                    <strong>손익:</strong> {Math.round(gateData.totalValue).toLocaleString()} - {gateData.moreGold.toLocaleString()} = <span className={gateData.profitLoss > 0 ? 'text-success' : gateData.profitLoss < 0 ? 'text-danger' : 'text-secondary'} style={{ fontWeight: 700 }}>
+                      {gateData.profitLoss > 0 ? '+' : ''}{Math.round(gateData.profitLoss).toLocaleString()}골드
+                    </span>
                   </span>
                 </div>
                 

@@ -119,18 +119,18 @@ export default function WeeklyGoldPage() {
                     position: 'absolute',
                     top: isMobile ? '-1.8rem' : '-2rem',
                     right: '0',
-                    backgroundColor: 'var(--card-bg)',
-                    border: '1.5px solid var(--border-color)',
+                    background: 'linear-gradient(135deg, #6b2d8c 0%, #9c4dcc 50%, #e85d04 100%)',
+                    border: '1.5px solid #9c4dcc',
                     borderRadius: '6px',
                     padding: isMobile ? '0.25rem 0.5rem' : '0.3rem 0.6rem',
                     fontSize: isMobile ? '0.6rem' : '0.7rem',
                     fontWeight: '600',
-                    color: 'var(--text-primary)',
-                    boxShadow: 'var(--shadow-sm)',
+                    color: '#ffffff',
+                    boxShadow: '0 2px 8px rgba(156, 77, 204, 0.4)',
                     zIndex: 10
                   }}
                 >
-                  26년 1월 7일 업데이트 예정
+                  🎃 26년 1월 7일 세르카 업데이트 완료!
                 </div>
                 <Card className="border-0 shadow-lg weekly-gold-header-card" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                   <Card.Header
@@ -158,17 +158,17 @@ export default function WeeklyGoldPage() {
                       position: 'absolute',
                       top: isMobile ? '-1.8rem' : '-2rem',
                       right: '0',
-                      backgroundColor: 'var(--card-bg)',
-                      border: '1.5px solid var(--border-color)',
+                      background: 'linear-gradient(135deg, #6b2d8c 0%, #9c4dcc 50%, #e85d04 100%)',
+                      border: '1.5px solid #9c4dcc',
                       borderRadius: '6px',
                       padding: isMobile ? '0.25rem 0.5rem' : '0.3rem 0.6rem',
                       fontSize: isMobile ? '0.6rem' : '0.7rem',
                       fontWeight: '600',
-                      color: 'var(--text-primary)',
-                      boxShadow: 'var(--shadow-sm)',
+                      color: '#ffffff',
+                      boxShadow: '0 2px 8px rgba(156, 77, 204, 0.4)',
                       zIndex: 10
                     }}>
-                      26년 1월 7일 업데이트 예정
+                      🎃 26년 1월 7일 세르카 업데이트 완료!
                     </div>
                     <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                       <Card.Header
