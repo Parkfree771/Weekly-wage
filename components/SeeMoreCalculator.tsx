@@ -22,7 +22,7 @@ const getMaterialImage = (itemName: string): string => {
     '위대한 운명의 돌파석': 'destiny-breakthrough-stone2.webp',
     // 특수 재료 (거래 불가)
     '코어': 'cerka-core.webp',
-    '고동의 가시': 'pulsating-thorn.webp',
+    '고통의 가시': 'pulsating-thorn.webp',
   };
 
   return imageMap[itemName] || 'default-material.webp';

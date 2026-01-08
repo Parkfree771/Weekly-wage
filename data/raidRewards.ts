@@ -25,7 +25,7 @@ export const MATERIAL_IDS = {
   ADVANCED_ABIDOS_FUSION: 6861013, // 상급 아비도스 융화 재료 (Bundle: 1)
   // 가격 없는 특수 재료 (세르카 레이드) - ID 0은 가격 계산 제외
   CERKA_CORE: 0, // 코어 (거래 불가)
-  PULSATING_THORN: 0, // 고동의 가시 (거래 불가)
+  PULSATING_THORN: 0, // 고통의 가시 (거래 불가)
 };
 
 export const MATERIAL_NAMES = {
@@ -41,7 +41,7 @@ export const MATERIAL_NAMES = {
   ADVANCED_ABIDOS_FUSION: '상급 아비도스 융화 재료',
   // 특수 재료
   CERKA_CORE: '코어',
-  PULSATING_THORN: '고동의 가시',
+  PULSATING_THORN: '고통의 가시',
 };
 
 // 묶음 단위 - 개당 가격 계산을 위한 나눗수
@@ -109,7 +109,7 @@ export const raidRewards: RaidReward[] = [
       { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 2 },
     ]
   },
-  // 세르카 노말 (기존 재료 사용, 고동의 가시 없음)
+  // 세르카 노말 (기존 재료 사용, 고통의 가시 없음)
   {
     raidName: '세르카 노말',
     gate: 1,

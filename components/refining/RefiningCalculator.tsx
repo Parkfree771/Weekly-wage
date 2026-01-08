@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Form, Button, InputGroup, Row, Col, Card, Badge, ButtonGroup } from 'react-bootstrap';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
-import { getAverageTries } from '../../lib/refiningSimulationData';
+import { getAverageTries, getSuccessionAverageTries } from '../../lib/refiningSimulationData';
 import styles from './RefiningCalculator.module.css';
 import {
   BASE_PROBABILITY,
@@ -64,6 +64,7 @@ type Materials = {
   파괴석결정?: number; // 운명의 파괴석 결정 (계승 무기)
   위대한돌파석?: number; // 위대한 명예의 돌파석 (계승)
   상급아비도스?: number; // 상급 아비도스 융화 재료 (계승)
+  실링?: number; // 실링 (계승 귀속 재화)
 };
 
 // 재료 카드 컴포넌트
@@ -123,12 +124,16 @@ const MaterialCard = ({
       </div>
     )}
     <div className={styles.materialIcon}>
-      <Image
-        src={icon}
-        alt={name}
-        fill
-        style={{ objectFit: 'contain' }}
-      />
+      {icon.startsWith('/') ? (
+        <Image
+          src={icon}
+          alt={name}
+          fill
+          style={{ objectFit: 'contain' }}
+        />
+      ) : (
+        <span style={{ fontSize: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>{icon}</span>
+      )}
     </div>
     <div className={styles.materialName}>
       {name}
@@ -840,7 +845,7 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
       재봉술1단: 0, 재봉술2단: 0, 재봉술3단: 0, 재봉술4단: 0,
       야금술1단: 0, 야금술2단: 0, 야금술3단: 0, 야금술4단: 0,
       // 계승 재료
-      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0,
+      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0,
     };
 
     toRefine.forEach(eq => {
@@ -859,23 +864,40 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
             const baseProb = SUCCESSION_BASE_PROBABILITY[level];
             if (!baseProb) continue;
 
-            // 장인의 기운 적용 (1 / (확률 * 장인배율))
-            const avgTries = 1 / (baseProb * JANGIN_ACCUMULATE_DIVIDER);
+            // 숨결 사용 여부 확인
+            const useBreath = (eq.type === 'armor' && materialOptions.glacierBreath.enabled) || (eq.type === 'weapon' && materialOptions.lavaBreath.enabled);
+
+            // 시뮬레이션 데이터에서 평균 시도 횟수 조회
+            // (장인의 기운, 실패 시 확률 증가 규칙이 모두 반영됨)
+            const avgTries = getSuccessionAverageTries(level, useBreath);
+            if (avgTries === 0) continue;
+
+            // 숨결 효과 (비용 계산용)
+            const breathEffect = getBreathEffect(baseProb);
 
             const materialCostPerTry = eq.type === 'armor'
-              ? SUCCESSION_ARMOR_MATERIAL_COSTS[level]
-              : SUCCESSION_WEAPON_MATERIAL_COSTS[level];
+              ? SUCCESSION_ARMOR_MATERIAL_COSTS[nextLevel]
+              : SUCCESSION_WEAPON_MATERIAL_COSTS[nextLevel];
 
             if (!materialCostPerTry) continue;
 
             if (eq.type === 'armor') {
               totalMaterials.수호석결정 = (totalMaterials.수호석결정 || 0) + (materialCostPerTry as any).수호석결정 * avgTries;
+              // 숨결 비용 (방어구: 빙하의 숨결)
+              if (useBreath) {
+                totalMaterials.빙하 += breathEffect.max * avgTries;
+              }
             } else {
               totalMaterials.파괴석결정 = (totalMaterials.파괴석결정 || 0) + (materialCostPerTry as any).파괴석결정 * avgTries;
+              // 숨결 비용 (무기: 용암의 숨결)
+              if (useBreath) {
+                totalMaterials.용암 += breathEffect.max * avgTries;
+              }
             }
             totalMaterials.위대한돌파석 = (totalMaterials.위대한돌파석 || 0) + (materialCostPerTry as any).위대한돌파석 * avgTries;
             totalMaterials.상급아비도스 = (totalMaterials.상급아비도스 || 0) + (materialCostPerTry as any).상급아비도스 * avgTries;
             totalMaterials.운명파편 += materialCostPerTry.운명파편 * avgTries;
+            totalMaterials.실링 = (totalMaterials.실링 || 0) + (materialCostPerTry as any).실링 * avgTries;
             totalMaterials.누골 += materialCostPerTry.골드 * avgTries;
           } else {
             // 기존 계승 전 로직
@@ -1105,7 +1127,7 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
           {/* 부위별 목표 레벨 설정 */}
           <div style={{ position: 'relative' }}>
             <div className={styles.updateBadge}>
-              ⚠️ 계승후 재련 소모 비용 데이터 확인 필요
+              🎃 26년 1월 7일 세르카 업데이트 완료!
             </div>
             <Card className={`mb-4 ${styles.mainCard}`}>
               <Card.Header className={styles.cardHeaderAlt}>
@@ -2194,6 +2216,9 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                               <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
                                 <MaterialCard icon="/abidos-fusion2.webp" name="상급아비도스" amount={materials.상급아비도스 || 0} color="#818cf8" showCheckbox={true} isBound={boundMaterials['상급아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['상급아비도스']} />
                               </Col>
+                              <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                                <MaterialCard icon="/shilling.png" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false} />
+                              </Col>
                             </>
                           ) : (
                             <>
@@ -2221,6 +2246,57 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                           )}
                         </Row>
                       </div>
+
+                      {/* 계승 모드 숨결 재료 (책은 미사용) */}
+                      {isSuccessionMode && (requiredMats.needsGlacierNormal || requiredMats.needsLavaNormal) && (
+                        <div className={styles.materialsSection}>
+                          <div className={styles.materialsSectionTitle}>
+                            추가 재료
+                          </div>
+                          <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
+                            {requiredMats.needsGlacierNormal && (
+                              <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
+                                <MaterialCard
+                                  icon="/breath-glacier.webp"
+                                  name="빙하의 숨결"
+                                  amount={materials.빙하}
+                                  color="#34d399"
+                                  showCheckbox={true}
+                                  isBound={boundMaterials['빙하']}
+                                  onBoundChange={handleBoundChange}
+                                  cost={results.materialCosts['빙하']}
+                                  showEnableToggle={true}
+                                  isEnabled={materialOptions.glacierBreath.enabled}
+                                  onToggleEnabled={() => setMaterialOptions(prev => ({
+                                    ...prev,
+                                    glacierBreath: { ...prev.glacierBreath, enabled: !prev.glacierBreath.enabled }
+                                  }))}
+                                />
+                              </Col>
+                            )}
+                            {requiredMats.needsLavaNormal && (
+                              <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
+                                <MaterialCard
+                                  icon="/breath-lava.webp"
+                                  name="용암의 숨결"
+                                  amount={materials.용암}
+                                  color="#f87171"
+                                  showCheckbox={true}
+                                  isBound={boundMaterials['용암']}
+                                  onBoundChange={handleBoundChange}
+                                  cost={results.materialCosts['용암']}
+                                  showEnableToggle={true}
+                                  isEnabled={materialOptions.lavaBreath.enabled}
+                                  onToggleEnabled={() => setMaterialOptions(prev => ({
+                                    ...prev,
+                                    lavaBreath: { ...prev.lavaBreath, enabled: !prev.lavaBreath.enabled }
+                                  }))}
+                                />
+                              </Col>
+                            )}
+                          </Row>
+                        </div>
+                      )}
 
                       {/* 일반 재련 추가 재료 (계승 모드에서는 숨김) */}
                       {!isSuccessionMode && requiredMats.hasNormalRefining && (requiredMats.needsGlacierNormal || requiredMats.needsLavaNormal) && (
