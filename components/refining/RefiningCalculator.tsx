@@ -279,16 +279,16 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
     const costs: Record<string, number> = {};
     let totalMaterialCost = 0;
 
-    // 개별 재료 비용 계산 (단위 변환 적용)
-    costs['수호석'] = materials.수호석 * ((marketPrices['66102106'] || 0) / 100);  // 100개 단위
-    costs['파괴석'] = materials.파괴석 * ((marketPrices['66102006'] || 0) / 100);  // 100개 단위
+    // 개별 재료 비용 계산 (marketPrices는 이미 개당 가격으로 변환됨)
+    costs['수호석'] = materials.수호석 * (marketPrices['66102106'] || 0);
+    costs['파괴석'] = materials.파괴석 * (marketPrices['66102006'] || 0);
     costs['돌파석'] = materials.돌파석 * (marketPrices['66110225'] || 0);
     costs['아비도스'] = materials.아비도스 * (marketPrices['6861012'] || 0);
-    costs['운명파편'] = materials.운명파편 * ((marketPrices['66130143'] || 0) / 3000);  // 3000개 단위
+    costs['운명파편'] = materials.운명파편 * (marketPrices['66130143'] || 0);
 
     // 계승 재료 비용 계산
-    costs['수호석결정'] = (materials.수호석결정 || 0) * ((marketPrices['66102107'] || 0) / 100);  // 100개 단위
-    costs['파괴석결정'] = (materials.파괴석결정 || 0) * ((marketPrices['66102007'] || 0) / 100);  // 100개 단위
+    costs['수호석결정'] = (materials.수호석결정 || 0) * (marketPrices['66102107'] || 0);
+    costs['파괴석결정'] = (materials.파괴석결정 || 0) * (marketPrices['66102007'] || 0);
     costs['위대한돌파석'] = (materials.위대한돌파석 || 0) * (marketPrices['66110226'] || 0);
     costs['상급아비도스'] = (materials.상급아비도스 || 0) * (marketPrices['6861013'] || 0);
     costs['빙하'] = materials.빙하 * (marketPrices['66111132'] || 0);
