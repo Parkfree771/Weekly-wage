@@ -314,12 +314,12 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
     // 상급 재련 책 비용 (1단, 2단, 3단, 4단)
     costs['재봉술1단'] = (materials.재봉술1단 || 0) * (marketPrices['66112712'] || 0);
     costs['재봉술2단'] = (materials.재봉술2단 || 0) * (marketPrices['66112714'] || 0);
-    costs['재봉술3단'] = (materials.재봉술3단 || 0) * 0;  // 거래소 미등록 (0골드)
-    costs['재봉술4단'] = (materials.재봉술4단 || 0) * 0;  // 거래소 미등록 (0골드)
+    costs['재봉술3단'] = (materials.재봉술3단 || 0) * (marketPrices['66112716'] || 0);
+    costs['재봉술4단'] = (materials.재봉술4단 || 0) * (marketPrices['66112718'] || 0);
     costs['야금술1단'] = (materials.야금술1단 || 0) * (marketPrices['66112711'] || 0);
     costs['야금술2단'] = (materials.야금술2단 || 0) * (marketPrices['66112713'] || 0);
-    costs['야금술3단'] = (materials.야금술3단 || 0) * 0;  // 거래소 미등록 (0골드)
-    costs['야금술4단'] = (materials.야금술4단 || 0) * 0;  // 거래소 미등록 (0골드)
+    costs['야금술3단'] = (materials.야금술3단 || 0) * (marketPrices['66112715'] || 0);
+    costs['야금술4단'] = (materials.야금술4단 || 0) * (marketPrices['66112717'] || 0);
 
     // 귀속 재료를 제외한 총 재료비 계산
     if (!boundMaterials['수호석']) totalMaterialCost += costs['수호석'];
