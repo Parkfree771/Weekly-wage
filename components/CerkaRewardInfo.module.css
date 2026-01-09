@@ -17,8 +17,8 @@
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: 3px solid transparent;
-  width: 160px;
-  max-width: 185px;
+  width: 185px;
+  max-width: 200px;
 }
 
 .raidCard:hover {
@@ -421,7 +421,7 @@
   }
 
   .raidCard {
-    width: 130px;
+    width: 160px;
     border-radius: 10px;
   }
 
@@ -430,15 +430,16 @@
   }
 
   .raidName {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    white-space: nowrap;
   }
 
   .raidLevel {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
   }
 
   .goldBadge {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
 
   .detailHeader {
@@ -541,7 +542,7 @@
   }
 
   .raidCard {
-    width: 110px;
+    width: 145px;
     border-radius: 8px;
   }
 
@@ -550,15 +551,16 @@
   }
 
   .raidName {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
   }
 
   .raidLevel {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
   }
 
   .goldBadge {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
   .detailBody {

@@ -319,8 +319,9 @@
   }
 
   .raidName {
-    font-size: 0.5rem;
+    font-size: 0.32rem;
     line-height: 1.1;
+    white-space: nowrap;
   }
 
   .raidLevel {
@@ -427,8 +428,9 @@
   }
 
   .raidName {
-    font-size: 0.48rem;
+    font-size: 0.28rem;
     line-height: 1.1;
+    white-space: nowrap;
   }
 
   .raidLevel {

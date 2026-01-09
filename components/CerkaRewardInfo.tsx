@@ -276,8 +276,19 @@ const CerkaRewardInfo: React.FC = () => {
       {/* 선택된 레이드 상세 정보 */}
       {selectedData && (
         <Card className={styles.detailCard}>
-          <Card.Header className={styles.detailHeader}>
-            {selectedData.raidName} 클리어 보상
+          <Card.Header
+            className={styles.detailHeader}
+            style={{
+              background: 'linear-gradient(135deg, #6b2d8c 0%, #9c4dcc 50%, #e85d04 100%)',
+              backgroundColor: '#6b2d8c'
+            }}
+          >
+            <span style={{
+              color: 'var(--text-primary)',
+              WebkitTextFillColor: 'var(--text-primary)'
+            }}>
+              {selectedData.raidName} 클리어 보상
+            </span>
           </Card.Header>
           <Card.Body className={styles.detailBody}>
 
