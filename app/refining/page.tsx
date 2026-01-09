@@ -29,7 +29,7 @@ export default function RefiningPage() {
                     width={48}
                     height={48}
                     priority
-                    style={{ borderRadius: '8px', width: 'clamp(2.5rem, 5vw, 3rem)', height: 'auto', objectFit: 'cover' }}
+                    style={{ borderRadius: '8px', width: 'clamp(2.5rem, 5vw, 3rem)', height: 'clamp(2.5rem, 5vw, 3rem)', objectFit: 'cover' }}
                   />
                   <h1
                     className="title mb-0"

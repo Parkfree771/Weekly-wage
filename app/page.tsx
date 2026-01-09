@@ -1,14 +1,30 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
-import PriceComparisonStats from '@/components/PriceComparisonStats';
-import { PriceChartProvider } from '@/components/PriceChartContainer';
 import ContactForm from '@/components/ContactForm';
 import styles from './page.module.css';
+
+// Recharts를 사용하는 컴포넌트를 Dynamic Import로 지연 로드 (초기 번들 크기 감소)
+const PriceComparisonStats = dynamic(() => import('@/components/PriceComparisonStats'), {
+  loading: () => (
+    <div className="text-center py-5" style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="spinner-border text-secondary" role="status">
+        <span className="visually-hidden">차트 로딩중...</span>
+      </div>
+    </div>
+  ),
+  ssr: false
+});
+
+const PriceChartProvider = dynamic(
+  () => import('@/components/PriceChartContainer').then(mod => ({ default: mod.PriceChartProvider })),
+  { ssr: false }
+);
 
 export default function Home() {
   const [footerOpen, setFooterOpen] = useState(false);
@@ -22,7 +38,7 @@ export default function Home() {
             {/* 사이트 제목 */}
             <div className="text-center mb-3 mb-md-4">
               <div className="d-flex justify-content-center align-items-center gap-2 mb-2">
-                <Image src="/icon.png" alt="로스트아크 골드 계산기 로고" width={40} height={40} priority style={{ width: 'clamp(2rem, 4.5vw, 2.5rem)', height: 'auto' }} />
+                <Image src="/icon.png" alt="로스트아크 골드 계산기 로고" width={40} height={40} priority style={{ width: 'clamp(2rem, 4.5vw, 2.5rem)', height: 'clamp(2rem, 4.5vw, 2.5rem)' }} />
                 <h1
   className="title mb-0"
   style={{
@@ -85,7 +101,7 @@ export default function Home() {
                       }}
                     >
                       <div className="d-flex justify-content-center mb-1 mb-sm-2">
-                        <Image src="/gold.webp" alt="로아 주간 골드 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
+                        <Image src="/gold.webp" alt="로아 주간 골드 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', width: 'clamp(36px, 8vw, 52px)', height: 'clamp(36px, 8vw, 52px)' }} />
                       </div>
                       <h3
                         className="mb-1 mb-sm-2"
@@ -126,7 +142,7 @@ export default function Home() {
                       }}
                     >
                       <div className="d-flex justify-content-center mb-1 mb-sm-2">
-                        <Image src="/banner_share.webp" alt="로아 T4 재련 비용 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
+                        <Image src="/banner_share.webp" alt="로아 T4 재련 비용 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(36px, 8vw, 52px)', height: 'clamp(36px, 8vw, 52px)' }} />
                       </div>
                       <h3
                         className="mb-1 mb-sm-2"

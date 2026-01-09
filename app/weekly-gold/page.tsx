@@ -8,10 +8,10 @@ import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 
-// Dynamic imports로 코드 분할
+// Dynamic imports로 코드 분할 (CLS 방지를 위해 최소 높이 지정)
 const RaidCalculator = dynamic(() => import('@/components/RaidCalculator'), {
   loading: () => (
-    <div className="text-center py-5">
+    <div className="text-center py-5" style={{ minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="spinner-border text-primary" role="status">
         <span className="visually-hidden">로딩중...</span>
       </div>
@@ -21,7 +21,7 @@ const RaidCalculator = dynamic(() => import('@/components/RaidCalculator'), {
 
 const SeeMoreCalculator = dynamic(() => import('@/components/SeeMoreCalculator'), {
   loading: () => (
-    <div className="text-center py-5">
+    <div className="text-center py-5" style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="spinner-border text-primary" role="status">
         <span className="visually-hidden">로딩중...</span>
       </div>
@@ -31,7 +31,7 @@ const SeeMoreCalculator = dynamic(() => import('@/components/SeeMoreCalculator')
 
 const CerkaRewardInfo = dynamic(() => import('@/components/CerkaRewardInfo'), {
   loading: () => (
-    <div className="text-center py-5">
+    <div className="text-center py-5" style={{ minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="spinner-border text-primary" role="status">
         <span className="visually-hidden">로딩중...</span>
       </div>
@@ -76,7 +76,7 @@ export default function WeeklyGoldPage() {
             <div className="text-center mb-3 mb-md-4">
               <Link href="/" className="text-decoration-none">
                 <div className="d-flex justify-content-center align-items-center gap-3 mb-2" style={{ cursor: 'pointer' }}>
-                  <Image src="/gold.webp" alt="골드" width={48} height={48} priority style={{ borderRadius: '8px', width: 'clamp(2.5rem, 5vw, 3rem)', height: 'auto' }} />
+                  <Image src="/gold.webp" alt="골드" width={48} height={48} priority style={{ borderRadius: '8px', width: 'clamp(2.5rem, 5vw, 3rem)', height: 'clamp(2.5rem, 5vw, 3rem)' }} />
                   <h1
   className="title mb-0"
   style={{
