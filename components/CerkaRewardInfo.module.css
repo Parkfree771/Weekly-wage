@@ -1,0 +1,717 @@
+/* 레이드 카드 그리드 */
+.raidCardsGrid {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem auto;
+  padding: 0;
+}
+
+/* 레이드 카드 */
+.raidCard {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 3px solid transparent;
+  width: 160px;
+  max-width: 185px;
+}
+
+.raidCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.raidCard.selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+  transform: translateY(-4px);
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.raidImage {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.6) 100%);
+  z-index: 1;
+}
+
+.cardContent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.75rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.raidName {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.raidLevel {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.goldBadge {
+  margin-top: 0.2rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #ffd700;
+  text-shadow:
+    0 0 6px rgba(0, 0, 0, 1),
+    0 2px 4px rgba(0, 0, 0, 1);
+}
+
+/* 상세 카드 */
+.detailCard {
+  border: 2px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+  background-color: var(--card-bg);
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.detailHeader {
+  background: linear-gradient(135deg, #6b2d8c 0%, #9c4dcc 50%, #e85d04 100%) !important;
+  color: #ffffff !important;
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 1rem 1.5rem;
+  border: none !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.detailBody {
+  padding: 1.5rem;
+  background-color: var(--card-bg);
+}
+
+/* 섹션 타이틀 */
+.sectionTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  padding-left: 0.5rem;
+  border-left: 4px solid var(--primary-color);
+}
+
+/* 관문 그리드 */
+.gatesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* 관문 섹션 */
+.gateSection {
+  background: var(--card-header-bg);
+  border-radius: 10px;
+  padding: 0.875rem;
+  border: 2px solid var(--border-color);
+}
+
+.moreSection {
+  border-color: rgba(168, 85, 247, 0.3);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(168, 85, 247, 0.03) 100%);
+}
+
+.gateHeader {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.gateName {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* 골드/비용 행 */
+.goldRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 0.875rem;
+  background: rgba(255, 215, 0, 0.08);
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.goldLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.goldValue {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #d4a000;
+}
+
+.costRow {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.costValue {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+/* 재료 테이블 */
+.materialTable {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  color: var(--text-primary);
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  table-layout: fixed;
+}
+
+.materialTable thead th {
+  background: var(--card-header-bg);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.75rem 0.875rem;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.materialTable thead th:first-child {
+  text-align: left;
+}
+
+.materialTable thead th:last-child {
+  border-right: none;
+}
+
+.materialTable tbody td {
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  vertical-align: middle;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.materialTable tbody td:first-child {
+  text-align: left;
+}
+
+.materialTable tbody td:last-child {
+  border-right: none;
+}
+
+.materialTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* 열 너비 조정 */
+.materialTable th:nth-child(1),
+.materialTable td:nth-child(1) {
+  width: 34%;
+}
+
+.materialTable th:nth-child(2),
+.materialTable td:nth-child(2) {
+  width: 18%;
+}
+
+.materialTable th:nth-child(3),
+.materialTable td:nth-child(3) {
+  width: 22%;
+}
+
+.materialTable th:nth-child(4),
+.materialTable td:nth-child(4) {
+  width: 26%;
+}
+
+.materialCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.materialCell img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.materialCell span {
+  font-size: 0.9rem;
+}
+
+/* 소계/합계 행 */
+.subtotalRow td {
+  background: rgba(0, 0, 0, 0.02);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  padding: 0.75rem 0.875rem !important;
+  border-top: 1px solid var(--border-color);
+}
+
+.subtotalRow td:first-child {
+  text-align: left;
+}
+
+.subtotalRow td:last-child {
+  text-align: right;
+}
+
+.gateTotalRow td {
+  background: rgba(99, 102, 241, 0.05);
+  font-size: 1rem;
+  padding: 0.875rem !important;
+  font-weight: 600;
+}
+
+.gateTotalRow td:first-child {
+  text-align: left;
+}
+
+.gateTotalRow td:last-child {
+  text-align: right;
+}
+
+.profit {
+  color: #22c55e !important;
+}
+
+.loss {
+  color: #ef4444 !important;
+}
+
+/* 최종 섹션 */
+.finalSection {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.finalTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.finalGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+
+.finalGridItem {
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.finalTotalItem {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+  border: 2px solid rgba(99, 102, 241, 0.5);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+  transform: scale(1.02);
+}
+
+.finalTotalItem .finalLabel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.finalLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+.finalItemValue {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.calcCost {
+  color: #ef4444 !important;
+}
+
+.finalValueWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.finalValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .raidCardsGrid {
+    gap: 0.75rem;
+  }
+
+  .raidCard {
+    width: 130px;
+    border-radius: 10px;
+  }
+
+  .cardContent {
+    padding: 0.5rem;
+  }
+
+  .raidName {
+    font-size: 0.9rem;
+  }
+
+  .raidLevel {
+    font-size: 0.75rem;
+  }
+
+  .goldBadge {
+    font-size: 0.8rem;
+  }
+
+  .detailHeader {
+    font-size: 1.1rem;
+    padding: 0.875rem 1rem;
+  }
+
+  .detailBody {
+    padding: 1rem;
+  }
+
+  .gatesGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .gateSection {
+    padding: 0.75rem;
+  }
+
+  .sectionTitle {
+    font-size: 1rem;
+  }
+
+  .gateName {
+    font-size: 1rem;
+  }
+
+  .goldRow {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .goldLabel {
+    font-size: 0.95rem;
+  }
+
+  .goldValue,
+  .costValue {
+    font-size: 1rem;
+  }
+
+  .materialTable thead th {
+    font-size: 0.9rem;
+    padding: 0.625rem 0.5rem;
+  }
+
+  .materialTable tbody td {
+    padding: 0.625rem 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .materialCell span {
+    font-size: 0.85rem;
+  }
+
+  .materialCell img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .subtotalRow td,
+  .gateTotalRow td {
+    font-size: 0.9rem;
+    padding: 0.625rem 0.5rem !important;
+  }
+
+  .finalSection {
+    padding: 1rem;
+  }
+
+  .finalTitle {
+    font-size: 1rem;
+  }
+
+  .finalGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+  }
+
+  .finalLabel {
+    font-size: 0.75rem;
+  }
+
+  .finalItemValue {
+    font-size: 0.9rem;
+  }
+
+  .finalTotalItem .finalLabel {
+    font-size: 0.8rem;
+  }
+
+  .finalValue {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .raidCardsGrid {
+    gap: 0.5rem;
+  }
+
+  .raidCard {
+    width: 110px;
+    border-radius: 8px;
+  }
+
+  .cardContent {
+    padding: 0.4rem;
+  }
+
+  .raidName {
+    font-size: 0.75rem;
+  }
+
+  .raidLevel {
+    font-size: 0.65rem;
+  }
+
+  .goldBadge {
+    font-size: 0.7rem;
+  }
+
+  .detailBody {
+    padding: 0.75rem;
+  }
+
+  .gateSection {
+    padding: 0.625rem;
+  }
+
+  .sectionTitle {
+    font-size: 0.9rem;
+  }
+
+  .gatesGrid {
+    margin-bottom: 1rem;
+    gap: 0.75rem;
+  }
+
+  .gateName {
+    font-size: 0.9rem;
+  }
+
+  .gateHeader {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+  }
+
+  .goldRow {
+    padding: 0.4rem 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .goldLabel {
+    font-size: 0.85rem;
+    gap: 0.35rem;
+  }
+
+  .goldLabel img {
+    width: 16px;
+    height: 16px;
+  }
+
+  .goldValue,
+  .costValue {
+    font-size: 0.9rem;
+  }
+
+  .materialTable thead th {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.4rem;
+  }
+
+  .materialTable tbody td {
+    padding: 0.5rem 0.4rem;
+    font-size: 0.8rem;
+  }
+
+  .materialCell span {
+    font-size: 0.75rem;
+  }
+
+  .materialCell img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .subtotalRow td,
+  .gateTotalRow td {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.4rem !important;
+  }
+
+  .finalSection {
+    padding: 0.875rem;
+  }
+
+  .finalTitle {
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .finalGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.3rem;
+  }
+
+  .finalGridItem {
+    padding: 0.4rem 0.2rem;
+  }
+
+  .finalLabel {
+    font-size: 0.65rem;
+  }
+
+  .finalItemValue {
+    font-size: 0.8rem;
+  }
+
+  .finalTotalItem .finalLabel {
+    font-size: 0.7rem;
+  }
+
+  .finalValue {
+    font-size: 1rem;
+  }
+
+  .finalTotalItem {
+    transform: scale(1);
+  }
+}
+
+/* 다크모드 */
+[data-theme="dark"] .raidCard {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .raidCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .raidCard.selected {
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
+}
+
+[data-theme="dark"] .detailCard {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .gateSection {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .moreSection {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%);
+}
+
+[data-theme="dark"] .goldRow {
+  background: rgba(255, 215, 0, 0.1);
+}
+
+[data-theme="dark"] .costRow {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+[data-theme="dark"] .subtotalRow td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="dark"] .gateTotalRow td {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="dark"] .finalSection {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
+}
