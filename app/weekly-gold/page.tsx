@@ -121,41 +121,9 @@ export default function WeeklyGoldPage() {
             {/* 캐릭터 검색 */}
             <CharacterSearch onSelectionChange={setSelectedCharacters} onSearch={handleSearch} searched={searched} />
 
-            {/* 세르카 보상 정보 */}
-            <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
-              <Row className="justify-content-center">
-                <Col xl={12} lg={12} md={12}>
-                  <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
-                    <Card.Header
-                      className="text-center py-2 border-0"
-                      style={{
-                        background: 'linear-gradient(135deg, #6b2d8c 0%, #9c4dcc 50%, #e85d04 100%)',
-                        borderBottom: '1px solid var(--border-color)'
-                      }}
-                    >
-                      <h3
-                        className="mb-0"
-                        style={{
-                          fontWeight: '600',
-                          fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                          color: '#ffffff',
-                          letterSpacing: '-0.025em'
-                        }}
-                      >
-                        세르카 클리어 보상 정보
-                      </h3>
-                    </Card.Header>
-                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
-                      <CerkaRewardInfo />
-                    </Card.Body>
-                  </Card>
-                </Col>
-              </Row>
-            </div>
-
-            {/* 검색 후 원정대 주급 계산기 */}
+            {/* 검색 후 원정대 주급 계산기 - 검색 결과가 가장 위에 표시 */}
             {searched && selectedCharacters.length > 0 && (
-              <div className="mt-3" style={{ position: 'relative' }}>
+              <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)', position: 'relative' }}>
                 <div
                   style={{
                     position: 'absolute',
@@ -190,6 +158,38 @@ export default function WeeklyGoldPage() {
                 </Card>
               </div>
             )}
+
+            {/* 세르카 보상 정보 */}
+            <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
+              <Row className="justify-content-center">
+                <Col xl={12} lg={12} md={12}>
+                  <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
+                    <Card.Header
+                      className="text-center py-2 border-0"
+                      style={{
+                        background: 'linear-gradient(135deg, #6b2d8c 0%, #9c4dcc 50%, #e85d04 100%)',
+                        borderBottom: '1px solid var(--border-color)'
+                      }}
+                    >
+                      <h3
+                        className="mb-0"
+                        style={{
+                          fontWeight: '600',
+                          fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
+                          color: '#ffffff',
+                          letterSpacing: '-0.025em'
+                        }}
+                      >
+                        세르카 클리어 보상 정보
+                      </h3>
+                    </Card.Header>
+                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
+                      <CerkaRewardInfo />
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </div>
 
             {/* 더보기 효율 계산기 섹션 */}
             <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>

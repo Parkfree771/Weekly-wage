@@ -194,7 +194,8 @@ export default function Home() {
                 className="p-2 p-md-3"
                 style={{
                   background: 'var(--card-body-bg-stone)',
-                  borderRadius: '0 0 16px 16px'
+                  borderRadius: '0 0 16px 16px',
+                  minHeight: '500px'
                 }}
               >
                 <PriceChartProvider>
@@ -228,7 +229,7 @@ export default function Home() {
                     문의하기
                   </h3>
                 </Card.Header>
-                <Card.Body className="p-0" style={{ background: 'var(--card-body-bg-stone)', borderRadius: '0 0 16px 16px', overflow: 'hidden' }}>
+                <Card.Body className="p-0" style={{ background: 'var(--card-body-bg-stone)', borderRadius: '0 0 16px 16px', overflow: 'hidden', minHeight: '380px' }}>
                   <ContactForm />
                 </Card.Body>
               </Card>
