@@ -23,7 +23,7 @@ const getMaterialImage = (itemName: string): string => {
 
 // 기본 클리어 보상 데이터
 const basicClearRewards = {
-  '세르카 나이트메어': [
+  '세르카 나메': [
     {
       gate: 1,
       materials: [
@@ -121,7 +121,7 @@ const CerkaRewardInfo: React.FC = () => {
         unitPrices[itemId] = bundlePrice / bundleSize;
       });
 
-      const targetRaids = ['세르카 나이트메어', '세르카 하드'];
+      const targetRaids = ['세르카 나메', '세르카 하드'];
       const result: CerkaData[] = [];
 
       targetRaids.forEach(raidName => {

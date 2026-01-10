@@ -1,6 +1,6 @@
 export const raids = [
   {
-    name: '세르카 나이트메어',
+    name: '세르카 나메',
     level: 1740,
     image: '/cerka.webp',
     gates: [

@@ -430,7 +430,7 @@
   }
 
   .raidName {
-    font-size: 0.95rem;
+    font-size: 0.7rem !important;
     white-space: nowrap;
   }
 
@@ -492,7 +492,8 @@
   }
 
   .materialCell span {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
   }
 
   .materialCell img {
@@ -551,7 +552,7 @@
   }
 
   .raidName {
-    font-size: 0.85rem;
+    font-size: 0.6rem !important;
     white-space: nowrap;
   }
 
@@ -620,7 +621,8 @@
   }
 
   .materialCell span {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
+    white-space: nowrap;
   }
 
   .materialCell img {

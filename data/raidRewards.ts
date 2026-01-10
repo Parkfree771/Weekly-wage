@@ -59,9 +59,9 @@ export const MATERIAL_BUNDLE_SIZES: { [key: number]: number } = {
 };
 
 export const raidRewards: RaidReward[] = [
-  // 세르카 나이트메어
+  // 세르카 나메
   {
-    raidName: '세르카 나이트메어',
+    raidName: '세르카 나메',
     gate: 1,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 860 },
@@ -73,7 +73,7 @@ export const raidRewards: RaidReward[] = [
     ]
   },
   {
-    raidName: '세르카 나이트메어',
+    raidName: '세르카 나메',
     gate: 2,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 1430 },
