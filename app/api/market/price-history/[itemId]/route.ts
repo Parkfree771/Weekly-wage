@@ -4,8 +4,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 /**
  * 캐시를 무효화해야 하는 시간대인지 확인 (한국 시간 기준)
- * - 평소(월~일): 오전 05:00~07:59 (날짜 변경 시간대 - 경매장 05시, 거래소 06시 갱신)
- * - 수요일: 오전 10:00~11:59 (점검 후 업데이트)
+ * - 매일: 오전 00:00~00:59 (날짜 변경 시점)
  */
 function shouldBypassCache(): boolean {
   const now = new Date();
@@ -15,17 +14,10 @@ function shouldBypassCache(): boolean {
   const kstDate = new Date(kstTime);
 
   const kstHour = kstDate.getUTCHours(); // KST 시간
-  const kstDay = kstDate.getUTCDay(); // 0=일요일, 3=수요일
 
-  // 수요일(3) 오전 10시~11시 59분
-  if (kstDay === 3 && (kstHour === 10 || kstHour === 11)) {
-    console.log('[Cache Bypass] 수요일 오전 10~11시대 - 캐시 무시');
-    return true;
-  }
-
-  // 평소 오전 5시~7시 59분 (경매장 05시 + 거래소 06시 갱신 + 여유시간)
-  if (kstHour === 5 || kstHour === 6 || kstHour === 7) {
-    console.log('[Cache Bypass] 오전 5~7시대 - 캐시 무시');
+  // 00시대 (날짜 변경 시점)
+  if (kstHour === 0) {
+    console.log('[Cache Bypass] 오전 0시대 - 캐시 무시');
     return true;
   }
 
@@ -34,7 +26,7 @@ function shouldBypassCache(): boolean {
 
 /**
  * 시간대별 Cache-Control 헤더 반환
- * - 날짜 변경 시간대: 5분 캐시 (빠른 갱신)
+ * - 날짜 변경 시간대 (00시): 5분 캐시 (빠른 갱신)
  * - 평상시: 1시간 캐시 (API 부하 최소화)
  */
 function getCacheControlHeader(): string {
@@ -44,11 +36,10 @@ function getCacheControlHeader(): string {
   const kstDate = new Date(kstTime);
 
   const kstHour = kstDate.getUTCHours();
-  const kstDay = kstDate.getUTCDay();
 
-  // 1. 날짜 변경 시간대 (05:00~07:59, 수요일 10:00~11:59)
+  // 1. 날짜 변경 시간대 (00:00~00:59)
   //    → 5분 캐시 - 새 데이터 빠르게 반영
-  if (kstHour === 5 || kstHour === 6 || kstHour === 7 || (kstDay === 3 && (kstHour === 10 || kstHour === 11))) {
+  if (kstHour === 0) {
     return 'public, max-age=300, s-maxage=300, stale-while-revalidate=60';
   }
 

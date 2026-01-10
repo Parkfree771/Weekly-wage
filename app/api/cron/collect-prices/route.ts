@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { addTodayTempPrice, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson, appendYesterdayToHistory } from '@/lib/firestore-admin';
+import { addTodayTempPrice, addTodayTempPriceForDate, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson, appendYesterdayToHistory, getLostArkDate, formatDateKey } from '@/lib/firestore-admin';
 import { TRACKED_ITEMS, getItemsByCategory, ItemCategory } from '@/lib/items-to-track';
 
 // 자동 가격 수집 엔드포인트 (GitHub Actions용)
@@ -41,10 +41,8 @@ export async function GET(request: Request) {
   const currentKSTMinute = kstDate.getUTCMinutes();
 
   // 시간대 확인
-  const isAt6AM = currentKSTHour === 6 && currentKSTMinute < 30; // 06:00-06:29
-  const isAt5AM = currentKSTHour === 5 && currentKSTMinute >= 10; // 05:10-05:59 (작업 지연 고려)
+  const isAt0AM = currentKSTHour === 0 && currentKSTMinute < 30; // 00:00-00:29 (날짜 변경 시점)
   const isWednesday = kstDate.getUTCDay() === 3; // 수요일
-  const isWednesdayAt10AM = isWednesday && currentKSTHour === 10 && currentKSTMinute < 30; // 수요일 10:00-10:29
 
   // 수요일 점검 시간 확인 (06:00~09:59)
   const isWednesdayMaintenance = isWednesday && currentKSTHour >= 6 && currentKSTHour < 10;
@@ -66,27 +64,21 @@ export async function GET(request: Request) {
   }
 
   // ========================================================================
-  // 전날 데이터 저장 타이밍 (CRITICAL - 신중하게 수정할 것)
+  // 전날 데이터 저장 타이밍 (00시 기준)
   // ========================================================================
 
   // === 거래소 아이템 전날 평균가 저장 타이밍 ===
-  // - 수요일: 오전 10시 00분 (점검 종료 후, 로스트아크 업데이트 반영)
-  //   → 수요일 06:00~09:59는 점검으로 건너뛰고, 10:00에 전날 데이터 확정
-  // - 기타 요일: 오전 6시 00분
-  // - 실행 조건: type=market이고 해당 시간일 때
-  // - GitHub Actions: 매시 00분 실행 → 06:00 또는 10:00에 type=market으로 실행됨
-  const shouldSaveMarketYesterday = isWednesdayAt10AM || (!isWednesday && isAt6AM);
+  // - 매일 오전 0시 00분에 Stats[1] (전날 확정 평균가) 저장
+  // - 수요일도 동일 (00시는 점검 전이므로 정상 동작)
+  // - GitHub Actions: 매시 00분 실행 → 00:00에 실행됨
+  const shouldSaveMarketYesterday = isAt0AM;
 
   // === 경매장 전날 데이터 확정 타이밍 ===
-  // - 매일 오전 5시대 (05:10~05:59) - 하루 마지막 수집 직후 확정
-  // - 실행 조건: type=auction이고 05:10 이후일 때
-  // - GitHub Actions: 매시 10분 실행 → 05:10에 type=auction으로 실행됨
-  // - 로직: 05:10 수집 시작 → 수집 완료(지연 가능) → 즉시 평균 계산하여 dailyPrices 확정
-  // - 시간 범위를 05:59까지 허용: API 지연, 서버 부하 등으로 작업이 늦게 끝날 수 있음
-  // - 06:10부터는 새로운 날짜의 todayTemp 수집 시작
-  // - 수요일: 06:10~09:10은 점검으로 건너뛰고, 10:10부터 수집 재개
-  //   → 평일 24개 vs 수요일 20개 (수요일 10:10 ~ 목요일 05:10)
-  const shouldFinalizeAuctionYesterday = isAt5AM && (typeFilter === 'auction' || typeFilter === null);
+  // - 매일 오전 0시대 (00:10)에 전날 수집 데이터 평균 계산하여 확정
+  // - 00:10 수집한 가격은 전날 마지막 가격 + 오늘 첫 가격으로 이중 사용
+  // - GitHub Actions: 매시 10분 실행 → 00:10에 실행됨
+  // - 수요일: 00시는 점검 전이므로 정상 동작, 06:10~09:10은 점검으로 건너뛰기
+  const shouldFinalizeAuctionYesterday = isAt0AM && (typeFilter === 'auction' || typeFilter === null);
 
   // ========================================================================
 
@@ -153,7 +145,7 @@ export async function GET(request: Request) {
 
         console.log(`[Market] ${item.name} - Stats 배열 개수: ${itemData.Stats?.length || 0}`);
 
-        // === 거래소 전날 평균가 저장: 수요일은 10시, 기타 요일은 6시 ===
+        // === 거래소 전날 평균가 저장: 매일 00시 ===
         if (shouldSaveMarketYesterday) {
           // Stats[1]은 어제 데이터 (이미 확정된 평균가)
           if (itemData.Stats && itemData.Stats.length > 1) {
@@ -162,8 +154,7 @@ export async function GET(request: Request) {
 
             if (yesterdayPrice > 0 && yesterdayStat.Date) {
               await saveHistoricalPrice(item.id, yesterdayPrice, yesterdayStat.Date, item.name);
-              const timeInfo = isWednesday ? '10시 (수요일 업데이트 고려)' : '6시';
-              console.log(`[Market] ${item.name} - 전날 평균가 저장 (${timeInfo}): ${yesterdayStat.Date} = ${yesterdayPrice}G`);
+              console.log(`[Market] ${item.name} - 전날 평균가 저장 (00시): ${yesterdayStat.Date} = ${yesterdayPrice}G`);
 
               results.push({
                 itemId: item.id,
@@ -200,7 +191,7 @@ export async function GET(request: Request) {
       } else if (item.type === 'auction') {
         // 경매장 아이템
         // 1시간마다: 현재 최저가를 todayTemp에 저장
-        // 오전 6시가 되면 finalizeYesterdayData()에서 전날 데이터를 평균 계산
+        // 00시가 되면 finalizeYesterdayData()에서 전날 데이터를 평균 계산
 
         // 필터 옵션 적용 (있으면)
         const requestBody: any = {
@@ -282,6 +273,17 @@ export async function GET(request: Request) {
           const currentPrice = auctionInfo.BuyPrice || auctionInfo.BidStartPrice || 0;
 
           if (currentPrice > 0) {
+            // 00시대: 이 가격을 전날 데이터에도 추가 (전날 마지막 가격)
+            if (isAt0AM) {
+              const lostArkDate = getLostArkDate();
+              const yesterday = new Date(lostArkDate);
+              yesterday.setDate(yesterday.getDate() - 1);
+              const yesterdayKey = formatDateKey(yesterday);
+              await addTodayTempPriceForDate(item.id, currentPrice, yesterdayKey, item.name);
+              console.log(`[Auction] ${item.name} - 전날 마지막 가격으로 추가: ${yesterdayKey} = ${currentPrice}G`);
+            }
+
+            // 오늘 todayTemp에 추가 (기존 로직)
             await addTodayTempPrice(item.id, currentPrice, item.name);
 
             results.push({
@@ -309,26 +311,26 @@ export async function GET(request: Request) {
     }
   }
 
-  // === 경매장 수집 완료 후 당일 데이터 확정 (05:10) ===
+  // === 경매장 수집 완료 후 전날 데이터 확정 (00:10) ===
   if (shouldFinalizeAuctionYesterday) {
     try {
-      // 경매장 아이템의 당일 임시 데이터를 평균내서 확정
-      // 중요: 수집을 먼저 완료한 후 확정해야 05:10 마지막 데이터가 포함됨
-      // useToday=true: 05시대에는 "당일" 데이터를 확정 (06시 이전이므로 getLostArkDate()가 당일을 반환)
-      await finalizeYesterdayData(true);
-      results.push({ message: '당일 데이터 확정 완료 (경매장 아이템 평균 계산)' });
-      console.log(`[5시대] 경매장 당일 데이터 확정 완료 (하루 마지막 수집 직후)`);
+      // 경매장 아이템의 전날 임시 데이터를 평균내서 확정
+      // 중요: 수집을 먼저 완료한 후 확정해야 00:10 마지막 데이터가 포함됨
+      // useToday=false: 00시대에는 "전날" 데이터를 확정 (이미 날짜가 바뀌었으므로)
+      await finalizeYesterdayData(false);
+      results.push({ message: '전날 데이터 확정 완료 (경매장 아이템 평균 계산)' });
+      console.log(`[00시대] 경매장 전날 데이터 확정 완료`);
     } catch (error: any) {
-      errors.push({ message: '당일 데이터 확정 실패', error: error.message });
-      console.error(`[5시대] 경매장 당일 데이터 확정 실패:`, error);
+      errors.push({ message: '전날 데이터 확정 실패', error: error.message });
+      console.error(`[00시대] 경매장 전날 데이터 확정 실패:`, error);
     }
   }
 
   // ========================================================================
-  // 히스토리 JSON 업데이트 (06시 또는 수요일 10시)
+  // 히스토리 JSON 업데이트 (00시)
   // ========================================================================
   // 날짜 변경 시점에 어제 확정 데이터를 history_all.json에 추가
-  const shouldAppendHistory = shouldSaveMarketYesterday; // 06시 또는 수요일 10시
+  const shouldAppendHistory = shouldSaveMarketYesterday; // 매일 00시
 
   if (shouldAppendHistory) {
     try {

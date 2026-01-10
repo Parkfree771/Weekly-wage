@@ -18,15 +18,13 @@ export type TempPriceEntry = {
   lastUpdated: Timestamp;
 };
 
-// 가격 히스토리 컬렉션 이름
-const PRICE_HISTORY_COLLECTION = 'priceHistory';
+// 가격 컬렉션 이름
 const DAILY_PRICE_COLLECTION = 'dailyPrices'; // 일별 평균가
 const TODAY_TEMP_COLLECTION = 'todayTemp'; // 오늘 임시 수집 데이터
 
 /**
- * 로스트아크 날짜 계산 (오전 6시 기준, 한국 시간)
- * 오전 6시 이전이면 전날, 오전 6시 이후면 당일
- * 예: 26일 오전 6시 ~ 27일 오전 6시까지가 26일
+ * 날짜 계산 (오전 0시 기준, 한국 시간)
+ * 일반적인 날짜 기준과 동일 (00:00에 날짜 변경)
  */
 export function getLostArkDate(date: Date = new Date()): Date {
   // 한국 시간(KST, UTC+9)으로 변환
@@ -34,10 +32,7 @@ export function getLostArkDate(date: Date = new Date()): Date {
   const kstTime = date.getTime() + kstOffset;
   const kstDate = new Date(kstTime);
 
-  // 오전 6시 이전이면 전날
-  if (kstDate.getUTCHours() < 6) {
-    kstDate.setUTCDate(kstDate.getUTCDate() - 1);
-  }
+  // 00시 기준: 전날 처리 로직 불필요
 
   // UTC 기준으로 시간을 00:00:00으로 설정 (KST 날짜 유지)
   kstDate.setUTCHours(0, 0, 0, 0);
@@ -55,8 +50,8 @@ export function formatDateKey(date: Date): string {
 }
 
 /**
- * 새로운 가격 데이터 저장
- * @param customDate - 과거 데이터 저장용 (선택사항, 없으면 현재 시간)
+ * 특정 날짜의 가격 데이터 저장 (dailyPrices 컬렉션)
+ * @param customDate - 저장할 날짜 (필수)
  */
 export async function savePriceData(
   itemId: string,
@@ -67,29 +62,21 @@ export async function savePriceData(
   try {
     const db = getAdminFirestore();
 
-    // customDate가 있으면 해당 날짜로 timestamp 설정, 없으면 현재 시간
-    const timestamp = customDate ? Timestamp.fromDate(customDate) : Timestamp.now();
-
-    // customDate가 있으면 dailyPrices에 직접 저장, 없으면 기존 방식
-    if (customDate) {
-      const dateKey = formatDateKey(customDate);
-      const docRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${itemId}_${dateKey}`);
-
-      await docRef.set({
-        itemId,
-        itemName,
-        price,
-        date: dateKey,
-        timestamp: Timestamp.now(), // 저장 시점의 실제 시간
-      });
-    } else {
-      await db.collection(PRICE_HISTORY_COLLECTION).add({
-        itemId,
-        itemName,
-        price,
-        timestamp,
-      });
+    if (!customDate) {
+      console.warn('[savePriceData] customDate가 필요합니다. 저장하지 않습니다.');
+      return;
     }
+
+    const dateKey = formatDateKey(customDate);
+    const docRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${itemId}_${dateKey}`);
+
+    await docRef.set({
+      itemId,
+      itemName,
+      price,
+      date: dateKey,
+      timestamp: Timestamp.now(),
+    });
   } catch (error) {
     console.error('가격 저장 오류:', error);
     throw error;
@@ -126,7 +113,7 @@ export async function saveHistoricalPrice(
 
 /**
  * 거래소 오늘 평균가 저장 (계속 덮어쓰기)
- * 06시가 되면 API의 전날 평균가로 교체됨
+ * 00시가 되면 API의 전날 평균가로 교체됨
  */
 export async function updateMarketTodayPrice(
   itemId: string,
@@ -197,8 +184,50 @@ export async function addTodayTempPrice(
 }
 
 /**
- * 오전 5시(경매장) 또는 6시(거래소)에 임시 데이터를 평균내서 확정
- * @param useToday - true면 당일 데이터 확정 (05시대), false면 전날 데이터 확정 (06시대)
+ * 특정 날짜의 todayTemp에 가격 추가 (00시 이중 역할용)
+ * 00:10 수집 시 전날 마지막 가격으로 추가할 때 사용
+ */
+export async function addTodayTempPriceForDate(
+  itemId: string,
+  price: number,
+  dateKey: string,
+  itemName?: string
+): Promise<void> {
+  try {
+    const db = getAdminFirestore();
+
+    const docRef = db.collection(TODAY_TEMP_COLLECTION).doc(`${itemId}_${dateKey}`);
+    const docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      const prices = [...(data?.prices || []), price];
+
+      await docRef.set({
+        itemId,
+        itemName,
+        prices,
+        count: prices.length,
+        lastUpdated: Timestamp.now(),
+      });
+    } else {
+      await docRef.set({
+        itemId,
+        itemName,
+        prices: [price],
+        count: 1,
+        lastUpdated: Timestamp.now(),
+      });
+    }
+  } catch (error) {
+    console.error('특정 날짜 임시 가격 저장 오류:', error);
+    throw error;
+  }
+}
+
+/**
+ * 00시에 전날 임시 데이터를 평균내서 확정
+ * @param useToday - true면 당일 데이터 확정, false면 전날 데이터 확정
  */
 export async function finalizeYesterdayData(useToday: boolean = false): Promise<void> {
   try {
@@ -210,10 +239,10 @@ export async function finalizeYesterdayData(useToday: boolean = false): Promise<
     // 확정할 날짜 계산
     let targetDate: Date;
     if (useToday) {
-      // 05시대: 당일 데이터 확정 (06:10 ~ 05:10 수집한 데이터)
+      // 당일 데이터 확정
       targetDate = lostArkToday;
     } else {
-      // 06시대 이후: 전날 데이터 확정
+      // 전날 데이터 확정
       targetDate = new Date(lostArkToday);
       targetDate.setDate(targetDate.getDate() - 1);
     }
@@ -554,7 +583,7 @@ export async function generateHistoryJson(): Promise<void> {
 /**
  * 어제 확정 데이터를 history_all.json에 추가
  *
- * 매일 06시 (또는 수요일 10시)에 실행
+ * 매일 00시에 실행
  * 1. 현재 history_all.json 다운로드
  * 2. 어제 확정된 dailyPrices 데이터 추가
  * 3. 다시 업로드

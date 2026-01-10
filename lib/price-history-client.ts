@@ -19,17 +19,15 @@ let lastFetchTime = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5분
 
 /**
- * 로스트아크 날짜 계산 (오전 6시 기준, 한국 시간)
+ * 날짜 계산 (오전 0시 기준, 한국 시간)
+ * 일반적인 날짜 기준과 동일 (00:00에 날짜 변경)
  */
 function getLostArkDate(date: Date = new Date()): string {
   const kstOffset = 9 * 60 * 60 * 1000;
   const kstTime = date.getTime() + kstOffset;
   const kstDate = new Date(kstTime);
 
-  // 오전 6시 이전이면 전날
-  if (kstDate.getUTCHours() < 6) {
-    kstDate.setUTCDate(kstDate.getUTCDate() - 1);
-  }
+  // 00시 기준: 전날 처리 로직 불필요
 
   const year = kstDate.getUTCFullYear();
   const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');

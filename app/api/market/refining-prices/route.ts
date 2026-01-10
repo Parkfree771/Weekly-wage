@@ -5,12 +5,12 @@ import { getLostArkDate, formatDateKey } from '@/lib/firestore-admin';
 /**
  * 재련 시뮬레이터용 재료 가격 가져오기
  * - 전전날(2일 전) 데이터 사용
- * - 06시 기준으로 날짜 변경
+ * - 00시 기준으로 날짜 변경
  * - 하루종일 같은 데이터 사용 (캐시 권장)
  */
 export async function GET() {
   try {
-    // 로스트아크 기준 오늘 날짜 (06시 기준)
+    // 오늘 날짜 (00시 기준)
     const lostArkToday = getLostArkDate();
 
     // 전전날 날짜 계산 (2일 전)
