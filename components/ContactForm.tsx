@@ -8,7 +8,7 @@ export default function ContactForm() {
 
   return (
     <iframe
-      src="https://tally.so/embed/RGdjgd?alignLeft=1&hideTitle=1&transparentBackground=1"
+      src="https://tally.so/embed/q4DxaY?alignLeft=1&hideTitle=1&transparentBackground=1"
       className={styles.contactIframe}
       title="문의하기"
       style={{
