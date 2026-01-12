@@ -31,7 +31,7 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
 
   // 자동완성 관련 상태
-  const { addToHistory, getSuggestions } = useSearchHistory();
+  const { history, addToHistory, getSuggestions } = useSearchHistory();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -153,9 +153,15 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
     setCharacterName(value);
     if (error) setError(null);
 
-    const matches = getSuggestions(value);
-    setSuggestions(matches);
-    setShowSuggestions(matches.length > 0 && value.trim().length > 0);
+    // 입력이 없으면 전체 히스토리 표시, 입력이 있으면 필터링된 결과 표시
+    if (value.trim()) {
+      const matches = getSuggestions(value);
+      setSuggestions(matches);
+      setShowSuggestions(matches.length > 0);
+    } else {
+      setSuggestions(history);
+      setShowSuggestions(history.length > 0);
+    }
     setSelectedIndex(-1);
   };
 
@@ -220,9 +226,15 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
                   value={characterName}
                   onChange={(e) => handleInputChange(e.target.value)}
                   onFocus={() => {
-                    const matches = getSuggestions(characterName);
-                    if (matches.length > 0 && characterName.trim()) {
-                      setSuggestions(matches);
+                    // 입력이 없으면 전체 히스토리 표시, 입력이 있으면 필터링된 결과 표시
+                    if (characterName.trim()) {
+                      const matches = getSuggestions(characterName);
+                      if (matches.length > 0) {
+                        setSuggestions(matches);
+                        setShowSuggestions(true);
+                      }
+                    } else if (history.length > 0) {
+                      setSuggestions(history);
                       setShowSuggestions(true);
                     }
                   }}
