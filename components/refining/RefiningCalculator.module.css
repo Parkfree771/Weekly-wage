@@ -401,7 +401,7 @@ div.equipmentCard,
 .equipmentCard.equipmentCard {
   position: relative !important;
   padding: clamp(0.9rem, 2.3vw, 1.2rem) !important;
-  background: var(--card-bg) !important;
+  background: var(--card-bg);
   border-radius: 16px !important;
   border: none !important;
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -493,26 +493,43 @@ div.equipmentCardDisabled,
   box-shadow: none !important;
 }
 
-/* 계승 장비 (전율) - 특별 스타일 (주황+보라 믹스 - 세르카 이후 장비) */
-div.equipmentCardSuccession,
-.equipmentCardSuccession.equipmentCardSuccession {
-  border: 2px solid #c084fc !important;
-  background: linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(168, 85, 247, 0.08) 50%, rgba(192, 132, 252, 0.08) 100%) !important;
+/* 계승 장비 (전율) - 특별 스타일 (게임 내 색상 기반) */
+.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession {
+  border: none !important;
   box-shadow:
     6px 6px 12px rgba(0, 0, 0, 0.15),
     -6px -6px 12px rgba(255, 255, 255, 0.7),
-    0 0 20px rgba(192, 132, 252, 0.15) !important;
+    0 0 15px rgba(200, 164, 104, 0.2) !important;
   position: relative !important;
+  overflow: visible !important;
 }
 
+/* 전율 장비 프레임 이미지 */
+.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background-image: url('/wjsdbf.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 1;
+}
 
-div.equipmentCardSuccession:hover,
-.equipmentCardSuccession.equipmentCardSuccession:hover {
-  border-color: #a855f7 !important;
+/* 전율 장비 내부 콘텐츠가 프레임 위에 보이도록 */
+.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession > * {
+  position: relative;
+  z-index: 2;
+}
+
+.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession:hover {
   box-shadow:
     8px 8px 16px rgba(0, 0, 0, 0.2),
     -8px -8px 16px rgba(255, 255, 255, 0.8),
-    0 0 30px rgba(168, 85, 247, 0.25),
+    0 0 25px rgba(200, 164, 104, 0.3),
     inset 2px 2px 4px rgba(255, 255, 255, 0.3) !important;
 }
 
@@ -1435,24 +1452,21 @@ button.bulkButton:disabled,
   border-color: #4b5563 !important;
 }
 
-/* 다크모드 계승 장비 카드 (주황+보라 믹스) */
-[data-theme="dark"] div.equipmentCardSuccession,
-[data-theme="dark"] .equipmentCardSuccession.equipmentCardSuccession {
-  border: 2px solid #c084fc !important;
-  background: linear-gradient(135deg, rgba(217, 119, 6, 0.15) 0%, rgba(168, 85, 247, 0.15) 50%, rgba(192, 132, 252, 0.15) 100%) !important;
+/* 다크모드 계승 장비 카드 (게임 내 색상 기반) */
+[data-theme="dark"] .equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession {
+  border: none !important;
   box-shadow:
     6px 6px 12px rgba(0, 0, 0, 0.5),
     -6px -6px 12px rgba(255, 255, 255, 0.03),
-    0 0 25px rgba(168, 85, 247, 0.25) !important;
+    0 0 20px rgba(200, 164, 104, 0.25) !important;
+  overflow: visible !important;
 }
 
-[data-theme="dark"] div.equipmentCardSuccession:hover,
-[data-theme="dark"] .equipmentCardSuccession.equipmentCardSuccession:hover {
-  border-color: #d8b4fe !important;
+[data-theme="dark"] .equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession:hover {
   box-shadow:
     8px 8px 16px rgba(0, 0, 0, 0.6),
     -8px -8px 16px rgba(255, 255, 255, 0.05),
-    0 0 35px rgba(168, 85, 247, 0.35),
+    0 0 30px rgba(200, 164, 104, 0.35),
     inset 2px 2px 4px rgba(255, 255, 255, 0.08) !important;
 }
 

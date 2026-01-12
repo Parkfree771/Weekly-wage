@@ -1352,7 +1352,12 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                   return (
                     <Col key={index} xs={4} sm={6} md={4} lg={2}>
                       <div
-                        className={`${styles.equipmentCard} ${isMobile ? styles.equipmentCardMobile : ''} ${isChanged && !eq.isEsther ? styles.equipmentCardChanged : ''} ${isChanged && isMobile && !eq.isEsther ? styles.equipmentCardMobileChanged : ''} ${!eq.isEsther ? (eq.type === 'weapon' ? styles.equipmentCardWeapon : styles.equipmentCardArmor) : ''} ${isEquipmentDisabled ? styles.equipmentCardDisabled : ''} ${specialCardClass}`}
+                        className={`${styles.equipmentCard} ${isMobile ? styles.equipmentCardMobile : ''} ${isChanged && !eq.isEsther ? styles.equipmentCardChanged : ''} ${isChanged && isMobile && !eq.isEsther ? styles.equipmentCardMobileChanged : ''} ${!eq.isEsther && !eq.isSuccession ? (eq.type === 'weapon' ? styles.equipmentCardWeapon : styles.equipmentCardArmor) : ''} ${isEquipmentDisabled ? styles.equipmentCardDisabled : ''} ${specialCardClass}`}
+                        style={eq.isSuccession && !eq.isEsther ? {
+                          background: theme === 'dark' ? '#1f2937' : '#ffffff',
+                          border: 'none',
+                          overflow: 'visible',
+                        } : undefined}
                       >
                         <div className="d-flex justify-content-between align-items-start" style={{ marginBottom: isMobile ? '0.2rem' : '0.5rem' }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -1374,7 +1379,7 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                             <Badge
                               pill
                               bg=""
-                              className={`${eq.isEsther ? styles.levelBadgeEsther : (eq.isSuccession ? styles.levelBadgeSuccession : (eq.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor))} ${isMobile ? styles.levelBadgeMobile : ''}`}
+                              className={`${eq.isEsther ? styles.levelBadgeEsther : (eq.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor)} ${isMobile ? styles.levelBadgeMobile : ''}`}
                             >
                               +{eq.currentLevel}
                             </Badge>
@@ -1448,7 +1453,7 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                                 disabled={isEquipmentDisabled}
                                 className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${targets.normal === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
                               >
-                                <option value="">{isSuccessionMode ? '계승' : '일반'}</option>
+                                <option value="">+{eq.currentLevel}</option>
                                 {Array.from({ length: (isSuccessionMode ? 25 : 26) - eq.currentLevel }, (_, i) => eq.currentLevel + i + 1).map(level => (
                                   <option key={level} value={level}>+{level}</option>
                                 ))}
@@ -1463,7 +1468,7 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                                       [eq.name]: { ...prev[eq.name], advanced: value === '' ? null : Number(value) }
                                     }));
                                   }}
-                                  disabled={eq.currentAdvancedLevel >= 40 || eq.isSuccession}
+                                  disabled={eq.currentAdvancedLevel >= 40}
                                   className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${targets.advanced === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
                                 >
                                   <option value="">상급</option>
