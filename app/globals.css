@@ -114,6 +114,25 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* CLS Prevention - Accordion 및 Collapse 트랜지션 최적화 */
+.accordion-collapse {
+  will-change: height;
+}
+
+.collapse {
+  will-change: height;
+}
+
+/* CLS Prevention - 이미지 컨테이너 */
+.img-container {
+  contain: layout style;
+}
+
+/* CLS Prevention - 카드 컴포넌트 */
+.card {
+  contain: layout style;
+}
+
 /* PC 화면일 때만 80% 축소 (모바일은 너무 작아지면 안 되니까) */
 @media screen and (min-width: 1024px) {
   body {

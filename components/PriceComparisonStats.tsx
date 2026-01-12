@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, createContext, useContext } from 'react';
+import Image from 'next/image';
 import { Card } from 'react-bootstrap';
 import { useTheme } from './ThemeProvider';
 
@@ -286,7 +287,7 @@ export default function PriceComparisonStats() {
                     최저가 대비
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <img src={stats.changeFromMin >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '24px', height: '24px' }} />
+                    <Image src={stats.changeFromMin >= 0 ? '/up.png' : '/down.png'} alt="" width={24} height={24} />
                     <div style={{ fontSize: '1.8rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.changeFromMin >= 0 ? '+' : ''}{stats.changeFromMin.toFixed(1)}%
                     </div>
@@ -312,7 +313,7 @@ export default function PriceComparisonStats() {
                     평균가 대비
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <img src={stats.changeFromAvg >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '24px', height: '24px' }} />
+                    <Image src={stats.changeFromAvg >= 0 ? '/up.png' : '/down.png'} alt="" width={24} height={24} />
                     <div style={{ fontSize: '1.8rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.changeFromAvg >= 0 ? '+' : ''}{stats.changeFromAvg.toFixed(1)}%
                     </div>
@@ -338,7 +339,7 @@ export default function PriceComparisonStats() {
                     최고가 대비
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <img src={stats.changeFromMax >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '24px', height: '24px' }} />
+                    <Image src={stats.changeFromMax >= 0 ? '/up.png' : '/down.png'} alt="" width={24} height={24} />
                     <div style={{ fontSize: '1.8rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.changeFromMax >= 0 ? '+' : ''}{stats.changeFromMax.toFixed(1)}%
                     </div>
@@ -366,7 +367,7 @@ export default function PriceComparisonStats() {
                     연속 {stats.isRising ? '상승' : '하락'}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <img src={stats.isRising ? '/up.png' : '/down.png'} alt="" style={{ width: '24px', height: '24px' }} />
+                    <Image src={stats.isRising ? '/up.png' : '/down.png'} alt="" width={24} height={24} />
                     <div style={{ fontSize: '1.8rem', color: stats.isRising ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.consecutiveDays}일
                     </div>
@@ -394,7 +395,7 @@ export default function PriceComparisonStats() {
                     RSI
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <img src={stats.rsi <= 30 ? '/cold.png' : stats.rsi >= 70 ? '/hot.png' : '/soso.png'} alt="" style={{ width: '24px', height: '24px' }} />
+                    <Image src={stats.rsi <= 30 ? '/cold.png' : stats.rsi >= 70 ? '/hot.png' : '/soso.png'} alt="" width={24} height={24} />
                     <div style={{
                       fontSize: '1.8rem',
                       color: stats.rsi <= 30 ? '#3b82f6' : stats.rsi >= 70 ? '#ef4444' : 'var(--text-primary)',
@@ -408,12 +409,12 @@ export default function PriceComparisonStats() {
                     {stats.rsiMessage}
                     {stats.rsi <= 30 && (
                       <>
-                        {' '}(<img src="/up.png" alt="" style={{ width: '12px', height: '12px', display: 'inline' }} /> 매수 추천)
+                        {' '}(<Image src="/up.png" alt="" width={12} height={12} style={{ display: 'inline' }} /> 매수 추천)
                       </>
                     )}
                     {stats.rsi >= 70 && (
                       <>
-                        {' '}(<img src="/down.png" alt="" style={{ width: '12px', height: '12px', display: 'inline' }} /> 매도 추천)
+                        {' '}(<Image src="/down.png" alt="" width={12} height={12} style={{ display: 'inline' }} /> 매도 추천)
                       </>
                     )}
                   </div>
@@ -437,7 +438,7 @@ export default function PriceComparisonStats() {
                     Stochastic
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <img src={stats.stochastic <= 20 ? '/cold.png' : stats.stochastic >= 80 ? '/hot.png' : '/soso.png'} alt="" style={{ width: '24px', height: '24px' }} />
+                    <Image src={stats.stochastic <= 20 ? '/cold.png' : stats.stochastic >= 80 ? '/hot.png' : '/soso.png'} alt="" width={24} height={24} />
                     <div style={{
                       fontSize: '1.8rem',
                       color: stats.stochastic <= 20 ? '#3b82f6' : stats.stochastic >= 80 ? '#ef4444' : 'var(--text-primary)',
@@ -451,12 +452,12 @@ export default function PriceComparisonStats() {
                     {stats.stochMessage}
                     {stats.stochastic <= 20 && (
                       <>
-                        {' '}(<img src="/up.png" alt="" style={{ width: '12px', height: '12px', display: 'inline' }} /> 매수 추천)
+                        {' '}(<Image src="/up.png" alt="" width={12} height={12} style={{ display: 'inline' }} /> 매수 추천)
                       </>
                     )}
                     {stats.stochastic >= 80 && (
                       <>
-                        {' '}(<img src="/down.png" alt="" style={{ width: '12px', height: '12px', display: 'inline' }} /> 매도 추천)
+                        {' '}(<Image src="/down.png" alt="" width={12} height={12} style={{ display: 'inline' }} /> 매도 추천)
                       </>
                     )}
                   </div>
@@ -586,7 +587,7 @@ export default function PriceComparisonStats() {
                     최저가 대비
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <img src={stats.changeFromMin >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '16px', height: '16px' }} />
+                    <Image src={stats.changeFromMin >= 0 ? '/up.png' : '/down.png'} alt="" width={16} height={16} />
                     <div style={{ fontSize: '1.1rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.changeFromMin >= 0 ? '+' : ''}{stats.changeFromMin.toFixed(1)}%
                     </div>
@@ -611,7 +612,7 @@ export default function PriceComparisonStats() {
                     평균가 대비
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <img src={stats.changeFromAvg >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '16px', height: '16px' }} />
+                    <Image src={stats.changeFromAvg >= 0 ? '/up.png' : '/down.png'} alt="" width={16} height={16} />
                     <div style={{ fontSize: '1.1rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.changeFromAvg >= 0 ? '+' : ''}{stats.changeFromAvg.toFixed(1)}%
                     </div>
@@ -636,7 +637,7 @@ export default function PriceComparisonStats() {
                     최고가 대비
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <img src={stats.changeFromMax >= 0 ? '/up.png' : '/down.png'} alt="" style={{ width: '16px', height: '16px' }} />
+                    <Image src={stats.changeFromMax >= 0 ? '/up.png' : '/down.png'} alt="" width={16} height={16} />
                     <div style={{ fontSize: '1.1rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.changeFromMax >= 0 ? '+' : ''}{stats.changeFromMax.toFixed(1)}%
                     </div>
@@ -663,7 +664,7 @@ export default function PriceComparisonStats() {
                     연속 {stats.isRising ? '상승' : '하락'}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <img src={stats.isRising ? '/up.png' : '/down.png'} alt="" style={{ width: '16px', height: '16px' }} />
+                    <Image src={stats.isRising ? '/up.png' : '/down.png'} alt="" width={16} height={16} />
                     <div style={{ fontSize: '1.1rem', color: stats.isRising ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
                       {stats.consecutiveDays}일
                     </div>
@@ -690,7 +691,7 @@ export default function PriceComparisonStats() {
                     RSI
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <img src={stats.rsi <= 30 ? '/cold.png' : stats.rsi >= 70 ? '/hot.png' : '/soso.png'} alt="" style={{ width: '16px', height: '16px' }} />
+                    <Image src={stats.rsi <= 30 ? '/cold.png' : stats.rsi >= 70 ? '/hot.png' : '/soso.png'} alt="" width={16} height={16} />
                     <div style={{
                       fontSize: '1.1rem',
                       color: stats.rsi <= 30 ? '#3b82f6' : stats.rsi >= 70 ? '#ef4444' : 'var(--text-primary)',
@@ -704,12 +705,12 @@ export default function PriceComparisonStats() {
                     <span>{stats.rsiMessage}</span>
                     {stats.rsi <= 30 && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
-                        (<img src="/up.png" alt="" style={{ width: '9px', height: '9px', display: 'inline' }} />매수)
+                        (<Image src="/up.png" alt="" width={9} height={9} style={{ display: 'inline' }} />매수)
                       </span>
                     )}
                     {stats.rsi >= 70 && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
-                        (<img src="/down.png" alt="" style={{ width: '9px', height: '9px', display: 'inline' }} />매도)
+                        (<Image src="/down.png" alt="" width={9} height={9} style={{ display: 'inline' }} />매도)
                       </span>
                     )}
                   </div>
@@ -732,7 +733,7 @@ export default function PriceComparisonStats() {
                     Stochastic
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <img src={stats.stochastic <= 20 ? '/cold.png' : stats.stochastic >= 80 ? '/hot.png' : '/soso.png'} alt="" style={{ width: '16px', height: '16px' }} />
+                    <Image src={stats.stochastic <= 20 ? '/cold.png' : stats.stochastic >= 80 ? '/hot.png' : '/soso.png'} alt="" width={16} height={16} />
                     <div style={{
                       fontSize: '1.1rem',
                       color: stats.stochastic <= 20 ? '#3b82f6' : stats.stochastic >= 80 ? '#ef4444' : 'var(--text-primary)',
@@ -746,12 +747,12 @@ export default function PriceComparisonStats() {
                     <span>{stats.stochMessage}</span>
                     {stats.stochastic <= 20 && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
-                        (<img src="/up.png" alt="" style={{ width: '9px', height: '9px', display: 'inline' }} />매수)
+                        (<Image src="/up.png" alt="" width={9} height={9} style={{ display: 'inline' }} />매수)
                       </span>
                     )}
                     {stats.stochastic >= 80 && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
-                        (<img src="/down.png" alt="" style={{ width: '9px', height: '9px', display: 'inline' }} />매도)
+                        (<Image src="/down.png" alt="" width={9} height={9} style={{ display: 'inline' }} />매도)
                       </span>
                     )}
                   </div>

@@ -6,6 +6,7 @@
   margin: 2rem auto;
   padding: 0;
   max-width: 925px;
+  contain: layout style;
 }
 
 /* 레이드 카드 */
@@ -122,6 +123,8 @@
   background-color: var(--card-bg);
   overflow: hidden;
   animation: slideIn 0.3s ease-out;
+  min-height: 300px;
+  contain: layout style;
 }
 
 @keyframes slideIn {
