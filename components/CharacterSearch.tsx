@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Form, Button, InputGroup, Row, Col, Card } from 'react-bootstrap';
+import { useSearchHistory } from '@/lib/useSearchHistory';
 
 type Sibling = {
   CharacterName: string;
@@ -28,6 +29,14 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
   const [retryCount, setRetryCount] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
+
+  // 자동완성 관련 상태
+  const { addToHistory, getSuggestions } = useSearchHistory();
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   // 모바일 감지
   useEffect(() => {
@@ -101,6 +110,8 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
           setCheckedState(newCheckedState);
           setShowAll(false);
           setRetryCount(0);
+          addToHistory(characterName.trim()); // 검색 성공 시 히스토리에 추가
+          setShowSuggestions(false);
           break; // 성공 시 루프 종료
         } else {
           throw new Error('잘못된 데이터 형식입니다.');
@@ -137,6 +148,59 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
     setCheckedState(newCheckedState);
   }, [checkedState]);
 
+  // 입력값 변경 시 자동완성 목록 업데이트
+  const handleInputChange = (value: string) => {
+    setCharacterName(value);
+    if (error) setError(null);
+
+    const matches = getSuggestions(value);
+    setSuggestions(matches);
+    setShowSuggestions(matches.length > 0 && value.trim().length > 0);
+    setSelectedIndex(-1);
+  };
+
+  // 자동완성 항목 선택
+  const handleSelectSuggestion = (name: string) => {
+    setCharacterName(name);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    inputRef.current?.focus();
+  };
+
+  // 키보드 네비게이션
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+      e.preventDefault();
+      handleSelectSuggestion(suggestions[selectedIndex]);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    }
+  };
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   useEffect(() => {
     const selectedCharacters = characters.filter((_, index) => checkedState[index]);
     onSelectionChange(selectedCharacters);
@@ -148,28 +212,83 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
         <div className="d-flex justify-content-center">
           <div className="mb-3" style={{maxWidth: '550px', width: '100%'}}>
             <div className="d-flex gap-2">
-              <Form.Control
-                placeholder="로스트아크 캐릭터명을 입력하세요"
-                aria-label="캐릭터명을 입력하세요"
-                value={characterName}
-                onChange={(e) => {
-                  setCharacterName(e.target.value);
-                  if (error) setError(null);
-                }}
-                disabled={isLoading}
-                autoComplete="off"
-                style={{
-                  backgroundColor: 'var(--input-bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
-                  padding: 'clamp(0.5rem, 1.5vw, 0.65rem) clamp(0.9rem, 2vw, 1.1rem)',
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  fontWeight: '500',
-                  boxShadow: 'var(--shadow-sm)',
-                  transition: 'all 0.2s ease',
-                }}
-              />
+              <div style={{ position: 'relative', flex: 1 }}>
+                <Form.Control
+                  ref={inputRef}
+                  placeholder="로스트아크 캐릭터명을 입력하세요"
+                  aria-label="캐릭터명을 입력하세요"
+                  value={characterName}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onFocus={() => {
+                    const matches = getSuggestions(characterName);
+                    if (matches.length > 0 && characterName.trim()) {
+                      setSuggestions(matches);
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  onKeyDown={handleKeyDown}
+                  disabled={isLoading}
+                  autoComplete="off"
+                  style={{
+                    backgroundColor: 'var(--input-bg)',
+                    color: 'var(--text-primary)',
+                    fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
+                    padding: 'clamp(0.5rem, 1.5vw, 0.65rem) clamp(0.9rem, 2vw, 1.1rem)',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-color)',
+                    fontWeight: '500',
+                    boxShadow: 'var(--shadow-sm)',
+                    transition: 'all 0.2s ease',
+                  }}
+                />
+                {/* 자동완성 드롭다운 */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div
+                    ref={suggestionsRef}
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      backgroundColor: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      marginTop: '4px',
+                      boxShadow: 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.15))',
+                      zIndex: 1000,
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    {suggestions.map((name, index) => (
+                      <div
+                        key={name}
+                        onClick={() => handleSelectSuggestion(name)}
+                        style={{
+                          padding: '10px 14px',
+                          cursor: 'pointer',
+                          backgroundColor: selectedIndex === index ? 'var(--hover-bg, rgba(0,0,0,0.05))' : 'transparent',
+                          color: 'var(--text-primary)',
+                          fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
+                          borderBottom: index < suggestions.length - 1 ? '1px solid var(--border-color)' : 'none',
+                          transition: 'background-color 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          setSelectedIndex(index);
+                          e.currentTarget.style.backgroundColor = 'var(--hover-bg, rgba(0,0,0,0.05))';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedIndex !== index) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }
+                        }}
+                      >
+                        {name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <Button
                 type="submit"
                 disabled={isLoading || !characterName.trim()}

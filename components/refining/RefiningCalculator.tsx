@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Form, Button, InputGroup, Row, Col, Card, Badge, ButtonGroup } from 'react-bootstrap';
+import { useSearchHistory } from '@/lib/useSearchHistory';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
 import { getAverageTries, getSuccessionAverageTries } from '../../lib/refiningSimulationData';
@@ -165,6 +166,14 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [searched, setSearched] = useState(false);
   const [characterInfo, setCharacterInfo] = useState<{ name: string; itemLevel: string; image?: string } | null>(null);
+
+  // 자동완성 관련 상태
+  const { addToHistory, getSuggestions } = useSearchHistory();
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   // 모바일 감지
   const [isMobile, setIsMobile] = useState(false);
@@ -565,6 +574,8 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
       setSelectedArmorBulkLevel({ normal: null, advanced: null });
       setSelectedWeaponBulkLevel({ normal: null, advanced: null });
 
+      addToHistory(characterName.trim()); // 검색 성공 시 히스토리에 추가
+      setShowSuggestions(false);
       setSearched(true);
     } catch (error: any) {
       setError(error.message || '예상치 못한 오류가 발생했습니다.');
@@ -573,6 +584,59 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
       setIsLoading(false);
     }
   };
+
+  // 입력값 변경 시 자동완성 목록 업데이트
+  const handleInputChange = (value: string) => {
+    setCharacterName(value);
+    if (error) setError(null);
+
+    const matches = getSuggestions(value);
+    setSuggestions(matches);
+    setShowSuggestions(matches.length > 0 && value.trim().length > 0);
+    setSelectedIndex(-1);
+  };
+
+  // 자동완성 항목 선택
+  const handleSelectSuggestion = (name: string) => {
+    setCharacterName(name);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    inputRef.current?.focus();
+  };
+
+  // 키보드 네비게이션
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+      e.preventDefault();
+      handleSelectSuggestion(suggestions[selectedIndex]);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    }
+  };
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleReset = () => {
     setCharacterName('');
@@ -1069,16 +1133,72 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
         <div className={styles.searchWrapper}>
           <div className={styles.searchInner}>
             <div className={styles.searchInputGroup}>
-              <Form.Control
-                placeholder="캐릭터명을 입력하세요"
-                value={characterName}
-                onChange={(e) => {
-                  setCharacterName(e.target.value);
-                  if (error) setError(null);
-                }}
-                disabled={isLoading}
-                className={styles.searchInput}
-              />
+              <div style={{ position: 'relative', flex: 1 }}>
+                <Form.Control
+                  ref={inputRef}
+                  placeholder="캐릭터명을 입력하세요"
+                  value={characterName}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onFocus={() => {
+                    const matches = getSuggestions(characterName);
+                    if (matches.length > 0 && characterName.trim()) {
+                      setSuggestions(matches);
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  onKeyDown={handleKeyDown}
+                  disabled={isLoading}
+                  className={styles.searchInput}
+                  autoComplete="off"
+                />
+                {/* 자동완성 드롭다운 */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div
+                    ref={suggestionsRef}
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      backgroundColor: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      marginTop: '4px',
+                      boxShadow: 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.15))',
+                      zIndex: 1000,
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    {suggestions.map((name, index) => (
+                      <div
+                        key={name}
+                        onClick={() => handleSelectSuggestion(name)}
+                        style={{
+                          padding: '10px 14px',
+                          cursor: 'pointer',
+                          backgroundColor: selectedIndex === index ? 'var(--hover-bg, rgba(0,0,0,0.05))' : 'transparent',
+                          color: 'var(--text-primary)',
+                          fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
+                          borderBottom: index < suggestions.length - 1 ? '1px solid var(--border-color)' : 'none',
+                          transition: 'background-color 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          setSelectedIndex(index);
+                          e.currentTarget.style.backgroundColor = 'var(--hover-bg, rgba(0,0,0,0.05))';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedIndex !== index) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }
+                        }}
+                      >
+                        {name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <Button
                 type="submit"
                 disabled={isLoading || !characterName.trim()}
