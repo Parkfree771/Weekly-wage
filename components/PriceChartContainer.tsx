@@ -123,7 +123,7 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
 
   return (
     <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod }}>
-      <div>
+      <div style={{ minHeight: '650px', contain: 'layout style' }}>
         <ItemSelector
           selectedCategory={selectedCategory}
           selectedItem={selectedItem}

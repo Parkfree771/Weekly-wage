@@ -5,6 +5,7 @@
 /* 메인 컨테이너 */
 .container {
   margin: 0 auto;
+  contain: layout style;
 }
 
 /* ========================================
@@ -116,6 +117,8 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   transition: all 0.3s ease;
   animation: slideIn 0.3s ease-out;
+  contain: layout style;
+  min-height: 400px;
 }
 
 @keyframes slideIn {
@@ -203,6 +206,8 @@
   overflow: hidden;
   backdrop-filter: blur(10px);
   animation: characterInfoSlideIn 0.5s ease-out;
+  contain: layout style;
+  min-height: 120px;
 }
 
 @keyframes characterInfoSlideIn {
@@ -769,6 +774,7 @@ select.equipmentSelectSelected,
   border: 2px solid var(--border-color);
   margin-top: 1.75rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  contain: layout style;
 }
 
 .bulkSettingContainerMobile {
@@ -1157,6 +1163,7 @@ button.bulkButton:disabled,
   border: 2px solid var(--border-color);
   margin-top: 1.75rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  contain: layout style;
 }
 
 .materialToggleTitle {
@@ -1170,6 +1177,7 @@ button.bulkButton:disabled,
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 1rem;
+  contain: layout style;
 }
 
 .materialToggleItem {
@@ -1231,6 +1239,7 @@ button.bulkButton:disabled,
   display: flex;
   gap: clamp(0.2rem, 0.5vw, 0.5rem);
   justify-content: center;
+  contain: layout style;
 }
 
 .materialsGridMobile {
@@ -1270,6 +1279,8 @@ button.bulkButton:disabled,
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   text-align: center;
   color: white;
+  contain: layout style;
+  min-height: 150px;
 }
 
 .totalCostTitle {
