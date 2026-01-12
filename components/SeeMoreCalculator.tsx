@@ -138,14 +138,17 @@ const SeeMoreCalculator: React.FC = () => {
     <div>
       {/* 레이드 목록 카드들 */}
       <div className={styles.raidCardsGrid}>
-        {raids.map((raid) => {
+        {raids.map((raid, index) => {
           const profitLoss = calculateProfitLoss(raid.name);
           const isProfit = profitLoss > 0;
           const isLoss = profitLoss < 0;
           const isSelected = selectedRaid === raid.name;
-          
+
           // 세르카 레이드인지 확인
           const isCerka = raid.name.includes('세르카');
+
+          // LCP 최적화: 처음 5개 이미지는 priority 로딩
+          const isPriorityImage = index < 5;
 
           return (
             <div
@@ -168,6 +171,7 @@ const SeeMoreCalculator: React.FC = () => {
                   fill
                   className={styles.raidImage}
                   sizes="(max-width: 768px) 150px, 200px"
+                  priority={isPriorityImage}
                 />
                 <div className={styles.overlay} />
               </div>
