@@ -10,6 +10,8 @@ const notoSansKr = Noto_Sans_KR({
   weight: ["400", "700"],
   display: "swap",
   preload: true,
+  adjustFontFallback: true,
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 });
 
 export const viewport: Viewport = {

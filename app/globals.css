@@ -879,3 +879,39 @@ textarea:-ms-input-placeholder {
     background-color: var(--card-header-bg) !important;
 }
 
+/* ========================================
+   CLS 방지용 스타일
+   ======================================== */
+
+/* 광고 영역 크기 고정 - CLS 방지 */
+ins.adsbygoogle {
+    display: block;
+    min-height: 100px;
+    width: 100%;
+}
+
+/* 광고 컨테이너 래퍼 */
+.ad-container {
+    min-height: 100px;
+    width: 100%;
+    contain: layout style;
+}
+
+/* 이미지 aspect-ratio 기본 설정 */
+img {
+    height: auto;
+    max-width: 100%;
+}
+
+/* 폰트 로딩 시 레이아웃 시프트 방지 */
+html {
+    font-size-adjust: from-font;
+}
+
+/* contain 속성으로 레이아웃 격리 */
+.price-chart-container,
+.raid-calculator-container,
+.see-more-calculator-container {
+    contain: layout style;
+}
+
