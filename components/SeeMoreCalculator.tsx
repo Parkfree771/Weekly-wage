@@ -37,11 +37,16 @@ type RaidProfitData = {
   materials: (MaterialReward & { unitPrice: number; totalPrice: number })[];
 };
 
+// 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
+const getTodayPriceDate = () => {
+  const now = new Date();
+  return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
+};
+
 const SeeMoreCalculator: React.FC = () => {
   const [selectedRaid, setSelectedRaid] = useState<string | null>(null);
   const [profitData, setProfitData] = useState<{ [key: string]: RaidProfitData[] }>({});
   const [loading, setLoading] = useState<boolean>(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const handleRaidSelect = (raidName: string) => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
@@ -67,7 +72,6 @@ const SeeMoreCalculator: React.FC = () => {
         searchPrices[itemId] = unitPrice;
       });
 
-      setLastUpdated(new Date());
       calculateWithPrices(searchPrices);
 
     } catch (error) {
@@ -207,18 +211,7 @@ const SeeMoreCalculator: React.FC = () => {
         
         <div className="text-end">
           <small className="text-muted d-block">
-            {lastUpdated ? (
-              <>
-                {lastUpdated.toLocaleString('ko-KR', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false
-                })} 기준 가격 | 실시간 시세와 차이가 있을 수 있습니다
-              </>
-            ) : '가격 정보를 불러오는 중...'}
+            {getTodayPriceDate()} | 실시간 시세와 차이가 있을 수 있습니다
           </small>
         </div>
       </div>

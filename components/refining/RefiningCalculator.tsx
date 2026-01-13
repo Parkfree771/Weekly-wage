@@ -157,6 +157,12 @@ type RefiningCalculatorProps = {
   mode?: RefiningMode;
 };
 
+// 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
+const getTodayPriceDate = () => {
+  const now = new Date();
+  return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
+};
+
 export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculatorProps) {
   const { theme } = useTheme();
   const isSuccessionMode = mode === 'succession';
@@ -268,8 +274,6 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
     '66112711': 0, // 야금술 1단계 (상급 1~10)
     '66112713': 0, // 야금술 2단계 (상급 11~20)
   });
-
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const [materials, setMaterials] = useState<Materials | null>(null);
 
@@ -470,7 +474,6 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
         });
 
         setMarketPrices(prices);
-        setLastUpdated(new Date());
       } catch (error) {
         console.error('Failed to fetch latest prices:', error);
       }
@@ -1235,20 +1238,11 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
             </div>
           </div>
         )}
-        {lastUpdated && (
-          <div className={styles.lastUpdated}>
-            <small className={styles.lastUpdatedText}>
-              {lastUpdated.toLocaleString('ko-KR', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              })} 기준 가격 | 실시간 시세와 차이가 있을 수 있습니다
-            </small>
-          </div>
-        )}
+        <div className={styles.lastUpdated}>
+          <small className={styles.lastUpdatedText}>
+            {getTodayPriceDate()} | 실시간 시세와 차이가 있을 수 있습니다
+          </small>
+        </div>
       </Form>
 
 

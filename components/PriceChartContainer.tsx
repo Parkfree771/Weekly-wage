@@ -5,6 +5,7 @@ import { useState, useEffect, ReactNode, useMemo } from 'react';
 import { TrackedItem, ItemCategory, getItemsByCategory, RefineAdditionalSubCategory, getItemsBySubCategory } from '@/lib/items-to-track';
 import ItemSelector, { CATEGORY_STYLES } from './ItemSelector';
 import CompactPriceChart from './CompactPriceChart';
+import CraftingCalculator from './CraftingCalculator';
 import { PriceContext } from './PriceComparisonStats';
 
 // 카테고리 목록
@@ -138,6 +139,7 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
           loading={loading}
           categoryStyle={categoryStyle}
         />
+        <CraftingCalculator selectedItemId={selectedItem?.id || null} />
       </div>
       {children}
     </PriceContext.Provider>
