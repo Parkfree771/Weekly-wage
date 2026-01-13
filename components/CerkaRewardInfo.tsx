@@ -8,6 +8,12 @@ import { raidRewards, MATERIAL_IDS, MATERIAL_BUNDLE_SIZES } from '@/data/raidRew
 import { fetchPriceData } from '@/lib/price-history-client';
 import styles from './CerkaRewardInfo.module.css';
 
+// 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
+const getTodayPriceDate = () => {
+  const now = new Date();
+  return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
+};
+
 // 재료 이미지 매핑
 const getMaterialImage = (itemName: string): string => {
   const imageMap: { [key: string]: string } = {
@@ -102,7 +108,6 @@ type CerkaData = {
 const CerkaRewardInfo: React.FC = () => {
   const [cerkaData, setCerkaData] = useState<CerkaData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [selectedRaid, setSelectedRaid] = useState<string | null>(null);
 
   useEffect(() => {
@@ -198,7 +203,6 @@ const CerkaRewardInfo: React.FC = () => {
       });
 
       setCerkaData(result);
-      setLastUpdated(new Date());
     } catch (error) {
       console.error('Failed to fetch prices:', error);
     } finally {
@@ -258,18 +262,7 @@ const CerkaRewardInfo: React.FC = () => {
       {/* 가격 갱신 정보 */}
       <div className="text-end mb-3">
         <small className="text-muted">
-          {lastUpdated ? (
-            <>
-              {lastUpdated.toLocaleString('ko-KR', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              })} 기준 가격
-            </>
-          ) : '가격 정보를 불러오는 중...'}
+          {getTodayPriceDate()} | 실시간 시세와 차이가 있을 수 있습니다
         </small>
       </div>
 

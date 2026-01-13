@@ -22,7 +22,8 @@ type EventInfo = {
 const EVENTS: EventInfo[] = [
   { date: '2025-11-07', label: '7주년 라방', color: '#ff6b6b' },
   { date: '2025-12-07', label: '로아온', color: '#ffa500' },
-  { date: '2025-12-10', label: '윈터❄️', color: '#00BFFF' }
+  { date: '2025-12-10', label: '윈터❄️', color: '#00BFFF' },
+  { date: '2026-01-07', label: '세르카🎃', color: '#9c4dcc' }
 ];
 
 type CategoryStyle = {
