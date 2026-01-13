@@ -133,6 +133,26 @@ body {
   contain: layout style;
 }
 
+/* CLS Prevention - Price Chart Container */
+.price-chart-container {
+  min-height: 650px;
+  contain: layout style;
+}
+
+.price-chart-card {
+  min-height: 580px;
+}
+
+@media (max-width: 767px) {
+  .price-chart-container {
+    min-height: 430px;
+  }
+
+  .price-chart-card {
+    min-height: 410px;
+  }
+}
+
 /* PC 화면일 때만 80% 축소 (모바일은 너무 작아지면 안 되니까) */
 @media screen and (min-width: 1024px) {
   body {

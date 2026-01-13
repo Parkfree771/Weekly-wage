@@ -600,7 +600,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }
 
   return (
-    <Card className="border-0 shadow-sm" style={{ borderRadius: '16px', backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)', maxWidth: '1400px', margin: '0 auto', minHeight: '580px' }}>
+    <Card className="border-0 shadow-sm price-chart-card" style={{ borderRadius: '16px', backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)', maxWidth: '1400px', margin: '0 auto' }}>
       <Card.Header
         className="py-3 border-0 d-none d-md-block"
         style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: '1px solid var(--border-color)' }}
