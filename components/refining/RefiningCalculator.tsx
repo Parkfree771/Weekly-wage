@@ -98,7 +98,7 @@ const MaterialCard = ({
   onToggleEnabled?: () => void;
 }) => (
   <div
-    className={`${styles.materialCard} ${isBound ? styles.materialCardBound : ''} ${showCheckbox ? styles.materialCardClickable : ''} ${showEnableToggle && !isEnabled ? styles.materialCardDisabled : ''} ${showEnableToggle && isEnabled ? styles.materialCardEnabled : ''}`}
+    className={`${styles.materialCard} ${showCheckbox ? styles.materialCardClickable : ''} ${showEnableToggle && !isEnabled ? styles.materialCardDisabled : ''} ${showEnableToggle && isEnabled && !isBound ? styles.materialCardEnabled : ''} ${isBound ? styles.materialCardBound : ''}`}
     onClick={() => {
       if (showCheckbox && !(showEnableToggle && !isEnabled)) {
         onBoundChange?.(name, !isBound);
@@ -347,7 +347,17 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
     if (!boundMaterials['위대한돌파석']) totalMaterialCost += costs['위대한돌파석'] || 0;
     if (!boundMaterials['상급아비도스']) totalMaterialCost += costs['상급아비도스'] || 0;
 
-    // 추가 재료 비용 계산 (일반 강화 + 상급재련) - 분리된 비용 적용
+    // 추가 재료 비용 계산 (일반 강화 + 상급재련 + 계승) - 분리된 비용 적용
+    // 계승 모드 빙하 숨결
+    if (materialOptions.glacierBreath.enabled && !materialOptions.glacierBreath.isBound && costs['빙하'] > 0) {
+      totalMaterialCost += costs['빙하'];
+    }
+
+    // 계승 모드 용암 숨결
+    if (materialOptions.lavaBreath.enabled && !materialOptions.lavaBreath.isBound && costs['용암'] > 0) {
+      totalMaterialCost += costs['용암'];
+    }
+
     // 일반 재련 빙하 숨결
     if (materialOptions.glacierBreath.enabled && !materialOptions.glacierBreath.isBound) {
       totalMaterialCost += costs['빙하_일반'];
@@ -2393,8 +2403,11 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                                   amount={materials.빙하}
                                   color="#34d399"
                                   showCheckbox={true}
-                                  isBound={boundMaterials['빙하']}
-                                  onBoundChange={handleBoundChange}
+                                  isBound={materialOptions.glacierBreath.isBound}
+                                  onBoundChange={() => setMaterialOptions(prev => ({
+                                    ...prev,
+                                    glacierBreath: { ...prev.glacierBreath, isBound: !prev.glacierBreath.isBound }
+                                  }))}
                                   cost={results.materialCosts['빙하']}
                                   showEnableToggle={true}
                                   isEnabled={materialOptions.glacierBreath.enabled}
@@ -2413,8 +2426,11 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                                   amount={materials.용암}
                                   color="#f87171"
                                   showCheckbox={true}
-                                  isBound={boundMaterials['용암']}
-                                  onBoundChange={handleBoundChange}
+                                  isBound={materialOptions.lavaBreath.isBound}
+                                  onBoundChange={() => setMaterialOptions(prev => ({
+                                    ...prev,
+                                    lavaBreath: { ...prev.lavaBreath, isBound: !prev.lavaBreath.isBound }
+                                  }))}
                                   cost={results.materialCosts['용암']}
                                   showEnableToggle={true}
                                   isEnabled={materialOptions.lavaBreath.enabled}
