@@ -42,6 +42,17 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
     '베히모스': '/behemoth.webp'
   };
 
+  // 레이드별 관문당 코어 획득량 (더보기 안 할 때 기준)
+  const corePerGate: { [key: string]: number } = {
+    '세르카 나메': 3,
+    '세르카 하드': 2,
+    '세르카 노말': 2,
+    '종막 하드': 2,
+    '종막 노말': 2,
+    '4막 하드': 1,
+    '4막 노말': 1,
+  };
+
   // 모바일 감지
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -261,6 +272,41 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
     return false;
   };
 
+  // 레이드 그룹별 코어 획득량 계산
+  const calculateRaidGroupCores = (characterName: string, groupName: string) => {
+    let totalCores = 0;
+    if (!gateSelection[characterName]) return 0;
+
+    // 코어 파밍 가능한 레이드만 (세르카, 종막, 4막)
+    if (groupName !== '세르카' && groupName !== '종막' && groupName !== '4막') {
+      return 0;
+    }
+
+    for (const raidName in gateSelection[characterName]) {
+      if (raidName.startsWith(groupName)) {
+        const baseCores = corePerGate[raidName] || 0;
+        if (baseCores === 0) continue;
+
+        for (const gate in gateSelection[characterName][raidName]) {
+          const selection = gateSelection[characterName][raidName][gate];
+          if (selection !== 'none') {
+            // 더보기(withoutMore)면 x2, 아니면 x1
+            const multiplier = selection === 'withoutMore' ? 2 : 1;
+            totalCores += baseCores * multiplier;
+          }
+        }
+      }
+    }
+    return totalCores;
+  };
+
+  // 캐릭터별 총 코어 획득량 계산
+  const calculateCharacterCores = (characterName: string) => {
+    return calculateRaidGroupCores(characterName, '세르카') +
+           calculateRaidGroupCores(characterName, '종막') +
+           calculateRaidGroupCores(characterName, '4막');
+  };
+
   // 전체 선택에서 더보기를 하나라도 사용했는지 확인
   const hasAnyMoreReward = () => {
     for (const characterName in gateSelection) {
@@ -445,6 +491,20 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                         </Button>
                       )}
 
+                      {/* 총 코어 개수 */}
+                      {calculateCharacterCores(character.characterName) > 0 && (
+                        <div className="d-flex align-items-center gap-1" style={{ whiteSpace: 'nowrap' }}>
+                          <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 20 : 26} height={isMobile ? 20 : 26} style={{ borderRadius: '3px' }} />
+                          <span style={{
+                            fontSize: isMobile ? '0.8rem' : '1rem',
+                            fontWeight: 700,
+                            color: 'var(--text-primary)'
+                          }}>
+                            x{calculateCharacterCores(character.characterName)}
+                          </span>
+                        </div>
+                      )}
+
                       {/* 골드 */}
                       <div className="character-gold-display d-flex align-items-center gap-1" style={{
                         padding: '0.35em 0.6em',
@@ -493,6 +553,14 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                             </Badge>
                             {hasMoreSelected(character.characterName, groupName) && (
                               <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.68rem' }}>더보기</Badge>
+                            )}
+                            {(groupName === '세르카' || groupName === '종막' || groupName === '4막') && (
+                              <span className="ms-1 d-inline-flex align-items-center">
+                                <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 20 : 26} height={isMobile ? 20 : 26} style={{ borderRadius: '3px' }} />
+                                <span style={{ marginLeft: '3px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.75rem' : '0.88rem' }}>
+                                  x{calculateRaidGroupCores(character.characterName, groupName)}
+                                </span>
+                              </span>
                             )}
                           </div>
                         </Accordion.Header>
@@ -656,6 +724,14 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
                                     <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
                                       0 G
                                     </Badge>
+                                    {(groupName === '세르카' || groupName === '종막' || groupName === '4막') && (
+                                      <span className="ms-1 d-inline-flex align-items-center" style={{ opacity: 0.7 }}>
+                                        <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 20 : 26} height={isMobile ? 20 : 26} style={{ borderRadius: '3px' }} />
+                                        <span style={{ marginLeft: '3px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.75rem' : '0.88rem' }}>
+                                          x{calculateRaidGroupCores(character.characterName, groupName)}
+                                        </span>
+                                      </span>
+                                    )}
                                   </div>
                                 </Accordion.Header>
                                 <Accordion.Body style={{ padding: isMobile ? '0.5rem' : '1.2rem' }}>
