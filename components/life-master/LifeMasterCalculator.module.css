@@ -1,0 +1,682 @@
+/* ========================================
+   생활의 달인 페이지 스타일
+   ======================================== */
+
+/* 메인 컨테이너 */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 헤더 섹션 */
+.header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .header {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.headerLink {
+  text-decoration: none;
+}
+
+.headerContent {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.headerIcon {
+  width: clamp(2rem, 4.5vw, 2.5rem);
+  height: auto;
+  aspect-ratio: 1/1;
+  border-radius: 8px;
+}
+
+.title {
+  margin-bottom: 0;
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  font-weight: 700;
+  background-image: var(--gradient-text-orange);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: clamp(0.8rem, 2vw, 0.95rem);
+  margin: 0;
+}
+
+/* 탭 스타일 */
+.tabContainer {
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* 카드 공통 */
+.card {
+  border: none;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.cardOrange {
+  background: var(--card-body-bg-orange);
+  color: var(--text-primary);
+}
+
+.cardStone {
+  background: var(--card-body-bg-stone);
+  color: var(--text-primary);
+}
+
+.cardHeader {
+  text-align: center;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+}
+
+@media (min-width: 768px) {
+  .cardHeader {
+    padding: 0.75rem 1rem;
+  }
+}
+
+.cardHeaderOrange {
+  background: var(--card-header-bg-orange);
+}
+
+.cardHeaderStone {
+  background: var(--card-header-bg-stone);
+}
+
+.cardHeaderContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.cardIcon {
+  border-radius: 6px;
+}
+
+.cardTitle {
+  margin-bottom: 0;
+  font-weight: 600;
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.cardTitleOrange {
+  background-image: var(--gradient-text-orange);
+}
+
+.cardTitleStone {
+  background-image: var(--gradient-text-stone);
+}
+
+.cardDate {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.cardBody {
+  padding: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .cardBody {
+    padding: 0.75rem;
+  }
+}
+
+/* 가격 정보 박스 */
+.priceBox {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  text-align: center;
+  background-color: var(--card-bg);
+}
+
+.priceLabel {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.priceValue {
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* 다크모드 대응 오렌지/스톤 색상 */
+.priceValueOrange {
+  background-image: var(--gradient-text-orange);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.priceValueStone {
+  background-image: var(--gradient-text-stone);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 재료 섹션 */
+.materialsSection {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 12px;
+  background-color: var(--card-bg);
+}
+
+.materialsSectionTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.materialRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+}
+
+.materialInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.materialIcon {
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.materialName {
+  color: var(--text-secondary);
+}
+
+.materialCost {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.materialsDivider {
+  margin: 10px 0;
+  border-color: var(--border-color);
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.totalLabel {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* 다크모드 대응 - 그라디언트 텍스트 사용 */
+.totalValueOrange {
+  font-weight: 700;
+  font-size: 1rem;
+  background-image: var(--gradient-text-orange);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.totalValueStone {
+  font-weight: 700;
+  font-size: 1rem;
+  background-image: var(--gradient-text-stone);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 입력 필드 */
+.inputSection {
+  margin-bottom: 12px;
+}
+
+.inputLabel {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* 손익 결과 박스 */
+.profitBox {
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.profitBoxProfit {
+  border: 2px solid var(--profit-color);
+  background-color: var(--profit-bg);
+}
+
+.profitBoxLoss {
+  border: 2px solid var(--loss-color);
+  background-color: var(--loss-bg);
+}
+
+.profitLabel {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.profitPercent {
+  font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+  font-weight: 700;
+}
+
+.profitPercentProfit {
+  color: var(--profit-color);
+}
+
+.profitPercentLoss {
+  color: var(--loss-color);
+}
+
+.profitPerUnit {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.profitPerUnitProfit {
+  color: var(--profit-color);
+}
+
+.profitPerUnitLoss {
+  color: var(--loss-color);
+}
+
+/* 극한의 효율 탭 */
+.efficiencyCard {
+  border: none;
+  border-radius: 16px;
+  background: var(--card-body-bg-orange);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.efficiencyHeader {
+  text-align: center;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: var(--card-header-bg-orange);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.efficiencyTitle {
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  background-image: var(--gradient-text-orange);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.efficiencySubtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0;
+}
+
+.efficiencyBody {
+  padding: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .efficiencyBody {
+    padding: 1rem;
+  }
+}
+
+/* 교환 메커니즘 박스 */
+.mechanismBox {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+  background-color: var(--card-bg);
+}
+
+.mechanismTitle {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mechanismIcon {
+  font-size: 1.2rem;
+}
+
+.mechanismContent {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.mechanismRow {
+  margin-bottom: 8px;
+}
+
+.mechanismHighlight {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.mechanismDivider {
+  margin: 12px 0;
+  border-color: var(--border-color);
+}
+
+.mechanismNote {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* 가격 비교 섹션 */
+.comparisonSection {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+  background-color: var(--card-bg);
+}
+
+.comparisonTitle {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.methodCard {
+  padding: 16px;
+  border-radius: 10px;
+  text-align: center;
+  height: 100%;
+}
+
+.methodCardDefault {
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+.methodCardBest {
+  border: 2px solid var(--profit-color);
+  background-color: var(--profit-bg);
+}
+
+.methodRecommended {
+  font-size: 0.7rem;
+  color: var(--profit-color);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.methodHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.methodIcon {
+  border-radius: 6px;
+}
+
+.methodName {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.methodPrice {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.methodPriceDefault {
+  color: var(--text-primary);
+}
+
+.methodPriceBest {
+  color: var(--profit-color);
+}
+
+.methodNote {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* 결론 박스 */
+.conclusionBox {
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid var(--profit-color);
+  background-color: var(--profit-bg);
+  text-align: center;
+}
+
+.conclusionLabel {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.conclusionMethod {
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  font-weight: 700;
+  color: var(--profit-color);
+  margin-bottom: 8px;
+}
+
+.conclusionPrice {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.conclusionPriceValue {
+  font-weight: 700;
+  color: var(--profit-color);
+}
+
+.conclusionSavings {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.conclusionSavingsValue {
+  color: var(--profit-color);
+  font-weight: 600;
+}
+
+/* 로딩 스피너 */
+.loadingContainer {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+/* 차트 카드 */
+.chartCard {
+  border: none;
+  border-radius: 16px;
+  background: var(--card-bg);
+  overflow: hidden;
+  height: 100%;
+}
+
+.chartCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--card-header-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.chartHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chartHeaderRight {
+  text-align: right;
+}
+
+.chartItemIcon {
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.chartItemName {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.chartItemType {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.chartCurrentPrice {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.chartChangeRate {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.chartCardBody {
+  padding: 0.75rem;
+  background: var(--card-bg);
+}
+
+@media (min-width: 768px) {
+  .chartCardBody {
+    padding: 1rem;
+  }
+}
+
+/* 차트 기간 선택 버튼 */
+.chartPeriodButtons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.chartPeriodButton {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chartPeriodButton:hover {
+  background: var(--card-body-bg-blue);
+}
+
+.chartPeriodButtonActive {
+  border-width: 2px;
+  background: var(--card-body-bg-blue);
+}
+
+/* 차트 컨테이너 */
+.chartContainer {
+  height: 200px;
+}
+
+@media (min-width: 768px) {
+  .chartContainer {
+    height: 250px;
+  }
+}
+
+/* 차트 툴팁 */
+.chartTooltip {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: var(--shadow-lg);
+}
+
+.chartTooltipDate {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.chartTooltipPrice {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}

@@ -81,7 +81,7 @@ export default function Home() {
             {/* 기능 버튼들 */}
             <div className="mb-2 mb-md-3 mt-3 mt-md-4" style={{ maxWidth: '1400px', margin: '0 auto' }}>
               <Row className="justify-content-center g-2 g-sm-3">
-                <Col xs={5} sm={5} md={4} lg={3} xl={3}>
+                <Col xs={4} sm={4} md={4} lg={3} xl={3}>
                   <Link href="/weekly-gold" className="text-decoration-none">
                     <Card
                       className="border-0 shadow-lg h-100 text-center py-2 py-sm-3 px-1 px-sm-2"
@@ -101,13 +101,13 @@ export default function Home() {
                       }}
                     >
                       <div className="d-flex justify-content-center mb-1 mb-sm-2">
-                        <Image src="/gold.webp" alt="로아 주간 골드 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', width: 'clamp(36px, 8vw, 52px)', height: 'auto', aspectRatio: '1/1' }} />
+                        <Image src="/gold.webp" alt="로아 주간 골드 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', width: 'clamp(32px, 7vw, 52px)', height: 'auto', aspectRatio: '1/1' }} />
                       </div>
                       <h3
                         className="mb-1 mb-sm-2"
                         style={{
                           fontWeight: '600',
-                          fontSize: 'clamp(0.8rem, 2.2vw, 1.1rem)',
+                          fontSize: 'clamp(0.7rem, 2vw, 1.1rem)',
                           background: 'var(--gradient-text-blue)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
@@ -116,13 +116,13 @@ export default function Home() {
                       >
                         주간 골드 계산
                       </h3>
-                      <p style={{ fontSize: 'clamp(0.6rem, 1.6vw, 0.85rem)', color: 'var(--text-muted)', marginBottom: 0, lineHeight: '1.3' }}>
+                      <p style={{ fontSize: 'clamp(0.55rem, 1.4vw, 0.85rem)', color: 'var(--text-muted)', marginBottom: 0, lineHeight: '1.3' }}>
                         원정대 주간 골드 수익과<br/>더보기 보상 손익을 계산
                       </p>
                     </Card>
                   </Link>
                 </Col>
-                <Col xs={5} sm={5} md={4} lg={3} xl={3}>
+                <Col xs={4} sm={4} md={4} lg={3} xl={3}>
                   <Link href="/refining" className="text-decoration-none">
                     <Card
                       className="border-0 shadow-lg h-100 text-center py-2 py-sm-3 px-1 px-sm-2"
@@ -142,13 +142,13 @@ export default function Home() {
                       }}
                     >
                       <div className="d-flex justify-content-center mb-1 mb-sm-2">
-                        <Image src="/banner_share.webp" alt="로아 T4 재련 비용 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(36px, 8vw, 52px)', height: 'auto', aspectRatio: '1/1' }} />
+                        <Image src="/banner_share.webp" alt="로아 T4 재련 비용 계산 아이콘" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(32px, 7vw, 52px)', height: 'auto', aspectRatio: '1/1' }} />
                       </div>
                       <h3
                         className="mb-1 mb-sm-2"
                         style={{
                           fontWeight: '600',
-                          fontSize: 'clamp(0.8rem, 2.2vw, 1.1rem)',
+                          fontSize: 'clamp(0.7rem, 2vw, 1.1rem)',
                           background: 'var(--gradient-text-stone)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
@@ -157,8 +157,49 @@ export default function Home() {
                       >
                         T4 재련 비용 계산
                       </h3>
-                      <p style={{ fontSize: 'clamp(0.6rem, 1.6vw, 0.85rem)', color: 'var(--text-muted)', marginBottom: 0, lineHeight: '1.3' }}>
+                      <p style={{ fontSize: 'clamp(0.55rem, 1.4vw, 0.85rem)', color: 'var(--text-muted)', marginBottom: 0, lineHeight: '1.3' }}>
                         목표 레벨까지 필요한<br/>재련 재료와 골드 계산
+                      </p>
+                    </Card>
+                  </Link>
+                </Col>
+                <Col xs={4} sm={4} md={4} lg={3} xl={3}>
+                  <Link href="/life-master" className="text-decoration-none">
+                    <Card
+                      className="border-0 shadow-lg h-100 text-center py-2 py-sm-3 px-1 px-sm-2"
+                      style={{
+                        borderRadius: 'clamp(10px, 3vw, 16px)',
+                        backgroundColor: 'var(--card-body-bg-orange)',
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.15)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '';
+                      }}
+                    >
+                      <div className="d-flex justify-content-center mb-1 mb-sm-2">
+                        <Image src="/abidos-fusion2.webp" alt="로아 생활의 달인 아이콘" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(32px, 7vw, 52px)', height: 'auto', aspectRatio: '1/1' }} />
+                      </div>
+                      <h3
+                        className="mb-1 mb-sm-2"
+                        style={{
+                          fontWeight: '600',
+                          fontSize: 'clamp(0.7rem, 2vw, 1.1rem)',
+                          background: 'var(--gradient-text-orange)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                        }}
+                      >
+                        생활의 달인
+                      </h3>
+                      <p style={{ fontSize: 'clamp(0.55rem, 1.4vw, 0.85rem)', color: 'var(--text-muted)', marginBottom: 0, lineHeight: '1.3' }}>
+                        아비도스 융화재료<br/>제작 손익과 극한 효율
                       </p>
                     </Card>
                   </Link>

@@ -20,6 +20,7 @@
   --card-bg: #ffffff;
   --card-body-bg-blue: #f7fafc;
   --card-body-bg-stone: #fafaf9;
+  --card-body-bg-orange: #fff7ed;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -28,11 +29,13 @@
   --card-header-bg-blue: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
   --card-header-bg-stone: linear-gradient(135deg, #fafaf9 0%, #f5f5f4 100%);
   --card-header-bg-violet: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+  --card-header-bg-orange: linear-gradient(135deg, #ffedd5 0%, #fff7ed 100%);
 
   /* Text Gradients */
   --gradient-text-blue: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   --gradient-text-stone: linear-gradient(135deg, #78716c 0%, #57534e 100%);
   --gradient-text-violet: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+  --gradient-text-orange: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
 
   /* Footer */
   --footer-text-primary-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
@@ -70,6 +73,7 @@
   --card-bg: #1f2937;
   --card-body-bg-blue: #111827;
   --card-body-bg-stone: #1c1917;
+  --card-body-bg-orange: #1c1410;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
@@ -78,11 +82,13 @@
   --card-header-bg-blue: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
   --card-header-bg-stone: linear-gradient(135deg, #292524 0%, #1c1917 100%);
   --card-header-bg-violet: linear-gradient(135deg, #5b21b6 0%, #6d28d9 100%);
+  --card-header-bg-orange: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%);
 
   /* Text Gradients */
   --gradient-text-blue: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
   --gradient-text-stone: linear-gradient(135deg, #a8a29e 0%, #d6d3d1 100%);
   --gradient-text-violet: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
+  --gradient-text-orange: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
 
   /* Footer */
   --footer-text-primary-gradient: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
