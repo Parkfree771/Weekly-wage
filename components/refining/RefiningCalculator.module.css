@@ -503,7 +503,7 @@ div.equipmentCardDisabled,
   left: -16px;
   right: -16px;
   bottom: -32px;
-  background-image: url('/wjsdbf.webp');
+  background-image: url('/wjsdbf.webp?v=2');
   background-size: 100% 100%;
   background-repeat: no-repeat;
   pointer-events: none;
