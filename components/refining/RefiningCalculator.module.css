@@ -499,10 +499,10 @@ div.equipmentCardDisabled,
 .equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession::before {
   content: '';
   position: absolute;
-  top: -10px;
-  left: -10px;
-  right: -10px;
-  bottom: -10px;
+  top: -32px;
+  left: -16px;
+  right: -16px;
+  bottom: -32px;
   background-image: url('/wjsdbf.webp');
   background-size: 100% 100%;
   background-repeat: no-repeat;
@@ -1359,10 +1359,10 @@ button.bulkButton:disabled,
   }
 
   .equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession::before {
-    top: -12px;
-    left: -12px;
-    right: -12px;
-    bottom: -12px;
+    top: -28px;
+    left: -15px;
+    right: -15px;
+    bottom: -28px;
   }
 
   .materialCard {
