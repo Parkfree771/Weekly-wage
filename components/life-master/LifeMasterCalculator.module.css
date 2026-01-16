@@ -551,6 +551,694 @@
   padding: 3rem 0;
 }
 
+/* 제작 손익 섹션 - 모바일 대응 */
+.craftingSection {
+  padding-top: 0.5rem;
+  padding-bottom: 0.75rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+@media (min-width: 768px) {
+  .craftingSection {
+    padding-top: 0.5rem;
+    padding-bottom: 0.75rem;
+  }
+}
+
+.craftingBox {
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  padding: 12px;
+  background-color: transparent;
+  height: 100%;
+}
+
+@media (min-width: 768px) {
+  .craftingBox {
+    border-radius: 14px;
+    padding: 20px;
+  }
+}
+
+.craftingTitle {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (min-width: 768px) {
+  .craftingTitle {
+    font-size: 1rem;
+    gap: 10px;
+  }
+}
+
+.craftingIcon {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+}
+
+@media (min-width: 768px) {
+  .craftingIcon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+  }
+}
+
+.materialIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+
+@media (min-width: 768px) {
+  .materialIcon {
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+  }
+}
+
+.materialRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+@media (min-width: 768px) {
+  .materialRow {
+    margin-bottom: 10px;
+  }
+}
+
+.materialLabel {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+@media (min-width: 768px) {
+  .materialLabel {
+    font-size: 1rem;
+    gap: 8px;
+  }
+}
+
+.materialPrice {
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .materialPrice {
+    font-size: 1.05rem;
+  }
+}
+
+.totalLabel {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .totalLabel {
+    font-size: 1rem;
+  }
+}
+
+.totalValue {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .totalValue {
+    font-size: 1.4rem;
+  }
+}
+
+.exchangeLabel {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+}
+
+@media (min-width: 768px) {
+  .exchangeLabel {
+    font-size: 0.95rem;
+  }
+}
+
+.exchangeValue {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .exchangeValue {
+    font-size: 1.6rem;
+  }
+}
+
+.feeLabel {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .feeLabel {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+  }
+}
+
+.feeInput {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .feeInput {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+  }
+}
+
+.priceDate {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+}
+
+@media (min-width: 768px) {
+  .priceDate {
+    font-size: 0.7rem;
+  }
+}
+
+.dividerLine {
+  border-color: var(--border-color);
+  margin: 8px 0;
+}
+
+@media (min-width: 768px) {
+  .dividerLine {
+    margin: 14px 0;
+  }
+}
+
+.titleWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+@media (min-width: 768px) {
+  .titleWrapper {
+    margin-bottom: 16px;
+  }
+}
+
+.exchangeInfoBox {
+  margin-bottom: 12px;
+}
+
+@media (min-width: 768px) {
+  .exchangeInfoBox {
+    margin-bottom: 20px;
+  }
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 768px) {
+  .infoRow {
+    margin-bottom: 12px;
+  }
+}
+
+/* 극한의 효율 탭 - 모바일 대응 */
+.efficiencyBox {
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  padding: 12px;
+  height: 100%;
+  background-color: transparent;
+}
+
+@media (min-width: 768px) {
+  .efficiencyBox {
+    border-radius: 14px;
+    padding: 20px;
+  }
+}
+
+.efficiencySectionTitle {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+}
+
+@media (min-width: 768px) {
+  .efficiencySectionTitle {
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+  }
+}
+
+.efficiencyIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+@media (min-width: 768px) {
+  .efficiencyIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+  }
+}
+
+.efficiencyItemLabel {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+@media (min-width: 768px) {
+  .efficiencyItemLabel {
+    font-size: 1.05rem;
+  }
+}
+
+.efficiencyItemValue {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+@media (min-width: 768px) {
+  .efficiencyItemValue {
+    font-size: 1.2rem;
+  }
+}
+
+.efficiencyRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.efficiencyItemRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (min-width: 768px) {
+  .efficiencyItemRow {
+    gap: 10px;
+  }
+}
+
+.efficiencyGap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .efficiencyGap {
+    gap: 14px;
+  }
+}
+
+.formulaText {
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .formulaText {
+    font-size: 1.05rem;
+  }
+}
+
+.formulaArrow {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+@media (min-width: 768px) {
+  .formulaArrow {
+    font-size: 1.2rem;
+  }
+}
+
+.ratioText {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+@media (min-width: 768px) {
+  .ratioText {
+    font-size: 1.15rem;
+  }
+}
+
+.ratioEquals {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--profit-color);
+}
+
+@media (min-width: 768px) {
+  .ratioEquals {
+    font-size: 1.3rem;
+  }
+}
+
+.ratioResult {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--profit-color);
+}
+
+@media (min-width: 768px) {
+  .ratioResult {
+    font-size: 1.15rem;
+  }
+}
+
+.formulaRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .formulaRow {
+    gap: 10px;
+  }
+}
+
+.resultBox {
+  border-radius: 10px;
+  border: 2px solid var(--profit-color);
+  padding: 14px;
+  height: 100%;
+  background-color: var(--profit-bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .resultBox {
+    border-radius: 14px;
+    padding: 20px;
+  }
+}
+
+.resultIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+@media (min-width: 768px) {
+  .resultIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+  }
+}
+
+.resultChainIcon {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+}
+
+@media (min-width: 768px) {
+  .resultChainIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+  }
+}
+
+.resultLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+@media (min-width: 768px) {
+  .resultLabel {
+    font-size: 1rem;
+  }
+}
+
+.resultDescription {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+@media (min-width: 768px) {
+  .resultDescription {
+    font-size: 1rem;
+    margin-bottom: 8px;
+  }
+}
+
+.resultArrow {
+  font-size: 0.9rem;
+  color: var(--profit-color);
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .resultArrow {
+    font-size: 1.2rem;
+  }
+}
+
+.resultSavings {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--profit-color);
+  margin-bottom: 2px;
+}
+
+@media (min-width: 768px) {
+  .resultSavings {
+    font-size: 1.8rem;
+    margin-bottom: 4px;
+  }
+}
+
+.resultPerUnit {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+@media (min-width: 768px) {
+  .resultPerUnit {
+    font-size: 0.9rem;
+  }
+}
+
+.resultOptimal {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+}
+
+@media (min-width: 768px) {
+  .resultOptimal {
+    font-size: 0.85rem;
+  }
+}
+
+.optionBox {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+@media (min-width: 768px) {
+  .optionBox {
+    padding: 12px 16px;
+    border-radius: 10px;
+  }
+}
+
+.optionBoxBest {
+  background-color: var(--profit-bg);
+  border: 2px solid var(--profit-color);
+}
+
+.optionLabel {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+@media (min-width: 768px) {
+  .optionLabel {
+    font-size: 1.05rem;
+  }
+}
+
+.optionValue {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .optionValue {
+    font-size: 1.2rem;
+  }
+}
+
+.costBox {
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  padding: 12px;
+  padding-right: 35px;
+  height: 100%;
+  background-color: transparent;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .costBox {
+    border-radius: 14px;
+    padding: 20px;
+    padding-right: 50px;
+  }
+}
+
+.costArrow {
+  position: absolute;
+  right: -25px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.3rem;
+  color: var(--profit-color);
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .costArrow {
+    right: -35px;
+    font-size: 1.8rem;
+  }
+}
+
+.optionIcon {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+}
+
+@media (min-width: 768px) {
+  .optionIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+  }
+}
+
+/* 융화재료 카드 */
+.fusionCard {
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  height: 100%;
+  background-color: var(--card-bg);
+}
+
+@media (min-width: 768px) {
+  .fusionCard {
+    border-radius: 16px;
+  }
+}
+
+.fusionCardHeader {
+  background: var(--card-header-bg);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+@media (min-width: 768px) {
+  .fusionCardHeader {
+    padding: 0.75rem 1rem;
+    gap: 10px;
+  }
+}
+
+.fusionCardTitle {
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .fusionCardTitle {
+    font-size: 1rem;
+  }
+}
+
+.fusionCardBody {
+  padding: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .fusionCardBody {
+    padding: 0.75rem;
+  }
+}
+
 /* 차트 카드 */
 .chartCard {
   border: none;

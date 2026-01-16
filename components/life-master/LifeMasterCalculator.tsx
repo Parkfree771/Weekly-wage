@@ -637,44 +637,25 @@ function ChartWithProfit({
             </div>
 
             {/* 제작 손익 섹션 - 메인페이지 스타일 */}
-            <div className="pt-2 pb-3 px-1">
+            <div className={styles.craftingSection}>
               <Row className="g-2 mb-2">
                 {/* 왼쪽: 제작 재료 */}
                 <Col xs={6}>
-                  <div style={{
-                    borderRadius: '14px',
-                    border: '1px solid var(--border-color)',
-                    padding: '20px',
-                    backgroundColor: 'transparent',
-                    height: '100%'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '16px'
-                    }}>
-                      <h6 style={{
-                        fontSize: '1rem',
-                        color: 'var(--text-secondary)',
-                        fontWeight: 600,
-                        marginBottom: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px'
-                      }}>
+                  <div className={styles.craftingBox}>
+                    <div className={styles.titleWrapper}>
+                      <h6 className={styles.craftingTitle}>
                         <Image
                           src={icon}
                           alt={name}
                           width={32}
                           height={32}
-                          style={{ borderRadius: '6px' }}
+                          className={styles.craftingIcon}
                         />
                         제작 재료
                       </h6>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {priceDate && (
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          <span className={styles.priceDate}>
                             {priceDate}
                           </span>
                         )}
@@ -686,8 +667,8 @@ function ChartWithProfit({
                             background: 'transparent',
                             border: 'none',
                             cursor: isRefreshing ? 'not-allowed' : 'pointer',
-                            padding: '4px',
-                            borderRadius: '6px',
+                            padding: '3px',
+                            borderRadius: '4px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -704,83 +685,49 @@ function ChartWithProfit({
                           }}
                         >
                           {isRefreshing ? (
-                            <Spinner animation="border" size="sm" style={{ width: '18px', height: '18px' }} />
+                            <Spinner animation="border" size="sm" style={{ width: '14px', height: '14px' }} />
                           ) : (
-                            <GearIcon size={18} color={!canRefresh ? 'var(--profit-color)' : 'var(--text-secondary)'} />
+                            <GearIcon size={14} color={!canRefresh ? 'var(--profit-color)' : 'var(--text-secondary)'} />
                           )}
                         </button>
                       </div>
                     </div>
-                    <div style={{ marginBottom: '12px' }}>
+                    <div style={{ marginBottom: '8px' }}>
                       {craftingMaterials.map((material, idx) => (
-                        <div key={idx} style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: '10px'
-                        }}>
-                          <span style={{
-                            fontSize: '1rem',
-                            color: 'var(--text-secondary)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                          }}>
+                        <div key={idx} className={styles.materialRow}>
+                          <span className={styles.materialLabel}>
                             <Image
                               src={material.icon}
                               alt={material.name}
                               width={30}
                               height={30}
-                              style={{ borderRadius: '5px' }}
+                              className={styles.materialIcon}
                             />
                             ×{material.quantity}
                           </span>
-                          <span style={{
-                            fontSize: '1.05rem',
-                            color: 'var(--text-primary)',
-                            fontWeight: 600
-                          }}>
+                          <span className={styles.materialPrice}>
                             {Math.round(material.quantity * material.pricePer100 / 100).toLocaleString()} G
                           </span>
                         </div>
                       ))}
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '10px'
-                      }}>
-                        <span style={{
-                          fontSize: '1rem',
-                          color: 'var(--text-secondary)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}>
-                          <Image src="/gold.webp" alt="골드" width={30} height={30} style={{ borderRadius: '5px' }} />
+                      <div className={styles.materialRow}>
+                        <span className={styles.materialLabel}>
+                          <Image src="/gold.webp" alt="골드" width={30} height={30} className={styles.materialIcon} />
                           제작비
                         </span>
-                        <span style={{
-                          fontSize: '1.05rem',
-                          color: 'var(--text-primary)',
-                          fontWeight: 600
-                        }}>
+                        <span className={styles.materialPrice}>
                           {Math.round(actualGoldCost).toLocaleString()} G
                         </span>
                       </div>
                     </div>
-                    <hr style={{ borderColor: 'var(--border-color)', margin: '14px 0' }} />
+                    <hr className={styles.dividerLine} />
                     <div style={{
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center'
                     }}>
-                      <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 600 }}>총 제작 비용</span>
-                      <span style={{
-                        fontSize: '1.4rem',
-                        color: chartColor,
-                        fontWeight: 700
-                      }}>
+                      <span className={styles.totalLabel}>총 제작 비용</span>
+                      <span className={styles.totalValue} style={{ color: chartColor }}>
                         {Math.round(craftingCost).toLocaleString()} G
                       </span>
                     </div>
@@ -789,44 +736,21 @@ function ChartWithProfit({
 
                 {/* 오른쪽: 거래소 정보 - 메인페이지 스타일 */}
                 <Col xs={6}>
-                  <div style={{
-                    borderRadius: '14px',
-                    border: '1px solid var(--border-color)',
-                    padding: '20px',
-                    backgroundColor: 'transparent',
-                    height: '100%'
-                  }}>
-                    <h6 style={{
-                      fontSize: '1rem',
-                      color: 'var(--text-secondary)',
-                      fontWeight: 600,
-                      marginBottom: '16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px'
-                    }}>
+                  <div className={styles.craftingBox}>
+                    <h6 className={`${styles.craftingTitle} ${styles.titleWrapper}`}>
                       <Image
                         src={icon}
                         alt={name}
                         width={32}
                         height={32}
-                        style={{ borderRadius: '6px' }}
+                        className={styles.craftingIcon}
                       />
                       거래소 정보
                     </h6>
-                    <div style={{ marginBottom: '20px' }}>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '12px'
-                      }}>
-                        <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>현재 거래소 가격</span>
-                        <span style={{
-                          fontSize: '1.6rem',
-                          color: 'var(--text-primary)',
-                          fontWeight: 700
-                        }}>
+                    <div className={styles.exchangeInfoBox}>
+                      <div className={styles.infoRow}>
+                        <span className={styles.exchangeLabel}>현재 거래소 가격</span>
+                        <span className={styles.exchangeValue} style={{ color: 'var(--text-primary)' }}>
                           {currentPrice.toLocaleString()} G
                         </span>
                       </div>
@@ -835,23 +759,14 @@ function ChartWithProfit({
                         justifyContent: 'space-between',
                         alignItems: 'center'
                       }}>
-                        <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>개당 제작 비용</span>
-                        <span style={{
-                          fontSize: '1.6rem',
-                          color: chartColor,
-                          fontWeight: 700
-                        }}>
+                        <span className={styles.exchangeLabel}>개당 제작 비용</span>
+                        <span className={styles.exchangeValue} style={{ color: chartColor }}>
                           {costPerUnit.toFixed(1)} G
                         </span>
                       </div>
                     </div>
                     <div>
-                      <label style={{
-                        fontSize: '0.9rem',
-                        color: 'var(--text-secondary)',
-                        marginBottom: '8px',
-                        display: 'block'
-                      }}>
+                      <label className={styles.feeLabel}>
                         제작 수수료 감소 (%)
                       </label>
                       <input
@@ -865,17 +780,7 @@ function ChartWithProfit({
                         min={0}
                         max={100}
                         step={1}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          borderRadius: '10px',
-                          border: '1px solid var(--border-color)',
-                          backgroundColor: 'var(--input-bg)',
-                          color: 'var(--text-primary)',
-                          fontSize: '1.2rem',
-                          fontWeight: 600,
-                          textAlign: 'center'
-                        }}
+                        className={styles.feeInput}
                       />
                     </div>
                   </div>
@@ -1187,20 +1092,14 @@ export default function LifeMasterCalculator() {
           <Row className="g-3 mb-3">
             {/* 왼쪽: 현재 시세 (100개당) */}
             <Col md={6}>
-              <div style={{
-                borderRadius: '14px',
-                border: '1px solid var(--border-color)',
-                padding: '20px',
-                height: '100%',
-                backgroundColor: 'transparent'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <h6 style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 0, fontSize: '1.1rem' }}>
+              <div className={styles.efficiencyBox}>
+                <div className={styles.titleWrapper}>
+                  <h6 className={styles.efficiencySectionTitle}>
                     현재 시세 (100개당)
                   </h6>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     {priceDate && (
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      <span className={styles.priceDate}>
                         {priceDate}
                       </span>
                     )}
@@ -1212,8 +1111,8 @@ export default function LifeMasterCalculator() {
                         background: 'transparent',
                         border: 'none',
                         cursor: isRefreshing ? 'not-allowed' : 'pointer',
-                        padding: '4px',
-                        borderRadius: '6px',
+                        padding: '3px',
+                        borderRadius: '4px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1230,38 +1129,38 @@ export default function LifeMasterCalculator() {
                       }}
                     >
                       {isRefreshing ? (
-                        <Spinner animation="border" size="sm" style={{ width: '18px', height: '18px' }} />
+                        <Spinner animation="border" size="sm" style={{ width: '14px', height: '14px' }} />
                       ) : (
-                        <GearIcon size={18} color={!canRefresh ? 'var(--profit-color)' : 'var(--text-secondary)'} />
+                        <GearIcon size={14} color={!canRefresh ? 'var(--profit-color)' : 'var(--text-secondary)'} />
                       )}
                     </button>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Image src="/wood2.webp" alt="목재" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.05rem', color: 'var(--text-secondary)' }}>목재</span>
+                <div className={styles.efficiencyGap}>
+                  <div className={styles.efficiencyRow}>
+                    <div className={styles.efficiencyItemRow}>
+                      <Image src="/wood2.webp" alt="목재" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.efficiencyItemLabel}>목재</span>
                     </div>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    <span className={styles.efficiencyItemValue}>
                       {(materialPrices['6882301'] || 0).toLocaleString()} G
                     </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Image src="/wood3.webp" alt="부드러운 목재" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.05rem', color: 'var(--text-secondary)' }}>부드러운</span>
+                  <div className={styles.efficiencyRow}>
+                    <div className={styles.efficiencyItemRow}>
+                      <Image src="/wood3.webp" alt="부드러운 목재" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.efficiencyItemLabel}>부드러운</span>
                     </div>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    <span className={styles.efficiencyItemValue}>
                       {(materialPrices['6882304'] || 0).toLocaleString()} G
                     </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Image src="/wood1.webp" alt="아비도스 목재" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.05rem', color: 'var(--text-secondary)' }}>아비도스</span>
+                  <div className={styles.efficiencyRow}>
+                    <div className={styles.efficiencyItemRow}>
+                      <Image src="/wood1.webp" alt="아비도스 목재" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.efficiencyItemLabel}>아비도스</span>
                     </div>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    <span className={styles.efficiencyItemValue}>
                       {(materialPrices['6884308'] || 0).toLocaleString()} G
                     </span>
                   </div>
@@ -1271,39 +1170,33 @@ export default function LifeMasterCalculator() {
 
             {/* 오른쪽: 교환 공식 */}
             <Col md={6}>
-              <div style={{
-                borderRadius: '14px',
-                border: '1px solid var(--border-color)',
-                padding: '20px',
-                height: '100%',
-                backgroundColor: 'transparent'
-              }}>
-                <h6 style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px', fontSize: '1.1rem' }}>
+              <div className={styles.efficiencyBox}>
+                <h6 className={styles.efficiencySectionTitle}>
                   교환 공식
                 </h6>
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'stretch' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'stretch' }}>
                   {/* 왼쪽: 교환 공식 */}
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '14px', justifyContent: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}>
-                      <Image src="/wood2.webp" alt="목재" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>×100</span>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>→</span>
-                      <Image src="/rkfn.webp" alt="가루" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>×80</span>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }} className={styles.efficiencyGap}>
+                    <div className={styles.formulaRow}>
+                      <Image src="/wood2.webp" alt="목재" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.formulaText}>×100</span>
+                      <span className={styles.formulaArrow}>→</span>
+                      <Image src="/rkfn.webp" alt="가루" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.formulaText}>×80</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}>
-                      <Image src="/wood3.webp" alt="부드러운 목재" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>×50</span>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>→</span>
-                      <Image src="/rkfn.webp" alt="가루" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>×80</span>
+                    <div className={styles.formulaRow}>
+                      <Image src="/wood3.webp" alt="부드러운 목재" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.formulaText}>×50</span>
+                      <span className={styles.formulaArrow}>→</span>
+                      <Image src="/rkfn.webp" alt="가루" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.formulaText}>×80</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}>
-                      <Image src="/rkfn.webp" alt="가루" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>×100</span>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>→</span>
-                      <Image src="/wood1.webp" alt="아비도스 목재" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>×10</span>
+                    <div className={styles.formulaRow}>
+                      <Image src="/rkfn.webp" alt="가루" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.formulaText}>×100</span>
+                      <span className={styles.formulaArrow}>→</span>
+                      <Image src="/wood1.webp" alt="아비도스 목재" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.formulaText}>×10</span>
                     </div>
                   </div>
 
@@ -1311,26 +1204,20 @@ export default function LifeMasterCalculator() {
                   <div style={{ width: '1px', backgroundColor: 'var(--border-color)', alignSelf: 'stretch' }} />
 
                   {/* 오른쪽: 교환 비율 */}
-                  <div style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    gap: '14px'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                      <Image src="/wood1.webp" alt="아비도스" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>×1</span>
-                      <span style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--profit-color)' }}>=</span>
-                      <Image src="/wood2.webp" alt="목재" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--profit-color)' }}>×12.5</span>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }} className={styles.efficiencyGap}>
+                    <div className={styles.formulaRow}>
+                      <Image src="/wood1.webp" alt="아비도스" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.ratioText}>×1</span>
+                      <span className={styles.ratioEquals}>=</span>
+                      <Image src="/wood2.webp" alt="목재" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.ratioResult}>×12.5</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                      <Image src="/wood1.webp" alt="아비도스" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>×1</span>
-                      <span style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--profit-color)' }}>=</span>
-                      <Image src="/wood3.webp" alt="부드러운" width={36} height={36} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--profit-color)' }}>×6.25</span>
+                    <div className={styles.formulaRow}>
+                      <Image src="/wood1.webp" alt="아비도스" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.ratioText}>×1</span>
+                      <span className={styles.ratioEquals}>=</span>
+                      <Image src="/wood3.webp" alt="부드러운" width={36} height={36} className={styles.efficiencyIcon} />
+                      <span className={styles.ratioResult}>×6.25</span>
                     </div>
                   </div>
                 </div>
@@ -1366,27 +1253,20 @@ export default function LifeMasterCalculator() {
                 display: 'flex', alignItems: 'center', gap: '0',
                 position: 'relative'
               }}>
-                <div style={{
-                  flex: 1,
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '12px 16px', borderRadius: '10px',
-                  backgroundColor: isBest ? 'var(--profit-bg)' : 'transparent',
-                  border: isBest ? '2px solid var(--profit-color)' : '1px solid var(--border-color)'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Image src={icon} alt="재료" width={36} height={36} style={{ borderRadius: '6px' }} />
+                <div className={`${styles.optionBox} ${isBest ? styles.optionBoxBest : ''}`}>
+                  <div className={styles.efficiencyItemRow}>
+                    <Image src={icon} alt="재료" width={36} height={36} className={styles.optionIcon} />
                     {multiplier ? (
-                      <span style={{ fontSize: '1.05rem', color: 'var(--text-secondary)' }}>
+                      <span className={styles.optionLabel}>
                         {truncateDecimal(unitPrice, 3)} × {multiplier}
                       </span>
                     ) : (
-                      <span style={{ fontSize: '1.05rem', color: 'var(--text-secondary)' }}>
+                      <span className={styles.optionLabel}>
                         {truncateDecimal(unitPrice, 3)}
                       </span>
                     )}
                   </div>
-                  <span style={{
-                    fontSize: '1.2rem', fontWeight: 700,
+                  <span className={styles.optionValue} style={{
                     color: isBest ? 'var(--profit-color)' : 'var(--text-primary)'
                   }}>
                     = {truncateDecimal(finalPrice, 3)} G
@@ -1394,15 +1274,7 @@ export default function LifeMasterCalculator() {
                 </div>
                 {/* 화살표 - 가장 저렴한 줄에서만 표시 */}
                 {isBest && (
-                  <div style={{
-                    position: 'absolute',
-                    right: '-35px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    fontSize: '1.8rem',
-                    color: 'var(--profit-color)',
-                    fontWeight: 700
-                  }}>
+                  <div className={styles.costArrow}>
                     →
                   </div>
                 )}
@@ -1413,19 +1285,11 @@ export default function LifeMasterCalculator() {
               <Row className="g-3 mb-3 align-items-stretch">
                 {/* 왼쪽: 1개 획득 비용 */}
                 <Col md={6}>
-                  <div style={{
-                    borderRadius: '14px',
-                    border: '1px solid var(--border-color)',
-                    padding: '20px',
-                    paddingRight: '50px',
-                    height: '100%',
-                    backgroundColor: 'transparent',
-                    position: 'relative'
-                  }}>
-                    <h6 style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px', fontSize: '1.1rem' }}>
+                  <div className={styles.costBox}>
+                    <h6 className={styles.efficiencySectionTitle}>
                       아비도스 목재 1개 획득 비용
                     </h6>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {renderOptionRow('/wood1.webp', abidosWoodPrice, null, abidosDirectBuy, isDirectBest)}
                       {renderOptionRow('/wood2.webp', normalWoodPrice, 12.5, abidosFromNormalWood, isNormalWoodBest)}
                       {renderOptionRow('/wood3.webp', softWoodPrice, 6.25, abidosFromSoftWood, isSoftWoodBest)}
@@ -1435,52 +1299,41 @@ export default function LifeMasterCalculator() {
 
                 {/* 오른쪽: 결과 */}
                 <Col md={6}>
-                  <div style={{
-                    borderRadius: '14px',
-                    border: '2px solid var(--profit-color)',
-                    padding: '20px',
-                    height: '100%',
-                    backgroundColor: 'var(--profit-bg)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    textAlign: 'center'
-                  }}>
+                  <div className={styles.resultBox}>
                     {/* 교환 과정 시각화 */}
                     {isDirectBest ? (
                       <>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                          <Image src="/wood1.webp" alt="아비도스 목재" width={40} height={40} style={{ borderRadius: '6px' }} />
-                          <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                          <Image src="/wood1.webp" alt="아비도스 목재" width={40} height={40} className={styles.resultIcon} />
+                          <span className={styles.resultLabel}>
                             직접 구매
                           </span>
                         </div>
-                        <div style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                        <div className={styles.resultDescription}>
                           직접 구매가 가장 저렴합니다
                         </div>
                       </>
                     ) : (
                       <>
                         {/* 교환 체인: 목재/부드러운 → 가루 → 아비도스 목재 */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                          <Image src={optimalIcon} alt="재료" width={36} height={36} style={{ borderRadius: '6px' }} />
-                          <span style={{ fontSize: '1.2rem', color: 'var(--profit-color)', fontWeight: 700 }}>→</span>
-                          <Image src="/rkfn.webp" alt="가루" width={36} height={36} style={{ borderRadius: '6px' }} />
-                          <span style={{ fontSize: '1.2rem', color: 'var(--profit-color)', fontWeight: 700 }}>→</span>
-                          <Image src="/wood1.webp" alt="아비도스 목재" width={36} height={36} style={{ borderRadius: '6px' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                          <Image src={optimalIcon} alt="재료" width={36} height={36} className={styles.resultChainIcon} />
+                          <span className={styles.resultArrow}>→</span>
+                          <Image src="/rkfn.webp" alt="가루" width={36} height={36} className={styles.resultChainIcon} />
+                          <span className={styles.resultArrow}>→</span>
+                          <Image src="/wood1.webp" alt="아비도스 목재" width={36} height={36} className={styles.resultChainIcon} />
                         </div>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--profit-color)', marginBottom: '4px' }}>
+                        <div className={styles.resultSavings}>
                           {truncateDecimal(savingsPercent, 2)}% 절약
                         </div>
-                        <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                        <div className={styles.resultPerUnit}>
                           개당 {truncateDecimal(savingsPerUnit, 3)} G 이득
                         </div>
                       </>
                     )}
 
-                    <hr style={{ borderColor: 'var(--border-color)', margin: '12px 0', width: '100%' }} />
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <hr className={styles.dividerLine} style={{ width: '100%' }} />
+                    <div className={styles.resultOptimal}>
                       최적 비용: <span style={{ fontWeight: 700, color: 'var(--profit-color)' }}>{truncateDecimal(optimalAbidosCost, 3)} G</span> / 개
                     </div>
                   </div>
@@ -1559,27 +1412,12 @@ export default function LifeMasterCalculator() {
               if (quantity === 0) return null;
               const totalPrice = Math.round(quantity * pricePer100 / 100);
               return (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '10px'
-                }}>
-                  <span style={{
-                    fontSize: '1rem',
-                    color: 'var(--text-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <Image src={icon} alt="재료" width={30} height={30} style={{ borderRadius: '5px' }} />
+                <div className={styles.materialRow}>
+                  <span className={styles.materialLabel}>
+                    <Image src={icon} alt="재료" width={30} height={30} className={styles.materialIcon} />
                     ×{quantity % 1 === 0 ? quantity : quantity.toFixed(1)}
                   </span>
-                  <span style={{
-                    fontSize: '1.05rem',
-                    color: 'var(--text-primary)',
-                    fontWeight: 600
-                  }}>
+                  <span className={styles.materialPrice}>
                     {totalPrice.toLocaleString()} G
                   </span>
                 </div>
@@ -1590,91 +1428,44 @@ export default function LifeMasterCalculator() {
               <Row className="g-3">
                 {/* 상급 아비도스 융화재료 */}
                 <Col lg={6}>
-                  <div style={{
-                    borderRadius: '16px',
-                    border: '1px solid var(--border-color)',
-                    overflow: 'hidden',
-                    height: '100%',
-                    backgroundColor: 'var(--card-bg)'
-                  }}>
+                  <div className={styles.fusionCard}>
                     {/* 헤더 */}
-                    <div style={{
-                      background: 'var(--card-header-bg)',
-                      borderBottom: '1px solid var(--border-color)',
-                      padding: '0.75rem 1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '10px'
-                    }}>
-                      <Image src={PREMIUM_ABIDOS_FUSION_ICON} alt="상급" width={32} height={32} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontWeight: 700, fontSize: '1rem', color: '#ea580c' }}>상급 아비도스 융화 재료</span>
+                    <div className={styles.fusionCardHeader}>
+                      <Image src={PREMIUM_ABIDOS_FUSION_ICON} alt="상급" width={32} height={32} className={styles.craftingIcon} />
+                      <span className={styles.fusionCardTitle} style={{ color: '#ea580c' }}>상급 아비도스 융화 재료</span>
                     </div>
                     {/* 바디 */}
-                    <div style={{ padding: '0.75rem' }}>
+                    <div className={styles.fusionCardBody}>
                       <Row className="g-2 mb-2">
                         {/* 왼쪽: 제작 재료 */}
                         <Col xs={6}>
-                          <div style={{
-                            borderRadius: '14px',
-                            border: '1px solid var(--border-color)',
-                            padding: '20px',
-                            backgroundColor: 'transparent',
-                            height: '100%'
-                          }}>
-                            <h6 style={{
-                              fontSize: '1rem',
-                              color: 'var(--text-secondary)',
-                              fontWeight: 600,
-                              marginBottom: '16px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px'
-                            }}>
-                              <Image src={PREMIUM_ABIDOS_FUSION_ICON} alt="상급" width={32} height={32} style={{ borderRadius: '6px' }} />
+                          <div className={styles.craftingBox}>
+                            <h6 className={`${styles.craftingTitle} ${styles.titleWrapper}`}>
+                              <Image src={PREMIUM_ABIDOS_FUSION_ICON} alt="상급" width={32} height={32} className={styles.craftingIcon} />
                               제작 재료
                             </h6>
-                            <div style={{ marginBottom: '12px' }}>
+                            <div style={{ marginBottom: '8px' }}>
                               {renderMaterialRow('/wood1.webp', premiumAbidosQty, materialPrices['6884308'] || 0)}
                               {renderMaterialRow('/wood3.webp', premiumSoftWoodQty, materialPrices['6882304'] || 0)}
                               {renderMaterialRow('/wood2.webp', premiumNormalWoodQty, materialPrices['6882301'] || 0)}
-                              <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: '10px'
-                              }}>
-                                <span style={{
-                                  fontSize: '1rem',
-                                  color: 'var(--text-secondary)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px'
-                                }}>
-                                  <Image src="/gold.webp" alt="골드" width={30} height={30} style={{ borderRadius: '5px' }} />
+                              <div className={styles.materialRow}>
+                                <span className={styles.materialLabel}>
+                                  <Image src="/gold.webp" alt="골드" width={30} height={30} className={styles.materialIcon} />
                                   제작비
                                 </span>
-                                <span style={{
-                                  fontSize: '1.05rem',
-                                  color: 'var(--text-primary)',
-                                  fontWeight: 600
-                                }}>
+                                <span className={styles.materialPrice}>
                                   {Math.round(premiumActualGoldCost).toLocaleString()} G
                                 </span>
                               </div>
                             </div>
-                            <hr style={{ borderColor: 'var(--border-color)', margin: '14px 0' }} />
+                            <hr className={styles.dividerLine} />
                             <div style={{
                               display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center'
                             }}>
-                              <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 600 }}>총 제작 비용</span>
-                              <span style={{
-                                fontSize: '1.4rem',
-                                color: '#ea580c',
-                                fontWeight: 700
-                              }}>
+                              <span className={styles.totalLabel}>총 제작 비용</span>
+                              <span className={styles.totalValue} style={{ color: '#ea580c' }}>
                                 {Math.round(premiumTotalCost).toLocaleString()} G
                               </span>
                             </div>
@@ -1683,38 +1474,15 @@ export default function LifeMasterCalculator() {
 
                         {/* 오른쪽: 거래소 정보 */}
                         <Col xs={6}>
-                          <div style={{
-                            borderRadius: '14px',
-                            border: '1px solid var(--border-color)',
-                            padding: '20px',
-                            backgroundColor: 'transparent',
-                            height: '100%'
-                          }}>
-                            <h6 style={{
-                              fontSize: '1rem',
-                              color: 'var(--text-secondary)',
-                              fontWeight: 600,
-                              marginBottom: '16px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px'
-                            }}>
-                              <Image src={PREMIUM_ABIDOS_FUSION_ICON} alt="상급" width={32} height={32} style={{ borderRadius: '6px' }} />
+                          <div className={styles.craftingBox}>
+                            <h6 className={`${styles.craftingTitle} ${styles.titleWrapper}`}>
+                              <Image src={PREMIUM_ABIDOS_FUSION_ICON} alt="상급" width={32} height={32} className={styles.craftingIcon} />
                               거래소 정보
                             </h6>
-                            <div style={{ marginBottom: '12px' }}>
-                              <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: '12px'
-                              }}>
-                                <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>현재 거래소 가격</span>
-                                <span style={{
-                                  fontSize: '1.6rem',
-                                  color: 'var(--text-primary)',
-                                  fontWeight: 700
-                                }}>
+                            <div className={styles.exchangeInfoBox}>
+                              <div className={styles.infoRow}>
+                                <span className={styles.exchangeLabel}>현재 거래소 가격</span>
+                                <span className={styles.exchangeValue} style={{ color: 'var(--text-primary)' }}>
                                   {premiumMarketPrice.toLocaleString()} G
                                 </span>
                               </div>
@@ -1723,23 +1491,14 @@ export default function LifeMasterCalculator() {
                                 justifyContent: 'space-between',
                                 alignItems: 'center'
                               }}>
-                                <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>개당 제작 비용</span>
-                                <span style={{
-                                  fontSize: '1.6rem',
-                                  color: '#ea580c',
-                                  fontWeight: 700
-                                }}>
+                                <span className={styles.exchangeLabel}>개당 제작 비용</span>
+                                <span className={styles.exchangeValue} style={{ color: '#ea580c' }}>
                                   {truncateDecimal(premiumCostPerUnit, 2)} G
                                 </span>
                               </div>
                             </div>
                             <div>
-                              <label style={{
-                                fontSize: '0.9rem',
-                                color: 'var(--text-secondary)',
-                                marginBottom: '8px',
-                                display: 'block'
-                              }}>
+                              <label className={styles.feeLabel}>
                                 제작 수수료 감소 (%)
                               </label>
                               <input
@@ -1753,17 +1512,7 @@ export default function LifeMasterCalculator() {
                                 min={0}
                                 max={100}
                                 step={1}
-                                style={{
-                                  width: '100%',
-                                  padding: '12px 16px',
-                                  borderRadius: '10px',
-                                  border: '1px solid var(--border-color)',
-                                  backgroundColor: 'var(--input-bg)',
-                                  color: 'var(--text-primary)',
-                                  fontSize: '1.2rem',
-                                  fontWeight: 600,
-                                  textAlign: 'center'
-                                }}
+                                className={styles.feeInput}
                               />
                             </div>
                           </div>
@@ -1801,91 +1550,44 @@ export default function LifeMasterCalculator() {
 
                 {/* 일반 아비도스 융화재료 */}
                 <Col lg={6}>
-                  <div style={{
-                    borderRadius: '16px',
-                    border: '1px solid var(--border-color)',
-                    overflow: 'hidden',
-                    height: '100%',
-                    backgroundColor: 'var(--card-bg)'
-                  }}>
+                  <div className={styles.fusionCard}>
                     {/* 헤더 */}
-                    <div style={{
-                      background: 'var(--card-header-bg)',
-                      borderBottom: '1px solid var(--border-color)',
-                      padding: '0.75rem 1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '10px'
-                    }}>
-                      <Image src={ABIDOS_FUSION_ICON} alt="일반" width={32} height={32} style={{ borderRadius: '6px' }} />
-                      <span style={{ fontWeight: 700, fontSize: '1rem', color: '#78716c' }}>아비도스 융화 재료</span>
+                    <div className={styles.fusionCardHeader}>
+                      <Image src={ABIDOS_FUSION_ICON} alt="일반" width={32} height={32} className={styles.craftingIcon} />
+                      <span className={styles.fusionCardTitle} style={{ color: '#78716c' }}>아비도스 융화 재료</span>
                     </div>
                     {/* 바디 */}
-                    <div style={{ padding: '0.75rem' }}>
+                    <div className={styles.fusionCardBody}>
                       <Row className="g-2 mb-2">
                         {/* 왼쪽: 제작 재료 */}
                         <Col xs={6}>
-                          <div style={{
-                            borderRadius: '14px',
-                            border: '1px solid var(--border-color)',
-                            padding: '20px',
-                            backgroundColor: 'transparent',
-                            height: '100%'
-                          }}>
-                            <h6 style={{
-                              fontSize: '1rem',
-                              color: 'var(--text-secondary)',
-                              fontWeight: 600,
-                              marginBottom: '16px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px'
-                            }}>
-                              <Image src={ABIDOS_FUSION_ICON} alt="일반" width={32} height={32} style={{ borderRadius: '6px' }} />
+                          <div className={styles.craftingBox}>
+                            <h6 className={`${styles.craftingTitle} ${styles.titleWrapper}`}>
+                              <Image src={ABIDOS_FUSION_ICON} alt="일반" width={32} height={32} className={styles.craftingIcon} />
                               제작 재료
                             </h6>
-                            <div style={{ marginBottom: '12px' }}>
+                            <div style={{ marginBottom: '8px' }}>
                               {renderMaterialRow('/wood1.webp', normalAbidosQty, materialPrices['6884308'] || 0)}
                               {renderMaterialRow('/wood3.webp', normalSoftWoodQty, materialPrices['6882304'] || 0)}
                               {renderMaterialRow('/wood2.webp', normalNormalWoodQty, materialPrices['6882301'] || 0)}
-                              <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: '10px'
-                              }}>
-                                <span style={{
-                                  fontSize: '1rem',
-                                  color: 'var(--text-secondary)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px'
-                                }}>
-                                  <Image src="/gold.webp" alt="골드" width={30} height={30} style={{ borderRadius: '5px' }} />
+                              <div className={styles.materialRow}>
+                                <span className={styles.materialLabel}>
+                                  <Image src="/gold.webp" alt="골드" width={30} height={30} className={styles.materialIcon} />
                                   제작비
                                 </span>
-                                <span style={{
-                                  fontSize: '1.05rem',
-                                  color: 'var(--text-primary)',
-                                  fontWeight: 600
-                                }}>
+                                <span className={styles.materialPrice}>
                                   {Math.round(normalActualGoldCost).toLocaleString()} G
                                 </span>
                               </div>
                             </div>
-                            <hr style={{ borderColor: 'var(--border-color)', margin: '14px 0' }} />
+                            <hr className={styles.dividerLine} />
                             <div style={{
                               display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center'
                             }}>
-                              <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 600 }}>총 제작 비용</span>
-                              <span style={{
-                                fontSize: '1.4rem',
-                                color: '#78716c',
-                                fontWeight: 700
-                              }}>
+                              <span className={styles.totalLabel}>총 제작 비용</span>
+                              <span className={styles.totalValue} style={{ color: '#78716c' }}>
                                 {Math.round(normalTotalCost).toLocaleString()} G
                               </span>
                             </div>
@@ -1894,38 +1596,15 @@ export default function LifeMasterCalculator() {
 
                         {/* 오른쪽: 거래소 정보 */}
                         <Col xs={6}>
-                          <div style={{
-                            borderRadius: '14px',
-                            border: '1px solid var(--border-color)',
-                            padding: '20px',
-                            backgroundColor: 'transparent',
-                            height: '100%'
-                          }}>
-                            <h6 style={{
-                              fontSize: '1rem',
-                              color: 'var(--text-secondary)',
-                              fontWeight: 600,
-                              marginBottom: '16px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px'
-                            }}>
-                              <Image src={ABIDOS_FUSION_ICON} alt="일반" width={32} height={32} style={{ borderRadius: '6px' }} />
+                          <div className={styles.craftingBox}>
+                            <h6 className={`${styles.craftingTitle} ${styles.titleWrapper}`}>
+                              <Image src={ABIDOS_FUSION_ICON} alt="일반" width={32} height={32} className={styles.craftingIcon} />
                               거래소 정보
                             </h6>
-                            <div style={{ marginBottom: '12px' }}>
-                              <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: '12px'
-                              }}>
-                                <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>현재 거래소 가격</span>
-                                <span style={{
-                                  fontSize: '1.6rem',
-                                  color: 'var(--text-primary)',
-                                  fontWeight: 700
-                                }}>
+                            <div className={styles.exchangeInfoBox}>
+                              <div className={styles.infoRow}>
+                                <span className={styles.exchangeLabel}>현재 거래소 가격</span>
+                                <span className={styles.exchangeValue} style={{ color: 'var(--text-primary)' }}>
                                   {normalMarketPrice.toLocaleString()} G
                                 </span>
                               </div>
@@ -1934,23 +1613,14 @@ export default function LifeMasterCalculator() {
                                 justifyContent: 'space-between',
                                 alignItems: 'center'
                               }}>
-                                <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>개당 제작 비용</span>
-                                <span style={{
-                                  fontSize: '1.6rem',
-                                  color: '#78716c',
-                                  fontWeight: 700
-                                }}>
+                                <span className={styles.exchangeLabel}>개당 제작 비용</span>
+                                <span className={styles.exchangeValue} style={{ color: '#78716c' }}>
                                   {truncateDecimal(normalCostPerUnit, 2)} G
                                 </span>
                               </div>
                             </div>
                             <div>
-                              <label style={{
-                                fontSize: '0.9rem',
-                                color: 'var(--text-secondary)',
-                                marginBottom: '8px',
-                                display: 'block'
-                              }}>
+                              <label className={styles.feeLabel}>
                                 제작 수수료 감소 (%)
                               </label>
                               <input
@@ -1964,17 +1634,7 @@ export default function LifeMasterCalculator() {
                                 min={0}
                                 max={100}
                                 step={1}
-                                style={{
-                                  width: '100%',
-                                  padding: '12px 16px',
-                                  borderRadius: '10px',
-                                  border: '1px solid var(--border-color)',
-                                  backgroundColor: 'var(--input-bg)',
-                                  color: 'var(--text-primary)',
-                                  fontSize: '1.2rem',
-                                  fontWeight: 600,
-                                  textAlign: 'center'
-                                }}
+                                className={styles.feeInput}
                               />
                             </div>
                           </div>
