@@ -1,45 +1,84 @@
 import { revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
-import { purgeCache } from '@netlify/functions';
 
 /**
  * 캐시 무효화 API
- * - revalidateTag: Next.js 캐시 무효화
- * - purgeCache: Netlify CDN 캐시 무효화
+ * - revalidateTag: Next.js 서버 캐시 무효화
+ * - Netlify API: CDN 캐시 태그 기반 무효화
+ *
+ * 사용법:
+ * - POST /api/cache/revalidate?type=latest  → price-latest만 무효화
+ * - POST /api/cache/revalidate?type=history → price-history만 무효화
+ * - POST /api/cache/revalidate              → 둘 다 무효화
  */
+
+async function purgeNetlifyCDN(tags: string[]): Promise<{ success: boolean; message: string }> {
+  const apiToken = process.env.NETLIFY_API_TOKEN;
+  const siteId = process.env.NETLIFY_SITE_ID;
+
+  if (!apiToken || !siteId) {
+    console.warn('[CDN Purge] NETLIFY_API_TOKEN 또는 NETLIFY_SITE_ID가 설정되지 않음');
+    return { success: false, message: 'Netlify 환경변수 미설정' };
+  }
+
+  try {
+    const response = await fetch('https://api.netlify.com/api/v1/purge', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        site_id: siteId,
+        cache_tags: tags,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[CDN Purge] Netlify API 오류:', response.status, errorText);
+      return { success: false, message: `API 오류: ${response.status}` };
+    }
+
+    console.log(`[CDN Purge] Netlify CDN 캐시 무효화 성공: ${tags.join(', ')}`);
+    return { success: true, message: `태그 무효화: ${tags.join(', ')}` };
+  } catch (error: any) {
+    console.error('[CDN Purge] 요청 실패:', error.message);
+    return { success: false, message: error.message };
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
 
-    const revalidated: string[] = [];
+    const revalidatedTags: string[] = [];
+    const cdnTags: string[] = [];
 
-    // Next.js 캐시 무효화
+    // 1. Next.js 서버 캐시 무효화
     if (!type || type === 'latest') {
-      revalidateTag('price-latest', 'max');
-      revalidated.push('price-latest');
+      revalidateTag('price-latest', 'page');
+      revalidatedTags.push('price-latest');
+      cdnTags.push('price-latest');
     }
 
     if (!type || type === 'history') {
-      revalidateTag('price-history', 'max');
-      revalidated.push('price-history');
+      revalidateTag('price-history', 'page');
+      revalidatedTags.push('price-history');
+      cdnTags.push('price-history');
     }
 
-    // Netlify CDN 전체 캐시 무효화 (태그 기반이 안 되므로)
-    try {
-      await purgeCache();  // 전체 캐시 무효화
-      console.log('[Cache Revalidate] Netlify CDN 전체 캐시 무효화 완료');
-    } catch (cdnError: any) {
-      console.error('[Cache Revalidate] Netlify CDN 무효화 실패:', cdnError.message);
-      // CDN 무효화 실패해도 계속 진행
-    }
+    console.log(`[Cache Revalidate] Next.js 캐시 무효화: ${revalidatedTags.join(', ')}`);
 
-    console.log(`[Cache Revalidate] 무효화된 태그: ${revalidated.join(', ')}`);
+    // 2. Netlify CDN 캐시 무효화 (태그 기반)
+    const cdnResult = await purgeNetlifyCDN(cdnTags);
 
     return NextResponse.json({
       success: true,
       message: '캐시가 무효화되었습니다.',
-      revalidated,
+      revalidated: revalidatedTags,
+      cdn: cdnResult,
       now: new Date().toISOString()
     });
   } catch (error: any) {

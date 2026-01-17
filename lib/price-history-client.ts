@@ -1,5 +1,6 @@
 // 클라이언트에서 서버 API를 통해 가격 데이터 조회
-// 서버에서 5분 캐싱하므로 Firebase Storage 다운로드 횟수 최소화
+// - latest: 1시간마다 갱신 (price-latest 태그)
+// - history: 24시간마다 갱신 (price-history 태그)
 
 type PriceEntry = {
   price: number;
@@ -13,10 +14,12 @@ type LatestPrices = Record<string, number>;
 // 클라이언트 메모리 캐시 (같은 탭 내 중복 요청 방지)
 let cachedHistory: HistoryData | null = null;
 let cachedLatest: LatestPrices | null = null;
-let lastFetchTime = 0;
+let lastHistoryFetchTime = 0;
+let lastLatestFetchTime = 0;
 
-// 클라이언트 캐시: 30초 (서버가 5분 캐시하므로 짧게 유지)
-const CLIENT_CACHE_DURATION = 30 * 1000;
+// 클라이언트 캐시 시간
+const HISTORY_CACHE_DURATION = 5 * 60 * 1000; // 5분 (history는 잘 안 바뀌므로)
+const LATEST_CACHE_DURATION = 30 * 1000;      // 30초 (latest는 자주 갱신)
 
 /**
  * 날짜 계산 (오전 0시 기준, 한국 시간)
@@ -33,21 +36,18 @@ function getLostArkDate(date: Date = new Date()): string {
 }
 
 /**
- * 서버 API를 통해 가격 데이터 조회 (서버에서 5분 캐싱)
- * - 서버: Firebase Storage JSON 5분 캐싱
- * - 클라이언트: 30초 메모리 캐싱 (중복 요청 방지)
+ * 히스토리 데이터 조회 (24시간 캐시)
  */
-export async function fetchPriceData(): Promise<{ history: HistoryData; latest: LatestPrices }> {
+async function fetchHistoryData(): Promise<HistoryData> {
   const now = Date.now();
 
-  // 클라이언트 캐시 확인 (30초)
-  if (cachedHistory && cachedLatest && now - lastFetchTime < CLIENT_CACHE_DURATION) {
-    return { history: cachedHistory, latest: cachedLatest };
+  // 클라이언트 캐시 확인
+  if (cachedHistory && now - lastHistoryFetchTime < HISTORY_CACHE_DURATION) {
+    return cachedHistory;
   }
 
   try {
-    // 서버 API 호출 (서버에서 5분 캐싱됨)
-    const response = await fetch('/api/price-data');
+    const response = await fetch('/api/price-data/history');
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
@@ -56,29 +56,75 @@ export async function fetchPriceData(): Promise<{ history: HistoryData; latest: 
     const data = await response.json();
 
     if (!data.success) {
-      throw new Error(data.message || 'Failed to fetch price data');
+      throw new Error(data.message || 'Failed to fetch history data');
     }
 
-    const history: HistoryData = data.history;
-    const latest: LatestPrices = data.latest;
+    cachedHistory = data.history;
+    lastHistoryFetchTime = now;
 
-    // 클라이언트 캐시 저장
-    cachedHistory = history;
-    cachedLatest = latest;
-    lastFetchTime = now;
-
-    return { history, latest };
+    return data.history;
   } catch (error) {
-    console.error('Error fetching price data:', error);
+    console.error('Error fetching history data:', error);
 
-    // 에러 시 캐시가 있으면 반환 (stale data)
-    if (cachedHistory && cachedLatest) {
-      console.warn('Using cached data due to fetch error');
-      return { history: cachedHistory, latest: cachedLatest };
+    if (cachedHistory) {
+      console.warn('Using cached history data due to fetch error');
+      return cachedHistory;
     }
 
     throw error;
   }
+}
+
+/**
+ * 최신 가격 데이터 조회 (1시간 캐시)
+ */
+async function fetchLatestData(): Promise<LatestPrices> {
+  const now = Date.now();
+
+  // 클라이언트 캐시 확인
+  if (cachedLatest && now - lastLatestFetchTime < LATEST_CACHE_DURATION) {
+    return cachedLatest;
+  }
+
+  try {
+    const response = await fetch('/api/price-data/latest');
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to fetch latest data');
+    }
+
+    cachedLatest = data.latest;
+    lastLatestFetchTime = now;
+
+    return data.latest;
+  } catch (error) {
+    console.error('Error fetching latest data:', error);
+
+    if (cachedLatest) {
+      console.warn('Using cached latest data due to fetch error');
+      return cachedLatest;
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * 서버 API를 통해 가격 데이터 조회 (history + latest 병렬 호출)
+ */
+export async function fetchPriceData(): Promise<{ history: HistoryData; latest: LatestPrices }> {
+  const [history, latest] = await Promise.all([
+    fetchHistoryData(),
+    fetchLatestData()
+  ]);
+
+  return { history, latest };
 }
 
 /**
@@ -186,5 +232,6 @@ export async function getMultipleItemPriceHistory(
 export function clearPriceCache(): void {
   cachedHistory = null;
   cachedLatest = null;
-  lastFetchTime = 0;
+  lastHistoryFetchTime = 0;
+  lastLatestFetchTime = 0;
 }
