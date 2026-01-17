@@ -58,13 +58,13 @@ export async function POST(request: Request) {
 
     // 1. Next.js 서버 캐시 무효화
     if (!type || type === 'latest') {
-      revalidateTag('price-latest', 'page');
+      revalidateTag('price-latest', 'max');
       revalidatedTags.push('price-latest');
       cdnTags.push('price-latest');
     }
 
     if (!type || type === 'history') {
-      revalidateTag('price-history', 'page');
+      revalidateTag('price-history', 'max');
       revalidatedTags.push('price-history');
       cdnTags.push('price-history');
     }

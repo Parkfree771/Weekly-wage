@@ -373,9 +373,11 @@ export async function GET(request: Request) {
     try {
       // 내부 API 호출로 캐시 무효화 (Netlify 컨텍스트에서 실행됨)
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.URL || 'https://lostarkweeklygold.kr';
-      const cacheType = shouldAppendHistory ? 'history' : 'latest';
+      // 00시: history + latest 둘 다 무효화 (type 파라미터 없음)
+      // 그 외: latest만 무효화
+      const cacheTypeParam = shouldAppendHistory ? '' : '?type=latest';
 
-      const revalidateResponse = await fetch(`${baseUrl}/api/cache/revalidate?type=${cacheType}`, {
+      const revalidateResponse = await fetch(`${baseUrl}/api/cache/revalidate${cacheTypeParam}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
