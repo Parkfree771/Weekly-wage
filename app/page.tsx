@@ -183,7 +183,7 @@ export default function Home() {
                       }}
                     >
                       <div className="d-flex justify-content-center mb-1 mb-sm-2">
-                        <Image src="/abidos-fusion2.webp" alt="로아 생활의 달인 아이콘" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(32px, 7vw, 52px)', height: 'auto', aspectRatio: '1/1' }} />
+                        <Image src="/abidos-fusion3.webp" alt="로아 생활의 달인 아이콘" width={64} height={64} style={{ borderRadius: '8px', objectFit: 'cover', width: 'clamp(32px, 7vw, 52px)', height: 'auto', aspectRatio: '1/1' }} />
                       </div>
                       <h3
                         className="mb-1 mb-sm-2"

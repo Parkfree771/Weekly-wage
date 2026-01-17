@@ -911,14 +911,14 @@ export default function LifeMasterCalculator() {
     }
   }, [canRefresh, remainingCooldown]);
 
-  // 가격 데이터 가져오기
+  // 가격 데이터 가져오기 (융화재료 가격 + 히스토리만, 목재는 톱니바퀴 클릭 시 조회)
   useEffect(() => {
     const fetchAllPrices = async () => {
       try {
         setIsLoading(true);
         setHistoryLoading(true);
 
-        // 융화재료 가격 가져오기
+        // 융화재료 가격 가져오기 (JSON에서)
         const { latest } = await fetchPriceData();
         const premiumFusionPrice = latest[PREMIUM_ABIDOS_FUSION_ID];
         const normalFusionPrice = latest[ABIDOS_FUSION_ID];
@@ -929,7 +929,7 @@ export default function LifeMasterCalculator() {
           setNormalMarketPrice(normalFusionPrice);
         }
 
-        // 가격 히스토리 가져오기
+        // 가격 히스토리 가져오기 (JSON에서)
         const [premiumHist, normalHist] = await Promise.all([
           getItemPriceHistory(PREMIUM_ABIDOS_FUSION_ID, 365),
           getItemPriceHistory(ABIDOS_FUSION_ID, 365),
@@ -937,24 +937,7 @@ export default function LifeMasterCalculator() {
         setPremiumHistory(premiumHist);
         setNormalHistory(normalHist);
 
-        // 목재 재료들 가격 가져오기
-        const materialIds = PREMIUM_CRAFTING_MATERIALS_BASE.map(m => m.id);
-        const response = await fetch('/api/market/batch-prices', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ itemIds: materialIds }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.prices) {
-            const prices: MaterialPrice = {};
-            data.prices.forEach((item: { itemId: string; price: number }) => {
-              prices[item.itemId] = item.price;
-            });
-            setMaterialPrices(prices);
-          }
-        }
+        // 목재 가격은 톱니바퀴 클릭 시에만 로스트아크 API로 조회
       } catch (error) {
         console.error('Failed to fetch prices:', error);
       } finally {

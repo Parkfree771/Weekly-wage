@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { addTodayTempPrice, addTodayTempPriceForDate, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson, appendYesterdayToHistory, getLostArkDate, formatDateKey } from '@/lib/firestore-admin';
 import { TRACKED_ITEMS, getItemsByCategory, ItemCategory } from '@/lib/items-to-track';
 
@@ -337,6 +338,15 @@ export async function GET(request: Request) {
       console.log('[Cron] 히스토리 JSON 업데이트 시작...');
       await appendYesterdayToHistory();
       results.push({ message: '히스토리 JSON 업데이트 완료' });
+
+      // history_all.json 캐시 무효화
+      try {
+        revalidateTag('price-history', 'max');
+        console.log('[Cron] price-history 캐시 무효화 완료');
+        results.push({ message: 'price-history 캐시 무효화 완료' });
+      } catch (cacheError: any) {
+        console.error('[Cron] price-history 캐시 무효화 실패:', cacheError);
+      }
     } catch (error: any) {
       console.error('[Cron] 히스토리 JSON 업데이트 실패:', error);
       errors.push({ message: '히스토리 JSON 업데이트 실패', error: error.message });
@@ -353,6 +363,19 @@ export async function GET(request: Request) {
     console.log('[Cron] JSON 파일 생성 시작...');
     await generateAndUploadPriceJson();
     results.push({ message: 'JSON 파일 생성 및 업로드 완료' });
+
+    // 10분 작업(accessory,jewel)에서만 latest_prices.json 캐시 무효화
+    // 정각, 5분 작업에서는 무효화하지 않음 → 1시간에 1번만 다운로드
+    const isLastJobOfHour = categoryFilter && categoryFilter.includes('accessory');
+    if (isLastJobOfHour) {
+      try {
+        revalidateTag('price-latest', 'max');
+        console.log('[Cron] price-latest 캐시 무효화 완료 (10분 작업)');
+        results.push({ message: 'price-latest 캐시 무효화 완료' });
+      } catch (cacheError: any) {
+        console.error('[Cron] price-latest 캐시 무효화 실패:', cacheError);
+      }
+    }
   } catch (error: any) {
     console.error('[Cron] JSON 생성 실패:', error);
     errors.push({ message: 'JSON 생성 실패', error: error.message });
