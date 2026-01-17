@@ -101,15 +101,8 @@ const nextConfig = {
           },
         ],
       },
-      {
-        source: '/api/market/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, s-maxage=3600, stale-while-revalidate=86400',
-          },
-        ],
-      },
+      // /api/market/:path* 헤더 제거: Next.js 내부 캐시 제어에 맡김
+      // revalidateTag가 CDN까지 무효화하려면 강제 헤더 없어야 함
     ];
   },
 }

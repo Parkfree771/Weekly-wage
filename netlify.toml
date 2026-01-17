@@ -1,6 +1,6 @@
 [build]
   command = "npm run build"
-  publish = ".next"
+  # publish = ".next"  # 삭제: Netlify 플러그인이 자동으로 경로 설정
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
