@@ -47,13 +47,13 @@ export async function GET() {
 
     // 캐시 헤더 설정
     // - Next.js Data Cache: 태그 기반 무효화 (크론 작업에서 revalidateTag)
-    // - CDN 캐시: 1분 (revalidateTag가 CDN 무효화 안 해서 짧게 유지)
+    // - CDN 캐시: 무한 (1년), 크론 작업에서 revalidateTag로 무효화
     // - 브라우저 캐시: 30초
     return NextResponse.json(
       { success: true, history, latest },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=60, max-age=30'
+          'Cache-Control': 'public, s-maxage=31536000, max-age=30'
         }
       }
     );

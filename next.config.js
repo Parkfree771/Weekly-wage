@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Netlify CDN 캐시 무효화를 위해 standalone 모드 필수
+  output: 'standalone',
   outputFileTracingRoot: require('path').join(__dirname),
 
   // 성능 최적화
