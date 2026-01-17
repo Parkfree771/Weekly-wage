@@ -46,14 +46,16 @@ export async function GET() {
     const latest = await latestRes.json();
 
     // 캐시 헤더 설정
-    // - Next.js Data Cache: 태그 기반 무효화 (크론 작업에서 revalidateTag)
-    // - CDN 캐시: 무한 (1년), 크론 작업에서 revalidateTag로 무효화
+    // - CDN 캐시: 무한 (1년), purgeCache로 무효화
+    // - Cache-Tag: Netlify CDN이 태그로 캐시 관리
     // - 브라우저 캐시: 30초
     return NextResponse.json(
       { success: true, history, latest },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=31536000, max-age=30'
+          'Cache-Control': 'public, s-maxage=31536000, max-age=30',
+          'Cache-Tag': 'price-data, price-latest, price-history',
+          'Netlify-Cache-Tag': 'price-data, price-latest, price-history'
         }
       }
     );

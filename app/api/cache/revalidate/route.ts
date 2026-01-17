@@ -27,10 +27,12 @@ export async function POST(request: Request) {
 
     // Netlify CDN 캐시 무효화
     try {
+      // price-data 태그도 함께 무효화 (응답 헤더의 Cache-Tag와 매칭)
+      const cdnTags = [...revalidated, 'price-data'];
       await purgeCache({
-        tags: revalidated
+        tags: cdnTags
       });
-      console.log(`[Cache Revalidate] Netlify CDN 캐시 무효화 완료: ${revalidated.join(', ')}`);
+      console.log(`[Cache Revalidate] Netlify CDN 캐시 무효화 완료: ${cdnTags.join(', ')}`);
     } catch (cdnError: any) {
       console.error('[Cache Revalidate] Netlify CDN 무효화 실패:', cdnError.message);
       // CDN 무효화 실패해도 계속 진행

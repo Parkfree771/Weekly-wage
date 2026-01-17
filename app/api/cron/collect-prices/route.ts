@@ -343,7 +343,7 @@ export async function GET(request: Request) {
       // history_all.json 캐시 무효화 (Next.js + Netlify CDN)
       try {
         revalidateTag('price-history', 'max');
-        await purgeCache({ tags: ['price-history'] });
+        await purgeCache({ tags: ['price-history', 'price-data'] });
         console.log('[Cron] price-history 캐시 무효화 완료 (Next.js + CDN)');
         results.push({ message: 'price-history 캐시 무효화 완료' });
       } catch (cacheError: any) {
@@ -372,7 +372,7 @@ export async function GET(request: Request) {
     if (isLastJobOfHour) {
       try {
         revalidateTag('price-latest', 'max');
-        await purgeCache({ tags: ['price-latest'] });
+        await purgeCache({ tags: ['price-latest', 'price-data'] });
         console.log('[Cron] price-latest 캐시 무효화 완료 (Next.js + CDN)');
         results.push({ message: 'price-latest 캐시 무효화 완료' });
       } catch (cacheError: any) {
