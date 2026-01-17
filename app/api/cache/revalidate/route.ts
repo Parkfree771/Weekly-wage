@@ -1,14 +1,11 @@
 import { revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
+import { purgeCache } from '@netlify/functions';
 
 /**
  * 캐시 무효화 API
- * POST /api/cache/revalidate
- *
- * Query params:
- * - type=latest  → price-latest 태그 무효화 (latest_prices.json)
- * - type=history → price-history 태그 무효화 (history_all.json)
- * - type 없음    → 둘 다 무효화
+ * - revalidateTag: Next.js 캐시 무효화
+ * - purgeCache: Netlify CDN 캐시 무효화
  */
 export async function POST(request: Request) {
   try {
@@ -17,6 +14,7 @@ export async function POST(request: Request) {
 
     const revalidated: string[] = [];
 
+    // Next.js 캐시 무효화
     if (!type || type === 'latest') {
       revalidateTag('price-latest', 'max');
       revalidated.push('price-latest');
@@ -25,6 +23,17 @@ export async function POST(request: Request) {
     if (!type || type === 'history') {
       revalidateTag('price-history', 'max');
       revalidated.push('price-history');
+    }
+
+    // Netlify CDN 캐시 무효화
+    try {
+      await purgeCache({
+        tags: revalidated
+      });
+      console.log(`[Cache Revalidate] Netlify CDN 캐시 무효화 완료: ${revalidated.join(', ')}`);
+    } catch (cdnError: any) {
+      console.error('[Cache Revalidate] Netlify CDN 무효화 실패:', cdnError.message);
+      // CDN 무효화 실패해도 계속 진행
     }
 
     console.log(`[Cache Revalidate] 무효화된 태그: ${revalidated.join(', ')}`);

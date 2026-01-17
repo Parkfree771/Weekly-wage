@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
+import { purgeCache } from '@netlify/functions';
 import { addTodayTempPrice, addTodayTempPriceForDate, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson, appendYesterdayToHistory, getLostArkDate, formatDateKey } from '@/lib/firestore-admin';
 import { TRACKED_ITEMS, getItemsByCategory, ItemCategory } from '@/lib/items-to-track';
 
@@ -339,10 +340,11 @@ export async function GET(request: Request) {
       await appendYesterdayToHistory();
       results.push({ message: '히스토리 JSON 업데이트 완료' });
 
-      // history_all.json 캐시 무효화
+      // history_all.json 캐시 무효화 (Next.js + Netlify CDN)
       try {
         revalidateTag('price-history', 'max');
-        console.log('[Cron] price-history 캐시 무효화 완료');
+        await purgeCache({ tags: ['price-history'] });
+        console.log('[Cron] price-history 캐시 무효화 완료 (Next.js + CDN)');
         results.push({ message: 'price-history 캐시 무효화 완료' });
       } catch (cacheError: any) {
         console.error('[Cron] price-history 캐시 무효화 실패:', cacheError);
@@ -370,7 +372,8 @@ export async function GET(request: Request) {
     if (isLastJobOfHour) {
       try {
         revalidateTag('price-latest', 'max');
-        console.log('[Cron] price-latest 캐시 무효화 완료 (10분 작업)');
+        await purgeCache({ tags: ['price-latest'] });
+        console.log('[Cron] price-latest 캐시 무효화 완료 (Next.js + CDN)');
         results.push({ message: 'price-latest 캐시 무효화 완료' });
       } catch (cacheError: any) {
         console.error('[Cron] price-latest 캐시 무효화 실패:', cacheError);
