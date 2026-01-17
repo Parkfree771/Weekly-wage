@@ -340,14 +340,14 @@ export async function GET(request: Request) {
       await appendYesterdayToHistory();
       results.push({ message: '히스토리 JSON 업데이트 완료' });
 
-      // history_all.json 캐시 무효화 (Next.js + Netlify CDN)
+      // history_all.json 캐시 무효화 (Next.js + Netlify CDN 전체)
       try {
         revalidateTag('price-history', 'max');
-        await purgeCache({ tags: ['price-history', 'price-data'] });
-        console.log('[Cron] price-history 캐시 무효화 완료 (Next.js + CDN)');
-        results.push({ message: 'price-history 캐시 무효화 완료' });
+        await purgeCache();  // 전체 캐시 무효화
+        console.log('[Cron] 캐시 무효화 완료 (Next.js + CDN 전체)');
+        results.push({ message: '캐시 무효화 완료' });
       } catch (cacheError: any) {
-        console.error('[Cron] price-history 캐시 무효화 실패:', cacheError);
+        console.error('[Cron] 캐시 무효화 실패:', cacheError);
       }
     } catch (error: any) {
       console.error('[Cron] 히스토리 JSON 업데이트 실패:', error);
@@ -366,17 +366,17 @@ export async function GET(request: Request) {
     await generateAndUploadPriceJson();
     results.push({ message: 'JSON 파일 생성 및 업로드 완료' });
 
-    // 10분 작업(accessory,jewel)에서만 latest_prices.json 캐시 무효화
-    // 정각, 5분 작업에서는 무효화하지 않음 → 1시간에 1번만 다운로드
+    // 10분 작업(accessory,jewel)에서만 캐시 무효화
+    // 정각, 5분 작업에서는 무효화하지 않음 → 1시간에 1번만
     const isLastJobOfHour = categoryFilter && categoryFilter.includes('accessory');
     if (isLastJobOfHour) {
       try {
         revalidateTag('price-latest', 'max');
-        await purgeCache({ tags: ['price-latest', 'price-data'] });
-        console.log('[Cron] price-latest 캐시 무효화 완료 (Next.js + CDN)');
-        results.push({ message: 'price-latest 캐시 무효화 완료' });
+        await purgeCache();  // 전체 캐시 무효화
+        console.log('[Cron] 캐시 무효화 완료 (Next.js + CDN 전체)');
+        results.push({ message: '캐시 무효화 완료' });
       } catch (cacheError: any) {
-        console.error('[Cron] price-latest 캐시 무효화 실패:', cacheError);
+        console.error('[Cron] 캐시 무효화 실패:', cacheError);
       }
     }
   } catch (error: any) {

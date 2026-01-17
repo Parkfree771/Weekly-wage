@@ -25,14 +25,10 @@ export async function POST(request: Request) {
       revalidated.push('price-history');
     }
 
-    // Netlify CDN 캐시 무효화
+    // Netlify CDN 전체 캐시 무효화 (태그 기반이 안 되므로)
     try {
-      // price-data 태그도 함께 무효화 (응답 헤더의 Cache-Tag와 매칭)
-      const cdnTags = [...revalidated, 'price-data'];
-      await purgeCache({
-        tags: cdnTags
-      });
-      console.log(`[Cache Revalidate] Netlify CDN 캐시 무효화 완료: ${cdnTags.join(', ')}`);
+      await purgeCache();  // 전체 캐시 무효화
+      console.log('[Cache Revalidate] Netlify CDN 전체 캐시 무효화 완료');
     } catch (cdnError: any) {
       console.error('[Cache Revalidate] Netlify CDN 무효화 실패:', cdnError.message);
       // CDN 무효화 실패해도 계속 진행
