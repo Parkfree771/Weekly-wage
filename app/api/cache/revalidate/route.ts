@@ -12,7 +12,7 @@ import { NextResponse } from 'next/server';
  * - POST /api/cache/revalidate              → 둘 다 무효화
  */
 
-async function purgeNetlifyCDN(tags: string[]): Promise<{ success: boolean; message: string }> {
+async function purgeNetlifyCDN(): Promise<{ success: boolean; message: string }> {
   const apiToken = process.env.NETLIFY_API_TOKEN;
   const siteId = process.env.NETLIFY_SITE_ID;
 
@@ -22,6 +22,7 @@ async function purgeNetlifyCDN(tags: string[]): Promise<{ success: boolean; mess
   }
 
   try {
+    // 전체 사이트 캐시 퍼지 (cache_tags 없이 호출)
     const response = await fetch('https://api.netlify.com/api/v1/purge', {
       method: 'POST',
       headers: {
@@ -30,7 +31,6 @@ async function purgeNetlifyCDN(tags: string[]): Promise<{ success: boolean; mess
       },
       body: JSON.stringify({
         site_id: siteId,
-        cache_tags: tags,
       }),
     });
 
@@ -40,8 +40,8 @@ async function purgeNetlifyCDN(tags: string[]): Promise<{ success: boolean; mess
       return { success: false, message: `API 오류: ${response.status}` };
     }
 
-    console.log(`[CDN Purge] Netlify CDN 캐시 무효화 성공: ${tags.join(', ')}`);
-    return { success: true, message: `태그 무효화: ${tags.join(', ')}` };
+    console.log('[CDN Purge] Netlify CDN 전체 캐시 무효화 성공');
+    return { success: true, message: '전체 캐시 무효화 완료' };
   } catch (error: any) {
     console.error('[CDN Purge] 요청 실패:', error.message);
     return { success: false, message: error.message };
@@ -71,8 +71,8 @@ export async function POST(request: Request) {
 
     console.log(`[Cache Revalidate] Next.js 캐시 무효화: ${revalidatedTags.join(', ')}`);
 
-    // 2. Netlify CDN 캐시 무효화 (태그 기반)
-    const cdnResult = await purgeNetlifyCDN(cdnTags);
+    // 2. Netlify CDN 전체 캐시 무효화
+    const cdnResult = await purgeNetlifyCDN();
 
     return NextResponse.json({
       success: true,
