@@ -1,6 +1,5 @@
-// 클라이언트에서 Firebase Storage의 JSON 파일을 직접 다운로드하여 가격 히스토리 조회
-
-const STORAGE_BASE_URL = 'https://storage.googleapis.com/lostark-weekly-gold.firebasestorage.app';
+// 클라이언트에서 Next.js API를 통해 가격 히스토리 조회
+// URL 쿼리 파라미터로 CDN 캐시 제어
 
 type PriceEntry = {
   price: number;
@@ -11,72 +10,153 @@ type PriceEntry = {
 type HistoryData = Record<string, Array<{ date: string; price: number }>>;
 type LatestPrices = Record<string, number>;
 
-// 캐시 (메모리)
+// 클라이언트 메모리 캐시
 let cachedHistory: HistoryData | null = null;
 let cachedLatest: LatestPrices | null = null;
-let lastFetchTime = 0;
+let lastHistoryCacheKey = '';
+let lastLatestCacheKey = '';
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5분
+// 진행 중인 요청 추적 (동시 호출 방지)
+let pendingRequest: Promise<{ history: HistoryData; latest: LatestPrices }> | null = null;
 
 /**
- * 날짜 계산 (오전 0시 기준, 한국 시간)
- * 일반적인 날짜 기준과 동일 (00:00에 날짜 변경)
+ * 한국 시간(KST) 정보 가져오기
  */
-function getLostArkDate(date: Date = new Date()): string {
+function getKSTInfo(): { date: string; hour: number; minute: number } {
+  const now = new Date();
   const kstOffset = 9 * 60 * 60 * 1000;
-  const kstTime = date.getTime() + kstOffset;
+  const kstTime = now.getTime() + kstOffset;
   const kstDate = new Date(kstTime);
-
-  // 00시 기준: 전날 처리 로직 불필요
 
   const year = kstDate.getUTCFullYear();
   const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
   const day = String(kstDate.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+
+  return {
+    date: `${year}-${month}-${day}`,
+    hour: kstDate.getUTCHours(),
+    minute: kstDate.getUTCMinutes()
+  };
 }
 
 /**
- * history_all.json과 latest_prices.json 다운로드 (캐싱)
+ * 한국 시간(KST) 기준 00시~01시인지 확인
+ */
+function isMidnightHour(): boolean {
+  return getKSTInfo().hour === 0;
+}
+
+/**
+ * latest.json 캐시 키 생성
+ * - 하루 종일 10분 단위
+ */
+function getLatestCacheKey(): string {
+  const { date, hour, minute } = getKSTInfo();
+  const slot = Math.floor(minute / 10) * 10; // 0, 10, 20, 30, 40, 50
+  return `${date}-${String(hour).padStart(2, '0')}-${String(slot).padStart(2, '0')}`;
+}
+
+/**
+ * history.json 캐시 키 생성
+ * - 01:00~23:59: 하루 종일 같은 키 (날짜만)
+ * - 00:00~00:59: 10분 단위
+ */
+function getHistoryCacheKey(): string {
+  const { date, hour, minute } = getKSTInfo();
+
+  if (hour === 0) {
+    // 00시대: 10분 단위
+    const slot = Math.floor(minute / 10) * 10;
+    return `${date}-00-${String(slot).padStart(2, '0')}`;
+  } else {
+    // 그 외: 날짜만 (하루 종일 캐시)
+    return date;
+  }
+}
+
+/**
+ * 날짜 계산 (오전 0시 기준, 한국 시간)
+ */
+function getLostArkDate(): string {
+  return getKSTInfo().date;
+}
+
+/**
+ * history_all.json과 latest_prices.json을 Next.js API를 통해 조회
+ * - URL 쿼리 파라미터(k)로 CDN 캐시 제어
+ * - 캐시 키가 바뀌면 CDN이 새 요청으로 인식
+ * - 동시 호출 시 중복 요청 방지
  */
 export async function fetchPriceData(): Promise<{ history: HistoryData; latest: LatestPrices }> {
-  const now = Date.now();
+  const historyCacheKey = getHistoryCacheKey();
+  const latestCacheKey = getLatestCacheKey();
 
-  // 캐시가 유효하면 반환
-  if (cachedHistory && cachedLatest && now - lastFetchTime < CACHE_DURATION) {
-    return { history: cachedHistory, latest: cachedLatest };
+  // 캐시 키가 같으면 클라이언트 메모리 캐시 사용
+  const historyValid = cachedHistory && lastHistoryCacheKey === historyCacheKey;
+  const latestValid = cachedLatest && lastLatestCacheKey === latestCacheKey;
+
+  if (historyValid && latestValid) {
+    return { history: cachedHistory!, latest: cachedLatest! };
   }
 
-  try {
-    // 두 파일 병렬 다운로드
-    const [historyRes, latestRes] = await Promise.all([
-      fetch(`${STORAGE_BASE_URL}/history_all.json?t=${now}`),
-      fetch(`${STORAGE_BASE_URL}/latest_prices.json?t=${now}`)
-    ]);
-
-    if (!historyRes.ok || !latestRes.ok) {
-      throw new Error('Failed to fetch price data from storage');
-    }
-
-    const history: HistoryData = await historyRes.json();
-    const latest: LatestPrices = await latestRes.json();
-
-    // 캐시 저장
-    cachedHistory = history;
-    cachedLatest = latest;
-    lastFetchTime = now;
-
-    return { history, latest };
-  } catch (error) {
-    console.error('Error fetching price data:', error);
-
-    // 에러 시 캐시가 있으면 반환
-    if (cachedHistory && cachedLatest) {
-      console.warn('Using cached data due to fetch error');
-      return { history: cachedHistory, latest: cachedLatest };
-    }
-
-    throw error;
+  // 이미 진행 중인 요청이 있으면 그 결과를 기다림 (동시 호출 방지)
+  if (pendingRequest) {
+    return pendingRequest;
   }
+
+  // 새 요청 시작
+  pendingRequest = (async () => {
+    try {
+      const promises: Promise<any>[] = [];
+      const needHistory = !historyValid;
+      const needLatest = !latestValid;
+
+      // 캐시 키를 URL 쿼리 파라미터로 전달 → CDN이 URL별로 캐시
+      if (needHistory) {
+        promises.push(fetch(`/api/price-data/history?k=${historyCacheKey}`).then(res => {
+          if (!res.ok) throw new Error('Failed to fetch history');
+          return res.json();
+        }));
+      }
+
+      if (needLatest) {
+        promises.push(fetch(`/api/price-data/latest?k=${latestCacheKey}`).then(res => {
+          if (!res.ok) throw new Error('Failed to fetch latest');
+          return res.json();
+        }));
+      }
+
+      const results = await Promise.all(promises);
+
+      let resultIndex = 0;
+
+      if (needHistory) {
+        cachedHistory = results[resultIndex++];
+        lastHistoryCacheKey = historyCacheKey;
+      }
+
+      if (needLatest) {
+        cachedLatest = results[resultIndex++];
+        lastLatestCacheKey = latestCacheKey;
+      }
+
+      return { history: cachedHistory!, latest: cachedLatest! };
+    } catch (error) {
+      console.error('Error fetching price data:', error);
+
+      // 에러 시 캐시가 있으면 반환
+      if (cachedHistory && cachedLatest) {
+        console.warn('Using cached data due to fetch error');
+        return { history: cachedHistory, latest: cachedLatest };
+      }
+
+      throw error;
+    } finally {
+      pendingRequest = null;
+    }
+  })();
+
+  return pendingRequest;
 }
 
 /**
@@ -184,5 +264,6 @@ export async function getMultipleItemPriceHistory(
 export function clearPriceCache(): void {
   cachedHistory = null;
   cachedLatest = null;
-  lastFetchTime = 0;
+  lastHistoryCacheKey = '';
+  lastLatestCacheKey = '';
 }
