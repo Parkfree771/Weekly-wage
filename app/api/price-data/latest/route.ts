@@ -24,6 +24,7 @@ export async function GET() {
     return NextResponse.json(latestPrices, {
       headers: {
         'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=60',
+        'Netlify-Vary': 'query=k',  // 쿼리 파라미터 k를 캐시 키에 포함
       },
     });
 

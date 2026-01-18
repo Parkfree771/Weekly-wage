@@ -2,8 +2,17 @@ import { NextResponse } from 'next/server';
 import { getAdminStorage } from '@/lib/firebase-admin';
 
 /**
+ * 한국 시간(KST) 기준 00시대인지 확인
+ */
+function isMidnightHourKST(): boolean {
+  const now = new Date();
+  const kstHour = (now.getUTCHours() + 9) % 24;
+  return kstHour === 0;
+}
+
+/**
  * history_all.json 반환
- * - CDN 캐시: 24시간 (클라이언트가 URL 쿼리로 캐시 키 관리)
+ * - CDN 캐시: 00시~01시에는 10분, 그 외에는 24시간
  * - 서버리스라서 서버 메모리 캐시 없음
  */
 export async function GET() {
@@ -20,10 +29,26 @@ export async function GET() {
     const [contents] = await file.download();
     const historyData = JSON.parse(contents.toString());
 
-    // CDN 24시간 캐시 (클라이언트가 URL 쿼리로 갱신 주기 제어)
+    // 00시~01시에는 10분 캐시, 그 외에는 다음 00시까지만 캐시
+    let cacheControl: string;
+    const now = new Date();
+    const kstHour = (now.getUTCHours() + 9) % 24;
+    const kstMinute = now.getUTCMinutes();
+
+    if (kstHour === 0) {
+      // 00시~01시: 10분 캐시
+      cacheControl = 'public, s-maxage=600, stale-while-revalidate=60';
+    } else {
+      // 그 외: 다음 00시까지 남은 시간만큼 캐시 (분 단위 계산)
+      const minutesUntilMidnight = (23 - kstHour) * 60 + (60 - kstMinute);
+      const secondsUntilMidnight = minutesUntilMidnight * 60;
+      cacheControl = `public, s-maxage=${secondsUntilMidnight}, stale-while-revalidate=600`;
+    }
+
     return NextResponse.json(historyData, {
       headers: {
-        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600',
+        'Cache-Control': cacheControl,
+        'Netlify-Vary': 'query=k',  // 쿼리 파라미터 k를 캐시 키에 포함
       },
     });
 
