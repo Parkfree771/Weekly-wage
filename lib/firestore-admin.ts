@@ -269,8 +269,8 @@ export async function finalizeYesterdayData(useToday: boolean = false): Promise<
       // 대상 날짜와 일치하는 문서만 처리
       if (docDate === targetKey && data.prices && data.prices.length > 0) {
         const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
-        // 아비도스 융화재료(6861012)만 소수점 첫째 자리까지, 나머지는 정수
-        const roundedAvgPrice = data.itemId === '6861012'
+        // 1000G 미만은 소수점 1자리, 이상은 정수
+        const roundedAvgPrice = avgPrice < 1000
           ? Math.round(avgPrice * 10) / 10
           : Math.round(avgPrice);
 
@@ -454,8 +454,8 @@ export async function generateAndUploadPriceJson(): Promise<void> {
       // 평균 계산
       const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
 
-      // 반올림 로직 (아비도스 융화재료는 소수점 첫째 자리까지)
-      const roundedPrice = itemId === '6861012'
+      // 1000G 미만은 소수점 1자리, 이상은 정수
+      const roundedPrice = avgPrice < 1000
         ? Math.round(avgPrice * 10) / 10
         : Math.round(avgPrice);
 
