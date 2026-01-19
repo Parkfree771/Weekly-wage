@@ -1440,7 +1440,7 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                                     const value = e.target.value;
                                     setTargetLevels(prev => ({
                                       ...prev,
-                                      [eq.name]: { ...prev[eq.name], advanced: value === '' ? null : Number(value) }
+                                      [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), advanced: value === '' ? null : Number(value) }
                                     }));
                                   }}
                                   disabled={eq.currentAdvancedLevel >= 40}
@@ -1463,7 +1463,7 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                                   const value = e.target.value;
                                   setTargetLevels(prev => ({
                                     ...prev,
-                                    [eq.name]: { ...prev[eq.name], normal: value === '' ? null : Number(value) }
+                                    [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), normal: value === '' ? null : Number(value) }
                                   }));
                                 }}
                                 disabled={isEquipmentDisabled}
@@ -1481,7 +1481,7 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                                     const value = e.target.value;
                                     setTargetLevels(prev => ({
                                       ...prev,
-                                      [eq.name]: { ...prev[eq.name], advanced: value === '' ? null : Number(value) }
+                                      [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), advanced: value === '' ? null : Number(value) }
                                     }));
                                   }}
                                   disabled={eq.currentAdvancedLevel >= 40}
