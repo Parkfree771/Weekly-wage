@@ -1,47 +1,62 @@
 import { NextResponse } from 'next/server';
-
-const STORAGE_BASE_URL = 'https://storage.googleapis.com/lostark-weekly-gold.firebasestorage.app';
+import { getAdminStorage } from '@/lib/firebase-admin';
 
 /**
- * 가격 히스토리 데이터 API (history_all.json)
- * - 하루에 1번 (00시) 크론에서 갱신
- * - CDN 캐시: 1년 (태그로 무효화)
- * - 브라우저 캐시: 5분 (파일이 크므로)
+ * 한국 시간(KST) 기준 00시대인지 확인
+ */
+function isMidnightHourKST(): boolean {
+  const now = new Date();
+  const kstHour = (now.getUTCHours() + 9) % 24;
+  return kstHour === 0;
+}
+
+/**
+ * history_all.json 반환
+ * - CDN 캐시: 00시~01시에는 10분, 그 외에는 24시간
+ * - 서버리스라서 서버 메모리 캐시 없음
  */
 export async function GET() {
   try {
-    const response = await fetch(`${STORAGE_BASE_URL}/history_all.json`, {
-      next: {
-        revalidate: 86400, // 24시간 (fallback)
-        tags: ['price-history']
-      }
-    });
+    const storage = getAdminStorage();
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
 
-    if (!response.ok) {
-      console.error('[Price History API] fetch failed:', response.status);
-      return NextResponse.json(
-        { success: false, message: 'Failed to fetch history data' },
-        { status: 502 }
-      );
+    if (!bucketName) {
+      throw new Error('FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
     }
 
-    const history = await response.json();
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file('history_all.json');
+    const [contents] = await file.download();
+    const historyData = JSON.parse(contents.toString());
+
+    // 00시~01시에는 10분 캐시, 그 외에는 다음 00시까지만 캐시
+    let cacheControl: string;
+    const now = new Date();
+    const kstHour = (now.getUTCHours() + 9) % 24;
+    const kstMinute = now.getUTCMinutes();
+
+    if (kstHour === 0) {
+      // 00시~01시: 10분 캐시
+      cacheControl = 'public, s-maxage=600, stale-while-revalidate=60';
+    } else {
+      // 그 외: 다음 00시까지 남은 시간만큼 캐시 (분 단위 계산)
+      const minutesUntilMidnight = (23 - kstHour) * 60 + (60 - kstMinute);
+      const secondsUntilMidnight = minutesUntilMidnight * 60;
+      cacheControl = `public, s-maxage=${secondsUntilMidnight}, stale-while-revalidate=600`;
+    }
+
+    return NextResponse.json(historyData, {
+      headers: {
+        'Cache-Control': cacheControl,
+        'Netlify-Vary': 'query=k',  // 쿼리 파라미터 k를 캐시 키에 포함
+      },
+    });
+
+  } catch (error) {
+    console.error('[/api/price-data/history] 오류:', error);
 
     return NextResponse.json(
-      { success: true, history },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=31536000, max-age=300',
-          'Netlify-Cache-Tag': 'price-history',
-          'CDN-Cache-Control': 'public, s-maxage=31536000',
-          'Netlify-CDN-Cache-Control': 'public, s-maxage=31536000, durable'
-        }
-      }
-    );
-  } catch (error: any) {
-    console.error('[Price History API] Error:', error);
-    return NextResponse.json(
-      { success: false, message: error.message || 'Internal server error' },
+      { error: 'Failed to fetch price history' },
       { status: 500 }
     );
   }

@@ -359,45 +359,6 @@ export async function GET(request: Request) {
     // JSON 생성 실패해도 크론 작업은 성공으로 간주
   }
 
-  // ========================================================================
-  // 캐시 무효화 (Netlify CDN + Next.js)
-  // ========================================================================
-  // 중요: purgeCache()는 Netlify 서버리스 함수 컨텍스트에서만 작동
-  // GitHub Actions에서 직접 호출하면 CDN 컨텍스트가 없어서 무효화 안됨
-  // 따라서 /api/cache/revalidate 엔드포인트를 내부 호출해야 함
-  const shouldInvalidateCache =
-    shouldAppendHistory || // 00시: 히스토리 업데이트
-    (categoryFilter && categoryFilter.includes('accessory')); // 10분: latest 업데이트
-
-  if (shouldInvalidateCache) {
-    try {
-      // 내부 API 호출로 캐시 무효화 (Netlify 컨텍스트에서 실행됨)
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.URL || 'https://lostarkweeklygold.kr';
-      // 00시: history + latest 둘 다 무효화 (type 파라미터 없음)
-      // 그 외: latest만 무효화
-      const cacheTypeParam = shouldAppendHistory ? '' : '?type=latest';
-
-      const revalidateResponse = await fetch(`${baseUrl}/api/cache/revalidate${cacheTypeParam}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (revalidateResponse.ok) {
-        const revalidateResult = await revalidateResponse.json();
-        console.log('[Cron] 캐시 무효화 완료:', revalidateResult);
-        results.push({ message: '캐시 무효화 완료 (CDN + Next.js)' });
-      } else {
-        console.error('[Cron] 캐시 무효화 API 오류:', revalidateResponse.status);
-        errors.push({ message: '캐시 무효화 API 오류', error: `HTTP ${revalidateResponse.status}` });
-      }
-    } catch (cacheError: any) {
-      console.error('[Cron] 캐시 무효화 실패:', cacheError.message);
-      errors.push({ message: '캐시 무효화 실패', error: cacheError.message });
-    }
-  }
-
   return NextResponse.json({
     success: true,
     message: `가격 수집 완료: ${results.length}개 성공, ${errors.length}개 실패`,

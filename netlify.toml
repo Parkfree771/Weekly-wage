@@ -12,14 +12,3 @@
 
 [build.environment]
   NODE_VERSION = "20"
-
-# CDN 캐시 태그 설정 (태그 기반 무효화용)
-[[headers]]
-  for = "/api/price-data/latest"
-  [headers.values]
-    Netlify-Cache-Tag = "price-latest"
-
-[[headers]]
-  for = "/api/price-data/history"
-  [headers.values]
-    Netlify-Cache-Tag = "price-history"

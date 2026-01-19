@@ -1,47 +1,38 @@
 import { NextResponse } from 'next/server';
-
-const STORAGE_BASE_URL = 'https://storage.googleapis.com/lostark-weekly-gold.firebasestorage.app';
+import { getAdminStorage } from '@/lib/firebase-admin';
 
 /**
- * 최신 가격 데이터 API (latest_prices.json)
- * - 1시간마다 크론에서 갱신
- * - CDN 캐시: 1년 (태그로 무효화)
- * - 브라우저 캐시: 30초
+ * latest_prices.json 반환
+ * - CDN 캐시: 10분 (클라이언트가 URL 쿼리로 캐시 키 관리)
+ * - 서버리스라서 서버 메모리 캐시 없음
  */
 export async function GET() {
   try {
-    const response = await fetch(`${STORAGE_BASE_URL}/latest_prices.json`, {
-      next: {
-        revalidate: 3600, // 1시간 (fallback)
-        tags: ['price-latest']
-      }
-    });
+    const storage = getAdminStorage();
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
 
-    if (!response.ok) {
-      console.error('[Price Latest API] fetch failed:', response.status);
-      return NextResponse.json(
-        { success: false, message: 'Failed to fetch latest data' },
-        { status: 502 }
-      );
+    if (!bucketName) {
+      throw new Error('FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
     }
 
-    const latest = await response.json();
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file('latest_prices.json');
+    const [contents] = await file.download();
+    const latestPrices = JSON.parse(contents.toString());
+
+    // CDN 10분 캐시 (클라이언트가 URL 쿼리로 갱신 주기 제어)
+    return NextResponse.json(latestPrices, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=60',
+        'Netlify-Vary': 'query=k',  // 쿼리 파라미터 k를 캐시 키에 포함
+      },
+    });
+
+  } catch (error) {
+    console.error('[/api/price-data/latest] 오류:', error);
 
     return NextResponse.json(
-      { success: true, latest },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=31536000, max-age=30',
-          'Netlify-Cache-Tag': 'price-latest',
-          'CDN-Cache-Control': 'public, s-maxage=31536000',
-          'Netlify-CDN-Cache-Control': 'public, s-maxage=31536000, durable'
-        }
-      }
-    );
-  } catch (error: any) {
-    console.error('[Price Latest API] Error:', error);
-    return NextResponse.json(
-      { success: false, message: error.message || 'Internal server error' },
+      { error: 'Failed to fetch latest prices' },
       { status: 500 }
     );
   }

@@ -1,9 +1,22 @@
 'use client';
 
 import { ItemCategory, TrackedItem, getItemsByCategory, RefineAdditionalSubCategory, REFINE_ADDITIONAL_SUBCATEGORIES, getItemsBySubCategory } from '@/lib/items-to-track';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useContext } from 'react';
 import { useTheme } from './ThemeProvider';
 import { Offcanvas } from 'react-bootstrap';
+import { PriceContext } from './PriceComparisonStats';
+
+// 그리드 아이콘 SVG 컴포넌트
+function GridIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <rect x="3" y="3" width="8" height="8" rx="1" />
+      <rect x="13" y="3" width="8" height="8" rx="1" />
+      <rect x="3" y="13" width="8" height="8" rx="1" />
+      <rect x="13" y="13" width="8" height="8" rx="1" />
+    </svg>
+  );
+}
 
 export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; darkThemeColor: string; darkBg: string; }> = {
   refine_succession: { label: '계승 재련 재료', color: '#ea580c', darkColor: '#c2410c', lightBg: '#ffedd5', darkThemeColor: '#fb923c', darkBg: '#7c2d12' },
@@ -83,6 +96,7 @@ export default function ItemSelector({
   onSelectSubCategory,
 }: ItemSelectorProps) {
   const { theme } = useTheme();
+  const { isGridView, onToggleGridView } = useContext(PriceContext);
   const [showItems, setShowItems] = useState(true);
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [bottomSheetCategory, setBottomSheetCategory] = useState<ItemCategory>(selectedCategory);
@@ -158,46 +172,70 @@ export default function ItemSelector({
     <div>
       {/* 카테고리 탭 - 데스크톱 */}
       <div className="mb-3 d-none d-md-block">
-        <div className="d-flex gap-3 justify-content-center" style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          {CATEGORY_ORDER.map((cat) => {
-            const categoryStyle = CATEGORY_STYLES[cat];
+        <div className="d-flex gap-3 align-items-center" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          <div className="d-flex gap-3 justify-content-center" style={{ flex: 1 }}>
+            {CATEGORY_ORDER.map((cat) => {
+              const categoryStyle = CATEGORY_STYLES[cat];
 
-            return (
-            <button
-              key={cat}
-              onClick={() => handleCategoryClick(cat)}
-              style={{
-                fontWeight: selectedCategory === cat ? '700' : '600',
-                fontSize: '1rem',
-                padding: '12px 24px',
-                backgroundColor: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
-                border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                borderRadius: '10px',
-                color: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
-                transition: 'all 0.2s ease',
-                cursor: 'pointer',
-                letterSpacing: '0.3px'
-              }}
-              onMouseEnter={(e) => {
-                if (selectedCategory !== cat) {
-                  const categoryStyle = CATEGORY_STYLES[cat];
-                  e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
-                  e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
-                  e.currentTarget.style.color = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedCategory !== cat) {
-                  e.currentTarget.style.backgroundColor = 'var(--card-bg)';
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.color = 'var(--text-secondary)';
-                }
-              }}
-            >
-              {categoryStyle.label}
-            </button>
-            );
-          })}
+              return (
+              <button
+                key={cat}
+                onClick={() => handleCategoryClick(cat)}
+                style={{
+                  fontWeight: selectedCategory === cat ? '700' : '600',
+                  fontSize: '1rem',
+                  padding: '12px 24px',
+                  backgroundColor: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
+                  border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
+                  borderRadius: '10px',
+                  color: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  letterSpacing: '0.3px'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedCategory !== cat) {
+                    const categoryStyle = CATEGORY_STYLES[cat];
+                    e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
+                    e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
+                    e.currentTarget.style.color = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedCategory !== cat) {
+                    e.currentTarget.style.backgroundColor = 'var(--card-bg)';
+                    e.currentTarget.style.borderColor = 'var(--border-color)';
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }
+                }}
+              >
+                {categoryStyle.label}
+              </button>
+              );
+            })}
+          </div>
+          {/* 그리드 토글 버튼 - 데스크톱 */}
+          <button
+            onClick={onToggleGridView}
+            title={isGridView ? '단일 차트 보기' : '4분할 차트 보기'}
+            style={{
+              padding: '10px 14px',
+              borderRadius: '10px',
+              border: `2px solid ${isGridView ? CATEGORY_STYLES[selectedCategory].darkThemeColor : 'var(--border-color)'}`,
+              backgroundColor: isGridView ? (theme === 'dark' ? CATEGORY_STYLES[selectedCategory].darkBg : CATEGORY_STYLES[selectedCategory].lightBg) : 'var(--card-bg)',
+              color: isGridView ? CATEGORY_STYLES[selectedCategory].darkThemeColor : 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease',
+              fontWeight: '600',
+              fontSize: '0.9rem'
+            }}
+          >
+            <GridIcon size={18} color="currentColor" />
+            <span>{isGridView ? '단일' : '4분할'}</span>
+          </button>
         </div>
       </div>
 
@@ -351,7 +389,6 @@ export default function ItemSelector({
         }}
       >
         <Offcanvas.Header
-          closeButton
           style={{
             backgroundColor: theme === 'dark'
               ? CATEGORY_STYLES[bottomSheetCategory].darkBg
@@ -362,7 +399,10 @@ export default function ItemSelector({
             padding: '8px 12px',
             borderTopLeftRadius: '20px',
             borderTopRightRadius: '20px',
-            minHeight: 'auto'
+            minHeight: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
           }}
         >
           <Offcanvas.Title
@@ -376,6 +416,45 @@ export default function ItemSelector({
           >
             {CATEGORY_STYLES[bottomSheetCategory].label}
           </Offcanvas.Title>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* 그리드 토글 버튼 - 모바일 */}
+            <button
+              onClick={onToggleGridView}
+              style={{
+                padding: '4px 8px',
+                borderRadius: '6px',
+                border: `1px solid ${isGridView ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor : 'var(--border-color)'}`,
+                backgroundColor: isGridView ? (theme === 'dark' ? CATEGORY_STYLES[bottomSheetCategory].darkBg : CATEGORY_STYLES[bottomSheetCategory].lightBg) : 'transparent',
+                color: isGridView ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor : 'var(--text-secondary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.75rem',
+                fontWeight: '600'
+              }}
+            >
+              <GridIcon size={14} color="currentColor" />
+              <span>{isGridView ? '단일' : '4분할'}</span>
+            </button>
+            {/* 닫기 버튼 */}
+            <button
+              onClick={() => setShowBottomSheet(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                fontSize: '1.2rem',
+                color: theme === 'dark'
+                  ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor
+                  : CATEGORY_STYLES[bottomSheetCategory].darkColor,
+                cursor: 'pointer',
+                padding: '4px 8px',
+                lineHeight: 1
+              }}
+            >
+              ✕
+            </button>
+          </div>
         </Offcanvas.Header>
         <Offcanvas.Body style={{ padding: '12px' }}>
           {/* 서브카테고리 선택 - 모바일 (재련 추가 재료만) */}

@@ -911,14 +911,14 @@ export default function LifeMasterCalculator() {
     }
   }, [canRefresh, remainingCooldown]);
 
-  // 가격 데이터 가져오기 (융화재료 가격 + 히스토리만, 목재는 톱니바퀴 클릭 시 조회)
+  // 가격 데이터 가져오기 (차트용 - 로스트아크 API 호출 안 함)
   useEffect(() => {
-    const fetchAllPrices = async () => {
+    const fetchChartData = async () => {
       try {
         setIsLoading(true);
         setHistoryLoading(true);
 
-        // 융화재료 가격 가져오기 (JSON에서)
+        // 융화재료 가격 가져오기 (latest.json에서)
         const { latest } = await fetchPriceData();
         const premiumFusionPrice = latest[PREMIUM_ABIDOS_FUSION_ID];
         const normalFusionPrice = latest[ABIDOS_FUSION_ID];
@@ -929,7 +929,7 @@ export default function LifeMasterCalculator() {
           setNormalMarketPrice(normalFusionPrice);
         }
 
-        // 가격 히스토리 가져오기 (JSON에서)
+        // 가격 히스토리 가져오기 (history.json에서)
         const [premiumHist, normalHist] = await Promise.all([
           getItemPriceHistory(PREMIUM_ABIDOS_FUSION_ID, 365),
           getItemPriceHistory(ABIDOS_FUSION_ID, 365),
@@ -937,16 +937,17 @@ export default function LifeMasterCalculator() {
         setPremiumHistory(premiumHist);
         setNormalHistory(normalHist);
 
-        // 목재 가격은 톱니바퀴 클릭 시에만 로스트아크 API로 조회
+        // 목재 재료 가격은 톱니바퀴 버튼 클릭 시에만 가져옴
+        // (로스트아크 API 호출 최소화)
       } catch (error) {
-        console.error('Failed to fetch prices:', error);
+        console.error('Failed to fetch chart data:', error);
       } finally {
         setIsLoading(false);
         setHistoryLoading(false);
       }
     };
 
-    fetchAllPrices();
+    fetchChartData();
   }, []);
 
   // 재료 정보에 가격 추가

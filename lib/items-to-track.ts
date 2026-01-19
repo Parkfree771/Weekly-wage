@@ -35,6 +35,17 @@ export type ItemCategory = 'refine_succession' | 'refine' | 'refine_additional' 
 // 재련 추가 재료 서브카테고리 타입
 export type RefineAdditionalSubCategory = 'weapon' | 'armor';
 
+// 계승 재련 재료 → 일반 재련 재료 매핑 (5:1 교환 비율)
+// 아비도스 제외
+export const SUCCESSION_TO_NORMAL_MATERIAL_MAP: Record<string, { normalId: string; ratio: number; normalIcon: string }> = {
+  '66102007': { normalId: '66102006', ratio: 5, normalIcon: '/destiny-destruction-stone.webp' },  // 파괴석 결정 → 파괴석
+  '66102107': { normalId: '66102106', ratio: 5, normalIcon: '/destiny-guardian-stone.webp' },    // 수호석 결정 → 수호석
+  '66110226': { normalId: '66110225', ratio: 5, normalIcon: '/destiny-breakthrough-stone.webp' } // 위대한 돌파석 → 돌파석
+};
+
+// 계승 재련 재료 데이터 시작일 (2025-01-07, 세르카 업데이트)
+export const SUCCESSION_MATERIAL_START_DATE = '2025-01-07';
+
 // 서브카테고리 정보
 export const REFINE_ADDITIONAL_SUBCATEGORIES: Record<RefineAdditionalSubCategory, { label: string; ids: string[] }> = {
   weapon: {

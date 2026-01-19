@@ -93,7 +93,10 @@ type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle }: CompactPriceChartProps) {
   const { theme } = useTheme();
-  const { selectedPeriod, setSelectedPeriod, filteredHistory } = useContext(PriceContext);
+  const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData } = useContext(PriceContext);
+
+  // 비교 라인 색상 (일반 재료)
+  const comparisonColor = '#9ca3af'; // 회색
 
   const chartColor = theme === 'dark'
     ? (categoryStyle?.darkThemeColor || '#8ab4f8')
@@ -120,6 +123,17 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
   // filteredHistory는 이제 Context에서 가져옴 (Provider에서 필터링)
 
+  // 비교 데이터를 날짜별로 매핑
+  const comparisonPriceMap = useMemo(() => {
+    if (!comparisonData) return new Map<string, number>();
+    const map = new Map<string, number>();
+    comparisonData.normalHistory.forEach((entry) => {
+      const dateStr = entry.date || entry.timestamp.split('T')[0];
+      map.set(dateStr, entry.price);
+    });
+    return map;
+  }, [comparisonData]);
+
   const chartData = useMemo(() => {
     const dateMap = new Map<string, any>();
     filteredHistory.forEach((entry) => {
@@ -142,9 +156,13 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       const eventLabel = event?.label;
       const eventColor = event?.color;
 
+      // 비교 가격 가져오기 (날짜 매칭)
+      const comparisonPrice = comparisonPriceMap.get(dateString);
+
       dateMap.set(dateKey, {
         날짜: dateKey,
         가격: entry.price,
+        비교가격: comparisonPrice,
         rawTime: dateObj.getTime(),
         isWednesday: dayOfWeek === 3,
         fullDate: dateObj,
@@ -154,7 +172,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       });
     });
     return Array.from(dateMap.values()).sort((a, b) => a.rawTime - b.rawTime);
-  }, [filteredHistory]);
+  }, [filteredHistory, comparisonPriceMap]);
 
   const formatPrice = useCallback((value: number) => {
     if (value < 100) {
@@ -385,6 +403,14 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       ? '#3b82f6'
       : (data.eventColor || '#ef4444');
 
+    // 비교 가격 및 차이 계산
+    const mainPrice = data.가격;
+    const compPrice = data.비교가격;
+    const ratio = comparisonData?.ratio || 5;
+    const originalPrice = compPrice ? compPrice / ratio : null; // 원래 가격 (×5 전)
+    const priceDiff = compPrice ? mainPrice - compPrice : null;
+    const priceDiffPercent = compPrice ? ((mainPrice - compPrice) / compPrice) * 100 : null;
+
     return (
       <div
         style={{
@@ -396,16 +422,41 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           color: 'var(--text-primary)'
         }}
       >
-        <div style={{ fontWeight: '700', color: chartColor, marginBottom: '6px', fontSize: '16px' }}>
-          {label}
+        <div style={{ fontWeight: '700', color: chartColor, marginBottom: '10px', fontSize: '16px' }}>
+          {label} {eventLabel && <span style={{ color: eventColor }}>({eventLabel})</span>}
         </div>
-        <div style={{ fontWeight: '600', fontSize: '15px' }}>
-          가격: {formatTooltipPrice(payload[0].value)}
+        <div style={{ fontWeight: '700', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Image src={selectedItem?.icon || ''} alt="" width={20} height={20} style={{ borderRadius: '4px' }} />
+          <span>{formatTooltipPrice(mainPrice)}</span>
         </div>
-        {eventLabel && (
-          <div style={{ fontWeight: '700', color: eventColor, marginTop: '6px', fontSize: '15px' }}>
-            {eventLabel}
-          </div>
+        {compPrice !== undefined && compPrice !== null && originalPrice !== null && (
+          <>
+            <div style={{ fontWeight: '600', fontSize: '14px', color: comparisonColor, marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Image src={comparisonData?.normalIcon || ''} alt="" width={18} height={18} style={{ borderRadius: '3px' }} />
+              <span>{formatTooltipPrice(originalPrice)}</span>
+              <span style={{ color: 'var(--text-secondary)' }}>×{ratio}</span>
+              <span>=</span>
+              <span style={{ fontWeight: '700' }}>{formatTooltipPrice(compPrice)}</span>
+            </div>
+            {priceDiff !== null && priceDiffPercent !== null && (
+              <div style={{
+                marginTop: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}>
+                <Image src={selectedItem?.icon || ''} alt="" width={22} height={22} style={{ borderRadius: '4px' }} />
+                <span style={{ fontSize: '18px', fontWeight: '800', color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
+                  {priceDiff >= 0 ? '>' : '<'}
+                </span>
+                <Image src={comparisonData?.normalIcon || ''} alt="" width={22} height={22} style={{ borderRadius: '4px' }} />
+                <span style={{ fontSize: '18px', fontWeight: '800', color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
+                  {priceDiff >= 0 ? '+' : ''}{priceDiffPercent.toFixed(1)}%
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
     );
@@ -422,6 +473,14 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       ? '#3b82f6'
       : (data.eventColor || '#ef4444');
 
+    // 비교 가격 및 차이 계산
+    const mainPrice = data.가격;
+    const compPrice = data.비교가격;
+    const ratio = comparisonData?.ratio || 5;
+    const originalPrice = compPrice ? compPrice / ratio : null;
+    const priceDiff = compPrice ? mainPrice - compPrice : null;
+    const priceDiffPercent = compPrice ? ((mainPrice - compPrice) / compPrice) * 100 : null;
+
     return (
       <div
         style={{
@@ -433,16 +492,41 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           color: 'var(--text-primary)'
         }}
       >
-        <div style={{ fontWeight: '700', color: chartColor, marginBottom: '4px', fontSize: '12px' }}>
-          {label}
+        <div style={{ fontWeight: '700', color: chartColor, marginBottom: '6px', fontSize: '12px' }}>
+          {label} {eventLabel && <span style={{ color: eventColor }}>({eventLabel})</span>}
         </div>
-        <div style={{ fontWeight: '600', fontSize: '11px' }}>
-          가격: {formatTooltipPrice(payload[0].value)}
+        <div style={{ fontWeight: '700', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <Image src={selectedItem?.icon || ''} alt="" width={16} height={16} style={{ borderRadius: '3px' }} />
+          <span>{formatTooltipPrice(mainPrice)}</span>
         </div>
-        {eventLabel && (
-          <div style={{ fontWeight: '700', color: eventColor, marginTop: '4px', fontSize: '11px' }}>
-            {eventLabel}
-          </div>
+        {compPrice !== undefined && compPrice !== null && originalPrice !== null && (
+          <>
+            <div style={{ fontWeight: '600', fontSize: '10px', color: comparisonColor, marginTop: '5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Image src={comparisonData?.normalIcon || ''} alt="" width={14} height={14} style={{ borderRadius: '2px' }} />
+              <span>{formatTooltipPrice(originalPrice)}</span>
+              <span style={{ color: 'var(--text-secondary)' }}>×{ratio}</span>
+              <span>=</span>
+              <span style={{ fontWeight: '700' }}>{formatTooltipPrice(compPrice)}</span>
+            </div>
+            {priceDiff !== null && priceDiffPercent !== null && (
+              <div style={{
+                marginTop: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px'
+              }}>
+                <Image src={selectedItem?.icon || ''} alt="" width={16} height={16} style={{ borderRadius: '3px' }} />
+                <span style={{ fontSize: '14px', fontWeight: '800', color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
+                  {priceDiff >= 0 ? '>' : '<'}
+                </span>
+                <Image src={comparisonData?.normalIcon || ''} alt="" width={16} height={16} style={{ borderRadius: '3px' }} />
+                <span style={{ fontSize: '14px', fontWeight: '800', color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
+                  {priceDiff >= 0 ? '+' : ''}{priceDiffPercent.toFixed(1)}%
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
     );
@@ -835,6 +919,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 14 : 16} fontWeight={isAverage ? '900' : '700'} dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 95 : stats && stats.max >= 100000 ? 80 : stats && stats.max >= 10000 ? 75 : 60} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} interval={0} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
                   <Tooltip content={<CustomTooltip />} cursor={{ stroke: chartColor, strokeWidth: 2, strokeDasharray: '5 5' }} />
                   <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} />
+                  {/* 비교 라인 (일반 재료 × 5) - 점선 */}
+                  {comparisonData && (
+                    <Line type="monotone" dataKey="비교가격" stroke={comparisonColor} strokeWidth={2} strokeDasharray="8 4" dot={false} activeDot={{ r: 6, fill: comparisonColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} connectNulls />
+                  )}
                   <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={<CustomDot />} activeDot={{ r: 9, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 4 }} fill="url(#colorPrice)" />
                 </LineChart>
               </ResponsiveContainer>
@@ -849,6 +937,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; const fontSize = stats ? (stats.max >= 1000000 ? 6 : stats.max >= 100000 ? 7 : stats.max >= 10000 ? 8 : stats.max >= 1000 ? 9 : stats.max >= 100 ? 7.5 : 7) : 8; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={fontSize} fontWeight={isAverage ? '900' : '700'} dx={-2}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 40 : stats && stats.max >= 100000 ? 38 : stats && stats.max >= 10000 ? 40 : stats && stats.max >= 1000 ? 35 : stats && stats.max >= 100 ? 28 : 25} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
                   <Tooltip content={<CustomTooltipMobile />} cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: '3 3' }} />
                   <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} />
+                  {/* 비교 라인 (일반 재료 × 5) - 점선 */}
+                  {comparisonData && (
+                    <Line type="monotone" dataKey="비교가격" stroke={comparisonColor} strokeWidth={1.5} strokeDasharray="6 3" dot={false} activeDot={{ r: 4, fill: comparisonColor, stroke: 'var(--card-bg)', strokeWidth: 1 }} connectNulls />
+                  )}
                   <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.5} dot={<CustomDotMobile />} activeDot={{ r: 6, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} fill="url(#colorPriceMobile)" />
                 </LineChart>
               </ResponsiveContainer>

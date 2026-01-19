@@ -3,7 +3,7 @@
 
 import { useState, useEffect, ReactNode, useMemo } from 'react';
 import { Row, Col } from 'react-bootstrap';
-import { TrackedItem, ItemCategory, getItemsByCategory, RefineAdditionalSubCategory, getItemsBySubCategory } from '@/lib/items-to-track';
+import { TrackedItem, ItemCategory, getItemsByCategory, RefineAdditionalSubCategory, getItemsBySubCategory, SUCCESSION_TO_NORMAL_MATERIAL_MAP, SUCCESSION_MATERIAL_START_DATE } from '@/lib/items-to-track';
 import ItemSelector, { CATEGORY_STYLES } from './ItemSelector';
 import CompactPriceChart from './CompactPriceChart';
 import MiniPriceChart from './MiniPriceChart';
@@ -20,27 +20,6 @@ type PriceEntry = {
 
 type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
-// 그리드 아이콘 SVG 컴포넌트
-function GridIcon({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <rect x="3" y="3" width="8" height="8" rx="1" />
-      <rect x="13" y="3" width="8" height="8" rx="1" />
-      <rect x="3" y="13" width="8" height="8" rx="1" />
-      <rect x="13" y="13" width="8" height="8" rx="1" />
-    </svg>
-  );
-}
-
-// 단일 차트 아이콘 SVG 컴포넌트
-function SingleChartIcon({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-    </svg>
-  );
-}
-
 // Provider를 별도로 export - 실제 데이터를 관리
 export function PriceChartProvider({ children }: { children: ReactNode }) {
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('refine_succession');
@@ -49,6 +28,10 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('1m');
+
+  // 비교 차트 데이터 (계승 재료 ↔ 일반 재료)
+  const [comparisonHistory, setComparisonHistory] = useState<PriceEntry[]>([]);
+  const [comparisonInfo, setComparisonInfo] = useState<{ normalIcon: string; ratio: number } | null>(null);
 
   // 그리드 뷰 관련 state
   const [isGridView, setIsGridView] = useState(false);
@@ -115,9 +98,32 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
         const { getItemPriceHistory } = await import('@/lib/price-history-client');
         const priceHistory = await getItemPriceHistory(selectedItem.id, 999);
         setHistory(priceHistory);
+
+        // 계승 재료 → 일반 재료 비교 데이터 가져오기
+        const mapping = SUCCESSION_TO_NORMAL_MATERIAL_MAP[selectedItem.id];
+        if (mapping) {
+          const normalHistory = await getItemPriceHistory(mapping.normalId, 999);
+          // 가격 × 5 적용하고, 계승 재료 시작일(2025-01-07) 이후 데이터만 필터링
+          const filteredNormalHistory = normalHistory
+            .filter(entry => {
+              const entryDate = entry.date || entry.timestamp.split('T')[0];
+              return entryDate >= SUCCESSION_MATERIAL_START_DATE;
+            })
+            .map(entry => ({
+              ...entry,
+              price: entry.price * mapping.ratio
+            }));
+          setComparisonHistory(filteredNormalHistory);
+          setComparisonInfo({ normalIcon: mapping.normalIcon, ratio: mapping.ratio });
+        } else {
+          setComparisonHistory([]);
+          setComparisonInfo(null);
+        }
       } catch (err) {
         console.error('Error fetching price history:', err);
         setHistory([]);
+        setComparisonHistory([]);
+        setComparisonInfo(null);
       } finally {
         setLoading(false);
       }
@@ -126,36 +132,63 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
     fetchHistory();
   }, [selectedItem]);
 
-  const filteredHistory = useMemo(() => {
-    if (history.length === 0) return [];
-    if (selectedPeriod === 'all') return history;
+  // 기간 필터링을 위한 cutoffDate 계산
+  const cutoffDate = useMemo(() => {
+    if (selectedPeriod === 'all') return null;
 
     const now = new Date();
-    const cutoffDate = new Date();
+    const cutoff = new Date();
 
     switch (selectedPeriod) {
       case '7d':
-        cutoffDate.setDate(now.getDate() - 7);
+        cutoff.setDate(now.getDate() - 7);
         break;
       case '1m':
-        cutoffDate.setMonth(now.getMonth() - 1);
+        cutoff.setMonth(now.getMonth() - 1);
         break;
       case '3m':
-        cutoffDate.setMonth(now.getMonth() - 3);
+        cutoff.setMonth(now.getMonth() - 3);
         break;
       case '6m':
-        cutoffDate.setMonth(now.getMonth() - 6);
+        cutoff.setMonth(now.getMonth() - 6);
         break;
       case '1y':
-        cutoffDate.setFullYear(now.getFullYear() - 1);
+        cutoff.setFullYear(now.getFullYear() - 1);
         break;
     }
+    return cutoff;
+  }, [selectedPeriod]);
+
+  const filteredHistory = useMemo(() => {
+    if (history.length === 0) return [];
+    if (!cutoffDate) return history;
 
     return history.filter(entry => {
       const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
       return entryDate >= cutoffDate;
     });
-  }, [history, selectedPeriod]);
+  }, [history, cutoffDate]);
+
+  // 비교 히스토리도 동일하게 필터링
+  const filteredComparisonHistory = useMemo(() => {
+    if (comparisonHistory.length === 0) return [];
+    if (!cutoffDate) return comparisonHistory;
+
+    return comparisonHistory.filter(entry => {
+      const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
+      return entryDate >= cutoffDate;
+    });
+  }, [comparisonHistory, cutoffDate]);
+
+  // 비교 데이터 객체
+  const comparisonData = useMemo(() => {
+    if (!comparisonInfo || filteredComparisonHistory.length === 0) return null;
+    return {
+      normalHistory: filteredComparisonHistory,
+      normalIcon: comparisonInfo.normalIcon,
+      ratio: comparisonInfo.ratio
+    };
+  }, [filteredComparisonHistory, comparisonInfo]);
 
   const handleSelectCategory = (category: ItemCategory) => {
     setSelectedCategory(category);
@@ -207,40 +240,8 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
   const categoryStyle = CATEGORY_STYLES[selectedCategory];
 
   return (
-    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod }}>
+    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod, comparisonData, isGridView, onToggleGridView: handleToggleGridView }}>
       <div className="price-chart-container">
-        {/* 그리드 토글 버튼 - 데스크톱만 */}
-        <div className="d-none d-md-flex justify-content-end mb-2">
-          <button
-            onClick={handleToggleGridView}
-            title={isGridView ? '단일 차트 보기' : '4분할 차트 보기'}
-            style={{
-              background: isGridView ? 'var(--card-body-bg-blue)' : 'transparent',
-              border: `2px solid ${isGridView ? categoryStyle?.darkThemeColor || 'var(--brand-primary)' : 'var(--border-color)'}`,
-              borderRadius: '8px',
-              padding: '6px 10px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s ease',
-              color: isGridView ? categoryStyle?.darkThemeColor || 'var(--brand-primary)' : 'var(--text-secondary)',
-            }}
-          >
-            {isGridView ? (
-              <>
-                <SingleChartIcon size={18} color="currentColor" />
-                <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>단일</span>
-              </>
-            ) : (
-              <>
-                <GridIcon size={18} color="currentColor" />
-                <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>4분할</span>
-              </>
-            )}
-          </button>
-        </div>
-
         <ItemSelector
           selectedCategory={selectedCategory}
           selectedItem={selectedItem}
@@ -253,19 +254,18 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
         {/* 그리드 뷰 안내 메시지 */}
         {isGridView && selectedSlot !== null && (
           <div
-            className="d-none d-md-block"
             style={{
               background: `${categoryStyle?.darkThemeColor || 'var(--brand-primary)'}20`,
               border: `1px solid ${categoryStyle?.darkThemeColor || 'var(--brand-primary)'}`,
               borderRadius: '8px',
-              padding: '8px 12px',
-              marginBottom: '12px',
-              fontSize: '0.85rem',
+              padding: '6px 10px',
+              marginBottom: '8px',
+              fontSize: '0.75rem',
               color: categoryStyle?.darkThemeColor || 'var(--brand-primary)',
               textAlign: 'center',
             }}
           >
-            슬롯 {selectedSlot + 1} 선택됨 - 위의 아이템 목록에서 원하는 아이템을 클릭하세요
+            슬롯 {selectedSlot + 1} 선택됨 - 아이템을 클릭하세요
           </div>
         )}
 
@@ -295,14 +295,31 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* 모바일: 항상 단일 차트 */}
+        {/* 모바일: 그리드 뷰 또는 단일 차트 */}
         <div className="d-md-none">
-          <CompactPriceChart
-            selectedItem={selectedItem}
-            history={history}
-            loading={loading}
-            categoryStyle={categoryStyle}
-          />
+          {isGridView ? (
+            <Row className="g-1" style={{ height: '350px' }}>
+              {gridItems.map((item, index) => (
+                <Col key={index} xs={6} style={{ height: '50%' }}>
+                  <MiniPriceChart
+                    item={item}
+                    categoryStyle={categoryStyle}
+                    isSelected={selectedSlot === index}
+                    onClick={() => handleSlotClick(index)}
+                    slotIndex={index}
+                    isMobile={true}
+                  />
+                </Col>
+              ))}
+            </Row>
+          ) : (
+            <CompactPriceChart
+              selectedItem={selectedItem}
+              history={history}
+              loading={loading}
+              categoryStyle={categoryStyle}
+            />
+          )}
         </div>
       </div>
       {children}
