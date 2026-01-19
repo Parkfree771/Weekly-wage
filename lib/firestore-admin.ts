@@ -268,22 +268,19 @@ export async function finalizeYesterdayData(useToday: boolean = false): Promise<
 
       // 대상 날짜와 일치하는 문서만 처리
       if (docDate === targetKey && data.prices && data.prices.length > 0) {
+        // API에서 주는 그대로 저장 (반올림 없음)
         const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
-        // 1000G 미만은 소수점 1자리, 이상은 정수
-        const roundedAvgPrice = avgPrice < 1000
-          ? Math.round(avgPrice * 10) / 10
-          : Math.round(avgPrice);
 
         const dailyDocRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${data.itemId}_${targetKey}`);
         batch.set(dailyDocRef, {
           itemId: data.itemId,
           itemName: data.itemName,
-          price: roundedAvgPrice,
+          price: avgPrice,
           date: targetKey,
           timestamp: Timestamp.now(),
         });
 
-        console.log(`  확정: ${data.itemName} - ${data.prices.length}개 평균 = ${roundedAvgPrice}G`);
+        console.log(`  확정: ${data.itemName} - ${data.prices.length}개 평균 = ${avgPrice}G`);
         count++;
 
         // 확정 후 todayTemp 문서 삭제 (데이터 안전성 확보 후 삭제)
@@ -451,15 +448,10 @@ export async function generateAndUploadPriceJson(): Promise<void> {
         return; // 유효하지 않은 데이터는 건너뛰기
       }
 
-      // 평균 계산
+      // API에서 주는 그대로 저장 (반올림 없음)
       const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
 
-      // 1000G 미만은 소수점 1자리, 이상은 정수
-      const roundedPrice = avgPrice < 1000
-        ? Math.round(avgPrice * 10) / 10
-        : Math.round(avgPrice);
-
-      prices[itemId] = roundedPrice;
+      prices[itemId] = avgPrice;
       itemCount++;
     });
 
