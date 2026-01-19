@@ -20,27 +20,6 @@ type PriceEntry = {
 
 type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
-// 그리드 아이콘 SVG 컴포넌트
-function GridIcon({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <rect x="3" y="3" width="8" height="8" rx="1" />
-      <rect x="13" y="3" width="8" height="8" rx="1" />
-      <rect x="3" y="13" width="8" height="8" rx="1" />
-      <rect x="13" y="13" width="8" height="8" rx="1" />
-    </svg>
-  );
-}
-
-// 단일 차트 아이콘 SVG 컴포넌트
-function SingleChartIcon({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-    </svg>
-  );
-}
-
 // Provider를 별도로 export - 실제 데이터를 관리
 export function PriceChartProvider({ children }: { children: ReactNode }) {
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('refine_succession');
@@ -261,40 +240,8 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
   const categoryStyle = CATEGORY_STYLES[selectedCategory];
 
   return (
-    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod, comparisonData }}>
+    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod, comparisonData, isGridView, onToggleGridView: handleToggleGridView }}>
       <div className="price-chart-container">
-        {/* 그리드 토글 버튼 - 데스크톱만 */}
-        <div className="d-none d-md-flex justify-content-end mb-2">
-          <button
-            onClick={handleToggleGridView}
-            title={isGridView ? '단일 차트 보기' : '4분할 차트 보기'}
-            style={{
-              background: isGridView ? 'var(--card-body-bg-blue)' : 'transparent',
-              border: `2px solid ${isGridView ? categoryStyle?.darkThemeColor || 'var(--brand-primary)' : 'var(--border-color)'}`,
-              borderRadius: '8px',
-              padding: '6px 10px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s ease',
-              color: isGridView ? categoryStyle?.darkThemeColor || 'var(--brand-primary)' : 'var(--text-secondary)',
-            }}
-          >
-            {isGridView ? (
-              <>
-                <SingleChartIcon size={18} color="currentColor" />
-                <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>단일</span>
-              </>
-            ) : (
-              <>
-                <GridIcon size={18} color="currentColor" />
-                <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>4분할</span>
-              </>
-            )}
-          </button>
-        </div>
-
         <ItemSelector
           selectedCategory={selectedCategory}
           selectedItem={selectedItem}
@@ -307,19 +254,18 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
         {/* 그리드 뷰 안내 메시지 */}
         {isGridView && selectedSlot !== null && (
           <div
-            className="d-none d-md-block"
             style={{
               background: `${categoryStyle?.darkThemeColor || 'var(--brand-primary)'}20`,
               border: `1px solid ${categoryStyle?.darkThemeColor || 'var(--brand-primary)'}`,
               borderRadius: '8px',
-              padding: '8px 12px',
-              marginBottom: '12px',
-              fontSize: '0.85rem',
+              padding: '6px 10px',
+              marginBottom: '8px',
+              fontSize: '0.75rem',
               color: categoryStyle?.darkThemeColor || 'var(--brand-primary)',
               textAlign: 'center',
             }}
           >
-            슬롯 {selectedSlot + 1} 선택됨 - 위의 아이템 목록에서 원하는 아이템을 클릭하세요
+            슬롯 {selectedSlot + 1} 선택됨 - 아이템을 클릭하세요
           </div>
         )}
 
@@ -349,14 +295,31 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* 모바일: 항상 단일 차트 */}
+        {/* 모바일: 그리드 뷰 또는 단일 차트 */}
         <div className="d-md-none">
-          <CompactPriceChart
-            selectedItem={selectedItem}
-            history={history}
-            loading={loading}
-            categoryStyle={categoryStyle}
-          />
+          {isGridView ? (
+            <Row className="g-1" style={{ height: '350px' }}>
+              {gridItems.map((item, index) => (
+                <Col key={index} xs={6} style={{ height: '50%' }}>
+                  <MiniPriceChart
+                    item={item}
+                    categoryStyle={categoryStyle}
+                    isSelected={selectedSlot === index}
+                    onClick={() => handleSlotClick(index)}
+                    slotIndex={index}
+                    isMobile={true}
+                  />
+                </Col>
+              ))}
+            </Row>
+          ) : (
+            <CompactPriceChart
+              selectedItem={selectedItem}
+              history={history}
+              loading={loading}
+              categoryStyle={categoryStyle}
+            />
+          )}
         </div>
       </div>
       {children}

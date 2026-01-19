@@ -26,6 +26,8 @@ type PriceContextType = {
   selectedPeriod: PeriodOption;
   setSelectedPeriod: (period: PeriodOption) => void;
   comparisonData: ComparisonData;    // 비교 차트 데이터
+  isGridView: boolean;
+  onToggleGridView: () => void;
 };
 
 export const PriceContext = createContext<PriceContextType>({
@@ -34,7 +36,47 @@ export const PriceContext = createContext<PriceContextType>({
   selectedPeriod: '1m',
   setSelectedPeriod: () => {},
   comparisonData: null,
+  isGridView: false,
+  onToggleGridView: () => {},
 });
+
+// 그리드 아이콘 SVG 컴포넌트
+function GridIcon({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <rect x="3" y="3" width="8" height="8" rx="1" />
+      <rect x="13" y="3" width="8" height="8" rx="1" />
+      <rect x="3" y="13" width="8" height="8" rx="1" />
+      <rect x="13" y="13" width="8" height="8" rx="1" />
+    </svg>
+  );
+}
+
+// 그리드 토글 버튼 컴포넌트 (Context 사용)
+export function GridToggleButton() {
+  const { isGridView, onToggleGridView } = useContext(PriceContext);
+
+  return (
+    <button
+      onClick={onToggleGridView}
+      title={isGridView ? '단일 차트 보기' : '4분할 차트 보기'}
+      style={{
+        background: isGridView ? 'var(--card-body-bg-stone)' : 'transparent',
+        border: '2px solid var(--text-secondary)',
+        borderRadius: '8px',
+        padding: '4px 8px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        transition: 'all 0.2s ease',
+        color: 'var(--text-secondary)',
+      }}
+    >
+      <GridIcon size={16} color="currentColor" />
+    </button>
+  );
+}
 
 const formatPrice = (value: number, isAverage = false, noDecimal = false) => {
   if (noDecimal) {

@@ -28,6 +28,7 @@ type MiniPriceChartProps = {
   isSelected?: boolean;
   onClick?: () => void;
   slotIndex: number;
+  isMobile?: boolean;
 };
 
 type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
@@ -82,7 +83,7 @@ function ColoredItemName({ name }: { name: string }) {
   return <>{parts.length > 0 ? parts : name}</>;
 }
 
-export default function MiniPriceChart({ item, categoryStyle, isSelected, onClick, slotIndex }: MiniPriceChartProps) {
+export default function MiniPriceChart({ item, categoryStyle, isSelected, onClick, slotIndex, isMobile = false }: MiniPriceChartProps) {
   const { theme } = useTheme();
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -299,20 +300,20 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
         onClick={onClick}
         style={{
           border: isSelected ? `3px solid ${chartColor}` : '2px dashed var(--border-color)',
-          borderRadius: '12px',
-          padding: '16px',
+          borderRadius: isMobile ? '8px' : '12px',
+          padding: isMobile ? '8px' : '16px',
           background: 'var(--card-bg)',
           cursor: 'pointer',
           height: '100%',
-          minHeight: '270px',
+          minHeight: isMobile ? '155px' : '270px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'all 0.2s ease',
         }}
       >
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          빈 슬롯 - 아이템 선택
+        <span style={{ color: 'var(--text-muted)', fontSize: isMobile ? '0.65rem' : '0.85rem' }}>
+          빈 슬롯
         </span>
       </div>
     );
@@ -323,8 +324,8 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
       onClick={onClick}
       style={{
         border: isSelected ? `3px solid ${chartColor}` : '1px solid var(--border-color)',
-        borderRadius: '12px',
-        padding: '12px',
+        borderRadius: isMobile ? '8px' : '12px',
+        padding: isMobile ? '6px' : '12px',
         background: 'var(--card-bg)',
         cursor: 'pointer',
         height: '100%',
@@ -332,20 +333,20 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
         boxShadow: isSelected ? `0 0 12px ${chartColor}40` : 'none',
       }}
     >
-      {/* 헤더 - 2줄 구조 */}
-      <div style={{ marginBottom: '10px' }}>
+      {/* 헤더 */}
+      <div style={{ marginBottom: isMobile ? '4px' : '10px' }}>
         {/* 첫째 줄: 아이콘 + 아이템명 (왼쪽) / 가격 (오른쪽) */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? '4px' : '8px', marginBottom: isMobile ? '2px' : '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '8px', flex: 1, minWidth: 0 }}>
             <Image
               src={item.icon || '/icon.png'}
               alt={item.name}
-              width={28}
-              height={28}
-              style={{ borderRadius: '6px', border: `1px solid ${chartColor}`, flexShrink: 0 }}
+              width={isMobile ? 20 : 28}
+              height={isMobile ? 20 : 28}
+              style={{ borderRadius: isMobile ? '4px' : '6px', border: `1px solid ${chartColor}`, flexShrink: 0 }}
             />
             <div style={{
-              fontSize: '0.9rem',
+              fontSize: isMobile ? '0.6rem' : '0.9rem',
               fontWeight: 600,
               color: chartColor,
               lineHeight: 1.2,
@@ -357,7 +358,7 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
             </div>
           </div>
           {stats && (
-            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: chartColor, flexShrink: 0 }}>
+            <div style={{ fontSize: isMobile ? '0.65rem' : '0.95rem', fontWeight: 700, color: chartColor, flexShrink: 0 }}>
               {stats.current.toLocaleString()}G
             </div>
           )}
@@ -366,7 +367,7 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
         {stats && (
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <div style={{
-              fontSize: '0.7rem',
+              fontSize: isMobile ? '0.55rem' : '0.7rem',
               fontWeight: 600,
               color: changeRate >= 0 ? '#ef4444' : '#3b82f6',
               display: 'flex',
@@ -376,8 +377,8 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
               <Image
                 src={changeRate >= 0 ? '/up.png' : '/down.png'}
                 alt={changeRate >= 0 ? 'up' : 'down'}
-                width={10}
-                height={10}
+                width={isMobile ? 8 : 10}
+                height={isMobile ? 8 : 10}
               />
               {Math.abs(changeRate).toFixed(1)}%
             </div>
@@ -387,13 +388,13 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
 
       {/* 차트 */}
       {loading ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '220px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: isMobile ? '110px' : '220px' }}>
           <Spinner animation="border" size="sm" />
         </div>
       ) : (
-        <div style={{ width: '100%', height: '220px' }}>
+        <div style={{ width: '100%', height: isMobile ? '110px' : '220px' }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: comparisonInfo ? 45 : 5, left: 0, bottom: 0 }}>
+            <LineChart data={chartData} margin={{ top: isMobile ? 2 : 5, right: isMobile ? 5 : (comparisonInfo ? 45 : 5), left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id={`miniGradient-${slotIndex}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/>
@@ -404,16 +405,16 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
               <XAxis
                 dataKey="날짜"
                 ticks={xAxisTicks}
-                tick={{ fill: 'var(--text-muted)', fontSize: 8 }}
-                height={20}
+                tick={{ fill: 'var(--text-muted)', fontSize: isMobile ? 6 : 8 }}
+                height={isMobile ? 15 : 20}
                 stroke="var(--border-color)"
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                tick={{ fill: 'var(--text-muted)', fontSize: 8 }}
+                tick={{ fill: 'var(--text-muted)', fontSize: isMobile ? 6 : 8 }}
                 tickFormatter={formatPrice}
-                width={35}
+                width={isMobile ? 25 : 35}
                 domain={yAxisConfig.domain}
                 stroke="var(--border-color)"
                 tickLine={false}
@@ -485,8 +486,8 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
                 activeDot={{ r: 3, fill: chartColor }}
                 fill={`url(#miniGradient-${slotIndex})`}
               />
-              {/* 차트 오른쪽 끝 라벨 */}
-              {comparisonInfo && chartData.length > 0 && (
+              {/* 차트 오른쪽 끝 라벨 - 데스크톱만 */}
+              {!isMobile && comparisonInfo && chartData.length > 0 && (
                 <Customized
                   component={(props: any) => {
                     const { xAxisMap, yAxisMap } = props;
