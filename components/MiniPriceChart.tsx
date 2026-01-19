@@ -4,8 +4,8 @@ import { useTheme } from './ThemeProvider';
 import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Spinner } from 'react-bootstrap';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { TrackedItem } from '@/lib/items-to-track';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Customized } from 'recharts';
+import { TrackedItem, SUCCESSION_TO_NORMAL_MATERIAL_MAP, SUCCESSION_MATERIAL_START_DATE } from '@/lib/items-to-track';
 
 type PriceEntry = {
   price: number;
@@ -88,14 +88,22 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
   const [loading, setLoading] = useState(false);
   const selectedPeriod: PeriodOption = '1m';
 
+  // 비교 데이터 (계승 재료 ↔ 일반 재료)
+  const [comparisonHistory, setComparisonHistory] = useState<PriceEntry[]>([]);
+  const [comparisonInfo, setComparisonInfo] = useState<{ normalIcon: string; ratio: number } | null>(null);
+
   const chartColor = theme === 'dark'
     ? (categoryStyle?.darkThemeColor || '#8ab4f8')
     : (categoryStyle?.darkColor || '#16a34a');
+
+  const comparisonColor = '#9ca3af'; // 회색
 
   // 데이터 fetch
   useEffect(() => {
     if (!item?.id) {
       setHistory([]);
+      setComparisonHistory([]);
+      setComparisonInfo(null);
       return;
     }
 
@@ -105,9 +113,32 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
         const { getItemPriceHistory } = await import('@/lib/price-history-client');
         const priceHistory = await getItemPriceHistory(item.id, 365);
         setHistory(priceHistory);
+
+        // 계승 재료 → 일반 재료 비교 데이터 가져오기
+        const mapping = SUCCESSION_TO_NORMAL_MATERIAL_MAP[item.id];
+        if (mapping) {
+          const normalHistory = await getItemPriceHistory(mapping.normalId, 365);
+          // 가격 × 5 적용하고, 계승 재료 시작일 이후 데이터만 필터링
+          const filteredNormalHistory = normalHistory
+            .filter(entry => {
+              const entryDate = entry.date || entry.timestamp.split('T')[0];
+              return entryDate >= SUCCESSION_MATERIAL_START_DATE;
+            })
+            .map(entry => ({
+              ...entry,
+              price: entry.price * mapping.ratio
+            }));
+          setComparisonHistory(filteredNormalHistory);
+          setComparisonInfo({ normalIcon: mapping.normalIcon, ratio: mapping.ratio });
+        } else {
+          setComparisonHistory([]);
+          setComparisonInfo(null);
+        }
       } catch (err) {
         console.error('Error fetching price history:', err);
         setHistory([]);
+        setComparisonHistory([]);
+        setComparisonInfo(null);
       } finally {
         setLoading(false);
       }
@@ -116,19 +147,43 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
     fetchHistory();
   }, [item?.id]);
 
+  // 기간 필터링을 위한 cutoffDate 계산
+  const cutoffDate = useMemo(() => {
+    const now = new Date();
+    const cutoff = new Date();
+    cutoff.setMonth(now.getMonth() - 1); // 1m
+    return cutoff;
+  }, []);
+
   // 기간 필터링
   const filteredHistory = useMemo(() => {
     if (history.length === 0) return [];
-
-    const now = new Date();
-    const cutoffDate = new Date();
-    cutoffDate.setMonth(now.getMonth() - 1); // 1m
 
     return history.filter(entry => {
       const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
       return entryDate >= cutoffDate;
     });
-  }, [history]);
+  }, [history, cutoffDate]);
+
+  // 비교 히스토리 필터링
+  const filteredComparisonHistory = useMemo(() => {
+    if (comparisonHistory.length === 0) return [];
+
+    return comparisonHistory.filter(entry => {
+      const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
+      return entryDate >= cutoffDate;
+    });
+  }, [comparisonHistory, cutoffDate]);
+
+  // 비교 데이터를 날짜별로 매핑
+  const comparisonPriceMap = useMemo(() => {
+    const map = new Map<string, number>();
+    filteredComparisonHistory.forEach((entry) => {
+      const dateStr = entry.date || entry.timestamp.split('T')[0];
+      map.set(dateStr, entry.price);
+    });
+    return map;
+  }, [filteredComparisonHistory]);
 
   const chartData = useMemo(() => {
     const dateMap = new Map<string, any>();
@@ -144,16 +199,21 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
       }
       const dateKey = `${month}/${day}`;
       const dateObj = new Date(Date.UTC(year, month - 1, day));
+      const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+      // 비교 가격 가져오기
+      const comparisonPrice = comparisonPriceMap.get(dateString);
 
       dateMap.set(dateKey, {
         날짜: dateKey,
         가격: entry.price,
+        비교가격: comparisonPrice,
         rawTime: dateObj.getTime(),
         fullDate: dateObj,
       });
     });
     return Array.from(dateMap.values()).sort((a, b) => a.rawTime - b.rawTime);
-  }, [filteredHistory]);
+  }, [filteredHistory, comparisonPriceMap]);
 
   const formatPrice = useCallback((value: number) => {
     if (value >= 10000) {
@@ -333,7 +393,7 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
       ) : (
         <div style={{ width: '100%', height: '220px' }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+            <LineChart data={chartData} margin={{ top: 5, right: comparisonInfo ? 45 : 5, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id={`miniGradient-${slotIndex}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/>
@@ -366,10 +426,55 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
                   borderRadius: '6px',
                   fontSize: '11px',
                 }}
-                formatter={(value) => [Number(value).toLocaleString() + ' G', '가격']}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload || !payload.length) return null;
+                  const data = payload[0].payload;
+                  const mainPrice = data.가격;
+                  const compPrice = data.비교가격;
+                  const priceDiff = compPrice ? mainPrice - compPrice : null;
+
+                  return (
+                    <div style={{
+                      backgroundColor: 'var(--card-bg)',
+                      border: `1px solid ${chartColor}`,
+                      borderRadius: '6px',
+                      padding: '6px 8px',
+                      fontSize: '10px',
+                    }}>
+                      <div style={{ fontWeight: 600, color: chartColor }}>{label}</div>
+                      <div>결정: {mainPrice.toLocaleString()} G</div>
+                      {compPrice !== undefined && compPrice !== null && (
+                        <>
+                          <div style={{ color: comparisonColor, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <Image src={comparisonInfo?.normalIcon || ''} alt="" width={12} height={12} style={{ borderRadius: '2px' }} />
+                            ×5: {compPrice.toLocaleString()} G
+                          </div>
+                          {priceDiff !== null && (
+                            <div style={{ fontWeight: 700, color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
+                              {priceDiff >= 0 ? '+' : ''}{priceDiff.toLocaleString()} G
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                }}
               />
               {stats && (
                 <ReferenceLine y={stats.avg} stroke={chartColor} strokeDasharray="3 3" strokeWidth={1} />
+              )}
+              {/* 비교 라인 (일반 재료 × 5) */}
+              {comparisonInfo && (
+                <Line
+                  type="monotone"
+                  dataKey="비교가격"
+                  stroke={comparisonColor}
+                  strokeWidth={1}
+                  strokeDasharray="4 2"
+                  dot={false}
+                  activeDot={{ r: 2, fill: comparisonColor }}
+                  connectNulls
+                />
               )}
               <Line
                 type="monotone"
@@ -380,6 +485,55 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
                 activeDot={{ r: 3, fill: chartColor }}
                 fill={`url(#miniGradient-${slotIndex})`}
               />
+              {/* 차트 오른쪽 끝 라벨 */}
+              {comparisonInfo && chartData.length > 0 && (
+                <Customized
+                  component={(props: any) => {
+                    const { xAxisMap, yAxisMap } = props;
+                    if (!xAxisMap || !yAxisMap) return null;
+                    const xAxis = Object.values(xAxisMap)[0] as any;
+                    const yAxis = Object.values(yAxisMap)[0] as any;
+                    if (!xAxis || !yAxis) return null;
+
+                    const lastData = chartData[chartData.length - 1];
+                    const mainPrice = lastData.가격;
+                    const compPrice = lastData.비교가격;
+                    if (!compPrice) return null;
+
+                    const x = xAxis.x + xAxis.width + 3;
+                    const yMain = yAxis.scale(mainPrice);
+                    const yComp = yAxis.scale(compPrice);
+                    const priceDiff = mainPrice - compPrice;
+                    const diffColor = priceDiff >= 0 ? '#ef4444' : '#3b82f6';
+                    const yMid = (yMain + yComp) / 2;
+
+                    return (
+                      <g>
+                        {/* 메인 가격 라벨 */}
+                        <circle cx={x - 1} cy={yMain} r={2} fill={chartColor} />
+                        <text x={x + 2} y={yMain} dy={2} fontSize={7} fontWeight="700" fill={chartColor}>
+                          결정
+                        </text>
+                        {/* 비교 가격 라벨 */}
+                        <circle cx={x - 1} cy={yComp} r={2} fill={comparisonColor} />
+                        <text x={x + 2} y={yComp} dy={2} fontSize={7} fontWeight="700" fill={comparisonColor}>
+                          ×5
+                        </text>
+                        {/* 화살표와 차이 */}
+                        <line x1={x + 22} y1={yMain + (priceDiff >= 0 ? 3 : -3)} x2={x + 22} y2={yComp + (priceDiff >= 0 ? -3 : 3)} stroke={diffColor} strokeWidth={1} markerEnd={`url(#arrowMini-${slotIndex})`} />
+                        <defs>
+                          <marker id={`arrowMini-${slotIndex}`} markerWidth="3" markerHeight="3" refX="1.5" refY="1.5" orient="auto">
+                            <polygon points="0 0, 3 1.5, 0 3" fill={diffColor} />
+                          </marker>
+                        </defs>
+                        <text x={x + 25} y={yMid} dy={2} fontSize={7} fontWeight="700" fill={diffColor}>
+                          {priceDiff >= 0 ? '+' : '-'}{formatPrice(Math.abs(priceDiff))}
+                        </text>
+                      </g>
+                    );
+                  }}
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </div>

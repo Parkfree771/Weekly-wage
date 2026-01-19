@@ -3,7 +3,7 @@
 
 import { useState, useEffect, ReactNode, useMemo } from 'react';
 import { Row, Col } from 'react-bootstrap';
-import { TrackedItem, ItemCategory, getItemsByCategory, RefineAdditionalSubCategory, getItemsBySubCategory } from '@/lib/items-to-track';
+import { TrackedItem, ItemCategory, getItemsByCategory, RefineAdditionalSubCategory, getItemsBySubCategory, SUCCESSION_TO_NORMAL_MATERIAL_MAP, SUCCESSION_MATERIAL_START_DATE } from '@/lib/items-to-track';
 import ItemSelector, { CATEGORY_STYLES } from './ItemSelector';
 import CompactPriceChart from './CompactPriceChart';
 import MiniPriceChart from './MiniPriceChart';
@@ -49,6 +49,10 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('1m');
+
+  // 비교 차트 데이터 (계승 재료 ↔ 일반 재료)
+  const [comparisonHistory, setComparisonHistory] = useState<PriceEntry[]>([]);
+  const [comparisonInfo, setComparisonInfo] = useState<{ normalIcon: string; ratio: number } | null>(null);
 
   // 그리드 뷰 관련 state
   const [isGridView, setIsGridView] = useState(false);
@@ -115,9 +119,32 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
         const { getItemPriceHistory } = await import('@/lib/price-history-client');
         const priceHistory = await getItemPriceHistory(selectedItem.id, 999);
         setHistory(priceHistory);
+
+        // 계승 재료 → 일반 재료 비교 데이터 가져오기
+        const mapping = SUCCESSION_TO_NORMAL_MATERIAL_MAP[selectedItem.id];
+        if (mapping) {
+          const normalHistory = await getItemPriceHistory(mapping.normalId, 999);
+          // 가격 × 5 적용하고, 계승 재료 시작일(2025-01-07) 이후 데이터만 필터링
+          const filteredNormalHistory = normalHistory
+            .filter(entry => {
+              const entryDate = entry.date || entry.timestamp.split('T')[0];
+              return entryDate >= SUCCESSION_MATERIAL_START_DATE;
+            })
+            .map(entry => ({
+              ...entry,
+              price: entry.price * mapping.ratio
+            }));
+          setComparisonHistory(filteredNormalHistory);
+          setComparisonInfo({ normalIcon: mapping.normalIcon, ratio: mapping.ratio });
+        } else {
+          setComparisonHistory([]);
+          setComparisonInfo(null);
+        }
       } catch (err) {
         console.error('Error fetching price history:', err);
         setHistory([]);
+        setComparisonHistory([]);
+        setComparisonInfo(null);
       } finally {
         setLoading(false);
       }
@@ -126,36 +153,63 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
     fetchHistory();
   }, [selectedItem]);
 
-  const filteredHistory = useMemo(() => {
-    if (history.length === 0) return [];
-    if (selectedPeriod === 'all') return history;
+  // 기간 필터링을 위한 cutoffDate 계산
+  const cutoffDate = useMemo(() => {
+    if (selectedPeriod === 'all') return null;
 
     const now = new Date();
-    const cutoffDate = new Date();
+    const cutoff = new Date();
 
     switch (selectedPeriod) {
       case '7d':
-        cutoffDate.setDate(now.getDate() - 7);
+        cutoff.setDate(now.getDate() - 7);
         break;
       case '1m':
-        cutoffDate.setMonth(now.getMonth() - 1);
+        cutoff.setMonth(now.getMonth() - 1);
         break;
       case '3m':
-        cutoffDate.setMonth(now.getMonth() - 3);
+        cutoff.setMonth(now.getMonth() - 3);
         break;
       case '6m':
-        cutoffDate.setMonth(now.getMonth() - 6);
+        cutoff.setMonth(now.getMonth() - 6);
         break;
       case '1y':
-        cutoffDate.setFullYear(now.getFullYear() - 1);
+        cutoff.setFullYear(now.getFullYear() - 1);
         break;
     }
+    return cutoff;
+  }, [selectedPeriod]);
+
+  const filteredHistory = useMemo(() => {
+    if (history.length === 0) return [];
+    if (!cutoffDate) return history;
 
     return history.filter(entry => {
       const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
       return entryDate >= cutoffDate;
     });
-  }, [history, selectedPeriod]);
+  }, [history, cutoffDate]);
+
+  // 비교 히스토리도 동일하게 필터링
+  const filteredComparisonHistory = useMemo(() => {
+    if (comparisonHistory.length === 0) return [];
+    if (!cutoffDate) return comparisonHistory;
+
+    return comparisonHistory.filter(entry => {
+      const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
+      return entryDate >= cutoffDate;
+    });
+  }, [comparisonHistory, cutoffDate]);
+
+  // 비교 데이터 객체
+  const comparisonData = useMemo(() => {
+    if (!comparisonInfo || filteredComparisonHistory.length === 0) return null;
+    return {
+      normalHistory: filteredComparisonHistory,
+      normalIcon: comparisonInfo.normalIcon,
+      ratio: comparisonInfo.ratio
+    };
+  }, [filteredComparisonHistory, comparisonInfo]);
 
   const handleSelectCategory = (category: ItemCategory) => {
     setSelectedCategory(category);
@@ -207,7 +261,7 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
   const categoryStyle = CATEGORY_STYLES[selectedCategory];
 
   return (
-    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod }}>
+    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod, comparisonData }}>
       <div className="price-chart-container">
         {/* 그리드 토글 버튼 - 데스크톱만 */}
         <div className="d-none d-md-flex justify-content-end mb-2">

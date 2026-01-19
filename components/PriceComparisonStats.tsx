@@ -13,11 +13,19 @@ type PriceEntry = {
 
 type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
+// 비교 차트 데이터 타입 (계승 재료 ↔ 일반 재료)
+type ComparisonData = {
+  normalHistory: PriceEntry[];       // 일반 재료 히스토리 (가격 × 5 적용됨)
+  normalIcon: string;                // 일반 재료 아이콘
+  ratio: number;                     // 교환 비율 (5:1)
+} | null;
+
 type PriceContextType = {
   history: PriceEntry[];
   filteredHistory: PriceEntry[];
   selectedPeriod: PeriodOption;
   setSelectedPeriod: (period: PeriodOption) => void;
+  comparisonData: ComparisonData;    // 비교 차트 데이터
 };
 
 export const PriceContext = createContext<PriceContextType>({
@@ -25,6 +33,7 @@ export const PriceContext = createContext<PriceContextType>({
   filteredHistory: [],
   selectedPeriod: '1m',
   setSelectedPeriod: () => {},
+  comparisonData: null,
 });
 
 const formatPrice = (value: number, isAverage = false, noDecimal = false) => {
