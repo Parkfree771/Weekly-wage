@@ -80,7 +80,7 @@ export function PriceChartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const defaultCategory = 'refine_succession';
     const defaultCategoryItems = getItemsByCategory(defaultCategory);
-    const defaultItem = defaultCategoryItems.find(item => item.id === '6861013') || defaultCategoryItems[0];
+    const defaultItem = defaultCategoryItems.find(item => item.id === '66102007') || defaultCategoryItems[0];
 
     setSelectedCategory(defaultCategory);
     setSelectedItem(defaultItem);

@@ -416,62 +416,27 @@ div.equipmentCard:hover,
 
 div.equipmentCardChanged,
 .equipmentCardChanged.equipmentCardChanged {
-  border: 2px solid #8b5cf6 !important;
+  border: none !important;
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%) !important;
   box-shadow:
     8px 8px 16px rgba(0, 0, 0, 0.2),
     -8px -8px 16px rgba(255, 255, 255, 0.8),
-    inset 3px 3px 6px rgba(255, 255, 255, 0.4) !important;
+    inset 3px 3px 6px rgba(255, 255, 255, 0.4),
+    0 0 0 2px rgba(139, 92, 246, 0.3) !important;
 }
 
 div.equipmentCardMobile,
 .equipmentCardMobile.equipmentCardMobile {
-  padding: 0.35rem !important;
+  padding: 0.5rem !important;
   border-radius: 8px !important;
-  border: 1.5px solid #cbd5e1 !important;
+  border: none !important;
   min-height: 85px !important;
 }
 
 div.equipmentCardMobileChanged,
 .equipmentCardMobileChanged.equipmentCardMobileChanged {
-  border-color: #6366f1 !important;
-  border-width: 2px !important;
+  border: none !important;
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25) !important;
-}
-
-/* 무기/방어구 장비 카드 3D 효과 */
-div.equipmentCardWeapon,
-.equipmentCardWeapon.equipmentCardWeapon {
-  border: 2px solid #ef4444 !important;
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.15),
-    -6px -6px 12px rgba(255, 255, 255, 0.7) !important;
-}
-
-div.equipmentCardWeapon:hover,
-.equipmentCardWeapon.equipmentCardWeapon:hover {
-  border-color: #dc2626 !important;
-  box-shadow:
-    8px 8px 16px rgba(0, 0, 0, 0.2),
-    -8px -8px 16px rgba(255, 255, 255, 0.8),
-    inset 2px 2px 4px rgba(255, 255, 255, 0.3) !important;
-}
-
-div.equipmentCardArmor,
-.equipmentCardArmor.equipmentCardArmor {
-  border: 2px solid #3b82f6 !important;
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.15),
-    -6px -6px 12px rgba(255, 255, 255, 0.7) !important;
-}
-
-div.equipmentCardArmor:hover,
-.equipmentCardArmor.equipmentCardArmor:hover {
-  border-color: #2563eb !important;
-  box-shadow:
-    8px 8px 16px rgba(0, 0, 0, 0.2),
-    -8px -8px 16px rgba(255, 255, 255, 0.8),
-    inset 2px 2px 4px rgba(255, 255, 255, 0.3) !important;
 }
 
 /* 비활성화된 장비 카드 (다른 모드의 장비) */
@@ -480,7 +445,7 @@ div.equipmentCardDisabled,
   opacity: 0.5 !important;
   pointer-events: none !important;
   filter: grayscale(50%) !important;
-  border-color: #9ca3af !important;
+  border: none !important;
   box-shadow: none !important;
 }
 
@@ -491,30 +456,8 @@ div.equipmentCardDisabled,
     6px 6px 12px rgba(0, 0, 0, 0.15),
     -6px -6px 12px rgba(255, 255, 255, 0.7),
     0 0 15px rgba(200, 164, 104, 0.2) !important;
-  position: relative !important;
-  overflow: visible !important;
 }
 
-/* 전율 장비 프레임 이미지 */
-.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession::before {
-  content: '';
-  position: absolute;
-  top: -32px;
-  left: -16px;
-  right: -16px;
-  bottom: -32px;
-  background-image: url('/wjsdbf.webp?v=2');
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* 전율 장비 내부 콘텐츠가 프레임 위에 보이도록 */
-.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession > * {
-  position: relative;
-  z-index: 2;
-}
 
 .equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession:hover {
   box-shadow:
@@ -527,7 +470,7 @@ div.equipmentCardDisabled,
 /* 에스더 장비 - 프리미엄 스타일 */
 div.equipmentCardEsther,
 .equipmentCardEsther.equipmentCardEsther {
-  border: 2px solid #3dd2cc !important;
+  border: none !important;
   background: linear-gradient(135deg, rgba(61, 210, 204, 0.1) 0%, rgba(45, 212, 191, 0.1) 50%, rgba(20, 184, 166, 0.1) 100%) !important;
   box-shadow:
     6px 6px 12px rgba(0, 0, 0, 0.15),
@@ -558,7 +501,7 @@ div.equipmentCardEsther,
 
 div.equipmentCardEsther:hover,
 .equipmentCardEsther.equipmentCardEsther:hover {
-  border-color: #14b8a6 !important;
+  border: none !important;
   box-shadow:
     8px 8px 16px rgba(0, 0, 0, 0.2),
     -8px -8px 16px rgba(255, 255, 255, 0.8),
@@ -1353,17 +1296,6 @@ button.bulkButton:disabled,
     border-radius: 6px;
   }
 
-  /* 모바일에서 계승 장비 테두리 더 멀리 배치 */
-  .equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession {
-    padding: 0.6rem !important;
-  }
-
-  .equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession::before {
-    top: -28px;
-    left: -15px;
-    right: -15px;
-    bottom: -28px;
-  }
 
   .materialCard {
     border-radius: 6px;
@@ -1400,57 +1332,23 @@ button.bulkButton:disabled,
 
 [data-theme="dark"] div.equipmentCardChanged,
 [data-theme="dark"] .equipmentCardChanged.equipmentCardChanged {
-  border: 2px solid #8b5cf6 !important;
+  border: none !important;
   box-shadow:
     8px 8px 16px rgba(0, 0, 0, 0.6),
     -8px -8px 16px rgba(255, 255, 255, 0.05),
-    inset 3px 3px 6px rgba(255, 255, 255, 0.1) !important;
+    inset 3px 3px 6px rgba(255, 255, 255, 0.1),
+    0 0 0 2px rgba(139, 92, 246, 0.4) !important;
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%) !important;
 }
 
 [data-theme="dark"] div.equipmentCardMobile,
 [data-theme="dark"] .equipmentCardMobile.equipmentCardMobile {
-  border-color: #475569 !important;
+  border: none !important;
 }
 
 [data-theme="dark"] div.equipmentCardMobileChanged,
 [data-theme="dark"] .equipmentCardMobileChanged.equipmentCardMobileChanged {
-  border-color: #6366f1 !important;
-}
-
-/* 다크모드 무기/방어구 장비 카드 3D 효과 */
-[data-theme="dark"] div.equipmentCardWeapon,
-[data-theme="dark"] .equipmentCardWeapon.equipmentCardWeapon {
-  border: 2px solid #ef4444 !important;
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.5),
-    -6px -6px 12px rgba(255, 255, 255, 0.03) !important;
-}
-
-[data-theme="dark"] div.equipmentCardWeapon:hover,
-[data-theme="dark"] .equipmentCardWeapon.equipmentCardWeapon:hover {
-  border-color: #f87171 !important;
-  box-shadow:
-    8px 8px 16px rgba(0, 0, 0, 0.6),
-    -8px -8px 16px rgba(255, 255, 255, 0.05),
-    inset 2px 2px 4px rgba(255, 255, 255, 0.08) !important;
-}
-
-[data-theme="dark"] div.equipmentCardArmor,
-[data-theme="dark"] .equipmentCardArmor.equipmentCardArmor {
-  border: 2px solid #3b82f6 !important;
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.5),
-    -6px -6px 12px rgba(255, 255, 255, 0.03) !important;
-}
-
-[data-theme="dark"] div.equipmentCardArmor:hover,
-[data-theme="dark"] .equipmentCardArmor.equipmentCardArmor:hover {
-  border-color: #60a5fa !important;
-  box-shadow:
-    8px 8px 16px rgba(0, 0, 0, 0.6),
-    -8px -8px 16px rgba(255, 255, 255, 0.05),
-    inset 2px 2px 4px rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
 }
 
 /* 다크모드 비활성화된 장비 카드 */
@@ -1458,7 +1356,7 @@ button.bulkButton:disabled,
 [data-theme="dark"] .equipmentCardDisabled.equipmentCardDisabled {
   opacity: 0.4 !important;
   filter: grayscale(60%) !important;
-  border-color: #4b5563 !important;
+  border: none !important;
 }
 
 /* 다크모드 계승 장비 카드 (게임 내 색상 기반) */
@@ -1468,7 +1366,6 @@ button.bulkButton:disabled,
     6px 6px 12px rgba(0, 0, 0, 0.5),
     -6px -6px 12px rgba(255, 255, 255, 0.03),
     0 0 20px rgba(200, 164, 104, 0.25) !important;
-  overflow: visible !important;
 }
 
 [data-theme="dark"] .equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession.equipmentCardSuccession:hover {
@@ -1482,7 +1379,7 @@ button.bulkButton:disabled,
 /* 다크모드 에스더 장비 카드 */
 [data-theme="dark"] div.equipmentCardEsther,
 [data-theme="dark"] .equipmentCardEsther.equipmentCardEsther {
-  border: 2px solid #3dd2cc !important;
+  border: none !important;
   background: linear-gradient(135deg, rgba(61, 210, 204, 0.15) 0%, rgba(45, 212, 191, 0.15) 50%, rgba(20, 184, 166, 0.15) 100%) !important;
   box-shadow:
     6px 6px 12px rgba(0, 0, 0, 0.5),
@@ -1493,7 +1390,7 @@ button.bulkButton:disabled,
 
 [data-theme="dark"] div.equipmentCardEsther:hover,
 [data-theme="dark"] .equipmentCardEsther.equipmentCardEsther:hover {
-  border-color: #5eead4 !important;
+  border: none !important;
   box-shadow:
     8px 8px 16px rgba(0, 0, 0, 0.6),
     -8px -8px 16px rgba(255, 255, 255, 0.05),

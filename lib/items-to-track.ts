@@ -785,7 +785,7 @@ export function getItemsBySubCategory(subCategory: RefineAdditionalSubCategory):
 // 카테고리별 아이템 필터 함수
 export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
-    refine_succession: ['6861013', '66102007', '66102107', '66110226'],
+    refine_succession: ['66102007', '66102107', '66110226', '6861013'],
     refine: ['6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
     refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],

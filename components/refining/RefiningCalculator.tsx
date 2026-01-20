@@ -1262,9 +1262,6 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
           {/* 캐릭터 정보 헤더 */}
           {/* 부위별 목표 레벨 설정 */}
           <div style={{ position: 'relative' }}>
-            <div className={styles.updateBadge}>
-              🎃 26년 1월 7일 세르카 업데이트 완료!
-            </div>
             <Card className={`mb-4 ${styles.mainCard}`}>
               <Card.Header className={styles.cardHeaderAlt}>
                 <h5 className={`mb-0 ${styles.cardTitle}`}>장비 강화 단계 및 목표 설정</h5>
@@ -1368,46 +1365,82 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                   return (
                     <Col key={index} xs={4} sm={6} md={4} lg={2}>
                       <div
-                        className={`${styles.equipmentCard} ${isMobile ? styles.equipmentCardMobile : ''} ${isChanged && !eq.isEsther ? styles.equipmentCardChanged : ''} ${isChanged && isMobile && !eq.isEsther ? styles.equipmentCardMobileChanged : ''} ${!eq.isEsther && !eq.isSuccession ? (eq.type === 'weapon' ? styles.equipmentCardWeapon : styles.equipmentCardArmor) : ''} ${isEquipmentDisabled ? styles.equipmentCardDisabled : ''} ${specialCardClass}`}
-                        style={eq.isSuccession && !eq.isEsther ? {
+                        className={`${styles.equipmentCard} ${isMobile ? styles.equipmentCardMobile : ''} ${isChanged && !eq.isEsther ? styles.equipmentCardChanged : ''} ${isChanged && isMobile && !eq.isEsther ? styles.equipmentCardMobileChanged : ''} ${isEquipmentDisabled ? styles.equipmentCardDisabled : ''} ${specialCardClass}`}
+                        style={{
                           background: theme === 'dark' ? '#1f2937' : '#ffffff',
                           border: 'none',
-                          overflow: 'visible',
-                        } : undefined}
+                        }}
                       >
-                        <div className="d-flex justify-content-between align-items-start" style={{ marginBottom: isMobile ? '0.2rem' : '0.5rem' }}>
+                        <div className="d-flex align-items-center" style={{ marginBottom: isMobile ? '0.3rem' : '0.5rem', gap: isMobile ? '0.4rem' : '0.6rem' }}>
+                          {/* 장비 아이콘 */}
+                          {eq.icon && (
+                            <div style={{
+                              width: eq.isSuccession ? (isMobile ? '52px' : '68px') : (isMobile ? '36px' : '48px'),
+                              height: eq.isSuccession ? (isMobile ? '52px' : '68px') : (isMobile ? '36px' : '48px'),
+                              flexShrink: 0,
+                              position: 'relative',
+                              marginLeft: eq.isSuccession ? (isMobile ? '-4px' : '-6px') : 0,
+                              marginRight: eq.isSuccession ? (isMobile ? '-4px' : '-6px') : 0,
+                            }}>
+                              <Image
+                                src={eq.icon}
+                                alt={eq.name}
+                                width={isMobile ? 36 : 48}
+                                height={isMobile ? 36 : 48}
+                                style={{
+                                  objectFit: 'contain',
+                                  position: eq.isSuccession ? 'absolute' : 'relative',
+                                  top: eq.isSuccession ? '50%' : undefined,
+                                  left: eq.isSuccession ? '50%' : undefined,
+                                  transform: eq.isSuccession ? 'translate(-50%, -50%)' : undefined,
+                                }}
+                                unoptimized
+                              />
+                              {/* 전율 장비 테두리 이미지 */}
+                              {eq.isSuccession && (
+                                <Image
+                                  src="/wjsdbf2.webp"
+                                  alt=""
+                                  width={isMobile ? 52 : 68}
+                                  height={isMobile ? 52 : 68}
+                                  style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    pointerEvents: 'none',
+                                  }}
+                                  unoptimized
+                                />
+                              )}
+                            </div>
+                          )}
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <span className={`${styles.equipmentName} ${isMobile ? styles.equipmentNameMobile : ''}`}>
-                              {eq.name}
-                            </span>
-                            <span className={`${styles.equipmentGrade} ${isMobile ? styles.equipmentGradeMobile : ''}`}>
-                              {eq.grade}
-                            </span>
-                          </div>
-                          <div className="d-flex flex-column" style={{
-                            gap: isMobile ? '0.1rem' : '0.25rem',
-                            alignItems: 'flex-end',
-                            marginLeft: '0.2rem',
-                            // 뱃지 2개 (레벨 + 상급) 공간 고정 - 모든 탭에서 동일
-                            minHeight: isMobile ? '38px' : '56px',
-                            justifyContent: 'flex-start'
-                          }}>
-                            <Badge
-                              pill
-                              bg=""
-                              className={`${eq.isEsther ? styles.levelBadgeEsther : (eq.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor)} ${isMobile ? styles.levelBadgeMobile : ''}`}
-                            >
-                              +{eq.currentLevel}
-                            </Badge>
-                            {eq.currentAdvancedLevel > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.15rem' }}>
+                              <span className={`${styles.equipmentName} ${isMobile ? styles.equipmentNameMobile : ''}`}>
+                                {eq.name}
+                              </span>
+                              <span className={`${styles.equipmentGrade} ${isMobile ? styles.equipmentGradeMobile : ''}`}>
+                                {eq.grade}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
                               <Badge
                                 pill
                                 bg=""
-                                className={`${styles.advancedLevelBadge} ${isMobile ? styles.advancedLevelBadgeMobile : ''}`}
+                                className={`${eq.isEsther ? styles.levelBadgeEsther : (eq.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor)} ${isMobile ? styles.levelBadgeMobile : ''}`}
                               >
-                                상+{eq.currentAdvancedLevel}
+                                +{eq.currentLevel}
                               </Badge>
-                            )}
+                              {eq.currentAdvancedLevel > 0 && (
+                                <Badge
+                                  pill
+                                  bg=""
+                                  className={`${styles.advancedLevelBadge} ${isMobile ? styles.advancedLevelBadgeMobile : ''}`}
+                                >
+                                  상+{eq.currentAdvancedLevel}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div style={{
@@ -1415,12 +1448,11 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                           gap: isMobile ? '0.15rem' : '0.3rem',
                           flexDirection: 'column',
                           minHeight: isSuccessionMode
-                            ? (isMobile ? '24px' : '32px')  // 계승 후 탭: 1개 셀렉트 높이
-                            : (isMobile ? '50px' : '68px'), // 계승 전 탭: 2개 셀렉트 높이
+                            ? (isMobile ? '24px' : '32px')
+                            : (isMobile ? '50px' : '68px'),
                           justifyContent: 'flex-start'
                         }}>
                           {eq.isEsther ? (
-                            // 에스더 장비: 일반 재련 대신 메시지 + 상급재련은 표시
                             <>
                               <div style={{
                                 textAlign: 'center',

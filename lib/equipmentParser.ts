@@ -20,6 +20,7 @@ export type Equipment = {
   isSuccession: boolean; // 계승 장비 여부 (운명의 전율 = 계승, 운명의 업화 = 계승 전)
   isEsther: boolean; // 에스더 장비 여부 (최상위 장비, 재련 불가)
   originalName?: string; // 원본 장비 이름 (예: +25 운명의 전율 장갑)
+  icon?: string; // 장비 아이콘 URL
 };
 
 // 장비 타입 매핑
@@ -216,6 +217,7 @@ export function parseEquipmentData(equipmentResponse: EquipmentAPIResponse[]): E
       isSuccession: isSuccessionEquipment(item.Name),
       isEsther: isEsther,
       originalName: item.Name,
+      icon: item.Icon,
     });
   }
 

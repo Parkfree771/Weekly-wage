@@ -14,6 +14,18 @@ const nextConfig = {
     minimumCacheTTL: 31536000, // 1년
     deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn-lostark.game.onstove.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.lostark.co.kr',
+        pathname: '/**',
+      },
+    ],
   },
   
   // 번들 최적화 (swcMinify는 Next.js 13+에서 기본값이므로 제거)
