@@ -175,18 +175,26 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }, [filteredHistory, comparisonPriceMap]);
 
   const formatPrice = useCallback((value: number) => {
+    // 악세, 보석 카테고리는 소수점 없이 표시
+    if (categoryStyle?.label === '악세' || categoryStyle?.label === '보석') {
+      return Math.round(value).toLocaleString('ko-KR');
+    }
     if (value < 100) {
       return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     }
     return Math.round(value).toLocaleString('ko-KR');
-  }, []);
+  }, [categoryStyle]);
 
   const formatTooltipPrice = useCallback((value: number) => {
+    // 악세, 보석 카테고리는 소수점 없이 표시
+    if (categoryStyle?.label === '악세' || categoryStyle?.label === '보석') {
+      return Math.round(value).toLocaleString('ko-KR') + ' G';
+    }
     if (value < 100) {
       return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G';
     }
     return value.toLocaleString('ko-KR') + ' G';
-  }, []);
+  }, [categoryStyle]);
 
   const stats = useMemo(() => {
     if (filteredHistory.length === 0) return null;

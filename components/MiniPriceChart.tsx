@@ -217,6 +217,13 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
   }, [filteredHistory, comparisonPriceMap]);
 
   const formatPrice = useCallback((value: number) => {
+    // 악세, 보석 카테고리는 소수점 없이 표시
+    if (categoryStyle?.label === '악세' || categoryStyle?.label === '보석') {
+      if (value >= 10000) {
+        return Math.round(value / 1000) + 'k';
+      }
+      return Math.round(value).toString();
+    }
     if (value >= 10000) {
       return Math.round(value / 1000) + 'k';
     }
@@ -224,7 +231,7 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
       return value.toFixed(1);
     }
     return Math.round(value).toString();
-  }, []);
+  }, [categoryStyle]);
 
   const stats = useMemo(() => {
     if (filteredHistory.length === 0) return null;
@@ -359,7 +366,9 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
           </div>
           {stats && (
             <div style={{ fontSize: isMobile ? '0.65rem' : '0.95rem', fontWeight: 700, color: chartColor, flexShrink: 0 }}>
-              {stats.current.toLocaleString()}G
+              {(categoryStyle?.label === '악세' || categoryStyle?.label === '보석')
+                ? Math.round(stats.current).toLocaleString()
+                : stats.current.toLocaleString()}G
             </div>
           )}
         </div>
@@ -443,7 +452,9 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
                       fontSize: '10px',
                     }}>
                       <div style={{ fontWeight: 600, color: chartColor }}>{label}</div>
-                      <div>결정: {mainPrice.toLocaleString()} G</div>
+                      <div>결정: {(categoryStyle?.label === '악세' || categoryStyle?.label === '보석')
+                        ? Math.round(mainPrice).toLocaleString()
+                        : mainPrice.toLocaleString()} G</div>
                       {compPrice !== undefined && compPrice !== null && (
                         <>
                           <div style={{ color: comparisonColor, display: 'flex', alignItems: 'center', gap: '3px' }}>
