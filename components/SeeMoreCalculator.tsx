@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, Badge, Button, Row, Col, Table, Spinner } from 'react-bootstrap';
 import { raids } from '@/data/raids';
 import { raidRewards, MaterialReward, MATERIAL_IDS, MATERIAL_NAMES, MATERIAL_BUNDLE_SIZES } from '@/data/raidRewards';
-import { fetchPriceData } from '@/lib/price-history-client';
+import { usePriceData } from '@/contexts/PriceContext';
 import styles from './SeeMoreCalculator.module.css';
 
 // 재료 이름에 따른 이미지 파일명 매핑
@@ -45,90 +45,62 @@ const getTodayPriceDate = () => {
 
 const SeeMoreCalculator: React.FC = () => {
   const [selectedRaid, setSelectedRaid] = useState<string | null>(null);
-  const [profitData, setProfitData] = useState<{ [key: string]: RaidProfitData[] }>({});
-  const [loading, setLoading] = useState<boolean>(false);
+
+  // Context에서 가격 데이터 가져오기
+  const { unitPrices, loading } = usePriceData();
 
   const handleRaidSelect = (raidName: string) => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
   };
 
-  // 컴포넌트 마운트시 가격 가져오기
-  useEffect(() => {
-    fetchLatestPrices();
-  }, []);
-
-  // latest_prices.json에서 최신 가격 가져오기
-  const fetchLatestPrices = async () => {
-    setLoading(true);
-    try {
-      const { latest } = await fetchPriceData();
-
-      const searchPrices: { [itemId: number]: number } = {};
-
-      Object.entries(MATERIAL_IDS).forEach(([key, itemId]) => {
-        const bundlePrice = latest[String(itemId)] || 0;
-        const bundleSize = MATERIAL_BUNDLE_SIZES[itemId] || 1;
-        const unitPrice = bundlePrice / bundleSize; // 묶음 가격 → 개당 가격 변환
-        searchPrices[itemId] = unitPrice;
-      });
-
-      calculateWithPrices(searchPrices);
-
-    } catch (error) {
-      console.error('Failed to fetch latest prices:', error);
-    } finally {
-      setLoading(false);
+  // 가격 데이터를 기반으로 수익 계산 (메모이제이션)
+  const profitData = useMemo(() => {
+    if (Object.keys(unitPrices).length === 0) {
+      return {};
     }
-  };
 
-  // 가격으로 수익 계산
-  const calculateWithPrices = (searchPrices: { [itemId: number]: number }) => {
-    try {
-      const newProfitData: { [key: string]: RaidProfitData[] } = {};
+    const newProfitData: { [key: string]: RaidProfitData[] } = {};
 
-      const groupedRewards = raidRewards.reduce((acc, reward) => {
-        if (!acc[reward.raidName]) {
-          acc[reward.raidName] = [];
-        }
-        acc[reward.raidName].push(reward);
-        return acc;
-      }, {} as { [key: string]: typeof raidRewards });
+    const groupedRewards = raidRewards.reduce((acc, reward) => {
+      if (!acc[reward.raidName]) {
+        acc[reward.raidName] = [];
+      }
+      acc[reward.raidName].push(reward);
+      return acc;
+    }, {} as { [key: string]: typeof raidRewards });
 
-      Object.entries(groupedRewards).forEach(([raidName, rewards]) => {
-        newProfitData[raidName] = rewards.map(reward => {
-          const materialsWithPrices = reward.materials.map(material => {
-            const unitPrice = searchPrices[material.itemId] || 0;
-            const totalPrice = unitPrice * material.amount;
-
-            return {
-              ...material,
-              unitPrice: unitPrice,
-              totalPrice: Math.round(totalPrice)
-            };
-          });
-
-          const totalValue = materialsWithPrices.reduce((sum, mat) => sum + mat.totalPrice, 0);
-          const raidInfo = raids.find(r => r.name === raidName);
-          const gateInfo = raidInfo?.gates.find(g => g.gate === reward.gate);
-          const moreGold = gateInfo?.moreGold || 0;
-          const profitLoss = totalValue - moreGold;
+    Object.entries(groupedRewards).forEach(([raidName, rewards]) => {
+      newProfitData[raidName] = rewards.map(reward => {
+        const materialsWithPrices = reward.materials.map(material => {
+          const unitPrice = unitPrices[material.itemId] || 0;
+          const totalPrice = unitPrice * material.amount;
 
           return {
-            raidName,
-            gate: reward.gate,
-            totalValue,
-            moreGold,
-            profitLoss,
-            materials: materialsWithPrices
+            ...material,
+            unitPrice: unitPrice,
+            totalPrice: Math.round(totalPrice)
           };
         });
-      });
 
-      setProfitData(newProfitData);
-    } catch (error) {
-      console.error('Failed to calculate raid profits:', error);
-    }
-  };
+        const totalValue = materialsWithPrices.reduce((sum, mat) => sum + mat.totalPrice, 0);
+        const raidInfo = raids.find(r => r.name === raidName);
+        const gateInfo = raidInfo?.gates.find(g => g.gate === reward.gate);
+        const moreGold = gateInfo?.moreGold || 0;
+        const profitLoss = totalValue - moreGold;
+
+        return {
+          raidName,
+          gate: reward.gate,
+          totalValue,
+          moreGold,
+          profitLoss,
+          materials: materialsWithPrices
+        };
+      });
+    });
+
+    return newProfitData;
+  }, [unitPrices]);
 
   // 손익 계산 함수
   const calculateProfitLoss = (raidName: string): number => {

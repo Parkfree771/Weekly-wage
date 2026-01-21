@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, Table, Spinner } from 'react-bootstrap';
 import { raids } from '@/data/raids';
 import { raidRewards, MATERIAL_IDS, MATERIAL_BUNDLE_SIZES } from '@/data/raidRewards';
-import { fetchPriceData } from '@/lib/price-history-client';
+import { usePriceData } from '@/contexts/PriceContext';
 import styles from './CerkaRewardInfo.module.css';
 
 // 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
@@ -106,109 +106,95 @@ type CerkaData = {
 };
 
 const CerkaRewardInfo: React.FC = () => {
-  const [cerkaData, setCerkaData] = useState<CerkaData[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const [selectedRaid, setSelectedRaid] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchLatestPrices();
-  }, []);
+  // Context에서 가격 데이터 가져오기
+  const { unitPrices, loading } = usePriceData();
 
-  const fetchLatestPrices = async () => {
-    setLoading(true);
-    try {
-      const { latest } = await fetchPriceData();
-
-      const unitPrices: { [itemId: number]: number } = {};
-      Object.entries(MATERIAL_IDS).forEach(([, itemId]) => {
-        const bundlePrice = latest[String(itemId)] || 0;
-        const bundleSize = MATERIAL_BUNDLE_SIZES[itemId] || 1;
-        unitPrices[itemId] = bundlePrice / bundleSize;
-      });
-
-      const targetRaids = ['세르카 나메', '세르카 하드'];
-      const result: CerkaData[] = [];
-
-      targetRaids.forEach(raidName => {
-        const raidInfo = raids.find(r => r.name === raidName);
-        if (!raidInfo) return;
-
-        const moreRewardData = raidRewards.filter(r => r.raidName === raidName);
-        const basicRewardData = basicClearRewards[raidName as keyof typeof basicClearRewards];
-
-        let totalClearGold = 0;
-        let totalMoreGold = 0;
-        let totalBasicMaterialValue = 0;
-        let totalMoreMaterialValue = 0;
-
-        const gates: GateData[] = raidInfo.gates.map(gateInfo => {
-          // 기본 클리어 재료
-          const basicGate = basicRewardData?.find(r => r.gate === gateInfo.gate);
-          const basicMaterials: MaterialWithPrice[] = basicGate?.materials.map(mat => {
-            const unitPrice = unitPrices[mat.itemId] || 0;
-            const totalPrice = mat.itemId === 0 ? 0 : unitPrice * mat.amount;
-            return {
-              itemId: mat.itemId,
-              itemName: mat.itemName,
-              amount: mat.amount,
-              unitPrice,
-              totalPrice: Math.round(totalPrice)
-            };
-          }) || [];
-
-          // 더보기 재료
-          const moreGate = moreRewardData.find(r => r.gate === gateInfo.gate);
-          const moreMaterials: MaterialWithPrice[] = moreGate?.materials.map(mat => {
-            const unitPrice = unitPrices[mat.itemId] || 0;
-            const totalPrice = mat.itemId === 0 ? 0 : unitPrice * mat.amount;
-            return {
-              itemId: mat.itemId,
-              itemName: mat.itemName,
-              amount: mat.amount,
-              unitPrice,
-              totalPrice: Math.round(totalPrice)
-            };
-          }) || [];
-
-          const basicMaterialValue = basicMaterials.reduce((sum, m) => sum + m.totalPrice, 0);
-          const moreMaterialValue = moreMaterials.reduce((sum, m) => sum + m.totalPrice, 0);
-
-          totalClearGold += gateInfo.gold;
-          totalMoreGold += gateInfo.moreGold;
-          totalBasicMaterialValue += basicMaterialValue;
-          totalMoreMaterialValue += moreMaterialValue;
-
-          return {
-            gate: gateInfo.gate,
-            clearGold: gateInfo.gold,
-            moreGold: gateInfo.moreGold,
-            basicMaterials,
-            basicMaterialValue,
-            moreMaterials,
-            moreMaterialValue
-          };
-        });
-
-        result.push({
-          raidName,
-          level: raidInfo.level,
-          image: raidInfo.image,
-          gates,
-          totalClearGold,
-          totalMoreGold,
-          totalBasicMaterialValue,
-          totalMoreMaterialValue,
-          finalValue: totalClearGold + totalBasicMaterialValue + totalMoreMaterialValue - totalMoreGold
-        });
-      });
-
-      setCerkaData(result);
-    } catch (error) {
-      console.error('Failed to fetch prices:', error);
-    } finally {
-      setLoading(false);
+  // 가격 데이터를 기반으로 세르카 보상 계산 (메모이제이션)
+  const cerkaData = useMemo(() => {
+    if (Object.keys(unitPrices).length === 0) {
+      return [];
     }
-  };
+
+    const targetRaids = ['세르카 나메', '세르카 하드'];
+    const result: CerkaData[] = [];
+
+    targetRaids.forEach(raidName => {
+      const raidInfo = raids.find(r => r.name === raidName);
+      if (!raidInfo) return;
+
+      const moreRewardData = raidRewards.filter(r => r.raidName === raidName);
+      const basicRewardData = basicClearRewards[raidName as keyof typeof basicClearRewards];
+
+      let totalClearGold = 0;
+      let totalMoreGold = 0;
+      let totalBasicMaterialValue = 0;
+      let totalMoreMaterialValue = 0;
+
+      const gates: GateData[] = raidInfo.gates.map(gateInfo => {
+        // 기본 클리어 재료
+        const basicGate = basicRewardData?.find(r => r.gate === gateInfo.gate);
+        const basicMaterials: MaterialWithPrice[] = basicGate?.materials.map(mat => {
+          const unitPrice = unitPrices[mat.itemId] || 0;
+          const totalPrice = mat.itemId === 0 ? 0 : unitPrice * mat.amount;
+          return {
+            itemId: mat.itemId,
+            itemName: mat.itemName,
+            amount: mat.amount,
+            unitPrice,
+            totalPrice: Math.round(totalPrice)
+          };
+        }) || [];
+
+        // 더보기 재료
+        const moreGate = moreRewardData.find(r => r.gate === gateInfo.gate);
+        const moreMaterials: MaterialWithPrice[] = moreGate?.materials.map(mat => {
+          const unitPrice = unitPrices[mat.itemId] || 0;
+          const totalPrice = mat.itemId === 0 ? 0 : unitPrice * mat.amount;
+          return {
+            itemId: mat.itemId,
+            itemName: mat.itemName,
+            amount: mat.amount,
+            unitPrice,
+            totalPrice: Math.round(totalPrice)
+          };
+        }) || [];
+
+        const basicMaterialValue = basicMaterials.reduce((sum, m) => sum + m.totalPrice, 0);
+        const moreMaterialValue = moreMaterials.reduce((sum, m) => sum + m.totalPrice, 0);
+
+        totalClearGold += gateInfo.gold;
+        totalMoreGold += gateInfo.moreGold;
+        totalBasicMaterialValue += basicMaterialValue;
+        totalMoreMaterialValue += moreMaterialValue;
+
+        return {
+          gate: gateInfo.gate,
+          clearGold: gateInfo.gold,
+          moreGold: gateInfo.moreGold,
+          basicMaterials,
+          basicMaterialValue,
+          moreMaterials,
+          moreMaterialValue
+        };
+      });
+
+      result.push({
+        raidName,
+        level: raidInfo.level,
+        image: raidInfo.image,
+        gates,
+        totalClearGold,
+        totalMoreGold,
+        totalBasicMaterialValue,
+        totalMoreMaterialValue,
+        finalValue: totalClearGold + totalBasicMaterialValue + totalMoreMaterialValue - totalMoreGold
+      });
+    });
+
+    return result;
+  }, [unitPrices]);
 
   const handleRaidSelect = (raidName: string) => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
@@ -229,7 +215,7 @@ const CerkaRewardInfo: React.FC = () => {
     <div>
       {/* 레이드 카드 그리드 */}
       <div className={styles.raidCardsGrid}>
-        {cerkaData.map((raid) => {
+        {cerkaData.map((raid, index) => {
           const isSelected = selectedRaid === raid.raidName;
           return (
             <div
@@ -244,6 +230,7 @@ const CerkaRewardInfo: React.FC = () => {
                   fill
                   className={styles.raidImage}
                   sizes="(max-width: 768px) 150px, 200px"
+                  priority={index < 2}
                 />
                 <div className={styles.overlay} />
               </div>

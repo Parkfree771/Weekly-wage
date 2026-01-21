@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, Table, Form, Badge, Accordion, Row, Col, Button, Collapse } from 'react-bootstrap';
 import Image from 'next/image';
 import { raids } from '@/data/raids';
@@ -20,6 +20,26 @@ type GateSelection = {
     [key: string]: {
       [key: string]: 'none' | 'withMore' | 'withoutMore';
     };
+  };
+};
+
+// Deep clone 대체 유틸리티: 필요한 부분만 얕은 복사
+const updateGateSelection = (
+  prev: GateSelection,
+  characterName: string,
+  raidName: string,
+  gate: string | number,
+  value: 'none' | 'withMore' | 'withoutMore'
+): GateSelection => {
+  return {
+    ...prev,
+    [characterName]: {
+      ...prev[characterName],
+      [raidName]: {
+        ...prev[characterName]?.[raidName],
+        [gate]: value
+      }
+    }
   };
 };
 
@@ -154,234 +174,237 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
     );
   };
 
-  const handleHeaderChange = (characterName: string, raidName: string, selection: 'withMore' | 'withoutMore') => {
+  const handleHeaderChange = useCallback((characterName: string, raidName: string, selection: 'withMore' | 'withoutMore') => {
     setGateSelection(prev => {
-      const newGateSelection = JSON.parse(JSON.stringify(prev));
       const raid = raids.find(r => r.name === raidName)!;
-      const allSelected = raid.gates.every(gate => 
-        newGateSelection[characterName]?.[raidName]?.[gate.gate] === selection
+      const allSelected = raid.gates.every(gate =>
+        prev[characterName]?.[raidName]?.[gate.gate] === selection
       );
 
       const newSelection = allSelected ? 'none' : selection;
+      const groupName = raidName.split(' ')[0];
 
-      // Only change gates in this specific raid, not the entire group
-      for (const gate of raid.gates) {
-        // If selecting a gate, deselect the same gate number in other difficulties of the same group
-        if (newSelection !== 'none') {
-          const groupName = raidName.split(' ')[0];
-          for (const r of groupedRaids[groupName]) {
-            if (r.name !== raidName) {
+      // 불변성을 유지하면서 새 객체 생성
+      let result = { ...prev };
+      result[characterName] = { ...result[characterName] };
+
+      // 같은 그룹 내 다른 난이도 레이드의 관문 해제
+      if (newSelection !== 'none') {
+        for (const r of groupedRaids[groupName]) {
+          if (r.name !== raidName && result[characterName]?.[r.name]) {
+            result[characterName][r.name] = { ...result[characterName][r.name] };
+            for (const gate of raid.gates) {
               const sameGate = r.gates.find((g: any) => g.gate === gate.gate);
-              if (sameGate && newGateSelection[characterName]?.[r.name]) {
-                newGateSelection[characterName][r.name][gate.gate] = 'none';
+              if (sameGate) {
+                result[characterName][r.name][gate.gate] = 'none';
               }
             }
           }
         }
-        newGateSelection[characterName][raidName][gate.gate] = newSelection;
       }
 
-      return newGateSelection;
-    });
-  };
+      // 현재 레이드의 모든 관문 업데이트
+      result[characterName][raidName] = { ...result[characterName][raidName] };
+      for (const gate of raid.gates) {
+        result[characterName][raidName][gate.gate] = newSelection;
+      }
 
-  const handleGateChange = (characterName: string, raidName: string, gate: number, selection: 'none' | 'withMore' | 'withoutMore') => {
+      return result;
+    });
+  }, [groupedRaids]);
+
+  const handleGateChange = useCallback((characterName: string, raidName: string, gate: number, selection: 'none' | 'withMore' | 'withoutMore') => {
     setGateSelection(prev => {
       const currentSelection = prev[characterName]?.[raidName]?.[gate];
-      let newSelection = currentSelection === selection ? 'none' : selection;
+      const newSelection = currentSelection === selection ? 'none' : selection;
+      const groupName = raidName.split(' ')[0];
 
-      const newGateSelection = JSON.parse(JSON.stringify(prev));
+      // 불변성을 유지하면서 새 객체 생성
+      let result = { ...prev };
+      result[characterName] = { ...result[characterName] };
 
-      // Only prevent selecting the same gate with different difficulties in the same group
+      // 같은 그룹 내 다른 난이도 레이드의 같은 관문 해제
       if (newSelection !== 'none') {
-        const groupName = raidName.split(' ')[0];
         for (const r of groupedRaids[groupName]) {
           if (r.name !== raidName) {
-            // Only deselect the same gate number, not all gates
             const sameGate = r.gates.find((g: any) => g.gate === gate);
-            if (sameGate && newGateSelection[characterName]?.[r.name]) {
-              newGateSelection[characterName][r.name][gate] = 'none';
+            if (sameGate && result[characterName]?.[r.name]) {
+              result[characterName][r.name] = { ...result[characterName][r.name] };
+              result[characterName][r.name][gate] = 'none';
             }
           }
         }
       }
 
-      newGateSelection[characterName][raidName][gate] = newSelection;
+      // 현재 관문 업데이트
+      result[characterName][raidName] = { ...result[characterName][raidName] };
+      result[characterName][raidName][gate] = newSelection;
 
-      return newGateSelection;
+      return result;
     });
-  };
+  }, [groupedRaids]);
 
-  const calculateRaidGroupGold = (characterName: string, groupName: string) => {
+  // 모든 계산 결과를 메모이제이션 (gateSelection이 바뀔 때만 재계산)
+  const calculatedData = useMemo(() => {
+    const raidGroupGold: { [char: string]: { [group: string]: number } } = {};
+    const characterGold: { [char: string]: number } = {};
+    const raidGroupCores: { [char: string]: { [group: string]: number } } = {};
+    const characterCores: { [char: string]: number } = {};
+    const moreSelected: { [char: string]: { [group: string]: boolean } } = {};
+    const checkedGroups: { [char: string]: string[] } = {};
     let totalGold = 0;
-    if (gateSelection[characterName]) {
-      for (const raidName in gateSelection[characterName]) {
-        if (raidName.startsWith(groupName)) {
-          for (const gate in gateSelection[characterName][raidName]) {
-            const selection = gateSelection[characterName][raidName][gate];
-            if (selection !== 'none') {
-              const raid = raids.find(r => r.name === raidName);
-              if (raid) {
-                const gateInfo = raid.gates.find(g => g.gate === parseInt(gate));
-                if (gateInfo) {
-                  if (selection === 'withMore') {
-                    totalGold += gateInfo.gold;
-                  } else if (selection === 'withoutMore') {
-                    totalGold += gateInfo.gold - gateInfo.moreGold;
+    let hasAnyMore = false;
+
+    for (const characterName in gateSelection) {
+      raidGroupGold[characterName] = {};
+      raidGroupCores[characterName] = {};
+      moreSelected[characterName] = {};
+      checkedGroups[characterName] = [];
+      let charGold = 0;
+      let charCores = 0;
+
+      for (const groupName in groupedRaids) {
+        let groupGold = 0;
+        let groupCores = 0;
+        let groupHasMore = false;
+        let groupHasChecked = false;
+
+        for (const raidName in gateSelection[characterName]) {
+          if (raidName.startsWith(groupName)) {
+            for (const gate in gateSelection[characterName][raidName]) {
+              const selection = gateSelection[characterName][raidName][gate];
+              if (selection !== 'none') {
+                groupHasChecked = true;
+                const raid = raids.find(r => r.name === raidName);
+                if (raid) {
+                  const gateInfo = raid.gates.find(g => g.gate === parseInt(gate));
+                  if (gateInfo) {
+                    if (selection === 'withMore') {
+                      groupGold += gateInfo.gold;
+                    } else if (selection === 'withoutMore') {
+                      groupGold += gateInfo.gold - gateInfo.moreGold;
+                      groupHasMore = true;
+                      hasAnyMore = true;
+                    }
+                  }
+                }
+
+                // 코어 계산 (세르카, 종막, 4막만)
+                if (groupName === '세르카' || groupName === '종막' || groupName === '4막') {
+                  const baseCores = corePerGate[raidName] || 0;
+                  if (baseCores > 0) {
+                    const multiplier = selection === 'withoutMore' ? 2 : 1;
+                    groupCores += baseCores * multiplier;
                   }
                 }
               }
             }
           }
         }
-      }
-    }
-    return totalGold;
-  };
 
-  const calculateCharacterGold = (characterName: string) => {
-    let totalGold = 0;
-    if (gateSelection[characterName]) {
-      for (const groupName in groupedRaids) {
-        totalGold += calculateRaidGroupGold(characterName, groupName);
-      }
-    }
-    return totalGold;
-  };
+        raidGroupGold[characterName][groupName] = groupGold;
+        raidGroupCores[characterName][groupName] = groupCores;
+        moreSelected[characterName][groupName] = groupHasMore;
+        charGold += groupGold;
+        charCores += groupCores;
 
-  const calculateTotalGold = () => {
-    let totalGold = 0;
-    for (const characterName in gateSelection) {
-      totalGold += calculateCharacterGold(characterName);
-    }
-    return totalGold;
-  };
-
-  const hasMoreSelected = (characterName: string, groupName: string) => {
-    if (!gateSelection[characterName]) return false;
-
-    for (const raidName in gateSelection[characterName]) {
-      if (raidName.startsWith(groupName)) {
-        for (const gate in gateSelection[characterName][raidName]) {
-          if (gateSelection[characterName][raidName][gate] === 'withoutMore') {
-            return true;
-          }
+        if (groupHasChecked) {
+          checkedGroups[characterName].push(groupName);
         }
       }
-    }
-    return false;
-  };
 
-  // 레이드 그룹별 코어 획득량 계산
-  const calculateRaidGroupCores = (characterName: string, groupName: string) => {
-    let totalCores = 0;
-    if (!gateSelection[characterName]) return 0;
-
-    // 코어 파밍 가능한 레이드만 (세르카, 종막, 4막)
-    if (groupName !== '세르카' && groupName !== '종막' && groupName !== '4막') {
-      return 0;
+      characterGold[characterName] = charGold;
+      characterCores[characterName] = charCores;
+      totalGold += charGold;
     }
 
-    for (const raidName in gateSelection[characterName]) {
-      if (raidName.startsWith(groupName)) {
-        const baseCores = corePerGate[raidName] || 0;
-        if (baseCores === 0) continue;
+    return {
+      raidGroupGold,
+      characterGold,
+      raidGroupCores,
+      characterCores,
+      moreSelected,
+      checkedGroups,
+      totalGold,
+      hasAnyMore
+    };
+  }, [gateSelection, groupedRaids, corePerGate]);
 
-        for (const gate in gateSelection[characterName][raidName]) {
-          const selection = gateSelection[characterName][raidName][gate];
-          if (selection !== 'none') {
-            // 더보기(withoutMore)면 x2, 아니면 x1
-            const multiplier = selection === 'withoutMore' ? 2 : 1;
-            totalCores += baseCores * multiplier;
-          }
-        }
-      }
-    }
-    return totalCores;
-  };
+  // 메모이제이션된 결과를 사용하는 래퍼 함수들
+  const calculateRaidGroupGold = useCallback((characterName: string, groupName: string) => {
+    return calculatedData.raidGroupGold[characterName]?.[groupName] || 0;
+  }, [calculatedData]);
 
-  // 캐릭터별 총 코어 획득량 계산
-  const calculateCharacterCores = (characterName: string) => {
-    return calculateRaidGroupCores(characterName, '세르카') +
-           calculateRaidGroupCores(characterName, '종막') +
-           calculateRaidGroupCores(characterName, '4막');
-  };
+  const calculateCharacterGold = useCallback((characterName: string) => {
+    return calculatedData.characterGold[characterName] || 0;
+  }, [calculatedData]);
 
-  // 전체 선택에서 더보기를 하나라도 사용했는지 확인
-  const hasAnyMoreReward = () => {
-    for (const characterName in gateSelection) {
-      for (const raidName in gateSelection[characterName]) {
-        for (const gate in gateSelection[characterName][raidName]) {
-          if (gateSelection[characterName][raidName][gate] === 'withoutMore') {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  };
+  const calculateTotalGold = useCallback(() => {
+    return calculatedData.totalGold;
+  }, [calculatedData]);
+
+  const hasMoreSelected = useCallback((characterName: string, groupName: string) => {
+    return calculatedData.moreSelected[characterName]?.[groupName] || false;
+  }, [calculatedData]);
+
+  const calculateRaidGroupCores = useCallback((characterName: string, groupName: string) => {
+    return calculatedData.raidGroupCores[characterName]?.[groupName] || 0;
+  }, [calculatedData]);
+
+  const calculateCharacterCores = useCallback((characterName: string) => {
+    return calculatedData.characterCores[characterName] || 0;
+  }, [calculatedData]);
+
+  const hasAnyMoreReward = useCallback(() => {
+    return calculatedData.hasAnyMore;
+  }, [calculatedData]);
+
+  const getCheckedRaidGroups = useCallback((characterName: string) => {
+    return calculatedData.checkedGroups[characterName] || [];
+  }, [calculatedData]);
 
   // 캐릭터별 코어 파밍 더보기 토글 (세르카/종막/4막 일괄 변경)
-  const toggleCoreFarmingMore = (characterName: string) => {
-    const newEnabled = !coreFarmingMoreEnabled[characterName];
+  const toggleCoreFarmingMore = useCallback((characterName: string) => {
+    setCoreFarmingMoreEnabled(prev => {
+      const newEnabled = !prev[characterName];
 
-    setCoreFarmingMoreEnabled(prev => ({
-      ...prev,
-      [characterName]: newEnabled
-    }));
+      // 같은 핸들러 내에서 gateSelection도 업데이트
+      setGateSelection(prevGate => {
+        // 불변성을 유지하면서 새 객체 생성
+        let result = { ...prevGate };
+        result[characterName] = { ...result[characterName] };
 
-    setGateSelection(prev => {
-      const newGateSelection = JSON.parse(JSON.stringify(prev));
+        // 해당 캐릭터의 세르카, 종막, 4막 관문을 변경
+        for (const raidName in result[characterName]) {
+          // 세르카, 종막, 4막인 경우 (코어 파밍 가능 레이드)
+          if (raidName.startsWith('세르카') || raidName.startsWith('종막') || raidName.startsWith('4막')) {
+            result[characterName][raidName] = { ...result[characterName][raidName] };
+            for (const gate in result[characterName][raidName]) {
+              const currentSelection = result[characterName][raidName][gate];
 
-      // 해당 캐릭터의 세르카, 종막, 4막 관문을 변경
-      for (const raidName in newGateSelection[characterName]) {
-        // 세르카, 종막, 4막인 경우 (코어 파밍 가능 레이드)
-        if (raidName.startsWith('세르카') || raidName.startsWith('종막') || raidName.startsWith('4막')) {
-          for (const gate in newGateSelection[characterName][raidName]) {
-            const currentSelection = newGateSelection[characterName][raidName][gate];
-
-            // none이 아닌 경우만 변경
-            if (currentSelection !== 'none') {
-              if (newEnabled) {
-                // ON: withMore → withoutMore (더보기 체크)
-                newGateSelection[characterName][raidName][gate] = 'withoutMore';
-              } else {
-                // OFF: withoutMore → withMore (더보기 해제)
-                newGateSelection[characterName][raidName][gate] = 'withMore';
+              // none이 아닌 경우만 변경
+              if (currentSelection !== 'none') {
+                if (newEnabled) {
+                  // ON: withMore → withoutMore (더보기 체크)
+                  result[characterName][raidName][gate] = 'withoutMore';
+                } else {
+                  // OFF: withoutMore → withMore (더보기 해제)
+                  result[characterName][raidName][gate] = 'withMore';
+                }
               }
             }
           }
         }
-      }
 
-      return newGateSelection;
+        return result;
+      });
+
+      return {
+        ...prev,
+        [characterName]: newEnabled
+      };
     });
-  };
-
-  // 체크된 레이드 그룹만 필터링 (모바일용)
-  const getCheckedRaidGroups = (characterName: string) => {
-    const checkedGroups: string[] = [];
-    if (!gateSelection[characterName]) return checkedGroups;
-
-    for (const groupName in groupedRaids) {
-      let hasChecked = false;
-      for (const raid of groupedRaids[groupName]) {
-        if (gateSelection[characterName]?.[raid.name]) {
-          for (const gate of raid.gates) {
-            if (gateSelection[characterName][raid.name][gate.gate] !== 'none') {
-              hasChecked = true;
-              break;
-            }
-          }
-        }
-        if (hasChecked) break;
-      }
-      if (hasChecked) {
-        checkedGroups.push(groupName);
-      }
-    }
-    return checkedGroups;
-  };
+  }, []);
 
   if (selectedCharacters.length === 0) {
     return (

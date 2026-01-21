@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
+import { PriceProvider } from '@/contexts/PriceContext';
 
 // Dynamic imports로 코드 분할 (CLS 방지를 위해 최소 높이 지정)
 const RaidCalculator = dynamic(() => import('@/components/RaidCalculator'), {
@@ -141,48 +142,17 @@ export default function WeeklyGoldPage() {
               </div>
             )}
 
-            {/* 세르카 보상 정보 */}
-            <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
-              <Row className="justify-content-center">
-                <Col xl={12} lg={12} md={12}>
-                  <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
-                    <Card.Header
-                      className="text-center py-2 border-0"
-                      style={{
-                        background: 'linear-gradient(135deg, #6b2d8c 0%, #9c4dcc 50%, #e85d04 100%)',
-                        borderBottom: '1px solid var(--border-color)'
-                      }}
-                    >
-                      <h3
-                        className="mb-0"
-                        style={{
-                          fontWeight: '600',
-                          fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                          color: '#ffffff',
-                          letterSpacing: '-0.025em'
-                        }}
-                      >
-                        세르카 클리어 보상 정보
-                      </h3>
-                    </Card.Header>
-                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
-                      <CerkaRewardInfo />
-                    </Card.Body>
-                  </Card>
-                </Col>
-              </Row>
-            </div>
-
-            {/* 더보기 효율 계산기 섹션 */}
-            <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
-              <Row className="justify-content-center">
-                <Col xl={12} lg={12} md={12}>
-                  <div style={{ position: 'relative' }}>
+            {/* 가격 데이터 공유를 위한 Provider */}
+            <PriceProvider>
+              {/* 세르카 보상 정보 */}
+              <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
+                <Row className="justify-content-center">
+                  <Col xl={12} lg={12} md={12}>
                     <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                       <Card.Header
                         className="text-center py-2 border-0"
                         style={{
-                          background: 'var(--card-header-bg-stone)',
+                          background: 'linear-gradient(135deg, #6b2d8c 0%, #9c4dcc 50%, #e85d04 100%)',
                           borderBottom: '1px solid var(--border-color)'
                         }}
                       >
@@ -191,24 +161,58 @@ export default function WeeklyGoldPage() {
                           style={{
                             fontWeight: '600',
                             fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                            background: 'var(--gradient-text-stone)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
+                            color: '#ffffff',
                             letterSpacing: '-0.025em'
                           }}
                         >
-                          더보기 손익 계산
+                          세르카 클리어 보상 정보
                         </h3>
                       </Card.Header>
-                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
-                      <SeeMoreCalculator />
-                    </Card.Body>
-                  </Card>
-                  </div>
-                </Col>
-              </Row>
-            </div>
+                      <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
+                        <CerkaRewardInfo />
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                </Row>
+              </div>
+
+              {/* 더보기 효율 계산기 섹션 */}
+              <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
+                <Row className="justify-content-center">
+                  <Col xl={12} lg={12} md={12}>
+                    <div style={{ position: 'relative' }}>
+                      <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
+                        <Card.Header
+                          className="text-center py-2 border-0"
+                          style={{
+                            background: 'var(--card-header-bg-stone)',
+                            borderBottom: '1px solid var(--border-color)'
+                          }}
+                        >
+                          <h3
+                            className="mb-0"
+                            style={{
+                              fontWeight: '600',
+                              fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
+                              background: 'var(--gradient-text-stone)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                              letterSpacing: '-0.025em'
+                            }}
+                          >
+                            더보기 손익 계산
+                          </h3>
+                        </Card.Header>
+                      <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
+                        <SeeMoreCalculator />
+                      </Card.Body>
+                    </Card>
+                    </div>
+                  </Col>
+                </Row>
+              </div>
+            </PriceProvider>
 
           </Col>
         </Row>
