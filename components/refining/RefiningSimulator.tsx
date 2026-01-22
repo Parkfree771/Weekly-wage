@@ -423,7 +423,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
     return !eq.isSuccession;
   });
 
-  const maxLevel = isSuccessionMode ? 24 : 25;
+  const maxLevel = 25; // 계승 전/후 모두 25가 최대
   const canRefine = selectedEquipment && currentLevel < maxLevel && getBaseProb(currentLevel) > 0;
   const materialCost = getMaterialCost();
 
