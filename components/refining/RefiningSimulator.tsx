@@ -289,7 +289,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
 
   const getMaterialCost = () => {
     if (!selectedEquipment) return null;
-    const nextLevel = currentLevel;
+    const nextLevel = currentLevel + 1;
     const isWeapon = selectedEquipment.type === 'weapon';
 
     if (isSuccessionMode) {
