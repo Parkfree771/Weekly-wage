@@ -1,0 +1,938 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { Form, Button } from 'react-bootstrap';
+import { useSearchHistory } from '@/lib/useSearchHistory';
+import Image from 'next/image';
+import { useTheme } from '../ThemeProvider';
+import styles from './RefiningSimulator.module.css';
+import {
+  BASE_PROBABILITY,
+  SUCCESSION_BASE_PROBABILITY,
+  ARMOR_MATERIAL_COSTS,
+  WEAPON_MATERIAL_COSTS,
+  SUCCESSION_ARMOR_MATERIAL_COSTS,
+  SUCCESSION_WEAPON_MATERIAL_COSTS,
+  getBreathEffect,
+  JANGIN_ACCUMULATE_DIVIDER
+} from '../../lib/refiningData';
+import { MATERIAL_BUNDLE_SIZES, MATERIAL_IDS } from '../../data/raidRewards';
+import {
+  parseEquipmentData,
+  type Equipment as EquipmentType,
+  type EquipmentAPIResponse
+} from '../../lib/equipmentParser';
+
+type Equipment = EquipmentType;
+
+// 재료별 아이템 ID 매핑
+const REFINING_MATERIAL_IDS: Record<string, number> = {
+  수호석: MATERIAL_IDS.FATE_GUARDIAN_STONE,
+  파괴석: MATERIAL_IDS.FATE_DESTRUCTION_STONE,
+  돌파석: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE,
+  아비도스: MATERIAL_IDS.ABIDOS_FUSION,
+  운명파편: MATERIAL_IDS.FATE_FRAGMENT,
+  빙하: 66111132,
+  용암: 66111131,
+  수호석결정: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL,
+  파괴석결정: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL,
+  위대한돌파석: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE,
+  상급아비도스: MATERIAL_IDS.ADVANCED_ABIDOS_FUSION,
+};
+type RefiningMode = 'normal' | 'succession';
+
+interface RefiningSimulatorProps {
+  mode?: RefiningMode;
+}
+
+interface RefiningAttempt {
+  attemptNumber: number;
+  success: boolean;
+  janginBefore: number;
+  janginAfter: number;
+  janginIncrease: number;
+  probabilityBefore: number;
+  probabilityAfter: number;
+  level: number;
+}
+
+interface AccumulatedCost {
+  수호석: number;
+  파괴석: number;
+  돌파석: number;
+  아비도스: number;
+  운명파편: number;
+  골드: number;
+  빙하: number;
+  용암: number;
+  수호석결정: number;
+  파괴석결정: number;
+  위대한돌파석: number;
+  상급아비도스: number;
+  실링: number;
+}
+
+export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulatorProps) {
+  const { theme } = useTheme();
+  const isSuccessionMode = mode === 'succession';
+
+  // 검색 관련 상태
+  const [characterName, setCharacterName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [searched, setSearched] = useState(false);
+
+  // 자동완성
+  const { history, addToHistory, getSuggestions } = useSearchHistory();
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const historyEndRef = useRef<HTMLDivElement>(null);
+
+  // 선택된 장비 및 시뮬레이션 상태
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [currentLevel, setCurrentLevel] = useState<number>(11);
+  const [jangin, setJangin] = useState<number>(0);
+  const [currentProbBonus, setCurrentProbBonus] = useState<number>(0);
+  const [useBreath, setUseBreath] = useState<boolean>(false);
+  const [attemptHistory, setAttemptHistory] = useState<RefiningAttempt[]>([]);
+  const [baseItemLevel, setBaseItemLevel] = useState<number>(0);
+  const [itemLevelIncrease, setItemLevelIncrease] = useState<number>(0);
+  // 장비별 강화 진행 상태 추적 (장비이름 -> 강화된 레벨)
+  const [enhancedLevels, setEnhancedLevels] = useState<Record<string, number>>({});
+  const [accumulatedCost, setAccumulatedCost] = useState<AccumulatedCost>({
+    수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
+    수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+  });
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // 거래소 가격
+  const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
+
+  // 거래소 가격 로드
+  useEffect(() => {
+    const fetchMarketPrices = async () => {
+      try {
+        const { fetchPriceData } = await import('@/lib/price-history-client');
+        const { latest } = await fetchPriceData();
+        const prices: Record<string, number> = {};
+        Object.entries(latest).forEach(([itemId, bundlePrice]) => {
+          const bundleSize = MATERIAL_BUNDLE_SIZES[Number(itemId)] || 1;
+          prices[itemId] = bundlePrice / bundleSize;
+        });
+        setMarketPrices(prices);
+      } catch (error) {
+        console.error('Failed to fetch latest prices:', error);
+      }
+    };
+    fetchMarketPrices();
+  }, []);
+
+  // 기록 스크롤
+  useEffect(() => {
+    if (historyEndRef.current) {
+      historyEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [attemptHistory]);
+
+  // 캐릭터 검색
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!characterName.trim()) {
+      setError('캐릭터명을 입력해주세요.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(characterName.trim())}`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('캐릭터를 찾을 수 없습니다.');
+        }
+        throw new Error('캐릭터 정보를 가져오는데 실패했습니다.');
+      }
+
+      const data = await response.json();
+
+      if (!data.equipment || !Array.isArray(data.equipment)) {
+        throw new Error('장비 정보를 찾을 수 없습니다.');
+      }
+
+      const parsedEquipments = parseEquipmentData(data.equipment as EquipmentAPIResponse[]);
+
+      if (parsedEquipments.length === 0) {
+        throw new Error('1640 레벨(+11) 이상의 장비가 없습니다.');
+      }
+
+      // 캐릭터 아이템 레벨 가져오기
+      const itemLevel = data.profile?.ItemMaxLevel || data.profile?.ItemAvgLevel || '0';
+      const parsedItemLevel = parseFloat(itemLevel.replace(/,/g, ''));
+      setBaseItemLevel(parsedItemLevel);
+
+      setEquipments(parsedEquipments);
+      addToHistory(characterName.trim());
+      setShowSuggestions(false);
+      setSearched(true);
+      setSelectedEquipment(null);
+      resetSimulation();
+    } catch (error: any) {
+      setError(error.message || '예상치 못한 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (value: string) => {
+    setCharacterName(value);
+    if (error) setError(null);
+    if (value.trim()) {
+      const matches = getSuggestions(value);
+      setSuggestions(matches);
+      setShowSuggestions(matches.length > 0);
+    } else {
+      setSuggestions(history);
+      setShowSuggestions(history.length > 0);
+    }
+    setSelectedIndex(-1);
+  };
+
+  const handleSelectSuggestion = (name: string) => {
+    setCharacterName(name);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+      e.preventDefault();
+      handleSelectSuggestion(suggestions[selectedIndex]);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node) &&
+        inputRef.current && !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelectEquipment = (equipment: Equipment) => {
+    setSelectedEquipment(equipment);
+    // 이미 강화한 적 있는 장비면 그 레벨 불러오기, 아니면 원래 레벨
+    const savedLevel = enhancedLevels[equipment.name];
+    setCurrentLevel(savedLevel !== undefined ? savedLevel : equipment.currentLevel);
+    // 장비 변경 시 장인의 기운과 확률 보너스만 초기화 (누적 비용은 유지)
+    setJangin(0);
+    setCurrentProbBonus(0);
+  };
+
+  const resetSimulation = () => {
+    if (selectedEquipment) {
+      setCurrentLevel(selectedEquipment.currentLevel);
+    }
+    setJangin(0);
+    setCurrentProbBonus(0);
+    setUseBreath(false);
+    setAttemptHistory([]);
+    setItemLevelIncrease(0);
+    setEnhancedLevels({}); // 모든 장비의 강화 진행 상태 초기화
+    setAccumulatedCost({
+      수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
+      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+    });
+  };
+
+  const getBaseProb = (level: number): number => {
+    if (isSuccessionMode) {
+      return SUCCESSION_BASE_PROBABILITY[level] || 0;
+    }
+    return BASE_PROBABILITY[level] || 0;
+  };
+
+  const calculateFinalProb = (): number => {
+    const baseProb = getBaseProb(currentLevel);
+    if (baseProb === 0) return 0;
+
+    let currentProb = baseProb + currentProbBonus;
+    currentProb = Math.min(currentProb, baseProb * 2);
+
+    const breathEffect = getBreathEffect(baseProb);
+    const breathProb = useBreath ? breathEffect.max * breathEffect.per : 0;
+
+    if (jangin >= 1) return 1;
+
+    return Math.min(currentProb + breathProb, 1);
+  };
+
+  const getMaterialCost = () => {
+    if (!selectedEquipment) return null;
+    const nextLevel = currentLevel;
+    const isWeapon = selectedEquipment.type === 'weapon';
+
+    if (isSuccessionMode) {
+      if (isWeapon) return SUCCESSION_WEAPON_MATERIAL_COSTS[nextLevel] || null;
+      return SUCCESSION_ARMOR_MATERIAL_COSTS[nextLevel] || null;
+    } else {
+      if (isWeapon) return WEAPON_MATERIAL_COSTS[nextLevel] || null;
+      return ARMOR_MATERIAL_COSTS[nextLevel] || null;
+    }
+  };
+
+  const attemptRefining = () => {
+    if (!selectedEquipment) return;
+
+    const baseProb = getBaseProb(currentLevel);
+    if (baseProb === 0) return;
+
+    const finalProb = calculateFinalProb();
+    const janginBefore = jangin;
+    const probBefore = finalProb;
+
+    // 재료 비용 누적
+    const materialCost = getMaterialCost();
+    if (materialCost) {
+      setAccumulatedCost(prev => {
+        const newCost = { ...prev };
+        if (isSuccessionMode) {
+          if ('수호석결정' in materialCost) newCost.수호석결정 += (materialCost as any).수호석결정 || 0;
+          if ('파괴석결정' in materialCost) newCost.파괴석결정 += (materialCost as any).파괴석결정 || 0;
+          newCost.위대한돌파석 += (materialCost as any).위대한돌파석 || 0;
+          newCost.상급아비도스 += (materialCost as any).상급아비도스 || 0;
+          newCost.운명파편 += (materialCost as any).운명파편 || 0;
+          newCost.실링 += (materialCost as any).실링 || 0;
+          newCost.골드 += (materialCost as any).골드 || 0;
+        } else {
+          if ('수호석' in materialCost) newCost.수호석 += (materialCost as any).수호석 || 0;
+          if ('파괴석' in materialCost) newCost.파괴석 += (materialCost as any).파괴석 || 0;
+          newCost.돌파석 += (materialCost as any).돌파석 || 0;
+          newCost.아비도스 += (materialCost as any).아비도스 || 0;
+          newCost.운명파편 += (materialCost as any).운명파편 || 0;
+          newCost.골드 += (materialCost as any).골드 || 0;
+        }
+        if (useBreath) {
+          const breathEffect = getBreathEffect(baseProb);
+          if (selectedEquipment.type === 'weapon') newCost.용암 += breathEffect.max;
+          else newCost.빙하 += breathEffect.max;
+        }
+        return newCost;
+      });
+    }
+
+    const roll = Math.random();
+    const success = jangin >= 1 || roll < finalProb;
+
+    let janginAfter = jangin;
+    let janginIncrease = 0;
+    let probAfter = finalProb;
+
+    if (success) {
+      const newLevel = currentLevel + 1;
+      setCurrentLevel(newLevel);
+      setJangin(0);
+      setCurrentProbBonus(0);
+      setItemLevelIncrease(prev => prev + (5 / 6)); // 1강당 0.83333 레벨 증가
+      // 장비별 강화 레벨 저장
+      setEnhancedLevels(prev => ({
+        ...prev,
+        [selectedEquipment.name]: newLevel
+      }));
+      janginAfter = 0;
+      probAfter = getBaseProb(newLevel);
+    } else {
+      janginIncrease = finalProb / JANGIN_ACCUMULATE_DIVIDER;
+      janginAfter = Math.min(jangin + janginIncrease, 1);
+      setJangin(janginAfter);
+
+      const newBonus = Math.min(currentProbBonus + baseProb * 0.1, baseProb);
+      setCurrentProbBonus(newBonus);
+
+      // 새 확률 계산
+      let newProb = baseProb + newBonus;
+      newProb = Math.min(newProb, baseProb * 2);
+      const breathEffect = getBreathEffect(baseProb);
+      const breathProb = useBreath ? breathEffect.max * breathEffect.per : 0;
+      probAfter = Math.min(newProb + breathProb, 1);
+
+      // 애니메이션 트리거
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 500);
+    }
+
+    const attempt: RefiningAttempt = {
+      attemptNumber: attemptHistory.length + 1,
+      success,
+      janginBefore,
+      janginAfter,
+      janginIncrease,
+      probabilityBefore: probBefore,
+      probabilityAfter: probAfter,
+      level: currentLevel
+    };
+    setAttemptHistory(prev => [...prev, attempt]);
+  };
+
+  const calculateTotalGoldCost = (): number => {
+    let total = accumulatedCost.골드;
+    total += accumulatedCost.수호석 * (marketPrices['66102106'] || 0);
+    total += accumulatedCost.파괴석 * (marketPrices['66102006'] || 0);
+    total += accumulatedCost.돌파석 * (marketPrices['66110225'] || 0);
+    total += accumulatedCost.아비도스 * (marketPrices['6861012'] || 0);
+    total += accumulatedCost.운명파편 * (marketPrices['66130143'] || 0);
+    total += accumulatedCost.빙하 * (marketPrices['66111132'] || 0);
+    total += accumulatedCost.용암 * (marketPrices['66111131'] || 0);
+    total += accumulatedCost.수호석결정 * (marketPrices['66102107'] || 0);
+    total += accumulatedCost.파괴석결정 * (marketPrices['66102007'] || 0);
+    total += accumulatedCost.위대한돌파석 * (marketPrices['66110226'] || 0);
+    total += accumulatedCost.상급아비도스 * (marketPrices['6861013'] || 0);
+    return Math.round(total);
+  };
+
+  // 재료별 골드 가격 계산
+  const getMaterialGoldCost = (materialKey: keyof typeof REFINING_MATERIAL_IDS, amount: number): number => {
+    const itemId = REFINING_MATERIAL_IDS[materialKey];
+    const unitPrice = marketPrices[String(itemId)] || 0;
+    return Math.round(amount * unitPrice);
+  };
+
+  const filteredEquipments = equipments.filter(eq => {
+    if (eq.isEsther) return false;
+    if (isSuccessionMode) return eq.isSuccession;
+    return !eq.isSuccession;
+  });
+
+  const maxLevel = isSuccessionMode ? 24 : 25;
+  const canRefine = selectedEquipment && currentLevel < maxLevel && getBaseProb(currentLevel) > 0;
+  const materialCost = getMaterialCost();
+
+  return (
+    <div className={styles.container}>
+      {/* 검색창 */}
+      <div className={styles.searchWrapper}>
+        <div className={styles.searchInner}>
+          <Form onSubmit={handleSearch}>
+            <div className={styles.searchInputGroup}>
+              <div style={{ flex: 1, position: 'relative' }}>
+                <Form.Control
+                  ref={inputRef}
+                  type="text"
+                  placeholder="캐릭터명을 입력하세요"
+                  value={characterName}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => {
+                    if (history.length > 0) {
+                      setSuggestions(characterName.trim() ? getSuggestions(characterName) : history);
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  className={styles.searchInput}
+                  disabled={isLoading}
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div
+                    ref={suggestionsRef}
+                    style={{
+                      position: 'absolute', top: '100%', left: 0, right: 0,
+                      backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)',
+                      borderRadius: '8px', marginTop: '4px', zIndex: 1000,
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                    }}
+                  >
+                    {suggestions.map((name, index) => (
+                      <div
+                        key={name}
+                        onClick={() => handleSelectSuggestion(name)}
+                        style={{
+                          padding: '0.75rem 1rem', cursor: 'pointer',
+                          backgroundColor: index === selectedIndex ? 'var(--card-body-bg-blue)' : 'transparent',
+                          borderBottom: index < suggestions.length - 1 ? '1px solid var(--border-color)' : 'none'
+                        }}
+                      >
+                        {name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Button type="submit" className={styles.searchButton} disabled={isLoading}>
+                {isLoading ? '검색 중...' : '검색'}
+              </Button>
+            </div>
+          </Form>
+        </div>
+      </div>
+
+      {error && (
+        <div className={styles.errorWrapper}>
+          <div className={styles.errorMessage}>{error}</div>
+        </div>
+      )}
+
+      {searched && (
+        <div className={styles.mainLayout}>
+          {/* 장비 목록 패널 */}
+          <div className={styles.equipmentPanel}>
+            <div className={styles.equipmentPanelTitle}>
+              장비 선택 ({isSuccessionMode ? '계승 후' : '계승 전'})
+            </div>
+            <div className={styles.equipmentList}>
+              {filteredEquipments.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                  {isSuccessionMode ? '계승 장비가 없습니다.' : '일반 장비가 없습니다.'}
+                </div>
+              ) : (
+                filteredEquipments.map((equipment) => (
+                  <div
+                    key={equipment.name}
+                    className={`${styles.equipmentItem} ${selectedEquipment?.name === equipment.name ? styles.equipmentItemSelected : ''}`}
+                    onClick={() => handleSelectEquipment(equipment)}
+                  >
+                    <div className={styles.equipmentIcon}>
+                      {equipment.icon && (
+                        <Image
+                          src={equipment.icon}
+                          alt={equipment.name}
+                          width={36}
+                          height={36}
+                          style={{ objectFit: 'contain' }}
+                        />
+                      )}
+                      {equipment.isSuccession && (
+                        <Image
+                          src="/wjsdbf2.webp"
+                          alt=""
+                          width={56}
+                          height={56}
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            pointerEvents: 'none',
+                          }}
+                          unoptimized
+                        />
+                      )}
+                    </div>
+                    <div className={styles.equipmentInfo}>
+                      <div className={styles.equipmentName}>{equipment.name}</div>
+                      <div className={styles.equipmentLevel}>
+                        {enhancedLevels[equipment.name] !== undefined && enhancedLevels[equipment.name] !== equipment.currentLevel ? (
+                          <span className={styles.levelProgress}>
+                            <span className={`${styles.levelBadge} ${equipment.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor}`}>
+                              +{equipment.currentLevel}
+                            </span>
+                            <span className={styles.levelArrow}>→</span>
+                            <span className={`${styles.levelBadge} ${equipment.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor}`}>
+                              +{enhancedLevels[equipment.name]}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className={`${styles.levelBadge} ${equipment.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor}`}>
+                            +{equipment.currentLevel}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* 시뮬레이터 - 3개의 상자 */}
+          <div className={styles.simulatorPanel}>
+            {!selectedEquipment ? (
+              <div className={styles.simulatorEmpty}>
+                <div className={styles.simulatorEmptyIcon}>🔨</div>
+                <div className={styles.simulatorEmptyTitle}>장비를 선택해주세요</div>
+                <div className={styles.simulatorEmptyDesc}>
+                  왼쪽 목록에서 강화할 장비를 선택하면<br />
+                  실제 강화 시뮬레이션을 시작할 수 있습니다.
+                </div>
+              </div>
+            ) : (
+              <div className={styles.threeBoxLayout}>
+                {/* 첫 번째 상자: 강화 정보 및 버튼 */}
+                <div className={styles.box}>
+                  <div className={styles.boxTitle}>강화 정보</div>
+
+                  {/* 장비 현황 및 목표 */}
+                  <div className={styles.equipmentStatus}>
+                    <div className={styles.equipmentStatusIcon}>
+                      {selectedEquipment.icon && (
+                        <Image src={selectedEquipment.icon} alt={selectedEquipment.name} fill style={{ objectFit: 'contain' }} />
+                      )}
+                    </div>
+                    <div className={styles.equipmentStatusInfo}>
+                      <div className={styles.equipmentStatusName}>{selectedEquipment.name}</div>
+                      <div className={styles.equipmentStatusLevel}>
+                        <span className={styles.currentLevelBig}>+{currentLevel}</span>
+                        <span className={styles.levelArrowBig}>→</span>
+                        <span className={styles.targetLevelBig}>+{currentLevel + 1}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 강화 확률 */}
+                  <div className={styles.probabilitySection}>
+                    <div className={styles.probabilityLabel}>강화 확률</div>
+                    <div className={styles.probabilityValue}>
+                      {jangin >= 1 ? (
+                        <span className={styles.probabilityGuaranteed}>100% (장인의 기운)</span>
+                      ) : (
+                        <>
+                          <span className={styles.probabilityNumber}>{(calculateFinalProb() * 100).toFixed(2)}%</span>
+                          <span className={styles.probabilityBase}>(기본 {(getBaseProb(currentLevel) * 100).toFixed(1)}%)</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 장인의 기운 */}
+                  <div className={styles.janginSection}>
+                    <div className={styles.janginHeader}>
+                      <span className={styles.janginLabel}>장인의 기운</span>
+                      <span className={styles.janginValue}>{(jangin * 100).toFixed(2)}%</span>
+                    </div>
+                    <div className={styles.janginBarOuter}>
+                      <div
+                        className={`${styles.janginBarInner} ${isAnimating ? styles.janginBarAnimating : ''}`}
+                        style={{ width: `${Math.min(jangin * 100, 100)}%` }}
+                      >
+                        <div className={styles.janginBarGlow}></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 숨결 옵션 */}
+                  <div className={styles.breathOption}>
+                    <button
+                      className={`${styles.breathButton} ${useBreath ? styles.breathButtonActive : ''}`}
+                      onClick={() => setUseBreath(!useBreath)}
+                    >
+                      <div className={styles.breathIcon}>
+                        <Image
+                          src={selectedEquipment.type === 'weapon' ? '/breath-lava.webp' : '/breath-glacier.webp'}
+                          alt="숨결" fill style={{ objectFit: 'contain' }}
+                        />
+                      </div>
+                      <span>{selectedEquipment.type === 'weapon' ? '용암의 숨결' : '빙하의 숨결'}</span>
+                      {useBreath && <span className={styles.breathCount}>({getBreathEffect(getBaseProb(currentLevel)).max}개)</span>}
+                    </button>
+                  </div>
+
+                  {/* 1회 비용 */}
+                  <div className={styles.singleCostSection}>
+                    <div className={styles.singleCostTitle}>1회 강화 비용</div>
+                    <div className={styles.singleCostGrid}>
+                      {materialCost && (
+                        <>
+                          {isSuccessionMode ? (
+                            <>
+                              {'수호석결정' in materialCost && (
+                                <div className={styles.singleCostItem}>
+                                  <Image src="/destiny-guardian-stone2.webp" alt="수호석결정" width={32} height={32} />
+                                  <span>{(materialCost as any).수호석결정?.toLocaleString()}</span>
+                                </div>
+                              )}
+                              {'파괴석결정' in materialCost && (
+                                <div className={styles.singleCostItem}>
+                                  <Image src="/destiny-destruction-stone2.webp" alt="파괴석결정" width={32} height={32} />
+                                  <span>{(materialCost as any).파괴석결정?.toLocaleString()}</span>
+                                </div>
+                              )}
+                              <div className={styles.singleCostItem}>
+                                <Image src="/destiny-breakthrough-stone2.webp" alt="위대한돌파석" width={32} height={32} />
+                                <span>{(materialCost as any).위대한돌파석?.toLocaleString()}</span>
+                              </div>
+                              <div className={styles.singleCostItem}>
+                                <Image src="/abidos-fusion3.webp" alt="상급아비도스" width={32} height={32} />
+                                <span>{(materialCost as any).상급아비도스?.toLocaleString()}</span>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {'수호석' in materialCost && (
+                                <div className={styles.singleCostItem}>
+                                  <Image src="/destiny-guardian-stone.webp" alt="수호석" width={32} height={32} />
+                                  <span>{(materialCost as any).수호석?.toLocaleString()}</span>
+                                </div>
+                              )}
+                              {'파괴석' in materialCost && (
+                                <div className={styles.singleCostItem}>
+                                  <Image src="/destiny-destruction-stone.webp" alt="파괴석" width={32} height={32} />
+                                  <span>{(materialCost as any).파괴석?.toLocaleString()}</span>
+                                </div>
+                              )}
+                              <div className={styles.singleCostItem}>
+                                <Image src="/destiny-breakthrough-stone.webp" alt="돌파석" width={32} height={32} />
+                                <span>{(materialCost as any).돌파석?.toLocaleString()}</span>
+                              </div>
+                              <div className={styles.singleCostItem}>
+                                <Image src="/abidos-fusion.webp" alt="아비도스" width={32} height={32} />
+                                <span>{(materialCost as any).아비도스?.toLocaleString()}</span>
+                              </div>
+                            </>
+                          )}
+                          <div className={styles.singleCostItem}>
+                            <Image src="/destiny-shard-bag-large.webp" alt="운명파편" width={32} height={32} />
+                            <span>{(materialCost as any).운명파편?.toLocaleString()}</span>
+                          </div>
+                          <div className={styles.singleCostItem}>
+                            <Image src="/gold.webp" alt="골드" width={32} height={32} />
+                            <span>{(materialCost as any).골드?.toLocaleString()}</span>
+                          </div>
+                          {useBreath && (
+                            <div className={styles.singleCostItem}>
+                              <Image
+                                src={selectedEquipment.type === 'weapon' ? '/breath-lava.webp' : '/breath-glacier.webp'}
+                                alt="숨결" width={32} height={32}
+                              />
+                              <span>{getBreathEffect(getBaseProb(currentLevel)).max}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 강화 버튼 */}
+                  <button
+                    className={styles.refiningButton}
+                    onClick={attemptRefining}
+                    disabled={!canRefine}
+                  >
+                    강화하기
+                  </button>
+
+                  <button className={styles.resetButton} onClick={resetSimulation}>
+                    초기화
+                  </button>
+                </div>
+
+                {/* 두 번째 상자: 강화 기록 */}
+                <div className={styles.box}>
+                  <div className={styles.boxTitle}>강화 기록</div>
+                  <div className={styles.historyContainer}>
+                    {attemptHistory.length === 0 ? (
+                      <div className={styles.historyEmpty}>
+                        강화 버튼을 눌러 시뮬레이션을 시작하세요
+                      </div>
+                    ) : (
+                      <div className={styles.historyList}>
+                        {attemptHistory.map((attempt, index) => (
+                          <div
+                            key={index}
+                            className={`${styles.historyItem} ${attempt.success ? styles.historyItemSuccess : styles.historyItemFail}`}
+                          >
+                            <div className={styles.historyItemHeader}>
+                              <span className={styles.historyItemNumber}>#{attempt.attemptNumber}</span>
+                              <span className={styles.historyItemLevel}>+{attempt.level} 강화</span>
+                              <span className={`${styles.historyItemResult} ${attempt.success ? styles.resultSuccess : styles.resultFail}`}>
+                                {attempt.success ? '성공' : '실패'}
+                              </span>
+                            </div>
+                            {!attempt.success && (
+                              <div className={styles.historyItemDetails}>
+                                <span>확률: {(attempt.probabilityBefore * 100).toFixed(2)}% → {(attempt.probabilityAfter * 100).toFixed(2)}%</span>
+                                <span>장인: {(attempt.janginBefore * 100).toFixed(2)}% → {(attempt.janginAfter * 100).toFixed(2)}% (+{(attempt.janginIncrease * 100).toFixed(2)}%)</span>
+                              </div>
+                            )}
+                            {attempt.success && (
+                              <div className={styles.historyItemDetails}>
+                                <span>+{attempt.level} → +{attempt.level + 1} 강화 성공!</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        <div ref={historyEndRef} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 세 번째 상자: 누적 비용 */}
+                <div className={styles.box}>
+                  <div className={styles.boxTitle}>누적 비용</div>
+                  <div className={styles.totalCostContainer}>
+                    <div className={styles.totalGoldCost}>
+                      <Image src="/gold.webp" alt="gold" width={32} height={32} />
+                      <span>{calculateTotalGoldCost().toLocaleString()} G</span>
+                    </div>
+                    <div className={styles.totalMaterialsList}>
+                      {isSuccessionMode ? (
+                        <>
+                          {accumulatedCost.수호석결정 > 0 && (
+                            <div className={styles.totalMaterialItem}>
+                              <Image src="/destiny-guardian-stone2.webp" alt="수호석결정" width={28} height={28} />
+                              <span className={styles.materialName}>수호석 결정</span>
+                              <span className={styles.materialAmount}>{accumulatedCost.수호석결정.toLocaleString()}</span>
+                              <span className={styles.materialGold}>{getMaterialGoldCost('수호석결정', accumulatedCost.수호석결정).toLocaleString()}G</span>
+                            </div>
+                          )}
+                          {accumulatedCost.파괴석결정 > 0 && (
+                            <div className={styles.totalMaterialItem}>
+                              <Image src="/destiny-destruction-stone2.webp" alt="파괴석결정" width={28} height={28} />
+                              <span className={styles.materialName}>파괴석 결정</span>
+                              <span className={styles.materialAmount}>{accumulatedCost.파괴석결정.toLocaleString()}</span>
+                              <span className={styles.materialGold}>{getMaterialGoldCost('파괴석결정', accumulatedCost.파괴석결정).toLocaleString()}G</span>
+                            </div>
+                          )}
+                          {accumulatedCost.위대한돌파석 > 0 && (
+                            <div className={styles.totalMaterialItem}>
+                              <Image src="/destiny-breakthrough-stone2.webp" alt="위대한돌파석" width={28} height={28} />
+                              <span className={styles.materialName}>위대한 돌파석</span>
+                              <span className={styles.materialAmount}>{accumulatedCost.위대한돌파석.toLocaleString()}</span>
+                              <span className={styles.materialGold}>{getMaterialGoldCost('위대한돌파석', accumulatedCost.위대한돌파석).toLocaleString()}G</span>
+                            </div>
+                          )}
+                          {accumulatedCost.상급아비도스 > 0 && (
+                            <div className={styles.totalMaterialItem}>
+                              <Image src="/abidos-fusion3.webp" alt="상급아비도스" width={28} height={28} />
+                              <span className={styles.materialName}>상급 아비도스</span>
+                              <span className={styles.materialAmount}>{accumulatedCost.상급아비도스.toLocaleString()}</span>
+                              <span className={styles.materialGold}>{getMaterialGoldCost('상급아비도스', accumulatedCost.상급아비도스).toLocaleString()}G</span>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {accumulatedCost.수호석 > 0 && (
+                            <div className={styles.totalMaterialItem}>
+                              <Image src="/destiny-guardian-stone.webp" alt="수호석" width={28} height={28} />
+                              <span className={styles.materialName}>수호석</span>
+                              <span className={styles.materialAmount}>{accumulatedCost.수호석.toLocaleString()}</span>
+                              <span className={styles.materialGold}>{getMaterialGoldCost('수호석', accumulatedCost.수호석).toLocaleString()}G</span>
+                            </div>
+                          )}
+                          {accumulatedCost.파괴석 > 0 && (
+                            <div className={styles.totalMaterialItem}>
+                              <Image src="/destiny-destruction-stone.webp" alt="파괴석" width={28} height={28} />
+                              <span className={styles.materialName}>파괴석</span>
+                              <span className={styles.materialAmount}>{accumulatedCost.파괴석.toLocaleString()}</span>
+                              <span className={styles.materialGold}>{getMaterialGoldCost('파괴석', accumulatedCost.파괴석).toLocaleString()}G</span>
+                            </div>
+                          )}
+                          {accumulatedCost.돌파석 > 0 && (
+                            <div className={styles.totalMaterialItem}>
+                              <Image src="/destiny-breakthrough-stone.webp" alt="돌파석" width={28} height={28} />
+                              <span className={styles.materialName}>돌파석</span>
+                              <span className={styles.materialAmount}>{accumulatedCost.돌파석.toLocaleString()}</span>
+                              <span className={styles.materialGold}>{getMaterialGoldCost('돌파석', accumulatedCost.돌파석).toLocaleString()}G</span>
+                            </div>
+                          )}
+                          {accumulatedCost.아비도스 > 0 && (
+                            <div className={styles.totalMaterialItem}>
+                              <Image src="/abidos-fusion.webp" alt="아비도스" width={28} height={28} />
+                              <span className={styles.materialName}>아비도스</span>
+                              <span className={styles.materialAmount}>{accumulatedCost.아비도스.toLocaleString()}</span>
+                              <span className={styles.materialGold}>{getMaterialGoldCost('아비도스', accumulatedCost.아비도스).toLocaleString()}G</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {accumulatedCost.운명파편 > 0 && (
+                        <div className={styles.totalMaterialItem}>
+                          <Image src="/destiny-shard-bag-large.webp" alt="운명파편" width={28} height={28} />
+                          <span className={styles.materialName}>운명파편</span>
+                          <span className={styles.materialAmount}>{accumulatedCost.운명파편.toLocaleString()}</span>
+                          <span className={styles.materialGold}>{getMaterialGoldCost('운명파편', accumulatedCost.운명파편).toLocaleString()}G</span>
+                        </div>
+                      )}
+                      {accumulatedCost.빙하 > 0 && (
+                        <div className={styles.totalMaterialItem}>
+                          <Image src="/breath-glacier.webp" alt="빙하의숨결" width={28} height={28} />
+                          <span className={styles.materialName}>빙하의 숨결</span>
+                          <span className={styles.materialAmount}>{accumulatedCost.빙하.toLocaleString()}</span>
+                          <span className={styles.materialGold}>{getMaterialGoldCost('빙하', accumulatedCost.빙하).toLocaleString()}G</span>
+                        </div>
+                      )}
+                      {accumulatedCost.용암 > 0 && (
+                        <div className={styles.totalMaterialItem}>
+                          <Image src="/breath-lava.webp" alt="용암의숨결" width={28} height={28} />
+                          <span className={styles.materialName}>용암의 숨결</span>
+                          <span className={styles.materialAmount}>{accumulatedCost.용암.toLocaleString()}</span>
+                          <span className={styles.materialGold}>{getMaterialGoldCost('용암', accumulatedCost.용암).toLocaleString()}G</span>
+                        </div>
+                      )}
+                      {accumulatedCost.골드 > 0 && (
+                        <div className={styles.totalMaterialItem}>
+                          <Image src="/gold.webp" alt="골드" width={28} height={28} />
+                          <span className={styles.materialName}>강화 골드</span>
+                          <span></span>
+                          <span className={styles.materialGold}>{accumulatedCost.골드.toLocaleString()}G</span>
+                        </div>
+                      )}
+                    </div>
+                    {/* 아이템 레벨 증가 */}
+                    {itemLevelIncrease > 0 && baseItemLevel > 0 && (
+                      <div className={styles.itemLevelProgress}>
+                        <span className={styles.levelProgressLabel}>아이템 레벨</span>
+                        <div className={styles.levelProgressValue}>
+                          <span>{baseItemLevel.toFixed(2)}</span>
+                          <span className={styles.levelArrow}>→</span>
+                          <span className={styles.levelCurrent}>{(baseItemLevel + itemLevelIncrease).toFixed(2)}</span>
+                          <span className={styles.levelIncrease}>(+{itemLevelIncrease.toFixed(2)})</span>
+                        </div>
+                      </div>
+                    )}
+                    {/* 강화 레벨 증가 */}
+                    {currentLevel > selectedEquipment.currentLevel && (
+                      <div className={styles.levelProgress}>
+                        <span className={styles.levelProgressLabel}>강화 단계</span>
+                        <div className={styles.levelProgressValue}>
+                          <span>+{selectedEquipment.currentLevel}</span>
+                          <span className={styles.levelArrow}>→</span>
+                          <span className={styles.levelCurrent}>+{currentLevel}</span>
+                          <span className={styles.levelIncrease}>(+{currentLevel - selectedEquipment.currentLevel})</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className={styles.totalStats}>
+                      <div className={styles.totalStatItem}>
+                        <span>총 시도</span>
+                        <span>{attemptHistory.length}회</span>
+                      </div>
+                      <div className={styles.totalStatItem}>
+                        <span>성공</span>
+                        <span className={styles.statSuccess}>{attemptHistory.filter(a => a.success).length}회</span>
+                      </div>
+                      <div className={styles.totalStatItem}>
+                        <span>실패</span>
+                        <span className={styles.statFail}>{attemptHistory.filter(a => !a.success).length}회</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

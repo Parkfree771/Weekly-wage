@@ -78,6 +78,64 @@
   font-weight: 600;
 }
 
+/* 계산 모드 선택 버튼 */
+.calcModeContainer {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.calcModeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--card-bg);
+  border: 2px solid var(--border-color);
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.calcModeBtn:hover {
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+.calcModeBtnActive {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+.calcModeBtnActive:hover {
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.betaBadge {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  margin-left: 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  color: white;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.calcModeIcon {
+  font-size: 1.1rem;
+}
+
 /* 모바일 반응형 */
 @media (max-width: 576px) {
   .tabContainer {
@@ -95,5 +153,15 @@
   .successionInfo {
     font-size: 0.7rem;
     padding: 0.4rem 0.75rem;
+  }
+
+  .calcModeContainer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .calcModeBtn {
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
   }
 }

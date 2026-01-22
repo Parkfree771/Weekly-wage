@@ -6,12 +6,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 import RefiningCalculator from '@/components/refining/RefiningCalculator';
+import RefiningSimulator from '@/components/refining/RefiningSimulator';
 import styles from './refining.module.css';
 
 type RefiningMode = 'normal' | 'succession';
+type CalcMode = 'average' | 'simulation';
 
 export default function RefiningPage() {
   const [activeMode, setActiveMode] = useState<RefiningMode>('normal');
+  const [calcMode, setCalcMode] = useState<CalcMode>('average');
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
@@ -100,10 +103,31 @@ export default function RefiningPage() {
                   <strong>계승 조건:</strong> 아이템 레벨 총합 1730 이상 + 상급재련 40단계 달성
                 </div>
               )}
+
+              {/* 계산 모드 선택 버튼 */}
+              <div className={styles.calcModeContainer}>
+                <button
+                  className={`${styles.calcModeBtn} ${calcMode === 'average' ? styles.calcModeBtnActive : ''}`}
+                  onClick={() => setCalcMode('average')}
+                >
+                  평균 시뮬
+                </button>
+                <button
+                  className={`${styles.calcModeBtn} ${calcMode === 'simulation' ? styles.calcModeBtnActive : ''}`}
+                  onClick={() => setCalcMode('simulation')}
+                >
+                  실제 시뮬
+                  <span className={styles.betaBadge}>Beta</span>
+                </button>
+              </div>
             </div>
 
-            {/* 재련 계산기 */}
-            <RefiningCalculator mode={activeMode} />
+            {/* 재련 계산기 또는 시뮬레이터 */}
+            {calcMode === 'average' ? (
+              <RefiningCalculator mode={activeMode} />
+            ) : (
+              <RefiningSimulator mode={activeMode} />
+            )}
           </Col>
         </Row>
       </Container>

@@ -1,0 +1,900 @@
+/* ========================================
+   재련 시뮬레이터 스타일
+   ======================================== */
+
+.container {
+  margin: 0 auto;
+  contain: layout style;
+}
+
+/* 검색창 */
+.searchWrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.searchInner {
+  margin-bottom: 0.5rem;
+  max-width: 700px;
+  width: 100%;
+}
+
+.searchInputGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.searchInput {
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  padding: clamp(0.7rem, 2vw, 0.85rem) clamp(1rem, 2.5vw, 1.25rem);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.searchInput:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  outline: none;
+}
+
+.searchButton {
+  background-color: var(--brand-primary);
+  padding: clamp(0.7rem, 2vw, 0.85rem) clamp(1.5rem, 3vw, 2rem);
+  border-radius: 12px;
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  font-weight: 700;
+  border: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+  white-space: nowrap;
+  color: white;
+}
+
+.searchButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* 에러 메시지 */
+.errorWrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.errorMessage {
+  max-width: 700px;
+  width: 100%;
+  padding: clamp(0.75rem, 2vw, 1rem);
+  border-radius: 12px;
+  font-size: clamp(0.85rem, 1.9vw, 0.95rem);
+  font-weight: 600;
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+}
+
+[data-theme="dark"] .errorMessage {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+/* 메인 레이아웃 */
+.mainLayout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 1200px) {
+  .mainLayout {
+    grid-template-columns: 220px 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .mainLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 장비 목록 패널 */
+.equipmentPanel {
+  background-color: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  height: fit-content;
+}
+
+.equipmentPanelTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.equipmentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.equipmentItem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  background-color: var(--card-body-bg-blue);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.equipmentItem:hover {
+  border-color: var(--primary-color);
+  transform: translateX(4px);
+}
+
+.equipmentItemSelected {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.equipmentIcon {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: visible;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.equipmentInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.equipmentName {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equipmentLevel {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+
+.levelBadge {
+  font-size: 0.6rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-weight: 700;
+  color: white;
+}
+
+.levelBadgeArmor {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.levelBadgeWeapon {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.levelProgress {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.levelArrow {
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+/* 시뮬레이터 패널 */
+.simulatorPanel {
+  background-color: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  min-height: 600px;
+}
+
+.simulatorEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 500px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.simulatorEmptyIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.simulatorEmptyTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.simulatorEmptyDesc {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+/* 3개의 상자 레이아웃 (세로 배치) */
+.threeBoxLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  height: 100%;
+}
+
+@media (max-width: 1400px) {
+  .threeBoxLayout {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+  }
+  .threeBoxLayout .box:nth-child(3) {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 900px) {
+  .threeBoxLayout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  .threeBoxLayout .box:nth-child(3) {
+    grid-column: span 1;
+  }
+}
+
+/* 상자 공통 스타일 */
+.box {
+  background-color: var(--card-body-bg-blue);
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.boxTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+/* 첫 번째 상자: 강화 정보 */
+.equipmentStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+}
+
+.equipmentStatusIcon {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--primary-color);
+  flex-shrink: 0;
+}
+
+.equipmentStatusInfo {
+  flex: 1;
+}
+
+.equipmentStatusName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.equipmentStatusLevel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.currentLevelBig {
+  color: var(--text-primary);
+}
+
+.levelArrowBig {
+  color: #10b981;
+}
+
+.targetLevelBig {
+  color: #10b981;
+}
+
+/* 강화 확률 */
+.probabilitySection {
+  padding: 0.75rem;
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.probabilityLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.probabilityValue {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.probabilityNumber {
+  color: #10b981;
+}
+
+.probabilityBase {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.probabilityGuaranteed {
+  color: #f59e0b;
+}
+
+/* 장인의 기운 */
+.janginSection {
+  margin-bottom: 0.75rem;
+}
+
+.janginHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.janginLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.janginValue {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+.janginBarOuter {
+  height: 20px;
+  background-color: var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.janginBarInner {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.janginBarAnimating {
+  animation: janginPulse 0.5s ease;
+}
+
+@keyframes janginPulse {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.5); }
+  100% { filter: brightness(1); }
+}
+
+.janginBarGlow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* 숨결 옵션 */
+.breathOption {
+  margin-bottom: 0.75rem;
+}
+
+.breathButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  background-color: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.breathButton:hover {
+  border-color: var(--primary-color);
+}
+
+.breathButtonActive {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: transparent;
+  color: white;
+}
+
+.breathIcon {
+  width: 20px;
+  height: 20px;
+  position: relative;
+}
+
+.breathCount {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* 1회 비용 */
+.singleCostSection {
+  margin-bottom: 0.75rem;
+}
+
+.singleCostTitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.singleCostGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.singleCostItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* 강화 버튼 */
+.refiningButton {
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 1rem;
+  font-weight: 800;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+  margin-bottom: 0.5rem;
+}
+
+.refiningButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.refiningButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resetButton {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetButton:hover {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: white;
+}
+
+/* 두 번째 상자: 강화 기록 */
+.historyContainer {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.historyEmpty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.historyList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 450px;
+  padding-right: 0.25rem;
+}
+
+.historyItem {
+  padding: 0.6rem;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.historyItemSuccess {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-left-color: #10b981;
+}
+
+.historyItemFail {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left-color: #ef4444;
+}
+
+.historyItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.historyItemNumber {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.historyItemLevel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.historyItemResult {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.resultSuccess {
+  background-color: #10b981;
+  color: white;
+}
+
+.resultFail {
+  background-color: #ef4444;
+  color: white;
+}
+
+.historyItemDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+/* 세 번째 상자: 누적 비용 */
+.totalCostContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.totalGoldCost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.totalGoldCost span {
+  color: #ffffff !important;
+}
+
+.totalMaterialsList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+
+.totalMaterialItem {
+  display: grid;
+  grid-template-columns: 28px 1fr 80px 80px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+}
+
+.materialName {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.materialAmount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.materialGold {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #f59e0b;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* 라이트모드 텍스트 색상 보장 */
+[data-theme="light"] .materialName {
+  color: #64748b;
+}
+
+[data-theme="light"] .materialAmount {
+  color: #1e293b;
+}
+
+[data-theme="light"] .singleCostItem {
+  color: #1e293b;
+}
+
+[data-theme="light"] .singleCostItem span {
+  color: #1e293b;
+}
+
+/* 아이템 레벨 진행 */
+.itemLevelProgress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+}
+
+.itemLevelProgress .levelProgressValue span:not(.levelArrow):not(.levelIncrease) {
+  color: var(--text-primary);
+}
+
+.itemLevelProgress .levelArrow {
+  color: #6366f1;
+}
+
+.itemLevelProgress .levelCurrent {
+  color: #6366f1 !important;
+}
+
+.itemLevelProgress .levelIncrease {
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.15);
+}
+
+/* 강화 레벨 진행 */
+.levelProgress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+}
+
+.levelProgressLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.levelProgressValue {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.levelArrow {
+  color: #10b981;
+}
+
+.levelCurrent {
+  color: #10b981;
+}
+
+.levelIncrease {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.totalStats {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 2px solid var(--border-color);
+}
+
+.totalStatItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.5rem;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.totalStatItem span:last-child {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.statSuccess {
+  color: #10b981 !important;
+}
+
+.statFail {
+  color: #ef4444 !important;
+}
+
+/* 다크모드 */
+[data-theme="dark"] .equipmentPanel,
+[data-theme="dark"] .simulatorPanel {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .box {
+  background-color: rgba(30, 41, 59, 0.5);
+}
+
+[data-theme="dark"] .historyList::-webkit-scrollbar {
+  width: 6px;
+}
+
+[data-theme="dark"] .historyList::-webkit-scrollbar-track {
+  background: var(--card-bg);
+  border-radius: 3px;
+}
+
+[data-theme="dark"] .historyList::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+/* 스크롤바 */
+.historyList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.historyList::-webkit-scrollbar-track {
+  background: var(--card-body-bg-blue);
+  border-radius: 3px;
+}
+
+.historyList::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
