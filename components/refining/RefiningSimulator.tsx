@@ -131,10 +131,10 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
     fetchMarketPrices();
   }, []);
 
-  // 기록 스크롤
+  // 기록 스크롤 (히스토리 리스트 내에서만)
   useEffect(() => {
     if (historyEndRef.current) {
-      historyEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      historyEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [attemptHistory]);
 
@@ -673,6 +673,10 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                                 <Image src="/abidos-fusion3.webp" alt="상급아비도스" width={32} height={32} />
                                 <span>{(materialCost as any).상급아비도스?.toLocaleString()}</span>
                               </div>
+                              <div className={styles.singleCostItem}>
+                                <Image src="/shilling.webp" alt="실링" width={32} height={32} />
+                                <span>{(materialCost as any).실링?.toLocaleString()}</span>
+                              </div>
                             </>
                           ) : (
                             <>
@@ -706,15 +710,6 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                             <Image src="/gold.webp" alt="골드" width={32} height={32} />
                             <span>{(materialCost as any).골드?.toLocaleString()}</span>
                           </div>
-                          {useBreath && (
-                            <div className={styles.singleCostItem}>
-                              <Image
-                                src={selectedEquipment.type === 'weapon' ? '/breath-lava.webp' : '/breath-glacier.webp'}
-                                alt="숨결" width={32} height={32}
-                              />
-                              <span>{getBreathEffect(getBaseProb(currentLevel)).max}</span>
-                            </div>
-                          )}
                         </>
                       )}
                     </div>
@@ -816,6 +811,14 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                               <span className={styles.materialName}>상급 아비도스</span>
                               <span className={styles.materialAmount}>{accumulatedCost.상급아비도스.toLocaleString()}</span>
                               <span className={styles.materialGold}>{getMaterialGoldCost('상급아비도스', accumulatedCost.상급아비도스).toLocaleString()}G</span>
+                            </div>
+                          )}
+                          {accumulatedCost.실링 > 0 && (
+                            <div className={styles.totalMaterialItem}>
+                              <Image src="/shilling.webp" alt="실링" width={28} height={28} />
+                              <span className={styles.materialName}>실링</span>
+                              <span className={styles.materialAmount}>{accumulatedCost.실링.toLocaleString()}</span>
+                              <span></span>
                             </div>
                           )}
                         </>
