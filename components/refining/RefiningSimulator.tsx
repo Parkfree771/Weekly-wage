@@ -580,153 +580,179 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                 <div className={styles.box}>
                   <div className={styles.boxTitle}>강화 정보</div>
 
-                  {/* 장비 현황 및 목표 */}
-                  <div className={styles.equipmentStatus}>
-                    <div className={styles.equipmentStatusIcon}>
-                      {selectedEquipment.icon && (
-                        <Image src={selectedEquipment.icon} alt={selectedEquipment.name} fill style={{ objectFit: 'contain' }} />
-                      )}
-                    </div>
-                    <div className={styles.equipmentStatusInfo}>
-                      <div className={styles.equipmentStatusName}>{selectedEquipment.name}</div>
-                      <div className={styles.equipmentStatusLevel}>
-                        <span className={styles.currentLevelBig}>+{currentLevel}</span>
-                        <span className={styles.levelArrowBig}>→</span>
-                        <span className={styles.targetLevelBig}>+{currentLevel + 1}</span>
+                  {currentLevel >= maxLevel ? (
+                    /* 25강 완료 화면 */
+                    <>
+                      <div className={`${styles.maxLevelComplete} ${selectedEquipment.type === 'weapon' ? styles.maxLevelWeapon : styles.maxLevelArmor}`}>
+                        <div className={styles.maxLevelIcon}>
+                          {selectedEquipment.icon && (
+                            <Image src={selectedEquipment.icon} alt={selectedEquipment.name} fill style={{ objectFit: 'contain' }} />
+                          )}
+                        </div>
+                        <div className={`${styles.maxLevelBadge} ${selectedEquipment.type === 'weapon' ? styles.maxLevelBadgeWeapon : styles.maxLevelBadgeArmor}`}>
+                          <span className={styles.maxLevelText}>+25 MAX</span>
+                        </div>
+                        <div className={styles.maxLevelTitle}>강화 완료!</div>
+                        <div className={styles.maxLevelSubtitle}>최고 단계에 도달했습니다</div>
+                        <div className={styles.maxLevelEquipName}>{selectedEquipment.name}</div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* 강화 확률 */}
-                  <div className={styles.probabilitySection}>
-                    <div className={styles.probabilityLabel}>강화 확률</div>
-                    <div className={styles.probabilityValue}>
-                      {jangin >= 1 ? (
-                        <span className={styles.probabilityGuaranteed}>100% (장인의 기운)</span>
-                      ) : (
-                        <>
-                          <span className={styles.probabilityNumber}>{(calculateFinalProb() * 100).toFixed(2)}%</span>
-                          <span className={styles.probabilityBase}>(기본 {(getBaseProb(currentLevel) * 100).toFixed(1)}%)</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 장인의 기운 */}
-                  <div className={styles.janginSection}>
-                    <div className={styles.janginHeader}>
-                      <span className={styles.janginLabel}>장인의 기운</span>
-                      <span className={styles.janginValue}>{(jangin * 100).toFixed(2)}%</span>
-                    </div>
-                    <div className={styles.janginBarOuter}>
-                      <div
-                        className={`${styles.janginBarInner} ${isAnimating ? styles.janginBarAnimating : ''}`}
-                        style={{ width: `${Math.min(jangin * 100, 100)}%` }}
-                      >
-                        <div className={styles.janginBarGlow}></div>
+                      <div className={styles.maxLevelButtons}>
+                        <button className={styles.resetButton} onClick={resetSimulation}>
+                          초기화
+                        </button>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* 숨결 옵션 */}
-                  <div className={styles.breathOption}>
-                    <button
-                      className={`${styles.breathButton} ${useBreath ? styles.breathButtonActive : ''}`}
-                      onClick={() => setUseBreath(!useBreath)}
-                    >
-                      <div className={styles.breathIcon}>
-                        <Image
-                          src={selectedEquipment.type === 'weapon' ? '/breath-lava.webp' : '/breath-glacier.webp'}
-                          alt="숨결" fill style={{ objectFit: 'contain' }}
-                        />
+                    </>
+                  ) : (
+                    <>
+                      {/* 장비 현황 및 목표 */}
+                      <div className={styles.equipmentStatus}>
+                        <div className={styles.equipmentStatusIcon}>
+                          {selectedEquipment.icon && (
+                            <Image src={selectedEquipment.icon} alt={selectedEquipment.name} fill style={{ objectFit: 'contain' }} />
+                          )}
+                        </div>
+                        <div className={styles.equipmentStatusInfo}>
+                          <div className={styles.equipmentStatusName}>{selectedEquipment.name}</div>
+                          <div className={styles.equipmentStatusLevel}>
+                            <span className={styles.currentLevelBig}>+{currentLevel}</span>
+                            <span className={styles.levelArrowBig}>→</span>
+                            <span className={styles.targetLevelBig}>+{currentLevel + 1}</span>
+                          </div>
+                        </div>
                       </div>
-                      <span>{selectedEquipment.type === 'weapon' ? '용암의 숨결' : '빙하의 숨결'}</span>
-                      {useBreath && <span className={styles.breathCount}>({getBreathEffect(getBaseProb(currentLevel)).max}개)</span>}
-                    </button>
-                  </div>
 
-                  {/* 1회 비용 */}
-                  <div className={styles.singleCostSection}>
-                    <div className={styles.singleCostTitle}>1회 강화 비용</div>
-                    <div className={styles.singleCostGrid}>
-                      {materialCost && (
-                        <>
-                          {isSuccessionMode ? (
-                            <>
-                              {'수호석결정' in materialCost && (
-                                <div className={styles.singleCostItem}>
-                                  <Image src="/destiny-guardian-stone2.webp" alt="수호석결정" width={32} height={32} />
-                                  <span>{(materialCost as any).수호석결정?.toLocaleString()}</span>
-                                </div>
-                              )}
-                              {'파괴석결정' in materialCost && (
-                                <div className={styles.singleCostItem}>
-                                  <Image src="/destiny-destruction-stone2.webp" alt="파괴석결정" width={32} height={32} />
-                                  <span>{(materialCost as any).파괴석결정?.toLocaleString()}</span>
-                                </div>
-                              )}
-                              <div className={styles.singleCostItem}>
-                                <Image src="/destiny-breakthrough-stone2.webp" alt="위대한돌파석" width={32} height={32} />
-                                <span>{(materialCost as any).위대한돌파석?.toLocaleString()}</span>
-                              </div>
-                              <div className={styles.singleCostItem}>
-                                <Image src="/abidos-fusion3.webp" alt="상급아비도스" width={32} height={32} />
-                                <span>{(materialCost as any).상급아비도스?.toLocaleString()}</span>
-                              </div>
-                              <div className={styles.singleCostItem}>
-                                <Image src="/shilling.webp" alt="실링" width={32} height={32} />
-                                <span>{(materialCost as any).실링?.toLocaleString()}</span>
-                              </div>
-                            </>
+                      {/* 강화 확률 */}
+                      <div className={styles.probabilitySection}>
+                        <div className={styles.probabilityLabel}>강화 확률</div>
+                        <div className={styles.probabilityValue}>
+                          {jangin >= 1 ? (
+                            <span className={styles.probabilityGuaranteed}>100% (장인의 기운)</span>
                           ) : (
                             <>
-                              {'수호석' in materialCost && (
-                                <div className={styles.singleCostItem}>
-                                  <Image src="/destiny-guardian-stone.webp" alt="수호석" width={32} height={32} />
-                                  <span>{(materialCost as any).수호석?.toLocaleString()}</span>
-                                </div>
-                              )}
-                              {'파괴석' in materialCost && (
-                                <div className={styles.singleCostItem}>
-                                  <Image src="/destiny-destruction-stone.webp" alt="파괴석" width={32} height={32} />
-                                  <span>{(materialCost as any).파괴석?.toLocaleString()}</span>
-                                </div>
+                              <span className={styles.probabilityNumber}>{(calculateFinalProb() * 100).toFixed(2)}%</span>
+                              <span className={styles.probabilityBase}>(기본 {(getBaseProb(currentLevel) * 100).toFixed(1)}%)</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 장인의 기운 */}
+                      <div className={styles.janginSection}>
+                        <div className={styles.janginHeader}>
+                          <span className={styles.janginLabel}>장인의 기운</span>
+                          <span className={styles.janginValue}>{(jangin * 100).toFixed(2)}%</span>
+                        </div>
+                        <div className={styles.janginBarOuter}>
+                          <div
+                            className={`${styles.janginBarInner} ${isAnimating ? styles.janginBarAnimating : ''}`}
+                            style={{ width: `${Math.min(jangin * 100, 100)}%` }}
+                          >
+                            <div className={styles.janginBarGlow}></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 숨결 옵션 */}
+                      <div className={styles.breathOption}>
+                        <button
+                          className={`${styles.breathButton} ${useBreath ? styles.breathButtonActive : ''}`}
+                          onClick={() => setUseBreath(!useBreath)}
+                        >
+                          <div className={styles.breathIcon}>
+                            <Image
+                              src={selectedEquipment.type === 'weapon' ? '/breath-lava.webp' : '/breath-glacier.webp'}
+                              alt="숨결" fill style={{ objectFit: 'contain' }}
+                            />
+                          </div>
+                          <span>{selectedEquipment.type === 'weapon' ? '용암의 숨결' : '빙하의 숨결'}</span>
+                          {useBreath && <span className={styles.breathCount}>({getBreathEffect(getBaseProb(currentLevel)).max}개)</span>}
+                        </button>
+                      </div>
+
+                      {/* 1회 비용 */}
+                      <div className={styles.singleCostSection}>
+                        <div className={styles.singleCostTitle}>1회 강화 비용</div>
+                        <div className={styles.singleCostGrid}>
+                          {materialCost && (
+                            <>
+                              {isSuccessionMode ? (
+                                <>
+                                  {'수호석결정' in materialCost && (
+                                    <div className={styles.singleCostItem}>
+                                      <Image src="/destiny-guardian-stone2.webp" alt="수호석결정" width={32} height={32} />
+                                      <span>{(materialCost as any).수호석결정?.toLocaleString()}</span>
+                                    </div>
+                                  )}
+                                  {'파괴석결정' in materialCost && (
+                                    <div className={styles.singleCostItem}>
+                                      <Image src="/destiny-destruction-stone2.webp" alt="파괴석결정" width={32} height={32} />
+                                      <span>{(materialCost as any).파괴석결정?.toLocaleString()}</span>
+                                    </div>
+                                  )}
+                                  <div className={styles.singleCostItem}>
+                                    <Image src="/destiny-breakthrough-stone2.webp" alt="위대한돌파석" width={32} height={32} />
+                                    <span>{(materialCost as any).위대한돌파석?.toLocaleString()}</span>
+                                  </div>
+                                  <div className={styles.singleCostItem}>
+                                    <Image src="/abidos-fusion3.webp" alt="상급아비도스" width={32} height={32} />
+                                    <span>{(materialCost as any).상급아비도스?.toLocaleString()}</span>
+                                  </div>
+                                  <div className={styles.singleCostItem}>
+                                    <Image src="/shilling.webp" alt="실링" width={32} height={32} />
+                                    <span>{(materialCost as any).실링?.toLocaleString()}</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  {'수호석' in materialCost && (
+                                    <div className={styles.singleCostItem}>
+                                      <Image src="/destiny-guardian-stone.webp" alt="수호석" width={32} height={32} />
+                                      <span>{(materialCost as any).수호석?.toLocaleString()}</span>
+                                    </div>
+                                  )}
+                                  {'파괴석' in materialCost && (
+                                    <div className={styles.singleCostItem}>
+                                      <Image src="/destiny-destruction-stone.webp" alt="파괴석" width={32} height={32} />
+                                      <span>{(materialCost as any).파괴석?.toLocaleString()}</span>
+                                    </div>
+                                  )}
+                                  <div className={styles.singleCostItem}>
+                                    <Image src="/destiny-breakthrough-stone.webp" alt="돌파석" width={32} height={32} />
+                                    <span>{(materialCost as any).돌파석?.toLocaleString()}</span>
+                                  </div>
+                                  <div className={styles.singleCostItem}>
+                                    <Image src="/abidos-fusion.webp" alt="아비도스" width={32} height={32} />
+                                    <span>{(materialCost as any).아비도스?.toLocaleString()}</span>
+                                  </div>
+                                </>
                               )}
                               <div className={styles.singleCostItem}>
-                                <Image src="/destiny-breakthrough-stone.webp" alt="돌파석" width={32} height={32} />
-                                <span>{(materialCost as any).돌파석?.toLocaleString()}</span>
+                                <Image src="/destiny-shard-bag-large.webp" alt="운명파편" width={32} height={32} />
+                                <span>{(materialCost as any).운명파편?.toLocaleString()}</span>
                               </div>
                               <div className={styles.singleCostItem}>
-                                <Image src="/abidos-fusion.webp" alt="아비도스" width={32} height={32} />
-                                <span>{(materialCost as any).아비도스?.toLocaleString()}</span>
+                                <Image src="/gold.webp" alt="골드" width={32} height={32} />
+                                <span>{(materialCost as any).골드?.toLocaleString()}</span>
                               </div>
                             </>
                           )}
-                          <div className={styles.singleCostItem}>
-                            <Image src="/destiny-shard-bag-large.webp" alt="운명파편" width={32} height={32} />
-                            <span>{(materialCost as any).운명파편?.toLocaleString()}</span>
-                          </div>
-                          <div className={styles.singleCostItem}>
-                            <Image src="/gold.webp" alt="골드" width={32} height={32} />
-                            <span>{(materialCost as any).골드?.toLocaleString()}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
 
-                  {/* 강화 버튼 */}
-                  <button
-                    className={styles.refiningButton}
-                    onClick={attemptRefining}
-                    disabled={!canRefine}
-                  >
-                    강화하기
-                  </button>
+                      {/* 강화 버튼 */}
+                      <button
+                        className={styles.refiningButton}
+                        onClick={attemptRefining}
+                        disabled={!canRefine}
+                      >
+                        강화하기
+                      </button>
 
-                  <button className={styles.resetButton} onClick={resetSimulation}>
-                    초기화
-                  </button>
+                      <button className={styles.resetButton} onClick={resetSimulation}>
+                        초기화
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 {/* 두 번째 상자: 강화 기록 */}
@@ -768,16 +794,26 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                       </div>
                     )}
                   </div>
+                  <div className={styles.historyStats}>
+                    <div className={styles.historyStatItem}>
+                      <span>총 시도</span>
+                      <span>{attemptHistory.length}회</span>
+                    </div>
+                    <div className={styles.historyStatItem}>
+                      <span>성공</span>
+                      <span className={styles.statSuccess}>{attemptHistory.filter(a => a.success).length}회</span>
+                    </div>
+                    <div className={styles.historyStatItem}>
+                      <span>실패</span>
+                      <span className={styles.statFail}>{attemptHistory.filter(a => !a.success).length}회</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* 세 번째 상자: 누적 비용 */}
                 <div className={styles.box}>
                   <div className={styles.boxTitle}>누적 비용</div>
                   <div className={styles.totalCostContainer}>
-                    <div className={styles.totalGoldCost}>
-                      <Image src="/gold.webp" alt="gold" width={32} height={32} />
-                      <span>{calculateTotalGoldCost().toLocaleString()} G</span>
-                    </div>
                     <div className={styles.totalMaterialsList}>
                       {isSuccessionMode ? (
                         <>
@@ -915,19 +951,9 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                         </div>
                       </div>
                     )}
-                    <div className={styles.totalStats}>
-                      <div className={styles.totalStatItem}>
-                        <span>총 시도</span>
-                        <span>{attemptHistory.length}회</span>
-                      </div>
-                      <div className={styles.totalStatItem}>
-                        <span>성공</span>
-                        <span className={styles.statSuccess}>{attemptHistory.filter(a => a.success).length}회</span>
-                      </div>
-                      <div className={styles.totalStatItem}>
-                        <span>실패</span>
-                        <span className={styles.statFail}>{attemptHistory.filter(a => !a.success).length}회</span>
-                      </div>
+                    <div className={styles.totalGoldCost}>
+                      <Image src="/gold.webp" alt="gold" width={32} height={32} />
+                      <span>{calculateTotalGoldCost().toLocaleString()} G</span>
                     </div>
                   </div>
                 </div>

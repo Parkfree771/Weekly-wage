@@ -13,8 +13,8 @@ type RefiningMode = 'normal' | 'succession';
 type CalcMode = 'average' | 'simulation';
 
 export default function RefiningPage() {
-  const [activeMode, setActiveMode] = useState<RefiningMode>('normal');
-  const [calcMode, setCalcMode] = useState<CalcMode>('average');
+  const [activeMode, setActiveMode] = useState<RefiningMode>('succession');
+  const [calcMode, setCalcMode] = useState<CalcMode>('simulation');
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
@@ -84,25 +84,20 @@ export default function RefiningPage() {
             <div className={styles.tabContainer}>
               <div className={styles.tabNav}>
                 <button
-                  className={`${styles.tabLink} ${activeMode === 'normal' ? styles.tabLinkActive : ''}`}
+                  className={`${styles.tabLink} ${styles.tabLinkAegir} ${activeMode === 'normal' ? styles.tabLinkActive : ''}`}
                   onClick={() => setActiveMode('normal')}
                 >
+                  <Image src="/aegir.webp" alt="계승 전" fill className={styles.tabBgImage} />
                   <span className={styles.tabText}>계승 전</span>
-                  <span className={styles.tabSubText}>일반 + 상급</span>
                 </button>
                 <button
-                  className={`${styles.tabLink} ${activeMode === 'succession' ? styles.tabLinkActive : ''}`}
+                  className={`${styles.tabLink} ${styles.tabLinkCerka} ${activeMode === 'succession' ? styles.tabLinkActive : ''}`}
                   onClick={() => setActiveMode('succession')}
                 >
+                  <Image src="/cerka.webp" alt="계승 후" fill className={styles.tabBgImage} />
                   <span className={styles.tabText}>계승 후</span>
-                  <span className={styles.tabSubText}>일반만</span>
                 </button>
               </div>
-              {activeMode === 'succession' && (
-                <div className={styles.successionInfo}>
-                  <strong>계승 조건:</strong> 아이템 레벨 총합 1730 이상 + 상급재련 40단계 달성
-                </div>
-              )}
 
               {/* 계산 모드 선택 버튼 */}
               <div className={styles.calcModeContainer}>
@@ -117,7 +112,6 @@ export default function RefiningPage() {
                   onClick={() => setCalcMode('simulation')}
                 >
                   실제 시뮬
-                  <span className={styles.betaBadge}>Beta</span>
                 </button>
               </div>
             </div>
