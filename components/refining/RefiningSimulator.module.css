@@ -53,6 +53,8 @@
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
   white-space: nowrap;
   color: white;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .searchButton:hover:not(:disabled) {
@@ -135,6 +137,8 @@
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .equipmentItem:hover {
@@ -468,6 +472,8 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .breathButton:hover {
@@ -535,6 +541,8 @@
   color: white;
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
   margin-bottom: 0.5rem;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .refiningButton:hover:not(:disabled) {
@@ -558,6 +566,8 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .resetButton:hover {
