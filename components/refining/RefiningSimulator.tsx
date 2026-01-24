@@ -22,6 +22,7 @@ import {
   type Equipment as EquipmentType,
   type EquipmentAPIResponse
 } from '../../lib/equipmentParser';
+import { saveRefiningResult, RefiningResult } from '../../lib/supabase';
 
 type Equipment = EquipmentType;
 
@@ -108,6 +109,15 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
     수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
   });
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // 현재 레벨 강화를 위한 시도 횟수 및 비용 (성공 시 저장 후 초기화)
+  const [levelAttempts, setLevelAttempts] = useState(0);
+  const [levelCost, setLevelCost] = useState<AccumulatedCost>({
+    수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
+    수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+  });
+  const [usedBreathThisLevel, setUsedBreathThisLevel] = useState(false);
+  const [breathCountThisLevel, setBreathCountThisLevel] = useState(0);  // 숨결 사용 횟수
 
   // 거래소 가격
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
@@ -244,9 +254,17 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
     // 이미 강화한 적 있는 장비면 그 레벨 불러오기, 아니면 원래 레벨
     const savedLevel = enhancedLevels[equipment.name];
     setCurrentLevel(savedLevel !== undefined ? savedLevel : equipment.currentLevel);
-    // 장비 변경 시 장인의 기운과 확률 보너스만 초기화 (누적 비용은 유지)
+    // 장비 변경 시 장인의 기운과 확률 보너스 초기화 (누적 비용은 유지)
     setJangin(0);
     setCurrentProbBonus(0);
+    // 레벨별 추적 초기화 (장비 변경 시 이전 장비 비용이 섞이지 않도록)
+    setLevelAttempts(0);
+    setLevelCost({
+      수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
+      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+    });
+    setUsedBreathThisLevel(false);
+    setBreathCountThisLevel(0);
   };
 
   const resetSimulation = () => {
@@ -263,6 +281,14 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
       수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
       수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
     });
+    // 레벨별 추적 초기화
+    setLevelAttempts(0);
+    setLevelCost({
+      수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
+      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+    });
+    setUsedBreathThisLevel(false);
+    setBreathCountThisLevel(0);
   };
 
   const getBaseProb = (level: number): number => {
@@ -301,7 +327,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
     }
   };
 
-  const attemptRefining = () => {
+  const attemptRefining = async () => {
     if (!selectedEquipment) return;
 
     const baseProb = getBaseProb(currentLevel);
@@ -311,9 +337,23 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
     const janginBefore = jangin;
     const probBefore = finalProb;
 
-    // 재료 비용 누적
+    // 현재 레벨 시도 횟수 증가
+    const newLevelAttempts = levelAttempts + 1;
+    setLevelAttempts(newLevelAttempts);
+
+    // 숨결 사용 여부 및 횟수 추적
+    let newBreathCount = breathCountThisLevel;
+    if (useBreath) {
+      setUsedBreathThisLevel(true);
+      newBreathCount = breathCountThisLevel + 1;
+      setBreathCountThisLevel(newBreathCount);
+    }
+
+    // 재료 비용 누적 (전체 누적 + 레벨별 누적)
     const materialCost = getMaterialCost();
+    let newLevelCost = { ...levelCost };
     if (materialCost) {
+      // 전체 누적 비용
       setAccumulatedCost(prev => {
         const newCost = { ...prev };
         if (isSuccessionMode) {
@@ -339,6 +379,30 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
         }
         return newCost;
       });
+
+      // 레벨별 비용 누적
+      if (isSuccessionMode) {
+        if ('수호석결정' in materialCost) newLevelCost.수호석결정 += (materialCost as any).수호석결정 || 0;
+        if ('파괴석결정' in materialCost) newLevelCost.파괴석결정 += (materialCost as any).파괴석결정 || 0;
+        newLevelCost.위대한돌파석 += (materialCost as any).위대한돌파석 || 0;
+        newLevelCost.상급아비도스 += (materialCost as any).상급아비도스 || 0;
+        newLevelCost.운명파편 += (materialCost as any).운명파편 || 0;
+        newLevelCost.실링 += (materialCost as any).실링 || 0;
+        newLevelCost.골드 += (materialCost as any).골드 || 0;
+      } else {
+        if ('수호석' in materialCost) newLevelCost.수호석 += (materialCost as any).수호석 || 0;
+        if ('파괴석' in materialCost) newLevelCost.파괴석 += (materialCost as any).파괴석 || 0;
+        newLevelCost.돌파석 += (materialCost as any).돌파석 || 0;
+        newLevelCost.아비도스 += (materialCost as any).아비도스 || 0;
+        newLevelCost.운명파편 += (materialCost as any).운명파편 || 0;
+        newLevelCost.골드 += (materialCost as any).골드 || 0;
+      }
+      if (useBreath) {
+        const breathEffect = getBreathEffect(baseProb);
+        if (selectedEquipment.type === 'weapon') newLevelCost.용암 += breathEffect.max;
+        else newLevelCost.빙하 += breathEffect.max;
+      }
+      setLevelCost(newLevelCost);
     }
 
     const roll = Math.random();
@@ -350,6 +414,58 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
 
     if (success) {
       const newLevel = currentLevel + 1;
+
+      // Supabase에 결과 저장
+      // 장비 이름은 통계를 위해 통일 (계승 전: 업화, 계승 후: 전율)
+      const equipmentName = isSuccessionMode
+        ? (selectedEquipment.type === 'weapon' ? '전율 무기' : '전율 방어구')
+        : (selectedEquipment.type === 'weapon' ? '업화 무기' : '업화 방어구');
+
+      const refiningResult: RefiningResult = {
+        equipment_type: selectedEquipment.type === 'weapon' ? 'weapon' : 'armor',
+        equipment_name: equipmentName,
+        is_succession: isSuccessionMode,
+        from_level: currentLevel,
+        to_level: newLevel,
+        attempts: newLevelAttempts,
+        use_breath: usedBreathThisLevel || useBreath,
+        fate_fragment: newLevelCost.운명파편 || undefined,
+        gold: newLevelCost.골드 || undefined,
+      };
+
+      // 계승 여부에 따라 재료 추가
+      if (isSuccessionMode) {
+        refiningResult.destruction_crystal = newLevelCost.파괴석결정 || undefined;
+        refiningResult.guardian_crystal = newLevelCost.수호석결정 || undefined;
+        refiningResult.great_breakthrough = newLevelCost.위대한돌파석 || undefined;
+        refiningResult.advanced_abidos = newLevelCost.상급아비도스 || undefined;
+        refiningResult.shilling = newLevelCost.실링 || undefined;
+      } else {
+        refiningResult.destruction_stone = newLevelCost.파괴석 || undefined;
+        refiningResult.guardian_stone = newLevelCost.수호석 || undefined;
+        refiningResult.breakthrough_stone = newLevelCost.돌파석 || undefined;
+        refiningResult.abidos = newLevelCost.아비도스 || undefined;
+      }
+
+      // 숨결 사용량 및 횟수 추가
+      if (newLevelCost.용암 > 0) refiningResult.lava_breath = newLevelCost.용암;
+      if (newLevelCost.빙하 > 0) refiningResult.glacier_breath = newLevelCost.빙하;
+      if (newBreathCount > 0) refiningResult.breath_count = newBreathCount;
+
+      // 비동기로 저장 (실패해도 시뮬레이션은 계속)
+      saveRefiningResult(refiningResult).catch(err => {
+        console.error('Failed to save refining result:', err);
+      });
+
+      // 레벨별 추적 초기화
+      setLevelAttempts(0);
+      setLevelCost({
+        수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
+        수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+      });
+      setUsedBreathThisLevel(false);
+      setBreathCountThisLevel(0);
+
       setCurrentLevel(newLevel);
       setJangin(0);
       setCurrentProbBonus(0);
@@ -492,7 +608,8 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
       )}
 
       {searched && (
-        <div className={styles.mainLayout}>
+        <>
+          <div className={styles.mainLayout}>
           {/* 장비 목록 패널 */}
           <div className={styles.equipmentPanel}>
             <div className={styles.equipmentPanelTitle}>
@@ -960,7 +1077,13 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
               </div>
             )}
           </div>
-        </div>
+          </div>
+
+          {/* 데이터 수집 고지 */}
+          <div className={styles.dataNotice}>
+            ℹ️ 시도 횟수, 강화 단계, 소모 재료, 숨결 사용 횟수만 익명 통계로 수집됩니다.
+          </div>
+        </>
       )}
     </div>
   );

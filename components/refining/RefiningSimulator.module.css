@@ -1462,3 +1462,12 @@
     font-size: 0.85rem;
   }
 }
+
+/* 데이터 수집 고지 */
+.dataNotice {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 1rem;
+  padding: 0.5rem;
+}
