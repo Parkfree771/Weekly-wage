@@ -270,8 +270,54 @@ export default function Home() {
                     문의하기
                   </h3>
                 </Card.Header>
-                <Card.Body className="p-0" style={{ background: 'var(--card-body-bg-stone)', borderRadius: '0 0 16px 16px', overflow: 'hidden', minHeight: '380px' }}>
+                <Card.Body className="p-0" style={{ background: 'var(--card-body-bg-stone)', borderRadius: '0 0 16px 16px', overflow: 'hidden' }}>
                   <ContactForm />
+                </Card.Body>
+              </Card>
+
+              {/* 요청사항 업데이트 내역 섹션 */}
+              <Card className="border-0 shadow-lg mb-3" style={{ borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent' }}>
+                <Card.Header
+                  className="text-center py-2 border-0"
+                  style={{
+                    background: 'var(--card-header-bg-stone)',
+                    borderBottom: '1px solid var(--border-color)'
+                  }}
+                >
+                  <h3
+                    className="mb-0"
+                    style={{
+                      fontWeight: '600',
+                      fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
+                      background: 'var(--gradient-text-stone)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      letterSpacing: '-0.025em'
+                    }}
+                  >
+                    요청사항 업데이트 내역
+                  </h3>
+                </Card.Header>
+                <Card.Body className="p-3" style={{ background: 'var(--card-body-bg-stone)', borderRadius: '0 0 16px 16px' }}>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                    <li style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginRight: '0.75rem' }}>2026.01.24</span>
+                      <span style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>더보기 효율 체크 기능 추가</span>
+                    </li>
+                    <li style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginRight: '0.75rem' }}>2026.01.23</span>
+                      <span style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>홈 버튼 추가</span>
+                    </li>
+                    <li style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginRight: '0.75rem' }}>2026.01.22</span>
+                      <span style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>강화 실제 시뮬 추가</span>
+                    </li>
+                    <li style={{ padding: '0.5rem 0' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginRight: '0.75rem' }}>2026.01.07</span>
+                      <span style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>종막 하드 더보기 정보 변경</span>
+                    </li>
+                  </ul>
                 </Card.Body>
               </Card>
             </div>

@@ -214,30 +214,23 @@
 /* 재료 테이블 */
 .materialTable {
   width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
   color: var(--text-primary);
   border-collapse: separate;
   border-spacing: 0;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--border-color);
-  table-layout: fixed;
 }
 
 .materialTable thead th {
   background: var(--card-header-bg);
   font-weight: 700;
   font-size: 0.95rem;
-  padding: 0.75rem 0.875rem;
+  padding: 0.75rem 0.5rem;
   color: var(--text-primary);
   border-bottom: 2px solid var(--border-color);
   border-right: 1px solid var(--border-color);
   text-align: center;
-}
-
-.materialTable thead th:first-child {
-  text-align: left;
 }
 
 .materialTable thead th:last-child {
@@ -245,7 +238,7 @@
 }
 
 .materialTable tbody td {
-  padding: 0.75rem 0.875rem;
+  padding: 0.75rem 0.5rem;
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
   vertical-align: middle;
@@ -253,7 +246,8 @@
   text-align: center;
 }
 
-.materialTable tbody td:first-child {
+/* 재료 열(2번째)만 왼쪽 정렬 */
+.materialTable tbody td:nth-child(2) {
   text-align: left;
 }
 
@@ -265,25 +259,21 @@
   border-bottom: none;
 }
 
-/* 열 너비 조정 */
+/* 체크박스 열 */
 .materialTable th:nth-child(1),
 .materialTable td:nth-child(1) {
-  width: 34%;
+  width: 30px;
+  padding: 0.5rem 0.25rem;
 }
 
-.materialTable th:nth-child(2),
-.materialTable td:nth-child(2) {
-  width: 18%;
+.materialCheckbox {
+  margin: 0 !important;
+  display: flex;
+  justify-content: center;
 }
 
-.materialTable th:nth-child(3),
-.materialTable td:nth-child(3) {
-  width: 22%;
-}
-
-.materialTable th:nth-child(4),
-.materialTable td:nth-child(4) {
-  width: 26%;
+.uncheckedRow {
+  opacity: 0.4;
 }
 
 .materialCell {
@@ -306,33 +296,26 @@
 /* 소계/합계 행 */
 .subtotalRow td {
   background: rgba(0, 0, 0, 0.02);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--text-secondary);
-  padding: 0.75rem 0.875rem !important;
-  border-top: 1px solid var(--border-color);
-}
-
-.subtotalRow td:first-child {
+  padding: 0.5rem !important;
   text-align: left;
 }
 
 .subtotalRow td:last-child {
-  text-align: right;
+  text-align: center;
 }
 
 .gateTotalRow td {
   background: rgba(99, 102, 241, 0.05);
-  font-size: 1rem;
-  padding: 0.875rem !important;
+  font-size: 0.95rem;
+  padding: 0.5rem !important;
   font-weight: 600;
-}
-
-.gateTotalRow td:first-child {
   text-align: left;
 }
 
 .gateTotalRow td:last-child {
-  text-align: right;
+  text-align: center;
 }
 
 .profit {

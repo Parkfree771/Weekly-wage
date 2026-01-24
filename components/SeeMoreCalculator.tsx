@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { Card, Badge, Button, Row, Col, Table, Spinner } from 'react-bootstrap';
+import { Card, Badge, Button, Row, Col, Table, Spinner, Form } from 'react-bootstrap';
 import { raids } from '@/data/raids';
 import { raidRewards, MaterialReward, MATERIAL_IDS, MATERIAL_NAMES, MATERIAL_BUNDLE_SIZES } from '@/data/raidRewards';
 import { usePriceData } from '@/contexts/PriceContext';
@@ -45,12 +45,35 @@ const getTodayPriceDate = () => {
 
 const SeeMoreCalculator: React.FC = () => {
   const [selectedRaid, setSelectedRaid] = useState<string | null>(null);
+  // 재료 체크 상태 관리: { [raidName]: { [gate]: { [itemId]: boolean } } }
+  const [materialChecks, setMaterialChecks] = useState<{
+    [raidName: string]: { [gate: number]: { [itemId: number]: boolean } }
+  }>({});
 
   // Context에서 가격 데이터 가져오기
   const { unitPrices, loading } = usePriceData();
 
   const handleRaidSelect = (raidName: string) => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
+  };
+
+  // 재료가 체크되어 있는지 확인
+  const isMaterialChecked = (raidName: string, gate: number, itemId: number): boolean => {
+    return materialChecks[raidName]?.[gate]?.[itemId] ?? true;
+  };
+
+  // 재료 체크 토글 함수
+  const handleMaterialCheck = (raidName: string, gate: number, itemId: number) => {
+    setMaterialChecks(prev => ({
+      ...prev,
+      [raidName]: {
+        ...prev[raidName],
+        [gate]: {
+          ...prev[raidName]?.[gate],
+          [itemId]: !prev[raidName]?.[gate]?.[itemId]
+        }
+      }
+    }));
   };
 
   // 가격 데이터를 기반으로 수익 계산 (메모이제이션)
@@ -102,12 +125,51 @@ const SeeMoreCalculator: React.FC = () => {
     return newProfitData;
   }, [unitPrices]);
 
-  // 손익 계산 함수
+  // 재료 체크 상태 초기화 (레이드 선택 시 또는 profitData 변경 시)
+  useEffect(() => {
+    if (selectedRaid && profitData[selectedRaid]) {
+      setMaterialChecks(prev => {
+        // 이미 해당 레이드의 체크 상태가 있으면 유지
+        if (prev[selectedRaid]) return prev;
+
+        // 없으면 모든 재료를 체크된 상태로 초기화
+        const raidChecks: { [gate: number]: { [itemId: number]: boolean } } = {};
+        profitData[selectedRaid].forEach(gateData => {
+          raidChecks[gateData.gate] = {};
+          gateData.materials.forEach(material => {
+            raidChecks[gateData.gate][material.itemId] = true;
+          });
+        });
+        return { ...prev, [selectedRaid]: raidChecks };
+      });
+    }
+  }, [selectedRaid, profitData]);
+
+  // 손익 계산 함수 (체크된 재료만 계산)
   const calculateProfitLoss = (raidName: string): number => {
     const raidData = profitData[raidName];
     if (!raidData) return 0;
-    const totalProfitLoss = raidData.reduce((sum, gate) => sum + gate.profitLoss, 0);
+
+    const totalProfitLoss = raidData.reduce((sum, gate) => {
+      const checkedMaterialsValue = gate.materials.reduce((matSum, material) => {
+        const isChecked = isMaterialChecked(raidName, gate.gate, material.itemId);
+        return matSum + (isChecked ? material.totalPrice : 0);
+      }, 0);
+      return sum + (checkedMaterialsValue - gate.moreGold);
+    }, 0);
     return totalProfitLoss;
+  };
+
+  // 관문별 손익 계산 함수 (체크된 재료만 계산)
+  const calculateGateProfitLoss = (raidName: string, gateData: RaidProfitData): { totalValue: number; profitLoss: number } => {
+    const checkedMaterialsValue = gateData.materials.reduce((sum, material) => {
+      const isChecked = isMaterialChecked(raidName, gateData.gate, material.itemId);
+      return sum + (isChecked ? material.totalPrice : 0);
+    }, 0);
+    return {
+      totalValue: checkedMaterialsValue,
+      profitLoss: checkedMaterialsValue - gateData.moreGold
+    };
   };
 
   return (
@@ -196,26 +258,28 @@ const SeeMoreCalculator: React.FC = () => {
           </Card.Header>
           <Card.Body>
             <div className={styles.gatesGrid}>
-              {profitData[selectedRaid].map((gateData, index) => (
-                <div key={index} className={`${styles.gateSection} ${gateData.profitLoss > 0 ? styles.profit : gateData.profitLoss < 0 ? styles.loss : styles.neutral}`}>
+              {profitData[selectedRaid].map((gateData, index) => {
+                const calculatedGate = calculateGateProfitLoss(selectedRaid, gateData);
+                return (
+                <div key={index} className={`${styles.gateSection} ${calculatedGate.profitLoss > 0 ? styles.profit : calculatedGate.profitLoss < 0 ? styles.loss : styles.neutral}`}>
                 <h6 className={`mb-2 ${styles.gateSectionHeader}`}>
                   {gateData.gate}관문
                   <Badge
-                    bg={gateData.profitLoss > 0 ? 'success' : gateData.profitLoss < 0 ? 'danger' : 'secondary'}
+                    bg={calculatedGate.profitLoss > 0 ? 'success' : calculatedGate.profitLoss < 0 ? 'danger' : 'secondary'}
                     className="ms-2"
                   >
-                    {gateData.profitLoss > 0 ? '+' : ''}{Math.round(gateData.profitLoss).toLocaleString()}골드
+                    {calculatedGate.profitLoss > 0 ? '+' : ''}{Math.round(calculatedGate.profitLoss).toLocaleString()}골드
                   </Badge>
                 </h6>
 
                 <div className={`mb-2 ${styles.gateSummaryRow}`}>
                   <span className={styles.summaryFirstLine}>
                     <strong>더보기비용:</strong> {gateData.moreGold.toLocaleString()}골드
-                    <strong>재료 가치:</strong> {Math.round(gateData.totalValue).toLocaleString()}골드
+                    <strong>재료 가치:</strong> {Math.round(calculatedGate.totalValue).toLocaleString()}골드
                   </span>
                   <span className={styles.summarySecondLine}>
-                    <strong>손익:</strong> {Math.round(gateData.totalValue).toLocaleString()} - {gateData.moreGold.toLocaleString()} = <span className={gateData.profitLoss > 0 ? 'text-success' : gateData.profitLoss < 0 ? 'text-danger' : 'text-secondary'} style={{ fontWeight: 700 }}>
-                      {gateData.profitLoss > 0 ? '+' : ''}{Math.round(gateData.profitLoss).toLocaleString()}골드
+                    <strong>손익:</strong> {Math.round(calculatedGate.totalValue).toLocaleString()} - {gateData.moreGold.toLocaleString()} = <span className={calculatedGate.profitLoss > 0 ? 'text-success' : calculatedGate.profitLoss < 0 ? 'text-danger' : 'text-secondary'} style={{ fontWeight: 700 }}>
+                      {calculatedGate.profitLoss > 0 ? '+' : ''}{Math.round(calculatedGate.profitLoss).toLocaleString()}골드
                     </span>
                   </span>
                 </div>
@@ -227,6 +291,7 @@ const SeeMoreCalculator: React.FC = () => {
                 >
                   <thead>
                     <tr className={styles.tableHeader}>
+                      <th className={`${styles.tableHeaderCell} ${styles.checkboxCol}`}></th>
                       <th className={styles.tableHeaderCell}>재료</th>
                       <th className={`${styles.tableHeaderCell} ${styles.tableHeaderCellRight}`}>수량</th>
                       <th className={`${styles.tableHeaderCell} ${styles.tableHeaderCellRight}`}>단가</th>
@@ -234,10 +299,23 @@ const SeeMoreCalculator: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {gateData.materials.map((material, matIndex) => (
-                      <tr key={matIndex} className={styles.tableRow}>
+                    {gateData.materials.map((material, matIndex) => {
+                      const isChecked = isMaterialChecked(selectedRaid, gateData.gate, material.itemId);
+                      return (
+                      <tr
+                        key={matIndex}
+                        className={`${styles.tableRow} ${isChecked ? '' : styles.uncheckedRow}`}
+                      >
+                        <td className={`${styles.tableCell} ${styles.checkboxCol}`}>
+                          <Form.Check
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleMaterialCheck(selectedRaid, gateData.gate, material.itemId)}
+                            className={styles.materialCheckbox}
+                          />
+                        </td>
                         <td className={styles.tableCell}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div className={styles.materialCellContent}>
                             <Image
                               src={`/${getMaterialImage(material.itemName)}`}
                               alt={material.itemName}
@@ -258,11 +336,13 @@ const SeeMoreCalculator: React.FC = () => {
                           {material.itemId === 0 ? '-' : Math.round(material.totalPrice).toLocaleString() + '골드'}
                         </td>
                       </tr>
-                    ))}
+                    );
+                    })}
                   </tbody>
                 </Table>
                 </div>
-              ))}
+              );
+              })}
             </div>
           </Card.Body>
         </Card>

@@ -656,6 +656,33 @@
   overflow: hidden;
   border-radius: 8px;
   border: 1px solid var(--border-color);
+  table-layout: auto;
+  width: 100%;
+}
+
+/* 체크박스 열 */
+.checkboxCol {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  text-align: center !important;
+  padding: 0.5rem 0.25rem !important;
+}
+
+.materialCheckbox {
+  margin: 0 !important;
+  display: flex;
+  justify-content: center;
+}
+
+.uncheckedRow {
+  opacity: 0.4;
+}
+
+.materialCellContent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .tableHeader {
@@ -669,6 +696,7 @@
   font-size: 0.85rem;
   color: var(--text-primary);
   border-right: 1px solid var(--border-color);
+  text-align: center;
 }
 
 .tableHeaderCell:last-child {
@@ -676,7 +704,7 @@
 }
 
 .tableHeaderCellRight {
-  text-align: right;
+  text-align: center;
 }
 
 .tableRow {
@@ -698,6 +726,12 @@
   border-right: 1px solid var(--border-color);
   border-top: 1px solid var(--border-color);
   color: var(--text-primary);
+  text-align: center;
+}
+
+/* 재료 열(2번째)만 왼쪽 정렬 */
+.tableCell:nth-child(2) {
+  text-align: left;
 }
 
 .tableCell:last-child {
@@ -709,7 +743,7 @@
 }
 
 .tableCellRight {
-  text-align: right;
+  text-align: center;
 }
 
 .tableCellPrice {

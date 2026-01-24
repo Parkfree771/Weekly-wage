@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { Card, Table, Spinner } from 'react-bootstrap';
+import { Card, Table, Spinner, Form } from 'react-bootstrap';
 import { raids } from '@/data/raids';
 import { raidRewards, MATERIAL_IDS, MATERIAL_BUNDLE_SIZES } from '@/data/raidRewards';
 import { usePriceData } from '@/contexts/PriceContext';
@@ -36,6 +36,7 @@ const basicClearRewards = {
         { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 405 },
         { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 810 },
         { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 8 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 9100 },
         { itemId: 0, itemName: '고통의 가시', amount: 10 },
         { itemId: 0, itemName: '코어', amount: 3 },
       ]
@@ -46,6 +47,7 @@ const basicClearRewards = {
         { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 500 },
         { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 1000 },
         { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 12 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 11000 },
         { itemId: 0, itemName: '고통의 가시', amount: 15 },
         { itemId: 0, itemName: '코어', amount: 3 },
       ]
@@ -58,6 +60,7 @@ const basicClearRewards = {
         { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 385 },
         { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 770 },
         { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 7 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 8300 },
         { itemId: 0, itemName: '고통의 가시', amount: 10 },
         { itemId: 0, itemName: '코어', amount: 2 },
       ]
@@ -68,6 +71,7 @@ const basicClearRewards = {
         { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 475 },
         { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 950 },
         { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 10 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 10100 },
         { itemId: 0, itemName: '고통의 가시', amount: 15 },
         { itemId: 0, itemName: '코어', amount: 2 },
       ]
@@ -107,9 +111,40 @@ type CerkaData = {
 
 const CerkaRewardInfo: React.FC = () => {
   const [selectedRaid, setSelectedRaid] = useState<string | null>(null);
+  // 재료 체크 상태 관리: { [raidName]: { basic: { [gate]: { [itemId]: boolean } }, more: { [gate]: { [itemId]: boolean } } } }
+  const [materialChecks, setMaterialChecks] = useState<{
+    [raidName: string]: {
+      basic: { [gate: number]: { [itemId: number]: boolean } };
+      more: { [gate: number]: { [itemId: number]: boolean } };
+    }
+  }>({});
 
   // Context에서 가격 데이터 가져오기
   const { unitPrices, loading } = usePriceData();
+
+  // 재료가 체크되어 있는지 확인
+  const isMaterialChecked = (raidName: string, type: 'basic' | 'more', gate: number, itemId: number): boolean => {
+    return materialChecks[raidName]?.[type]?.[gate]?.[itemId] ?? true;
+  };
+
+  // 재료 체크 토글 함수
+  const handleMaterialCheck = (raidName: string, type: 'basic' | 'more', gate: number, itemId: number) => {
+    setMaterialChecks(prev => ({
+      ...prev,
+      [raidName]: {
+        ...prev[raidName],
+        basic: prev[raidName]?.basic || {},
+        more: prev[raidName]?.more || {},
+        [type]: {
+          ...prev[raidName]?.[type],
+          [gate]: {
+            ...prev[raidName]?.[type]?.[gate],
+            [itemId]: !isMaterialChecked(raidName, type, gate, itemId)
+          }
+        }
+      }
+    }));
+  };
 
   // 가격 데이터를 기반으로 세르카 보상 계산 (메모이제이션)
   const cerkaData = useMemo(() => {
@@ -196,6 +231,33 @@ const CerkaRewardInfo: React.FC = () => {
     return result;
   }, [unitPrices]);
 
+  // 체크된 재료만 계산한 관문별 기본 재료 가치
+  const getCheckedBasicMaterialValue = (raidName: string, gate: GateData): number => {
+    return gate.basicMaterials.reduce((sum, mat) => {
+      const isChecked = isMaterialChecked(raidName, 'basic', gate.gate, mat.itemId);
+      return sum + (isChecked ? mat.totalPrice : 0);
+    }, 0);
+  };
+
+  // 체크된 재료만 계산한 관문별 더보기 재료 가치
+  const getCheckedMoreMaterialValue = (raidName: string, gate: GateData): number => {
+    return gate.moreMaterials.reduce((sum, mat) => {
+      const isChecked = isMaterialChecked(raidName, 'more', gate.gate, mat.itemId);
+      return sum + (isChecked ? mat.totalPrice : 0);
+    }, 0);
+  };
+
+  // 체크 상태 반영한 총 가치 계산
+  const getCalculatedFinalValue = (raidData: CerkaData): number => {
+    let totalBasic = 0;
+    let totalMore = 0;
+    raidData.gates.forEach(gate => {
+      totalBasic += getCheckedBasicMaterialValue(raidData.raidName, gate);
+      totalMore += getCheckedMoreMaterialValue(raidData.raidName, gate);
+    });
+    return raidData.totalClearGold + totalBasic + totalMore - raidData.totalMoreGold;
+  };
+
   const handleRaidSelect = (raidName: string) => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
   };
@@ -238,7 +300,7 @@ const CerkaRewardInfo: React.FC = () => {
                 <h3 className={styles.raidName}>{raid.raidName}</h3>
                 <p className={styles.raidLevel}>Lv. {raid.level}</p>
                 <div className={styles.goldBadge}>
-                  {raid.finalValue.toLocaleString()}G
+                  {getCalculatedFinalValue(raid).toLocaleString()}G
                 </div>
               </div>
             </div>
@@ -296,6 +358,7 @@ const CerkaRewardInfo: React.FC = () => {
                   <Table size="sm" className={styles.materialTable}>
                     <thead>
                       <tr>
+                        <th></th>
                         <th>재료</th>
                         <th>수량</th>
                         <th>단가</th>
@@ -303,8 +366,18 @@ const CerkaRewardInfo: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {gate.basicMaterials.map((mat, idx) => (
-                        <tr key={idx}>
+                      {gate.basicMaterials.map((mat, idx) => {
+                        const isChecked = isMaterialChecked(selectedData.raidName, 'basic', gate.gate, mat.itemId);
+                        return (
+                        <tr key={idx} className={isChecked ? '' : styles.uncheckedRow}>
+                          <td>
+                            <Form.Check
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleMaterialCheck(selectedData.raidName, 'basic', gate.gate, mat.itemId)}
+                              className={styles.materialCheckbox}
+                            />
+                          </td>
                           <td>
                             <div className={styles.materialCell}>
                               <Image
@@ -325,17 +398,18 @@ const CerkaRewardInfo: React.FC = () => {
                             {mat.itemId === 0 ? '-' : mat.totalPrice.toLocaleString()}
                           </td>
                         </tr>
-                      ))}
+                      );
+                      })}
                     </tbody>
                     <tfoot>
                       <tr className={styles.subtotalRow}>
-                        <td colSpan={3}>재료 가치</td>
-                        <td>{gate.basicMaterialValue.toLocaleString()}</td>
+                        <td colSpan={4}>재료 가치</td>
+                        <td>{getCheckedBasicMaterialValue(selectedData.raidName, gate).toLocaleString()}</td>
                       </tr>
                       <tr className={styles.gateTotalRow}>
-                        <td colSpan={3}><strong>{gate.gate}관문 합계</strong></td>
+                        <td colSpan={4}><strong>{gate.gate}관문 합계</strong></td>
                         <td>
-                          <strong>{(gate.clearGold + gate.basicMaterialValue).toLocaleString()}</strong>
+                          <strong>{(gate.clearGold + getCheckedBasicMaterialValue(selectedData.raidName, gate)).toLocaleString()}</strong>
                         </td>
                       </tr>
                     </tfoot>
@@ -368,6 +442,7 @@ const CerkaRewardInfo: React.FC = () => {
                   <Table size="sm" className={styles.materialTable}>
                     <thead>
                       <tr>
+                        <th></th>
                         <th>재료</th>
                         <th>수량</th>
                         <th>단가</th>
@@ -375,8 +450,18 @@ const CerkaRewardInfo: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {gate.moreMaterials.map((mat, idx) => (
-                        <tr key={idx}>
+                      {gate.moreMaterials.map((mat, idx) => {
+                        const isChecked = isMaterialChecked(selectedData.raidName, 'more', gate.gate, mat.itemId);
+                        return (
+                        <tr key={idx} className={isChecked ? '' : styles.uncheckedRow}>
+                          <td>
+                            <Form.Check
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleMaterialCheck(selectedData.raidName, 'more', gate.gate, mat.itemId)}
+                              className={styles.materialCheckbox}
+                            />
+                          </td>
                           <td>
                             <div className={styles.materialCell}>
                               <Image
@@ -397,19 +482,20 @@ const CerkaRewardInfo: React.FC = () => {
                             {mat.itemId === 0 ? '-' : mat.totalPrice.toLocaleString()}
                           </td>
                         </tr>
-                      ))}
+                      );
+                      })}
                     </tbody>
                     <tfoot>
                       <tr className={styles.subtotalRow}>
-                        <td colSpan={3}>재료 가치</td>
-                        <td>{gate.moreMaterialValue.toLocaleString()}</td>
+                        <td colSpan={4}>재료 가치</td>
+                        <td>{getCheckedMoreMaterialValue(selectedData.raidName, gate).toLocaleString()}</td>
                       </tr>
                       <tr className={styles.gateTotalRow}>
-                        <td colSpan={3}><strong>더보기 손익</strong></td>
+                        <td colSpan={4}><strong>더보기 손익</strong></td>
                         <td>
-                          <strong className={gate.moreMaterialValue - gate.moreGold >= 0 ? styles.profit : styles.loss}>
-                            {(gate.moreMaterialValue - gate.moreGold) >= 0 ? '+' : ''}
-                            {(gate.moreMaterialValue - gate.moreGold).toLocaleString()}
+                          <strong className={getCheckedMoreMaterialValue(selectedData.raidName, gate) - gate.moreGold >= 0 ? styles.profit : styles.loss}>
+                            {(getCheckedMoreMaterialValue(selectedData.raidName, gate) - gate.moreGold) >= 0 ? '+' : ''}
+                            {(getCheckedMoreMaterialValue(selectedData.raidName, gate) - gate.moreGold).toLocaleString()}
                           </strong>
                         </td>
                       </tr>
@@ -420,34 +506,44 @@ const CerkaRewardInfo: React.FC = () => {
             </div>
 
             {/* 최종 합계 */}
-            <div className={styles.finalSection}>
-              <div className={styles.finalTitle}>더보기 포함 총 가치</div>
-              <div className={styles.finalGrid}>
-                <div className={styles.finalGridItem}>
-                  <div className={styles.finalLabel}>클리어 골드</div>
-                  <div className={styles.finalItemValue}>{selectedData.totalClearGold.toLocaleString()}</div>
-                </div>
-                <div className={styles.finalGridItem}>
-                  <div className={styles.finalLabel}>기본 재료 가치</div>
-                  <div className={styles.finalItemValue}>+{selectedData.totalBasicMaterialValue.toLocaleString()}</div>
-                </div>
-                <div className={styles.finalGridItem}>
-                  <div className={styles.finalLabel}>더보기 재료 가치</div>
-                  <div className={styles.finalItemValue}>+{selectedData.totalMoreMaterialValue.toLocaleString()}</div>
-                </div>
-                <div className={styles.finalGridItem}>
-                  <div className={styles.finalLabel}>더보기 비용</div>
-                  <div className={`${styles.finalItemValue} ${styles.calcCost}`}>-{selectedData.totalMoreGold.toLocaleString()}</div>
-                </div>
-                <div className={`${styles.finalGridItem} ${styles.finalTotalItem}`}>
-                  <div className={styles.finalLabel}>총 가치</div>
-                  <div className={styles.finalValueWrapper}>
-                    <Image src="/gold.webp" alt="골드" width={24} height={24} />
-                    <span className={styles.finalValue}>{selectedData.finalValue.toLocaleString()}</span>
+            {(() => {
+              const totalCheckedBasic = selectedData.gates.reduce((sum, gate) =>
+                sum + getCheckedBasicMaterialValue(selectedData.raidName, gate), 0);
+              const totalCheckedMore = selectedData.gates.reduce((sum, gate) =>
+                sum + getCheckedMoreMaterialValue(selectedData.raidName, gate), 0);
+              const calculatedFinal = selectedData.totalClearGold + totalCheckedBasic + totalCheckedMore - selectedData.totalMoreGold;
+
+              return (
+              <div className={styles.finalSection}>
+                <div className={styles.finalTitle}>더보기 포함 총 가치</div>
+                <div className={styles.finalGrid}>
+                  <div className={styles.finalGridItem}>
+                    <div className={styles.finalLabel}>클리어 골드</div>
+                    <div className={styles.finalItemValue}>{selectedData.totalClearGold.toLocaleString()}</div>
+                  </div>
+                  <div className={styles.finalGridItem}>
+                    <div className={styles.finalLabel}>기본 재료 가치</div>
+                    <div className={styles.finalItemValue}>+{totalCheckedBasic.toLocaleString()}</div>
+                  </div>
+                  <div className={styles.finalGridItem}>
+                    <div className={styles.finalLabel}>더보기 재료 가치</div>
+                    <div className={styles.finalItemValue}>+{totalCheckedMore.toLocaleString()}</div>
+                  </div>
+                  <div className={styles.finalGridItem}>
+                    <div className={styles.finalLabel}>더보기 비용</div>
+                    <div className={`${styles.finalItemValue} ${styles.calcCost}`}>-{selectedData.totalMoreGold.toLocaleString()}</div>
+                  </div>
+                  <div className={`${styles.finalGridItem} ${styles.finalTotalItem}`}>
+                    <div className={styles.finalLabel}>총 가치</div>
+                    <div className={styles.finalValueWrapper}>
+                      <Image src="/gold.webp" alt="골드" width={24} height={24} />
+                      <span className={styles.finalValue}>{calculatedFinal.toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+              );
+            })()}
 
           </Card.Body>
         </Card>
