@@ -453,8 +453,8 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
       if (newLevelCost.빙하 > 0) refiningResult.glacier_breath = newLevelCost.빙하;
       if (newBreathCount > 0) refiningResult.breath_count = newBreathCount;
 
-      // 성공 시점 장인의 기운 저장 (%)
-      refiningResult.final_jangin = Math.round(jangin * 100);
+      // 성공 시점 장인의 기운 저장 (%) - 소수점 셋째자리에서 버림
+      refiningResult.final_jangin = Math.floor(jangin * 10000) / 100;
 
       // 비동기로 저장 (실패해도 시뮬레이션은 계속)
       saveRefiningResult(refiningResult).catch(err => {
