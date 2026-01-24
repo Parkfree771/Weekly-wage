@@ -302,10 +302,6 @@
   border: 1px dashed var(--border-color);
 }
 
-.insufficientIcon {
-  font-size: 2rem;
-}
-
 .insufficientText {
   font-size: 1.1rem;
   font-weight: 700;
@@ -588,10 +584,6 @@
     padding: 1.5rem 1rem;
   }
 
-  .insufficientIcon {
-    font-size: 1.5rem;
-  }
-
   .insufficientText {
     font-size: 1rem;
   }
@@ -814,10 +806,6 @@
   .insufficientData {
     padding: 1.25rem 0.75rem;
     margin-bottom: 0.75rem;
-  }
-
-  .insufficientIcon {
-    font-size: 1.25rem;
   }
 
   .insufficientText {

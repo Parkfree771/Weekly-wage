@@ -332,7 +332,6 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
         {/* 통계 부족 메시지 - 100개 미만일 때 */}
         {selectedLevel !== null && records.length > 0 && records.length < 100 && !loading && (
           <div className={styles.insufficientData}>
-            <span className={styles.insufficientIcon}>📊</span>
             <span className={styles.insufficientText}>
               통계 부족 ({records.length}/100)
             </span>
