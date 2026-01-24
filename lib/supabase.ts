@@ -34,6 +34,7 @@ export interface RefiningResult {
   lava_breath?: number;
   glacier_breath?: number;
   breath_count?: number;  // 숨결 사용 횟수
+  final_jangin?: number;  // 성공 시점 장인의 기운 (%)
 }
 
 // 재련 결과 저장 함수
@@ -87,5 +88,162 @@ export async function getRefiningStats(
   } catch (err) {
     console.error('Error fetching refining stats:', err);
     return null;
+  }
+}
+
+// 레벨별 통계 타입
+export interface LevelStats {
+  fromLevel: number;
+  toLevel: number;
+  avgAttempts: number;
+  totalSamples: number;
+}
+
+// 전체 레벨 통계 조회 함수 (테이블용)
+export async function getAllLevelStats(
+  isSuccession: boolean,
+  equipmentType: 'weapon' | 'armor'
+): Promise<LevelStats[]> {
+  try {
+    const equipmentName = isSuccession
+      ? (equipmentType === 'weapon' ? '전율 무기' : '전율 방어구')
+      : (equipmentType === 'weapon' ? '업화 무기' : '업화 방어구');
+
+    const { data, error } = await supabase
+      .from('refining_results')
+      .select('from_level, to_level, attempts')
+      .eq('equipment_name', equipmentName)
+      .eq('is_succession', isSuccession);
+
+    if (error || !data || data.length === 0) {
+      return [];
+    }
+
+    // 레벨별로 그룹화
+    const grouped: Record<string, { attempts: number[]; fromLevel: number; toLevel: number }> = {};
+
+    for (const row of data) {
+      const key = `${row.from_level}-${row.to_level}`;
+      if (!grouped[key]) {
+        grouped[key] = { attempts: [], fromLevel: row.from_level, toLevel: row.to_level };
+      }
+      grouped[key].attempts.push(row.attempts);
+    }
+
+    // 통계 계산
+    const stats: LevelStats[] = [];
+    for (const key in grouped) {
+      const group = grouped[key];
+      const totalAttempts = group.attempts.reduce((sum, a) => sum + a, 0);
+      stats.push({
+        fromLevel: group.fromLevel,
+        toLevel: group.toLevel,
+        avgAttempts: Math.round((totalAttempts / group.attempts.length) * 10) / 10,
+        totalSamples: group.attempts.length
+      });
+    }
+
+    // fromLevel 기준 정렬
+    stats.sort((a, b) => a.fromLevel - b.fromLevel);
+
+    return stats;
+  } catch (err) {
+    console.error('Error fetching all level stats:', err);
+    return [];
+  }
+}
+
+// 개별 시뮬레이션 결과 타입
+export interface SimulationRecord {
+  id: number;
+  attempts: number;
+  use_breath: boolean;
+  breath_count: number | null;
+  created_at: string;
+  // 재료들
+  fate_fragment: number | null;
+  gold: number | null;
+  // 계승 전
+  destruction_stone: number | null;
+  guardian_stone: number | null;
+  breakthrough_stone: number | null;
+  abidos: number | null;
+  // 계승 후
+  destruction_crystal: number | null;
+  guardian_crystal: number | null;
+  great_breakthrough: number | null;
+  advanced_abidos: number | null;
+  shilling: number | null;
+  // 숨결
+  lava_breath: number | null;
+  glacier_breath: number | null;
+  // 장인의 기운
+  final_jangin: number | null;
+}
+
+// 조건별 시뮬레이션 결과 조회
+export async function getSimulationRecords(
+  isSuccession: boolean,
+  equipmentType: 'weapon' | 'armor',
+  useBreath: boolean,
+  fromLevel: number
+): Promise<SimulationRecord[]> {
+  try {
+    const equipmentName = isSuccession
+      ? (equipmentType === 'weapon' ? '전율 무기' : '전율 방어구')
+      : (equipmentType === 'weapon' ? '업화 무기' : '업화 방어구');
+
+    const { data, error } = await supabase
+      .from('refining_results')
+      .select('*')
+      .eq('equipment_name', equipmentName)
+      .eq('is_succession', isSuccession)
+      .eq('use_breath', useBreath)
+      .eq('from_level', fromLevel)
+      .order('attempts', { ascending: true });
+
+    if (error || !data) {
+      console.error('Error fetching simulation records:', error);
+      return [];
+    }
+
+    return data as SimulationRecord[];
+  } catch (err) {
+    console.error('Error fetching simulation records:', err);
+    return [];
+  }
+}
+
+// 레벨별 샘플 수 조회 (버튼에 표시용)
+export async function getLevelSampleCounts(
+  isSuccession: boolean,
+  equipmentType: 'weapon' | 'armor',
+  useBreath: boolean
+): Promise<Record<number, number>> {
+  try {
+    const equipmentName = isSuccession
+      ? (equipmentType === 'weapon' ? '전율 무기' : '전율 방어구')
+      : (equipmentType === 'weapon' ? '업화 무기' : '업화 방어구');
+
+    const { data, error } = await supabase
+      .from('refining_results')
+      .select('from_level')
+      .eq('equipment_name', equipmentName)
+      .eq('is_succession', isSuccession)
+      .eq('use_breath', useBreath);
+
+    if (error || !data) {
+      return {};
+    }
+
+    const counts: Record<number, number> = {};
+    for (const row of data) {
+      counts[row.from_level] = (counts[row.from_level] || 0) + 1;
+    }
+
+    return counts;
+  } catch (err) {
+    console.error('Error fetching level sample counts:', err);
+    return {};
   }
 }

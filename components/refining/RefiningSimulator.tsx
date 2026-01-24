@@ -23,6 +23,7 @@ import {
   type EquipmentAPIResponse
 } from '../../lib/equipmentParser';
 import { saveRefiningResult, RefiningResult } from '../../lib/supabase';
+import RefiningStats from './RefiningStats';
 
 type Equipment = EquipmentType;
 
@@ -452,6 +453,9 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
       if (newLevelCost.빙하 > 0) refiningResult.glacier_breath = newLevelCost.빙하;
       if (newBreathCount > 0) refiningResult.breath_count = newBreathCount;
 
+      // 성공 시점 장인의 기운 저장 (%)
+      refiningResult.final_jangin = Math.round(jangin * 100);
+
       // 비동기로 저장 (실패해도 시뮬레이션은 계속)
       saveRefiningResult(refiningResult).catch(err => {
         console.error('Failed to save refining result:', err);
@@ -757,7 +761,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                       <div className={styles.janginSection}>
                         <div className={styles.janginHeader}>
                           <span className={styles.janginLabel}>장인의 기운</span>
-                          <span className={styles.janginValue}>{(jangin * 100).toFixed(2)}%</span>
+                          <span className={styles.janginValue}>{(Math.floor(jangin * 10000) / 100).toFixed(2)}%</span>
                         </div>
                         <div className={styles.janginBarOuter}>
                           <div
@@ -777,7 +781,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                         >
                           <div className={styles.breathIcon}>
                             <Image
-                              src={selectedEquipment.type === 'weapon' ? '/breath-lava.webp' : '/breath-glacier.webp'}
+                              src={selectedEquipment.type === 'weapon' ? '/breath-lava5.webp' : '/breath-glacier5.webp'}
                               alt="숨결" fill style={{ objectFit: 'contain' }}
                             />
                           </div>
@@ -796,22 +800,22 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                                 <>
                                   {'수호석결정' in materialCost && (
                                     <div className={styles.singleCostItem}>
-                                      <Image src="/destiny-guardian-stone2.webp" alt="수호석결정" width={32} height={32} />
+                                      <Image src="/top-destiny-guardian-stone5.webp" alt="수호석결정" width={32} height={32} />
                                       <span>{(materialCost as any).수호석결정?.toLocaleString()}</span>
                                     </div>
                                   )}
                                   {'파괴석결정' in materialCost && (
                                     <div className={styles.singleCostItem}>
-                                      <Image src="/destiny-destruction-stone2.webp" alt="파괴석결정" width={32} height={32} />
+                                      <Image src="/top-destiny-destruction-stone5.webp" alt="파괴석결정" width={32} height={32} />
                                       <span>{(materialCost as any).파괴석결정?.toLocaleString()}</span>
                                     </div>
                                   )}
                                   <div className={styles.singleCostItem}>
-                                    <Image src="/destiny-breakthrough-stone2.webp" alt="위대한돌파석" width={32} height={32} />
+                                    <Image src="/top-destiny-breakthrough-stone5.webp" alt="위대한돌파석" width={32} height={32} />
                                     <span>{(materialCost as any).위대한돌파석?.toLocaleString()}</span>
                                   </div>
                                   <div className={styles.singleCostItem}>
-                                    <Image src="/abidos-fusion3.webp" alt="상급아비도스" width={32} height={32} />
+                                    <Image src="/top-abidos-fusion5.webp" alt="상급아비도스" width={32} height={32} />
                                     <span>{(materialCost as any).상급아비도스?.toLocaleString()}</span>
                                   </div>
                                   <div className={styles.singleCostItem}>
@@ -823,28 +827,28 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                                 <>
                                   {'수호석' in materialCost && (
                                     <div className={styles.singleCostItem}>
-                                      <Image src="/destiny-guardian-stone.webp" alt="수호석" width={32} height={32} />
+                                      <Image src="/destiny-guardian-stone5.webp" alt="수호석" width={32} height={32} />
                                       <span>{(materialCost as any).수호석?.toLocaleString()}</span>
                                     </div>
                                   )}
                                   {'파괴석' in materialCost && (
                                     <div className={styles.singleCostItem}>
-                                      <Image src="/destiny-destruction-stone.webp" alt="파괴석" width={32} height={32} />
+                                      <Image src="/destiny-destruction-stone5.webp" alt="파괴석" width={32} height={32} />
                                       <span>{(materialCost as any).파괴석?.toLocaleString()}</span>
                                     </div>
                                   )}
                                   <div className={styles.singleCostItem}>
-                                    <Image src="/destiny-breakthrough-stone.webp" alt="돌파석" width={32} height={32} />
+                                    <Image src="/destiny-breakthrough-stone5.webp" alt="돌파석" width={32} height={32} />
                                     <span>{(materialCost as any).돌파석?.toLocaleString()}</span>
                                   </div>
                                   <div className={styles.singleCostItem}>
-                                    <Image src="/abidos-fusion.webp" alt="아비도스" width={32} height={32} />
+                                    <Image src="/abidos-fusion5.webp" alt="아비도스" width={32} height={32} />
                                     <span>{(materialCost as any).아비도스?.toLocaleString()}</span>
                                   </div>
                                 </>
                               )}
                               <div className={styles.singleCostItem}>
-                                <Image src="/destiny-shard-bag-large.webp" alt="운명파편" width={32} height={32} />
+                                <Image src="/destiny-shard-bag-large5.webp" alt="운명파편" width={32} height={32} />
                                 <span>{(materialCost as any).운명파편?.toLocaleString()}</span>
                               </div>
                               <div className={styles.singleCostItem}>
@@ -897,7 +901,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                             {!attempt.success && (
                               <div className={styles.historyItemDetails}>
                                 <span>확률: {(attempt.probabilityBefore * 100).toFixed(2)}% → {(attempt.probabilityAfter * 100).toFixed(2)}%</span>
-                                <span>장인: {(attempt.janginBefore * 100).toFixed(2)}% → {(attempt.janginAfter * 100).toFixed(2)}% (+{(attempt.janginIncrease * 100).toFixed(2)}%)</span>
+                                <span>장인: {(Math.floor(attempt.janginBefore * 10000) / 100).toFixed(2)}% → {(Math.floor(attempt.janginAfter * 10000) / 100).toFixed(2)}% (+{(Math.floor(attempt.janginIncrease * 10000) / 100).toFixed(2)}%)</span>
                               </div>
                             )}
                             {attempt.success && (
@@ -936,7 +940,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                         <>
                           {accumulatedCost.수호석결정 > 0 && (
                             <div className={styles.totalMaterialItem}>
-                              <Image src="/destiny-guardian-stone2.webp" alt="수호석결정" width={28} height={28} />
+                              <Image src="/top-destiny-guardian-stone5.webp" alt="수호석결정" width={28} height={28} />
                               <span className={styles.materialName}>수호석 결정</span>
                               <span className={styles.materialAmount}>{accumulatedCost.수호석결정.toLocaleString()}</span>
                               <span className={styles.materialGold}>{getMaterialGoldCost('수호석결정', accumulatedCost.수호석결정).toLocaleString()}G</span>
@@ -944,7 +948,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                           )}
                           {accumulatedCost.파괴석결정 > 0 && (
                             <div className={styles.totalMaterialItem}>
-                              <Image src="/destiny-destruction-stone2.webp" alt="파괴석결정" width={28} height={28} />
+                              <Image src="/top-destiny-destruction-stone5.webp" alt="파괴석결정" width={28} height={28} />
                               <span className={styles.materialName}>파괴석 결정</span>
                               <span className={styles.materialAmount}>{accumulatedCost.파괴석결정.toLocaleString()}</span>
                               <span className={styles.materialGold}>{getMaterialGoldCost('파괴석결정', accumulatedCost.파괴석결정).toLocaleString()}G</span>
@@ -952,7 +956,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                           )}
                           {accumulatedCost.위대한돌파석 > 0 && (
                             <div className={styles.totalMaterialItem}>
-                              <Image src="/destiny-breakthrough-stone2.webp" alt="위대한돌파석" width={28} height={28} />
+                              <Image src="/top-destiny-breakthrough-stone5.webp" alt="위대한돌파석" width={28} height={28} />
                               <span className={styles.materialName}>위대한 돌파석</span>
                               <span className={styles.materialAmount}>{accumulatedCost.위대한돌파석.toLocaleString()}</span>
                               <span className={styles.materialGold}>{getMaterialGoldCost('위대한돌파석', accumulatedCost.위대한돌파석).toLocaleString()}G</span>
@@ -960,7 +964,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                           )}
                           {accumulatedCost.상급아비도스 > 0 && (
                             <div className={styles.totalMaterialItem}>
-                              <Image src="/abidos-fusion3.webp" alt="상급아비도스" width={28} height={28} />
+                              <Image src="/top-abidos-fusion5.webp" alt="상급아비도스" width={28} height={28} />
                               <span className={styles.materialName}>상급 아비도스</span>
                               <span className={styles.materialAmount}>{accumulatedCost.상급아비도스.toLocaleString()}</span>
                               <span className={styles.materialGold}>{getMaterialGoldCost('상급아비도스', accumulatedCost.상급아비도스).toLocaleString()}G</span>
@@ -979,7 +983,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                         <>
                           {accumulatedCost.수호석 > 0 && (
                             <div className={styles.totalMaterialItem}>
-                              <Image src="/destiny-guardian-stone.webp" alt="수호석" width={28} height={28} />
+                              <Image src="/destiny-guardian-stone5.webp" alt="수호석" width={28} height={28} />
                               <span className={styles.materialName}>수호석</span>
                               <span className={styles.materialAmount}>{accumulatedCost.수호석.toLocaleString()}</span>
                               <span className={styles.materialGold}>{getMaterialGoldCost('수호석', accumulatedCost.수호석).toLocaleString()}G</span>
@@ -987,7 +991,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                           )}
                           {accumulatedCost.파괴석 > 0 && (
                             <div className={styles.totalMaterialItem}>
-                              <Image src="/destiny-destruction-stone.webp" alt="파괴석" width={28} height={28} />
+                              <Image src="/destiny-destruction-stone5.webp" alt="파괴석" width={28} height={28} />
                               <span className={styles.materialName}>파괴석</span>
                               <span className={styles.materialAmount}>{accumulatedCost.파괴석.toLocaleString()}</span>
                               <span className={styles.materialGold}>{getMaterialGoldCost('파괴석', accumulatedCost.파괴석).toLocaleString()}G</span>
@@ -995,7 +999,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                           )}
                           {accumulatedCost.돌파석 > 0 && (
                             <div className={styles.totalMaterialItem}>
-                              <Image src="/destiny-breakthrough-stone.webp" alt="돌파석" width={28} height={28} />
+                              <Image src="/destiny-breakthrough-stone5.webp" alt="돌파석" width={28} height={28} />
                               <span className={styles.materialName}>돌파석</span>
                               <span className={styles.materialAmount}>{accumulatedCost.돌파석.toLocaleString()}</span>
                               <span className={styles.materialGold}>{getMaterialGoldCost('돌파석', accumulatedCost.돌파석).toLocaleString()}G</span>
@@ -1003,7 +1007,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                           )}
                           {accumulatedCost.아비도스 > 0 && (
                             <div className={styles.totalMaterialItem}>
-                              <Image src="/abidos-fusion.webp" alt="아비도스" width={28} height={28} />
+                              <Image src="/abidos-fusion5.webp" alt="아비도스" width={28} height={28} />
                               <span className={styles.materialName}>아비도스</span>
                               <span className={styles.materialAmount}>{accumulatedCost.아비도스.toLocaleString()}</span>
                               <span className={styles.materialGold}>{getMaterialGoldCost('아비도스', accumulatedCost.아비도스).toLocaleString()}G</span>
@@ -1013,7 +1017,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                       )}
                       {accumulatedCost.운명파편 > 0 && (
                         <div className={styles.totalMaterialItem}>
-                          <Image src="/destiny-shard-bag-large.webp" alt="운명파편" width={28} height={28} />
+                          <Image src="/destiny-shard-bag-large5.webp" alt="운명파편" width={28} height={28} />
                           <span className={styles.materialName}>운명파편</span>
                           <span className={styles.materialAmount}>{accumulatedCost.운명파편.toLocaleString()}</span>
                           <span className={styles.materialGold}>{getMaterialGoldCost('운명파편', accumulatedCost.운명파편).toLocaleString()}G</span>
@@ -1021,7 +1025,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                       )}
                       {accumulatedCost.빙하 > 0 && (
                         <div className={styles.totalMaterialItem}>
-                          <Image src="/breath-glacier.webp" alt="빙하의숨결" width={28} height={28} />
+                          <Image src="/breath-glacier5.webp" alt="빙하의숨결" width={28} height={28} />
                           <span className={styles.materialName}>빙하의 숨결</span>
                           <span className={styles.materialAmount}>{accumulatedCost.빙하.toLocaleString()}</span>
                           <span className={styles.materialGold}>{getMaterialGoldCost('빙하', accumulatedCost.빙하).toLocaleString()}G</span>
@@ -1029,7 +1033,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                       )}
                       {accumulatedCost.용암 > 0 && (
                         <div className={styles.totalMaterialItem}>
-                          <Image src="/breath-lava.webp" alt="용암의숨결" width={28} height={28} />
+                          <Image src="/breath-lava5.webp" alt="용암의숨결" width={28} height={28} />
                           <span className={styles.materialName}>용암의 숨결</span>
                           <span className={styles.materialAmount}>{accumulatedCost.용암.toLocaleString()}</span>
                           <span className={styles.materialGold}>{getMaterialGoldCost('용암', accumulatedCost.용암).toLocaleString()}G</span>
@@ -1083,6 +1087,9 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
           <div className={styles.dataNotice}>
             ℹ️ 시도 횟수, 강화 단계, 소모 재료, 숨결 사용 횟수만 익명 통계로 수집됩니다.
           </div>
+
+          {/* 통계 테이블 */}
+          <RefiningStats defaultSuccession={isSuccessionMode} />
         </>
       )}
     </div>
