@@ -164,8 +164,14 @@ export default function TermsOfService() {
               </div>
 
               <div className="text-center mt-5">
-                <Link href="/" className="btn btn-success">
+                <Link href="/" className="btn btn-success me-2">
                   메인페이지로 돌아가기
+                </Link>
+                <Link href="/about" className="btn btn-outline-secondary me-2">
+                  사이트 소개
+                </Link>
+                <Link href="/privacy" className="btn btn-outline-secondary">
+                  개인정보처리방침
                 </Link>
               </div>
             </Card.Body>

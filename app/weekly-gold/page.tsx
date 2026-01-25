@@ -216,6 +216,54 @@ export default function WeeklyGoldPage() {
 
           </Col>
         </Row>
+
+        {/* SEO 정보성 콘텐츠 */}
+        <Row className="justify-content-center mt-5">
+          <Col xl={10} lg={11} md={12}>
+            <Card className="border-0 shadow-sm" style={{ borderRadius: '12px', backgroundColor: 'var(--card-body-bg-stone)' }}>
+              <Card.Body className="p-4">
+                <h2 className="h5 mb-4" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                  주간 골드 계산기 사용 가이드
+                </h2>
+
+                <div className="mb-4">
+                  <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)' }}>사용 방법</h3>
+                  <ol className="mb-0 small" style={{ color: 'var(--text-muted)', paddingLeft: '1.2rem' }}>
+                    <li className="mb-1">상단 검색창에 로스트아크 캐릭터명을 입력합니다.</li>
+                    <li className="mb-1">원정대 캐릭터 목록에서 골드를 획득할 캐릭터를 선택합니다.</li>
+                    <li className="mb-1">각 캐릭터별 클리어 가능한 레이드와 예상 골드 수익을 확인합니다.</li>
+                    <li className="mb-1">더보기 손익 계산기에서 레이드별 더보기 효율을 분석합니다.</li>
+                  </ol>
+                </div>
+
+                <div className="mb-4">
+                  <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)' }}>지원 레이드</h3>
+                  <ul className="mb-0 small" style={{ color: 'var(--text-muted)', paddingLeft: '1.2rem' }}>
+                    <li><strong>카제로스 레이드:</strong> 종막(하드/노말), 4막, 3막, 2막, 1막</li>
+                    <li><strong>그림자 레이드:</strong> 세르카(1710), 고통의 마녀 에키드나</li>
+                    <li><strong>에브레샤크/카양겔:</strong> 각 난이도별 보상 계산</li>
+                  </ul>
+                </div>
+
+                <div className="mb-4">
+                  <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)' }}>자주 묻는 질문</h3>
+                  <div className="small" style={{ color: 'var(--text-muted)' }}>
+                    <p className="mb-2"><strong>Q. 골드 수익은 어떻게 계산되나요?</strong><br />
+                    A. 각 레이드의 클리어 골드와 더보기 보상을 실시간 거래소 시세로 환산하여 계산합니다.</p>
+                    <p className="mb-2"><strong>Q. 더보기 손익은 무엇인가요?</strong><br />
+                    A. 레이드 클리어 시 추가 골드를 지불하고 받는 더보기 보상의 실제 가치를 분석한 것입니다.</p>
+                    <p className="mb-0"><strong>Q. 시세는 얼마나 자주 업데이트되나요?</strong><br />
+                    A. 거래소 시세는 매시 정각에 로스트아크 공식 API를 통해 자동 갱신됩니다.</p>
+                  </div>
+                </div>
+
+                <div className="small" style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                  <strong>TIP:</strong> 골드 획득 제한(6캐릭터)을 고려하여 가장 효율적인 캐릭터 조합을 선택하세요.
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
       </Container>
 
       <footer className="footer-fixed">
@@ -227,6 +275,10 @@ export default function WeeklyGoldPage() {
                   &copy; {new Date().getFullYear()} <strong style={{ color: 'var(--text-primary)' }}>로스트아크 골드 계산기</strong>
                 </p>
                 <div className="d-flex justify-content-center gap-3 mb-2">
+                  <a href="/about" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
+                    사이트 소개
+                  </a>
+                  <span style={{ color: 'var(--text-muted)' }}>|</span>
                   <a href="/privacy" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
                     개인정보처리방침
                   </a>

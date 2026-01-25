@@ -147,8 +147,14 @@ export default function PrivacyPolicy() {
               </div>
 
               <div className="text-center mt-5">
-                <Link href="/" className="btn btn-primary">
+                <Link href="/" className="btn btn-primary me-2">
                   메인페이지로 돌아가기
+                </Link>
+                <Link href="/about" className="btn btn-outline-secondary me-2">
+                  사이트 소개
+                </Link>
+                <Link href="/terms" className="btn btn-outline-secondary">
+                  이용약관
                 </Link>
               </div>
             </Card.Body>

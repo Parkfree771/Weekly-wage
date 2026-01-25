@@ -32,7 +32,7 @@ export default function Home() {
   return (
     <div className={styles.mainContainer}>
       <ThemeToggleButton />
-      <Container fluid className="mt-3 mt-md-4">
+      <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1800px', margin: '0 auto' }}>
         <Row className="justify-content-center">
           <Col xl={11} lg={12} md={12}>
             {/* 사이트 제목 */}
@@ -324,6 +324,80 @@ export default function Home() {
 
           </Col>
         </Row>
+
+        {/* SEO 정보성 콘텐츠 */}
+        <Row className="justify-content-center mt-4">
+          <Col xl={10} lg={11} md={12}>
+            <Card className="border-0 shadow-sm" style={{ borderRadius: '12px', backgroundColor: 'var(--card-body-bg-stone)' }}>
+              <Card.Body className="p-4">
+                <h2 className="h5 mb-4" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                  로스트아크 골드 계산기 소개
+                </h2>
+
+                <div className="mb-4">
+                  <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)' }}>서비스 소개</h3>
+                  <p className="mb-0 small" style={{ color: 'var(--text-muted)' }}>
+                    로스트아크 골드 계산기는 원정대의 주간 골드 수익을 계산하고 레이드 더보기 효율을 분석하여
+                    효율적인 골드 파밍을 도와주는 무료 웹 서비스입니다. 실시간 거래소 시세를 반영하여
+                    정확한 수익 계산을 제공합니다.
+                  </p>
+                </div>
+
+                <div className="mb-4">
+                  <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)' }}>주요 기능</h3>
+                  <Row>
+                    <Col md={4} className="mb-2 mb-md-0">
+                      <div className="small" style={{ color: 'var(--text-muted)' }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>주간 골드 계산</strong>
+                        <ul className="mb-0 ps-3 mt-1">
+                          <li>원정대 골드 수익 계산</li>
+                          <li>더보기 손익 분석</li>
+                          <li>세르카/카제로스 지원</li>
+                        </ul>
+                      </div>
+                    </Col>
+                    <Col md={4} className="mb-2 mb-md-0">
+                      <div className="small" style={{ color: 'var(--text-muted)' }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>재련 비용 계산</strong>
+                        <ul className="mb-0 ps-3 mt-1">
+                          <li>목표 레벨 재료 계산</li>
+                          <li>예상 골드 비용</li>
+                          <li>강화 시뮬레이션</li>
+                        </ul>
+                      </div>
+                    </Col>
+                    <Col md={4}>
+                      <div className="small" style={{ color: 'var(--text-muted)' }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>실시간 시세</strong>
+                        <ul className="mb-0 ps-3 mt-1">
+                          <li>거래소 가격 추이</li>
+                          <li>매시 정각 갱신</li>
+                          <li>공식 API 데이터</li>
+                        </ul>
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
+
+                <div className="mb-4">
+                  <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)' }}>자주 묻는 질문</h3>
+                  <div className="small" style={{ color: 'var(--text-muted)' }}>
+                    <p className="mb-2"><strong>Q. 데이터는 어디서 가져오나요?</strong><br />
+                    A. 로스트아크 공식 Open API를 통해 캐릭터 정보와 거래소 시세를 가져옵니다.</p>
+                    <p className="mb-2"><strong>Q. 모바일에서도 사용할 수 있나요?</strong><br />
+                    A. 네, 모든 기능이 모바일 환경에 최적화되어 있습니다.</p>
+                    <p className="mb-0"><strong>Q. 무료인가요?</strong><br />
+                    A. 네, 모든 기능을 무료로 제공하고 있습니다.</p>
+                  </div>
+                </div>
+
+                <div className="small" style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                  <strong>TIP:</strong> 상단 메뉴에서 원하는 계산기를 선택하여 바로 사용해보세요.
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
       </Container>
 
       <footer className="footer-fixed">
@@ -335,6 +409,10 @@ export default function Home() {
                 &copy; {new Date().getFullYear()} <strong style={{ color: 'var(--text-primary)' }}>로스트아크 골드 계산기</strong>
               </p>
               <div className="d-flex justify-content-center align-items-center gap-2 gap-sm-3 flex-wrap">
+                <a href="/about" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
+                  사이트 소개
+                </a>
+                <span style={{ color: 'var(--text-muted)' }}>|</span>
                 <a href="/privacy" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
                   개인정보처리방침
                 </a>
