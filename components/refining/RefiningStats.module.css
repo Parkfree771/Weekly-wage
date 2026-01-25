@@ -423,15 +423,9 @@
   position: relative;
   width: 100%;
   max-width: 400px;
-  height: 12px;
-  background: linear-gradient(90deg,
-    #9ca3af 0%,
-    #22c55e 25%,
-    #3b82f6 50%,
-    #a855f7 75%,
-    #f59e0b 100%
-  );
-  border-radius: 6px;
+  height: 8px;
+  background: var(--border-color);
+  border-radius: 99px;
   overflow: visible;
 }
 
@@ -440,19 +434,21 @@
   top: 0;
   left: 0;
   height: 100%;
-  border-radius: 6px 0 0 6px;
-  opacity: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  transition: width 0.3s ease;
 }
 
 .rankMarker {
   position: absolute;
-  top: -4px;
-  width: 4px;
-  height: 20px;
-  background: var(--text-primary);
-  border-radius: 2px;
-  transform: translateX(-50%);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border: 3px solid #6366f1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
 }
 
 .rankScale {
@@ -460,7 +456,7 @@
   justify-content: space-between;
   width: 100%;
   max-width: 400px;
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
   font-size: 0.75rem;
   color: var(--text-muted);
 }
@@ -554,12 +550,12 @@
 
   .rankBar {
     max-width: 100%;
-    height: 10px;
+    height: 6px;
   }
 
   .rankMarker {
-    height: 18px;
-    top: -4px;
+    width: 14px;
+    height: 14px;
   }
 
   .rankScale {
@@ -776,13 +772,12 @@
   }
 
   .rankBar {
-    height: 8px;
+    height: 5px;
   }
 
   .rankMarker {
-    height: 16px;
-    width: 3px;
-    top: -4px;
+    width: 12px;
+    height: 12px;
   }
 
   .rankScale {

@@ -156,15 +156,6 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
     };
   }, [records, myAttempts]);
 
-  // 운 등급 계산
-  const getLuckGrade = (percentile: number) => {
-    if (percentile >= 90) return { text: '전설', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' };
-    if (percentile >= 70) return { text: '영웅', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)' };
-    if (percentile >= 50) return { text: '희귀', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' };
-    if (percentile >= 30) return { text: '고급', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' };
-    return { text: '일반', color: '#9ca3af', bg: 'rgba(156, 163, 175, 0.1)' };
-  };
-
   const avgAttempts = records.length > 0
     ? Math.round((records.reduce((sum, r) => sum + r.attempts, 0) / records.length) * 10) / 10
     : 0;
@@ -271,32 +262,13 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
 
             {stats && stats.myAttemptsNum > 0 && (
               <div className={styles.compareResult}>
-                <div
-                  className={styles.rankBadge}
-                  style={{
-                    color: getLuckGrade(stats.myPercentile).color,
-                    backgroundColor: getLuckGrade(stats.myPercentile).bg,
-                    borderColor: getLuckGrade(stats.myPercentile).color
-                  }}
-                >
-                  {getLuckGrade(stats.myPercentile).text}
-                </div>
                 <div className={styles.rankText}>
                   <span className={styles.rankHighlight}>상위 {100 - stats.myPercentile}%</span>
-                  <span className={styles.rankDesc}>
-                    {stats.myPercentile >= 50
-                      ? `${stats.sampleSize}명 중 ${Math.round(stats.sampleSize * stats.myPercentile / 100)}명보다 빠르게 성공!`
-                      : `평균(${stats.mean}회)보다 ${stats.myAttemptsNum > stats.mean ? '조금 더 걸렸어요' : '빠르게 성공했어요'}`
-                    }
-                  </span>
                 </div>
                 <div className={styles.rankBar}>
                   <div
                     className={styles.rankProgress}
-                    style={{
-                      width: `${stats.myPercentile}%`,
-                      backgroundColor: getLuckGrade(stats.myPercentile).color
-                    }}
+                    style={{ width: `${stats.myPercentile}%` }}
                   />
                   <div
                     className={styles.rankMarker}

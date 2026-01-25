@@ -707,7 +707,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                       <div className={`${styles.maxLevelComplete} ${selectedEquipment.type === 'weapon' ? styles.maxLevelWeapon : styles.maxLevelArmor}`}>
                         <div className={styles.maxLevelIcon}>
                           {selectedEquipment.icon && (
-                            <Image src={selectedEquipment.icon} alt={selectedEquipment.name} fill style={{ objectFit: 'contain' }} />
+                            <Image src={selectedEquipment.icon} alt={selectedEquipment.name} fill sizes="80px" style={{ objectFit: 'contain' }} />
                           )}
                         </div>
                         <div className={`${styles.maxLevelBadge} ${selectedEquipment.type === 'weapon' ? styles.maxLevelBadgeWeapon : styles.maxLevelBadgeArmor}`}>
@@ -729,7 +729,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
                       <div className={styles.equipmentStatus}>
                         <div className={styles.equipmentStatusIcon}>
                           {selectedEquipment.icon && (
-                            <Image src={selectedEquipment.icon} alt={selectedEquipment.name} fill style={{ objectFit: 'contain' }} />
+                            <Image src={selectedEquipment.icon} alt={selectedEquipment.name} fill sizes="56px" style={{ objectFit: 'contain' }} />
                           )}
                         </div>
                         <div className={styles.equipmentStatusInfo}>

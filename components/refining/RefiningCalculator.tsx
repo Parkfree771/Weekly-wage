@@ -130,6 +130,7 @@ const MaterialCard = ({
           src={icon}
           alt={name}
           fill
+          sizes="40px"
           style={{ objectFit: 'contain' }}
         />
       ) : (
@@ -1290,10 +1291,13 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
                       {/* 캐릭터 이미지 */}
                       {characterInfo.image && (
                         <div className={styles.characterImageWrapper}>
-                          <img
+                          <Image
                             src={characterInfo.image}
                             alt={characterInfo.name}
-                            className={styles.characterImage}
+                            fill
+                            sizes="(max-width: 576px) 80px, 120px"
+                            style={{ objectFit: 'cover' }}
+                            priority
                           />
                         </div>
                       )}
