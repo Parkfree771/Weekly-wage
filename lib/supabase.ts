@@ -99,7 +99,7 @@ export interface LevelStats {
   totalSamples: number;
 }
 
-// 전체 레벨 통계 조회 함수 (테이블용)
+// 전체 레벨 통계 조회 함수 (테이블용) - pagination으로 전체 데이터 조회
 export async function getAllLevelStats(
   isSuccession: boolean,
   equipmentType: 'weapon' | 'armor'
@@ -109,25 +109,42 @@ export async function getAllLevelStats(
       ? (equipmentType === 'weapon' ? '전율 무기' : '전율 방어구')
       : (equipmentType === 'weapon' ? '업화 무기' : '업화 방어구');
 
-    const { data, error } = await supabase
-      .from('refining_results')
-      .select('from_level, to_level, attempts')
-      .eq('equipment_name', equipmentName)
-      .eq('is_succession', isSuccession);
-
-    if (error || !data || data.length === 0) {
-      return [];
-    }
-
     // 레벨별로 그룹화
     const grouped: Record<string, { attempts: number[]; fromLevel: number; toLevel: number }> = {};
+    const pageSize = 1000;
+    let from = 0;
+    let hasMore = true;
 
-    for (const row of data) {
-      const key = `${row.from_level}-${row.to_level}`;
-      if (!grouped[key]) {
-        grouped[key] = { attempts: [], fromLevel: row.from_level, toLevel: row.to_level };
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('refining_results')
+        .select('from_level, to_level, attempts')
+        .eq('equipment_name', equipmentName)
+        .eq('is_succession', isSuccession)
+        .range(from, from + pageSize - 1);
+
+      if (error || !data || data.length === 0) {
+        hasMore = false;
+        break;
       }
-      grouped[key].attempts.push(row.attempts);
+
+      for (const row of data) {
+        const key = `${row.from_level}-${row.to_level}`;
+        if (!grouped[key]) {
+          grouped[key] = { attempts: [], fromLevel: row.from_level, toLevel: row.to_level };
+        }
+        grouped[key].attempts.push(row.attempts);
+      }
+
+      if (data.length < pageSize) {
+        hasMore = false;
+      } else {
+        from += pageSize;
+      }
+    }
+
+    if (Object.keys(grouped).length === 0) {
+      return [];
     }
 
     // 통계 계산
@@ -200,7 +217,8 @@ export async function getSimulationRecords(
       .eq('is_succession', isSuccession)
       .eq('use_breath', useBreath)
       .eq('from_level', fromLevel)
-      .order('attempts', { ascending: true });
+      .order('attempts', { ascending: true })
+      .limit(10000);
 
     if (error || !data) {
       console.error('Error fetching simulation records:', error);
@@ -214,7 +232,26 @@ export async function getSimulationRecords(
   }
 }
 
-// 레벨별 샘플 수 조회 (버튼에 표시용)
+// 전체 시뮬레이션 기록 수 조회
+export async function getTotalSimulationCount(): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from('refining_results')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      console.error('Error fetching total count:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (err) {
+    console.error('Error fetching total simulation count:', err);
+    return 0;
+  }
+}
+
+// 레벨별 샘플 수 조회 (버튼에 표시용) - pagination으로 전체 데이터 조회
 export async function getLevelSampleCounts(
   isSuccession: boolean,
   equipmentType: 'weapon' | 'armor',
@@ -225,20 +262,34 @@ export async function getLevelSampleCounts(
       ? (equipmentType === 'weapon' ? '전율 무기' : '전율 방어구')
       : (equipmentType === 'weapon' ? '업화 무기' : '업화 방어구');
 
-    const { data, error } = await supabase
-      .from('refining_results')
-      .select('from_level')
-      .eq('equipment_name', equipmentName)
-      .eq('is_succession', isSuccession)
-      .eq('use_breath', useBreath);
-
-    if (error || !data) {
-      return {};
-    }
-
     const counts: Record<number, number> = {};
-    for (const row of data) {
-      counts[row.from_level] = (counts[row.from_level] || 0) + 1;
+    const pageSize = 1000;
+    let from = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('refining_results')
+        .select('from_level')
+        .eq('equipment_name', equipmentName)
+        .eq('is_succession', isSuccession)
+        .eq('use_breath', useBreath)
+        .range(from, from + pageSize - 1);
+
+      if (error || !data || data.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      for (const row of data) {
+        counts[row.from_level] = (counts[row.from_level] || 0) + 1;
+      }
+
+      if (data.length < pageSize) {
+        hasMore = false;
+      } else {
+        from += pageSize;
+      }
     }
 
     return counts;

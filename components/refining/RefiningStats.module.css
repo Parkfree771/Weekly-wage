@@ -36,6 +36,11 @@
   margin: 0;
 }
 
+.totalCount {
+  color: var(--primary);
+  font-weight: 600;
+}
+
 /* 필터 영역 */
 .filterArea {
   display: flex;

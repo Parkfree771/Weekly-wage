@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import styles from './RefiningStats.module.css';
-import { getSimulationRecords, SimulationRecord } from '../../lib/supabase';
+import { getSimulationRecords, SimulationRecord, getTotalSimulationCount } from '../../lib/supabase';
 import { MATERIAL_IDS, MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 
 // 숨결 아이템 ID
@@ -26,6 +26,7 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
   const [initialLoad, setInitialLoad] = useState(true);
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
   const [myAttempts, setMyAttempts] = useState<string>('');
+  const [totalCount, setTotalCount] = useState<number>(0);
 
   // 레벨 범위: 11~24 (25가 최대이므로 24→25까지)
   const levelRange = Array.from({ length: 14 }, (_, i) => i + 11);
@@ -47,6 +48,15 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
       }
     };
     fetchMarketPrices();
+  }, []);
+
+  // 전체 기록 수 로드
+  useEffect(() => {
+    const fetchTotalCount = async () => {
+      const count = await getTotalSimulationCount();
+      setTotalCount(count);
+    };
+    fetchTotalCount();
   }, []);
 
   // 초기 데이터 로드
@@ -164,7 +174,10 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
     <div className={styles.statsContainer}>
       <div className={styles.statsHeader}>
         <h3 className={styles.statsTitle}>시뮬레이션 통계</h3>
-        <p className={styles.statsDesc}>다른 유저들의 결과와 비교해보세요</p>
+        <p className={styles.statsDesc}>
+          다른 유저들의 결과와 비교해보세요
+          {totalCount > 0 && <span className={styles.totalCount}> (총 {totalCount.toLocaleString()}건)</span>}
+        </p>
       </div>
 
       {/* 필터 영역 */}
