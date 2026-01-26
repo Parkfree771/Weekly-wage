@@ -2,6 +2,15 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  ResponsiveContainer,
+  Tooltip,
+  LabelList,
+  Cell,
+} from 'recharts';
 import styles from './RefiningStats.module.css';
 import {
   getSimulationRecords,
@@ -11,6 +20,38 @@ import {
 } from '../../lib/supabase';
 import { MATERIAL_IDS, MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import { supabase } from '../../lib/supabase';
+
+// 히스토그램 데이터 생성 (10% 구간)
+const generateHistogramData = (janginValues: number[]) => {
+  const bins = [
+    { range: '0-10', min: 0, max: 10, count: 0 },
+    { range: '10-20', min: 10, max: 20, count: 0 },
+    { range: '20-30', min: 20, max: 30, count: 0 },
+    { range: '30-40', min: 30, max: 40, count: 0 },
+    { range: '40-50', min: 40, max: 50, count: 0 },
+    { range: '50-60', min: 50, max: 60, count: 0 },
+    { range: '60-70', min: 60, max: 70, count: 0 },
+    { range: '70-80', min: 70, max: 80, count: 0 },
+    { range: '80-90', min: 80, max: 90, count: 0 },
+    { range: '90-100', min: 90, max: 100.01, count: 0 },
+  ];
+
+  for (const value of janginValues) {
+    for (const bin of bins) {
+      if (value >= bin.min && value < bin.max) {
+        bin.count++;
+        break;
+      }
+    }
+  }
+
+  const total = janginValues.length;
+  return bins.map(bin => ({
+    range: bin.range,
+    count: bin.count,
+    percent: Math.round((bin.count / total) * 1000) / 10,
+  }));
+};
 
 // 숨결 아이템 ID
 const BREATH_IDS = {
@@ -48,6 +89,7 @@ interface AdvancedRefiningRecord {
 }
 
 type RefiningMode = 'normal' | 'advanced';
+type BreathType = 'all' | 'full' | 'partial' | 'none';
 
 interface RefiningStatsProps {
   defaultSuccession?: boolean;
@@ -60,9 +102,10 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
   // 일반 재련 상태
   const [isSuccession, setIsSuccession] = useState(true);
   const [equipmentType, setEquipmentType] = useState<'weapon' | 'armor'>('weapon');
-  const [useBreath, setUseBreath] = useState(true);
+  const [breathType, setBreathType] = useState<BreathType>('full');
   const [selectedLevel, setSelectedLevel] = useState<number | null>(20);
   const [records, setRecords] = useState<SimulationRecord[]>([]);
+  const [allRecords, setAllRecords] = useState<SimulationRecord[]>([]); // 전체 데이터 (숨결 사용 기록)
 
   // 상급 재련 상태
   const [advancedRecords, setAdvancedRecords] = useState<AdvancedRefiningRecord[]>([]);
@@ -72,7 +115,6 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
   const [loading, setLoading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
-  const [myAttempts, setMyAttempts] = useState<string>('');
   const [totalCount, setTotalCount] = useState<number>(0);
   const [advancedTotalCount, setAdvancedTotalCount] = useState<number>(0);
 
@@ -141,13 +183,53 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
     setLoading(false);
   };
 
+  // 레벨별 숨결 최대 개수 (계승 후 기준)
+  const getMaxBreathForLevel = (level: number): number => {
+    // 계승 후 확률 기준
+    // 11-12: 5% → max 20
+    // 13-15: 4% → max 20
+    // 16-18: 3% → max 20
+    // 19-20: 1.5% → max 25
+    // 21-22: 1% → max 25
+    // 23-24: 0.5% → max 50
+    if (level >= 23) return 50;
+    if (level >= 19) return 25;
+    return 20;
+  };
+
+  // 숨결 타입에 따른 필터링 함수
+  const filterByBreathType = (data: SimulationRecord[], type: BreathType, level: number): SimulationRecord[] => {
+    if (type === 'all') return data;
+
+    const maxBreath = getMaxBreathForLevel(level);
+
+    return data.filter(record => {
+      const breath = equipmentType === 'weapon'
+        ? (record.lava_breath || 0)
+        : (record.glacier_breath || 0);
+      const breathPerAttempt = record.attempts > 0 ? breath / record.attempts : 0;
+
+      switch (type) {
+        case 'full':
+          return breathPerAttempt === maxBreath; // 100%
+        case 'partial':
+          return breathPerAttempt > 0 && breathPerAttempt < maxBreath; // 0% ~ 100% 사이
+        case 'none':
+          return breathPerAttempt === 0; // 0%
+        default:
+          return true;
+      }
+    });
+  };
+
   // 초기 데이터 로드
   useEffect(() => {
     const loadInitialData = async () => {
       if (initialLoad) {
         setLoading(true);
         const data = await getSimulationRecords(true, 'weapon', true, 20);
-        setRecords(data);
+        setAllRecords(data);
+        setRecords(filterByBreathType(data, breathType, 20));
         setLoading(false);
         setInitialLoad(false);
       }
@@ -155,13 +237,37 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
     loadInitialData();
   }, [initialLoad]);
 
+  // breathType 변경 시 데이터 재조회 또는 필터링
+  useEffect(() => {
+    if (selectedLevel === null) return;
+
+    const refetchData = async () => {
+      setLoading(true);
+      if (breathType === 'none') {
+        // 노숨: use_breath = false 데이터 가져오기
+        const data = await getSimulationRecords(isSuccession, equipmentType, false, selectedLevel);
+        setAllRecords(data);
+        setRecords(data);
+      } else {
+        // 전체/풀숨/부분숨: use_breath = true 데이터에서 필터링
+        const data = await getSimulationRecords(isSuccession, equipmentType, true, selectedLevel);
+        setAllRecords(data);
+        setRecords(filterByBreathType(data, breathType, selectedLevel));
+      }
+      setLoading(false);
+    };
+
+    refetchData();
+  }, [breathType, isSuccession, equipmentType, selectedLevel]);
+
   // 필터 변경 시 선택 초기화 (일반 재련)
   useEffect(() => {
     if (!initialLoad && refiningMode === 'normal') {
       setSelectedLevel(null);
       setRecords([]);
+      setAllRecords([]);
     }
-  }, [isSuccession, useBreath, initialLoad, refiningMode]);
+  }, [isSuccession, initialLoad, refiningMode]);
 
   // 장비 타입 변경 시 (상급 재련은 재조회, 일반 재련은 초기화)
   useEffect(() => {
@@ -182,7 +288,6 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
     setRecords([]);
     setSelectedAdvancedLevel(null);
     setAdvancedRecords([]);
-    setMyAttempts('');
   }, [refiningMode]);
 
   // 일반 재련 레벨 선택 시 결과 로드
@@ -190,13 +295,24 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
     if (selectedLevel === level) {
       setSelectedLevel(null);
       setRecords([]);
+      setAllRecords([]);
       return;
     }
 
     setSelectedLevel(level);
     setLoading(true);
-    const data = await getSimulationRecords(isSuccession, equipmentType, useBreath, level);
-    setRecords(data);
+
+    if (breathType === 'none') {
+      // 노숨: use_breath = false 데이터
+      const data = await getSimulationRecords(isSuccession, equipmentType, false, level);
+      setAllRecords(data);
+      setRecords(data);
+    } else {
+      // 전체/풀숨/부분숨: use_breath = true 데이터에서 필터링
+      const data = await getSimulationRecords(isSuccession, equipmentType, true, level);
+      setAllRecords(data);
+      setRecords(filterByBreathType(data, breathType, level));
+    }
     setLoading(false);
   };
 
@@ -242,49 +358,90 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
 
     totalCost += (record.fate_fragment || 0) * (marketPrices[MATERIAL_IDS.FATE_FRAGMENT] || 0);
 
-    if (useBreath) {
-      const breathId = equipmentType === 'weapon' ? BREATH_IDS.LAVA : BREATH_IDS.GLACIER;
-      const breathAmount = equipmentType === 'weapon'
-        ? record.lava_breath || 0
-        : record.glacier_breath || 0;
-      totalCost += breathAmount * (marketPrices[breathId] || 0);
-    }
+    // 숨결 비용은 레코드에 데이터가 있으면 항상 포함
+    const breathId = equipmentType === 'weapon' ? BREATH_IDS.LAVA : BREATH_IDS.GLACIER;
+    const breathAmount = equipmentType === 'weapon'
+      ? record.lava_breath || 0
+      : record.glacier_breath || 0;
+    totalCost += breathAmount * (marketPrices[breathId] || 0);
 
     return Math.round(totalCost);
   };
 
-  // 통계 계산
+  // 일반 재련 통계 계산 (장인의 기운 중심)
   const stats = useMemo(() => {
     if (records.length === 0) return null;
 
-    const attempts = records.map(r => r.attempts).sort((a, b) => a - b);
-    const n = attempts.length;
-    const sum = attempts.reduce((a, b) => a + b, 0);
-    const mean = sum / n;
-    const min = attempts[0];
-    const max = attempts[n - 1];
+    // 장인의 기운 통계 (null이 아닌 값만)
+    const janginValues = records
+      .map(r => r.final_jangin)
+      .filter((v): v is number => v != null)
+      .sort((a, b) => a - b);
 
-    // 내 시도 횟수의 순위 계산
-    const myAttemptsNum = parseInt(myAttempts) || 0;
-    let betterThan = 0;
-    if (myAttemptsNum > 0) {
-      betterThan = attempts.filter(a => a > myAttemptsNum).length;
-    }
-    const percentile = myAttemptsNum > 0 ? Math.round((betterThan / n) * 100) : 0;
+    if (janginValues.length === 0) return null;
+
+    const n = janginValues.length;
+    const sum = janginValues.reduce((a, b) => a + b, 0);
+    const mean = sum / n;
+    const min = janginValues[0];
+    const max = janginValues[n - 1];
+
+    // 표준편차 계산
+    const squaredDiffs = janginValues.map(v => Math.pow(v - mean, 2));
+    const variance = squaredDiffs.reduce((a, b) => a + b, 0) / n;
+    const stdDev = Math.sqrt(variance);
+
+    // 백분위수 계산
+    const getPercentile = (p: number) => {
+      const index = Math.ceil((p / 100) * n) - 1;
+      return janginValues[Math.max(0, Math.min(index, n - 1))];
+    };
+
+    // 중앙값(p50)에 해당하는 레코드 찾기
+    const p50Value = getPercentile(50);
+    const sortedByJangin = [...records]
+      .filter(r => r.final_jangin != null)
+      .sort((a, b) => (a.final_jangin || 0) - (b.final_jangin || 0));
+    const medianIndex = Math.floor(sortedByJangin.length / 2);
+    const medianRecord = sortedByJangin[medianIndex];
+
+    // 중앙값 기준 재료 소모량
+    const medianMaterials = {
+      attempts: medianRecord?.attempts || 0,
+      destructionStone: medianRecord?.destruction_stone || 0,
+      guardianStone: medianRecord?.guardian_stone || 0,
+      destructionCrystal: medianRecord?.destruction_crystal || 0,
+      guardianCrystal: medianRecord?.guardian_crystal || 0,
+      breakthroughStone: medianRecord?.breakthrough_stone || 0,
+      greatBreakthrough: medianRecord?.great_breakthrough || 0,
+      abidos: medianRecord?.abidos || 0,
+      advancedAbidos: medianRecord?.advanced_abidos || 0,
+      fateFragment: medianRecord?.fate_fragment || 0,
+      gold: medianRecord?.gold || 0,
+      lavaBreath: medianRecord?.lava_breath || 0,
+      glacierBreath: medianRecord?.glacier_breath || 0,
+    };
+
+    // 히스토그램 차트 데이터 생성
+    const chartData = generateHistogramData(janginValues);
 
     return {
-      mean: Math.round(mean * 10) / 10,
-      min,
-      max,
-      sampleSize: n,
-      myPercentile: percentile,
-      myAttemptsNum,
+      jangin: {
+        mean: Math.round(mean * 10) / 10,
+        min: Math.round(min * 10) / 10,
+        max: Math.round(max * 10) / 10,
+        stdDev: Math.round(stdDev * 10) / 10,
+        p25: Math.round(getPercentile(25) * 10) / 10,
+        p50: Math.round(getPercentile(50) * 10) / 10,
+        p75: Math.round(getPercentile(75) * 10) / 10,
+        count: n,
+      },
+      chartData,
+      materials: medianMaterials,
+      medianRecord,
+      totalRecords: records.length,
     };
-  }, [records, myAttempts]);
-
-  const avgAttempts = records.length > 0
-    ? Math.round((records.reduce((sum, r) => sum + r.attempts, 0) / records.length) * 10) / 10
-    : 0;
+  }, [records]);
 
   // 상급재련 통계 계산
   const advancedStats = useMemo(() => {
@@ -297,14 +454,6 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
     const min = turns[0];
     const max = turns[n - 1];
 
-    // 내 시도 횟수의 순위 계산
-    const myAttemptsNum = parseInt(myAttempts) || 0;
-    let betterThan = 0;
-    if (myAttemptsNum > 0) {
-      betterThan = turns.filter(t => t > myAttemptsNum).length;
-    }
-    const percentile = myAttemptsNum > 0 ? Math.round((betterThan / n) * 100) : 0;
-
     // 성공 등급 평균
     const avgSuccess = advancedRecords.reduce((s, r) => s + r.success_count, 0) / n;
     const avgGreat = advancedRecords.reduce((s, r) => s + r.great_success_count, 0) / n;
@@ -315,17 +464,11 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
       min,
       max,
       sampleSize: n,
-      myPercentile: percentile,
-      myAttemptsNum,
       avgSuccess: Math.round(avgSuccess * 10) / 10,
       avgGreat: Math.round(avgGreat * 10) / 10,
       avgSuper: Math.round(avgSuper * 10) / 10,
     };
-  }, [advancedRecords, myAttempts]);
-
-  const avgAdvancedTurns = advancedRecords.length > 0
-    ? Math.round((advancedRecords.reduce((sum, r) => sum + r.total_turns, 0) / advancedRecords.length) * 10) / 10
-    : 0;
+  }, [advancedRecords]);
 
   return (
     <div className={styles.statsContainer}>
@@ -395,16 +538,28 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
         {refiningMode === 'normal' && (
           <div className={styles.filterGroup}>
             <button
-              className={`${styles.filterBtn} ${!useBreath ? styles.filterBtnActive : ''}`}
-              onClick={() => setUseBreath(false)}
+              className={`${styles.filterBtn} ${breathType === 'all' ? styles.filterBtnActive : ''}`}
+              onClick={() => setBreathType('all')}
             >
-              숨결 미사용
+              전체
             </button>
             <button
-              className={`${styles.filterBtn} ${useBreath ? styles.filterBtnActive : ''}`}
-              onClick={() => setUseBreath(true)}
+              className={`${styles.filterBtn} ${breathType === 'full' ? styles.filterBtnActive : ''}`}
+              onClick={() => setBreathType('full')}
             >
-              숨결 사용
+              풀숨
+            </button>
+            <button
+              className={`${styles.filterBtn} ${breathType === 'partial' ? styles.filterBtnActive : ''}`}
+              onClick={() => setBreathType('partial')}
+            >
+              부분숨
+            </button>
+            <button
+              className={`${styles.filterBtn} ${breathType === 'none' ? styles.filterBtnActive : ''}`}
+              onClick={() => setBreathType('none')}
+            >
+              노숨
             </button>
           </div>
         )}
@@ -450,77 +605,207 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
                 <span className={styles.resultsLevel}>
                   {selectedLevel !== null ? `${selectedLevel}→${selectedLevel + 1} 강화` : '레벨을 선택하세요'}
                 </span>
-                {selectedLevel !== null && records.length > 0 && (
-                  <span className={styles.resultsAvg}>평균 {avgAttempts}회</span>
+                {selectedLevel !== null && stats && (
+                  <span className={styles.resultsAvg}>평균 장기백 {stats.jangin.mean}%</span>
                 )}
               </div>
-              <span className={styles.resultsTotal}>{selectedLevel !== null ? `${records.length}건` : ''}</span>
+              <span className={styles.resultsTotal}>{selectedLevel !== null && stats ? `${stats.jangin.count}건` : ''}</span>
             </div>
 
-            {/* 내 시도 횟수 비교 - 100개 이상일 때만 표시 */}
-            {selectedLevel !== null && records.length >= 100 && !loading && (
-              <div className={styles.compareSection}>
-                <div className={styles.compareInput}>
-                  <label className={styles.compareLabel}>내 시도 횟수</label>
-                  <input
-                    type="number"
-                    className={styles.compareField}
-                    placeholder="숫자 입력"
-                    value={myAttempts}
-                    onChange={(e) => setMyAttempts(e.target.value)}
-                    min="1"
-                  />
+            {/* 통계 표시 - 100개 이상일 때만 */}
+            {selectedLevel !== null && stats && stats.jangin.count >= 100 && !loading && (
+              <div className={styles.statsSection}>
+                {/* 장인의 기운 분포 */}
+                <div className={styles.distributionCard}>
+                  <div className={styles.distributionTitle}>장인의 기운 분포</div>
+
+                  {/* 히스토그램 차트 */}
+                  <div className={styles.chartWrapper}>
+                    <ResponsiveContainer width="100%" height={260}>
+                      <BarChart
+                        data={stats.chartData}
+                        margin={{ top: 30, right: 15, left: 15, bottom: 10 }}
+                        barCategoryGap="20%"
+                      >
+                        <defs>
+                          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#a855f7" stopOpacity={1} />
+                            <stop offset="50%" stopColor="#9333ea" stopOpacity={1} />
+                            <stop offset="100%" stopColor="#7c3aed" stopOpacity={1} />
+                          </linearGradient>
+                          <filter id="barShadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#a855f7" floodOpacity="0.3"/>
+                          </filter>
+                        </defs>
+                        <XAxis
+                          dataKey="range"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: 'var(--text-secondary)', fontSize: 12, fontWeight: 600 }}
+                          interval={0}
+                          tickFormatter={(v) => `${v}%`}
+                          dy={8}
+                        />
+                        <Tooltip
+                          cursor={{ fill: 'rgba(168, 85, 247, 0.08)' }}
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className={styles.chartTooltip}>
+                                  <div className={styles.tooltipRange}>{data.range}%</div>
+                                  <div className={styles.tooltipValue}>{data.count}명 ({data.percent}%)</div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar
+                          dataKey="count"
+                          fill="url(#barGradient)"
+                          radius={[6, 6, 0, 0]}
+                          animationDuration={800}
+                          animationEasing="ease-out"
+                          style={{ filter: 'url(#barShadow)' }}
+                        >
+                          <LabelList
+                            dataKey="count"
+                            position="top"
+                            fill="var(--text-primary)"
+                            fontSize={13}
+                            fontWeight={700}
+                            offset={8}
+                          />
+                          {stats.chartData.map((entry, index) => {
+                            const maxCount = Math.max(...stats.chartData.map(d => d.count));
+                            const opacity = 0.5 + (entry.count / maxCount) * 0.5;
+                            return (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={`rgba(168, 85, 247, ${opacity})`}
+                              />
+                            );
+                          })}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* 핵심 통계 수치 */}
+                  <div className={styles.keyStats}>
+                    <div className={styles.keyStat}>
+                      <span className={styles.keyStatLabel}>최소</span>
+                      <span className={styles.keyStatValue}>{stats.jangin.min}%</span>
+                    </div>
+                    <div className={styles.keyStat}>
+                      <span className={styles.keyStatLabel}>하위 25%</span>
+                      <span className={styles.keyStatValue}>{stats.jangin.p25}%</span>
+                    </div>
+                    <div className={styles.keyStat}>
+                      <span className={styles.keyStatLabel}>중앙값</span>
+                      <span className={styles.keyStatValue}>{stats.jangin.p50}%</span>
+                    </div>
+                    <div className={styles.keyStat}>
+                      <span className={styles.keyStatLabel}>상위 25%</span>
+                      <span className={styles.keyStatValue}>{stats.jangin.p75}%</span>
+                    </div>
+                    <div className={styles.keyStat}>
+                      <span className={styles.keyStatLabel}>최대</span>
+                      <span className={styles.keyStatValue}>{stats.jangin.max}%</span>
+                    </div>
+                  </div>
                 </div>
 
-                {stats && stats.myAttemptsNum > 0 && (
-                  <div className={styles.compareResult}>
-                    <div className={styles.rankText}>
-                      <span className={styles.rankHighlight}>상위 {100 - stats.myPercentile}%</span>
+                {/* 중앙값 기준 재료 소모량 */}
+                <div className={styles.materialsCard}>
+                  <div className={styles.materialsTitle}>중앙값 기준 재료 소모량 (장기백 {stats.jangin.p50}%)</div>
+                  <div className={styles.materialsGrid}>
+                    <div className={styles.materialItem}>
+                      <span className={styles.materialLabel}>시도 횟수</span>
+                      <span className={styles.materialValue}>{stats.materials.attempts}회</span>
                     </div>
-                    <div className={styles.rankBar}>
-                      <div
-                        className={styles.rankProgress}
-                        style={{ width: `${stats.myPercentile}%` }}
+                    <div className={styles.materialItem}>
+                      <Image
+                        src={isSuccession
+                          ? (equipmentType === 'weapon' ? '/top-destiny-destruction-stone5.webp' : '/top-destiny-guardian-stone5.webp')
+                          : (equipmentType === 'weapon' ? '/destiny-destruction-stone5.webp' : '/destiny-guardian-stone5.webp')
+                        }
+                        alt=""
+                        width={24}
+                        height={24}
                       />
-                      <div
-                        className={styles.rankMarker}
-                        style={{ left: `${stats.myPercentile}%` }}
+                      <span className={styles.materialValue}>
+                        {isSuccession
+                          ? (equipmentType === 'weapon' ? stats.materials.destructionCrystal : stats.materials.guardianCrystal)
+                          : (equipmentType === 'weapon' ? stats.materials.destructionStone : stats.materials.guardianStone)
+                        }
+                      </span>
+                    </div>
+                    <div className={styles.materialItem}>
+                      <Image
+                        src={isSuccession ? '/top-destiny-breakthrough-stone5.webp' : '/destiny-breakthrough-stone5.webp'}
+                        alt=""
+                        width={24}
+                        height={24}
                       />
+                      <span className={styles.materialValue}>
+                        {isSuccession ? stats.materials.greatBreakthrough : stats.materials.breakthroughStone}
+                      </span>
                     </div>
-                    <div className={styles.rankScale}>
-                      <span>운 나쁨</span>
-                      <span>평균</span>
-                      <span>운 좋음</span>
+                    <div className={styles.materialItem}>
+                      <Image
+                        src={isSuccession ? '/top-abidos-fusion5.webp' : '/abidos-fusion5.webp'}
+                        alt=""
+                        width={24}
+                        height={24}
+                      />
+                      <span className={styles.materialValue}>
+                        {isSuccession ? stats.materials.advancedAbidos : stats.materials.abidos}
+                      </span>
+                    </div>
+                    <div className={styles.materialItem}>
+                      <Image src="/destiny-shard-bag-large5.webp" alt="" width={24} height={24} />
+                      <span className={styles.materialValue}>{stats.materials.fateFragment.toLocaleString()}</span>
+                    </div>
+                    {breathType !== 'none' && (
+                      <div className={styles.materialItem}>
+                        <Image
+                          src={equipmentType === 'weapon' ? '/breath-lava5.webp' : '/breath-glacier5.webp'}
+                          alt=""
+                          width={24}
+                          height={24}
+                        />
+                        <span className={styles.materialValue}>
+                          {equipmentType === 'weapon' ? stats.materials.lavaBreath : stats.materials.glacierBreath}
+                        </span>
+                      </div>
+                    )}
+                    <div className={styles.materialItem}>
+                      <Image src="/gold.webp" alt="" width={24} height={24} />
+                      <span className={styles.materialValue}>{stats.materials.gold.toLocaleString()}</span>
                     </div>
                   </div>
-                )}
-
-                {/* 간단한 통계 요약 */}
-                <div className={styles.quickStats}>
-                  <div className={styles.quickStatItem}>
-                    <span className={styles.quickStatLabel}>최소</span>
-                    <span className={styles.quickStatValue}>{stats?.min || '-'}회</span>
-                  </div>
-                  <div className={styles.quickStatItem}>
-                    <span className={styles.quickStatLabel}>평균</span>
-                    <span className={styles.quickStatValue}>{stats?.mean || '-'}회</span>
-                  </div>
-                  <div className={styles.quickStatItem}>
-                    <span className={styles.quickStatLabel}>최대</span>
-                    <span className={styles.quickStatValue}>{stats?.max || '-'}회</span>
-                  </div>
+                  {stats.medianRecord && (
+                    <div className={styles.totalCostSection}>
+                      <span className={styles.totalCostLabel}>예상 총비용</span>
+                      <span className={styles.totalCostValue}>
+                        {calculateTotalCost(stats.medianRecord).toLocaleString()}G
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* 통계 부족 메시지 - 100개 미만일 때 */}
-            {selectedLevel !== null && records.length > 0 && records.length < 100 && !loading && (
+            {/* 통계 부족 메시지 - 장인의 기운 데이터가 100개 미만일 때 */}
+            {selectedLevel !== null && records.length > 0 && (!stats || stats.jangin.count < 100) && !loading && (
               <div className={styles.insufficientData}>
                 <span className={styles.insufficientText}>
-                  통계 부족 ({records.length}/100)
+                  통계 부족 ({stats?.jangin.count || 0}/100)
                 </span>
                 <span className={styles.insufficientDesc}>
-                  100건 이상의 데이터가 수집되면 통계가 표시됩니다
+                  100건 이상의 장인의 기운 데이터가 수집되면 통계가 표시됩니다
                 </span>
               </div>
             )}
@@ -579,7 +864,7 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
                       <th>
                         <Image src="/gold.webp" alt="" width={32} height={32} />
                       </th>
-                      {useBreath && (
+                      {breathType !== 'none' && (
                         <th>
                           <Image src={equipmentType === 'weapon' ? '/breath-lava5.webp' : '/breath-glacier5.webp'} alt="" width={32} height={32} />
                         </th>
@@ -609,7 +894,7 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
                         )}
                         <td>{record.fate_fragment?.toLocaleString()}</td>
                         <td className={styles.cellGold}>{record.gold?.toLocaleString()}</td>
-                        {useBreath && (
+                        {breathType !== 'none' && (
                           <td className={styles.cellBreath}>
                             {equipmentType === 'weapon' ? record.lava_breath : record.glacier_breath}
                           </td>
@@ -630,80 +915,51 @@ export default function RefiningStats({ defaultSuccession = false }: RefiningSta
                 <span className={styles.resultsLevel}>
                   {selectedAdvancedLevel !== null ? `${selectedAdvancedLevel}→${selectedAdvancedLevel + 10} 상급재련` : '레벨을 선택하세요'}
                 </span>
-                {selectedAdvancedLevel !== null && advancedRecords.length > 0 && (
-                  <span className={styles.resultsAvg}>평균 {avgAdvancedTurns}회</span>
+                {selectedAdvancedLevel !== null && advancedStats && (
+                  <span className={styles.resultsAvg}>평균 {advancedStats.mean}회</span>
                 )}
               </div>
               <span className={styles.resultsTotal}>{selectedAdvancedLevel !== null ? `${advancedRecords.length}건` : ''}</span>
             </div>
 
-            {/* 내 시도 횟수 비교 - 100개 이상일 때만 표시 */}
-            {selectedAdvancedLevel !== null && advancedRecords.length >= 100 && !loading && (
-              <div className={styles.compareSection}>
-                <div className={styles.compareInput}>
-                  <label className={styles.compareLabel}>내 시도 횟수</label>
-                  <input
-                    type="number"
-                    className={styles.compareField}
-                    placeholder="숫자 입력"
-                    value={myAttempts}
-                    onChange={(e) => setMyAttempts(e.target.value)}
-                    min="1"
-                  />
-                </div>
-
-                {advancedStats && advancedStats.myAttemptsNum > 0 && (
-                  <div className={styles.compareResult}>
-                    <div className={styles.rankText}>
-                      <span className={styles.rankHighlight}>상위 {100 - advancedStats.myPercentile}%</span>
+            {/* 통계 표시 - 100개 이상일 때만 */}
+            {selectedAdvancedLevel !== null && advancedRecords.length >= 100 && !loading && advancedStats && (
+              <div className={styles.statsSection}>
+                {/* 턴 수 통계 */}
+                <div className={styles.distributionCard}>
+                  <div className={styles.distributionTitle}>턴 수 통계</div>
+                  <div className={styles.keyStats}>
+                    <div className={styles.keyStat}>
+                      <span className={styles.keyStatLabel}>최소</span>
+                      <span className={styles.keyStatValue}>{advancedStats.min}회</span>
                     </div>
-                    <div className={styles.rankBar}>
-                      <div
-                        className={styles.rankProgress}
-                        style={{ width: `${advancedStats.myPercentile}%` }}
-                      />
-                      <div
-                        className={styles.rankMarker}
-                        style={{ left: `${advancedStats.myPercentile}%` }}
-                      />
+                    <div className={styles.keyStat}>
+                      <span className={styles.keyStatLabel}>평균</span>
+                      <span className={styles.keyStatValue}>{advancedStats.mean}회</span>
                     </div>
-                    <div className={styles.rankScale}>
-                      <span>운 나쁨</span>
-                      <span>평균</span>
-                      <span>운 좋음</span>
+                    <div className={styles.keyStat}>
+                      <span className={styles.keyStatLabel}>최대</span>
+                      <span className={styles.keyStatValue}>{advancedStats.max}회</span>
                     </div>
-                  </div>
-                )}
-
-                {/* 간단한 통계 요약 */}
-                <div className={styles.quickStats}>
-                  <div className={styles.quickStatItem}>
-                    <span className={styles.quickStatLabel}>최소</span>
-                    <span className={styles.quickStatValue}>{advancedStats?.min || '-'}회</span>
-                  </div>
-                  <div className={styles.quickStatItem}>
-                    <span className={styles.quickStatLabel}>평균</span>
-                    <span className={styles.quickStatValue}>{advancedStats?.mean || '-'}회</span>
-                  </div>
-                  <div className={styles.quickStatItem}>
-                    <span className={styles.quickStatLabel}>최대</span>
-                    <span className={styles.quickStatValue}>{advancedStats?.max || '-'}회</span>
                   </div>
                 </div>
 
                 {/* 성공 등급 평균 */}
-                <div className={styles.quickStats} style={{ marginTop: '0.5rem' }}>
-                  <div className={styles.quickStatItem}>
-                    <span className={styles.quickStatLabel}>성공</span>
-                    <span className={styles.quickStatValue}>{advancedStats?.avgSuccess || '-'}회</span>
-                  </div>
-                  <div className={styles.quickStatItem}>
-                    <span className={styles.quickStatLabel}>대성공</span>
-                    <span className={styles.quickStatValue}>{advancedStats?.avgGreat || '-'}회</span>
-                  </div>
-                  <div className={styles.quickStatItem}>
-                    <span className={styles.quickStatLabel}>대대성공</span>
-                    <span className={styles.quickStatValue}>{advancedStats?.avgSuper || '-'}회</span>
+                <div className={styles.materialsCard}>
+                  <div className={styles.materialsTitle}>평균 성공 등급</div>
+                  <div className={styles.keyStats}>
+                    <div className={styles.keyStat}>
+                      <span className={styles.keyStatLabel}>성공</span>
+                      <span className={styles.keyStatValue}>{advancedStats.avgSuccess}회</span>
+                    </div>
+                    <div className={styles.keyStat}>
+                      <span className={styles.keyStatLabel}>대성공</span>
+                      <span className={styles.keyStatValue}>{advancedStats.avgGreat}회</span>
+                    </div>
+                    <div className={styles.keyStat}>
+                      <span className={styles.keyStatLabel}>대대성공</span>
+                      <span className={styles.keyStatValue}>{advancedStats.avgSuper}회</span>
+                    </div>
                   </div>
                 </div>
               </div>

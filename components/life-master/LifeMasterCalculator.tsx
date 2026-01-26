@@ -838,6 +838,13 @@ export default function LifeMasterCalculator() {
   const [premiumCraftingFeeReduction, setPremiumCraftingFeeReduction] = useState<number>(0);
   const [normalCraftingFeeReduction, setNormalCraftingFeeReduction] = useState<number>(0);
 
+  // 보유 재료 state
+  const [ownedAbidosWood, setOwnedAbidosWood] = useState<number>(0);
+  const [ownedSoftWood, setOwnedSoftWood] = useState<number>(0);
+  const [ownedNormalWood, setOwnedNormalWood] = useState<number>(0);
+  const [ownedCraftingFeeReduction, setOwnedCraftingFeeReduction] = useState<number>(0);
+  const [useGaruExchange, setUseGaruExchange] = useState<boolean>(false);
+
   // 가격 갱신 관련 state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
@@ -1063,6 +1070,622 @@ export default function LifeMasterCalculator() {
           />
         </Col>
       </Row>
+
+      {/* 제작 수익 계산기 섹션 */}
+      <Card className="border-0 shadow-lg mb-4" style={{ borderRadius: '16px', background: 'var(--card-bg)' }}>
+        <Card.Header style={{ background: 'var(--card-header-bg)', borderBottom: '1px solid var(--border-color)', textAlign: 'center', padding: '0.75rem 1rem' }}>
+          <h4 style={{ marginBottom: 0, fontWeight: 600, fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'var(--text-primary)' }}>
+            보유 재료로 제작 수익 계산
+          </h4>
+        </Card.Header>
+        <Card.Body style={{ padding: '1rem' }}>
+          {/* 재료 입력 */}
+          <Row className="g-3 mb-3">
+            {/* 아비도스 목재 */}
+            <Col md={3} sm={6}>
+              <div className={styles.efficiencyBox}>
+                <div className={styles.efficiencyItemRow} style={{ marginBottom: '8px' }}>
+                  <Image src="/wood1.webp" alt="아비도스 목재" width={32} height={32} className={styles.efficiencyIcon} />
+                  <span className={styles.efficiencyItemLabel} style={{ fontSize: '0.8rem' }}>아비도스 목재</span>
+                </div>
+                <input
+                  type="number"
+                  value={ownedAbidosWood || ''}
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
+                    setOwnedAbidosWood(val);
+                  }}
+                  placeholder="보유 수량"
+                  min={0}
+                  className={styles.feeInput}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </Col>
+
+            {/* 부드러운 목재 */}
+            <Col md={3} sm={6}>
+              <div className={styles.efficiencyBox}>
+                <div className={styles.efficiencyItemRow} style={{ marginBottom: '8px' }}>
+                  <Image src="/wood3.webp" alt="부드러운 목재" width={32} height={32} className={styles.efficiencyIcon} />
+                  <span className={styles.efficiencyItemLabel} style={{ fontSize: '0.8rem' }}>부드러운 목재</span>
+                </div>
+                <input
+                  type="number"
+                  value={ownedSoftWood || ''}
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
+                    setOwnedSoftWood(val);
+                  }}
+                  placeholder="보유 수량"
+                  min={0}
+                  className={styles.feeInput}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </Col>
+
+            {/* 목재 */}
+            <Col md={3} sm={6}>
+              <div className={styles.efficiencyBox}>
+                <div className={styles.efficiencyItemRow} style={{ marginBottom: '8px' }}>
+                  <Image src="/wood2.webp" alt="목재" width={32} height={32} className={styles.efficiencyIcon} />
+                  <span className={styles.efficiencyItemLabel} style={{ fontSize: '0.8rem' }}>목재</span>
+                </div>
+                <input
+                  type="number"
+                  value={ownedNormalWood || ''}
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
+                    setOwnedNormalWood(val);
+                  }}
+                  placeholder="보유 수량"
+                  min={0}
+                  className={styles.feeInput}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </Col>
+
+            {/* 수수료 감소 */}
+            <Col md={3} sm={6}>
+              <div className={styles.efficiencyBox}>
+                <div className={styles.efficiencyItemRow} style={{ marginBottom: '8px' }}>
+                  <Image src="/gold.webp" alt="수수료 감소" width={32} height={32} className={styles.efficiencyIcon} />
+                  <span className={styles.efficiencyItemLabel} style={{ fontSize: '0.8rem' }}>수수료 감소 (%)</span>
+                </div>
+                <input
+                  type="number"
+                  value={ownedCraftingFeeReduction || ''}
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? 0 : Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+                    setOwnedCraftingFeeReduction(val);
+                  }}
+                  placeholder="0"
+                  min={0}
+                  max={100}
+                  className={styles.feeInput}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </Col>
+          </Row>
+
+          {/* 생활의 가루 이용하기 버튼 */}
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <button
+              onClick={() => setUseGaruExchange(!useGaruExchange)}
+              style={{
+                padding: '10px 24px',
+                borderRadius: '8px',
+                border: useGaruExchange ? '2px solid var(--profit-color)' : '2px solid var(--border-color)',
+                background: useGaruExchange ? 'var(--card-body-bg-blue)' : 'var(--card-bg)',
+                color: useGaruExchange ? 'var(--profit-color)' : 'var(--text-primary)',
+                fontWeight: 600,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Image src="/rkfn.webp" alt="가루" width={20} height={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+              생활의 가루 이용하기 {useGaruExchange ? '(ON)' : '(OFF)'}
+            </button>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              남는 재료를 가루로 교환하여 아비도스 목재를 확보합니다
+            </div>
+          </div>
+
+          {/* 수익 계산 결과 */}
+          {(() => {
+            // 상급 아비도스 융화재료 제작 필요량 (1회당)
+            const premiumAbidosNeeded = 43;
+            const premiumSoftNeeded = 59;
+            const premiumNormalNeeded = 112;
+
+            // 일반 아비도스 융화재료 제작 필요량 (1회당)
+            const normalAbidosReq = 33;
+            const normalSoftReq = 45;
+            const normalNormalReq = 86;
+
+            // 가루 교환 비율
+            // 목재 100개 → 가루 80개
+            // 부드러운 50개 → 가루 80개
+            // 가루 100개 → 아비도스 10개
+            // 가루 100개 → 부드러운 50개
+            const NORMAL_TO_GARU = 0.8;   // 목재 1개 → 가루 0.8개
+            const SOFT_TO_GARU = 1.6;      // 부드러운 1개 → 가루 1.6개
+            const GARU_TO_ABIDOS = 0.1;    // 가루 1개 → 아비도스 0.1개
+            const GARU_TO_SOFT = 0.5;      // 가루 1개 → 부드러운 0.5개
+
+            // 목재 환산 비율 (모든 재료를 목재 기준으로 환산)
+            // 아비도스 1개 = 목재 12.5개 (목재 100 → 가루 80 → 아비도스 8)
+            // 부드러운 1개 = 목재 2.5개 (목재 100 → 가루 80 → 부드러운 40)
+            const ABIDOS_TO_NORMAL_EQUIV = 12.5;
+            const SOFT_TO_NORMAL_EQUIV = 2.5;
+
+            // 가루 교환을 이용한 최대 제작 횟수 및 교환 상세 계산 함수
+            const calcWithGaruExchange = (reqAbidos: number, reqSoft: number, reqNormal: number) => {
+              // 모든 보유 재료를 "목재 환산"으로 변환
+              const totalNormalEquiv = (ownedAbidosWood * ABIDOS_TO_NORMAL_EQUIV) + (ownedSoftWood * SOFT_TO_NORMAL_EQUIV) + ownedNormalWood;
+
+              // 제작당 필요 목재 환산
+              const reqNormalEquiv = (reqAbidos * ABIDOS_TO_NORMAL_EQUIV) + (reqSoft * SOFT_TO_NORMAL_EQUIV) + reqNormal;
+
+              // 목재 환산 기준 최대 횟수
+              const maxCrafts = Math.floor(totalNormalEquiv / reqNormalEquiv);
+
+              if (maxCrafts <= 0) {
+                return {
+                  maxCrafts: 0,
+                  normalToGaru: 0,
+                  softToGaru: 0,
+                  totalGaru: 0,
+                  garuToAbidos: 0,
+                  garuToSoft: 0,
+                  directAbidos: 0,
+                  directSoft: 0,
+                  directNormal: 0,
+                };
+              }
+
+              // 제작에 필요한 총 재료량
+              const totalAbidosNeeded = maxCrafts * reqAbidos;
+              const totalSoftNeeded = maxCrafts * reqSoft;
+              const totalNormalNeeded = maxCrafts * reqNormal;
+
+              // 직접 사용할 재료
+              const directAbidos = Math.min(ownedAbidosWood, totalAbidosNeeded);
+              const directSoft = Math.min(ownedSoftWood, totalSoftNeeded);
+              const directNormal = Math.min(ownedNormalWood, totalNormalNeeded);
+
+              // 부족한 재료
+              const shortAbidos = totalAbidosNeeded - directAbidos;
+              const shortSoft = totalSoftNeeded - directSoft;
+
+              // 남는 재료
+              const leftoverSoft = ownedSoftWood - directSoft;
+              const leftoverNormal = ownedNormalWood - directNormal;
+
+              // 가루 교환 계산
+              let softToGaru = 0;
+              let normalToGaru = 0;
+              let totalGaru = 0;
+              let garuToAbidos = 0;
+              let garuToSoft = 0;
+
+              // 필요한 가루 계산
+              const garuNeededForAbidos = shortAbidos / GARU_TO_ABIDOS;  // 아비도스 1개당 가루 10개
+              const garuNeededForSoft = shortSoft / GARU_TO_SOFT;        // 부드러운 1개당 가루 2개
+              const totalGaruNeeded = garuNeededForAbidos + garuNeededForSoft;
+
+              if (totalGaruNeeded > 0) {
+                // 남는 목재로 먼저 가루 확보
+                const garuFromNormal = leftoverNormal * NORMAL_TO_GARU;
+
+                if (garuFromNormal >= totalGaruNeeded) {
+                  // 목재만으로 충분
+                  normalToGaru = Math.ceil(totalGaruNeeded / NORMAL_TO_GARU);
+                  totalGaru = normalToGaru * NORMAL_TO_GARU;
+                } else {
+                  // 목재 전부 사용 + 남는 부드러운 사용
+                  normalToGaru = leftoverNormal;
+                  const remainingGaru = totalGaruNeeded - garuFromNormal;
+                  softToGaru = Math.min(leftoverSoft, Math.ceil(remainingGaru / SOFT_TO_GARU));
+                  totalGaru = (normalToGaru * NORMAL_TO_GARU) + (softToGaru * SOFT_TO_GARU);
+                }
+
+                // 가루 배분 (부드러운 먼저, 남는 걸로 아비도스)
+                if (shortSoft > 0) {
+                  const garuForSoft = Math.min(totalGaru, garuNeededForSoft);
+                  garuToSoft = Math.floor(garuForSoft * GARU_TO_SOFT);
+                  const remainingGaru = totalGaru - garuForSoft;
+                  garuToAbidos = Math.floor(remainingGaru * GARU_TO_ABIDOS);
+                } else {
+                  garuToAbidos = Math.floor(totalGaru * GARU_TO_ABIDOS);
+                }
+              }
+
+              return {
+                maxCrafts,
+                normalToGaru,
+                softToGaru,
+                totalGaru: Math.floor(totalGaru),
+                garuToAbidos,
+                garuToSoft,
+                directAbidos,
+                directSoft,
+                directNormal,
+              };
+            };
+
+            // 일반 최대 제작 횟수 계산 함수 (가루 미사용)
+            const calcNormal = (reqAbidos: number, reqSoft: number, reqNormal: number) => {
+              const maxByAbidos = ownedAbidosWood > 0 ? Math.floor(ownedAbidosWood / reqAbidos) : 0;
+              const maxBySoft = ownedSoftWood > 0 ? Math.floor(ownedSoftWood / reqSoft) : 0;
+              const maxByNormal = ownedNormalWood > 0 ? Math.floor(ownedNormalWood / reqNormal) : 0;
+              return Math.min(maxByAbidos, maxBySoft, maxByNormal);
+            };
+
+            // 계산 결과
+            const premiumResult = useGaruExchange
+              ? calcWithGaruExchange(premiumAbidosNeeded, premiumSoftNeeded, premiumNormalNeeded)
+              : { maxCrafts: calcNormal(premiumAbidosNeeded, premiumSoftNeeded, premiumNormalNeeded), normalToGaru: 0, softToGaru: 0, totalGaru: 0, garuToAbidos: 0, garuToSoft: 0, directAbidos: 0, directSoft: 0, directNormal: 0 };
+
+            const normalResult = useGaruExchange
+              ? calcWithGaruExchange(normalAbidosReq, normalSoftReq, normalNormalReq)
+              : { maxCrafts: calcNormal(normalAbidosReq, normalSoftReq, normalNormalReq), normalToGaru: 0, softToGaru: 0, totalGaru: 0, garuToAbidos: 0, garuToSoft: 0, directAbidos: 0, directSoft: 0, directNormal: 0 };
+
+            // 제작비 (골드)
+            const premiumGoldCostPerCraft = PREMIUM_CRAFTING_GOLD_COST * (1 - ownedCraftingFeeReduction / 100);
+            const normalGoldCostPerCraft = NORMAL_CRAFTING_GOLD_COST * (1 - ownedCraftingFeeReduction / 100);
+
+            const premiumTotalGoldCost = premiumGoldCostPerCraft * premiumResult.maxCrafts;
+            const normalTotalGoldCost = normalGoldCostPerCraft * normalResult.maxCrafts;
+
+            // 생산량
+            const premiumTotalOutput = premiumResult.maxCrafts * OUTPUT_QUANTITY;
+            const normalTotalOutput = normalResult.maxCrafts * OUTPUT_QUANTITY;
+
+            // 판매 수익
+            const premiumSaleRevenue = premiumMarketPrice * premiumTotalOutput * 0.95;
+            const normalSaleRevenue = normalMarketPrice * normalTotalOutput * 0.95;
+
+            // 직접 사용 가치
+            const premiumDirectValue = premiumMarketPrice * premiumTotalOutput;
+            const normalDirectValue = normalMarketPrice * normalTotalOutput;
+
+            // 순이익 (재료는 보유분이라 0원, 제작비만 비용)
+            const premiumSaleProfit = premiumSaleRevenue - premiumTotalGoldCost;
+            const normalSaleProfit = normalSaleRevenue - normalTotalGoldCost;
+            const premiumDirectProfit = premiumDirectValue - premiumTotalGoldCost;
+            const normalDirectProfit = normalDirectValue - normalTotalGoldCost;
+
+            // 보유 재료가 있는지 확인
+            const hasOwnedInput = ownedAbidosWood > 0 || ownedSoftWood > 0 || ownedNormalWood > 0;
+
+            if (!hasOwnedInput) {
+              return (
+                <div className="text-center py-4" style={{ color: 'var(--text-muted)' }}>
+                  <p className="mb-0">보유 재료 수량을 입력하면 제작 수익을 계산합니다.</p>
+                </div>
+              );
+            }
+
+            // 가루 교환 상세 내역 표시 컴포넌트
+            const GaruExchangeDetail = ({ result, reqAbidos, reqSoft }: { result: typeof premiumResult; reqAbidos: number; reqSoft: number }) => {
+              if (!useGaruExchange || result.maxCrafts === 0) return null;
+
+              const totalAbidosNeeded = result.maxCrafts * reqAbidos;
+              const totalSoftNeeded = result.maxCrafts * reqSoft;
+              const shortAbidos = totalAbidosNeeded - result.directAbidos;
+              const shortSoft = totalSoftNeeded - result.directSoft;
+
+              if (shortAbidos <= 0 && shortSoft <= 0) return null;
+
+              return (
+                <div style={{
+                  background: 'var(--card-body-bg-blue)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '12px',
+                  border: '2px solid var(--profit-color)'
+                }}>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--profit-color)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Image src="/rkfn.webp" alt="가루" width={28} height={28} />
+                    가루 교환 내역
+                  </div>
+
+                  {/* 재료 → 가루 교환 */}
+                  {(result.normalToGaru > 0 || result.softToGaru > 0) && (
+                    <div style={{ marginBottom: '14px' }}>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 600 }}>
+                        STEP 1. 재료 → 가루
+                      </div>
+                      {result.normalToGaru > 0 && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px 12px',
+                          background: 'var(--card-body-bg)',
+                          borderRadius: '8px',
+                          marginBottom: '6px'
+                        }}>
+                          <Image src="/wood2.webp" alt="목재" width={32} height={32} />
+                          <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            목재 {result.normalToGaru}개
+                          </span>
+                          <span style={{ fontSize: '1.2rem', color: 'var(--profit-color)', fontWeight: 700 }}>→</span>
+                          <Image src="/rkfn.webp" alt="가루" width={32} height={32} />
+                          <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--profit-color)' }}>
+                            가루 {Math.floor(result.normalToGaru * NORMAL_TO_GARU)}개
+                          </span>
+                        </div>
+                      )}
+                      {result.softToGaru > 0 && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px 12px',
+                          background: 'var(--card-body-bg)',
+                          borderRadius: '8px'
+                        }}>
+                          <Image src="/wood3.webp" alt="부드러운" width={32} height={32} />
+                          <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            부드러운 {result.softToGaru}개
+                          </span>
+                          <span style={{ fontSize: '1.2rem', color: 'var(--profit-color)', fontWeight: 700 }}>→</span>
+                          <Image src="/rkfn.webp" alt="가루" width={32} height={32} />
+                          <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--profit-color)' }}>
+                            가루 {Math.floor(result.softToGaru * SOFT_TO_GARU)}개
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 가루 → 재료 교환 */}
+                  {(result.garuToSoft > 0 || result.garuToAbidos > 0) && (
+                    <div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 600 }}>
+                        STEP 2. 가루 → 재료
+                      </div>
+                      {result.garuToSoft > 0 && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px 12px',
+                          background: 'var(--card-body-bg)',
+                          borderRadius: '8px',
+                          marginBottom: '6px'
+                        }}>
+                          <Image src="/rkfn.webp" alt="가루" width={32} height={32} />
+                          <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            가루 {Math.ceil(result.garuToSoft / GARU_TO_SOFT)}개
+                          </span>
+                          <span style={{ fontSize: '1.2rem', color: 'var(--profit-color)', fontWeight: 700 }}>→</span>
+                          <Image src="/wood3.webp" alt="부드러운" width={32} height={32} />
+                          <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--profit-color)' }}>
+                            부드러운 {result.garuToSoft}개
+                          </span>
+                        </div>
+                      )}
+                      {result.garuToAbidos > 0 && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px 12px',
+                          background: 'var(--card-body-bg)',
+                          borderRadius: '8px'
+                        }}>
+                          <Image src="/rkfn.webp" alt="가루" width={32} height={32} />
+                          <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            가루 {Math.ceil(result.garuToAbidos / GARU_TO_ABIDOS)}개
+                          </span>
+                          <span style={{ fontSize: '1.2rem', color: 'var(--profit-color)', fontWeight: 700 }}>→</span>
+                          <Image src="/wood1.webp" alt="아비도스" width={32} height={32} />
+                          <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--profit-color)' }}>
+                            아비도스 {result.garuToAbidos}개
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            };
+
+            return (
+              <Row className="g-3">
+                {/* 상급 아비도스 융화재료 */}
+                <Col lg={6}>
+                  <div className={styles.fusionCard}>
+                    <div className={styles.fusionCardHeader}>
+                      <Image src={PREMIUM_ABIDOS_FUSION_ICON} alt="상급" width={32} height={32} className={styles.craftingIcon} />
+                      <span className={styles.fusionCardTitle} style={{ color: '#ea580c' }}>상급 아비도스 융화 재료</span>
+                    </div>
+                    <div className={styles.fusionCardBody}>
+                      {premiumResult.maxCrafts > 0 ? (
+                        <>
+                          <div style={{ textAlign: 'center', marginBottom: '12px', padding: '8px', background: 'var(--card-body-bg-blue)', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                              {useGaruExchange ? '가루 교환 활용 최대 제작' : '최대 제작 가능'}
+                            </div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ea580c' }}>
+                              {premiumResult.maxCrafts}회 ({premiumTotalOutput}개)
+                            </div>
+                          </div>
+
+                          {/* 가루 교환 상세 */}
+                          <GaruExchangeDetail result={premiumResult} reqAbidos={premiumAbidosNeeded} reqSoft={premiumSoftNeeded} />
+
+                          <div style={{ marginBottom: '12px' }}>
+                            <div className={styles.materialRow}>
+                              <span className={styles.materialLabel}>
+                                <Image src="/wood1.webp" alt="아비도스" width={24} height={24} className={styles.materialIcon} />
+                                아비도스 ×{premiumResult.maxCrafts * premiumAbidosNeeded}
+                              </span>
+                              <span className={styles.materialPrice} style={{ color: 'var(--profit-color)' }}>보유</span>
+                            </div>
+                            <div className={styles.materialRow}>
+                              <span className={styles.materialLabel}>
+                                <Image src="/wood3.webp" alt="부드러운" width={24} height={24} className={styles.materialIcon} />
+                                부드러운 ×{premiumResult.maxCrafts * premiumSoftNeeded}
+                              </span>
+                              <span className={styles.materialPrice} style={{ color: 'var(--profit-color)' }}>보유</span>
+                            </div>
+                            <div className={styles.materialRow}>
+                              <span className={styles.materialLabel}>
+                                <Image src="/wood2.webp" alt="목재" width={24} height={24} className={styles.materialIcon} />
+                                목재 ×{premiumResult.maxCrafts * premiumNormalNeeded}
+                              </span>
+                              <span className={styles.materialPrice} style={{ color: 'var(--profit-color)' }}>보유</span>
+                            </div>
+                            <div className={styles.materialRow}>
+                              <span className={styles.materialLabel}>
+                                <Image src="/gold.webp" alt="골드" width={24} height={24} className={styles.materialIcon} />
+                                제작비
+                              </span>
+                              <span className={styles.materialPrice}>
+                                {Math.round(premiumTotalGoldCost).toLocaleString()} G
+                              </span>
+                            </div>
+                          </div>
+                          <hr className={styles.dividerLine} />
+                          <Row className="g-2">
+                            <Col xs={6}>
+                              <div className={`${styles.profitBox} ${premiumDirectProfit > 0 ? styles.profitBoxProfit : styles.profitBoxLoss}`}>
+                                <div className={styles.profitLabel}>직접 사용 시</div>
+                                <div className={`${styles.profitPercent} ${premiumDirectProfit > 0 ? styles.profitPercentProfit : styles.profitPercentLoss}`}>
+                                  {premiumDirectProfit > 0 ? '+' : ''}{Math.round(premiumDirectProfit).toLocaleString()} G
+                                </div>
+                              </div>
+                            </Col>
+                            <Col xs={6}>
+                              <div className={`${styles.profitBox} ${premiumSaleProfit > 0 ? styles.profitBoxProfit : styles.profitBoxLoss}`}>
+                                <div className={styles.profitLabel}>판매 시 (수수료 5%)</div>
+                                <div className={`${styles.profitPercent} ${premiumSaleProfit > 0 ? styles.profitPercentProfit : styles.profitPercentLoss}`}>
+                                  {premiumSaleProfit > 0 ? '+' : ''}{Math.round(premiumSaleProfit).toLocaleString()} G
+                                </div>
+                              </div>
+                            </Col>
+                          </Row>
+                        </>
+                      ) : (
+                        <div className="text-center py-3" style={{ color: 'var(--text-muted)' }}>
+                          재료가 부족하여 제작할 수 없습니다.
+                          <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>
+                            (1회 필요: 아비도스 {premiumAbidosNeeded}, 부드러운 {premiumSoftNeeded}, 목재 {premiumNormalNeeded})
+                          </div>
+                          {useGaruExchange && (
+                            <div style={{ fontSize: '0.75rem', marginTop: '8px', color: 'var(--profit-color)' }}>
+                              가루 교환을 활용해도 재료가 부족합니다
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Col>
+
+                {/* 일반 아비도스 융화재료 */}
+                <Col lg={6}>
+                  <div className={styles.fusionCard}>
+                    <div className={styles.fusionCardHeader}>
+                      <Image src={ABIDOS_FUSION_ICON} alt="일반" width={32} height={32} className={styles.craftingIcon} />
+                      <span className={styles.fusionCardTitle} style={{ color: '#78716c' }}>아비도스 융화 재료</span>
+                    </div>
+                    <div className={styles.fusionCardBody}>
+                      {normalResult.maxCrafts > 0 ? (
+                        <>
+                          <div style={{ textAlign: 'center', marginBottom: '12px', padding: '8px', background: 'var(--card-body-bg-blue)', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                              {useGaruExchange ? '가루 교환 활용 최대 제작' : '최대 제작 가능'}
+                            </div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#78716c' }}>
+                              {normalResult.maxCrafts}회 ({normalTotalOutput}개)
+                            </div>
+                          </div>
+
+                          {/* 가루 교환 상세 */}
+                          <GaruExchangeDetail result={normalResult} reqAbidos={normalAbidosReq} reqSoft={normalSoftReq} />
+
+                          <div style={{ marginBottom: '12px' }}>
+                            <div className={styles.materialRow}>
+                              <span className={styles.materialLabel}>
+                                <Image src="/wood1.webp" alt="아비도스" width={24} height={24} className={styles.materialIcon} />
+                                아비도스 ×{normalResult.maxCrafts * normalAbidosReq}
+                              </span>
+                              <span className={styles.materialPrice} style={{ color: 'var(--profit-color)' }}>보유</span>
+                            </div>
+                            <div className={styles.materialRow}>
+                              <span className={styles.materialLabel}>
+                                <Image src="/wood3.webp" alt="부드러운" width={24} height={24} className={styles.materialIcon} />
+                                부드러운 ×{normalResult.maxCrafts * normalSoftReq}
+                              </span>
+                              <span className={styles.materialPrice} style={{ color: 'var(--profit-color)' }}>보유</span>
+                            </div>
+                            <div className={styles.materialRow}>
+                              <span className={styles.materialLabel}>
+                                <Image src="/wood2.webp" alt="목재" width={24} height={24} className={styles.materialIcon} />
+                                목재 ×{normalResult.maxCrafts * normalNormalReq}
+                              </span>
+                              <span className={styles.materialPrice} style={{ color: 'var(--profit-color)' }}>보유</span>
+                            </div>
+                            <div className={styles.materialRow}>
+                              <span className={styles.materialLabel}>
+                                <Image src="/gold.webp" alt="골드" width={24} height={24} className={styles.materialIcon} />
+                                제작비
+                              </span>
+                              <span className={styles.materialPrice}>
+                                {Math.round(normalTotalGoldCost).toLocaleString()} G
+                              </span>
+                            </div>
+                          </div>
+                          <hr className={styles.dividerLine} />
+                          <Row className="g-2">
+                            <Col xs={6}>
+                              <div className={`${styles.profitBox} ${normalDirectProfit > 0 ? styles.profitBoxProfit : styles.profitBoxLoss}`}>
+                                <div className={styles.profitLabel}>직접 사용 시</div>
+                                <div className={`${styles.profitPercent} ${normalDirectProfit > 0 ? styles.profitPercentProfit : styles.profitPercentLoss}`}>
+                                  {normalDirectProfit > 0 ? '+' : ''}{Math.round(normalDirectProfit).toLocaleString()} G
+                                </div>
+                              </div>
+                            </Col>
+                            <Col xs={6}>
+                              <div className={`${styles.profitBox} ${normalSaleProfit > 0 ? styles.profitBoxProfit : styles.profitBoxLoss}`}>
+                                <div className={styles.profitLabel}>판매 시 (수수료 5%)</div>
+                                <div className={`${styles.profitPercent} ${normalSaleProfit > 0 ? styles.profitPercentProfit : styles.profitPercentLoss}`}>
+                                  {normalSaleProfit > 0 ? '+' : ''}{Math.round(normalSaleProfit).toLocaleString()} G
+                                </div>
+                              </div>
+                            </Col>
+                          </Row>
+                        </>
+                      ) : (
+                        <div className="text-center py-3" style={{ color: 'var(--text-muted)' }}>
+                          재료가 부족하여 제작할 수 없습니다.
+                          <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>
+                            (1회 필요: 아비도스 {normalAbidosReq}, 부드러운 {normalSoftReq}, 목재 {normalNormalReq})
+                          </div>
+                          {useGaruExchange && (
+                            <div style={{ fontSize: '0.75rem', marginTop: '8px', color: 'var(--profit-color)' }}>
+                              가루 교환을 활용해도 재료가 부족합니다
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Col>
+              </Row>
+            );
+          })()}
+        </Card.Body>
+      </Card>
 
       {/* 생활 최적 재련 섹션 */}
       <Card className="border-0 shadow-lg" style={{ borderRadius: '16px', background: 'var(--card-bg)' }}>
