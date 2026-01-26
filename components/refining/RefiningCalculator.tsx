@@ -156,6 +156,7 @@ type RefiningMode = 'normal' | 'succession';
 
 type RefiningCalculatorProps = {
   mode?: RefiningMode;
+  onSearchComplete?: (searched: boolean) => void;
 };
 
 // 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
@@ -164,7 +165,7 @@ const getTodayPriceDate = () => {
   return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
 };
 
-export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculatorProps) {
+export default function RefiningCalculator({ mode = 'normal', onSearchComplete }: RefiningCalculatorProps) {
   const { theme } = useTheme();
   const isSuccessionMode = mode === 'succession';
   const [characterName, setCharacterName] = useState('');
@@ -591,6 +592,7 @@ export default function RefiningCalculator({ mode = 'normal' }: RefiningCalculat
       addToHistory(characterName.trim()); // 검색 성공 시 히스토리에 추가
       setShowSuggestions(false);
       setSearched(true);
+      onSearchComplete?.(true);
     } catch (error: any) {
       setError(error.message || '예상치 못한 오류가 발생했습니다.');
       // 에러 발생 시 기존 데이터 유지

@@ -15,6 +15,7 @@ type CalcMode = 'average' | 'simulation';
 export default function RefiningPage() {
   const [activeMode, setActiveMode] = useState<RefiningMode>('succession');
   const [calcMode, setCalcMode] = useState<CalcMode>('simulation');
+  const [hasSearched, setHasSearched] = useState(false);
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
@@ -118,9 +119,9 @@ export default function RefiningPage() {
 
             {/* 재련 계산기 또는 시뮬레이터 */}
             {calcMode === 'average' ? (
-              <RefiningCalculator mode={activeMode} />
+              <RefiningCalculator mode={activeMode} onSearchComplete={setHasSearched} />
             ) : (
-              <RefiningSimulator mode={activeMode} />
+              <RefiningSimulator mode={activeMode} onSearchComplete={setHasSearched} />
             )}
           </Col>
         </Row>

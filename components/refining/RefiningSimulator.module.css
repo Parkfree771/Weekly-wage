@@ -128,6 +128,27 @@
   gap: 0.4rem;
 }
 
+.equipmentListPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.placeholderIcon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.6;
+}
+
+.placeholderText {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
 .equipmentItem {
   display: flex;
   align-items: center;

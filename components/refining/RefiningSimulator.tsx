@@ -45,6 +45,7 @@ type RefiningMode = 'normal' | 'succession';
 
 interface RefiningSimulatorProps {
   mode?: RefiningMode;
+  onSearchComplete?: (searched: boolean) => void;
 }
 
 interface RefiningAttempt {
@@ -74,7 +75,7 @@ interface AccumulatedCost {
   실링: number;
 }
 
-export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulatorProps) {
+export default function RefiningSimulator({ mode = 'normal', onSearchComplete }: RefiningSimulatorProps) {
   const { theme } = useTheme();
   const isSuccessionMode = mode === 'succession';
 
@@ -191,6 +192,7 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
       addToHistory(characterName.trim());
       setShowSuggestions(false);
       setSearched(true);
+      onSearchComplete?.(true);
       setSelectedEquipment(null);
       resetSimulation();
     } catch (error: any) {
@@ -611,21 +613,24 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
         </div>
       )}
 
-      {searched && (
-        <>
-          <div className={styles.mainLayout}>
-          {/* 장비 목록 패널 */}
-          <div className={styles.equipmentPanel}>
-            <div className={styles.equipmentPanelTitle}>
-              장비 선택 ({isSuccessionMode ? '계승 후' : '계승 전'})
-            </div>
-            <div className={styles.equipmentList}>
-              {filteredEquipments.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
-                  {isSuccessionMode ? '계승 장비가 없습니다.' : '일반 장비가 없습니다.'}
-                </div>
-              ) : (
-                filteredEquipments.map((equipment) => (
+      <div className={styles.mainLayout}>
+        {/* 장비 목록 패널 */}
+        <div className={styles.equipmentPanel}>
+          <div className={styles.equipmentPanelTitle}>
+            장비 선택 ({isSuccessionMode ? '계승 후' : '계승 전'})
+          </div>
+          <div className={styles.equipmentList}>
+            {!searched ? (
+              <div className={styles.equipmentListPlaceholder}>
+                <div className={styles.placeholderIcon}>🔍</div>
+                <div className={styles.placeholderText}>캐릭터를 검색해주세요</div>
+              </div>
+            ) : filteredEquipments.length === 0 ? (
+              <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                {isSuccessionMode ? '계승 장비가 없습니다.' : '일반 장비가 없습니다.'}
+              </div>
+            ) : (
+              filteredEquipments.map((equipment) => (
                   <div
                     key={equipment.name}
                     className={`${styles.equipmentItem} ${selectedEquipment?.name === equipment.name ? styles.equipmentItemSelected : ''}`}
@@ -1081,17 +1086,15 @@ export default function RefiningSimulator({ mode = 'normal' }: RefiningSimulator
               </div>
             )}
           </div>
-          </div>
+        </div>
 
-          {/* 데이터 수집 고지 */}
-          <div className={styles.dataNotice}>
-            ℹ️ 시도 횟수, 강화 단계, 소모 재료, 숨결 사용 횟수만 익명 통계로 수집됩니다.
-          </div>
+        {/* 데이터 수집 고지 */}
+        <div className={styles.dataNotice}>
+          ℹ️ 시도 횟수, 강화 단계, 소모 재료, 숨결 사용 횟수만 익명 통계로 수집됩니다.
+        </div>
 
-          {/* 통계 테이블 */}
-          <RefiningStats defaultSuccession={isSuccessionMode} />
-        </>
-      )}
+        {/* 통계 테이블 */}
+        <RefiningStats defaultSuccession={isSuccessionMode} />
     </div>
   );
 }
