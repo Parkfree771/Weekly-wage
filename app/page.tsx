@@ -302,6 +302,14 @@ export default function Home() {
                 <Card.Body className="p-3" style={{ background: 'var(--card-body-bg-stone)', borderRadius: '0 0 16px 16px' }}>
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                     <li style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginRight: '0.75rem' }}>2026.01.26</span>
+                      <span style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>상급 재련 실제 시뮬 기능 추가</span>
+                    </li>
+                    <li style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginRight: '0.75rem' }}>2026.01.26</span>
+                      <span style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>벌목 보유 재료 입력 기능 추가</span>
+                    </li>
+                    <li style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--border-color)' }}>
                       <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginRight: '0.75rem' }}>2026.01.24</span>
                       <span style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>더보기 효율 체크 기능 추가</span>
                     </li>
