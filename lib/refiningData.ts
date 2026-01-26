@@ -110,3 +110,23 @@ const BREATH_EFFECT_TABLE: { [prob: number]: BreathEffect } = {
 export const getBreathEffect = (baseProb: number): BreathEffect => {
   return BREATH_EFFECT_TABLE[baseProb] || { max: 0, per: 0 };
 };
+
+// 계승 전 책 효과 (확률 2배 증가)
+// 11-14: 야금술/재봉술 : 업화 [11-14]
+// 15-18: 야금술/재봉술 : 업화 [15-18]
+// 19-20: 야금술/재봉술 : 업화 [19-20]
+// 21-25: 책 효과 없음
+export const getBookEffect = (level: number): number => {
+  if (level >= 11 && level <= 20) {
+    return 2.0; // 확률 2배
+  }
+  return 1.0; // 효과 없음
+};
+
+// 레벨에 따른 책 종류 반환
+export const getBookType = (level: number): '1114' | '1518' | '1920' | null => {
+  if (level >= 11 && level <= 14) return '1114';
+  if (level >= 15 && level <= 18) return '1518';
+  if (level >= 19 && level <= 20) return '1920';
+  return null;
+};

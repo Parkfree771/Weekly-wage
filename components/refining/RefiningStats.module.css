@@ -4,6 +4,7 @@
 
 .statsContainer {
   margin: 2rem auto 0;
+  margin-left: calc((100% - 1200px) / 2 + 70px); /* 위 레이아웃과 정렬 */
   max-width: 1200px;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -39,6 +40,11 @@
 .totalCount {
   color: var(--primary);
   font-weight: 600;
+}
+
+/* 상급재련 레벨 버튼 */
+.advancedLevelBtn {
+  min-width: 70px;
 }
 
 /* 필터 영역 */
@@ -99,6 +105,12 @@
   gap: 0.6rem;
   padding: 1.25rem 1.5rem;
   background-color: var(--card-body-bg-stone);
+}
+
+/* 상급재련 레벨 버튼일 때 가운데 정렬 */
+.levelGrid:has(.advancedLevelBtn) {
+  grid-template-columns: repeat(4, 120px);
+  justify-content: center;
 }
 
 .levelBtn {
@@ -280,6 +292,20 @@
 .cellBreath {
   font-weight: 600;
   color: #f59e0b;
+}
+
+.cellGradeHeader {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  height: 50px;
+  vertical-align: middle;
+}
+
+.cellGrade {
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .cellTotal {
@@ -494,11 +520,32 @@
   color: var(--text-primary);
 }
 
+/* 중간 화면 대응 */
+@media (max-width: 1400px) and (min-width: 901px) {
+  .statsContainer {
+    margin-left: calc((100% - 1200px) / 2 + 50px);
+  }
+}
+
+@media (max-width: 1200px) and (min-width: 901px) {
+  .statsContainer {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 /* 모바일 대응 */
 @media (max-width: 900px) {
   .statsContainer {
-    margin-top: 1.5rem;
+    margin: 1.5rem auto 0;
+    margin-left: auto; /* 모바일에서는 가운데 정렬 */
     border-radius: 12px;
+  }
+
+  /* 모바일에서는 상급재련도 7열 그리드 사용 (다만 4개만 표시) */
+  .levelGrid:has(.advancedLevelBtn) {
+    grid-template-columns: repeat(7, 1fr);
+    justify-content: initial;
   }
 
   .statsHeader {
@@ -511,6 +558,10 @@
 
   .statsDesc {
     font-size: 0.8rem;
+  }
+
+  .advancedLevelBtn {
+    min-width: 60px;
   }
 
   /* 비교 섹션 모바일 */
@@ -661,25 +712,34 @@
   }
 
   .recordsTable {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
   }
 
   .recordsTable th,
   .recordsTable td {
-    padding: 0.5rem 0.35rem;
+    padding: 0.4rem 0.2rem;
   }
 
   .recordsTable th img {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .cellGradeHeader {
+    font-size: 0.55rem;
+    height: 40px;
+  }
+
+  .cellGrade {
+    font-size: 0.65rem;
   }
 
   .cellNum {
-    font-size: 0.75rem;
+    font-size: 0.6rem;
   }
 
   .cellAttempts {
-    font-size: 0.85rem;
+    font-size: 0.7rem;
   }
 
   .cellJangin {
@@ -693,7 +753,8 @@
 
 @media (max-width: 500px) {
   .statsContainer {
-    margin-top: 1rem;
+    margin: 1rem auto 0;
+    margin-left: auto; /* 모바일에서는 가운데 정렬 */
     border-radius: 10px;
   }
 
@@ -707,6 +768,10 @@
 
   .statsDesc {
     font-size: 0.75rem;
+  }
+
+  .advancedLevelBtn {
+    min-width: 50px;
   }
 
   .filterArea {
@@ -843,40 +908,49 @@
   }
 
   .recordsTable {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
   }
 
   .recordsTable th,
   .recordsTable td {
-    padding: 0.4rem 0.25rem;
+    padding: 0.3rem 0.15rem;
   }
 
   .recordsTable th img {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .cellGradeHeader {
+    font-size: 0.5rem;
+    height: 35px;
+  }
+
+  .cellGrade {
+    font-size: 0.55rem;
   }
 
   .cellNum {
-    font-size: 0.65rem;
+    font-size: 0.5rem;
   }
 
   .cellAttempts {
-    font-size: 0.75rem;
+    font-size: 0.6rem;
   }
 
   .cellJangin {
-    font-size: 0.7rem;
+    font-size: 0.55rem;
   }
 
   .cellGold {
-    font-size: 0.7rem;
+    font-size: 0.55rem;
   }
 
   .cellBreath {
-    font-size: 0.7rem;
+    font-size: 0.55rem;
   }
 
   .cellTotal {
-    font-size: 0.7rem;
+    font-size: 0.55rem;
   }
 }

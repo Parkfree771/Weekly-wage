@@ -14,6 +14,8 @@ import {
   SUCCESSION_ARMOR_MATERIAL_COSTS,
   SUCCESSION_WEAPON_MATERIAL_COSTS,
   getBreathEffect,
+  getBookEffect,
+  getBookType,
   JANGIN_ACCUMULATE_DIVIDER
 } from '../../lib/refiningData';
 import { MATERIAL_BUNDLE_SIZES, MATERIAL_IDS } from '../../data/raidRewards';
@@ -40,12 +42,20 @@ const REFINING_MATERIAL_IDS: Record<string, number> = {
   파괴석결정: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL,
   위대한돌파석: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE,
   상급아비도스: MATERIAL_IDS.ADVANCED_ABIDOS_FUSION,
+  // 책 아이템 ID
+  야금술1114: 66112543,
+  야금술1518: 66112551,
+  야금술1920: 66112553,
+  재봉술1114: 66112546,
+  재봉술1518: 66112552,
+  재봉술1920: 66112554,
 };
-type RefiningMode = 'normal' | 'succession';
+type RefiningType = 'normal' | 'advanced'; // 일반재련 / 상급재련
 
 interface RefiningSimulatorProps {
-  mode?: RefiningMode;
   onSearchComplete?: (searched: boolean) => void;
+  refiningType?: RefiningType;
+  showStats?: boolean;
 }
 
 interface RefiningAttempt {
@@ -73,11 +83,21 @@ interface AccumulatedCost {
   위대한돌파석: number;
   상급아비도스: number;
   실링: number;
+  // 책
+  야금술1114: number;
+  야금술1518: number;
+  야금술1920: number;
+  재봉술1114: number;
+  재봉술1518: number;
+  재봉술1920: number;
 }
 
-export default function RefiningSimulator({ mode = 'normal', onSearchComplete }: RefiningSimulatorProps) {
+export default function RefiningSimulator({ onSearchComplete, refiningType = 'normal', showStats = true }: RefiningSimulatorProps) {
   const { theme } = useTheme();
-  const isSuccessionMode = mode === 'succession';
+
+  // 선택된 장비에 따라 계승 모드 자동 판별 (isSuccession: true면 계승 후)
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const isSuccessionMode = selectedEquipment?.isSuccession ?? false;
 
   // 검색 관련 상태
   const [characterName, setCharacterName] = useState('');
@@ -95,12 +115,12 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
 
-  // 선택된 장비 및 시뮬레이션 상태
-  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  // 시뮬레이션 상태
   const [currentLevel, setCurrentLevel] = useState<number>(11);
   const [jangin, setJangin] = useState<number>(0);
   const [currentProbBonus, setCurrentProbBonus] = useState<number>(0);
   const [useBreath, setUseBreath] = useState<boolean>(false);
+  const [useBook, setUseBook] = useState<boolean>(false);
   const [attemptHistory, setAttemptHistory] = useState<RefiningAttempt[]>([]);
   const [baseItemLevel, setBaseItemLevel] = useState<number>(0);
   const [itemLevelIncrease, setItemLevelIncrease] = useState<number>(0);
@@ -108,7 +128,8 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
   const [enhancedLevels, setEnhancedLevels] = useState<Record<string, number>>({});
   const [accumulatedCost, setAccumulatedCost] = useState<AccumulatedCost>({
     수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
-    수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+    수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0,
+    야금술1114: 0, 야금술1518: 0, 야금술1920: 0, 재봉술1114: 0, 재봉술1518: 0, 재봉술1920: 0
   });
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -116,10 +137,13 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
   const [levelAttempts, setLevelAttempts] = useState(0);
   const [levelCost, setLevelCost] = useState<AccumulatedCost>({
     수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
-    수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+    수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0,
+    야금술1114: 0, 야금술1518: 0, 야금술1920: 0, 재봉술1114: 0, 재봉술1518: 0, 재봉술1920: 0
   });
   const [usedBreathThisLevel, setUsedBreathThisLevel] = useState(false);
   const [breathCountThisLevel, setBreathCountThisLevel] = useState(0);  // 숨결 사용 횟수
+  const [usedBookThisLevel, setUsedBookThisLevel] = useState(false);
+  const [bookCountThisLevel, setBookCountThisLevel] = useState(0);  // 책 사용 횟수
 
   // 거래소 가격
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
@@ -264,10 +288,13 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
     setLevelAttempts(0);
     setLevelCost({
       수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
-      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0,
+      야금술1114: 0, 야금술1518: 0, 야금술1920: 0, 재봉술1114: 0, 재봉술1518: 0, 재봉술1920: 0
     });
     setUsedBreathThisLevel(false);
     setBreathCountThisLevel(0);
+    setUsedBookThisLevel(false);
+    setBookCountThisLevel(0);
   };
 
   const resetSimulation = () => {
@@ -277,21 +304,26 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
     setJangin(0);
     setCurrentProbBonus(0);
     setUseBreath(false);
+    setUseBook(false);
     setAttemptHistory([]);
     setItemLevelIncrease(0);
     setEnhancedLevels({}); // 모든 장비의 강화 진행 상태 초기화
     setAccumulatedCost({
       수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
-      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0,
+      야금술1114: 0, 야금술1518: 0, 야금술1920: 0, 재봉술1114: 0, 재봉술1518: 0, 재봉술1920: 0
     });
     // 레벨별 추적 초기화
     setLevelAttempts(0);
     setLevelCost({
       수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
-      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0,
+      야금술1114: 0, 야금술1518: 0, 야금술1920: 0, 재봉술1114: 0, 재봉술1518: 0, 재봉술1920: 0
     });
     setUsedBreathThisLevel(false);
     setBreathCountThisLevel(0);
+    setUsedBookThisLevel(false);
+    setBookCountThisLevel(0);
   };
 
   const getBaseProb = (level: number): number => {
@@ -305,8 +337,12 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
     const baseProb = getBaseProb(currentLevel);
     if (baseProb === 0) return 0;
 
-    let currentProb = baseProb + currentProbBonus;
-    currentProb = Math.min(currentProb, baseProb * 2);
+    // 책 효과 적용 (계승 전 11-20 구간만, 기본 확률 2배)
+    const bookMultiplier = (!isSuccessionMode && useBook) ? getBookEffect(currentLevel) : 1;
+    const effectiveBaseProb = baseProb * bookMultiplier;
+
+    let currentProb = effectiveBaseProb + currentProbBonus;
+    currentProb = Math.min(currentProb, effectiveBaseProb * 2);
 
     const breathEffect = getBreathEffect(baseProb);
     const breathProb = useBreath ? breathEffect.max * breathEffect.per : 0;
@@ -315,6 +351,9 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
 
     return Math.min(currentProb + breathProb, 1);
   };
+
+  // 책 사용 가능 여부 (계승 전 11-20 구간만)
+  const canUseBook = !isSuccessionMode && currentLevel >= 11 && currentLevel <= 20;
 
   const getMaterialCost = () => {
     if (!selectedEquipment) return null;
@@ -352,6 +391,14 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
       setBreathCountThisLevel(newBreathCount);
     }
 
+    // 책 사용 여부 및 횟수 추적 (계승 전만)
+    let newBookCount = bookCountThisLevel;
+    if (useBook && canUseBook) {
+      setUsedBookThisLevel(true);
+      newBookCount = bookCountThisLevel + 1;
+      setBookCountThisLevel(newBookCount);
+    }
+
     // 재료 비용 누적 (전체 누적 + 레벨별 누적)
     const materialCost = getMaterialCost();
     let newLevelCost = { ...levelCost };
@@ -380,6 +427,17 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
           if (selectedEquipment.type === 'weapon') newCost.용암 += breathEffect.max;
           else newCost.빙하 += breathEffect.max;
         }
+        // 책 비용 누적 (계승 전만)
+        if (useBook && canUseBook) {
+          const bookType = getBookType(currentLevel);
+          if (bookType) {
+            if (selectedEquipment.type === 'weapon') {
+              newCost[`야금술${bookType}` as keyof AccumulatedCost] += 1;
+            } else {
+              newCost[`재봉술${bookType}` as keyof AccumulatedCost] += 1;
+            }
+          }
+        }
         return newCost;
       });
 
@@ -404,6 +462,17 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
         const breathEffect = getBreathEffect(baseProb);
         if (selectedEquipment.type === 'weapon') newLevelCost.용암 += breathEffect.max;
         else newLevelCost.빙하 += breathEffect.max;
+      }
+      // 레벨별 책 비용 누적 (계승 전만)
+      if (useBook && canUseBook) {
+        const bookType = getBookType(currentLevel);
+        if (bookType) {
+          if (selectedEquipment.type === 'weapon') {
+            newLevelCost[`야금술${bookType}` as keyof AccumulatedCost] += 1;
+          } else {
+            newLevelCost[`재봉술${bookType}` as keyof AccumulatedCost] += 1;
+          }
+        }
       }
       setLevelCost(newLevelCost);
     }
@@ -467,10 +536,13 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
       setLevelAttempts(0);
       setLevelCost({
         수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
-        수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0
+        수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0,
+        야금술1114: 0, 야금술1518: 0, 야금술1920: 0, 재봉술1114: 0, 재봉술1518: 0, 재봉술1920: 0
       });
       setUsedBreathThisLevel(false);
       setBreathCountThisLevel(0);
+      setUsedBookThisLevel(false);
+      setBookCountThisLevel(0);
 
       setCurrentLevel(newLevel);
       setJangin(0);
@@ -529,6 +601,13 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
     total += accumulatedCost.파괴석결정 * (marketPrices['66102007'] || 0);
     total += accumulatedCost.위대한돌파석 * (marketPrices['66110226'] || 0);
     total += accumulatedCost.상급아비도스 * (marketPrices['6861013'] || 0);
+    // 책 비용 추가
+    total += accumulatedCost.야금술1114 * (marketPrices['66112543'] || 0);
+    total += accumulatedCost.야금술1518 * (marketPrices['66112551'] || 0);
+    total += accumulatedCost.야금술1920 * (marketPrices['66112553'] || 0);
+    total += accumulatedCost.재봉술1114 * (marketPrices['66112546'] || 0);
+    total += accumulatedCost.재봉술1518 * (marketPrices['66112552'] || 0);
+    total += accumulatedCost.재봉술1920 * (marketPrices['66112554'] || 0);
     return Math.round(total);
   };
 
@@ -539,11 +618,14 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
     return Math.round(amount * unitPrice);
   };
 
-  const filteredEquipments = equipments.filter(eq => {
-    if (eq.isEsther) return false;
-    if (isSuccessionMode) return eq.isSuccession;
-    return !eq.isSuccession;
-  });
+  // 에스더 장비 제외, 업화/전율 모두 표시 (업화 먼저, 전율 나중)
+  const filteredEquipments = equipments
+    .filter(eq => !eq.isEsther)
+    .sort((a, b) => {
+      // 업화(계승 전)를 먼저, 전율(계승 후)를 나중에
+      if (a.isSuccession !== b.isSuccession) return a.isSuccession ? 1 : -1;
+      return 0;
+    });
 
   const maxLevel = 25; // 계승 전/후 모두 25가 최대
   const canRefine = selectedEquipment && currentLevel < maxLevel && getBaseProb(currentLevel) > 0;
@@ -617,7 +699,7 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
         {/* 장비 목록 패널 */}
         <div className={styles.equipmentPanel}>
           <div className={styles.equipmentPanelTitle}>
-            장비 선택 ({isSuccessionMode ? '계승 후' : '계승 전'})
+            장비 선택
           </div>
           <div className={styles.equipmentList}>
             {!searched ? (
@@ -627,13 +709,13 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
               </div>
             ) : filteredEquipments.length === 0 ? (
               <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
-                {isSuccessionMode ? '계승 장비가 없습니다.' : '일반 장비가 없습니다.'}
+                장비가 없습니다.
               </div>
             ) : (
               filteredEquipments.map((equipment) => (
                   <div
                     key={equipment.name}
-                    className={`${styles.equipmentItem} ${selectedEquipment?.name === equipment.name ? styles.equipmentItemSelected : ''}`}
+                    className={`${styles.equipmentItem} ${selectedEquipment?.name === equipment.name ? styles.equipmentItemSelected : ''} ${equipment.isSuccession ? styles.equipmentItemSuccession : styles.equipmentItemNormal}`}
                     onClick={() => handleSelectEquipment(equipment)}
                   >
                     <div className={styles.equipmentIcon}>
@@ -778,8 +860,8 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
                         </div>
                       </div>
 
-                      {/* 숨결 옵션 */}
-                      <div className={styles.breathOption}>
+                      {/* 숨결 및 책 옵션 */}
+                      <div className={styles.optionsRow}>
                         <button
                           className={`${styles.breathButton} ${useBreath ? styles.breathButtonActive : ''}`}
                           onClick={() => setUseBreath(!useBreath)}
@@ -793,6 +875,22 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
                           <span>{selectedEquipment.type === 'weapon' ? '용암의 숨결' : '빙하의 숨결'}</span>
                           {useBreath && <span className={styles.breathCount}>({getBreathEffect(getBaseProb(currentLevel)).max}개)</span>}
                         </button>
+
+                        {/* 책 옵션 (계승 전 11-20단계만) */}
+                        {canUseBook && (
+                          <button
+                            className={`${styles.breathButton} ${useBook ? styles.breathButtonActive : ''}`}
+                            onClick={() => setUseBook(!useBook)}
+                          >
+                            <div className={styles.breathIcon}>
+                              <Image
+                                src={selectedEquipment.type === 'weapon' ? '/metallurgy-karma.webp' : '/tailoring-karma.webp'}
+                                alt="책" fill style={{ objectFit: 'contain' }}
+                              />
+                            </div>
+                            <span>{selectedEquipment.type === 'weapon' ? '야금술' : '재봉술'} [{getBookType(currentLevel)}]</span>
+                          </button>
+                        )}
                       </div>
 
                       {/* 1회 비용 */}
@@ -1044,6 +1142,55 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
                           <span className={styles.materialGold}>{getMaterialGoldCost('용암', accumulatedCost.용암).toLocaleString()}G</span>
                         </div>
                       )}
+                      {/* 책 비용 표시 (계승 전만) */}
+                      {accumulatedCost.야금술1114 > 0 && (
+                        <div className={styles.totalMaterialItem}>
+                          <Image src="/metallurgy-karma.webp" alt="야금술1114" width={28} height={28} />
+                          <span className={styles.materialName}>야금술 [11-14]</span>
+                          <span className={styles.materialAmount}>{accumulatedCost.야금술1114.toLocaleString()}</span>
+                          <span className={styles.materialGold}>{getMaterialGoldCost('야금술1114', accumulatedCost.야금술1114).toLocaleString()}G</span>
+                        </div>
+                      )}
+                      {accumulatedCost.야금술1518 > 0 && (
+                        <div className={styles.totalMaterialItem}>
+                          <Image src="/metallurgy-karma.webp" alt="야금술1518" width={28} height={28} />
+                          <span className={styles.materialName}>야금술 [15-18]</span>
+                          <span className={styles.materialAmount}>{accumulatedCost.야금술1518.toLocaleString()}</span>
+                          <span className={styles.materialGold}>{getMaterialGoldCost('야금술1518', accumulatedCost.야금술1518).toLocaleString()}G</span>
+                        </div>
+                      )}
+                      {accumulatedCost.야금술1920 > 0 && (
+                        <div className={styles.totalMaterialItem}>
+                          <Image src="/metallurgy-karma.webp" alt="야금술1920" width={28} height={28} />
+                          <span className={styles.materialName}>야금술 [19-20]</span>
+                          <span className={styles.materialAmount}>{accumulatedCost.야금술1920.toLocaleString()}</span>
+                          <span className={styles.materialGold}>{getMaterialGoldCost('야금술1920', accumulatedCost.야금술1920).toLocaleString()}G</span>
+                        </div>
+                      )}
+                      {accumulatedCost.재봉술1114 > 0 && (
+                        <div className={styles.totalMaterialItem}>
+                          <Image src="/tailoring-karma.webp" alt="재봉술1114" width={28} height={28} />
+                          <span className={styles.materialName}>재봉술 [11-14]</span>
+                          <span className={styles.materialAmount}>{accumulatedCost.재봉술1114.toLocaleString()}</span>
+                          <span className={styles.materialGold}>{getMaterialGoldCost('재봉술1114', accumulatedCost.재봉술1114).toLocaleString()}G</span>
+                        </div>
+                      )}
+                      {accumulatedCost.재봉술1518 > 0 && (
+                        <div className={styles.totalMaterialItem}>
+                          <Image src="/tailoring-karma.webp" alt="재봉술1518" width={28} height={28} />
+                          <span className={styles.materialName}>재봉술 [15-18]</span>
+                          <span className={styles.materialAmount}>{accumulatedCost.재봉술1518.toLocaleString()}</span>
+                          <span className={styles.materialGold}>{getMaterialGoldCost('재봉술1518', accumulatedCost.재봉술1518).toLocaleString()}G</span>
+                        </div>
+                      )}
+                      {accumulatedCost.재봉술1920 > 0 && (
+                        <div className={styles.totalMaterialItem}>
+                          <Image src="/tailoring-karma.webp" alt="재봉술1920" width={28} height={28} />
+                          <span className={styles.materialName}>재봉술 [19-20]</span>
+                          <span className={styles.materialAmount}>{accumulatedCost.재봉술1920.toLocaleString()}</span>
+                          <span className={styles.materialGold}>{getMaterialGoldCost('재봉술1920', accumulatedCost.재봉술1920).toLocaleString()}G</span>
+                        </div>
+                      )}
                       {accumulatedCost.골드 > 0 && (
                         <div className={styles.totalMaterialItem}>
                           <Image src="/gold.webp" alt="골드" width={28} height={28} />
@@ -1094,7 +1241,7 @@ export default function RefiningSimulator({ mode = 'normal', onSearchComplete }:
         </div>
 
         {/* 통계 테이블 */}
-        <RefiningStats defaultSuccession={isSuccessionMode} />
+        {showStats && <RefiningStats defaultSuccession={isSuccessionMode} />}
     </div>
   );
 }

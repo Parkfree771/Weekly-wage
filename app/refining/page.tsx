@@ -7,14 +7,16 @@ import Link from 'next/link';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 import RefiningCalculator from '@/components/refining/RefiningCalculator';
 import RefiningSimulator from '@/components/refining/RefiningSimulator';
+import AdvancedRefiningSimulator from '@/components/refining/AdvancedRefiningSimulator';
+import RefiningStats from '@/components/refining/RefiningStats';
 import styles from './refining.module.css';
 
-type RefiningMode = 'normal' | 'succession';
 type CalcMode = 'average' | 'simulation';
+type RefiningType = 'normal' | 'advanced'; // 일반재련 / 상급재련
 
 export default function RefiningPage() {
-  const [activeMode, setActiveMode] = useState<RefiningMode>('succession');
   const [calcMode, setCalcMode] = useState<CalcMode>('simulation');
+  const [refiningType, setRefiningType] = useState<RefiningType>('normal');
   const [hasSearched, setHasSearched] = useState(false);
 
   return (
@@ -81,25 +83,8 @@ export default function RefiningPage() {
               </noscript>
             </div>
 
-            {/* 모드 선택 탭 */}
-            <div className={styles.tabContainer}>
-              <div className={styles.tabNav}>
-                <button
-                  className={`${styles.tabLink} ${styles.tabLinkAegir} ${activeMode === 'normal' ? styles.tabLinkActive : ''}`}
-                  onClick={() => setActiveMode('normal')}
-                >
-                  <Image src="/aegir.webp" alt="계승 전" fill className={styles.tabBgImage} />
-                  <span className={styles.tabText}>계승 전</span>
-                </button>
-                <button
-                  className={`${styles.tabLink} ${styles.tabLinkCerka} ${activeMode === 'succession' ? styles.tabLinkActive : ''}`}
-                  onClick={() => setActiveMode('succession')}
-                >
-                  <Image src="/cerka.webp" alt="계승 후" fill className={styles.tabBgImage} />
-                  <span className={styles.tabText}>계승 후</span>
-                </button>
-              </div>
-
+            {/* 모드 선택 */}
+            <div className={styles.modeContainer}>
               {/* 계산 모드 선택 버튼 */}
               <div className={styles.calcModeContainer}>
                 <button
@@ -115,13 +100,38 @@ export default function RefiningPage() {
                   실제 시뮬
                 </button>
               </div>
+
+              {/* 실제 시뮬일 때만 재련 타입 선택 버튼 표시 */}
+              {calcMode === 'simulation' && (
+                <div className={styles.refiningTypeContainer}>
+                  <button
+                    className={`${styles.refiningTypeBtn} ${refiningType === 'normal' ? styles.refiningTypeBtnActive : ''}`}
+                    onClick={() => setRefiningType('normal')}
+                  >
+                    일반 재련
+                  </button>
+                  <button
+                    className={`${styles.refiningTypeBtn} ${refiningType === 'advanced' ? styles.refiningTypeBtnActive : ''}`}
+                    onClick={() => setRefiningType('advanced')}
+                  >
+                    상급 재련
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* 재련 계산기 또는 시뮬레이터 */}
             {calcMode === 'average' ? (
-              <RefiningCalculator mode={activeMode} onSearchComplete={setHasSearched} />
+              <RefiningCalculator onSearchComplete={setHasSearched} />
+            ) : refiningType === 'normal' ? (
+              <RefiningSimulator onSearchComplete={setHasSearched} refiningType={refiningType} showStats={false} />
             ) : (
-              <RefiningSimulator mode={activeMode} onSearchComplete={setHasSearched} />
+              <AdvancedRefiningSimulator onSearchComplete={setHasSearched} />
+            )}
+
+            {/* 통계 - 실제 시뮬일 때만 표시 */}
+            {calcMode === 'simulation' && (
+              <RefiningStats />
             )}
           </Col>
         </Row>
@@ -140,7 +150,7 @@ export default function RefiningPage() {
                   <ul className="mb-0 small" style={{ color: 'var(--text-muted)', paddingLeft: '1.2rem' }}>
                     <li className="mb-1"><strong>평균 시뮬:</strong> 확률 기반으로 평균적인 재련 비용을 계산합니다. 장기적인 재료 수급 계획에 적합합니다.</li>
                     <li className="mb-1"><strong>실제 시뮬:</strong> 실제 재련처럼 성공/실패를 시뮬레이션합니다. 운에 따른 편차를 확인할 수 있습니다.</li>
-                    <li className="mb-1"><strong>계승 전/후:</strong> 1710 계승 전후로 재련 재료가 다르므로 해당하는 모드를 선택하세요.</li>
+                    <li className="mb-1"><strong>장비 자동 판별:</strong> 업화 장비는 계승 전, 전율 장비는 계승 후 재련으로 자동 적용됩니다.</li>
                   </ul>
                 </div>
 

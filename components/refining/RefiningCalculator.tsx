@@ -155,7 +155,6 @@ const MaterialCard = ({
 type RefiningMode = 'normal' | 'succession';
 
 type RefiningCalculatorProps = {
-  mode?: RefiningMode;
   onSearchComplete?: (searched: boolean) => void;
 };
 
@@ -165,9 +164,9 @@ const getTodayPriceDate = () => {
   return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
 };
 
-export default function RefiningCalculator({ mode = 'normal', onSearchComplete }: RefiningCalculatorProps) {
+export default function RefiningCalculator({ onSearchComplete }: RefiningCalculatorProps) {
   const { theme } = useTheme();
-  const isSuccessionMode = mode === 'succession';
+  // 평균 시뮬에서는 업화/전율 장비 각각 따로 계산 (장비별 isSuccession 기반)
   const [characterName, setCharacterName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -722,11 +721,7 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
         return hasAdvancedTarget;
       }
 
-      // 계승 모드에 따른 장비 필터링
-      // 계승 후 탭: 계승 장비만, 계승 전 탭: 비계승 장비만
-      const isEquipmentDisabled = isSuccessionMode ? !eq.isSuccession : eq.isSuccession;
-      if (isEquipmentDisabled) return false;
-
+      // 모든 장비 포함 (업화/전율 상관없이) - 각 장비의 isSuccession 속성으로 계산 방식 결정
       // 일반 강화 또는 상급 재련 목표가 하나라도 설정되어 있으면 계산 대상
       const hasNormalTarget = targets.normal !== null && targets.normal > eq.currentLevel;
       const hasAdvancedTarget = targets.advanced !== null && targets.advanced > eq.currentAdvancedLevel;
@@ -943,9 +938,9 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
         for (let level = eq.currentLevel; level < targets.normal; level++) {
           const nextLevel = level + 1;
 
-          // 계승 모드: 다른 확률과 재료 테이블 사용
+          // 장비별 계승 여부에 따라 다른 확률과 재료 테이블 사용
           // 계승 데이터에서 키는 "현재 레벨" (예: 키 11 = 11→12 재련 재료)
-          if (isSuccessionMode) {
+          if (eq.isSuccession) {
             // 계승은 11~24 레벨 데이터 있음 (11→12 ~ 24→25)
             const baseProb = SUCCESSION_BASE_PROBABILITY[level];
             if (!baseProb) continue;
@@ -1044,8 +1039,8 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
         }
       }
 
-      // 2. 상급 재련 재료 계산 (계승 모드에서는 상급 재련 없음)
-      if (!isSuccessionMode && targets.advanced && targets.advanced > eq.currentAdvancedLevel) {
+      // 2. 상급 재련 재료 계산 (전율 장비는 상급 재련 없음)
+      if (!eq.isSuccession && targets.advanced && targets.advanced > eq.currentAdvancedLevel) {
         // 새 상급재련 옵션 설정 (방어구/무기 구분)
         const advancedOptions: NewAdvancedRefiningOptions = eq.type === 'armor' ? {
           useNormalBreath: advancedMaterialOptions.armorNormalBreath.enabled,
@@ -1357,11 +1352,9 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                   const isChanged = isNormalChanged || isAdvancedChanged;
                   const gradeColor = getGradeColor(eq.grade);
 
-                  // 계승 모드에 따른 장비 활성화/비활성화 판별
-                  // 계승 후 탭: 계승 장비(전율)만 활성화
-                  // 계승 전 탭: 비계승 장비(업화)만 활성화
-                  // 에스더 장비는 항상 표시하되 재련 비활성화
-                  const isEquipmentDisabled = eq.isEsther ? false : (isSuccessionMode ? !eq.isSuccession : eq.isSuccession);
+                  // 모든 장비 활성화 (업화/전율 구분 없이)
+                  // 에스더 장비도 상급 재련 가능
+                  const isEquipmentDisabled = false;
 
                   // 에스더/계승 장비 특별 클래스
                   const specialCardClass = eq.isEsther
@@ -1453,7 +1446,7 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                           display: 'flex',
                           gap: isMobile ? '0.15rem' : '0.3rem',
                           flexDirection: 'column',
-                          minHeight: isSuccessionMode
+                          minHeight: eq.isSuccession
                             ? (isMobile ? '24px' : '32px')
                             : (isMobile ? '50px' : '68px'),
                           justifyContent: 'flex-start'
@@ -1471,27 +1464,26 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                               }}>
                                 최상위 장비
                               </div>
-                              {!isSuccessionMode && (
-                                <Form.Select
-                                  value={targets.advanced ?? ''}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    setTargetLevels(prev => ({
-                                      ...prev,
-                                      [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), advanced: value === '' ? null : Number(value) }
-                                    }));
-                                  }}
-                                  disabled={eq.currentAdvancedLevel >= 40}
-                                  className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${targets.advanced === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
-                                >
-                                  <option value="">상급</option>
-                                  {[10, 20, 30, 40]
-                                    .filter(level => level > eq.currentAdvancedLevel)
-                                    .map(level => (
-                                      <option key={level} value={level}>+{level}</option>
-                                    ))}
-                                </Form.Select>
-                              )}
+                              {/* 에스더 장비는 상급 재련만 가능 */}
+                              <Form.Select
+                                value={targets.advanced ?? ''}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setTargetLevels(prev => ({
+                                    ...prev,
+                                    [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), advanced: value === '' ? null : Number(value) }
+                                  }));
+                                }}
+                                disabled={eq.currentAdvancedLevel >= 40}
+                                className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${targets.advanced === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
+                              >
+                                <option value="">상급</option>
+                                {[10, 20, 30, 40]
+                                  .filter(level => level > eq.currentAdvancedLevel)
+                                  .map(level => (
+                                    <option key={level} value={level}>+{level}</option>
+                                  ))}
+                              </Form.Select>
                             </>
                           ) : (
                             <>
@@ -1508,11 +1500,12 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                                 className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${targets.normal === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
                               >
                                 <option value="">+{eq.currentLevel}</option>
-                                {Array.from({ length: (isSuccessionMode ? 25 : 26) - eq.currentLevel }, (_, i) => eq.currentLevel + i + 1).map(level => (
+                                {Array.from({ length: (eq.isSuccession ? 25 : 26) - eq.currentLevel }, (_, i) => eq.currentLevel + i + 1).map(level => (
                                   <option key={level} value={level}>+{level}</option>
                                 ))}
                               </Form.Select>
-                              {!isSuccessionMode && (
+                              {/* 업화 장비만 상급 재련 가능 */}
+                              {!eq.isSuccession && (
                                 <Form.Select
                                   value={targets.advanced ?? ''}
                                   onChange={(e) => {
@@ -1549,29 +1542,27 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                     {/* 방어구 일괄 설정 */}
                     <div style={{ marginBottom: isMobile ? '0.6rem' : '1rem' }}>
                       <div className={`${styles.bulkSettingLabel} ${isMobile ? styles.bulkSettingLabelMobile : ''}`}>
-                        방어구 ({isSuccessionMode ? '계승' : '일반'})
+                        방어구
                       </div>
                       <div className={`${styles.bulkButtonGroup} ${isMobile ? styles.bulkButtonGroupMobile : ''}`}>
                         {(() => {
-                          // 현재 모드에 맞는 방어구만 필터링 (에스더 제외)
+                          // 모든 방어구 필터링 (에스더 제외)
                           const armorEquipments = equipments.filter(eq =>
                             eq.type === 'armor' &&
-                            !eq.isEsther &&
-                            (isSuccessionMode ? eq.isSuccession : !eq.isSuccession)
+                            !eq.isEsther
                           );
                           const minArmorLevel = armorEquipments.length > 0
                             ? Math.min(...armorEquipments.map(eq => eq.currentLevel))
                             : 10;
                           const startLevel = Math.max(minArmorLevel, 11);
-                          const maxLevel = isSuccessionMode ? 25 : 25;
+                          const maxLevel = 25;
                           return Array.from({ length: maxLevel - startLevel + 1 }, (_, i) => i + startLevel);
                         })().map(level => {
-                          // 현재 모드에 맞는 방어구만 체크 (에스더 제외)
+                          // 모든 방어구 체크 (에스더 제외)
                           const hasArmor = equipments.some(eq =>
                             eq.type === 'armor' &&
                             !eq.isEsther &&
-                            eq.currentLevel < level &&
-                            (isSuccessionMode ? eq.isSuccession : !eq.isSuccession)
+                            eq.currentLevel < level
                           );
                           const isSelected = selectedArmorBulkLevel.normal === level;
 
@@ -1583,9 +1574,8 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                                 if (isSelected) {
                                   const newTargets = { ...targetLevels };
                                   equipments.forEach(eq => {
-                                    // 현재 모드에 맞는 방어구만 대상 (에스더 제외)
-                                    const isActiveEquipment = !eq.isEsther && (isSuccessionMode ? eq.isSuccession : !eq.isSuccession);
-                                    if (eq.type === 'armor' && isActiveEquipment) {
+                                    // 모든 방어구 대상 (에스더 제외)
+                                    if (eq.type === 'armor' && !eq.isEsther) {
                                       newTargets[eq.name] = { ...newTargets[eq.name], normal: null };
                                     }
                                   });
@@ -1595,9 +1585,8 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                                   // 새로운 목표 설정
                                   const newTargets = { ...targetLevels };
                                   equipments.forEach(eq => {
-                                    // 현재 모드에 맞는 방어구만 대상 (에스더 제외)
-                                    const isActiveEquipment = !eq.isEsther && (isSuccessionMode ? eq.isSuccession : !eq.isSuccession);
-                                    if (eq.type === 'armor' && eq.currentLevel < level && isActiveEquipment) {
+                                    // 모든 방어구 대상 (에스더 제외)
+                                    if (eq.type === 'armor' && !eq.isEsther && eq.currentLevel < level) {
                                       newTargets[eq.name] = { ...newTargets[eq.name], normal: level };
                                     }
                                   });
@@ -1618,29 +1607,27 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                     {/* 무기 일괄 설정 */}
                     <div style={{ marginBottom: isMobile ? '0.6rem' : '1rem' }}>
                       <div className={`${styles.bulkSettingLabel} ${isMobile ? styles.bulkSettingLabelMobile : ''}`}>
-                        무기 ({isSuccessionMode ? '계승' : '일반'})
+                        무기
                       </div>
                       <div className={`${styles.bulkButtonGroup} ${isMobile ? styles.bulkButtonGroupMobile : ''}`}>
                         {(() => {
-                          // 현재 모드에 맞는 무기만 필터링 (에스더 제외)
+                          // 모든 무기 필터링 (에스더 제외)
                           const weaponEquipments = equipments.filter(eq =>
                             eq.type === 'weapon' &&
-                            !eq.isEsther &&
-                            (isSuccessionMode ? eq.isSuccession : !eq.isSuccession)
+                            !eq.isEsther
                           );
                           const minWeaponLevel = weaponEquipments.length > 0
                             ? Math.min(...weaponEquipments.map(eq => eq.currentLevel))
                             : 10;
                           const startLevel = Math.max(minWeaponLevel, 11);
-                          const maxLevel = isSuccessionMode ? 25 : 25;
+                          const maxLevel = 25;
                           return Array.from({ length: maxLevel - startLevel + 1 }, (_, i) => i + startLevel);
                         })().map(level => {
-                          // 현재 모드에 맞는 무기만 체크 (에스더 제외)
+                          // 모든 무기 체크 (에스더 제외)
                           const hasWeapon = equipments.some(eq =>
                             eq.type === 'weapon' &&
                             !eq.isEsther &&
-                            eq.currentLevel < level &&
-                            (isSuccessionMode ? eq.isSuccession : !eq.isSuccession)
+                            eq.currentLevel < level
                           );
                           const isSelected = selectedWeaponBulkLevel.normal === level;
 
@@ -1652,9 +1639,8 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                                 if (isSelected) {
                                   const newTargets = { ...targetLevels };
                                   equipments.forEach(eq => {
-                                    // 현재 모드에 맞는 무기만 대상 (에스더 제외)
-                                    const isActiveEquipment = !eq.isEsther && (isSuccessionMode ? eq.isSuccession : !eq.isSuccession);
-                                    if (eq.type === 'weapon' && isActiveEquipment) {
+                                    // 모든 무기 대상 (에스더 제외)
+                                    if (eq.type === 'weapon' && !eq.isEsther) {
                                       newTargets[eq.name] = { ...newTargets[eq.name], normal: null };
                                     }
                                   });
@@ -1664,9 +1650,8 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                                   // 새로운 목표 설정
                                   const newTargets = { ...targetLevels };
                                   equipments.forEach(eq => {
-                                    // 현재 모드에 맞는 무기만 대상 (에스더 제외)
-                                    const isActiveEquipment = !eq.isEsther && (isSuccessionMode ? eq.isSuccession : !eq.isSuccession);
-                                    if (eq.type === 'weapon' && eq.currentLevel < level && isActiveEquipment) {
+                                    // 모든 무기 대상 (에스더 제외)
+                                    if (eq.type === 'weapon' && !eq.isEsther && eq.currentLevel < level) {
                                       newTargets[eq.name] = { ...newTargets[eq.name], normal: level };
                                     }
                                   });
@@ -1684,8 +1669,8 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                       </div>
                     </div>
 
-                    {/* 상급재련 섹션 - 계승 전 모드에서만 표시 */}
-                    {!isSuccessionMode && (
+                    {/* 상급재련 섹션 - 업화 장비에만 적용 (전율 장비는 상급 재련 없음) */}
+                    {equipments.some(eq => !eq.isSuccession && !eq.isEsther) && (
                     <>
                     {/* 상급재련 헤더 */}
                     {!isMobile && (
@@ -2370,121 +2355,67 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
 
                   return (
                     <>
-                      {/* 1줄: 기본 재료 - 5개 */}
+                      {/* 1줄: 기본 재료 - 업화/전율 장비 재료 모두 표시 (해당하는 것만) */}
                       <div className={styles.materialsSection}>
                         <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
-                          {isSuccessionMode ? (
-                            <>
-                              {/* 계승 모드 재료 */}
-                              {requiredMats.needsArmor && (
-                                <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                  <MaterialCard icon="/destiny-guardian-stone2.webp" name="수호석결정" amount={materials.수호석결정 || 0} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석결정']} />
-                                </Col>
-                              )}
-                              {requiredMats.needsWeapon && (
-                                <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                  <MaterialCard icon="/destiny-destruction-stone2.webp" name="파괴석결정" amount={materials.파괴석결정 || 0} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석결정']} />
-                                </Col>
-                              )}
-                              <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/destiny-breakthrough-stone2.webp" name="위대한돌파석" amount={materials.위대한돌파석 || 0} color="#818cf8" showCheckbox={true} isBound={boundMaterials['위대한돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['위대한돌파석']} />
-                              </Col>
-                              <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} />
-                              </Col>
-                              <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/abidos-fusion2.webp" name="상급아비도스" amount={materials.상급아비도스 || 0} color="#818cf8" showCheckbox={true} isBound={boundMaterials['상급아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['상급아비도스']} />
-                              </Col>
-                              <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/shilling.png" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false} />
-                              </Col>
-                            </>
-                          ) : (
-                            <>
-                              {/* 계승 전 모드 재료 */}
-                              {requiredMats.needsArmor && (
-                                <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                  <MaterialCard icon="/destiny-guardian-stone.webp" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
-                                </Col>
-                              )}
-                              {requiredMats.needsWeapon && (
-                                <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                  <MaterialCard icon="/destiny-destruction-stone.webp" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} />
-                                </Col>
-                              )}
-                              <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/destiny-breakthrough-stone.webp" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} />
-                              </Col>
-                              <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} />
-                              </Col>
-                              <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/abidos-fusion.webp" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} />
-                              </Col>
-                            </>
+                          {/* 업화 장비 재료 (일반 재련) */}
+                          {materials.수호석 > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-guardian-stone.webp" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
+                            </Col>
+                          )}
+                          {materials.파괴석 > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-destruction-stone.webp" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} />
+                            </Col>
+                          )}
+                          {materials.돌파석 > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-breakthrough-stone.webp" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} />
+                            </Col>
+                          )}
+                          {materials.아비도스 > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/abidos-fusion.webp" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} />
+                            </Col>
+                          )}
+                          {/* 전율 장비 재료 (계승 재련) */}
+                          {(materials.수호석결정 || 0) > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-guardian-stone2.webp" name="수호석결정" amount={materials.수호석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['수호석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석결정']} />
+                            </Col>
+                          )}
+                          {(materials.파괴석결정 || 0) > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-destruction-stone2.webp" name="파괴석결정" amount={materials.파괴석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['파괴석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석결정']} />
+                            </Col>
+                          )}
+                          {(materials.위대한돌파석 || 0) > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-breakthrough-stone2.webp" name="위대한돌파석" amount={materials.위대한돌파석 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['위대한돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['위대한돌파석']} />
+                            </Col>
+                          )}
+                          {(materials.상급아비도스 || 0) > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/abidos-fusion2.webp" name="상급아비도스" amount={materials.상급아비도스 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['상급아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['상급아비도스']} />
+                            </Col>
+                          )}
+                          {/* 공통 재료 */}
+                          {materials.운명파편 > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} />
+                            </Col>
+                          )}
+                          {(materials.실링 || 0) > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/shilling.png" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false} />
+                            </Col>
                           )}
                         </Row>
                       </div>
 
-                      {/* 계승 모드 숨결 재료 (책은 미사용) */}
-                      {isSuccessionMode && (requiredMats.needsGlacierNormal || requiredMats.needsLavaNormal) && (
-                        <div className={styles.materialsSection}>
-                          <div className={styles.materialsSectionTitle}>
-                            추가 재료
-                          </div>
-                          <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
-                            {requiredMats.needsGlacierNormal && (
-                              <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
-                                <MaterialCard
-                                  icon="/breath-glacier.webp"
-                                  name="빙하의 숨결"
-                                  amount={materials.빙하}
-                                  color="#34d399"
-                                  showCheckbox={true}
-                                  isBound={materialOptions.glacierBreath.isBound}
-                                  onBoundChange={() => setMaterialOptions(prev => ({
-                                    ...prev,
-                                    glacierBreath: { ...prev.glacierBreath, isBound: !prev.glacierBreath.isBound }
-                                  }))}
-                                  cost={results.materialCosts['빙하']}
-                                  showEnableToggle={true}
-                                  isEnabled={materialOptions.glacierBreath.enabled}
-                                  onToggleEnabled={() => setMaterialOptions(prev => ({
-                                    ...prev,
-                                    glacierBreath: { ...prev.glacierBreath, enabled: !prev.glacierBreath.enabled }
-                                  }))}
-                                />
-                              </Col>
-                            )}
-                            {requiredMats.needsLavaNormal && (
-                              <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
-                                <MaterialCard
-                                  icon="/breath-lava.webp"
-                                  name="용암의 숨결"
-                                  amount={materials.용암}
-                                  color="#f87171"
-                                  showCheckbox={true}
-                                  isBound={materialOptions.lavaBreath.isBound}
-                                  onBoundChange={() => setMaterialOptions(prev => ({
-                                    ...prev,
-                                    lavaBreath: { ...prev.lavaBreath, isBound: !prev.lavaBreath.isBound }
-                                  }))}
-                                  cost={results.materialCosts['용암']}
-                                  showEnableToggle={true}
-                                  isEnabled={materialOptions.lavaBreath.enabled}
-                                  onToggleEnabled={() => setMaterialOptions(prev => ({
-                                    ...prev,
-                                    lavaBreath: { ...prev.lavaBreath, enabled: !prev.lavaBreath.enabled }
-                                  }))}
-                                />
-                              </Col>
-                            )}
-                          </Row>
-                        </div>
-                      )}
-
-                      {/* 일반 재련 추가 재료 (계승 모드에서는 숨김) */}
-                      {!isSuccessionMode && requiredMats.hasNormalRefining && (requiredMats.needsGlacierNormal || requiredMats.needsLavaNormal) && (
+                      {/* 일반 재련 추가 재료 (업화 장비) */}
+                      {requiredMats.hasNormalRefining && (requiredMats.needsGlacierNormal || requiredMats.needsLavaNormal) && (
                         <div className={styles.materialsSection}>
                           <div className={styles.materialsSectionTitle}>
                             일반 재련 추가 재료
@@ -2634,8 +2565,8 @@ export default function RefiningCalculator({ mode = 'normal', onSearchComplete }
                         </div>
                       )}
 
-                      {/* 상급 재련 추가 재료 - 계승 전 모드에서만 표시 */}
-                      {!isSuccessionMode && (requiredMats.needsAdvancedArmorBook1 || requiredMats.needsAdvancedArmorBook2 || requiredMats.needsAdvancedArmorBook3 || requiredMats.needsAdvancedArmorBook4 || requiredMats.needsAdvancedWeaponBook1 || requiredMats.needsAdvancedWeaponBook2 || requiredMats.needsAdvancedWeaponBook3 || requiredMats.needsAdvancedWeaponBook4) && (
+                      {/* 상급 재련 추가 재료 - 업화 장비에만 적용 */}
+                      {requiredMats.hasAdvancedRefining && (requiredMats.needsAdvancedArmorBook1 || requiredMats.needsAdvancedArmorBook2 || requiredMats.needsAdvancedArmorBook3 || requiredMats.needsAdvancedArmorBook4 || requiredMats.needsAdvancedWeaponBook1 || requiredMats.needsAdvancedWeaponBook2 || requiredMats.needsAdvancedWeaponBook3 || requiredMats.needsAdvancedWeaponBook4) && (
                         <div className={styles.materialsSection}>
                           <div className={styles.materialsSectionTitle}>
                             상급 재련 추가 재료

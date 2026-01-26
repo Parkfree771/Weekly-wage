@@ -1,0 +1,789 @@
+/* 상급 재련 시뮬레이터 스타일 */
+
+/* ============================================
+   메인 컨테이너
+   ============================================ */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ============================================
+   검색 섹션
+   ============================================ */
+.searchSection {
+  max-width: 500px;
+  margin: 0 auto 1.5rem;
+}
+
+.searchInputWrapper {
+  position: relative;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+}
+
+.searchButton {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.5rem 1rem;
+  background: var(--brand-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.searchButton:hover {
+  opacity: 0.9;
+}
+
+.searchButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   시뮬레이터 메인 레이아웃
+   ============================================ */
+.simulatorLayout {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1200px) {
+  .simulatorLayout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* ============================================
+   장비 목록 패널
+   ============================================ */
+.equipmentPanel {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.panelTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.equipmentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.equipmentItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--card-body-bg);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.equipmentItem:hover {
+  background: var(--hover-bg);
+}
+
+.equipmentItemSelected {
+  border-color: var(--brand-primary);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.equipmentIcon {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.equipmentInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.equipmentName {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.equipmentLevel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.advancedLevelBadge {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: white;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+/* ============================================
+   메인 시뮬레이터 패널
+   ============================================ */
+.mainPanel {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+/* 선조의 가호 표시 */
+.gahoSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
+  border-radius: 12px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.gahoTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gahoIcon {
+  width: 32px;
+  height: 32px;
+}
+
+.gahoGauge {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.gahoDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(251, 191, 36, 0.2);
+  border: 2px solid rgba(251, 191, 36, 0.4);
+  transition: all 0.3s;
+}
+
+.gahoDotFilled {
+  background: #fbbf24;
+  border-color: #f59e0b;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+}
+
+.gahoDotBonus {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-color: #d97706;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+  animation: gahoPulse 1s ease-in-out infinite;
+}
+
+@keyframes gahoPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* 경험치 게이지 섹션 */
+.expSection {
+  margin-bottom: 1.5rem;
+}
+
+.stageInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.stageLabel {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stageLevelBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.currentLevel {
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: white;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.expGaugeWrapper {
+  position: relative;
+  height: 32px;
+  background: #1f2937;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #374151;
+}
+
+.expGaugeFill {
+  height: 100%;
+  background: linear-gradient(90deg, #a855f7, #7c3aed);
+  transition: width 0.5s ease-out;
+  position: relative;
+}
+
+.expGaugeFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  animation: expShine 2s ease-in-out infinite;
+}
+
+@keyframes expShine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.expText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.levelMarkers {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+  padding: 0 2px;
+}
+
+.levelMarker {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  width: 20px;
+  text-align: center;
+}
+
+.levelMarkerActive {
+  color: #a855f7;
+  font-weight: 600;
+}
+
+/* 확률 표시 */
+.probabilitySection {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--card-body-bg);
+  border-radius: 8px;
+}
+
+.probabilityItem {
+  text-align: center;
+}
+
+.probabilityLabel {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.probabilityValue {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.probabilitySuccess {
+  color: #10b981;
+}
+
+.probabilityGreat {
+  color: #3b82f6;
+}
+
+.probabilitySuper {
+  color: #f59e0b;
+}
+
+/* 재료 옵션 */
+.materialOptions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.materialOptionCard {
+  padding: 1rem;
+  background: var(--card-body-bg);
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.materialOptionCardActive {
+  border-color: var(--brand-primary);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.materialOptionCardDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.materialOptionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.materialOptionTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.materialOptionIcon {
+  width: 24px;
+  height: 24px;
+}
+
+.turnSelector {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.turnButton {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.turnButton:hover:not(:disabled) {
+  border-color: var(--brand-primary);
+  color: var(--text-primary);
+}
+
+.turnButtonActive {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: white;
+}
+
+.turnButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 재련 버튼 */
+.refineButtonSection {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.refineButton {
+  padding: 1rem 3rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: white;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.refineButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+}
+
+.refineButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.refineButtonBonus {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.refineButtonBonus:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.4);
+}
+
+.refineButtonFree {
+  position: relative;
+}
+
+.refineButtonFree::after {
+  content: '무료';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  padding: 0.2rem 0.5rem;
+  background: #10b981;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+.resetButton {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.resetButton:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   결과 패널
+   ============================================ */
+.resultPanel {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+/* 시도 결과 표시 */
+.lastResult {
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 1rem;
+  animation: resultPop 0.3s ease-out;
+}
+
+@keyframes resultPop {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.resultSuccess {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.resultGreat {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.resultSuper {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.resultBonus {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.resultLabel {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.resultExp {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.resultCard {
+  font-size: 0.85rem;
+  color: #fbbf24;
+  margin-top: 0.25rem;
+}
+
+/* 히스토리 */
+.historySection {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.historyItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.historyItemNormal {
+  background: var(--card-body-bg);
+}
+
+.historyItemBonus {
+  background: rgba(251, 191, 36, 0.1);
+  border-left: 3px solid #fbbf24;
+}
+
+.historyAttempt {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.historyGrade {
+  font-weight: 600;
+}
+
+.historyGradeSuccess {
+  color: #10b981;
+}
+
+.historyGradeGreat {
+  color: #3b82f6;
+}
+
+.historyGradeSuper {
+  color: #f59e0b;
+}
+
+.historyExp {
+  color: #a855f7;
+  font-weight: 600;
+}
+
+/* 누적 비용 */
+.costSection {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.costTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.costGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.costItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--card-body-bg);
+  border-radius: 6px;
+}
+
+.costIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.costValue {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ============================================
+   반응형
+   ============================================ */
+@media (max-width: 768px) {
+  .simulatorLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .equipmentPanel {
+    order: 1;
+  }
+
+  .mainPanel {
+    order: 2;
+  }
+
+  .resultPanel {
+    order: 3;
+  }
+
+  .equipmentList {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    max-height: none;
+  }
+
+  .gahoSection {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .probabilitySection {
+    gap: 1rem;
+  }
+
+  .materialOptions {
+    grid-template-columns: 1fr;
+  }
+
+  .refineButtonSection {
+    flex-direction: column;
+  }
+
+  .refineButton {
+    width: 100%;
+  }
+
+  .resetButton {
+    width: 100%;
+  }
+}
+
+/* 레벨업 애니메이션 */
+.levelUpAnimation {
+  animation: levelUp 0.5s ease-out;
+}
+
+@keyframes levelUp {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: brightness(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 선조턴 활성화 표시 */
+.bonusTurnActive {
+  position: relative;
+}
+
+.bonusTurnActive::before {
+  content: '선조턴';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.2rem 0.6rem;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* 플레이스홀더 */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.placeholderIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.placeholderText {
+  font-size: 0.95rem;
+}
