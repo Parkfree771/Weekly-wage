@@ -1,9 +1,7 @@
 'use client';
 
 import { useMemo, createContext, useContext } from 'react';
-import Image from 'next/image';
 import { Card } from 'react-bootstrap';
-import { useTheme } from './ThemeProvider';
 
 type PriceEntry = {
   price: number;
@@ -20,6 +18,8 @@ type ComparisonData = {
   ratio: number;                     // 교환 비율 (5:1)
 } | null;
 
+type ReferenceLineType = 'min' | 'avg' | 'max' | 'current';
+
 type PriceContextType = {
   history: PriceEntry[];
   filteredHistory: PriceEntry[];
@@ -28,6 +28,9 @@ type PriceContextType = {
   comparisonData: ComparisonData;    // 비교 차트 데이터
   isGridView: boolean;
   onToggleGridView: () => void;
+  activeReferenceLines: Set<ReferenceLineType>;
+  toggleReferenceLine: (type: ReferenceLineType) => void;
+  selectItemById: (itemId: string) => void;  // 아이템 ID로 선택
 };
 
 export const PriceContext = createContext<PriceContextType>({
@@ -38,6 +41,9 @@ export const PriceContext = createContext<PriceContextType>({
   comparisonData: null,
   isGridView: false,
   onToggleGridView: () => {},
+  activeReferenceLines: new Set<ReferenceLineType>(),
+  toggleReferenceLine: () => {},
+  selectItemById: () => {},
 });
 
 // 그리드 아이콘 SVG 컴포넌트
@@ -61,7 +67,7 @@ export function GridToggleButton() {
       onClick={onToggleGridView}
       title={isGridView ? '단일 차트 보기' : '4분할 차트 보기'}
       style={{
-        background: isGridView ? 'var(--card-body-bg-stone)' : 'transparent',
+        background: isGridView ? 'var(--card-bg)' : 'transparent',
         border: '2px solid var(--text-secondary)',
         borderRadius: '8px',
         padding: '4px 8px',
@@ -103,8 +109,7 @@ const formatPrice = (value: number, isAverage = false, noDecimal = false) => {
 };
 
 export default function PriceComparisonStats() {
-  const { theme } = useTheme();
-  const { filteredHistory } = useContext(PriceContext);
+  const { filteredHistory, activeReferenceLines, toggleReferenceLine } = useContext(PriceContext);
 
   // 통계 계산 (필터링된 기간의 데이터만 사용)
   const stats = useMemo(() => {
@@ -118,78 +123,8 @@ export default function PriceComparisonStats() {
     const changeFromAvg = avg > 0 ? ((current - avg) / avg) * 100 : 0;
     const changeFromMax = max > 0 ? ((current - max) / max) * 100 : 0;
 
-    // 연속 상승/하락일 계산
-    let consecutiveDays = 0;
-    let isRising = true;
-    for (let i = filteredHistory.length - 1; i > 0; i--) {
-      const prevPrice = filteredHistory[i - 1].price;
-      const currPrice = filteredHistory[i].price;
-
-      if (i === filteredHistory.length - 1) {
-        isRising = currPrice > prevPrice;
-      }
-
-      if ((isRising && currPrice > prevPrice) || (!isRising && currPrice < prevPrice)) {
-        consecutiveDays++;
-      } else {
-        break;
-      }
-    }
-
-    // RSI 계산 (선택된 차트 기간 전체 사용)
-    const period = filteredHistory.length - 1;
-    let avgGain = 0;
-    let avgLoss = 0;
-
-    if (period > 0) {
-      for (let i = 1; i < filteredHistory.length; i++) {
-        const change = filteredHistory[i].price - filteredHistory[i - 1].price;
-        if (change > 0) {
-          avgGain += change;
-        } else {
-          avgLoss += Math.abs(change);
-        }
-      }
-      avgGain /= period;
-      avgLoss /= period;
-    }
-
-    const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-    const rsi = 100 - (100 / (1 + rs));
-
-    let rsiStatus: string;
-    let rsiMessage: string;
-    if (rsi <= 30) {
-      rsiStatus = '저평가';
-      rsiMessage = '과매도';
-    } else if (rsi >= 70) {
-      rsiStatus = '고평가';
-      rsiMessage = '과매수';
-    } else {
-      rsiStatus = '보통';
-      rsiMessage = '중립';
-    }
-
-    // Stochastic 계산 (선택된 차트 기간 전체 사용)
-    const stochPeriod = filteredHistory.length;
-    const recentPrices = filteredHistory.map(h => h.price);
-    const periodMin = Math.min(...recentPrices);
-    const periodMax = Math.max(...recentPrices);
-
-    const stochastic = periodMax === periodMin ? 50 : ((current - periodMin) / (periodMax - periodMin)) * 100;
-
-    let stochStatus: string;
-    let stochMessage: string;
-    if (stochastic <= 20) {
-      stochStatus = '최저가 근접';
-      stochMessage = '바닥권';
-    } else if (stochastic >= 80) {
-      stochStatus = '최고가 근접';
-      stochMessage = '천장권';
-    } else {
-      stochStatus = '변동 중';
-      stochMessage = '중간';
-    }
+    // 가격 위치 (0~100%, 최저가=0%, 최고가=100%)
+    const pricePosition = max === min ? 50 : ((current - min) / (max - min)) * 100;
 
     return {
       current,
@@ -199,615 +134,254 @@ export default function PriceComparisonStats() {
       changeFromMin,
       changeFromAvg,
       changeFromMax,
-      consecutiveDays,
-      isRising,
-      rsi,
-      rsiStatus,
-      rsiMessage,
-      stochastic,
-      stochStatus,
-      stochMessage,
+      pricePosition,
     };
   }, [filteredHistory]);
 
   if (!stats || filteredHistory.length === 0) return null;
 
+  // 가격 위치에 따른 색상 계산 (파란색 -> 보라색 -> 빨간색 그라데이션)
+  const getPositionColor = (position: number) => {
+    if (position <= 30) return '#3b82f6'; // 파란색 (저점)
+    if (position >= 70) return '#ef4444'; // 빨간색 (고점)
+    return '#8b5cf6'; // 보라색 (중간)
+  };
+
+  const positionColor = getPositionColor(stats.pricePosition);
+
   return (
     <>
       {/* 가격 비교 통계 - 데스크톱 */}
-      <Card className="border-0 shadow-lg mt-3 d-none d-md-block" style={{ borderRadius: '16px', background: 'var(--card-body-bg-stone)', color: 'var(--text-primary)', maxWidth: '1400px', margin: '16px auto 0', overflow: 'hidden' }}>
-        <Card.Header
-          className="text-center py-3 border-0"
-          style={{
-            background: 'var(--card-header-bg-stone)',
-            borderBottom: '1px solid var(--border-color)'
-          }}
-        >
-          <h4
-            className="mb-0"
-            style={{
-              fontWeight: '600',
-              fontSize: '1.1rem',
-              background: 'var(--gradient-text-stone)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              letterSpacing: '-0.025em'
-            }}
-          >
-            가격 변동 분석
-          </h4>
-        </Card.Header>
+      <Card className="mt-3 d-none d-md-block" style={{ color: 'var(--text-primary)', maxWidth: '1400px', margin: '16px auto 0', overflow: 'hidden' }}>
         <Card.Body className="p-3">
-          <div className="row g-3">
-            {/* 통계 상자 - 첫 번째 줄 */}
-            <div className="col-md-3">
+          {/* 가격 위치 바 */}
+          <div style={{ marginBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
               <div
+                onClick={() => toggleReferenceLine('min')}
                 style={{
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  padding: '12px',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: 'transparent'
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  backgroundColor: activeReferenceLines.has('min') ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                  border: activeReferenceLines.has('min') ? '1px solid #3b82f6' : '1px solid transparent',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
-                    현재가
-                  </div>
-                  <div style={{ fontSize: '1.8rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
-                    {formatPrice(stats.current, false, true)}
-                  </div>
-                </div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>최저</div>
+                <div style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
               </div>
-            </div>
-            <div className="col-md-3">
               <div
+                onClick={() => toggleReferenceLine('current')}
                 style={{
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  padding: '12px',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: 'transparent'
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  backgroundColor: activeReferenceLines.has('current') ? `${positionColor}20` : 'transparent',
+                  border: activeReferenceLines.has('current') ? `1px solid ${positionColor}` : '1px solid transparent',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
-                    평균가
-                  </div>
-                  <div style={{ fontSize: '1.8rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
-                    {formatPrice(stats.avg, false, true)}
-                  </div>
-                </div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>현재</div>
+                <div style={{ fontSize: '1.1rem', color: positionColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
               </div>
-            </div>
-            <div className="col-md-3">
               <div
+                onClick={() => toggleReferenceLine('avg')}
                 style={{
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  padding: '12px',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: 'transparent'
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  backgroundColor: activeReferenceLines.has('avg') ? 'rgba(107, 114, 128, 0.15)' : 'transparent',
+                  border: activeReferenceLines.has('avg') ? '1px solid #6b7280' : '1px solid transparent',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
-                    최저가
-                  </div>
-                  <div style={{ fontSize: '1.8rem', color: '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
-                    {formatPrice(stats.min, false, true)}
-                  </div>
-                </div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>평균</div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
               </div>
-            </div>
-            <div className="col-md-3">
               <div
+                onClick={() => toggleReferenceLine('max')}
                 style={{
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  padding: '12px',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: 'transparent'
+                  textAlign: 'right',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  backgroundColor: activeReferenceLines.has('max') ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                  border: activeReferenceLines.has('max') ? '1px solid #ef4444' : '1px solid transparent',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
-                    최고가
-                  </div>
-                  <div style={{ fontSize: '1.8rem', color: '#ef4444', fontWeight: '700', lineHeight: '1' }}>
-                    {formatPrice(stats.max, false, true)}
-                  </div>
-                </div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>최고</div>
+                <div style={{ fontSize: '0.85rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
               </div>
             </div>
+            <div style={{
+              position: 'relative',
+              height: '8px',
+              borderRadius: '4px',
+              background: 'linear-gradient(to right, #3b82f6, #8b5cf6, #ef4444)',
+              opacity: 0.4
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: `${stats.pricePosition}%`,
+                transform: 'translate(-50%, -50%)',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                backgroundColor: positionColor,
+                border: '3px solid var(--card-bg)',
+                boxShadow: `0 0 0 2px ${positionColor}, 0 2px 8px ${positionColor}80`
+              }} />
+            </div>
+          </div>
 
-            {/* 가격 변동 분석 - 두 번째 줄 */}
-            <div className="col-md-4">
-              <div
-                style={{
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  padding: '12px',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
-                    최저가 대비
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <Image src={stats.changeFromMin >= 0 ? '/up.png' : '/down.png'} alt="" width={24} height={24} />
-                    <div style={{ fontSize: '1.8rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
-                      {stats.changeFromMin >= 0 ? '+' : ''}{stats.changeFromMin.toFixed(1)}%
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    {formatPrice(stats.min)}
-                  </div>
-                </div>
-              </div>
+          {/* 대비 변동률 - 한 줄 */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '24px',
+            padding: '8px 0',
+            borderTop: '1px solid var(--border-color)'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginRight: '6px' }}>최저가 대비</span>
+              <span style={{ fontSize: '0.85rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+                {stats.changeFromMin >= 0 ? '+' : ''}{stats.changeFromMin.toFixed(1)}%
+              </span>
             </div>
-            <div className="col-md-4">
-              <div
-                style={{
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  padding: '12px',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
-                    평균가 대비
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <Image src={stats.changeFromAvg >= 0 ? '/up.png' : '/down.png'} alt="" width={24} height={24} />
-                    <div style={{ fontSize: '1.8rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
-                      {stats.changeFromAvg >= 0 ? '+' : ''}{stats.changeFromAvg.toFixed(1)}%
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    {formatPrice(stats.avg, true)}
-                  </div>
-                </div>
-              </div>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginRight: '6px' }}>평균 대비</span>
+              <span style={{ fontSize: '0.85rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+                {stats.changeFromAvg >= 0 ? '+' : ''}{stats.changeFromAvg.toFixed(1)}%
+              </span>
             </div>
-            <div className="col-md-4">
-              <div
-                style={{
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  padding: '12px',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
-                    최고가 대비
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <Image src={stats.changeFromMax >= 0 ? '/up.png' : '/down.png'} alt="" width={24} height={24} />
-                    <div style={{ fontSize: '1.8rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
-                      {stats.changeFromMax >= 0 ? '+' : ''}{stats.changeFromMax.toFixed(1)}%
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    {formatPrice(stats.max)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 연속 상승/하락일 */}
-            <div className="col-md-4">
-              <div
-                style={{
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  padding: '12px',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
-                    연속 {stats.isRising ? '상승' : '하락'}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <Image src={stats.isRising ? '/up.png' : '/down.png'} alt="" width={24} height={24} />
-                    <div style={{ fontSize: '1.8rem', color: stats.isRising ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
-                      {stats.consecutiveDays}일
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    {stats.isRising ? '상승세' : '하락세'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* RSI */}
-            <div className="col-md-4">
-              <div
-                style={{
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  padding: '12px',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
-                    RSI
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <Image src={stats.rsi <= 30 ? '/cold.png' : stats.rsi >= 70 ? '/hot.png' : '/soso.png'} alt="" width={24} height={24} />
-                    <div style={{
-                      fontSize: '1.8rem',
-                      color: stats.rsi <= 30 ? '#3b82f6' : stats.rsi >= 70 ? '#ef4444' : 'var(--text-primary)',
-                      fontWeight: '700',
-                      lineHeight: '1'
-                    }}>
-                      {stats.rsi.toFixed(1)}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                    {stats.rsiMessage}
-                    {stats.rsi <= 30 && (
-                      <>
-                        {' '}(<Image src="/up.png" alt="" width={12} height={12} style={{ display: 'inline' }} /> 매수 추천)
-                      </>
-                    )}
-                    {stats.rsi >= 70 && (
-                      <>
-                        {' '}(<Image src="/down.png" alt="" width={12} height={12} style={{ display: 'inline' }} /> 매도 추천)
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 스토캐스틱 */}
-            <div className="col-md-4">
-              <div
-                style={{
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  padding: '12px',
-                  transition: 'all 0.3s ease',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '8px' }}>
-                    Stochastic
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <Image src={stats.stochastic <= 20 ? '/cold.png' : stats.stochastic >= 80 ? '/hot.png' : '/soso.png'} alt="" width={24} height={24} />
-                    <div style={{
-                      fontSize: '1.8rem',
-                      color: stats.stochastic <= 20 ? '#3b82f6' : stats.stochastic >= 80 ? '#ef4444' : 'var(--text-primary)',
-                      fontWeight: '700',
-                      lineHeight: '1'
-                    }}>
-                      {stats.stochastic.toFixed(1)}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                    {stats.stochMessage}
-                    {stats.stochastic <= 20 && (
-                      <>
-                        {' '}(<Image src="/up.png" alt="" width={12} height={12} style={{ display: 'inline' }} /> 매수 추천)
-                      </>
-                    )}
-                    {stats.stochastic >= 80 && (
-                      <>
-                        {' '}(<Image src="/down.png" alt="" width={12} height={12} style={{ display: 'inline' }} /> 매도 추천)
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginRight: '6px' }}>최고가 대비</span>
+              <span style={{ fontSize: '0.85rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+                {stats.changeFromMax >= 0 ? '+' : ''}{stats.changeFromMax.toFixed(1)}%
+              </span>
             </div>
           </div>
         </Card.Body>
       </Card>
 
       {/* 가격 비교 통계 - 모바일 */}
-      <Card className="border-0 shadow-lg mt-2 d-md-none" style={{ borderRadius: '12px', background: 'var(--card-body-bg-stone)', color: 'var(--text-primary)', overflow: 'hidden' }}>
-        <Card.Header
-          className="text-center py-2 border-0"
-          style={{
-            background: 'var(--card-header-bg-stone)',
-            borderBottom: '1px solid var(--border-color)'
-          }}
-        >
-          <h5
-            className="mb-0"
-            style={{
-              fontWeight: '600',
-              fontSize: '0.9rem',
-              background: 'var(--gradient-text-stone)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              letterSpacing: '-0.025em'
-            }}
-          >
-            가격 변동 분석
-          </h5>
-        </Card.Header>
+      <Card className="mt-2 d-md-none" style={{ color: 'var(--text-primary)', overflow: 'hidden' }}>
         <Card.Body className="p-2">
-          <div className="row g-2">
-            {/* 통계 상자 - 첫 번째 줄 */}
-            <div className="col-3">
+          {/* 가격 위치 바 - 모바일 */}
+          <div style={{ marginBottom: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '6px' }}>
               <div
+                onClick={() => toggleReferenceLine('min')}
                 style={{
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  padding: '14px 6px',
-                  backgroundColor: 'transparent'
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  padding: '3px 6px',
+                  borderRadius: '4px',
+                  backgroundColor: activeReferenceLines.has('min') ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                  border: activeReferenceLines.has('min') ? '1px solid #3b82f6' : '1px solid transparent',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '5px' }}>
-                    현재가
-                  </div>
-                  <div style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
-                    {formatPrice(stats.current, false, true)}
-                  </div>
-                </div>
+                <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>최저</div>
+                <div style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
               </div>
-            </div>
-            <div className="col-3">
               <div
+                onClick={() => toggleReferenceLine('current')}
                 style={{
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  padding: '14px 6px',
-                  backgroundColor: 'transparent'
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  padding: '3px 6px',
+                  borderRadius: '4px',
+                  backgroundColor: activeReferenceLines.has('current') ? `${positionColor}20` : 'transparent',
+                  border: activeReferenceLines.has('current') ? `1px solid ${positionColor}` : '1px solid transparent',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '5px' }}>
-                    평균가
-                  </div>
-                  <div style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1' }}>
-                    {formatPrice(stats.avg, false, true)}
-                  </div>
-                </div>
+                <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>현재</div>
+                <div style={{ fontSize: '0.95rem', color: positionColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
               </div>
-            </div>
-            <div className="col-3">
               <div
+                onClick={() => toggleReferenceLine('avg')}
                 style={{
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  padding: '14px 6px',
-                  backgroundColor: 'transparent'
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  padding: '3px 6px',
+                  borderRadius: '4px',
+                  backgroundColor: activeReferenceLines.has('avg') ? 'rgba(107, 114, 128, 0.15)' : 'transparent',
+                  border: activeReferenceLines.has('avg') ? '1px solid #6b7280' : '1px solid transparent',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '5px' }}>
-                    최저가
-                  </div>
-                  <div style={{ fontSize: '1.1rem', color: '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
-                    {formatPrice(stats.min, false, true)}
-                  </div>
-                </div>
+                <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>평균</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
               </div>
-            </div>
-            <div className="col-3">
               <div
+                onClick={() => toggleReferenceLine('max')}
                 style={{
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  padding: '14px 6px',
-                  backgroundColor: 'transparent'
+                  textAlign: 'right',
+                  cursor: 'pointer',
+                  padding: '3px 6px',
+                  borderRadius: '4px',
+                  backgroundColor: activeReferenceLines.has('max') ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                  border: activeReferenceLines.has('max') ? '1px solid #ef4444' : '1px solid transparent',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '5px' }}>
-                    최고가
-                  </div>
-                  <div style={{ fontSize: '1.1rem', color: '#ef4444', fontWeight: '700', lineHeight: '1' }}>
-                    {formatPrice(stats.max, false, true)}
-                  </div>
-                </div>
+                <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>최고</div>
+                <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
               </div>
             </div>
+            <div style={{
+              position: 'relative',
+              height: '6px',
+              borderRadius: '3px',
+              background: 'linear-gradient(to right, #3b82f6, #8b5cf6, #ef4444)',
+              opacity: 0.4
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: `${stats.pricePosition}%`,
+                transform: 'translate(-50%, -50%)',
+                width: '14px',
+                height: '14px',
+                borderRadius: '50%',
+                backgroundColor: positionColor,
+                border: '2px solid var(--card-bg)',
+                boxShadow: `0 0 0 2px ${positionColor}, 0 2px 6px ${positionColor}80`
+              }} />
+            </div>
+          </div>
 
-            {/* 가격 변동 분석 - 두 번째 줄 */}
-            <div className="col-4">
-              <div
-                style={{
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  padding: '10px 4px',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.58rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '5px' }}>
-                    최저가 대비
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <Image src={stats.changeFromMin >= 0 ? '/up.png' : '/down.png'} alt="" width={16} height={16} />
-                    <div style={{ fontSize: '1.1rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
-                      {stats.changeFromMin >= 0 ? '+' : ''}{stats.changeFromMin.toFixed(1)}%
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>
-                    {formatPrice(stats.min)}
-                  </div>
-                </div>
+          {/* 대비 변동률 - 한 줄 */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-around',
+            padding: '6px 0',
+            borderTop: '1px solid var(--border-color)'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginBottom: '2px' }}>최저 대비</div>
+              <div style={{ fontSize: '0.8rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+                {stats.changeFromMin >= 0 ? '+' : ''}{stats.changeFromMin.toFixed(1)}%
               </div>
             </div>
-            <div className="col-4">
-              <div
-                style={{
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  padding: '10px 4px',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.58rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '5px' }}>
-                    평균가 대비
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <Image src={stats.changeFromAvg >= 0 ? '/up.png' : '/down.png'} alt="" width={16} height={16} />
-                    <div style={{ fontSize: '1.1rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
-                      {stats.changeFromAvg >= 0 ? '+' : ''}{stats.changeFromAvg.toFixed(1)}%
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>
-                    {formatPrice(stats.avg, true)}
-                  </div>
-                </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginBottom: '2px' }}>평균 대비</div>
+              <div style={{ fontSize: '0.8rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+                {stats.changeFromAvg >= 0 ? '+' : ''}{stats.changeFromAvg.toFixed(1)}%
               </div>
             </div>
-            <div className="col-4">
-              <div
-                style={{
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  padding: '10px 4px',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.58rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '5px' }}>
-                    최고가 대비
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <Image src={stats.changeFromMax >= 0 ? '/up.png' : '/down.png'} alt="" width={16} height={16} />
-                    <div style={{ fontSize: '1.1rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
-                      {stats.changeFromMax >= 0 ? '+' : ''}{stats.changeFromMax.toFixed(1)}%
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>
-                    {formatPrice(stats.max)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 연속 상승/하락일 - 모바일 */}
-            <div className="col-4">
-              <div
-                style={{
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  padding: '10px 4px',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.58rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '5px' }}>
-                    연속 {stats.isRising ? '상승' : '하락'}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <Image src={stats.isRising ? '/up.png' : '/down.png'} alt="" width={16} height={16} />
-                    <div style={{ fontSize: '1.1rem', color: stats.isRising ? '#ef4444' : '#3b82f6', fontWeight: '700', lineHeight: '1' }}>
-                      {stats.consecutiveDays}일
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>
-                    {stats.isRising ? '상승세' : '하락세'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* RSI - 모바일 */}
-            <div className="col-4">
-              <div
-                style={{
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  padding: '10px 4px',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.58rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '5px' }}>
-                    RSI
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <Image src={stats.rsi <= 30 ? '/cold.png' : stats.rsi >= 70 ? '/hot.png' : '/soso.png'} alt="" width={16} height={16} />
-                    <div style={{
-                      fontSize: '1.1rem',
-                      color: stats.rsi <= 30 ? '#3b82f6' : stats.rsi >= 70 ? '#ef4444' : 'var(--text-primary)',
-                      fontWeight: '700',
-                      lineHeight: '1'
-                    }}>
-                      {stats.rsi.toFixed(1)}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1px', flexWrap: 'wrap' }}>
-                    <span>{stats.rsiMessage}</span>
-                    {stats.rsi <= 30 && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
-                        (<Image src="/up.png" alt="" width={9} height={9} style={{ display: 'inline' }} />매수)
-                      </span>
-                    )}
-                    {stats.rsi >= 70 && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
-                        (<Image src="/down.png" alt="" width={9} height={9} style={{ display: 'inline' }} />매도)
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 스토캐스틱 - 모바일 */}
-            <div className="col-4">
-              <div
-                style={{
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  padding: '10px 4px',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <div className="text-center">
-                  <div style={{ fontSize: '0.58rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '5px' }}>
-                    Stochastic
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginBottom: '4px' }}>
-                    <Image src={stats.stochastic <= 20 ? '/cold.png' : stats.stochastic >= 80 ? '/hot.png' : '/soso.png'} alt="" width={16} height={16} />
-                    <div style={{
-                      fontSize: '1.1rem',
-                      color: stats.stochastic <= 20 ? '#3b82f6' : stats.stochastic >= 80 ? '#ef4444' : 'var(--text-primary)',
-                      fontWeight: '700',
-                      lineHeight: '1'
-                    }}>
-                      {stats.stochastic.toFixed(1)}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1px', flexWrap: 'wrap' }}>
-                    <span>{stats.stochMessage}</span>
-                    {stats.stochastic <= 20 && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
-                        (<Image src="/up.png" alt="" width={9} height={9} style={{ display: 'inline' }} />매수)
-                      </span>
-                    )}
-                    {stats.stochastic >= 80 && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
-                        (<Image src="/down.png" alt="" width={9} height={9} style={{ display: 'inline' }} />매도)
-                      </span>
-                    )}
-                  </div>
-                </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginBottom: '2px' }}>최고 대비</div>
+              <div style={{ fontSize: '0.8rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+                {stats.changeFromMax >= 0 ? '+' : ''}{stats.changeFromMax.toFixed(1)}%
               </div>
             </div>
           </div>

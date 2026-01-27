@@ -52,10 +52,17 @@ const REFINING_MATERIAL_IDS: Record<string, number> = {
 };
 type RefiningType = 'normal' | 'advanced'; // 일반재련 / 상급재련
 
+// 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
+const getTodayPriceDate = () => {
+  const now = new Date();
+  return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
+};
+
 interface RefiningSimulatorProps {
   onSearchComplete?: (searched: boolean) => void;
   refiningType?: RefiningType;
   showStats?: boolean;
+  modeSelector?: React.ReactNode;
 }
 
 interface RefiningAttempt {
@@ -92,7 +99,7 @@ interface AccumulatedCost {
   재봉술1920: number;
 }
 
-export default function RefiningSimulator({ onSearchComplete, refiningType = 'normal', showStats = true }: RefiningSimulatorProps) {
+export default function RefiningSimulator({ onSearchComplete, refiningType = 'normal', showStats = true, modeSelector }: RefiningSimulatorProps) {
   const { theme } = useTheme();
 
   // 선택된 장비에 따라 계승 모드 자동 판별 (isSuccession: true면 계승 후)
@@ -105,6 +112,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
   const [error, setError] = useState<string | null>(null);
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [searched, setSearched] = useState(false);
+  const [characterInfo, setCharacterInfo] = useState<{ name: string; itemLevel: string; image?: string } | null>(null);
 
   // 자동완성
   const { history, addToHistory, getSuggestions } = useSearchHistory();
@@ -211,6 +219,15 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
       const itemLevel = data.profile?.ItemMaxLevel || data.profile?.ItemAvgLevel || '0';
       const parsedItemLevel = parseFloat(itemLevel.replace(/,/g, ''));
       setBaseItemLevel(parsedItemLevel);
+
+      // 캐릭터 정보 저장
+      if (data.profile) {
+        setCharacterInfo({
+          name: data.profile.CharacterName || characterName,
+          itemLevel: data.profile.ItemAvgLevel || '알 수 없음',
+          image: data.profile.CharacterImage || undefined
+        });
+      }
 
       setEquipments(parsedEquipments);
       addToHistory(characterName.trim());
@@ -634,9 +651,9 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
   return (
     <div className={styles.container}>
       {/* 검색창 */}
-      <div className={styles.searchWrapper}>
-        <div className={styles.searchInner}>
-          <Form onSubmit={handleSearch}>
+      <Form onSubmit={handleSearch} className="mb-2">
+        <div className={styles.searchWrapper}>
+          <div className={styles.searchInner}>
             <div className={styles.searchInputGroup}>
               <div style={{ flex: 1, position: 'relative' }}>
                 <Form.Control
@@ -681,93 +698,104 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                   </div>
                 )}
               </div>
-              <Button type="submit" className={styles.searchButton} disabled={isLoading}>
+              <Button type="submit" className={styles.searchButton} disabled={isLoading} style={{ backgroundColor: '#6366f1', borderColor: '#6366f1', color: 'white' }}>
                 {isLoading ? '검색 중...' : '검색'}
               </Button>
             </div>
-          </Form>
+          </div>
         </div>
-      </div>
+        {error && (
+          <div className={styles.errorWrapper}>
+            <div className={styles.errorMessage}>{error}</div>
+          </div>
+        )}
+        <div className={styles.lastUpdated}>
+          <small className={styles.lastUpdatedText}>
+            {getTodayPriceDate()} | 실시간 시세와 차이가 있을 수 있습니다
+          </small>
+        </div>
+      </Form>
 
-      {error && (
-        <div className={styles.errorWrapper}>
-          <div className={styles.errorMessage}>{error}</div>
+      {/* 모드 선택 탭 */}
+      {modeSelector}
+
+      {/* 검색 전 빈 상태 */}
+      {!searched && (
+        <div className={styles.emptyState}>
+          <div className={styles.emptyStateIcon}>⚒️</div>
+          <p className={styles.emptyStateTitle}>캐릭터를 검색하면 장비 정보가 표시됩니다</p>
+          <p className={styles.emptyStateDesc}>각 장비별 목표 레벨을 설정하고 필요한 재료와 비용을 확인하세요</p>
         </div>
       )}
 
-      <div className={styles.mainLayout}>
+      {searched && <div className={styles.mainLayout}>
         {/* 장비 목록 패널 */}
         <div className={styles.equipmentPanel}>
           <div className={styles.equipmentPanelTitle}>
             장비 선택
           </div>
           <div className={styles.equipmentList}>
-            {!searched ? (
-              <div className={styles.equipmentListPlaceholder}>
-                <div className={styles.placeholderIcon}>🔍</div>
-                <div className={styles.placeholderText}>캐릭터를 검색해주세요</div>
-              </div>
-            ) : filteredEquipments.length === 0 ? (
-              <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+            {filteredEquipments.length === 0 ? (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
                 장비가 없습니다.
               </div>
             ) : (
               filteredEquipments.map((equipment) => (
-                  <div
-                    key={equipment.name}
-                    className={`${styles.equipmentItem} ${selectedEquipment?.name === equipment.name ? styles.equipmentItemSelected : ''} ${equipment.isSuccession ? styles.equipmentItemSuccession : styles.equipmentItemNormal}`}
-                    onClick={() => handleSelectEquipment(equipment)}
-                  >
-                    <div className={styles.equipmentIcon}>
-                      {equipment.icon && (
-                        <Image
-                          src={equipment.icon}
-                          alt={equipment.name}
-                          width={36}
-                          height={36}
-                          style={{ objectFit: 'contain' }}
-                        />
-                      )}
-                      {equipment.isSuccession && (
-                        <Image
-                          src="/wjsdbf2.webp"
-                          alt=""
-                          width={56}
-                          height={56}
-                          style={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            pointerEvents: 'none',
-                          }}
-                          unoptimized
-                        />
-                      )}
-                    </div>
-                    <div className={styles.equipmentInfo}>
-                      <div className={styles.equipmentName}>{equipment.name}</div>
-                      <div className={styles.equipmentLevel}>
-                        {enhancedLevels[equipment.name] !== undefined && enhancedLevels[equipment.name] !== equipment.currentLevel ? (
-                          <span className={styles.levelProgress}>
+                    <div
+                      key={equipment.name}
+                      className={`${styles.equipmentItem} ${selectedEquipment?.name === equipment.name ? styles.equipmentItemSelected : ''} ${equipment.isSuccession ? styles.equipmentItemSuccession : styles.equipmentItemNormal}`}
+                      onClick={() => handleSelectEquipment(equipment)}
+                    >
+                      <div className={styles.equipmentIcon}>
+                        {equipment.icon && (
+                          <Image
+                            src={equipment.icon}
+                            alt={equipment.name}
+                            width={36}
+                            height={36}
+                            style={{ objectFit: 'contain' }}
+                          />
+                        )}
+                        {equipment.isSuccession && (
+                          <Image
+                            src="/wjsdbf2.webp"
+                            alt=""
+                            width={56}
+                            height={56}
+                            style={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              pointerEvents: 'none',
+                            }}
+                            unoptimized
+                          />
+                        )}
+                      </div>
+                      <div className={styles.equipmentInfo}>
+                        <div className={styles.equipmentName}>{equipment.name}</div>
+                        <div className={styles.equipmentLevel}>
+                          {enhancedLevels[equipment.name] !== undefined && enhancedLevels[equipment.name] !== equipment.currentLevel ? (
+                            <span className={styles.levelProgress}>
+                              <span className={`${styles.levelBadge} ${equipment.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor}`}>
+                                +{equipment.currentLevel}
+                              </span>
+                              <span className={styles.levelArrow}>→</span>
+                              <span className={`${styles.levelBadge} ${equipment.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor}`}>
+                                +{enhancedLevels[equipment.name]}
+                              </span>
+                            </span>
+                          ) : (
                             <span className={`${styles.levelBadge} ${equipment.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor}`}>
                               +{equipment.currentLevel}
                             </span>
-                            <span className={styles.levelArrow}>→</span>
-                            <span className={`${styles.levelBadge} ${equipment.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor}`}>
-                              +{enhancedLevels[equipment.name]}
-                            </span>
-                          </span>
-                        ) : (
-                          <span className={`${styles.levelBadge} ${equipment.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor}`}>
-                            +{equipment.currentLevel}
-                          </span>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
             </div>
           </div>
 
@@ -1233,7 +1261,6 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
               </div>
             )}
           </div>
-        </div>
 
         {/* 데이터 수집 고지 */}
         <div className={styles.dataNotice}>
@@ -1242,6 +1269,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
 
         {/* 통계 테이블 */}
         {showStats && <RefiningStats defaultSuccession={isSuccessionMode} />}
+      </div>}
     </div>
   );
 }

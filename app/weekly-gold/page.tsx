@@ -6,8 +6,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
-import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { PriceProvider } from '@/contexts/PriceContext';
+import styles from './weekly-gold.module.css';
 
 // Dynamic imports로 코드 분할 (CLS 방지를 위해 최소 높이 지정)
 const RaidCalculator = dynamic(() => import('@/components/RaidCalculator'), {
@@ -69,34 +69,23 @@ export default function WeeklyGoldPage() {
   };
 
   return (
-    <div className="raid-calculator-page" style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
-      <ThemeToggleButton />
+    <div className={styles.pageWrapper} style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
       <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1800px', margin: '0 auto' }}>
         <Row className="justify-content-center">
-          <Col xl={11} lg={11} md={12}>
-            <div className="text-center mb-3 mb-md-4">
-              <Link href="/" className="text-decoration-none">
-                <div className="d-flex justify-content-center align-items-center gap-3 mb-2" style={{ cursor: 'pointer' }}>
-                  <Image src="/gold.webp" alt="골드" width={48} height={48} priority style={{ borderRadius: '8px', width: 'clamp(2.5rem, 5vw, 3rem)', height: 'auto', aspectRatio: '1/1' }} />
-                  <h1
-  className="title mb-0"
-  style={{
-    // 폰트 크기 등 스타일은 그대로 유지
-    fontSize: 'clamp(1.5rem, 3.5vw, 2rem)',
-    fontWeight: 700,
-    background: 'var(--gradient-text-blue)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    letterSpacing: '-0.02em'
-  }}
->
-  {/* 👇 텍스트 변경: 세르카 키워드 추가 */}
-  세르카 보상 & 주간 골드 계산
-</h1>
-                </div>
-              </Link>
-              <p className="mb-3" style={{fontSize: 'clamp(0.85rem, 1.8vw, 1rem)', fontWeight: '400', color: 'var(--text-muted)'}}>
+          <Col xl={11} lg={12} md={12}>
+            <div className="text-center mb-3" style={{ marginTop: 0 }}>
+              <h1
+                style={{
+                  fontSize: 'clamp(1.3rem, 3vw, 1.6rem)',
+                  fontWeight: 700,
+                  color: 'var(--text-primary)',
+                  marginTop: 0,
+                  marginBottom: '0.5rem'
+                }}
+              >
+                주간 골드 계산
+              </h1>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 원정대 주간 골드 수익과 더보기 보상 손익을 계산해보세요
               </p>
 

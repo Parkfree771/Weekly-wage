@@ -1006,21 +1006,19 @@ export default function LifeMasterCalculator() {
   return (
     <div className={styles.container}>
       {/* 헤더 */}
-      <div className={styles.header}>
-        <Link href="/" className={styles.headerLink}>
-          <div className={styles.headerContent}>
-            <Image
-              src={PREMIUM_ABIDOS_FUSION_ICON}
-              alt="생활의 달인"
-              width={40}
-              height={40}
-              priority
-              className={styles.headerIcon}
-            />
-            <h1 className={styles.title}>생활의 달인</h1>
-          </div>
-        </Link>
-        <p className={styles.subtitle}>
+      <div className="text-center mb-3" style={{ marginTop: 0 }}>
+        <h1
+          style={{
+            fontSize: 'clamp(1.3rem, 3vw, 1.6rem)',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            marginTop: 0,
+            marginBottom: '0.5rem'
+          }}
+        >
+          생활 계산기
+        </h1>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
           아비도스 융화재료 제작 손익 및 극한의 효율 계산
         </p>
       </div>

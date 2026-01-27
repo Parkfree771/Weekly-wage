@@ -1,20 +1,18 @@
 'use client';
 
 import { Container, Row, Col, Card } from 'react-bootstrap';
-import ThemeToggleButton from '@/components/ThemeToggleButton';
 import LifeMasterCalculator from '@/components/life-master/LifeMasterCalculator';
 
 export default function LifeMasterPage() {
   return (
     <div className="min-vh-100" style={{ background: 'linear-gradient(180deg, rgb(var(--background-start-rgb)) 0%, rgb(var(--background-end-rgb)) 100%)' }}>
-      <ThemeToggleButton />
-      <Container fluid className="py-3 py-md-4" style={{ maxWidth: '1800px', margin: '0 auto' }}>
+      <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1800px', margin: '0 auto' }}>
         <Row className="justify-content-center">
           <Col xl={11} lg={12} md={12}>
             {/* SEO를 위한 정적 콘텐츠 */}
             <noscript>
               <div style={{padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px', margin: '1rem 0'}}>
-                <h1>생활의 달인 효율 계산기</h1>
+                <h1>생활 계산기</h1>
                 <p>로스트아크 생활 콘텐츠 효율을 계산하고 아비도스 융화재료 제작 손익을 분석합니다.</p>
                 <h2>주요 기능</h2>
                 <ul>

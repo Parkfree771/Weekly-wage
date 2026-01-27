@@ -1,0 +1,419 @@
+/* ==========================================================================
+   [FINAL REFINED] 주간 골드 페이지 전용: "Abyssal Magma (Simpler Ver.)"
+   * 수정 1: 카드 헤더 폰트 크기 축소 (부담스럽지 않게)
+   * 수정 2: 과한 그라디언트 제거 -> 깔끔한 단색(Solid) 적용
+   ========================================================================== */
+
+/* 1. 공통 브랜드 변수 (차분한 마그마 색상) */
+.pageWrapper {
+  /* 다크 오렌지 (Rust/Magma) */
+  --brand-hue: 15;
+  --brand-saturation: 85%;
+  --brand-lightness: 50%;
+  --brand-primary: hsl(var(--brand-hue), var(--brand-saturation), var(--brand-lightness));
+}
+
+/* 2. 라이트 모드 대응 (깔끔한 웜톤) */
+:global(:root) .pageWrapper {
+  /* 배경: 차분한 웜 그레이 */
+  --background-start-rgb: 245, 242, 240;
+  --background-end-rgb: 235, 230, 228;
+
+  /* 카드: 불투명한 미색 */
+  --card-bg: rgba(255, 255, 255, 0.95);
+
+  /* [수정] 헤더 배경: 그라디언트 빼고 아주 연한 단색 */
+  --card-header-bg: rgba(160, 60, 30, 0.03);
+
+  --border-color: rgba(160, 60, 30, 0.15);
+  --text-primary: #2b1d1a;
+  --text-muted: #75605a;
+
+  /* 내부 배경 */
+  --card-body-bg-blue: rgba(245, 240, 235, 1);
+  --card-body-bg-stone: rgba(250, 245, 240, 1);
+
+  /* 배경색 적용 */
+  background: linear-gradient(180deg, rgb(var(--background-start-rgb)) 0%, rgb(var(--background-end-rgb)) 100%);
+  border-radius: 12px;
+}
+
+/* 3. 다크 모드 (검정 & 심플 레드오렌지) */
+:global([data-theme="dark"]) .pageWrapper {
+  /* 배경: 붉은기 없는 깔끔한 다크 그레이 */
+  --background-start-rgb: 45, 45, 50;
+  --background-end-rgb: 30, 30, 35;
+
+  /* 카드: 붉은기 뺀 중립적인 블랙 유리 */
+  --card-bg: rgba(30, 30, 35, 0.8);
+  --card-header-bg: rgba(255, 255, 255, 0.05);
+
+  /* 내부 배경 변수도 붉은기 제거 */
+  --card-body-bg-blue: rgba(40, 40, 45, 0.5);
+  --card-body-bg-stone: rgba(35, 35, 40, 0.5);
+
+  /* 테두리 */
+  --border-color: rgba(255, 255, 255, 0.15);
+  --text-primary: #e0e0e0;
+  --text-muted: #a0a0a0;
+
+  /* 배경 적용 */
+  background: linear-gradient(180deg, rgb(var(--background-start-rgb)) 0%, rgb(var(--background-end-rgb)) 100%);
+}
+
+/* 4. 컴포넌트 스타일링 */
+.pageWrapper :global(.card) {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.3) !important;
+  border-radius: 12px !important;
+}
+
+.pageWrapper :global(.card:hover) {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.5) !important;
+  transition: all 0.3s ease;
+}
+
+/* 버튼: 단색 (그라디언트 X) */
+.pageWrapper :global(.btn-primary) {
+  background-color: #9a3412 !important;
+  border: 1px solid #7c2d12 !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.pageWrapper :global(.btn-primary:hover) {
+  background-color: #c2410c !important;
+  border-color: #9a3412 !important;
+}
+
+/* 5. 텍스트 스타일 */
+.pageWrapper :global(h1.title),
+.pageWrapper :global(.weekly-gold-page-title) {
+  font-family: 'Pretendard', sans-serif;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+  color: var(--brand-primary) !important;
+  text-shadow: none !important;
+  font-size: clamp(1.3rem, 3vw, 1.6rem) !important;
+  font-weight: 700 !important;
+}
+
+/* 카드 헤더 폰트 줄이기 */
+.pageWrapper :global(h3),
+.pageWrapper :global(.card-header h3),
+.pageWrapper :global(.weekly-gold-header-title) {
+  font-family: 'Pretendard', sans-serif;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+  color: var(--text-primary) !important;
+  text-shadow: none !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em;
+}
+
+/* 카드 헤더 영역 자체의 패딩 조절 */
+.pageWrapper :global(.card-header) {
+  padding: 0.75rem 1rem !important;
+  background: var(--card-header-bg) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* 6. 체크박스 디자인 */
+.pageWrapper :global(.form-check-input) {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color) !important;
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.pageWrapper :global(.form-check-input:checked) {
+  background-color: #9a3412 !important;
+  border-color: #7c2d12 !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+}
+
+/* ==========================================================================
+   [세르카 1710+ 전용] 배경 투명화
+   ========================================================================== */
+
+.pageWrapper :global(.cerka-character.card),
+.pageWrapper :global(.cerka-character .accordion),
+.pageWrapper :global(.cerka-character .accordion-item),
+.pageWrapper :global(.cerka-character .accordion-header),
+.pageWrapper :global(.cerka-character .accordion-button),
+.pageWrapper :global(.cerka-character .accordion-button:not(.collapsed)),
+.pageWrapper :global(.cerka-character .accordion-collapse),
+.pageWrapper :global(.cerka-character .accordion-body),
+.pageWrapper :global(.cerka-character .table),
+.pageWrapper :global(.cerka-character .table td),
+.pageWrapper :global(.cerka-character .table th),
+.pageWrapper :global(.cerka-character .raid-group-accordion),
+.pageWrapper :global(.cerka-character .raid-difficulty-accordion) {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  border: none !important;
+}
+
+.pageWrapper :global(.cerka-character.card) {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 세르카 텍스트: 흰색 + 진한 그림자 */
+.pageWrapper :global(.cerka-character),
+.pageWrapper :global(.cerka-character span),
+.pageWrapper :global(.cerka-character div),
+.pageWrapper :global(.cerka-character .accordion-button),
+.pageWrapper :global(.cerka-character .form-check-label),
+.pageWrapper :global(.cerka-character .badge),
+.pageWrapper :global(.cerka-character th),
+.pageWrapper :global(.cerka-character td) {
+  color: #f0f0f0 !important;
+  text-shadow: 0 2px 4px #000000 !important;
+  font-weight: 500 !important;
+}
+
+.pageWrapper :global(.cerka-character h4),
+.pageWrapper :global(.cerka-character h5),
+.pageWrapper :global(.cerka-character strong) {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* 세르카 구분선 */
+.pageWrapper :global(.cerka-character .card-header),
+.pageWrapper :global(.cerka-character .table td),
+.pageWrapper :global(.cerka-character .accordion-item) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 세르카 전용 체크박스 */
+.pageWrapper :global(.cerka-character .form-check-input) {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.pageWrapper :global(.cerka-character .form-check-input:checked) {
+  background-color: #c2410c !important;
+  border-color: #c2410c !important;
+  box-shadow: 0 0 10px rgba(194, 65, 12, 0.6) !important;
+}
+
+/* 세르카 아코디언 화살표 */
+.pageWrapper :global(.cerka-character .accordion-button::after) {
+  filter: brightness(0) invert(1) drop-shadow(0 1px 2px #000);
+}
+
+/* ==========================================================================
+   총 골드 카드(Total Gold) 스타일링
+   ========================================================================== */
+
+.pageWrapper :global(.total-gold-card) {
+  background-color: var(--card-bg) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.pageWrapper :global(.total-gold-card .card-body),
+.pageWrapper :global(.total-gold-card div) {
+  color: var(--text-primary) !important;
+}
+
+/* ==========================================================================
+   더보기 효율 계산기 (이미지 카드) 텍스트 색상
+   ========================================================================== */
+
+.pageWrapper :global(div[class*="raidCard"] h3),
+.pageWrapper :global(div[class*="raidCard"] p),
+.pageWrapper :global(div[class*="raidCard"] span) {
+  color: #ffffff !important;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9) !important;
+  opacity: 1 !important;
+}
+
+.pageWrapper :global(div[class*="raidCard"] p) {
+  font-weight: 600 !important;
+  color: #f0f0f0 !important;
+}
+
+/* ==========================================================================
+   "다른 레이드 보기" 버튼 색상
+   ========================================================================== */
+
+.pageWrapper :global(.cerka-character .btn-link) {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.pageWrapper :global(.cerka-character .btn-link span) {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.pageWrapper :global(.cerka-character .btn-link:hover) {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: #ffffff !important;
+}
+
+/* ==========================================================================
+   [일반 캐릭터] 테이블 스타일
+   ========================================================================== */
+
+.pageWrapper :global(.accordion-body) {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.pageWrapper :global(.table),
+.pageWrapper :global(.table > tbody),
+.pageWrapper :global(.table > thead),
+.pageWrapper :global(.table > tr),
+.pageWrapper :global(.table > :not(caption) > * > *) {
+  background-color: transparent !important;
+  --bs-table-bg: transparent !important;
+  --bs-table-accent-bg: transparent !important;
+  --bs-table-striped-bg: transparent !important;
+  --bs-table-hover-bg: rgba(99, 102, 241, 0.05) !important;
+  color: var(--text-primary) !important;
+  box-shadow: none !important;
+  border-color: var(--border-color) !important;
+}
+
+.pageWrapper :global(.table th),
+.pageWrapper :global(.table td) {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.pageWrapper :global(.table .form-check-label),
+.pageWrapper :global(.table label),
+.pageWrapper :global(.table span) {
+  color: var(--text-primary) !important;
+}
+
+.pageWrapper :global(.table .form-check) {
+  margin-bottom: 0;
+}
+
+.pageWrapper :global(.table-striped > tbody > tr:nth-of-type(odd) > *) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  --bs-table-accent-bg: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+:global([data-theme="dark"]) .pageWrapper :global(.table) {
+  --bs-table-hover-bg: rgba(99, 102, 241, 0.1) !important;
+}
+
+/* ==========================================================================
+   [세르카 캐릭터] 테이블 강제 투명화 + 흰색 글씨
+   ========================================================================== */
+
+.pageWrapper :global(.cerka-character .accordion-body) {
+  background-color: transparent !important;
+  color: white !important;
+}
+
+.pageWrapper :global(.cerka-character .table),
+.pageWrapper :global(.cerka-character .table > tbody),
+.pageWrapper :global(.cerka-character .table > thead),
+.pageWrapper :global(.cerka-character .table > tr),
+.pageWrapper :global(.cerka-character .table > :not(caption) > * > *) {
+  background-color: transparent !important;
+  --bs-table-bg: transparent !important;
+  --bs-table-accent-bg: transparent !important;
+  --bs-table-striped-bg: transparent !important;
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  box-shadow: none !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.pageWrapper :global(.cerka-character .table th),
+.pageWrapper :global(.cerka-character .table td) {
+  background-color: transparent !important;
+  color: white !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.pageWrapper :global(.cerka-character .table .form-check-label),
+.pageWrapper :global(.cerka-character .table label),
+.pageWrapper :global(.cerka-character .table span) {
+  color: white !important;
+}
+
+.pageWrapper :global(.cerka-character .table .form-check) {
+  margin-bottom: 0;
+}
+
+.pageWrapper :global(.cerka-character .table-striped > tbody > tr:nth-of-type(odd) > *) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  --bs-table-accent-bg: transparent !important;
+  color: white !important;
+}
+
+/* ==========================================================================
+   [예외 처리] 더보기 손익 계산 테이블
+   ========================================================================== */
+
+.pageWrapper :global(table[class*="materialTable"]),
+.pageWrapper :global(table[class*="materialTable"] > tbody),
+.pageWrapper :global(table[class*="materialTable"] > thead),
+.pageWrapper :global(table[class*="materialTable"] > tr),
+.pageWrapper :global(table[class*="materialTable"] > :not(caption) > * > *) {
+  background-color: initial !important;
+  --bs-table-bg: initial !important;
+  --bs-table-accent-bg: initial !important;
+  --bs-table-striped-bg: initial !important;
+  --bs-table-hover-bg: initial !important;
+  color: var(--text-primary) !important;
+  box-shadow: none !important;
+  border-color: var(--border-color) !important;
+}
+
+.pageWrapper :global(table[class*="materialTable"] th) {
+  background-color: var(--card-header-bg) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 2px solid var(--border-color) !important;
+}
+
+.pageWrapper :global(table[class*="materialTable"] td) {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+  border-top: 1px solid var(--border-color) !important;
+}
+
+.pageWrapper :global(table[class*="materialTable"] tbody tr:hover) {
+  background-color: rgba(99, 102, 241, 0.05) !important;
+}
+
+:global([data-theme="dark"]) .pageWrapper :global(table[class*="materialTable"] tbody tr:hover) {
+  background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+.pageWrapper :global(h6[class*="gateSectionHeader"]) {
+  color: var(--text-primary) !important;
+}
+
+.pageWrapper :global(div[class*="gateSummaryRow"]) {
+  color: var(--text-secondary) !important;
+}
+
+.pageWrapper :global(div[class*="selectedRaidCard"] .card-header),
+.pageWrapper :global(div[class*="selectedRaidCard"] h5) {
+  color: var(--text-primary) !important;
+  background-color: var(--card-header-bg) !important;
+}

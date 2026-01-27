@@ -216,12 +216,12 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
     <>
       <Form onSubmit={handleSearch}>
         <div className="d-flex justify-content-center">
-          <div className="mb-3" style={{maxWidth: '550px', width: '100%'}}>
+          <div className="mb-3" style={{maxWidth: '700px', width: '100%'}}>
             <div className="d-flex gap-2">
               <div style={{ position: 'relative', flex: 1 }}>
                 <Form.Control
                   ref={inputRef}
-                  placeholder="로스트아크 캐릭터명을 입력하세요"
+                  placeholder="캐릭터명을 입력하세요"
                   aria-label="캐릭터명을 입력하세요"
                   value={characterName}
                   onChange={(e) => handleInputChange(e.target.value)}
@@ -244,13 +244,13 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
                   style={{
                     backgroundColor: 'var(--input-bg)',
                     color: 'var(--text-primary)',
-                    fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
-                    padding: 'clamp(0.5rem, 1.5vw, 0.65rem) clamp(0.9rem, 2vw, 1.1rem)',
+                    fontSize: 'clamp(0.9rem, 2vw, 1rem)',
+                    padding: 'clamp(0.7rem, 2vw, 0.85rem) clamp(1rem, 2.5vw, 1.25rem)',
                     borderRadius: '12px',
                     border: '1px solid var(--border-color)',
                     fontWeight: '500',
-                    boxShadow: 'var(--shadow-sm)',
-                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                    transition: 'all 0.3s ease',
                   }}
                 />
                 {/* 자동완성 드롭다운 */}
@@ -281,7 +281,7 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
                           cursor: 'pointer',
                           backgroundColor: selectedIndex === index ? 'var(--hover-bg, rgba(0,0,0,0.05))' : 'transparent',
                           color: 'var(--text-primary)',
-                          fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
+                          fontSize: 'clamp(0.9rem, 2vw, 1rem)',
                           borderBottom: index < suggestions.length - 1 ? '1px solid var(--border-color)' : 'none',
                           transition: 'background-color 0.15s ease',
                         }}
@@ -306,13 +306,16 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
                 disabled={isLoading || !characterName.trim()}
                 className="character-search-button"
                 style={{
-                  padding: 'clamp(0.5rem, 1.5vw, 0.65rem) clamp(1.2rem, 2.5vw, 1.6rem)',
+                  backgroundColor: '#6366f1',
+                  padding: 'clamp(0.7rem, 2vw, 0.85rem) clamp(1.5rem, 3vw, 2rem)',
                   borderRadius: '12px',
-                  fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
+                  fontSize: 'clamp(0.9rem, 2vw, 1rem)',
                   fontWeight: '700',
                   border: 'none',
-                  transition: 'all 0.2s ease',
-                  whiteSpace: 'nowrap'
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 2px 8px rgba(99, 102, 241, 0.2)',
+                  whiteSpace: 'nowrap',
+                  color: 'white'
                 }}
               >
                 {isLoading ? (
@@ -329,7 +332,7 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
         </div>
         {error && (
           <div className="d-flex justify-content-center">
-            <div className="alert alert-danger d-inline-block" style={{maxWidth: '600px'}} role="alert">
+            <div className="alert alert-danger d-inline-block" style={{maxWidth: '700px'}} role="alert">
               <i className="bi bi-exclamation-triangle-fill me-2"></i>
               {error}
             </div>

@@ -1,4 +1,5 @@
 import { ThemeProvider } from '@/components/ThemeProvider';
+import Navbar from '@/components/Navbar';
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import Script from "next/script";
@@ -97,6 +98,7 @@ export default function RootLayout({
     <html lang="ko">
       <body className={notoSansKr.className}>
         <ThemeProvider>
+          <Navbar />
           {children}
         </ThemeProvider>
 

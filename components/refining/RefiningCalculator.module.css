@@ -5,6 +5,7 @@
 /* 메인 컨테이너 */
 .container {
   margin: 0 auto;
+  max-width: 1400px;
   contain: layout style;
 }
 
@@ -46,18 +47,20 @@
 }
 
 .searchButton {
-  background-color: var(--brand-primary);
+  background-color: #6366f1 !important;
   padding: clamp(0.7rem, 2vw, 0.85rem) clamp(1.5rem, 3vw, 2rem);
   border-radius: 12px;
   font-size: clamp(0.9rem, 2vw, 1rem);
   font-weight: 700;
-  border: none;
+  border: none !important;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
   white-space: nowrap;
+  color: white !important;
 }
 
 .searchButton:hover:not(:disabled) {
+  background-color: #5558e3 !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }

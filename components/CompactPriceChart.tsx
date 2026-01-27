@@ -40,6 +40,7 @@ type CompactPriceChartProps = {
   history: PriceEntry[];
   loading: boolean;
   categoryStyle?: CategoryStyle;
+  hidePeriodButtons?: boolean;
 };
 
 function ColoredItemName({ name }: { name: string }) {
@@ -91,9 +92,9 @@ function ColoredItemName({ name }: { name: string }) {
 
 type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
-export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle }: CompactPriceChartProps) {
+export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle, hidePeriodButtons = false }: CompactPriceChartProps) {
   const { theme } = useTheme();
-  const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData } = useContext(PriceContext);
+  const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData, activeReferenceLines } = useContext(PriceContext);
 
   // 비교 라인 색상 (일반 재료)
   const comparisonColor = '#9ca3af'; // 회색
@@ -550,7 +551,11 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       ? '#3b82f6'
       : (payload.eventColor || '#ef4444');
 
+    // ALL 기간에서는 이벤트 없는 일반 점은 표시하지 않음
     if (!hasEvent) {
+      if (selectedPeriod === 'all') {
+        return null;
+      }
       return (
         <circle cx={cx} cy={cy} r={6} fill={chartColor} strokeWidth={3} stroke="var(--card-bg)" />
       );
@@ -592,7 +597,11 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       ? '#3b82f6'
       : (payload.eventColor || '#ef4444');
 
+    // ALL 기간에서는 이벤트 없는 일반 점은 표시하지 않음
     if (!hasEvent) {
+      if (selectedPeriod === 'all') {
+        return null;
+      }
       return (
         <circle cx={cx} cy={cy} r={3} fill={chartColor} strokeWidth={2} stroke="var(--card-bg)" />
       );
@@ -693,9 +702,9 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }
 
   return (
-    <Card className="border-0 shadow-sm price-chart-card" style={{ borderRadius: '16px', backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)', maxWidth: '1400px', margin: '0 auto' }}>
+    <Card className="price-chart-card" style={{ color: 'var(--text-primary)', maxWidth: '1400px', margin: '0 auto' }}>
       <Card.Header
-        className="py-3 border-0 d-none d-md-block"
+        className="py-3 d-none d-md-block"
         style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: '1px solid var(--border-color)' }}
       >
         <div className="d-flex align-items-center" style={{ gap: '16px' }}>
@@ -749,40 +758,45 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
             </div>
           </div>
 
-          <div className="d-flex justify-content-center gap-2" style={{ flex: '1' }}>
-            {(['7d', '1m', 'all'] as PeriodOption[]).map((period) => (
-              <button
-                key={period}
-                onClick={() => setSelectedPeriod(period)}
-                style={{
-                  padding: '4px 16px',
-                  borderRadius: '6px',
-                  border: selectedPeriod === period ? `2px solid ${chartColor}` : '2px solid var(--border-color)',
-                  backgroundColor: selectedPeriod === period ? (theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4')) : 'var(--card-bg)',
-                  color: selectedPeriod === period ? chartColor : 'var(--text-secondary)',
-                  fontWeight: selectedPeriod === period ? '700' : '500',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  outline: 'none'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedPeriod !== period) {
-                    e.currentTarget.style.borderColor = chartColor;
-                    e.currentTarget.style.color = chartColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedPeriod !== period) {
-                    e.currentTarget.style.borderColor = 'var(--border-color)';
-                    e.currentTarget.style.color = 'var(--text-secondary)';
-                  }
-                }}
-              >
-                {periodLabels[period]}
-              </button>
-            ))}
-          </div>
+          {!hidePeriodButtons && (
+            <div className="d-flex justify-content-center gap-2" style={{ flex: '1' }}>
+              {(['7d', '1m', '3m', 'all'] as PeriodOption[]).map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setSelectedPeriod(period)}
+                  style={{
+                    padding: '4px 16px',
+                    borderRadius: '10px',
+                    border: selectedPeriod === period ? `2px solid ${chartColor}` : '2px solid var(--border-color)',
+                    backgroundColor: selectedPeriod === period ? (theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4')) : 'var(--card-bg)',
+                    color: selectedPeriod === period ? chartColor : 'var(--text-secondary)',
+                    fontWeight: selectedPeriod === period ? '700' : '500',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.25s ease',
+                    outline: 'none',
+                    boxShadow: selectedPeriod === period
+                      ? `0 3px 10px ${theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.1)'}`
+                      : `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.05)'}`
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedPeriod !== period) {
+                      e.currentTarget.style.borderColor = chartColor;
+                      e.currentTarget.style.color = chartColor;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedPeriod !== period) {
+                      e.currentTarget.style.borderColor = 'var(--border-color)';
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                    }
+                  }}
+                >
+                  {periodLabels[period]}
+                </button>
+              ))}
+            </div>
+          )}
 
           {stats && (
             <div className="text-end" style={{ flex: '1' }}>
@@ -805,7 +819,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       </Card.Header>
 
       <Card.Header
-        className="py-2 border-0 d-md-none"
+        className="py-2 d-md-none"
         style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: 'none', paddingBottom: 0 }}
       >
         <div className="d-flex align-items-center justify-content-between">
@@ -895,22 +909,28 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           <>
             {/* 기간 선택 버튼 - 모바일 */}
             <div className="d-md-none d-flex justify-content-center gap-1" style={{ margin: 0, padding: '2px 0 0 0' }}>
-              {(['7d', '1m', 'all'] as PeriodOption[]).map((period) => (
+              {(['7d', '1m', '3m', 'all'] as PeriodOption[]).map((period) => (
                 <button
                   key={period}
                   onClick={() => setSelectedPeriod(period)}
                   style={{
-                    padding: '2px 10px',
-                    borderRadius: '3px',
-                    border: selectedPeriod === period ? `1px solid ${chartColor}` : '1px solid var(--border-color)',
+                    padding: '3px 10px',
+                    borderRadius: '8px',
+                    borderLeft: selectedPeriod === period ? `1px solid ${chartColor}` : '1px solid var(--border-color)',
+                    borderRight: selectedPeriod === period ? `1px solid ${chartColor}` : '1px solid var(--border-color)',
+                    borderBottom: selectedPeriod === period ? `1px solid ${chartColor}` : '1px solid var(--border-color)',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
                     backgroundColor: selectedPeriod === period ? (theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4')) : 'var(--card-bg)',
                     color: selectedPeriod === period ? chartColor : 'var(--text-secondary)',
                     fontWeight: selectedPeriod === period ? '700' : '500',
                     fontSize: '0.65rem',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.25s ease',
                     outline: 'none',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    boxShadow: selectedPeriod === period
+                      ? `0 2px 8px ${theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)'}`
+                      : `0 1px 4px ${theme === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.04)'}`
                   }}
                 >
                   {periodLabels[period]}
@@ -927,6 +947,19 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 14 : 16} fontWeight={isAverage ? '900' : '700'} dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 95 : stats && stats.max >= 100000 ? 80 : stats && stats.max >= 10000 ? 75 : 60} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} interval={0} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
                   <Tooltip content={<CustomTooltip />} cursor={{ stroke: chartColor, strokeWidth: 2, strokeDasharray: '5 5' }} />
                   <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} />
+                  {/* 사용자 선택 참조선 */}
+                  {activeReferenceLines?.has('min') && stats && (
+                    <ReferenceLine y={stats.min} stroke="#3b82f6" strokeDasharray="8 4" strokeWidth={2} />
+                  )}
+                  {activeReferenceLines?.has('max') && stats && (
+                    <ReferenceLine y={stats.max} stroke="#ef4444" strokeDasharray="8 4" strokeWidth={2} />
+                  )}
+                  {activeReferenceLines?.has('current') && stats && (
+                    <ReferenceLine y={stats.current} stroke="#8b5cf6" strokeDasharray="8 4" strokeWidth={2} />
+                  )}
+                  {activeReferenceLines?.has('avg') && stats && (
+                    <ReferenceLine y={stats.avg} stroke="#6b7280" strokeDasharray="8 4" strokeWidth={2} />
+                  )}
                   {/* 비교 라인 (일반 재료 × 5) - 점선 */}
                   {comparisonData && (
                     <Line type="monotone" dataKey="비교가격" stroke={comparisonColor} strokeWidth={2} strokeDasharray="8 4" dot={false} activeDot={{ r: 6, fill: comparisonColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} connectNulls />
@@ -945,6 +978,19 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; const fontSize = stats ? (stats.max >= 1000000 ? 6 : stats.max >= 100000 ? 7 : stats.max >= 10000 ? 8 : stats.max >= 1000 ? 9 : stats.max >= 100 ? 7.5 : 7) : 8; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={fontSize} fontWeight={isAverage ? '900' : '700'} dx={-2}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 40 : stats && stats.max >= 100000 ? 38 : stats && stats.max >= 10000 ? 40 : stats && stats.max >= 1000 ? 35 : stats && stats.max >= 100 ? 28 : 25} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
                   <Tooltip content={<CustomTooltipMobile />} cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: '3 3' }} />
                   <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} />
+                  {/* 사용자 선택 참조선 - 모바일 */}
+                  {activeReferenceLines?.has('min') && stats && (
+                    <ReferenceLine y={stats.min} stroke="#3b82f6" strokeDasharray="6 3" strokeWidth={1.5} />
+                  )}
+                  {activeReferenceLines?.has('max') && stats && (
+                    <ReferenceLine y={stats.max} stroke="#ef4444" strokeDasharray="6 3" strokeWidth={1.5} />
+                  )}
+                  {activeReferenceLines?.has('current') && stats && (
+                    <ReferenceLine y={stats.current} stroke="#8b5cf6" strokeDasharray="6 3" strokeWidth={1.5} />
+                  )}
+                  {activeReferenceLines?.has('avg') && stats && (
+                    <ReferenceLine y={stats.avg} stroke="#6b7280" strokeDasharray="6 3" strokeWidth={1.5} />
+                  )}
                   {/* 비교 라인 (일반 재료 × 5) - 점선 */}
                   {comparisonData && (
                     <Line type="monotone" dataKey="비교가격" stroke={comparisonColor} strokeWidth={1.5} strokeDasharray="6 3" dot={false} activeDot={{ r: 4, fill: comparisonColor, stroke: 'var(--card-bg)', strokeWidth: 1 }} connectNulls />

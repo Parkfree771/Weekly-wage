@@ -3,14 +3,14 @@
    ======================================== */
 
 .statsContainer {
-  margin: 2rem auto 0;
-  margin-left: calc((100% - 1200px) / 2 + 70px); /* 위 레이아웃과 정렬 */
-  max-width: 1200px;
+  margin: 1.5rem auto 0;
+  max-width: 1000px;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* 헤더 */

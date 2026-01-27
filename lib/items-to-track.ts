@@ -802,3 +802,35 @@ export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
 
   return ids.map(id => itemsById[id]).filter((item): item is TrackedItem => !!item);
 }
+
+// 아이템 ID로 아이템과 카테고리 찾기
+export function findItemById(itemId: string): { item: TrackedItem; category: ItemCategory; subCategory?: RefineAdditionalSubCategory } | null {
+  const categoryMap: Record<ItemCategory, string[]> = {
+    refine_succession: ['66102007', '66102107', '66110226', '6861013'],
+    refine: ['6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
+    refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
+    gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
+    engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
+    accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high', 'auction_necklace_support_refine3', 'auction_necklace_support_refine3_high', 'auction_ring_support_refine3', 'auction_ring_support_refine3_high'],
+    jewel: ['auction_gem_fear_8', 'auction_gem_fear_9', 'auction_gem_fear_10', 'auction_gem_flame_10']
+  };
+
+  const item = TRACKED_ITEMS.find(i => i.id === itemId);
+  if (!item) return null;
+
+  for (const [category, ids] of Object.entries(categoryMap)) {
+    if (ids.includes(itemId)) {
+      // 재련 추가 재료인 경우 서브카테고리도 찾기
+      if (category === 'refine_additional') {
+        for (const [subCat, subInfo] of Object.entries(REFINE_ADDITIONAL_SUBCATEGORIES)) {
+          if (subInfo.ids.includes(itemId)) {
+            return { item, category: category as ItemCategory, subCategory: subCat as RefineAdditionalSubCategory };
+          }
+        }
+      }
+      return { item, category: category as ItemCategory };
+    }
+  }
+
+  return null;
+}

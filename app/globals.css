@@ -1,44 +1,44 @@
 :root {
   --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 240, 242, 245;
-  --background-end-rgb: 255, 255, 255;
+  --background-start-rgb: 245, 242, 240;
+  --background-end-rgb: 235, 230, 228;
 
-  /* New Design System Variables */
-  --brand-hue: 220;
-  --brand-saturation: 70%;
-  --brand-lightness: 55%;
+  /* Brand Color - Orange/Rust (주간골드 스타일) */
+  --brand-hue: 15;
+  --brand-saturation: 85%;
+  --brand-lightness: 50%;
   --brand-primary: hsl(var(--brand-hue), var(--brand-saturation), var(--brand-lightness));
   --brand-primary-light: hsl(var(--brand-hue), var(--brand-saturation), 95%);
-  --brand-primary-dark: hsl(var(--brand-hue), var(--brand-saturation), 45%);
+  --brand-primary-dark: hsl(var(--brand-hue), var(--brand-saturation), 40%);
 
-  --text-primary: #2d3748;
-  --text-secondary: #4a5568;
-  --text-muted: #718096;
-  --text-disabled: #a0aec0;
-  --border-color: #e2e8f0;
-  --input-bg: #ffffff;
-  --card-bg: #ffffff;
-  --card-body-bg-blue: #f7fafc;
-  --card-body-bg-stone: #fafaf9;
-  --card-body-bg-orange: #fff7ed;
+  --text-primary: #2b1d1a;
+  --text-secondary: #4a3d3a;
+  --text-muted: #75605a;
+  --text-disabled: #a09590;
+  --border-color: rgba(160, 60, 30, 0.15);
+  --input-bg: rgba(255, 255, 255, 0.95);
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-body-bg-blue: rgba(245, 240, 235, 1);
+  --card-body-bg-stone: rgba(250, 245, 240, 1);
+  --card-body-bg-orange: rgba(255, 248, 240, 1);
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
 
   /* Card Header Backgrounds */
-  --card-header-bg-blue: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
-  --card-header-bg-stone: linear-gradient(135deg, #fafaf9 0%, #f5f5f4 100%);
-  --card-header-bg-violet: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
-  --card-header-bg-orange: linear-gradient(135deg, #ffedd5 0%, #fff7ed 100%);
+  --card-header-bg-blue: rgba(160, 60, 30, 0.03);
+  --card-header-bg-stone: rgba(160, 60, 30, 0.03);
+  --card-header-bg-violet: rgba(160, 60, 30, 0.03);
+  --card-header-bg-orange: rgba(160, 60, 30, 0.03);
 
   /* Text Gradients */
-  --gradient-text-blue: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  --gradient-text-blue: linear-gradient(135deg, #c2410c 0%, #ea580c 100%);
   --gradient-text-stone: linear-gradient(135deg, #78716c 0%, #57534e 100%);
   --gradient-text-violet: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
   --gradient-text-orange: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
 
   /* Footer */
-  --footer-text-primary-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  --footer-text-primary-gradient: linear-gradient(135deg, #c2410c 0%, #ea580c 100%);
 
   /* Profit/Loss Colors */
   --profit-color: #10b981;
@@ -57,41 +57,41 @@
 
 [data-theme="dark"] {
   --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 17, 24, 39;
-  --background-end-rgb: 10, 10, 15;
+  --background-start-rgb: 45, 45, 50;
+  --background-end-rgb: 30, 30, 35;
 
   /* New Design System Variables */
   --brand-saturation: 75%;
   --brand-lightness: 60%;
 
-  --text-primary: #e5e7eb;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
-  --text-disabled: #4b5563;
-  --border-color: #374151;
-  --input-bg: #1f2937;
-  --card-bg: #1f2937;
-  --card-body-bg-blue: #111827;
-  --card-body-bg-stone: #1c1917;
-  --card-body-bg-orange: #1c1410;
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-muted: #a0a0a0;
+  --text-disabled: #707070;
+  --border-color: rgba(255, 255, 255, 0.15);
+  --input-bg: rgba(40, 40, 45, 0.8);
+  --card-bg: rgba(30, 30, 35, 0.8);
+  --card-body-bg-blue: rgba(40, 40, 45, 0.5);
+  --card-body-bg-stone: rgba(35, 35, 40, 0.5);
+  --card-body-bg-orange: rgba(40, 35, 30, 0.5);
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
 
   /* Card Header Backgrounds */
-  --card-header-bg-blue: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-  --card-header-bg-stone: linear-gradient(135deg, #292524 0%, #1c1917 100%);
-  --card-header-bg-violet: linear-gradient(135deg, #5b21b6 0%, #6d28d9 100%);
-  --card-header-bg-orange: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%);
+  --card-header-bg-blue: rgba(255, 255, 255, 0.05);
+  --card-header-bg-stone: rgba(255, 255, 255, 0.05);
+  --card-header-bg-violet: rgba(255, 255, 255, 0.05);
+  --card-header-bg-orange: rgba(255, 255, 255, 0.05);
 
   /* Text Gradients */
-  --gradient-text-blue: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
+  --gradient-text-blue: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
   --gradient-text-stone: linear-gradient(135deg, #a8a29e 0%, #d6d3d1 100%);
   --gradient-text-violet: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
   --gradient-text-orange: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
 
   /* Footer */
-  --footer-text-primary-gradient: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
+  --footer-text-primary-gradient: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
 
   /* Profit/Loss Colors */
   --profit-color: #34d399;
@@ -137,6 +137,34 @@ body {
 /* CLS Prevention - 카드 컴포넌트 */
 .card {
   contain: layout style;
+}
+
+/* Global Card Styles */
+.card {
+  background-color: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.15);
+  border-color: rgba(160, 60, 30, 0.25);
+}
+
+[data-theme="dark"] .card {
+  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .card:hover {
+  box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 /* CLS Prevention - Price Chart Container */
@@ -386,6 +414,11 @@ textarea:-ms-input-placeholder {
   margin-top: 60px;
   padding: 20px 0;
   border-top: 1px solid var(--border-color);
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .footer-fixed {
+  background-color: rgba(30, 30, 35, 0.5);
 }
 
 @media (max-width: 768px) {
@@ -395,495 +428,7 @@ textarea:-ms-input-placeholder {
   }
 }
 
-/* ==========================================================================
-   [NEW THEME] 주간 골드 페이지 전용: "Witching Hour (할로윈)"
-   ========================================================================== */
-
-/* ==========================================================================
-   [FINAL] 주간 골드 페이지 전용: "Abyssal Magma (심연의 마그마)"
-   * 수정: 쨍한 색 제거 -> 검정 & 다크 레드 오렌지
-   * 수정: 카드 크기 늘어짐 방지 (min-height 제거)
-   ========================================================================== */
-
-/* ==========================================================================
-   [FINAL FIXED] 주간 골드 페이지 전용: "Abyssal Magma (심연의 마그마)"
-   * 수정: 아코디언 본문(body) 투명화 누락 수정 (세르카 배경 100% 보임)
-   ========================================================================== */
-
-/* ==========================================================================
-   [FINAL REFINED] 주간 골드 페이지 전용: "Abyssal Magma (Simpler Ver.)"
-   * 수정 1: 카드 헤더 폰트 크기 축소 (부담스럽지 않게)
-   * 수정 2: 과한 그라디언트 제거 -> 깔끔한 단색(Solid) 적용
-   ========================================================================== */
-
-/* 1. 공통 브랜드 변수 (차분한 마그마 색상) */
-.raid-calculator-page {
-  /* 다크 오렌지 (Rust/Magma) */
-  --brand-hue: 15;
-  --brand-saturation: 85%;
-  --brand-lightness: 50%; 
-  --brand-primary: hsl(var(--brand-hue), var(--brand-saturation), var(--brand-lightness));
-}
-
-/* 2. 라이트 모드 대응 (깔끔한 웜톤) */
-:root .raid-calculator-page {
-  /* 배경: 차분한 웜 그레이 */
-  --background-start-rgb: 245, 242, 240;
-  --background-end-rgb: 235, 230, 228;
-
-  /* 카드: 불투명한 미색 */
-  --card-bg: rgba(255, 255, 255, 0.95);
-  
-  /* [수정] 헤더 배경: 그라디언트 빼고 아주 연한 단색 */
-  --card-header-bg: rgba(160, 60, 30, 0.03); 
-  
-  --border-color: rgba(160, 60, 30, 0.15);
-  --text-primary: #2b1d1a;
-  --text-muted: #75605a;
-  
-  /* 내부 배경 */
-  --card-body-bg-blue: rgba(245, 240, 235, 1);
-  --card-body-bg-stone: rgba(250, 245, 240, 1);
-  
-  /* 배경색 적용 */
-  background: linear-gradient(180deg, rgb(var(--background-start-rgb)) 0%, rgb(var(--background-end-rgb)) 100%);
-  padding: 10px 0;
-  border-radius: 12px;
-}
-
-/* 3. 다크 모드 (검정 & 심플 레드오렌지) */
-/* [수정] 3. 다크모드 스타일 */
-[data-theme="dark"] .raid-calculator-page {
-  /* 기존의 붉은색(12, 5, 5) 값을 지우고 아래 값으로 변경하세요 */
-  
-  /* 배경: 붉은기 없는 깔끔한 다크 그레이 */
-  --background-start-rgb: 45, 45, 50;  /* 약간 밝은 차콜 그레이 */
-  --background-end-rgb: 30, 30, 35;    /* 묵직한 다크 그레이 */
-  
-  /* 카드: 붉은기 뺀 중립적인 블랙 유리 */
-  --card-bg: rgba(30, 30, 35, 0.8);
-  --card-header-bg: rgba(255, 255, 255, 0.05); /* 투명한 흰색 틴트 */
-  
-  /* 내부 배경 변수도 붉은기 제거 (중요!) */
-  --card-body-bg-blue: rgba(40, 40, 45, 0.5); 
-  --card-body-bg-stone: rgba(35, 35, 40, 0.5); /* 총 골드 카드에 쓰임 */
-  
-  /* 테두리: 호박색은 유지하되 채도를 살짝 낮춤 */
---border-color: rgba(255, 255, 255, 0.15);  
-  /* (나머지 텍스트 변수 등은 그대로 유지) */
-  --text-primary: #e0e0e0;
-  --text-muted: #a0a0a0;
-  
-  /* 배경 적용 코드는 그대로 둠 */
-  background: linear-gradient(180deg, rgb(var(--background-start-rgb)) 0%, rgb(var(--background-end-rgb)) 100%);
-}
-
-/* 4. 컴포넌트 스타일링 */
-.raid-calculator-page .card {
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  
-  border: 1px solid var(--border-color) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  
-  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.3) !important;
-  border-radius: 12px !important;
-}
-
-.raid-calculator-page .card:hover {
-  /* 👇 주황색 변수 삭제 -> 흰색 투명으로 변경 */
-  border-color: rgba(255, 255, 255, 0.3) !important; 
-  
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.5) !important;
-  transition: all 0.3s ease;
-}
-
-/* 버튼: 단색 (그라디언트 X) */
-.raid-calculator-page .btn-primary {
-  background-color: #9a3412 !important; /* Burnt Orange */
-  border: 1px solid #7c2d12 !important;
-  color: #fff !important;
-  font-weight: 600 !important;
-  box-shadow: none !important; /* 그림자 제거 (심플하게) */
-}
-
-.raid-calculator-page .btn-primary:hover {
-  background-color: #c2410c !important; 
-  border-color: #9a3412 !important;
-}
-
-/* 5. [수정] 텍스트 스타일: 과한 그라디언트 제거 & 폰트 축소 */
-.raid-calculator-page h1.title,
-.raid-calculator-page .weekly-gold-page-title {
-  font-family: 'Pretendard', sans-serif;
-  /* 그라디언트 제거 -> 브랜드 컬러 단색 사용 */
-  background: none !important;
-  -webkit-text-fill-color: initial !important;
-  color: var(--brand-primary) !important; /* 텍스트 색상 직접 지정 */
-  text-shadow: none !important;
-  
-  /* 폰트 크기 조정 */
-  font-size: clamp(1.3rem, 3vw, 1.6rem) !important; 
-  font-weight: 700 !important;
-}
-
-/* [핵심 수정] 카드 헤더 ("원정대 주간 골드 계산" 등) 폰트 줄이기 */
-.raid-calculator-page h3,
-.raid-calculator-page .card-header h3, 
-.raid-calculator-page .weekly-gold-header-title {
-  font-family: 'Pretendard', sans-serif;
-  background: none !important;
-  -webkit-text-fill-color: initial !important;
-  
-  /* 색상: 다크모드에선 밝은 회색, 라이트모드에선 진한 갈색 */
-  color: var(--text-primary) !important; 
-  text-shadow: none !important;
-  
-  /* 폰트 크기 확 줄임 */
-  font-size: 1.1rem !important; 
-  font-weight: 600 !important;
-  letter-spacing: -0.01em;
-}
-
-/* 카드 헤더 영역 자체의 패딩 조절 */
-.raid-calculator-page .card-header {
-    padding: 0.75rem 1rem !important;
-    background: var(--card-header-bg) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-}
-
-/* 6. 체크박스 디자인 */
-.raid-calculator-page .form-check-input {
-  background-color: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-color) !important;
-  width: 1.1em;
-  height: 1.1em;
-}
-
-.raid-calculator-page .form-check-input:checked {
-  background-color: #9a3412 !important;
-  border-color: #7c2d12 !important;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
-}
-
-/* ==========================================================================
-   [세르카 1710+ 전용] 배경 투명화 (완벽 버전)
-   ========================================================================== */
-
-/* 1. 배경 제거 및 테두리 정리 */
-.raid-calculator-page .cerka-character.card,
-.raid-calculator-page .cerka-character .accordion,
-.raid-calculator-page .cerka-character .accordion-item,
-.raid-calculator-page .cerka-character .accordion-header,
-.raid-calculator-page .cerka-character .accordion-button,
-.raid-calculator-page .cerka-character .accordion-button:not(.collapsed),
-.raid-calculator-page .cerka-character .accordion-collapse,
-.raid-calculator-page .cerka-character .accordion-body,
-.raid-calculator-page .cerka-character .table,
-.raid-calculator-page .cerka-character .table td,
-.raid-calculator-page .cerka-character .table th,
-.raid-calculator-page .cerka-character .raid-group-accordion,
-.raid-calculator-page .cerka-character .raid-difficulty-accordion {
-    background-color: transparent !important;
-    background: transparent !important;
-    background-image: none !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    border: none !important;
-}
-
-.raid-calculator-page .cerka-character.card {
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-/* 2. 텍스트: 흰색 + 진한 그림자 */
-.raid-calculator-page .cerka-character,
-.raid-calculator-page .cerka-character span,
-.raid-calculator-page .cerka-character div,
-.raid-calculator-page .cerka-character .accordion-button,
-.raid-calculator-page .cerka-character .form-check-label,
-.raid-calculator-page .cerka-character .badge,
-.raid-calculator-page .cerka-character th,
-.raid-calculator-page .cerka-character td {
-    color: #f0f0f0 !important;
-    text-shadow: 0 2px 4px #000000 !important;
-    font-weight: 500 !important;
-}
-
-.raid-calculator-page .cerka-character h4,
-.raid-calculator-page .cerka-character h5,
-.raid-calculator-page .cerka-character strong {
-    color: #ffffff !important;
-    font-weight: 700 !important;
-}
-
-/* 3. 구분선: 아주 희미하게 */
-.raid-calculator-page .cerka-character .card-header,
-.raid-calculator-page .cerka-character .table td,
-.raid-calculator-page .cerka-character .accordion-item {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
-/* 4. 세르카 전용 체크박스 */
-.raid-calculator-page .cerka-character .form-check-input {
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  border-color: rgba(255, 255, 255, 0.4) !important;
-}
-.raid-calculator-page .cerka-character .form-check-input:checked {
-  background-color: #c2410c !important;
-  border-color: #c2410c !important;
-  box-shadow: 0 0 10px rgba(194, 65, 12, 0.6) !important;
-}
-
-/* 5. 아코디언 화살표 */
-.raid-calculator-page .cerka-character .accordion-button::after {
-  filter: brightness(0) invert(1) drop-shadow(0 1px 2px #000);
-}
-
-/* ==========================================================================
-   [추가] 총 골드 카드(Total Gold) 강제 스타일링
-   * 인라인 스타일을 무시하고 다크모드 유리 디자인을 강제 적용합니다.
-   ========================================================================== */
-.raid-calculator-page .total-gold-card {
-  /* 배경색 변수 대신 유리 질감 강제 적용 */
-  background-color: var(--card-bg) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid var(--border-color) !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
-}
-
-/* 텍스트 색상도 확실하게 (다크모드에서 흰색) */
-.raid-calculator-page .total-gold-card .card-body,
-.raid-calculator-page .total-gold-card div {
-  color: var(--text-primary) !important;
-}
-
-/* ==========================================================================
-   [FIX] 더보기 효율 계산기 (이미지 카드) 텍스트 색상 강제 화이트
-   * 설명: 글로벌 설정의 !important(검은 글씨)를 이기기 위해 추가
-   * [class*="raidCard"]는 CSS 모듈 클래스 이름(예: SeeMore_raidCard__xyz)을 찾아냅니다.
-   ========================================================================== */
-
-.raid-calculator-page div[class*="raidCard"] h3,
-.raid-calculator-page div[class*="raidCard"] p,
-.raid-calculator-page div[class*="raidCard"] span {
-    color: #ffffff !important; /* 무조건 흰색 강제 */
-    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9) !important; /* 배경이 밝아도 보이게 진한 그림자 */
-    opacity: 1 !important;
-}
-
-/* 세르카 출시일 텍스트 특별 강조 */
-.raid-calculator-page div[class*="raidCard"] p {
-    font-weight: 600 !important;
-    color: #f0f0f0 !important;
-}
-/* ==========================================================================
-   [FIX] "다른 레이드 보기" 버튼 색상 이중화 처리
-   * 일반 레이드: 기존 변수 유지 (라이트모드 검정 / 다크모드 흰색)
-   * 세르카 레이드: 배경이 어두우므로 무조건 흰색 강제
-   ========================================================================== */
-
-/* 1. 세르카 캐릭터 카드 내부의 링크 버튼(다른 레이드 보기) */
-.raid-calculator-page .cerka-character .btn-link {
-    color: #ffffff !important;  /* 흰색 강제 */
-    border-color: rgba(255, 255, 255, 0.3) !important; /* 테두리도 밝게 */
-}
-
-/* 2. 버튼 안의 갯수 표시 (5개) span 태그 */
-.raid-calculator-page .cerka-character .btn-link span {
-    color: rgba(255, 255, 255, 0.7) !important; /* 연한 흰색 */
-}
-
-/* 3. 버튼에 마우스 올렸을 때 */
-.raid-calculator-page .cerka-character .btn-link:hover {
-    color: #ffffff !important;
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    border-color: #ffffff !important;
-}
-
-
-/* ==========================================================================
-   [일반 캐릭터 1710 미만] 테이블 스타일 (CSS 변수 사용)
-   * 라이트/다크 모드에 따라 자동으로 색상 변경
-   ========================================================================== */
-
-/* 1. 일반 캐릭터 아코디언 본문 배경 */
-.raid-calculator-page .accordion-body {
-    background-color: transparent !important;
-    color: var(--text-primary) !important;
-}
-
-/* 2. 일반 캐릭터 테이블 스타일 (CSS 변수 사용) */
-.raid-calculator-page .table,
-.raid-calculator-page .table > tbody,
-.raid-calculator-page .table > thead,
-.raid-calculator-page .table > tr,
-.raid-calculator-page .table > :not(caption) > * > * {
-    background-color: transparent !important;
-
-    /* 부트스트랩 줄무늬(Striped) 배경 변수 제거 */
-    --bs-table-bg: transparent !important;
-    --bs-table-accent-bg: transparent !important;
-    --bs-table-striped-bg: transparent !important;
-    --bs-table-hover-bg: rgba(99, 102, 241, 0.05) !important;
-
-    color: var(--text-primary) !important;
-    box-shadow: none !important;
-    border-color: var(--border-color) !important;
-}
-
-/* 3. 일반 캐릭터 관문(th), 클골/더보기(td) 텍스트 및 배경 */
-.raid-calculator-page .table th,
-.raid-calculator-page .table td {
-    background-color: transparent !important;
-    color: var(--text-primary) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-}
-
-/* 4. 일반 캐릭터 체크박스/라디오 버튼 옆 글씨(Label, Span) */
-.raid-calculator-page .table .form-check-label,
-.raid-calculator-page .table label,
-.raid-calculator-page .table span {
-    color: var(--text-primary) !important;
-}
-
-/* 5. 일반 캐릭터 input 요소 주변 텍스트 처리 */
-.raid-calculator-page .table .form-check {
-    margin-bottom: 0;
-}
-
-/* 6. 일반 캐릭터 테이블 줄무늬(Striped) */
-.raid-calculator-page .table-striped > tbody > tr:nth-of-type(odd) > * {
-    background-color: transparent !important;
-    box-shadow: none !important;
-    --bs-table-accent-bg: transparent !important;
-    color: var(--text-primary) !important;
-}
-
-/* 7. 일반 캐릭터 다크 모드 호버 효과 */
-[data-theme="dark"] .raid-calculator-page .table {
-    --bs-table-hover-bg: rgba(99, 102, 241, 0.1) !important;
-}
-
-/* ==========================================================================
-   [세르카 캐릭터 1710 이상] 테이블 강제 투명화 + 흰색 글씨
-   * 세르카 배경이 검정색이므로 흰색 글씨 필요
-   ========================================================================== */
-
-/* 1. 세르카 캐릭터 아코디언 본문 배경 */
-.raid-calculator-page .cerka-character .accordion-body {
-    background-color: transparent !important;
-    color: white !important;
-}
-
-/* 2. 세르카 캐릭터 테이블 전체 투명화 (가장 강력한 설정) */
-.raid-calculator-page .cerka-character .table,
-.raid-calculator-page .cerka-character .table > tbody,
-.raid-calculator-page .cerka-character .table > thead,
-.raid-calculator-page .cerka-character .table > tr,
-.raid-calculator-page .cerka-character .table > :not(caption) > * > * {
-    background-color: transparent !important;
-
-    /* 부트스트랩 줄무늬(Striped) 배경 변수 제거 */
-    --bs-table-bg: transparent !important;
-    --bs-table-accent-bg: transparent !important;
-    --bs-table-striped-bg: transparent !important;
-    --bs-table-hover-bg: rgba(255, 255, 255, 0.1) !important; /* 호버 시에만 살짝 흰색 */
-
-    color: white !important; /* 글씨 흰색 강제 */
-    box-shadow: none !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
-}
-
-/* 3. 세르카 캐릭터 관문(th), 클골/더보기(td) 텍스트 및 배경 */
-.raid-calculator-page .cerka-character .table th,
-.raid-calculator-page .cerka-character .table td {
-    background-color: transparent !important;
-    color: white !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-/* 4. 세르카 캐릭터 체크박스/라디오 버튼 옆 글씨(Label, Span) 흰색 강제 */
-.raid-calculator-page .cerka-character .table .form-check-label,
-.raid-calculator-page .cerka-character .table label,
-.raid-calculator-page .cerka-character .table span {
-    color: white !important;
-}
-
-/* 5. 세르카 캐릭터 input 요소 주변 텍스트 처리 */
-.raid-calculator-page .cerka-character .table .form-check {
-    margin-bottom: 0;
-}
-
-/* 6. 세르카 캐릭터 테이블 줄무늬(Striped) 강제 투명화 */
-.raid-calculator-page .cerka-character .table-striped > tbody > tr:nth-of-type(odd) > * {
-    background-color: transparent !important;
-    box-shadow: none !important;
-    --bs-table-accent-bg: transparent !important; /* 부트스트랩 accent 변수 제거 */
-    color: white !important;
-}
-
-/* ==========================================================================
-   [예외 처리] 더보기 손익 계산 테이블 (SeeMoreCalculator)
-   * 위의 투명화 스타일을 덮어쓰고, 라이트/다크 모드에서 올바른 색상 표시
-   ========================================================================== */
-
-/* 더보기 손익 계산 테이블은 CSS 변수 사용 (투명화 해제) */
-.raid-calculator-page table[class*="materialTable"],
-.raid-calculator-page table[class*="materialTable"] > tbody,
-.raid-calculator-page table[class*="materialTable"] > thead,
-.raid-calculator-page table[class*="materialTable"] > tr,
-.raid-calculator-page table[class*="materialTable"] > :not(caption) > * > * {
-    background-color: initial !important;
-    --bs-table-bg: initial !important;
-    --bs-table-accent-bg: initial !important;
-    --bs-table-striped-bg: initial !important;
-    --bs-table-hover-bg: initial !important;
-    color: var(--text-primary) !important;
-    box-shadow: none !important;
-    border-color: var(--border-color) !important;
-}
-
-/* 더보기 손익 계산 테이블 헤더 */
-.raid-calculator-page table[class*="materialTable"] th {
-    background-color: var(--card-header-bg) !important;
-    color: var(--text-primary) !important;
-    border-bottom: 2px solid var(--border-color) !important;
-}
-
-/* 더보기 손익 계산 테이블 바디 */
-.raid-calculator-page table[class*="materialTable"] td {
-    background-color: transparent !important;
-    color: var(--text-primary) !important;
-    border-top: 1px solid var(--border-color) !important;
-}
-
-/* 더보기 손익 계산 테이블 호버 */
-.raid-calculator-page table[class*="materialTable"] tbody tr:hover {
-    background-color: rgba(99, 102, 241, 0.05) !important;
-}
-
-[data-theme="dark"] .raid-calculator-page table[class*="materialTable"] tbody tr:hover {
-    background-color: rgba(99, 102, 241, 0.1) !important;
-}
-
-/* 더보기 손익 계산 - 관문 제목 */
-.raid-calculator-page h6[class*="gateSectionHeader"] {
-    color: var(--text-primary) !important;
-}
-
-/* 더보기 손익 계산 - 요약 행 */
-.raid-calculator-page div[class*="gateSummaryRow"] {
-    color: var(--text-secondary) !important;
-}
-
-/* 더보기 손익 계산 - 카드 헤더 */
-.raid-calculator-page div[class*="selectedRaidCard"] .card-header,
-.raid-calculator-page div[class*="selectedRaidCard"] h5 {
-    color: var(--text-primary) !important;
-    background-color: var(--card-header-bg) !important;
-}
+/* 주간 골드 페이지 스타일은 weekly-gold.module.css로 이동됨 */
 
 /* ========================================
    CLS 방지용 스타일
@@ -919,5 +464,330 @@ html {
 .raid-calculator-container,
 .see-more-calculator-container {
     contain: layout style;
+}
+
+/* ==========================================================================
+   Navbar 스타일
+   ========================================================================== */
+
+/* Body padding for fixed navbar */
+body {
+  padding-top: 52px;
+}
+
+@media (max-width: 767px) {
+  body {
+    padding-top: 48px;
+  }
+}
+
+/* Main Navbar */
+.main-navbar {
+  background: linear-gradient(180deg, rgba(255, 250, 248, 0.95) 0%, rgba(250, 245, 240, 0.9) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(160, 60, 30, 0.12);
+  box-shadow: 0 2px 12px 0 rgba(160, 60, 30, 0.08);
+  height: 52px;
+  z-index: 1030;
+}
+
+[data-theme="dark"] .main-navbar {
+  background: linear-gradient(180deg, rgba(45, 45, 50, 0.95) 0%, rgba(35, 35, 40, 0.9) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 767px) {
+  .main-navbar {
+    height: 48px;
+  }
+}
+
+/* Navbar Brand */
+.navbar-brand-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Nav Links */
+.navbar-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+}
+
+/* 주간 계산 - 주황색 */
+.navbar-nav-link.nav-weekly:hover {
+  color: #ea580c;
+  border-color: #ea580c;
+  background-color: rgba(234, 88, 12, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-nav-link.nav-weekly.active {
+  color: #fff;
+  font-weight: 700;
+  background-color: #ea580c;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(194, 65, 12, 0.35);
+}
+
+/* 재련 계산 - 파란색 */
+.navbar-nav-link.nav-refining:hover {
+  color: #6366f1;
+  border-color: #6366f1;
+  background-color: rgba(99, 102, 241, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-nav-link.nav-refining.active {
+  color: #fff;
+  font-weight: 700;
+  background-color: #6366f1;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.35);
+}
+
+/* 생활 계산 - 초록색 */
+.navbar-nav-link.nav-life:hover {
+  color: #22c55e;
+  border-color: #22c55e;
+  background-color: rgba(34, 197, 94, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-nav-link.nav-life.active {
+  color: #fff;
+  font-weight: 700;
+  background-color: #22c55e;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(34, 197, 94, 0.35);
+}
+
+[data-theme="dark"] .navbar-nav-link {
+  background-color: rgba(50, 50, 55, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-weekly:hover {
+  background-color: rgba(60, 60, 65, 0.9);
+  border-color: #ea580c;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-weekly.active {
+  background-color: #ea580c;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.4);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-refining:hover {
+  background-color: rgba(60, 60, 65, 0.9);
+  border-color: #6366f1;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-refining.active {
+  background-color: #6366f1;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.4);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-life:hover {
+  background-color: rgba(60, 60, 65, 0.9);
+  border-color: #22c55e;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-life.active {
+  background-color: #22c55e;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(34, 197, 94, 0.4);
+}
+
+/* Theme Toggle Button */
+.navbar-theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navbar-theme-toggle:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .navbar-theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .navbar-theme-toggle img {
+  filter: invert(1);
+}
+
+/* Navbar Toggler */
+.main-navbar .navbar-toggler {
+  padding: 4px 8px;
+}
+
+.main-navbar .navbar-toggler-icon {
+  width: 24px;
+  height: 24px;
+}
+
+[data-theme="dark"] .main-navbar .navbar-toggler-icon {
+  filter: invert(1);
+}
+
+/* Offcanvas Menu */
+.navbar-offcanvas {
+  background-color: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  max-width: 280px;
+}
+
+[data-theme="dark"] .navbar-offcanvas {
+  background-color: rgba(35, 35, 40, 0.98);
+}
+
+.navbar-offcanvas-header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.navbar-offcanvas .btn-close {
+  filter: var(--accordion-icon-invert);
+}
+
+[data-theme="dark"] .navbar-offcanvas .btn-close {
+  filter: invert(1);
+}
+
+.navbar-offcanvas-body {
+  padding-top: 1rem;
+}
+
+.navbar-offcanvas-link {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.navbar-offcanvas-link.nav-weekly:hover {
+  background-color: rgba(234, 88, 12, 0.08);
+  color: #ea580c;
+}
+
+.navbar-offcanvas-link.nav-refining:hover {
+  background-color: rgba(99, 102, 241, 0.08);
+  color: #6366f1;
+}
+
+.navbar-offcanvas-link.nav-life:hover {
+  background-color: rgba(34, 197, 94, 0.08);
+  color: #22c55e;
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-weekly:hover {
+  background-color: rgba(234, 88, 12, 0.15);
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-refining:hover {
+  background-color: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-life:hover {
+  background-color: rgba(34, 197, 94, 0.15);
+}
+
+.navbar-offcanvas-link.nav-weekly.active {
+  color: #fff;
+  background-color: #ea580c;
+  font-weight: 600;
+}
+
+.navbar-offcanvas-link.nav-refining.active {
+  color: #fff;
+  background-color: #6366f1;
+  font-weight: 600;
+}
+
+.navbar-offcanvas-link.nav-life.active {
+  color: #fff;
+  background-color: #22c55e;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-weekly.active {
+  background-color: #ea580c;
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-refining.active {
+  background-color: #6366f1;
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-life.active {
+  background-color: #22c55e;
+}
+
+/* ==========================================================================
+   시세 대시보드 스타일
+   ========================================================================== */
+
+.price-dashboard-section {
+  margin-bottom: 0;
+}
+
+/* 대시보드 아이템 호버 효과 */
+.price-dashboard-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px 0 rgba(0, 0, 0, 0.15) !important;
+  border-color: rgba(160, 60, 30, 0.25) !important;
+}
+
+[data-theme="dark"] .price-dashboard-item {
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.4) !important;
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .price-dashboard-item:hover {
+  box-shadow: 0 6px 18px 0 rgba(0, 0, 0, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* 스크롤바 숨김 */
+.price-dashboard-section div::-webkit-scrollbar {
+  display: none;
 }
 

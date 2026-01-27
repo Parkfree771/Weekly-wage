@@ -156,6 +156,7 @@ type RefiningMode = 'normal' | 'succession';
 
 type RefiningCalculatorProps = {
   onSearchComplete?: (searched: boolean) => void;
+  modeSelector?: React.ReactNode;
 };
 
 // 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
@@ -164,7 +165,7 @@ const getTodayPriceDate = () => {
   return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
 };
 
-export default function RefiningCalculator({ onSearchComplete }: RefiningCalculatorProps) {
+export default function RefiningCalculator({ onSearchComplete, modeSelector }: RefiningCalculatorProps) {
   const { theme } = useTheme();
   // 평균 시뮬에서는 업화/전율 장비 각각 따로 계산 (장비별 isSuccession 기반)
   const [characterName, setCharacterName] = useState('');
@@ -1224,8 +1225,9 @@ export default function RefiningCalculator({ onSearchComplete }: RefiningCalcula
               </div>
               <Button
                 type="submit"
-                disabled={isLoading || !characterName.trim()}
+                disabled={isLoading}
                 className={styles.searchButton}
+                style={{ backgroundColor: '#6366f1', borderColor: '#6366f1', color: 'white' }}
               >
                 {isLoading ? (
                   <>
@@ -1253,9 +1255,11 @@ export default function RefiningCalculator({ onSearchComplete }: RefiningCalcula
         </div>
       </Form>
 
+      {/* 모드 선택 탭 */}
+      {modeSelector}
 
       {/* 장비 정보 및 목표 레벨 설정 */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(0.25rem, 2vw, 1.5rem)', marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: 'clamp(0.25rem, 2vw, 1rem)', marginTop: 'clamp(1rem, 3vw, 1.5rem)' }}>
         <>
           {/* 캐릭터 정보 헤더 */}
           {/* 부위별 목표 레벨 설정 */}

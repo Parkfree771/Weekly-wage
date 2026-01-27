@@ -1,22 +1,22 @@
-/* 모드 컨테이너 */
-.modeContainer {
-  max-width: 500px;
-  margin: 0 auto 1.5rem auto;
-  contain: layout style;
-}
+/* ========================================
+   재련 계산 페이지 - 통합 탭 UI
+   ======================================== */
 
-/* 계산 모드 선택 버튼 */
-.calcModeContainer {
+/* 탭 컨테이너 */
+.tabContainer {
   display: flex;
   justify-content: center;
   gap: 0.5rem;
+  max-width: 500px;
+  margin: 0 auto 1rem auto;
 }
 
-.calcModeBtn {
+/* 탭 버튼 */
+.tabButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.7rem 1.5rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -27,106 +27,72 @@
   color: var(--text-muted);
 }
 
-.calcModeBtn:hover {
-  border-color: var(--primary-color);
+.tabButton:hover {
+  border-color: #6366f1;
   color: var(--text-primary);
 }
 
-.calcModeBtnActive {
-  background-color: var(--text-primary);
-  border-color: var(--text-primary);
-  color: var(--card-bg);
+.tabButtonActive {
+  background-color: #6366f1;
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
-.calcModeBtnActive:hover {
-  opacity: 0.9;
-  color: var(--card-bg);
+.tabButtonActive:hover {
+  color: #fff;
 }
 
-/* 재련 타입 선택 버튼 (일반/상급) */
-.refiningTypeContainer {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
-.refiningTypeBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border-radius: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: transparent;
-  border: 1.5px solid var(--border-color);
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-
-.refiningTypeBtn:hover:not(:disabled) {
-  border-color: var(--primary-color);
-  color: var(--text-primary);
-}
-
-.refiningTypeBtn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.refiningTypeBtnActive {
-  background-color: var(--brand-primary);
-  border-color: var(--brand-primary);
-  color: white;
-}
-
-.refiningTypeBtnActive:hover {
-  opacity: 0.9;
-  color: white;
-}
-
-/* 준비중 뱃지 */
-.comingSoonBadge {
-  font-size: 0.65rem;
-  padding: 0.15rem 0.4rem;
-  border-radius: 8px;
-  background-color: var(--text-muted);
-  color: white;
+/* 탭 라벨 */
+.tabLabel {
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
-/* 모바일 반응형 */
+/* 탭 설명 - 숨김 */
+.tabDesc {
+  display: none;
+}
+
+/* 컨텐츠 영역 */
+.contentArea {
+  /* 컨텐츠 영역 */
+}
+
+/* ========================================
+   모바일 반응형
+   ======================================== */
 @media (max-width: 576px) {
-  .modeContainer {
-    max-width: 320px;
+  .tabContainer {
+    gap: 0.5rem;
+    padding: 0 0.5rem;
   }
 
-  .calcModeContainer {
-    gap: 0.4rem;
+  .tabButton {
+    padding: 0.75rem 0.5rem;
+    border-radius: 10px;
   }
 
-  .calcModeBtn {
-    padding: 0.6rem 1.2rem;
+  .tabLabel {
+    font-size: 0.8rem;
+  }
+
+  .tabDesc {
+    font-size: 0.65rem;
+  }
+}
+
+/* 태블릿 */
+@media (min-width: 577px) and (max-width: 768px) {
+  .tabContainer {
+    max-width: 550px;
+  }
+
+  .tabButton {
+    padding: 0.85rem 0.6rem;
+  }
+
+  .tabLabel {
     font-size: 0.85rem;
-    border-radius: 16px;
-  }
-
-  .refiningTypeContainer {
-    gap: 0.4rem;
-    margin-top: 0.6rem;
-  }
-
-  .refiningTypeBtn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.75rem;
-    border-radius: 12px;
-  }
-
-  .comingSoonBadge {
-    font-size: 0.6rem;
-    padding: 0.1rem 0.3rem;
   }
 }

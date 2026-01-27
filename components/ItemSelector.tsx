@@ -187,11 +187,14 @@ export default function ItemSelector({
                   padding: '12px 24px',
                   backgroundColor: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
                   border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                  borderRadius: '10px',
+                  borderRadius: '12px',
                   color: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.25s ease',
                   cursor: 'pointer',
-                  letterSpacing: '0.3px'
+                  letterSpacing: '0.3px',
+                  boxShadow: selectedCategory === cat
+                    ? `0 4px 12px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.12)'}`
+                    : `0 2px 8px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)'}`
                 }}
                 onMouseEnter={(e) => {
                   if (selectedCategory !== cat) {
@@ -220,7 +223,7 @@ export default function ItemSelector({
             title={isGridView ? '단일 차트 보기' : '4분할 차트 보기'}
             style={{
               padding: '10px 14px',
-              borderRadius: '10px',
+              borderRadius: '12px',
               border: `2px solid ${isGridView ? CATEGORY_STYLES[selectedCategory].darkThemeColor : 'var(--border-color)'}`,
               backgroundColor: isGridView ? (theme === 'dark' ? CATEGORY_STYLES[selectedCategory].darkBg : CATEGORY_STYLES[selectedCategory].lightBg) : 'var(--card-bg)',
               color: isGridView ? CATEGORY_STYLES[selectedCategory].darkThemeColor : 'var(--text-secondary)',
@@ -228,9 +231,12 @@ export default function ItemSelector({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              transition: 'all 0.2s ease',
+              transition: 'all 0.25s ease',
               fontWeight: '600',
-              fontSize: '0.9rem'
+              fontSize: '0.9rem',
+              boxShadow: isGridView
+                ? `0 4px 12px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.12)'}`
+                : `0 2px 8px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)'}`
             }}
           >
             <GridIcon size={18} color="currentColor" />
@@ -255,12 +261,15 @@ export default function ItemSelector({
                 padding: '8px 12px',
                 backgroundColor: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
                 border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--border-color)'}`,
-                borderRadius: '8px',
+                borderRadius: '10px',
                 color: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.25s ease',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
-                flexShrink: 0
+                flexShrink: 0,
+                boxShadow: selectedCategory === cat
+                  ? `0 3px 10px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)'}`
+                  : `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.06)'}`
               }}
             >
               {categoryStyle.label}
@@ -289,11 +298,14 @@ export default function ItemSelector({
                     padding: '10px 20px',
                     backgroundColor: isSelected ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
                     border: `2px solid ${isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                    borderRadius: '10px',
+                      borderRadius: '12px',
                     color: isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.25s ease',
                     cursor: 'pointer',
-                    letterSpacing: '0.3px'
+                    letterSpacing: '0.3px',
+                    boxShadow: isSelected
+                      ? `0 4px 12px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.12)'}`
+                      : `0 2px 8px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)'}`
                   }}
                   onMouseEnter={(e) => {
                     if (!isSelected) {
@@ -321,8 +333,9 @@ export default function ItemSelector({
       {/* 아이템 선택 버튼 - 데스크톱 */}
       {showItems && (selectedCategory !== 'refine_additional' || selectedSubCategory) && <div className="mb-3 d-none d-md-block">
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
           gap: '12px',
           maxWidth: '1400px',
           margin: '0 auto'
@@ -336,19 +349,22 @@ export default function ItemSelector({
                 onClick={() => onSelectItem(item)}
                 style={{
                   backgroundColor: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
-                  borderRadius: '10px',
+                  borderRadius: '12px',
                   padding: '10px 16px',
                   fontWeight: selectedItem.id === item.id ? '700' : '600',
                   fontSize: '0.875rem',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.25s ease',
                   border: `2px solid ${selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                  color: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
+                    color: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   whiteSpace: 'nowrap',
                   cursor: 'pointer',
-                  width: '100%'
+                  minWidth: '200px',
+                  boxShadow: selectedItem.id === item.id
+                    ? `0 3px 10px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)'}`
+                    : `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)'}`
                 }}
                 onMouseEnter={(e) => {
                   if (selectedItem.id !== item.id) {
@@ -422,16 +438,17 @@ export default function ItemSelector({
               onClick={onToggleGridView}
               style={{
                 padding: '4px 8px',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 border: `1px solid ${isGridView ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor : 'var(--border-color)'}`,
-                backgroundColor: isGridView ? (theme === 'dark' ? CATEGORY_STYLES[bottomSheetCategory].darkBg : CATEGORY_STYLES[bottomSheetCategory].lightBg) : 'transparent',
+                backgroundColor: isGridView ? (theme === 'dark' ? CATEGORY_STYLES[bottomSheetCategory].darkBg : CATEGORY_STYLES[bottomSheetCategory].lightBg) : 'var(--card-bg)',
                 color: isGridView ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor : 'var(--text-secondary)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
                 fontSize: '0.75rem',
-                fontWeight: '600'
+                fontWeight: '600',
+                boxShadow: `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)'}`
               }}
             >
               <GridIcon size={14} color="currentColor" />
@@ -476,11 +493,14 @@ export default function ItemSelector({
                         padding: '8px 16px',
                         backgroundColor: isSelected ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
                         border: `2px solid ${isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                        borderRadius: '8px',
+                                borderRadius: '10px',
                         color: isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
-                        transition: 'all 0.2s ease',
+                        transition: 'all 0.25s ease',
                         cursor: 'pointer',
-                        flex: 1
+                        flex: 1,
+                        boxShadow: isSelected
+                          ? `0 3px 10px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)'}`
+                          : `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)'}`
                       }}
                     >
                       {subCategoryInfo.label}
@@ -515,15 +535,15 @@ export default function ItemSelector({
                     backgroundColor: isSelected
                       ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
                       : 'var(--card-bg)',
-                    borderRadius: '10px',
+                    borderRadius: '12px',
                     padding: '12px 16px',
                     fontWeight: isSelected ? '700' : '600',
                     fontSize: '0.85rem',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.25s ease',
                     border: `2px solid ${isSelected
                       ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color)
                       : 'var(--border-color)'}`,
-                    color: isSelected
+                        color: isSelected
                       ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
                       : 'var(--text-secondary)',
                     cursor: 'pointer',
@@ -531,7 +551,10 @@ export default function ItemSelector({
                     alignItems: 'center',
                     justifyContent: 'center',
                     whiteSpace: 'nowrap',
-                    minHeight: '50px'
+                    minHeight: '50px',
+                    boxShadow: isSelected
+                      ? `0 3px 10px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)'}`
+                      : `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)'}`
                   }}
                 >
                   <ColoredItemName name={item.name} />
