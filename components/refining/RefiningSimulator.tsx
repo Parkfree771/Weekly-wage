@@ -1116,35 +1116,21 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
 
                           {/* 자동강화 설정 드롭다운 */}
                           {showAutoSettings && !isAutoMode && (
-                            <div style={{
-                              position: 'absolute',
-                              top: '100%',
-                              left: 0,
-                              right: 0,
-                              marginTop: '0.5rem',
-                              padding: '1rem',
-                              background: 'var(--card-bg)',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                              zIndex: 100,
-                            }}>
-                              <div style={{ marginBottom: '0.75rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                                자동강화 설정
-                              </div>
+                            <div className={styles.autoDropdown}>
+                              <div className={styles.autoDropdownTitle}>자동강화 설정</div>
 
                               {/* 목표 레벨 입력 */}
-                              <div style={{ marginBottom: '0.75rem', padding: '0.5rem', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>목표 레벨 ({currentLevel + 1}~25)</div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>+{currentLevel} → +</span>
+                              <div className={styles.autoDropdownSection}>
+                                <div className={styles.autoDropdownLabel}>목표 레벨 ({currentLevel + 1}~25)</div>
+                                <div className={styles.autoDropdownLevelRow}>
+                                  <span className={styles.autoDropdownLevelText}>+{currentLevel} → +</span>
                                   <input
                                     type="text"
                                     inputMode="numeric"
+                                    className={styles.autoDropdownInput}
                                     value={autoTargetLevel || ''}
                                     onChange={(e) => {
                                       const value = e.target.value;
-                                      // 숫자만 허용, 빈 값도 허용
                                       if (value === '' || /^\d+$/.test(value)) {
                                         setAutoTargetLevel(value === '' ? 0 : parseInt(value));
                                       }
@@ -1152,33 +1138,19 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                                     onBlur={(e) => {
                                       const val = parseInt(e.target.value) || 0;
                                       if (val > 0) {
-                                        // 범위 벗어나면 보정
                                         setAutoTargetLevel(Math.min(Math.max(val, currentLevel + 1), 25));
                                       }
                                     }}
                                     placeholder={`${currentLevel + 1}`}
-                                    style={{
-                                      width: '50px',
-                                      padding: '0.3rem 0.5rem',
-                                      border: '1px solid var(--border-color)',
-                                      borderRadius: '4px',
-                                      background: 'var(--input-bg)',
-                                      color: 'var(--text-primary)',
-                                      fontSize: '1rem',
-                                      fontWeight: 700,
-                                      textAlign: 'center',
-                                    }}
                                   />
                                 </div>
                               </div>
 
                               {/* 숨결 설정 */}
-                              <div style={{ marginBottom: '0.75rem' }}>
-                                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                                  재료 설정
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                              <div className={styles.autoDropdownTurnSection}>
+                                <div className={styles.autoDropdownSectionTitle}>재료 설정</div>
+                                <div className={styles.autoDropdownCheckboxRow}>
+                                  <label className={styles.autoDropdownCheckbox}>
                                     <input
                                       type="checkbox"
                                       checked={autoSettings.useBreath}
@@ -1191,26 +1163,13 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
 
                               {/* 시작 버튼 */}
                               <button
+                                className={styles.autoDropdownStartBtn}
                                 onClick={() => {
-                                  // 시작 시 범위 보정
                                   const validTarget = Math.min(Math.max(autoTargetLevel, currentLevel + 1), 25);
                                   setAutoTargetLevel(validTarget);
                                   startAutoRefining();
                                 }}
                                 disabled={!autoTargetLevel || autoTargetLevel <= currentLevel || autoTargetLevel > 25}
-                                style={{
-                                  width: '100%',
-                                  padding: '0.6rem',
-                                  background: (!autoTargetLevel || autoTargetLevel <= currentLevel || autoTargetLevel > 25)
-                                    ? '#6b7280'
-                                    : 'linear-gradient(135deg, #10b981, #059669)',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  fontWeight: 600,
-                                  cursor: (!autoTargetLevel || autoTargetLevel <= currentLevel || autoTargetLevel > 25) ? 'not-allowed' : 'pointer',
-                                  opacity: (!autoTargetLevel || autoTargetLevel <= currentLevel || autoTargetLevel > 25) ? 0.5 : 1,
-                                }}
                               >
                                 자동강화 시작
                               </button>

@@ -93,8 +93,8 @@ interface AccumulatedCost {
 
 const gradeLabels: Record<SuccessGrade, string> = {
   success: '성공',
-  great: '대성공',
-  super: '대대성공',
+  great: '대성',
+  super: '대대',
 };
 
 // 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
@@ -801,6 +801,10 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
             },
             auxiliaryPattern: { none: 0, breath: 0, book: 0, both: 0 },
           };
+          // 선조의 가호도 초기화
+          setGahoCount(0);
+          setIsBonusTurn(false);
+          setIsEnhancedBonus(false);
         }
       }
     }
@@ -1216,11 +1220,11 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                         <div style={{ fontSize: '1rem', fontWeight: 600, color: gradeColors.success }}>{(rates.success * 100).toFixed(0)}%</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>대성공</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>대성</div>
                         <div style={{ fontSize: '1rem', fontWeight: 600, color: gradeColors.great }}>{(rates.great * 100).toFixed(0)}%</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>대대성공</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>대대</div>
                         <div style={{ fontSize: '1rem', fontWeight: 600, color: gradeColors.super }}>{(rates.super * 100).toFixed(0)}%</div>
                       </div>
                     </div>
@@ -1373,38 +1377,22 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
 
                         {/* 자동강화 설정 드롭다운 */}
                         {showAutoSettings && !isAutoMode && (
-                          <div style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: 0,
-                            right: 0,
-                            marginTop: '0.5rem',
-                            padding: '1rem',
-                            background: 'var(--card-bg)',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '8px',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                            zIndex: 100,
-                          }}>
-                            <div style={{ marginBottom: '0.75rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                              자동강화 설정
-                            </div>
+                          <div className={styles.autoDropdown}>
+                            <div className={styles.autoDropdownTitle}>자동강화 설정</div>
 
                             {/* 목표 레벨 */}
-                            <div style={{ marginBottom: '0.75rem', padding: '0.5rem', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>목표 레벨</div>
-                              <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            <div className={styles.autoDropdownSection}>
+                              <div className={styles.autoDropdownLabel}>목표 레벨</div>
+                              <div className={styles.autoDropdownLevelText}>
                                 +{currentLevel} → +{isAutoMode ? autoTargetLevel : getAutoTargetLevel(currentLevel)}
                               </div>
                             </div>
 
                             {/* 일반턴 설정 */}
-                            <div style={{ marginBottom: '0.75rem' }}>
-                              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                                일반턴
-                              </div>
-                              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                            <div className={styles.autoDropdownTurnSection}>
+                              <div className={`${styles.autoDropdownTurnTitle} ${styles.autoDropdownTurnNormal}`}>일반턴</div>
+                              <div className={styles.autoDropdownCheckboxRow}>
+                                <label className={styles.autoDropdownCheckbox}>
                                   <input
                                     type="checkbox"
                                     checked={autoSettings.normalTurn.useBreath}
@@ -1415,7 +1403,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                                   />
                                   숨결
                                 </label>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                                <label className={styles.autoDropdownCheckbox}>
                                   <input
                                     type="checkbox"
                                     checked={autoSettings.normalTurn.useBook}
@@ -1430,12 +1418,10 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                             </div>
 
                             {/* 선조턴 설정 */}
-                            <div style={{ marginBottom: '0.75rem' }}>
-                              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#f59e0b', marginBottom: '0.5rem' }}>
-                                선조턴
-                              </div>
-                              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                            <div className={styles.autoDropdownTurnSection}>
+                              <div className={`${styles.autoDropdownTurnTitle} ${styles.autoDropdownTurnAncestor}`}>선조턴</div>
+                              <div className={styles.autoDropdownCheckboxRow}>
+                                <label className={styles.autoDropdownCheckbox}>
                                   <input
                                     type="checkbox"
                                     checked={autoSettings.ancestorTurn.useBreath}
@@ -1446,7 +1432,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                                   />
                                   숨결
                                 </label>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                                <label className={styles.autoDropdownCheckbox}>
                                   <input
                                     type="checkbox"
                                     checked={autoSettings.ancestorTurn.useBook}
@@ -1461,12 +1447,10 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                             </div>
 
                             {/* 강화 선조턴 설정 */}
-                            <div style={{ marginBottom: '0.75rem' }}>
-                              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#60a5fa', marginBottom: '0.5rem' }}>
-                                강화 선조턴
-                              </div>
-                              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                            <div className={styles.autoDropdownTurnSection}>
+                              <div className={`${styles.autoDropdownTurnTitle} ${styles.autoDropdownTurnEnhanced}`}>강화 선조턴</div>
+                              <div className={styles.autoDropdownCheckboxRow}>
+                                <label className={styles.autoDropdownCheckbox}>
                                   <input
                                     type="checkbox"
                                     checked={autoSettings.enhancedAncestorTurn.useBreath}
@@ -1477,7 +1461,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                                   />
                                   숨결
                                 </label>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                                <label className={styles.autoDropdownCheckbox}>
                                   <input
                                     type="checkbox"
                                     checked={autoSettings.enhancedAncestorTurn.useBook}
@@ -1492,19 +1476,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                             </div>
 
                             {/* 시작 버튼 */}
-                            <button
-                              onClick={toggleAutoMode}
-                              style={{
-                                width: '100%',
-                                padding: '0.6rem',
-                                background: 'linear-gradient(135deg, #10b981, #059669)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                              }}
-                            >
+                            <button className={styles.autoDropdownStartBtn} onClick={toggleAutoMode}>
                               자동강화 시작
                             </button>
                           </div>
@@ -1533,31 +1505,31 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                         <div
                           key={index}
                           style={{
-                            padding: '0.5rem 0.6rem',
-                            borderRadius: '6px',
+                            padding: '0.35rem 0.5rem',
+                            borderRadius: '5px',
                             borderLeft: `3px solid ${gradeColors[attempt.grade]}`,
                             background: 'var(--card-bg)',
-                            marginBottom: '0.25rem',
+                            marginBottom: '0.2rem',
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)' }}>#{attempt.attemptNumber}</span>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)' }}>#{attempt.attemptNumber}</span>
+                            <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                               {attempt.isBonusTurn ? '선조' : '일반'}
                             </span>
                             <span style={{
                               marginLeft: 'auto',
-                              fontSize: '0.7rem',
+                              fontSize: '0.6rem',
                               fontWeight: 700,
-                              padding: '0.15rem 0.4rem',
-                              borderRadius: '4px',
+                              padding: '0.1rem 0.3rem',
+                              borderRadius: '3px',
                               background: gradeColors[attempt.grade],
                               color: 'white',
                             }}>
                               {gradeLabels[attempt.grade]}
                             </span>
                           </div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.2rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', marginTop: '0.15rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                             <span>+{attempt.exp} EXP → Lv.{attempt.level}</span>
                             {attempt.card && <span style={{ color: '#fbbf24', fontWeight: 600 }}>{attempt.card}</span>}
                             {attempt.isFree && <span style={{ color: '#10b981', fontWeight: 600 }}>무료</span>}

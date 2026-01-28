@@ -1843,3 +1843,201 @@
     border-radius: 8px;
   }
 }
+
+/* ========================================
+   자동강화 드롭다운 (인라인→클래스)
+   ======================================== */
+
+.autoDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 100;
+}
+
+.autoDropdownTitle {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.autoDropdownSection {
+  margin-bottom: 0.5rem;
+  padding: 0.4rem;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+}
+
+.autoDropdownLabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.autoDropdownLevelRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.autoDropdownLevelText {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.autoDropdownInput {
+  width: 45px;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.autoDropdownSectionTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+.autoDropdownCheckboxRow {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.autoDropdownCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.autoDropdownStartBtn {
+  width: 100%;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.autoDropdownStartBtn:disabled {
+  background: #6b7280;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 상급재련 턴별 설정 */
+.autoDropdownTurnSection {
+  margin-bottom: 0.5rem;
+}
+
+.autoDropdownTurnTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.autoDropdownTurnNormal {
+  color: var(--text-secondary);
+}
+
+.autoDropdownTurnAncestor {
+  color: #f59e0b;
+}
+
+.autoDropdownTurnEnhanced {
+  color: #60a5fa;
+}
+
+/* 모바일 자동강화 드롭다운 */
+@media (max-width: 768px) {
+  .autoDropdown {
+    padding: 0.5rem;
+    border-radius: 6px;
+  }
+
+  .autoDropdownTitle {
+    font-size: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .autoDropdownSection {
+    padding: 0.35rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .autoDropdownLabel {
+    font-size: 0.6rem;
+  }
+
+  .autoDropdownLevelRow {
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+  }
+
+  .autoDropdownLevelText {
+    font-size: 0.65rem;
+  }
+
+  .autoDropdownInput {
+    width: 40px;
+    padding: 0.2rem 0.3rem;
+    font-size: 0.8rem;
+  }
+
+  .autoDropdownSectionTitle {
+    font-size: 0.65rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .autoDropdownCheckboxRow {
+    gap: 0.4rem;
+  }
+
+  .autoDropdownCheckbox {
+    font-size: 0.6rem;
+    gap: 0.15rem;
+  }
+
+  .autoDropdownCheckbox input {
+    width: 12px;
+    height: 12px;
+  }
+
+  .autoDropdownStartBtn {
+    padding: 0.4rem;
+    font-size: 0.7rem;
+    border-radius: 5px;
+  }
+
+  .autoDropdownTurnTitle {
+    font-size: 0.65rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .autoDropdownTurnSection {
+    margin-bottom: 0.4rem;
+  }
+}

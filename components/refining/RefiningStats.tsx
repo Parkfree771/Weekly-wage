@@ -72,6 +72,15 @@ export default function RefiningStats() {
   const [initialLoad, setInitialLoad] = useState(true);
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 모바일 감지
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 600);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // 일반 재련 레벨 범위: 11~24 (25가 최대이므로 24→25까지)
   const levelRange = Array.from({ length: 14 }, (_, i) => i + 11);
@@ -432,7 +441,7 @@ export default function RefiningStats() {
                           dataKey="range"
                           axisLine={false}
                           tickLine={false}
-                          tick={{ fill: 'var(--text-secondary)', fontSize: 12, fontWeight: 600 }}
+                          tick={{ fill: 'var(--text-secondary)', fontSize: isMobile ? 7 : 12, fontWeight: 600 }}
                           interval={0}
                           tickFormatter={(v) => `${v}%`}
                           dy={8}
