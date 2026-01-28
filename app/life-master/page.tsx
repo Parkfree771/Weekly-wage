@@ -36,63 +36,6 @@ export default function LifeMasterPage() {
           </Col>
         </Row>
 
-        {/* SEO 정보성 콘텐츠 */}
-        <Row className="justify-content-center mt-5 mb-4">
-          <Col xl={10} lg={11} md={12}>
-            <Card className="border-0 shadow-sm" style={{ borderRadius: '12px', backgroundColor: 'var(--card-body-bg-stone)' }}>
-              <Card.Body className="p-4">
-                <h2 className="h5 mb-4" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                  생활의 달인 가이드
-                </h2>
-
-                <div className="mb-4">
-                  <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)' }}>아비도스 융화 재료란?</h3>
-                  <p className="mb-0 small" style={{ color: 'var(--text-muted)' }}>
-                    아비도스 융화 재료는 T4 고레벨 재련(1540+)에 필요한 특수 재료입니다.
-                    생활 콘텐츠를 통해 획득한 재료를 융화 재료로 제작하여 거래소에 판매하거나
-                    직접 재련에 사용할 수 있습니다.
-                  </p>
-                </div>
-
-                <div className="mb-4">
-                  <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)' }}>손익 계산 방법</h3>
-                  <ul className="mb-0 small" style={{ color: 'var(--text-muted)', paddingLeft: '1.2rem' }}>
-                    <li className="mb-1"><strong>제작 비용:</strong> 기본 재료 시세 + 제작 골드 비용</li>
-                    <li className="mb-1"><strong>판매 수익:</strong> 거래소 판매가 - 수수료(5%)</li>
-                    <li className="mb-1"><strong>순이익:</strong> 판매 수익 - 제작 비용</li>
-                  </ul>
-                </div>
-
-                <div className="mb-4">
-                  <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)' }}>생활 콘텐츠별 재료</h3>
-                  <ul className="mb-0 small" style={{ color: 'var(--text-muted)', paddingLeft: '1.2rem' }}>
-                    <li><strong>낚시:</strong> 생선류 → 오레하 융화 재료</li>
-                    <li><strong>수렵:</strong> 고기류 → 오레하 융화 재료</li>
-                    <li><strong>벌목:</strong> 목재류 → 상급/최상급 융화 재료</li>
-                    <li><strong>채광:</strong> 광석류 → 상급/최상급 융화 재료</li>
-                    <li><strong>고고학:</strong> 유물류 → 아비도스 융화 재료</li>
-                  </ul>
-                </div>
-
-                <div className="mb-4">
-                  <h3 className="h6 mb-2" style={{ color: 'var(--text-primary)' }}>자주 묻는 질문</h3>
-                  <div className="small" style={{ color: 'var(--text-muted)' }}>
-                    <p className="mb-2"><strong>Q. 극한 합성이 뭔가요?</strong><br />
-                    A. 일반 합성보다 높은 비용으로 더 많은 융화 재료를 얻는 제작 방식입니다.</p>
-                    <p className="mb-2"><strong>Q. 직접 사용 vs 판매 중 뭐가 나을까요?</strong><br />
-                    A. 재련이 필요하다면 직접 사용이 수수료를 아낄 수 있고, 급하지 않다면 시세를 보고 판매하세요.</p>
-                    <p className="mb-0"><strong>Q. 시세는 실시간인가요?</strong><br />
-                    A. 매시 정각 로스트아크 공식 API에서 최신 거래소 시세를 가져옵니다.</p>
-                  </div>
-                </div>
-
-                <div className="small" style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                  <strong>TIP:</strong> 융화 재료 시세는 레이드 패치나 이벤트에 따라 크게 변동됩니다. 제작 전 항상 현재 시세를 확인하세요.
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
       </Container>
 
       {/* 푸터 */}

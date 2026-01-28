@@ -114,18 +114,6 @@ export default function Home() {
           </Col>
         </Row>
 
-        {/* SEO 정보성 콘텐츠 */}
-        <Card className="mt-3">
-          <Card.Body className="p-3">
-            <h2 className="h6 mb-2" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-              로스트아크 골드 계산기
-            </h2>
-            <p className="mb-0 small" style={{ color: 'var(--text-muted)' }}>
-              실시간 거래소 시세를 반영하여 원정대 주간 골드 수익 계산, 레이드 더보기 효율 분석, T4 재련 비용 계산을 제공합니다.
-              상단 메뉴에서 주간골드, 재련, 생활 계산기를 이용해보세요.
-            </p>
-          </Card.Body>
-        </Card>
       </Container>
 
       <footer className="footer-fixed">
