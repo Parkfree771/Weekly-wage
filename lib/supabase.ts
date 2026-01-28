@@ -111,7 +111,7 @@ export async function getAllLevelStats(
 
     // 레벨별로 그룹화
     const grouped: Record<string, { attempts: number[]; fromLevel: number; toLevel: number }> = {};
-    const pageSize = 1000;
+    const pageSize = 10000;
     let from = 0;
     let hasMore = true;
 
@@ -263,7 +263,7 @@ export async function getLevelSampleCounts(
       : (equipmentType === 'weapon' ? '업화 무기' : '업화 방어구');
 
     const counts: Record<number, number> = {};
-    const pageSize = 1000;
+    const pageSize = 10000;
     let from = 0;
     let hasMore = true;
 
@@ -440,7 +440,7 @@ export async function getAllAdvancedLevelStats(
       toLevel: number;
     }> = {};
 
-    const pageSize = 1000;
+    const pageSize = 10000;
     let from = 0;
     let hasMore = true;
 
