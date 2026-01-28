@@ -517,6 +517,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
           newCost.돌파석 += (materialCost as any).돌파석 || 0;
           newCost.아비도스 += (materialCost as any).아비도스 || 0;
           newCost.운명파편 += (materialCost as any).운명파편 || 0;
+          newCost.실링 += (materialCost as any).실링 || 0;
           newCost.골드 += (materialCost as any).골드 || 0;
         }
         if (useBreath) {
@@ -553,6 +554,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
         newLevelCost.돌파석 += (materialCost as any).돌파석 || 0;
         newLevelCost.아비도스 += (materialCost as any).아비도스 || 0;
         newLevelCost.운명파편 += (materialCost as any).운명파편 || 0;
+        newLevelCost.실링 += (materialCost as any).실링 || 0;
         newLevelCost.골드 += (materialCost as any).골드 || 0;
       }
       if (useBreath) {
@@ -1056,6 +1058,10 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                                     <Image src="/abidos-fusion5.webp" alt="아비도스" width={32} height={32} />
                                     <span>{(materialCost as any).아비도스?.toLocaleString()}</span>
                                   </div>
+                                  <div className={styles.singleCostItem}>
+                                    <Image src="/shilling.webp" alt="실링" width={32} height={32} />
+                                    <span>{(materialCost as any).실링?.toLocaleString()}</span>
+                                  </div>
                                 </>
                               )}
                               <div className={styles.singleCostItem}>
@@ -1359,6 +1365,14 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                               <span className={styles.materialName}>아비도스</span>
                               <span className={styles.materialAmount}>{accumulatedCost.아비도스.toLocaleString()}</span>
                               <span className={styles.materialGold}>{getMaterialGoldCost('아비도스', accumulatedCost.아비도스).toLocaleString()}G</span>
+                            </div>
+                          )}
+                          {accumulatedCost.실링 > 0 && (
+                            <div className={styles.totalMaterialItem}>
+                              <Image src="/shilling.webp" alt="실링" width={28} height={28} />
+                              <span className={styles.materialName}>실링</span>
+                              <span className={styles.materialAmount}>{accumulatedCost.실링.toLocaleString()}</span>
+                              <span></span>
                             </div>
                           )}
                         </>

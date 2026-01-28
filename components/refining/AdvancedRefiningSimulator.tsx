@@ -80,6 +80,7 @@ interface AccumulatedCost {
   골드: number;
   빙하: number;
   용암: number;
+  실링: number;
   야금술1단: number;
   야금술2단: number;
   야금술3단: number;
@@ -145,7 +146,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
   const [attemptHistory, setAttemptHistory] = useState<AttemptResult[]>([]);
   const [accumulatedCost, setAccumulatedCost] = useState<AccumulatedCost>({
     수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0,
-    빙하: 0, 용암: 0,
+    빙하: 0, 용암: 0, 실링: 0,
     야금술1단: 0, 야금술2단: 0, 야금술3단: 0, 야금술4단: 0,
     재봉술1단: 0, 재봉술2단: 0, 재봉술3단: 0, 재봉술4단: 0,
   });
@@ -170,7 +171,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
     ancestorCards: {},
     materials: {
       수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0,
-      빙하: 0, 용암: 0,
+      빙하: 0, 용암: 0, 실링: 0,
       야금술1단: 0, 야금술2단: 0, 야금술3단: 0, 야금술4단: 0,
       재봉술1단: 0, 재봉술2단: 0, 재봉술3단: 0, 재봉술4단: 0,
     },
@@ -383,7 +384,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
     // 초기화 버튼을 누르면 모든 누적 비용과 진행 상태 초기화
     setAccumulatedCost({
       수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0,
-      빙하: 0, 용암: 0,
+      빙하: 0, 용암: 0, 실링: 0,
       야금술1단: 0, 야금술2단: 0, 야금술3단: 0, 야금술4단: 0,
       재봉술1단: 0, 재봉술2단: 0, 재봉술3단: 0, 재봉술4단: 0,
     });
@@ -409,7 +410,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
       ancestorCards: {},
       materials: {
         수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0,
-        빙하: 0, 용암: 0,
+        빙하: 0, 용암: 0, 실링: 0,
         야금술1단: 0, 야금술2단: 0, 야금술3단: 0, 야금술4단: 0,
         재봉술1단: 0, 재봉술2단: 0, 재봉술3단: 0, 재봉술4단: 0,
       },
@@ -554,6 +555,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
         newCost.아비도스 += materials.아비도스;
         newCost.운명파편 += materials.운명파편;
         newCost.골드 += materials.골드;
+        newCost.실링 += materials.실링;
 
         if (useBreath) {
           newCost.용암 += materials.용암;
@@ -570,6 +572,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
         newCost.아비도스 += materials.아비도스;
         newCost.운명파편 += materials.운명파편;
         newCost.골드 += materials.골드;
+        newCost.실링 += materials.실링;
 
         if (useBreath) {
           newCost.빙하 += materials.빙하;
@@ -704,6 +707,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
         stats.materials.아비도스 += materials.아비도스;
         stats.materials.운명파편 += materials.운명파편;
         stats.materials.골드 += materials.골드;
+        stats.materials.실링 += materials.실링;
         if (useBreath) stats.materials.용암 += materials.용암;
         if (useBook && materials.책) {
           const bookKey = materials.책 as keyof AccumulatedCost;
@@ -716,6 +720,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
         stats.materials.아비도스 += materials.아비도스;
         stats.materials.운명파편 += materials.운명파편;
         stats.materials.골드 += materials.골드;
+        stats.materials.실링 += materials.실링;
         if (useBreath) stats.materials.빙하 += materials.빙하;
         if (useBook && materials.책) {
           const bookKey = materials.책 as keyof AccumulatedCost;
@@ -788,7 +793,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
             ancestorCards: {},
             materials: {
               수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0,
-              빙하: 0, 용암: 0,
+              빙하: 0, 용암: 0, 실링: 0,
               야금술1단: 0, 야금술2단: 0, 야금술3단: 0, 야금술4단: 0,
               재봉술1단: 0, 재봉술2단: 0, 재봉술3단: 0, 재봉술4단: 0,
             },
@@ -1620,6 +1625,14 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                         <span className={styles.materialName}>운명파편</span>
                         <span className={styles.materialAmount}>{accumulatedCost.운명파편.toLocaleString()}</span>
                         <span className={styles.materialGold}>{getMaterialGoldCost('운명파편', accumulatedCost.운명파편).toLocaleString()}G</span>
+                      </div>
+                    )}
+                    {accumulatedCost.실링 > 0 && (
+                      <div className={styles.totalMaterialItem}>
+                        <Image src="/shilling.webp" alt="실링" width={28} height={28} />
+                        <span className={styles.materialName}>실링</span>
+                        <span className={styles.materialAmount}>{accumulatedCost.실링.toLocaleString()}</span>
+                        <span></span>
                       </div>
                     )}
                     {accumulatedCost.빙하 > 0 && (

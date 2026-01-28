@@ -1035,6 +1035,7 @@ export default function RefiningCalculator({ onSearchComplete, modeSelector }: R
             totalMaterials.돌파석 += materialCostPerTry.돌파석 * avgTries;
             totalMaterials.아비도스 += materialCostPerTry.아비도스 * avgTries;
             totalMaterials.운명파편 += materialCostPerTry.운명파편 * avgTries;
+            totalMaterials.실링 = (totalMaterials.실링 || 0) + (materialCostPerTry as any).실링 * avgTries;
             totalMaterials.누골 += materialCostPerTry.골드 * avgTries;
           }
         }
@@ -1081,6 +1082,7 @@ export default function RefiningCalculator({ onSearchComplete, modeSelector }: R
         totalMaterials.돌파석 += advancedMaterials['돌파석'] || 0;
         totalMaterials.아비도스 += advancedMaterials['아비도스'] || 0;
         totalMaterials.운명파편 += advancedMaterials['운명파편'] || 0;
+        totalMaterials.실링 = (totalMaterials.실링 || 0) + (advancedMaterials['실링'] || 0);
         totalMaterials.누골 += advancedMaterials['누골'] || 0;
         totalMaterials.빙하 += advancedMaterials['빙하'] || 0;
         totalMaterials.용암 += advancedMaterials['용암'] || 0;
