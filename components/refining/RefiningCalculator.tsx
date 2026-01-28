@@ -2414,7 +2414,7 @@ export default function RefiningCalculator({ onSearchComplete, modeSelector }: R
                           )}
                           {(materials.실링 || 0) > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/shilling.png" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false} />
+                              <MaterialCard icon="/shilling.webp" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false} />
                             </Col>
                           )}
                         </Row>

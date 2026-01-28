@@ -1031,10 +1031,6 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                                     <Image src="/top-abidos-fusion5.webp" alt="상급아비도스" width={32} height={32} />
                                     <span>{(materialCost as any).상급아비도스?.toLocaleString()}</span>
                                   </div>
-                                  <div className={styles.singleCostItem}>
-                                    <Image src="/shilling.webp" alt="실링" width={32} height={32} />
-                                    <span>{(materialCost as any).실링?.toLocaleString()}</span>
-                                  </div>
                                 </>
                               ) : (
                                 <>
@@ -1058,15 +1054,15 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                                     <Image src="/abidos-fusion5.webp" alt="아비도스" width={32} height={32} />
                                     <span>{(materialCost as any).아비도스?.toLocaleString()}</span>
                                   </div>
-                                  <div className={styles.singleCostItem}>
-                                    <Image src="/shilling.webp" alt="실링" width={32} height={32} />
-                                    <span>{(materialCost as any).실링?.toLocaleString()}</span>
-                                  </div>
                                 </>
                               )}
                               <div className={styles.singleCostItem}>
                                 <Image src="/destiny-shard-bag-large5.webp" alt="운명파편" width={32} height={32} />
                                 <span>{(materialCost as any).운명파편?.toLocaleString()}</span>
+                              </div>
+                              <div className={styles.singleCostItem}>
+                                <Image src="/shilling.webp" alt="실링" width={32} height={32} />
+                                <span>{(materialCost as any).실링?.toLocaleString()}</span>
                               </div>
                               <div className={styles.singleCostItem}>
                                 <Image src="/gold.webp" alt="골드" width={32} height={32} />

@@ -512,6 +512,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
         돌파석: materials.돌파석,
         아비도스: materials.아비도스,
         운명파편: materials.운명파편,
+        실링: materials.실링,
         골드: materials.골드,
         breath: materials.용암,
         breathName: '용암의 숨결',
@@ -528,6 +529,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
         돌파석: materials.돌파석,
         아비도스: materials.아비도스,
         운명파편: materials.운명파편,
+        실링: materials.실링,
         골드: materials.골드,
         breath: materials.빙하,
         breathName: '빙하의 숨결',
@@ -1315,6 +1317,10 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                             <div className={styles.singleCostItem}>
                               <Image src="/destiny-shard-bag-large5.webp" alt="운명파편" width={32} height={32} />
                               <span>{perAttemptCost.운명파편.toLocaleString()}</span>
+                            </div>
+                            <div className={styles.singleCostItem}>
+                              <Image src="/shilling.webp" alt="실링" width={32} height={32} />
+                              <span>{perAttemptCost.실링.toLocaleString()}</span>
                             </div>
                             <div className={styles.singleCostItem}>
                               <Image src="/gold.webp" alt="골드" width={32} height={32} />
