@@ -98,6 +98,17 @@
   background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
+/* 숨결 필터 버튼 - 장비 타입에 따른 색상 */
+.filterBtnActiveWeapon {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.filterBtnActiveArmor {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
 /* 레벨 버튼 그리드 */
 .levelGrid {
   display: grid;

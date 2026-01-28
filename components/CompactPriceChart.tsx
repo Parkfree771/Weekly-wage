@@ -907,37 +907,6 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           </div>
         ) : (
           <>
-            {/* 기간 선택 버튼 - 모바일 */}
-            <div className="d-md-none d-flex justify-content-center gap-1" style={{ margin: 0, padding: '2px 0 0 0' }}>
-              {(['7d', '1m', '3m', 'all'] as PeriodOption[]).map((period) => (
-                <button
-                  key={period}
-                  onClick={() => setSelectedPeriod(period)}
-                  style={{
-                    padding: '3px 10px',
-                    borderRadius: '8px',
-                    borderLeft: selectedPeriod === period ? `1px solid ${chartColor}` : '1px solid var(--border-color)',
-                    borderRight: selectedPeriod === period ? `1px solid ${chartColor}` : '1px solid var(--border-color)',
-                    borderBottom: selectedPeriod === period ? `1px solid ${chartColor}` : '1px solid var(--border-color)',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                    backgroundColor: selectedPeriod === period ? (theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4')) : 'var(--card-bg)',
-                    color: selectedPeriod === period ? chartColor : 'var(--text-secondary)',
-                    fontWeight: selectedPeriod === period ? '700' : '500',
-                    fontSize: '0.65rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.25s ease',
-                    outline: 'none',
-                    whiteSpace: 'nowrap',
-                    boxShadow: selectedPeriod === period
-                      ? `0 2px 8px ${theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)'}`
-                      : `0 1px 4px ${theme === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.04)'}`
-                  }}
-                >
-                  {periodLabels[period]}
-                </button>
-              ))}
-            </div>
-
             <div className="d-none d-md-block" style={{ width: '100%', height: '500px' }}>
               <ResponsiveContainer width="100%" height="100%" minHeight={500}>
                 <LineChart data={chartData} margin={{ top: 25, right: 10, left: 0, bottom: 0 }}>
@@ -969,9 +938,9 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               </ResponsiveContainer>
             </div>
 
-            <div className="d-md-none" style={{ width: '100%', height: '350px' }}>
+            <div className="d-md-none" style={{ width: '100%', height: '350px', marginTop: '-8px' }}>
               <ResponsiveContainer width="100%" height="100%" minHeight={350}>
-                <LineChart data={chartData} margin={{ top: 20, right: 5, left: 0, bottom: 0 }}>
+                <LineChart data={chartData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />
                   <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : ''); const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" transform="rotate(-45)">{payload.value}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />

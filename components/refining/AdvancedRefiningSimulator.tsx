@@ -187,6 +187,27 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
   // 애니메이션
   const [isAnimating, setIsAnimating] = useState(false);
 
+  // 자동강화 관련 상태
+  const [showAutoSettings, setShowAutoSettings] = useState(false);
+  const [isAutoMode, setIsAutoMode] = useState(false);
+  const [autoTargetLevel, setAutoTargetLevel] = useState(0); // 시작 시 고정되는 목표 레벨
+  const autoIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [autoSettings, setAutoSettings] = useState({
+    normalTurn: { useBreath: false, useBook: false },
+    ancestorTurn: { useBreath: false, useBook: false },
+    enhancedAncestorTurn: { useBreath: false, useBook: false },
+  });
+  // 최신 상태 참조용 ref (stale closure 방지)
+  const latestStateRef = useRef({
+    currentLevel: 0,
+    isBonusTurn: false,
+    isEnhancedBonus: false,
+    autoSettings: autoSettings,
+    selectedEquipment: null as Equipment | null,
+    autoTargetLevel: 0,
+  });
+  const attemptRefiningRef = useRef<() => void>(() => {});
+
   // 거래소 가격 로드
   useEffect(() => {
     const fetchMarketPrices = async () => {
@@ -811,6 +832,118 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
     }, 300);
   };
 
+  // 목표 레벨 자동 계산 (현재 레벨 기준으로 다음 10단위)
+  const getAutoTargetLevel = (level: number): number => {
+    if (level < 10) return 10;
+    if (level < 20) return 20;
+    if (level < 30) return 30;
+    return 40;
+  };
+
+  // 최신 상태를 ref에 저장 (매 렌더링마다 업데이트)
+  latestStateRef.current = {
+    currentLevel,
+    isBonusTurn,
+    isEnhancedBonus,
+    autoSettings,
+    selectedEquipment,
+    autoTargetLevel,
+  };
+  attemptRefiningRef.current = attemptRefining;
+
+  // 자동강화 시작/중지
+  const toggleAutoMode = () => {
+    if (isAutoMode) {
+      // 중지
+      if (autoIntervalRef.current) {
+        clearInterval(autoIntervalRef.current);
+        autoIntervalRef.current = null;
+      }
+      // 보조재료 상태 해제
+      setUseBreath(false);
+      setUseBook(false);
+      setIsAutoMode(false);
+    } else {
+      // 시작 - 현재 레벨 기준으로 목표 레벨 고정
+      const target = getAutoTargetLevel(currentLevel);
+      setAutoTargetLevel(target);
+      setIsAutoMode(true);
+      setShowAutoSettings(false);
+    }
+  };
+
+  // 자동강화 모드 Effect
+  useEffect(() => {
+    if (isAutoMode && selectedEquipment && autoTargetLevel > 0) {
+      // 초기 보조재료 설정
+      const { isBonusTurn: ib, isEnhancedBonus: ie, autoSettings: as } = latestStateRef.current;
+      if (ib && ie) {
+        setUseBreath(as.enhancedAncestorTurn.useBreath);
+        setUseBook(as.enhancedAncestorTurn.useBook);
+      } else if (ib) {
+        setUseBreath(as.ancestorTurn.useBreath);
+        setUseBook(as.ancestorTurn.useBook);
+      } else {
+        setUseBreath(as.normalTurn.useBreath);
+        setUseBook(as.normalTurn.useBook);
+      }
+
+      // 0.5초마다 재련 시도
+      autoIntervalRef.current = setInterval(() => {
+        const state = latestStateRef.current;
+
+        // 목표 도달 시 자동 중지
+        if (state.currentLevel >= state.autoTargetLevel) {
+          if (autoIntervalRef.current) {
+            clearInterval(autoIntervalRef.current);
+            autoIntervalRef.current = null;
+          }
+          // 보조재료 상태 해제
+          setUseBreath(false);
+          setUseBook(false);
+          setIsAutoMode(false);
+          return;
+        }
+
+        // 현재 턴 타입에 따라 보조재료 설정
+        if (state.isBonusTurn && state.isEnhancedBonus) {
+          setUseBreath(state.autoSettings.enhancedAncestorTurn.useBreath);
+          setUseBook(state.autoSettings.enhancedAncestorTurn.useBook);
+        } else if (state.isBonusTurn) {
+          setUseBreath(state.autoSettings.ancestorTurn.useBreath);
+          setUseBook(state.autoSettings.ancestorTurn.useBook);
+        } else {
+          setUseBreath(state.autoSettings.normalTurn.useBreath);
+          setUseBook(state.autoSettings.normalTurn.useBook);
+        }
+
+        // 재련 버튼 클릭 (처리 중이 아닐 때만)
+        if (!processingRef.current) {
+          // 보조재료 설정 후 약간의 딜레이 후 재련 시도
+          setTimeout(() => {
+            attemptRefiningRef.current();
+          }, 50);
+        }
+      }, 700);
+
+      return () => {
+        if (autoIntervalRef.current) {
+          clearInterval(autoIntervalRef.current);
+          autoIntervalRef.current = null;
+        }
+      };
+    }
+  }, [isAutoMode, selectedEquipment, autoTargetLevel]);
+
+  // 컴포넌트 언마운트 시 정리
+  useEffect(() => {
+    return () => {
+      if (autoIntervalRef.current) {
+        clearInterval(autoIntervalRef.current);
+      }
+    };
+  }, []);
+
   const rates = getCurrentRates();
   const perAttemptCost = getPerAttemptCost();
   const stageKey = getStageKey(currentLevel);
@@ -1187,18 +1320,188 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                       </div>
                     </div>
 
-                    {/* 재련 버튼 */}
-                    <button
-                      className={styles.refiningButton}
-                      onClick={attemptRefining}
-                      disabled={isAnimating}
-                      style={isBonusTurn ? { background: 'linear-gradient(135deg, #f59e0b, #d97706)' } : undefined}
-                    >
-                      {isBonusTurn ? '선조 재련' : '상급 재련'}
-                      {nextTurnFree && <span style={{ marginLeft: '8px', fontSize: '0.8rem' }}>(무료)</span>}
-                    </button>
+                    {/* 재련 버튼 영역 */}
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <button
+                        className={styles.refiningButton}
+                        onClick={attemptRefining}
+                        disabled={isAnimating || isAutoMode}
+                        style={{
+                          flex: 1,
+                          ...(isBonusTurn ? { background: 'linear-gradient(135deg, #f59e0b, #d97706)' } : {}),
+                          ...(isAutoMode ? { opacity: 0.5, cursor: 'not-allowed' } : {}),
+                        }}
+                      >
+                        {isBonusTurn ? '선조 재련' : '상급 재련'}
+                        {nextTurnFree && <span style={{ marginLeft: '8px', fontSize: '0.8rem' }}>(무료)</span>}
+                      </button>
 
-                    <button className={styles.resetButton} onClick={resetSimulation}>
+                      <div style={{ position: 'relative', flex: 1 }}>
+                        <button
+                          className={styles.refiningButton}
+                          onClick={() => {
+                            if (isAutoMode) {
+                              toggleAutoMode();
+                            } else {
+                              if (!showAutoSettings) {
+                                // 드롭다운 열 때 기본 목표 설정 (10단위 끝)
+                                setAutoTargetLevel(getAutoTargetLevel(currentLevel));
+                              }
+                              setShowAutoSettings(!showAutoSettings);
+                            }
+                          }}
+                          style={{
+                            width: '100%',
+                            background: isAutoMode
+                              ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                              : 'linear-gradient(135deg, #10b981, #059669)',
+                          }}
+                        >
+                          {isAutoMode ? '중지' : '자동강화'}
+                        </button>
+
+                        {/* 자동강화 설정 드롭다운 */}
+                        {showAutoSettings && !isAutoMode && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            marginTop: '0.5rem',
+                            padding: '1rem',
+                            background: 'var(--card-bg)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            zIndex: 100,
+                          }}>
+                            <div style={{ marginBottom: '0.75rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                              자동강화 설정
+                            </div>
+
+                            {/* 목표 레벨 */}
+                            <div style={{ marginBottom: '0.75rem', padding: '0.5rem', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>목표 레벨</div>
+                              <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                +{currentLevel} → +{isAutoMode ? autoTargetLevel : getAutoTargetLevel(currentLevel)}
+                              </div>
+                            </div>
+
+                            {/* 일반턴 설정 */}
+                            <div style={{ marginBottom: '0.75rem' }}>
+                              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                                일반턴
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={autoSettings.normalTurn.useBreath}
+                                    onChange={(e) => setAutoSettings(prev => ({
+                                      ...prev,
+                                      normalTurn: { ...prev.normalTurn, useBreath: e.target.checked }
+                                    }))}
+                                  />
+                                  숨결
+                                </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={autoSettings.normalTurn.useBook}
+                                    onChange={(e) => setAutoSettings(prev => ({
+                                      ...prev,
+                                      normalTurn: { ...prev.normalTurn, useBook: e.target.checked }
+                                    }))}
+                                  />
+                                  {selectedEquipment?.type === 'weapon' ? '야금술' : '재봉술'}
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* 선조턴 설정 */}
+                            <div style={{ marginBottom: '0.75rem' }}>
+                              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#f59e0b', marginBottom: '0.5rem' }}>
+                                선조턴
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={autoSettings.ancestorTurn.useBreath}
+                                    onChange={(e) => setAutoSettings(prev => ({
+                                      ...prev,
+                                      ancestorTurn: { ...prev.ancestorTurn, useBreath: e.target.checked }
+                                    }))}
+                                  />
+                                  숨결
+                                </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={autoSettings.ancestorTurn.useBook}
+                                    onChange={(e) => setAutoSettings(prev => ({
+                                      ...prev,
+                                      ancestorTurn: { ...prev.ancestorTurn, useBook: e.target.checked }
+                                    }))}
+                                  />
+                                  {selectedEquipment?.type === 'weapon' ? '야금술' : '재봉술'}
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* 강화 선조턴 설정 */}
+                            <div style={{ marginBottom: '0.75rem' }}>
+                              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#60a5fa', marginBottom: '0.5rem' }}>
+                                강화 선조턴
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={autoSettings.enhancedAncestorTurn.useBreath}
+                                    onChange={(e) => setAutoSettings(prev => ({
+                                      ...prev,
+                                      enhancedAncestorTurn: { ...prev.enhancedAncestorTurn, useBreath: e.target.checked }
+                                    }))}
+                                  />
+                                  숨결
+                                </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={autoSettings.enhancedAncestorTurn.useBook}
+                                    onChange={(e) => setAutoSettings(prev => ({
+                                      ...prev,
+                                      enhancedAncestorTurn: { ...prev.enhancedAncestorTurn, useBook: e.target.checked }
+                                    }))}
+                                  />
+                                  {selectedEquipment?.type === 'weapon' ? '야금술' : '재봉술'}
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* 시작 버튼 */}
+                            <button
+                              onClick={toggleAutoMode}
+                              style={{
+                                width: '100%',
+                                padding: '0.6rem',
+                                background: 'linear-gradient(135deg, #10b981, #059669)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              자동강화 시작
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <button className={styles.resetButton} onClick={resetSimulation} disabled={isAutoMode}>
                       초기화
                     </button>
                   </>

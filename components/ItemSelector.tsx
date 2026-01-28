@@ -4,7 +4,7 @@ import { ItemCategory, TrackedItem, getItemsByCategory, RefineAdditionalSubCateg
 import React, { useMemo, useState, useContext } from 'react';
 import { useTheme } from './ThemeProvider';
 import { Offcanvas } from 'react-bootstrap';
-import { PriceContext } from './PriceComparisonStats';
+import { PriceContext, PeriodOption } from './PriceComparisonStats';
 
 // 그리드 아이콘 SVG 컴포넌트
 function GridIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
@@ -96,7 +96,17 @@ export default function ItemSelector({
   onSelectSubCategory,
 }: ItemSelectorProps) {
   const { theme } = useTheme();
-  const { isGridView, onToggleGridView } = useContext(PriceContext);
+  const { isGridView, onToggleGridView, selectedPeriod, setSelectedPeriod } = useContext(PriceContext);
+
+  // 기간 라벨 매핑
+  const periodLabels: Record<PeriodOption, string> = {
+    '7d': '7일',
+    '1m': '1개월',
+    '3m': '3개월',
+    '6m': '6개월',
+    '1y': '1년',
+    'all': '전체',
+  };
   const [showItems, setShowItems] = useState(true);
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [bottomSheetCategory, setBottomSheetCategory] = useState<ItemCategory>(selectedCategory);
@@ -432,7 +442,33 @@ export default function ItemSelector({
           >
             {CATEGORY_STYLES[bottomSheetCategory].label}
           </Offcanvas.Title>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* 기간 선택 버튼 - 모바일 */}
+            <div style={{ display: 'flex', gap: '2px' }}>
+              {(['7d', '1m', '3m', 'all'] as PeriodOption[]).map((period) => {
+                const isSelected = selectedPeriod === period;
+                const categoryStyle = CATEGORY_STYLES[bottomSheetCategory];
+                return (
+                  <button
+                    key={period}
+                    onClick={() => setSelectedPeriod(period)}
+                    style={{
+                      padding: '4px 6px',
+                      borderRadius: '6px',
+                      border: `1px solid ${isSelected ? categoryStyle.darkThemeColor : 'var(--border-color)'}`,
+                      backgroundColor: isSelected ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
+                      color: isSelected ? categoryStyle.darkThemeColor : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      fontSize: '0.65rem',
+                      fontWeight: isSelected ? '700' : '500',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {periodLabels[period]}
+                  </button>
+                );
+              })}
+            </div>
             {/* 그리드 토글 버튼 - 모바일 */}
             <button
               onClick={onToggleGridView}

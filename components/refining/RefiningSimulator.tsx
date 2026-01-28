@@ -132,6 +132,21 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
   const [attemptHistory, setAttemptHistory] = useState<RefiningAttempt[]>([]);
   const [baseItemLevel, setBaseItemLevel] = useState<number>(0);
   const [itemLevelIncrease, setItemLevelIncrease] = useState<number>(0);
+
+  // 자동강화 상태
+  const [showAutoSettings, setShowAutoSettings] = useState(false);
+  const [isAutoMode, setIsAutoMode] = useState(false);
+  const [autoTargetLevel, setAutoTargetLevel] = useState(0);
+  const [autoSettings, setAutoSettings] = useState({
+    useBreath: false,
+  });
+  const autoIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const latestStateRef = useRef({
+    currentLevel: 11,
+    autoTargetLevel: 0,
+    autoSettings: { useBreath: false },
+  });
+  const attemptRefiningRef = useRef<() => void>(() => {});
   // 장비별 강화 진행 상태 추적 (장비이름 -> 강화된 레벨)
   const [enhancedLevels, setEnhancedLevels] = useState<Record<string, number>>({});
   const [accumulatedCost, setAccumulatedCost] = useState<AccumulatedCost>({
@@ -155,6 +170,54 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
 
   // 거래소 가격
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
+
+  // 자동강화를 위한 최신 상태 ref 업데이트
+  useEffect(() => {
+    latestStateRef.current = {
+      currentLevel,
+      autoTargetLevel,
+      autoSettings,
+    };
+  });
+
+  // attemptRefining 함수를 ref로 저장
+  useEffect(() => {
+    attemptRefiningRef.current = attemptRefining;
+  });
+
+  // 자동강화 Effect
+  useEffect(() => {
+    if (isAutoMode && selectedEquipment && autoTargetLevel > 0) {
+      // 초기 숨결 설정
+      setUseBreath(autoSettings.useBreath);
+
+      autoIntervalRef.current = setInterval(() => {
+        const state = latestStateRef.current;
+
+        // 목표 레벨 도달 체크
+        if (state.currentLevel >= state.autoTargetLevel) {
+          setUseBreath(false);
+          setIsAutoMode(false);
+          return;
+        }
+
+        // 숨결 설정 적용
+        setUseBreath(state.autoSettings.useBreath);
+
+        // 강화 시도
+        setTimeout(() => {
+          attemptRefiningRef.current();
+        }, 50);
+      }, 700);
+
+      return () => {
+        if (autoIntervalRef.current) {
+          clearInterval(autoIntervalRef.current);
+          autoIntervalRef.current = null;
+        }
+      };
+    }
+  }, [isAutoMode, selectedEquipment, autoTargetLevel]);
 
   // 거래소 가격 로드
   useEffect(() => {
@@ -348,6 +411,23 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
       return SUCCESSION_BASE_PROBABILITY[level] || 0;
     }
     return BASE_PROBABILITY[level] || 0;
+  };
+
+  // 자동강화 시작
+  const startAutoRefining = () => {
+    if (!selectedEquipment || autoTargetLevel <= currentLevel) return;
+    setShowAutoSettings(false);
+    setIsAutoMode(true);
+  };
+
+  // 자동강화 중지
+  const stopAutoRefining = () => {
+    if (autoIntervalRef.current) {
+      clearInterval(autoIntervalRef.current);
+      autoIntervalRef.current = null;
+    }
+    setUseBreath(false);
+    setIsAutoMode(false);
   };
 
   const calculateFinalProb = (): number => {
@@ -991,16 +1071,153 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                         </div>
                       </div>
 
-                      {/* 강화 버튼 */}
-                      <button
-                        className={styles.refiningButton}
-                        onClick={attemptRefining}
-                        disabled={!canRefine}
-                      >
-                        강화하기
-                      </button>
+                      {/* 강화 버튼 영역 */}
+                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <button
+                          className={styles.refiningButton}
+                          onClick={attemptRefining}
+                          disabled={!canRefine || isAutoMode}
+                          style={{
+                            flex: 1,
+                            marginBottom: 0,
+                            ...(isAutoMode ? { opacity: 0.5, cursor: 'not-allowed' } : {}),
+                          }}
+                        >
+                          강화하기
+                        </button>
 
-                      <button className={styles.resetButton} onClick={resetSimulation}>
+                        <div style={{ position: 'relative', flex: 1 }}>
+                          <button
+                            className={styles.refiningButton}
+                            onClick={() => {
+                              if (isAutoMode) {
+                                stopAutoRefining();
+                              } else {
+                                if (!showAutoSettings) {
+                                  // 드롭다운 열 때 기본 목표 설정 (현재+1)
+                                  setAutoTargetLevel(currentLevel + 1);
+                                }
+                                setShowAutoSettings(!showAutoSettings);
+                              }
+                            }}
+                            disabled={!canRefine && !isAutoMode}
+                            style={{
+                              width: '100%',
+                              marginBottom: 0,
+                              background: isAutoMode
+                                ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                                : 'linear-gradient(135deg, #10b981, #059669)',
+                            }}
+                          >
+                            {isAutoMode ? '중지' : '자동강화'}
+                          </button>
+
+                          {/* 자동강화 설정 드롭다운 */}
+                          {showAutoSettings && !isAutoMode && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              right: 0,
+                              marginTop: '0.5rem',
+                              padding: '1rem',
+                              background: 'var(--card-bg)',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                              zIndex: 100,
+                            }}>
+                              <div style={{ marginBottom: '0.75rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                                자동강화 설정
+                              </div>
+
+                              {/* 목표 레벨 입력 */}
+                              <div style={{ marginBottom: '0.75rem', padding: '0.5rem', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>목표 레벨 ({currentLevel + 1}~25)</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>+{currentLevel} → +</span>
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={autoTargetLevel || ''}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      // 숫자만 허용, 빈 값도 허용
+                                      if (value === '' || /^\d+$/.test(value)) {
+                                        setAutoTargetLevel(value === '' ? 0 : parseInt(value));
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      const val = parseInt(e.target.value) || 0;
+                                      if (val > 0) {
+                                        // 범위 벗어나면 보정
+                                        setAutoTargetLevel(Math.min(Math.max(val, currentLevel + 1), 25));
+                                      }
+                                    }}
+                                    placeholder={`${currentLevel + 1}`}
+                                    style={{
+                                      width: '50px',
+                                      padding: '0.3rem 0.5rem',
+                                      border: '1px solid var(--border-color)',
+                                      borderRadius: '4px',
+                                      background: 'var(--input-bg)',
+                                      color: 'var(--text-primary)',
+                                      fontSize: '1rem',
+                                      fontWeight: 700,
+                                      textAlign: 'center',
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* 숨결 설정 */}
+                              <div style={{ marginBottom: '0.75rem' }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                                  재료 설정
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={autoSettings.useBreath}
+                                      onChange={(e) => setAutoSettings({ useBreath: e.target.checked })}
+                                    />
+                                    숨결 (풀숨)
+                                  </label>
+                                </div>
+                              </div>
+
+                              {/* 시작 버튼 */}
+                              <button
+                                onClick={() => {
+                                  // 시작 시 범위 보정
+                                  const validTarget = Math.min(Math.max(autoTargetLevel, currentLevel + 1), 25);
+                                  setAutoTargetLevel(validTarget);
+                                  startAutoRefining();
+                                }}
+                                disabled={!autoTargetLevel || autoTargetLevel <= currentLevel || autoTargetLevel > 25}
+                                style={{
+                                  width: '100%',
+                                  padding: '0.6rem',
+                                  background: (!autoTargetLevel || autoTargetLevel <= currentLevel || autoTargetLevel > 25)
+                                    ? '#6b7280'
+                                    : 'linear-gradient(135deg, #10b981, #059669)',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  fontWeight: 600,
+                                  cursor: (!autoTargetLevel || autoTargetLevel <= currentLevel || autoTargetLevel > 25) ? 'not-allowed' : 'pointer',
+                                  opacity: (!autoTargetLevel || autoTargetLevel <= currentLevel || autoTargetLevel > 25) ? 0.5 : 1,
+                                }}
+                              >
+                                자동강화 시작
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <button className={styles.resetButton} onClick={resetSimulation} disabled={isAutoMode}>
                         초기화
                       </button>
                     </>
@@ -1268,7 +1485,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
         </div>
 
         {/* 통계 테이블 */}
-        {showStats && <RefiningStats defaultSuccession={isSuccessionMode} />}
+        {showStats && <RefiningStats />}
       </div>}
     </div>
   );

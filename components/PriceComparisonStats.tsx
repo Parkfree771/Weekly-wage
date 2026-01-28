@@ -9,7 +9,7 @@ type PriceEntry = {
   date?: string;
 };
 
-type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
+export type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
 // 비교 차트 데이터 타입 (계승 재료 ↔ 일반 재료)
 type ComparisonData = {
@@ -31,6 +31,7 @@ type PriceContextType = {
   activeReferenceLines: Set<ReferenceLineType>;
   toggleReferenceLine: (type: ReferenceLineType) => void;
   selectItemById: (itemId: string) => void;  // 아이템 ID로 선택
+  categoryColor: string;  // 카테고리 색상
 };
 
 export const PriceContext = createContext<PriceContextType>({
@@ -44,6 +45,7 @@ export const PriceContext = createContext<PriceContextType>({
   activeReferenceLines: new Set<ReferenceLineType>(),
   toggleReferenceLine: () => {},
   selectItemById: () => {},
+  categoryColor: '#10b981',
 });
 
 // 그리드 아이콘 SVG 컴포넌트
@@ -109,7 +111,7 @@ const formatPrice = (value: number, isAverage = false, noDecimal = false) => {
 };
 
 export default function PriceComparisonStats() {
-  const { filteredHistory, activeReferenceLines, toggleReferenceLine } = useContext(PriceContext);
+  const { filteredHistory, activeReferenceLines, toggleReferenceLine, categoryColor } = useContext(PriceContext);
 
   // 통계 계산 (필터링된 기간의 데이터만 사용)
   const stats = useMemo(() => {
@@ -140,103 +142,110 @@ export default function PriceComparisonStats() {
 
   if (!stats || filteredHistory.length === 0) return null;
 
-  // 가격 위치에 따른 색상 계산 (파란색 -> 보라색 -> 빨간색 그라데이션)
-  const getPositionColor = (position: number) => {
-    if (position <= 30) return '#3b82f6'; // 파란색 (저점)
-    if (position >= 70) return '#ef4444'; // 빨간색 (고점)
-    return '#8b5cf6'; // 보라색 (중간)
-  };
-
-  const positionColor = getPositionColor(stats.pricePosition);
+  // 점 색상은 카테고리 색상 사용
+  const dotColor = categoryColor;
 
   return (
     <>
       {/* 가격 비교 통계 - 데스크톱 */}
       <Card className="mt-3 d-none d-md-block" style={{ color: 'var(--text-primary)', maxWidth: '1400px', margin: '16px auto 0', overflow: 'hidden' }}>
-        <Card.Body className="p-3">
+        <Card.Body className="p-2">
           {/* 가격 위치 바 */}
-          <div style={{ marginBottom: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
+          <div style={{ marginBottom: '8px', position: 'relative' }}>
+            {/* 현재가 - 바 위에 점 따라다니기 */}
+            <div
+              onClick={() => toggleReferenceLine('current')}
+              style={{
+                position: 'absolute',
+                left: `${stats.pricePosition}%`,
+                transform: 'translateX(-50%)',
+                top: '0',
+                textAlign: 'center',
+                cursor: 'pointer',
+                padding: '2px 6px',
+                borderRadius: '6px',
+                backgroundColor: activeReferenceLines.has('current') ? `${dotColor}20` : 'var(--card-bg)',
+                border: activeReferenceLines.has('current') ? `1px solid ${dotColor}` : '1px solid var(--border-color)',
+                transition: 'all 0.2s ease',
+                zIndex: 10,
+                whiteSpace: 'nowrap',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
+              }}
+            >
+              <div style={{ fontSize: '0.85rem', color: dotColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
+            </div>
+
+            {/* 바 영역 */}
+            <div style={{ paddingTop: '32px' }}>
+              <div style={{
+                position: 'relative',
+                height: '10px',
+                borderRadius: '5px',
+                background: 'linear-gradient(to right, #3b82f6, #ef4444)',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: `${stats.pricePosition}%`,
+                  transform: 'translate(-50%, -50%)',
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  backgroundColor: dotColor,
+                  border: '3px solid var(--card-bg)',
+                  boxShadow: `0 0 0 2px ${dotColor}, 0 2px 8px ${dotColor}`
+                }} />
+              </div>
+            </div>
+
+            {/* 최저, 평균, 최고 - 바 밑에 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '6px' }}>
               <div
                 onClick={() => toggleReferenceLine('min')}
                 style={{
                   textAlign: 'left',
                   cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
                   backgroundColor: activeReferenceLines.has('min') ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
                   border: activeReferenceLines.has('min') ? '1px solid #3b82f6' : '1px solid transparent',
                   transition: 'all 0.2s ease'
                 }}
               >
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>최저</div>
-                <div style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
-              </div>
-              <div
-                onClick={() => toggleReferenceLine('current')}
-                style={{
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  backgroundColor: activeReferenceLines.has('current') ? `${positionColor}20` : 'transparent',
-                  border: activeReferenceLines.has('current') ? `1px solid ${positionColor}` : '1px solid transparent',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>현재</div>
-                <div style={{ fontSize: '1.1rem', color: positionColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
+                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>최저</div>
+                <div style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('avg')}
                 style={{
                   textAlign: 'center',
                   cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
                   backgroundColor: activeReferenceLines.has('avg') ? 'rgba(107, 114, 128, 0.15)' : 'transparent',
                   border: activeReferenceLines.has('avg') ? '1px solid #6b7280' : '1px solid transparent',
                   transition: 'all 0.2s ease'
                 }}
               >
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>평균</div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
+                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>평균</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('max')}
                 style={{
                   textAlign: 'right',
                   cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
                   backgroundColor: activeReferenceLines.has('max') ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
                   border: activeReferenceLines.has('max') ? '1px solid #ef4444' : '1px solid transparent',
                   transition: 'all 0.2s ease'
                 }}
               >
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '2px' }}>최고</div>
-                <div style={{ fontSize: '0.85rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
+                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>최고</div>
+                <div style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
               </div>
-            </div>
-            <div style={{
-              position: 'relative',
-              height: '8px',
-              borderRadius: '4px',
-              background: 'linear-gradient(to right, #3b82f6, #8b5cf6, #ef4444)',
-              opacity: 0.4
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: `${stats.pricePosition}%`,
-                transform: 'translate(-50%, -50%)',
-                width: '18px',
-                height: '18px',
-                borderRadius: '50%',
-                backgroundColor: positionColor,
-                border: '3px solid var(--card-bg)',
-                boxShadow: `0 0 0 2px ${positionColor}, 0 2px 8px ${positionColor}80`
-              }} />
             </div>
           </div>
 
@@ -244,25 +253,25 @@ export default function PriceComparisonStats() {
           <div style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: '24px',
-            padding: '8px 0',
+            gap: '20px',
+            padding: '6px 0',
             borderTop: '1px solid var(--border-color)'
           }}>
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginRight: '6px' }}>최저가 대비</span>
-              <span style={{ fontSize: '0.85rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginRight: '4px' }}>최저 대비</span>
+              <span style={{ fontSize: '0.8rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromMin >= 0 ? '+' : ''}{stats.changeFromMin.toFixed(1)}%
               </span>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginRight: '6px' }}>평균 대비</span>
-              <span style={{ fontSize: '0.85rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginRight: '4px' }}>평균 대비</span>
+              <span style={{ fontSize: '0.8rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromAvg >= 0 ? '+' : ''}{stats.changeFromAvg.toFixed(1)}%
               </span>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginRight: '6px' }}>최고가 대비</span>
-              <span style={{ fontSize: '0.85rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginRight: '4px' }}>최고 대비</span>
+              <span style={{ fontSize: '0.8rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromMax >= 0 ? '+' : ''}{stats.changeFromMax.toFixed(1)}%
               </span>
             </div>
@@ -274,88 +283,101 @@ export default function PriceComparisonStats() {
       <Card className="mt-2 d-md-none" style={{ color: 'var(--text-primary)', overflow: 'hidden' }}>
         <Card.Body className="p-2">
           {/* 가격 위치 바 - 모바일 */}
-          <div style={{ marginBottom: '10px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '6px' }}>
+          <div style={{ marginBottom: '6px', position: 'relative' }}>
+            {/* 현재가 - 바 위에 점 따라다니기 */}
+            <div
+              onClick={() => toggleReferenceLine('current')}
+              style={{
+                position: 'absolute',
+                left: `${stats.pricePosition}%`,
+                transform: 'translateX(-50%)',
+                top: '0',
+                textAlign: 'center',
+                cursor: 'pointer',
+                padding: '2px 5px',
+                borderRadius: '4px',
+                backgroundColor: activeReferenceLines.has('current') ? `${dotColor}20` : 'var(--card-bg)',
+                border: activeReferenceLines.has('current') ? `1px solid ${dotColor}` : '1px solid var(--border-color)',
+                transition: 'all 0.2s ease',
+                zIndex: 10,
+                whiteSpace: 'nowrap',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
+              }}
+            >
+              <div style={{ fontSize: '0.75rem', color: dotColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
+            </div>
+
+            {/* 바 영역 */}
+            <div style={{ paddingTop: '26px' }}>
+              <div style={{
+                position: 'relative',
+                height: '8px',
+                borderRadius: '4px',
+                background: 'linear-gradient(to right, #3b82f6, #ef4444)',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: `${stats.pricePosition}%`,
+                  transform: 'translate(-50%, -50%)',
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  backgroundColor: dotColor,
+                  border: '2px solid var(--card-bg)',
+                  boxShadow: `0 0 0 2px ${dotColor}, 0 2px 6px ${dotColor}`
+                }} />
+              </div>
+            </div>
+
+            {/* 최저, 평균, 최고 - 바 밑에 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '4px' }}>
               <div
                 onClick={() => toggleReferenceLine('min')}
                 style={{
                   textAlign: 'left',
                   cursor: 'pointer',
-                  padding: '3px 6px',
-                  borderRadius: '4px',
+                  padding: '2px 4px',
+                  borderRadius: '3px',
                   backgroundColor: activeReferenceLines.has('min') ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
                   border: activeReferenceLines.has('min') ? '1px solid #3b82f6' : '1px solid transparent',
                   transition: 'all 0.2s ease'
                 }}
               >
-                <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>최저</div>
-                <div style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
-              </div>
-              <div
-                onClick={() => toggleReferenceLine('current')}
-                style={{
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  padding: '3px 6px',
-                  borderRadius: '4px',
-                  backgroundColor: activeReferenceLines.has('current') ? `${positionColor}20` : 'transparent',
-                  border: activeReferenceLines.has('current') ? `1px solid ${positionColor}` : '1px solid transparent',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>현재</div>
-                <div style={{ fontSize: '0.95rem', color: positionColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
+                <div style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>최저</div>
+                <div style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('avg')}
                 style={{
                   textAlign: 'center',
                   cursor: 'pointer',
-                  padding: '3px 6px',
-                  borderRadius: '4px',
+                  padding: '2px 4px',
+                  borderRadius: '3px',
                   backgroundColor: activeReferenceLines.has('avg') ? 'rgba(107, 114, 128, 0.15)' : 'transparent',
                   border: activeReferenceLines.has('avg') ? '1px solid #6b7280' : '1px solid transparent',
                   transition: 'all 0.2s ease'
                 }}
               >
-                <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>평균</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
+                <div style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>평균</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('max')}
                 style={{
                   textAlign: 'right',
                   cursor: 'pointer',
-                  padding: '3px 6px',
-                  borderRadius: '4px',
+                  padding: '2px 4px',
+                  borderRadius: '3px',
                   backgroundColor: activeReferenceLines.has('max') ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
                   border: activeReferenceLines.has('max') ? '1px solid #ef4444' : '1px solid transparent',
                   transition: 'all 0.2s ease'
                 }}
               >
-                <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>최고</div>
-                <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
+                <div style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>최고</div>
+                <div style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
               </div>
-            </div>
-            <div style={{
-              position: 'relative',
-              height: '6px',
-              borderRadius: '3px',
-              background: 'linear-gradient(to right, #3b82f6, #8b5cf6, #ef4444)',
-              opacity: 0.4
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: `${stats.pricePosition}%`,
-                transform: 'translate(-50%, -50%)',
-                width: '14px',
-                height: '14px',
-                borderRadius: '50%',
-                backgroundColor: positionColor,
-                border: '2px solid var(--card-bg)',
-                boxShadow: `0 0 0 2px ${positionColor}, 0 2px 6px ${positionColor}80`
-              }} />
             </div>
           </div>
 
@@ -363,26 +385,26 @@ export default function PriceComparisonStats() {
           <div style={{
             display: 'flex',
             justifyContent: 'space-around',
-            padding: '6px 0',
+            padding: '4px 0',
             borderTop: '1px solid var(--border-color)'
           }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginBottom: '2px' }}>최저 대비</div>
-              <div style={{ fontSize: '0.8rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span style={{ fontSize: '0.5rem', color: 'var(--text-muted)', marginRight: '2px' }}>최저</span>
+              <span style={{ fontSize: '0.7rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromMin >= 0 ? '+' : ''}{stats.changeFromMin.toFixed(1)}%
-              </div>
+              </span>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginBottom: '2px' }}>평균 대비</div>
-              <div style={{ fontSize: '0.8rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span style={{ fontSize: '0.5rem', color: 'var(--text-muted)', marginRight: '2px' }}>평균</span>
+              <span style={{ fontSize: '0.7rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromAvg >= 0 ? '+' : ''}{stats.changeFromAvg.toFixed(1)}%
-              </div>
+              </span>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginBottom: '2px' }}>최고 대비</div>
-              <div style={{ fontSize: '0.8rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span style={{ fontSize: '0.5rem', color: 'var(--text-muted)', marginRight: '2px' }}>최고</span>
+              <span style={{ fontSize: '0.7rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromMax >= 0 ? '+' : ''}{stats.changeFromMax.toFixed(1)}%
-              </div>
+              </span>
             </div>
           </div>
         </Card.Body>
