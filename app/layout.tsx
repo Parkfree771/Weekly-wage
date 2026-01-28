@@ -27,38 +27,33 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://lostarkweeklygold.kr'),
   title: {
-    // 1. %s는 나중에 다른 페이지(재련 등) 만들 때 그 페이지 제목이 들어갈 자리입니다.
-    template: '%s | 로스트아크 골드 계산기',
-    // 2. 메인 페이지(홈)에서 보여질 '진짜 제목'입니다. (세르카 강조!)
-    default: "세르카 보상 & 골드 | 로아 주간 골드 계산 | 재련 비용",
+    template: '%s | 로골로골',
+    default: "로아 시세 | 로아 거래소 가격 | 로아 아이템 시세 차트 | 로골로골",
   },
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
     apple: '/apple-icon.png',
   },
-  // 3. 설명도 '세르카'로 시작하게 변경
-  description: "세르카(1710) 레이드 보상과 더보기 효율 완벽 정리. 원정대 주간 골드 수익과 T4 재련 비용, 실시간 아이템 시세를 한눈에 계산해 드립니다. 카제로스 종막, 4막, 3막 포함.",
+  description: "로아 시세 확인은 로골로골! 로아 거래소 실시간 가격과 로아 과거 시세 차트를 한눈에. 로아 재련 재료, 로아 각인서, 로아 보석 등 모든 로아 아이템 가격 변동을 확인하세요.",
 
-  // 4. 키워드 순서 변경 (세르카 맨 앞)
-  keywords: "세르카 보상, 세르카 골드, 세르카 더보기, 세르카 효율, 로스트아크, 로아, 골드계산기, 원정대주급, 더보기손익, 레이드수익, 거래소가격, T4 재련, 재련 계산기, 종막, 카제로스",
+  keywords: "로아 시세, 로아 거래소, 로아 가격, 로아 아이템 시세, 로아 경매장, 로아 과거 시세, 로아 시세 차트, 로아 재련 재료 시세, 로아 각인서 시세, 로아 보석 시세, 로스트아크 시세, 로스트아크 거래소, 로스트아크 가격, 로골로골",
 
-  authors: [{ name: "로스트아크 골드 계산기" }],
-  creator: "로스트아크 골드 계산기",
-  publisher: "로스트아크 골드 계산기",
+  authors: [{ name: "로골로골" }],
+  creator: "로골로골",
+  publisher: "로골로골",
 
-  // 5. 카톡 공유(OpenGraph) 제목 변경
   openGraph: {
-    title: "세르카 보상 & 골드 효율 계산기",
-    description: "세르카(1710) 포함 내 캐릭터들의 주간 레이드 수익과 더보기 효율을 즉시 확인하세요.",
+    title: "로아 시세 | 로아 거래소 가격 차트 | 로골로골",
+    description: "로아 시세 확인은 로골로골! 로아 거래소 실시간 가격, 로아 과거 시세 차트, 로아 재련 재료, 로아 각인서 시세까지.",
     url: "https://lostarkweeklygold.kr",
-    siteName: "로아 주간 골드 계산",
+    siteName: "로골로골",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "세르카 보상 및 골드 계산기 미리보기"
+        alt: "로골로골 - 로아 시세 로아 거래소 가격 차트"
       }
     ],
     locale: "ko_KR",
@@ -66,8 +61,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "세르카 보상 & 주간 골드 계산기",
-    description: "세르카 포함 원정대 주간 골드 수익 및 아이템 시세 확인",
+    title: "로아 시세 | 로아 거래소 가격 | 로골로골",
+    description: "로아 시세, 로아 거래소 가격, 로아 과거 시세 차트 확인",
     images: ["/og-image.png"],
   },
   robots: {
@@ -84,7 +79,7 @@ export const metadata: Metadata = {
   verification: {
     google: "tmTEi92jQrmP3wwpDaxW36nEO4kq6UAWtXLa7FdqOkw",
     other: {
-      "naver-site-verification": "6873351e8c76eb0a0ac7c6d9647b5e8431bec76e", // 네이버 코드 적용됨
+      "naver-site-verification": "6873351e8c76eb0a0ac7c6d9647b5e8431bec76e",
     },
   },
 };
@@ -130,9 +125,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebSite",
-            "name": "로아 주간 골드 계산",
+            "name": "로골로골 - 로아 시세",
             "url": "https://lostarkweeklygold.kr",
-            "description": "로스트아크 원정대 주간 골드 수익을 계산하고 세르카 레이드 골드 효율, 세르카 더보기 보상의 손익을 실시간 거래소 가격으로 분석하는 필수 도구. 세르카 클리어 골드 계산, 카제로스 레이드(종막, 4막, 3막, 2막, 1막), 그림자 레이드(세르카, 고통의 마녀) 지원",
+            "description": "로아 시세 확인은 로골로골! 로아 거래소 실시간 가격, 로아 과거 시세 차트, 로아 재련 재료 시세, 로아 각인서 시세, 로아 보석 시세를 한눈에 확인하세요.",
             "potentialAction": {
               "@type": "SearchAction",
               "target": "https://lostarkweeklygold.kr/weekly-gold?search={search_term_string}",

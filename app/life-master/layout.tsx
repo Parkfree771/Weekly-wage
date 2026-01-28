@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '생활의 달인 효율 계산기 | 상급 아비도스 융화재료 제작',
-  description: '로스트아크 생활의 달인 효율 계산기. 상급 아비도스 융화재료 제작 효율, 생활의 가루 수익, 벌목 목재(부드러운 목재, 아비도스 목재) 채집 효율을 실시간 시세로 계산합니다.',
-  keywords: '생활의 달인, 상급 아비도스 융화재료, 아비도스 융화재료 제작, 생활의 가루, 벌목, 목재, 부드러운 목재, 아비도스 목재, 로스트아크 생활, 채집 효율, 제작 효율',
+  title: '로아 벌목 계산기 | 로아 생활 효율 | 로아 융화재료 제작 | 로골로골',
+  description: '로아 벌목 효율 계산기! 로아 생활 콘텐츠 효율, 로아 융화재료 제작 손익, 로아 생활의 가루 수익을 실시간 거래소 시세로 계산하세요. 로아 목재 시세도 확인 가능.',
+  keywords: '로아 벌목, 로아 벌목 효율, 로아 벌목 계산기, 로아 생활, 로아 생활 효율, 로아 융화재료, 로아 융화재료 제작, 로아 생활의 가루, 로아 목재 시세, 로스트아크 벌목, 아비도스 융화재료, 로골로골',
   openGraph: {
-    title: '생활의 달인 효율 계산기 | 상급 아비도스 융화재료',
-    description: '상급 아비도스 융화재료 제작 효율, 생활의 가루 수익을 실시간 시세로 계산하세요.',
+    title: '로아 벌목 계산기 | 로아 생활 효율 | 로골로골',
+    description: '로아 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익을 실시간 시세로 계산하세요.',
     url: 'https://lostarkweeklygold.kr/life-master',
-    siteName: '로아 주간 골드 계산',
+    siteName: '로골로골',
     images: [
       {
         url: '/og-image.png',
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '생활의 달인 효율 계산기 | 상급 아비도스 융화재료',
-    description: '상급 아비도스 융화재료 제작 효율, 생활의 가루 수익 계산',
+    title: '로아 벌목 계산기 | 로아 생활 효율 | 로골로골',
+    description: '로아 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익 계산',
     images: ['/og-image.png'],
   },
 };
@@ -43,9 +43,9 @@ export default function LifeMasterLayout({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            "name": "로스트아크 생활의 달인 효율 계산기",
+            "name": "로아 벌목 계산기 - 로골로골",
             "url": "https://lostarkweeklygold.kr/life-master",
-            "description": "로스트아크 생활 콘텐츠 효율을 계산하고 아비도스 융화재료 제작 손익을 실시간 거래소 가격으로 분석하는 도구",
+            "description": "로아 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익을 실시간 거래소 가격으로 분석",
             "applicationCategory": "GameApplication",
             "operatingSystem": "Any",
             "offers": {
@@ -54,10 +54,10 @@ export default function LifeMasterLayout({
               "priceCurrency": "KRW"
             },
             "featureList": [
-              "상급 아비도스 융화재료 제작 효율 계산",
-              "생활의 가루 수익 분석",
-              "실시간 거래소 가격 반영",
-              "벌목, 채광, 낚시, 수렵, 고고학 효율 비교"
+              "로아 벌목 효율 계산",
+              "로아 융화재료 제작 손익 분석",
+              "로아 거래소 실시간 가격 반영",
+              "로아 생활 콘텐츠 효율 비교"
             ]
           })
         }}
@@ -72,34 +72,34 @@ export default function LifeMasterLayout({
             "mainEntity": [
               {
                 "@type": "Question",
-                "name": "아비도스 융화재료 제작이 이득인가요?",
+                "name": "로아 벌목 효율은 어떻게 계산하나요?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "생활 재료 시세와 융화재료 시세에 따라 다릅니다. 본 계산기에서 실시간 시세를 반영하여 제작 손익을 확인할 수 있습니다. 일반적으로 생활 레벨이 높을수록 효율이 좋습니다."
+                  "text": "로아 벌목 효율은 로아 목재 시세와 로아 융화재료 시세를 기준으로 계산됩니다. 로골로골에서 로아 벌목 손익을 실시간으로 확인하세요."
                 }
               },
               {
                 "@type": "Question",
-                "name": "극한 합성과 일반 합성 중 뭐가 나은가요?",
+                "name": "로아 융화재료 제작이 이득인가요?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "극한 합성은 더 많은 골드가 들지만 더 많은 융화재료를 얻습니다. 시세에 따라 효율이 달라지므로 계산기에서 두 방식의 손익을 비교해보세요."
+                  "text": "로아 융화재료 제작은 로아 생활 재료 시세에 따라 달라집니다. 로아 벌목 계산기에서 실시간 손익을 확인하고 효율적으로 제작하세요."
                 }
               },
               {
                 "@type": "Question",
-                "name": "생활의 가루는 어디에 사용하나요?",
+                "name": "로아 생활의 가루는 어디에 사용하나요?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "생활의 가루는 융화재료 제작에 필요한 재료입니다. 생활 콘텐츠를 하면서 자연스럽게 획득되며, 부족하면 거래소에서 구매할 수 있습니다."
+                  "text": "로아 생활의 가루는 로아 융화재료 제작에 필요합니다. 로아 생활 콘텐츠에서 획득하거나 로아 거래소에서 구매할 수 있습니다."
                 }
               },
               {
                 "@type": "Question",
-                "name": "어떤 생활 콘텐츠가 가장 효율적인가요?",
+                "name": "로아 생활 중 어떤 콘텐츠가 가장 효율적인가요?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "시세에 따라 달라집니다. 일반적으로 고고학이 가장 효율이 좋지만, 벌목이나 채광도 시세에 따라 효율적일 수 있습니다. 계산기에서 각 콘텐츠별 효율을 비교해보세요."
+                  "text": "로아 생활 효율은 시세에 따라 달라집니다. 로아 벌목, 로아 채광, 로아 고고학 등 각 콘텐츠별 효율을 로골로골에서 비교해보세요."
                 }
               }
             ]
