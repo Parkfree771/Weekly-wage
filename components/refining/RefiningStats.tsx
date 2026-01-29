@@ -13,43 +13,12 @@ import {
 } from 'recharts';
 import styles from './RefiningStats.module.css';
 import {
-  getSimulationRecords,
-  SimulationRecord,
+  getRefiningStatsSummary,
+  getRefiningStatsSummaryAll,
+  RefiningStatsSummary,
   getTotalSimulationCount,
 } from '../../lib/supabase';
 import { MATERIAL_IDS, MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
-
-// 히스토그램 데이터 생성 (10% 구간)
-const generateHistogramData = (janginValues: number[]) => {
-  const bins = [
-    { range: '0-10', min: 0, max: 10, count: 0 },
-    { range: '10-20', min: 10, max: 20, count: 0 },
-    { range: '20-30', min: 20, max: 30, count: 0 },
-    { range: '30-40', min: 30, max: 40, count: 0 },
-    { range: '40-50', min: 40, max: 50, count: 0 },
-    { range: '50-60', min: 50, max: 60, count: 0 },
-    { range: '60-70', min: 60, max: 70, count: 0 },
-    { range: '70-80', min: 70, max: 80, count: 0 },
-    { range: '80-90', min: 80, max: 90, count: 0 },
-    { range: '90-100', min: 90, max: 100.01, count: 0 },
-  ];
-
-  for (const value of janginValues) {
-    for (const bin of bins) {
-      if (value >= bin.min && value < bin.max) {
-        bin.count++;
-        break;
-      }
-    }
-  }
-
-  const total = janginValues.length;
-  return bins.map(bin => ({
-    range: bin.range,
-    count: bin.count,
-    percent: Math.round((bin.count / total) * 1000) / 10,
-  }));
-};
 
 // 숨결 아이템 ID
 const BREATH_IDS = {
@@ -64,8 +33,7 @@ export default function RefiningStats() {
   const [equipmentType, setEquipmentType] = useState<'weapon' | 'armor'>('weapon');
   const [breathType, setBreathType] = useState<BreathType>('full');
   const [selectedLevel, setSelectedLevel] = useState<number | null>(20);
-  const [records, setRecords] = useState<SimulationRecord[]>([]);
-  const [allRecords, setAllRecords] = useState<SimulationRecord[]>([]);
+  const [summaryData, setSummaryData] = useState<RefiningStatsSummary | null>(null);
 
   // 공통 상태
   const [loading, setLoading] = useState(false);
@@ -113,87 +81,48 @@ export default function RefiningStats() {
     fetchTotalCount();
   }, []);
 
-  // 레벨별 숨결 최대 개수 (계승 후 기준)
-  const getMaxBreathForLevel = (level: number): number => {
-    // 계승 후 확률 기준
-    // 11-12: 5% → max 20
-    // 13-15: 4% → max 20
-    // 16-18: 3% → max 25 (수정됨)
-    // 19-20: 1.5% → max 25
-    // 21-22: 1% → max 25
-    // 23-24: 0.5% → max 50
-    if (level >= 23) return 50;
-    if (level >= 16) return 25;  // 16-18도 25개
-    return 20;
-  };
-
-  // 숨결 타입에 따른 필터링 함수
-  const filterByBreathType = (data: SimulationRecord[], type: BreathType, level: number): SimulationRecord[] => {
-    if (type === 'all') return data;
-
-    const maxBreath = getMaxBreathForLevel(level);
-
-    return data.filter(record => {
-      const breath = equipmentType === 'weapon'
-        ? (record.lava_breath || 0)
-        : (record.glacier_breath || 0);
-      const breathPerAttempt = record.attempts > 0 ? breath / record.attempts : 0;
-
-      switch (type) {
-        case 'full':
-          return breathPerAttempt === maxBreath; // 100%
-        case 'partial':
-          return breathPerAttempt > 0 && breathPerAttempt < maxBreath; // 0% ~ 100% 사이
-        case 'none':
-          return breathPerAttempt === 0; // 0%
-        default:
-          return true;
+  // 집계 데이터 로드 함수
+  const loadSummaryData = async (
+    eqType: 'weapon' | 'armor',
+    bType: BreathType,
+    level: number
+  ) => {
+    setLoading(true);
+    try {
+      let data: RefiningStatsSummary | null;
+      if (bType === 'all') {
+        data = await getRefiningStatsSummaryAll(eqType, level);
+      } else {
+        data = await getRefiningStatsSummary(eqType, bType, level);
       }
-    });
+      setSummaryData(data);
+    } catch (error) {
+      console.error('Failed to load summary data:', error);
+      setSummaryData(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 초기 데이터 로드
   useEffect(() => {
-    const loadInitialData = async () => {
-      if (initialLoad) {
-        setLoading(true);
-        const data = await getSimulationRecords(true, 'weapon', true, 20);
-        setAllRecords(data);
-        setRecords(filterByBreathType(data, breathType, 20));
-        setLoading(false);
-        setInitialLoad(false);
-      }
-    };
-    loadInitialData();
+    if (initialLoad) {
+      loadSummaryData('weapon', 'full', 20);
+      setInitialLoad(false);
+    }
   }, [initialLoad]);
 
-  // breathType 변경 시 데이터 재조회 또는 필터링
+  // breathType 또는 equipmentType 변경 시 데이터 재조회
   useEffect(() => {
-    if (selectedLevel === null) return;
-
-    const refetchData = async () => {
-      setLoading(true);
-
-      if (breathType === 'none') {
-        const data = await getSimulationRecords(true, equipmentType, false, selectedLevel);
-        setAllRecords(data);
-        setRecords(data);
-      } else {
-        const data = await getSimulationRecords(true, equipmentType, true, selectedLevel);
-        setAllRecords(data);
-        setRecords(filterByBreathType(data, breathType, selectedLevel));
-      }
-      setLoading(false);
-    };
-
-    refetchData();
+    if (selectedLevel === null || initialLoad) return;
+    loadSummaryData(equipmentType, breathType, selectedLevel);
   }, [breathType, equipmentType, selectedLevel]);
 
   // 장비 타입 변경 시 초기화
   useEffect(() => {
     if (!initialLoad) {
       setSelectedLevel(null);
-      setRecords([]);
+      setSummaryData(null);
     }
   }, [equipmentType, initialLoad]);
 
@@ -201,124 +130,100 @@ export default function RefiningStats() {
   const handleLevelClick = async (level: number) => {
     if (selectedLevel === level) {
       setSelectedLevel(null);
-      setRecords([]);
-      setAllRecords([]);
+      setSummaryData(null);
       return;
     }
 
     setSelectedLevel(level);
-    setLoading(true);
-
-    if (breathType === 'none') {
-      const data = await getSimulationRecords(true, equipmentType, false, level);
-      setAllRecords(data);
-      setRecords(data);
-    } else {
-      const data = await getSimulationRecords(true, equipmentType, true, level);
-      setAllRecords(data);
-      setRecords(filterByBreathType(data, breathType, level));
-    }
-    setLoading(false);
+    loadSummaryData(equipmentType, breathType, level);
   };
 
-  // 총 비용 계산 함수 (계승 후 고정)
-  const calculateTotalCost = (record: SimulationRecord): number => {
-    let totalCost = record.gold || 0;
+  // 총 비용 계산 함수 (집계 데이터 기반)
+  const calculateTotalCost = (data: RefiningStatsSummary): number => {
+    let totalCost = data.median_gold || 0;
 
     const stoneId = equipmentType === 'weapon'
       ? MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL
       : MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL;
     const stoneAmount = equipmentType === 'weapon'
-      ? record.destruction_crystal || 0
-      : record.guardian_crystal || 0;
+      ? data.median_destruction_crystal || 0
+      : data.median_guardian_crystal || 0;
 
     totalCost += stoneAmount * (marketPrices[stoneId] || 0);
-    totalCost += (record.great_breakthrough || 0) * (marketPrices[MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE] || 0);
-    totalCost += (record.advanced_abidos || 0) * (marketPrices[MATERIAL_IDS.ADVANCED_ABIDOS_FUSION] || 0);
-    totalCost += (record.fate_fragment || 0) * (marketPrices[MATERIAL_IDS.FATE_FRAGMENT] || 0);
+    totalCost += (data.median_great_breakthrough || 0) * (marketPrices[MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE] || 0);
+    totalCost += (data.median_advanced_abidos || 0) * (marketPrices[MATERIAL_IDS.ADVANCED_ABIDOS_FUSION] || 0);
+    totalCost += (data.median_fate_fragment || 0) * (marketPrices[MATERIAL_IDS.FATE_FRAGMENT] || 0);
 
-    // 숨결 비용은 레코드에 데이터가 있으면 항상 포함
+    // 숨결 비용
     const breathId = equipmentType === 'weapon' ? BREATH_IDS.LAVA : BREATH_IDS.GLACIER;
     const breathAmount = equipmentType === 'weapon'
-      ? record.lava_breath || 0
-      : record.glacier_breath || 0;
+      ? data.median_lava_breath || 0
+      : data.median_glacier_breath || 0;
     totalCost += breathAmount * (marketPrices[breathId] || 0);
 
     return Math.round(totalCost);
   };
 
-  // 일반 재련 통계 계산 (장인의 기운 중심)
+  // 집계 데이터를 화면에 표시할 형태로 변환
   const stats = useMemo(() => {
-    if (records.length === 0) return null;
+    if (!summaryData) return null;
 
-    const janginValues = records
-      .map(r => r.final_jangin)
-      .filter((v): v is number => v != null)
-      .sort((a, b) => a - b);
+    const totalCount = summaryData.total_count;
+    if (totalCount === 0) return null;
 
-    if (janginValues.length === 0) return null;
+    // 히스토그램 데이터 생성
+    const histData = [
+      { range: '0-10', count: summaryData.hist_0_10 },
+      { range: '10-20', count: summaryData.hist_10_20 },
+      { range: '20-30', count: summaryData.hist_20_30 },
+      { range: '30-40', count: summaryData.hist_30_40 },
+      { range: '40-50', count: summaryData.hist_40_50 },
+      { range: '50-60', count: summaryData.hist_50_60 },
+      { range: '60-70', count: summaryData.hist_60_70 },
+      { range: '70-80', count: summaryData.hist_70_80 },
+      { range: '80-90', count: summaryData.hist_80_90 },
+      { range: '90-100', count: summaryData.hist_90_100 },
+    ];
 
-    const n = janginValues.length;
-    const sum = janginValues.reduce((a, b) => a + b, 0);
-    const mean = sum / n;
-    const min = janginValues[0];
-    const max = janginValues[n - 1];
-
-    // 표준편차 계산
-    const squaredDiffs = janginValues.map(v => Math.pow(v - mean, 2));
-    const variance = squaredDiffs.reduce((a, b) => a + b, 0) / n;
-    const stdDev = Math.sqrt(variance);
-
-    // 백분위수 계산
-    const getPercentile = (p: number) => {
-      const index = Math.ceil((p / 100) * n) - 1;
-      return janginValues[Math.max(0, Math.min(index, n - 1))];
-    };
-
-    // 중앙값(p50)에 해당하는 레코드 찾기
-    const sortedByJangin = [...records]
-      .filter(r => r.final_jangin != null)
-      .sort((a, b) => (a.final_jangin || 0) - (b.final_jangin || 0));
-    const medianIndex = Math.floor(sortedByJangin.length / 2);
-    const medianRecord = sortedByJangin[medianIndex];
+    const chartData = histData.map(bin => ({
+      range: bin.range,
+      count: bin.count,
+      percent: Math.round((bin.count / totalCount) * 1000) / 10,
+    }));
 
     // 중앙값 기준 재료 소모량
     const medianMaterials = {
-      attempts: medianRecord?.attempts || 0,
-      destructionStone: medianRecord?.destruction_stone || 0,
-      guardianStone: medianRecord?.guardian_stone || 0,
-      destructionCrystal: medianRecord?.destruction_crystal || 0,
-      guardianCrystal: medianRecord?.guardian_crystal || 0,
-      breakthroughStone: medianRecord?.breakthrough_stone || 0,
-      greatBreakthrough: medianRecord?.great_breakthrough || 0,
-      abidos: medianRecord?.abidos || 0,
-      advancedAbidos: medianRecord?.advanced_abidos || 0,
-      fateFragment: medianRecord?.fate_fragment || 0,
-      gold: medianRecord?.gold || 0,
-      lavaBreath: medianRecord?.lava_breath || 0,
-      glacierBreath: medianRecord?.glacier_breath || 0,
+      attempts: summaryData.median_attempts || 0,
+      destructionStone: 0,
+      guardianStone: 0,
+      destructionCrystal: summaryData.median_destruction_crystal || 0,
+      guardianCrystal: summaryData.median_guardian_crystal || 0,
+      breakthroughStone: 0,
+      greatBreakthrough: summaryData.median_great_breakthrough || 0,
+      abidos: 0,
+      advancedAbidos: summaryData.median_advanced_abidos || 0,
+      fateFragment: summaryData.median_fate_fragment || 0,
+      gold: summaryData.median_gold || 0,
+      lavaBreath: summaryData.median_lava_breath || 0,
+      glacierBreath: summaryData.median_glacier_breath || 0,
     };
-
-    // 히스토그램 차트 데이터 생성
-    const chartData = generateHistogramData(janginValues);
 
     return {
       jangin: {
-        mean: Math.round(mean * 10) / 10,
-        min: Math.round(min * 10) / 10,
-        max: Math.round(max * 10) / 10,
-        stdDev: Math.round(stdDev * 10) / 10,
-        p25: Math.round(getPercentile(25) * 10) / 10,
-        p50: Math.round(getPercentile(50) * 10) / 10,
-        p75: Math.round(getPercentile(75) * 10) / 10,
-        count: n,
+        mean: Number(summaryData.jangin_avg) || 0,
+        min: Number(summaryData.jangin_min) || 0,
+        max: Number(summaryData.jangin_max) || 0,
+        stdDev: Number(summaryData.jangin_stddev) || 0,
+        p25: Number(summaryData.jangin_p25) || 0,
+        p50: Number(summaryData.jangin_p50) || 0,
+        p75: Number(summaryData.jangin_p75) || 0,
+        count: totalCount,
       },
       chartData,
       materials: medianMaterials,
-      medianRecord,
-      totalRecords: records.length,
+      totalRecords: totalCount,
     };
-  }, [records]);
+  }, [summaryData]);
 
   return (
     <div className={styles.statsContainer}>
@@ -577,11 +482,11 @@ export default function RefiningStats() {
                       <span className={styles.materialValue}>{stats.materials.gold.toLocaleString()}</span>
                     </div>
                   </div>
-                  {stats.medianRecord && (
+                  {summaryData && (
                     <div className={styles.totalCostSection}>
                       <span className={styles.totalCostLabel}>예상 총비용</span>
                       <span className={styles.totalCostValue}>
-                        {calculateTotalCost(stats.medianRecord).toLocaleString()}G
+                        {calculateTotalCost(summaryData).toLocaleString()}G
                       </span>
                     </div>
                   )}
@@ -590,7 +495,7 @@ export default function RefiningStats() {
             )}
 
             {/* 통계 부족 메시지 */}
-            {selectedLevel !== null && records.length > 0 && stats && stats.jangin.count < 100 && !loading && (
+            {selectedLevel !== null && summaryData && stats && stats.jangin.count < 100 && !loading && (
               <div className={styles.insufficientData}>
                 <span className={styles.insufficientText}>
                   통계 부족 ({stats?.jangin.count || 0}/100)
@@ -607,7 +512,7 @@ export default function RefiningStats() {
             {selectedLevel !== null && loading && (
               <div className={styles.loadingState}>로딩 중...</div>
             )}
-            {selectedLevel !== null && !loading && records.length === 0 && (
+            {selectedLevel !== null && !loading && !summaryData && (
               <div className={styles.emptyState}>해당 조건의 기록이 없습니다</div>
             )}
       </div>

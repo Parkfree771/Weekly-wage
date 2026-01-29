@@ -348,6 +348,150 @@ export async function getTotalSimulationCount(): Promise<number> {
   }
 }
 
+// ============================================
+// 집계 테이블 기반 통계 조회 (egress 최적화)
+// ============================================
+
+export interface RefiningStatsSummary {
+  total_count: number;
+  jangin_avg: number;
+  jangin_min: number;
+  jangin_max: number;
+  jangin_stddev: number | null;
+  jangin_p25: number;
+  jangin_p50: number;
+  jangin_p75: number;
+  // 히스토그램
+  hist_0_10: number;
+  hist_10_20: number;
+  hist_20_30: number;
+  hist_30_40: number;
+  hist_40_50: number;
+  hist_50_60: number;
+  hist_60_70: number;
+  hist_70_80: number;
+  hist_80_90: number;
+  hist_90_100: number;
+  // 중앙값 재료
+  median_attempts: number;
+  median_destruction_crystal: number;
+  median_guardian_crystal: number;
+  median_great_breakthrough: number;
+  median_advanced_abidos: number;
+  median_fate_fragment: number;
+  median_gold: number;
+  median_lava_breath: number;
+  median_glacier_breath: number;
+}
+
+// 집계 테이블에서 통계 조회 (단일 breath_type)
+export async function getRefiningStatsSummary(
+  equipmentType: 'weapon' | 'armor',
+  breathType: 'full' | 'partial' | 'none',
+  fromLevel: number
+): Promise<RefiningStatsSummary | null> {
+  try {
+    const equipmentName = equipmentType === 'weapon' ? '전율 무기' : '전율 방어구';
+
+    const { data, error } = await supabase
+      .from('refining_stats_summary')
+      .select('*')
+      .eq('equipment_name', equipmentName)
+      .eq('is_succession', true)
+      .eq('breath_type', breathType)
+      .eq('from_level', fromLevel)
+      .single();
+
+    if (error || !data) {
+      console.log('No stats found for:', { equipmentName, breathType, fromLevel });
+      return null;
+    }
+
+    return data as RefiningStatsSummary;
+  } catch (err) {
+    console.error('Error fetching refining stats summary:', err);
+    return null;
+  }
+}
+
+// 집계 테이블에서 전체(all) 통계 조회 - full + partial + none 합산
+export async function getRefiningStatsSummaryAll(
+  equipmentType: 'weapon' | 'armor',
+  fromLevel: number
+): Promise<RefiningStatsSummary | null> {
+  try {
+    const equipmentName = equipmentType === 'weapon' ? '전율 무기' : '전율 방어구';
+
+    const { data, error } = await supabase
+      .from('refining_stats_summary')
+      .select('*')
+      .eq('equipment_name', equipmentName)
+      .eq('is_succession', true)
+      .eq('from_level', fromLevel);
+
+    if (error || !data || data.length === 0) {
+      return null;
+    }
+
+    // 여러 breath_type 합산
+    const totalCount = data.reduce((sum, d) => sum + (d.total_count || 0), 0);
+    if (totalCount === 0) return null;
+
+    // 가중 평균 계산
+    const weightedAvg = data.reduce((sum, d) => sum + (d.jangin_avg || 0) * (d.total_count || 0), 0) / totalCount;
+
+    // min/max
+    const allMins = data.map(d => d.jangin_min).filter(v => v != null);
+    const allMaxs = data.map(d => d.jangin_max).filter(v => v != null);
+
+    // 히스토그램 합산
+    const histSum = {
+      hist_0_10: data.reduce((sum, d) => sum + (d.hist_0_10 || 0), 0),
+      hist_10_20: data.reduce((sum, d) => sum + (d.hist_10_20 || 0), 0),
+      hist_20_30: data.reduce((sum, d) => sum + (d.hist_20_30 || 0), 0),
+      hist_30_40: data.reduce((sum, d) => sum + (d.hist_30_40 || 0), 0),
+      hist_40_50: data.reduce((sum, d) => sum + (d.hist_40_50 || 0), 0),
+      hist_50_60: data.reduce((sum, d) => sum + (d.hist_50_60 || 0), 0),
+      hist_60_70: data.reduce((sum, d) => sum + (d.hist_60_70 || 0), 0),
+      hist_70_80: data.reduce((sum, d) => sum + (d.hist_70_80 || 0), 0),
+      hist_80_90: data.reduce((sum, d) => sum + (d.hist_80_90 || 0), 0),
+      hist_90_100: data.reduce((sum, d) => sum + (d.hist_90_100 || 0), 0),
+    };
+
+    // 가중 백분위수 (가장 많은 데이터를 가진 breath_type 기준)
+    const maxCountData = data.reduce((max, d) => (d.total_count > max.total_count ? d : max), data[0]);
+
+    // 가중 중앙값 재료 (count 기준 가중 평균)
+    const medianMaterials = {
+      median_attempts: Math.round(data.reduce((sum, d) => sum + (d.median_attempts || 0) * (d.total_count || 0), 0) / totalCount),
+      median_destruction_crystal: Math.round(data.reduce((sum, d) => sum + (d.median_destruction_crystal || 0) * (d.total_count || 0), 0) / totalCount),
+      median_guardian_crystal: Math.round(data.reduce((sum, d) => sum + (d.median_guardian_crystal || 0) * (d.total_count || 0), 0) / totalCount),
+      median_great_breakthrough: Math.round(data.reduce((sum, d) => sum + (d.median_great_breakthrough || 0) * (d.total_count || 0), 0) / totalCount),
+      median_advanced_abidos: Math.round(data.reduce((sum, d) => sum + (d.median_advanced_abidos || 0) * (d.total_count || 0), 0) / totalCount),
+      median_fate_fragment: Math.round(data.reduce((sum, d) => sum + (d.median_fate_fragment || 0) * (d.total_count || 0), 0) / totalCount),
+      median_gold: Math.round(data.reduce((sum, d) => sum + (d.median_gold || 0) * (d.total_count || 0), 0) / totalCount),
+      median_lava_breath: Math.round(data.reduce((sum, d) => sum + (d.median_lava_breath || 0) * (d.total_count || 0), 0) / totalCount),
+      median_glacier_breath: Math.round(data.reduce((sum, d) => sum + (d.median_glacier_breath || 0) * (d.total_count || 0), 0) / totalCount),
+    };
+
+    return {
+      total_count: totalCount,
+      jangin_avg: Math.round(weightedAvg * 100) / 100,
+      jangin_min: Math.min(...allMins),
+      jangin_max: Math.max(...allMaxs),
+      jangin_stddev: maxCountData.jangin_stddev,
+      jangin_p25: maxCountData.jangin_p25,
+      jangin_p50: maxCountData.jangin_p50,
+      jangin_p75: maxCountData.jangin_p75,
+      ...histSum,
+      ...medianMaterials,
+    };
+  } catch (err) {
+    console.error('Error fetching all refining stats summary:', err);
+    return null;
+  }
+}
+
 // 레벨별 샘플 수 조회 (버튼에 표시용) - pagination으로 전체 데이터 조회
 export async function getLevelSampleCounts(
   isSuccession: boolean,
