@@ -604,75 +604,14 @@ export default function RefiningStats() {
               </div>
             )}
 
-            {selectedLevel === null ? (
-              <div className={styles.tableWrapper}>
-                <div className={styles.emptyState}>위에서 레벨을 선택하세요</div>
-              </div>
-            ) : loading ? (
-              <div className={styles.tableWrapper}>
-                <div className={styles.loadingState}>로딩 중...</div>
-              </div>
-            ) : records.length === 0 ? (
-              <div className={styles.tableWrapper}>
-                <div className={styles.emptyState}>해당 조건의 기록이 없습니다</div>
-              </div>
-            ) : (
-              <div className={styles.tableWrapper}>
-                <table className={styles.recordsTable}>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>시도</th>
-                      <th>장기</th>
-                      <th>
-                        <Image src={equipmentType === 'weapon' ? '/top-destiny-destruction-stone5.webp' : '/top-destiny-guardian-stone5.webp'} alt="" width={32} height={32} />
-                      </th>
-                      <th>
-                        <Image src="/top-destiny-breakthrough-stone5.webp" alt="" width={32} height={32} />
-                      </th>
-                      <th>
-                        <Image src="/top-abidos-fusion5.webp" alt="" width={32} height={32} />
-                      </th>
-                      <th>
-                        <Image src="/shilling.webp" alt="" width={32} height={32} />
-                      </th>
-                      <th>
-                        <Image src="/destiny-shard-bag-large5.webp" alt="" width={32} height={32} />
-                      </th>
-                      <th>
-                        <Image src="/gold.webp" alt="" width={32} height={32} />
-                      </th>
-                      {breathType !== 'none' && (
-                        <th>
-                          <Image src={equipmentType === 'weapon' ? '/breath-lava5.webp' : '/breath-glacier5.webp'} alt="" width={32} height={32} />
-                        </th>
-                      )}
-                      <th>총 비용</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {records.map((record, idx) => (
-                      <tr key={record.id}>
-                        <td className={styles.cellNum}>{idx + 1}</td>
-                        <td className={styles.cellAttempts}>{record.attempts}회</td>
-                        <td className={styles.cellJangin}>{record.final_jangin != null ? `${record.final_jangin}%` : '-'}</td>
-                        <td>{equipmentType === 'weapon' ? record.destruction_crystal?.toLocaleString() : record.guardian_crystal?.toLocaleString()}</td>
-                        <td>{record.great_breakthrough?.toLocaleString()}</td>
-                        <td>{record.advanced_abidos?.toLocaleString()}</td>
-                        <td>{record.shilling?.toLocaleString()}</td>
-                        <td>{record.fate_fragment?.toLocaleString()}</td>
-                        <td className={styles.cellGold}>{record.gold?.toLocaleString()}</td>
-                        {breathType !== 'none' && (
-                          <td className={styles.cellBreath}>
-                            {equipmentType === 'weapon' ? record.lava_breath : record.glacier_breath}
-                          </td>
-                        )}
-                        <td className={styles.cellTotal}>{calculateTotalCost(record).toLocaleString()}G</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            {selectedLevel === null && (
+              <div className={styles.emptyState}>위에서 레벨을 선택하세요</div>
+            )}
+            {selectedLevel !== null && loading && (
+              <div className={styles.loadingState}>로딩 중...</div>
+            )}
+            {selectedLevel !== null && !loading && records.length === 0 && (
+              <div className={styles.emptyState}>해당 조건의 기록이 없습니다</div>
             )}
       </div>
     </div>

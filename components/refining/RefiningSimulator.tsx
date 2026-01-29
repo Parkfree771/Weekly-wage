@@ -139,12 +139,13 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
   const [autoTargetLevel, setAutoTargetLevel] = useState(0);
   const [autoSettings, setAutoSettings] = useState({
     useBreath: false,
+    speed: 700,
   });
   const autoIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const latestStateRef = useRef({
     currentLevel: 11,
     autoTargetLevel: 0,
-    autoSettings: { useBreath: false },
+    autoSettings: { useBreath: false, speed: 700 },
   });
   const attemptRefiningRef = useRef<() => void>(() => {});
   // 장비별 강화 진행 상태 추적 (장비이름 -> 강화된 레벨)
@@ -155,6 +156,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     야금술1114: 0, 야금술1518: 0, 야금술1920: 0, 재봉술1114: 0, 재봉술1518: 0, 재봉술1920: 0
   });
   const [isAnimating, setIsAnimating] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // 현재 레벨 강화를 위한 시도 횟수 및 비용 (성공 시 저장 후 초기화)
   const [levelAttempts, setLevelAttempts] = useState(0);
@@ -208,7 +210,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
         setTimeout(() => {
           attemptRefiningRef.current();
         }, 50);
-      }, 700);
+      }, autoSettings.speed);
 
       return () => {
         if (autoIntervalRef.current) {
@@ -217,7 +219,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
         }
       };
     }
-  }, [isAutoMode, selectedEquipment, autoTargetLevel]);
+  }, [isAutoMode, selectedEquipment, autoTargetLevel, autoSettings.speed]);
 
   // 거래소 가격 로드
   useEffect(() => {
@@ -404,6 +406,17 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     setBreathCountThisLevel(0);
     setUsedBookThisLevel(false);
     setBookCountThisLevel(0);
+  };
+
+  // 초기화 버튼 핸들러 (2번 클릭 확인)
+  const handleResetClick = () => {
+    if (confirmReset) {
+      resetSimulation();
+      setConfirmReset(false);
+    } else {
+      setConfirmReset(true);
+      setTimeout(() => setConfirmReset(false), 3000);
+    }
   };
 
   const getBaseProb = (level: number): number => {
@@ -915,8 +928,11 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                         <div className={styles.maxLevelEquipName}>{selectedEquipment.name}</div>
                       </div>
                       <div className={styles.maxLevelButtons}>
-                        <button className={styles.resetButton} onClick={resetSimulation}>
-                          초기화
+                        <button
+                          className={`${styles.resetButton} ${confirmReset ? styles.resetButtonConfirm : ''}`}
+                          onClick={handleResetClick}
+                        >
+                          {confirmReset ? '진짜 초기화' : '초기화'}
                         </button>
                       </div>
                     </>
@@ -1154,10 +1170,31 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                                     <input
                                       type="checkbox"
                                       checked={autoSettings.useBreath}
-                                      onChange={(e) => setAutoSettings({ useBreath: e.target.checked })}
+                                      onChange={(e) => setAutoSettings({ ...autoSettings, useBreath: e.target.checked })}
                                     />
                                     숨결 (풀숨)
                                   </label>
+                                </div>
+                              </div>
+
+                              {/* 속도 설정 */}
+                              <div className={styles.autoDropdownTurnSection}>
+                                <div className={styles.autoDropdownSectionTitle}>강화 속도</div>
+                                <div className={styles.speedButtonGroup}>
+                                  {[
+                                    { label: '0.3', value: 300 },
+                                    { label: '0.5', value: 500 },
+                                    { label: '0.7', value: 700 },
+                                    { label: '1', value: 1000 },
+                                  ].map((option) => (
+                                    <button
+                                      key={option.value}
+                                      className={`${styles.speedButton} ${autoSettings.speed === option.value ? styles.speedButtonActive : ''}`}
+                                      onClick={() => setAutoSettings({ ...autoSettings, speed: option.value })}
+                                    >
+                                      {option.label}
+                                    </button>
+                                  ))}
                                 </div>
                               </div>
 
@@ -1178,8 +1215,12 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                         </div>
                       </div>
 
-                      <button className={styles.resetButton} onClick={resetSimulation} disabled={isAutoMode}>
-                        초기화
+                      <button
+                        className={`${styles.resetButton} ${confirmReset ? styles.resetButtonConfirm : ''}`}
+                        onClick={handleResetClick}
+                        disabled={isAutoMode}
+                      >
+                        {confirmReset ? '진짜 초기화' : '초기화'}
                       </button>
                     </>
                   )}
@@ -1202,7 +1243,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                           >
                             <div className={styles.historyItemHeader}>
                               <span className={styles.historyItemNumber}>#{attempt.attemptNumber}</span>
-                              <span className={styles.historyItemLevel}>+{attempt.level} 강화</span>
+                              <span className={styles.historyItemLevel}>+{attempt.level} → +{attempt.level + 1}</span>
                               <span className={`${styles.historyItemResult} ${attempt.success ? styles.resultSuccess : styles.resultFail}`}>
                                 {attempt.success ? '성공' : '실패'}
                               </span>

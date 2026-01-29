@@ -651,7 +651,7 @@
 
 /* 1회 비용 */
 .singleCostSection {
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .singleCostTitle {
@@ -710,6 +710,7 @@
 .resetButton {
   width: 100%;
   padding: 0.5rem;
+  margin-top: 0.5rem;
   background-color: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border-color);
@@ -726,6 +727,23 @@
   background-color: #ef4444;
   border-color: #ef4444;
   color: white;
+}
+
+.resetButtonConfirm {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: white;
+  animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+.resetButtonConfirm:hover {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+@keyframes pulse {
+  from { opacity: 1; }
+  to { opacity: 0.7; }
 }
 
 /* 두 번째 상자: 강화 기록 */
@@ -950,6 +968,7 @@
   border: 1px solid rgba(99, 102, 241, 0.3);
   border-radius: 10px;
   margin-bottom: 0.5rem;
+  min-height: 2.5rem;
 }
 
 .itemLevelProgress .levelProgressValue span:not(.levelArrow):not(.levelIncrease) {
@@ -977,6 +996,7 @@
   padding: 0.75rem;
   border-radius: 10px;
   margin-bottom: 0.75rem;
+  min-height: 2.5rem;
 }
 
 .levelProgressLabel {
@@ -1971,6 +1991,41 @@
   color: #60a5fa;
 }
 
+/* 자동강화 속도 버튼 */
+.speedButtonGroup {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+}
+
+.speedButton {
+  flex: 1;
+  padding: 0.4rem 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--card-background);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.speedButton:hover {
+  background: var(--hover-background);
+  border-color: var(--primary-color);
+}
+
+.speedButtonActive {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #10b981;
+  color: white;
+}
+
+.speedButtonActive:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
 /* 모바일 자동강화 드롭다운 */
 @media (max-width: 768px) {
   .autoDropdown {
@@ -2039,5 +2094,17 @@
 
   .autoDropdownTurnSection {
     margin-bottom: 0.4rem;
+  }
+
+  .speedButtonGroup {
+    gap: 0.2rem;
+    flex-wrap: nowrap;
+  }
+
+  .speedButton {
+    padding: 0.25rem 0.15rem;
+    font-size: 0.65rem;
+    border-radius: 4px;
+    min-width: 0;
   }
 }
