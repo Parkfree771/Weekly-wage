@@ -97,6 +97,8 @@ export const SUCCESSION_WEAPON_MATERIAL_COSTS: { [level: number]: { 파괴석결
 };
 
 type BreathEffect = { max: number; per: number };
+
+// 계승 전 숨결 효과 테이블
 const BREATH_EFFECT_TABLE: { [prob: number]: BreathEffect } = {
   0.10: { max: 20, per: 0.005 },
   0.05: { max: 20, per: 0.0025 },
@@ -107,8 +109,22 @@ const BREATH_EFFECT_TABLE: { [prob: number]: BreathEffect } = {
   0.005: { max: 50, per: 0.0002 },
 };
 
+// 계승 후 숨결 효과 테이블 (3% 확률이 다름: max 25개, per 0.12%)
+const SUCCESSION_BREATH_EFFECT_TABLE: { [prob: number]: BreathEffect } = {
+  0.05: { max: 20, per: 0.0025 },
+  0.04: { max: 20, per: 0.002 },
+  0.03: { max: 25, per: 0.0012 },  // 계승 후: 25개, 개당 0.12%
+  0.015: { max: 25, per: 0.0006 },
+  0.01: { max: 25, per: 0.0004 },
+  0.005: { max: 50, per: 0.0002 },
+};
+
 export const getBreathEffect = (baseProb: number): BreathEffect => {
   return BREATH_EFFECT_TABLE[baseProb] || { max: 0, per: 0 };
+};
+
+export const getSuccessionBreathEffect = (baseProb: number): BreathEffect => {
+  return SUCCESSION_BREATH_EFFECT_TABLE[baseProb] || { max: 0, per: 0 };
 };
 
 // 계승 전 책 효과 (확률 2배 증가)

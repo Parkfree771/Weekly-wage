@@ -14,6 +14,7 @@ import {
   SUCCESSION_ARMOR_MATERIAL_COSTS,
   SUCCESSION_WEAPON_MATERIAL_COSTS,
   getBreathEffect,
+  getSuccessionBreathEffect,
   getBookEffect,
   getBookType,
   JANGIN_ACCUMULATE_DIVIDER
@@ -454,7 +455,8 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     let currentProb = effectiveBaseProb + currentProbBonus;
     currentProb = Math.min(currentProb, effectiveBaseProb * 2);
 
-    const breathEffect = getBreathEffect(baseProb);
+    // 계승 모드에 따라 적절한 숨결 효과 테이블 사용
+    const breathEffect = isSuccessionMode ? getSuccessionBreathEffect(baseProb) : getBreathEffect(baseProb);
     const breathProb = useBreath ? breathEffect.max * breathEffect.per : 0;
 
     if (jangin >= 1) return 1;
@@ -534,7 +536,8 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
           newCost.골드 += (materialCost as any).골드 || 0;
         }
         if (useBreath) {
-          const breathEffect = getBreathEffect(baseProb);
+          // 계승 모드에 따라 적절한 숨결 효과 테이블 사용
+          const breathEffect = isSuccessionMode ? getSuccessionBreathEffect(baseProb) : getBreathEffect(baseProb);
           if (selectedEquipment.type === 'weapon') newCost.용암 += breathEffect.max;
           else newCost.빙하 += breathEffect.max;
         }
@@ -571,7 +574,8 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
         newLevelCost.골드 += (materialCost as any).골드 || 0;
       }
       if (useBreath) {
-        const breathEffect = getBreathEffect(baseProb);
+        // 계승 모드에 따라 적절한 숨결 효과 테이블 사용
+        const breathEffect = isSuccessionMode ? getSuccessionBreathEffect(baseProb) : getBreathEffect(baseProb);
         if (selectedEquipment.type === 'weapon') newLevelCost.용암 += breathEffect.max;
         else newLevelCost.빙하 += breathEffect.max;
       }
@@ -678,7 +682,8 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
       // 새 확률 계산
       let newProb = baseProb + newBonus;
       newProb = Math.min(newProb, baseProb * 2);
-      const breathEffect = getBreathEffect(baseProb);
+      // 계승 모드에 따라 적절한 숨결 효과 테이블 사용
+      const breathEffect = isSuccessionMode ? getSuccessionBreathEffect(baseProb) : getBreathEffect(baseProb);
       const breathProb = useBreath ? breathEffect.max * breathEffect.per : 0;
       probAfter = Math.min(newProb + breathProb, 1);
 
@@ -999,7 +1004,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                             />
                           </div>
                           <span>{selectedEquipment.type === 'weapon' ? '용암의 숨결' : '빙하의 숨결'}</span>
-                          {useBreath && <span className={styles.breathCount}>({getBreathEffect(getBaseProb(currentLevel)).max}개)</span>}
+                          {useBreath && <span className={styles.breathCount}>({(isSuccessionMode ? getSuccessionBreathEffect(getBaseProb(currentLevel)) : getBreathEffect(getBaseProb(currentLevel))).max}개)</span>}
                         </button>
 
                         {/* 책 옵션 (계승 전 11-20단계만) */}

@@ -15,6 +15,7 @@ import {
   SUCCESSION_ARMOR_MATERIAL_COSTS,
   SUCCESSION_WEAPON_MATERIAL_COSTS,
   getBreathEffect,
+  getSuccessionBreathEffect,
   JANGIN_ACCUMULATE_DIVIDER
 } from '../../lib/refiningData';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
@@ -954,8 +955,8 @@ export default function RefiningCalculator({ onSearchComplete, modeSelector }: R
             const avgTries = getSuccessionAverageTries(level, useBreath);
             if (avgTries === 0) continue;
 
-            // 숨결 효과 (비용 계산용)
-            const breathEffect = getBreathEffect(baseProb);
+            // 숨결 효과 (비용 계산용) - 계승 후용 테이블 사용
+            const breathEffect = getSuccessionBreathEffect(baseProb);
 
             const materialCostPerTry = eq.type === 'armor'
               ? SUCCESSION_ARMOR_MATERIAL_COSTS[nextLevel]

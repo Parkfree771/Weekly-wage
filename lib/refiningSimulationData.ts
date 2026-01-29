@@ -1,4 +1,4 @@
-import { SUCCESSION_BASE_PROBABILITY, getBreathEffect } from './refiningData';
+import { SUCCESSION_BASE_PROBABILITY, getBreathEffect, getSuccessionBreathEffect } from './refiningData';
 
 const JANGIN_ACCUMULATE_DIVIDER = 2.15;
 
@@ -17,8 +17,8 @@ function simulateSuccessionRefining(baseProb: number, useBreath: boolean): numbe
   let currentProb = baseProb; // 현재 확률 (실패 시 증가)
   let tries = 0;
 
-  // 숨결 효과 계산
-  const breathEffect = getBreathEffect(baseProb);
+  // 숨결 효과 계산 (계승 후용 테이블 사용)
+  const breathEffect = getSuccessionBreathEffect(baseProb);
   const breathProb = useBreath ? breathEffect.max * breathEffect.per : 0;
 
   while (true) {
