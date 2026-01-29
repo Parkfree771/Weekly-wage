@@ -81,6 +81,14 @@ export default function Home() {
               <Card.Body className="p-3">
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
                   <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>01.29</span>
+                    <span style={{ color: 'var(--text-primary)' }}>자동강화 속도 선택버튼 추가</span>
+                  </li>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>01.29</span>
+                    <span style={{ color: 'var(--text-primary)' }}>계승 후 16→17→18→19 숨결 개수 수정</span>
+                  </li>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>01.27</span>
                     <span style={{ color: 'var(--text-primary)' }}>메인 페이지 리뉴얼</span>
                   </li>

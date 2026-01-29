@@ -118,12 +118,12 @@ export default function RefiningStats() {
     // 계승 후 확률 기준
     // 11-12: 5% → max 20
     // 13-15: 4% → max 20
-    // 16-18: 3% → max 20
+    // 16-18: 3% → max 25 (수정됨)
     // 19-20: 1.5% → max 25
     // 21-22: 1% → max 25
     // 23-24: 0.5% → max 50
     if (level >= 23) return 50;
-    if (level >= 19) return 25;
+    if (level >= 16) return 25;  // 16-18도 25개
     return 20;
   };
 
@@ -173,13 +173,12 @@ export default function RefiningStats() {
 
     const refetchData = async () => {
       setLoading(true);
+
       if (breathType === 'none') {
-        // 노숨: use_breath = false 데이터 가져오기
         const data = await getSimulationRecords(true, equipmentType, false, selectedLevel);
         setAllRecords(data);
         setRecords(data);
       } else {
-        // 전체/풀숨/부분숨: use_breath = true 데이터에서 필터링
         const data = await getSimulationRecords(true, equipmentType, true, selectedLevel);
         setAllRecords(data);
         setRecords(filterByBreathType(data, breathType, selectedLevel));
@@ -211,12 +210,10 @@ export default function RefiningStats() {
     setLoading(true);
 
     if (breathType === 'none') {
-      // 노숨: use_breath = false 데이터
       const data = await getSimulationRecords(true, equipmentType, false, level);
       setAllRecords(data);
       setRecords(data);
     } else {
-      // 전체/풀숨/부분숨: use_breath = true 데이터에서 필터링
       const data = await getSimulationRecords(true, equipmentType, true, level);
       setAllRecords(data);
       setRecords(filterByBreathType(data, breathType, level));
@@ -254,7 +251,6 @@ export default function RefiningStats() {
   const stats = useMemo(() => {
     if (records.length === 0) return null;
 
-    // 장인의 기운 통계 (null이 아닌 값만)
     const janginValues = records
       .map(r => r.final_jangin)
       .filter((v): v is number => v != null)
@@ -280,7 +276,6 @@ export default function RefiningStats() {
     };
 
     // 중앙값(p50)에 해당하는 레코드 찾기
-    const p50Value = getPercentile(50);
     const sortedByJangin = [...records]
       .filter(r => r.final_jangin != null)
       .sort((a, b) => (a.final_jangin || 0) - (b.final_jangin || 0));
@@ -403,7 +398,9 @@ export default function RefiningStats() {
         <div className={styles.resultsHeader}>
               <div className={styles.resultsInfo}>
                 <span className={styles.resultsLevel}>
-                  {selectedLevel !== null ? `${selectedLevel}→${selectedLevel + 1} 강화` : '레벨을 선택하세요'}
+                  {selectedLevel === null
+                    ? '레벨을 선택하세요'
+                    : `${selectedLevel}→${selectedLevel + 1} 강화`}
                 </span>
                 {selectedLevel !== null && stats && (
                   <span className={styles.resultsAvg}>평균 장기백 {stats.jangin.mean}%</span>
@@ -413,7 +410,7 @@ export default function RefiningStats() {
             </div>
 
             {/* 통계 표시 - 100개 이상일 때만 */}
-            {selectedLevel !== null && stats && stats.jangin.count >= 100 && !loading && (
+            {selectedLevel !== null && stats && stats.jangin.count >= 100 && stats.materials && !loading && (
               <div className={styles.statsSection}>
                 {/* 장인의 기운 분포 */}
                 <div className={styles.distributionCard}>
@@ -592,8 +589,8 @@ export default function RefiningStats() {
               </div>
             )}
 
-            {/* 통계 부족 메시지 - 장인의 기운 데이터가 100개 미만일 때 */}
-            {selectedLevel !== null && records.length > 0 && (!stats || stats.jangin.count < 100) && !loading && (
+            {/* 통계 부족 메시지 */}
+            {selectedLevel !== null && records.length > 0 && stats && stats.jangin.count < 100 && !loading && (
               <div className={styles.insufficientData}>
                 <span className={styles.insufficientText}>
                   통계 부족 ({stats?.jangin.count || 0}/100)

@@ -198,21 +198,113 @@ export interface SimulationRecord {
   final_jangin: number | null;
 }
 
-// 조건별 시뮬레이션 결과 조회
+// 캐시 관련 상수 및 유틸
+const CACHE_TTL = 60 * 60 * 1000; // 1시간 (밀리초)
+const CACHE_PREFIX = 'refining_stats_';
+
+interface CacheData {
+  data: SimulationRecord[];
+  timestamp: number;
+}
+
+// 캐시에서 데이터 가져오기
+function getFromCache(key: string): SimulationRecord[] | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const cached = localStorage.getItem(CACHE_PREFIX + key);
+    if (!cached) return null;
+
+    const { data, timestamp }: CacheData = JSON.parse(cached);
+    const now = Date.now();
+
+    // 1시간 이내면 캐시 사용
+    if (now - timestamp < CACHE_TTL) {
+      console.log(`[Cache Hit] ${key}`);
+      return data;
+    }
+
+    // 만료된 캐시 삭제
+    localStorage.removeItem(CACHE_PREFIX + key);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// 캐시에 데이터 저장
+function saveToCache(key: string, data: SimulationRecord[]): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const cacheData: CacheData = {
+      data,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(cacheData));
+    console.log(`[Cache Save] ${key}, ${data.length}건`);
+  } catch (e) {
+    // localStorage 용량 초과 시 오래된 캐시 정리
+    console.warn('Cache save failed, clearing old caches');
+    clearOldCaches();
+  }
+}
+
+// 오래된 캐시 정리
+function clearOldCaches(): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(CACHE_PREFIX)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  } catch {
+    // 무시
+  }
+}
+
+// 조건별 시뮬레이션 결과 조회 (캐싱 적용)
 export async function getSimulationRecords(
   isSuccession: boolean,
   equipmentType: 'weapon' | 'armor',
   useBreath: boolean,
   fromLevel: number
 ): Promise<SimulationRecord[]> {
+  // 캐시 키 생성
+  const cacheKey = `${isSuccession ? 'succ' : 'pre'}_${equipmentType}_${useBreath ? 'breath' : 'nobreath'}_${fromLevel}`;
+
+  // 캐시 확인
+  const cached = getFromCache(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   try {
     const equipmentName = isSuccession
       ? (equipmentType === 'weapon' ? '전율 무기' : '전율 방어구')
       : (equipmentType === 'weapon' ? '업화 무기' : '업화 방어구');
 
+    // 필요한 컬럼만 선택 (데이터 전송량 절감)
     const { data, error } = await supabase
       .from('refining_results')
-      .select('*')
+      .select(`
+        id,
+        attempts,
+        final_jangin,
+        destruction_crystal,
+        guardian_crystal,
+        great_breakthrough,
+        advanced_abidos,
+        fate_fragment,
+        gold,
+        lava_breath,
+        glacier_breath
+      `)
       .eq('equipment_name', equipmentName)
       .eq('is_succession', isSuccession)
       .eq('use_breath', useBreath)
@@ -225,7 +317,12 @@ export async function getSimulationRecords(
       return [];
     }
 
-    return data as SimulationRecord[];
+    const records = data as SimulationRecord[];
+
+    // 캐시에 저장
+    saveToCache(cacheKey, records);
+
+    return records;
   } catch (err) {
     console.error('Error fetching simulation records:', err);
     return [];
