@@ -78,6 +78,10 @@ export default function Home() {
               <Card.Body className="p-3">
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
                   <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>01.30</span>
+                    <span style={{ color: 'var(--text-primary)' }}>로그인 기능 추가, 원정대 등록 (추후 차트 커스텀화 기능 추가 등 다양한 기능 추가 예정)</span>
+                  </li>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>01.29</span>
                     <span style={{ color: 'var(--text-primary)' }}>자동강화 속도 선택버튼 추가</span>
                   </li>
