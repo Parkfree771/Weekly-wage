@@ -18,7 +18,16 @@ export async function GET() {
     const bucket = storage.bucket(bucketName);
     const file = bucket.file('latest_prices.json');
     const [contents] = await file.download();
-    const latestPrices = JSON.parse(contents.toString());
+    const rawData = JSON.parse(contents.toString());
+
+    // _meta와 _raw 필드 제외하고 가격 데이터만 반환
+    // 컴포넌트들이 Object.entries()로 순회하므로 순수 가격 데이터만 제공
+    const latestPrices: Record<string, number> = {};
+    for (const [key, value] of Object.entries(rawData)) {
+      if (!key.startsWith('_') && typeof value === 'number') {
+        latestPrices[key] = value;
+      }
+    }
 
     // CDN 10분 캐시 (클라이언트가 URL 쿼리로 갱신 주기 제어)
     return NextResponse.json(latestPrices, {

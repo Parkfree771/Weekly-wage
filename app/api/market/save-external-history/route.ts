@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { saveHistoricalPrice } from '@/lib/firestore-admin';
 
 /**
- * 외부 API에서 가져온 가격 히스토리를 Firebase에 저장
+ * 외부 API에서 가져온 가격 히스토리를 history_all.json에 저장
  * 66112543, 66112546 아이템의 거래소 데이터 저장용
  */
 export async function POST(request: Request) {

@@ -1,40 +1,46 @@
-// Firestore Admin 헬퍼 함수들 (서버 사이드 전용)
-import { getAdminFirestore, getAdminStorage, Timestamp, FieldValue } from './firebase-admin';
+// JSON 기반 가격 데이터 관리 (Firestore 제거)
+// Firebase Storage의 JSON 파일만 사용
+// 메모리 캐시 방식: 수집 중에는 메모리에 저장, 마지막에 한 번만 업로드
+
+import { getAdminStorage } from './firebase-admin';
 
 // 가격 데이터 타입
 export type PriceEntry = {
   itemId: string;
   itemName?: string;
   price: number;
-  timestamp: Timestamp;
+  timestamp: { seconds: number; nanoseconds: number };
   date?: string; // YYYY-MM-DD 형식
 };
 
-// 임시 수집 데이터 타입 (경매장용)
-export type TempPriceEntry = {
-  itemId: string;
-  prices: number[];
-  count: number;
-  lastUpdated: Timestamp;
+// latest_prices.json 구조
+type LatestPricesJson = {
+  [itemId: string]: number;
+} & {
+  _raw?: Record<string, number[]>;  // 경매장 아이템 누적 가격
+  _meta?: {
+    date: string;      // 현재 데이터 날짜 (YYYY-MM-DD)
+    updatedAt: string; // 마지막 업데이트 시간 (ISO)
+  };
 };
 
-// 가격 컬렉션 이름
-const DAILY_PRICE_COLLECTION = 'dailyPrices'; // 일별 평균가
-const TODAY_TEMP_COLLECTION = 'todayTemp'; // 오늘 임시 수집 데이터
+// history_all.json 구조
+type HistoryAllJson = Record<string, Array<{ date: string; price: number }>>;
+
+// ============================================================
+// 메모리 캐시 (크론 실행 중 사용)
+// ============================================================
+let latestPricesCache: LatestPricesJson | null = null;
+let historyCache: HistoryAllJson | null = null;
+let cacheLoaded = false;
 
 /**
  * 날짜 계산 (오전 0시 기준, 한국 시간)
- * 일반적인 날짜 기준과 동일 (00:00에 날짜 변경)
  */
 export function getLostArkDate(date: Date = new Date()): Date {
-  // 한국 시간(KST, UTC+9)으로 변환
-  const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
+  const kstOffset = 9 * 60 * 60 * 1000;
   const kstTime = date.getTime() + kstOffset;
   const kstDate = new Date(kstTime);
-
-  // 00시 기준: 전날 처리 로직 불필요
-
-  // UTC 기준으로 시간을 00:00:00으로 설정 (KST 날짜 유지)
   kstDate.setUTCHours(0, 0, 0, 0);
   return kstDate;
 }
@@ -50,70 +56,119 @@ export function formatDateKey(date: Date): string {
 }
 
 /**
- * 특정 날짜의 가격 데이터 저장 (dailyPrices 컬렉션)
- * @param customDate - 저장할 날짜 (필수)
+ * Firebase Storage bucket 가져오기
  */
-export async function savePriceData(
-  itemId: string,
-  price: number,
-  itemName?: string,
-  customDate?: Date
-): Promise<void> {
-  try {
-    const db = getAdminFirestore();
+function getBucket() {
+  const storage = getAdminStorage();
+  const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+  if (!bucketName) {
+    throw new Error('FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
+  }
+  return storage.bucket(bucketName);
+}
 
-    if (!customDate) {
-      console.warn('[savePriceData] customDate가 필요합니다. 저장하지 않습니다.');
-      return;
+/**
+ * latest_prices.json 읽기 (캐시 사용)
+ */
+async function readLatestPrices(): Promise<LatestPricesJson> {
+  // 캐시가 있으면 캐시 반환
+  if (latestPricesCache !== null) {
+    return latestPricesCache;
+  }
+
+  try {
+    const bucket = getBucket();
+    const file = bucket.file('latest_prices.json');
+    const [contents] = await file.download();
+    latestPricesCache = JSON.parse(contents.toString());
+    cacheLoaded = true;
+    console.log('[readLatestPrices] 파일 로드 완료');
+    return latestPricesCache!;
+  } catch (error: any) {
+    if (error.code === 404) {
+      console.log('[readLatestPrices] 파일 없음, 새로 생성');
+      latestPricesCache = {};
+      return latestPricesCache;
     }
-
-    const dateKey = formatDateKey(customDate);
-    const docRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${itemId}_${dateKey}`);
-
-    await docRef.set({
-      itemId,
-      itemName,
-      price,
-      date: dateKey,
-      timestamp: Timestamp.now(),
-    });
-  } catch (error) {
-    console.error('가격 저장 오류:', error);
     throw error;
   }
 }
 
 /**
- * 과거 특정 날짜의 평균가 저장 (거래소 Stats 배열용)
- * 기존 데이터가 있어도 최신 데이터로 덮어씌움
+ * latest_prices.json 저장 (캐시 → Storage)
  */
-export async function saveHistoricalPrice(
-  itemId: string,
-  price: number,
-  dateStr: string, // YYYY-MM-DD 형식
-  itemName?: string
-): Promise<void> {
-  try {
-    const db = getAdminFirestore();
-    const docRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${itemId}_${dateStr}`);
+async function writeLatestPrices(data: LatestPricesJson): Promise<void> {
+  const bucket = getBucket();
+  const file = bucket.file('latest_prices.json');
 
-    // 항상 최신 데이터로 업데이트 (덮어쓰기)
-    await docRef.set({
-      itemId,
-      itemName,
-      price,
-      date: dateStr,
-      timestamp: Timestamp.now(),
-    });
-  } catch (error) {
-    console.error('과거 평균가 저장 오류:', error);
+  const jsonContent = JSON.stringify(data, null, 2);
+
+  await file.save(jsonContent, {
+    metadata: {
+      contentType: 'application/json',
+      // Storage 직접 접근 시 캐시 방지 (API 라우트 + CDN 캐시키 시스템 사용)
+      cacheControl: 'no-cache, no-store, must-revalidate',
+    },
+  });
+
+  await file.makePublic();
+
+  // 캐시 업데이트
+  latestPricesCache = data;
+}
+
+/**
+ * history_all.json 읽기 (캐시 사용)
+ */
+async function readHistoryAll(): Promise<HistoryAllJson> {
+  // 캐시가 있으면 캐시 반환
+  if (historyCache !== null) {
+    return historyCache;
+  }
+
+  try {
+    const bucket = getBucket();
+    const file = bucket.file('history_all.json');
+    const [contents] = await file.download();
+    historyCache = JSON.parse(contents.toString());
+    console.log('[readHistoryAll] 파일 로드 완료');
+    return historyCache!;
+  } catch (error: any) {
+    if (error.code === 404) {
+      console.log('[readHistoryAll] 파일 없음, 새로 생성');
+      historyCache = {};
+      return historyCache;
+    }
     throw error;
   }
 }
 
 /**
- * 거래소 오늘 평균가 저장 (계속 덮어쓰기)
- * 00시가 되면 API의 전날 평균가로 교체됨
+ * history_all.json 저장 (캐시 → Storage)
+ */
+async function writeHistoryAll(data: HistoryAllJson): Promise<void> {
+  const bucket = getBucket();
+  const file = bucket.file('history_all.json');
+
+  const jsonContent = JSON.stringify(data, null, 2);
+
+  await file.save(jsonContent, {
+    metadata: {
+      contentType: 'application/json',
+      // Storage 직접 접근 시 캐시 방지 (API 라우트 + CDN 캐시키 시스템 사용)
+      cacheControl: 'no-cache, no-store, must-revalidate',
+    },
+  });
+
+  await file.makePublic();
+
+  // 캐시 업데이트
+  historyCache = data;
+}
+
+/**
+ * 거래소 오늘 평균가 저장 (메모리 캐시에만 저장, 나중에 한 번에 업로드)
+ * - API에서 받은 평균가를 그대로 저장
  */
 export async function updateMarketTodayPrice(
   itemId: string,
@@ -121,20 +176,27 @@ export async function updateMarketTodayPrice(
   itemName?: string
 ): Promise<void> {
   try {
-    const db = getAdminFirestore();
-    const lostArkDate = getLostArkDate();
-    const dateKey = formatDateKey(lostArkDate);
+    const todayKey = formatDateKey(getLostArkDate());
+    const data = await readLatestPrices();
 
-    const docRef = db.collection(TODAY_TEMP_COLLECTION).doc(`${itemId}_${dateKey}`);
+    // 날짜가 바뀌었는지 확인
+    if (data._meta?.date && data._meta.date !== todayKey) {
+      console.log(`[updateMarketTodayPrice] 날짜 변경 감지: ${data._meta.date} → ${todayKey}`);
+    }
 
-    // 거래소는 평균가를 그대로 덮어쓰기 (배열 사용 안함)
-    await docRef.set({
-      itemId,
-      itemName,
-      prices: [price], // 단일 값으로 유지
-      count: 1,
-      lastUpdated: Timestamp.now(),
-    });
+    // 가격 업데이트 (캐시에만)
+    data[itemId] = price;
+
+    // 메타 정보 업데이트
+    data._meta = {
+      date: todayKey,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 캐시 업데이트 (저장은 나중에)
+    latestPricesCache = data;
+
+    console.log(`[Market] ${itemName || itemId} - 오늘 평균가: ${price}G`);
   } catch (error) {
     console.error('거래소 오늘 평균가 저장 오류:', error);
     throw error;
@@ -142,7 +204,9 @@ export async function updateMarketTodayPrice(
 }
 
 /**
- * 경매장 당일 임시 가격 추가 (1시간마다 누적)
+ * 경매장 당일 임시 가격 추가 (메모리 캐시에만 저장)
+ * - _raw에 가격 배열로 저장
+ * - 평균가도 함께 업데이트
  */
 export async function addTodayTempPrice(
   itemId: string,
@@ -150,33 +214,41 @@ export async function addTodayTempPrice(
   itemName?: string
 ): Promise<void> {
   try {
-    const db = getAdminFirestore();
-    const lostArkDate = getLostArkDate();
-    const dateKey = formatDateKey(lostArkDate);
+    const todayKey = formatDateKey(getLostArkDate());
+    const data = await readLatestPrices();
 
-    const docRef = db.collection(TODAY_TEMP_COLLECTION).doc(`${itemId}_${dateKey}`);
-    const docSnap = await docRef.get();
-
-    if (docSnap.exists) {
-      const data = docSnap.data();
-      const prices = [...(data?.prices || []), price];
-
-      await docRef.set({
-        itemId,
-        itemName,
-        prices,
-        count: prices.length,
-        lastUpdated: Timestamp.now(),
-      });
-    } else {
-      await docRef.set({
-        itemId,
-        itemName,
-        prices: [price],
-        count: 1,
-        lastUpdated: Timestamp.now(),
-      });
+    // _raw 초기화
+    if (!data._raw) {
+      data._raw = {};
     }
+
+    // 날짜가 바뀌었으면 _raw 초기화 (00시 처리 후 첫 수집)
+    if (data._meta?.date && data._meta.date !== todayKey) {
+      console.log(`[addTodayTempPrice] 새 날짜 시작, _raw 초기화`);
+      data._raw = {};
+    }
+
+    // 가격 배열에 추가
+    if (!data._raw[itemId]) {
+      data._raw[itemId] = [];
+    }
+    data._raw[itemId].push(price);
+
+    // 평균가 계산 및 저장
+    const prices = data._raw[itemId];
+    const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+    data[itemId] = avgPrice;
+
+    // 메타 정보 업데이트
+    data._meta = {
+      date: todayKey,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 캐시 업데이트 (저장은 나중에)
+    latestPricesCache = data;
+
+    console.log(`[Auction] ${itemName || itemId} - 가격 추가: ${price}G (총 ${prices.length}개, 평균 ${avgPrice.toFixed(0)}G)`);
   } catch (error) {
     console.error('당일 임시 가격 저장 오류:', error);
     throw error;
@@ -184,8 +256,8 @@ export async function addTodayTempPrice(
 }
 
 /**
- * 특정 날짜의 todayTemp에 가격 추가 (00시 이중 역할용)
- * 00:10 수집 시 전날 마지막 가격으로 추가할 때 사용
+ * 특정 날짜의 가격 추가 (00시 이중 역할용)
+ * - 00:10에 수집한 가격을 전날 마지막 가격으로도 추가
  */
 export async function addTodayTempPriceForDate(
   itemId: string,
@@ -194,30 +266,36 @@ export async function addTodayTempPriceForDate(
   itemName?: string
 ): Promise<void> {
   try {
-    const db = getAdminFirestore();
+    const data = await readLatestPrices();
+    const currentDateKey = data._meta?.date;
 
-    const docRef = db.collection(TODAY_TEMP_COLLECTION).doc(`${itemId}_${dateKey}`);
-    const docSnap = await docRef.get();
+    // 전날 데이터에 추가하는 경우 (00시 처리 전)
+    if (currentDateKey === dateKey) {
+      // _raw에 추가
+      if (!data._raw) {
+        data._raw = {};
+      }
+      if (!data._raw[itemId]) {
+        data._raw[itemId] = [];
+      }
+      data._raw[itemId].push(price);
 
-    if (docSnap.exists) {
-      const data = docSnap.data();
-      const prices = [...(data?.prices || []), price];
+      // 평균가 업데이트
+      const prices = data._raw[itemId];
+      const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+      data[itemId] = avgPrice;
 
-      await docRef.set({
-        itemId,
-        itemName,
-        prices,
-        count: prices.length,
-        lastUpdated: Timestamp.now(),
-      });
+      data._meta = {
+        date: currentDateKey,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // 캐시 업데이트 (저장은 나중에)
+      latestPricesCache = data;
+
+      console.log(`[Auction] ${itemName || itemId} - 전날 마지막 가격 추가: ${price}G`);
     } else {
-      await docRef.set({
-        itemId,
-        itemName,
-        prices: [price],
-        count: 1,
-        lastUpdated: Timestamp.now(),
-      });
+      console.log(`[addTodayTempPriceForDate] 날짜 불일치, 건너뜀: 현재=${currentDateKey}, 요청=${dateKey}`);
     }
   } catch (error) {
     console.error('특정 날짜 임시 가격 저장 오류:', error);
@@ -226,23 +304,57 @@ export async function addTodayTempPriceForDate(
 }
 
 /**
- * 00시에 전날 임시 데이터를 평균내서 확정
+ * 과거 특정 날짜의 평균가 저장 (거래소 Stats[1] 용)
+ * - history_all.json에 직접 추가 (캐시 사용)
+ */
+export async function saveHistoricalPrice(
+  itemId: string,
+  price: number,
+  dateStr: string,
+  itemName?: string
+): Promise<void> {
+  try {
+    const history = await readHistoryAll();
+
+    // 해당 아이템 히스토리 초기화
+    if (!history[itemId]) {
+      history[itemId] = [];
+    }
+
+    // 이미 같은 날짜 데이터가 있으면 업데이트
+    const existingIndex = history[itemId].findIndex(entry => entry.date === dateStr);
+    if (existingIndex >= 0) {
+      history[itemId][existingIndex].price = price;
+      console.log(`[History] ${itemName || itemId} - 기존 데이터 업데이트: ${dateStr} = ${price}G`);
+    } else {
+      history[itemId].push({ date: dateStr, price });
+      console.log(`[History] ${itemName || itemId} - 새 데이터 추가: ${dateStr} = ${price}G`);
+    }
+
+    // 날짜순 정렬
+    history[itemId].sort((a, b) => a.date.localeCompare(b.date));
+
+    // 캐시 업데이트 (저장은 나중에)
+    historyCache = history;
+  } catch (error) {
+    console.error('과거 평균가 저장 오류:', error);
+    throw error;
+  }
+}
+
+/**
+ * 00시에 전날 경매장 데이터를 평균내서 history에 추가
  * @param useToday - true면 당일 데이터 확정, false면 전날 데이터 확정
  */
 export async function finalizeYesterdayData(useToday: boolean = false): Promise<void> {
   try {
-    const db = getAdminFirestore();
-
-    // 로스트아크 기준 오늘 날짜
     const lostArkToday = getLostArkDate();
 
     // 확정할 날짜 계산
     let targetDate: Date;
     if (useToday) {
-      // 당일 데이터 확정
       targetDate = lostArkToday;
     } else {
-      // 전날 데이터 확정
       targetDate = new Date(lostArkToday);
       targetDate.setDate(targetDate.getDate() - 1);
     }
@@ -250,46 +362,37 @@ export async function finalizeYesterdayData(useToday: boolean = false): Promise<
 
     console.log(`[finalizeYesterdayData] ${useToday ? '당일' : '전날'} 데이터 확정 시작: ${targetKey}`);
 
-    // 전날의 todayTemp 문서를 직접 조회 (문서명이 itemId_날짜 형식)
-    const tempSnapshot = await db.collection(TODAY_TEMP_COLLECTION).get();
+    const latestData = await readLatestPrices();
+    const history = await readHistoryAll();
 
-    const batch = db.batch();
+    // _raw에서 경매장 아이템 평균 계산 후 history에 추가
+    const raw = latestData._raw || {};
     let count = 0;
 
-    tempSnapshot.docs.forEach((doc) => {
-      const data = doc.data();
-      const docId = doc.id; // 예: "auction_gem_fear_8_2025-10-23"
+    for (const [itemId, prices] of Object.entries(raw)) {
+      if (prices && prices.length > 0) {
+        const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
 
-      // 문서 ID에서 날짜 추출
-      const docDateMatch = docId.match(/_(\d{4}-\d{2}-\d{2})$/);
-      if (!docDateMatch) return;
+        // history에 추가
+        if (!history[itemId]) {
+          history[itemId] = [];
+        }
 
-      const docDate = docDateMatch[1];
-
-      // 대상 날짜와 일치하는 문서만 처리
-      if (docDate === targetKey && data.prices && data.prices.length > 0) {
-        // API에서 주는 그대로 저장 (반올림 없음)
-        const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
-
-        const dailyDocRef = db.collection(DAILY_PRICE_COLLECTION).doc(`${data.itemId}_${targetKey}`);
-        batch.set(dailyDocRef, {
-          itemId: data.itemId,
-          itemName: data.itemName,
-          price: avgPrice,
-          date: targetKey,
-          timestamp: Timestamp.now(),
-        });
-
-        console.log(`  확정: ${data.itemName} - ${data.prices.length}개 평균 = ${avgPrice}G`);
-        count++;
-
-        // 확정 후 todayTemp 문서 삭제 (데이터 안전성 확보 후 삭제)
-        batch.delete(doc.ref);
+        // 중복 확인
+        const exists = history[itemId].some(entry => entry.date === targetKey);
+        if (!exists) {
+          history[itemId].push({ date: targetKey, price: avgPrice });
+          history[itemId].sort((a, b) => a.date.localeCompare(b.date));
+          console.log(`  확정: ${itemId} - ${prices.length}개 평균 = ${avgPrice.toFixed(0)}G`);
+          count++;
+        }
       }
-    });
+    }
 
-    await batch.commit();
-    console.log(`[finalizeYesterdayData] 완료: ${count}개 아이템 데이터 확정 및 todayTemp에서 삭제`);
+    // 캐시 업데이트
+    historyCache = history;
+
+    console.log(`[finalizeYesterdayData] 완료: ${count}개 경매장 아이템 데이터 확정`);
   } catch (error) {
     console.error('전날 데이터 확정 오류:', error);
     throw error;
@@ -297,96 +400,134 @@ export async function finalizeYesterdayData(useToday: boolean = false): Promise<
 }
 
 /**
+ * 어제 확정 데이터를 history_all.json에 추가 + _raw 초기화
+ * 매일 00시에 실행
+ */
+export async function appendYesterdayToHistory(): Promise<void> {
+  try {
+    console.log('[appendYesterdayToHistory] 시작...');
+
+    const lostArkToday = getLostArkDate();
+    const todayKey = formatDateKey(lostArkToday);
+
+    // 전날 날짜
+    const yesterday = new Date(lostArkToday);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = formatDateKey(yesterday);
+
+    console.log(`[appendYesterdayToHistory] 어제: ${yesterdayKey}, 오늘: ${todayKey}`);
+
+    const latestData = await readLatestPrices();
+
+    // 현재 데이터가 어제 날짜인지 확인
+    if (latestData._meta?.date !== yesterdayKey) {
+      console.log(`[appendYesterdayToHistory] 이미 처리됨 또는 날짜 불일치: ${latestData._meta?.date}`);
+      return;
+    }
+
+    // _raw 초기화 및 날짜 변경
+    latestData._raw = {};
+    latestData._meta = {
+      date: todayKey,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 캐시 업데이트
+    latestPricesCache = latestData;
+
+    console.log(`[appendYesterdayToHistory] 완료: _raw 초기화, 날짜 변경 ${yesterdayKey} → ${todayKey}`);
+  } catch (error) {
+    console.error('[appendYesterdayToHistory] 실패:', error);
+  }
+}
+
+/**
+ * 캐시된 데이터를 Firebase Storage에 저장 (크론 완료 후 호출)
+ * 이 함수가 실제로 JSON 파일을 업로드함
+ */
+export async function generateAndUploadPriceJson(): Promise<void> {
+  try {
+    console.log('[generateAndUploadPriceJson] 캐시 데이터 저장 시작...');
+
+    // latest_prices.json 저장
+    if (latestPricesCache !== null) {
+      await writeLatestPrices(latestPricesCache);
+
+      const itemCount = Object.keys(latestPricesCache).filter(k => !k.startsWith('_')).length;
+      const rawCount = Object.keys(latestPricesCache._raw || {}).length;
+
+      console.log(`[generateAndUploadPriceJson] latest_prices.json 저장 완료: ${itemCount}개 아이템, ${rawCount}개 경매장 _raw`);
+    }
+
+    // history_all.json 저장 (변경된 경우에만)
+    if (historyCache !== null) {
+      await writeHistoryAll(historyCache);
+      console.log(`[generateAndUploadPriceJson] history_all.json 저장 완료`);
+    }
+
+    // 캐시 초기화 (다음 크론을 위해)
+    latestPricesCache = null;
+    historyCache = null;
+    cacheLoaded = false;
+
+    console.log('[generateAndUploadPriceJson] 완료!');
+  } catch (error) {
+    console.error('[generateAndUploadPriceJson] 저장 실패:', error);
+    throw error;
+  }
+}
+
+/**
  * 일별 가격 히스토리 조회 (차트용)
- * Firebase Storage의 JSON 파일에서 데이터 읽기 (Firestore 읽기 0회)
- * @param days - 조회할 일수 (기본 30일, 최대 365일 가능)
+ * - history_all.json + latest_prices.json 조합
  */
 export async function getDailyPriceHistory(
   itemId: string,
   days: number = 30
 ): Promise<PriceEntry[]> {
   try {
-    const storage = getAdminStorage();
     const history: PriceEntry[] = [];
 
-    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
-    if (!bucketName) {
-      throw new Error('FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
-    }
+    // 1. history_all.json에서 과거 데이터
+    const historyData = await readHistoryAll();
+    const itemHistory = historyData[itemId] || [];
 
-    const bucket = storage.bucket(bucketName);
+    itemHistory.forEach((entry) => {
+      const [year, month, day] = entry.date.split('-').map(Number);
+      const utcDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 
-    // 1. history_all.json에서 과거 확정 데이터 조회
-    try {
-      const historyFile = bucket.file('history_all.json');
-      const [historyContents] = await historyFile.download();
-      const historyByItem: Record<string, Array<{date: string, price: number}>> = JSON.parse(historyContents.toString());
+      history.push({
+        itemId: itemId,
+        price: entry.price,
+        timestamp: { seconds: Math.floor(utcDate.getTime() / 1000), nanoseconds: 0 },
+        date: entry.date,
+      });
+    });
 
-      // 해당 아이템의 히스토리 가져오기
-      const itemHistory = historyByItem[itemId] || [];
+    // 2. latest_prices.json에서 오늘 데이터
+    const latestData = await readLatestPrices();
+    const todayPrice = latestData[itemId];
+    const todayKey = latestData._meta?.date || formatDateKey(getLostArkDate());
 
-      itemHistory.forEach((entry) => {
-        const dateStr = entry.date; // YYYY-MM-DD
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const utcDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-        const timestamp = Timestamp.fromDate(utcDate);
+    if (todayPrice !== undefined) {
+      const alreadyExists = history.some(entry => entry.date === todayKey);
+      if (!alreadyExists) {
+        const [year, month, day] = todayKey.split('-').map(Number);
+        const todayUtc = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 
         history.push({
           itemId: itemId,
-          price: entry.price,
-          timestamp: timestamp,
-          date: dateStr,
+          price: todayPrice,
+          timestamp: { seconds: Math.floor(todayUtc.getTime() / 1000), nanoseconds: 0 },
+          date: todayKey,
         });
-      });
-
-      console.log(`[getDailyPriceHistory] ${itemId}: history_all.json에서 ${itemHistory.length}개 과거 데이터 로드`);
-    } catch (error: any) {
-      if (error.code === 404) {
-        console.log('[getDailyPriceHistory] history_all.json 파일이 없습니다.');
-      } else {
-        console.error('[getDailyPriceHistory] history_all.json 읽기 오류:', error);
       }
     }
 
-    // 2. latest_prices.json에서 오늘 데이터 추가
-    try {
-      const latestFile = bucket.file('latest_prices.json');
-      const [latestContents] = await latestFile.download();
-      const latestPrices: Record<string, number> = JSON.parse(latestContents.toString());
-
-      const todayPrice = latestPrices[itemId];
-      if (todayPrice !== undefined) {
-        const lostArkDate = getLostArkDate();
-        const todayKey = formatDateKey(lostArkDate);
-
-        const [year, month, day] = todayKey.split('-').map(Number);
-        const todayUtc = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-        const todayTimestamp = Timestamp.fromDate(todayUtc);
-
-        // 오늘 날짜가 history에 이미 있는지 확인 (중복 방지)
-        const alreadyExists = history.some(entry => entry.date === todayKey);
-        if (!alreadyExists) {
-          history.push({
-            itemId: itemId,
-            price: todayPrice,
-            timestamp: todayTimestamp,
-            date: todayKey,
-          });
-          console.log(`[getDailyPriceHistory] ${itemId}: 오늘 데이터 추가 (${todayKey}: ${todayPrice}G)`);
-        }
-      }
-    } catch (error: any) {
-      if (error.code === 404) {
-        console.log('[getDailyPriceHistory] latest_prices.json 파일이 없습니다.');
-      } else {
-        console.error('[getDailyPriceHistory] latest_prices.json 읽기 오류:', error);
-      }
-    }
-
-    // 날짜순 정렬 (오래된 것부터)
+    // 날짜순 정렬
     const sorted = history.sort((a, b) => a.timestamp.seconds - b.timestamp.seconds);
 
-    // 최근 days 개만 반환
+    // 최근 days개만 반환
     return sorted.slice(-days);
   } catch (error) {
     console.error('일별 가격 히스토리 조회 오류:', error);
@@ -395,288 +536,30 @@ export async function getDailyPriceHistory(
 }
 
 /**
- * todayTemp의 모든 가격 데이터를 JSON으로 생성하여 Firebase Storage에 업로드
- *
- * 동작 방식:
- * 1. todayTemp 컬렉션의 모든 문서 조회
- * 2. 경매장 아이템: prices 배열의 평균 계산
- * 3. 거래소 아이템: prices[0] 값 사용 (이미 평균값)
- * 4. { itemId: price, ... } 형태의 JSON 생성
- * 5. Firebase Storage의 latest_prices.json에 업로드 (Public 권한)
- */
-export async function generateAndUploadPriceJson(): Promise<void> {
-  try {
-    const db = getAdminFirestore();
-    const storage = getAdminStorage();
-
-    console.log('[generateAndUploadPriceJson] 시작...');
-
-    // 로스트아크 기준 오늘 날짜
-    const today = getLostArkDate();
-    const todayKey = formatDateKey(today);
-
-    console.log(`[generateAndUploadPriceJson] 오늘 날짜: ${todayKey}`);
-
-    // 1. todayTemp 컬렉션에서 오늘 날짜 데이터만 조회 (성능 최적화)
-    const snapshot = await db.collection('todayTemp').get();
-    const prices: Record<string, number> = {};
-    let itemCount = 0;
-    let skippedCount = 0;
-
-    // 2. 각 아이템의 평균 가격 계산 (오늘 날짜만)
-    snapshot.docs.forEach((doc) => {
-      const data = doc.data();
-      const docId = doc.id;
-      const itemId = data.itemId;
-
-      // 문서 ID에서 날짜 추출
-      const dateMatch = docId.match(/_(\d{4}-\d{2}-\d{2})$/);
-      if (!dateMatch) {
-        skippedCount++;
-        return;
-      }
-
-      const docDate = dateMatch[1];
-
-      // 오늘 날짜가 아니면 건너뛰기 (오래된 데이터 무시)
-      if (docDate !== todayKey) {
-        skippedCount++;
-        return;
-      }
-
-      if (!itemId || !data.prices || !Array.isArray(data.prices) || data.prices.length === 0) {
-        return; // 유효하지 않은 데이터는 건너뛰기
-      }
-
-      // API에서 주는 그대로 저장 (반올림 없음)
-      const avgPrice = data.prices.reduce((a: number, b: number) => a + b, 0) / data.prices.length;
-
-      prices[itemId] = avgPrice;
-      itemCount++;
-    });
-
-    console.log(`[generateAndUploadPriceJson] ${itemCount}개 아이템 가격 계산 완료 (${skippedCount}개 오래된 데이터 건너뜀)`);
-
-    // 3. JSON 문자열 생성
-    const jsonContent = JSON.stringify(prices, null, 2); // 가독성을 위해 pretty-print
-
-    // 4. Firebase Storage에 업로드
-    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
-    if (!bucketName) {
-      throw new Error('FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
-    }
-
-    const bucket = storage.bucket(bucketName);
-    const file = bucket.file('latest_prices.json');
-
-    await file.save(jsonContent, {
-      metadata: {
-        contentType: 'application/json',
-        cacheControl: 'public, max-age=60, must-revalidate', // 1분 캐싱
-        metadata: {
-          generatedAt: new Date().toISOString(),
-          itemCount: String(itemCount),
-        },
-      },
-    });
-
-    // 5. 공개 URL 생성
-    await file.makePublic();
-
-    const publicUrl = `https://storage.googleapis.com/${bucketName}/latest_prices.json`;
-    console.log(`[generateAndUploadPriceJson] 업로드 완료: ${publicUrl}`);
-    console.log(`[generateAndUploadPriceJson] 파일 크기: ${(jsonContent.length / 1024).toFixed(2)} KB`);
-
-  } catch (error) {
-    console.error('[generateAndUploadPriceJson] JSON 생성/업로드 실패:', error);
-    // 에러를 throw하지 않음 - 크론 작업 전체가 실패하지 않도록
-    // 대신 로그만 남기고 계속 진행
-  }
-}
-
-/**
- * 전체 히스토리 JSON 생성 (초기 마이그레이션용)
- *
- * dailyPrices 컬렉션의 모든 과거 확정 데이터를 history_all.json으로 생성
- * 한 번만 실행하면 됨 (또는 전체 재생성 필요할 때)
+ * 전체 히스토리 JSON 생성 (마이그레이션용, 일반적으로 사용 안함)
  */
 export async function generateHistoryJson(): Promise<void> {
-  try {
-    const db = getAdminFirestore();
-    const storage = getAdminStorage();
-
-    console.log('[generateHistoryJson] 전체 히스토리 생성 시작...');
-
-    // dailyPrices 컬렉션에서 모든 데이터 조회
-    const snapshot = await db.collection('dailyPrices').get();
-
-    // 아이템별로 그룹화: { itemId: [{date, price}, ...] }
-    const historyByItem: Record<string, Array<{date: string, price: number}>> = {};
-
-    snapshot.docs.forEach((doc) => {
-      const data = doc.data();
-      const itemId = data.itemId;
-      const date = data.date; // YYYY-MM-DD
-      const price = data.price;
-
-      if (!itemId || !date || price === undefined) {
-        return; // 유효하지 않은 데이터 건너뛰기
-      }
-
-      if (!historyByItem[itemId]) {
-        historyByItem[itemId] = [];
-      }
-
-      historyByItem[itemId].push({ date, price });
-    });
-
-    // 각 아이템의 히스토리를 날짜순 정렬
-    Object.keys(historyByItem).forEach(itemId => {
-      historyByItem[itemId].sort((a, b) => a.date.localeCompare(b.date));
-    });
-
-    console.log(`[generateHistoryJson] ${Object.keys(historyByItem).length}개 아이템 히스토리 생성 완료`);
-
-    // JSON 문자열 생성
-    const jsonContent = JSON.stringify(historyByItem, null, 2);
-
-    // Firebase Storage에 업로드
-    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
-    if (!bucketName) {
-      throw new Error('FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
-    }
-
-    const bucket = storage.bucket(bucketName);
-    const file = bucket.file('history_all.json');
-
-    await file.save(jsonContent, {
-      metadata: {
-        contentType: 'application/json',
-        cacheControl: 'public, max-age=3600, must-revalidate', // 1시간 캐싱
-        metadata: {
-          generatedAt: new Date().toISOString(),
-          itemCount: String(Object.keys(historyByItem).length),
-        },
-      },
-    });
-
-    await file.makePublic();
-
-    const publicUrl = `https://storage.googleapis.com/${bucketName}/history_all.json`;
-    console.log(`[generateHistoryJson] 업로드 완료: ${publicUrl}`);
-    console.log(`[generateHistoryJson] 파일 크기: ${(jsonContent.length / 1024).toFixed(2)} KB`);
-
-  } catch (error) {
-    console.error('[generateHistoryJson] 히스토리 JSON 생성 실패:', error);
-    throw error;
-  }
+  console.log('[generateHistoryJson] 이 함수는 더 이상 Firestore를 사용하지 않습니다.');
+  console.log('[generateHistoryJson] 기존 history_all.json을 유지합니다.');
 }
 
+// ============================================================
+// 하위 호환성을 위한 더미 함수들 (사용되지 않음)
+// ============================================================
+
 /**
- * 어제 확정 데이터를 history_all.json에 추가
- *
- * 매일 00시에 실행
- * 1. 현재 history_all.json 다운로드
- * 2. 어제 확정된 dailyPrices 데이터 추가
- * 3. 다시 업로드
+ * @deprecated Firestore 제거됨. saveHistoricalPrice 사용
  */
-export async function appendYesterdayToHistory(): Promise<void> {
-  try {
-    const db = getAdminFirestore();
-    const storage = getAdminStorage();
-
-    console.log('[appendYesterdayToHistory] 어제 데이터 추가 시작...');
-
-    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
-    if (!bucketName) {
-      throw new Error('FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.');
-    }
-
-    const bucket = storage.bucket(bucketName);
-    const file = bucket.file('history_all.json');
-
-    // 1. 기존 history_all.json 다운로드
-    let historyByItem: Record<string, Array<{date: string, price: number}>> = {};
-
-    try {
-      const [contents] = await file.download();
-      historyByItem = JSON.parse(contents.toString());
-      console.log(`[appendYesterdayToHistory] 기존 히스토리 로드 완료: ${Object.keys(historyByItem).length}개 아이템`);
-    } catch (error: any) {
-      if (error.code === 404) {
-        console.log('[appendYesterdayToHistory] history_all.json 없음. 새로 생성합니다.');
-        historyByItem = {};
-      } else {
-        throw error;
-      }
-    }
-
-    // 2. 어제 날짜 계산
-    const lostArkToday = getLostArkDate();
-    const yesterday = new Date(lostArkToday);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayKey = formatDateKey(yesterday);
-
-    console.log(`[appendYesterdayToHistory] 어제 날짜: ${yesterdayKey}`);
-
-    // 3. dailyPrices에서 어제 데이터 조회
-    const snapshot = await db.collection('dailyPrices')
-      .where('date', '==', yesterdayKey)
-      .get();
-
-    let addedCount = 0;
-
-    snapshot.docs.forEach((doc) => {
-      const data = doc.data();
-      const itemId = data.itemId;
-      const price = data.price;
-
-      if (!itemId || price === undefined) {
-        return;
-      }
-
-      // 해당 아이템 히스토리가 없으면 생성
-      if (!historyByItem[itemId]) {
-        historyByItem[itemId] = [];
-      }
-
-      // 이미 같은 날짜 데이터가 있는지 확인 (중복 방지)
-      const exists = historyByItem[itemId].some(entry => entry.date === yesterdayKey);
-      if (!exists) {
-        historyByItem[itemId].push({ date: yesterdayKey, price });
-        addedCount++;
-      }
-    });
-
-    // 4. 각 아이템 히스토리 날짜순 정렬
-    Object.keys(historyByItem).forEach(itemId => {
-      historyByItem[itemId].sort((a, b) => a.date.localeCompare(b.date));
-    });
-
-    console.log(`[appendYesterdayToHistory] ${addedCount}개 아이템 데이터 추가 완료`);
-
-    // 5. JSON 업로드
-    const jsonContent = JSON.stringify(historyByItem, null, 2);
-
-    await file.save(jsonContent, {
-      metadata: {
-        contentType: 'application/json',
-        cacheControl: 'public, max-age=3600, must-revalidate',
-        metadata: {
-          updatedAt: new Date().toISOString(),
-          lastAppendedDate: yesterdayKey,
-          itemCount: String(Object.keys(historyByItem).length),
-        },
-      },
-    });
-
-    await file.makePublic();
-
-    console.log(`[appendYesterdayToHistory] 업로드 완료`);
-    console.log(`[appendYesterdayToHistory] 파일 크기: ${(jsonContent.length / 1024).toFixed(2)} KB`);
-
-  } catch (error) {
-    console.error('[appendYesterdayToHistory] 어제 데이터 추가 실패:', error);
-    // 에러를 throw하지 않음 - 크론 작업 전체가 실패하지 않도록
+export async function savePriceData(
+  itemId: string,
+  price: number,
+  itemName?: string,
+  customDate?: Date
+): Promise<void> {
+  if (!customDate) {
+    console.warn('[savePriceData] customDate가 필요합니다.');
+    return;
   }
+  const dateKey = formatDateKey(customDate);
+  await saveHistoricalPrice(itemId, price, dateKey, itemName);
 }

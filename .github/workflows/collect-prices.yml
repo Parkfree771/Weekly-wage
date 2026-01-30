@@ -20,6 +20,11 @@ on:
         required: false
         default: 'no'
 
+# 동시 실행 방지 - JSON 파일 동시 수정 충돌 방지
+concurrency:
+  group: collect-prices
+  cancel-in-progress: false
+
 jobs:
   collect-market-refine-gem:
     # 정각(00분): 거래소 - 계승 재련 재료 + 재련 재료 + 젬 (17개)

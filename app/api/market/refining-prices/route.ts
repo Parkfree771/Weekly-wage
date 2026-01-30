@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getAdminFirestore } from '@/lib/firebase-admin';
+import { getAdminStorage } from '@/lib/firebase-admin';
 import { getLostArkDate, formatDateKey } from '@/lib/firestore-admin';
 
 /**
  * 재련 시뮬레이터용 재료 가격 가져오기
  * - 전전날(2일 전) 데이터 사용
+ * - history_all.json에서 읽기 (Firestore 제거)
  * - 00시 기준으로 날짜 변경
  * - 하루종일 같은 데이터 사용 (캐시 권장)
  */
@@ -47,23 +48,50 @@ export async function GET() {
       '66112718', // 장인의 재봉술 4단계 (상급 31~40)
     ];
 
-    const db = getAdminFirestore();
-    const prices: Record<string, number> = {};
+    // Firebase Storage에서 history_all.json 읽기
+    const storage = getAdminStorage();
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+
+    if (!bucketName) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'FIREBASE_STORAGE_BUCKET 환경 변수가 설정되지 않았습니다.'
+        },
+        { status: 500 }
+      );
+    }
+
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file('history_all.json');
+
+    let historyData: Record<string, Array<{ date: string; price: number }>> = {};
+
+    try {
+      const [contents] = await file.download();
+      historyData = JSON.parse(contents.toString());
+    } catch (error: any) {
+      if (error.code === 404) {
+        return NextResponse.json({
+          success: false,
+          error: 'history_all.json 파일이 없습니다.',
+          targetDate: targetDateStr,
+        }, { status: 404 });
+      }
+      throw error;
+    }
 
     // 각 아이템의 전전날 가격 데이터 조회
-    const pricePromises = itemIds.map(async (itemId) => {
-      const docRef = db.collection('dailyPrices').doc(`${itemId}_${targetDateStr}`);
-      const doc = await docRef.get();
+    const prices: Record<string, number> = {};
 
-      if (doc.exists) {
-        const data = doc.data();
-        if (data && data.price !== undefined) {
-          prices[itemId] = data.price;
-        }
+    for (const itemId of itemIds) {
+      const itemHistory = historyData[itemId] || [];
+      const targetEntry = itemHistory.find(entry => entry.date === targetDateStr);
+
+      if (targetEntry) {
+        prices[itemId] = targetEntry.price;
       }
-    });
-
-    await Promise.all(pricePromises);
+    }
 
     // 데이터가 없는 아이템이 있는지 체크
     const missingItems = itemIds.filter(id => !prices[id]);

@@ -169,7 +169,7 @@ export async function GET(request: Request) {
           }
         }
 
-        // === 1시간마다: 오늘 평균가를 todayTemp에 덮어쓰기 ===
+        // === 1시간마다: 오늘 평균가를 latest_prices.json에 저장 ===
         const todayAvgPrice = itemData.Stats?.[0]?.AvgPrice || 0;
 
         if (todayAvgPrice > 0) {
@@ -190,7 +190,7 @@ export async function GET(request: Request) {
 
       } else if (item.type === 'auction') {
         // 경매장 아이템
-        // 1시간마다: 현재 최저가를 todayTemp에 저장
+        // 1시간마다: 현재 최저가를 latest_prices.json의 _raw에 누적
         // 00시가 되면 finalizeYesterdayData()에서 전날 데이터를 평균 계산
 
         // 필터 옵션 적용 (있으면)
@@ -283,7 +283,7 @@ export async function GET(request: Request) {
               console.log(`[Auction] ${item.name} - 전날 마지막 가격으로 추가: ${yesterdayKey} = ${currentPrice}G`);
             }
 
-            // 오늘 todayTemp에 추가 (기존 로직)
+            // 오늘 데이터에 추가 (latest_prices.json의 _raw)
             await addTodayTempPrice(item.id, currentPrice, item.name);
 
             results.push({
