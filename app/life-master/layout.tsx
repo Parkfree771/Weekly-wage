@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '로아 벌목 계산기 | 로아 생활 효율 | 로아 융화재료 제작 | 로골로골',
-  description: '로아 벌목 효율 계산기! 로아 생활 콘텐츠 효율, 로아 융화재료 제작 손익, 로아 생활의 가루 수익을 실시간 거래소 시세로 계산하세요. 로아 목재 시세도 확인 가능.',
-  keywords: '로아 벌목, 로아 벌목 효율, 로아 벌목 계산기, 로아 생활, 로아 생활 효율, 로아 융화재료, 로아 융화재료 제작, 로아 생활의 가루, 로아 목재 시세, 로스트아크 벌목, 아비도스 융화재료, 로골로골',
+  title: '벌목 계산기 - 생활 효율, 융화재료 제작',
+  description: '로골로골 벌목 효율 계산기! 로아 생활 콘텐츠 효율, 로아 융화재료 제작 손익, 로아 생활의 가루 수익을 실시간 거래소 시세로 계산하세요. 로아 목재 시세도 확인 가능.',
+  keywords: '로골로골, 로아 벌목, 로아 벌목 효율, 로아 벌목 계산기, 로아 생활, 로아 생활 효율, 로아 융화재료, 로아 융화재료 제작, 로아 생활의 가루, 로아 목재 시세, 로스트아크 벌목, 아비도스 융화재료',
   openGraph: {
-    title: '로아 벌목 계산기 | 로아 생활 효율 | 로골로골',
-    description: '로아 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익을 실시간 시세로 계산하세요.',
+    title: '로골로골 | 벌목 계산기 - 생활 효율, 융화재료 제작',
+    description: '로골로골 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익을 실시간 시세로 계산하세요.',
     url: 'https://lostarkweeklygold.kr/life-master',
     siteName: '로골로골',
     images: [
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: '생활의 달인 효율 계산기'
+        alt: '로골로골 - 벌목 계산기'
       }
     ],
     locale: 'ko_KR',
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '로아 벌목 계산기 | 로아 생활 효율 | 로골로골',
-    description: '로아 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익 계산',
+    title: '로골로골 | 벌목 계산기 - 생활 효율, 융화재료 제작',
+    description: '로골로골 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익 계산',
     images: ['/og-image.png'],
   },
 };
@@ -43,7 +43,7 @@ export default function LifeMasterLayout({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            "name": "로아 벌목 계산기 - 로골로골",
+            "name": "로골로골 - 벌목 계산기",
             "url": "https://lostarkweeklygold.kr/life-master",
             "description": "로아 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익을 실시간 거래소 가격으로 분석",
             "applicationCategory": "GameApplication",

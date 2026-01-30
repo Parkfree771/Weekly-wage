@@ -1,12 +1,12 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: '로아 재련 시뮬레이터 | 로아 재련 비용 계산 | 로아 장기백 평균 | 로골로골',
-  description: '로아 재련 시뮬레이터로 실제 재련을 체험하세요! 로아 재련 비용 계산, 로아 장기백(장인의 기운) 평균 통계, 로아 상급재련/일반재련 확률을 실시간 거래소 시세로 분석합니다.',
-  keywords: '로아 재련, 로아 재련 시뮬, 로아 재련 비용, 로아 재련 계산기, 로아 장기백, 로아 장인의 기운, 로아 상급재련, 로아 재련 확률, 로아 재련 재료, 로아 재련 통계, 로스트아크 재련, 재련 시뮬레이터, 전율 장비, 세르카 계승 장비, 로골로골',
+  title: '재련 시뮬레이터 - 재련 비용 계산, 장기백 평균',
+  description: '로골로골 재련 시뮬레이터로 실제 재련을 체험하세요! 로아 재련 비용 계산, 로아 장기백(장인의 기운) 평균 통계, 로아 상급재련/일반재련 확률을 실시간 거래소 시세로 분석합니다.',
+  keywords: '로골로골, 로아 재련, 로아 재련 시뮬, 로아 재련 비용, 로아 재련 계산기, 로아 장기백, 로아 장인의 기운, 로아 상급재련, 로아 재련 확률, 로아 재련 재료, 로아 재련 통계, 로스트아크 재련, 재련 시뮬레이터, 전율 장비, 세르카 계승 장비',
   openGraph: {
-    title: '로아 재련 시뮬레이터 | 로아 재련 비용 | 로아 장기백 | 로골로골',
-    description: '로아 재련 시뮬레이터! 로아 재련 비용 계산, 로아 장기백 평균 통계, 로아 상급재련 확률을 확인하세요.',
+    title: '로골로골 | 재련 시뮬레이터 - 재련 비용 계산, 장기백 평균',
+    description: '로골로골 재련 시뮬레이터! 로아 재련 비용 계산, 로아 장기백 평균 통계, 로아 상급재련 확률을 확인하세요.',
     url: 'https://lostarkweeklygold.kr/refining',
     siteName: '로골로골',
     locale: 'ko_KR',
@@ -32,7 +32,7 @@ export default function RefiningLayout({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            "name": "로아 재련 시뮬레이터 - 로골로골",
+            "name": "로골로골 - 재련 시뮬레이터",
             "url": "https://lostarkweeklygold.kr/refining",
             "description": "로아 재련 시뮬레이터! 로아 재련 비용 계산, 로아 장기백 평균 통계, 로아 상급재련/일반재련 확률 확인",
             "applicationCategory": "GameApplication",

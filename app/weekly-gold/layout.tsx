@@ -3,15 +3,15 @@ import { Metadata } from 'next'
 // layout.tsx
 
 export const metadata: Metadata = {
-  title: '로아 주간 골드 계산 | 로아 더보기 효율 | 로아 레이드 보상 | 로골로골',
+  title: '주간 골드 계산기 - 더보기 효율, 레이드 보상',
 
-  description: '로아 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상을 실시간 거래소 가격으로 계산하세요. 로아 세르카, 로아 카제로스 레이드 골드 수익과 더보기 손익을 한눈에.',
+  description: '로골로골 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상을 실시간 거래소 가격으로 계산하세요. 로아 세르카, 로아 카제로스 레이드 골드 수익과 더보기 손익을 한눈에.',
 
-  keywords: '로아 주간 골드, 로아 골드 계산, 로아 더보기, 로아 더보기 효율, 로아 레이드 보상, 로아 세르카, 로아 카제로스, 로아 주급, 로아 골드 수익, 로스트아크 주간 골드, 세르카 보상, 더보기 손익, 원정대 주급, 로골로골',
+  keywords: '로골로골, 로아 주간 골드, 로아 골드 계산, 로아 더보기, 로아 더보기 효율, 로아 레이드 보상, 로아 세르카, 로아 카제로스, 로아 주급, 로아 골드 수익, 로스트아크 주간 골드, 세르카 보상, 더보기 손익, 원정대 주급',
 
   openGraph: {
-    title: '로아 주간 골드 계산 | 로아 더보기 효율 | 로골로골',
-    description: '로아 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상, 로아 세르카/카제로스 골드 수익을 확인하세요.',
+    title: '로골로골 | 주간 골드 계산기 - 더보기 효율, 레이드 보상',
+    description: '로골로골 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상, 로아 세르카/카제로스 골드 수익을 확인하세요.',
     url: 'https://lostarkweeklygold.kr/weekly-gold',
     siteName: '로골로골',
     locale: 'ko_KR',
@@ -37,7 +37,7 @@ export default function WeeklyGoldLayout({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            "name": "로아 주간 골드 계산기 - 로골로골",
+            "name": "로골로골 - 주간 골드 계산기",
             "url": "https://lostarkweeklygold.kr/weekly-gold",
             "description": "로아 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상, 로아 세르카/카제로스 골드 수익을 실시간 시세로 계산",
             "applicationCategory": "GameApplication",

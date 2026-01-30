@@ -129,7 +129,7 @@ export default function Home() {
           <Row className="justify-content-center text-center">
             <Col md={8}>
               <p className="small mb-2" style={{ color: 'var(--text-muted)' }}>
-                &copy; {new Date().getFullYear()} <strong style={{ color: 'var(--text-primary)' }}>로스트아크 골드 계산기</strong>
+                &copy; {new Date().getFullYear()} <strong style={{ color: 'var(--text-primary)' }}>로골로골</strong>
               </p>
               <div className="d-flex justify-content-center align-items-center gap-2 gap-sm-3 flex-wrap">
                 <a href="/about" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
