@@ -90,32 +90,6 @@ export default function RefiningPage() {
         </Row>
 
       </Container>
-
-      {/* 푸터 */}
-      <footer style={{ padding: '1.5rem 0', marginTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
-        <Container>
-          <Row className="justify-content-center text-center">
-            <Col md={8}>
-              <p className="small mb-2" style={{ color: 'var(--text-muted)' }}>
-                &copy; {new Date().getFullYear()} <strong style={{ color: 'var(--text-primary)' }}>로스트아크 골드 계산기</strong>
-              </p>
-              <div className="d-flex justify-content-center gap-3">
-                <a href="/about" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
-                  사이트 소개
-                </a>
-                <span style={{ color: 'var(--text-muted)' }}>|</span>
-                <a href="/privacy" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
-                  개인정보처리방침
-                </a>
-                <span style={{ color: 'var(--text-muted)' }}>|</span>
-                <a href="/terms" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
-                  이용약관
-                </a>
-              </div>
-            </Col>
-          </Row>
-        </Container>
-      </footer>
     </div>
   );
 }

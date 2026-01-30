@@ -25,6 +25,11 @@ const nextConfig = {
         hostname: 'img.lostark.co.kr',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
     ],
   },
   

@@ -1,0 +1,1182 @@
+/* ==========================================================================
+   마이페이지 전용 스타일 - 주간골드 페이지와 동일한 테마
+   ========================================================================== */
+
+/* 1. 공통 브랜드 변수 */
+.pageWrapper {
+  --brand-hue: 15;
+  --brand-saturation: 85%;
+  --brand-lightness: 50%;
+  --brand-primary: hsl(var(--brand-hue), var(--brand-saturation), var(--brand-lightness));
+  min-height: 100vh;
+  padding-bottom: 2rem;
+}
+
+/* 2. 라이트 모드 */
+:global(:root) .pageWrapper {
+  --background-start-rgb: 245, 242, 240;
+  --background-end-rgb: 235, 230, 228;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-header-bg: rgba(160, 60, 30, 0.03);
+  --border-color: rgba(160, 60, 30, 0.15);
+  --text-primary: #2b1d1a;
+  --text-secondary: #5a4a45;
+  --text-muted: #75605a;
+  background: linear-gradient(180deg, rgb(var(--background-start-rgb)) 0%, rgb(var(--background-end-rgb)) 100%);
+}
+
+/* 3. 다크 모드 */
+:global([data-theme="dark"]) .pageWrapper {
+  --background-start-rgb: 45, 45, 50;
+  --background-end-rgb: 30, 30, 35;
+  --card-bg: rgba(30, 30, 35, 0.95);
+  --card-header-bg: rgba(255, 255, 255, 0.05);
+  --border-color: rgba(255, 255, 255, 0.15);
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-muted: #a0a0a0;
+  background: linear-gradient(180deg, rgb(var(--background-start-rgb)) 0%, rgb(var(--background-end-rgb)) 100%);
+}
+
+/* 컨테이너 */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 80px 16px 40px;
+}
+
+/* 페이지 헤더 */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pageTitle {
+  font-size: clamp(1.3rem, 3vw, 1.6rem);
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* 캐릭터 등록 버튼 */
+.registerBtn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #a855f7;
+  background: transparent;
+  border: 2px solid #a855f7;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.registerBtn:hover {
+  background: #a855f7;
+  color: #fff;
+}
+
+/* 원정대 편집 버튼 */
+.editBtn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editBtn:hover {
+  border-color: var(--text-secondary);
+  background: var(--card-header-bg);
+}
+
+/* 저장 버튼 */
+.saveButton {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.saveButton.hasChanges {
+  color: #fff;
+  background: #a855f7;
+  border-color: #a855f7;
+  animation: pulse 2s infinite;
+}
+
+.saveButton.hasChanges:hover {
+  background: #9333ea;
+  border-color: #9333ea;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(168, 85, 247, 0); }
+}
+
+/* 총 골드 배지 */
+.totalGoldBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.totalGoldBadge .goldLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.totalGoldBadge .goldAmount {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+
+/* 카드 공통 스타일 */
+.pageWrapper :global(.card) {
+  background-color: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 12px !important;
+  transition: all 0.3s ease;
+}
+
+/* 버튼 스타일 */
+.pageWrapper :global(.btn-primary) {
+  background-color: #9a3412 !important;
+  border: 1px solid #7c2d12 !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+
+.pageWrapper :global(.btn-primary:hover) {
+  background-color: #c2410c !important;
+  border-color: #9a3412 !important;
+}
+
+.pageWrapper :global(.btn-outline-primary) {
+  color: #9a3412 !important;
+  border-color: #9a3412 !important;
+}
+
+.pageWrapper :global(.btn-outline-primary:hover) {
+  background-color: #9a3412 !important;
+  color: #fff !important;
+}
+
+/* 이미지 로딩 표시 */
+.loadingImages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 8px;
+  margin-bottom: 12px;
+}
+
+/* 빈 상태 카드 */
+.emptyCard {
+  color: var(--text-primary);
+}
+
+/* 카드 그리드 (2열) */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* 캐릭터 카드 */
+.characterCard {
+  position: relative;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  background-image: url('/background.webp');
+  background-size: cover;
+  background-position: center;
+}
+
+/* 카드 헤더 */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+}
+
+.characterName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7);
+}
+
+.cardHeader .headerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.refreshBtn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fbbf24;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.6);
+  transform: rotate(90deg);
+}
+
+.refreshBtn:disabled {
+  cursor: not-allowed;
+}
+
+.refreshBtn.refreshDisabled {
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.characterLevel {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fbbf24;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7);
+}
+
+/* 카드 본문 */
+.cardBody {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  align-items: stretch;
+  background: transparent;
+}
+
+/* 캐릭터 이미지 영역 */
+.characterImageArea {
+  flex-shrink: 0;
+  display: flex;
+}
+
+.characterImage {
+  width: 160px;
+  height: 100%;
+  min-height: 150px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--card-header-bg);
+  border: 2px solid var(--border-color);
+}
+
+.characterPlaceholder {
+  width: 160px;
+  height: 100%;
+  min-height: 150px;
+  border-radius: 10px;
+  background: var(--card-header-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border-color);
+}
+
+/* 오른쪽 영역 */
+.cardRight {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+/* 아이템 행 */
+.itemRow {
+  display: flex;
+  gap: 5px;
+  flex: 1;
+}
+
+/* 레이드 행 래퍼 (버튼 포함) */
+.raidRowWrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+/* 레이드 넘기기 버튼 */
+.raidNavBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.raidNavBtn:hover {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.raidNavLeft {
+  left: -8px;
+}
+
+.raidNavRight {
+  right: -8px;
+}
+
+/* 톱니바퀴 버튼 */
+.gearBtn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  transition: all 0.2s ease;
+}
+
+.gearBtn:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: rotate(45deg);
+}
+
+/* 난이도 선택 메뉴 */
+.difficultyMenu {
+  position: absolute;
+  top: 28px;
+  right: 4px;
+  background: rgba(30, 30, 35, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 20;
+  min-width: 100px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.difficultyOption {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.difficultyOption:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.difficultyOption.selected {
+  background: rgba(154, 52, 18, 0.6);
+  font-weight: 600;
+}
+
+/* 레이드 카드 */
+.raidCard {
+  flex: 1;
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid var(--border-color);
+}
+
+.raidCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.raidChecked {
+  border-color: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+.raidImage {
+  object-fit: cover;
+}
+
+.raidOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.75) 100%);
+  z-index: 1;
+}
+
+.raidInfo {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 5px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.raidName {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+  line-height: 1.2;
+}
+
+.raidDifficulty {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+}
+
+.raidLevel {
+  font-size: 9px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.8);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.raidCheck {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: #22c55e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 3;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.raidEmpty {
+  background: var(--card-header-bg);
+  opacity: 0.3;
+  cursor: default;
+}
+
+.raidEmpty:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.emptySlot {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 18px;
+}
+
+/* 아이템 카드 (모래시계, 낙원, 추가골드) */
+.itemCard {
+  flex: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.itemCard:hover {
+  transform: translateY(-2px);
+}
+
+.itemImageWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2px solid var(--border-color);
+  background: var(--card-header-bg);
+  transition: border-color 0.2s ease;
+}
+
+.itemChecked .itemImageWrapper {
+  border-color: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+}
+
+.checkOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(34, 197, 94, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.itemName {
+  font-size: 9px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.placeholderBox {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-header-bg);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.itemEmpty {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.itemEmpty:hover {
+  transform: none;
+}
+
+/* 추가 골드 카드 */
+.goldCard {
+  flex: 1;
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,0.3);
+  background: transparent;
+}
+
+.goldCardContent {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px;
+}
+
+.goldCardLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.8);
+}
+
+.goldCardInput {
+  width: 85%;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 2px solid rgba(255, 255, 255, 0.5) !important;
+  border-radius: 6px;
+  color: #fff !important;
+  font-size: 14px;
+  padding: 6px 8px;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.goldCardInput:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3) !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border-color: #fff !important;
+  color: #fff !important;
+  caret-color: #fff;
+}
+
+/* 숫자 입력 스피너 제거 */
+.goldCardInput::-webkit-outer-spin-button,
+.goldCardInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.goldCardInput {
+  -moz-appearance: textfield;
+  color: #fff !important;
+}
+
+.goldCardInput::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 카드 푸터 */
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+}
+
+.excludeMoreGold {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* 더보기 비용 드롭다운 버튼 */
+.moreGoldDropdownBtn {
+  font-size: 12px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  transition: all 0.2s ease;
+}
+
+.moreGoldDropdownBtn:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* 더보기 비용 드롭다운 */
+.moreGoldDropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  min-width: 200px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(30, 30, 35, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 6px;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.moreGoldEmpty {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  padding: 8px;
+}
+
+.moreGoldItem {
+  padding: 6px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.moreGoldItem:last-child {
+  border-bottom: none;
+}
+
+.moreGoldCheck {
+  font-size: 12px;
+}
+
+.moreGoldCheck :global(.form-check-input) {
+  width: 16px !important;
+  height: 16px !important;
+  margin-right: 8px !important;
+  background-color: #fff !important;
+  border: 2px solid #ccc !important;
+  cursor: pointer !important;
+}
+
+.moreGoldCheck :global(.form-check-input:checked) {
+  background-color: #a855f7 !important;
+  border-color: #a855f7 !important;
+}
+
+.moreGoldCheck :global(.form-check-label) {
+  color: #fff;
+  cursor: pointer;
+}
+
+.moreGoldLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.moreGoldLabel small {
+  font-size: 10px;
+  color: #fbbf24;
+}
+
+.excludeCheck {
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+}
+
+.excludeCheck :global(.form-check-input) {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+}
+
+.excludeCheck :global(.form-check-label) {
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.7);
+}
+
+.charTotalGold {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.charTotalGold .goldLabel {
+  font-size: 13px;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.7);
+}
+
+.charTotalGold .goldValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fbbf24;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7);
+}
+
+.charTotalGold .goldValue small {
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+/* 체크박스 스타일 */
+.pageWrapper :global(.form-check-input) {
+  background-color: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color) !important;
+}
+
+.pageWrapper :global(.form-check-input:checked) {
+  background-color: #9a3412 !important;
+  border-color: #7c2d12 !important;
+}
+
+/* 모달 스타일 */
+.pageWrapper :global(.modal-content) {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.pageWrapper :global(.modal-header),
+.pageWrapper :global(.modal-footer) {
+  border-color: var(--border-color);
+}
+
+.pageWrapper :global(.modal-title) {
+  color: var(--text-primary);
+}
+
+.pageWrapper :global(.form-label) {
+  color: var(--text-primary);
+}
+
+.pageWrapper :global(.form-control) {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.pageWrapper :global(.form-text) {
+  color: var(--text-muted);
+}
+
+/* 캐릭터 선택 그리드 */
+.characterSelectGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.characterSelectItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--card-header-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.characterSelectItem:hover {
+  border-color: var(--brand-primary);
+}
+
+.characterSelectItem.selected {
+  border-color: var(--brand-primary);
+  background: rgba(154, 52, 18, 0.1);
+}
+
+.characterSelectItem.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.characterSelectItem.disabled:hover {
+  border-color: var(--border-color);
+}
+
+.selectCheckbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.characterSelectItem.selected .selectCheckbox {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+.selectInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.selectName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selectDetails {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* 약관 동의 */
+.termsAgree {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--card-header-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.termsAgree :global(.form-check-input) {
+  margin-top: 3px;
+}
+
+.termsAgree :global(.form-check-label) {
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* 로그인 프롬프트 */
+.loginPrompt {
+  max-width: 400px;
+  margin: 60px auto;
+  padding: 40px;
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.loginTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.loginDesc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.googleLoginBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 24px;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #3c4043;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 12px;
+}
+
+.googleLoginBtn:hover {
+  background: #f7f8f8;
+  box-shadow: 0 2px 6px rgba(60, 64, 67, 0.2);
+}
+
+.backHomeBtn {
+  display: inline-block;
+  padding: 12px 24px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.backHomeBtn:hover {
+  border-color: var(--text-secondary);
+  background: var(--card-header-bg);
+}
+
+/* 계정 탈퇴 */
+.deleteAccountSection {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.deleteAccountBtn {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.deleteAccountBtn:hover {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+/* 태블릿 반응형 */
+@media (max-width: 1100px) {
+  .characterImage,
+  .characterPlaceholder {
+    width: 140px;
+  }
+}
+
+@media (max-width: 900px) {
+  .cardGrid {
+    grid-template-columns: 1fr;
+    max-width: 450px;
+    margin: 0 auto;
+  }
+
+  .characterImage,
+  .characterPlaceholder {
+    width: 150px;
+  }
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .container {
+    padding: 70px 10px 24px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .cardGrid {
+    max-width: 100%;
+  }
+
+  .characterImage,
+  .characterPlaceholder {
+    width: 130px;
+    font-size: 44px;
+  }
+
+  .checkOverlay {
+    font-size: 18px;
+  }
+
+  .totalGold strong {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cardHeader {
+    padding: 8px 12px;
+  }
+
+  .characterName {
+    font-size: 13px;
+  }
+
+  .characterLevel {
+    font-size: 12px;
+  }
+
+  .cardBody {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .characterImage,
+  .characterPlaceholder {
+    width: 110px;
+    min-height: 120px;
+    font-size: 36px;
+  }
+
+  .itemRow {
+    gap: 4px;
+  }
+
+  .itemName {
+    font-size: 8px;
+  }
+
+  .placeholderBox {
+    font-size: 9px;
+  }
+
+  .checkOverlay {
+    font-size: 14px;
+  }
+
+  .goldInput {
+    font-size: 11px;
+  }
+
+  .cardFooter {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  .charTotalGold {
+    font-size: 13px;
+  }
+
+  .charTotalGold strong {
+    font-size: 15px;
+  }
+}

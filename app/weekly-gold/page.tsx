@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
+import { Container, Row, Col, Card } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
 import styles from './weekly-gold.module.css';
@@ -48,7 +48,6 @@ type Character = {
 export default function WeeklyGoldPage() {
   const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
   const [searched, setSearched] = useState(false);
-  const [footerOpen, setFooterOpen] = useState(false);
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
 
   // 모바일 감지
@@ -207,85 +206,6 @@ export default function WeeklyGoldPage() {
         </Row>
 
       </Container>
-
-      <footer className="footer-fixed">
-        <Container>
-          <Row className="justify-content-center text-center">
-            <Col md={8}>
-              <div className="mb-2">
-                <p className="small mb-1" style={{ color: 'var(--text-muted)' }}>
-                  &copy; {new Date().getFullYear()} <strong style={{ color: 'var(--text-primary)' }}>로스트아크 골드 계산기</strong>
-                </p>
-                <div className="d-flex justify-content-center gap-3 mb-2">
-                  <a href="/about" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
-                    사이트 소개
-                  </a>
-                  <span style={{ color: 'var(--text-muted)' }}>|</span>
-                  <a href="/privacy" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
-                    개인정보처리방침
-                  </a>
-                  <span style={{ color: 'var(--text-muted)' }}>|</span>
-                  <a href="/terms" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
-                    이용약관
-                  </a>
-                </div>
-                <Button
-                  variant="link"
-                  size="sm"
-                  style={{ color: 'var(--text-muted)' }}
-                  className="p-0 border-0"
-                  onClick={() => setFooterOpen(!footerOpen)}
-                >
-                  {footerOpen ? '▲ 사이트 정보 접기' : '▼ 사이트 정보 더보기'}
-                </Button>
-              </div>
-            </Col>
-          </Row>
-
-          <Collapse in={footerOpen}>
-            <div>
-              <hr className="my-3" style={{opacity: 0.3, borderColor: 'var(--border-color)'}} />
-              <Row className="justify-content-center">
-                <Col lg={8} md={10}>
-                  <Row className="gy-4 text-center text-md-start">
-                    <Col md={6}>
-                      <h6 className="fw-semibold mb-3 text-primary" style={{ background: 'var(--footer-text-primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>서비스 소개</h6>
-                      <p className="small mb-3" style={{ color: 'var(--text-muted)' }}>
-                        원정대 주간 골드 수익을 계산하고 더보기 보상의 손익을 분석하여
-                        효율적인 로스트아크 플레이를 도와드립니다.
-                      </p>
-                      <div className="small" style={{ color: 'var(--text-muted)' }}>
-                        <div>🌐 <strong style={{ color: 'var(--text-primary)' }}>사이트:</strong> lostarkweeklygold.kr</div>
-                        <div>🔄 <strong style={{ color: 'var(--text-primary)' }}>갱신:</strong> 매시 정각</div>
-                        <div>📊 <strong style={{ color: 'var(--text-primary)' }}>데이터:</strong> 로스트아크 공식 API</div>
-                      </div>
-                    </Col>
-
-                    <Col md={6}>
-                      <h6 className="fw-semibold mb-3 text-success" style={{ color: 'var(--text-primary)' }}>주요 기능</h6>
-                      <ul className="list-unstyled small" style={{ color: 'var(--text-muted)' }}>
-                        <li className="mb-1">✓ 캐릭터별 주간 골드 수익 계산</li>
-                        <li className="mb-1">✓ 레이드 더보기 보상 손익 분석</li>
-                        <li className="mb-1">✓ 실시간 거래소 가격 반영</li>
-                        <li className="mb-1">✓ 효율적인 골드 파밍 가이드</li>
-                      </ul>
-                    </Col>
-                  </Row>
-
-                  <div className="text-center mt-4">
-                    <p className="small mb-0" style={{ color: 'var(--text-muted)' }}>
-                      본 사이트는 로스트아크 공식 서비스가 아니며, 스마일게이트와 무관한 팬사이트입니다.
-                    </p>
-                    <p className="small mb-0" style={{ color: 'var(--text-muted)' }}>
-                      Made with ❤️ for Lost Ark Players
-                    </p>
-                  </div>
-                </Col>
-              </Row>
-            </div>
-          </Collapse>
-        </Container>
-      </footer>
     </div>
   );
 }

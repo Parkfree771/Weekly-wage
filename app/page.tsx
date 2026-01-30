@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Container, Row, Col, Button, Card, Collapse } from 'react-bootstrap';
+import { Container, Row, Col, Card } from 'react-bootstrap';
 import ContactForm from '@/components/ContactForm';
 import PriceDashboard from '@/components/PriceDashboard';
 import styles from './page.module.css';
@@ -25,8 +24,6 @@ const PriceChartProvider = dynamic(
 );
 
 export default function Home() {
-  const [footerOpen, setFooterOpen] = useState(false);
-
   return (
     <div className={styles.mainContainer}>
       <Container fluid className="mt-2 mt-md-3" style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -123,77 +120,6 @@ export default function Home() {
         </Row>
 
       </Container>
-
-      <footer className="footer-fixed">
-        <Container>
-          <Row className="justify-content-center text-center">
-            <Col md={8}>
-              <p className="small mb-2" style={{ color: 'var(--text-muted)' }}>
-                &copy; {new Date().getFullYear()} <strong style={{ color: 'var(--text-primary)' }}>로골로골</strong>
-              </p>
-              <div className="d-flex justify-content-center align-items-center gap-2 gap-sm-3 flex-wrap">
-                <a href="/about" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
-                  사이트 소개
-                </a>
-                <span style={{ color: 'var(--text-muted)' }}>|</span>
-                <a href="/privacy" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
-                  개인정보처리방침
-                </a>
-                <span style={{ color: 'var(--text-muted)' }}>|</span>
-                <a href="/terms" style={{ color: 'var(--text-muted)' }} className="text-decoration-none hover-primary small">
-                  이용약관
-                </a>
-                <span style={{ color: 'var(--text-muted)' }}>|</span>
-                <Button
-                  variant="link"
-                  size="sm"
-                  style={{ color: 'var(--text-muted)' }}
-                  className="p-0 border-0 small"
-                  onClick={() => setFooterOpen(!footerOpen)}
-                >
-                  {footerOpen ? '▲ 접기' : '▼ 더보기'}
-                </Button>
-              </div>
-            </Col>
-          </Row>
-
-          <Collapse in={footerOpen}>
-            <div>
-              <hr className="my-3" style={{opacity: 0.3, borderColor: 'var(--border-color)'}} />
-              <Row className="justify-content-center">
-                <Col lg={8} md={10}>
-                  <Row className="gy-3 text-center text-md-start">
-                    <Col md={6}>
-                      <h6 className="fw-semibold mb-2" style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>서비스 소개</h6>
-                      <p className="small mb-2" style={{ color: 'var(--text-muted)' }}>
-                        원정대 주간 골드 수익을 계산하고 더보기 보상의 손익을 분석하여
-                        효율적인 로스트아크 플레이를 도와드립니다.
-                      </p>
-                      <div className="small" style={{ color: 'var(--text-muted)' }}>
-                        <div>🔄 갱신: 매시 정각</div>
-                        <div>📊 데이터: 로스트아크 공식 API</div>
-                      </div>
-                    </Col>
-                    <Col md={6}>
-                      <h6 className="fw-semibold mb-2" style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>주요 기능</h6>
-                      <ul className="list-unstyled small" style={{ color: 'var(--text-muted)' }}>
-                        <li className="mb-1">✓ 캐릭터별 주간 골드 수익 계산</li>
-                        <li className="mb-1">✓ 레이드 더보기 보상 손익 분석</li>
-                        <li className="mb-1">✓ 실시간 거래소 가격 반영</li>
-                      </ul>
-                    </Col>
-                  </Row>
-                  <div className="text-center mt-3">
-                    <p className="small mb-0" style={{ color: 'var(--text-muted)' }}>
-                      본 사이트는 로스트아크 공식 서비스가 아닙니다.
-                    </p>
-                  </div>
-                </Col>
-              </Row>
-            </div>
-          </Collapse>
-        </Container>
-      </footer>
     </div>
   );
 }

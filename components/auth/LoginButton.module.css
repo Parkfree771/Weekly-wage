@@ -1,0 +1,104 @@
+.loginButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Google 공식 스타일 버튼 */
+.googleButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #3c4043;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.googleButton:hover {
+  background-color: #f7f8f8;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.googleButton:active {
+  background-color: #f1f3f4;
+}
+
+.googleButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.googleIcon {
+  flex-shrink: 0;
+}
+
+.userDropdown {
+  padding: 0;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+}
+
+.userDropdown::after {
+  display: none;
+}
+
+.profileImage {
+  border-radius: 50%;
+  border: 2px solid var(--brand-primary);
+}
+
+.profilePlaceholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.dropdownMenu {
+  min-width: 200px;
+  padding: 8px 0;
+}
+
+.userInfo {
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.userInfo strong {
+  font-size: 14px;
+}
+
+.userInfo small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.deleteItem {
+  color: var(--text-muted) !important;
+  font-size: 13px;
+}
+
+.deleteItem:hover {
+  color: var(--bs-danger) !important;
+}
+
+.logoutItem {
+  color: var(--text-primary) !important;
+}

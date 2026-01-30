@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useTheme } from './ThemeProvider';
 import { Container, Navbar as BSNavbar, Nav, Offcanvas } from 'react-bootstrap';
+import LoginButton from './auth/LoginButton';
 
 type NavItem = {
   href: string;
@@ -16,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/weekly-gold', label: '주간 계산' },
   { href: '/refining', label: '재련 계산' },
   { href: '/life-master', label: '생활 계산' },
+  { href: '/mypage', label: '마이페이지' },
 ];
 
 export default function Navbar() {
@@ -35,7 +37,8 @@ export default function Navbar() {
 
   const getNavClass = (href: string) => {
     const pageClass = href === '/refining' ? 'nav-refining' :
-                      href === '/life-master' ? 'nav-life' : 'nav-weekly';
+                      href === '/life-master' ? 'nav-life' :
+                      href === '/mypage' ? 'nav-mypage' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
   };
@@ -112,7 +115,7 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* 데스크톱 테마 토글 + 홈버튼 */}
+        {/* 데스크톱 테마 토글 + 홈버튼 + 로그인 */}
         <div className="d-none d-md-flex align-items-center gap-2">
           <Link
             href="/"
@@ -140,6 +143,7 @@ export default function Navbar() {
               height={22}
             />
           </button>
+          <LoginButton />
         </div>
 
         {/* 모바일 Offcanvas 메뉴 */}
@@ -176,6 +180,10 @@ export default function Navbar() {
                 </Link>
               ))}
             </Nav>
+            <hr className="my-3" />
+            <div className="d-flex justify-content-center">
+              <LoginButton />
+            </div>
           </Offcanvas.Body>
         </Offcanvas>
       </Container>
