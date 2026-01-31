@@ -1187,10 +1187,10 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                                 <div className={styles.autoDropdownSectionTitle}>강화 속도</div>
                                 <div className={styles.speedButtonGroup}>
                                   {[
-                                    { label: '0.3', value: 300 },
-                                    { label: '0.5', value: 500 },
-                                    { label: '0.7', value: 700 },
-                                    { label: '1', value: 1000 },
+                                    { label: 'x1', value: 1000 },
+                                    { label: 'x1.5', value: 667 },
+                                    { label: 'x2', value: 500 },
+                                    { label: 'x3', value: 333 },
                                   ].map((option) => (
                                     <button
                                       key={option.value}

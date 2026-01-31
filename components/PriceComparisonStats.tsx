@@ -32,6 +32,7 @@ type PriceContextType = {
   toggleReferenceLine: (type: ReferenceLineType) => void;
   selectItemById: (itemId: string) => void;  // 아이템 ID로 선택
   categoryColor: string;  // 카테고리 색상
+  openChartSettings: () => void;  // 차트 설정 모달 열기
 };
 
 export const PriceContext = createContext<PriceContextType>({
@@ -46,6 +47,7 @@ export const PriceContext = createContext<PriceContextType>({
   toggleReferenceLine: () => {},
   selectItemById: () => {},
   categoryColor: '#10b981',
+  openChartSettings: () => {},
 });
 
 // 그리드 아이콘 SVG 컴포넌트

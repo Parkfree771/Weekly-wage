@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useEffect, ReactNode, useMemo, useRef } from 'react';
+import { useState, useEffect, ReactNode, useMemo, useRef, useCallback } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import Image from 'next/image';
-import { TrackedItem, ItemCategory, getItemsByCategory, RefineAdditionalSubCategory, getItemsBySubCategory, REFINE_ADDITIONAL_SUBCATEGORIES, SUCCESSION_TO_NORMAL_MATERIAL_MAP, SUCCESSION_MATERIAL_START_DATE, findItemById } from '@/lib/items-to-track';
+import { TrackedItem, ItemCategory, getItemsByCategory, RefineAdditionalSubCategory, getItemsBySubCategory, REFINE_ADDITIONAL_SUBCATEGORIES, SUCCESSION_TO_NORMAL_MATERIAL_MAP, SUCCESSION_MATERIAL_START_DATE, findItemById, TRACKED_ITEMS } from '@/lib/items-to-track';
 import ItemSelector, { CATEGORY_STYLES } from './ItemSelector';
 import CompactPriceChart from './CompactPriceChart';
 import MiniPriceChart from './MiniPriceChart';
@@ -13,6 +13,85 @@ import { useTheme } from './ThemeProvider';
 
 // 카테고리 표시 순서
 const CATEGORY_ORDER: ItemCategory[] = ['refine_succession', 'gem', 'refine', 'refine_additional', 'engraving', 'accessory', 'jewel'];
+
+// TRACKED_ITEMS를 Map으로 변환 (O(1) 조회용)
+const TRACKED_ITEMS_MAP = new Map(TRACKED_ITEMS.map(item => [item.id, item]));
+
+// 아이템 ID로 아이템 조회 (최적화)
+const getTrackedItemById = (id: string): TrackedItem | undefined => TRACKED_ITEMS_MAP.get(id);
+
+// 악세서리 아이템 이름에서 (상), (중) 색상 처리 함수
+const renderAccessoryItemName = (name: string, category: ItemCategory) => {
+  if (category !== 'accessory') return name;
+  const parts = name.split(/(\(상\)|\(중\))/g);
+  return parts.map((part, idx) => {
+    if (part === '(상)') {
+      return <span key={idx} style={{ color: '#fbbf24', fontWeight: 700 }}>(상)</span>;
+    } else if (part === '(중)') {
+      return <span key={idx} style={{ color: '#a855f7', fontWeight: 700 }}>(중)</span>;
+    }
+    return part;
+  });
+};
+
+// 가격 포맷팅 함수
+const formatPrice = (price: number) => {
+  if (price >= 100) {
+    return Math.round(price).toLocaleString('ko-KR');
+  }
+  return price.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+};
+
+// 차트 설정 localStorage 키
+const CHART_CONFIG_KEY = 'chartConfig';
+
+type ViewMode = 'single' | 'grid';
+
+type ChartConfig = {
+  defaultMode: ViewMode;      // 기본 보기 모드
+  defaultItem: string | null; // 단일 모드 기본 아이템
+  gridItems: string[];        // 4분할 모드 아이템 4개
+};
+
+const getDefaultChartConfig = (): ChartConfig => ({
+  defaultMode: 'single',
+  defaultItem: null,
+  gridItems: []
+});
+
+const loadChartConfig = (): ChartConfig => {
+  if (typeof window === 'undefined') return getDefaultChartConfig();
+  try {
+    const saved = localStorage.getItem(CHART_CONFIG_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // 새 형식인지 확인
+      if (parsed.defaultMode) {
+        return parsed as ChartConfig;
+      }
+      // 이전 형식 마이그레이션
+      if (parsed.defaultGridView !== undefined) {
+        return {
+          defaultMode: parsed.defaultGridView ? 'grid' : 'single',
+          defaultItem: null,
+          gridItems: parsed.favoriteItems || []
+        };
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load chart config:', e);
+  }
+  return getDefaultChartConfig();
+};
+
+const saveChartConfig = (config: ChartConfig) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(CHART_CONFIG_KEY, JSON.stringify(config));
+  } catch (e) {
+    console.error('Failed to save chart config:', e);
+  }
+};
 
 type PriceEntry = {
   price: number;
@@ -44,6 +123,54 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   // 참조선 관련 state
   type ReferenceLineType = 'min' | 'avg' | 'max' | 'current';
   const [activeReferenceLines, setActiveReferenceLines] = useState<Set<ReferenceLineType>>(new Set());
+
+  // 차트 설정 관련 state
+  const [chartConfig, setChartConfig] = useState<ChartConfig>(getDefaultChartConfig());
+  const [showChartSettings, setShowChartSettings] = useState(false);
+  const [tempChartConfig, setTempChartConfig] = useState<ChartConfig>(getDefaultChartConfig());
+  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
+
+  // 차트 설정 불러오기
+  useEffect(() => {
+    const loaded = loadChartConfig();
+    setChartConfig(loaded);
+    setTempChartConfig(loaded);
+
+    // 기본 모드에 따라 초기화
+    if (loaded.defaultMode === 'grid') {
+      // 4분할 모드
+      setIsGridView(true);
+      if (loaded.gridItems.length > 0) {
+        const items = loaded.gridItems.map(id => getTrackedItemById(id) || null);
+        setGridItems([
+          items[0] || null,
+          items[1] || null,
+          items[2] || null,
+          items[3] || null,
+        ]);
+      }
+    } else {
+      // 단일 모드
+      setIsGridView(false);
+      if (loaded.defaultItem) {
+        const item = getTrackedItemById(loaded.defaultItem);
+        if (item) {
+          setSelectedItem(item);
+          // 해당 아이템의 카테고리로 변경
+          const result = findItemById(loaded.defaultItem);
+          if (result) {
+            setSelectedCategory(result.category);
+            if (result.subCategory) {
+              setSelectedSubCategory(result.subCategory);
+            }
+          }
+        }
+      }
+    }
+
+    // 설정 로드 완료 표시
+    setIsConfigLoaded(true);
+  }, []);
 
   const toggleReferenceLine = (type: ReferenceLineType) => {
     setActiveReferenceLines(prev => {
@@ -127,9 +254,10 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     }
   }, [selectedCategory, selectedSubCategory]);
 
-  // 카테고리 변경 시 그리드 아이템 초기화
+  // 카테고리 변경 시 그리드 아이템 초기화 (설정된 gridItems가 있으면 유지)
   useEffect(() => {
-    if (isGridView) {
+    if (isGridView && chartConfig.gridItems.length === 0) {
+      // 설정된 아이템이 없을 때만 카테고리 아이템으로 초기화
       const items = currentCategoryItems;
       setGridItems([
         items[0] || null,
@@ -139,21 +267,27 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
       ]);
       setSelectedSlot(null);
     }
-  }, [selectedCategory, selectedSubCategory, isGridView, currentCategoryItems]);
+  }, [selectedCategory, selectedSubCategory, isGridView, currentCategoryItems, chartConfig.gridItems.length]);
 
   // 카테고리 변경 시 스크롤 상태 체크
   useEffect(() => {
     setTimeout(checkItemScroll, 100);
   }, [selectedCategory, selectedSubCategory, currentCategoryItems]);
 
+  // 초기 로드 시 저장된 설정이 없으면 기본 아이템 설정 (차트 설정 로드 후에만 실행)
   useEffect(() => {
-    const defaultCategory = 'refine_succession';
-    const defaultCategoryItems = getItemsByCategory(defaultCategory);
-    const defaultItem = defaultCategoryItems.find(item => item.id === '66102007') || defaultCategoryItems[0];
+    if (!isConfigLoaded) return;
 
-    setSelectedCategory(defaultCategory);
-    setSelectedItem(defaultItem);
-  }, []);
+    // 저장된 설정이 없을 때만 기본 아이템 설정
+    if (!chartConfig.defaultItem && chartConfig.defaultMode === 'single') {
+      const defaultCategory = 'refine_succession';
+      const defaultCategoryItems = getItemsByCategory(defaultCategory);
+      const defaultItem = defaultCategoryItems.find(item => item.id === '66102007') || defaultCategoryItems[0];
+
+      setSelectedCategory(defaultCategory);
+      setSelectedItem(defaultItem);
+    }
+  }, [isConfigLoaded, chartConfig.defaultItem, chartConfig.defaultMode]);
 
   useEffect(() => {
     if (!selectedItem?.id) {
@@ -259,73 +393,143 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     };
   }, [filteredComparisonHistory, comparisonInfo]);
 
-  const handleSelectCategory = (category: ItemCategory) => {
+  const handleSelectCategory = useCallback((category: ItemCategory) => {
+    // 4분할 모드일 때 카테고리 클릭하면 단일 모드로 전환
+    if (isGridView) {
+      setIsGridView(false);
+    }
     setSelectedCategory(category);
     setSelectedSubCategory(null);
     setSelectedSlot(null);
-  };
+  }, [isGridView]);
 
-  const handleSelectSubCategory = (subCategory: RefineAdditionalSubCategory | null) => {
+  const handleSelectSubCategory = useCallback((subCategory: RefineAdditionalSubCategory | null) => {
+    // 4분할 모드일 때 서브카테고리 클릭하면 단일 모드로 전환
+    if (isGridView) {
+      setIsGridView(false);
+    }
     setSelectedSubCategory(subCategory);
     setSelectedSlot(null);
-  };
+  }, [isGridView]);
 
-  const handleSelectItem = (item: TrackedItem) => {
-    // 그리드 모드이고 슬롯이 선택된 경우, 해당 슬롯에 아이템 배치
-    if (isGridView && selectedSlot !== null) {
-      setGridItems(prev => {
-        const newItems = [...prev];
-        newItems[selectedSlot] = item;
-        return newItems;
-      });
+  const handleSelectItem = useCallback((item: TrackedItem) => {
+    // 4분할 모드일 때 아이템 클릭하면 단일 모드로 전환하고 해당 아이템 선택
+    if (isGridView) {
+      setIsGridView(false);
+      setSelectedItem(item);
       setSelectedSlot(null);
     } else {
       setSelectedItem(item);
     }
-  };
+  }, [isGridView]);
 
-  const handleSlotClick = (slotIndex: number) => {
-    if (selectedSlot === slotIndex) {
-      setSelectedSlot(null);
-    } else {
-      setSelectedSlot(slotIndex);
-    }
-  };
+  const handleSlotClick = useCallback((slotIndex: number) => {
+    setSelectedSlot(prev => prev === slotIndex ? null : slotIndex);
+  }, []);
 
-  const handleToggleGridView = () => {
+  const handleToggleGridView = useCallback(() => {
     if (!isGridView) {
-      // 그리드 뷰로 전환 시 현재 카테고리의 처음 4개 아이템으로 초기화
-      const items = currentCategoryItems;
-      setGridItems([
-        items[0] || null,
-        items[1] || null,
-        items[2] || null,
-        items[3] || null,
-      ]);
+      // 그리드 뷰로 전환 시: 설정된 gridItems가 있으면 사용, 없으면 현재 카테고리
+      const savedGridItems = chartConfig.gridItems;
+      if (savedGridItems.length > 0) {
+        // 설정된 아이템으로 초기화
+        const configuredItems = savedGridItems.map(id => getTrackedItemById(id) || null);
+        setGridItems([
+          configuredItems[0] || null,
+          configuredItems[1] || null,
+          configuredItems[2] || null,
+          configuredItems[3] || null,
+        ]);
+      } else {
+        // 현재 카테고리의 처음 4개 아이템으로 초기화
+        const items = currentCategoryItems;
+        setGridItems([
+          items[0] || null,
+          items[1] || null,
+          items[2] || null,
+          items[3] || null,
+        ]);
+      }
     }
     setIsGridView(!isGridView);
     setSelectedSlot(null);
+  }, [isGridView, chartConfig.gridItems, currentCategoryItems]);
+
+  // 차트 설정 모달 열기
+  const openChartSettings = () => {
+    setTempChartConfig({ ...chartConfig });
+    setShowChartSettings(true);
   };
+
+  // 차트 설정 저장
+  const saveChartSettings = () => {
+    setChartConfig(tempChartConfig);
+    saveChartConfig(tempChartConfig);
+
+    // 저장 후 현재 상태에 적용
+    if (tempChartConfig.defaultMode === 'grid') {
+      setIsGridView(true);
+      if (tempChartConfig.gridItems.length > 0) {
+        const items = tempChartConfig.gridItems.map(id => getTrackedItemById(id) || null);
+        setGridItems([
+          items[0] || null,
+          items[1] || null,
+          items[2] || null,
+          items[3] || null,
+        ]);
+      }
+    } else {
+      setIsGridView(false);
+      if (tempChartConfig.defaultItem) {
+        const item = getTrackedItemById(tempChartConfig.defaultItem);
+        if (item) {
+          setSelectedItem(item);
+          const result = findItemById(tempChartConfig.defaultItem);
+          if (result) {
+            setSelectedCategory(result.category);
+            if (result.subCategory) {
+              setSelectedSubCategory(result.subCategory);
+            }
+          }
+        }
+      }
+    }
+
+    setShowChartSettings(false);
+  };
+
+  // 차트 설정 초기화
+  const resetChartSettings = () => {
+    setTempChartConfig(getDefaultChartConfig());
+  };
+
+  // 단일 모드 아이템 선택
+  const selectSingleItem = (itemId: string) => {
+    setTempChartConfig(prev => ({
+      ...prev,
+      defaultItem: prev.defaultItem === itemId ? null : itemId
+    }));
+  };
+
+  // 4분할 모드 아이템 토글
+  const toggleGridItem = (itemId: string) => {
+    setTempChartConfig(prev => {
+      const items = [...prev.gridItems];
+      const index = items.indexOf(itemId);
+      if (index >= 0) {
+        items.splice(index, 1);
+      } else if (items.length < 4) {
+        items.push(itemId);
+      }
+      return { ...prev, gridItems: items };
+    });
+  };
+
 
   const categoryStyle = CATEGORY_STYLES[selectedCategory];
 
-  // 현재가 및 변동률 계산
-  const currentPrice = filteredHistory.length > 0 ? filteredHistory[filteredHistory.length - 1]?.price : 0;
-  const previousPrice = filteredHistory.length >= 2 ? filteredHistory[filteredHistory.length - 2]?.price : currentPrice;
-  const priceChange = previousPrice > 0 ? ((currentPrice - previousPrice) / previousPrice) * 100 : 0;
-
-  const formatPrice = (price: number) => {
-    if (price >= 10000) {
-      return Math.round(price).toLocaleString('ko-KR');
-    }
-    if (price >= 100) {
-      return Math.round(price).toLocaleString('ko-KR');
-    }
-    return price.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  };
-
   return (
-    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod, comparisonData, isGridView, onToggleGridView: handleToggleGridView, activeReferenceLines, toggleReferenceLine, selectItemById, categoryColor: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor }}>
+    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod, comparisonData, isGridView, onToggleGridView: handleToggleGridView, activeReferenceLines, toggleReferenceLine, selectItemById, categoryColor: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor, openChartSettings }}>
       {dashboard}
       <div className="price-chart-container">
         {/* 데스크톱: 사이드바 레이아웃 */}
@@ -353,8 +557,34 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                   marginBottom: '12px',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 }}>
-                  카테고리
+                  <span>카테고리</span>
+                  {/* 차트 설정 톱니바퀴 */}
+                  <button
+                    onClick={openChartSettings}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '2px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--text-muted)',
+                      transition: 'color 0.2s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                    title="차트 설정"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                  </button>
                 </div>
                 {CATEGORY_ORDER.map((cat) => {
                   const catStyle = CATEGORY_STYLES[cat];
@@ -678,21 +908,6 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                         ? gridItems.some(gi => gi?.id === item.id)
                         : selectedItem?.id === item.id;
 
-                      // 악세서리 아이템 이름에서 (상), (중) 색상 처리
-                      const renderItemName = (name: string) => {
-                        if (selectedCategory !== 'accessory') return name;
-
-                        const parts = name.split(/(\(상\)|\(중\))/g);
-                        return parts.map((part, idx) => {
-                          if (part === '(상)') {
-                            return <span key={idx} style={{ color: '#fbbf24', fontWeight: 700 }}>(상)</span>;
-                          } else if (part === '(중)') {
-                            return <span key={idx} style={{ color: '#a855f7', fontWeight: 700 }}>(중)</span>;
-                          }
-                          return part;
-                        });
-                      };
-
                       return (
                         <button
                           key={item.id}
@@ -732,7 +947,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                             }
                           }}
                         >
-                          {renderItemName(item.name)}
+                          {renderAccessoryItemName(item.name, selectedCategory)}
                         </button>
                       );
                     })}
@@ -868,6 +1083,461 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
           )}
         </div>
       </div>
+      {/* 차트 설정 모달 */}
+      {showChartSettings && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowChartSettings(false);
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--card-bg)',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '450px',
+              maxHeight: '85vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            {/* 모달 헤더 */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--border-color)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                차트 설정
+              </h3>
+              <button
+                onClick={() => setShowChartSettings(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* 모달 바디 */}
+            <div style={{
+              padding: '16px 20px',
+              overflowY: 'auto',
+              flex: 1,
+            }}>
+              {/* 모드 선택 탭 */}
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                marginBottom: '16px',
+              }}>
+                <button
+                  onClick={() => setTempChartConfig(prev => ({ ...prev, defaultMode: 'single' }))}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: `2px solid ${tempChartConfig.defaultMode === 'single' ? '#3b82f6' : 'var(--border-color)'}`,
+                    backgroundColor: tempChartConfig.defaultMode === 'single' ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                    color: tempChartConfig.defaultMode === 'single' ? '#3b82f6' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    fontWeight: tempChartConfig.defaultMode === 'single' ? 700 : 500,
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  기본
+                  <div style={{ fontSize: '0.7rem', marginTop: '4px', opacity: 0.8 }}>
+                    아이템 1개 선택
+                  </div>
+                </button>
+                <button
+                  onClick={() => setTempChartConfig(prev => ({ ...prev, defaultMode: 'grid' }))}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: `2px solid ${tempChartConfig.defaultMode === 'grid' ? '#3b82f6' : 'var(--border-color)'}`,
+                    backgroundColor: tempChartConfig.defaultMode === 'grid' ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                    color: tempChartConfig.defaultMode === 'grid' ? '#3b82f6' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    fontWeight: tempChartConfig.defaultMode === 'grid' ? 700 : 500,
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  4분할
+                  <div style={{ fontSize: '0.7rem', marginTop: '4px', opacity: 0.8 }}>
+                    아이템 4개 선택
+                  </div>
+                </button>
+              </div>
+
+              {/* 기본 모드: 단일 아이템 선택 */}
+              {tempChartConfig.defaultMode === 'single' && (
+                <div>
+                  <div style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    marginBottom: '8px',
+                  }}>
+                    첫 화면에 표시할 아이템
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                    페이지 접속 시 이 아이템이 표시됩니다.
+                  </div>
+
+                  {/* 선택된 아이템 표시 */}
+                  {tempChartConfig.defaultItem && (() => {
+                    const item = getTrackedItemById(tempChartConfig.defaultItem);
+                    if (!item) return null;
+                    return (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px',
+                        marginBottom: '12px',
+                        backgroundColor: 'var(--bg-secondary)',
+                        borderRadius: '8px',
+                        border: '1px solid #3b82f6',
+                      }}>
+                        <Image
+                          src={item.icon || '/icon.png'}
+                          alt={item.name}
+                          width={28}
+                          height={28}
+                          style={{ borderRadius: '4px' }}
+                        />
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600, flex: 1 }}>
+                          {item.name}
+                        </span>
+                        <button
+                          onClick={() => selectSingleItem(item.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            fontSize: '1.2rem',
+                            padding: '0 4px',
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })()}
+
+                  {/* 아이템 목록 */}
+                  <div style={{
+                    maxHeight: '280px',
+                    overflowY: 'auto',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                  }}>
+                    {CATEGORY_ORDER.map(cat => {
+                      const catStyle = CATEGORY_STYLES[cat];
+                      const items = getItemsByCategory(cat);
+                      return (
+                        <div key={cat}>
+                          <div style={{
+                            padding: '8px 12px',
+                            backgroundColor: 'var(--bg-secondary)',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor,
+                            borderBottom: '1px solid var(--border-color)',
+                          }}>
+                            {catStyle.label}
+                          </div>
+                          {items.map(item => {
+                            const isSelected = tempChartConfig.defaultItem === item.id;
+                            return (
+                              <div
+                                key={item.id}
+                                onClick={() => selectSingleItem(item.id)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  padding: '8px 12px',
+                                  cursor: 'pointer',
+                                  backgroundColor: isSelected ? (theme === 'dark' ? catStyle.darkBg : catStyle.lightBg) : 'transparent',
+                                  borderBottom: '1px solid var(--border-color)',
+                                }}
+                              >
+                                <div style={{
+                                  width: '18px',
+                                  height: '18px',
+                                  borderRadius: '50%',
+                                  border: `2px solid ${isSelected ? '#3b82f6' : 'var(--border-color)'}`,
+                                  backgroundColor: isSelected ? '#3b82f6' : 'transparent',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}>
+                                  {isSelected && (
+                                    <div style={{
+                                      width: '8px',
+                                      height: '8px',
+                                      borderRadius: '50%',
+                                      backgroundColor: 'white',
+                                    }} />
+                                  )}
+                                </div>
+                                <Image
+                                  src={item.icon || '/icon.png'}
+                                  alt={item.name}
+                                  width={24}
+                                  height={24}
+                                  style={{ borderRadius: '4px', flexShrink: 0 }}
+                                />
+                                <span style={{
+                                  fontSize: '0.8rem',
+                                  color: isSelected ? (theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor) : 'var(--text-primary)',
+                                  fontWeight: isSelected ? 600 : 400,
+                                }}>
+                                  {item.name}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 4분할 모드: 4개 아이템 선택 */}
+              {tempChartConfig.defaultMode === 'grid' && (
+                <div>
+                  <div style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    marginBottom: '8px',
+                  }}>
+                    4분할에 표시할 아이템 ({tempChartConfig.gridItems.length}/4)
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                    페이지 접속 시 이 4개 아이템이 4분할로 표시됩니다.
+                  </div>
+
+                  {/* 선택된 아이템들 표시 */}
+                  {tempChartConfig.gridItems.length > 0 && (
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      marginBottom: '12px',
+                      padding: '10px',
+                      backgroundColor: 'var(--bg-secondary)',
+                      borderRadius: '8px',
+                    }}>
+                      {tempChartConfig.gridItems.map((itemId, idx) => {
+                        const item = getTrackedItemById(itemId);
+                        if (!item) return null;
+                        return (
+                          <div
+                            key={itemId}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 10px',
+                              backgroundColor: 'var(--card-bg)',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '6px',
+                            }}
+                          >
+                            <span style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 700 }}>
+                              {idx + 1}
+                            </span>
+                            <Image
+                              src={item.icon || '/icon.png'}
+                              alt={item.name}
+                              width={20}
+                              height={20}
+                              style={{ borderRadius: '4px' }}
+                            />
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                              {item.name.length > 10 ? item.name.slice(0, 10) + '...' : item.name}
+                            </span>
+                            <button
+                              onClick={() => toggleGridItem(itemId)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                fontSize: '1rem',
+                                padding: '0 4px',
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* 아이템 목록 */}
+                  <div style={{
+                    maxHeight: '250px',
+                    overflowY: 'auto',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                  }}>
+                    {CATEGORY_ORDER.map(cat => {
+                      const catStyle = CATEGORY_STYLES[cat];
+                      const items = getItemsByCategory(cat);
+                      return (
+                        <div key={cat}>
+                          <div style={{
+                            padding: '8px 12px',
+                            backgroundColor: 'var(--bg-secondary)',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor,
+                            borderBottom: '1px solid var(--border-color)',
+                          }}>
+                            {catStyle.label}
+                          </div>
+                          {items.map(item => {
+                            const isSelected = tempChartConfig.gridItems.includes(item.id);
+                            const canAdd = tempChartConfig.gridItems.length < 4;
+                            return (
+                              <div
+                                key={item.id}
+                                onClick={() => {
+                                  if (isSelected || canAdd) toggleGridItem(item.id);
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  padding: '8px 12px',
+                                  cursor: isSelected || canAdd ? 'pointer' : 'not-allowed',
+                                  opacity: !isSelected && !canAdd ? 0.5 : 1,
+                                  backgroundColor: isSelected ? (theme === 'dark' ? catStyle.darkBg : catStyle.lightBg) : 'transparent',
+                                  borderBottom: '1px solid var(--border-color)',
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}}
+                                  disabled={!isSelected && !canAdd}
+                                  style={{ width: '16px', height: '16px', cursor: 'inherit' }}
+                                />
+                                <Image
+                                  src={item.icon || '/icon.png'}
+                                  alt={item.name}
+                                  width={24}
+                                  height={24}
+                                  style={{ borderRadius: '4px', flexShrink: 0 }}
+                                />
+                                <span style={{
+                                  fontSize: '0.8rem',
+                                  color: isSelected ? (theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor) : 'var(--text-primary)',
+                                  fontWeight: isSelected ? 600 : 400,
+                                }}>
+                                  {item.name}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 모달 푸터 */}
+            <div style={{
+              padding: '16px 20px',
+              borderTop: '1px solid var(--border-color)',
+              display: 'flex',
+              gap: '10px',
+              justifyContent: 'space-between',
+            }}>
+              <button
+                onClick={resetChartSettings}
+                style={{
+                  padding: '10px 16px',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--card-bg)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                }}
+              >
+                초기화
+              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => setShowChartSettings(false)}
+                  style={{
+                    padding: '10px 16px',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--card-bg)',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={saveChartSettings}
+                  style={{
+                    padding: '10px 20px',
+                    border: 'none',
+                    borderRadius: '8px',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  저장
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {children}
     </PriceContext.Provider>
   );
@@ -997,62 +1667,45 @@ function SidebarMobileLayout({
       )}
 
       {/* 선택된 아이템 표시 + 아이템 선택 버튼 */}
-      {selectedItem && (selectedCategory !== 'refine_additional' || selectedSubCategory) && (() => {
-        // 악세서리 아이템 이름에서 (상), (중) 색상 처리
-        const renderItemName = (name: string) => {
-          if (selectedCategory !== 'accessory') return name;
-
-          const parts = name.split(/(\(상\)|\(중\))/g);
-          return parts.map((part, idx) => {
-            if (part === '(상)') {
-              return <span key={idx} style={{ color: '#fbbf24', fontWeight: 700 }}>(상)</span>;
-            } else if (part === '(중)') {
-              return <span key={idx} style={{ color: '#a855f7', fontWeight: 700 }}>(중)</span>;
-            }
-            return part;
-          });
-        };
-
-        return (
-          <button
-            onClick={() => setShowItemSheet(!showItemSheet)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              width: '100%',
-              padding: '10px 12px',
-              marginBottom: '8px',
-              borderRadius: '10px',
-              border: `1px solid ${theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color}`,
-              backgroundColor: theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg,
-              cursor: 'pointer',
-            }}
-          >
-            {selectedItem.icon && (
-              <Image
-                src={selectedItem.icon}
-                alt={selectedItem.name}
-                width={32}
-                height={32}
-                style={{ borderRadius: '6px' }}
-              />
-            )}
-            <span style={{
-              flex: 1,
-              textAlign: 'left',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              color: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor,
-            }}>
-              {renderItemName(selectedItem.name)}
-            </span>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-              {showItemSheet ? '▲' : '▼'}
-            </span>
-          </button>
-        );
-      })()}
+      {selectedItem && (selectedCategory !== 'refine_additional' || selectedSubCategory) && (
+        <button
+          onClick={() => setShowItemSheet(!showItemSheet)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            width: '100%',
+            padding: '10px 12px',
+            marginBottom: '8px',
+            borderRadius: '10px',
+            border: `1px solid ${theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color}`,
+            backgroundColor: theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg,
+            cursor: 'pointer',
+          }}
+        >
+          {selectedItem.icon && (
+            <Image
+              src={selectedItem.icon}
+              alt={selectedItem.name}
+              width={32}
+              height={32}
+              style={{ borderRadius: '6px' }}
+            />
+          )}
+          <span style={{
+            flex: 1,
+            textAlign: 'left',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            color: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor,
+          }}>
+            {renderAccessoryItemName(selectedItem.name, selectedCategory)}
+          </span>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+            {showItemSheet ? '▲' : '▼'}
+          </span>
+        </button>
+      )}
 
       {/* 아이템 목록 (접기/펼치기) */}
       {showItemSheet && (selectedCategory !== 'refine_additional' || selectedSubCategory) && (
@@ -1068,22 +1721,6 @@ function SidebarMobileLayout({
         }}>
           {currentCategoryItems.map((item) => {
             const isSelected = selectedItem?.id === item.id;
-
-            // 악세서리 아이템 이름에서 (상), (중) 색상 처리
-            const renderItemName = (name: string) => {
-              if (selectedCategory !== 'accessory') return name;
-
-              const parts = name.split(/(\(상\)|\(중\))/g);
-              return parts.map((part, idx) => {
-                if (part === '(상)') {
-                  return <span key={idx} style={{ color: '#fbbf24', fontWeight: 700 }}>(상)</span>;
-                } else if (part === '(중)') {
-                  return <span key={idx} style={{ color: '#a855f7', fontWeight: 700 }}>(중)</span>;
-                }
-                return part;
-              });
-            };
-
             return (
               <button
                 key={item.id}
@@ -1110,7 +1747,7 @@ function SidebarMobileLayout({
                   textOverflow: 'ellipsis',
                 }}
               >
-                {renderItemName(item.name)}
+                {renderAccessoryItemName(item.name, selectedCategory)}
               </button>
             );
           })}

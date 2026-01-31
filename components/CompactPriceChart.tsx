@@ -1,10 +1,40 @@
 import { useTheme } from './ThemeProvider';
-import React, { useMemo, useCallback, useContext } from 'react';
+import React, { useMemo, useCallback, useContext, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { TrackedItem, ItemCategory } from '@/lib/items-to-track';
 import { PriceContext } from './PriceComparisonStats';
+
+// 커스텀 가격선 localStorage 키
+const CUSTOM_PRICE_LINES_KEY = 'customPriceLines';
+
+type CustomPriceLine = {
+  sellPrice?: number;  // 판매가
+  buyPrice?: number;   // 구매가
+};
+
+type CustomPriceLines = Record<string, CustomPriceLine>;
+
+const loadCustomPriceLines = (): CustomPriceLines => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const saved = localStorage.getItem(CUSTOM_PRICE_LINES_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch (e) {
+    console.error('Failed to load custom price lines:', e);
+  }
+  return {};
+};
+
+const saveCustomPriceLines = (lines: CustomPriceLines) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(CUSTOM_PRICE_LINES_KEY, JSON.stringify(lines));
+  } catch (e) {
+    console.error('Failed to save custom price lines:', e);
+  }
+};
 
 type PriceEntry = {
   price: number;
@@ -95,6 +125,59 @@ type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle, hidePeriodButtons = false }: CompactPriceChartProps) {
   const { theme } = useTheme();
   const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData, activeReferenceLines } = useContext(PriceContext);
+
+  // 커스텀 가격선 관련 state
+  const [customPriceLines, setCustomPriceLines] = useState<CustomPriceLines>({});
+  const [showPriceInput, setShowPriceInput] = useState(false);
+  const [tempSellPrice, setTempSellPrice] = useState('');
+  const [tempBuyPrice, setTempBuyPrice] = useState('');
+
+  // 커스텀 가격선 불러오기
+  useEffect(() => {
+    setCustomPriceLines(loadCustomPriceLines());
+  }, []);
+
+  // 아이템 변경 시 입력값 초기화
+  useEffect(() => {
+    if (selectedItem) {
+      const lines = customPriceLines[selectedItem.id];
+      setTempSellPrice(lines?.sellPrice?.toString() || '');
+      setTempBuyPrice(lines?.buyPrice?.toString() || '');
+    }
+  }, [selectedItem, customPriceLines]);
+
+  // 현재 아이템의 커스텀 가격선
+  const currentCustomLines = selectedItem ? customPriceLines[selectedItem.id] : undefined;
+
+  // 가격선 저장
+  const savePriceLines = () => {
+    if (!selectedItem) return;
+    const newLines = { ...customPriceLines };
+    const sellPrice = tempSellPrice ? parseFloat(tempSellPrice) : undefined;
+    const buyPrice = tempBuyPrice ? parseFloat(tempBuyPrice) : undefined;
+
+    if (sellPrice || buyPrice) {
+      newLines[selectedItem.id] = { sellPrice, buyPrice };
+    } else {
+      delete newLines[selectedItem.id];
+    }
+
+    setCustomPriceLines(newLines);
+    saveCustomPriceLines(newLines);
+    setShowPriceInput(false);
+  };
+
+  // 가격선 삭제
+  const clearPriceLines = () => {
+    if (!selectedItem) return;
+    const newLines = { ...customPriceLines };
+    delete newLines[selectedItem.id];
+    setCustomPriceLines(newLines);
+    saveCustomPriceLines(newLines);
+    setTempSellPrice('');
+    setTempBuyPrice('');
+    setShowPriceInput(false);
+  };
 
   // 비교 라인 색상 (일반 재료)
   const comparisonColor = '#9ca3af'; // 회색
@@ -193,6 +276,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     }
     if (value < 100) {
       return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' G';
+    }
+    // 10만 이상은 소수점 없이 표시
+    if (value >= 100000) {
+      return Math.round(value).toLocaleString('ko-KR') + ' G';
     }
     return value.toLocaleString('ko-KR') + ' G';
   }, [categoryStyle]);
@@ -722,39 +809,169 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 }}
               />
             )}
-            <div>
-              {categoryStyle?.label === '악세' && selectedItem.displayName ? (
-                (() => {
-                  const parts = selectedItem.displayName.split('\n');
-                  if (parts.length === 3) {
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div>
+                {categoryStyle?.label === '악세' && selectedItem.displayName ? (
+                  (() => {
+                    const parts = selectedItem.displayName.split('\n');
+                    if (parts.length === 3) {
+                      return (
+                        <div>
+                          <h5 className="mb-0" style={{ fontWeight: '700', color: chartColor, lineHeight: '1.3', fontSize: '0.95rem' }}>
+                            <div><ColoredItemName name={parts[0]} /></div>
+                            <div><ColoredItemName name={parts[1]} /></div>
+                          </h5>
+                          <small style={{ color: 'var(--text-muted)', fontSize: '0.7rem', display: 'block', marginTop: '2px' }}>
+                            {parts[2]}, {selectedItem.type === 'market' ? '거래소' : '경매장'}
+                          </small>
+                        </div>
+                      );
+                    }
                     return (
-                      <div>
-                        <h5 className="mb-0" style={{ fontWeight: '700', color: chartColor, lineHeight: '1.3', fontSize: '0.95rem' }}>
-                          <div><ColoredItemName name={parts[0]} /></div>
-                          <div><ColoredItemName name={parts[1]} /></div>
-                        </h5>
-                        <small style={{ color: 'var(--text-muted)', fontSize: '0.7rem', display: 'block', marginTop: '2px' }}>
-                          {parts[2]}, {selectedItem.type === 'market' ? '거래소' : '경매장'}
-                        </small>
-                      </div>
+                      <h5 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.95rem' }}>
+                        <ColoredItemName name={selectedItem.displayName} />
+                      </h5>
                     );
-                  }
-                  return (
-                    <h5 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.95rem' }}>
-                      <ColoredItemName name={selectedItem.displayName} />
+                  })()
+                ) : (
+                  <>
+                    <h5 className="mb-0" style={{ fontWeight: '700', color: chartColor }}>
+                      <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
                     </h5>
-                  );
-                })()
-              ) : (
-                <>
-                  <h5 className="mb-0" style={{ fontWeight: '700', color: chartColor }}>
-                    <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
-                  </h5>
-                  <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                    {selectedItem.type === 'market' ? '거래소' : '경매장'}
-                  </small>
-                </>
+                    <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                      {selectedItem.type === 'market' ? '거래소' : '경매장'}
+                    </small>
+                  </>
+                )}
+              </div>
+              {/* 가격선 설정 톱니바퀴 */}
+              <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowPriceInput(!showPriceInput)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: currentCustomLines ? '#10b981' : 'var(--text-muted)',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = currentCustomLines ? '#10b981' : 'var(--text-primary)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = currentCustomLines ? '#10b981' : 'var(--text-muted)'}
+                title="차트 설정"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+              </button>
+
+              {/* 가격 입력 팝업 */}
+              {showPriceInput && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    marginTop: '8px',
+                    backgroundColor: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                    zIndex: 100,
+                    minWidth: '220px',
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
+                    가격선 설정
+                  </div>
+
+                  {/* 판매가 */}
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                      판매가 (녹색)
+                    </label>
+                    <input
+                      type="number"
+                      value={tempSellPrice}
+                      onChange={(e) => setTempSellPrice(e.target.value)}
+                      placeholder="판매가"
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--bg-secondary)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.85rem',
+                      }}
+                    />
+                  </div>
+
+                  {/* 구매가 */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                      구매가 (주황)
+                    </label>
+                    <input
+                      type="number"
+                      value={tempBuyPrice}
+                      onChange={(e) => setTempBuyPrice(e.target.value)}
+                      placeholder="구매가"
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--bg-secondary)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.85rem',
+                      }}
+                    />
+                  </div>
+
+                  {/* 버튼 */}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={clearPriceLines}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--card-bg)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      삭제
+                    </button>
+                    <button
+                      onClick={savePriceLines}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      저장
+                    </button>
+                  </div>
+                </div>
               )}
+            </div>
             </div>
           </div>
 
@@ -838,39 +1055,163 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 }}
               />
             )}
-            <div>
-              {categoryStyle?.label === '악세' && selectedItem.displayName ? (
-                (() => {
-                  const parts = selectedItem.displayName.split('\n');
-                  if (parts.length === 3) {
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div>
+                {categoryStyle?.label === '악세' && selectedItem.displayName ? (
+                  (() => {
+                    const parts = selectedItem.displayName.split('\n');
+                    if (parts.length === 3) {
+                      return (
+                        <div>
+                          <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.63rem', lineHeight: '1.3', wordBreak: 'keep-all' }}>
+                            <div><ColoredItemName name={parts[0]} /></div>
+                            <div><ColoredItemName name={parts[1]} /></div>
+                          </h6>
+                          <small style={{ color: 'var(--text-muted)', fontSize: '0.58rem', display: 'block', marginTop: '2px' }}>
+                            {parts[2]}, {selectedItem.type === 'market' ? '거래소' : '경매장'}
+                          </small>
+                        </div>
+                      );
+                    }
                     return (
-                      <div>
-                        <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.63rem', lineHeight: '1.3', wordBreak: 'keep-all' }}>
-                          <div><ColoredItemName name={parts[0]} /></div>
-                          <div><ColoredItemName name={parts[1]} /></div>
-                        </h6>
-                        <small style={{ color: 'var(--text-muted)', fontSize: '0.58rem', display: 'block', marginTop: '2px' }}>
-                          {parts[2]}, {selectedItem.type === 'market' ? '거래소' : '경매장'}
-                        </small>
-                      </div>
+                      <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.63rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
+                        <ColoredItemName name={selectedItem.displayName} />
+                      </h6>
                     );
-                  }
-                  return (
-                    <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.63rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
-                      <ColoredItemName name={selectedItem.displayName} />
+                  })()
+                ) : (
+                  <>
+                    <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.75rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
+                      <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
                     </h6>
-                  );
-                })()
-              ) : (
-                <>
-                  <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.75rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
-                    <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
-                  </h6>
-                  <small style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>
-                    {selectedItem.type === 'market' ? '거래소' : '경매장'}
-                  </small>
-                </>
+                    <small style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>
+                      {selectedItem.type === 'market' ? '거래소' : '경매장'}
+                    </small>
+                  </>
+                )}
+              </div>
+              {/* 모바일 가격선 설정 톱니바퀴 */}
+              <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowPriceInput(!showPriceInput)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: currentCustomLines ? '#10b981' : 'var(--text-muted)',
+                }}
+                title="차트 설정"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+              </button>
+
+              {/* 모바일 가격 입력 팝업 */}
+              {showPriceInput && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: '6px',
+                    backgroundColor: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '10px',
+                    padding: '12px',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                    zIndex: 100,
+                    minWidth: '180px',
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '10px' }}>
+                    가격선 설정
+                  </div>
+
+                  <div style={{ marginBottom: '8px' }}>
+                    <label style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600, display: 'block', marginBottom: '3px' }}>
+                      판매가 (녹색)
+                    </label>
+                    <input
+                      type="number"
+                      value={tempSellPrice}
+                      onChange={(e) => setTempSellPrice(e.target.value)}
+                      placeholder="판매가"
+                      style={{
+                        width: '100%',
+                        padding: '6px 8px',
+                        borderRadius: '5px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--bg-secondary)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.8rem',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ fontSize: '0.7rem', color: '#f59e0b', fontWeight: 600, display: 'block', marginBottom: '3px' }}>
+                      구매가 (주황)
+                    </label>
+                    <input
+                      type="number"
+                      value={tempBuyPrice}
+                      onChange={(e) => setTempBuyPrice(e.target.value)}
+                      placeholder="구매가"
+                      style={{
+                        width: '100%',
+                        padding: '6px 8px',
+                        borderRadius: '5px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--bg-secondary)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.8rem',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      onClick={clearPriceLines}
+                      style={{
+                        flex: 1,
+                        padding: '6px',
+                        borderRadius: '5px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--card-bg)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      삭제
+                    </button>
+                    <button
+                      onClick={savePriceLines}
+                      style={{
+                        flex: 1,
+                        padding: '6px',
+                        borderRadius: '5px',
+                        border: 'none',
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      저장
+                    </button>
+                  </div>
+                </div>
               )}
+            </div>
             </div>
           </div>
           {stats && (
@@ -929,6 +1270,14 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   {activeReferenceLines?.has('avg') && stats && (
                     <ReferenceLine y={stats.avg} stroke="#6b7280" strokeDasharray="8 4" strokeWidth={2} />
                   )}
+                  {/* 커스텀 가격선 - 판매가 (녹색) */}
+                  {currentCustomLines?.sellPrice && (
+                    <ReferenceLine y={currentCustomLines.sellPrice} stroke="#10b981" strokeDasharray="10 5" strokeWidth={2.5} />
+                  )}
+                  {/* 커스텀 가격선 - 구매가 (주황) */}
+                  {currentCustomLines?.buyPrice && (
+                    <ReferenceLine y={currentCustomLines.buyPrice} stroke="#f59e0b" strokeDasharray="10 5" strokeWidth={2.5} />
+                  )}
                   {/* 비교 라인 (일반 재료 × 5) - 점선 */}
                   {comparisonData && (
                     <Line type="monotone" dataKey="비교가격" stroke={comparisonColor} strokeWidth={2} strokeDasharray="8 4" dot={false} activeDot={{ r: 6, fill: comparisonColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} connectNulls />
@@ -959,6 +1308,14 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   )}
                   {activeReferenceLines?.has('avg') && stats && (
                     <ReferenceLine y={stats.avg} stroke="#6b7280" strokeDasharray="6 3" strokeWidth={1.5} />
+                  )}
+                  {/* 커스텀 가격선 - 판매가 (녹색) - 모바일 */}
+                  {currentCustomLines?.sellPrice && (
+                    <ReferenceLine y={currentCustomLines.sellPrice} stroke="#10b981" strokeDasharray="8 4" strokeWidth={2} />
+                  )}
+                  {/* 커스텀 가격선 - 구매가 (주황) - 모바일 */}
+                  {currentCustomLines?.buyPrice && (
+                    <ReferenceLine y={currentCustomLines.buyPrice} stroke="#f59e0b" strokeDasharray="8 4" strokeWidth={2} />
                   )}
                   {/* 비교 라인 (일반 재료 × 5) - 점선 */}
                   {comparisonData && (
