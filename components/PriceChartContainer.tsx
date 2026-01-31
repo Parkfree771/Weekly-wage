@@ -48,12 +48,10 @@ const CHART_CONFIG_KEY = 'chartConfig';
 // 차트 설정 타입
 type ChartConfig = {
   defaultItem: string | null;  // 기본 모드에서 처음 표시할 아이템 ID
-  gridItems: string[];  // 4분할 모드 아이템 4개
 };
 
 const getDefaultChartConfig = (): ChartConfig => ({
-  defaultItem: null,
-  gridItems: []
+  defaultItem: null
 });
 
 const loadChartConfig = (): ChartConfig => {
@@ -63,8 +61,7 @@ const loadChartConfig = (): ChartConfig => {
     if (saved) {
       const parsed = JSON.parse(saved);
       return {
-        defaultItem: parsed.defaultItem || null,
-        gridItems: parsed.gridItems || parsed.favoriteItems || []
+        defaultItem: parsed.defaultItem || null
       };
     }
   } catch (e) {
@@ -118,7 +115,6 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   const [showChartSettings, setShowChartSettings] = useState(false);
   const [tempChartConfig, setTempChartConfig] = useState<ChartConfig>(getDefaultChartConfig());
   const [isConfigLoaded, setIsConfigLoaded] = useState(false);
-  const [settingsMode, setSettingsMode] = useState<'default' | 'grid'>('default');
 
   // 차트 설정 불러오기 (초기 로드 - 한 번만 실행)
   useEffect(() => {
@@ -215,10 +211,10 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   // 이 useEffect는 더 이상 카테고리 변경 시 아이템을 자동 선택하지 않음
   // 대신 handleSelectCategory, handleSelectSubCategory에서 직접 처리
 
-  // 카테고리 변경 시 그리드 아이템 초기화 (설정된 gridItems가 있으면 유지)
+  // 카테고리 변경 시 그리드 아이템 초기화
   useEffect(() => {
-    if (isGridView && chartConfig.gridItems.length === 0) {
-      // 설정된 아이템이 없을 때만 카테고리 아이템으로 초기화
+    if (isGridView) {
+      // 4분할 모드일 때 카테고리 변경하면 해당 카테고리 아이템으로 초기화
       const items = currentCategoryItems;
       setGridItems([
         items[0] || null,
@@ -228,7 +224,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
       ]);
       setSelectedSlot(null);
     }
-  }, [selectedCategory, selectedSubCategory, isGridView, currentCategoryItems, chartConfig.gridItems.length]);
+  }, [selectedCategory, selectedSubCategory, isGridView, currentCategoryItems]);
 
   // 카테고리 변경 시 스크롤 상태 체크
   useEffect(() => {
@@ -391,31 +387,18 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
 
   const handleToggleGridView = useCallback(() => {
     if (!isGridView) {
-      // 그리드 뷰로 전환 시: 설정된 gridItems가 있으면 사용, 없으면 현재 카테고리
-      const savedGridItems = chartConfig.gridItems;
-      if (savedGridItems.length > 0) {
-        // 설정된 아이템으로 초기화
-        const configuredItems = savedGridItems.map(id => getTrackedItemById(id) || null);
-        setGridItems([
-          configuredItems[0] || null,
-          configuredItems[1] || null,
-          configuredItems[2] || null,
-          configuredItems[3] || null,
-        ]);
-      } else {
-        // 현재 카테고리의 처음 4개 아이템으로 초기화
-        const items = currentCategoryItems;
-        setGridItems([
-          items[0] || null,
-          items[1] || null,
-          items[2] || null,
-          items[3] || null,
-        ]);
-      }
+      // 그리드 뷰로 전환 시: 현재 카테고리의 처음 4개 아이템으로 초기화
+      const items = currentCategoryItems;
+      setGridItems([
+        items[0] || null,
+        items[1] || null,
+        items[2] || null,
+        items[3] || null,
+      ]);
     }
     setIsGridView(!isGridView);
     setSelectedSlot(null);
-  }, [isGridView, chartConfig.gridItems, currentCategoryItems]);
+  }, [isGridView, currentCategoryItems]);
 
   // 차트 설정 모달 열기
   const openChartSettings = () => {
@@ -428,8 +411,8 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     setChartConfig(tempChartConfig);
     saveChartConfig(tempChartConfig);
 
-    // 기본 모드: 저장된 아이템으로 현재 화면 업데이트
-    if (tempChartConfig.defaultItem && !isGridView) {
+    // 저장된 아이템으로 현재 화면 업데이트
+    if (tempChartConfig.defaultItem) {
       const result = findItemById(tempChartConfig.defaultItem);
       if (result) {
         setSelectedCategory(result.category);
@@ -442,37 +425,12 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
       }
     }
 
-    // 4분할 모드: 저장된 아이템으로 gridItems 업데이트
-    if (tempChartConfig.gridItems.length > 0) {
-      const items = tempChartConfig.gridItems.map(id => getTrackedItemById(id) || null);
-      setGridItems([
-        items[0] || null,
-        items[1] || null,
-        items[2] || null,
-        items[3] || null,
-      ]);
-    }
-
     setShowChartSettings(false);
   };
 
   // 차트 설정 초기화
   const resetChartSettings = () => {
     setTempChartConfig(getDefaultChartConfig());
-  };
-
-  // 4분할 모드 아이템 토글
-  const toggleGridItem = (itemId: string) => {
-    setTempChartConfig(prev => {
-      const items = [...prev.gridItems];
-      const index = items.indexOf(itemId);
-      if (index >= 0) {
-        items.splice(index, 1);
-      } else if (items.length < 4) {
-        items.push(itemId);
-      }
-      return { ...prev, gridItems: items };
-    });
   };
 
 
@@ -1098,307 +1056,122 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
               overflowY: 'auto',
               flex: 1,
             }}>
-              {/* 모드 선택 탭 */}
-              <div style={{
-                display: 'flex',
-                gap: '8px',
-                marginBottom: '16px',
-              }}>
-                <button
-                  onClick={() => setSettingsMode('default')}
-                  style={{
-                    flex: 1,
-                    padding: '10px 16px',
-                    borderRadius: '8px',
-                    border: `2px solid ${settingsMode === 'default' ? '#3b82f6' : 'var(--border-color)'}`,
-                    backgroundColor: settingsMode === 'default' ? '#3b82f620' : 'transparent',
-                    color: settingsMode === 'default' ? '#3b82f6' : 'var(--text-secondary)',
-                    fontSize: '0.9rem',
-                    fontWeight: settingsMode === 'default' ? 700 : 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  기본
-                </button>
-                <button
-                  onClick={() => setSettingsMode('grid')}
-                  style={{
-                    flex: 1,
-                    padding: '10px 16px',
-                    borderRadius: '8px',
-                    border: `2px solid ${settingsMode === 'grid' ? '#3b82f6' : 'var(--border-color)'}`,
-                    backgroundColor: settingsMode === 'grid' ? '#3b82f620' : 'transparent',
-                    color: settingsMode === 'grid' ? '#3b82f6' : 'var(--text-secondary)',
-                    fontSize: '0.9rem',
-                    fontWeight: settingsMode === 'grid' ? 700 : 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  4분할
-                </button>
+              {/* 기본 아이템 설정 */}
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                페이지 접속 시 처음 표시될 아이템을 선택하세요.
               </div>
 
-              {/* 기본 모드 설정 */}
-              {settingsMode === 'default' && (
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
-                    페이지 접속 시 처음 표시될 아이템을 선택하세요.
-                  </div>
-
-                  {/* 선택된 기본 아이템 표시 */}
-                  {tempChartConfig.defaultItem && (
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 12px',
-                      marginBottom: '12px',
-                      backgroundColor: 'var(--bg-secondary)',
-                      borderRadius: '8px',
-                      border: '1px solid #3b82f6',
-                    }}>
-                      {(() => {
-                        const item = getTrackedItemById(tempChartConfig.defaultItem!);
-                        if (!item) return <span style={{ color: 'var(--text-muted)' }}>아이템을 찾을 수 없음</span>;
-                        return (
-                          <>
-                            <Image
-                              src={item.icon || '/icon.png'}
-                              alt={item.name}
-                              width={28}
-                              height={28}
-                              style={{ borderRadius: '4px' }}
-                            />
-                            <span style={{ flex: 1, fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-                              {item.name}
-                            </span>
-                            <button
-                              onClick={() => setTempChartConfig(prev => ({ ...prev, defaultItem: null }))}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: '#ef4444',
-                                cursor: 'pointer',
-                                fontSize: '1.2rem',
-                                padding: '0 4px',
-                              }}
-                            >
-                              ×
-                            </button>
-                          </>
-                        );
-                      })()}
-                    </div>
-                  )}
-
-                  {/* 기본 아이템 선택 목록 */}
-                  <div style={{
-                    maxHeight: '300px',
-                    overflowY: 'auto',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                  }}>
-                    {CATEGORY_ORDER.map(cat => {
-                      const catStyle = CATEGORY_STYLES[cat];
-                      const items = getItemsByCategory(cat);
-                      return (
-                        <div key={cat}>
-                          <div style={{
-                            padding: '8px 12px',
-                            backgroundColor: 'var(--bg-secondary)',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            color: theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor,
-                            borderBottom: '1px solid var(--border-color)',
-                          }}>
-                            {catStyle.label}
-                          </div>
-                          {items.map(item => {
-                            const isSelected = tempChartConfig.defaultItem === item.id;
-                            return (
-                              <div
-                                key={item.id}
-                                onClick={() => setTempChartConfig(prev => ({ ...prev, defaultItem: item.id }))}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '10px',
-                                  padding: '8px 12px',
-                                  cursor: 'pointer',
-                                  backgroundColor: isSelected ? (theme === 'dark' ? catStyle.darkBg : catStyle.lightBg) : 'transparent',
-                                  borderBottom: '1px solid var(--border-color)',
-                                }}
-                              >
-                                <input
-                                  type="radio"
-                                  checked={isSelected}
-                                  onChange={() => {}}
-                                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                                />
-                                <Image
-                                  src={item.icon || '/icon.png'}
-                                  alt={item.name}
-                                  width={24}
-                                  height={24}
-                                  style={{ borderRadius: '4px', flexShrink: 0 }}
-                                />
-                                <span style={{
-                                  fontSize: '0.8rem',
-                                  color: isSelected ? (theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor) : 'var(--text-primary)',
-                                  fontWeight: isSelected ? 600 : 400,
-                                }}>
-                                  {item.name}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
-                  </div>
+              {/* 선택된 기본 아이템 표시 */}
+              {tempChartConfig.defaultItem && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '10px 12px',
+                  marginBottom: '12px',
+                  backgroundColor: 'var(--bg-secondary)',
+                  borderRadius: '8px',
+                  border: '1px solid #3b82f6',
+                }}>
+                  {(() => {
+                    const item = getTrackedItemById(tempChartConfig.defaultItem!);
+                    if (!item) return <span style={{ color: 'var(--text-muted)' }}>아이템을 찾을 수 없음</span>;
+                    return (
+                      <>
+                        <Image
+                          src={item.icon || '/icon.png'}
+                          alt={item.name}
+                          width={28}
+                          height={28}
+                          style={{ borderRadius: '4px' }}
+                        />
+                        <span style={{ flex: 1, fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                          {item.name}
+                        </span>
+                        <button
+                          onClick={() => setTempChartConfig(prev => ({ ...prev, defaultItem: null }))}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            fontSize: '1.2rem',
+                            padding: '0 4px',
+                          }}
+                        >
+                          ×
+                        </button>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
 
-              {/* 4분할 모드 설정 */}
-              {settingsMode === 'grid' && (
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
-                    4분할 모드에서 표시할 아이템을 선택하세요. ({tempChartConfig.gridItems.length}/4)
-                  </div>
-
-                  {/* 선택된 아이템들 표시 */}
-                  {tempChartConfig.gridItems.length > 0 && (
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '8px',
-                      marginBottom: '12px',
-                      padding: '10px',
-                      backgroundColor: 'var(--bg-secondary)',
-                      borderRadius: '8px',
-                    }}>
-                      {tempChartConfig.gridItems.map((itemId, idx) => {
-                        const item = getTrackedItemById(itemId);
-                        if (!item) return null;
+              {/* 기본 아이템 선택 목록 */}
+              <div style={{
+                maxHeight: '350px',
+                overflowY: 'auto',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+              }}>
+                {CATEGORY_ORDER.map(cat => {
+                  const catStyle = CATEGORY_STYLES[cat];
+                  const items = getItemsByCategory(cat);
+                  return (
+                    <div key={cat}>
+                      <div style={{
+                        padding: '8px 12px',
+                        backgroundColor: 'var(--bg-secondary)',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor,
+                        borderBottom: '1px solid var(--border-color)',
+                      }}>
+                        {catStyle.label}
+                      </div>
+                      {items.map(item => {
+                        const isSelected = tempChartConfig.defaultItem === item.id;
                         return (
                           <div
-                            key={itemId}
+                            key={item.id}
+                            onClick={() => setTempChartConfig(prev => ({ ...prev, defaultItem: item.id }))}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 10px',
-                              backgroundColor: 'var(--card-bg)',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: '6px',
+                              gap: '10px',
+                              padding: '8px 12px',
+                              cursor: 'pointer',
+                              backgroundColor: isSelected ? (theme === 'dark' ? catStyle.darkBg : catStyle.lightBg) : 'transparent',
+                              borderBottom: '1px solid var(--border-color)',
                             }}
                           >
-                            <span style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 700 }}>
-                              {idx + 1}
-                            </span>
+                            <input
+                              type="radio"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                            />
                             <Image
                               src={item.icon || '/icon.png'}
                               alt={item.name}
-                              width={20}
-                              height={20}
-                              style={{ borderRadius: '4px' }}
+                              width={24}
+                              height={24}
+                              style={{ borderRadius: '4px', flexShrink: 0 }}
                             />
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
-                              {item.name.length > 10 ? item.name.slice(0, 10) + '...' : item.name}
+                            <span style={{
+                              fontSize: '0.8rem',
+                              color: isSelected ? (theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor) : 'var(--text-primary)',
+                              fontWeight: isSelected ? 600 : 400,
+                            }}>
+                              {item.name}
                             </span>
-                            <button
-                              onClick={() => toggleGridItem(itemId)}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: '#ef4444',
-                                cursor: 'pointer',
-                                fontSize: '1rem',
-                                padding: '0 4px',
-                              }}
-                            >
-                              ×
-                            </button>
                           </div>
                         );
                       })}
                     </div>
-                  )}
-
-                  {/* 아이템 목록 */}
-                  <div style={{
-                    maxHeight: '300px',
-                    overflowY: 'auto',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                  }}>
-                    {CATEGORY_ORDER.map(cat => {
-                      const catStyle = CATEGORY_STYLES[cat];
-                      const items = getItemsByCategory(cat);
-                      return (
-                        <div key={cat}>
-                          <div style={{
-                            padding: '8px 12px',
-                            backgroundColor: 'var(--bg-secondary)',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            color: theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor,
-                            borderBottom: '1px solid var(--border-color)',
-                          }}>
-                            {catStyle.label}
-                          </div>
-                          {items.map(item => {
-                            const isSelected = tempChartConfig.gridItems.includes(item.id);
-                            const canAdd = tempChartConfig.gridItems.length < 4;
-                            return (
-                              <div
-                                key={item.id}
-                                onClick={() => {
-                                  if (isSelected || canAdd) toggleGridItem(item.id);
-                                }}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '10px',
-                                  padding: '8px 12px',
-                                  cursor: isSelected || canAdd ? 'pointer' : 'not-allowed',
-                                  opacity: !isSelected && !canAdd ? 0.5 : 1,
-                                  backgroundColor: isSelected ? (theme === 'dark' ? catStyle.darkBg : catStyle.lightBg) : 'transparent',
-                                  borderBottom: '1px solid var(--border-color)',
-                                }}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => {}}
-                                  disabled={!isSelected && !canAdd}
-                                  style={{ width: '16px', height: '16px', cursor: 'inherit' }}
-                                />
-                                <Image
-                                  src={item.icon || '/icon.png'}
-                                  alt={item.name}
-                                  width={24}
-                                  height={24}
-                                  style={{ borderRadius: '4px', flexShrink: 0 }}
-                                />
-                                <span style={{
-                                  fontSize: '0.8rem',
-                                  color: isSelected ? (theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor) : 'var(--text-primary)',
-                                  fontWeight: isSelected ? 600 : 400,
-                                }}>
-                                  {item.name}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
 
             {/* 모달 푸터 */}
