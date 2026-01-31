@@ -45,16 +45,13 @@ const formatPrice = (price: number) => {
 // 차트 설정 localStorage 키
 const CHART_CONFIG_KEY = 'chartConfig';
 
-type ViewMode = 'single' | 'grid';
-
+// 차트 설정 타입
 type ChartConfig = {
-  defaultMode: ViewMode;      // 기본 보기 모드
-  defaultItem: string | null; // 단일 모드 기본 아이템
-  gridItems: string[];        // 4분할 모드 아이템 4개
+  defaultItem: string | null;  // 기본 모드에서 처음 표시할 아이템 ID
+  gridItems: string[];  // 4분할 모드 아이템 4개
 };
 
 const getDefaultChartConfig = (): ChartConfig => ({
-  defaultMode: 'single',
   defaultItem: null,
   gridItems: []
 });
@@ -65,18 +62,10 @@ const loadChartConfig = (): ChartConfig => {
     const saved = localStorage.getItem(CHART_CONFIG_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // 새 형식인지 확인
-      if (parsed.defaultMode) {
-        return parsed as ChartConfig;
-      }
-      // 이전 형식 마이그레이션
-      if (parsed.defaultGridView !== undefined) {
-        return {
-          defaultMode: parsed.defaultGridView ? 'grid' : 'single',
-          defaultItem: null,
-          gridItems: parsed.favoriteItems || []
-        };
-      }
+      return {
+        defaultItem: parsed.defaultItem || null,
+        gridItems: parsed.gridItems || parsed.favoriteItems || []
+      };
     }
   } catch (e) {
     console.error('Failed to load chart config:', e);
@@ -129,46 +118,32 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   const [showChartSettings, setShowChartSettings] = useState(false);
   const [tempChartConfig, setTempChartConfig] = useState<ChartConfig>(getDefaultChartConfig());
   const [isConfigLoaded, setIsConfigLoaded] = useState(false);
+  const [settingsMode, setSettingsMode] = useState<'default' | 'grid'>('default');
 
-  // 차트 설정 불러오기
+  // 차트 설정 불러오기 (초기 로드 - 한 번만 실행)
   useEffect(() => {
     const loaded = loadChartConfig();
     setChartConfig(loaded);
     setTempChartConfig(loaded);
 
-    // 기본 모드에 따라 초기화
-    if (loaded.defaultMode === 'grid') {
-      // 4분할 모드
-      setIsGridView(true);
-      if (loaded.gridItems.length > 0) {
-        const items = loaded.gridItems.map(id => getTrackedItemById(id) || null);
-        setGridItems([
-          items[0] || null,
-          items[1] || null,
-          items[2] || null,
-          items[3] || null,
-        ]);
-      }
-    } else {
-      // 단일 모드
-      setIsGridView(false);
-      if (loaded.defaultItem) {
-        const item = getTrackedItemById(loaded.defaultItem);
-        if (item) {
-          setSelectedItem(item);
-          // 해당 아이템의 카테고리로 변경
-          const result = findItemById(loaded.defaultItem);
-          if (result) {
-            setSelectedCategory(result.category);
-            if (result.subCategory) {
-              setSelectedSubCategory(result.subCategory);
-            }
-          }
+    // 저장된 기본 아이템이 있으면 해당 아이템으로 설정
+    if (loaded.defaultItem) {
+      const result = findItemById(loaded.defaultItem);
+      if (result) {
+        setSelectedCategory(result.category);
+        if (result.subCategory) {
+          setSelectedSubCategory(result.subCategory);
         }
+        setSelectedItem(result.item);
+        setIsConfigLoaded(true);
+        return;
       }
     }
 
-    // 설정 로드 완료 표시
+    // 저장된 아이템이 없으면 기본값 (정수의 돌파석)
+    const defaultCategoryItems = getItemsByCategory('refine_succession');
+    const defaultItem = defaultCategoryItems.find(item => item.id === '66102007') || defaultCategoryItems[0];
+    setSelectedItem(defaultItem);
     setIsConfigLoaded(true);
   }, []);
 
@@ -237,22 +212,8 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     return getItemsByCategory(selectedCategory);
   }, [selectedCategory, selectedSubCategory]);
 
-  useEffect(() => {
-    // 재련 추가 재료 카테고리일 때는 서브카테고리가 선택되어야만 아이템을 가져옴
-    if (selectedCategory === 'refine_additional') {
-      if (selectedSubCategory) {
-        const subCategoryItems = getItemsBySubCategory(selectedSubCategory);
-        if (subCategoryItems.length > 0) {
-          setSelectedItem(subCategoryItems[0]);
-        }
-      }
-    } else {
-      const categoryItems = getItemsByCategory(selectedCategory);
-      if (categoryItems.length > 0) {
-        setSelectedItem(categoryItems[0]);
-      }
-    }
-  }, [selectedCategory, selectedSubCategory]);
+  // 이 useEffect는 더 이상 카테고리 변경 시 아이템을 자동 선택하지 않음
+  // 대신 handleSelectCategory, handleSelectSubCategory에서 직접 처리
 
   // 카테고리 변경 시 그리드 아이템 초기화 (설정된 gridItems가 있으면 유지)
   useEffect(() => {
@@ -273,21 +234,6 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   useEffect(() => {
     setTimeout(checkItemScroll, 100);
   }, [selectedCategory, selectedSubCategory, currentCategoryItems]);
-
-  // 초기 로드 시 저장된 설정이 없으면 기본 아이템 설정 (차트 설정 로드 후에만 실행)
-  useEffect(() => {
-    if (!isConfigLoaded) return;
-
-    // 저장된 설정이 없을 때만 기본 아이템 설정
-    if (!chartConfig.defaultItem && chartConfig.defaultMode === 'single') {
-      const defaultCategory = 'refine_succession';
-      const defaultCategoryItems = getItemsByCategory(defaultCategory);
-      const defaultItem = defaultCategoryItems.find(item => item.id === '66102007') || defaultCategoryItems[0];
-
-      setSelectedCategory(defaultCategory);
-      setSelectedItem(defaultItem);
-    }
-  }, [isConfigLoaded, chartConfig.defaultItem, chartConfig.defaultMode]);
 
   useEffect(() => {
     if (!selectedItem?.id) {
@@ -401,6 +347,14 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     setSelectedCategory(category);
     setSelectedSubCategory(null);
     setSelectedSlot(null);
+
+    // 재련 추가 재료가 아니면 첫 번째 아이템 선택
+    if (category !== 'refine_additional') {
+      const categoryItems = getItemsByCategory(category);
+      if (categoryItems.length > 0) {
+        setSelectedItem(categoryItems[0]);
+      }
+    }
   }, [isGridView]);
 
   const handleSelectSubCategory = useCallback((subCategory: RefineAdditionalSubCategory | null) => {
@@ -410,6 +364,14 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     }
     setSelectedSubCategory(subCategory);
     setSelectedSlot(null);
+
+    // 서브카테고리가 선택되면 첫 번째 아이템 선택
+    if (subCategory) {
+      const subCategoryItems = getItemsBySubCategory(subCategory);
+      if (subCategoryItems.length > 0) {
+        setSelectedItem(subCategoryItems[0]);
+      }
+    }
   }, [isGridView]);
 
   const handleSelectItem = useCallback((item: TrackedItem) => {
@@ -466,33 +428,29 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     setChartConfig(tempChartConfig);
     saveChartConfig(tempChartConfig);
 
-    // 저장 후 현재 상태에 적용
-    if (tempChartConfig.defaultMode === 'grid') {
-      setIsGridView(true);
-      if (tempChartConfig.gridItems.length > 0) {
-        const items = tempChartConfig.gridItems.map(id => getTrackedItemById(id) || null);
-        setGridItems([
-          items[0] || null,
-          items[1] || null,
-          items[2] || null,
-          items[3] || null,
-        ]);
-      }
-    } else {
-      setIsGridView(false);
-      if (tempChartConfig.defaultItem) {
-        const item = getTrackedItemById(tempChartConfig.defaultItem);
-        if (item) {
-          setSelectedItem(item);
-          const result = findItemById(tempChartConfig.defaultItem);
-          if (result) {
-            setSelectedCategory(result.category);
-            if (result.subCategory) {
-              setSelectedSubCategory(result.subCategory);
-            }
-          }
+    // 기본 모드: 저장된 아이템으로 현재 화면 업데이트
+    if (tempChartConfig.defaultItem && !isGridView) {
+      const result = findItemById(tempChartConfig.defaultItem);
+      if (result) {
+        setSelectedCategory(result.category);
+        if (result.subCategory) {
+          setSelectedSubCategory(result.subCategory);
+        } else {
+          setSelectedSubCategory(null);
         }
+        setSelectedItem(result.item);
       }
+    }
+
+    // 4분할 모드: 저장된 아이템으로 gridItems 업데이트
+    if (tempChartConfig.gridItems.length > 0) {
+      const items = tempChartConfig.gridItems.map(id => getTrackedItemById(id) || null);
+      setGridItems([
+        items[0] || null,
+        items[1] || null,
+        items[2] || null,
+        items[3] || null,
+      ]);
     }
 
     setShowChartSettings(false);
@@ -501,14 +459,6 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   // 차트 설정 초기화
   const resetChartSettings = () => {
     setTempChartConfig(getDefaultChartConfig());
-  };
-
-  // 단일 모드 아이템 선택
-  const selectSingleItem = (itemId: string) => {
-    setTempChartConfig(prev => ({
-      ...prev,
-      defaultItem: prev.defaultItem === itemId ? null : itemId
-    }));
   };
 
   // 4분할 모드 아이템 토글
@@ -1155,105 +1105,97 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                 marginBottom: '16px',
               }}>
                 <button
-                  onClick={() => setTempChartConfig(prev => ({ ...prev, defaultMode: 'single' }))}
+                  onClick={() => setSettingsMode('default')}
                   style={{
                     flex: 1,
-                    padding: '12px',
+                    padding: '10px 16px',
                     borderRadius: '8px',
-                    border: `2px solid ${tempChartConfig.defaultMode === 'single' ? '#3b82f6' : 'var(--border-color)'}`,
-                    backgroundColor: tempChartConfig.defaultMode === 'single' ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                    color: tempChartConfig.defaultMode === 'single' ? '#3b82f6' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    fontWeight: tempChartConfig.defaultMode === 'single' ? 700 : 500,
+                    border: `2px solid ${settingsMode === 'default' ? '#3b82f6' : 'var(--border-color)'}`,
+                    backgroundColor: settingsMode === 'default' ? '#3b82f620' : 'transparent',
+                    color: settingsMode === 'default' ? '#3b82f6' : 'var(--text-secondary)',
                     fontSize: '0.9rem',
+                    fontWeight: settingsMode === 'default' ? 700 : 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
                   }}
                 >
                   기본
-                  <div style={{ fontSize: '0.7rem', marginTop: '4px', opacity: 0.8 }}>
-                    아이템 1개 선택
-                  </div>
                 </button>
                 <button
-                  onClick={() => setTempChartConfig(prev => ({ ...prev, defaultMode: 'grid' }))}
+                  onClick={() => setSettingsMode('grid')}
                   style={{
                     flex: 1,
-                    padding: '12px',
+                    padding: '10px 16px',
                     borderRadius: '8px',
-                    border: `2px solid ${tempChartConfig.defaultMode === 'grid' ? '#3b82f6' : 'var(--border-color)'}`,
-                    backgroundColor: tempChartConfig.defaultMode === 'grid' ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                    color: tempChartConfig.defaultMode === 'grid' ? '#3b82f6' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    fontWeight: tempChartConfig.defaultMode === 'grid' ? 700 : 500,
+                    border: `2px solid ${settingsMode === 'grid' ? '#3b82f6' : 'var(--border-color)'}`,
+                    backgroundColor: settingsMode === 'grid' ? '#3b82f620' : 'transparent',
+                    color: settingsMode === 'grid' ? '#3b82f6' : 'var(--text-secondary)',
                     fontSize: '0.9rem',
+                    fontWeight: settingsMode === 'grid' ? 700 : 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
                   }}
                 >
                   4분할
-                  <div style={{ fontSize: '0.7rem', marginTop: '4px', opacity: 0.8 }}>
-                    아이템 4개 선택
-                  </div>
                 </button>
               </div>
 
-              {/* 기본 모드: 단일 아이템 선택 */}
-              {tempChartConfig.defaultMode === 'single' && (
+              {/* 기본 모드 설정 */}
+              {settingsMode === 'default' && (
                 <div>
-                  <div style={{
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    marginBottom: '8px',
-                  }}>
-                    첫 화면에 표시할 아이템
-                  </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
-                    페이지 접속 시 이 아이템이 표시됩니다.
+                    페이지 접속 시 처음 표시될 아이템을 선택하세요.
                   </div>
 
-                  {/* 선택된 아이템 표시 */}
-                  {tempChartConfig.defaultItem && (() => {
-                    const item = getTrackedItemById(tempChartConfig.defaultItem);
-                    if (!item) return null;
-                    return (
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '10px',
-                        marginBottom: '12px',
-                        backgroundColor: 'var(--bg-secondary)',
-                        borderRadius: '8px',
-                        border: '1px solid #3b82f6',
-                      }}>
-                        <Image
-                          src={item.icon || '/icon.png'}
-                          alt={item.name}
-                          width={28}
-                          height={28}
-                          style={{ borderRadius: '4px' }}
-                        />
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600, flex: 1 }}>
-                          {item.name}
-                        </span>
-                        <button
-                          onClick={() => selectSingleItem(item.id)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            fontSize: '1.2rem',
-                            padding: '0 4px',
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    );
-                  })()}
+                  {/* 선택된 기본 아이템 표시 */}
+                  {tempChartConfig.defaultItem && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      marginBottom: '12px',
+                      backgroundColor: 'var(--bg-secondary)',
+                      borderRadius: '8px',
+                      border: '1px solid #3b82f6',
+                    }}>
+                      {(() => {
+                        const item = getTrackedItemById(tempChartConfig.defaultItem!);
+                        if (!item) return <span style={{ color: 'var(--text-muted)' }}>아이템을 찾을 수 없음</span>;
+                        return (
+                          <>
+                            <Image
+                              src={item.icon || '/icon.png'}
+                              alt={item.name}
+                              width={28}
+                              height={28}
+                              style={{ borderRadius: '4px' }}
+                            />
+                            <span style={{ flex: 1, fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                              {item.name}
+                            </span>
+                            <button
+                              onClick={() => setTempChartConfig(prev => ({ ...prev, defaultItem: null }))}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                fontSize: '1.2rem',
+                                padding: '0 4px',
+                              }}
+                            >
+                              ×
+                            </button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
 
-                  {/* 아이템 목록 */}
+                  {/* 기본 아이템 선택 목록 */}
                   <div style={{
-                    maxHeight: '280px',
+                    maxHeight: '300px',
                     overflowY: 'auto',
                     border: '1px solid var(--border-color)',
                     borderRadius: '8px',
@@ -1278,7 +1220,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                             return (
                               <div
                                 key={item.id}
-                                onClick={() => selectSingleItem(item.id)}
+                                onClick={() => setTempChartConfig(prev => ({ ...prev, defaultItem: item.id }))}
                                 style={{
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1289,25 +1231,12 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                                   borderBottom: '1px solid var(--border-color)',
                                 }}
                               >
-                                <div style={{
-                                  width: '18px',
-                                  height: '18px',
-                                  borderRadius: '50%',
-                                  border: `2px solid ${isSelected ? '#3b82f6' : 'var(--border-color)'}`,
-                                  backgroundColor: isSelected ? '#3b82f6' : 'transparent',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                }}>
-                                  {isSelected && (
-                                    <div style={{
-                                      width: '8px',
-                                      height: '8px',
-                                      borderRadius: '50%',
-                                      backgroundColor: 'white',
-                                    }} />
-                                  )}
-                                </div>
+                                <input
+                                  type="radio"
+                                  checked={isSelected}
+                                  onChange={() => {}}
+                                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                                />
                                 <Image
                                   src={item.icon || '/icon.png'}
                                   alt={item.name}
@@ -1332,19 +1261,11 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                 </div>
               )}
 
-              {/* 4분할 모드: 4개 아이템 선택 */}
-              {tempChartConfig.defaultMode === 'grid' && (
+              {/* 4분할 모드 설정 */}
+              {settingsMode === 'grid' && (
                 <div>
-                  <div style={{
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    marginBottom: '8px',
-                  }}>
-                    4분할에 표시할 아이템 ({tempChartConfig.gridItems.length}/4)
-                  </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
-                    페이지 접속 시 이 4개 아이템이 4분할로 표시됩니다.
+                    4분할 모드에서 표시할 아이템을 선택하세요. ({tempChartConfig.gridItems.length}/4)
                   </div>
 
                   {/* 선택된 아이템들 표시 */}
@@ -1408,7 +1329,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
 
                   {/* 아이템 목록 */}
                   <div style={{
-                    maxHeight: '250px',
+                    maxHeight: '300px',
                     overflowY: 'auto',
                     border: '1px solid var(--border-color)',
                     borderRadius: '8px',
