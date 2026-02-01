@@ -78,6 +78,10 @@ export default function Home() {
               <Card.Body className="p-3">
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
                   <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.01</span>
+                    <span style={{ color: 'var(--text-primary)' }}>붕괴, 불변 이미지 오류 수정</span>
+                  </li>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>01.31</span>
                     <span style={{ color: 'var(--text-primary)' }}>자동강화 속도 표시 수정, 차트 오늘의 시세 커스텀 기능 추가</span>
                   </li>
