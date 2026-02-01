@@ -3,6 +3,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ConsentModal from '@/components/auth/ConsentModal';
+import ConsoleFilter from '@/components/ConsoleFilter';
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import Script from "next/script";
@@ -96,6 +97,7 @@ export default function RootLayout({
     <html lang="ko">
       <body className={notoSansKr.className}>
         <ThemeProvider>
+          <ConsoleFilter />
           <AuthProvider>
             <Navbar />
             <main style={{ minHeight: 'calc(100vh - 200px)' }}>

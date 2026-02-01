@@ -5,6 +5,8 @@ import { Card, Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { TrackedItem, ItemCategory } from '@/lib/items-to-track';
 import { PriceContext } from './PriceComparisonStats';
+import { ColoredItemName } from '@/lib/components/ColoredItemName';
+import type { TooltipProps, CustomDotProps } from '@/types/recharts';
 
 // 커스텀 가격선 localStorage 키
 const CUSTOM_PRICE_LINES_KEY = 'customPriceLines';
@@ -73,58 +75,22 @@ type CompactPriceChartProps = {
   hidePeriodButtons?: boolean;
 };
 
-function ColoredItemName({ name }: { name: string }) {
-  const regex = /(\d+\.?\d*%)\s*(\(상\))|(\d+\.?\d*%)\s*(\(중\))|(\(상\))|(\(중\))/g;
-  const parts: React.JSX.Element[] = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = regex.exec(name)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<span key={`text-${lastIndex}`}>{name.substring(lastIndex, match.index)}</span>);
-    }
-
-    if (match[2] === '(상)') {
-      parts.push(
-        <span key={`match-${match.index}`} style={{ color: '#FFB800', fontWeight: '700' }}>
-          {match[1]} {match[2]}
-        </span>
-      );
-    } else if (match[4] === '(중)') {
-      parts.push(
-        <span key={`match-${match.index}`} style={{ color: '#A020F0', fontWeight: '700' }}>
-          {match[3]} {match[4]}
-        </span>
-      );
-    } else if (match[5] === '(상)') {
-      parts.push(
-        <span key={`match-${match.index}`} style={{ color: '#FFB800', fontWeight: '700' }}>
-          {match[5]}
-        </span>
-      );
-    } else if (match[6] === '(중)') {
-      parts.push(
-        <span key={`match-${match.index}`} style={{ color: '#A020F0', fontWeight: '700' }}>
-          {match[6]}
-        </span>
-      );
-    }
-
-    lastIndex = regex.lastIndex;
-  }
-
-  if (lastIndex < name.length) {
-    parts.push(<span key={`text-${lastIndex}`}>{name.substring(lastIndex)}</span>);
-  }
-
-  return <>{parts}</>;
-}
-
 type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle, hidePeriodButtons = false }: CompactPriceChartProps) {
   const { theme } = useTheme();
   const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData, activeReferenceLines } = useContext(PriceContext);
+
+  // 모바일 감지 및 마운트 상태
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    setIsMounted(true);
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // 커스텀 가격선 관련 state
   const [customPriceLines, setCustomPriceLines] = useState<CustomPriceLines>({});
@@ -489,7 +455,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }, [filteredHistory]);
 
   // 커스텀 툴팁
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
     if (!active || !payload || !payload.length) return null;
 
     const data = payload[0].payload;
@@ -559,7 +525,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   };
 
   // 모바일용 커스텀 툴팁
-  const CustomTooltipMobile = ({ active, payload, label }: any) => {
+  const CustomTooltipMobile = ({ active, payload, label }: TooltipProps) => {
     if (!active || !payload || !payload.length) return null;
 
     const data = payload[0].payload;
@@ -629,8 +595,9 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   };
 
   // 커스텀 점 렌더러 (이벤트 라벨 포함)
-  const CustomDot = (props: any) => {
+  const CustomDot = (props: CustomDotProps) => {
     const { cx, cy, payload } = props;
+    if (!payload || cx === undefined || cy === undefined) return null;
     const hasEvent = payload.eventLabel || payload.isWednesday;
     const eventLabel = payload.eventLabel || (payload.isWednesday ? '수요일' : '');
     // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
@@ -676,8 +643,9 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   };
 
   // 모바일용 커스텀 점 렌더러
-  const CustomDotMobile = (props: any) => {
+  const CustomDotMobile = (props: CustomDotProps) => {
     const { cx, cy, payload } = props;
+    if (!payload || cx === undefined || cy === undefined) return null;
     const hasEvent = payload.eventLabel || payload.isWednesday;
     // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
     const eventColor = (categoryStyle?.label === '유물 각인서' || categoryStyle?.label === '보석')
@@ -1246,9 +1214,13 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
             <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>아직 수집된 데이터가 없습니다</p>
             <small style={{ color: 'var(--text-muted)' }}>가격 수집 후 차트가 표시됩니다</small>
           </div>
+        ) : !isMounted ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: isMobile ? '350px' : '500px' }}>
+            <Spinner animation="border" size="sm" />
+          </div>
         ) : (
           <>
-            <div className="d-none d-md-block" style={{ width: '100%', height: '500px' }}>
+            {!isMobile && <div style={{ width: '100%', height: '500px' }}>
               <ResponsiveContainer width="100%" height="100%" minHeight={500}>
                 <LineChart data={chartData} margin={{ top: 25, right: 10, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
@@ -1285,9 +1257,9 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={<CustomDot />} activeDot={{ r: 9, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 4 }} fill="url(#colorPrice)" />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
+            </div>}
 
-            <div className="d-md-none" style={{ width: '100%', height: '350px', marginTop: '-8px' }}>
+            {isMobile && <div style={{ width: '100%', height: '350px', marginTop: '-8px' }}>
               <ResponsiveContainer width="100%" height="100%" minHeight={350}>
                 <LineChart data={chartData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
@@ -1324,7 +1296,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.5} dot={<CustomDotMobile />} activeDot={{ r: 6, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} fill="url(#colorPriceMobile)" />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
+            </div>}
           </>
         )}
       </Card.Body>

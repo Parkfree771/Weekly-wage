@@ -172,6 +172,7 @@ export default function AboutPage() {
                 <h2 className="h5 text-primary mb-3">업데이트 이력</h2>
                 <div className="bg-light p-3 rounded">
                   <ul className="mb-0 small">
+                    <li><strong>2026.02.01:</strong> 불괴, 불변 이미지 오류 수정</li>
                     <li><strong>2026.01:</strong> 세르카(1710) 레이드 보상 정보 추가, 더보기 효율 체크 기능 추가</li>
                     <li><strong>2026.01:</strong> 강화 실제 시뮬레이션 기능 추가</li>
                     <li><strong>2025.12:</strong> 생활의 달인 페이지 추가, 아비도스 융화재료 손익 계산</li>

@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Customized } from 'recharts';
 import { TrackedItem, SUCCESSION_TO_NORMAL_MATERIAL_MAP, SUCCESSION_MATERIAL_START_DATE } from '@/lib/items-to-track';
+import { ColoredItemName } from '@/lib/components/ColoredItemName';
+import type { CustomizedProps } from '@/types/recharts';
 
 type PriceEntry = {
   price: number;
@@ -33,61 +35,16 @@ type MiniPriceChartProps = {
 
 type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
-// 아이템명 색상 처리 컴포넌트 - (상)은 노란색, (중)은 보라색, 나머지는 부모 색상 상속
-function ColoredItemName({ name }: { name: string }) {
-  const regex = /(\d+\.?\d*%)\s*(\(상\))|(\d+\.?\d*%)\s*(\(중\))|(\(상\))|(\(중\))/g;
-  const parts: React.JSX.Element[] = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = regex.exec(name)) !== null) {
-    if (match.index > lastIndex) {
-      // 일반 텍스트는 색상 지정 안함 (부모에서 상속)
-      parts.push(<span key={`text-${lastIndex}`}>{name.substring(lastIndex, match.index)}</span>);
-    }
-
-    if (match[2] === '(상)') {
-      parts.push(
-        <span key={`match-${match.index}`} style={{ color: '#FFB800', fontWeight: '700' }}>
-          {match[1]} {match[2]}
-        </span>
-      );
-    } else if (match[4] === '(중)') {
-      parts.push(
-        <span key={`match-${match.index}`} style={{ color: '#A020F0', fontWeight: '700' }}>
-          {match[3]} {match[4]}
-        </span>
-      );
-    } else if (match[5] === '(상)') {
-      parts.push(
-        <span key={`match-${match.index}`} style={{ color: '#FFB800', fontWeight: '700' }}>
-          {match[5]}
-        </span>
-      );
-    } else if (match[6] === '(중)') {
-      parts.push(
-        <span key={`match-${match.index}`} style={{ color: '#A020F0', fontWeight: '700' }}>
-          {match[6]}
-        </span>
-      );
-    }
-
-    lastIndex = regex.lastIndex;
-  }
-
-  if (lastIndex < name.length) {
-    parts.push(<span key={`text-${lastIndex}`}>{name.substring(lastIndex)}</span>);
-  }
-
-  // parts가 비어있으면 그냥 name 반환 (색상은 부모에서 상속)
-  return <>{parts.length > 0 ? parts : name}</>;
-}
-
 export default function MiniPriceChart({ item, categoryStyle, isSelected, onClick, slotIndex, isMobile = false }: MiniPriceChartProps) {
   const { theme } = useTheme();
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const selectedPeriod: PeriodOption = '1m';
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // 비교 데이터 (계승 재료 ↔ 일반 재료)
   const [comparisonHistory, setComparisonHistory] = useState<PriceEntry[]>([]);
@@ -400,9 +357,13 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: isMobile ? '110px' : '220px' }}>
           <Spinner animation="border" size="sm" />
         </div>
+      ) : !isMounted ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: isMobile ? '110px' : '220px' }}>
+          <Spinner animation="border" size="sm" />
+        </div>
       ) : (
         <div style={{ width: '100%', height: isMobile ? '110px' : '220px' }}>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minHeight={isMobile ? 110 : 220}>
             <LineChart data={chartData} margin={{ top: isMobile ? 2 : 5, right: isMobile ? 5 : (comparisonInfo ? 45 : 5), left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id={`miniGradient-${slotIndex}`} x1="0" y1="0" x2="0" y2="1">
@@ -500,7 +461,7 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
               {/* 차트 오른쪽 끝 라벨 - 데스크톱만 */}
               {!isMobile && comparisonInfo && chartData.length > 0 && (
                 <Customized
-                  component={(props: any) => {
+                  component={(props: CustomizedProps) => {
                     const { xAxisMap, yAxisMap } = props;
                     if (!xAxisMap || !yAxisMap) return null;
                     const xAxis = Object.values(xAxisMap)[0] as any;

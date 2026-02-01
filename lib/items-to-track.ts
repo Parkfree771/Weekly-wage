@@ -276,7 +276,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     id: '67400203',
     name: '질서의 젬 : 불변',
     type: 'market',
-    icon: '/gem-order-immutable.webp',
+    icon: '/gem-chaos-collapse.webp',
     iconBorderColor: '#4B0082' // 보라색
   },
   {
@@ -297,7 +297,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     id: '67410503',
     name: '혼돈의 젬 : 붕괴',
     type: 'market',
-    icon: '/gem-chaos-collapse.webp',
+    icon: '/gem-order-immutable.webp',
     iconBorderColor: '#4B0082' // 보라색
   },
 

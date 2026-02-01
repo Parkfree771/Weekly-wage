@@ -113,6 +113,11 @@ function ChartWithProfit({
 }) {
   const { theme } = useTheme();
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('1m');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // 제작 비용 계산
   const { craftingCost, actualGoldCost } = useMemo(() => {
@@ -526,8 +531,10 @@ function ChartWithProfit({
             </div>
 
             {/* 데스크톱 차트 */}
+            {isMounted ? (
+            <>
             <div className="d-none d-md-block" style={{ width: '100%', height: '320px' }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                 <LineChart data={chartData} margin={{ top: 15, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id={`colorPrice-${name}`} x1="0" y1="0" x2="0" y2="1">
@@ -581,9 +588,8 @@ function ChartWithProfit({
               </ResponsiveContainer>
             </div>
 
-            {/* 모바일 차트 */}
             <div className="d-md-none" style={{ width: '100%', height: '260px' }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={260}>
                 <LineChart data={chartData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id={`colorPriceMobile-${name}`} x1="0" y1="0" x2="0" y2="1">
@@ -635,6 +641,12 @@ function ChartWithProfit({
                 </LineChart>
               </ResponsiveContainer>
             </div>
+            </>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px' }}>
+                <Spinner animation="border" size="sm" />
+              </div>
+            )}
 
             {/* 제작 손익 섹션 - 메인페이지 스타일 */}
             <div className={styles.craftingSection}>

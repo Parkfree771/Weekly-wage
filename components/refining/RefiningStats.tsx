@@ -41,11 +41,13 @@ export default function RefiningStats() {
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // 모바일 감지
+  // 모바일 감지 및 마운트 상태
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 600);
     checkMobile();
+    setIsMounted(true);
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
@@ -323,7 +325,8 @@ export default function RefiningStats() {
 
                   {/* 히스토그램 차트 */}
                   <div className={styles.chartWrapper}>
-                    <ResponsiveContainer width="100%" height={260}>
+                    {isMounted ? (
+                    <ResponsiveContainer width="100%" height={260} minHeight={260}>
                       <BarChart
                         data={stats.chartData}
                         margin={{ top: 30, right: 15, left: 15, bottom: 10 }}
@@ -392,6 +395,11 @@ export default function RefiningStats() {
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
+                        <div className="spinner-border spinner-border-sm" role="status" />
+                      </div>
+                    )}
                   </div>
 
                   {/* 핵심 통계 수치 */}
