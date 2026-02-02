@@ -702,6 +702,23 @@ body {
   box-shadow: 0 3px 10px rgba(34, 197, 94, 0.35);
 }
 
+/* 지옥 시뮬 - 빨간색 */
+.navbar-nav-link.nav-hell:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-nav-link.nav-hell.active {
+  color: #fff;
+  font-weight: 700;
+  background-color: #ef4444;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.35);
+}
+
 /* 마이페이지 - 보라색 */
 .navbar-nav-link.nav-mypage:hover {
   color: #a855f7;
@@ -759,6 +776,19 @@ body {
   background-color: #22c55e;
   border-color: transparent;
   box-shadow: 0 3px 10px rgba(34, 197, 94, 0.4);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-hell:hover {
+  color: #ef4444;
+  background-color: rgba(60, 60, 65, 0.9);
+  border-color: #ef4444;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-hell.active {
+  background-color: #ef4444;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.4);
 }
 
 [data-theme="dark"] .navbar-nav-link.nav-mypage:hover {
@@ -869,6 +899,11 @@ body {
   color: #22c55e;
 }
 
+.navbar-offcanvas-link.nav-hell:hover {
+  background-color: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+}
+
 .navbar-offcanvas-link.nav-mypage:hover {
   background-color: rgba(168, 85, 247, 0.08);
   color: #a855f7;
@@ -884,6 +919,10 @@ body {
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-life:hover {
   background-color: rgba(34, 197, 94, 0.15);
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-hell:hover {
+  background-color: rgba(239, 68, 68, 0.15);
 }
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-mypage:hover {
@@ -908,6 +947,12 @@ body {
   font-weight: 600;
 }
 
+.navbar-offcanvas-link.nav-hell.active {
+  color: #fff;
+  background-color: #ef4444;
+  font-weight: 600;
+}
+
 .navbar-offcanvas-link.nav-mypage.active {
   color: #fff;
   background-color: #a855f7;
@@ -924,6 +969,10 @@ body {
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-life.active {
   background-color: #22c55e;
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-hell.active {
+  background-color: #ef4444;
 }
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-mypage.active {

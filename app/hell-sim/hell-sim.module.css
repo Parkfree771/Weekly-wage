@@ -1,5 +1,5 @@
 /* ========================================
-   지옥 시뮬레이터 - 핀볼 타워 미니게임
+   지옥 시뮬레이터 - 사이트 디자인 통합
    ======================================== */
 
 /* 메인 컨테이너 */
@@ -32,7 +32,9 @@
   margin: 0;
 }
 
-/* 게임 레이아웃 */
+/* ========================================
+   게임 레이아웃
+   ======================================== */
 .gameLayout {
   display: flex;
   gap: 1.5rem;
@@ -47,7 +49,9 @@
   }
 }
 
-/* 게임 캔버스 영역 */
+/* ========================================
+   게임 캔버스 영역
+   ======================================== */
 .gameArea {
   position: relative;
   flex-shrink: 0;
@@ -57,7 +61,7 @@
   position: relative;
   width: 360px;
   height: 600px;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -68,59 +72,50 @@
   display: block;
 }
 
-/* 층수 오버레이 */
-.floorOverlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.floorIndicator {
-  position: absolute;
-  left: 8px;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-  opacity: 0.7;
-  transform: translateY(-50%);
-}
-
-.floorIndicatorActive {
-  color: var(--profit-color);
-  opacity: 1;
-  font-weight: 700;
-}
-
-/* 현재 층 표시 */
+/* 현재 층 오버레이 표시 */
 .currentFloorDisplay {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  background: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  padding: 12px 20px;
+  top: 12px;
+  right: 12px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 10px 16px;
   border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 700;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   z-index: 20;
-  border: 2px solid rgba(249, 115, 22, 0.5);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
-.currentFloorNumber {
-  color: #f97316;
-  font-size: 1.6rem;
+.floorLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.floorValue {
+  font-size: 1.4rem;
   font-weight: 800;
-  text-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+  color: #f97316;
+  line-height: 1;
 }
 
-/* 컨트롤 패널 */
+[data-theme="dark"] .currentFloorDisplay {
+  background: rgba(30, 30, 35, 0.9);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ========================================
+   컨트롤 패널
+   ======================================== */
 .controlPanel {
-  width: 280px;
+  width: 300px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -133,94 +128,223 @@
   }
 }
 
-/* 카드 스타일 */
+/* ========================================
+   카드 스타일 (사이트 통일)
+   ======================================== */
 .card {
   background-color: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--border-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: 1rem;
   box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(160, 60, 30, 0.25);
+}
+
+[data-theme="dark"] .card {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .card:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* 카드 헤더 */
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--card-header-bg-orange);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cardIcon {
+  font-size: 1rem;
 }
 
 .cardTitle {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
-/* 상태 표시 */
+/* ========================================
+   열쇠 선택 그리드
+   ======================================== */
+.keyGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.keyButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-body-bg-stone);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.keyButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--key-color, var(--border-color));
+  background: var(--key-color-light, var(--card-body-bg-stone));
+  box-shadow: var(--shadow-md);
+}
+
+.keyButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.keyButtonActive {
+  border-color: var(--key-color, #f97316) !important;
+  background: var(--key-color-light, rgba(249, 115, 22, 0.1)) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.keyName {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--key-color, var(--text-primary));
+}
+
+.keyChances {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ========================================
+   게임 현황 그리드
+   ======================================== */
 .statusGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  padding: 0.75rem;
 }
 
 .statusItem {
   text-align: center;
-  padding: 0.6rem 0.4rem;
-  border-radius: 8px;
+  padding: 0.75rem 0.5rem;
+  border-radius: 10px;
   background: var(--card-body-bg-stone);
+  border: 1px solid var(--border-color);
 }
 
 .statusLabel {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: var(--text-muted);
-  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
 }
 
 .statusValue {
   font-size: 1.1rem;
   font-weight: 800;
   color: var(--text-primary);
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
 .statusValueHighlight {
   color: #f97316;
-  font-size: 1.2rem;
-  text-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
 }
 
-/* 메시지 박스 */
+.statusValueProfit {
+  color: var(--profit-color);
+}
+
+.chanceNumber {
+  font-size: 1.3rem;
+  color: #f97316;
+}
+
+.chanceUnit {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.targetFloor {
+  color: #ef4444;
+  font-size: 1.2rem;
+}
+
+.hiddenCount {
+  font-size: 1.3rem;
+  color: #fbbf24;
+}
+
+/* ========================================
+   메시지 박스
+   ======================================== */
 .messageBox {
   background: var(--card-body-bg-stone);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 0.75rem;
-  min-height: 60px;
-  font-family: monospace;
-  font-size: 0.8rem;
+  padding: 0.85rem 1rem;
+  margin: 0.75rem;
+  margin-top: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
   color: var(--text-secondary);
   line-height: 1.5;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
-/* 발사 버튼 */
+/* ========================================
+   버튼 스타일
+   ======================================== */
 .launchButton {
   width: 100%;
-  padding: 1rem;
+  padding: 1rem 1.5rem;
   border: none;
   border-radius: 12px;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
   color: #fff;
-  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .launchButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.45);
+  background: linear-gradient(135deg, #fdba74 0%, #fb923c 50%, #f97316 100%);
 }
 
 .launchButton:active:not(:disabled) {
   transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.3);
 }
 
 .launchButton:disabled {
@@ -228,14 +352,14 @@
   color: var(--text-muted);
   cursor: not-allowed;
   box-shadow: none;
+  text-shadow: none;
 }
 
-/* 리셋 버튼 */
 .resetButton {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -247,130 +371,402 @@
 .resetButton:hover {
   border-color: var(--text-primary);
   color: var(--text-primary);
+  background: var(--card-body-bg-stone);
 }
 
-/* 열쇠 선택 그리드 */
-.keyGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+/* ========================================
+   정보 박스
+   ======================================== */
+.infoBox {
+  background: var(--card-body-bg-stone);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
 }
 
-.keyButton {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0.6rem 0.5rem;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.keyButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.keyButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.keyButtonActive {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.keyName {
-  font-size: 0.9rem;
+.infoTitle {
+  font-size: 0.8rem;
   font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
-.keyChances {
-  font-size: 0.7rem;
+.infoTitle::before {
+  content: '';
+}
+
+.infoList {
+  margin: 0;
+  padding: 0;
+  padding-left: 1.2rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
-  margin-top: 2px;
+  line-height: 1.7;
 }
 
-/* 설명 텍스트 */
-.infoText {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  line-height: 1.6;
-  padding: 0 0.5rem;
+.infoList li {
+  margin-bottom: 0.25rem;
 }
 
-/* 결과 모달 */
+.infoList li:last-child {
+  margin-bottom: 0;
+}
+
+/* ========================================
+   결과 오버레이
+   ======================================== */
 .resultOverlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(30, 10, 0, 0.9) 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 30;
-  border-radius: 12px;
+  border-radius: 16px;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.resultIcon {
+  font-size: 4rem;
+  margin-bottom: 0.5rem;
+  animation: bounce 1s ease infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 .resultTitle {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 2rem;
+  font-weight: 800;
   color: #fff;
   margin-bottom: 0.5rem;
+  text-shadow: 0 2px 10px rgba(249, 115, 22, 0.5);
 }
 
 .resultFloor {
-  font-size: 4rem;
-  font-weight: 800;
-  color: #f97316;
+  font-size: 5rem;
+  font-weight: 900;
+  background: linear-gradient(180deg, #fcd34d 0%, #f97316 50%, #ea580c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
   margin-bottom: 0.5rem;
-  text-shadow: 0 0 20px rgba(249, 115, 22, 0.6);
+  text-shadow: none;
+  filter: drop-shadow(0 4px 20px rgba(249, 115, 22, 0.6));
 }
 
 .resultProgress {
   font-size: 1rem;
   color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 1rem;
+  font-weight: 500;
 }
 
-.resultButton {
-  padding: 0.75rem 2rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  background: #f97316;
-  color: #fff;
-  transition: all 0.2s ease;
-}
-
-.resultButton:hover {
-  background: #ea580c;
-}
-
-/* 애니메이션 */
+/* ========================================
+   애니메이션
+   ======================================== */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  50% { opacity: 0.6; }
 }
 
 .animatePulse {
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-/* 다크모드 대응 */
+/* ========================================
+   다크모드 대응
+   ======================================== */
 [data-theme="dark"] .canvasWrapper {
   background-color: #1a1a2e;
 }
 
-[data-theme="dark"] .currentFloorDisplay {
-  background: rgba(0, 0, 0, 0.85);
+[data-theme="dark"] .statusItem {
+  background: rgba(40, 40, 45, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .messageBox {
+  background: rgba(40, 40, 45, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .keyButton {
+  background: rgba(40, 40, 45, 0.5);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .keyButton:hover:not(:disabled) {
+  border-color: var(--key-color, rgba(255, 255, 255, 0.3));
+  background: var(--key-color-light, rgba(40, 40, 45, 0.8));
+}
+
+[data-theme="dark"] .infoBox {
+  background: rgba(40, 40, 45, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .resetButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ========================================
+   모바일 최적화
+   ======================================== */
+@media (max-width: 400px) {
+  .canvasWrapper {
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+    aspect-ratio: 360 / 600;
+  }
+
+  .canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .controlPanel {
+    padding: 0 0.5rem;
+  }
+
+  .launchButton {
+    padding: 0.9rem 1rem;
+    font-size: 1.1rem;
+  }
+
+  .statusValue {
+    font-size: 1rem;
+  }
+
+  .chanceNumber {
+    font-size: 1.1rem;
+  }
+}
+
+/* ========================================
+   레거시 호환 (사용되지 않는 클래스 유지)
+   ======================================== */
+.floorOverlay,
+.floorIndicator,
+.floorIndicatorActive,
+.currentFloorNumber {
+  display: none;
+}
+
+/* 결과 버튼 (현재 미사용) */
+.resultButton {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  color: #fff;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+
+.resultButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4);
+}
+
+/* ========================================
+   히든층 보상 섹션
+   ======================================== */
+.rewardSection {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #1a1a1a;
+  border: 1px solid #ff4500;
+  border-radius: 12px;
+}
+
+.rewardTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ff6b35;
+  text-align: center;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.rewardList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rewardItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.rewardFloor {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.rewardName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* ========================================
+   최종 상자 보상 섹션
+   ======================================== */
+.finalRewardSection {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  background: #1a1a1a;
+  border: 1px solid #ff6b35;
+  border-radius: 12px;
+}
+
+.finalRewardTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ff6b35;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.boxGrid {
+  display: grid;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.boxGrid:has(.boxItem:nth-child(4)) {
+  grid-template-columns: repeat(2, 100px);
+}
+
+.boxGrid:not(:has(.boxItem:nth-child(4))) {
+  grid-template-columns: repeat(3, 100px);
+}
+
+.boxItem {
+  width: 100px;
+  height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  border: 2px solid #ff6b35;
+  color: #fff;
+}
+
+.boxReward {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ff6b35;
+  text-align: center;
+  line-height: 1.2;
+  word-break: keep-all;
+}
+
+.boxPungyo {
+  border-color: #22c55e;
+  background: #0a1f0a;
+}
+
+.boxPungyo .boxReward {
+  color: #4ade80;
+}
+
+.pungyoLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #22c55e;
+}
+
+/* ========================================
+   통계 수집 현황 섹션
+   ======================================== */
+.statsSection {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.statsCard {
+  background-color: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem 2rem;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  min-width: 200px;
+}
+
+.statsCount {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f97316;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.statsLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.statsNote {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .statsCard {
+  background-color: rgba(30, 30, 35, 0.8);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .statsSection {
+    margin-top: 1.5rem;
+  }
+
+  .statsCard {
+    padding: 1rem 1.5rem;
+    min-width: 160px;
+  }
+
+  .statsCount {
+    font-size: 1.5rem;
+  }
 }

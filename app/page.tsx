@@ -78,6 +78,10 @@ export default function Home() {
               <Card.Body className="p-3">
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
                   <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.02</span>
+                    <span style={{ color: 'var(--text-primary)' }}>지옥 시뮬 추가 (추후 보상, 패키지 정보 추가 예정)</span>
+                  </li>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.01</span>
                     <span style={{ color: 'var(--text-primary)' }}>붕괴, 불변 이미지 오류 수정</span>
                   </li>

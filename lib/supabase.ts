@@ -767,3 +767,118 @@ export async function getTotalAdvancedSimulationCount(): Promise<number> {
     return 0;
   }
 }
+
+// ============================================
+// 지옥 시뮬레이터 (Hell Simulator)
+// ============================================
+
+// 지옥 시뮬 결과 저장 타입
+export interface HellSimResult {
+  key_type: 'rare' | 'epic' | 'legendary';
+  final_floor: number;
+  hidden_rewards: string[];  // 획득한 히든 보상 목록
+  box_rewards: string[];     // 최종 상자 보상 목록
+  pungyo_count: number;      // 풍요 갯수
+}
+
+// 지옥 시뮬 결과 저장 함수
+export async function saveHellSimResult(result: HellSimResult): Promise<boolean> {
+  try {
+    console.log('Saving hell sim result:', JSON.stringify(result, null, 2));
+
+    const { data, error } = await supabase
+      .from('hell_sim_results')
+      .insert([{
+        key_type: result.key_type,
+        final_floor: result.final_floor,
+        hidden_rewards: JSON.stringify(result.hidden_rewards),
+        box_rewards: JSON.stringify(result.box_rewards),
+        pungyo_count: result.pungyo_count,
+      }])
+      .select();
+
+    if (error) {
+      console.error('Supabase error:', error.message, error.details, error.hint);
+      return false;
+    }
+
+    console.log('Saved hell sim result successfully:', data);
+    return true;
+  } catch (err: any) {
+    console.error('Error saving hell sim result:', err?.message || err);
+    return false;
+  }
+}
+
+// 지옥 시뮬 통계 조회
+export interface HellSimStats {
+  key_type: string;
+  total_count: number;
+  avg_floor: number;
+  clear_count: number;
+  clear_rate: number;
+}
+
+export async function getHellSimStats(): Promise<HellSimStats[]> {
+  try {
+    const { data, error } = await supabase
+      .from('hell_sim_results')
+      .select('key_type, final_floor');
+
+    if (error || !data || data.length === 0) {
+      return [];
+    }
+
+    // 열쇠별 그룹화
+    const grouped: Record<string, { floors: number[]; clears: number }> = {};
+
+    for (const row of data) {
+      if (!grouped[row.key_type]) {
+        grouped[row.key_type] = { floors: [], clears: 0 };
+      }
+      grouped[row.key_type].floors.push(row.final_floor);
+      if (row.final_floor >= 100) {
+        grouped[row.key_type].clears++;
+      }
+    }
+
+    const stats: HellSimStats[] = [];
+    for (const keyType in grouped) {
+      const group = grouped[keyType];
+      const total = group.floors.length;
+      const avgFloor = group.floors.reduce((a, b) => a + b, 0) / total;
+
+      stats.push({
+        key_type: keyType,
+        total_count: total,
+        avg_floor: Math.round(avgFloor * 10) / 10,
+        clear_count: group.clears,
+        clear_rate: Math.round((group.clears / total) * 1000) / 10,
+      });
+    }
+
+    return stats;
+  } catch (err) {
+    console.error('Error fetching hell sim stats:', err);
+    return [];
+  }
+}
+
+// 지옥 시뮬 전체 데이터 수 조회
+export async function getHellSimTotalCount(): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from('hell_sim_results')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      console.error('Error fetching hell sim count:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (err) {
+    console.error('Error fetching hell sim total count:', err);
+    return 0;
+  }
+}
