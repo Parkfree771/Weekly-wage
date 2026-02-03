@@ -772,16 +772,22 @@ export async function getTotalAdvancedSimulationCount(): Promise<number> {
 // 지옥 시뮬레이터 (Hell Simulator)
 // ============================================
 
-// 지옥 시뮬 결과 저장 타입
+// 지옥/나락 시뮬 결과 저장 타입
 export interface HellSimResult {
+  game_mode: 'hell' | 'narak-odd' | 'narak-even';  // 게임 모드
   key_type: 'rare' | 'epic' | 'legendary';
   final_floor: number;
   hidden_rewards: string[];  // 획득한 히든 보상 목록
   box_rewards: string[];     // 최종 상자 보상 목록
   pungyo_count: number;      // 풍요 갯수
+  // 나락 전용 필드
+  result_type?: 'clear' | 'stop' | 'death';  // 결과 유형 (클리어/중단/완전사망)
+  used_revive?: boolean;     // 부활 사용 여부
+  death_floor?: number;      // 첫 사망 층 (나락에서 사망 시)
+  remaining_chances?: number; // 중단 시 남은 기회 (나락 stop 전용)
 }
 
-// 지옥 시뮬 결과 저장 함수
+// 지옥/나락 시뮬 결과 저장 함수
 export async function saveHellSimResult(result: HellSimResult): Promise<boolean> {
   try {
     console.log('Saving hell sim result:', JSON.stringify(result, null, 2));
@@ -789,11 +795,16 @@ export async function saveHellSimResult(result: HellSimResult): Promise<boolean>
     const { data, error } = await supabase
       .from('hell_sim_results')
       .insert([{
+        game_mode: result.game_mode,
         key_type: result.key_type,
         final_floor: result.final_floor,
         hidden_rewards: JSON.stringify(result.hidden_rewards),
         box_rewards: JSON.stringify(result.box_rewards),
         pungyo_count: result.pungyo_count,
+        result_type: result.result_type || null,
+        used_revive: result.used_revive || false,
+        death_floor: result.death_floor || null,
+        remaining_chances: result.remaining_chances ?? null,
       }])
       .select();
 

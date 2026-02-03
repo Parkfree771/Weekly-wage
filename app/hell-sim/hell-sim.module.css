@@ -37,25 +37,29 @@
    ======================================== */
 .gameLayout {
   display: flex;
-  gap: 1.5rem;
   justify-content: center;
+  margin: 0 auto;
+  width: fit-content;
+}
+
+/* 메인: 게임 + 컨트롤 */
+.mainRow {
+  display: flex;
+  gap: 1rem;
   align-items: flex-start;
 }
 
-@media (max-width: 768px) {
-  .gameLayout {
-    flex-direction: column;
-    align-items: center;
-  }
+/* 왼쪽: 게임 모드 + 캔버스 영역 */
+.gameColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 360px;
 }
 
 /* ========================================
    게임 캔버스 영역
    ======================================== */
-.gameArea {
-  position: relative;
-  flex-shrink: 0;
-}
 
 .canvasWrapper {
   position: relative;
@@ -115,17 +119,11 @@
    컨트롤 패널
    ======================================== */
 .controlPanel {
-  width: 300px;
+  width: 280px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-}
-
-@media (max-width: 768px) {
-  .controlPanel {
-    width: 100%;
-    max-width: 360px;
-  }
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 /* ========================================
@@ -182,8 +180,8 @@
    열쇠 선택 그리드
    ======================================== */
 .keyGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem;
 }
@@ -231,6 +229,60 @@
   font-weight: 600;
   color: var(--text-muted);
   margin-top: 2px;
+}
+
+/* 열쇠 이미지 버튼 */
+.keyImageButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.keyImageButton:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.05);
+}
+
+.keyImageButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.keyImageButtonActive {
+  transform: translateY(-3px) scale(1.1);
+  filter: drop-shadow(0 4px 12px rgba(249, 115, 22, 0.5));
+}
+
+.keyImage {
+  width: 90px !important;
+  height: 90px !important;
+  object-fit: contain !important;
+  border-radius: 12px;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+  transition: all 0.2s ease;
+}
+
+.keyImageButton:hover:not(:disabled) .keyImage {
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
+}
+
+.keyPlaceholder {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  background: var(--card-body-bg-stone);
 }
 
 /* ========================================
@@ -525,37 +577,327 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+[data-theme="dark"] .modeButton {
+  background: rgba(40, 40, 45, 0.5);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .modeButton:hover:not(:disabled) {
+  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.1);
+}
+
+[data-theme="dark"] .narakStatus {
+  background: rgba(40, 40, 45, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
 /* ========================================
    모바일 최적화
    ======================================== */
-@media (max-width: 400px) {
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem 0.5rem;
+  }
+
+  .innerContainer {
+    max-width: 100%;
+  }
+
+  .header {
+    margin-bottom: 0.75rem;
+  }
+
+  .title {
+    font-size: 1.2rem;
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+  }
+
+  /* 메인 영역 */
+  .mainRow {
+    gap: 0.5rem;
+  }
+
+  .gameColumn {
+    width: 200px;
+  }
+
   .canvasWrapper {
-    width: 100%;
-    max-width: 360px;
-    height: auto;
-    aspect-ratio: 360 / 600;
+    width: 200px;
+    height: 333px;
+    border-radius: 12px;
   }
 
   .canvas {
-    width: 100%;
-    height: 100%;
+    width: 200px;
+    height: 333px;
   }
 
+  /* 컨트롤 패널 축소 */
   .controlPanel {
-    padding: 0 0.5rem;
+    width: 150px;
+    gap: 0.5rem;
   }
 
-  .launchButton {
-    padding: 0.9rem 1rem;
-    font-size: 1.1rem;
+  .card {
+    border-radius: 8px;
+  }
+
+  .cardHeader {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .cardTitle {
+    font-size: 0.7rem;
+  }
+
+  /* 게임 모드 버튼 */
+  .modeGrid {
+    gap: 0.25rem;
+    padding: 0.4rem;
+  }
+
+  .modeButton {
+    padding: 0.35rem 0.25rem;
+    border-radius: 6px;
+  }
+
+  .modeName {
+    font-size: 0.6rem;
+  }
+
+  /* 열쇠 이미지 버튼 모바일 */
+  .keyGrid {
+    gap: 0.25rem;
+    padding: 0.4rem;
+  }
+
+  .keyImageButton {
+    border-radius: 6px;
+  }
+
+  .keyImage {
+    width: 45px !important;
+    height: 45px !important;
+    border-radius: 6px;
+  }
+
+  .keyPlaceholder {
+    width: 40px;
+    height: 40px;
+    font-size: 0.6rem;
+    border-radius: 6px;
+  }
+
+  .statusGrid {
+    gap: 0.25rem;
+    padding: 0.4rem;
+  }
+
+  .statusItem {
+    padding: 0.4rem 0.2rem;
+    border-radius: 6px;
+  }
+
+  .statusLabel {
+    font-size: 0.55rem;
+    margin-bottom: 0.15rem;
   }
 
   .statusValue {
-    font-size: 1rem;
+    font-size: 0.8rem;
   }
 
   .chanceNumber {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
+  }
+
+  .chanceUnit {
+    font-size: 0.65rem;
+  }
+
+  .hiddenCount {
+    font-size: 0.95rem;
+  }
+
+  .launchButton {
+    padding: 0.5rem 0.4rem;
+    font-size: 0.8rem;
+    border-radius: 8px;
+  }
+
+  .resetButton {
+    padding: 0.4rem 0.4rem;
+    font-size: 0.7rem;
+    border-radius: 6px;
+  }
+
+  .narakStatus {
+    padding: 0.3rem 0.5rem;
+  }
+
+  .narakLabel {
+    font-size: 0.65rem;
+  }
+
+  .narakAvailable,
+  .narakUsed {
+    font-size: 0.7rem;
+  }
+
+  /* 결과 오버레이 축소 */
+  .resultOverlay {
+    border-radius: 12px;
+  }
+
+  .resultIcon {
+    font-size: 2.5rem;
+  }
+
+  .resultTitle {
+    font-size: 1.2rem;
+  }
+
+  .resultFloor {
+    font-size: 3rem;
+  }
+
+  .resultProgress {
+    font-size: 0.8rem;
+  }
+
+  /* 보상 섹션 축소 */
+  .rewardSection {
+    margin-top: 0.5rem;
+    padding: 0.6rem;
+    border-radius: 8px;
+  }
+
+  .rewardTitle {
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .rewardItem {
+    padding: 0.35rem 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .rewardFloor {
+    font-size: 0.7rem;
+  }
+
+  .rewardName {
+    font-size: 0.75rem;
+  }
+
+  .finalRewardSection {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+
+  .finalRewardTitle {
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .boxGrid:has(.boxItem:nth-child(4)) {
+    grid-template-columns: repeat(2, 80px);
+    gap: 0.5rem;
+  }
+
+  .boxGrid:not(:has(.boxItem:nth-child(4))) {
+    grid-template-columns: repeat(3, 60px);
+    gap: 0.5rem;
+  }
+
+  .boxItem {
+    width: auto;
+    height: 55px;
+    padding: 6px;
+    border-radius: 8px;
+  }
+
+  .boxReward {
+    font-size: 0.65rem;
+  }
+
+  .pungyoLabel {
+    font-size: 0.6rem;
+  }
+}
+
+/* 아주 작은 화면 추가 대응 */
+@media (max-width: 400px) {
+  .mainRow {
+    gap: 0.4rem;
+  }
+
+  .gameColumn {
+    width: 165px;
+  }
+
+  .canvasWrapper {
+    width: 165px;
+    height: 275px;
+  }
+
+  .canvas {
+    width: 165px;
+    height: 275px;
+  }
+
+  .controlPanel {
+    width: 125px;
+  }
+
+  .modeButton {
+    padding: 0.3rem 0.2rem;
+  }
+
+  .modeName {
+    font-size: 0.55rem;
+  }
+
+  /* 열쇠 이미지 버튼 초소형 화면 */
+  .keyImage {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 5px;
+  }
+
+  .keyPlaceholder {
+    width: 35px;
+    height: 35px;
+    font-size: 0.5rem;
+    border-radius: 5px;
+  }
+
+  .statusLabel {
+    font-size: 0.5rem;
+  }
+
+  .statusValue {
+    font-size: 0.7rem;
+  }
+
+  .chanceNumber,
+  .hiddenCount {
+    font-size: 0.85rem;
+  }
+
+  .launchButton {
+    font-size: 0.7rem;
+    padding: 0.45rem 0.3rem;
+  }
+
+  .resetButton {
+    font-size: 0.6rem;
+    padding: 0.35rem 0.3rem;
   }
 }
 
@@ -714,7 +1056,7 @@
    통계 수집 현황 섹션
    ======================================== */
 .statsSection {
-  margin-top: 2rem;
+  margin-top: 4rem;
   display: flex;
   justify-content: center;
 }
@@ -758,15 +1100,313 @@
 
 @media (max-width: 768px) {
   .statsSection {
-    margin-top: 1.5rem;
+    margin-top: 3rem;
   }
 
   .statsCard {
-    padding: 1rem 1.5rem;
-    min-width: 160px;
+    padding: 0.75rem 1rem;
+    min-width: 120px;
+    border-radius: 8px;
   }
 
   .statsCount {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+  }
+
+  .statsLabel {
+    font-size: 0.75rem;
+  }
+
+  .statsNote {
+    font-size: 0.65rem;
   }
 }
+
+/* ========================================
+   게임 모드 선택
+   ======================================== */
+.modeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.4rem;
+  padding: 0.75rem;
+}
+
+.modeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.4rem;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-body-bg-stone);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modeButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #f97316;
+  box-shadow: var(--shadow-md);
+}
+
+.modeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modeButtonActive {
+  border-color: #f97316 !important;
+  background: rgba(249, 115, 22, 0.15) !important;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+}
+
+.modeName {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.modeButtonActive .modeName {
+  color: #f97316;
+}
+
+/* ========================================
+   나락 모드 - 중단 버튼
+   ======================================== */
+.stopButton {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: rgba(239, 68, 68, 0.9);
+  color: #fff;
+  z-index: 25;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+}
+
+.stopButton:hover {
+  background: #ef4444;
+  transform: scale(1.05);
+}
+
+/* ========================================
+   나락 모드 - 사망 오버레이
+   ======================================== */
+.deathOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(50, 0, 0, 0.95) 0%, rgba(20, 0, 0, 0.98) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  border-radius: 16px;
+  animation: fadeIn 0.5s ease;
+  gap: 0.5rem;
+}
+
+.permaDeathOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(30, 30, 30, 0.98) 0%, rgba(10, 10, 10, 0.99) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  border-radius: 16px;
+  animation: fadeIn 0.5s ease;
+  gap: 0.5rem;
+}
+
+.deathIcon {
+  font-size: 4rem;
+  margin-bottom: 0.5rem;
+}
+
+.deathTitle {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ef4444;
+  text-shadow: 0 2px 10px rgba(239, 68, 68, 0.5);
+}
+
+.deathFloor {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+}
+
+.deathReason {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+.noReward {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ef4444;
+  margin-top: 0.5rem;
+}
+
+.reviveButton {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #fff;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+}
+
+.reviveButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
+}
+
+.stopButtonOverlay {
+  padding: 0.6rem 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.stopButtonOverlay:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.reviveHint {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.5rem;
+}
+
+/* ========================================
+   나락 모드 - 부활 상태 표시
+   ======================================== */
+.narakStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--card-body-bg-stone);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.narakLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.narakAvailable {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #22c55e;
+}
+
+.narakUsed {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+/* ========================================
+   모바일 - 나락 오버레이 스타일
+   ======================================== */
+@media (max-width: 768px) {
+  .stopButton {
+    padding: 0.3rem 0.4rem;
+    font-size: 0.55rem;
+    top: 5px;
+    left: 5px;
+  }
+
+  .deathIcon {
+    font-size: 2rem;
+  }
+
+  .deathTitle {
+    font-size: 1.3rem;
+  }
+
+  .deathFloor {
+    font-size: 2rem;
+  }
+
+  .deathReason {
+    font-size: 0.7rem;
+  }
+
+  .reviveButton {
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  .reviveHint {
+    font-size: 0.6rem;
+  }
+
+  .noReward {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .stopButton {
+    padding: 0.25rem 0.35rem;
+    font-size: 0.5rem;
+  }
+
+  .deathIcon {
+    font-size: 1.5rem;
+  }
+
+  .deathTitle {
+    font-size: 1rem;
+  }
+
+  .deathFloor {
+    font-size: 1.5rem;
+  }
+
+  .deathReason {
+    font-size: 0.6rem;
+  }
+
+  .reviveButton {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.65rem;
+  }
+}
+

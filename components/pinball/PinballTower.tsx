@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import NextImage from 'next/image';
 import styles from '@/app/hell-sim/hell-sim.module.css';
 import { saveHellSimResult } from '@/lib/supabase';
 
@@ -14,6 +15,9 @@ const GRAVITY = 0.5;
 const PLATFORM_WIDTH = 120;
 const PLATFORM_HEIGHT = 12;
 
+// 게임 모드 타입
+type GameMode = 'hell' | 'narak-odd' | 'narak-even';
+
 // 열쇠 타입 정의
 const KEY_TYPES = {
   rare: { name: '희귀', chances: 5, color: '#3b82f6', gradient: ['#60a5fa', '#3b82f6', '#2563eb'] },
@@ -21,8 +25,34 @@ const KEY_TYPES = {
   legendary: { name: '전설', chances: 7, color: '#f97316', gradient: ['#fb923c', '#f97316', '#ea580c'] }
 } as const;
 
-// 상자 보상 목록
-const BOX_REWARDS = [
+// 게임 모드별 열쇠 이미지 (1=전설, 2=영웅, 3=희귀)
+const KEY_IMAGES: Record<GameMode, Record<KeyType, string>> = {
+  'hell': {
+    legendary: '/celtic_key_1.webp',
+    epic: '/celtic_key_2.webp',
+    rare: '/celtic_key_3.webp',
+  },
+  'narak-odd': {
+    legendary: '/blue_key_1.webp',
+    epic: '/blue_key_2.webp',
+    rare: '/blue_key_3.webp',
+  },
+  'narak-even': {
+    legendary: '/key_1.webp',
+    epic: '/key_2.webp',
+    rare: '/key_3.webp',
+  },
+};
+
+// 게임 모드 정보
+const GAME_MODES = {
+  'hell': { name: '지옥', description: '100층까지 도달하세요' },
+  'narak-odd': { name: '나락 (홀수)', description: '홀수층에만 착지해야 합니다' },
+  'narak-even': { name: '나락 (짝수)', description: '짝수층에만 착지해야 합니다' }
+} as const;
+
+// 지옥 상자 보상 목록
+const HELL_BOX_REWARDS = [
   '파괴석/수호석',
   '돌파석',
   '융화재료',
@@ -36,27 +66,72 @@ const BOX_REWARDS = [
   '운명의 돌'
 ];
 
+// 나락 상자 보상 목록
+const NARAK_BOX_REWARDS = [
+  '재련보조',
+  '귀속골드',
+  '어빌리티스톤 키트',
+  '팔찌',
+  '귀속 각인서 랜덤',
+  '귀속 보석',
+  '젬선택',
+  '운명의 돌'
+];
+
+// 게임 모드에 따른 보상 목록 반환
+function getBoxRewards(mode: GameMode | null): string[] {
+  if (mode === 'narak-odd' || mode === 'narak-even') {
+    return NARAK_BOX_REWARDS;
+  }
+  return HELL_BOX_REWARDS;
+}
+
 type KeyType = keyof typeof KEY_TYPES;
 
 // 히든층 보상 타입
-type RewardType = 'box' | 'chance' | 'rocket' | 'pungyo';
+type RewardType = 'box' | 'chance' | 'rocket' | 'pungyo' | 'life';
 
-// 히든층 보상 종류 (25% 확률씩)
-const REWARD_TYPES: { type: RewardType; name: string }[] = [
+// 지옥 히든층 보상 종류 (25% 확률씩)
+const HELL_REWARD_TYPES: { type: RewardType; name: string }[] = [
   { type: 'box', name: '상자 +1' },
   { type: 'chance', name: '기회 +1' },
   { type: 'rocket', name: '로켓점프' },
   { type: 'pungyo', name: '풍요' },
 ];
 
-// 히든층 체크 (11의 배수)
-function isHiddenFloor(floor: number): boolean {
-  return floor > 0 && floor % 11 === 0 && floor < 100;
+// 나락 히든층 보상 종류 (20% 확률씩)
+const NARAK_REWARD_TYPES: { type: RewardType; name: string }[] = [
+  { type: 'box', name: '상자 +1' },
+  { type: 'chance', name: '기회 +1' },
+  { type: 'rocket', name: '로켓점프' },
+  { type: 'pungyo', name: '풍요' },
+  { type: 'life', name: '목숨 +1' },
+];
+
+// 히든층 체크 (게임 모드별)
+// 지옥: 11, 22, 33, 44, 55, 66, 77, 88, 99
+// 홀수 나락: 11, 33, 55, 77, 99
+// 짝수 나락: 22, 44, 66, 88
+function isHiddenFloor(floor: number, mode: GameMode | null): boolean {
+  if (floor <= 0 || floor >= 100 || floor % 11 !== 0) return false;
+
+  if (mode === 'narak-odd') {
+    // 홀수 나락: 11의 배수 중 홀수만
+    return floor % 2 === 1;
+  } else if (mode === 'narak-even') {
+    // 짝수 나락: 11의 배수 중 짝수만
+    return floor % 2 === 0;
+  }
+  // 지옥: 모든 11의 배수
+  return true;
 }
 
-// 랜덤 보상 선택
-function getRandomReward(): { type: RewardType; name: string } {
-  return REWARD_TYPES[Math.floor(Math.random() * REWARD_TYPES.length)];
+// 랜덤 보상 선택 (게임 모드별)
+function getRandomReward(mode: GameMode | null): { type: RewardType; name: string } {
+  const rewards = (mode === 'narak-odd' || mode === 'narak-even')
+    ? NARAK_REWARD_TYPES
+    : HELL_REWARD_TYPES;
+  return rewards[Math.floor(Math.random() * rewards.length)];
 }
 
 interface HiddenReward {
@@ -230,7 +305,7 @@ export default function PinballTower() {
 
   const [currentFloor, setCurrentFloor] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [gameMsg, setGameMsg] = useState('열쇠를 선택하고 게임을 시작하세요!');
+  const [gameMsg, setGameMsg] = useState('게임 모드와 열쇠를 선택하세요!');
   const [selectedKey, setSelectedKey] = useState<KeyType | null>(null);
   const [remainingChances, setRemainingChances] = useState(0);
   const [isCleared, setIsCleared] = useState(false);
@@ -248,6 +323,14 @@ export default function PinballTower() {
   const [gameEnded, setGameEnded] = useState(false);
   const [bgLoaded, setBgLoaded] = useState(false);
   const [platformLoaded, setPlatformLoaded] = useState(false);
+
+  // 게임 모드 관련 상태
+  const [gameMode, setGameMode] = useState<GameMode | null>(null);
+  const [canRevive, setCanRevive] = useState(false); // 부활 가능 여부
+  const [isDead, setIsDead] = useState(false); // 사망 상태 (부활 대기)
+  const [isPermaDead, setIsPermaDead] = useState(false); // 완전 사망 (보상 없음)
+  const [usedRevive, setUsedRevive] = useState(false); // 부활 사용 여부
+  const [deathFloor, setDeathFloor] = useState<number | null>(null); // 첫 사망 층
 
   const ceilingFloorRef = useRef(20);
   const cameraYRef = useRef(0);
@@ -376,6 +459,39 @@ export default function PinballTower() {
             setIsPlaying(false);
             setIsCleared(true);
             setGameMsg('축하합니다! 지하 100층 도달!');
+
+            // 게임 종료 - 최종 상자 생성
+            const totalBoxes = bonusBox ? 4 : 3;
+            const boxes: { reward: string; isPungyo: boolean }[] = [];
+            const usedRewards: string[] = [];
+
+            for (let i = 0; i < totalBoxes; i++) {
+              let reward: string;
+              do {
+                reward = getBoxRewards(gameMode)[Math.floor(Math.random() * getBoxRewards(gameMode).length)];
+              } while (usedRewards.includes(reward));
+              usedRewards.push(reward);
+
+              const isPungyo = (hasPungyo && i === 0) || Math.random() < 0.1;
+              boxes.push({ reward, isPungyo });
+            }
+            setFinalBoxes(boxes);
+            setGameEnded(true);
+
+            // Supabase에 결과 저장
+            if (selectedKey && gameMode) {
+              saveHellSimResult({
+                game_mode: gameMode,
+                key_type: selectedKey,
+                final_floor: TOTAL_FLOORS,
+                hidden_rewards: hiddenRewards.map(r => r.name),
+                box_rewards: boxes.map(b => b.reward),
+                pungyo_count: boxes.filter(b => b.isPungyo).length,
+                result_type: 'clear',
+                used_revive: usedRevive,
+                death_floor: deathFloor || undefined,
+              });
+            }
             return;
           }
 
@@ -441,14 +557,53 @@ export default function PinballTower() {
             setLastMoved(gained);
             setIsPlaying(false);
 
+            // 나락 모드: 홀수/짝수 체크
+            if (gameMode === 'narak-odd' || gameMode === 'narak-even') {
+              const isOddFloor = targetFloor % 2 === 1;
+              const shouldDie = (gameMode === 'narak-odd' && !isOddFloor) ||
+                               (gameMode === 'narak-even' && isOddFloor);
+
+              if (shouldDie && targetFloor < TOTAL_FLOORS) {
+                // 사망 처리
+                if (canRevive) {
+                  // 부활 가능 - 첫 사망 층 기록
+                  setIsDead(true);
+                  setCanRevive(false);
+                  setDeathFloor(targetFloor);
+                  setGameMsg(`${targetFloor}층 (${isOddFloor ? '홀수' : '짝수'})에 착지! 부활 가능!`);
+                  return; // 부활 대기 상태로 전환
+                } else {
+                  // 완전 사망 - 보상 없음
+                  setIsPermaDead(true);
+                  setGameEnded(true);
+                  setGameMsg(`사망! ${targetFloor}층 (${isOddFloor ? '홀수' : '짝수'})에 착지하여 탈락!`);
+                  // 완전 사망 결과 저장
+                  if (selectedKey && gameMode) {
+                    saveHellSimResult({
+                      game_mode: gameMode,
+                      key_type: selectedKey,
+                      final_floor: targetFloor,
+                      hidden_rewards: hiddenRewards.map(r => r.name),
+                      box_rewards: [],
+                      pungyo_count: 0,
+                      result_type: 'death',
+                      used_revive: usedRevive,
+                      death_floor: deathFloor || targetFloor,
+                    });
+                  }
+                  return;
+                }
+              }
+            }
+
             // 히든층 체크 (11의 배수)
             let gotBonusBox = bonusBox;
             let gotPungyo = hasPungyo;
             let extraChance = 0;
             let currentHiddenReward: { floor: number; name: string; type: RewardType } | null = null;
 
-            if (isHiddenFloor(targetFloor)) {
-              const reward = getRandomReward();
+            if (isHiddenFloor(targetFloor, gameMode)) {
+              const reward = getRandomReward(gameMode);
               currentHiddenReward = { floor: targetFloor, name: reward.name, type: reward.type };
               setHiddenRewards(prev => [...prev, currentHiddenReward!]);
 
@@ -463,6 +618,9 @@ export default function PinballTower() {
               } else if (reward.type === 'pungyo') {
                 gotPungyo = true;
                 setHasPungyo(true);
+              } else if (reward.type === 'life') {
+                // 나락 전용: 부활 +1
+                setCanRevive(true);
               }
             }
 
@@ -483,7 +641,7 @@ export default function PinballTower() {
               for (let i = 0; i < totalBoxes; i++) {
                 let reward: string;
                 do {
-                  reward = BOX_REWARDS[Math.floor(Math.random() * BOX_REWARDS.length)];
+                  reward = getBoxRewards(gameMode)[Math.floor(Math.random() * getBoxRewards(gameMode).length)];
                 } while (usedRewards.includes(reward));
                 usedRewards.push(reward);
 
@@ -495,17 +653,21 @@ export default function PinballTower() {
               setGameEnded(true);
 
               // Supabase에 결과 저장
-              if (selectedKey) {
+              if (selectedKey && gameMode) {
                 const allHiddenRewards = [...hiddenRewards];
                 if (currentHiddenReward) {
                   allHiddenRewards.push(currentHiddenReward);
                 }
                 saveHellSimResult({
+                  game_mode: gameMode,
                   key_type: selectedKey,
                   final_floor: targetFloor,
                   hidden_rewards: allHiddenRewards.map(r => r.name),
                   box_rewards: boxes.map(b => b.reward),
                   pungyo_count: boxes.filter(b => b.isPungyo).length,
+                  result_type: 'clear',
+                  used_revive: usedRevive,
+                  death_floor: deathFloor || undefined,
                 });
               }
             } else if (newRemainingChances > 0) {
@@ -520,7 +682,7 @@ export default function PinballTower() {
               for (let i = 0; i < totalBoxes; i++) {
                 let reward: string;
                 do {
-                  reward = BOX_REWARDS[Math.floor(Math.random() * BOX_REWARDS.length)];
+                  reward = getBoxRewards(gameMode)[Math.floor(Math.random() * getBoxRewards(gameMode).length)];
                 } while (usedRewards.includes(reward));
                 usedRewards.push(reward);
 
@@ -531,17 +693,21 @@ export default function PinballTower() {
               setFinalBoxes(boxes);
 
               // Supabase에 결과 저장
-              if (selectedKey) {
+              if (selectedKey && gameMode) {
                 const allHiddenRewards = [...hiddenRewards];
                 if (currentHiddenReward) {
                   allHiddenRewards.push(currentHiddenReward);
                 }
                 saveHellSimResult({
+                  game_mode: gameMode,
                   key_type: selectedKey,
                   final_floor: targetFloor,
                   hidden_rewards: allHiddenRewards.map(r => r.name),
                   box_rewards: boxes.map(b => b.reward),
                   pungyo_count: boxes.filter(b => b.isPungyo).length,
+                  // 기회 소진으로 인한 일반 종료 (나락에서 사망 없이 끝난 경우 포함)
+                  used_revive: usedRevive,
+                  death_floor: deathFloor || undefined,
                 });
               }
               setGameEnded(true);
@@ -754,7 +920,7 @@ export default function PinballTower() {
     if (gameStarted) {
       animationRef.current = requestAnimationFrame(gameLoop);
     }
-  }, [isPlaying, remainingChances, floorToY, yToFloor, gameStarted, GROUND_Y, currentFloor, imageLoaded, bgLoaded, platformLoaded, bonusBox, hasPungyo, selectedKey, hiddenRewards]);
+  }, [isPlaying, remainingChances, floorToY, yToFloor, gameStarted, GROUND_Y, currentFloor, imageLoaded, bgLoaded, platformLoaded, bonusBox, hasPungyo, selectedKey, hiddenRewards, gameMode, canRevive, usedRevive, deathFloor]);
 
   useEffect(() => {
     if (gameStarted) {
@@ -786,7 +952,27 @@ export default function PinballTower() {
     }
   }, [gameStarted, bgLoaded]);
 
+  const selectGameMode = useCallback((mode: GameMode) => {
+    setGameMode(mode);
+    setSelectedKey(null);
+    setRemainingChances(0);
+    setCurrentFloor(0);
+    setDisplayFloor(0);
+    setLastMoved(0);
+    setIsCleared(false);
+    setGameStarted(false);
+    setIsDead(false);
+    setIsPermaDead(false);
+    setCanRevive(mode !== 'hell'); // 나락 모드면 부활 1회 가능
+    setUsedRevive(false);
+    setDeathFloor(null);
+    ballRef.current = null;
+    cameraYRef.current = 0;
+    setGameMsg(`${GAME_MODES[mode].name} 모드 선택! 열쇠를 선택하세요.`);
+  }, []);
+
   const selectKey = useCallback((keyType: KeyType) => {
+    if (!gameMode) return;
     setSelectedKey(keyType);
     setRemainingChances(KEY_TYPES[keyType].chances);
     setCurrentFloor(0);
@@ -794,15 +980,20 @@ export default function PinballTower() {
     setLastMoved(0);
     setIsCleared(false);
     setGameStarted(false);
+    setIsDead(false);
+    setIsPermaDead(false);
+    setCanRevive(gameMode !== 'hell'); // 나락 모드면 부활 1회 가능
+    setUsedRevive(false);
+    setDeathFloor(null);
     ballRef.current = null;
     cameraYRef.current = 0;
     ceilingFloorRef.current = 20;
     startFloorRef.current = 0;
     setGameMsg(`${KEY_TYPES[keyType].name} 열쇠 선택! ${KEY_TYPES[keyType].chances}회 기회`);
-  }, []);
+  }, [gameMode]);
 
   const dropBall = useCallback(() => {
-    if (!selectedKey || remainingChances <= 0 || isCleared || isPlaying) return;
+    if (!selectedKey || !gameMode || remainingChances <= 0 || isCleared || isPlaying || isDead || isPermaDead || gameEnded) return;
 
     startFloorRef.current = currentFloor;
     const newCeiling = Math.min(currentFloor + 20, TOTAL_FLOORS);
@@ -836,7 +1027,61 @@ export default function PinballTower() {
     setGameStarted(true);
     setGameMsg(`DROP! 지하 100층 바닥으로 떨어지는 중...`);
     cameraYRef.current = Math.max(0, startY - CANVAS_HEIGHT / 2);
-  }, [currentFloor, selectedKey, remainingChances, isCleared, isPlaying, floorToY]);
+  }, [currentFloor, selectedKey, gameMode, remainingChances, isCleared, isPlaying, isDead, isPermaDead, gameEnded, floorToY]);
+
+  // 부활 함수 (나락 모드)
+  const revive = useCallback(() => {
+    if (!isDead || !gameMode) return;
+    setIsDead(false);
+    setUsedRevive(true);
+    if (remainingChances > 0) {
+      setGameMsg(`부활! 지하 ${currentFloor}층에서 계속합니다. 남은 기회: ${remainingChances}회`);
+    } else {
+      setGameMsg(`부활! 지하 ${currentFloor}층. 기회 소진 - 중단하고 보상을 받으세요.`);
+    }
+  }, [isDead, gameMode, currentFloor, remainingChances]);
+
+  // 중단하고 보상받기 (나락 모드)
+  const stopAndGetReward = useCallback(() => {
+    if (!gameMode || gameMode === 'hell') return;
+    if (isPlaying) return;
+
+    // 현재 층 기준으로 보상 생성
+    const totalBoxes = bonusBox ? 4 : 3;
+    const boxes: { reward: string; isPungyo: boolean }[] = [];
+    const usedRewards: string[] = [];
+
+    for (let i = 0; i < totalBoxes; i++) {
+      let reward: string;
+      do {
+        reward = getBoxRewards(gameMode)[Math.floor(Math.random() * getBoxRewards(gameMode).length)];
+      } while (usedRewards.includes(reward));
+      usedRewards.push(reward);
+
+      const isPungyo = (hasPungyo && i === 0) || Math.random() < 0.1;
+      boxes.push({ reward, isPungyo });
+    }
+    setFinalBoxes(boxes);
+    setGameEnded(true);
+    setIsDead(false);
+    setGameMsg(`중단! 최종: 지하 ${currentFloor}층`);
+
+    // Supabase에 결과 저장
+    if (selectedKey && gameMode) {
+      saveHellSimResult({
+        game_mode: gameMode,
+        key_type: selectedKey,
+        final_floor: currentFloor,
+        hidden_rewards: hiddenRewards.map(r => r.name),
+        box_rewards: boxes.map(b => b.reward),
+        pungyo_count: boxes.filter(b => b.isPungyo).length,
+        result_type: 'stop',
+        used_revive: usedRevive,
+        death_floor: deathFloor || undefined,
+        remaining_chances: remainingChances,
+      });
+    }
+  }, [gameMode, isPlaying, bonusBox, hasPungyo, currentFloor, selectedKey, hiddenRewards, usedRevive, deathFloor, remainingChances]);
 
   const resetGame = useCallback(() => {
     ballRef.current = null;
@@ -848,7 +1093,8 @@ export default function PinballTower() {
     setRemainingChances(0);
     setIsCleared(false);
     setGameStarted(false);
-    setGameMsg('열쇠를 선택하고 게임을 시작하세요!');
+    setGameMode(null);
+    setGameMsg('게임 모드와 열쇠를 선택하세요!');
     cameraYRef.current = 0;
     ceilingFloorRef.current = 20;
     startFloorRef.current = 0;
@@ -859,145 +1105,230 @@ export default function PinballTower() {
     setHasPungyo(false);
     setFinalBoxes([]);
     setGameEnded(false);
+    setIsDead(false);
+    setIsPermaDead(false);
+    setCanRevive(false);
+    setUsedRevive(false);
+    setDeathFloor(null);
   }, []);
 
   return (
     <div className={styles.gameLayout}>
-      {/* 게임 캔버스 */}
-      <div className={styles.gameArea}>
-        <div className={styles.canvasWrapper}>
-          <canvas
-            ref={canvasRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            className={styles.canvas}
-          />
+      {/* 메인: 왼쪽(게임모드+캔버스) + 오른쪽(열쇠+컨트롤) */}
+      <div className={styles.mainRow}>
+        {/* 왼쪽: 게임 모드 + 캔버스 */}
+        <div className={styles.gameColumn}>
+          {/* 게임 모드 선택 */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <span className={styles.cardTitle}>게임 모드</span>
+            </div>
+            <div className={styles.modeGrid}>
+              {(Object.keys(GAME_MODES) as GameMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  className={`${styles.modeButton} ${gameMode === mode ? styles.modeButtonActive : ''}`}
+                  onClick={() => selectGameMode(mode)}
+                  disabled={gameStarted}
+                >
+                  <span className={styles.modeName}>{GAME_MODES[mode].name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
-          {/* 클리어 오버레이 */}
-          {isCleared && (
-            <div className={styles.resultOverlay}>
-              <div className={styles.resultIcon}></div>
-              <div className={styles.resultTitle}>클리어!</div>
-              <div className={styles.resultFloor}>100층</div>
-              <div className={styles.resultProgress}>지옥의 끝에 도달했습니다</div>
+          <div className={styles.canvasWrapper}>
+            <canvas
+              ref={canvasRef}
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              className={styles.canvas}
+            />
+
+            {/* 나락 모드: 중단 버튼 (왼쪽 상단) */}
+            {gameMode && gameMode !== 'hell' && gameStarted && !gameEnded && !isPlaying && !isDead && currentFloor > 0 && (
+              <button className={styles.stopButton} onClick={stopAndGetReward}>
+                중단하고 보상받기
+              </button>
+            )}
+
+            {/* 클리어 오버레이 */}
+            {isCleared && (
+              <div className={styles.resultOverlay}>
+                <div className={styles.resultIcon}></div>
+                <div className={styles.resultTitle}>클리어!</div>
+                <div className={styles.resultFloor}>100층</div>
+                <div className={styles.resultProgress}>{gameMode === 'hell' ? '지옥' : '나락'}의 끝에 도달했습니다</div>
+              </div>
+            )}
+
+            {/* 나락 사망 오버레이 (부활 필수) */}
+            {isDead && (
+              <div className={styles.deathOverlay}>
+                                <div className={styles.deathTitle}>사망!</div>
+                <div className={styles.deathFloor}>{currentFloor}층</div>
+                <div className={styles.deathReason}>
+                  {gameMode === 'narak-odd' ? '짝수층' : '홀수층'}에 착지했습니다
+                </div>
+                <button className={styles.reviveButton} onClick={revive}>
+                  부활하기 (1회)
+                </button>
+                <div className={styles.reviveHint}>부활 후 중단 가능</div>
+              </div>
+            )}
+
+            {/* 나락 완전 사망 오버레이 (보상 없음) */}
+            {isPermaDead && (
+              <div className={styles.permaDeathOverlay}>
+                                <div className={styles.deathTitle}>탈락!</div>
+                <div className={styles.deathFloor}>{currentFloor}층</div>
+                <div className={styles.deathReason}>
+                  부활 후 다시 {gameMode === 'narak-odd' ? '짝수층' : '홀수층'}에 착지!
+                </div>
+                <div className={styles.noReward}>보상 없음</div>
+              </div>
+            )}
+          </div>
+
+          {/* 히든층 보상 표시 */}
+          {hiddenRewards.length > 0 && (
+            <div className={styles.rewardSection}>
+              <div className={styles.rewardTitle}>특별 보상</div>
+              <div className={styles.rewardList}>
+                {hiddenRewards.map((reward, idx) => (
+                  <div key={idx} className={styles.rewardItem}>
+                    <span className={styles.rewardFloor}>{reward.floor}층</span>
+                    <span className={styles.rewardName}>{reward.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 최종 상자 보상 */}
+          {gameEnded && finalBoxes.length > 0 && (
+            <div className={styles.finalRewardSection}>
+              <div className={styles.finalRewardTitle}>획득 보상</div>
+              <div className={styles.boxGrid}>
+                {finalBoxes.map((box, idx) => (
+                  <div key={idx} className={`${styles.boxItem} ${box.isPungyo ? styles.boxPungyo : ''}`}>
+                    <span className={styles.boxReward}>{box.reward}</span>
+                    {box.isPungyo && <span className={styles.pungyoLabel}>풍요</span>}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
 
-        {/* 히든층 보상 표시 */}
-        {hiddenRewards.length > 0 && (
-          <div className={styles.rewardSection}>
-            <div className={styles.rewardTitle}>특별 보상</div>
-            <div className={styles.rewardList}>
-              {hiddenRewards.map((reward, idx) => (
-                <div key={idx} className={styles.rewardItem}>
-                  <span className={styles.rewardFloor}>{reward.floor}층</span>
-                  <span className={styles.rewardName}>{reward.name}</span>
-                </div>
+        {/* 오른쪽: 열쇠 선택 + 컨트롤 패널 */}
+        <div className={styles.controlPanel}>
+          {/* 열쇠 선택 */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <span className={styles.cardTitle}>열쇠 선택</span>
+            </div>
+            <div className={styles.keyGrid}>
+              {(Object.keys(KEY_TYPES) as KeyType[]).map((keyType) => (
+                <button
+                  key={keyType}
+                  className={`${styles.keyImageButton} ${selectedKey === keyType ? styles.keyImageButtonActive : ''}`}
+                  onClick={() => selectKey(keyType)}
+                  disabled={gameStarted || !gameMode}
+                  title={`${KEY_TYPES[keyType].name} (${KEY_TYPES[keyType].chances}회)`}
+                >
+                  {gameMode ? (
+                    <NextImage
+                      src={KEY_IMAGES[gameMode][keyType]}
+                      alt={KEY_TYPES[keyType].name}
+                      width={60}
+                      height={60}
+                      className={styles.keyImage}
+                    />
+                  ) : (
+                    <div className={styles.keyPlaceholder}>
+                      <span>{KEY_TYPES[keyType].chances}회</span>
+                    </div>
+                  )}
+                </button>
               ))}
             </div>
           </div>
-        )}
 
-        {/* 최종 상자 보상 */}
-        {gameEnded && finalBoxes.length > 0 && (
-          <div className={styles.finalRewardSection}>
-            <div className={styles.finalRewardTitle}>획득 보상</div>
-            <div className={styles.boxGrid}>
-              {finalBoxes.map((box, idx) => (
-                <div key={idx} className={`${styles.boxItem} ${box.isPungyo ? styles.boxPungyo : ''}`}>
-                  <span className={styles.boxReward}>{box.reward}</span>
-                  {box.isPungyo && <span className={styles.pungyoLabel}>풍요</span>}
+          {/* 게임 현황 */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <span className={styles.cardTitle}>게임 현황</span>
+            </div>
+            <div className={styles.statusGrid}>
+              <div className={styles.statusItem}>
+                <div className={styles.statusLabel}>현재 위치</div>
+                <div className={`${styles.statusValue} ${styles.statusValueHighlight}`}>
+                  {currentFloor === 0 ? '지상' : `${currentFloor}층`}
                 </div>
-              ))}
+              </div>
+              <div className={styles.statusItem}>
+                <div className={styles.statusLabel}>남은 기회</div>
+                <div className={styles.statusValue}>
+                  <span className={styles.chanceNumber}>{remainingChances}</span>
+                  <span className={styles.chanceUnit}>회</span>
+                </div>
+              </div>
+              <div className={styles.statusItem}>
+                <div className={styles.statusLabel}>이번 이동</div>
+                <div className={`${styles.statusValue} ${isPlaying ? styles.animatePulse : ''} ${lastMoved > 0 && !isPlaying ? styles.statusValueProfit : ''}`}>
+                  {isPlaying ? `-${spinningNumber}층` : lastMoved > 0 ? `-${lastMoved}층` : '-'}
+                </div>
+              </div>
+              <div className={styles.statusItem}>
+                <div className={styles.statusLabel}>히든층</div>
+                <div className={styles.statusValue}>
+                  <span className={styles.hiddenCount}>{hiddenRewards.length}</span>
+                  <span className={styles.chanceUnit}>회</span>
+                </div>
+              </div>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* 컨트롤 패널 */}
-      <div className={styles.controlPanel}>
-        {/* 열쇠 선택 */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardIcon}></span>
-            <span className={styles.cardTitle}>열쇠 선택</span>
-          </div>
-          <div className={styles.keyGrid}>
-            {(Object.keys(KEY_TYPES) as KeyType[]).map((keyType) => (
-              <button
-                key={keyType}
-                className={`${styles.keyButton} ${selectedKey === keyType ? styles.keyButtonActive : ''}`}
-                style={{
-                  '--key-color': KEY_TYPES[keyType].color,
-                  '--key-color-light': `${KEY_TYPES[keyType].color}20`,
-                } as React.CSSProperties}
-                onClick={() => selectKey(keyType)}
-                disabled={gameStarted}
-              >
-                <span className={styles.keyName}>{KEY_TYPES[keyType].name}</span>
-                <span className={styles.keyChances}>{KEY_TYPES[keyType].chances}회</span>
-              </button>
-            ))}
-          </div>
+          {/* 나락 모드: 부활 상태 표시 */}
+          {gameMode && gameMode !== 'hell' && (
+            <div className={styles.narakStatus}>
+              <span className={styles.narakLabel}>부활:</span>
+              <span className={canRevive ? styles.narakAvailable : styles.narakUsed}>
+                {canRevive ? '가능' : '사용함'}
+              </span>
+            </div>
+          )}
+
+          {/* 버튼 */}
+          <button
+            className={styles.launchButton}
+            onClick={dropBall}
+            disabled={!selectedKey || !gameMode || remainingChances <= 0 || isCleared || isPlaying || isDead || isPermaDead || gameEnded}
+          >
+            {!gameMode
+              ? '모드 선택'
+              : !selectedKey
+                ? '열쇠 선택'
+                : isCleared
+                  ? 'CLEAR!'
+                  : isPermaDead
+                    ? '탈락!'
+                    : isDead
+                      ? '부활 대기중'
+                      : gameEnded
+                        ? '게임 종료'
+                        : remainingChances <= 0
+                          ? '기회 소진'
+                          : isPlaying
+                            ? '떨어지는 중...'
+                            : 'DROP!'}
+          </button>
+
+          <button className={styles.resetButton} onClick={resetGame}>
+            처음부터 다시하기
+          </button>
         </div>
-
-        {/* 게임 현황 */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardIcon}></span>
-            <span className={styles.cardTitle}>게임 현황</span>
-          </div>
-          <div className={styles.statusGrid}>
-            <div className={styles.statusItem}>
-              <div className={styles.statusLabel}>현재 위치</div>
-              <div className={`${styles.statusValue} ${styles.statusValueHighlight}`}>
-                {currentFloor === 0 ? '지상' : `${currentFloor}층`}
-              </div>
-            </div>
-            <div className={styles.statusItem}>
-              <div className={styles.statusLabel}>남은 기회</div>
-              <div className={styles.statusValue}>
-                <span className={styles.chanceNumber}>{remainingChances}</span>
-                <span className={styles.chanceUnit}>회</span>
-              </div>
-            </div>
-            <div className={styles.statusItem}>
-              <div className={styles.statusLabel}>이번 이동</div>
-              <div className={`${styles.statusValue} ${isPlaying ? styles.animatePulse : ''} ${lastMoved > 0 && !isPlaying ? styles.statusValueProfit : ''}`}>
-                {isPlaying ? `-${spinningNumber}층` : lastMoved > 0 ? `-${lastMoved}층` : '-'}
-              </div>
-            </div>
-            <div className={styles.statusItem}>
-              <div className={styles.statusLabel}>히든층</div>
-              <div className={styles.statusValue}>
-                <span className={styles.hiddenCount}>{hiddenRewards.length}</span>
-                <span className={styles.chanceUnit}>회</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 버튼 */}
-        <button
-          className={styles.launchButton}
-          onClick={dropBall}
-          disabled={!selectedKey || remainingChances <= 0 || isCleared || isPlaying}
-        >
-          {!selectedKey
-            ? '열쇠를 선택하세요'
-            : isCleared
-              ? 'CLEAR!'
-              : remainingChances <= 0
-                ? '기회 소진'
-                : isPlaying
-                  ? '떨어지는 중...'
-                  : 'DROP!'}
-        </button>
-
-        <button className={styles.resetButton} onClick={resetGame}>
-          처음부터 다시하기
-        </button>
       </div>
     </div>
   );
