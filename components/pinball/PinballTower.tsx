@@ -51,6 +51,62 @@ const GAME_MODES = {
   'narak-even': { name: '나락 (짝수)', description: '짝수층에만 착지해야 합니다' }
 } as const;
 
+// 지옥 기본 보상 (단계별)
+const HELL_BASE_REWARDS = [
+  { 파편: 5200, 파괴석결정: 26, 수호석결정: 170, 돌파석: 4 },
+  { 파편: 6500, 파괴석결정: 32, 수호석결정: 200, 돌파석: 5 },
+  { 파편: 7700, 파괴석결정: 38, 수호석결정: 230, 돌파석: 6 },
+  { 파편: 9000, 파괴석결정: 44, 수호석결정: 280, 돌파석: 7 },
+  { 파편: 10000, 파괴석결정: 52, 수호석결정: 330, 돌파석: 8 },
+  { 파편: 11500, 파괴석결정: 60, 수호석결정: 380, 돌파석: 9 },
+  { 파편: 13000, 파괴석결정: 70, 수호석결정: 440, 돌파석: 10 },
+  { 파편: 14000, 파괴석결정: 80, 수호석결정: 500, 돌파석: 11 },
+  { 파편: 15500, 파괴석결정: 90, 수호석결정: 560, 돌파석: 12 },
+  { 파편: 17000, 파괴석결정: 100, 수호석결정: 620, 돌파석: 13 },
+  { 파편: 18000, 파괴석결정: 110, 수호석결정: 680, 돌파석: 15 },
+];
+
+// 지옥 상자 보상 (단계별)
+const HELL_BOX_REWARDS_DATA: Record<string, string[]> = {
+  '파괴석/수호석': ['500/1,500', '600/1,800', '900/2,700', '1,200/3,600', '1,600/4,800', '2,200/6,600', '3,000/9,000', '4,500/13,500', '6,500/19,500', '9,000/27,000', '15,000/45,000'],
+  '돌파석': ['60', '36', '48', '64', '90', '130', '190', '250', '350', '500', '850'],
+  '융화재료': ['-', '90', '125', '150', '225', '300', '450', '600', '850', '1,200', '2,000'],
+  '재련 보조': ['10/30', '15/45', '20/60', '25/75', '36/108', '48/144', '72/216', '96/288', '132/396', '192/576', '320/960'],
+  '귀속골드': ['4,500', '7,200', '9,500', '12,000', '16,000', '22,000', '32,000', '45,000', '65,000', '95,000', '130,000'],
+  '어빌리티스톤 키트': ['8', '10', '15', '20', '30', '30', '45', '60', '80', '120', '200'],
+  '팔찌': ['고대 x3', '고대 x5', '고대 x7', '고대 x10', '고대 x15', '고대 x20', '고대 x25', '고대 x35', '고대 x50', '고대 x70', '고대 x120'],
+  '특수재련': ['24', '40', '56', '70', '96', '130', '180', '260', '380', '500', '850'],
+  '천상 도전권': ['-', '-', '-', '-', '-', '2', '4', '7', '10', '15', '20'],
+  '젬선택': ['희귀 x3', '희귀 x5', '희귀 x7', '영웅 x1', '영웅 x1, 희귀 질서 x1, 희귀 혼돈 x1', '영웅 x1, 희귀 질서 x2, 희귀 혼돈 x2', '영웅 x2', '영웅 x2, 희귀 질서 x2, 희귀 혼돈 x2', '영웅 x3', '영웅 x4', '영웅 x5'],
+  '운명의 돌': ['7', '12', '15', '18', '27', '36', '54', '72', '100', '150', '240'],
+};
+
+// 나락 상자 보상 (단계별)
+const NARAK_BOX_REWARDS_DATA: Record<string, string[]> = {
+  '재련보조': ['50/150', '75/225', '100/300', '125/375', '180/540', '240/720', '360/1,080', '480/1,440', '660/1,980', '960/2,880', '1,600/4,800'],
+  '귀속골드': ['22,500', '36,000', '47,500', '60,000', '80,000', '110,000', '160,000', '225,000', '325,000', '475,000', '650,000'],
+  '어빌리티스톤 키트': ['40', '50', '75', '100', '125', '150', '225', '300', '400', '600', '1,000'],
+  '팔찌': ['고대 x15', '고대 x25', '고대 x35', '고대 x50', '고대 x75', '고대 x100', '고대 x125', '고대 x175', '고대 x250', '고대 x350', '고대 x600'],
+  '귀속 각인서 랜덤': ['2', '4', '6', '8', '10', '12', '18', '24', '36', '48', '80'],
+  '귀속 보석': ['희귀 x15', '희귀 x25', '희귀 x35', '영웅 x5', '영웅 x5, 희귀 질서 x5, 희귀 혼돈 x5', '영웅 x5, 희귀 질서 x10, 희귀 혼돈 x10', '영웅 x10', '영웅 x10, 희귀 질서 x10, 희귀 혼돈 x10', '영웅 x15', '영웅 x20', '영웅 x25'],
+  '젬선택': ['희귀 x15', '희귀 x25', '희귀 x35', '영웅 x5', '영웅 x5, 희귀 질서 x5, 희귀 혼돈 x5', '영웅 x5, 희귀 질서 x10, 희귀 혼돈 x10', '영웅 x10', '영웅 x10, 희귀 질서 x10, 희귀 혼돈 x10', '영웅 x15', '영웅 x20', '영웅 x25'],
+  '운명의 돌': ['35', '60', '75', '90', '135', '180', '270', '360', '500', '750', '1,200'],
+};
+
+// 단계 계산 (층수 -> 단계)
+function getTier(floor: number): number {
+  return Math.min(10, Math.floor(floor / 10));
+}
+
+// 보상 수량 가져오기
+function getRewardQuantity(rewardName: string, floor: number, mode: GameMode | null): string {
+  const tier = getTier(floor);
+  if (mode === 'narak-odd' || mode === 'narak-even') {
+    return NARAK_BOX_REWARDS_DATA[rewardName]?.[tier] || '-';
+  }
+  return HELL_BOX_REWARDS_DATA[rewardName]?.[tier] || '-';
+}
+
 // 지옥 상자 보상 목록
 const HELL_BOX_REWARDS = [
   '파괴석/수호석',
@@ -321,6 +377,7 @@ export default function PinballTower() {
   const [hasPungyo, setHasPungyo] = useState(false);
   const [finalBoxes, setFinalBoxes] = useState<{ reward: string; isPungyo: boolean }[]>([]);
   const [gameEnded, setGameEnded] = useState(false);
+  const [selectedRewardIdx, setSelectedRewardIdx] = useState<number | null>(null);
   const [bgLoaded, setBgLoaded] = useState(false);
   const [platformLoaded, setPlatformLoaded] = useState(false);
 
@@ -576,7 +633,7 @@ export default function PinballTower() {
                   // 완전 사망 - 보상 없음
                   setIsPermaDead(true);
                   setGameEnded(true);
-                  setGameMsg(`사망! ${targetFloor}층 (${isOddFloor ? '홀수' : '짝수'})에 착지하여 탈락!`);
+                  setGameMsg(`사망! ${targetFloor}층 (${isOddFloor ? '홀수' : '짝수'})에 착지하여 실패!`);
                   // 완전 사망 결과 저장
                   if (selectedKey && gameMode) {
                     saveHellSimResult({
@@ -1104,6 +1161,7 @@ export default function PinballTower() {
     hasRocketRef.current = false;
     setHasPungyo(false);
     setFinalBoxes([]);
+    setSelectedRewardIdx(null);
     setGameEnded(false);
     setIsDead(false);
     setIsPermaDead(false);
@@ -1180,7 +1238,7 @@ export default function PinballTower() {
             {/* 나락 완전 사망 오버레이 (보상 없음) */}
             {isPermaDead && (
               <div className={styles.permaDeathOverlay}>
-                                <div className={styles.deathTitle}>탈락!</div>
+                                <div className={styles.deathTitle}>실패!</div>
                 <div className={styles.deathFloor}>{currentFloor}층</div>
                 <div className={styles.deathReason}>
                   부활 후 다시 {gameMode === 'narak-odd' ? '짝수층' : '홀수층'}에 착지!
@@ -1190,32 +1248,58 @@ export default function PinballTower() {
             )}
           </div>
 
-          {/* 히든층 보상 표시 */}
-          {hiddenRewards.length > 0 && (
-            <div className={styles.rewardSection}>
-              <div className={styles.rewardTitle}>특별 보상</div>
-              <div className={styles.rewardList}>
-                {hiddenRewards.map((reward, idx) => (
-                  <div key={idx} className={styles.rewardItem}>
-                    <span className={styles.rewardFloor}>{reward.floor}층</span>
-                    <span className={styles.rewardName}>{reward.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* 최종 상자 보상 */}
           {gameEnded && finalBoxes.length > 0 && (
-            <div className={styles.finalRewardSection}>
-              <div className={styles.finalRewardTitle}>획득 보상</div>
-              <div className={styles.boxGrid}>
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <span className={styles.cardTitle}>획득 보상 (단계 {getTier(currentFloor)})</span>
+              </div>
+              <div className={styles.finalRewardContent}>
                 {finalBoxes.map((box, idx) => (
-                  <div key={idx} className={`${styles.boxItem} ${box.isPungyo ? styles.boxPungyo : ''}`}>
-                    <span className={styles.boxReward}>{box.reward}</span>
-                    {box.isPungyo && <span className={styles.pungyoLabel}>풍요</span>}
-                  </div>
+                  <button
+                    key={idx}
+                    className={`${styles.rewardButton} ${box.isPungyo ? styles.rewardButtonPungyo : ''} ${selectedRewardIdx === idx ? styles.rewardButtonActive : ''}`}
+                    onClick={() => setSelectedRewardIdx(selectedRewardIdx === idx ? null : idx)}
+                  >
+                    <span className={styles.rewardButtonName}>{box.reward}</span>
+                    {box.isPungyo && <span className={styles.rewardButtonPungyoTag}>풍요</span>}
+                  </button>
                 ))}
+                {selectedRewardIdx !== null && finalBoxes[selectedRewardIdx] && (
+                  <div className={styles.rewardDetail}>
+                    <div className={styles.rewardDetailTitle}>{finalBoxes[selectedRewardIdx].reward}</div>
+                    <div className={styles.rewardDetailQty}>
+                      {getRewardQuantity(finalBoxes[selectedRewardIdx].reward, currentFloor, gameMode)}
+                    </div>
+                    {finalBoxes[selectedRewardIdx].isPungyo && (
+                      <div className={styles.rewardDetailPungyo}>풍요 적용 (2배)</div>
+                    )}
+                  </div>
+                )}
+                {/* 지옥 모드: 기본 보상 표시 */}
+                {gameMode === 'hell' && (
+                  <div className={styles.baseRewardSection}>
+                    <div className={styles.baseRewardTitle}>기본 보상</div>
+                    <div className={styles.baseRewardGrid}>
+                      <div className={styles.baseRewardItem}>
+                        <span className={styles.baseRewardLabel}>운명의 파편</span>
+                        <span className={styles.baseRewardValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].파편.toLocaleString()}</span>
+                      </div>
+                      <div className={styles.baseRewardItem}>
+                        <span className={styles.baseRewardLabel}>파괴석 결정</span>
+                        <span className={styles.baseRewardValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].파괴석결정}</span>
+                      </div>
+                      <div className={styles.baseRewardItem}>
+                        <span className={styles.baseRewardLabel}>수호석 결정</span>
+                        <span className={styles.baseRewardValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].수호석결정}</span>
+                      </div>
+                      <div className={styles.baseRewardItem}>
+                        <span className={styles.baseRewardLabel}>위대한 돌파석</span>
+                        <span className={styles.baseRewardValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].돌파석}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1290,6 +1374,25 @@ export default function PinballTower() {
             </div>
           </div>
 
+          {/* 히든층 보상 */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <span className={styles.cardTitle}>히든 보상</span>
+            </div>
+            <div className={styles.hiddenRewardContent}>
+              {hiddenRewards.length > 0 ? (
+                hiddenRewards.map((reward, idx) => (
+                  <div key={idx} className={styles.hiddenRewardItem}>
+                    <span className={styles.hiddenRewardFloor}>{reward.floor}층</span>
+                    <span className={styles.hiddenRewardName}>{reward.name}</span>
+                  </div>
+                ))
+              ) : (
+                <div className={styles.hiddenRewardEmpty}>-</div>
+              )}
+            </div>
+          </div>
+
           {/* 나락 모드: 부활 상태 표시 */}
           {gameMode && gameMode !== 'hell' && (
             <div className={styles.narakStatus}>
@@ -1313,7 +1416,7 @@ export default function PinballTower() {
                 : isCleared
                   ? 'CLEAR!'
                   : isPermaDead
-                    ? '탈락!'
+                    ? '실패!'
                     : isDead
                       ? '부활 대기중'
                       : gameEnded
