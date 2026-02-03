@@ -102,10 +102,10 @@ const REWARD_IMAGES: Record<string, string> = {
   '재련 보조': '/breath-lava5.webp',
   '귀속골드': '/gold.webp',
   '어빌리티스톤 키트': '/djqlfflxltmxhs.webp',
-  '팔찌': '/ancient-necklace.webp',
+  '팔찌': '/vkfwl.webp',
   '특수재련': '/xmrwo.webp',
   '천상 도전권': '/cjstkd.webp',
-  '젬선택': '/gem.webp',
+  '젬선택': '/gem-hero.webp',
   '운명의 돌': '/dnsauddmlehf.webp',
   // 나락 상자 보상
   '재련보조': '/breath-lava5.webp',
@@ -1459,8 +1459,8 @@ export default function PinballTower() {
                     <NextImage
                       src={REWARD_IMAGES[box.reward]}
                       alt={box.reward}
-                      width={64}
-                      height={64}
+                      width={100}
+                      height={100}
                       className={styles.rewardCardImg}
                     />
                   )}
@@ -1483,8 +1483,8 @@ export default function PinballTower() {
                   <NextImage
                     src={BASE_REWARD_IMAGES['파편']}
                     alt="운명의 파편"
-                    width={48}
-                    height={48}
+                    width={64}
+                    height={64}
                     className={styles.baseRewardFullImg}
                   />
                   <div className={styles.baseRewardFullText}>
@@ -1496,8 +1496,8 @@ export default function PinballTower() {
                   <NextImage
                     src={BASE_REWARD_IMAGES['파괴석결정']}
                     alt="파괴석 결정"
-                    width={48}
-                    height={48}
+                    width={64}
+                    height={64}
                     className={styles.baseRewardFullImg}
                   />
                   <div className={styles.baseRewardFullText}>
@@ -1509,8 +1509,8 @@ export default function PinballTower() {
                   <NextImage
                     src={BASE_REWARD_IMAGES['수호석결정']}
                     alt="수호석 결정"
-                    width={48}
-                    height={48}
+                    width={64}
+                    height={64}
                     className={styles.baseRewardFullImg}
                   />
                   <div className={styles.baseRewardFullText}>
@@ -1522,8 +1522,8 @@ export default function PinballTower() {
                   <NextImage
                     src={BASE_REWARD_IMAGES['돌파석']}
                     alt="위대한 돌파석"
-                    width={48}
-                    height={48}
+                    width={64}
+                    height={64}
                     className={styles.baseRewardFullImg}
                   />
                   <div className={styles.baseRewardFullText}>

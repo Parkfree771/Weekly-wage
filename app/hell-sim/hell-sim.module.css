@@ -1550,8 +1550,8 @@
 
 .rewardCardImgWrap {
   position: relative;
-  width: 90px;
-  height: 90px;
+  width: 100px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1561,11 +1561,12 @@
 }
 
 .rewardCardImg {
-  width: 70px !important;
-  height: 70px !important;
+  width: 80px !important;
+  height: 80px !important;
   object-fit: contain !important;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
   transition: all 0.3s ease;
+  image-rendering: -webkit-optimize-contrast;
 }
 
 .rewardCard:hover .rewardCardImg {
@@ -1666,11 +1667,12 @@
 }
 
 .baseRewardFullImg {
-  width: 44px !important;
-  height: 44px !important;
+  width: 52px !important;
+  height: 52px !important;
   object-fit: contain !important;
   filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.4));
   flex-shrink: 0;
+  image-rendering: -webkit-optimize-contrast;
 }
 
 .baseRewardFullText {
