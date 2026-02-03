@@ -96,7 +96,7 @@ const NARAK_BOX_REWARDS_DATA: Record<string, string[]> = {
 // 보상 이미지 매핑
 const REWARD_IMAGES: Record<string, string> = {
   // 지옥 상자 보상
-  '파괴석/수호석': '/top-destiny-destruction-stone5.webp',
+  '파괴석/수호석': '/vkrhltngh.webp',
   '돌파석': '/top-destiny-breakthrough-stone5.webp',
   '융화재료': '/top-abidos-fusion5.webp',
   '재련 보조': '/breath-lava5.webp',
@@ -105,13 +105,36 @@ const REWARD_IMAGES: Record<string, string> = {
   '팔찌': '/vkfwl.webp',
   '특수재련': '/xmrwo.webp',
   '천상 도전권': '/cjstkd.webp',
-  '젬선택': '/gem-hero.webp',
+  '젬선택': '/duddndgmlrnl.webp', // 영웅+희귀 혼합 이미지
   '운명의 돌': '/dnsauddmlehf.webp',
   // 나락 상자 보상
   '재련보조': '/breath-lava5.webp',
   '귀속 각인서 랜덤': '/engraving.webp',
-  '귀속 보석': '/gem-hero.webp',
+  '귀속 보석': '/duddndgmlrnl.webp', // 영웅+희귀 혼합 이미지
 };
+
+// 단계별 젬 이미지 선택
+// 지옥/나락 공통: 3,6,8,9,10 = 영웅만, 4,5,7 = 영웅+희귀, 0,1,2 = 희귀만
+function getGemImageByTier(tier: number): string {
+  const heroOnlyTiers = [3, 6, 8, 9, 10];
+  const mixedTiers = [4, 5, 7];
+
+  if (heroOnlyTiers.includes(tier)) {
+    return '/gem-hero.webp'; // 영웅만
+  } else if (mixedTiers.includes(tier)) {
+    return '/duddndgmlrnl.webp'; // 영웅 + 희귀 섞임
+  } else {
+    return '/gem.webp'; // 희귀만 (0, 1, 2)
+  }
+}
+
+// 보상 이미지 가져오기 (젬 종류는 단계에 따라 동적 선택)
+function getRewardImage(rewardName: string, tier: number): string {
+  if (rewardName === '젬선택' || rewardName === '귀속 보석') {
+    return getGemImageByTier(tier);
+  }
+  return REWARD_IMAGES[rewardName] || '';
+}
 
 // 기본 보상 이미지 매핑
 const BASE_REWARD_IMAGES: Record<string, string> = {
@@ -278,17 +301,46 @@ interface Ember {
   color: string;
 }
 
-// 불씨 생성
-function createEmber(canvasWidth: number, worldHeight: number): Ember {
-  const colors = ['#ff4500', '#ff6b35', '#ff8c00', '#ffa500', '#ffcc00', '#ff3300'];
+// 불씨/눈꽃 생성 (깊이에 따라 밀도 증가)
+function createEmber(canvasWidth: number, worldHeight: number, isIceTheme: boolean = false, forceY?: number): Ember {
+  const fireColors = ['#ff4500', '#ff6b35', '#ff8c00', '#ffa500', '#ffcc00', '#ff3300', '#ff5722', '#ff7043'];
+  const iceColors = ['#4fc3f7', '#29b6f6', '#81d4fa', '#b3e5fc', '#e1f5fe', '#ffffff', '#80deea', '#4dd0e1', '#e0f7fa', '#b2ebf2'];
+  const colors = isIceTheme ? iceColors : fireColors;
+
+  let y: number;
+  if (forceY !== undefined) {
+    y = forceY;
+  } else if (isIceTheme) {
+    // 눈: 전체 영역에 균일하게 분포 (위에서 아래로 떨어지므로)
+    y = Math.random() * worldHeight;
+  } else {
+    // 불: 아래쪽에 더 많이 분포 (제곱 분포)
+    const rand = Math.random();
+    y = rand * rand * worldHeight;
+  }
+
+  // 깊이에 따라 크기 증가 (아래쪽일수록 더 큼)
+  const depthRatio = y / worldHeight;
+  const baseSize = Math.random() * 4 + 2;
+  const depthBonus = depthRatio * 5;
+
+  // 눈은 좌우로 더 많이 흔들리고, 천천히 떨어짐
+  const vx = isIceTheme
+    ? (Math.random() - 0.5) * 3  // 눈: 좌우 흔들림 더 크게
+    : (Math.random() - 0.5) * 2;
+
+  const vy = isIceTheme
+    ? Math.random() * 1.5 + 0.8  // 눈: 천천히 떨어짐 (0.8~2.3)
+    : -Math.random() * 2.5 - 0.8; // 불: 위로 올라감
+
   return {
     x: Math.random() * canvasWidth,
-    y: Math.random() * worldHeight,
-    vx: (Math.random() - 0.5) * 1.5,
-    vy: -Math.random() * 2 - 0.5,
-    size: Math.random() * 4 + 2,
-    life: Math.random() * 100 + 50,
-    maxLife: 150,
+    y: y,
+    vx: vx,
+    vy: vy,
+    size: baseSize + depthBonus,
+    life: Math.random() * 150 + 80, // 수명 늘림
+    maxLife: 230,
     color: colors[Math.floor(Math.random() * colors.length)]
   };
 }
@@ -321,26 +373,39 @@ function drawFloorLabel(
   y: number,
   width: number,
   floorNum: number,
-  isTarget: boolean
+  isTarget: boolean,
+  isIceTheme: boolean = false
 ) {
   const labelWidth = 100;
   const labelHeight = 32;
   const labelX = x + (width - labelWidth) / 2;
-  const labelY = y + 55;
+  const labelY = y + 70; // 55 -> 70으로 내림
 
-  // 라벨 배경
-  ctx.fillStyle = isTarget ? 'rgba(251, 191, 36, 0.9)' : 'rgba(20, 20, 20, 0.9)';
+  // 라벨 배경 (테마에 따라 다름)
+  if (isIceTheme) {
+    ctx.fillStyle = isTarget ? 'rgba(79, 195, 247, 0.9)' : 'rgba(20, 20, 30, 0.9)';
+  } else {
+    ctx.fillStyle = isTarget ? 'rgba(251, 191, 36, 0.9)' : 'rgba(20, 20, 20, 0.9)';
+  }
   ctx.beginPath();
   ctx.roundRect(labelX, labelY, labelWidth, labelHeight, 6);
   ctx.fill();
 
   // 라벨 테두리
-  ctx.strokeStyle = isTarget ? '#fcd34d' : '#ff4500';
+  if (isIceTheme) {
+    ctx.strokeStyle = isTarget ? '#81d4fa' : '#4fc3f7';
+  } else {
+    ctx.strokeStyle = isTarget ? '#fcd34d' : '#ff4500';
+  }
   ctx.lineWidth = 2;
   ctx.stroke();
 
   // 라벨 텍스트
-  ctx.fillStyle = isTarget ? '#78350f' : '#ff6b35';
+  if (isIceTheme) {
+    ctx.fillStyle = isTarget ? '#01579b' : '#81d4fa';
+  } else {
+    ctx.fillStyle = isTarget ? '#78350f' : '#ff6b35';
+  }
   ctx.font = 'bold 16px Pretendard, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(`${floorNum}층`, labelX + labelWidth / 2, labelY + 22);
@@ -403,14 +468,73 @@ function drawLava(ctx: CanvasRenderingContext2D, x: number, y: number, width: nu
   ctx.fillRect(x, y - 20, width, 50);
 }
 
+// 얼음 바닥 그리기 (나락 홀수용)
+function drawIce(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, time: number) {
+  // 얼음 베이스 그라데이션
+  const iceGrad = ctx.createLinearGradient(x, y, x, y + height);
+  iceGrad.addColorStop(0, '#4fc3f7');
+  iceGrad.addColorStop(0.3, '#29b6f6');
+  iceGrad.addColorStop(0.6, '#0288d1');
+  iceGrad.addColorStop(1, '#01579b');
+  ctx.fillStyle = iceGrad;
+  ctx.fillRect(x, y, width, height);
+
+  // 얼음 파동 (여러 레이어)
+  for (let layer = 0; layer < 3; layer++) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + 10 + layer * 8);
+
+    for (let wx = 0; wx <= width; wx += 10) {
+      const waveY = y + 10 + layer * 8 +
+        Math.sin((wx + time * (1.5 - layer * 0.3)) * 0.025) * (6 - layer * 1.5) +
+        Math.sin((wx + time * (1 - layer * 0.2)) * 0.04) * (4 - layer * 0.8);
+      ctx.lineTo(x + wx, waveY);
+    }
+
+    ctx.lineTo(x + width, y + height);
+    ctx.lineTo(x, y + height);
+    ctx.closePath();
+
+    const alpha = 0.35 - layer * 0.08;
+    ctx.fillStyle = `rgba(150, ${200 + layer * 20}, 255, ${alpha})`;
+    ctx.fill();
+  }
+
+  // 얼음 결정 반짝임
+  const sparkleCount = 10;
+  for (let i = 0; i < sparkleCount; i++) {
+    const sparkleX = x + ((i * 37 + time * 0.3) % width);
+    const sparklePhase = (time * 0.04 + i * 1.1) % (Math.PI * 2);
+    const sparkleY = y + 12 + Math.sin(sparklePhase) * 8;
+    const sparkleSize = 2 + Math.sin(sparklePhase * 2) * 1.5;
+
+    if (sparkleSize > 1) {
+      ctx.beginPath();
+      ctx.arc(sparkleX, sparkleY, sparkleSize, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.5 + Math.sin(sparklePhase) * 0.4})`;
+      ctx.fill();
+    }
+  }
+
+  // 얼음 표면 글로우
+  const glowGrad = ctx.createLinearGradient(x, y - 20, x, y + 30);
+  glowGrad.addColorStop(0, 'rgba(100, 200, 255, 0)');
+  glowGrad.addColorStop(0.5, 'rgba(100, 200, 255, 0.25)');
+  glowGrad.addColorStop(1, 'rgba(100, 200, 255, 0)');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(x, y - 20, width, 50);
+}
+
 export default function PinballTower() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const ballRef = useRef<Ball | null>(null);
   const startFloorRef = useRef(0);
   const ballImageRef = useRef<HTMLImageElement | null>(null);
+  const ballImageCacheRef = useRef<HTMLCanvasElement | null>(null);
   const bgImageRef = useRef<HTMLImageElement | null>(null);
   const platformImageRef = useRef<HTMLImageElement | null>(null);
+  const platformIceImageRef = useRef<HTMLImageElement | null>(null);
   const embersRef = useRef<Ember[]>([]);
   const timeRef = useRef(0);
 
@@ -447,12 +571,26 @@ export default function PinballTower() {
   const ceilingFloorRef = useRef(20);
   const cameraYRef = useRef(0);
 
-  // 공 이미지 로드
+  // 공 이미지 로드 및 캐싱 (고화질 축소)
   useEffect(() => {
     const img = new Image();
     img.src = '/mococo.webp';
     img.onload = () => {
       ballImageRef.current = img;
+
+      // 고화질 캐싱: 200x200 크기로 미리 렌더링 (2x 해상도)
+      const cacheSize = 200;
+      const cacheCanvas = document.createElement('canvas');
+      cacheCanvas.width = cacheSize;
+      cacheCanvas.height = cacheSize;
+      const cacheCtx = cacheCanvas.getContext('2d');
+      if (cacheCtx) {
+        cacheCtx.imageSmoothingEnabled = true;
+        cacheCtx.imageSmoothingQuality = 'high';
+        cacheCtx.drawImage(img, 0, 0, cacheSize, cacheSize);
+        ballImageCacheRef.current = cacheCanvas;
+      }
+
       setImageLoaded(true);
     };
   }, []);
@@ -467,14 +605,31 @@ export default function PinballTower() {
     };
   }, []);
 
-  // 발판 이미지 로드 (b2.webp)
+  // 발판 이미지 로드 (b2.webp: 용암, b3.png: 얼음)
   useEffect(() => {
+    // 용암 발판 (지옥, 나락 짝수)
     const img = new Image();
     img.src = '/b2.webp';
     img.onload = () => {
       platformImageRef.current = img;
       setPlatformLoaded(true);
     };
+
+    // 얼음 발판 (나락 홀수)
+    const iceImg = new Image();
+    iceImg.src = '/b3.webp';
+    iceImg.onload = () => {
+      platformIceImageRef.current = iceImg;
+    };
+  }, []);
+
+  // 보상 이미지 미리 로드
+  useEffect(() => {
+    const preloadImages = [...Object.values(REWARD_IMAGES), ...Object.values(BASE_REWARD_IMAGES)];
+    preloadImages.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
   }, []);
 
   // 이번 이동 룰렛 효과
@@ -487,15 +642,17 @@ export default function PinballTower() {
     }
   }, [isPlaying]);
 
-  // 불씨 파티클 초기화
+  // 불씨/눈꽃 파티클 초기화 (게임 모드에 따라 재생성, 깊이별 밀도 증가)
   useEffect(() => {
     const worldHeight = TOTAL_FLOORS * FLOOR_HEIGHT + 200;
+    const isIceTheme = gameMode === 'narak-odd';
     const embers: Ember[] = [];
-    for (let i = 0; i < 60; i++) {
-      embers.push(createEmber(CANVAS_WIDTH, worldHeight));
+    // 파티클 개수 대폭 증가 (250개)
+    for (let i = 0; i < 250; i++) {
+      embers.push(createEmber(CANVAS_WIDTH, worldHeight, isIceTheme));
     }
     embersRef.current = embers;
-  }, []);
+  }, [gameMode]);
 
   const GROUND_Y = TOTAL_FLOORS * FLOOR_HEIGHT;
   const CEILING_PADDING = 50;
@@ -850,19 +1007,45 @@ export default function PinballTower() {
       cameraYRef.current = Math.max(0, Math.min(cameraYRef.current, GROUND_Y - CANVAS_HEIGHT + 100));
     }
 
-    // 불씨 파티클 업데이트
-    const worldHeight = TOTAL_FLOORS * FLOOR_HEIGHT + 200;
+    // 불씨/눈꽃 파티클 업데이트
+    const particleWorldHeight = TOTAL_FLOORS * FLOOR_HEIGHT + 200;
+    const isIceThemeParticle = gameMode === 'narak-odd';
     embersRef.current.forEach((ember, index) => {
       ember.x += ember.vx;
       ember.y += ember.vy;
       ember.life--;
 
-      // %.flickering
-      ember.vx += (Math.random() - 0.5) * 0.3;
+      // 흔들림 효과 (눈은 더 부드럽게)
+      if (isIceThemeParticle) {
+        ember.vx += (Math.random() - 0.5) * 0.2;
+        // 눈이 좌우로 너무 벗어나지 않도록
+        if (ember.vx > 2) ember.vx = 2;
+        if (ember.vx < -2) ember.vx = -2;
+      } else {
+        ember.vx += (Math.random() - 0.5) * 0.3;
+      }
 
-      if (ember.life <= 0 || ember.y < 0) {
-        embersRef.current[index] = createEmber(CANVAS_WIDTH, worldHeight);
-        embersRef.current[index].y = worldHeight - Math.random() * 200;
+      // x 범위 체크 (화면 밖으로 나가면 반대편에서 나타남)
+      if (ember.x < -10) ember.x = CANVAS_WIDTH + 10;
+      if (ember.x > CANVAS_WIDTH + 10) ember.x = -10;
+
+      // 리셋 조건
+      const shouldReset = isIceThemeParticle
+        ? (ember.life <= 0 || ember.y > particleWorldHeight + 50)
+        : (ember.life <= 0 || ember.y < -50);
+
+      if (shouldReset) {
+        if (isIceThemeParticle) {
+          // 눈꽃: 현재 카메라 위치 기준 위쪽에서 시작
+          const cameraTop = Math.max(0, cameraYRef.current - 100);
+          const startY = cameraTop + Math.random() * 50;
+          embersRef.current[index] = createEmber(CANVAS_WIDTH, particleWorldHeight, isIceThemeParticle, startY);
+        } else {
+          // 불씨: 현재 카메라 위치 기준 아래쪽에서 시작
+          const cameraBottom = Math.min(particleWorldHeight, cameraYRef.current + CANVAS_HEIGHT + 100);
+          const startY = cameraBottom - Math.random() * 50;
+          embersRef.current[index] = createEmber(CANVAS_WIDTH, particleWorldHeight, isIceThemeParticle, startY);
+        }
       }
     });
 
@@ -873,18 +1056,28 @@ export default function PinballTower() {
     ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // 2. 지옥 그라데이션 (월드 좌표 기준 - 위쪽은 검정, 아래로 갈수록 붉은색)
+    // 2. 배경 그라데이션 (게임 모드에 따라 다름)
     // 카메라 위치에 따라 그라데이션 시작점 조정
     const worldTop = cameraYRef.current;
     const gradStartY = Math.max(0, SKY_HEIGHT - worldTop); // 화면상 SKY_HEIGHT 위치
+    const isIceTheme = gameMode === 'narak-odd';
 
     if (gradStartY < CANVAS_HEIGHT) {
-      const hellGrad = ctx.createLinearGradient(0, gradStartY, 0, CANVAS_HEIGHT);
-      hellGrad.addColorStop(0, 'rgba(10, 10, 10, 1)'); // 순수 검정에서 시작
-      hellGrad.addColorStop(0.3, 'rgba(15, 10, 8, 1)'); // 아주 살짝 붉은기
-      hellGrad.addColorStop(0.6, 'rgba(25, 12, 8, 1)'); // 점점 붉어짐
-      hellGrad.addColorStop(1, 'rgba(50, 15, 5, 1)'); // 붉은 검정
-      ctx.fillStyle = hellGrad;
+      const bgGrad = ctx.createLinearGradient(0, gradStartY, 0, CANVAS_HEIGHT);
+      if (isIceTheme) {
+        // 나락 홀수: 얼음/파란색 테마
+        bgGrad.addColorStop(0, 'rgba(10, 15, 25, 1)'); // 어두운 파랑에서 시작
+        bgGrad.addColorStop(0.3, 'rgba(8, 20, 35, 1)'); // 점점 파래짐
+        bgGrad.addColorStop(0.6, 'rgba(5, 25, 45, 1)'); // 더 파래짐
+        bgGrad.addColorStop(1, 'rgba(5, 35, 60, 1)'); // 진한 파랑
+      } else {
+        // 지옥, 나락 짝수: 용암/붉은색 테마
+        bgGrad.addColorStop(0, 'rgba(10, 10, 10, 1)'); // 순수 검정에서 시작
+        bgGrad.addColorStop(0.3, 'rgba(15, 10, 8, 1)'); // 아주 살짝 붉은기
+        bgGrad.addColorStop(0.6, 'rgba(25, 12, 8, 1)'); // 점점 붉어짐
+        bgGrad.addColorStop(1, 'rgba(50, 15, 5, 1)'); // 붉은 검정
+      }
+      ctx.fillStyle = bgGrad;
       ctx.fillRect(0, gradStartY, CANVAS_WIDTH, CANVAS_HEIGHT - gradStartY);
     }
 
@@ -896,28 +1089,50 @@ export default function PinballTower() {
       // b1.png를 월드 좌표 0 ~ SKY_HEIGHT 영역에 그림
       ctx.drawImage(bgImageRef.current, 0, 0, CANVAS_WIDTH, SKY_HEIGHT);
 
-      // 이미지와 지옥 배경 사이 자연스러운 전환 (더 넓고 부드럽게)
+      // 이미지와 배경 사이 자연스러운 전환 (테마별 색상)
       const transitionGrad = ctx.createLinearGradient(0, SKY_HEIGHT - 200, 0, SKY_HEIGHT + 100);
-      transitionGrad.addColorStop(0, 'rgba(10, 10, 10, 0)');
-      transitionGrad.addColorStop(0.3, 'rgba(10, 10, 10, 0.3)');
-      transitionGrad.addColorStop(0.6, 'rgba(10, 10, 10, 0.7)');
-      transitionGrad.addColorStop(1, 'rgba(10, 10, 10, 1)');
+      if (isIceTheme) {
+        // 얼음 테마: 어두운 파란색으로 전환
+        transitionGrad.addColorStop(0, 'rgba(10, 15, 25, 0)');
+        transitionGrad.addColorStop(0.3, 'rgba(10, 15, 25, 0.3)');
+        transitionGrad.addColorStop(0.6, 'rgba(10, 15, 25, 0.7)');
+        transitionGrad.addColorStop(1, 'rgba(10, 15, 25, 1)');
+      } else {
+        // 용암 테마: 어두운 검정으로 전환
+        transitionGrad.addColorStop(0, 'rgba(10, 10, 10, 0)');
+        transitionGrad.addColorStop(0.3, 'rgba(10, 10, 10, 0.3)');
+        transitionGrad.addColorStop(0.6, 'rgba(10, 10, 10, 0.7)');
+        transitionGrad.addColorStop(1, 'rgba(10, 10, 10, 1)');
+      }
       ctx.fillStyle = transitionGrad;
       ctx.fillRect(0, SKY_HEIGHT - 200, CANVAS_WIDTH, 300);
     }
 
-    // 4. 불씨 파티클 그리기
+    // 4. 불씨/눈꽃 파티클 그리기 (깊이에 따라 투명도 증가)
+    const emberWorldHeight = TOTAL_FLOORS * FLOOR_HEIGHT + 200;
     embersRef.current.forEach(ember => {
       const screenY = ember.y - cameraYRef.current;
-      if (screenY < -20 || screenY > CANVAS_HEIGHT + 20) return;
+      if (screenY < -30 || screenY > CANVAS_HEIGHT + 30) return;
 
-      const alpha = ember.life / ember.maxLife;
+      // 기본 알파 (수명 기반)
+      const lifeAlpha = ember.life / ember.maxLife;
+
+      // 깊이 기반 알파 (아래쪽일수록 더 진하게, 0.4 ~ 1.0)
+      const depthRatio = ember.y / emberWorldHeight;
+      const depthAlpha = 0.4 + depthRatio * 0.6;
+
+      // 최종 알파
+      const finalAlpha = lifeAlpha * depthAlpha;
+
+      // 깊이에 따라 글로우 강도도 증가
+      const glowIntensity = 10 + depthRatio * 20;
+
       ctx.beginPath();
-      ctx.arc(ember.x, ember.y, ember.size * alpha, 0, Math.PI * 2);
+      ctx.arc(ember.x, ember.y, ember.size * lifeAlpha, 0, Math.PI * 2);
       ctx.fillStyle = ember.color;
-      ctx.globalAlpha = alpha * 0.8;
+      ctx.globalAlpha = finalAlpha;
       ctx.shadowColor = ember.color;
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = glowIntensity;
       ctx.fill();
       ctx.shadowBlur = 0;
       ctx.globalAlpha = 1;
@@ -961,28 +1176,44 @@ export default function PinballTower() {
 
         platformX = Math.max(5, Math.min(platformX, CANVAS_WIDTH - PLATFORM_WIDTH - 5));
 
-        if (showPlatform && platformImageRef.current) {
-          drawPlatform(ctx, platformX, platformY, PLATFORM_WIDTH, PLATFORM_HEIGHT, isTarget, platformImageRef.current);
-          drawFloorLabel(ctx, platformX, platformY, PLATFORM_WIDTH, displayFloorNum, isTarget);
+        // 게임 모드에 따라 발판 이미지 선택
+        const currentPlatformImg = isIceTheme && platformIceImageRef.current
+          ? platformIceImageRef.current
+          : platformImageRef.current;
+
+        if (showPlatform && currentPlatformImg) {
+          drawPlatform(ctx, platformX, platformY, PLATFORM_WIDTH, PLATFORM_HEIGHT, isTarget, currentPlatformImg);
+          drawFloorLabel(ctx, platformX, platformY, PLATFORM_WIDTH, displayFloorNum, isTarget, isIceTheme);
         }
       }
     }
 
-    // 6. 용암 바닥 (100층)
-    drawLava(ctx, 0, groundY, CANVAS_WIDTH, 100, timeRef.current);
+    // 6. 바닥 (100층) - 게임 모드에 따라 용암/얼음
+    if (isIceTheme) {
+      drawIce(ctx, 0, groundY, CANVAS_WIDTH, 100, timeRef.current);
+    } else {
+      drawLava(ctx, 0, groundY, CANVAS_WIDTH, 100, timeRef.current);
+    }
 
     // 7. 공 그리기
     if (ball) {
       const imgSize = BALL_RADIUS * 10;
 
-      // 공 궤적
+      // 캐시된 이미지 사용 (고화질)
+      const ballImg = ballImageCacheRef.current || ballImageRef.current;
+
+      // 공 궤적 (공과 동일한 오프셋 적용)
+      const trailYOffset = -8;
       if (isPlaying && (Math.abs(ball.vx) > 0.5 || Math.abs(ball.vy) > 0.5)) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         ctx.globalAlpha = 0.3;
         for (let i = 1; i <= 3; i++) {
           const trailX = ball.x - ball.vx * i * 2;
           const trailY = ball.y - ball.vy * i * 2;
-          if (ballImageRef.current) {
-            ctx.drawImage(ballImageRef.current, trailX - imgSize / 2, trailY - imgSize / 2, imgSize * (1 - i * 0.15), imgSize * (1 - i * 0.15));
+          if (ballImg) {
+            const trailSize = imgSize * (1 - i * 0.15);
+            ctx.drawImage(ballImg, trailX - trailSize / 2, trailY - trailSize / 2 + trailYOffset, trailSize, trailSize);
           }
         }
         ctx.globalAlpha = 1;
@@ -995,12 +1226,12 @@ export default function PinballTower() {
       ctx.ellipse(ball.x, shadowY, imgSize * 0.4, 6, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 공 이미지
-      if (ballImageRef.current && imageLoaded) {
-        ctx.shadowColor = '#ff4500';
-        ctx.shadowBlur = 20;
-        ctx.drawImage(ballImageRef.current, ball.x - imgSize / 2, ball.y - imgSize / 2, imgSize, imgSize);
-        ctx.shadowBlur = 0;
+      // 공 이미지 (캐시된 고화질 이미지 사용, 살짝 위로)
+      const ballYOffset = -8; // 공을 8px 위로
+      if (ballImg && imageLoaded) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(ballImg, ball.x - imgSize / 2, ball.y - imgSize / 2 + ballYOffset, imgSize, imgSize);
       } else {
         const gradient = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 0, ball.x, ball.y, BALL_RADIUS);
         gradient.addColorStop(0, '#fff');
@@ -1025,10 +1256,15 @@ export default function PinballTower() {
     ctx.fillStyle = topVignette;
     ctx.fillRect(0, 0, CANVAS_WIDTH, 60);
 
-    // 하단 용암 글로우
+    // 하단 글로우 (게임 모드에 따라 다름)
     const bottomGlow = ctx.createLinearGradient(0, CANVAS_HEIGHT - 80, 0, CANVAS_HEIGHT);
-    bottomGlow.addColorStop(0, 'rgba(255, 69, 0, 0)');
-    bottomGlow.addColorStop(1, 'rgba(255, 69, 0, 0.15)');
+    if (isIceTheme) {
+      bottomGlow.addColorStop(0, 'rgba(100, 200, 255, 0)');
+      bottomGlow.addColorStop(1, 'rgba(100, 200, 255, 0.15)');
+    } else {
+      bottomGlow.addColorStop(0, 'rgba(255, 69, 0, 0)');
+      bottomGlow.addColorStop(1, 'rgba(255, 69, 0, 0.15)');
+    }
     ctx.fillStyle = bottomGlow;
     ctx.fillRect(0, CANVAS_HEIGHT - 80, CANVAS_WIDTH, 80);
 
@@ -1231,36 +1467,81 @@ export default function PinballTower() {
 
   return (
     <div className={styles.gameLayout}>
-      {/* 메인: 왼쪽(게임모드+캔버스) + 오른쪽(열쇠+컨트롤) */}
+      {/* 메인: 왼쪽(캔버스) + 오른쪽(컨트롤) */}
       <div className={styles.mainRow}>
-        {/* 왼쪽: 게임 모드 + 캔버스 */}
+        {/* 왼쪽: 캔버스 */}
         <div className={styles.gameColumn}>
-          {/* 게임 모드 선택 */}
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <span className={styles.cardTitle}>게임 모드</span>
-            </div>
-            <div className={styles.modeGrid}>
-              {(Object.keys(GAME_MODES) as GameMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  className={`${styles.modeButton} ${gameMode === mode ? styles.modeButtonActive : ''}`}
-                  onClick={() => selectGameMode(mode)}
-                  disabled={gameStarted}
-                >
-                  <span className={styles.modeName}>{GAME_MODES[mode].name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.canvasWrapper}>
+          <div className={`${styles.canvasWrapper} ${gameMode === 'narak-odd' ? styles.canvasWrapperIce : ''}`}>
             <canvas
               ref={canvasRef}
               width={CANVAS_WIDTH}
               height={CANVAS_HEIGHT}
               className={styles.canvas}
             />
+
+            {/* 게임 모드 선택 오버레이 (게임 모드가 선택되지 않았을 때) */}
+            {!gameMode && !gameStarted && (
+              <div className={styles.selectionOverlay}>
+                <div className={styles.selectionTitle}>게임 모드 선택</div>
+                <div className={styles.selectionGrid}>
+                  {(Object.keys(GAME_MODES) as GameMode[]).map((mode) => {
+                    const modeIcon = mode === 'hell' ? '/celtic_key_5.webp' : mode === 'narak-odd' ? '/blue_key_5.webp' : '/key_5.webp';
+                    return (
+                      <button
+                        key={mode}
+                        className={`${styles.selectionButton} ${mode === 'narak-odd' ? styles.selectionButtonIce : ''}`}
+                        onClick={() => selectGameMode(mode)}
+                      >
+                        <div className={styles.selectionButtonIcon}>
+                          <NextImage
+                            src={modeIcon}
+                            alt={GAME_MODES[mode].name}
+                            width={40}
+                            height={40}
+                            className={styles.selectionButtonIconImg}
+                          />
+                        </div>
+                        <div className={styles.selectionButtonContent}>
+                          <span className={styles.selectionButtonName}>{GAME_MODES[mode].name}</span>
+                          <span className={styles.selectionButtonDesc}>{GAME_MODES[mode].description}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 열쇠 선택 오버레이 (게임 모드 선택됨 & 열쇠 미선택) */}
+            {gameMode && !selectedKey && !gameStarted && (
+              <div className={`${styles.selectionOverlay} ${gameMode === 'narak-odd' ? styles.selectionOverlayIce : ''}`}>
+                <div className={styles.selectionTitle}>열쇠 선택</div>
+                <div className={styles.selectionSubtitle}>{GAME_MODES[gameMode].name} 모드</div>
+                <div className={styles.keySelectionGrid}>
+                  {(Object.keys(KEY_TYPES) as KeyType[]).map((keyType) => (
+                    <button
+                      key={keyType}
+                      className={styles.keySelectionButton}
+                      onClick={() => selectKey(keyType)}
+                    >
+                      <NextImage
+                        src={KEY_IMAGES[gameMode][keyType]}
+                        alt={KEY_TYPES[keyType].name}
+                        width={80}
+                        height={80}
+                        className={styles.keySelectionImage}
+                        priority
+                      />
+                      <span className={styles.keySelectionName}>{KEY_TYPES[keyType].name}</span>
+                      <span className={styles.keySelectionChances}>{KEY_TYPES[keyType].chances}회</span>
+                    </button>
+                  ))}
+                </div>
+                <button className={styles.backButton} onClick={() => setGameMode(null)}>
+                  ← 모드 다시 선택
+                </button>
+              </div>
+            )}
 
             {/* 나락 모드: 중단 버튼 (왼쪽 상단) */}
             {gameMode && gameMode !== 'hell' && gameStarted && !gameEnded && !isPlaying && !isDead && currentFloor > 0 && (
@@ -1269,9 +1550,17 @@ export default function PinballTower() {
               </button>
             )}
 
+            {/* 나락 모드: 부활 기회 표시 (오른쪽 상단) */}
+            {gameMode && gameMode !== 'hell' && gameStarted && !gameEnded && (
+              <div className={`${styles.reviveDisplay} ${gameMode === 'narak-odd' ? styles.reviveDisplayIce : ''}`}>
+                <span className={styles.reviveLabel}>부활</span>
+                <span className={styles.reviveCount}>x{canRevive ? 1 : 0}</span>
+              </div>
+            )}
+
             {/* 클리어 오버레이 */}
             {isCleared && (
-              <div className={styles.resultOverlay}>
+              <div className={`${styles.resultOverlay} ${gameMode === 'narak-odd' ? styles.resultOverlayIce : ''}`}>
                 <div className={styles.resultIcon}></div>
                 <div className={styles.resultTitle}>클리어!</div>
                 <div className={styles.resultFloor}>100층</div>
@@ -1281,8 +1570,8 @@ export default function PinballTower() {
 
             {/* 나락 사망 오버레이 (부활 필수) */}
             {isDead && (
-              <div className={styles.deathOverlay}>
-                                <div className={styles.deathTitle}>사망!</div>
+              <div className={`${styles.deathOverlay} ${gameMode === 'narak-odd' ? styles.deathOverlayIce : ''}`}>
+                <div className={styles.deathTitle}>사망!</div>
                 <div className={styles.deathFloor}>{currentFloor}층</div>
                 <div className={styles.deathReason}>
                   {gameMode === 'narak-odd' ? '짝수층' : '홀수층'}에 착지했습니다
@@ -1296,8 +1585,8 @@ export default function PinballTower() {
 
             {/* 나락 완전 사망 오버레이 (보상 없음) */}
             {isPermaDead && (
-              <div className={styles.permaDeathOverlay}>
-                                <div className={styles.deathTitle}>실패!</div>
+              <div className={`${styles.permaDeathOverlay} ${gameMode === 'narak-odd' ? styles.permaDeathOverlayIce : ''}`}>
+                <div className={styles.deathTitle}>실패!</div>
                 <div className={styles.deathFloor}>{currentFloor}층</div>
                 <div className={styles.deathReason}>
                   부활 후 다시 {gameMode === 'narak-odd' ? '짝수층' : '홀수층'}에 착지!
@@ -1309,37 +1598,34 @@ export default function PinballTower() {
 
         </div>
 
-        {/* 오른쪽: 열쇠 선택 + 컨트롤 패널 */}
+        {/* 오른쪽: 컨트롤 패널 */}
         <div className={styles.controlPanel}>
-          {/* 열쇠 선택 */}
+          {/* 현재 선택 상태 표시 */}
           <div className={styles.card}>
             <div className={styles.cardHeader}>
-              <span className={styles.cardTitle}>열쇠 선택</span>
+              <span className={styles.cardTitle}>선택 현황</span>
             </div>
-            <div className={styles.keyGrid}>
-              {(Object.keys(KEY_TYPES) as KeyType[]).map((keyType) => (
-                <button
-                  key={keyType}
-                  className={`${styles.keyImageButton} ${selectedKey === keyType ? styles.keyImageButtonActive : ''}`}
-                  onClick={() => selectKey(keyType)}
-                  disabled={gameStarted || !gameMode}
-                  title={`${KEY_TYPES[keyType].name} (${KEY_TYPES[keyType].chances}회)`}
-                >
-                  {gameMode ? (
+            <div className={styles.selectionStatus}>
+              <div className={styles.selectionStatusItem}>
+                <span className={styles.selectionStatusLabel}>모드</span>
+                <span className={styles.selectionStatusValue}>
+                  {gameMode ? GAME_MODES[gameMode].name : '-'}
+                </span>
+              </div>
+              <div className={styles.selectionStatusItem}>
+                <span className={styles.selectionStatusLabel}>열쇠</span>
+                <span className={styles.selectionStatusValue}>
+                  {selectedKey && gameMode ? (
                     <NextImage
-                      src={KEY_IMAGES[gameMode][keyType]}
-                      alt={KEY_TYPES[keyType].name}
-                      width={60}
-                      height={60}
-                      className={styles.keyImage}
+                      src={KEY_IMAGES[gameMode][selectedKey]}
+                      alt={KEY_TYPES[selectedKey].name}
+                      width={32}
+                      height={32}
+                      className={styles.selectionStatusKeyImg}
                     />
-                  ) : (
-                    <div className={styles.keyPlaceholder}>
-                      <span>{KEY_TYPES[keyType].chances}회</span>
-                    </div>
-                  )}
-                </button>
-              ))}
+                  ) : '-'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -1397,15 +1683,6 @@ export default function PinballTower() {
             </div>
           </div>
 
-          {/* 나락 모드: 부활 상태 표시 */}
-          {gameMode && gameMode !== 'hell' && (
-            <div className={styles.narakStatus}>
-              <span className={styles.narakLabel}>부활:</span>
-              <span className={canRevive ? styles.narakAvailable : styles.narakUsed}>
-                {canRevive ? '가능' : '사용함'}
-              </span>
-            </div>
-          )}
 
           {/* 버튼 */}
           <button
@@ -1448,30 +1725,33 @@ export default function PinballTower() {
 
           {/* 상자 보상 그리드 */}
           <div className={styles.rewardBoxGrid}>
-            {finalBoxes.map((box, idx) => (
-              <div
-                key={idx}
-                className={`${styles.rewardCard} ${box.isPungyo ? styles.rewardCardPungyo : ''} ${selectedRewardIdx === idx ? styles.rewardCardActive : ''}`}
-                onClick={() => setSelectedRewardIdx(selectedRewardIdx === idx ? null : idx)}
-              >
-                <div className={styles.rewardCardImgWrap}>
-                  {REWARD_IMAGES[box.reward] && (
-                    <NextImage
-                      src={REWARD_IMAGES[box.reward]}
-                      alt={box.reward}
-                      width={100}
-                      height={100}
-                      className={styles.rewardCardImg}
-                    />
-                  )}
-                  {box.isPungyo && <span className={styles.rewardCardPungyoBadge}>풍요</span>}
+            {finalBoxes.map((box, idx) => {
+              const rewardImg = getRewardImage(box.reward, getTier(currentFloor));
+              return (
+                <div
+                  key={idx}
+                  className={`${styles.rewardCard} ${box.isPungyo ? styles.rewardCardPungyo : ''} ${selectedRewardIdx === idx ? styles.rewardCardActive : ''}`}
+                  onClick={() => setSelectedRewardIdx(selectedRewardIdx === idx ? null : idx)}
+                >
+                  <div className={styles.rewardCardImgWrap}>
+                    {rewardImg && (
+                      <NextImage
+                        src={rewardImg}
+                        alt={box.reward}
+                        width={100}
+                        height={100}
+                        className={styles.rewardCardImg}
+                      />
+                    )}
+                    {box.isPungyo && <span className={styles.rewardCardPungyoBadge}>풍요</span>}
+                  </div>
+                  <div className={styles.rewardCardName}>{box.reward}</div>
+                  <div className={styles.rewardCardQty}>
+                    {getRewardQuantity(box.reward, currentFloor, gameMode)}
+                  </div>
                 </div>
-                <div className={styles.rewardCardName}>{box.reward}</div>
-                <div className={styles.rewardCardQty}>
-                  {getRewardQuantity(box.reward, currentFloor, gameMode)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* 지옥 모드: 기본 보상 표시 */}
@@ -1534,8 +1814,142 @@ export default function PinballTower() {
               </div>
             </div>
           )}
+
         </div>
       )}
+
+      {/* 전체 보상 테이블 - 항상 표시 */}
+      <RewardTable />
+    </div>
+  );
+}
+
+// 전체 보상 테이블 컴포넌트
+function RewardTable() {
+  const [tableMode, setTableMode] = useState<'hell' | 'narak'>('hell');
+
+  // 단계별 층수 범위
+  const TIERS = [
+    { tier: 0, range: '0~9층' },
+    { tier: 1, range: '10~19층' },
+    { tier: 2, range: '20~29층' },
+    { tier: 3, range: '30~39층' },
+    { tier: 4, range: '40~49층' },
+    { tier: 5, range: '50~59층' },
+    { tier: 6, range: '60~69층' },
+    { tier: 7, range: '70~79층' },
+    { tier: 8, range: '80~89층' },
+    { tier: 9, range: '90~99층' },
+    { tier: 10, range: '100층' },
+  ];
+
+  // 지옥 모드 상자 보상 목록
+  const HELL_REWARDS = [
+    '파괴석/수호석', '돌파석', '융화재료', '재련 보조', '귀속골드',
+    '어빌리티스톤 키트', '팔찌', '특수재련', '천상 도전권', '젬선택', '운명의 돌'
+  ];
+
+  // 지옥 기본 보상 목록
+  const HELL_BASE = ['파편', '파괴석결정', '수호석결정', '돌파석'];
+
+  // 나락 모드 상자 보상 목록
+  const NARAK_REWARDS = [
+    '재련보조', '귀속골드', '어빌리티스톤 키트', '팔찌',
+    '귀속 각인서 랜덤', '귀속 보석', '젬선택', '운명의 돌'
+  ];
+
+  const rewards = tableMode === 'hell' ? HELL_REWARDS : NARAK_REWARDS;
+  const rewardData = tableMode === 'hell' ? HELL_BOX_REWARDS_DATA : NARAK_BOX_REWARDS_DATA;
+
+  return (
+    <div className={styles.rewardTableSection}>
+      {/* 모드 선택 버튼 */}
+      <div className={styles.rewardTableHeader}>
+        <button
+          className={`${styles.rewardTableModeBtn} ${tableMode === 'hell' ? styles.rewardTableModeBtnActive : ''}`}
+          onClick={() => setTableMode('hell')}
+        >
+          지옥 보상
+        </button>
+        <button
+          className={`${styles.rewardTableModeBtn} ${tableMode === 'narak' ? styles.rewardTableModeBtnActive : ''}`}
+          onClick={() => setTableMode('narak')}
+        >
+          나락 보상
+        </button>
+      </div>
+
+      {/* 보상 테이블 - 세로: 단계, 가로: 보상 */}
+      <div className={styles.rewardTableContent}>
+        <div className={styles.rewardTableScroll}>
+          <table className={styles.rewardTable}>
+            <thead>
+              <tr>
+                <th className={styles.rewardTableCorner}>단계</th>
+                {rewards.map((reward, idx) => (
+                  <th key={idx} className={styles.rewardTableHeaderCell}>
+                    <div className={styles.rewardHeaderItem}>
+                      {REWARD_IMAGES[reward] && (
+                        <NextImage
+                          src={REWARD_IMAGES[reward]}
+                          alt={reward}
+                          width={48}
+                          height={48}
+                          className={styles.rewardHeaderIcon}
+                        />
+                      )}
+                      <span className={styles.rewardHeaderName}>{reward}</span>
+                    </div>
+                  </th>
+                ))}
+                {/* 지옥 모드: 기본 보상 헤더 */}
+                {tableMode === 'hell' && HELL_BASE.map((name, idx) => (
+                  <th key={`base-${idx}`} className={styles.rewardTableHeaderCell}>
+                    <div className={styles.rewardHeaderItem}>
+                      <NextImage
+                        src={BASE_REWARD_IMAGES[name]}
+                        alt={name}
+                        width={48}
+                        height={48}
+                        className={styles.rewardHeaderIcon}
+                      />
+                      <span className={styles.rewardHeaderName}>
+                        {name === '파편' ? '운명의 파편' : name === '파괴석결정' ? '파괴석 결정' : name === '수호석결정' ? '수호석 결정' : '위대한 돌파석'}
+                      </span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {TIERS.map(({ tier, range }) => (
+                <tr key={tier} className={styles.rewardTableRow}>
+                  <td className={styles.rewardTableTierCell}>
+                    <div className={styles.tierInfo}>
+                      <span className={styles.tierNum}>단계 {tier}</span>
+                      <span className={styles.tierRange}>{range}</span>
+                    </div>
+                  </td>
+                  {rewards.map((reward, rIdx) => (
+                    <td key={rIdx} className={styles.rewardTableCell}>
+                      {rewardData[reward]?.[tier] || '-'}
+                    </td>
+                  ))}
+                  {/* 지옥 모드: 기본 보상 데이터 */}
+                  {tableMode === 'hell' && (
+                    <>
+                      <td className={styles.rewardTableCell}>{HELL_BASE_REWARDS[tier].파편.toLocaleString()}</td>
+                      <td className={styles.rewardTableCell}>{HELL_BASE_REWARDS[tier].파괴석결정}</td>
+                      <td className={styles.rewardTableCell}>{HELL_BASE_REWARDS[tier].수호석결정}</td>
+                      <td className={styles.rewardTableCell}>{HELL_BASE_REWARDS[tier].돌파석}</td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

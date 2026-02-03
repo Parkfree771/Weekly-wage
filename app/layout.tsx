@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ConsentModal from '@/components/auth/ConsentModal';
 import ConsoleFilter from '@/components/ConsoleFilter';
+import ImagePreloader from '@/components/ImagePreloader';
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import Script from "next/script";
@@ -96,6 +97,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={notoSansKr.className}>
+        <ImagePreloader />
         <ThemeProvider>
           <ConsoleFilter />
           <AuthProvider>

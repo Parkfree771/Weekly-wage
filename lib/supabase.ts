@@ -52,7 +52,6 @@ export async function saveRefiningResult(result: RefiningResult): Promise<boolea
       return false;
     }
 
-    console.log('Saved successfully:', data);
     return true;
   } catch (err: any) {
     console.error('Error saving refining result:', err?.message || err);
@@ -242,7 +241,6 @@ function saveToCache(key: string, data: SimulationRecord[]): void {
       timestamp: Date.now(),
     };
     localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(cacheData));
-    console.log(`[Cache Save] ${key}, ${data.length}건`);
   } catch (e) {
     // localStorage 용량 초과 시 오래된 캐시 정리
     console.warn('Cache save failed, clearing old caches');
@@ -603,7 +601,6 @@ export async function saveAdvancedRefiningResult(result: AdvancedRefiningResult)
       return false;
     }
 
-    console.log('Saved advanced refining result successfully:', data);
     return true;
   } catch (err: any) {
     console.error('Error saving advanced refining result:', err?.message || err);
@@ -813,7 +810,6 @@ export async function saveHellSimResult(result: HellSimResult): Promise<boolean>
       return false;
     }
 
-    console.log('Saved hell sim result successfully:', data);
     return true;
   } catch (err: any) {
     console.error('Error saving hell sim result:', err?.message || err);
