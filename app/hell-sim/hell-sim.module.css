@@ -597,7 +597,7 @@
    ======================================== */
 @media (max-width: 768px) {
   .container {
-    padding: 1rem 0.5rem;
+    padding: 0.5rem 0.15rem;
   }
 
   .innerContainer {
@@ -605,41 +605,45 @@
   }
 
   .header {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.4rem;
   }
 
   .title {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
 
   .subtitle {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
 
-  /* 메인 영역 */
+  /* 메인 영역 - 화면 최대 활용 */
   .mainRow {
-    gap: 0.5rem;
+    gap: 0.3rem;
   }
 
   .gameColumn {
-    width: 200px;
+    width: 56vw;
+    max-width: 240px;
+    gap: 0.25rem;
   }
 
   .canvasWrapper {
-    width: 200px;
-    height: 333px;
-    border-radius: 12px;
+    width: 100%;
+    aspect-ratio: 360 / 600;
+    height: auto;
+    border-radius: 10px;
   }
 
   .canvas {
-    width: 200px;
-    height: 333px;
+    width: 100%;
+    height: 100%;
   }
 
-  /* 컨트롤 패널 축소 */
+  /* 컨트롤 패널 - 화면 활용 */
   .controlPanel {
-    width: 150px;
-    gap: 0.5rem;
+    width: 42vw;
+    max-width: 180px;
+    gap: 0.35rem;
   }
 
   .card {
@@ -647,76 +651,78 @@
   }
 
   .cardHeader {
-    padding: 0.4rem 0.6rem;
+    padding: 0.35rem 0.5rem;
   }
 
   .cardTitle {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
   }
 
-  /* 게임 모드 버튼 */
+  /* 게임 모드 - 최대한 얇게 */
   .modeGrid {
-    gap: 0.25rem;
-    padding: 0.4rem;
+    gap: 0.1rem;
+    padding: 0.1rem;
   }
 
   .modeButton {
-    padding: 0.35rem 0.25rem;
-    border-radius: 6px;
+    padding: 0.15rem 0.05rem;
+    border-radius: 4px;
   }
 
   .modeName {
-    font-size: 0.6rem;
+    font-size: 0.32rem;
+    white-space: nowrap;
+    letter-spacing: -0.02em;
   }
 
-  /* 열쇠 이미지 버튼 모바일 */
+  /* 열쇠 이미지 - 캔버스 어깨 아래까지 */
   .keyGrid {
-    gap: 0.25rem;
-    padding: 0.4rem;
+    gap: 0.3rem;
+    padding: 1.5rem 0.3rem;
   }
 
   .keyImageButton {
-    border-radius: 6px;
+    border-radius: 8px;
   }
 
   .keyImage {
-    width: 45px !important;
-    height: 45px !important;
-    border-radius: 6px;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 8px;
   }
 
   .keyPlaceholder {
-    width: 40px;
-    height: 40px;
-    font-size: 0.6rem;
-    border-radius: 6px;
+    width: 44px;
+    height: 44px;
+    font-size: 0.5rem;
+    border-radius: 8px;
   }
 
   .statusGrid {
-    gap: 0.25rem;
-    padding: 0.4rem;
+    gap: 0.2rem;
+    padding: 0.35rem;
   }
 
   .statusItem {
-    padding: 0.4rem 0.2rem;
-    border-radius: 6px;
+    padding: 0.35rem 0.15rem;
+    border-radius: 5px;
   }
 
   .statusLabel {
-    font-size: 0.55rem;
-    margin-bottom: 0.15rem;
+    font-size: 0.5rem;
+    margin-bottom: 0.1rem;
   }
 
   .statusValue {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
 
   .chanceNumber {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 
   .chanceUnit {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
   }
 
   .hiddenCount {
@@ -769,135 +775,213 @@
     font-size: 0.8rem;
   }
 
-  /* 보상 섹션 축소 */
+  /* 히든층 보상 섹션 - 모바일 */
   .rewardSection {
-    margin-top: 0.5rem;
-    padding: 0.6rem;
-    border-radius: 8px;
+    margin-top: 0.25rem;
+    padding: 0.3rem;
+    border-radius: 6px;
+    width: 100%;
   }
 
   .rewardTitle {
-    font-size: 0.75rem;
-    margin-bottom: 0.5rem;
+    font-size: 0.55rem;
+    margin-bottom: 0.2rem;
+    letter-spacing: 0.05em;
+  }
+
+  .rewardList {
+    gap: 0.2rem;
   }
 
   .rewardItem {
-    padding: 0.35rem 0.5rem;
-    gap: 0.5rem;
+    padding: 0.2rem 0.3rem;
+    gap: 0.3rem;
+    border-radius: 4px;
   }
 
   .rewardFloor {
-    font-size: 0.7rem;
+    font-size: 0.5rem;
   }
 
   .rewardName {
-    font-size: 0.75rem;
+    font-size: 0.55rem;
   }
 
+  /* 최종 상자 보상 - 모바일 (세로 배치) */
   .finalRewardSection {
-    margin-top: 0.75rem;
-    padding: 0.75rem;
-    border-radius: 8px;
+    margin-top: 0.25rem;
+    padding: 0.3rem;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .finalRewardTitle {
-    font-size: 0.75rem;
-    margin-bottom: 0.5rem;
+    font-size: 0.55rem;
+    margin-bottom: 0.2rem;
   }
 
-  .boxGrid:has(.boxItem:nth-child(4)) {
-    grid-template-columns: repeat(2, 80px);
-    gap: 0.5rem;
-  }
-
-  .boxGrid:not(:has(.boxItem:nth-child(4))) {
-    grid-template-columns: repeat(3, 60px);
-    gap: 0.5rem;
+  .boxGrid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.3rem;
+    width: 100%;
   }
 
   .boxItem {
-    width: auto;
-    height: 55px;
-    padding: 6px;
-    border-radius: 8px;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    border-width: 1px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
   }
 
   .boxReward {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
+    white-space: nowrap;
   }
 
   .pungyoLabel {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
+    flex-shrink: 0;
   }
 }
 
 /* 아주 작은 화면 추가 대응 */
 @media (max-width: 400px) {
+  .container {
+    padding: 0.4rem 0.1rem;
+  }
+
   .mainRow {
-    gap: 0.4rem;
+    gap: 0.25rem;
   }
 
   .gameColumn {
-    width: 165px;
-  }
-
-  .canvasWrapper {
-    width: 165px;
-    height: 275px;
-  }
-
-  .canvas {
-    width: 165px;
-    height: 275px;
+    width: 58vw;
+    max-width: 210px;
+    gap: 0.15rem;
   }
 
   .controlPanel {
-    width: 125px;
+    width: 40vw;
+    max-width: 150px;
+  }
+
+  /* 게임 모드 - 최대한 얇게 */
+  .modeGrid {
+    padding: 0.08rem;
+    gap: 0.08rem;
   }
 
   .modeButton {
-    padding: 0.3rem 0.2rem;
+    padding: 0.12rem 0.04rem;
   }
 
   .modeName {
-    font-size: 0.55rem;
+    font-size: 0.28rem;
+    white-space: nowrap;
+    letter-spacing: -0.03em;
   }
 
-  /* 열쇠 이미지 버튼 초소형 화면 */
+  /* 열쇠 이미지 - 캔버스 어깨 아래까지 */
+  .keyGrid {
+    padding: 1.2rem 0.2rem;
+    gap: 0.25rem;
+  }
+
   .keyImage {
-    width: 38px !important;
-    height: 38px !important;
-    border-radius: 5px;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 6px;
   }
 
   .keyPlaceholder {
-    width: 35px;
-    height: 35px;
-    font-size: 0.5rem;
-    border-radius: 5px;
+    width: 36px;
+    height: 36px;
+    font-size: 0.4rem;
+    border-radius: 6px;
   }
 
   .statusLabel {
-    font-size: 0.5rem;
+    font-size: 0.45rem;
   }
 
   .statusValue {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
   }
 
   .chanceNumber,
   .hiddenCount {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .launchButton {
-    font-size: 0.7rem;
-    padding: 0.45rem 0.3rem;
+    font-size: 0.65rem;
+    padding: 0.4rem 0.25rem;
   }
 
   .resetButton {
-    font-size: 0.6rem;
-    padding: 0.35rem 0.3rem;
+    font-size: 0.55rem;
+    padding: 0.3rem 0.25rem;
+  }
+
+  /* 히든층 보상 - 초소형 */
+  .rewardSection {
+    margin-top: 0.15rem;
+    padding: 0.25rem;
+  }
+
+  .rewardTitle {
+    font-size: 0.45rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .rewardItem {
+    padding: 0.15rem 0.25rem;
+    gap: 0.25rem;
+  }
+
+  .rewardFloor {
+    font-size: 0.4rem;
+  }
+
+  .rewardName {
+    font-size: 0.45rem;
+  }
+
+  /* 최종 상자 보상 - 초소형 */
+  .finalRewardSection {
+    margin-top: 0.15rem;
+    padding: 0.25rem;
+  }
+
+  .finalRewardTitle {
+    font-size: 0.5rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .boxGrid {
+    gap: 0.2rem;
+  }
+
+  .boxItem {
+    padding: 0.25rem 0.3rem;
+  }
+
+  .boxReward {
+    font-size: 0.55rem;
+  }
+
+  .pungyoLabel {
+    font-size: 0.45rem;
   }
 }
 
@@ -1026,6 +1110,8 @@
   border-radius: 12px;
   border: 2px solid #ff6b35;
   color: #fff;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .boxReward {
@@ -1034,7 +1120,11 @@
   color: #ff6b35;
   text-align: center;
   line-height: 1.2;
-  word-break: keep-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  display: block;
 }
 
 .boxPungyo {
