@@ -103,8 +103,8 @@ const REWARD_IMAGES: Record<string, string> = {
   '귀속골드': '/gold.webp',
   '어빌리티스톤 키트': '/djqlfflxltmxhs.webp',
   '팔찌': '/ancient-necklace.webp',
-  '특수재련': '/master-metallurgy-1-5.webp',
-  '천상 도전권': '/shilling.webp',
+  '특수재련': '/xmrwo.webp',
+  '천상 도전권': '/cjstkd.webp',
   '젬선택': '/gem.webp',
   '운명의 돌': '/dnsauddmlehf.webp',
   // 나락 상자 보상
