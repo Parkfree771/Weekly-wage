@@ -93,6 +93,34 @@ const NARAK_BOX_REWARDS_DATA: Record<string, string[]> = {
   '운명의 돌': ['35', '60', '75', '90', '135', '180', '270', '360', '500', '750', '1,200'],
 };
 
+// 보상 이미지 매핑
+const REWARD_IMAGES: Record<string, string> = {
+  // 지옥 상자 보상
+  '파괴석/수호석': '/top-destiny-destruction-stone5.webp',
+  '돌파석': '/top-destiny-breakthrough-stone5.webp',
+  '융화재료': '/top-abidos-fusion5.webp',
+  '재련 보조': '/breath-lava5.webp',
+  '귀속골드': '/gold.webp',
+  '어빌리티스톤 키트': '/djqlfflxltmxhs.webp',
+  '팔찌': '/ancient-necklace.webp',
+  '특수재련': '/master-metallurgy-1-5.webp',
+  '천상 도전권': '/shilling.webp',
+  '젬선택': '/gem.webp',
+  '운명의 돌': '/dnsauddmlehf.webp',
+  // 나락 상자 보상
+  '재련보조': '/breath-lava5.webp',
+  '귀속 각인서 랜덤': '/engraving.webp',
+  '귀속 보석': '/gem-hero.webp',
+};
+
+// 기본 보상 이미지 매핑
+const BASE_REWARD_IMAGES: Record<string, string> = {
+  '파편': '/destiny-shard-bag-large5.webp',
+  '파괴석결정': '/top-destiny-destruction-stone5.webp',
+  '수호석결정': '/top-destiny-guardian-stone5.webp',
+  '돌파석': '/top-destiny-breakthrough-stone5.webp',
+};
+
 // 단계 계산 (층수 -> 단계)
 function getTier(floor: number): number {
   return Math.min(10, Math.floor(floor / 10));
@@ -107,8 +135,22 @@ function getRewardQuantity(rewardName: string, floor: number, mode: GameMode | n
   return HELL_BOX_REWARDS_DATA[rewardName]?.[tier] || '-';
 }
 
-// 지옥 상자 보상 목록
-const HELL_BOX_REWARDS = [
+// 지옥 상자 보상 목록 (0~49층: 10개, 천상 도전권 제외)
+const HELL_BOX_REWARDS_LOW = [
+  '파괴석/수호석',
+  '돌파석',
+  '융화재료',
+  '재련 보조',
+  '귀속골드',
+  '어빌리티스톤 키트',
+  '팔찌',
+  '특수재련',
+  '젬선택',
+  '운명의 돌'
+];
+
+// 지옥 상자 보상 목록 (50~100층: 11개, 천상 도전권 포함)
+const HELL_BOX_REWARDS_HIGH = [
   '파괴석/수호석',
   '돌파석',
   '융화재료',
@@ -122,8 +164,19 @@ const HELL_BOX_REWARDS = [
   '운명의 돌'
 ];
 
-// 나락 상자 보상 목록
-const NARAK_BOX_REWARDS = [
+// 나락 상자 보상 목록 (1~79층: 7개)
+const NARAK_BOX_REWARDS_LOW = [
+  '재련보조',
+  '귀속골드',
+  '어빌리티스톤 키트',
+  '팔찌',
+  '귀속 각인서 랜덤',
+  '젬선택',
+  '운명의 돌'
+];
+
+// 나락 상자 보상 목록 (80~100층: 8개, 귀속 보석 추가)
+const NARAK_BOX_REWARDS_HIGH = [
   '재련보조',
   '귀속골드',
   '어빌리티스톤 키트',
@@ -134,12 +187,14 @@ const NARAK_BOX_REWARDS = [
   '운명의 돌'
 ];
 
-// 게임 모드에 따른 보상 목록 반환
-function getBoxRewards(mode: GameMode | null): string[] {
+// 게임 모드와 층수에 따른 보상 목록 반환
+function getBoxRewards(mode: GameMode | null, floor: number = 0): string[] {
   if (mode === 'narak-odd' || mode === 'narak-even') {
-    return NARAK_BOX_REWARDS;
+    // 나락: 80층 이상이면 귀속 보석 포함 (8개), 미만이면 제외 (7개)
+    return floor >= 80 ? NARAK_BOX_REWARDS_HIGH : NARAK_BOX_REWARDS_LOW;
   }
-  return HELL_BOX_REWARDS;
+  // 지옥: 50층 이상이면 천상 도전권 포함 (11개), 미만이면 제외 (10개)
+  return floor >= 50 ? HELL_BOX_REWARDS_HIGH : HELL_BOX_REWARDS_LOW;
 }
 
 type KeyType = keyof typeof KEY_TYPES;
@@ -524,8 +579,9 @@ export default function PinballTower() {
 
             for (let i = 0; i < totalBoxes; i++) {
               let reward: string;
+              const rewardList = getBoxRewards(gameMode, TOTAL_FLOORS);
               do {
-                reward = getBoxRewards(gameMode)[Math.floor(Math.random() * getBoxRewards(gameMode).length)];
+                reward = rewardList[Math.floor(Math.random() * rewardList.length)];
               } while (usedRewards.includes(reward));
               usedRewards.push(reward);
 
@@ -697,8 +753,9 @@ export default function PinballTower() {
 
               for (let i = 0; i < totalBoxes; i++) {
                 let reward: string;
+                const rewardList = getBoxRewards(gameMode, targetFloor);
                 do {
-                  reward = getBoxRewards(gameMode)[Math.floor(Math.random() * getBoxRewards(gameMode).length)];
+                  reward = rewardList[Math.floor(Math.random() * rewardList.length)];
                 } while (usedRewards.includes(reward));
                 usedRewards.push(reward);
 
@@ -738,8 +795,9 @@ export default function PinballTower() {
 
               for (let i = 0; i < totalBoxes; i++) {
                 let reward: string;
+                const rewardList = getBoxRewards(gameMode, targetFloor);
                 do {
-                  reward = getBoxRewards(gameMode)[Math.floor(Math.random() * getBoxRewards(gameMode).length)];
+                  reward = rewardList[Math.floor(Math.random() * rewardList.length)];
                 } while (usedRewards.includes(reward));
                 usedRewards.push(reward);
 
@@ -1110,8 +1168,9 @@ export default function PinballTower() {
 
     for (let i = 0; i < totalBoxes; i++) {
       let reward: string;
+      const rewardList = getBoxRewards(gameMode, currentFloor);
       do {
-        reward = getBoxRewards(gameMode)[Math.floor(Math.random() * getBoxRewards(gameMode).length)];
+        reward = rewardList[Math.floor(Math.random() * rewardList.length)];
       } while (usedRewards.includes(reward));
       usedRewards.push(reward);
 
@@ -1248,61 +1307,6 @@ export default function PinballTower() {
             )}
           </div>
 
-          {/* 최종 상자 보상 */}
-          {gameEnded && finalBoxes.length > 0 && (
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <span className={styles.cardTitle}>획득 보상 (단계 {getTier(currentFloor)})</span>
-              </div>
-              <div className={styles.finalRewardContent}>
-                {finalBoxes.map((box, idx) => (
-                  <button
-                    key={idx}
-                    className={`${styles.rewardButton} ${box.isPungyo ? styles.rewardButtonPungyo : ''} ${selectedRewardIdx === idx ? styles.rewardButtonActive : ''}`}
-                    onClick={() => setSelectedRewardIdx(selectedRewardIdx === idx ? null : idx)}
-                  >
-                    <span className={styles.rewardButtonName}>{box.reward}</span>
-                    {box.isPungyo && <span className={styles.rewardButtonPungyoTag}>풍요</span>}
-                  </button>
-                ))}
-                {selectedRewardIdx !== null && finalBoxes[selectedRewardIdx] && (
-                  <div className={styles.rewardDetail}>
-                    <div className={styles.rewardDetailTitle}>{finalBoxes[selectedRewardIdx].reward}</div>
-                    <div className={styles.rewardDetailQty}>
-                      {getRewardQuantity(finalBoxes[selectedRewardIdx].reward, currentFloor, gameMode)}
-                    </div>
-                    {finalBoxes[selectedRewardIdx].isPungyo && (
-                      <div className={styles.rewardDetailPungyo}>풍요 적용 (2배)</div>
-                    )}
-                  </div>
-                )}
-                {/* 지옥 모드: 기본 보상 표시 */}
-                {gameMode === 'hell' && (
-                  <div className={styles.baseRewardSection}>
-                    <div className={styles.baseRewardTitle}>기본 보상</div>
-                    <div className={styles.baseRewardGrid}>
-                      <div className={styles.baseRewardItem}>
-                        <span className={styles.baseRewardLabel}>운명의 파편</span>
-                        <span className={styles.baseRewardValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].파편.toLocaleString()}</span>
-                      </div>
-                      <div className={styles.baseRewardItem}>
-                        <span className={styles.baseRewardLabel}>파괴석 결정</span>
-                        <span className={styles.baseRewardValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].파괴석결정}</span>
-                      </div>
-                      <div className={styles.baseRewardItem}>
-                        <span className={styles.baseRewardLabel}>수호석 결정</span>
-                        <span className={styles.baseRewardValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].수호석결정}</span>
-                      </div>
-                      <div className={styles.baseRewardItem}>
-                        <span className={styles.baseRewardLabel}>위대한 돌파석</span>
-                        <span className={styles.baseRewardValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].돌파석}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* 오른쪽: 열쇠 선택 + 컨트롤 패널 */}
@@ -1433,6 +1437,105 @@ export default function PinballTower() {
           </button>
         </div>
       </div>
+
+      {/* 최종 상자 보상 - 전체 너비 */}
+      {gameEnded && finalBoxes.length > 0 && (
+        <div className={styles.rewardFullWidth}>
+          <div className={styles.rewardHeader}>
+            <span className={styles.rewardHeaderTitle}>획득 보상</span>
+            <span className={styles.rewardHeaderTier}>단계 {getTier(currentFloor)}</span>
+          </div>
+
+          {/* 상자 보상 그리드 */}
+          <div className={styles.rewardBoxGrid}>
+            {finalBoxes.map((box, idx) => (
+              <div
+                key={idx}
+                className={`${styles.rewardCard} ${box.isPungyo ? styles.rewardCardPungyo : ''} ${selectedRewardIdx === idx ? styles.rewardCardActive : ''}`}
+                onClick={() => setSelectedRewardIdx(selectedRewardIdx === idx ? null : idx)}
+              >
+                <div className={styles.rewardCardImgWrap}>
+                  {REWARD_IMAGES[box.reward] && (
+                    <NextImage
+                      src={REWARD_IMAGES[box.reward]}
+                      alt={box.reward}
+                      width={64}
+                      height={64}
+                      className={styles.rewardCardImg}
+                    />
+                  )}
+                  {box.isPungyo && <span className={styles.rewardCardPungyoBadge}>풍요</span>}
+                </div>
+                <div className={styles.rewardCardName}>{box.reward}</div>
+                <div className={styles.rewardCardQty}>
+                  {getRewardQuantity(box.reward, currentFloor, gameMode)}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 지옥 모드: 기본 보상 표시 */}
+          {gameMode === 'hell' && (
+            <div className={styles.baseRewardFullSection}>
+              <div className={styles.baseRewardFullTitle}>기본 보상</div>
+              <div className={styles.baseRewardFullGrid}>
+                <div className={styles.baseRewardFullItem}>
+                  <NextImage
+                    src={BASE_REWARD_IMAGES['파편']}
+                    alt="운명의 파편"
+                    width={48}
+                    height={48}
+                    className={styles.baseRewardFullImg}
+                  />
+                  <div className={styles.baseRewardFullText}>
+                    <span className={styles.baseRewardFullLabel}>운명의 파편</span>
+                    <span className={styles.baseRewardFullValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].파편.toLocaleString()}</span>
+                  </div>
+                </div>
+                <div className={styles.baseRewardFullItem}>
+                  <NextImage
+                    src={BASE_REWARD_IMAGES['파괴석결정']}
+                    alt="파괴석 결정"
+                    width={48}
+                    height={48}
+                    className={styles.baseRewardFullImg}
+                  />
+                  <div className={styles.baseRewardFullText}>
+                    <span className={styles.baseRewardFullLabel}>파괴석 결정</span>
+                    <span className={styles.baseRewardFullValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].파괴석결정}</span>
+                  </div>
+                </div>
+                <div className={styles.baseRewardFullItem}>
+                  <NextImage
+                    src={BASE_REWARD_IMAGES['수호석결정']}
+                    alt="수호석 결정"
+                    width={48}
+                    height={48}
+                    className={styles.baseRewardFullImg}
+                  />
+                  <div className={styles.baseRewardFullText}>
+                    <span className={styles.baseRewardFullLabel}>수호석 결정</span>
+                    <span className={styles.baseRewardFullValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].수호석결정}</span>
+                  </div>
+                </div>
+                <div className={styles.baseRewardFullItem}>
+                  <NextImage
+                    src={BASE_REWARD_IMAGES['돌파석']}
+                    alt="위대한 돌파석"
+                    width={48}
+                    height={48}
+                    className={styles.baseRewardFullImg}
+                  />
+                  <div className={styles.baseRewardFullText}>
+                    <span className={styles.baseRewardFullLabel}>위대한 돌파석</span>
+                    <span className={styles.baseRewardFullValue}>{HELL_BASE_REWARDS[getTier(currentFloor)].돌파석}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -37,7 +37,8 @@
    ======================================== */
 .gameLayout {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   margin: 0 auto;
   width: fit-content;
 }
@@ -67,9 +68,11 @@
   height: 600px;
   border-radius: 16px;
   overflow: hidden;
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-lg);
+  background: #0a0a0a;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  box-shadow:
+    0 0 30px rgba(249, 115, 22, 0.15),
+    0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
 .canvas {
@@ -127,42 +130,54 @@
 }
 
 /* ========================================
-   카드 스타일 (사이트 통일)
+   카드 스타일 (다크 게임 테마)
    ======================================== */
 .card {
-  background-color: var(--card-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  box-shadow: var(--shadow-md);
+  background: #1a1a2e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   transition: all 0.25s ease;
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #fbbf24, #f97316, #fbbf24, transparent);
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: rgba(160, 60, 30, 0.25);
+  border-color: rgba(249, 115, 22, 0.3);
+  box-shadow:
+    0 0 20px rgba(249, 115, 22, 0.1),
+    0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
-[data-theme="dark"] .card {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+[data-theme="light"] .card {
+  background: #fff;
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-[data-theme="dark"] .card:hover {
-  border-color: rgba(255, 255, 255, 0.25);
+[data-theme="light"] .card:hover {
+  border-color: rgba(249, 115, 22, 0.4);
 }
 
 /* 카드 헤더 */
 .cardHeader {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: var(--card-header-bg-orange);
-  border-bottom: 1px solid var(--border-color);
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .cardIcon {
@@ -172,8 +187,16 @@
 .cardTitle {
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+[data-theme="light"] .cardHeader {
+  border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] .cardTitle {
+  color: #1e293b;
 }
 
 /* ========================================
@@ -236,53 +259,78 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  border: none;
-  border-radius: 12px;
-  background: transparent;
+  padding: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: #252538;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .keyImageButton:hover:not(:disabled) {
-  transform: translateY(-3px) scale(1.05);
+  transform: translateY(-3px);
+  border-color: rgba(249, 115, 22, 0.4);
+  background: #2d2d42;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .keyImageButton:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
 .keyImageButtonActive {
-  transform: translateY(-3px) scale(1.1);
-  filter: drop-shadow(0 4px 12px rgba(249, 115, 22, 0.5));
+  transform: translateY(-3px);
+  border-color: #f97316;
+  background: #352a28;
+  box-shadow:
+    0 0 15px rgba(249, 115, 22, 0.4),
+    0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .keyImage {
-  width: 90px !important;
-  height: 90px !important;
+  width: 70px !important;
+  height: 70px !important;
   object-fit: contain !important;
-  border-radius: 12px;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
-  transition: all 0.2s ease;
+  border-radius: 6px;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+  transition: all 0.3s ease;
 }
 
 .keyImageButton:hover:not(:disabled) .keyImage {
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
+  filter:
+    drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6))
+    drop-shadow(0 0 12px rgba(249, 115, 22, 0.3));
+}
+
+.keyImageButtonActive .keyImage {
+  filter:
+    drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6))
+    drop-shadow(0 0 15px rgba(249, 115, 22, 0.5));
 }
 
 .keyPlaceholder {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
-  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
   font-weight: 700;
-  border: 2px dashed var(--border-color);
-  border-radius: 12px;
-  background: var(--card-body-bg-stone);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: transparent;
+}
+
+[data-theme="light"] .keyImageButton {
+  background: #fff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .keyPlaceholder {
+  color: #94a3b8;
+  border-color: #cbd5e1;
 }
 
 /* ========================================
@@ -299,14 +347,20 @@
   text-align: center;
   padding: 0.75rem 0.5rem;
   border-radius: 10px;
-  background: var(--card-body-bg-stone);
-  border: 1px solid var(--border-color);
+  background: #252538;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+
+.statusItem:hover {
+  background: #2a2a3e;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .statusLabel {
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.4rem;
@@ -315,26 +369,27 @@
 .statusValue {
   font-size: 1.1rem;
   font-weight: 800;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.95);
   line-height: 1.2;
 }
 
 .statusValueHighlight {
-  color: #f97316;
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
 }
 
 .statusValueProfit {
-  color: var(--profit-color);
+  color: #22c55e;
 }
 
 .chanceNumber {
   font-size: 1.3rem;
-  color: #f97316;
+  color: #fbbf24;
 }
 
 .chanceUnit {
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.5);
   margin-left: 2px;
 }
 
@@ -346,6 +401,23 @@
 .hiddenCount {
   font-size: 1.3rem;
   color: #fbbf24;
+}
+
+[data-theme="light"] .statusItem {
+  background: #fff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .statusLabel {
+  color: #64748b;
+}
+
+[data-theme="light"] .statusValue {
+  color: #1e293b;
+}
+
+[data-theme="light"] .chanceUnit {
+  color: #64748b;
 }
 
 /* ========================================
@@ -381,27 +453,48 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
   color: #fff;
-  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 4px 15px rgba(249, 115, 22, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.launchButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.launchButton:hover:not(:disabled)::before {
+  left: 100%;
 }
 
 .launchButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.45);
-  background: linear-gradient(135deg, #fdba74 0%, #fb923c 50%, #f97316 100%);
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 25px rgba(249, 115, 22, 0.5),
+    0 8px 25px rgba(249, 115, 22, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .launchButton:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
 }
 
 .launchButton:disabled {
-  background: var(--text-disabled);
-  color: var(--text-muted);
+  background: linear-gradient(180deg, #374151 0%, #1f2937 100%);
+  color: rgba(255, 255, 255, 0.4);
   cursor: not-allowed;
   box-shadow: none;
   text-shadow: none;
@@ -410,20 +503,38 @@
 .resetButton {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 2px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: transparent;
-  color: var(--text-secondary);
+  transition: all 0.25s ease;
+  background: #252538;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .resetButton:hover {
-  border-color: var(--text-primary);
-  color: var(--text-primary);
-  background: var(--card-body-bg-stone);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+  background: #2d2d42;
+  transform: translateY(-2px);
+}
+
+[data-theme="light"] .launchButton:disabled {
+  background: #e2e8f0;
+  color: #94a3b8;
+}
+
+[data-theme="light"] .resetButton {
+  background: #fff;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+[data-theme="light"] .resetButton:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1e293b;
 }
 
 /* ========================================
@@ -542,54 +653,11 @@
 }
 
 /* ========================================
-   다크모드 대응
+   다크모드 대응 (기본이 다크)
    ======================================== */
-[data-theme="dark"] .canvasWrapper {
-  background-color: #1a1a2e;
-}
-
-[data-theme="dark"] .statusItem {
-  background: rgba(40, 40, 45, 0.5);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .messageBox {
-  background: rgba(40, 40, 45, 0.5);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .keyButton {
-  background: rgba(40, 40, 45, 0.5);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-[data-theme="dark"] .keyButton:hover:not(:disabled) {
-  border-color: var(--key-color, rgba(255, 255, 255, 0.3));
-  background: var(--key-color-light, rgba(40, 40, 45, 0.8));
-}
-
-[data-theme="dark"] .infoBox {
-  background: rgba(40, 40, 45, 0.5);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .resetButton:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .modeButton {
-  background: rgba(40, 40, 45, 0.5);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-[data-theme="dark"] .modeButton:hover:not(:disabled) {
-  border-color: #f97316;
-  background: rgba(249, 115, 22, 0.1);
-}
-
-[data-theme="dark"] .narakStatus {
-  background: rgba(40, 40, 45, 0.5);
-  border-color: rgba(255, 255, 255, 0.1);
+[data-theme="light"] .canvasWrapper {
+  border-color: #e2e8f0;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
 }
 
 /* ========================================
@@ -675,27 +743,28 @@
     letter-spacing: -0.02em;
   }
 
-  /* 열쇠 이미지 - 캔버스 어깨 아래까지 */
+  /* 열쇠 이미지 */
   .keyGrid {
-    gap: 0.3rem;
-    padding: 1.5rem 0.3rem;
+    gap: 0.25rem;
+    padding: 0.5rem 0.25rem;
   }
 
   .keyImageButton {
+    padding: 0.25rem;
     border-radius: 8px;
   }
 
   .keyImage {
-    width: 48px !important;
-    height: 48px !important;
-    border-radius: 8px;
+    width: 46px !important;
+    height: 46px !important;
+    border-radius: 5px;
   }
 
   .keyPlaceholder {
-    width: 44px;
-    height: 44px;
+    width: 46px;
+    height: 46px;
     font-size: 0.5rem;
-    border-radius: 8px;
+    border-radius: 5px;
   }
 
   .statusGrid {
@@ -801,17 +870,27 @@
 
   /* 최종 상자 보상 - 모바일 */
   .finalRewardContent {
-    gap: 0.25rem;
+    gap: 0.3rem;
     padding: 0.35rem;
   }
 
   .rewardButton {
-    padding: 0.35rem 0.5rem;
-    border-radius: 6px;
+    padding: 0.4rem 0.5rem;
+    border-radius: 8px;
+  }
+
+  .rewardButtonInner {
+    gap: 0.35rem;
+  }
+
+  .rewardButtonImg {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 5px;
   }
 
   .rewardButtonName {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
   }
 
   .rewardButtonPungyoTag {
@@ -820,22 +899,30 @@
   }
 
   .rewardDetail {
-    margin-top: 0.25rem;
+    margin-top: 0.3rem;
     padding: 0.4rem;
+  }
+
+  .rewardDetailHeader {
+    gap: 0.5rem;
+  }
+
+  .rewardDetailImg {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 2px;
   }
 
   .rewardDetailTitle {
     font-size: 0.65rem;
-    margin-bottom: 0.2rem;
   }
 
   .rewardDetailDesc {
     font-size: 0.55rem;
-    margin-bottom: 0.15rem;
   }
 
   .rewardDetailQty {
-    font-size: 0.55rem;
+    font-size: 0.7rem;
   }
 
   .rewardDetailPungyo {
@@ -844,22 +931,37 @@
 
   /* 기본 보상 - 모바일 */
   .baseRewardSection {
-    margin-top: 0.3rem;
-    padding-top: 0.3rem;
+    margin-top: 0.35rem;
+    padding-top: 0.35rem;
   }
 
   .baseRewardTitle {
-    font-size: 0.55rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.6rem;
+    margin-bottom: 0.3rem;
   }
 
   .baseRewardGrid {
-    gap: 0.2rem;
+    gap: 0.25rem;
   }
 
   .baseRewardItem {
-    padding: 0.15rem 0.25rem;
+    padding: 0.25rem 0.3rem;
+    gap: 0.35rem;
+    border-radius: 6px;
+  }
+
+  .baseRewardImg {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 3px;
+  }
+
+  .baseRewardLabel {
     font-size: 0.5rem;
+  }
+
+  .baseRewardValue {
+    font-size: 0.6rem;
   }
 }
 
@@ -900,23 +1002,28 @@
     letter-spacing: -0.03em;
   }
 
-  /* 열쇠 이미지 - 캔버스 어깨 아래까지 */
+  /* 열쇠 이미지 */
   .keyGrid {
-    padding: 1.2rem 0.2rem;
-    gap: 0.25rem;
+    padding: 0.4rem 0.2rem;
+    gap: 0.2rem;
+  }
+
+  .keyImageButton {
+    padding: 0.2rem;
+    border-radius: 6px;
   }
 
   .keyImage {
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 6px;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 4px;
   }
 
   .keyPlaceholder {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     font-size: 0.4rem;
-    border-radius: 6px;
+    border-radius: 4px;
   }
 
   .statusLabel {
@@ -966,20 +1073,30 @@
 
   /* 최종 상자 보상 - 초소형 */
   .finalRewardContent {
-    gap: 0.2rem;
+    gap: 0.25rem;
     padding: 0.25rem;
   }
 
   .rewardButton {
-    padding: 0.25rem 0.35rem;
+    padding: 0.3rem 0.35rem;
+  }
+
+  .rewardButtonInner {
+    gap: 0.25rem;
+  }
+
+  .rewardButtonImg {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 4px;
   }
 
   .rewardButtonName {
-    font-size: 0.55rem;
+    font-size: 0.5rem;
   }
 
   .rewardButtonPungyoTag {
-    font-size: 0.45rem;
+    font-size: 0.4rem;
     padding: 0.08rem 0.2rem;
   }
 
@@ -987,20 +1104,29 @@
     padding: 0.3rem;
   }
 
+  .rewardDetailHeader {
+    gap: 0.4rem;
+  }
+
+  .rewardDetailImg {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
   .rewardDetailTitle {
     font-size: 0.55rem;
   }
 
   .rewardDetailDesc {
-    font-size: 0.5rem;
+    font-size: 0.45rem;
   }
 
   .rewardDetailQty {
-    font-size: 0.5rem;
+    font-size: 0.6rem;
   }
 
   .rewardDetailPungyo {
-    font-size: 0.45rem;
+    font-size: 0.4rem;
   }
 
   /* 기본 보상 - 초소형 */
@@ -1019,8 +1145,23 @@
   }
 
   .baseRewardItem {
-    padding: 0.12rem 0.2rem;
-    font-size: 0.45rem;
+    padding: 0.2rem 0.25rem;
+    gap: 0.25rem;
+    border-radius: 5px;
+  }
+
+  .baseRewardImg {
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 2px;
+  }
+
+  .baseRewardLabel {
+    font-size: 0.42rem;
+  }
+
+  .baseRewardValue {
+    font-size: 0.5rem;
   }
 }
 
@@ -1068,10 +1209,10 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.6rem 0.75rem;
   background: var(--card-body-bg-stone);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -1079,11 +1220,13 @@
 .rewardButton:hover {
   background: var(--card-bg);
   border-color: var(--text-muted);
+  transform: translateY(-1px);
 }
 
 .rewardButtonActive {
   background: var(--card-bg);
   border-color: #f97316;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.2);
 }
 
 .rewardButtonPungyo {
@@ -1095,6 +1238,20 @@
 .rewardButtonPungyo.rewardButtonActive {
   border-color: #22c55e;
   background: rgba(34, 197, 94, 0.1);
+}
+
+.rewardButtonInner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rewardButtonImg {
+  width: 36px !important;
+  height: 36px !important;
+  object-fit: contain !important;
+  border-radius: 6px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
 }
 
 .rewardButtonName {
@@ -1113,29 +1270,50 @@
 }
 
 .rewardDetail {
-  margin-top: 0.4rem;
-  padding: 0.6rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
   background: var(--card-body-bg-stone);
   border: 1px solid var(--border-color);
+  border-radius: 10px;
+  border-left: 3px solid #f97316;
+}
+
+.rewardDetailHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rewardDetailImg {
+  width: 48px !important;
+  height: 48px !important;
+  object-fit: contain !important;
   border-radius: 8px;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+  background: rgba(0, 0, 0, 0.1);
+  padding: 4px;
+}
+
+.rewardDetailInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .rewardDetailTitle {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 0.3rem;
 }
 
 .rewardDetailDesc {
   font-size: 0.8rem;
   color: var(--text-secondary);
-  margin-bottom: 0.25rem;
 }
 
 .rewardDetailQty {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   color: #f97316;
 }
 
@@ -1163,45 +1341,405 @@
 
 /* 지옥 기본 보상 섹션 */
 .baseRewardSection {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
   border-top: 1px solid var(--border-color);
 }
 
 .baseRewardTitle {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-muted);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
 }
 
 .baseRewardGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.3rem;
+  gap: 0.4rem;
 }
 
 .baseRewardItem {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.25rem 0.4rem;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
   background: var(--card-body-bg-stone);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.baseRewardImg {
+  width: 28px !important;
+  height: 28px !important;
+  object-fit: contain !important;
   border-radius: 4px;
-  font-size: 0.7rem;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
+  flex-shrink: 0;
+}
+
+.baseRewardTextWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
 }
 
 .baseRewardLabel {
+  font-size: 0.65rem;
   color: var(--text-muted);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .baseRewardValue {
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--text-primary);
+  line-height: 1.2;
 }
 
 [data-theme="dark"] .baseRewardItem {
   background: rgba(40, 40, 45, 0.5);
+}
+
+/* ========================================
+   전체 너비 보상 섹션 (게임 종료 시)
+   ======================================== */
+.rewardFullWidth {
+  width: calc(360px + 280px + 1rem);
+  margin-top: 1rem;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow:
+    0 0 40px rgba(249, 115, 22, 0.15),
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.rewardFullWidth::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #fbbf24, #f97316, #fbbf24, transparent);
+}
+
+.rewardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.12) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.rewardHeaderTitle {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.rewardHeaderTier {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #fff;
+  padding: 0.4rem 1rem;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.4);
+}
+
+/* 상자 보상 제목 */
+.rewardSectionTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding-top: 1rem;
+}
+
+[data-theme="light"] .rewardSectionTitle {
+  color: #64748b;
+}
+
+/* 상자 보상 그리드 */
+.rewardBoxGrid {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 2rem 1.5rem;
+  flex-wrap: wrap;
+  background: radial-gradient(ellipse at center, rgba(249, 115, 22, 0.08) 0%, transparent 70%);
+}
+
+.rewardCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem 1rem;
+  background: #1e1e2e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 130px;
+  max-width: 160px;
+  position: relative;
+  overflow: hidden;
+}
+
+.rewardCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #fbbf24, #f97316, #fbbf24, transparent);
+}
+
+.rewardCard:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(249, 115, 22, 0.6);
+  box-shadow:
+    0 0 30px rgba(249, 115, 22, 0.3),
+    0 15px 40px rgba(0, 0, 0, 0.4);
+  background: #252538;
+}
+
+.rewardCardActive {
+  border-color: #f97316;
+  background: #252538;
+  box-shadow:
+    0 0 25px rgba(249, 115, 22, 0.4),
+    0 10px 30px rgba(0, 0, 0, 0.3);
+  transform: translateY(-4px);
+}
+
+.rewardCardPungyo {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: #1e2535;
+}
+
+.rewardCardPungyo::before {
+  background: linear-gradient(90deg, transparent, #60a5fa, #3b82f6, #60a5fa, transparent);
+}
+
+.rewardCardPungyo:hover,
+.rewardCardPungyo.rewardCardActive {
+  border-color: #3b82f6;
+  background: #253045;
+  box-shadow:
+    0 0 30px rgba(59, 130, 246, 0.4),
+    0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.rewardCardImgWrap {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  background: transparent;
+  border-radius: 12px;
+}
+
+.rewardCardImg {
+  width: 70px !important;
+  height: 70px !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  transition: all 0.3s ease;
+}
+
+.rewardCard:hover .rewardCardImg {
+  transform: scale(1.15) rotate(3deg);
+  filter:
+    drop-shadow(0 6px 16px rgba(0, 0, 0, 0.6))
+    drop-shadow(0 0 20px rgba(249, 115, 22, 0.4));
+}
+
+.rewardCardPungyo .rewardCardImgWrap {
+  background: transparent;
+}
+
+.rewardCardPungyo:hover .rewardCardImg {
+  filter:
+    drop-shadow(0 6px 16px rgba(0, 0, 0, 0.6))
+    drop-shadow(0 0 20px rgba(59, 130, 246, 0.6));
+}
+
+.rewardCardPungyoBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 0.25rem 0.6rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 10px;
+  box-shadow:
+    0 2px 8px rgba(59, 130, 246, 0.5),
+    0 0 15px rgba(59, 130, 246, 0.3);
+  animation: pungyoPulse 2s ease-in-out infinite;
+}
+
+@keyframes pungyoPulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5), 0 0 15px rgba(59, 130, 246, 0.3); }
+  50% { box-shadow: 0 2px 12px rgba(59, 130, 246, 0.7), 0 0 25px rgba(59, 130, 246, 0.5); }
+}
+
+.rewardCardName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+  margin-bottom: 0.4rem;
+  line-height: 1.3;
+}
+
+.rewardCardQty {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fbbf24;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 기본 보상 전체 너비 섹션 */
+.baseRewardFullSection {
+  padding: 1.25rem 1.5rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #151520;
+}
+
+.baseRewardFullTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 1rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.baseRewardFullGrid {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.baseRewardFullItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #252538;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  min-width: 150px;
+  transition: all 0.2s ease;
+}
+
+.baseRewardFullItem:hover {
+  background: #2a2a3e;
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.baseRewardFullImg {
+  width: 44px !important;
+  height: 44px !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.4));
+  flex-shrink: 0;
+}
+
+.baseRewardFullText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.baseRewardFullLabel {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+
+.baseRewardFullValue {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="light"] .rewardFullWidth {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+[data-theme="light"] .rewardHeaderTitle {
+  color: #1e293b;
+}
+
+[data-theme="light"] .rewardCardQty {
+  color: #f97316;
+}
+
+[data-theme="light"] .rewardCard {
+  background: #fff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .rewardCard:hover {
+  background: #fefcf9;
+}
+
+[data-theme="light"] .rewardCardPungyo {
+  background: #f8faff;
+}
+
+[data-theme="light"] .rewardCardPungyo:hover {
+  background: #f0f5ff;
+}
+
+[data-theme="light"] .rewardCardName {
+  color: #1e293b;
+}
+
+[data-theme="light"] .baseRewardFullSection {
+  background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 100%);
+}
+
+[data-theme="light"] .baseRewardFullItem {
+  background: #fff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .baseRewardFullLabel {
+  color: #64748b;
+}
+
+[data-theme="light"] .baseRewardFullValue {
+  color: #1e293b;
 }
 
 /* ========================================
@@ -1250,6 +1788,116 @@
   border-color: rgba(255, 255, 255, 0.1);
 }
 
+/* 전체 너비 보상 - 모바일 */
+@media (max-width: 768px) {
+  .rewardFullWidth {
+    width: calc(56vw + 42vw + 0.3rem);
+    max-width: calc(240px + 180px + 0.3rem);
+    margin-top: 0.5rem;
+    border-radius: 14px;
+  }
+
+  .rewardFullWidth::before {
+    height: 1px;
+  }
+
+  .rewardHeader {
+    padding: 0.7rem 0.75rem;
+    gap: 0.6rem;
+  }
+
+  .rewardHeaderTitle {
+    font-size: 1rem;
+  }
+
+  .rewardHeaderTier {
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .rewardSectionTitle {
+    font-size: 0.6rem;
+    padding-top: 0.6rem;
+  }
+
+  .rewardBoxGrid {
+    gap: 0.6rem;
+    padding: 0.75rem;
+  }
+
+  .rewardCard {
+    padding: 0.75rem 0.6rem;
+    min-width: 85px;
+    max-width: 105px;
+    border-radius: 12px;
+  }
+
+  .rewardCardImgWrap {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 0.5rem;
+  }
+
+  .rewardCardImg {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .rewardCard:hover .rewardCardImg {
+    transform: scale(1.1);
+  }
+
+  .rewardCardPungyoBadge {
+    font-size: 0.5rem;
+    padding: 0.15rem 0.4rem;
+    top: -3px;
+    right: -3px;
+    border-radius: 8px;
+  }
+
+  .rewardCardName {
+    font-size: 0.65rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .rewardCardQty {
+    font-size: 0.75rem;
+  }
+
+  .baseRewardFullSection {
+    padding: 0.75rem;
+  }
+
+  .baseRewardFullTitle {
+    font-size: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .baseRewardFullGrid {
+    gap: 0.5rem;
+  }
+
+  .baseRewardFullItem {
+    padding: 0.5rem 0.6rem;
+    gap: 0.5rem;
+    min-width: 95px;
+    border-radius: 10px;
+  }
+
+  .baseRewardFullImg {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .baseRewardFullLabel {
+    font-size: 0.5rem;
+  }
+
+  .baseRewardFullValue {
+    font-size: 0.8rem;
+  }
+}
+
 @media (max-width: 768px) {
   .statsSection {
     margin-top: 3rem;
@@ -1280,7 +1928,7 @@
 .modeGrid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.4rem;
+  gap: 0.5rem;
   padding: 0.75rem;
 }
 
@@ -1288,38 +1936,56 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.6rem 0.4rem;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--card-body-bg-stone);
+  padding: 0.65rem 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: #252538;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .modeButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  border-color: #f97316;
-  box-shadow: var(--shadow-md);
+  border-color: rgba(249, 115, 22, 0.5);
+  background: #2d2d42;
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.2);
 }
 
 .modeButton:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .modeButtonActive {
   border-color: #f97316 !important;
-  background: rgba(249, 115, 22, 0.15) !important;
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+  background: #352a28 !important;
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
 }
 
 .modeName {
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .modeButtonActive .modeName {
+  color: #fbbf24;
+}
+
+[data-theme="light"] .modeButton {
+  background: #fff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .modeButton:hover:not(:disabled) {
+  background: #fef3e2;
+}
+
+[data-theme="light"] .modeName {
+  color: #1e293b;
+}
+
+[data-theme="light"] .modeButtonActive .modeName {
   color: #f97316;
 }
 
@@ -1469,22 +2135,23 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: var(--card-body-bg-stone);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  background: #252538;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
 }
 
 .narakLabel {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .narakAvailable {
   font-size: 0.85rem;
   font-weight: 700;
   color: #22c55e;
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
 }
 
 .narakUsed {
@@ -1493,24 +2160,40 @@
   color: #ef4444;
 }
 
+[data-theme="light"] .narakStatus {
+  background: #fff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .narakLabel {
+  color: #64748b;
+}
+
 /* ========================================
    히든층 보상 카드 (컨트롤 패널 내)
    ======================================== */
 .hiddenRewardContent {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.5rem;
+  gap: 0.4rem;
+  padding: 0.6rem;
 }
 
 .hiddenRewardItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.35rem 0.5rem;
-  background: rgba(251, 191, 36, 0.1);
+  padding: 0.45rem 0.6rem;
+  background: #2a2520;
   border: 1px solid rgba(251, 191, 36, 0.3);
-  border-radius: 6px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.hiddenRewardItem:hover {
+  background: #352e25;
+  border-color: rgba(251, 191, 36, 0.5);
+  transform: translateX(2px);
 }
 
 .hiddenRewardFloor {
@@ -1522,19 +2205,26 @@
 .hiddenRewardName {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .hiddenRewardEmpty {
   text-align: center;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.35);
   font-size: 0.85rem;
-  padding: 0.25rem;
+  padding: 0.5rem;
 }
 
-[data-theme="dark"] .hiddenRewardItem {
-  background: rgba(251, 191, 36, 0.08);
-  border-color: rgba(251, 191, 36, 0.25);
+[data-theme="light"] .hiddenRewardItem {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0.04) 100%);
+}
+
+[data-theme="light"] .hiddenRewardName {
+  color: #1e293b;
+}
+
+[data-theme="light"] .hiddenRewardEmpty {
+  color: #94a3b8;
 }
 
 /* ========================================
@@ -1602,6 +2292,103 @@
 
   .reviveButton {
     padding: 0.35rem 0.8rem;
+    font-size: 0.65rem;
+  }
+
+  /* 전체 너비 보상 - 초소형 */
+  .rewardFullWidth {
+    width: calc(58vw + 40vw + 0.25rem);
+    max-width: calc(210px + 150px + 0.25rem);
+    margin-top: 0.4rem;
+    border-radius: 10px;
+  }
+
+  .rewardHeader {
+    padding: 0.5rem;
+    gap: 0.4rem;
+  }
+
+  .rewardHeaderTitle {
+    font-size: 0.8rem;
+  }
+
+  .rewardHeaderTier {
+    font-size: 0.5rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .rewardSectionTitle {
+    font-size: 0.5rem;
+    padding-top: 0.5rem;
+  }
+
+  .rewardBoxGrid {
+    gap: 0.4rem;
+    padding: 0.5rem;
+  }
+
+  .rewardCard {
+    padding: 0.5rem 0.4rem;
+    min-width: 70px;
+    max-width: 85px;
+    border-radius: 10px;
+  }
+
+  .rewardCardImgWrap {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 0.35rem;
+  }
+
+  .rewardCardImg {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .rewardCardPungyoBadge {
+    font-size: 0.4rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 6px;
+  }
+
+  .rewardCardName {
+    font-size: 0.5rem;
+  }
+
+  .rewardCardQty {
+    font-size: 0.6rem;
+  }
+
+  .baseRewardFullSection {
+    padding: 0.5rem;
+  }
+
+  .baseRewardFullTitle {
+    font-size: 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .baseRewardFullGrid {
+    gap: 0.35rem;
+  }
+
+  .baseRewardFullItem {
+    padding: 0.35rem 0.4rem;
+    gap: 0.35rem;
+    min-width: 78px;
+    border-radius: 8px;
+  }
+
+  .baseRewardFullImg {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .baseRewardFullLabel {
+    font-size: 0.42rem;
+  }
+
+  .baseRewardFullValue {
     font-size: 0.65rem;
   }
 }
