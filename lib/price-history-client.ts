@@ -58,16 +58,21 @@ function getLatestCacheKey(): string {
 
 /**
  * history.json 캐시 키 생성
- * - 01:00~23:59: 하루 종일 같은 키 (날짜만)
- * - 00:00~00:59: 10분 단위
+ * - 00:00~01:30: 10분 단위 (크론 실행 + GitHub Actions 지연 대비)
+ * - 그 외: 하루 종일 같은 키 (날짜만)
  */
 function getHistoryCacheKey(): string {
   const { date, hour, minute } = getKSTInfo();
 
-  if (hour === 0) {
-    // 00시대: 10분 단위
+  // 00:00~01:30 범위 체크
+  const isUpdateWindow =
+    (hour === 0) ||
+    (hour === 1 && minute <= 30);
+
+  if (isUpdateWindow) {
+    // 00:00~01:30: 10분 단위
     const slot = Math.floor(minute / 10) * 10;
-    return `${date}-00-${String(slot).padStart(2, '0')}`;
+    return `${date}-${String(hour).padStart(2, '0')}-${String(slot).padStart(2, '0')}`;
   } else {
     // 그 외: 날짜만 (하루 종일 캐시)
     return date;

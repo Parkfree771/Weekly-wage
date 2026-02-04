@@ -15,6 +15,8 @@ import {
   raidGroupImages,
   createEmptyWeeklyState,
   getRaidsForLevel,
+  needsWeeklyReset,
+  resetWeeklyChecklist,
 } from '@/types/user';
 import styles from './mypage.module.css';
 
@@ -86,17 +88,48 @@ export default function MyPage() {
   // 난이도 설정 열린 레이드 (캐릭터명-그룹명)
   const [difficultyOpenKey, setDifficultyOpenKey] = useState<string | null>(null);
 
-  // 프로필 데이터 로드
+  // 프로필 데이터 로드 + 주간 초기화 체크
   useEffect(() => {
-    if (userProfile) {
-      setCharacters(userProfile.characters || []);
-      setWeeklyChecklist(userProfile.weeklyChecklist || {});
-      // 전체 원정대 목록도 로드
-      if (userProfile.allCharacters && userProfile.allCharacters.length > 0) {
-        setAllSiblings(userProfile.allCharacters);
-      }
+    if (!userProfile || !user) return;
+
+    const chars = userProfile.characters || [];
+    const checklist = userProfile.weeklyChecklist || {};
+
+    setCharacters(chars);
+    setWeeklyChecklist(checklist);
+
+    // 전체 원정대 목록도 로드
+    if (userProfile.allCharacters && userProfile.allCharacters.length > 0) {
+      setAllSiblings(userProfile.allCharacters);
     }
-  }, [userProfile]);
+
+    // 주간 초기화 체크 (수요일 06:00 KST)
+    if (chars.length > 0 && needsWeeklyReset(userProfile.lastWeeklyReset)) {
+      console.log('[주간 초기화] 수요일 06시 지남, 체크리스트 초기화 시작');
+
+      const resetChecklist = resetWeeklyChecklist(checklist, chars);
+      const now = new Date().toISOString();
+
+      // Firestore 업데이트
+      (async () => {
+        try {
+          const { doc, updateDoc } = await import('firebase/firestore');
+          const { db } = await import('@/lib/firebase-client');
+          const userRef = doc(db, 'users', user.uid);
+
+          await updateDoc(userRef, {
+            weeklyChecklist: resetChecklist,
+            lastWeeklyReset: now,
+          });
+
+          setWeeklyChecklist(resetChecklist);
+          console.log('[주간 초기화] 완료');
+        } catch (error) {
+          console.error('[주간 초기화] 실패:', error);
+        }
+      })();
+    }
+  }, [userProfile, user]);
 
   // 이미지 없는 캐릭터들의 이미지 로드
   useEffect(() => {

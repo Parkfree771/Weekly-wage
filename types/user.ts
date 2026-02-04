@@ -65,6 +65,7 @@ export type UserProfile = {
   allCharacters?: Character[];  // 전체 원정대 캐릭터 목록
   // 주간 체크리스트
   weeklyChecklist: WeeklyChecklist;
+  lastWeeklyReset?: string;  // 마지막 주간 초기화 시간 (ISO string)
   // UI 설정
   uiSettings?: {
     priceOrder?: string[];
@@ -146,4 +147,101 @@ export function createEmptyWeeklyState(itemLevel: number): CharacterWeeklyState 
     raids: raidState,
     additionalGold: 0,
   };
+}
+
+// 이번 주 수요일 06:00 KST 시간 가져오기
+export function getThisWeekWednesday6AM(): Date {
+  const now = new Date();
+  // KST 기준 현재 시간
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kstNow = new Date(now.getTime() + kstOffset);
+
+  // 현재 KST 요일 (0=일, 3=수)
+  const kstDay = kstNow.getUTCDay();
+
+  // 이번 주 수요일까지 남은 일수 계산
+  let daysToWednesday = 3 - kstDay;
+  if (daysToWednesday < 0) {
+    // 이미 수요일이 지났으면 이번 주 수요일은 과거
+    daysToWednesday += 7;
+  }
+
+  // 이번 주 수요일 00:00 KST
+  const wednesday = new Date(kstNow);
+  wednesday.setUTCDate(wednesday.getUTCDate() + daysToWednesday);
+  wednesday.setUTCHours(6, 0, 0, 0); // 06:00 KST (UTC 기준으로 설정했으므로)
+
+  // 만약 오늘이 수요일이고 06시 이전이면, 지난 수요일이 아니라 오늘 06시
+  // 만약 오늘이 수요일이고 06시 이후면, 오늘 06시가 이번 주 초기화 시점
+  if (kstDay === 3) {
+    const kstHour = kstNow.getUTCHours();
+    if (kstHour >= 6) {
+      // 오늘 수요일 06시가 초기화 시점
+      wednesday.setUTCDate(kstNow.getUTCDate());
+    } else {
+      // 아직 06시 전이면 지난주 수요일이 마지막 초기화
+      wednesday.setUTCDate(kstNow.getUTCDate() - 7);
+    }
+  } else if (daysToWednesday > 0) {
+    // 아직 수요일이 안 왔으면, 지난주 수요일이 마지막 초기화
+    wednesday.setUTCDate(wednesday.getUTCDate() - 7);
+  }
+
+  // UTC 시간으로 변환 (KST - 9시간)
+  return new Date(wednesday.getTime() - kstOffset);
+}
+
+// 주간 초기화가 필요한지 체크
+export function needsWeeklyReset(lastResetTime: string | undefined): boolean {
+  const lastWednesday6AM = getThisWeekWednesday6AM();
+
+  if (!lastResetTime) {
+    // 한 번도 초기화된 적 없으면 초기화 필요
+    return true;
+  }
+
+  const lastReset = new Date(lastResetTime);
+  // 마지막 초기화가 이번 주 수요일 06시 이전이면 초기화 필요
+  return lastReset < lastWednesday6AM;
+}
+
+// 주간 체크리스트 초기화 (레이드 체크, 추가 골드만 - 캐릭터 정보 유지)
+export function resetWeeklyChecklist(
+  weeklyChecklist: WeeklyChecklist,
+  characters: Character[]
+): WeeklyChecklist {
+  const newChecklist: WeeklyChecklist = {};
+
+  characters.forEach(char => {
+    const existingState = weeklyChecklist[char.name];
+    // 레이드 체크 상태만 초기화 (레이드 난이도 설정은 유지)
+    const raidState: RaidCheckState = {};
+
+    if (existingState?.raids) {
+      // 기존에 설정된 레이드들의 체크만 false로
+      Object.keys(existingState.raids).forEach(raidName => {
+        const raid = raids.find(r => r.name === raidName);
+        if (raid) {
+          raidState[raidName] = new Array(raid.gates.length).fill(false);
+        }
+      });
+    } else {
+      // 레이드 설정이 없으면 새로 생성
+      const availableRaids = getRaidsForLevel(char.itemLevel);
+      availableRaids.forEach(raid => {
+        raidState[raid.name] = new Array(raid.gates.length).fill(false);
+      });
+    }
+
+    newChecklist[char.name] = {
+      raids: raidState,
+      additionalGold: 0,  // 추가 골드 초기화
+      paradise: false,    // 낙원 초기화
+      sandOfTime: false,  // 모래시계 초기화
+      // 더보기 비용 설정은 유지
+      raidMoreGoldExclude: existingState?.raidMoreGoldExclude || {},
+    };
+  });
+
+  return newChecklist;
 }

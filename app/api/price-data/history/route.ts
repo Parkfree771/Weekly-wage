@@ -29,14 +29,19 @@ export async function GET() {
     const [contents] = await file.download();
     const historyData = JSON.parse(contents.toString());
 
-    // 00시~01시에는 10분 캐시, 그 외에는 다음 00시까지만 캐시
+    // 00:00~01:30에는 10분 캐시, 그 외에는 다음 00시까지만 캐시
     let cacheControl: string;
     const now = new Date();
     const kstHour = (now.getUTCHours() + 9) % 24;
     const kstMinute = now.getUTCMinutes();
 
-    if (kstHour === 0) {
-      // 00시~01시: 10분 캐시
+    // 00:00~01:30 범위 체크 (크론 실행 + GitHub Actions 지연 대비)
+    const isUpdateWindow =
+      (kstHour === 0) ||
+      (kstHour === 1 && kstMinute <= 30);
+
+    if (isUpdateWindow) {
+      // 00:00~01:30: 10분 캐시
       cacheControl = 'public, s-maxage=600, stale-while-revalidate=60';
     } else {
       // 그 외: 다음 00시까지 남은 시간만큼 캐시 (분 단위 계산)

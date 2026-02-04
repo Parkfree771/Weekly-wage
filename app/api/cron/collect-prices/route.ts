@@ -40,8 +40,8 @@ export async function GET(request: Request) {
   const currentKSTHour = kstDate.getUTCHours();
   const currentKSTMinute = kstDate.getUTCMinutes();
 
-  // 시간대 확인
-  const isAt0AM = currentKSTHour === 0 && currentKSTMinute < 30; // 00:00-00:29 (날짜 변경 시점)
+  // 시간대 확인 (GitHub Actions 지연 고려하여 00:00~01:59로 확장)
+  const isAt0AM = currentKSTHour === 0 || currentKSTHour === 1; // 00:00-01:59 (날짜 변경 시점, 지연 대비)
   const isWednesday = kstDate.getUTCDay() === 3; // 수요일
 
   // 수요일 점검 시간 확인 (06:00~09:59)
@@ -64,20 +64,18 @@ export async function GET(request: Request) {
   }
 
   // ========================================================================
-  // 전날 데이터 저장 타이밍 (00시 기준)
+  // 전날 데이터 저장 타이밍 (00시~01시대, GitHub Actions 지연 대비)
   // ========================================================================
 
   // === 거래소 아이템 전날 평균가 저장 타이밍 ===
-  // - 매일 오전 0시 00분에 Stats[1] (전날 확정 평균가) 저장
-  // - 수요일도 동일 (00시는 점검 전이므로 정상 동작)
-  // - GitHub Actions: 매시 00분 실행 → 00:00에 실행됨
+  // - 매일 오전 0시~1시대에 Stats[1] (전날 확정 평균가) 저장
+  // - GitHub Actions 지연으로 1시를 넘어갈 수 있어 00:00~01:59로 확장
+  // - 중복 저장 시 날짜 기준으로 덮어씀 (문제없음)
   const shouldSaveMarketYesterday = isAt0AM;
 
   // === 경매장 전날 데이터 확정 타이밍 ===
-  // - 매일 오전 0시대 (00:10)에 전날 수집 데이터 평균 계산하여 확정
-  // - 00:10 수집 가격은 오늘의 첫 데이터로만 사용 (전날 데이터는 00:10 전에 확정됨)
-  // - GitHub Actions: 매시 10분 실행 → 00:10에 실행됨
-  // - 수요일: 00시는 점검 전이므로 정상 동작, 06:10~09:10은 점검으로 건너뛰기
+  // - 매일 오전 0시~1시대에 전날 수집 데이터 평균 계산하여 확정
+  // - GitHub Actions 지연 대비 00:00~01:59로 확장
   // - 경매장 크론(accessory, jewel)에서만 실행, 거래소 크론에서는 실행 안함
   const isAuctionCron = categoryFilter?.includes('accessory') || categoryFilter?.includes('jewel') || typeFilter === 'auction';
   const shouldFinalizeAuctionYesterday = isAt0AM && isAuctionCron;

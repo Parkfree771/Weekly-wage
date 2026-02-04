@@ -1,10 +1,11 @@
 // Firebase Admin SDK 설정 (서버 사이드 전용)
-// Storage만 사용 (Firestore 제거됨)
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getStorage, Storage } from 'firebase-admin/storage';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 let adminApp: App;
 let adminStorage: Storage;
+let adminFirestore: Firestore;
 
 /**
  * Firebase Admin SDK 초기화
@@ -54,4 +55,15 @@ export function getAdminStorage(): Storage {
     adminStorage = getStorage(app);
   }
   return adminStorage;
+}
+
+/**
+ * Admin Firestore 인스턴스 가져오기
+ */
+export function getAdminFirestore(): Firestore {
+  if (!adminFirestore) {
+    const app = getAdminApp();
+    adminFirestore = getFirestore(app);
+  }
+  return adminFirestore;
 }
