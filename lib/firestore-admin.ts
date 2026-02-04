@@ -222,10 +222,13 @@ export async function addTodayTempPrice(
       data._raw = {};
     }
 
-    // 날짜가 바뀌었으면 _raw 초기화 (00시 처리 후 첫 수집)
+    // 날짜 변경 감지 - 경고만 출력 (실제 초기화는 appendYesterdayToHistory()에서 처리)
+    // 00시에 경매장 크론이 먼저 실행되어 appendYesterdayToHistory()를 호출하므로
+    // 정상적인 경우 여기서 날짜 불일치가 발생하면 안 됨
     if (data._meta?.date && data._meta.date !== todayKey) {
-      console.log(`[addTodayTempPrice] 새 날짜 시작, _raw 초기화`);
-      data._raw = {};
+      console.warn(`[addTodayTempPrice] 경고: 날짜 불일치 감지 - 현재: ${data._meta.date}, 오늘: ${todayKey}`);
+      console.warn(`[addTodayTempPrice] appendYesterdayToHistory()가 먼저 실행되어야 합니다!`);
+      // _raw를 초기화하지 않음 - 데이터 손실 방지
     }
 
     // 가격 배열에 추가
@@ -251,54 +254,6 @@ export async function addTodayTempPrice(
     console.log(`[Auction] ${itemName || itemId} - 가격 추가: ${price}G (총 ${prices.length}개, 평균 ${avgPrice.toFixed(0)}G)`);
   } catch (error) {
     console.error('당일 임시 가격 저장 오류:', error);
-    throw error;
-  }
-}
-
-/**
- * 특정 날짜의 가격 추가 (00시 이중 역할용)
- * - 00:10에 수집한 가격을 전날 마지막 가격으로도 추가
- */
-export async function addTodayTempPriceForDate(
-  itemId: string,
-  price: number,
-  dateKey: string,
-  itemName?: string
-): Promise<void> {
-  try {
-    const data = await readLatestPrices();
-    const currentDateKey = data._meta?.date;
-
-    // 전날 데이터에 추가하는 경우 (00시 처리 전)
-    if (currentDateKey === dateKey) {
-      // _raw에 추가
-      if (!data._raw) {
-        data._raw = {};
-      }
-      if (!data._raw[itemId]) {
-        data._raw[itemId] = [];
-      }
-      data._raw[itemId].push(price);
-
-      // 평균가 업데이트
-      const prices = data._raw[itemId];
-      const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-      data[itemId] = avgPrice;
-
-      data._meta = {
-        date: currentDateKey,
-        updatedAt: new Date().toISOString(),
-      };
-
-      // 캐시 업데이트 (저장은 나중에)
-      latestPricesCache = data;
-
-      console.log(`[Auction] ${itemName || itemId} - 전날 마지막 가격 추가: ${price}G`);
-    } else {
-      console.log(`[addTodayTempPriceForDate] 날짜 불일치, 건너뜀: 현재=${currentDateKey}, 요청=${dateKey}`);
-    }
-  } catch (error) {
-    console.error('특정 날짜 임시 가격 저장 오류:', error);
     throw error;
   }
 }
@@ -535,31 +490,3 @@ export async function getDailyPriceHistory(
   }
 }
 
-/**
- * 전체 히스토리 JSON 생성 (마이그레이션용, 일반적으로 사용 안함)
- */
-export async function generateHistoryJson(): Promise<void> {
-  console.log('[generateHistoryJson] 이 함수는 더 이상 Firestore를 사용하지 않습니다.');
-  console.log('[generateHistoryJson] 기존 history_all.json을 유지합니다.');
-}
-
-// ============================================================
-// 하위 호환성을 위한 더미 함수들 (사용되지 않음)
-// ============================================================
-
-/**
- * @deprecated Firestore 제거됨. saveHistoricalPrice 사용
- */
-export async function savePriceData(
-  itemId: string,
-  price: number,
-  itemName?: string,
-  customDate?: Date
-): Promise<void> {
-  if (!customDate) {
-    console.warn('[savePriceData] customDate가 필요합니다.');
-    return;
-  }
-  const dateKey = formatDateKey(customDate);
-  await saveHistoricalPrice(itemId, price, dateKey, itemName);
-}

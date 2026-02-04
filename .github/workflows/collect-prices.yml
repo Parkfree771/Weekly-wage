@@ -2,12 +2,12 @@ name: Collect Prices
 
 on:
   schedule:
-    # 거래소 - 계승 재련 재료 + 재련 재료 + 젬: 매시 정각 (UTC 기준)
-    - cron: '0 * * * *'
-    # 거래소 - 재련 추가 재료 + 각인서: 매시 5분 (UTC 기준)
-    - cron: '5 * * * *'
-    # 경매장 - 악세 + 보석: 매시 10분 (UTC 기준)
+    # 경매장 - 악세 + 보석: 매시 10분 (UTC 기준) - 00시에 먼저 실행되어야 _raw 처리 가능
     - cron: '10 * * * *'
+    # 거래소 - 계승 재련 재료 + 재련 재료 + 젬: 매시 15분 (UTC 기준)
+    - cron: '15 * * * *'
+    # 거래소 - 재련 추가 재료 + 각인서: 매시 20분 (UTC 기준)
+    - cron: '20 * * * *'
   # 수동 실행도 가능
   workflow_dispatch:
     inputs:
@@ -26,9 +26,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  collect-auction-accessory-jewel:
+    # 10분: 경매장 - 악세 + 보석 (14개) - 00시에 먼저 실행되어 _raw 처리
+    if: github.event.schedule == '10 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'accessory,jewel')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Collect auction prices (accessory + jewel)
+        run: |
+          response=$(curl -f -s -w "\n%{http_code}" --max-time 180 \
+            -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=accessory,jewel" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -H "X-Netlify-Background: true")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" -ge 400 ]; then
+            echo "API request failed with status $http_code"
+            exit 1
+          fi
+
   collect-market-refine-gem:
-    # 정각(00분): 거래소 - 계승 재련 재료 + 재련 재료 + 젬 (17개)
-    if: github.event.schedule == '0 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'refine_succession,refine,gem')
+    # 15분: 거래소 - 계승 재련 재료 + 재련 재료 + 젬 (17개)
+    if: github.event.schedule == '15 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'refine_succession,refine,gem')
     runs-on: ubuntu-latest
 
     steps:
@@ -59,8 +83,8 @@ jobs:
             -H "Content-Type: application/json"
 
   collect-market-additional-engraving:
-    # 5분: 거래소 - 재련 추가 재료 + 각인서 (22개)
-    if: github.event.schedule == '5 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'refine_additional,engraving')
+    # 20분: 거래소 - 재련 추가 재료 + 각인서 (22개)
+    if: github.event.schedule == '20 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'refine_additional,engraving')
     runs-on: ubuntu-latest
 
     steps:
@@ -82,26 +106,3 @@ jobs:
             exit 1
           fi
 
-  collect-auction-accessory-jewel:
-    # 10분: 경매장 - 악세 + 보석 (14개)
-    if: github.event.schedule == '10 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'accessory,jewel')
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Collect auction prices (accessory + jewel)
-        run: |
-          response=$(curl -f -s -w "\n%{http_code}" --max-time 180 \
-            -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=accessory,jewel" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
-            -H "X-Netlify-Background: true")
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
-
-          echo "HTTP Status: $http_code"
-          echo "Response: $body"
-
-          if [ "$http_code" -ge 400 ]; then
-            echo "API request failed with status $http_code"
-            exit 1
-          fi

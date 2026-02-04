@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { addTodayTempPrice, addTodayTempPriceForDate, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson, appendYesterdayToHistory, getLostArkDate, formatDateKey } from '@/lib/firestore-admin';
+import { addTodayTempPrice, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson, appendYesterdayToHistory } from '@/lib/firestore-admin';
 import { TRACKED_ITEMS, getItemsByCategory, ItemCategory } from '@/lib/items-to-track';
 
 // 자동 가격 수집 엔드포인트 (GitHub Actions용)
@@ -75,10 +75,12 @@ export async function GET(request: Request) {
 
   // === 경매장 전날 데이터 확정 타이밍 ===
   // - 매일 오전 0시대 (00:10)에 전날 수집 데이터 평균 계산하여 확정
-  // - 00:10 수집한 가격은 전날 마지막 가격 + 오늘 첫 가격으로 이중 사용
+  // - 00:10 수집 가격은 오늘의 첫 데이터로만 사용 (전날 데이터는 00:10 전에 확정됨)
   // - GitHub Actions: 매시 10분 실행 → 00:10에 실행됨
   // - 수요일: 00시는 점검 전이므로 정상 동작, 06:10~09:10은 점검으로 건너뛰기
-  const shouldFinalizeAuctionYesterday = isAt0AM && (typeFilter === 'auction' || typeFilter === null);
+  // - 경매장 크론(accessory, jewel)에서만 실행, 거래소 크론에서는 실행 안함
+  const isAuctionCron = categoryFilter?.includes('accessory') || categoryFilter?.includes('jewel') || typeFilter === 'auction';
+  const shouldFinalizeAuctionYesterday = isAt0AM && isAuctionCron;
 
   // ========================================================================
 
@@ -99,6 +101,34 @@ export async function GET(request: Request) {
   }
 
   console.log(`[Collect Prices] 처리할 아이템: ${itemsToProcess.length}개 (타입: ${typeFilter || '전체'}, 카테고리: ${categoryFilter || '전체'})`);
+
+  // ========================================================================
+  // 00시 경매장 크론 (00:10): 데이터 수집 전에 전날 데이터 처리 (순서 중요!)
+  // - 경매장 크론이 거래소 크론보다 먼저 실행되어야 함 (10분 → 15분 → 20분)
+  // 1. finalizeYesterdayData(): _raw에 누적된 전날 데이터 평균 계산 → history에 저장
+  // 2. appendYesterdayToHistory(): _raw 초기화, _meta.date를 오늘로 변경
+  // 3. 그 다음 데이터 수집 시작
+  // ========================================================================
+  if (shouldFinalizeAuctionYesterday) {
+    try {
+      // 경매장 아이템의 전날 임시 데이터를 평균내서 확정
+      await finalizeYesterdayData(false);
+      results.push({ message: '전날 데이터 확정 완료 (경매장 아이템 평균 계산)' });
+      console.log(`[00시대] 경매장 전날 데이터 확정 완료`);
+    } catch (error: any) {
+      errors.push({ message: '전날 데이터 확정 실패', error: error.message });
+      console.error(`[00시대] 경매장 전날 데이터 확정 실패:`, error);
+    }
+
+    try {
+      console.log('[Cron] 히스토리 JSON 업데이트 및 _raw 초기화 시작...');
+      await appendYesterdayToHistory();
+      results.push({ message: '히스토리 JSON 업데이트 및 _raw 초기화 완료' });
+    } catch (error: any) {
+      console.error('[Cron] 히스토리 JSON 업데이트 실패:', error);
+      errors.push({ message: '히스토리 JSON 업데이트 실패', error: error.message });
+    }
+  }
 
   // 각 아이템의 가격 수집
   for (const item of itemsToProcess) {
@@ -273,17 +303,8 @@ export async function GET(request: Request) {
           const currentPrice = auctionInfo.BuyPrice || auctionInfo.BidStartPrice || 0;
 
           if (currentPrice > 0) {
-            // 00시대: 이 가격을 전날 데이터에도 추가 (전날 마지막 가격)
-            if (isAt0AM) {
-              const lostArkDate = getLostArkDate();
-              const yesterday = new Date(lostArkDate);
-              yesterday.setDate(yesterday.getDate() - 1);
-              const yesterdayKey = formatDateKey(yesterday);
-              await addTodayTempPriceForDate(item.id, currentPrice, yesterdayKey, item.name);
-              console.log(`[Auction] ${item.name} - 전날 마지막 가격으로 추가: ${yesterdayKey} = ${currentPrice}G`);
-            }
-
             // 오늘 데이터에 추가 (latest_prices.json의 _raw)
+            // 00:10 가격은 오늘의 첫 데이터로만 사용 (전날 데이터는 00:10 전에 이미 확정됨)
             await addTodayTempPrice(item.id, currentPrice, item.name);
 
             results.push({
@@ -308,39 +329,6 @@ export async function GET(request: Request) {
     } catch (error: any) {
       console.error(`아이템 ${item.id} 수집 오류:`, error.message);
       errors.push({ itemId: item.id, error: error.message });
-    }
-  }
-
-  // === 경매장 수집 완료 후 전날 데이터 확정 (00:10) ===
-  if (shouldFinalizeAuctionYesterday) {
-    try {
-      // 경매장 아이템의 전날 임시 데이터를 평균내서 확정
-      // 중요: 수집을 먼저 완료한 후 확정해야 00:10 마지막 데이터가 포함됨
-      // useToday=false: 00시대에는 "전날" 데이터를 확정 (이미 날짜가 바뀌었으므로)
-      await finalizeYesterdayData(false);
-      results.push({ message: '전날 데이터 확정 완료 (경매장 아이템 평균 계산)' });
-      console.log(`[00시대] 경매장 전날 데이터 확정 완료`);
-    } catch (error: any) {
-      errors.push({ message: '전날 데이터 확정 실패', error: error.message });
-      console.error(`[00시대] 경매장 전날 데이터 확정 실패:`, error);
-    }
-  }
-
-  // ========================================================================
-  // 히스토리 JSON 업데이트 (00시)
-  // ========================================================================
-  // 날짜 변경 시점에 어제 확정 데이터를 history_all.json에 추가
-  const shouldAppendHistory = shouldSaveMarketYesterday; // 매일 00시
-
-  if (shouldAppendHistory) {
-    try {
-      console.log('[Cron] 히스토리 JSON 업데이트 시작...');
-      await appendYesterdayToHistory();
-      results.push({ message: '히스토리 JSON 업데이트 완료' });
-    } catch (error: any) {
-      console.error('[Cron] 히스토리 JSON 업데이트 실패:', error);
-      errors.push({ message: '히스토리 JSON 업데이트 실패', error: error.message });
-      // 히스토리 업데이트 실패해도 크론 작업은 계속 진행
     }
   }
 
