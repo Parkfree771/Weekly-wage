@@ -371,6 +371,12 @@
   border-color: #10b981;
 }
 
+.requiredAmount {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 .maxCrafts {
   margin-top: 12px;
   text-align: center;
@@ -1279,6 +1285,50 @@
   font-size: 0.8rem;
   font-weight: 600;
   color: #10b981;
+}
+
+/* 제작 후 남는 재료 */
+.leftoverSection {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--card-header-bg);
+  border-radius: 8px;
+  border: 1px dashed var(--border-color);
+}
+
+.leftoverTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.leftoverItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.leftoverItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--card-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.leftoverItem span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.noLeftover {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 /* 교환 비율 참고 */

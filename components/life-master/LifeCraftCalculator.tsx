@@ -43,6 +43,21 @@ const MATERIALS = {
   abidos: { id: '6884308', name: '아비도스 목재', icon: '/wood1.webp' },
   soft: { id: '6882304', name: '부드러운 목재', icon: '/wood3.webp' },
   normal: { id: '6882301', name: '목재', icon: '/wood2.webp' },
+  sturdy: { id: '6882302', name: '튼튼한 목재', icon: '/wood4.webp' },
+};
+
+// 교환 비율
+const EXCHANGE_RATES = {
+  // 직접 교환
+  SOFT_TO_NORMAL: 2,      // 부드러운 1개 → 목재 2개 (25→50)
+  STURDY_TO_NORMAL: 10,   // 튼튼한 1개 → 목재 10개 (5→50)
+  // 가루 변환
+  NORMAL_TO_GARU: 0.8,    // 목재 1개 → 가루 0.8개 (100→80)
+  SOFT_TO_GARU: 1.6,      // 부드러운 1개 → 가루 1.6개 (50→80)
+  // 가루 → 재료
+  GARU_TO_SOFT: 0.5,      // 가루 1개 → 부드러운 0.5개 (100→50)
+  GARU_TO_STURDY: 0.1,    // 가루 1개 → 튼튼한 0.1개 (100→10)
+  GARU_TO_ABIDOS: 0.1,    // 가루 1개 → 아비도스 0.1개 (100→10)
 };
 
 const SALE_FEE_PERCENT = 5;
@@ -64,6 +79,7 @@ export default function LifeCraftCalculator() {
   const [ownedAbidos, setOwnedAbidos] = useState<number>(0);
   const [ownedSoft, setOwnedSoft] = useState<number>(0);
   const [ownedNormal, setOwnedNormal] = useState<number>(0);
+  const [ownedSturdy, setOwnedSturdy] = useState<number>(0);
   const [applyExtraCrafts, setApplyExtraCrafts] = useState<boolean>(false);
 
   // 가격 데이터 (API에서 가져온 원본 가격)
@@ -230,17 +246,12 @@ export default function LifeCraftCalculator() {
     return Math.min(maxByAbidos, maxBySoft, maxByNormal);
   }, [currentItem, ownedAbidos, ownedSoft, ownedNormal]);
 
-  // 가루 교환 최적화 계산
+  // 가루 교환 최적화 계산 (새 알고리즘)
   const garuOptimization = useMemo(() => {
-    // 교환 비율
-    const NORMAL_TO_GARU = 0.8;   // 목재 1개 → 가루 0.8개
-    const SOFT_TO_GARU = 1.6;     // 부드러운 1개 → 가루 1.6개
-    const GARU_TO_ABIDOS = 0.1;   // 가루 1개 → 아비도스 0.1개
-
     // 아비도스 1개 획득 비용 비교
     const abidosDirect = materialUnitPrices.abidos;
-    const abidosFromNormal = materialUnitPrices.normal * 12.5; // 목재 12.5개 → 가루 10개 → 아비도스 1개
-    const abidosFromSoft = materialUnitPrices.soft * 6.25;     // 부드러운 6.25개 → 가루 10개 → 아비도스 1개
+    const abidosFromNormal = materialUnitPrices.normal * 12.5;
+    const abidosFromSoft = materialUnitPrices.soft * 6.25;
 
     const methods = [
       { name: '직접 구매', cost: abidosDirect, icon: '/wood1.webp' },
@@ -251,71 +262,210 @@ export default function LifeCraftCalculator() {
     const bestMethod = methods[0];
     const savings = abidosDirect > 0 ? ((abidosDirect - bestMethod.cost) / abidosDirect) * 100 : 0;
 
-    // 보유 모드: 가루 교환으로 추가 제작 가능 여부
     let extraCrafts = 0;
-    let extraDetail = null;
+    let extraDetail: {
+      sturdyConverted: number;
+      sturdyToNormal: number;
+      softToNormalConverted: number;
+      softToNormal: number;
+      normalToSoftConverted: number;
+      normalToSoft: number;
+      softUsedForGaru: number;
+      normalUsedForGaru: number;
+      garuFromSoft: number;
+      garuFromNormal: number;
+      totalGaru: number;
+      extraAbidos: number;
+      dustToSoft: number;
+      dustToTimber: number;
+      usedForCraft: { soft: number; normal: number };
+      finalLeftover: {
+        abidos: number;
+        soft: number;
+        normal: number;
+        sturdy: number;
+        garu: number;
+      };
+    } | null = null;
 
     // 재료가 하나라도 있으면 계산
-    if (craftMode === 'owned' && (ownedAbidos > 0 || ownedSoft > 0 || ownedNormal > 0)) {
+    if (craftMode === 'owned' && (ownedAbidos > 0 || ownedSoft > 0 || ownedNormal > 0 || ownedSturdy > 0)) {
       const { materials } = currentItem;
+      const COST_A = materials.abidos; // 43 (상급) or 33 (일반)
+      const COST_S = materials.soft;   // 59 or 45
+      const COST_T = materials.normal; // 112 or 86
 
-      let availableAbidos, availableSoft, availableNormal;
+      // 기본 제작 후 남는 재료
+      let abydos = maxCraftsFromOwned > 0 ? ownedAbidos - maxCraftsFromOwned * COST_A : ownedAbidos;
+      let soft = maxCraftsFromOwned > 0 ? ownedSoft - maxCraftsFromOwned * COST_S : ownedSoft;
+      let timber = maxCraftsFromOwned > 0 ? ownedNormal - maxCraftsFromOwned * COST_T : ownedNormal;
+      let sturdy = ownedSturdy;
+      let dust = 0;
 
-      if (maxCraftsFromOwned > 0) {
-        // 제작 후 남는 재료
-        availableAbidos = ownedAbidos - maxCraftsFromOwned * materials.abidos;
-        availableSoft = ownedSoft - maxCraftsFromOwned * materials.soft;
-        availableNormal = ownedNormal - maxCraftsFromOwned * materials.normal;
-      } else {
-        // 제작 불가능한 경우, 모든 재료 사용 가능
-        availableAbidos = ownedAbidos;
-        availableSoft = ownedSoft;
-        availableNormal = ownedNormal;
-      }
+      // 변환 추적용
+      let totalSturdyConverted = 0;
+      let totalSturdyToTimber = 0;
+      let totalDirectSoftToTimber = 0; // 직접 부드러운 → 목재
+      let totalTimberToDust = 0;
+      let totalSoftToDust = 0;
+      let totalDustToAbydos = 0;
+      let totalDustToSoft = 0;
+      let totalDustToTimber = 0; // 가루 → 부드러운 → 목재 (100가루 → 100목재)
 
-      // 추가 제작 가능 횟수 계산 (모든 재료 고려)
-      // n회 추가 제작하려면: n*아비도스, n*부드러운, n*목재 필요
-      // 부드러운/목재는 제작용으로 남기고, 남는 것만 가루로 변환
-      for (let n = 1; n <= 100; n++) {
-        const neededAbidos = n * materials.abidos;
-        const neededSoft = n * materials.soft;
-        const neededNormal = n * materials.normal;
+      let craftCount = 0;
+      const MAX_ITERATIONS = 100000; // 무한루프 방지
 
-        // 부드러운/목재가 n회 제작에 충분한지 확인
-        if (availableSoft < neededSoft || availableNormal < neededNormal) {
-          break;
+      for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
+        let canCraft = true;
+
+        // Priority 1: 아비도스 목재 채우기 (목표: COST_A)
+        if (abydos < COST_A) {
+          const needed = COST_A - abydos;
+          const costInDust = needed * 10; // 아비도스 1개 = 가루 10개
+
+          // 가루 부족 시 하위 재료 갈아서 가루 확보
+          while (dust < costInDust) {
+            if (sturdy >= 5) {
+              // 튼튼한 → 목재 → 가루 (5튼튼한 → 50목재)
+              sturdy -= 5;
+              timber += 50;
+              totalSturdyConverted += 5;
+              totalSturdyToTimber += 50;
+            } else if (timber >= 100) {
+              // 목재 → 가루 (100목재 → 80가루)
+              timber -= 100;
+              dust += 80;
+              totalTimberToDust += 100;
+            } else if (soft >= 50) {
+              // 부드러운 → 가루 (50부드러운 → 80가루) - 최후의 수단
+              soft -= 50;
+              dust += 80;
+              totalSoftToDust += 50;
+            } else {
+              break; // 더 이상 가루를 만들 재료 없음
+            }
+          }
+
+          // 가루가 충분하면 아비도스 구매
+          if (dust >= costInDust) {
+            dust -= costInDust;
+            abydos += needed;
+            totalDustToAbydos += needed;
+          } else {
+            canCraft = false;
+          }
         }
 
-        // n회 제작 후 남는 재료 (가루로 변환 가능)
-        const excessSoft = availableSoft - neededSoft;
-        const excessNormal = availableNormal - neededNormal;
+        if (!canCraft) break;
 
-        // 남는 재료를 가루로 변환 → 아비도스로 변환
-        const garuFromExcess = excessSoft * SOFT_TO_GARU + excessNormal * NORMAL_TO_GARU;
-        const convertedAbidos = Math.floor(garuFromExcess * GARU_TO_ABIDOS);
+        // Priority 2: 부드러운 목재 채우기 (목표: COST_S)
+        if (soft < COST_S) {
+          const needed = COST_S - soft;
+          const costInDust = needed * 2; // 부드러운 1개 = 가루 2개 (100가루 = 50부드러운)
 
-        // 총 아비도스 = 기존 + 변환
-        const totalAbidos = availableAbidos + convertedAbidos;
-
-        // n회 제작에 필요한 아비도스가 충분한지 확인
-        if (totalAbidos >= neededAbidos) {
-          extraCrafts = n;
-          extraDetail = {
-            leftoverSoft: excessSoft,
-            leftoverNormal: excessNormal,
-            garuFromSoft: Math.floor(excessSoft * SOFT_TO_GARU),
-            garuFromNormal: Math.floor(excessNormal * NORMAL_TO_GARU),
-            totalGaru: Math.floor(garuFromExcess),
-            extraAbidos: convertedAbidos,
-            // 제작에 사용되는 재료
-            usedForCraft: {
-              soft: neededSoft,
-              normal: neededNormal,
+          // 가루 부족 시 갈아서 확보 (단, soft 갈기는 제외)
+          while (dust < costInDust) {
+            if (sturdy >= 5) {
+              sturdy -= 5;
+              timber += 50;
+              totalSturdyConverted += 5;
+              totalSturdyToTimber += 50;
+            } else if (timber >= 100) {
+              timber -= 100;
+              dust += 80;
+              totalTimberToDust += 100;
+            } else {
+              break;
             }
-          };
+          }
+
+          if (dust >= costInDust) {
+            dust -= costInDust;
+            soft += needed;
+            totalDustToSoft += needed;
+          } else {
+            canCraft = false;
+          }
+        }
+
+        if (!canCraft) break;
+
+        // Priority 3: 일반 목재 채우기 (목표: COST_T)
+        if (timber < COST_T) {
+          // 3-1. 튼튼한 목재 사용 (1순위: 5개 → 50개)
+          while (timber < COST_T && sturdy >= 5) {
+            sturdy -= 5;
+            timber += 50;
+            totalSturdyConverted += 5;
+            totalSturdyToTimber += 50;
+          }
+
+          // 3-2. 부드러운 목재 여유분 사용 (2순위: 25개 → 50개)
+          // 단, 부드러운 목재가 필요량(COST_S) 아래로 내려가면 안됨
+          while (timber < COST_T && soft >= (COST_S + 25)) {
+            soft -= 25;
+            timber += 50;
+            totalDirectSoftToTimber += 25;
+          }
+
+          // 3-3. 가루 사용 (최후 순위: 100가루 → 50부드러운 → 100목재)
+          while (timber < COST_T) {
+            if (dust >= 100) {
+              dust -= 100;
+              timber += 100; // 100가루 → 50부드러운 → 100목재
+              totalDustToTimber += 100;
+            } else {
+              break;
+            }
+          }
+
+          if (timber < COST_T) {
+            canCraft = false;
+          }
+        }
+
+        if (!canCraft) break;
+
+        // 최종 제작 가능 여부 확인
+        if (abydos >= COST_A && soft >= COST_S && timber >= COST_T) {
+          abydos -= COST_A;
+          soft -= COST_S;
+          timber -= COST_T;
+          craftCount++;
         } else {
           break;
         }
+      }
+
+      if (craftCount > 0) {
+        extraCrafts = craftCount;
+        extraDetail = {
+          sturdyConverted: totalSturdyConverted,
+          sturdyToNormal: totalSturdyToTimber,
+          softToNormalConverted: totalDirectSoftToTimber,
+          softToNormal: totalDirectSoftToTimber * 2, // 25개당 50목재
+          normalToSoftConverted: 0,
+          normalToSoft: 0,
+          softUsedForGaru: totalSoftToDust,
+          normalUsedForGaru: totalTimberToDust,
+          garuFromSoft: Math.floor(totalSoftToDust * 1.6), // 50 → 80
+          garuFromNormal: Math.floor(totalTimberToDust * 0.8), // 100 → 80
+          totalGaru: Math.floor(totalSoftToDust * 1.6) + Math.floor(totalTimberToDust * 0.8),
+          extraAbidos: totalDustToAbydos,
+          dustToSoft: totalDustToSoft,
+          dustToTimber: totalDustToTimber,
+          usedForCraft: {
+            soft: craftCount * COST_S,
+            normal: craftCount * COST_T,
+          },
+          finalLeftover: {
+            abidos: abydos,
+            soft: soft,
+            normal: timber,
+            sturdy: sturdy,
+            garu: dust,
+          }
+        };
       }
     }
 
@@ -331,7 +481,7 @@ export default function LifeCraftCalculator() {
         abidosFromSoft,
       }
     };
-  }, [materialUnitPrices, craftMode, maxCraftsFromOwned, currentItem, ownedAbidos, ownedSoft, ownedNormal]);
+  }, [materialUnitPrices, craftMode, maxCraftsFromOwned, currentItem, ownedAbidos, ownedSoft, ownedNormal, ownedSturdy]);
 
   // 실제 제작 횟수 (구매 모드는 항상 1회, 보유 모드는 최대 + 추가 제작)
   const actualCraftCount = craftMode === 'owned'
@@ -341,7 +491,7 @@ export default function LifeCraftCalculator() {
   // 보유 재료 변경 시 추가 제작 적용 해제
   useEffect(() => {
     setApplyExtraCrafts(false);
-  }, [ownedAbidos, ownedSoft, ownedNormal, selectedItem]);
+  }, [ownedAbidos, ownedSoft, ownedNormal, ownedSturdy, selectedItem]);
 
   // 비용 계산
   const calculations = useMemo(() => {
@@ -482,6 +632,17 @@ export default function LifeCraftCalculator() {
                   onChange={(e) => setOwnedAbidos(Math.max(0, parseInt(e.target.value) || 0))}
                   placeholder="0"
                 />
+                <span className={styles.requiredAmount}>/{currentItem.materials.abidos}</span>
+              </div>
+              <div className={styles.ownedInput}>
+                <Image src={MATERIALS.sturdy.icon} alt="튼튼한" width={32} height={32} />
+                <input
+                  type="number"
+                  value={ownedSturdy || ''}
+                  onChange={(e) => setOwnedSturdy(Math.max(0, parseInt(e.target.value) || 0))}
+                  placeholder="0"
+                />
+                <span className={styles.requiredAmount}>(교환용)</span>
               </div>
               <div className={styles.ownedInput}>
                 <Image src={MATERIALS.soft.icon} alt="부드러운" width={32} height={32} />
@@ -491,6 +652,7 @@ export default function LifeCraftCalculator() {
                   onChange={(e) => setOwnedSoft(Math.max(0, parseInt(e.target.value) || 0))}
                   placeholder="0"
                 />
+                <span className={styles.requiredAmount}>/{currentItem.materials.soft}</span>
               </div>
               <div className={styles.ownedInput}>
                 <Image src={MATERIALS.normal.icon} alt="목재" width={32} height={32} />
@@ -500,6 +662,7 @@ export default function LifeCraftCalculator() {
                   onChange={(e) => setOwnedNormal(Math.max(0, parseInt(e.target.value) || 0))}
                   placeholder="0"
                 />
+                <span className={styles.requiredAmount}>/{currentItem.materials.normal}</span>
               </div>
             </div>
             {maxCraftsFromOwned > 0 && (
@@ -510,117 +673,91 @@ export default function LifeCraftCalculator() {
           </div>
         )}
 
-        {/* 필요 재료 */}
-        <div className={styles.materialsSection}>
-          <div className={styles.materialHeader}>
-            <span className={styles.sectionLabel}>필요 재료 (100개당 가격)</span>
-          </div>
-
-          <div className={styles.materialsList}>
-            <div className={styles.materialItem}>
-              <Image src={MATERIALS.abidos.icon} alt="아비도스" width={40} height={40} className={styles.materialIcon} />
-              <div className={styles.materialInfo}>
-                <span className={styles.materialName}>아비도스 목재</span>
-                <span className={styles.materialQty}>
-                  {craftMode === 'owned' ? (
-                    <>{ownedAbidos} <span>/ {currentItem.materials.abidos}</span></>
-                  ) : (
-                    <>{currentItem.materials.abidos * actualCraftCount} <span>/ {currentItem.materials.abidos}</span></>
-                  )}
-                </span>
-              </div>
-              <div className={styles.materialPriceInput}>
-                <input
-                  type="number"
-                  value={
-                    craftMode === 'owned' && ownedAbidos > 0
-                      ? 0
-                      : (customMaterialPrices.abidos !== null ? customMaterialPrices.abidos : (materialPrices[MATERIALS.abidos.id] || 0))
-                  }
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setCustomMaterialPrices(prev => ({
-                      ...prev,
-                      abidos: val === '' ? 0 : Math.max(0, parseInt(val) || 0)
-                    }));
-                  }}
-                  disabled={craftMode === 'owned' && ownedAbidos > 0}
-                  className={`${styles.matPriceField} ${craftMode === 'owned' && ownedAbidos > 0 ? styles.disabledPrice : ''}`}
-                />
-                <span>G</span>
-              </div>
+        {/* 필요 재료 (구매 모드만) */}
+        {craftMode === 'buy' && (
+          <div className={styles.materialsSection}>
+            <div className={styles.materialHeader}>
+              <span className={styles.sectionLabel}>필요 재료 (100개당 가격)</span>
             </div>
 
-            <div className={styles.materialItem}>
-              <Image src={MATERIALS.soft.icon} alt="부드러운" width={40} height={40} className={styles.materialIcon} />
-              <div className={styles.materialInfo}>
-                <span className={styles.materialName}>부드러운 목재</span>
-                <span className={styles.materialQty}>
-                  {craftMode === 'owned' ? (
-                    <>{ownedSoft} <span>/ {currentItem.materials.soft}</span></>
-                  ) : (
-                    <>{currentItem.materials.soft * actualCraftCount} <span>/ {currentItem.materials.soft}</span></>
-                  )}
-                </span>
+            <div className={styles.materialsList}>
+              <div className={styles.materialItem}>
+                <Image src={MATERIALS.abidos.icon} alt="아비도스" width={40} height={40} className={styles.materialIcon} />
+                <div className={styles.materialInfo}>
+                  <span className={styles.materialName}>아비도스 목재</span>
+                  <span className={styles.materialQty}>
+                    {currentItem.materials.abidos * actualCraftCount} <span>/ {currentItem.materials.abidos}</span>
+                  </span>
+                </div>
+                <div className={styles.materialPriceInput}>
+                  <input
+                    type="number"
+                    value={customMaterialPrices.abidos !== null ? customMaterialPrices.abidos : (materialPrices[MATERIALS.abidos.id] || 0)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomMaterialPrices(prev => ({
+                        ...prev,
+                        abidos: val === '' ? 0 : Math.max(0, parseInt(val) || 0)
+                      }));
+                    }}
+                    className={styles.matPriceField}
+                  />
+                  <span>G</span>
+                </div>
               </div>
-              <div className={styles.materialPriceInput}>
-                <input
-                  type="number"
-                  value={
-                    craftMode === 'owned' && ownedSoft > 0
-                      ? 0
-                      : (customMaterialPrices.soft !== null ? customMaterialPrices.soft : (materialPrices[MATERIALS.soft.id] || 0))
-                  }
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setCustomMaterialPrices(prev => ({
-                      ...prev,
-                      soft: val === '' ? 0 : Math.max(0, parseInt(val) || 0)
-                    }));
-                  }}
-                  disabled={craftMode === 'owned' && ownedSoft > 0}
-                  className={`${styles.matPriceField} ${craftMode === 'owned' && ownedSoft > 0 ? styles.disabledPrice : ''}`}
-                />
-                <span>G</span>
-              </div>
-            </div>
 
-            <div className={styles.materialItem}>
-              <Image src={MATERIALS.normal.icon} alt="목재" width={40} height={40} className={styles.materialIcon} />
-              <div className={styles.materialInfo}>
-                <span className={styles.materialName}>목재</span>
-                <span className={styles.materialQty}>
-                  {craftMode === 'owned' ? (
-                    <>{ownedNormal} <span>/ {currentItem.materials.normal}</span></>
-                  ) : (
-                    <>{currentItem.materials.normal * actualCraftCount} <span>/ {currentItem.materials.normal}</span></>
-                  )}
-                </span>
+              <div className={styles.materialItem}>
+                <Image src={MATERIALS.soft.icon} alt="부드러운" width={40} height={40} className={styles.materialIcon} />
+                <div className={styles.materialInfo}>
+                  <span className={styles.materialName}>부드러운 목재</span>
+                  <span className={styles.materialQty}>
+                    {currentItem.materials.soft * actualCraftCount} <span>/ {currentItem.materials.soft}</span>
+                  </span>
+                </div>
+                <div className={styles.materialPriceInput}>
+                  <input
+                    type="number"
+                    value={customMaterialPrices.soft !== null ? customMaterialPrices.soft : (materialPrices[MATERIALS.soft.id] || 0)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomMaterialPrices(prev => ({
+                        ...prev,
+                        soft: val === '' ? 0 : Math.max(0, parseInt(val) || 0)
+                      }));
+                    }}
+                    className={styles.matPriceField}
+                  />
+                  <span>G</span>
+                </div>
               </div>
-              <div className={styles.materialPriceInput}>
-                <input
-                  type="number"
-                  value={
-                    craftMode === 'owned' && ownedNormal > 0
-                      ? 0
-                      : (customMaterialPrices.normal !== null ? customMaterialPrices.normal : (materialPrices[MATERIALS.normal.id] || 0))
-                  }
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setCustomMaterialPrices(prev => ({
-                      ...prev,
-                      normal: val === '' ? 0 : Math.max(0, parseInt(val) || 0)
-                    }));
-                  }}
-                  disabled={craftMode === 'owned' && ownedNormal > 0}
-                  className={`${styles.matPriceField} ${craftMode === 'owned' && ownedNormal > 0 ? styles.disabledPrice : ''}`}
-                />
-                <span>G</span>
+
+              <div className={styles.materialItem}>
+                <Image src={MATERIALS.normal.icon} alt="목재" width={40} height={40} className={styles.materialIcon} />
+                <div className={styles.materialInfo}>
+                  <span className={styles.materialName}>목재</span>
+                  <span className={styles.materialQty}>
+                    {currentItem.materials.normal * actualCraftCount} <span>/ {currentItem.materials.normal}</span>
+                  </span>
+                </div>
+                <div className={styles.materialPriceInput}>
+                  <input
+                    type="number"
+                    value={customMaterialPrices.normal !== null ? customMaterialPrices.normal : (materialPrices[MATERIALS.normal.id] || 0)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomMaterialPrices(prev => ({
+                        ...prev,
+                        normal: val === '' ? 0 : Math.max(0, parseInt(val) || 0)
+                      }));
+                    }}
+                    className={styles.matPriceField}
+                  />
+                  <span>G</span>
+                </div>
               </div>
             </div>
           </div>
-
-        </div>
+        )}
 
         {/* 비용 계산 섹션 - 재료 구매 모드 */}
         {craftMode === 'buy' && (
@@ -878,33 +1015,93 @@ export default function LifeCraftCalculator() {
                     <div className={styles.exchangeSteps}>
                       <div className={styles.stepTitle}>교환 과정</div>
 
-                      {garuOptimization.extraDetail.leftoverSoft > 0 && (
+                      {/* 튼튼한 → 목재 변환 */}
+                      {garuOptimization.extraDetail.sturdyConverted > 0 && (
+                        <div className={styles.stepRow}>
+                          <Image src="/wood4.webp" alt="튼튼한" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.sturdyConverted}개</span>
+                          <span className={styles.arrow}>→</span>
+                          <Image src="/wood2.webp" alt="목재" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.sturdyToNormal}개</span>
+                        </div>
+                      )}
+
+                      {/* 부드러운 → 목재 변환 */}
+                      {garuOptimization.extraDetail.softToNormalConverted > 0 && (
                         <div className={styles.stepRow}>
                           <Image src="/wood3.webp" alt="부드러운" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.leftoverSoft}개</span>
+                          <span>{garuOptimization.extraDetail.softToNormalConverted}개</span>
+                          <span className={styles.arrow}>→</span>
+                          <Image src="/wood2.webp" alt="목재" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.softToNormal}개</span>
+                        </div>
+                      )}
+
+                      {/* 목재 → 가루 → 부드러운 변환 */}
+                      {garuOptimization.extraDetail.normalToSoftConverted > 0 && (
+                        <div className={styles.stepRow}>
+                          <Image src="/wood2.webp" alt="목재" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.normalToSoftConverted}개</span>
+                          <span className={styles.arrow}>→</span>
+                          <Image src="/wood3.webp" alt="부드러운" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.normalToSoft}개</span>
+                        </div>
+                      )}
+
+                      {/* 부드러운 → 가루 변환 */}
+                      {garuOptimization.extraDetail.softUsedForGaru > 0 && (
+                        <div className={styles.stepRow}>
+                          <Image src="/wood3.webp" alt="부드러운" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.softUsedForGaru}개</span>
                           <span className={styles.arrow}>→</span>
                           <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
                           <span>{garuOptimization.extraDetail.garuFromSoft}개</span>
                         </div>
                       )}
 
-                      {garuOptimization.extraDetail.leftoverNormal > 0 && (
+                      {/* 목재 → 가루 변환 */}
+                      {garuOptimization.extraDetail.normalUsedForGaru > 0 && (
                         <div className={styles.stepRow}>
                           <Image src="/wood2.webp" alt="목재" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.leftoverNormal}개</span>
+                          <span>{garuOptimization.extraDetail.normalUsedForGaru}개</span>
                           <span className={styles.arrow}>→</span>
                           <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
                           <span>{garuOptimization.extraDetail.garuFromNormal}개</span>
                         </div>
                       )}
 
-                      <div className={styles.stepRow}>
-                        <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
-                        <span>{garuOptimization.extraDetail.totalGaru}개</span>
-                        <span className={styles.arrow}>→</span>
-                        <Image src="/wood1.webp" alt="아비도스" width={24} height={24} />
-                        <span>{garuOptimization.extraDetail.extraAbidos}개</span>
-                      </div>
+                      {/* 가루 → 아비도스 변환 */}
+                      {garuOptimization.extraDetail.extraAbidos > 0 && (
+                        <div className={styles.stepRow}>
+                          <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.extraAbidos * 10}개</span>
+                          <span className={styles.arrow}>→</span>
+                          <Image src="/wood1.webp" alt="아비도스" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.extraAbidos}개</span>
+                        </div>
+                      )}
+
+                      {/* 가루 → 부드러운 변환 */}
+                      {garuOptimization.extraDetail.dustToSoft > 0 && (
+                        <div className={styles.stepRow}>
+                          <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.dustToSoft * 2}개</span>
+                          <span className={styles.arrow}>→</span>
+                          <Image src="/wood3.webp" alt="부드러운" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.dustToSoft}개</span>
+                        </div>
+                      )}
+
+                      {/* 가루 → 목재 변환 (via 부드러운) */}
+                      {garuOptimization.extraDetail.dustToTimber > 0 && (
+                        <div className={styles.stepRow}>
+                          <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.dustToTimber}개</span>
+                          <span className={styles.arrow}>→</span>
+                          <Image src="/wood2.webp" alt="목재" width={24} height={24} />
+                          <span>{garuOptimization.extraDetail.dustToTimber}개</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* 적용하기 버튼 */}
@@ -915,9 +1112,55 @@ export default function LifeCraftCalculator() {
                       {applyExtraCrafts ? '적용 해제' : '계산에 적용하기'}
                     </button>
                     {applyExtraCrafts && (
-                      <div className={styles.appliedNotice}>
-                        총 {actualCraftCount}회 ({actualCraftCount * currentItem.output}개) 계산 중
-                      </div>
+                      <>
+                        <div className={styles.appliedNotice}>
+                          총 {actualCraftCount}회 ({actualCraftCount * currentItem.output}개) 계산 중
+                        </div>
+                        {garuOptimization.extraDetail?.finalLeftover && (
+                          <div className={styles.leftoverSection}>
+                            <div className={styles.leftoverTitle}>제작 후 남는 재료</div>
+                            <div className={styles.leftoverItems}>
+                              {garuOptimization.extraDetail.finalLeftover.abidos > 0 && (
+                                <div className={styles.leftoverItem}>
+                                  <Image src="/wood1.webp" alt="아비도스" width={20} height={20} />
+                                  <span>{garuOptimization.extraDetail.finalLeftover.abidos}</span>
+                                </div>
+                              )}
+                              {garuOptimization.extraDetail.finalLeftover.soft > 0 && (
+                                <div className={styles.leftoverItem}>
+                                  <Image src="/wood3.webp" alt="부드러운" width={20} height={20} />
+                                  <span>{garuOptimization.extraDetail.finalLeftover.soft}</span>
+                                </div>
+                              )}
+                              {garuOptimization.extraDetail.finalLeftover.normal > 0 && (
+                                <div className={styles.leftoverItem}>
+                                  <Image src="/wood2.webp" alt="목재" width={20} height={20} />
+                                  <span>{garuOptimization.extraDetail.finalLeftover.normal}</span>
+                                </div>
+                              )}
+                              {garuOptimization.extraDetail.finalLeftover.sturdy > 0 && (
+                                <div className={styles.leftoverItem}>
+                                  <Image src="/wood4.webp" alt="튼튼한" width={20} height={20} />
+                                  <span>{garuOptimization.extraDetail.finalLeftover.sturdy}</span>
+                                </div>
+                              )}
+                              {garuOptimization.extraDetail.finalLeftover.garu > 0 && (
+                                <div className={styles.leftoverItem}>
+                                  <Image src="/rkfn.webp" alt="가루" width={20} height={20} />
+                                  <span>{garuOptimization.extraDetail.finalLeftover.garu}</span>
+                                </div>
+                              )}
+                              {garuOptimization.extraDetail.finalLeftover.abidos === 0 &&
+                               garuOptimization.extraDetail.finalLeftover.soft === 0 &&
+                               garuOptimization.extraDetail.finalLeftover.normal === 0 &&
+                               garuOptimization.extraDetail.finalLeftover.sturdy === 0 &&
+                               garuOptimization.extraDetail.finalLeftover.garu === 0 && (
+                                <span className={styles.noLeftover}>남는 재료 없음</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </>
                 ) : maxCraftsFromOwned > 0 ? (
@@ -934,9 +1177,15 @@ export default function LifeCraftCalculator() {
 
             {/* 교환 비율 참고 */}
             <div className={styles.exchangeRef}>
-              <div className={styles.refTitle}>교환 비율</div>
+              <div className={styles.refTitle}>직접 교환</div>
+              <div className={styles.refRow}>부드러운 25 → 목재 50</div>
+              <div className={styles.refRow}>튼튼한 5 → 목재 50</div>
+              <div className={styles.refTitle} style={{ marginTop: '8px' }}>가루 변환</div>
               <div className={styles.refRow}>목재 100 → 가루 80</div>
               <div className={styles.refRow}>부드러운 50 → 가루 80</div>
+              <div className={styles.refTitle} style={{ marginTop: '8px' }}>가루 → 재료</div>
+              <div className={styles.refRow}>가루 100 → 부드러운 50</div>
+              <div className={styles.refRow}>가루 100 → 튼튼한 10</div>
               <div className={styles.refRow}>가루 100 → 아비도스 10</div>
             </div>
           </div>
