@@ -351,17 +351,9 @@ export default function RefiningCalculator({ onSearchComplete, modeSelector }: R
     if (!boundMaterials['상급아비도스']) totalMaterialCost += costs['상급아비도스'] || 0;
 
     // 추가 재료 비용 계산 (일반 강화 + 상급재련 + 계승) - 분리된 비용 적용
-    // 계승 모드 빙하 숨결
-    if (materialOptions.glacierBreath.enabled && !materialOptions.glacierBreath.isBound && costs['빙하'] > 0) {
-      totalMaterialCost += costs['빙하'];
-    }
+    // 계승 후 숨결도 빙하_일반/용암_일반에 포함되므로 별도 계산 불필요
 
-    // 계승 모드 용암 숨결
-    if (materialOptions.lavaBreath.enabled && !materialOptions.lavaBreath.isBound && costs['용암'] > 0) {
-      totalMaterialCost += costs['용암'];
-    }
-
-    // 일반 재련 빙하 숨결
+    // 일반 재련 빙하 숨결 (계승 전 + 계승 후 모두 포함)
     if (materialOptions.glacierBreath.enabled && !materialOptions.glacierBreath.isBound) {
       totalMaterialCost += costs['빙하_일반'];
     }
@@ -805,23 +797,27 @@ export default function RefiningCalculator({ onSearchComplete, modeSelector }: R
           needsArmor = true;
           needsGlacierNormal = true;
 
-          // 레벨별 책 필요 여부 확인
-          for (let level = eq.currentLevel; level < targets.normal; level++) {
-            const nextLevel = level + 1;
-            if (nextLevel >= 11 && nextLevel <= 14) needsArmorBook1014 = true;
-            if (nextLevel >= 15 && nextLevel <= 18) needsArmorBook1518 = true;
-            if (nextLevel >= 19 && nextLevel <= 20) needsArmorBook1920 = true;
+          // 레벨별 책 필요 여부 확인 (계승 후 장비는 책 사용 불가)
+          if (!eq.isSuccession) {
+            for (let level = eq.currentLevel; level < targets.normal; level++) {
+              const nextLevel = level + 1;
+              if (nextLevel >= 11 && nextLevel <= 14) needsArmorBook1014 = true;
+              if (nextLevel >= 15 && nextLevel <= 18) needsArmorBook1518 = true;
+              if (nextLevel >= 19 && nextLevel <= 20) needsArmorBook1920 = true;
+            }
           }
         } else {
           needsWeapon = true;
           needsLavaNormal = true;
 
-          // 레벨별 책 필요 여부 확인
-          for (let level = eq.currentLevel; level < targets.normal; level++) {
-            const nextLevel = level + 1;
-            if (nextLevel >= 11 && nextLevel <= 14) needsWeaponBook1014 = true;
-            if (nextLevel >= 15 && nextLevel <= 18) needsWeaponBook1518 = true;
-            if (nextLevel >= 19 && nextLevel <= 20) needsWeaponBook1920 = true;
+          // 레벨별 책 필요 여부 확인 (계승 후 장비는 책 사용 불가)
+          if (!eq.isSuccession) {
+            for (let level = eq.currentLevel; level < targets.normal; level++) {
+              const nextLevel = level + 1;
+              if (nextLevel >= 11 && nextLevel <= 14) needsWeaponBook1014 = true;
+              if (nextLevel >= 15 && nextLevel <= 18) needsWeaponBook1518 = true;
+              if (nextLevel >= 19 && nextLevel <= 20) needsWeaponBook1920 = true;
+            }
           }
         }
       }
@@ -969,12 +965,14 @@ export default function RefiningCalculator({ onSearchComplete, modeSelector }: R
               // 숨결 비용 (방어구: 빙하의 숨결)
               if (useBreath) {
                 totalMaterials.빙하 += breathEffect.max * avgTries;
+                totalMaterials.빙하_일반 += breathEffect.max * avgTries;
               }
             } else {
               totalMaterials.파괴석결정 = (totalMaterials.파괴석결정 || 0) + (materialCostPerTry as any).파괴석결정 * avgTries;
               // 숨결 비용 (무기: 용암의 숨결)
               if (useBreath) {
                 totalMaterials.용암 += breathEffect.max * avgTries;
+                totalMaterials.용암_일반 += breathEffect.max * avgTries;
               }
             }
             totalMaterials.위대한돌파석 = (totalMaterials.위대한돌파석 || 0) + (materialCostPerTry as any).위대한돌파석 * avgTries;
