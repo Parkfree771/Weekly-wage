@@ -2,7 +2,13 @@
 .container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 16px 40px;
+  padding: 0 4px 20px;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 16px 40px;
+  }
 }
 
 /* number input 화살표 제거 */
@@ -30,47 +36,83 @@
 /* 헤더 - 다른 페이지와 동일한 스타일 */
 .header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 6px;
+}
+
+@media (min-width: 768px) {
+  .header {
+    margin-bottom: 20px;
+  }
 }
 
 .pageTitle {
-  font-size: clamp(1.3rem, 3vw, 1.6rem);
+  font-size: 0.7rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.2rem 0;
+}
+
+@media (min-width: 768px) {
+  .pageTitle {
+    font-size: clamp(1.3rem, 3vw, 1.6rem);
+    margin: 0 0 0.5rem 0;
+  }
 }
 
 .pageDesc {
-  font-size: 0.85rem;
+  font-size: 0.4rem;
   color: var(--text-muted);
   margin: 0;
+}
+
+@media (min-width: 768px) {
+  .pageDesc {
+    font-size: 0.85rem;
+  }
 }
 
 /* 사이드바 시세 갱신 */
 .refreshCard {
   background: var(--card-bg);
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--border-color);
-  padding: 14px;
-  margin-bottom: 16px;
+  padding: 10px;
+  margin-bottom: 10px;
   text-align: center;
+}
+
+@media (min-width: 768px) {
+  .refreshCard {
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
 }
 
 .refreshBtnSidebar {
   width: 100%;
-  padding: 12px 16px;
-  border-radius: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
   border: 2px solid #10b981;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
   color: #10b981;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 8px;
   transition: all 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  .refreshBtnSidebar {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+  }
 }
 
 .refreshBtnSidebar:hover:not(:disabled) {
@@ -88,16 +130,29 @@
 }
 
 .cooldownTimer {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
+@media (min-width: 768px) {
+  .cooldownTimer {
+    font-size: 1rem;
+  }
+}
+
 .priceDateSidebar {
   display: block;
-  margin-top: 10px;
-  font-size: 0.75rem;
+  margin-top: 8px;
+  font-size: 0.7rem;
   color: var(--text-muted);
+}
+
+@media (min-width: 768px) {
+  .priceDateSidebar {
+    margin-top: 10px;
+    font-size: 0.75rem;
+  }
 }
 
 /* 메인 카드 */
@@ -943,20 +998,41 @@
 
 .profitItem {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
+  gap: 2px;
   padding: 10px 14px;
   border-radius: 8px;
 }
 
+@media (min-width: 768px) {
+  .profitItem {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0;
+  }
+}
+
 .profitLabel {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
+@media (min-width: 768px) {
+  .profitLabel {
+    font-size: 0.8rem;
+  }
+}
+
 .profitPercent {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .profitPercent {
+    font-size: 1.1rem;
+  }
 }
 
 .profitBg {
@@ -1068,55 +1144,116 @@
 /* 메인 레이아웃 */
 .mainLayout {
   display: flex;
-  gap: 20px;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .mainLayout {
+    flex-direction: row;
+    gap: 20px;
+    align-items: flex-start;
+  }
 }
 
 .mainCard {
   flex: 1;
   min-width: 0;
+  border-radius: 12px;
+}
+
+@media (min-width: 768px) {
+  .mainCard {
+    border-radius: 16px;
+  }
 }
 
 /* 사이드바 */
 .sidebar {
-  width: 280px;
+  width: 100%;
   flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    width: 280px;
+  }
 }
 
 .sidebarCard {
   background: var(--card-bg);
-  border-radius: 16px;
+  border-radius: 12px;
   border: 1px solid var(--border-color);
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 768px) {
+  .sidebarCard {
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .sidebarHeader {
   display: flex;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, transparent 100%);
   border-bottom: 1px solid var(--border-color);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #10b981;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .sidebarHeader {
+    justify-content: flex-start;
+    padding: 14px 16px;
+    font-size: 0.9rem;
+    text-align: left;
+  }
+}
+
+.sidebarHeader span {
+  display: inline;
 }
 
 .sidebarContent {
-  padding: 16px;
+  padding: 12px;
+}
+
+@media (min-width: 768px) {
+  .sidebarContent {
+    padding: 16px;
+  }
 }
 
 .sidebarTitle {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-muted);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .sidebarTitle {
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+    text-align: left;
+  }
 }
 
 /* 구매 모드 - 비용 비교 */
 .methodRow {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
@@ -1137,15 +1274,28 @@
 }
 
 .methodName {
-  font-size: 0.85rem;
+  display: inline;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
+@media (min-width: 768px) {
+  .methodName {
+    font-size: 0.85rem;
+  }
+}
+
 .methodCost {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-secondary);
+}
+
+@media (min-width: 768px) {
+  .methodCost {
+    font-size: 0.9rem;
+  }
 }
 
 .bestMethod .methodCost {
@@ -1154,59 +1304,109 @@
 
 .savingsBox {
   margin-top: 12px;
-  padding: 14px;
+  padding: 12px;
   background: rgba(16, 185, 129, 0.1);
   border-radius: 10px;
   text-align: center;
 }
 
+@media (min-width: 768px) {
+  .savingsBox {
+    padding: 14px;
+  }
+}
+
 .savingsTitle {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #10b981;
   margin-bottom: 4px;
 }
 
+@media (min-width: 768px) {
+  .savingsTitle {
+    font-size: 0.9rem;
+  }
+}
+
 .savingsPercent {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #10b981;
 }
 
+@media (min-width: 768px) {
+  .savingsPercent {
+    font-size: 1.2rem;
+  }
+}
+
 .savingsDetail {
-  font-size: 0.7rem;
+  display: block;
+  font-size: 0.65rem;
   color: var(--text-muted);
   margin-top: 6px;
 }
 
+@media (min-width: 768px) {
+  .savingsDetail {
+    font-size: 0.7rem;
+  }
+}
+
 .directBestBox {
   margin-top: 12px;
-  padding: 14px;
+  padding: 12px;
   background: var(--card-header-bg);
   border-radius: 10px;
   text-align: center;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+@media (min-width: 768px) {
+  .directBestBox {
+    padding: 14px;
+    font-size: 0.85rem;
+  }
 }
 
 /* 보유 모드 - 추가 제작 */
 .extraBox {
-  padding: 14px;
+  padding: 12px;
   background: rgba(16, 185, 129, 0.1);
   border-radius: 10px;
   text-align: center;
   margin-bottom: 12px;
 }
 
+@media (min-width: 768px) {
+  .extraBox {
+    padding: 14px;
+  }
+}
+
 .extraTitle {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #10b981;
 }
 
+@media (min-width: 768px) {
+  .extraTitle {
+    font-size: 1rem;
+  }
+}
+
 .extraOutput {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #10b981;
+}
+
+@media (min-width: 768px) {
+  .extraOutput {
+    font-size: 0.85rem;
+  }
 }
 
 .exchangeSteps {
@@ -1216,19 +1416,33 @@
 }
 
 .stepTitle {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 10px;
 }
 
+@media (min-width: 768px) {
+  .stepTitle {
+    font-size: 0.75rem;
+  }
+}
+
 .stepRow {
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
+  justify-content: flex-start;
   gap: 6px;
   padding: 6px 0;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--text-primary);
+}
+
+@media (min-width: 768px) {
+  .stepRow {
+    font-size: 0.8rem;
+  }
 }
 
 .stepRow .arrow {
@@ -1237,27 +1451,42 @@
 }
 
 .noExtraBox {
-  padding: 20px 14px;
+  padding: 16px 12px;
   background: var(--card-header-bg);
   border-radius: 10px;
   text-align: center;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+@media (min-width: 768px) {
+  .noExtraBox {
+    padding: 20px 14px;
+    font-size: 0.85rem;
+  }
 }
 
 /* 적용하기 버튼 */
 .applyExtraBtn {
   width: 100%;
-  margin-top: 12px;
-  padding: 12px 16px;
+  margin-top: 10px;
+  padding: 10px 14px;
   border-radius: 8px;
   border: 2px solid #10b981;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
   color: #10b981;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  .applyExtraBtn {
+    margin-top: 12px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
 }
 
 .applyExtraBtn:hover {
@@ -1285,6 +1514,12 @@
   font-size: 0.8rem;
   font-weight: 600;
   color: #10b981;
+}
+
+@media (min-width: 768px) {
+  .appliedNotice {
+    font-size: 0.8rem;
+  }
 }
 
 /* 제작 후 남는 재료 */
@@ -1333,9 +1568,15 @@
 
 /* 교환 비율 참고 */
 .exchangeRef {
-  padding: 12px 16px;
+  padding: 10px 12px;
   border-top: 1px solid var(--border-color);
   background: var(--card-header-bg);
+}
+
+@media (min-width: 768px) {
+  .exchangeRef {
+    padding: 12px 16px;
+  }
 }
 
 .refTitle {
@@ -1345,213 +1586,132 @@
   margin-bottom: 6px;
 }
 
+@media (min-width: 768px) {
+  .refTitle {
+    font-size: 0.7rem;
+    margin-bottom: 6px;
+  }
+}
+
 .refRow {
   font-size: 0.7rem;
   color: var(--text-muted);
   padding: 2px 0;
 }
 
-/* 반응형 */
-@media (max-width: 900px) {
-  .mainLayout {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-  }
-
-  .sidebarCard {
-    display: flex;
-    flex-wrap: wrap;
-  }
-
-  .sidebarHeader {
-    width: 100%;
-  }
-
-  .sidebarContent {
-    flex: 1;
-    min-width: 280px;
-  }
-
-  .exchangeRef {
-    flex: 1;
-    min-width: 200px;
-    border-top: none;
-    border-left: 1px solid var(--border-color);
-  }
-}
-
-@media (max-width: 768px) {
-  .craftResultSection {
-    gap: 12px;
-  }
-
-  .craftResultLeft {
-    padding: 12px 14px;
-    gap: 10px;
-    min-width: 140px;
-  }
-
-  .craftResultMain {
-    gap: 8px;
-  }
-
-  .craftResultIcon {
-    width: 48px !important;
-    height: 48px !important;
-  }
-
-  .craftResultCount {
-    font-size: 1.4rem;
-  }
-
-  .craftResultValue {
-    padding-top: 8px;
-  }
-
-  .valueRow {
+@media (min-width: 768px) {
+  .refRow {
     font-size: 0.7rem;
-  }
-
-  .costCalcRight {
-    padding: 12px 14px;
-  }
-
-  .materialsList {
-    flex-wrap: wrap;
-  }
-
-  .materialItem {
-    min-width: calc(50% - 6px);
-    flex: 1 1 calc(50% - 6px);
-  }
-
-  .sidebarCard {
-    flex-direction: column;
-  }
-
-  .exchangeRef {
-    border-left: none;
-    border-top: 1px solid var(--border-color);
+    padding: 2px 0;
   }
 }
 
-@media (max-width: 480px) {
-  .container {
-    padding: 16px 12px 32px;
-  }
-
-  .costCalcSection {
-    padding: 12px;
-  }
-
-  .craftResultSection {
-    padding: 12px;
-    gap: 8px;
-  }
-
-  .craftResultLeft {
-    padding: 10px 12px;
-    gap: 8px;
-    min-width: 110px;
-  }
-
-  .craftResultMain {
-    gap: 6px;
-  }
-
-  .craftResultIcon {
-    width: 40px !important;
-    height: 40px !important;
-  }
-
-  .craftResultCount {
-    font-size: 1.2rem;
-  }
-
-  .craftResultValue {
-    padding-top: 6px;
-    gap: 2px;
-  }
-
-  .valueRow {
-    font-size: 0.65rem;
-  }
-
-  .valueAmount {
-    font-size: 0.65rem;
-  }
-
-  .costCalcRight {
-    padding: 10px 12px;
-  }
-
-  .costCalcTitle {
-    font-size: 0.8rem;
-  }
-
-  .costCalcRow {
-    font-size: 0.75rem;
-  }
-
-  .perUnitValue {
-    font-size: 0.9rem;
-  }
-
-  .header {
-    margin-bottom: 16px;
-  }
-
-  .refreshCard {
-    padding: 12px;
-    margin-bottom: 12px;
-  }
-
-  .refreshBtnSidebar {
-    padding: 10px 14px;
-    font-size: 0.85rem;
+/* 반응형 - 모바일 메인 카드만 조정 (사이드바는 아래에 전체 너비로) */
+@media (max-width: 767px) {
+  .mainCard {
+    border-radius: 10px;
   }
 
   .itemBtn {
-    padding: 12px 10px;
-    font-size: 0.8rem;
+    padding: 10px 8px;
+    font-size: 0.75rem;
+    gap: 6px;
   }
 
   .itemHeader {
-    padding: 16px;
+    padding: 14px;
     gap: 12px;
   }
 
-  .itemIcon {
-    width: 48px;
-    height: 48px;
+  .itemName {
+    font-size: 0.95rem;
   }
 
-  .itemName {
-    font-size: 1rem;
+  .itemPriceRow {
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .priceLabel {
+    font-size: 0.8rem;
+  }
+
+  .priceInput {
+    width: 80px;
+    height: 28px;
+    font-size: 0.9rem;
+    padding: 0 6px;
+  }
+
+  .priceUnit {
+    font-size: 0.8rem;
   }
 
   .modeSelector {
-    padding: 12px 16px;
+    padding: 10px 14px;
     gap: 6px;
   }
 
   .modeBtn {
-    padding: 8px 12px;
-    font-size: 0.8rem;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    border-radius: 6px;
+  }
+
+  .craftCountSection {
+    padding: 12px 14px;
+  }
+
+  .sectionLabel {
+    font-size: 0.7rem;
+    margin-bottom: 8px;
+  }
+
+  .countBtn {
+    width: 36px;
+    height: 32px;
+    font-size: 0.85rem;
+    border-radius: 5px;
+  }
+
+  .countInput {
+    width: 60px;
+    height: 32px;
+    font-size: 0.9rem;
+    border-radius: 5px;
+  }
+
+  .ownedSection {
+    padding: 12px 14px;
   }
 
   .ownedInputs {
-    flex-wrap: wrap;
     gap: 8px;
   }
 
   .ownedInput {
     padding: 10px 8px;
-    min-width: calc(50% - 4px);
-    flex: 1 1 calc(50% - 4px);
+    gap: 6px;
+    border-radius: 6px;
+  }
+
+  .ownedInput input {
+    height: 32px;
+    font-size: 0.85rem;
+    border-radius: 5px;
+  }
+
+  .requiredAmount {
+    font-size: 0.65rem;
+  }
+
+  .maxCrafts {
+    margin-top: 10px;
+    font-size: 0.8rem;
+  }
+
+  .materialsSection {
+    padding: 12px 14px;
   }
 
   .materialsList {
@@ -1559,14 +1719,9 @@
   }
 
   .materialItem {
-    padding: 12px 8px;
-    min-width: calc(33% - 6px);
-    flex: 1 1 calc(33% - 6px);
-  }
-
-  .materialIcon {
-    width: 36px !important;
-    height: 36px !important;
+    padding: 10px 8px;
+    gap: 6px;
+    border-radius: 8px;
   }
 
   .materialName {
@@ -1579,64 +1734,225 @@
 
   .materialCost {
     font-size: 0.7rem;
+    margin-top: 4px;
   }
 
-  .materialPriceInput input,
   .matPriceField {
     width: 60px;
-    height: 26px;
+    height: 24px;
     font-size: 0.75rem;
+    padding: 0 4px;
+    border-radius: 4px;
   }
 
-  .priceInput {
-    width: 80px;
-    height: 28px;
-    font-size: 0.9rem;
-  }
-
-  .itemPriceRow {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .priceCards {
-    gap: 8px;
-  }
-
-  .priceCard {
-    padding: 12px 8px;
-  }
-
-  .cardLabel {
-    font-size: 0.65rem;
-  }
-
-  .cardValue {
-    font-size: 1rem;
-  }
-
-  .conclusionBox {
-    flex-wrap: wrap;
-    gap: 4px;
+  .priceComparison {
+    margin-top: 12px;
     padding: 12px;
-    font-size: 0.85rem;
+    border-radius: 8px;
   }
 
-  .conclusionTotal {
+  .compLabel {
+    font-size: 0.7rem;
+  }
+
+  .compValue {
+    font-size: 0.95rem;
+  }
+
+  .compVs {
     font-size: 0.75rem;
-    width: 100%;
-    text-align: center;
+  }
+
+  .comparisonResult {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    padding: 8px;
+    border-radius: 6px;
+  }
+
+  .resultSection {
+    padding: 14px;
   }
 
   .resultInfo {
     font-size: 0.75rem;
+    margin-bottom: 12px;
+    gap: 4px;
+  }
+
+  .priceCards {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .priceCard {
+    padding: 12px 10px;
+    border-radius: 10px;
+  }
+
+  .cardLabel {
+    font-size: 0.65rem;
+    margin-bottom: 6px;
+  }
+
+  .cardValue {
+    font-size: 1.1rem;
+  }
+
+  .cardSub {
+    font-size: 0.6rem;
+    margin-top: 4px;
+  }
+
+  .profitCardNew {
+    padding: 12px 10px;
+    gap: 6px;
+    border-radius: 10px;
+  }
+
+  .profitItem {
+    padding: 8px 10px;
+    border-radius: 6px;
+  }
+
+  .profitLabel {
+    font-size: 0.75rem;
+  }
+
+  .profitPercent {
+    font-size: 0.95rem;
+  }
+
+  .conclusionBox {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    gap: 6px;
+  }
+
+  .conclusionIcon {
+    font-size: 0.95rem;
+  }
+
+  .conclusionTotal {
+    font-size: 0.7rem;
   }
 
   .feeSection {
-    padding: 10px 16px;
+    padding: 10px 14px;
   }
 
   .feeLabel {
     font-size: 0.8rem;
+  }
+
+  .feeInput input {
+    width: 45px;
+    height: 26px;
+    font-size: 0.8rem;
+    border-radius: 4px;
+  }
+
+  .feeInput span {
+    font-size: 0.8rem;
+  }
+
+  .craftResultSection {
+    padding: 12px 14px;
+    gap: 10px;
+    flex-direction: column;
+  }
+
+  .craftResultLeft {
+    padding: 12px;
+    gap: 10px;
+    min-width: auto;
+    border-radius: 10px;
+  }
+
+  .craftResultCount {
+    font-size: 1.4rem;
+  }
+
+  .craftResultValue {
+    padding-top: 8px;
+    gap: 4px;
+  }
+
+  .valueRow {
+    font-size: 0.7rem;
+  }
+
+  .valueAmount {
+    font-size: 0.7rem;
+  }
+
+  .costCalcRight {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .costCalcHeader {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+  }
+
+  .costCalcTitle {
+    font-size: 0.8rem;
+  }
+
+  .feeInputInline {
+    font-size: 0.7rem;
+    gap: 4px;
+  }
+
+  .feeInputInline input {
+    width: 36px;
+    height: 22px;
+    font-size: 0.7rem;
+    border-radius: 3px;
+  }
+
+  .costCalcRow {
+    font-size: 0.75rem;
+  }
+
+  .costCalcPerUnit {
+    padding: 8px 10px;
+    margin-top: 8px;
+    border-radius: 6px;
+  }
+
+  .perUnitValue {
+    font-size: 0.9rem;
+  }
+
+  .leftoverSection {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+  }
+
+  .leftoverTitle {
+    font-size: 0.7rem;
+    margin-bottom: 6px;
+  }
+
+  .leftoverItems {
+    gap: 8px;
+  }
+
+  .leftoverItem {
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+
+  .leftoverItem span {
+    font-size: 0.75rem;
+  }
+
+  .noLeftover {
+    font-size: 0.75rem;
   }
 }
