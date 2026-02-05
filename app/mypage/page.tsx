@@ -10,6 +10,7 @@ import { raids } from '@/data/raids';
 import {
   Character,
   WeeklyChecklist,
+  WeeklyGoldRecord,
   getTop3RaidGroups,
   getRaidGroupName,
   raidGroupImages,
@@ -17,7 +18,11 @@ import {
   getRaidsForLevel,
   needsWeeklyReset,
   resetWeeklyChecklist,
+  getWeekLabel,
+  getCurrentWeekStart,
+  calculateTotalGoldFromChecklist,
 } from '@/types/user';
+import WeeklyGoldChart from '@/components/WeeklyGoldChart';
 import styles from './mypage.module.css';
 
 // 레이드 그룹별 가능한 난이도 가져오기
@@ -50,6 +55,7 @@ export default function MyPage() {
   // 상태
   const [characters, setCharacters] = useState<Character[]>([]);
   const [weeklyChecklist, setWeeklyChecklist] = useState<WeeklyChecklist>({});
+  const [weeklyGoldHistory, setWeeklyGoldHistory] = useState<WeeklyGoldRecord[]>([]);
   const [showAllCharacters, setShowAllCharacters] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -94,9 +100,11 @@ export default function MyPage() {
 
     const chars = userProfile.characters || [];
     const checklist = userProfile.weeklyChecklist || {};
+    const goldHistory = userProfile.weeklyGoldHistory || [];
 
     setCharacters(chars);
     setWeeklyChecklist(checklist);
+    setWeeklyGoldHistory(goldHistory);
 
     // 전체 원정대 목록도 로드
     if (userProfile.allCharacters && userProfile.allCharacters.length > 0) {
@@ -107,6 +115,28 @@ export default function MyPage() {
     if (chars.length > 0 && needsWeeklyReset(userProfile.lastWeeklyReset)) {
       console.log('[주간 초기화] 수요일 06시 지남, 체크리스트 초기화 시작');
 
+      // 1. 먼저 현재 골드를 기록에 저장
+      const { totalGold, raidGold, additionalGold } = calculateTotalGoldFromChecklist(chars, checklist);
+
+      // 지난 주 시작일 계산 (현재 주 시작일 - 7일)
+      const lastWeekStart = userProfile.lastWeeklyReset
+        ? userProfile.lastWeeklyReset.split('T')[0]
+        : getCurrentWeekStart();
+      const lastWeekLabel = getWeekLabel(new Date(lastWeekStart));
+
+      // 이미 저장된 주인지 체크
+      const alreadySaved = goldHistory.some(h => h.weekStart === lastWeekStart);
+
+      const newGoldRecord: WeeklyGoldRecord = {
+        weekStart: lastWeekStart,
+        weekLabel: lastWeekLabel,
+        totalGold,
+        raidGold,
+        additionalGold,
+        characterCount: chars.length,
+      };
+
+      // 2. 초기화
       const resetChecklist = resetWeeklyChecklist(checklist, chars);
       const now = new Date().toISOString();
 
@@ -117,12 +147,21 @@ export default function MyPage() {
           const { db } = await import('@/lib/firebase-client');
           const userRef = doc(db, 'users', user.uid);
 
+          // 골드 기록 업데이트 (중복 방지)
+          let updatedHistory = [...goldHistory];
+          if (!alreadySaved && totalGold > 0) {
+            updatedHistory.push(newGoldRecord);
+            console.log('[주간 골드 저장]', newGoldRecord);
+          }
+
           await updateDoc(userRef, {
             weeklyChecklist: resetChecklist,
+            weeklyGoldHistory: updatedHistory,
             lastWeeklyReset: now,
           });
 
           setWeeklyChecklist(resetChecklist);
+          setWeeklyGoldHistory(updatedHistory);
           console.log('[주간 초기화] 완료');
         } catch (error) {
           console.error('[주간 초기화] 실패:', error);
@@ -1038,6 +1077,23 @@ export default function MyPage() {
             >
               {showAllCharacters ? '접기' : `더보기 (+${characters.length - 6})`}
             </Button>
+          </div>
+        )}
+
+        {/* 주간 골드 차트 (맨 아래) */}
+        {characters.length > 0 && (
+          <WeeklyGoldChart
+            history={weeklyGoldHistory}
+            currentWeekGold={calculateTotalGold()}
+            currentWeekLabel={getWeekLabel(new Date())}
+          />
+        )}
+
+        {/* 안내 문구 */}
+        {characters.length > 0 && (
+          <div className={styles.notice}>
+            <p>매주 수요일 06:00 이후 첫 접속 시 이전 주 골드가 자동 저장됩니다.</p>
+            <p>레이드 체크 후 상단의 '저장하기' 버튼을 눌러야 변경사항이 반영됩니다.</p>
           </div>
         )}
 

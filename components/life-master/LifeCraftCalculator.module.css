@@ -1,0 +1,1592 @@
+/* 컨테이너 */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+}
+
+/* number input 화살표 제거 */
+.container input[type="number"]::-webkit-outer-spin-button,
+.container input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.container input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+/* 헤더 - 다른 페이지와 동일한 스타일 */
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.pageTitle {
+  font-size: clamp(1.3rem, 3vw, 1.6rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.pageDesc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* 사이드바 시세 갱신 */
+.refreshCard {
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  padding: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.refreshBtnSidebar {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 2px solid #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
+  color: #10b981;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.refreshBtnSidebar:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border-color: #059669;
+  transform: translateY(-1px);
+}
+
+.refreshBtnSidebar:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+  border-color: var(--border-color);
+  background: var(--card-header-bg);
+  color: var(--text-muted);
+}
+
+.cooldownTimer {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.priceDateSidebar {
+  display: block;
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* 메인 카드 */
+.mainCard {
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 아이템 선택 */
+.itemSelector {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.itemBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.itemBtn:hover {
+  background: var(--card-header-bg);
+}
+
+.itemBtn.active {
+  background: var(--card-header-bg);
+  color: var(--text-primary);
+  border-bottom: 2px solid #ea580c;
+}
+
+.itemBtn.active:last-child {
+  border-bottom-color: #78716c;
+}
+
+/* 아이템 헤더 */
+.itemHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.1) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.itemIcon {
+  border-radius: 8px;
+  border: 2px solid #ea580c;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+}
+
+.itemInfo {
+  flex: 1;
+}
+
+.itemPriceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.priceLabel {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.priceInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.priceInput {
+  width: 90px;
+  height: 32px;
+  padding: 0 8px;
+  text-align: right;
+  border-radius: 6px;
+  border: 2px solid #ea580c;
+  background: var(--card-bg);
+  color: #ea580c;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.priceInput:focus {
+  outline: none;
+  border-color: #c2410c;
+}
+
+.priceUnit {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ea580c;
+}
+
+.resetPriceBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--card-header-bg);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.resetPriceBtn:hover {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.itemName {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.itemPrice {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.itemPrice span {
+  color: #ea580c;
+  font-weight: 700;
+}
+
+/* 모드 선택 */
+.modeSelector {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  background: var(--card-header-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modeBtn:hover {
+  border-color: var(--text-muted);
+}
+
+.modeBtn.active {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+/* 제작 횟수 */
+.craftCountSection {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sectionLabel {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.countControl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.countBtn {
+  width: 40px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.countBtn:hover {
+  background: var(--card-header-bg);
+  border-color: var(--text-muted);
+}
+
+.countInput {
+  width: 80px;
+  height: 36px;
+  text-align: center;
+  border-radius: 6px;
+  border: 2px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.countInput:focus {
+  outline: none;
+  border-color: #ea580c;
+}
+
+/* 보유 재료 */
+.ownedSection {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ownedInputs {
+  display: flex;
+  gap: 12px;
+}
+
+.ownedInput {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--card-header-bg);
+  border-radius: 8px;
+}
+
+.ownedInput input {
+  width: 100%;
+  height: 36px;
+  text-align: center;
+  border-radius: 6px;
+  border: 2px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.ownedInput input:focus {
+  outline: none;
+  border-color: #10b981;
+}
+
+.maxCrafts {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.maxCrafts span {
+  color: #10b981;
+  font-weight: 700;
+}
+
+/* 필요 재료 */
+.materialsSection {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.materialHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.refreshBtn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.refreshBtn:hover {
+  background: var(--card-header-bg);
+  border-color: var(--text-muted);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.materialsList {
+  display: flex;
+  gap: 12px;
+}
+
+.materialItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: var(--card-header-bg);
+  border-radius: 12px;
+  position: relative;
+}
+
+.materialIcon {
+  border-radius: 6px;
+}
+
+.materialInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.materialName {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.materialQty {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.materialQty span {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.materialCost {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ea580c;
+  margin-top: 4px;
+}
+
+.materialPriceInput {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.materialPriceInput input {
+  width: 70px;
+  height: 28px;
+  padding: 0 6px;
+  text-align: right;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.materialPriceInput input:focus {
+  outline: none;
+  border-color: #ea580c;
+}
+
+.materialPriceInput span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.matPriceField {
+  width: 70px;
+  height: 28px;
+  padding: 0 6px;
+  text-align: right;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.matPriceField:focus {
+  outline: none;
+  border-color: #ea580c;
+}
+
+.disabledPrice {
+  background: var(--bg-secondary, #f0f0f0);
+  color: #10b981;
+  font-weight: 700;
+  cursor: not-allowed;
+  border-color: #10b981;
+}
+
+/* 가격 비교 섹션 */
+.priceComparison {
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--card-header-bg);
+  border-radius: 10px;
+}
+
+.comparisonRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.comparisonItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.compLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.compValue {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.compVs {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0 8px;
+}
+
+.comparisonResult {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 0.95rem;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.comparisonResult strong {
+  font-weight: 700;
+}
+
+.profitResult {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.lossResult {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.priceDate {
+  margin-top: 10px;
+  text-align: right;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* 비용 계산 섹션 - 재료 구매 모드 */
+.costCalcSection {
+  padding: 16px 20px;
+  background: var(--card-header-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* 제작 결과 & 비용 계산 섹션 - 재료 보유 모드 */
+.craftResultSection {
+  display: flex;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--card-header-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.craftResultLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  min-width: 180px;
+}
+
+.craftResultMain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.craftResultIcon {
+  border-radius: 8px;
+}
+
+.craftResultCount {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #ea580c;
+}
+
+.craftResultValue {
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.valueRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.valueAmount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.netValue {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.costCalcRight {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.costCalcHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.costCalcTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.feeInputInline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.feeInputInline input {
+  width: 40px;
+  height: 24px;
+  text-align: center;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--card-header-bg);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.feeInputInline input:focus {
+  outline: none;
+  border-color: #ea580c;
+}
+
+.costCalcBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.costCalcRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.costCalcValue {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.costCalcTotal {
+  padding-top: 6px;
+  margin-top: 4px;
+  border-top: 1px dashed var(--border-color);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.costCalcPerUnit {
+  padding: 8px 10px;
+  margin-top: 6px;
+  background: var(--card-header-bg);
+  border-radius: 6px;
+}
+
+.perUnitValue {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ea580c;
+}
+
+/* 기존 feeSection 호환성 유지 */
+.feeSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--card-header-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.feeLabel {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.feeInput {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.feeInput input {
+  width: 50px;
+  height: 28px;
+  text-align: center;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.feeInput input:focus {
+  outline: none;
+  border-color: #ea580c;
+}
+
+.feeInput span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* 손익 결과 - 카드형 */
+.resultSection {
+  padding: 20px;
+}
+
+.resultInfo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.resultInfo img {
+  margin-left: -2px;
+}
+
+.resultDivider {
+  color: var(--border-color);
+}
+
+.priceCards {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.priceCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px 12px;
+  background: var(--card-header-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.cardLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.cardValue {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cardUnit {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.cardValueRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.cardSub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  text-align: center;
+}
+
+.profitRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.profitRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--card-bg);
+}
+
+.profitType {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.profitValue {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.profitText {
+  color: #10b981;
+}
+
+.profitText .profitRow {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.lossText {
+  color: #ef4444;
+}
+
+.lossText .profitRow {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* 새로운 손익 카드 */
+.profitCardNew {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: var(--card-header-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.profitItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.profitLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.profitPercent {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.profitBg {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.lossBg {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.conclusionBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+}
+
+.conclusionBox strong {
+  font-weight: 700;
+}
+
+.conclusionIcon {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.conclusionTotal {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.profitConclusion {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.lossConclusion {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* 기존 profitCards - 미사용이지만 호환성 유지 */
+.profitCards {
+  display: flex;
+  gap: 12px;
+}
+
+.profitCard {
+  flex: 1;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  border: 2px solid transparent;
+}
+
+.profitCard.profit {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.profitCard.loss {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.profitLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.profitPercent {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.profit .profitPercent {
+  color: #10b981;
+}
+
+.loss .profitPercent {
+  color: #ef4444;
+}
+
+.profitTotal {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.profit .profitTotal {
+  color: #10b981;
+}
+
+.loss .profitTotal {
+  color: #ef4444;
+}
+
+/* 메인 레이아웃 */
+.mainLayout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.mainCard {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 사이드바 */
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.sidebarCard {
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #10b981;
+}
+
+.sidebarContent {
+  padding: 16px;
+}
+
+.sidebarTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* 구매 모드 - 비용 비교 */
+.methodRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--card-header-bg);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.methodRow.bestMethod {
+  background: rgba(16, 185, 129, 0.1);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.methodInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.methodName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.methodCost {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.bestMethod .methodCost {
+  color: #10b981;
+}
+
+.savingsBox {
+  margin-top: 12px;
+  padding: 14px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.savingsTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #10b981;
+  margin-bottom: 4px;
+}
+
+.savingsPercent {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.savingsDetail {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.directBestBox {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--card-header-bg);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* 보유 모드 - 추가 제작 */
+.extraBox {
+  padding: 14px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.extraTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.extraOutput {
+  font-size: 0.85rem;
+  color: #10b981;
+}
+
+.exchangeSteps {
+  padding: 12px;
+  background: var(--card-header-bg);
+  border-radius: 10px;
+}
+
+.stepTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.stepRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.stepRow .arrow {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.noExtraBox {
+  padding: 20px 14px;
+  background: var(--card-header-bg);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* 적용하기 버튼 */
+.applyExtraBtn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
+  color: #10b981;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.applyExtraBtn:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.1) 100%);
+  transform: translateY(-1px);
+}
+
+.applyExtraBtn.applied {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.applyExtraBtn.applied:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+.appliedNotice {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #10b981;
+}
+
+/* 교환 비율 참고 */
+.exchangeRef {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+  background: var(--card-header-bg);
+}
+
+.refTitle {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.refRow {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  padding: 2px 0;
+}
+
+/* 반응형 */
+@media (max-width: 900px) {
+  .mainLayout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .sidebarCard {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .sidebarHeader {
+    width: 100%;
+  }
+
+  .sidebarContent {
+    flex: 1;
+    min-width: 280px;
+  }
+
+  .exchangeRef {
+    flex: 1;
+    min-width: 200px;
+    border-top: none;
+    border-left: 1px solid var(--border-color);
+  }
+}
+
+@media (max-width: 768px) {
+  .craftResultSection {
+    gap: 12px;
+  }
+
+  .craftResultLeft {
+    padding: 12px 14px;
+    gap: 10px;
+    min-width: 140px;
+  }
+
+  .craftResultMain {
+    gap: 8px;
+  }
+
+  .craftResultIcon {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .craftResultCount {
+    font-size: 1.4rem;
+  }
+
+  .craftResultValue {
+    padding-top: 8px;
+  }
+
+  .valueRow {
+    font-size: 0.7rem;
+  }
+
+  .costCalcRight {
+    padding: 12px 14px;
+  }
+
+  .materialsList {
+    flex-wrap: wrap;
+  }
+
+  .materialItem {
+    min-width: calc(50% - 6px);
+    flex: 1 1 calc(50% - 6px);
+  }
+
+  .sidebarCard {
+    flex-direction: column;
+  }
+
+  .exchangeRef {
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 16px 12px 32px;
+  }
+
+  .costCalcSection {
+    padding: 12px;
+  }
+
+  .craftResultSection {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .craftResultLeft {
+    padding: 10px 12px;
+    gap: 8px;
+    min-width: 110px;
+  }
+
+  .craftResultMain {
+    gap: 6px;
+  }
+
+  .craftResultIcon {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .craftResultCount {
+    font-size: 1.2rem;
+  }
+
+  .craftResultValue {
+    padding-top: 6px;
+    gap: 2px;
+  }
+
+  .valueRow {
+    font-size: 0.65rem;
+  }
+
+  .valueAmount {
+    font-size: 0.65rem;
+  }
+
+  .costCalcRight {
+    padding: 10px 12px;
+  }
+
+  .costCalcTitle {
+    font-size: 0.8rem;
+  }
+
+  .costCalcRow {
+    font-size: 0.75rem;
+  }
+
+  .perUnitValue {
+    font-size: 0.9rem;
+  }
+
+  .header {
+    margin-bottom: 16px;
+  }
+
+  .refreshCard {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .refreshBtnSidebar {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+
+  .itemBtn {
+    padding: 12px 10px;
+    font-size: 0.8rem;
+  }
+
+  .itemHeader {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .itemIcon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .itemName {
+    font-size: 1rem;
+  }
+
+  .modeSelector {
+    padding: 12px 16px;
+    gap: 6px;
+  }
+
+  .modeBtn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .ownedInputs {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ownedInput {
+    padding: 10px 8px;
+    min-width: calc(50% - 4px);
+    flex: 1 1 calc(50% - 4px);
+  }
+
+  .materialsList {
+    gap: 8px;
+  }
+
+  .materialItem {
+    padding: 12px 8px;
+    min-width: calc(33% - 6px);
+    flex: 1 1 calc(33% - 6px);
+  }
+
+  .materialIcon {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .materialName {
+    font-size: 0.65rem;
+  }
+
+  .materialQty {
+    font-size: 0.85rem;
+  }
+
+  .materialCost {
+    font-size: 0.7rem;
+  }
+
+  .materialPriceInput input,
+  .matPriceField {
+    width: 60px;
+    height: 26px;
+    font-size: 0.75rem;
+  }
+
+  .priceInput {
+    width: 80px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .itemPriceRow {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .priceCards {
+    gap: 8px;
+  }
+
+  .priceCard {
+    padding: 12px 8px;
+  }
+
+  .cardLabel {
+    font-size: 0.65rem;
+  }
+
+  .cardValue {
+    font-size: 1rem;
+  }
+
+  .conclusionBox {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 12px;
+    font-size: 0.85rem;
+  }
+
+  .conclusionTotal {
+    font-size: 0.75rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  .resultInfo {
+    font-size: 0.75rem;
+  }
+
+  .feeSection {
+    padding: 10px 16px;
+  }
+
+  .feeLabel {
+    font-size: 0.8rem;
+  }
+}

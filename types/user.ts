@@ -1,6 +1,16 @@
 // 사용자 데이터 타입 정의
 import { raids } from '@/data/raids';
 
+// 주간 골드 기록
+export type WeeklyGoldRecord = {
+  weekStart: string;      // "2026-02-05" (수요일 시작)
+  weekLabel: string;      // "2월 1주차"
+  totalGold: number;      // 총 골드
+  raidGold: number;       // 레이드 골드
+  additionalGold: number; // 추가 골드
+  characterCount: number; // 캐릭터 수
+};
+
 // 캐릭터 정보
 export type Character = {
   name: string;
@@ -66,6 +76,8 @@ export type UserProfile = {
   // 주간 체크리스트
   weeklyChecklist: WeeklyChecklist;
   lastWeeklyReset?: string;  // 마지막 주간 초기화 시간 (ISO string)
+  // 주간 골드 기록 (차트용)
+  weeklyGoldHistory?: WeeklyGoldRecord[];
   // UI 설정
   uiSettings?: {
     priceOrder?: string[];
@@ -203,6 +215,72 @@ export function needsWeeklyReset(lastResetTime: string | undefined): boolean {
   const lastReset = new Date(lastResetTime);
   // 마지막 초기화가 이번 주 수요일 06시 이전이면 초기화 필요
   return lastReset < lastWednesday6AM;
+}
+
+// 주 라벨 생성 (예: "2월 1주차")
+export function getWeekLabel(date: Date): string {
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kstDate = new Date(date.getTime() + kstOffset);
+
+  const month = kstDate.getUTCMonth() + 1;
+  const day = kstDate.getUTCDate();
+
+  // 해당 월의 몇 번째 주인지 계산 (1일 기준)
+  const weekOfMonth = Math.ceil(day / 7);
+
+  return `${month}월 ${weekOfMonth}주차`;
+}
+
+// 현재 주의 시작일 (수요일) 가져오기
+export function getCurrentWeekStart(): string {
+  const wednesday = getThisWeekWednesday6AM();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kstDate = new Date(wednesday.getTime() + kstOffset);
+
+  const year = kstDate.getUTCFullYear();
+  const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(kstDate.getUTCDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+// 총 골드 계산 (체크리스트 기반)
+export function calculateTotalGoldFromChecklist(
+  characters: Character[],
+  weeklyChecklist: WeeklyChecklist
+): { totalGold: number; raidGold: number; additionalGold: number } {
+  let raidGold = 0;
+  let additionalGold = 0;
+
+  characters.forEach(char => {
+    const state = weeklyChecklist[char.name];
+    if (!state) return;
+
+    Object.entries(state.raids).forEach(([raidName, gates]) => {
+      const raid = raids.find(r => r.name === raidName);
+      if (raid) {
+        const buyMore = state.raidMoreGoldExclude?.[raidName] === true;
+
+        gates.forEach((checked, i) => {
+          if (checked && raid.gates[i]) {
+            if (buyMore) {
+              raidGold += raid.gates[i].gold - raid.gates[i].moreGold;
+            } else {
+              raidGold += raid.gates[i].gold;
+            }
+          }
+        });
+      }
+    });
+
+    additionalGold += state.additionalGold || 0;
+  });
+
+  return {
+    totalGold: raidGold + additionalGold,
+    raidGold,
+    additionalGold
+  };
 }
 
 // 주간 체크리스트 초기화 (레이드 체크, 추가 골드만 - 캐릭터 정보 유지)

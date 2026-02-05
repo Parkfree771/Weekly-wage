@@ -415,12 +415,15 @@ textarea:-ms-input-placeholder {
 .site-footer {
   margin-top: 60px;
   padding: 20px 0;
-  border-top: 1px solid var(--border-color);
-  background-color: var(--card-bg);
+  border-top: 1px solid rgba(160, 60, 30, 0.12);
+  background: rgb(255, 250, 248);
+  box-shadow: 0 -1px 3px 0 rgba(160, 60, 30, 0.06);
 }
 
 [data-theme="dark"] .site-footer {
-  background-color: rgba(30, 30, 35, 0.8);
+  background: rgb(35, 35, 40);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.2);
 }
 
 .footer-copyright {

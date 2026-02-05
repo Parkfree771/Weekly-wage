@@ -1,0 +1,300 @@
+.container {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  margin-top: 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.titleArea {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--bg-secondary, #f5f5f5);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.chartWrapper {
+  display: flex;
+  gap: 12px;
+}
+
+.yAxis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 60px;
+  height: 240px;
+}
+
+.yLabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-align: right;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.chartArea {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.gridLines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.gridLine {
+  height: 1px;
+  background: var(--border-color);
+  opacity: 0.3;
+}
+
+.barsContainer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 10px;
+  height: 240px;
+  border-bottom: 2px solid var(--text-muted);
+}
+
+.barWrapper {
+  flex: 1;
+  max-width: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.barValue {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.currentValue {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.bar {
+  width: 100%;
+  max-width: 44px;
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+  border-radius: 6px 6px 0 0;
+  position: relative;
+  transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-height: 0;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  transform-origin: bottom;
+}
+
+.currentBar {
+  background: linear-gradient(180deg, #34d399 0%, #10b981 50%, #059669 100%);
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.4);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+
+.xAxisLabels {
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+  padding-top: 10px;
+}
+
+.xLabel {
+  flex: 1;
+  max-width: 60px;
+  font-size: 0.7rem;
+  color: var(--text-primary);
+  text-align: center;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.currentLabel {
+  color: #10b981;
+  font-weight: 700;
+}
+
+
+.notice {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--bg-secondary, #f5f5f5);
+  border-radius: 8px;
+  border-left: 3px solid var(--text-muted);
+}
+
+.notice p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.notice p + p {
+  margin-top: 4px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.emptyState p {
+  margin: 0;
+}
+
+.emptyHint {
+  font-size: 0.85rem;
+  margin-top: 8px !important;
+  opacity: 0.7;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .container {
+    padding: 18px;
+    margin-top: 24px;
+  }
+
+  .header {
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+  }
+
+  .yAxis {
+    min-width: 50px;
+    height: 200px;
+  }
+
+  .barsContainer {
+    height: 200px;
+  }
+
+  .gridLines {
+    height: 200px;
+  }
+
+  .barWrapper {
+    max-width: 48px;
+  }
+
+  .bar {
+    max-width: 36px;
+  }
+
+  .xLabel {
+    font-size: 0.62rem;
+    max-width: 48px;
+  }
+
+  .barValue {
+    font-size: 0.65rem;
+  }
+
+  .yLabel {
+    font-size: 0.62rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .chartWrapper {
+    gap: 8px;
+  }
+
+  .yAxis {
+    min-width: 44px;
+    height: 180px;
+  }
+
+  .barsContainer {
+    gap: 4px;
+    height: 180px;
+  }
+
+  .gridLines {
+    height: 180px;
+  }
+
+  .xAxisLabels {
+    gap: 4px;
+  }
+
+  .barWrapper {
+    max-width: 38px;
+  }
+
+  .xLabel {
+    font-size: 0.55rem;
+    max-width: 38px;
+  }
+
+  .bar {
+    max-width: 26px;
+  }
+
+  .barValue {
+    font-size: 0.58rem;
+  }
+
+  .yLabel {
+    font-size: 0.58rem;
+  }
+}

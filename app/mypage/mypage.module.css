@@ -1180,3 +1180,24 @@
     font-size: 15px;
   }
 }
+
+
+/* 안내 문구 */
+.notice {
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: var(--bg-secondary, rgba(0, 0, 0, 0.03));
+  border-radius: 10px;
+  border-left: 3px solid var(--text-muted);
+}
+
+.notice p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.notice p + p {
+  margin-top: 6px;
+}
