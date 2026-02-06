@@ -31,16 +31,28 @@ export default function PrivacyPolicy() {
               <section className="mb-4">
                 <h2 className="h5 text-primary mb-3">2. 처리하는 개인정보의 항목</h2>
                 <div className="mb-3">
-                  <h6>필수정보</h6>
+                  <h6>필수정보 (비로그인 이용 시)</h6>
                   <ul>
-                    <li>로스트아크 캐릭터 닉네임</li>
+                    <li>로스트아크 캐릭터 닉네임 (검색 시 입력)</li>
                     <li>접속 로그, IP 주소</li>
                     <li>쿠키, 접속기록</li>
                   </ul>
                 </div>
-                <div>
-                  <h6>선택정보</h6>
+                <div className="mb-3">
+                  <h6>선택정보 (Google 로그인 시)</h6>
                   <ul>
+                    <li>Google 계정 이메일 주소</li>
+                    <li>Google 계정 프로필 이름 및 프로필 사진 URL</li>
+                    <li>Google 계정 고유 식별자(UID)</li>
+                    <li>등록한 로스트아크 캐릭터 정보 (닉네임, 직업, 아이템 레벨, 서버)</li>
+                    <li>주간 레이드 체크리스트 데이터</li>
+                    <li>주간 골드 기록 데이터</li>
+                  </ul>
+                </div>
+                <div>
+                  <h6>자동 수집 정보</h6>
+                  <ul>
+                    <li>Google Analytics를 통한 방문 통계 (페이지 조회수, 방문 시간 등)</li>
                     <li>사용자가 입력한 기타 게임 관련 정보</li>
                   </ul>
                 </div>
@@ -49,12 +61,14 @@ export default function PrivacyPolicy() {
               <section className="mb-4">
                 <h2 className="h5 text-primary mb-3">3. 개인정보의 처리 및 보유기간</h2>
                 <p>
-                  개인정보는 법령에 따른 개인정보 보유·이용기간 또는 정보주체로부터 
+                  개인정보는 법령에 따른 개인정보 보유·이용기간 또는 정보주체로부터
                   개인정보를 수집시에 동의받은 개인정보 보유·이용기간 내에서 처리·보유합니다.
                 </p>
                 <ul>
                   <li>웹사이트 방문기록: 3개월</li>
-                  <li>사용자 입력 정보: 즉시 삭제 (저장하지 않음)</li>
+                  <li>비로그인 사용자 입력 정보: 서버에 저장하지 않음 (브라우저 세션 내에서만 사용)</li>
+                  <li>Google 로그인 사용자 정보: 회원 탈퇴 시까지 보유 (Google Firebase Firestore에 저장)</li>
+                  <li>주간 골드 기록: 회원 탈퇴 시까지 보유</li>
                 </ul>
               </section>
 
@@ -120,7 +134,51 @@ export default function PrivacyPolicy() {
               </section>
 
               <section className="mb-4">
-                <h2 className="h5 text-primary mb-3">9. 데이터 수집 및 사용에 관한 상세 정보</h2>
+                <h2 className="h5 text-primary mb-3">9. Google 로그인 및 회원 서비스</h2>
+                <div className="bg-light p-3 rounded mb-3">
+                  <h6 className="fw-semibold mb-3">Google OAuth 2.0 로그인</h6>
+                  <p className="mb-2">
+                    본 웹사이트는 마이페이지 기능 이용을 위해 Google OAuth 2.0 로그인을 제공합니다.
+                    Google 로그인 시 다음 정보가 수집됩니다:
+                  </p>
+                  <ul className="mb-3">
+                    <li>Google 계정 이메일 주소</li>
+                    <li>Google 계정 표시 이름</li>
+                    <li>Google 프로필 사진 URL</li>
+                    <li>Google 계정 고유 식별자(UID)</li>
+                  </ul>
+                  <p className="mb-2">
+                    수집된 정보는 사용자 식별, 마이페이지 데이터 관리, 로그인 상태 유지 목적으로만 사용되며,
+                    제3자에게 제공하지 않습니다. Google 로그인은 선택 사항이며,
+                    로그인하지 않아도 주간 골드 계산, 재련 계산, 생활 계산, 시세 확인 등
+                    대부분의 기능을 이용할 수 있습니다.
+                  </p>
+                  <p className="small text-muted mb-0">
+                    ※ Google 로그인 과정에서 비밀번호는 본 사이트에 전달되지 않습니다.
+                    인증은 Google 서버에서 처리되며, 본 사이트는 인증 토큰만 수신합니다.
+                  </p>
+                </div>
+                <div className="bg-light p-3 rounded">
+                  <h6 className="fw-semibold mb-3">데이터 저장</h6>
+                  <p className="mb-2">
+                    로그인 사용자의 데이터는 Google Firebase Firestore에 저장됩니다.
+                    저장되는 데이터는 다음과 같습니다:
+                  </p>
+                  <ul className="mb-3">
+                    <li>등록한 로스트아크 캐릭터 정보 (닉네임, 직업, 아이템 레벨, 서버, 캐릭터 이미지 URL)</li>
+                    <li>주간 레이드 체크리스트 (레이드 클리어 여부, 더보기 구매 여부, 추가 골드)</li>
+                    <li>주간 골드 기록 (주별 골드 수입 이력)</li>
+                    <li>마지막 주간 초기화 시각</li>
+                  </ul>
+                  <p className="small text-muted mb-0">
+                    ※ Firebase Firestore의 보안 규칙에 따라 각 사용자는 자신의 데이터에만 접근할 수 있으며,
+                    다른 사용자의 데이터에는 접근할 수 없습니다.
+                  </p>
+                </div>
+              </section>
+
+              <section className="mb-4">
+                <h2 className="h5 text-primary mb-3">10. 데이터 수집 및 사용에 관한 상세 정보</h2>
                 <div className="bg-light p-3 rounded">
                   <h6 className="fw-semibold mb-3">본 웹사이트가 수집하는 데이터</h6>
                   <p className="mb-2"><strong>1. 로스트아크 API를 통한 공개 데이터:</strong></p>
@@ -135,8 +193,9 @@ export default function PrivacyPolicy() {
                     <li>Google AdSense를 통한 광고 표시 및 클릭 데이터</li>
                   </ul>
                   <p className="small text-muted mb-0">
-                    ※ 본 웹사이트는 회원가입 기능이 없으며, 사용자의 개인 식별 정보(이름, 이메일, 전화번호 등)를
-                    일체 수집하지 않습니다. 모든 데이터는 공개된 게임 정보 및 익명 통계 목적으로만 사용됩니다.
+                    ※ 비로그인 사용자의 경우, 캐릭터 검색 정보는 서버에 저장되지 않으며
+                    브라우저 세션 내에서만 사용됩니다. Google 로그인 사용자의 데이터는
+                    위 9항에 명시된 바와 같이 Firebase에 저장됩니다.
                   </p>
                 </div>
               </section>

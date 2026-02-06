@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     description: '로골로골 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익 계산',
     images: ['/og-image.png'],
   },
+  alternates: {
+    canonical: 'https://lostarkweeklygold.kr/life-master',
+  },
 };
 
 export default function LifeMasterLayout({

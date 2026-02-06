@@ -685,6 +685,141 @@ export default function MyPage() {
               홈으로 돌아가기
             </button>
           </div>
+
+          {/* 마이페이지 소개 - 봇이 읽을 수 있는 정적 텍스트 */}
+          <section className="faq-section" style={{ marginTop: '2rem' }}>
+            <h2 className="faq-section-title">로골로골 마이페이지란?</h2>
+            <div className="faq-item">
+              <p className="faq-answer">
+                로골로골 마이페이지는 로스트아크 플레이어가 자신의 원정대를 등록하고,
+                매주 레이드 클리어 현황을 체크하며, 주간 골드 수입을 체계적으로 관리할 수 있는 개인화 서비스입니다.
+                Google 계정으로 로그인하면 모든 데이터가 Firebase에 안전하게 저장되어,
+                어디서든 접속하여 내 원정대의 골드 현황을 확인할 수 있습니다.
+                캐릭터명 하나만 입력하면 로스트아크 공식 API를 통해 원정대 전체가 자동으로 조회되며,
+                최대 6캐릭터를 골드 획득 캐릭터로 선택하여 관리할 수 있습니다.
+              </p>
+            </div>
+
+            <h3 className="faq-question" style={{marginTop: '1rem'}}>원정대 등록 및 관리</h3>
+            <div className="faq-item">
+              <p className="faq-answer">
+                캐릭터 이름을 검색하면 같은 원정대의 모든 캐릭터가 자동으로 조회됩니다.
+                아이템 레벨이 높은 순서대로 정렬되며, 골드를 획득할 캐릭터 6개를 직접 선택할 수 있습니다.
+                등록된 캐릭터의 직업, 아이템 레벨, 캐릭터 이미지가 표시되며,
+                갱신 버튼으로 최신 레벨 정보를 불러올 수 있습니다(5분 간격 제한).
+                원정대 편집 기능으로 언제든 골드 획득 캐릭터를 변경할 수 있으며,
+                캐릭터를 추가 등록하면 기존 체크리스트 데이터가 유지됩니다.
+              </p>
+            </div>
+
+            <h3 className="faq-question" style={{marginTop: '1rem'}}>주간 레이드 체크리스트</h3>
+            <div className="faq-item">
+              <p className="faq-answer">
+                등록된 캐릭터마다 참여 가능한 레이드가 아이템 레벨 기준으로 자동 표시됩니다.
+                레이드 이미지를 클릭하면 클리어 여부를 체크할 수 있고,
+                체크된 레이드의 골드가 자동으로 합산되어 캐릭터별, 원정대 전체의 주간 예상 골드를 보여줍니다.
+                세르카, 종막, 에기르, 아에르, 아브렐슈드, 카멘, 상아탑, 베히모스 등 모든 레이드를 지원하며,
+                각 레이드의 난이도(노말/하드)를 톱니바퀴 버튼으로 변경할 수 있습니다.
+                레이드 카드를 좌우로 넘겨 추가 레이드를 확인하고 체크할 수 있습니다.
+              </p>
+            </div>
+
+            <h3 className="faq-question" style={{marginTop: '1rem'}}>더보기 비용 관리</h3>
+            <div className="faq-item">
+              <p className="faq-answer">
+                각 캐릭터의 레이드별로 더보기 보상 구매 여부를 개별 설정할 수 있습니다.
+                더보기를 구매한 레이드는 클리어 골드에서 더보기 비용이 차감되어 실제 순수익이 표시됩니다.
+                예를 들어, 세르카 하드에서 더보기를 구매하면 클리어 골드에서 더보기 비용이 자동 차감됩니다.
+                더보기 구매 여부는 레이드마다 독립적으로 설정 가능하며,
+                카드 하단의 &quot;더보기 비용 설정&quot; 드롭다운에서 관리합니다.
+                추가 골드 입력란에 모래시계, 낙원 등 기타 골드 수입을 직접 입력할 수도 있습니다.
+              </p>
+            </div>
+
+            <h3 className="faq-question" style={{marginTop: '1rem'}}>주간 골드 기록 차트</h3>
+            <div className="faq-item">
+              <p className="faq-answer">
+                매주 수요일 오전 6시(레이드 초기화 시점)에 이전 주의 골드 기록이 자동으로 저장됩니다.
+                저장된 데이터는 주간 골드 차트로 시각화되어, 시간에 따른 골드 수입 추이를 한눈에 파악할 수 있습니다.
+                차트에는 레이드 골드와 추가 골드가 구분 표시되며, 현재 주의 예상 골드도 함께 표시됩니다.
+                이를 통해 캐릭터 육성이나 레이드 전략 변경이 실제 골드 수입에 어떤 영향을 미치는지 추적할 수 있습니다.
+                주간 골드 기록은 Firebase에 안전하게 보관되어, 로그인만 하면 언제든 과거 데이터를 조회할 수 있습니다.
+              </p>
+            </div>
+
+            <h3 className="faq-question" style={{marginTop: '1rem'}}>자동 주간 초기화</h3>
+            <div className="faq-item">
+              <p className="faq-answer">
+                로스트아크의 주간 초기화 시점인 매주 수요일 오전 6시(KST)에 맞춰
+                마이페이지의 레이드 체크리스트가 자동으로 초기화됩니다.
+                초기화 전에 현재 주의 골드 기록이 자동으로 저장되므로 데이터 손실 걱정이 없습니다.
+                수요일 이후 첫 접속 시 자동으로 초기화가 진행되며,
+                새로운 주차에 맞게 깨끗한 체크리스트로 시작할 수 있습니다.
+              </p>
+            </div>
+
+            <h3 className="faq-question" style={{marginTop: '1rem'}}>데이터 보안</h3>
+            <div className="faq-item">
+              <p className="faq-answer">
+                마이페이지의 모든 데이터는 Google Firebase Firestore에 저장됩니다.
+                Google OAuth 2.0 인증을 사용하여 안전하게 로그인하며,
+                다른 사용자의 데이터에는 접근할 수 없도록 보안 규칙이 설정되어 있습니다.
+                별도의 회원가입 과정 없이 기존 Google 계정으로 간편하게 이용할 수 있으며,
+                로그아웃 후에도 데이터는 안전하게 보관되어 다시 로그인하면 그대로 복원됩니다.
+              </p>
+            </div>
+          </section>
+
+          <section className="faq-section" style={{ marginTop: '1.5rem' }}>
+            <h2 className="faq-section-title">마이페이지 자주 묻는 질문</h2>
+
+            <div className="faq-item">
+              <h3 className="faq-question">Q. 캐릭터는 어떻게 등록하나요?</h3>
+              <p className="faq-answer">
+                로그인 후 &quot;캐릭터 등록&quot; 버튼을 클릭하고, 캐릭터 이름을 검색하면 됩니다.
+                로스트아크 공식 API를 통해 같은 원정대의 모든 캐릭터가 자동으로 조회되며,
+                아이템 레벨 순으로 정렬됩니다. 최대 6개의 골드 획득 캐릭터를 선택한 후 등록하면
+                바로 주간 체크리스트를 사용할 수 있습니다.
+              </p>
+            </div>
+
+            <div className="faq-item">
+              <h3 className="faq-question">Q. 캐릭터 레벨이 변경되면 어떻게 하나요?</h3>
+              <p className="faq-answer">
+                캐릭터 카드의 갱신 버튼(↻)을 클릭하면 로스트아크 API에서 최신 아이템 레벨을 불러옵니다.
+                레벨이 올라가면 참여 가능한 레이드가 자동으로 업데이트됩니다.
+                갱신은 캐릭터당 5분에 1회로 제한되며, 원정대 편집에서 캐릭터를 재등록하면 전체가 갱신됩니다.
+              </p>
+            </div>
+
+            <div className="faq-item">
+              <h3 className="faq-question">Q. 주간 골드 기록은 자동으로 저장되나요?</h3>
+              <p className="faq-answer">
+                네, 매주 수요일 오전 6시 이후 첫 접속 시 이전 주의 골드 기록이 자동으로 저장됩니다.
+                저장된 기록은 주간 골드 차트에 누적되어 시간에 따른 수입 변화를 확인할 수 있습니다.
+                다만 레이드 체크나 더보기 설정 변경 후에는 반드시 &quot;저장하기&quot; 버튼을 눌러야
+                변경사항이 서버에 반영됩니다.
+              </p>
+            </div>
+
+            <div className="faq-item">
+              <h3 className="faq-question">Q. 다른 기기에서도 사용할 수 있나요?</h3>
+              <p className="faq-answer">
+                네, 같은 Google 계정으로 로그인하면 PC, 모바일 등 어떤 기기에서든
+                동일한 데이터를 확인하고 관리할 수 있습니다.
+                데이터는 클라우드(Firebase)에 저장되므로 기기 변경 시에도 데이터가 유지됩니다.
+              </p>
+            </div>
+
+            <div className="faq-item">
+              <h3 className="faq-question">Q. 레이드 난이도는 어떻게 변경하나요?</h3>
+              <p className="faq-answer">
+                레이드 카드 우측 상단의 톱니바퀴(⚙) 버튼을 클릭하면 난이도 선택 메뉴가 나타납니다.
+                노말, 하드 등 캐릭터의 아이템 레벨에 맞는 난이도를 선택할 수 있으며,
+                난이도에 따라 클리어 골드와 더보기 비용이 자동으로 변경됩니다.
+              </p>
+            </div>
+          </section>
         </Container>
       </div>
     );
@@ -1096,6 +1231,30 @@ export default function MyPage() {
             <p>레이드 체크 후 상단의 '저장하기' 버튼을 눌러야 변경사항이 반영됩니다.</p>
           </div>
         )}
+
+        {/* 마이페이지 설명 섹션 */}
+        <section className="faq-section" style={{ marginTop: '1.5rem' }}>
+          <h2 className="faq-section-title">마이페이지 사용 가이드</h2>
+          <div className="faq-item">
+            <p className="faq-answer">
+              마이페이지에서는 원정대 캐릭터의 주간 레이드 진행 상황을 체크하고,
+              주간 골드 수입을 추적할 수 있습니다. 레이드 이미지를 클릭하면 클리어 체크가 되며,
+              톱니바퀴 버튼으로 레이드 난이도를 변경할 수 있습니다.
+              더보기 비용 설정에서 레이드별 더보기 구매 여부를 체크하면
+              클리어 골드에서 더보기 비용이 자동 차감되어 실수익을 확인할 수 있습니다.
+              모든 변경사항은 &quot;저장하기&quot; 버튼을 눌러야 서버에 반영됩니다.
+            </p>
+          </div>
+          <div className="faq-item">
+            <h3 className="faq-question">주간 골드 차트 활용법</h3>
+            <p className="faq-answer">
+              매주 수요일 레이드 초기화 시 이전 주 골드가 자동 저장되어 차트에 누적됩니다.
+              차트에서 주별 골드 추이를 확인하여 캐릭터 육성 효과를 파악하거나,
+              골드 수입 목표를 설정하는 데 활용하세요.
+              레이드 골드와 추가 골드가 구분 표시되어 수입 구성을 한눈에 볼 수 있습니다.
+            </p>
+          </div>
+        </section>
 
         {/* 캐릭터 등록 모달 (2단계) */}
         <Modal show={showRegisterModal} onHide={closeRegisterModal} centered size={registerStep === 2 ? 'lg' : undefined}>
