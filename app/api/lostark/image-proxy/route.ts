@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const res = await fetch(imageUrl);
+    const res = await fetch(imageUrl, { cache: 'no-store' });
     if (!res.ok) {
       return NextResponse.json({ message: '이미지를 가져올 수 없습니다.' }, { status: res.status });
     }
