@@ -756,6 +756,23 @@ body {
   box-shadow: 0 3px 10px rgba(236, 72, 153, 0.35);
 }
 
+/* 패키지 - 오렌지색 */
+.navbar-nav-link.nav-package:hover {
+  color: #f97316;
+  border-color: #f97316;
+  background-color: rgba(249, 115, 22, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-nav-link.nav-package.active {
+  color: #fff;
+  font-weight: 700;
+  background-color: #f97316;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(249, 115, 22, 0.35);
+}
+
 [data-theme="dark"] .navbar-nav-link {
   background-color: rgba(50, 50, 55, 0.8);
   border-color: rgba(255, 255, 255, 0.12);
@@ -835,6 +852,19 @@ body {
   background-color: #ec4899;
   border-color: transparent;
   box-shadow: 0 3px 10px rgba(236, 72, 153, 0.4);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-package:hover {
+  color: #f97316;
+  background-color: rgba(60, 60, 65, 0.9);
+  border-color: #f97316;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-package.active {
+  background-color: #f97316;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(249, 115, 22, 0.4);
 }
 
 /* Theme Toggle Button */
@@ -947,6 +977,11 @@ body {
   color: #ec4899;
 }
 
+.navbar-offcanvas-link.nav-package:hover {
+  background-color: rgba(249, 115, 22, 0.08);
+  color: #f97316;
+}
+
 [data-theme="dark"] .navbar-offcanvas-link.nav-weekly:hover {
   background-color: rgba(234, 88, 12, 0.15);
 }
@@ -969,6 +1004,10 @@ body {
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-avatar:hover {
   background-color: rgba(236, 72, 153, 0.15);
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-package:hover {
+  background-color: rgba(249, 115, 22, 0.15);
 }
 
 .navbar-offcanvas-link.nav-weekly.active {
@@ -1007,6 +1046,12 @@ body {
   font-weight: 600;
 }
 
+.navbar-offcanvas-link.nav-package.active {
+  color: #fff;
+  background-color: #f97316;
+  font-weight: 600;
+}
+
 [data-theme="dark"] .navbar-offcanvas-link.nav-weekly.active {
   background-color: #ea580c;
 }
@@ -1029,6 +1074,10 @@ body {
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-avatar.active {
   background-color: #ec4899;
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-package.active {
+  background-color: #f97316;
 }
 
 /* ==========================================================================

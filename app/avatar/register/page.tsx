@@ -240,6 +240,10 @@ export default function AvatarRegisterPage() {
           </button>
         </form>
 
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0.5rem 0 0', lineHeight: 1.6, textAlign: 'center' }}>
+          아바타가 갱신되지 않나요? 인게임에서 아바타 전부 해제 → 영지 이동 → 다시 착용 → 영지 밖으로 이동 후 검색해보세요.
+        </p>
+
         {error && !searchResult && <p className={styles.errorMsg}>{error}</p>}
         {searchResult && error && <p className={styles.errorMsg}>{error}</p>}
 
