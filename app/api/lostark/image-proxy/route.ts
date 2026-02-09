@@ -37,6 +37,7 @@ export async function GET(request: Request) {
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+        'Netlify-Vary': 'query',
       },
     });
   } catch (error) {
