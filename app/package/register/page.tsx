@@ -683,18 +683,14 @@ export default function PackageRegisterPage() {
                     <>
                       <hr className={styles.calcDivider} />
                       <div className={styles.calcRow}>
-                        <span className={styles.calcLabel}>{packageType} 전부 구매 시</span>
-                        <span className={styles.calcValue}>{buyCount}개 값 → {getCount}개 수령</span>
-                      </div>
-                      <div className={styles.calcRow}>
-                        <span className={styles.calcLabel}>지출</span>
+                        <span className={styles.calcLabel}>{packageType} 지출</span>
                         <span className={styles.calcValue}>
-                          {formatNumber(royalCrystalPrice * buyCount)}원 ({formatNumber(fullCashGold)} G)
+                          {formatNumber(royalCrystalPrice * buyCount)}원
                         </span>
                       </div>
                       <div className={styles.calcRow}>
-                        <span className={styles.calcLabel}>획득</span>
-                        <span className={styles.calcValue}>{formatNumber(fullPackageGold)} G</span>
+                        <span className={styles.calcLabel}>{packageType} 획득</span>
+                        <span className={styles.calcValue}>{formatNumber(fullPackageGold)}G</span>
                       </div>
                       <div className={styles.calcRow}>
                         <span className={styles.calcLabel}>{packageType} 이득률</span>

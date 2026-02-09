@@ -556,15 +556,15 @@
 /* ─── 계산 결과 사이드바 (fixed) ─── */
 .calcSidebar {
   position: fixed;
-  top: 150px;
+  top: 168px;
   left: calc(50% + 562px);
   z-index: 100;
   width: 240px;
   background: var(--card-bg);
-  border: 1px solid rgba(249, 115, 22, 0.25);
+  border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 1.25rem 1rem;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-md);
   animation: sidebarIn 0.25s ease;
 }
 
@@ -598,8 +598,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.35rem 0;
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .calcLabel {
@@ -618,7 +619,7 @@
 }
 
 .calcEfficiency {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: #f97316;
   font-weight: 800;
 }

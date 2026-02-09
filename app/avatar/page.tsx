@@ -7,7 +7,7 @@ import AvatarGalleryCard from '@/components/avatar/AvatarGalleryCard';
 import { getAvatarPosts } from '@/lib/avatar-service';
 import { useAuth } from '@/contexts/AuthContext';
 import type { AvatarPost, AvatarSortBy } from '@/types/avatar';
-import { CLASS_GROUPS } from '@/types/avatar';
+import { ALL_CLASSES } from '@/types/avatar';
 import styles from './avatar.module.css';
 
 const PAGE_SIZE = 16;
@@ -107,14 +107,10 @@ export default function AvatarGalleryPage() {
               onChange={(e) => setFilterClass(e.target.value)}
             >
               <option value="">전체 클래스</option>
-              {Object.entries(CLASS_GROUPS).map(([group, classes]) => (
-                <optgroup key={group} label={group}>
-                  {classes.map((cls) => (
-                    <option key={cls} value={cls}>
-                      {cls}
-                    </option>
-                  ))}
-                </optgroup>
+              {ALL_CLASSES.map((cls) => (
+                <option key={cls} value={cls}>
+                  {cls}
+                </option>
               ))}
             </select>
           </div>

@@ -34,6 +34,7 @@ export default function AvatarRegisterPage() {
   const [transparentBlobUrl, setTransparentBlobUrl] = useState<string | null>(null);
   const transparentBlobRef = useRef<Blob | null>(null);
   const [backgroundId, setBackgroundId] = useState('default');
+  const searchGenRef = useRef(0);
 
   // 캐릭터 검색
   const handleSearch = async (e: React.FormEvent) => {
@@ -43,8 +44,11 @@ export default function AvatarRegisterPage() {
     setSearching(true);
     setError('');
     setSearchResult(null);
-    // 배경 상태 초기화
+    // 배경 상태 초기화 + 진행 중인 배경 제거 무효화
+    searchGenRef.current += 1;
     setBgRemoved(false);
+    setBgRemoving(false);
+    setBgRemoveProgress('');
     setTransparentBlobUrl(null);
     transparentBlobRef.current = null;
     setBackgroundId('default');
@@ -80,6 +84,7 @@ export default function AvatarRegisterPage() {
   const handleRemoveBackground = async () => {
     if (!searchResult?.characterImageUrl) return;
 
+    const gen = searchGenRef.current;
     setBgRemoving(true);
     setBgRemoveProgress('AI 모델 로딩 중... (첫 사용 시 약 30초 소요)');
     setError('');
@@ -87,6 +92,7 @@ export default function AvatarRegisterPage() {
     try {
       const { removeBackground } = await import('@imgly/background-removal');
 
+      if (searchGenRef.current !== gen) return;
       setBgRemoveProgress('이미지 다운로드 중...');
 
       // 프록시를 통해 이미지 가져오기 (CORS 우회)
@@ -95,20 +101,25 @@ export default function AvatarRegisterPage() {
       if (!imgRes.ok) throw new Error('이미지를 가져올 수 없습니다.');
       const imgBlob = await imgRes.blob();
 
+      if (searchGenRef.current !== gen) return;
       setBgRemoveProgress('배경 제거 중... (약 5~10초)');
 
       const aiResultBlob = await removeBackground(imgBlob, {
         progress: (key: string, current: number, total: number) => {
-          if (key === 'compute:inference') {
+          if (key === 'compute:inference' && searchGenRef.current === gen) {
             const pct = Math.round((current / total) * 100);
             setBgRemoveProgress(`배경 제거 중... ${pct}%`);
           }
         },
       });
 
+      if (searchGenRef.current !== gen) return;
+
       // 하이브리드 후처리: AI가 지운 이펙트 복원
       setBgRemoveProgress('이펙트 보정 중...');
       const resultBlob = await refineBackgroundRemoval(imgBlob, aiResultBlob);
+
+      if (searchGenRef.current !== gen) return;
 
       // 결과를 Object URL로 변환하여 미리보기
       const objectUrl = URL.createObjectURL(resultBlob);
@@ -117,11 +128,14 @@ export default function AvatarRegisterPage() {
       setBgRemoved(true);
       setBgRemoveProgress('');
     } catch (err: any) {
+      if (searchGenRef.current !== gen) return;
       console.error('배경 제거 실패:', err);
       setError('배경 제거에 실패했습니다. 다시 시도해주세요.');
       setBgRemoveProgress('');
     } finally {
-      setBgRemoving(false);
+      if (searchGenRef.current === gen) {
+        setBgRemoving(false);
+      }
     }
   };
 

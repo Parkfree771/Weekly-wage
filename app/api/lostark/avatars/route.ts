@@ -105,8 +105,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(responseData, {
       headers: {
-        // Netlify CDN 캐시: 2시간 유효, 만료 후 1시간은 stale 반환 + 백그라운드 갱신
-        'Cache-Control': 'public, s-maxage=7200, stale-while-revalidate=3600',
+        'Cache-Control': 'no-store',
       },
     });
   } catch (error: any) {

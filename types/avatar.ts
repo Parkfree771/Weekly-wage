@@ -119,29 +119,17 @@ export type LostArkAvatarRaw = {
   Tooltip: string; // JSON 문자열
 };
 
-// ─── 클래스 분류 (필터링용) ───
+// ─── 클래스 목록 (필터링용) ───
 
-export const CLASS_GROUPS: Record<string, string[]> = {
-  '워리어': ['버서커', '디스트로이어', '워로드', '홀리나이트', '슬레이어'],
-  '마법사': ['아르카나', '서머너', '바드', '소서리스'],
-  '무도가': ['배틀마스터', '인파이터', '기공사', '창술사', '브레이커'],
-  '헌터': ['데빌헌터', '블래스터', '호크아이', '스카우터', '건슬링어'],
-  '암살자': ['블레이드', '데모닉', '리퍼', '소울이터'],
-  '스페셜리스트': ['도화가', '기상술사', '워크래프터'],
-};
-
-/** 클래스명으로 그룹명 찾기 */
-export function getClassGroup(className: string): string | null {
-  for (const [group, classes] of Object.entries(CLASS_GROUPS)) {
-    if (classes.includes(className)) return group;
-  }
-  return null;
-}
-
-/** 전체 클래스 목록 (플랫) */
-export function getAllClasses(): string[] {
-  return Object.values(CLASS_GROUPS).flat();
-}
+export const ALL_CLASSES: string[] = [
+  '버서커', '디스트로이어', '워로드', '홀리나이트', '슬레이어',
+  '아르카나', '서머너', '바드', '소서리스',
+  '배틀마스터', '인파이터', '기공사', '창술사', '브레이커',
+  '데빌헌터', '블래스터', '호크아이', '스카우터', '건슬링어',
+  '블레이드', '데모닉', '리퍼', '소울이터',
+  '도화가', '기상술사', '환수사',
+  '가디언 나이트',
+];
 
 // ─── 배경 프리셋 ───
 
