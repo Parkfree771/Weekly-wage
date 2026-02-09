@@ -224,11 +224,9 @@ export default function PackageRegisterPage() {
   const [packageType, setPackageType] = useState<PackageType>('일반');
   const [royalCrystalPrice, setRoyalCrystalPrice] = useState<number>(0);
   const [tradeMode, setTradeMode] = useState<'unofficial' | 'official'>('official');
-  // 엄거래: 100골드 = ?원
+  // 엄거래: 100골드 : ?원
   const [unofficialRate, setUnofficialRate] = useState<number>(0);
-  // 공식 거래: RC = BC = Gold 교환 비율
-  const [officialRC, setOfficialRC] = useState<number>(0);
-  const [officialBC, setOfficialBC] = useState<number>(0);
+  // 공식 거래: 2750 RC(=2750원) = 100 BC = ?골드 (RC/BC 고정)
   const [officialGold, setOfficialGold] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -313,10 +311,12 @@ export default function PackageRegisterPage() {
   const adjustedValue = totalGoldValue * multiplier;
   const efficiency = royalCrystalPrice > 0 ? adjustedValue / royalCrystalPrice : 0;
 
-  // 골드:현금 비율 계산
+  // 골드:현금 비율 계산 (1 RC = 1원, 100 BC = 2750 RC 고정)
   const goldPerWon = tradeMode === 'unofficial'
     ? (unofficialRate > 0 ? 100 / unofficialRate : 0)
-    : (officialRC > 0 ? officialGold / officialRC : 0);
+    : (officialGold > 0 ? officialGold / 2750 : 0);
+  // 100:X 비율 (100골드 당 원)
+  const ratePer100 = goldPerWon > 0 ? Math.round(100 / goldPerWon) : 0;
   // 1개 구매 기준
   const singleCashGold = royalCrystalPrice * goldPerWon;
   const singleBenefit = singleCashGold > 0
@@ -581,13 +581,12 @@ export default function PackageRegisterPage() {
                 {tradeMode === 'unofficial' ? (
                   <div className={styles.rateCard}>
                     <div className={styles.ratioRow}>
-                      <span className={styles.ratioFixed}>100 G</span>
-                      <span className={styles.ratioSeparator}>=</span>
+                      <span className={styles.ratioFixed}>100</span>
+                      <span className={styles.ratioSeparator}>:</span>
                       <input type="number" className={styles.ratioInput}
                         value={unofficialRate || ''}
                         onChange={(e) => setUnofficialRate(parseInt(e.target.value) || 0)}
-                        placeholder="원" min={0} />
-                      <span className={styles.ratioUnit}>원</span>
+                        placeholder="22" min={0} />
                     </div>
                     <div className={styles.rateResult}>
                       {goldPerWon > 0 ? `1원 = ${goldPerWon.toFixed(2)} G` : '-'}
@@ -595,33 +594,24 @@ export default function PackageRegisterPage() {
                   </div>
                 ) : (
                   <div className={styles.rateCard}>
-                    <div className={styles.officialRateGrid}>
-                      <div className={styles.officialRateItem}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/royal.webp" alt="로얄 크리스탈" className={styles.officialRateIcon} />
-                        <input type="number" className={styles.ratioInput}
-                          value={officialRC || ''} onChange={(e) => setOfficialRC(parseInt(e.target.value) || 0)}
-                          placeholder="0" min={0} />
-                      </div>
-                      <span className={styles.officialRateEquals}>=</span>
-                      <div className={styles.officialRateItem}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/blue.webp" alt="블루 크리스탈" className={styles.officialRateIcon} />
-                        <input type="number" className={styles.ratioInput}
-                          value={officialBC || ''} onChange={(e) => setOfficialBC(parseInt(e.target.value) || 0)}
-                          placeholder="95" min={0} />
-                      </div>
-                      <span className={styles.officialRateEquals}>=</span>
-                      <div className={styles.officialRateItem}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/gold.webp" alt="골드" className={styles.officialRateIcon} />
-                        <input type="number" className={styles.ratioInput}
-                          value={officialGold || ''} onChange={(e) => setOfficialGold(parseInt(e.target.value) || 0)}
-                          placeholder="0" min={0} />
-                      </div>
+                    <div className={styles.ratioRow}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/royal.webp" alt="" className={styles.officialRateIcon} />
+                      <span className={styles.ratioFixed}>2750</span>
+                      <span className={styles.ratioSeparator}>=</span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/blue.webp" alt="" className={styles.officialRateIcon} />
+                      <span className={styles.ratioFixed}>100</span>
+                      <span className={styles.ratioSeparator}>=</span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/gold.webp" alt="" className={styles.officialRateIcon} />
+                      <input type="number" className={styles.ratioInput}
+                        value={officialGold || ''}
+                        onChange={(e) => setOfficialGold(parseInt(e.target.value) || 0)}
+                        placeholder="9500" min={0} />
                     </div>
                     <div className={styles.rateResult}>
-                      {goldPerWon > 0 ? `1원 = ${goldPerWon.toFixed(2)} G` : '-'}
+                      {goldPerWon > 0 ? `100 : ${ratePer100} (1원 = ${goldPerWon.toFixed(2)} G)` : '-'}
                     </div>
                   </div>
                 )}
