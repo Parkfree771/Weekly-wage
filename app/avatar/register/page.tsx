@@ -95,9 +95,9 @@ export default function AvatarRegisterPage() {
       if (searchGenRef.current !== gen) return;
       setBgRemoveProgress('이미지 다운로드 중...');
 
-      // 프록시를 통해 이미지 가져오기 (CORS 우회)
-      const proxyUrl = `/api/lostark/image-proxy?url=${encodeURIComponent(searchResult.characterImageUrl)}`;
-      const imgRes = await fetch(proxyUrl);
+      // 프록시를 통해 이미지 가져오기 (CORS 우회, 캐시 방지)
+      const proxyUrl = `/api/lostark/image-proxy?url=${encodeURIComponent(searchResult.characterImageUrl)}&t=${Date.now()}`;
+      const imgRes = await fetch(proxyUrl, { cache: 'no-store' });
       if (!imgRes.ok) throw new Error('이미지를 가져올 수 없습니다.');
       const imgBlob = await imgRes.blob();
 
