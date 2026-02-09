@@ -3,6 +3,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ConsentModal from '@/components/auth/ConsentModal';
+
 import ConsoleFilter from '@/components/ConsoleFilter';
 import ImagePreloader from '@/components/ImagePreloader';
 import type { Metadata, Viewport } from "next";

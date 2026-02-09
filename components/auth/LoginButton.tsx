@@ -114,6 +114,15 @@ export default function LoginButton() {
       </Dropdown.Toggle>
 
       <Dropdown.Menu className={styles.dropdownMenu}>
+        {userProfile?.nickname && (
+          <>
+            <div className={styles.userInfo}>
+              <strong>{userProfile.nickname}</strong>
+              <small>{user.email}</small>
+            </div>
+            <Dropdown.Divider />
+          </>
+        )}
         <Dropdown.Item onClick={() => setShowDeleteModal(true)} className={styles.deleteItem}>
           계정 탈퇴
         </Dropdown.Item>

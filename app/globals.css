@@ -756,6 +756,23 @@ body {
   box-shadow: 0 3px 10px rgba(14, 165, 233, 0.35);
 }
 
+/* 아바타 - 핑크색 */
+.navbar-nav-link.nav-avatar:hover {
+  color: #ec4899;
+  border-color: #ec4899;
+  background-color: rgba(236, 72, 153, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-nav-link.nav-avatar.active {
+  color: #fff;
+  font-weight: 700;
+  background-color: #ec4899;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(236, 72, 153, 0.35);
+}
+
 [data-theme="dark"] .navbar-nav-link {
   background-color: rgba(50, 50, 55, 0.8);
   border-color: rgba(255, 255, 255, 0.12);
@@ -835,6 +852,19 @@ body {
   background-color: #0ea5e9;
   border-color: transparent;
   box-shadow: 0 3px 10px rgba(14, 165, 233, 0.4);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-avatar:hover {
+  color: #ec4899;
+  background-color: rgba(60, 60, 65, 0.9);
+  border-color: #ec4899;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-avatar.active {
+  background-color: #ec4899;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(236, 72, 153, 0.4);
 }
 
 /* Theme Toggle Button */
@@ -947,6 +977,11 @@ body {
   color: #0ea5e9;
 }
 
+.navbar-offcanvas-link.nav-avatar:hover {
+  background-color: rgba(236, 72, 153, 0.08);
+  color: #ec4899;
+}
+
 [data-theme="dark"] .navbar-offcanvas-link.nav-weekly:hover {
   background-color: rgba(234, 88, 12, 0.15);
 }
@@ -969,6 +1004,10 @@ body {
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-guide:hover {
   background-color: rgba(14, 165, 233, 0.15);
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-avatar:hover {
+  background-color: rgba(236, 72, 153, 0.15);
 }
 
 .navbar-offcanvas-link.nav-weekly.active {
@@ -1007,6 +1046,12 @@ body {
   font-weight: 600;
 }
 
+.navbar-offcanvas-link.nav-avatar.active {
+  color: #fff;
+  background-color: #ec4899;
+  font-weight: 600;
+}
+
 [data-theme="dark"] .navbar-offcanvas-link.nav-weekly.active {
   background-color: #ea580c;
 }
@@ -1029,6 +1074,10 @@ body {
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-guide.active {
   background-color: #0ea5e9;
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-avatar.active {
+  background-color: #ec4899;
 }
 
 /* ==========================================================================

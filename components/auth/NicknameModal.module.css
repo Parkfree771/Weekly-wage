@@ -1,0 +1,86 @@
+.modal :global(.modal-content) {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+}
+
+.header {
+  border-bottom: 1px solid var(--border-color);
+  padding: 1.25rem 1.5rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.body {
+  padding: 1.5rem;
+}
+
+.description {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+}
+
+.inputGroup {
+  margin-bottom: 1rem;
+}
+
+.nicknameInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.nicknameInput:focus {
+  border-color: var(--brand-primary);
+}
+
+.nicknameInput::placeholder {
+  color: var(--text-muted);
+}
+
+.feedback {
+  min-height: 1.5rem;
+  padding-top: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.feedbackSuccess {
+  color: #10b981;
+}
+
+.feedbackError {
+  color: #ef4444;
+}
+
+.feedbackChecking {
+  color: var(--text-muted);
+}
+
+.rules {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.8;
+}
+
+.footer {
+  border-top: 1px solid var(--border-color);
+  padding: 1rem 1.5rem;
+}
+
+.footer :global(.btn) {
+  min-width: 120px;
+}

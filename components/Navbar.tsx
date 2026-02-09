@@ -18,6 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/refining', label: '재련 계산' },
   { href: '/life-master', label: '생활 계산' },
   { href: '/hell-sim', label: '지옥 시뮬' },
+  { href: '/avatar', label: '아바타' },
   { href: '/guide', label: '가이드' },
   { href: '/mypage', label: '마이페이지' },
 ];
@@ -41,6 +42,7 @@ export default function Navbar() {
     const pageClass = href === '/refining' ? 'nav-refining' :
                       href === '/life-master' ? 'nav-life' :
                       href === '/hell-sim' ? 'nav-hell' :
+                      href === '/avatar' ? 'nav-avatar' :
                       href === '/guide' ? 'nav-guide' :
                       href === '/mypage' ? 'nav-mypage' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';

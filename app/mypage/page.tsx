@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { registerCharacter, saveWeeklyChecklist, refreshCharacter, updateCharacterImages } from '@/lib/user-service';
+import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service';
+import NicknameModal from '@/components/auth/NicknameModal';
 import { raids } from '@/data/raids';
 import {
   Character,
@@ -50,7 +52,7 @@ function getAllRaidGroups(itemLevel: number) {
 
 export default function MyPage() {
   const router = useRouter();
-  const { user, userProfile, loading, refreshUserProfile, signInWithGoogle } = useAuth();
+  const { user, userProfile, loading, refreshUserProfile, signInWithGoogle, setNickname: updateNickname } = useAuth();
 
   // 상태
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -93,6 +95,14 @@ export default function MyPage() {
 
   // 난이도 설정 열린 레이드 (캐릭터명-그룹명)
   const [difficultyOpenKey, setDifficultyOpenKey] = useState<string | null>(null);
+
+  // 닉네임 변경
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [newNickname, setNewNickname] = useState('');
+  const [nicknameStatus, setNicknameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [nicknameMessage, setNicknameMessage] = useState('');
+  const [isSavingNickname, setIsSavingNickname] = useState(false);
+  const nicknameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 프로필 데이터 로드 + 주간 초기화 체크
   useEffect(() => {
@@ -207,6 +217,65 @@ export default function MyPage() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasChanges]);
+
+  // 닉네임 실시간 검증
+  useEffect(() => {
+    if (!newNickname) {
+      setNicknameStatus('idle');
+      setNicknameMessage('');
+      return;
+    }
+    // 현재 닉네임과 동일하면 스킵
+    if (userProfile?.nickname && newNickname === userProfile.nickname) {
+      setNicknameStatus('idle');
+      setNicknameMessage('현재 사용 중인 닉네임입니다.');
+      return;
+    }
+    const validation = validateNickname(newNickname);
+    if (!validation.valid) {
+      setNicknameStatus('invalid');
+      setNicknameMessage(validation.message);
+      return;
+    }
+    setNicknameStatus('checking');
+    setNicknameMessage('확인 중...');
+    if (nicknameDebounceRef.current) clearTimeout(nicknameDebounceRef.current);
+    nicknameDebounceRef.current = setTimeout(async () => {
+      try {
+        const available = await checkNicknameAvailable(newNickname);
+        if (available) {
+          setNicknameStatus('available');
+          setNicknameMessage('사용 가능한 닉네임입니다.');
+        } else {
+          setNicknameStatus('taken');
+          setNicknameMessage('이미 사용 중인 닉네임입니다.');
+        }
+      } catch {
+        setNicknameStatus('invalid');
+        setNicknameMessage('중복 확인에 실패했습니다.');
+      }
+    }, 500);
+    return () => {
+      if (nicknameDebounceRef.current) clearTimeout(nicknameDebounceRef.current);
+    };
+  }, [newNickname, userProfile?.nickname]);
+
+  // 닉네임 변경 저장
+  const handleSaveNickname = async () => {
+    if (nicknameStatus !== 'available') return;
+    setIsSavingNickname(true);
+    try {
+      await updateNickname(newNickname);
+      setEditingNickname(false);
+      setNewNickname('');
+      setNicknameStatus('idle');
+      setNicknameMessage('');
+    } catch (err: any) {
+      setNicknameMessage(err.message || '닉네임 변경에 실패했습니다.');
+      setNicknameStatus('invalid');
+    }
+    setIsSavingNickname(false);
+  };
 
   // 원정대 검색 (1단계)
   const handleSearchSiblings = async () => {
@@ -861,6 +930,67 @@ export default function MyPage() {
           </div>
         </div>
 
+        {/* 닉네임 섹션 */}
+        <div className={styles.nicknameSection}>
+          {!editingNickname ? (
+            <div className={styles.nicknameDisplay}>
+              <span className={styles.nicknameLabel}>닉네임:</span>
+              <span className={styles.nicknameValue}>
+                {userProfile?.nickname || '미설정'}
+              </span>
+              <button
+                className={styles.nicknameEditBtn}
+                onClick={() => {
+                  setEditingNickname(true);
+                  setNewNickname(userProfile?.nickname || '');
+                }}
+              >
+                변경
+              </button>
+            </div>
+          ) : (
+            <div className={styles.nicknameEdit}>
+              <input
+                type="text"
+                className={styles.nicknameInput}
+                value={newNickname}
+                onChange={(e) => setNewNickname(e.target.value)}
+                placeholder="새 닉네임"
+                maxLength={12}
+                disabled={isSavingNickname}
+              />
+              <button
+                className={styles.nicknameSaveBtn}
+                onClick={handleSaveNickname}
+                disabled={nicknameStatus !== 'available' || isSavingNickname}
+              >
+                {isSavingNickname ? <Spinner animation="border" size="sm" /> : '저장'}
+              </button>
+              <button
+                className={styles.nicknameCancelBtn}
+                onClick={() => {
+                  setEditingNickname(false);
+                  setNewNickname('');
+                  setNicknameStatus('idle');
+                  setNicknameMessage('');
+                }}
+                disabled={isSavingNickname}
+              >
+                취소
+              </button>
+              {nicknameMessage && (
+                <span className={`${styles.nicknameFeedback} ${
+                  nicknameStatus === 'available' ? styles.feedbackSuccess :
+                  nicknameStatus === 'taken' || nicknameStatus === 'invalid' ? styles.feedbackError :
+                  ''
+                }`}>
+                  {nicknameMessage}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
         {saveMessage && (
           <Alert variant={saveMessage.type === 'success' ? 'success' : 'danger'} className="mb-3">
             {saveMessage.text}
@@ -1398,6 +1528,9 @@ export default function MyPage() {
             </Button>
           </Modal.Footer>
         </Modal>
+
+        {/* 닉네임 미설정 시 모달 */}
+        {userProfile && !userProfile.nickname && <NicknameModal />}
 
       </Container>
     </div>

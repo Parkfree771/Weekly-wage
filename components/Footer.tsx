@@ -27,6 +27,8 @@ export default function Footer() {
               <span className="footer-divider">|</span>
               <a href="/terms">이용약관</a>
               <span className="footer-divider">|</span>
+              <a href="/avatar">아바타</a>
+              <span className="footer-divider">|</span>
               <a href="/guide">가이드</a>
               <span className="footer-divider">|</span>
               <button

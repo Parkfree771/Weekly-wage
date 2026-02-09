@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modal, Button, Form, Spinner } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
+import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service';
 import Link from 'next/link';
 import styles from './ConsentModal.module.css';
 
@@ -16,7 +17,54 @@ export default function ConsentModal() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 닉네임 관련 상태
+  const [nickname, setNickname] = useState('');
+  const [nicknameStatus, setNicknameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [nicknameMessage, setNicknameMessage] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const allChecked = Object.values(consents).every(v => v);
+  const canSubmit = allChecked && nicknameStatus === 'available';
+
+  // 닉네임 실시간 검증
+  useEffect(() => {
+    if (!nickname) {
+      setNicknameStatus('idle');
+      setNicknameMessage('');
+      return;
+    }
+
+    const validation = validateNickname(nickname);
+    if (!validation.valid) {
+      setNicknameStatus('invalid');
+      setNicknameMessage(validation.message);
+      return;
+    }
+
+    setNicknameStatus('checking');
+    setNicknameMessage('확인 중...');
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const available = await checkNicknameAvailable(nickname);
+        if (available) {
+          setNicknameStatus('available');
+          setNicknameMessage('사용 가능한 닉네임입니다.');
+        } else {
+          setNicknameStatus('taken');
+          setNicknameMessage('이미 사용 중인 닉네임입니다.');
+        }
+      } catch {
+        setNicknameStatus('invalid');
+        setNicknameMessage('중복 확인에 실패했습니다.');
+      }
+    }, 500);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [nickname]);
 
   const handleCheckAll = (checked: boolean) => {
     setConsents({
@@ -28,11 +76,11 @@ export default function ConsentModal() {
   };
 
   const handleSubmit = async () => {
-    if (!allChecked) return;
+    if (!canSubmit) return;
 
     setIsSubmitting(true);
     try {
-      await completeRegistration();
+      await completeRegistration(nickname);
     } catch (error) {
       console.error('가입 실패:', error);
     }
@@ -58,6 +106,27 @@ export default function ConsentModal() {
         <div className={styles.userInfo}>
           <span className={styles.userEmail}>{user.email}</span>
           <span className={styles.userLabel}>계정으로 가입합니다</span>
+        </div>
+
+        {/* 닉네임 입력 */}
+        <div className={styles.nicknameSection}>
+          <label className={styles.nicknameLabel}>닉네임 설정</label>
+          <input
+            type="text"
+            className={styles.nicknameInput}
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            placeholder="닉네임 입력 (한글/영어/숫자, 최대 12자)"
+            maxLength={12}
+            disabled={isSubmitting}
+          />
+          <div className={`${styles.nicknameFeedback} ${
+            nicknameStatus === 'available' ? styles.feedbackSuccess :
+            nicknameStatus === 'taken' || nicknameStatus === 'invalid' ? styles.feedbackError :
+            nicknameStatus === 'checking' ? styles.feedbackChecking : ''
+          }`}>
+            {nicknameMessage}
+          </div>
         </div>
 
         <div className={styles.consentList}>
@@ -163,7 +232,7 @@ export default function ConsentModal() {
         <Button
           variant="primary"
           onClick={handleSubmit}
-          disabled={!allChecked || isSubmitting}
+          disabled={!canSubmit || isSubmitting}
         >
           {isSubmitting ? <Spinner animation="border" size="sm" /> : '동의하고 가입하기'}
         </Button>

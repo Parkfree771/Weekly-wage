@@ -47,6 +47,58 @@
   margin-top: 0.25rem;
 }
 
+/* 닉네임 입력 섹션 */
+.nicknameSection {
+  margin-bottom: 1.25rem;
+}
+
+.nicknameLabel {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.nicknameInput {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.nicknameInput:focus {
+  border-color: var(--brand-primary);
+}
+
+.nicknameInput::placeholder {
+  color: var(--text-muted);
+}
+
+.nicknameFeedback {
+  min-height: 1.3rem;
+  padding-top: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.feedbackSuccess {
+  color: #10b981;
+}
+
+.feedbackError {
+  color: #ef4444;
+}
+
+.feedbackChecking {
+  color: var(--text-muted);
+}
+
 .consentList {
   background-color: var(--input-bg);
   border: 1px solid var(--border-color);

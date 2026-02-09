@@ -1201,3 +1201,110 @@
 .notice p + p {
   margin-top: 6px;
 }
+
+/* 닉네임 섹션 */
+.nicknameSection {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.nicknameDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nicknameLabel {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.nicknameValue {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.nicknameEditBtn {
+  font-size: 0.8rem;
+  color: #a855f7;
+  background: none;
+  border: 1px solid #a855f7;
+  border-radius: 6px;
+  padding: 2px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nicknameEditBtn:hover {
+  background: #a855f7;
+  color: #fff;
+}
+
+.nicknameEdit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nicknameInput {
+  flex: 1;
+  min-width: 150px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.nicknameInput:focus {
+  border-color: #a855f7;
+}
+
+.nicknameSaveBtn {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  background: #a855f7;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.nicknameSaveBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nicknameCancelBtn {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.nicknameFeedback {
+  width: 100%;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding-top: 2px;
+}
+
+.feedbackSuccess {
+  color: #10b981;
+}
+
+.feedbackError {
+  color: #ef4444;
+}

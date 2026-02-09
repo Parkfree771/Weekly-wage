@@ -67,6 +67,7 @@ export type UserProfile = {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  nickname?: string;
   // 동의 내역
   consents?: UserConsents;
   // 로스트아크 계정 정보

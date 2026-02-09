@@ -1,7 +1,13 @@
 // Firebase 클라이언트 SDK 설정 (브라우저 전용)
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  Firestore,
+} from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,6 +23,7 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
+let storage: FirebaseStorage;
 
 if (typeof window !== 'undefined') {
   if (getApps().length === 0) {
@@ -25,7 +32,13 @@ if (typeof window !== 'undefined') {
     app = getApps()[0];
   }
   auth = getAuth(app);
-  db = getFirestore(app);
+  // IndexedDB 로컬 캐시 + 멀티탭 지원
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    }),
+  });
+  storage = getStorage(app);
 }
 
-export { app, auth, db };
+export { app, auth, db, storage };

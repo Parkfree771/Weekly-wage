@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase-client';
+import { claimNickname, releaseNickname } from '@/lib/nickname-service';
 
 import {
   UserProfile as UserProfileType,
@@ -29,12 +30,14 @@ type AuthContextType = {
   loading: boolean;
   error: string | null;
   needsConsent: boolean;  // 신규 사용자 동의 필요 여부
+  needsNickname: boolean; // 기존 사용자 닉네임 미설정
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
   deleteAccount: () => Promise<void>;
-  completeRegistration: () => Promise<void>;  // 동의 후 가입 완료
+  completeRegistration: (nickname: string) => Promise<void>;  // 동의 후 가입 완료 (닉네임 포함)
   cancelRegistration: () => Promise<void>;    // 동의 거부 시 취소
+  setNickname: (nickname: string) => Promise<void>;  // 닉네임 설정/변경
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [needsConsent, setNeedsConsent] = useState(false);
+  const [needsNickname, setNeedsNickname] = useState(false);
 
   // 기존 사용자 프로필 가져오기 (신규 사용자는 생성하지 않음)
   const fetchUserProfile = async (firebaseUser: User): Promise<UserProfile | null> => {
@@ -63,15 +67,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // 동의 후 신규 사용자 프로필 생성
-  const createUserProfile = async (firebaseUser: User): Promise<UserProfile> => {
+  const createUserProfile = async (firebaseUser: User, nickname: string): Promise<UserProfile> => {
     const userRef = doc(db, 'users', firebaseUser.uid);
     const now = serverTimestamp();
 
+    // 닉네임 등록 (nicknames 컬렉션)
+    await claimNickname(nickname, firebaseUser.uid);
+
     const newProfile: UserProfile = {
       uid: firebaseUser.uid,
-      email: firebaseUser.email,  // Firebase Auth에서 제공하는 이메일 저장
+      email: firebaseUser.email,
       displayName: firebaseUser.displayName,
       photoURL: firebaseUser.photoURL,
+      nickname,
       consents: {
         privacyPolicy: { agreed: true, agreedAt: now },
         emailCollection: { agreed: true, agreedAt: now },
@@ -129,16 +137,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // 동의 후 가입 완료
-  const completeRegistration = async () => {
+  const completeRegistration = async (nickname: string) => {
     if (!user) return;
 
     try {
-      const profile = await createUserProfile(user);
+      const profile = await createUserProfile(user, nickname);
       setUserProfile(profile);
       setNeedsConsent(false);
+      setNeedsNickname(false);
     } catch (err: any) {
       console.error('가입 완료 실패:', err);
       setError(err.message || '가입에 실패했습니다.');
+      throw err;
+    }
+  };
+
+  // 닉네임 설정/변경
+  const setNicknameFunc = async (nickname: string) => {
+    if (!user || !userProfile) return;
+
+    try {
+      // 기존 닉네임이 있으면 해제
+      if (userProfile.nickname) {
+        await releaseNickname(userProfile.nickname);
+      }
+      // 새 닉네임 등록
+      await claimNickname(nickname, user.uid);
+      setUserProfile(prev => prev ? { ...prev, nickname } : prev);
+      setNeedsNickname(false);
+    } catch (err: any) {
+      console.error('닉네임 설정 실패:', err);
       throw err;
     }
   };
@@ -151,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setUserProfile(null);
       setNeedsConsent(false);
+      setNeedsNickname(false);
     } catch (err: any) {
       console.error('가입 취소 실패:', err);
     }
@@ -163,6 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setUserProfile(null);
       setNeedsConsent(false);
+      setNeedsNickname(false);
     } catch (err: any) {
       console.error('로그아웃 실패:', err);
       setError(err.message || '로그아웃에 실패했습니다.');
@@ -189,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setUserProfile(null);
       setNeedsConsent(false);
+      setNeedsNickname(false);
     } catch (err: any) {
       console.error('계정 삭제 실패:', err);
       setError(err.message || '계정 삭제에 실패했습니다.');
@@ -235,12 +266,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         error,
         needsConsent,
+        needsNickname,
         signInWithGoogle,
         signOut,
         refreshUserProfile,
         deleteAccount,
         completeRegistration,
         cancelRegistration,
+        setNickname: setNicknameFunc,
       }}
     >
       {children}
