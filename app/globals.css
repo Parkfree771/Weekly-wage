@@ -739,23 +739,6 @@ body {
   box-shadow: 0 3px 10px rgba(168, 85, 247, 0.35);
 }
 
-/* 가이드 - 하늘색 */
-.navbar-nav-link.nav-guide:hover {
-  color: #0ea5e9;
-  border-color: #0ea5e9;
-  background-color: rgba(14, 165, 233, 0.08);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.navbar-nav-link.nav-guide.active {
-  color: #fff;
-  font-weight: 700;
-  background-color: #0ea5e9;
-  border-color: transparent;
-  box-shadow: 0 3px 10px rgba(14, 165, 233, 0.35);
-}
-
 /* 아바타 - 핑크색 */
 .navbar-nav-link.nav-avatar:hover {
   color: #ec4899;
@@ -839,19 +822,6 @@ body {
   background-color: #a855f7;
   border-color: transparent;
   box-shadow: 0 3px 10px rgba(168, 85, 247, 0.4);
-}
-
-[data-theme="dark"] .navbar-nav-link.nav-guide:hover {
-  color: #0ea5e9;
-  background-color: rgba(60, 60, 65, 0.9);
-  border-color: #0ea5e9;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="dark"] .navbar-nav-link.nav-guide.active {
-  background-color: #0ea5e9;
-  border-color: transparent;
-  box-shadow: 0 3px 10px rgba(14, 165, 233, 0.4);
 }
 
 [data-theme="dark"] .navbar-nav-link.nav-avatar:hover {
@@ -972,11 +942,6 @@ body {
   color: #a855f7;
 }
 
-.navbar-offcanvas-link.nav-guide:hover {
-  background-color: rgba(14, 165, 233, 0.08);
-  color: #0ea5e9;
-}
-
 .navbar-offcanvas-link.nav-avatar:hover {
   background-color: rgba(236, 72, 153, 0.08);
   color: #ec4899;
@@ -1000,10 +965,6 @@ body {
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-mypage:hover {
   background-color: rgba(168, 85, 247, 0.15);
-}
-
-[data-theme="dark"] .navbar-offcanvas-link.nav-guide:hover {
-  background-color: rgba(14, 165, 233, 0.15);
 }
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-avatar:hover {
@@ -1040,12 +1001,6 @@ body {
   font-weight: 600;
 }
 
-.navbar-offcanvas-link.nav-guide.active {
-  color: #fff;
-  background-color: #0ea5e9;
-  font-weight: 600;
-}
-
 .navbar-offcanvas-link.nav-avatar.active {
   color: #fff;
   background-color: #ec4899;
@@ -1070,10 +1025,6 @@ body {
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-mypage.active {
   background-color: #a855f7;
-}
-
-[data-theme="dark"] .navbar-offcanvas-link.nav-guide.active {
-  background-color: #0ea5e9;
 }
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-avatar.active {
@@ -1110,105 +1061,4 @@ body {
   display: none;
 }
 
-/* ==========================================================================
-   FAQ 섹션 스타일
-   ========================================================================== */
-
-.faq-section {
-  margin-top: 2.5rem;
-  padding: 1.5rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-}
-
-.faq-section-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 1.25rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--brand-primary);
-}
-
-.faq-item {
-  margin-bottom: 1.25rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.faq-item:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.faq-question {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.5rem;
-}
-
-.faq-answer {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
-  margin: 0;
-}
-
-/* 서비스 소개 섹션 (홈페이지) */
-.service-intro {
-  padding: 1.25rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  margin-bottom: 1.25rem;
-}
-
-.service-intro h2 {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 0.75rem;
-}
-
-.service-intro p {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
-  margin-bottom: 0.5rem;
-}
-
-.service-intro p:last-child {
-  margin-bottom: 0;
-}
-
-.service-features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-}
-
-.service-feature-item {
-  padding: 0.75rem;
-  background: rgba(154, 52, 18, 0.03);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.service-feature-item h3 {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.3rem;
-}
-
-.service-feature-item p {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  margin: 0;
-  line-height: 1.5;
-}
 

@@ -1,11 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import ContactForm from '@/components/ContactForm';
 import PriceDashboard from '@/components/PriceDashboard';
-import { guides } from '@/data/guides';
 import styles from './page.module.css';
 
 // Recharts를 사용하는 컴포넌트를 Dynamic Import로 지연 로드
@@ -140,86 +138,6 @@ export default function Home() {
             </Card>
           </Col>
         </Row>
-
-        {/* 가이드 섹션 */}
-        <section style={{ marginTop: '1.5rem' }}>
-          <Card>
-            <Card.Header
-              className="py-2"
-              style={{
-                backgroundColor: 'var(--card-header-bg)',
-                borderBottom: '1px solid var(--border-color)'
-              }}
-            >
-              <h3 style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)', margin: 0 }}>
-                로스트아크 가이드
-              </h3>
-            </Card.Header>
-            <Card.Body className="p-3">
-              <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', lineHeight: 1.6 }}>
-                로스트아크의 골드 수급, 레이드 보상, 재련 시스템, 거래소 시세 등을 정리한 가이드입니다.
-              </p>
-              <Row className="g-2">
-                {guides.slice(0, 4).map((guide) => (
-                  <Col key={guide.slug} sm={6}>
-                    <Link
-                      href={guide.href}
-                      style={{
-                        display: 'block',
-                        padding: '0.6rem 0.75rem',
-                        fontSize: '0.82rem',
-                        color: 'var(--text-primary)',
-                        textDecoration: 'none',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-color)',
-                        transition: 'background-color 0.2s',
-                      }}
-                    >
-                      <span style={{ fontWeight: 600 }}>{guide.title}</span>
-                      <br />
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{guide.summary.slice(0, 50)}...</span>
-                    </Link>
-                  </Col>
-                ))}
-              </Row>
-              <div className="text-center mt-2">
-                <Link
-                  href="/guide"
-                  style={{ fontSize: '0.82rem', color: 'var(--brand-primary)', textDecoration: 'none' }}
-                >
-                  모든 가이드 보기 &rarr;
-                </Link>
-              </div>
-            </Card.Body>
-          </Card>
-        </section>
-
-        {/* 서비스 소개 섹션 */}
-        <section className="service-intro" style={{ marginTop: '1.5rem' }}>
-          <h2>로골로골 - 로스트아크 골드 계산기</h2>
-          <p>
-            로골로골은 로스트아크 플레이어를 위한 무료 골드 계산 서비스입니다.
-            로스트아크 공식 API의 실시간 거래소 시세를 기반으로 주간 골드 수익, 재련 비용, 생활 콘텐츠 손익을 정확하게 계산해드립니다.
-          </p>
-          <div className="service-features">
-            <div className="service-feature-item">
-              <h3>주간 골드 계산</h3>
-              <p>캐릭터명 입력만으로 원정대 전체 주간 골드 수익과 더보기 손익을 자동 계산합니다.</p>
-            </div>
-            <div className="service-feature-item">
-              <h3>재련 비용 계산</h3>
-              <p>T4 일반/상급 재련 비용을 실시간 시세로 계산하고, 재련 시뮬레이션을 체험할 수 있습니다.</p>
-            </div>
-            <div className="service-feature-item">
-              <h3>생활 제작 손익</h3>
-              <p>아비도스 융화재료 제작의 실시간 손익을 분석하여 최적의 생활 콘텐츠를 안내합니다.</p>
-            </div>
-            <div className="service-feature-item">
-              <h3>실시간 시세 차트</h3>
-              <p>로스트아크 거래소 아이템의 실시간 가격과 과거 시세 추이를 차트로 확인할 수 있습니다.</p>
-            </div>
-          </div>
-        </section>
 
       </Container>
     </div>
