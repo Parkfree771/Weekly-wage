@@ -918,10 +918,10 @@
   color: #6b7280;
 }
 
-/* ─── 좌우 분할 (아이템 + 결과) ─── */
+/* ─── 좌우 분할 (결과 + 아이템) ─── */
 .detailSplitRow {
   display: grid;
-  grid-template-columns: 3fr 2fr;
+  grid-template-columns: 340px 1fr;
   gap: 1.5rem;
   align-items: start;
   margin-bottom: 1.5rem;
@@ -934,7 +934,7 @@
 
 .itemCardsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 0.75rem;
 }
 
@@ -1104,28 +1104,46 @@
   outline: none;
 }
 
-/* ─── 결과 패널 (오른쪽) ─── */
+/* ─── 결과 패널 (왼쪽) ─── */
 .resultPanel {
   position: sticky;
   top: 80px;
-  padding-top: 2.45rem;
 }
 
 /* ─── 계산 결과 박스 ─── */
 .resultBox {
+  position: relative;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  overflow: hidden;
+}
+
+.resultBox::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #f97316, #f59e0b);
+  border-radius: 14px 14px 0 0;
+}
+
+.resultTitle {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0.5rem 0 0;
+  word-break: break-word;
+  line-height: 1.4;
 }
 
 .resultDivider {
   border: none;
   border-top: 1px solid var(--border-color);
-  margin: 0.5rem 0;
+  margin: 0.65rem 0;
 }
 
 /* 행 공통 */
@@ -1133,53 +1151,35 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.15rem 0;
+  padding: 0.25rem 0;
 }
 
 .resultRowLabel {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .resultRowValue {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #f97316;
-}
-
-.resultRowIcon {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.resultRowIconSm {
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-/* 현금 구매 골드 */
-.resultCashGold {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text-primary);
+  text-align: right;
 }
 
+.resultRowValueGold {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f97316;
+  text-align: right;
+}
+
+.resultBenefitNum {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+/* 환율 입력 */
 .resultRateInput {
   display: flex;
   align-items: center;
@@ -1187,7 +1187,7 @@
   background: var(--input-bg);
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  padding: 0.3rem 0.5rem;
+  padding: 0.25rem 0.45rem;
   transition: border-color 0.2s;
 }
 
@@ -1196,31 +1196,31 @@
 }
 
 .resultRateIcon {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   border-radius: 3px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .resultRateFixed {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-secondary);
 }
 
 .resultRateSep {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 800;
   color: var(--text-muted);
 }
 
 .resultRateNumber {
-  width: 40px;
+  width: 36px;
   background: transparent;
   border: none;
   color: #f97316;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-align: center;
   outline: none;
@@ -1234,37 +1234,33 @@
   margin: 0;
 }
 
-/* 이득률 */
-.resultBenefitInline {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 0.15rem 0;
+/* 메타 + 액션 */
+.resultMeta {
+  padding: 0.1rem 0;
 }
 
-.resultBenefitItem {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-}
-
-.resultBenefitLabel {
+.resultMetaDate {
   font-size: 0.78rem;
-  font-weight: 600;
   color: var(--text-muted);
 }
 
-.resultBenefitNum {
-  font-size: 1.15rem;
-  font-weight: 800;
+.resultActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.35rem;
 }
 
-.resultBenefitSep {
-  width: 1px;
-  height: 24px;
-  background: var(--border-color);
-  flex-shrink: 0;
+.resultActionsLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.resultActionsRight {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .benefitUp {
@@ -1475,8 +1471,8 @@
     position: static;
   }
 
-  .itemCardsSection {
-    margin-bottom: 1rem;
+  .resultBox {
+    max-width: 400px;
   }
 }
 
@@ -1512,6 +1508,7 @@
 
   .resultBox {
     padding: 1rem;
+    max-width: 100%;
   }
 
   .itemCheckList {
