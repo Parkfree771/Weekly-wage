@@ -24,6 +24,15 @@ function formatNumber(n: number): string {
   return Math.round(n).toLocaleString('ko-KR');
 }
 
+function formatShortDate(timestamp: any): string {
+  if (!timestamp) return '';
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  const y = String(date.getFullYear()).slice(2);
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}.${m}.${d}`;
+}
+
 const PRICE_BUNDLE_SIZE: Record<string, number> = {
   '66102007': 100,
   '66102107': 100,
@@ -66,13 +75,12 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
 
   return (
     <article className={styles.galleryCard} onClick={handleCardClick}>
-      <div className={styles.cardTop}>
+      <div className={styles.cardTitleRow}>
+        <h3 className={styles.cardTitle}>{post.title}</h3>
         <span className={`${styles.cardBadge} ${getBadgeClass(post.packageType)}`}>
           {post.packageType}
         </span>
       </div>
-
-      <h3 className={styles.cardTitle}>{post.title}</h3>
 
       {/* 아이템 아이콘 */}
       <div className={styles.cardItemIcons}>
@@ -85,6 +93,35 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
         {post.items.length > 5 && (
           <span className={styles.cardItemMore}>+{post.items.length - 5}</span>
         )}
+      </div>
+
+      {/* 골드/원 */}
+      <div className={styles.cardGoldValue}>
+        {formatNumber(totalGold)}G / {formatNumber(post.royalCrystalPrice)}원
+      </div>
+
+      {/* 환율 입력 */}
+      <div className={styles.cardRateWrap}>
+        <div
+          className={styles.cardRateRow}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/gold.webp" alt="골드" className={styles.cardRateIcon} />
+          <span className={styles.cardRateFixed}>100</span>
+          <span className={styles.cardRateSep}>:</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/royal.webp" alt="로얄" className={styles.cardRateIcon} />
+          <input
+            type="number"
+            className={styles.cardRateInput}
+            value={wonPer100Gold || ''}
+            onChange={(e) => setWonPer100Gold(parseInt(e.target.value) || 0)}
+            placeholder="32"
+            min={1}
+          />
+        </div>
+        <span className={styles.cardRateHint}>&#8592; 직접 수정 가능</span>
       </div>
 
       {/* 이득률 */}
@@ -107,30 +144,13 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
         </div>
       )}
 
-      {/* 골드/원 */}
-      <div className={styles.cardGoldValue}>
-        {formatNumber(totalGold)}G / {formatNumber(post.royalCrystalPrice)}원
-      </div>
-
-      {/* 환율 입력 */}
-      <div
-        className={styles.cardRateRow}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/gold.webp" alt="골드" className={styles.cardRateIcon} />
-        <span className={styles.cardRateFixed}>100</span>
-        <span className={styles.cardRateSep}>:</span>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/royal.webp" alt="로얄" className={styles.cardRateIcon} />
-        <input
-          type="number"
-          className={styles.cardRateInput}
-          value={wonPer100Gold || ''}
-          onChange={(e) => setWonPer100Gold(parseInt(e.target.value) || 0)}
-          placeholder="32"
-          min={1}
-        />
+      {/* 하단 메타 */}
+      <div className={styles.cardMeta}>
+        <div className={styles.cardMetaLeft}>
+          <span>{'\u2661'} {post.likeCount || 0}</span>
+          <span>{'\uD83D\uDC41'} {post.viewCount || 0}</span>
+        </div>
+        <span className={styles.cardMetaDate}>{formatShortDate(post.createdAt)}</span>
       </div>
 
     </article>
