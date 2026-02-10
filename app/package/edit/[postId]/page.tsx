@@ -104,7 +104,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
   },
   {
     id: 'abidos-fusion',
-    icon: '/abidos-fusion5.webp?v=2',
+    icon: '/abidos-fusion5.webp?v=3',
     name: '아비도스 융화 재료',
     type: 'simple',
     itemId: '6861011',
@@ -130,12 +130,12 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     name: '영웅 젬 상자',
     type: 'choice',
     choices: [
-      { itemId: '67400003', name: '질서의 젬 : 안정', icon: '/gem-order-stable.webp' },
-      { itemId: '67400103', name: '질서의 젬 : 견고', icon: '/gem-order-solid.webp' },
-      { itemId: '67400203', name: '질서의 젬 : 불변', icon: '/gem-chaos-collapse.webp' },
-      { itemId: '67410303', name: '혼돈의 젬 : 침식', icon: '/gem-chaos-erosion.webp' },
-      { itemId: '67410403', name: '혼돈의 젬 : 왜곡', icon: '/gem-chaos-distortion.webp' },
-      { itemId: '67410503', name: '혼돈의 젬 : 붕괴', icon: '/gem-order-immutable.webp' },
+      { itemId: '67400003', name: '질서의 젬 : 안정', icon: '/gem-order-stable.webp?v=3' },
+      { itemId: '67400103', name: '질서의 젬 : 견고', icon: '/gem-order-solid.webp?v=3' },
+      { itemId: '67400203', name: '질서의 젬 : 불변', icon: '/gem-order-immutable.webp?v=3' },
+      { itemId: '67410303', name: '혼돈의 젬 : 침식', icon: '/gem-chaos-erosion.webp?v=3' },
+      { itemId: '67410403', name: '혼돈의 젬 : 왜곡', icon: '/gem-chaos-distortion.webp?v=3' },
+      { itemId: '67410503', name: '혼돈의 젬 : 붕괴', icon: '/gem-chaos-collapse.webp?v=3' },
     ],
   },
   // ── 유각 ──

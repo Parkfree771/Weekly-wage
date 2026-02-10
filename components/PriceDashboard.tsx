@@ -15,15 +15,15 @@ type PriceItem = {
 // 거래소 + 경매장 아이템 표시
 const DASHBOARD_ITEMS: PriceItem[] = [
   // 계승 재련 재료
-  { id: '66102007', name: '운명의 파괴석 결정', shortName: '파괴석 결정', icon: '/top-destiny-destruction-stone5.webp' },
-  { id: '66102107', name: '운명의 수호석 결정', shortName: '수호석 결정', icon: '/top-destiny-guardian-stone5.webp' },
-  { id: '66110226', name: '위대한 운명의 돌파석', shortName: '위대한 돌파석', icon: '/top-destiny-breakthrough-stone5.webp' },
+  { id: '66102007', name: '운명의 파괴석 결정', shortName: '파괴석 결정', icon: '/destiny-destruction-stone2.webp?v=3' },
+  { id: '66102107', name: '운명의 수호석 결정', shortName: '수호석 결정', icon: '/destiny-guardian-stone2.webp?v=3' },
+  { id: '66110226', name: '위대한 운명의 돌파석', shortName: '위대한 돌파석', icon: '/destiny-breakthrough-stone2.webp?v=3' },
   { id: '6861013', name: '상급 아비도스 융화 재료', shortName: '상비도스', icon: '/top-abidos-fusion5.webp' },
   // 일반 재련 재료
   { id: '66102006', name: '운명의 파괴석', shortName: '파괴석', icon: '/destiny-destruction-stone5.webp' },
   { id: '66102106', name: '운명의 수호석', shortName: '수호석', icon: '/destiny-guardian-stone5.webp' },
   { id: '66110225', name: '운명의 돌파석', shortName: '돌파석', icon: '/destiny-breakthrough-stone5.webp' },
-  { id: '6861012', name: '아비도스 융화 재료', shortName: '아비도스', icon: '/abidos-fusion5.webp' },
+  { id: '6861012', name: '아비도스 융화 재료', shortName: '아비도스', icon: '/abidos-fusion5.webp?v=3' },
   { id: '66130143', name: '운명의 파편 주머니(대)', shortName: '운파', icon: '/destiny-shard-bag-large5.webp' },
   // 재련 추가 재료
   { id: '66111131', name: '용암의 숨결', shortName: '용암의 숨결', icon: '/breath-lava5.webp' },

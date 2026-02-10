@@ -17,9 +17,9 @@ const getMaterialImage = (itemName: string): string => {
     '운명의 파편': 'destiny-shard-bag-large.webp',
     '운명의 돌파석': 'destiny-breakthrough-stone.webp',
     // 계승 재료 (세르카 레이드)
-    '운명의 파괴석 결정': 'destiny-destruction-stone2.webp',
-    '운명의 수호석 결정': 'destiny-guardian-stone2.webp',
-    '위대한 운명의 돌파석': 'destiny-breakthrough-stone2.webp',
+    '운명의 파괴석 결정': 'destiny-destruction-stone2.webp?v=3',
+    '운명의 수호석 결정': 'destiny-guardian-stone2.webp?v=3',
+    '위대한 운명의 돌파석': 'destiny-breakthrough-stone2.webp?v=3',
     // 특수 재료 (거래 불가)
     '코어': 'cerka-core.webp',
     '고통의 가시': 'pulsating-thorn.webp',

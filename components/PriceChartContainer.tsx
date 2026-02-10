@@ -341,11 +341,18 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
       setIsGridView(false);
     }
     setSelectedCategory(category);
-    setSelectedSubCategory(null);
     setSelectedSlot(null);
 
-    // 재련 추가 재료가 아니면 첫 번째 아이템 선택
-    if (category !== 'refine_additional') {
+    if (category === 'refine_additional') {
+      // 재련 추가 재료: 첫 번째 서브카테고리(무기 보조 재료) 자동 선택 + 첫 아이템
+      const firstSubCat = Object.keys(REFINE_ADDITIONAL_SUBCATEGORIES)[0] as RefineAdditionalSubCategory;
+      setSelectedSubCategory(firstSubCat);
+      const subItems = getItemsBySubCategory(firstSubCat);
+      if (subItems.length > 0) {
+        setSelectedItem(subItems[0]);
+      }
+    } else {
+      setSelectedSubCategory(null);
       const categoryItems = getItemsByCategory(category);
       if (categoryItems.length > 0) {
         setSelectedItem(categoryItems[0]);

@@ -17,9 +17,9 @@ const getTodayPriceDate = () => {
 // 재료 이미지 매핑
 const getMaterialImage = (itemName: string): string => {
   const imageMap: { [key: string]: string } = {
-    '운명의 파괴석 결정': 'destiny-destruction-stone2.webp',
-    '운명의 수호석 결정': 'destiny-guardian-stone2.webp',
-    '위대한 운명의 돌파석': 'destiny-breakthrough-stone2.webp',
+    '운명의 파괴석 결정': 'destiny-destruction-stone2.webp?v=3',
+    '운명의 수호석 결정': 'destiny-guardian-stone2.webp?v=3',
+    '위대한 운명의 돌파석': 'destiny-breakthrough-stone2.webp?v=3',
     '운명의 파편': 'destiny-shard-bag-large.webp',
     '코어': 'cerka-core.webp',
     '고통의 가시': 'pulsating-thorn.webp',

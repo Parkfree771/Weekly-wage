@@ -54,11 +54,11 @@ const PRELOAD_IMAGES = [
   '/behemoth.webp',
 
   // 재련 재료 이미지
-  '/destiny-destruction-stone2.webp',
-  '/destiny-guardian-stone2.webp',
-  '/destiny-breakthrough-stone2.webp',
+  '/destiny-destruction-stone2.webp?v=3',
+  '/destiny-guardian-stone2.webp?v=3',
+  '/destiny-breakthrough-stone2.webp?v=3',
   '/destiny-shard-bag-large.webp',
-  '/abidos-fusion5.webp',
+  '/abidos-fusion5.webp?v=3',
   '/breath-glacier5.webp',
 
   // 생명의 거장 재료

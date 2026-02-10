@@ -1315,7 +1315,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                               <span>{perAttemptCost.돌파석.toLocaleString()}</span>
                             </div>
                             <div className={styles.singleCostItem}>
-                              <Image src="/abidos-fusion5.webp" alt="아비도스" width={32} height={32} />
+                              <Image src="/abidos-fusion5.webp?v=3" alt="아비도스" width={32} height={32} />
                               <span>{perAttemptCost.아비도스.toLocaleString()}</span>
                             </div>
                             <div className={styles.singleCostItem}>
@@ -1591,7 +1591,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                     )}
                     {accumulatedCost.아비도스 > 0 && (
                       <div className={styles.totalMaterialItem}>
-                        <Image src="/abidos-fusion5.webp" alt="아비도스" width={28} height={28} />
+                        <Image src="/abidos-fusion5.webp?v=3" alt="아비도스" width={28} height={28} />
                         <span className={styles.materialName}>아비도스</span>
                         <span className={styles.materialAmount}>{accumulatedCost.아비도스.toLocaleString()}</span>
                         <span className={styles.materialGold}>{getMaterialGoldCost('아비도스', accumulatedCost.아비도스).toLocaleString()}G</span>

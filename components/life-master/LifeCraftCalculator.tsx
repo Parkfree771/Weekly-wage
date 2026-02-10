@@ -15,7 +15,7 @@ const CRAFTING_INFO = {
   premium: {
     id: PREMIUM_ABIDOS_FUSION_ID,
     name: '상급 아비도스 융화 재료',
-    icon: '/abidos-fusion2.webp',
+    icon: '/abidos-fusion2.webp?v=3',
     materials: {
       abidos: 43,
       soft: 59,
@@ -27,7 +27,7 @@ const CRAFTING_INFO = {
   normal: {
     id: ABIDOS_FUSION_ID,
     name: '아비도스 융화 재료',
-    icon: '/abidos-fusion.webp',
+    icon: '/abidos-fusion.webp?v=3',
     materials: {
       abidos: 33,
       soft: 45,

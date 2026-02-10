@@ -75,8 +75,16 @@ export default function Home() {
                   업데이트 내역
                 </h3>
               </Card.Header>
-              <Card.Body className="p-3">
+              <Card.Body className="p-3" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.09</span>
+                    <span style={{ color: 'var(--text-primary)' }}>패키지 효율 계산기 추가</span>
+                  </li>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.09</span>
+                    <span style={{ color: 'var(--text-primary)' }}>아바타 갤러리 추가 (염색 코드 공유)</span>
+                  </li>
                   <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.05</span>
                     <span style={{ color: 'var(--text-primary)' }}>생활 계산 리뉴얼, 마이페이지 주간 골드 기록 차트 추가</span>

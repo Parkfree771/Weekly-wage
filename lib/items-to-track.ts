@@ -51,12 +51,12 @@ export const REFINE_ADDITIONAL_SUBCATEGORIES: Record<RefineAdditionalSubCategory
   weapon: {
     label: '무기 보조 재료',
     // 야금술 아이템들 + 용암의 숨결
-    ids: ['66112553', '66112551', '66112543', '66112717', '66112715', '66112713', '66112711', '66111131']
+    ids: ['66111131', '66112553', '66112551', '66112543', '66112717', '66112715', '66112713', '66112711']
   },
   armor: {
     label: '방어구 보조 재료',
     // 재봉술 아이템들 + 빙하의 숨결
-    ids: ['66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66111132']
+    ids: ['66111132', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712']
   }
 };
 
@@ -67,28 +67,28 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     id: '6861013',
     name: '상급 아비도스 융화 재료',
     type: 'market',
-    icon: '/abidos-fusion2.webp',
+    icon: '/abidos-fusion2.webp?v=3',
     iconBorderColor: '#c2410c' // 세르카 주황
   },
   {
     id: '66102007',
     name: '운명의 파괴석 결정',
     type: 'market',
-    icon: '/destiny-destruction-stone2.webp',
+    icon: '/destiny-destruction-stone2.webp?v=3',
     iconBorderColor: '#c2410c' // 세르카 주황
   },
   {
     id: '66102107',
     name: '운명의 수호석 결정',
     type: 'market',
-    icon: '/destiny-guardian-stone2.webp',
+    icon: '/destiny-guardian-stone2.webp?v=3',
     iconBorderColor: '#c2410c' // 세르카 주황
   },
   {
     id: '66110226',
     name: '위대한 운명의 돌파석',
     type: 'market',
-    icon: '/destiny-breakthrough-stone2.webp',
+    icon: '/destiny-breakthrough-stone2.webp?v=3',
     iconBorderColor: '#c2410c' // 세르카 주황
   },
 
@@ -97,7 +97,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     id: '6861012',
     name: '아비도스 융화 재료',
     type: 'market',
-    icon: '/abidos-fusion.webp',
+    icon: '/abidos-fusion.webp?v=3',
     iconBorderColor: '#6366f1' // 인디고
   },
   {
@@ -262,42 +262,42 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     id: '67400003',
     name: '질서의 젬 : 안정',
     type: 'market',
-    icon: '/gem-order-stable.webp',
+    icon: '/gem-order-stable.webp?v=3',
     iconBorderColor: '#4B0082' // 보라색
   },
   {
     id: '67400103',
     name: '질서의 젬 : 견고',
     type: 'market',
-    icon: '/gem-order-solid.webp',
+    icon: '/gem-order-solid.webp?v=3',
     iconBorderColor: '#4B0082' // 보라색
   },
   {
     id: '67400203',
     name: '질서의 젬 : 불변',
     type: 'market',
-    icon: '/gem-chaos-collapse.webp',
+    icon: '/gem-order-immutable.webp?v=3',
     iconBorderColor: '#4B0082' // 보라색
   },
   {
     id: '67410303',
     name: '혼돈의 젬 : 침식',
     type: 'market',
-    icon: '/gem-chaos-erosion.webp',
+    icon: '/gem-chaos-erosion.webp?v=3',
     iconBorderColor: '#4B0082' // 보라색
   },
   {
     id: '67410403',
     name: '혼돈의 젬 : 왜곡',
     type: 'market',
-    icon: '/gem-chaos-distortion.webp',
+    icon: '/gem-chaos-distortion.webp?v=3',
     iconBorderColor: '#4B0082' // 보라색
   },
   {
     id: '67410503',
     name: '혼돈의 젬 : 붕괴',
     type: 'market',
-    icon: '/gem-order-immutable.webp',
+    icon: '/gem-chaos-collapse.webp?v=3',
     iconBorderColor: '#4B0082' // 보라색
   },
 

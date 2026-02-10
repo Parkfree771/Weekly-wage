@@ -1,27 +1,49 @@
+/* ─── 갤러리 카드: 2단 레이아웃 ─── */
 .galleryCard {
-  background: var(--card-bg);
+  display: grid;
+  grid-template-columns: 1fr 280px;
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
-  cursor: pointer;
-  transition: all 0.2s ease;
   box-shadow: var(--shadow-md);
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  transition: all 0.2s ease;
 }
 
 .galleryCard:hover {
-  transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
 }
 
-/* 제목 + 뱃지 한 줄 */
-.cardTitleRow {
+/* ─── 왼쪽 박스: 배경 이미지 + 아이템 ─── */
+.leftBox {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background-color: #1a1a2e;
+  background-image: url('/vozlwl.webp');
+  background-size: cover;
+  background-position: center right;
+  min-height: 270px;
+}
+
+/* 헤더: 제목 + 뱃지 */
+.leftHeader {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+.cardTitle {
+  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  min-width: 0;
+  flex: 1;
 }
 
 .cardBadge {
@@ -50,56 +72,193 @@
   color: #6b7280;
 }
 
-/* 제목 */
-.cardTitle {
-  font-size: clamp(0.85rem, 2vw, 0.95rem);
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0;
-  min-width: 0;
+/* ─── 아이템 그리드 ─── */
+.itemGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
   flex: 1;
 }
 
-/* 골드/원 */
-.cardGoldValue {
-  font-size: 0.78rem;
-  color: var(--text-muted);
+.itemCell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: opacity 0.2s, filter 0.2s;
+  background: transparent;
+  padding: 0.2rem;
 }
 
-/* ─── 환율 입력 ─── */
-.cardRateWrap {
+.itemCellUnchecked {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+}
+
+/* 체크박스 (아이콘 위 오버레이) */
+.itemCheckLabel {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: center;
+  z-index: 2;
 }
 
-.cardRateRow {
+.itemCheckInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.itemCheckBox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: center;
-  gap: 0.2rem;
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 0.25rem 0.5rem;
-  width: fit-content;
-  transition: border-color 0.2s;
+  justify-content: center;
+  transition: all 0.15s;
 }
 
-.cardRateHint {
-  font-size: 0.62rem;
-  color: var(--text-muted);
-  opacity: 0.7;
-  white-space: nowrap;
-}
-
-.cardRateRow:focus-within {
+.itemCheckLabel:hover .itemCheckBox {
   border-color: #f97316;
 }
 
-.cardRateIcon {
+.itemCheckInput:checked + .itemCheckBox {
+  background: #f97316;
+  border-color: #f97316;
+}
+
+.itemCheckIcon {
+  width: 10px;
+  height: 8px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 아이콘 */
+.itemCellIcon {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+
+/* ─── 하단 메타 ─── */
+.leftMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
+  font-size: 0.7rem;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  font-weight: 600;
+  margin-top: auto;
+}
+
+.metaHeart {
+  color: #ef4444;
+}
+
+.metaLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.metaDate {
+  font-weight: 500;
+}
+
+/* ─── 오른쪽 박스: 계산 결과 ─── */
+.rightBox {
+  background: #1a1a2e;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.2s;
+}
+
+.rightTop {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+/* 결과 행 */
+.resultRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+}
+
+.resultLabel {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.resultValue {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  text-align: right;
+}
+
+.resultValueGold {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f97316;
+  text-align: right;
+}
+
+.resultDivider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0.75rem 0;
+}
+
+/* ─── 환율 입력 ─── */
+.rateHint {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 500;
+  text-align: right;
+  margin-top: -0.2rem;
+}
+
+.rateRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  transition: border-color 0.2s;
+}
+
+.rateRow:focus-within {
+  border-color: #f97316;
+}
+
+.rateIconGold {
   width: 20px;
   height: 20px;
   border-radius: 3px;
@@ -107,24 +266,32 @@
   flex-shrink: 0;
 }
 
-.cardRateFixed {
-  font-size: 0.75rem;
+.rateIconRoyal {
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.rateFixed {
+  font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: #fff;
 }
 
-.cardRateSep {
-  font-size: 0.75rem;
+.rateSep {
+  font-size: 0.8rem;
   font-weight: 800;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.cardRateInput {
+.rateInput {
   width: 40px;
   background: transparent;
   border: none;
   color: #f97316;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   text-align: center;
   outline: none;
@@ -132,114 +299,94 @@
   -moz-appearance: textfield;
 }
 
-.cardRateInput::placeholder {
-  color: var(--text-muted);
+.rateInput::placeholder {
+  color: rgba(255, 255, 255, 0.3);
   font-weight: 500;
 }
 
-.cardRateInput::-webkit-outer-spin-button,
-.cardRateInput::-webkit-inner-spin-button {
+.rateInput::-webkit-outer-spin-button,
+.rateInput::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
 /* ─── 이득률 ─── */
-.cardBenefitArea {
+.benefitArea {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
 }
 
-.cardBenefitLine {
+.benefitLine {
   display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: 0.4rem;
 }
 
-.cardBenefitLabel {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  min-width: 28px;
+.benefitLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.cardBenefitValue {
-  font-size: 1.07rem;
+.benefitValue {
+  font-size: 1.15rem;
   font-weight: 800;
 }
 
 .benefitPositive {
-  color: #22c55e;
+  color: #4ade80;
 }
 
 .benefitNegative {
-  color: #ef4444;
+  color: #f87171;
 }
 
-/* 아이템 아이콘 미리보기 */
-.cardItemIcons {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin: 0.1rem 0;
-}
-
-.cardItemIcon {
-  width: 36px;
-  height: 36px;
-  border-radius: 5px;
-  object-fit: contain;
-  border: 1px solid var(--border-color);
-  background: var(--input-bg);
-}
-
-.cardItemMore {
-  font-size: 0.68rem;
-  color: var(--text-muted);
-  font-weight: 600;
-  margin-left: 0.15rem;
-}
-
-/* 하단 메타 */
-.cardMeta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.68rem;
-  color: var(--text-muted);
+/* ─── 상세보기 링크 ─── */
+.detailLink {
   margin-top: auto;
-  padding: 0.45rem 0 0.1rem;
-  border-top: 1px solid var(--border-color);
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #f97316;
+  transition: color 0.2s;
 }
 
-.cardMetaLeft {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.rightBox:hover .detailLink {
+  color: #ea580c;
 }
 
-.cardMetaDate {
-  font-weight: 500;
+/* ─── 반응형 ─── */
+@media (max-width: 768px) {
+  .galleryCard {
+    grid-template-columns: 1fr 240px;
+  }
+
+  .itemCellIcon {
+    width: 42px;
+    height: 42px;
+  }
 }
 
-/* 반응형 */
 @media (max-width: 576px) {
   .galleryCard {
-    border-radius: 8px;
-    padding: 0.85rem;
-    gap: 0.35rem;
+    grid-template-columns: 1fr;
+  }
+
+  .rightBox {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .leftBox {
+    min-height: auto;
   }
 
   .cardTitle {
     font-size: 0.8rem;
-  }
-
-  .cardBenefitValue {
-    font-size: 0.9rem;
-  }
-
-  .cardMeta {
-    font-size: 0.6rem;
   }
 
   .cardBadge {
@@ -247,18 +394,16 @@
     padding: 0.1rem 0.4rem;
   }
 
-
-  .cardRateHint {
-    display: none;
-  }
-}
-
-@media (max-width: 400px) {
-  .galleryCard {
-    padding: 0.7rem;
+  .itemCellIcon {
+    width: 38px;
+    height: 38px;
   }
 
-  .cardTitle {
-    font-size: 0.75rem;
+  .leftMeta {
+    font-size: 0.62rem;
+  }
+
+  .benefitValue {
+    font-size: 0.9rem;
   }
 }
