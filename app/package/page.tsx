@@ -20,10 +20,8 @@ export default function PackageGalleryPage() {
   const [hasMore, setHasMore] = useState(true);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
 
-  // 정렬
   const [sortBy, setSortBy] = useState<PackageSortBy>('createdAt');
 
-  // 실시간 가격 fetch
   useEffect(() => {
     fetch('/api/price-data/latest')
       .then((res) => res.json())
@@ -64,14 +62,12 @@ export default function PackageGalleryPage() {
     [sortBy],
   );
 
-  // 초기 로딩 + 정렬 변경 시
   useEffect(() => {
     lastDocRef.current = null;
     setHasMore(true);
     fetchPosts(false);
   }, [fetchPosts]);
 
-  // 스켈레톤 카드
   const renderSkeletons = () =>
     Array.from({ length: 8 }).map((_, i) => (
       <div key={i} className={styles.skeletonCard}>
@@ -85,7 +81,6 @@ export default function PackageGalleryPage() {
   return (
     <Container fluid style={{ maxWidth: '1400px' }}>
       <div className={styles.pageWrapper}>
-        {/* 헤더 */}
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>패키지 효율 계산기</h1>
           <p className={styles.pageSubtitle}>
@@ -93,7 +88,6 @@ export default function PackageGalleryPage() {
           </p>
         </div>
 
-        {/* 컨트롤 */}
         <div className={styles.controls}>
           <div className={styles.filterRow}>
             <select
@@ -111,12 +105,10 @@ export default function PackageGalleryPage() {
           </Link>
         </div>
 
-        {/* 갤러리 그리드 */}
         {loading ? (
           <div className={styles.galleryGrid}>{renderSkeletons()}</div>
         ) : posts.length === 0 ? (
           <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>&#128230;</div>
             <p className={styles.emptyText}>아직 등록된 패키지가 없습니다</p>
             <p className={styles.emptySubtext}>
               첫 번째로 패키지 효율을 공유해보세요!
@@ -134,7 +126,6 @@ export default function PackageGalleryPage() {
               ))}
             </div>
 
-            {/* 더보기 */}
             {hasMore && (
               <div className={styles.loadMoreWrap}>
                 <button

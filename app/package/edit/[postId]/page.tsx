@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { Container } from 'react-bootstrap';
+import { useParams, useRouter } from 'next/navigation';
+import { Container, Spinner } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
-import { createPackagePost } from '@/lib/package-service';
-import NicknameModal from '@/components/auth/NicknameModal';
-import type { PackagePostCreateData, PackageItem, PackageType } from '@/types/package';
-import styles from '../package.module.css';
+import { getPackagePost, updatePackagePost } from '@/lib/package-service';
+import type { PackageItem, PackageType } from '@/types/package';
+import styles from '../../package.module.css';
 
 // ─── 선택지 옵션 ───
 type ChoiceOption = {
@@ -169,7 +168,8 @@ type AddedItem = {
 };
 
 function formatNumber(n: number): string {
-  if (n !== 0 && Math.abs(n) < 1) {
+  if (n === 0) return '0';
+  if (Math.abs(n) < 10) {
     return n.toFixed(3);
   }
   if (n % 1 !== 0 && Math.abs(n) < 100) {
@@ -178,11 +178,10 @@ function formatNumber(n: number): string {
   return Math.round(n).toLocaleString('ko-KR');
 }
 
-// 묶음 단위 (API 가격이 이 수량 기준)
 const PRICE_BUNDLE_SIZE: Record<string, number> = {
-  '66102007': 100,   // 운명의 파괴석 결정 (100개 단위)
-  '66102107': 100,   // 운명의 수호석 결정 (100개 단위)
-  '66130143': 3000,  // 운명의 파편 (3000개 단위)
+  '66102007': 100,
+  '66102107': 100,
+  '66130143': 3000,
 };
 
 function getItemUnitPrice(itemId: string, prices: Record<string, number>): number {
@@ -210,9 +209,61 @@ function getUnitPrice(
   }
 }
 
-export default function PackageRegisterPage() {
+/** PackageItem[] → AddedItem[] 역매핑 */
+function mapItemsToAdded(items: PackageItem[]): AddedItem[] {
+  return items
+    .map((item) => {
+      // Gold type
+      if (item.itemId.startsWith('gold_')) {
+        const templateId = item.itemId.replace('gold_', '');
+        if (TEMPLATES_MAP[templateId]) {
+          return { templateId, quantity: 1, goldAmount: item.goldOverride || 0 };
+        }
+      }
+      // Fixed type
+      if (item.itemId.startsWith('fixed_')) {
+        const templateId = item.itemId.replace('fixed_', '');
+        if (TEMPLATES_MAP[templateId]) {
+          return { templateId, quantity: item.quantity };
+        }
+      }
+      // Choice type (has choiceOptions)
+      if (item.choiceOptions && item.choiceOptions.length > 0) {
+        const template = TEMPLATE_ITEMS.find(
+          (t) =>
+            t.type === 'choice' &&
+            t.choices?.some((c) =>
+              item.choiceOptions!.some((co) => co.itemId === c.itemId),
+            ),
+        );
+        if (template) {
+          return {
+            templateId: template.id,
+            quantity: item.quantity,
+            selectedChoiceId: item.itemId,
+          };
+        }
+      }
+      // Simple type
+      const template = TEMPLATE_ITEMS.find(
+        (t) => t.type === 'simple' && t.itemId === item.itemId,
+      );
+      if (template) {
+        return { templateId: template.id, quantity: item.quantity };
+      }
+      return null;
+    })
+    .filter(Boolean) as AddedItem[];
+}
+
+export default function PackageEditPage() {
+  const params = useParams();
   const router = useRouter();
-  const { user, userProfile } = useAuth();
+  const postId = params.postId as string;
+  const { user } = useAuth();
+
+  const [pageLoading, setPageLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
   const [priceLoading, setPriceLoading] = useState(true);
@@ -224,9 +275,7 @@ export default function PackageRegisterPage() {
   const [packageType, setPackageType] = useState<PackageType>('일반');
   const [royalCrystalPrice, setRoyalCrystalPrice] = useState<number>(0);
   const [tradeMode, setTradeMode] = useState<'unofficial' | 'official'>('official');
-  // 엄거래: 100골드 : ?원
   const [unofficialRate, setUnofficialRate] = useState<number>(0);
-  // 공식 거래: 2750 RC(=2750원) = 100 BC = ?골드 (RC/BC 고정)
   const [officialGold, setOfficialGold] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -239,6 +288,37 @@ export default function PackageRegisterPage() {
       .catch(() => setPriceLoading(false));
   }, []);
 
+  // 기존 게시물 로드
+  useEffect(() => {
+    if (!postId || !user) return;
+    const load = async () => {
+      try {
+        const post = await getPackagePost(postId);
+        if (!post || post.authorUid !== user.uid) {
+          setNotFound(true);
+          setPageLoading(false);
+          return;
+        }
+        setTitle(post.title);
+        setPackageType(post.packageType);
+        setRoyalCrystalPrice(post.royalCrystalPrice);
+        setAddedItems(mapItemsToAdded(post.items));
+
+        // 환율 복원
+        if (post.goldPerWon && post.goldPerWon > 0) {
+          const restoredOfficialGold = Math.round(post.goldPerWon * 2750);
+          setOfficialGold(restoredOfficialGold);
+        }
+      } catch (err) {
+        console.error('게시물 로딩 실패:', err);
+        setNotFound(true);
+      } finally {
+        setPageLoading(false);
+      }
+    };
+    load();
+  }, [postId, user]);
+
   // 아이템 추가 시 스크롤 맨 아래로
   useEffect(() => {
     if (scrollRef.current) {
@@ -246,7 +326,6 @@ export default function PackageRegisterPage() {
     }
   }, [addedItems.length]);
 
-  // 아이템 추가
   const handleAddItem = (templateId: string) => {
     const template = TEMPLATES_MAP[templateId];
     if (!template) return;
@@ -254,7 +333,6 @@ export default function PackageRegisterPage() {
     setAddedItems((prev) => {
       const existing = prev.find((a) => a.templateId === templateId);
       if (existing) {
-        // 이미 추가된 아이템 → 제거
         return prev.filter((a) => a.templateId !== templateId);
       }
       const newItem: AddedItem = { templateId, quantity: 1 };
@@ -311,18 +389,14 @@ export default function PackageRegisterPage() {
   const adjustedValue = totalGoldValue * multiplier;
   const efficiency = royalCrystalPrice > 0 ? adjustedValue / royalCrystalPrice : 0;
 
-  // 골드:현금 비율 계산 (1 RC = 1원, 100 BC = 2750 RC 고정)
   const goldPerWon = tradeMode === 'unofficial'
     ? (unofficialRate > 0 ? 100 / unofficialRate : 0)
     : (officialGold > 0 ? officialGold / 2750 : 0);
-  // 100:X 비율 (100골드 당 원)
   const ratePer100 = goldPerWon > 0 ? Math.round(100 / goldPerWon) : 0;
-  // 1개 구매 기준
   const singleCashGold = royalCrystalPrice * goldPerWon;
   const singleBenefit = singleCashGold > 0
     ? ((totalGoldValue - singleCashGold) / singleCashGold) * 100
     : 0;
-  // N+1 전부 구매 기준 (3+1: 3개값 내고 4개 받음, 2+1: 2개값 내고 3개 받음)
   const buyCount = packageType === '3+1' ? 3 : packageType === '2+1' ? 2 : 1;
   const getCount = packageType === '3+1' ? 4 : packageType === '2+1' ? 3 : 1;
   const fullCashGold = royalCrystalPrice * buyCount * goldPerWon;
@@ -331,10 +405,10 @@ export default function PackageRegisterPage() {
     ? ((fullPackageGold - fullCashGold) / fullCashGold) * 100
     : 0;
 
-  // 등록
+  // 수정
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !userProfile) return;
+    if (!user) return;
     if (!title.trim()) { setError('제목을 입력해주세요.'); return; }
     if (addedItems.length === 0) { setError('아이템을 1개 이상 추가해주세요.'); return; }
     if (royalCrystalPrice <= 0) { setError('현금 가격을 입력해주세요.'); return; }
@@ -394,43 +468,54 @@ export default function PackageRegisterPage() {
         })
         .filter(Boolean) as PackageItem[];
 
-      const postData: PackagePostCreateData = {
-        authorUid: user.uid,
-        authorName: userProfile.nickname || '익명',
-        authorPhotoURL: null,
+      await updatePackagePost(postId, {
         title: title.trim(),
-        description: '',
         packageType,
         royalCrystalPrice,
         items,
-        ...(goldPerWon > 0 ? { goldPerWon } : {}),
-      };
+        ...(goldPerWon > 0 ? { goldPerWon } : { goldPerWon: 0 }),
+      });
 
-      const postId = await createPackagePost(postData);
       router.push(`/package/${postId}`);
     } catch (err: any) {
-      console.error('등록 실패:', err);
-      setError('등록에 실패했습니다. 다시 시도해주세요.');
+      console.error('수정 실패:', err);
+      setError('수정에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // 비로그인
   if (!user) {
     return (
       <Container fluid style={{ maxWidth: '1400px' }}>
         <div className={styles.registerWrapper}>
           <div className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>패키지 등록</h1>
+            <h1 className={styles.pageTitle}>패키지 수정</h1>
           </div>
           <div className={styles.loginNotice}>
-            <p className={styles.loginNoticeText}>
-              패키지를 등록하려면 로그인이 필요합니다.
-            </p>
-            <p className={styles.loginNoticeText} style={{ fontSize: '0.85rem' }}>
-              상단의 로그인 버튼을 눌러 Google 계정으로 로그인해주세요.
-            </p>
+            <p className={styles.loginNoticeText}>로그인이 필요합니다.</p>
+          </div>
+        </div>
+      </Container>
+    );
+  }
+
+  if (pageLoading) {
+    return (
+      <Container fluid style={{ maxWidth: '1100px' }}>
+        <div className={styles.registerWrapper} style={{ textAlign: 'center', paddingTop: '3rem' }}>
+          <Spinner animation="border" style={{ color: '#f97316' }} />
+        </div>
+      </Container>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <Container fluid style={{ maxWidth: '1100px' }}>
+        <div className={styles.registerWrapper}>
+          <div className={styles.emptyState}>
+            <p className={styles.emptyText}>게시물을 찾을 수 없거나 수정 권한이 없습니다.</p>
           </div>
         </div>
       </Container>
@@ -441,9 +526,9 @@ export default function PackageRegisterPage() {
     <Container fluid style={{ maxWidth: '1100px' }}>
       <div className={styles.registerWrapper}>
         <div className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>패키지 등록</h1>
+          <h1 className={styles.pageTitle}>패키지 수정</h1>
           <p className={styles.pageSubtitle}>
-            아래 아이템을 클릭하여 패키지에 추가하세요
+            아래 아이템을 클릭하여 패키지를 수정하세요
           </p>
         </div>
 
@@ -623,7 +708,7 @@ export default function PackageRegisterPage() {
                 )}
               </div>
             </div>
-          </div>{/* topSplitRow */}
+          </div>
 
           {/* 아이템 추가 그리드 */}
           <div className={styles.availableSection}>
@@ -646,7 +731,7 @@ export default function PackageRegisterPage() {
             </div>
           </div>
 
-          {/* 계산 결과 사이드바 (fixed) */}
+          {/* 계산 결과 사이드바 */}
           {addedItems.length > 0 && royalCrystalPrice > 0 && (
             <div className={styles.calcSidebar}>
               <h3 className={styles.calcSidebarTitle}>계산 결과</h3>
@@ -702,14 +787,12 @@ export default function PackageRegisterPage() {
               <button type="submit" className={styles.registerButton}
                 style={{ width: '100%', marginTop: '1rem' }}
                 disabled={submitting || !title.trim() || addedItems.length === 0 || royalCrystalPrice <= 0}>
-                {submitting ? '등록 중...' : '등록하기'}
+                {submitting ? '수정 중...' : '수정 완료'}
               </button>
             </div>
           )}
         </form>
       </div>
-
-      {userProfile && !userProfile.nickname && <NicknameModal />}
     </Container>
   );
 }

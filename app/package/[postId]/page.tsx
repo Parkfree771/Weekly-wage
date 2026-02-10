@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Container, Spinner } from 'react-bootstrap';
@@ -12,10 +12,14 @@ import {
   checkPackageLike,
   deletePackagePost,
 } from '@/lib/package-service';
-import type { PackagePost, PackageType } from '@/types/package';
+import type { PackagePost, PackageType, PackageItem } from '@/types/package';
 import styles from '../package.module.css';
 
 function formatNumber(n: number): string {
+  if (n === 0) return '0';
+  if (Math.abs(n) < 10) {
+    return n.toFixed(3);
+  }
   return Math.round(n).toLocaleString('ko-KR');
 }
 
@@ -28,19 +32,12 @@ function formatDate(timestamp: any): string {
   return `${y}.${m}.${d}`;
 }
 
-function getMultiplier(type: PackageType): number {
-  if (type === '3+1') return 4 / 3;
-  if (type === '2+1') return 3 / 2;
-  return 1;
-}
-
 function getTypeBadgeClass(type: PackageType): string {
   if (type === '3+1') return styles.typeBadge31;
   if (type === '2+1') return styles.typeBadge21;
   return styles.typeBadgeNormal;
 }
 
-/** 묶음 단위 (API 가격 기준) */
 const PRICE_BUNDLE_SIZE: Record<string, number> = {
   '66102007': 100,
   '66102107': 100,
@@ -64,10 +61,12 @@ export default function PackageDetailPage() {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
+  const [choiceSelections, setChoiceSelections] = useState<Record<number, string>>({});
+  const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
+  const [detailWonPer100Gold, setDetailWonPer100Gold] = useState<number>(0);
 
   const isOwner = user && post && user.uid === post.authorUid;
 
-  // 가격 fetch
   useEffect(() => {
     fetch('/api/price-data/latest')
       .then((res) => res.json())
@@ -75,12 +74,10 @@ export default function PackageDetailPage() {
       .catch((err) => console.error('가격 데이터 로딩 실패:', err));
   }, []);
 
-  // 게시물 로딩
   const viewCounted = useRef(false);
 
   useEffect(() => {
     if (!postId) return;
-
     const load = async () => {
       setLoading(true);
       try {
@@ -88,6 +85,19 @@ export default function PackageDetailPage() {
         if (data) {
           setPost(data);
           setLikeCount(data.likeCount || 0);
+          const initial: Record<number, string> = {};
+          const initialChecked: Record<number, boolean> = {};
+          data.items.forEach((item, idx) => {
+            if (item.choiceOptions && item.choiceOptions.length > 0) {
+              initial[idx] = item.itemId;
+            }
+            initialChecked[idx] = true;
+          });
+          setChoiceSelections(initial);
+          setCheckedItems(initialChecked);
+          if (data.goldPerWon && data.goldPerWon > 0) {
+            setDetailWonPer100Gold(Math.round(100 / data.goldPerWon));
+          }
           if (!viewCounted.current) {
             viewCounted.current = true;
             incrementPackageViewCount(postId).catch(() => {});
@@ -99,17 +109,14 @@ export default function PackageDetailPage() {
         setLoading(false);
       }
     };
-
     load();
   }, [postId]);
 
-  // 좋아요 상태 확인
   useEffect(() => {
     if (!user || !postId) return;
     checkPackageLike(postId, user.uid).then(setLiked).catch(() => {});
   }, [user, postId]);
 
-  // 좋아요 토글
   const handleLike = async () => {
     if (!user || !postId) return;
     try {
@@ -121,7 +128,6 @@ export default function PackageDetailPage() {
     }
   };
 
-  // 삭제
   const handleDelete = async () => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
@@ -132,9 +138,55 @@ export default function PackageDetailPage() {
     }
   };
 
+  const handleChoiceSelect = (idx: number, choiceItemId: string) => {
+    setChoiceSelections((prev) => ({ ...prev, [idx]: choiceItemId }));
+  };
+
+  const handleToggleCheck = (idx: number) => {
+    setCheckedItems((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
+  const getEffectiveItem = (item: PackageItem, idx: number) => {
+    if (!item.choiceOptions || !item.choiceOptions.length) return item;
+    const selectedId = choiceSelections[idx] || item.itemId;
+    const selectedOption = item.choiceOptions.find((c) => c.itemId === selectedId);
+    if (selectedOption) {
+      return {
+        ...item,
+        itemId: selectedOption.itemId,
+        name: selectedOption.name,
+        icon: selectedOption.icon || item.icon,
+      };
+    }
+    return item;
+  };
+
+  const { totalGold, itemSubtotals } = useMemo(() => {
+    if (!post) return { totalGold: 0, itemSubtotals: [] as number[] };
+    let total = 0;
+    const subtotals: number[] = [];
+    post.items.forEach((item, idx) => {
+      let effectiveItemId = item.itemId;
+      if (item.choiceOptions && item.choiceOptions.length > 0) {
+        effectiveItemId = choiceSelections[idx] || item.itemId;
+      }
+      if (item.goldOverride != null) {
+        const sub = item.goldOverride * item.quantity;
+        subtotals.push(sub);
+        if (checkedItems[idx] !== false) total += sub;
+      } else {
+        const unitPrice = getItemPrice(effectiveItemId, latestPrices);
+        const sub = unitPrice * item.quantity;
+        subtotals.push(sub);
+        if (checkedItems[idx] !== false) total += sub;
+      }
+    });
+    return { totalGold: total, itemSubtotals: subtotals };
+  }, [post, choiceSelections, latestPrices, checkedItems]);
+
   if (loading) {
     return (
-      <Container fluid style={{ maxWidth: '1400px' }}>
+      <Container fluid style={{ maxWidth: '1100px' }}>
         <div className={styles.detailWrapper} style={{ textAlign: 'center', paddingTop: '3rem' }}>
           <Spinner animation="border" style={{ color: '#f97316' }} />
         </div>
@@ -144,7 +196,7 @@ export default function PackageDetailPage() {
 
   if (!post) {
     return (
-      <Container fluid style={{ maxWidth: '1400px' }}>
+      <Container fluid style={{ maxWidth: '1100px' }}>
         <div className={styles.detailWrapper}>
           <div className={styles.emptyState}>
             <p className={styles.emptyText}>게시물을 찾을 수 없습니다</p>
@@ -157,146 +209,254 @@ export default function PackageDetailPage() {
     );
   }
 
-  // 실시간 계산
-  const totalGold = post.items.reduce((sum, item) => {
-    if (item.goldOverride != null) return sum + item.goldOverride * item.quantity;
-    const unitPrice = getItemPrice(item.itemId, latestPrices);
-    return sum + unitPrice * item.quantity;
-  }, 0);
+  const detailGoldPerWon = detailWonPer100Gold > 0 ? 100 / detailWonPer100Gold : 0;
+  const cashGold = post.royalCrystalPrice * detailGoldPerWon;
 
-  const multiplier = getMultiplier(post.packageType);
-  const adjustedValue = totalGold * multiplier;
-  const efficiency = post.royalCrystalPrice > 0
-    ? adjustedValue / post.royalCrystalPrice
-    : 0;
+  // 1개 이득률
+  const singleBenefit = cashGold > 0 ? ((totalGold - cashGold) / cashGold) * 100 : 0;
+
+  // N+1 이득률
+  const buyCount = post.packageType === '3+1' ? 3 : post.packageType === '2+1' ? 2 : 1;
+  const getCount = post.packageType === '3+1' ? 4 : post.packageType === '2+1' ? 3 : 1;
+  const bundleCash = cashGold * buyCount;
+  const bundleGold = totalGold * getCount;
+  const bundleBenefit = bundleCash > 0 ? ((bundleGold - bundleCash) / bundleCash) * 100 : 0;
 
   return (
-    <Container fluid style={{ maxWidth: '1400px' }}>
+    <Container fluid style={{ maxWidth: '1100px' }}>
       <div className={styles.detailWrapper}>
         <Link href="/package" className={styles.backLink}>
           &#8592; 목록으로 돌아가기
         </Link>
 
-        <div className={styles.detailLayout}>
-          {/* 좌측: 패키지 요약 카드 */}
-          <div className={styles.summaryCard}>
-            {/* 타입 뱃지 */}
+        {/* 헤더 */}
+        <div className={styles.detailHeader}>
+          <div className={styles.detailHeaderTop}>
             <span className={`${styles.typeBadge} ${getTypeBadgeClass(post.packageType)}`}>
               {post.packageType}
             </span>
-
-            <h1 className={styles.summaryTitle}>{post.title}</h1>
-
-            {post.description && (
-              <p className={styles.summaryDescription}>{post.description}</p>
-            )}
-
-            {/* 요약 지표 */}
-            <div className={styles.summaryMetrics}>
-              <div className={styles.metricRow}>
-                <span className={styles.metricLabel}>패키지 가격</span>
-                <span className={styles.metricValue}>
-                  {formatNumber(post.royalCrystalPrice)}원
-                </span>
-              </div>
-              <div className={styles.metricRow}>
-                <span className={styles.metricLabel}>총 골드 가치</span>
-                <span className={styles.metricValue}>
-                  {formatNumber(totalGold)} G
-                </span>
-              </div>
-              {post.packageType !== '일반' && (
-                <div className={styles.metricRow}>
-                  <span className={styles.metricLabel}>
-                    {post.packageType} 보정
-                  </span>
-                  <span className={styles.metricValue}>
-                    {formatNumber(adjustedValue)} G
-                  </span>
-                </div>
-              )}
-              <hr className={styles.summaryDivider} />
-              <div className={styles.metricRow}>
-                <span className={styles.metricLabel}>효율</span>
-                <span className={styles.metricHighlight}>
-                  {formatNumber(efficiency)} G/원
-                </span>
-              </div>
-            </div>
-
-            {/* 작성자 정보 */}
-            <div className={styles.authorInfo}>
-              {post.authorPhotoURL && (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={post.authorPhotoURL}
-                  alt={post.authorName}
-                  className={styles.authorPhoto}
-                />
-              )}
-              <span>{post.authorName}</span>
-              <span style={{ marginLeft: 'auto' }}>{formatDate(post.createdAt)}</span>
-            </div>
-
-            {/* 좋아요 · 조회수 | 삭제 */}
-            <div className={styles.detailStats}>
-              <div className={styles.detailStatsLeft}>
-                <button
-                  className={`${styles.detailLike} ${liked ? styles.detailLiked : ''}`}
-                  onClick={handleLike}
-                  disabled={!user}
-                  title={user ? '좋아요' : '로그인 후 이용 가능'}
-                >
-                  {liked ? '\u2764' : '\u2661'} {likeCount}
-                </button>
-                <span className={styles.viewCount}>
-                  {'\uD83D\uDC41'} {post.viewCount || 0}
-                </span>
-              </div>
-              {isOwner && (
-                <div className={styles.detailStatsRight}>
-                  <button className={styles.deleteBtn} onClick={handleDelete}>
-                    삭제
-                  </button>
-                </div>
-              )}
-            </div>
+            <span className={styles.detailDate}>{formatDate(post.createdAt)}</span>
           </div>
+          <h1 className={styles.detailTitle}>{post.title}</h1>
+        </div>
 
-          {/* 우측: 아이템 상세 목록 */}
-          <div className={styles.detailContent}>
+        {/* 아이템 구성 + 계산 결과 좌우 배치 */}
+        <div className={styles.detailSplitRow}>
+          {/* 왼쪽: 아이템 카드 */}
+          <section className={styles.itemCardsSection}>
             <h2 className={styles.sectionTitle}>
-              아이템 구성 ({post.items.length}개)
+              아이템 구성 ({post.items.length}종)
             </h2>
-            <div className={styles.itemDetailList}>
+            <div className={styles.itemCardsGrid}>
               {post.items.map((item, idx) => {
-                const price = item.goldOverride != null ? item.goldOverride : getItemPrice(item.itemId, latestPrices);
-                const subtotal = price * item.quantity;
+                const effective = getEffectiveItem(item, idx);
                 const isFixed = item.goldOverride != null;
+                const effectiveItemId =
+                  item.choiceOptions && item.choiceOptions.length > 0
+                    ? choiceSelections[idx] || item.itemId
+                    : item.itemId;
+                const unitPrice = isFixed
+                  ? item.goldOverride!
+                  : getItemPrice(effectiveItemId, latestPrices);
+                const subtotal = itemSubtotals[idx] || 0;
+                const hasChoices = item.choiceOptions && item.choiceOptions.length > 0;
+
+                const isChecked = checkedItems[idx] !== false;
+
                 return (
-                  <div key={idx} className={styles.itemDetailRow}>
-                    {item.icon && (
+                  <div
+                    key={idx}
+                    className={`${styles.itemCard} ${hasChoices ? styles.itemCardChoice : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
+                  >
+                    <label className={styles.itemCardCheckLabel} onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleToggleCheck(idx)}
+                        className={styles.itemCardCheckInput}
+                      />
+                      <span className={styles.itemCardCheckBox}>
+                        {isChecked && (
+                          <svg viewBox="0 0 12 10" className={styles.itemCardCheckIcon}>
+                            <polyline points="1.5 5 4.5 8 10.5 2" />
+                          </svg>
+                        )}
+                      </span>
+                    </label>
+                    {effective.icon && (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
-                        src={item.icon}
-                        alt={item.name}
-                        className={styles.itemDetailIcon}
+                        src={effective.icon}
+                        alt={effective.name}
+                        className={styles.itemCardIcon}
                       />
                     )}
-                    <div className={styles.itemDetailInfo}>
-                      <div className={styles.itemDetailName}>{item.name}</div>
-                      <div className={styles.itemDetailMeta}>
-                        {isFixed ? `${formatNumber(price)}G (고정)` : `@${formatNumber(price)}G`} x {item.quantity}개
+                    <div className={styles.itemCardName}>{effective.name}</div>
+
+                    {hasChoices && item.choiceOptions!.length <= 3 && (
+                      <div className={styles.itemCardChoices}>
+                        {item.choiceOptions!.map((choice) => (
+                          <button
+                            key={choice.itemId}
+                            type="button"
+                            className={`${styles.itemCardChoiceBtn} ${
+                              (choiceSelections[idx] || item.itemId) === choice.itemId
+                                ? styles.itemCardChoiceBtnActive
+                                : ''
+                            }`}
+                            onClick={() => handleChoiceSelect(idx, choice.itemId)}
+                          >
+                            {choice.icon && (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={choice.icon} alt={choice.name} className={styles.itemCardChoiceBtnIcon} />
+                            )}
+                            <span>{choice.name}</span>
+                          </button>
+                        ))}
                       </div>
+                    )}
+                    {hasChoices && item.choiceOptions!.length > 3 && (
+                      <select
+                        className={styles.itemCardChoiceSelect}
+                        value={choiceSelections[idx] || item.itemId}
+                        onChange={(e) => handleChoiceSelect(idx, e.target.value)}
+                      >
+                        {item.choiceOptions!.map((choice) => (
+                          <option key={choice.itemId} value={choice.itemId}>
+                            {choice.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    <div className={styles.itemCardPriceLine}>
+                      {isFixed
+                        ? `${formatNumber(unitPrice)}G (고정)`
+                        : `${formatNumber(unitPrice)}G`}
+                      {' x '}
+                      {item.quantity}개
                     </div>
-                    <div className={styles.itemDetailSubtotal}>
+                    <div className={styles.itemCardSubtotal}>
                       {formatNumber(subtotal)}G
                     </div>
                   </div>
                 );
               })}
             </div>
+          </section>
+
+          {/* 오른쪽: 계산 결과 */}
+          <div className={styles.resultPanel}>
+            <div className={styles.resultBox}>
+              {/* 패키지 가격 */}
+              <div className={styles.resultRow}>
+                <span className={styles.resultRowLabel}>패키지 가격</span>
+                <span className={styles.resultRowValue}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/royal.webp" alt="" className={styles.resultRowIcon} />
+                  {formatNumber(post.royalCrystalPrice)}
+                </span>
+              </div>
+
+              <div className={styles.resultDivider} />
+
+              {/* 구성품 골드 가치 */}
+              <div className={styles.resultRow}>
+                <span className={styles.resultRowLabel}>구성품 골드 가치</span>
+                <span className={styles.resultRowValue}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/gold.webp" alt="" className={styles.resultRowIcon} />
+                  {formatNumber(totalGold)}
+                </span>
+              </div>
+
+              <div className={styles.resultDivider} />
+
+              {/* 환율 */}
+              <div className={styles.resultRow}>
+                <span className={styles.resultRowLabel}>환율</span>
+                <div className={styles.resultRateInput}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/gold.webp" alt="" className={styles.resultRateIcon} />
+                  <span className={styles.resultRateFixed}>100</span>
+                  <span className={styles.resultRateSep}>:</span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/royal.webp" alt="" className={styles.resultRateIcon} />
+                  <input
+                    type="number"
+                    className={styles.resultRateNumber}
+                    value={detailWonPer100Gold || ''}
+                    onChange={(e) => setDetailWonPer100Gold(parseInt(e.target.value) || 0)}
+                    placeholder="32"
+                    min={1}
+                  />
+                </div>
+              </div>
+
+              {/* 로크로 골드 구매 시 */}
+              <div className={styles.resultRow}>
+                <span className={styles.resultRowLabel}>로크로 골드 구매 시</span>
+                <span className={styles.resultCashGold}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/gold.webp" alt="" className={styles.resultRowIconSm} />
+                  {detailGoldPerWon > 0 ? formatNumber(cashGold) : '-'}
+                </span>
+              </div>
+
+              {/* 이득률 */}
+              {detailGoldPerWon > 0 && (
+                <>
+                  <div className={styles.resultDivider} />
+                  <div className={styles.resultBenefitInline}>
+                    <div className={styles.resultBenefitItem}>
+                      <span className={styles.resultBenefitLabel}>1개 구매</span>
+                      <span className={`${styles.resultBenefitNum} ${singleBenefit >= 0 ? styles.benefitUp : styles.benefitDown}`}>
+                        {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
+                      </span>
+                    </div>
+                    {post.packageType !== '일반' && (
+                      <>
+                        <div className={styles.resultBenefitSep} />
+                        <div className={styles.resultBenefitItem}>
+                          <span className={styles.resultBenefitLabel}>{post.packageType} 구매</span>
+                          <span className={`${styles.resultBenefitNum} ${bundleBenefit >= 0 ? styles.benefitUp : styles.benefitDown}`}>
+                            {bundleBenefit >= 0 ? '+' : ''}{bundleBenefit.toFixed(1)}%
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+        </div>
+
+        {/* 액션 바 */}
+        <div className={styles.detailActions}>
+          <div className={styles.detailActionsLeft}>
+            <button
+              className={`${styles.likeBtn} ${liked ? styles.likeBtnActive : ''}`}
+              onClick={handleLike}
+              disabled={!user}
+              title={user ? '좋아요' : '로그인 후 이용 가능'}
+            >
+              {liked ? '\u2665' : '\u2661'} 좋아요 {likeCount}
+            </button>
+            <span className={styles.viewCountText}>
+              조회 {post.viewCount || 0}
+            </span>
+          </div>
+          {isOwner && (
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <Link href={`/package/edit/${postId}`} className={styles.editBtn}>
+                수정
+              </Link>
+              <button className={styles.deleteBtn} onClick={handleDelete}>
+                삭제
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </Container>

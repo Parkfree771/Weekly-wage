@@ -11,6 +11,7 @@ export type PackageItem = {
   quantity: number;      // 수량
   icon?: string;         // 아이콘 경로
   goldOverride?: number; // 골드/고정가 아이템용 (시세 대신 이 값 사용)
+  choiceOptions?: { itemId: string; name: string; icon?: string }[]; // 선택지 목록 (선택 아이템용)
 };
 
 // ─── 게시물 ───
@@ -31,6 +32,9 @@ export type PackagePost = {
   packageType: PackageType;
   royalCrystalPrice: number;
   items: PackageItem[];
+
+  // 환율 (등록 시 입력값)
+  goldPerWon?: number;
 
   // 통계
   viewCount: number;

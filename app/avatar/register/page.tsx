@@ -90,11 +90,6 @@ export default function AvatarRegisterPage() {
     if (!currentResult?.characterImageUrl) return;
 
     const gen = searchGenRef.current;
-    console.log('[BG-DEBUG] 시작', {
-      gen,
-      characterName: currentResult.characterName,
-      imageUrl: currentResult.characterImageUrl,
-    });
     setBgRemoving(true);
     setBgRemoveProgress('AI 모델 로딩 중... (첫 사용 시 약 30초 소요)');
     setError('');
@@ -102,21 +97,17 @@ export default function AvatarRegisterPage() {
     try {
       const { removeBackground } = await import('@imgly/background-removal');
 
-      if (searchGenRef.current !== gen) { console.log('[BG-DEBUG] gen 불일치 (import 후)', { gen, current: searchGenRef.current }); return; }
+      if (searchGenRef.current !== gen) return;
       setBgRemoveProgress('이미지 다운로드 중...');
 
       // 프록시를 통해 이미지 가져오기 (CORS 우회)
       const proxyUrl = `/api/lostark/image-proxy?url=${encodeURIComponent(currentResult.characterImageUrl)}&t=${Date.now()}`;
-      console.log('[BG-DEBUG] fetch URL:', proxyUrl);
       const imgRes = await fetch(proxyUrl, { cache: 'no-store' });
       if (!imgRes.ok) throw new Error('이미지를 가져올 수 없습니다.');
       const imgBlob = await imgRes.blob();
-      console.log('[BG-DEBUG] fetch 완료', { blobSize: imgBlob.size, blobType: imgBlob.type });
-
-      if (searchGenRef.current !== gen) { console.log('[BG-DEBUG] gen 불일치 (fetch 후)'); return; }
+      if (searchGenRef.current !== gen) return;
       setBgRemoveProgress('배경 제거 중... (약 5~10초)');
 
-      console.log('[BG-DEBUG] removeBackground 시작, inputSize:', imgBlob.size);
       const aiResultBlob = await removeBackground(imgBlob, {
         progress: (key: string, current: number, total: number) => {
           if (key === 'compute:inference' && searchGenRef.current === gen) {
@@ -125,20 +116,15 @@ export default function AvatarRegisterPage() {
           }
         },
       });
-      console.log('[BG-DEBUG] removeBackground 완료', { resultSize: aiResultBlob.size });
-
-      if (searchGenRef.current !== gen) { console.log('[BG-DEBUG] gen 불일치 (AI 후)'); return; }
+      if (searchGenRef.current !== gen) return;
 
       // 하이브리드 후처리: AI가 지운 이펙트 복원
       setBgRemoveProgress('이펙트 보정 중...');
       const resultBlob = await refineBackgroundRemoval(imgBlob, aiResultBlob);
-      console.log('[BG-DEBUG] refine 완료', { finalSize: resultBlob.size });
-
-      if (searchGenRef.current !== gen) { console.log('[BG-DEBUG] gen 불일치 (refine 후)'); return; }
+      if (searchGenRef.current !== gen) return;
 
       // 결과를 Object URL로 변환하여 미리보기
       const objectUrl = URL.createObjectURL(resultBlob);
-      console.log('[BG-DEBUG] 최종 결과 설정', { objectUrl, characterName: currentResult.characterName });
       setTransparentBlobUrl(objectUrl);
       transparentBlobRef.current = resultBlob;
       setBgRemoved(true);
