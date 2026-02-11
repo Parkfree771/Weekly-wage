@@ -154,9 +154,11 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                 key={idx}
                 className={`${styles.itemCell} ${!isChecked ? styles.itemCellUnchecked : ''}`}
               >
-                {item.icon && (
+                {item.icon ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={item.icon} alt={item.name} className={styles.itemCellIcon} />
+                ) : (
+                  <div className={styles.itemCellPlaceholder}>기타</div>
                 )}
                 <label
                   className={styles.itemCheckLabel}
