@@ -365,6 +365,7 @@ export default function PackageRegisterPage() {
   const [checkedTemplateIds, setCheckedTemplateIds] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const customCounterRef = useRef(0);
 
   // 가격 fetch
@@ -537,9 +538,18 @@ export default function PackageRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !userProfile) return;
-    if (!title.trim()) { setError('제목을 입력해주세요.'); return; }
-    if (addedItems.length === 0) { setError('아이템을 1개 이상 추가해주세요.'); return; }
-    if (royalCrystalPrice <= 0) { setError('현금 가격을 입력해주세요.'); return; }
+
+    const errors: Record<string, string> = {};
+    if (!title.trim()) errors.title = '제목을 입력해주세요.';
+    if (addedItems.length === 0) errors.items = '아이템을 1개 이상 추가해주세요.';
+    if (royalCrystalPrice <= 0) errors.price = '현금 가격을 입력해주세요.';
+    if (goldPerWon <= 0) errors.rate = '환율을 입력해주세요.';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError(Object.values(errors)[0]);
+      return;
+    }
+    setFieldErrors({});
 
     setSubmitting(true);
     setError('');
@@ -609,6 +619,7 @@ export default function PackageRegisterPage() {
                 quantity: added.quantity,
                 icon: template.icon,
                 goldOverride: unitGold,
+                crystalPerUnit: template.crystalPerUnit || 0,
               };
             }
             case 'expected': {
@@ -828,9 +839,10 @@ export default function PackageRegisterPage() {
                 <h2 className={styles.sectionTitle}>패키지 정보</h2>
                 <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
                   <label className={styles.formLabel} htmlFor="pkg-title">패키지 이름 *</label>
-                  <input id="pkg-title" type="text" className={styles.formInput}
-                    value={title} onChange={(e) => setTitle(e.target.value)}
+                  <input id="pkg-title" type="text" className={`${styles.formInput} ${fieldErrors.title ? styles.formInputError : ''}`}
+                    value={title} onChange={(e) => { setTitle(e.target.value); if (fieldErrors.title) setFieldErrors((p) => { const n = { ...p }; delete n.title; return n; }); }}
                     placeholder="예: 2025 설날 패키지" maxLength={50} />
+                  {fieldErrors.title && <p className={styles.fieldErrorMsg}>{fieldErrors.title}</p>}
                 </div>
                 <div className={styles.typeButtonRow}>
                   {(['일반', '2+1', '3+1'] as PackageType[]).map((t) => (
@@ -855,14 +867,15 @@ export default function PackageRegisterPage() {
                 </div>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel} htmlFor="pkg-rc">패키지 현금 가격 (원) *</label>
-                  <input id="pkg-rc" type="number" className={styles.formInput}
+                  <input id="pkg-rc" type="number" className={`${styles.formInput} ${fieldErrors.price ? styles.formInputError : ''}`}
                     value={royalCrystalPrice || ''}
-                    onChange={(e) => setRoyalCrystalPrice(parseInt(e.target.value) || 0)}
+                    onChange={(e) => { setRoyalCrystalPrice(parseInt(e.target.value) || 0); if (fieldErrors.price) setFieldErrors((p) => { const n = { ...p }; delete n.price; return n; }); }}
                     placeholder="예: 33000" min={0} />
+                  {fieldErrors.price && <p className={styles.fieldErrorMsg}>{fieldErrors.price}</p>}
                 </div>
               </div>
 
-              <div className={styles.rateSection}>
+              <div className={`${styles.rateSection} ${fieldErrors.rate ? styles.rateCardError : ''}`}>
                 <div className={styles.rateSectionHeader}>
                   <h2 className={styles.sectionTitle}>골드 환율</h2>
                   <div className={styles.tradeModeToggle}>
@@ -911,6 +924,7 @@ export default function PackageRegisterPage() {
                     </div>
                   </div>
                 )}
+                {fieldErrors.rate && <p className={styles.fieldErrorMsg}>{fieldErrors.rate}</p>}
               </div>
             </div>
           </div>{/* topSplitRow */}
@@ -943,65 +957,67 @@ export default function PackageRegisterPage() {
           </div>
 
           {/* 계산 결과 사이드바 (fixed) */}
-          {addedItems.length > 0 && royalCrystalPrice > 0 && (
-            <div className={styles.calcSidebar}>
-              <h3 className={styles.calcSidebarTitle}>계산 결과</h3>
-              <div className={styles.calcRow}>
-                <span className={styles.calcLabel}>1개 골드 가치</span>
-                <span className={styles.calcValue}>{formatNumber(totalGoldValue)} G</span>
-              </div>
-              <div className={styles.calcRow}>
-                <span className={styles.calcLabel}>패키지 가격</span>
-                <span className={styles.calcValue}>{formatNumber(royalCrystalPrice)}원</span>
-              </div>
-              <div className={styles.calcRow}>
-                <span className={styles.calcLabel}>효율</span>
-                <span className={styles.calcEfficiency}>{formatNumber(efficiency)} G/원</span>
-              </div>
-              {goldPerWon > 0 && (
-                <>
-                  <hr className={styles.calcDivider} />
-                  <div className={styles.calcRow}>
-                    <span className={styles.calcLabel}>현금 골드 구매 시</span>
-                    <span className={styles.calcValue}>{formatNumber(singleCashGold)} G</span>
-                  </div>
-                  <div className={styles.calcRow}>
-                    <span className={styles.calcLabel}>1개 구매 이득률</span>
-                    <span className={`${styles.calcEfficiency} ${singleBenefit >= 0 ? styles.calcPositive : styles.calcNegative}`}>
-                      {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
-                    </span>
-                  </div>
-                  {packageType !== '일반' && (
-                    <>
-                      <hr className={styles.calcDivider} />
-                      <div className={styles.calcRow}>
-                        <span className={styles.calcLabel}>{packageType} 지출</span>
-                        <span className={styles.calcValue}>
-                          {formatNumber(royalCrystalPrice * buyCount)}원
-                        </span>
-                      </div>
-                      <div className={styles.calcRow}>
-                        <span className={styles.calcLabel}>{packageType} 획득</span>
-                        <span className={styles.calcValue}>{formatNumber(fullPackageGold)}G</span>
-                      </div>
-                      <div className={styles.calcRow}>
-                        <span className={styles.calcLabel}>{packageType} 이득률</span>
-                        <span className={`${styles.calcEfficiency} ${fullBenefit >= 0 ? styles.calcPositive : styles.calcNegative}`}>
-                          {fullBenefit >= 0 ? '+' : ''}{fullBenefit.toFixed(1)}%
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-              {error && <p className={styles.errorMsg}>{error}</p>}
-              <button type="submit" className={styles.registerButton}
-                style={{ width: '100%', marginTop: '1rem' }}
-                disabled={submitting || !title.trim() || addedItems.length === 0 || royalCrystalPrice <= 0}>
-                {submitting ? '등록 중...' : '등록하기'}
-              </button>
-            </div>
-          )}
+          <div className={styles.calcSidebar}>
+            <h3 className={styles.calcSidebarTitle}>계산 결과</h3>
+            {addedItems.length > 0 && royalCrystalPrice > 0 && (
+              <>
+                <div className={styles.calcRow}>
+                  <span className={styles.calcLabel}>1개 골드 가치</span>
+                  <span className={styles.calcValue}>{formatNumber(totalGoldValue)} G</span>
+                </div>
+                <div className={styles.calcRow}>
+                  <span className={styles.calcLabel}>패키지 가격</span>
+                  <span className={styles.calcValue}>{formatNumber(royalCrystalPrice)}원</span>
+                </div>
+                <div className={styles.calcRow}>
+                  <span className={styles.calcLabel}>효율</span>
+                  <span className={styles.calcEfficiency}>{formatNumber(efficiency)} G/원</span>
+                </div>
+                {goldPerWon > 0 && (
+                  <>
+                    <hr className={styles.calcDivider} />
+                    <div className={styles.calcRow}>
+                      <span className={styles.calcLabel}>현금 골드 구매 시</span>
+                      <span className={styles.calcValue}>{formatNumber(singleCashGold)} G</span>
+                    </div>
+                    <div className={styles.calcRow}>
+                      <span className={styles.calcLabel}>1개 구매 이득률</span>
+                      <span className={`${styles.calcEfficiency} ${singleBenefit >= 0 ? styles.calcPositive : styles.calcNegative}`}>
+                        {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
+                      </span>
+                    </div>
+                    {packageType !== '일반' && (
+                      <>
+                        <hr className={styles.calcDivider} />
+                        <div className={styles.calcRow}>
+                          <span className={styles.calcLabel}>{packageType} 지출</span>
+                          <span className={styles.calcValue}>
+                            {formatNumber(royalCrystalPrice * buyCount)}원
+                          </span>
+                        </div>
+                        <div className={styles.calcRow}>
+                          <span className={styles.calcLabel}>{packageType} 획득</span>
+                          <span className={styles.calcValue}>{formatNumber(fullPackageGold)}G</span>
+                        </div>
+                        <div className={styles.calcRow}>
+                          <span className={styles.calcLabel}>{packageType} 이득률</span>
+                          <span className={`${styles.calcEfficiency} ${fullBenefit >= 0 ? styles.calcPositive : styles.calcNegative}`}>
+                            {fullBenefit >= 0 ? '+' : ''}{fullBenefit.toFixed(1)}%
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+            {error && <p className={styles.errorMsg}>{error}</p>}
+            <button type="submit" className={styles.registerButton}
+              style={{ width: '100%', marginTop: '1rem' }}
+              disabled={submitting}>
+              {submitting ? '등록 중...' : '등록하기'}
+            </button>
+          </div>
         </form>
       </div>
 

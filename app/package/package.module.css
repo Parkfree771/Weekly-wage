@@ -881,6 +881,26 @@
   text-align: center;
 }
 
+/* 필드별 인라인 에러 */
+.fieldErrorMsg {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+
+.formInputError {
+  border-color: #ef4444 !important;
+}
+
+.formInputError:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.rateCardError {
+  border-color: #ef4444 !important;
+}
+
 /* ─── 상세 페이지 ─── */
 .detailWrapper {
   padding: clamp(1rem, 3vw, 2rem) 0;

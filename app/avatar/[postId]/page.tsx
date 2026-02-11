@@ -7,7 +7,6 @@ import { Container, Spinner } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   getAvatarPost,
-  incrementViewCount,
   toggleAvatarLike,
   checkAvatarLike,
   deleteAvatarPost,
@@ -56,7 +55,11 @@ export default function AvatarDetailPage() {
           // 조회수 증가 (StrictMode 중복 방지)
           if (!viewCounted.current) {
             viewCounted.current = true;
-            incrementViewCount(postId).catch(() => {});
+            fetch('/api/avatar/view', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ postId }),
+            }).catch(() => {});
           }
         }
       } catch (err) {

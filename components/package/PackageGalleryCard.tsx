@@ -39,6 +39,14 @@ const PRICE_BUNDLE_SIZE: Record<string, number> = {
   '66130143': 3000,
 };
 
+// 기존 패키지 하위 호환: crystalPerUnit 없는 구 데이터용 폴백
+const CRYSTAL_PER_UNIT_FALLBACK: Record<string, number> = {
+  'crystal_blue-crystal-input': 1,
+  'crystal_pheon': 8.5,
+  'crystal_gem-reset-ticket': 100,
+  'crystal_ninav-blessing': 360,
+};
+
 export default function PackageGalleryCard({ post, latestPrices }: Props) {
   const router = useRouter();
 
@@ -73,15 +81,27 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
     return initial;
   });
 
+  const goldPerWon = wonPer100Gold > 0 ? 100 / wonPer100Gold : 0;
+
   // 아이템별 소계 (N선택 토글 로직용)
   const itemSubtotals = useMemo(() => {
     return post.items.map((item) => {
-      if (item.goldOverride != null) return item.goldOverride * item.quantity;
+      if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
+        return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
+      }
+      // 기존 패키지 하위 호환
+      if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
+        const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
+        if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
+      }
+      if (item.goldOverride != null) {
+        return item.goldOverride * item.quantity;
+      }
       const raw = latestPrices[item.itemId] || 0;
       const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
       return (raw / bundle) * item.quantity;
     });
-  }, [post.items, latestPrices]);
+  }, [post.items, latestPrices, goldPerWon]);
 
   const handleToggleCheck = (idx: number) => {
     const sc = post.selectableCount || 0;
@@ -111,14 +131,20 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
   const totalGold = useMemo(() => {
     return post.items.reduce((sum, item, idx) => {
       if (checkedItems[idx] === false) return sum;
+      if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
+        return sum + item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
+      }
+      // 기존 패키지 하위 호환
+      if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
+        const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
+        if (fallback) return sum + fallback * goldPerWon * 27.5 * item.quantity;
+      }
       if (item.goldOverride != null) return sum + item.goldOverride * item.quantity;
       const raw = latestPrices[item.itemId] || 0;
       const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
       return sum + (raw / bundle) * item.quantity;
     }, 0);
-  }, [post.items, latestPrices, checkedItems]);
-
-  const goldPerWon = wonPer100Gold > 0 ? 100 / wonPer100Gold : 0;
+  }, [post.items, latestPrices, checkedItems, goldPerWon]);
   const cashGold = post.royalCrystalPrice * goldPerWon;
   const isBundle = post.packageType === '3+1' || post.packageType === '2+1';
 

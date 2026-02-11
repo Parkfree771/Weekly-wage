@@ -11,6 +11,7 @@ export type PackageItem = {
   quantity: number;      // 수량
   icon?: string;         // 아이콘 경로
   goldOverride?: number; // 골드/고정가 아이템용 (시세 대신 이 값 사용)
+  crystalPerUnit?: number; // 블크 기반 아이템용 (환율 변경 시 재계산에 사용)
   choiceOptions?: { itemId: string; name: string; icon?: string }[]; // 선택지 목록 (선택 아이템용)
 };
 

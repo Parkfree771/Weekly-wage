@@ -7,7 +7,6 @@ import { Container, Spinner } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   getPackagePost,
-  incrementPackageViewCount,
   togglePackageLike,
   checkPackageLike,
   deletePackagePost,
@@ -42,6 +41,14 @@ const PRICE_BUNDLE_SIZE: Record<string, number> = {
   '66102007': 100,
   '66102107': 100,
   '66130143': 3000,
+};
+
+// 기존 패키지 하위 호환: crystalPerUnit 없는 구 데이터용 폴백
+const CRYSTAL_PER_UNIT_FALLBACK: Record<string, number> = {
+  'crystal_blue-crystal-input': 1,
+  'crystal_pheon': 8.5,
+  'crystal_gem-reset-ticket': 100,
+  'crystal_ninav-blessing': 360,
 };
 
 function getItemPrice(itemId: string, prices: Record<string, number>): number {
@@ -117,7 +124,11 @@ export default function PackageDetailPage() {
           }
           if (!viewCounted.current) {
             viewCounted.current = true;
-            incrementPackageViewCount(postId).catch(() => {});
+            fetch('/api/package/view', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ postId }),
+            }).catch(() => {});
           }
         }
       } catch (err) {
@@ -224,6 +235,23 @@ export default function PackageDetailPage() {
     return item;
   };
 
+  const detailGoldPerWon = detailWonPer100Gold > 0 ? 100 / detailWonPer100Gold : 0;
+
+  // crystal 아이템의 실제 단가 (환율 변경 시 crystalPerUnit 기반 재계산)
+  const getCrystalAdjustedUnit = (item: PackageItem): number => {
+    if (item.crystalPerUnit && item.crystalPerUnit > 0 && detailGoldPerWon > 0) {
+      return item.crystalPerUnit * detailGoldPerWon * 27.5;
+    }
+    // 기존 패키지 하위 호환: crystalPerUnit 없지만 crystal_ 접두사인 경우
+    if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && detailGoldPerWon > 0) {
+      const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
+      if (fallback) {
+        return fallback * detailGoldPerWon * 27.5;
+      }
+    }
+    return item.goldOverride || 0;
+  };
+
   const { totalGold, itemSubtotals } = useMemo(() => {
     if (!post) return { totalGold: 0, itemSubtotals: [] as number[] };
     let total = 0;
@@ -234,7 +262,8 @@ export default function PackageDetailPage() {
         effectiveItemId = choiceSelections[idx] || item.itemId;
       }
       if (item.goldOverride != null) {
-        const sub = item.goldOverride * item.quantity;
+        const unit = getCrystalAdjustedUnit(item);
+        const sub = unit * item.quantity;
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
       } else {
@@ -245,7 +274,8 @@ export default function PackageDetailPage() {
       }
     });
     return { totalGold: total, itemSubtotals: subtotals };
-  }, [post, choiceSelections, latestPrices, checkedItems]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post, choiceSelections, latestPrices, checkedItems, detailGoldPerWon]);
 
   if (loading) {
     return (
@@ -272,7 +302,6 @@ export default function PackageDetailPage() {
     );
   }
 
-  const detailGoldPerWon = detailWonPer100Gold > 0 ? 100 / detailWonPer100Gold : 0;
   const cashGold = post.royalCrystalPrice * detailGoldPerWon;
 
   // 1개 이득률
@@ -434,12 +463,13 @@ export default function PackageDetailPage() {
               {post.items.map((item, idx) => {
                 const effective = getEffectiveItem(item, idx);
                 const isFixed = item.goldOverride != null;
+                const isCrystal = !!(item.crystalPerUnit && item.crystalPerUnit > 0);
                 const effectiveItemId =
                   item.choiceOptions && item.choiceOptions.length > 0
                     ? choiceSelections[idx] || item.itemId
                     : item.itemId;
                 const unitPrice = isFixed
-                  ? item.goldOverride!
+                  ? getCrystalAdjustedUnit(item)
                   : getItemPrice(effectiveItemId, latestPrices);
                 const subtotal = itemSubtotals[idx] || 0;
                 const hasChoices = item.choiceOptions && item.choiceOptions.length > 0;
@@ -514,7 +544,7 @@ export default function PackageDetailPage() {
 
                     <div className={styles.itemCardPriceLine}>
                       {isFixed
-                        ? `${formatNumber(unitPrice)}G (고정)`
+                        ? `${formatNumber(unitPrice)}G${isCrystal ? '' : ' (고정)'}`
                         : `${formatNumber(unitPrice)}G`}
                       {' x '}
                       {item.quantity}개
