@@ -89,12 +89,14 @@
 .itemCell {
   position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
   cursor: pointer;
   transition: opacity 0.2s, filter 0.2s;
   background: transparent;
-  padding: 0.2rem;
+  flex-shrink: 0;
 }
 
 .itemCellUnchecked {
@@ -147,8 +149,8 @@
 }
 
 .itemCellPlaceholder {
-  width: 50px;
-  height: 50px;
+  width: 100%;
+  height: 100%;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.1);
   display: flex;
@@ -369,9 +371,9 @@
     grid-template-columns: 1fr 240px;
   }
 
-  .itemCellIcon {
-    width: 42px;
-    height: 42px;
+  .itemCell {
+    width: 66px;
+    height: 66px;
   }
 }
 
@@ -398,9 +400,9 @@
     padding: 0.1rem 0.4rem;
   }
 
-  .itemCellIcon {
-    width: 38px;
-    height: 38px;
+  .itemCell {
+    width: 56px;
+    height: 56px;
   }
 
   .leftMeta {

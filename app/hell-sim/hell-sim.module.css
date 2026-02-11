@@ -1940,36 +1940,25 @@
    ======================================== */
 .rewardFullWidth {
   width: calc(360px + 280px + 1rem);
-  margin: 1rem auto 0;
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
-  border: 1px solid rgba(249, 115, 22, 0.3);
-  border-radius: 20px;
+  margin: 1.5rem auto 0;
+  background: rgba(30, 30, 40, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow:
-    0 0 40px rgba(249, 115, 22, 0.15),
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   position: relative;
-}
-
-.rewardFullWidth::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #fbbf24, #f97316, #fbbf24, transparent);
 }
 
 .rewardHeader {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  background: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
 }
 
@@ -1996,21 +1985,19 @@
 }
 
 .rewardHeaderTitle {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: 0.05em;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e0e0e0;
+  letter-spacing: 0.02em;
 }
 
 .rewardHeaderTier {
-  font-size: 0.9rem;
-  font-weight: 800;
+  font-size: 0.75rem;
+  font-weight: 700;
   color: #fff;
-  padding: 0.4rem 1rem;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  border-radius: 20px;
-  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.4);
+  padding: 0.3rem 0.75rem;
+  background: #9a3412;
+  border-radius: 6px;
 }
 
 /* 상자 보상 제목 */
@@ -2032,100 +2019,73 @@
 .rewardBoxGrid {
   display: flex;
   justify-content: center;
-  gap: 1.25rem;
-  padding: 2rem 1.5rem;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
   flex-wrap: wrap;
-  background: radial-gradient(ellipse at center, rgba(249, 115, 22, 0.08) 0%, transparent 70%);
 }
 
 .rewardCard {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.25rem 1rem;
-  background: #1e1e2e;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  padding: 1rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  min-width: 130px;
-  max-width: 160px;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  max-width: 150px;
   position: relative;
-  overflow: hidden;
-}
-
-.rewardCard::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #fbbf24, #f97316, #fbbf24, transparent);
 }
 
 .rewardCard:hover {
-  transform: translateY(-8px) scale(1.02);
-  border-color: rgba(249, 115, 22, 0.6);
-  box-shadow:
-    0 0 30px rgba(249, 115, 22, 0.3),
-    0 15px 40px rgba(0, 0, 0, 0.4);
-  background: #252538;
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .rewardCardActive {
   border-color: #f97316;
-  background: #252538;
-  box-shadow:
-    0 0 25px rgba(249, 115, 22, 0.4),
-    0 10px 30px rgba(0, 0, 0, 0.3);
-  transform: translateY(-4px);
+  background: rgba(249, 115, 22, 0.08);
+  box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.3);
 }
 
 .rewardCardPungyo {
-  border-color: rgba(59, 130, 246, 0.5);
-  background: #1e2535;
-}
-
-.rewardCardPungyo::before {
-  background: linear-gradient(90deg, transparent, #60a5fa, #3b82f6, #60a5fa, transparent);
+  border-color: rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.06);
 }
 
 .rewardCardPungyo:hover,
 .rewardCardPungyo.rewardCardActive {
   border-color: #3b82f6;
-  background: #253045;
-  box-shadow:
-    0 0 30px rgba(59, 130, 246, 0.4),
-    0 15px 40px rgba(0, 0, 0, 0.4);
+  background: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
 }
 
 .rewardCardImgWrap {
   position: relative;
-  width: 100px;
-  height: 100px;
+  width: 72px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.75rem;
-  background: transparent;
-  border-radius: 12px;
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
 }
 
 .rewardCardImg {
-  width: 80px !important;
-  height: 80px !important;
+  width: 64px !important;
+  height: 64px !important;
   object-fit: contain !important;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
-  transition: all 0.3s ease;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  transition: transform 0.2s ease;
   image-rendering: -webkit-optimize-contrast;
 }
 
 .rewardCard:hover .rewardCardImg {
-  transform: scale(1.15) rotate(3deg);
-  filter:
-    drop-shadow(0 6px 16px rgba(0, 0, 0, 0.6))
-    drop-shadow(0 0 20px rgba(249, 115, 22, 0.4));
+  transform: scale(1.08);
 }
 
 .rewardCardPungyo .rewardCardImgWrap {
@@ -2133,96 +2093,79 @@
 }
 
 .rewardCardPungyo:hover .rewardCardImg {
-  filter:
-    drop-shadow(0 6px 16px rgba(0, 0, 0, 0.6))
-    drop-shadow(0 0 20px rgba(59, 130, 246, 0.6));
+  transform: scale(1.08);
 }
 
 .rewardCardPungyoBadge {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  font-size: 0.65rem;
+  top: -4px;
+  right: -4px;
+  font-size: 0.6rem;
   font-weight: 700;
   color: #fff;
-  padding: 0.25rem 0.6rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-radius: 10px;
-  box-shadow:
-    0 2px 8px rgba(59, 130, 246, 0.5),
-    0 0 15px rgba(59, 130, 246, 0.3);
-  animation: pungyoPulse 2s ease-in-out infinite;
-}
-
-@keyframes pungyoPulse {
-  0%, 100% { box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5), 0 0 15px rgba(59, 130, 246, 0.3); }
-  50% { box-shadow: 0 2px 12px rgba(59, 130, 246, 0.7), 0 0 25px rgba(59, 130, 246, 0.5); }
+  padding: 0.2rem 0.5rem;
+  background: #3b82f6;
+  border-radius: 4px;
 }
 
 .rewardCardName {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
   text-align: center;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.25rem;
   line-height: 1.3;
 }
 
 .rewardCardQty {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #fbbf24;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f97316;
   text-align: center;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* 기본 보상 전체 너비 섹션 */
+/* 기본 보상 섹션 */
 .baseRewardFullSection {
-  padding: 1.25rem 1.5rem 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: #151520;
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .baseRewardFullTitle {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 1rem;
-  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
 }
 
 .baseRewardFullGrid {
   display: flex;
-  justify-content: center;
-  gap: 1rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
 .baseRewardFullItem {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: #252538;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  min-width: 150px;
-  transition: all 0.2s ease;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  flex: 1;
+  min-width: 140px;
+  transition: border-color 0.2s ease;
 }
 
 .baseRewardFullItem:hover {
-  background: #2a2a3e;
   border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
 }
 
 .baseRewardFullImg {
-  width: 52px !important;
-  height: 52px !important;
+  width: 36px !important;
+  height: 36px !important;
   object-fit: contain !important;
-  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.4));
   flex-shrink: 0;
   image-rendering: -webkit-optimize-contrast;
 }
@@ -2230,49 +2173,82 @@
 .baseRewardFullText {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.1rem;
 }
 
 .baseRewardFullLabel {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.45);
   white-space: nowrap;
 }
 
 .baseRewardFullValue {
-  font-size: 1.05rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 [data-theme="light"] .rewardFullWidth {
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
-  border-color: rgba(249, 115, 22, 0.3);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="light"] .rewardHeaderTitle {
   color: #1e293b;
 }
 
+[data-theme="light"] .rewardHeader {
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
 [data-theme="light"] .rewardCardQty {
-  color: #f97316;
+  color: #ea580c;
 }
 
 [data-theme="light"] .rewardCard {
-  background: #fff;
-  border-color: #e2e8f0;
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="light"] .rewardCard:hover {
-  background: #fefcf9;
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 [data-theme="light"] .rewardCardPungyo {
-  background: #f8faff;
+  background: rgba(59, 130, 246, 0.04);
+  border-color: rgba(59, 130, 246, 0.15);
 }
 
 [data-theme="light"] .rewardCardPungyo:hover {
-  background: #f0f5ff;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+[data-theme="light"] .rewardCardName {
+  color: #334155;
+}
+
+[data-theme="light"] .baseRewardFullSection {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .baseRewardFullTitle {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .baseRewardFullItem {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .baseRewardFullLabel {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .baseRewardFullValue {
+  color: #1e293b;
 }
 
 /* ========================================
@@ -2594,33 +2570,17 @@
   }
 }
 
-[data-theme="light"] .rewardCardName {
-  color: #1e293b;
-}
-
-[data-theme="light"] .baseRewardFullSection {
-  background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 100%);
-}
-
-[data-theme="light"] .baseRewardFullItem {
-  background: #fff;
-  border-color: #e2e8f0;
-}
-
-[data-theme="light"] .baseRewardFullLabel {
-  color: #64748b;
-}
-
-[data-theme="light"] .baseRewardFullValue {
-  color: #1e293b;
-}
+/* (light 모드 규칙은 상단에 통합됨) */
 
 /* ========================================
    전체 보상 테이블 섹션
    ======================================== */
+/* ========================================
+   보상 탐색기 (카드 기반)
+   ======================================== */
 .rewardTableSection {
   width: 100%;
-  max-width: 1400px;
+  max-width: 800px;
   margin: 2rem auto 0;
   background: #1a1a2e;
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -2640,222 +2600,676 @@
   background: linear-gradient(90deg, transparent, #fbbf24, #f97316, #fbbf24, transparent);
 }
 
+/* 모드 선택 헤더 */
 .rewardTableHeader {
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  padding: 1.25rem;
-  background: #151520;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.2rem 1.25rem;
+  background: #13131f;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.rewardTableModeBtn {
-  padding: 0.75rem 2rem;
-  font-size: 1rem;
+.modeSwitchTrack {
+  display: flex;
+  background: #1e1e30;
+  border-radius: 14px;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.modeSwitchBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 2rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
-  background: #252538;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  background: transparent;
+  border: none;
+  border-radius: 11px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
-.rewardTableModeBtn:hover {
-  background: #2d2d42;
+.modeSwitchBtn:hover {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.modeSwitchBtnActive {
   color: #fff;
-  border-color: rgba(249, 115, 22, 0.5);
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
-.rewardTableModeBtnActive {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  border-color: #f97316;
-  color: #fff;
-  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
-  transform: translateY(-2px);
+.modeSwitchBtnActive:hover {
+  background: linear-gradient(135deg, #fb923c, #f97316);
 }
 
-.rewardTableContent {
-  padding: 1.5rem;
+.modeSwitchIcon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+  transition: filter 0.2s;
 }
 
-.rewardTableScroll {
+.modeSwitchBtnActive .modeSwitchIcon {
+  filter: drop-shadow(0 1px 4px rgba(255, 255, 255, 0.3));
+}
+
+/* 본문 영역 */
+.rwBody {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+/* 단계 선택 */
+.tierSelector {
+  position: relative;
+}
+
+.tierTrack {
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  background: #151522;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  scrollbar-width: none;
 }
 
-.rewardTable {
-  width: 100%;
-  border-collapse: collapse;
+.tierTrack::-webkit-scrollbar {
+  display: none;
 }
 
-/* 좌상단 코너 셀 */
-.rewardTableCorner {
-  padding: 1rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
-  text-align: center;
+.tierChip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 0.55rem 0;
+  min-width: 56px;
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.tierChip:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tierChipActive {
+  background: linear-gradient(135deg, #f97316, #dc6b10);
+  box-shadow: 0 3px 14px rgba(249, 115, 22, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.tierChipActive:hover {
+  background: linear-gradient(135deg, #fb923c, #f97316);
+}
+
+.tierChipNum {
+  font-size: 1rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.tierChipActive .tierChipNum {
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tierChip:hover .tierChipNum {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tierChipRange {
+  font-size: 0.52rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.28);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  transition: color 0.2s;
+}
+
+.tierChipActive .tierChipRange {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tierChip:hover .tierChipRange {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 환율 입력 */
+.exchangeRateRow {
+  display: flex;
+  justify-content: center;
+}
+
+.exchangeRateCard {
   background: #1e1e30;
-  border-bottom: 2px solid rgba(249, 115, 22, 0.3);
-  border-right: 2px solid rgba(249, 115, 22, 0.3);
-  position: sticky;
-  left: 0;
-  z-index: 20;
-  min-width: 100px;
-}
-
-/* 보상 헤더 셀 (가로) */
-.rewardTableHeaderCell {
-  padding: 1rem 0.75rem;
-  text-align: center;
-  background: #1e1e30;
-  border-bottom: 2px solid rgba(249, 115, 22, 0.3);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  min-width: 100px;
-}
-
-.rewardTableHeaderCell:last-child {
-  border-right: none;
-}
-
-.rewardHeaderItem {
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
 }
 
-.rewardHeaderIcon {
-  width: 48px !important;
-  height: 48px !important;
-  object-fit: contain !important;
-  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.5));
+.exchangeRatioRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.rewardHeaderName {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
-  line-height: 1.3;
+.exchangeRateIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.exchangeRateFixed {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+}
+
+.exchangeRateSeparator {
+  font-size: 1rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.exchangeRateInput {
+  width: 85px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fbbf24;
+  background: #252538;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  border-radius: 8px;
   text-align: center;
-  max-width: 90px;
+  outline: none;
+  transition: border-color 0.2s;
 }
 
-/* 단계 셀 (세로 첫번째 열) */
-.rewardTableTierCell {
-  padding: 0.75rem 1rem;
-  background: #1e1e30;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  border-right: 2px solid rgba(249, 115, 22, 0.3);
-  position: sticky;
-  left: 0;
-  z-index: 10;
+.exchangeRateInput:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
-.tierInfo {
+.exchangeRateResult {
+  margin-top: 0.2rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  width: 100%;
+  text-align: center;
+}
+
+/* 평균 배너 */
+.avgBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem 1.3rem;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(251, 191, 36, 0.08) 50%, rgba(249, 115, 22, 0.06) 100%);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.avgBannerGlow {
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.15), transparent 70%);
+  pointer-events: none;
+}
+
+.avgBannerIcon {
+  filter: drop-shadow(0 2px 8px rgba(251, 191, 36, 0.4));
+  flex-shrink: 0;
+}
+
+.avgBannerText {
   display: flex;
   flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.avgBannerLabel {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.avgBannerValue {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+}
+
+.avgBannerCount {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* 로딩 */
+.rwLoading {
+  text-align: center;
+  padding: 2rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 보상 카드 목록 */
+.rwCardList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* 보상 카드 */
+.rwCard {
+  background: #1e1e30;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.rwCard:hover {
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+.rwCardExpanded {
+  border-color: rgba(249, 115, 22, 0.4);
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.1);
+}
+
+.rwCardDisabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* 카드 메인 행 */
+.rwCardMain {
+  display: flex;
   align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.rwCardMain:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* 순위 뱃지 */
+.rwRankBadge {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #fff;
+  border-radius: 14px 0 10px 0;
+  z-index: 2;
+}
+
+.rwRank1 {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.5);
+}
+
+.rwRank2 {
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+  box-shadow: 0 2px 8px rgba(148, 163, 184, 0.4);
+}
+
+.rwRank3 {
+  background: linear-gradient(135deg, #c2956a, #a67c52);
+  box-shadow: 0 2px 8px rgba(194, 149, 106, 0.4);
+}
+
+/* 카드 이미지 */
+.rwCardImgWrap {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.rwCardImg {
+  width: 56px !important;
+  height: 56px !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+}
+
+.rwCardImgPlaceholder {
+  width: 56px;
+  height: 56px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+/* 카드 정보 */
+.rwCardInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   gap: 0.2rem;
 }
 
-.tierNum {
+.rwCardName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rwCardQty {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* 골드 가치 */
+.rwCardGold {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fbbf24;
+  white-space: nowrap;
+}
+
+.rwCardUnavailable {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* 펼침 아이콘 */
+.rwExpandIcon {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.3);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+  margin-left: 0.25rem;
+}
+
+.rwExpandIconOpen {
+  transform: rotate(180deg);
+  color: #f97316;
+}
+
+/* 상세 패널 */
+.rwDetail {
+  padding: 0 1rem 0.9rem 1rem;
+  margin-left: 56px;
+  padding-left: calc(0.75rem + 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  animation: rwSlideDown 0.2s ease;
+}
+
+@keyframes rwSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rwDetailRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.rwDetailLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  min-width: 38px;
+  flex-shrink: 0;
+}
+
+.rwDetailValue {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  word-break: break-all;
+}
+
+.rwDetailGold {
   font-size: 0.85rem;
   font-weight: 700;
   color: #fbbf24;
 }
 
-.tierRange {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-/* 데이터 행 */
-.rewardTableRow {
-  transition: background 0.15s ease;
-}
-
-.rewardTableRow:hover {
-  background: rgba(249, 115, 22, 0.1);
-}
-
-.rewardTableRow:nth-child(even) {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.rewardTableRow:nth-child(even):hover {
-  background: rgba(249, 115, 22, 0.1);
-}
-
-/* 데이터 셀 */
-.rewardTableCell {
-  padding: 0.75rem 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  border-right: 1px solid rgba(255, 255, 255, 0.03);
-}
-
-.rewardTableCell:last-child {
-  border-right: none;
-}
-
-/* 라이트 모드 */
+/* ─── 라이트 모드 ─── */
 [data-theme="light"] .rewardTableSection {
   background: #fff;
   border-color: #e2e8f0;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="light"] .rewardTableHeader {
-  background: #f8fafc;
+  background: #f1f5f9;
   border-bottom-color: #e2e8f0;
 }
 
-[data-theme="light"] .rewardTableModeBtn {
-  background: #fff;
-  border-color: #e2e8f0;
+[data-theme="light"] .modeSwitchTrack {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .modeSwitchBtn {
   color: #64748b;
 }
 
-[data-theme="light"] .rewardTableModeBtn:hover {
+[data-theme="light"] .modeSwitchBtn:hover {
+  color: #1e293b;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .modeSwitchBtnActive {
+  color: #fff;
+}
+
+[data-theme="light"] .rwBody {
+  background: #fff;
+}
+
+[data-theme="light"] .tierTrack {
   background: #f1f5f9;
-  color: #1e293b;
+  border-color: #e2e8f0;
 }
 
-[data-theme="light"] .rewardTableCorner,
-[data-theme="light"] .rewardTableHeaderCell,
-[data-theme="light"] .rewardTableTierCell {
-  background: #f8fafc;
-  border-color: rgba(249, 115, 22, 0.2);
+[data-theme="light"] .tierChip:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
 
-[data-theme="light"] .rewardHeaderName {
-  color: #1e293b;
-}
-
-[data-theme="light"] .rewardTableCell {
+[data-theme="light"] .tierChipNum {
   color: #475569;
-  border-bottom-color: #e2e8f0;
-  border-right-color: #f1f5f9;
 }
 
-[data-theme="light"] .rewardTableRow:nth-child(even) {
-  background: #fafafa;
+[data-theme="light"] .tierChip:hover .tierChipNum {
+  color: #1e293b;
 }
 
-[data-theme="light"] .rewardTableRow:hover,
-[data-theme="light"] .rewardTableRow:nth-child(even):hover {
-  background: rgba(249, 115, 22, 0.08);
+[data-theme="light"] .tierChipRange {
+  color: #94a3b8;
 }
 
-/* 보상 테이블 - 모바일 */
+[data-theme="light"] .tierChip:hover .tierChipRange {
+  color: #64748b;
+}
+
+[data-theme="light"] .exchangeRateCard {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .exchangeRateFixed {
+  color: #1e293b;
+}
+
+[data-theme="light"] .exchangeRateSeparator {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .exchangeRateInput {
+  background: #fff;
+  border-color: #e2e8f0;
+  color: #ea580c;
+}
+
+[data-theme="light"] .exchangeRateInput:focus {
+  border-color: #f97316;
+}
+
+[data-theme="light"] .exchangeRateResult {
+  color: #64748b;
+  border-top-color: #e2e8f0;
+}
+
+[data-theme="light"] .avgBanner {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(251, 191, 36, 0.04));
+  border-color: rgba(249, 115, 22, 0.18);
+}
+
+[data-theme="light"] .avgBannerLabel {
+  color: #64748b;
+}
+
+[data-theme="light"] .avgBannerValue {
+  color: #ea580c;
+  text-shadow: none;
+}
+
+[data-theme="light"] .avgBannerCount {
+  color: #64748b;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .rwLoading {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .rwCard {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .rwCard:hover {
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+[data-theme="light"] .rwCardMain:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .rwCardImgWrap {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .rwCardName {
+  color: #1e293b;
+}
+
+[data-theme="light"] .rwCardQty {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .rwCardGold {
+  color: #ea580c;
+}
+
+[data-theme="light"] .rwExpandIcon {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .rwExpandIconOpen {
+  color: #f97316;
+}
+
+[data-theme="light"] .rwDetail {
+  border-top-color: #e2e8f0;
+}
+
+[data-theme="light"] .rwDetailLabel {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .rwDetailValue {
+  color: #475569;
+}
+
+[data-theme="light"] .rwDetailGold {
+  color: #ea580c;
+}
+
+/* ─── 모바일 768px ─── */
 @media (max-width: 768px) {
   .rewardTableSection {
     margin-top: 1rem;
@@ -2867,55 +3281,110 @@
     gap: 0.5rem;
   }
 
-  .rewardTableModeBtn {
-    padding: 0.5rem 1.25rem;
+  .modeSwitchBtn {
+    padding: 0.5rem 1.5rem;
     font-size: 0.85rem;
+  }
+
+  .modeSwitchIcon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .rwBody {
+    padding: 0.9rem;
+    gap: 0.75rem;
+  }
+
+  .tierTrack {
+    gap: 3px;
+    padding: 4px;
+    border-radius: 12px;
+  }
+
+  .tierChip {
+    min-width: 46px;
+    padding: 0.45rem 0;
     border-radius: 8px;
   }
 
-  .rewardTableContent {
-    padding: 0.75rem;
+  .tierChipNum {
+    font-size: 0.85rem;
   }
 
-  .rewardTableCorner {
-    padding: 0.5rem;
-    font-size: 0.65rem;
-    min-width: 70px;
+  .tierChipRange {
+    font-size: 0.45rem;
   }
 
-  .rewardTableHeaderCell {
-    padding: 0.6rem 0.4rem;
-    min-width: 75px;
+  .exchangeRateCard {
+    padding: 0.6rem 0.8rem;
   }
 
-  .rewardHeaderIcon {
-    width: 36px !important;
-    height: 36px !important;
+  .exchangeRateIcon {
+    width: 22px;
+    height: 22px;
   }
 
-  .rewardHeaderName {
-    font-size: 0.55rem;
-    max-width: 70px;
+  .exchangeRateFixed {
+    font-size: 0.8rem;
   }
 
-  .rewardTableTierCell {
-    padding: 0.5rem;
+  .exchangeRateSeparator {
+    font-size: 0.85rem;
   }
 
-  .tierNum {
-    font-size: 0.65rem;
+  .exchangeRateInput {
+    width: 70px;
+    padding: 0.3rem 0.4rem;
+    font-size: 0.75rem;
   }
 
-  .tierRange {
-    font-size: 0.5rem;
+  .exchangeRateResult {
+    font-size: 0.7rem;
   }
 
-  .rewardTableCell {
-    padding: 0.5rem 0.3rem;
-    font-size: 0.6rem;
+  .avgBanner {
+    padding: 0.7rem 1rem;
+  }
+
+  .avgBannerValue {
+    font-size: 1.1rem;
+  }
+
+  .rwCardMain {
+    padding: 0.6rem 0.8rem;
+    gap: 0.6rem;
+  }
+
+  .rwCardImgWrap {
+    width: 48px;
+    height: 48px;
+  }
+
+  .rwCardImg {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .rwCardName {
+    font-size: 0.82rem;
+  }
+
+  .rwCardQty {
+    font-size: 0.68rem;
+  }
+
+  .rwCardGold {
+    font-size: 0.9rem;
+  }
+
+  .rwDetail {
+    margin-left: 48px;
+    padding-left: calc(0.6rem + 0.8rem);
   }
 }
 
+/* ─── 모바일 400px ─── */
 @media (max-width: 400px) {
   .rewardTableSection {
     border-radius: 10px;
@@ -2925,51 +3394,149 @@
     padding: 0.5rem;
   }
 
-  .rewardTableModeBtn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.7rem;
+  .modeSwitchTrack {
+    border-radius: 10px;
+    padding: 3px;
   }
 
-  .rewardTableContent {
+  .modeSwitchBtn {
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    gap: 0.3rem;
+    border-radius: 8px;
+  }
+
+  .modeSwitchIcon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .rwBody {
+    padding: 0.6rem;
+    gap: 0.6rem;
+  }
+
+  .tierTrack {
+    gap: 2px;
+    padding: 3px;
+    border-radius: 10px;
+  }
+
+  .tierChip {
+    min-width: 36px;
+    padding: 0.35rem 0;
+    border-radius: 7px;
+  }
+
+  .tierChipNum {
+    font-size: 0.72rem;
+  }
+
+  .tierChipRange {
+    font-size: 0.38rem;
+  }
+
+  .exchangeRateCard {
     padding: 0.5rem;
   }
 
-  .rewardTableCorner {
-    padding: 0.4rem;
-    font-size: 0.55rem;
-    min-width: 55px;
+  .exchangeRatioRow {
+    gap: 0.3rem;
   }
 
-  .rewardTableHeaderCell {
-    padding: 0.4rem 0.25rem;
-    min-width: 60px;
+  .exchangeRateIcon {
+    width: 18px;
+    height: 18px;
   }
 
-  .rewardHeaderIcon {
+  .exchangeRateFixed {
+    font-size: 0.7rem;
+  }
+
+  .exchangeRateSeparator {
+    font-size: 0.75rem;
+  }
+
+  .exchangeRateInput {
+    width: 60px;
+    font-size: 0.65rem;
+  }
+
+  .exchangeRateResult {
+    font-size: 0.6rem;
+  }
+
+  .avgBanner {
+    padding: 0.6rem 0.8rem;
+    gap: 0.5rem;
+  }
+
+  .avgBannerIcon {
     width: 28px !important;
     height: 28px !important;
   }
 
-  .rewardHeaderName {
-    font-size: 0.45rem;
-    max-width: 55px;
+  .avgBannerLabel {
+    font-size: 0.65rem;
   }
 
-  .rewardTableTierCell {
-    padding: 0.35rem;
+  .avgBannerValue {
+    font-size: 1rem;
   }
 
-  .tierNum {
-    font-size: 0.55rem;
+  .avgBannerCount {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
   }
 
-  .tierRange {
-    font-size: 0.4rem;
+  .rwCardMain {
+    padding: 0.5rem 0.6rem;
+    gap: 0.5rem;
   }
 
-  .rewardTableCell {
-    padding: 0.35rem 0.2rem;
-    font-size: 0.5rem;
+  .rwCardImgWrap {
+    width: 40px;
+    height: 40px;
+  }
+
+  .rwCardImg {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .rwCardName {
+    font-size: 0.75rem;
+  }
+
+  .rwCardQty {
+    font-size: 0.6rem;
+  }
+
+  .rwCardGold {
+    font-size: 0.8rem;
+  }
+
+  .rwRankBadge {
+    width: 22px;
+    height: 22px;
+    font-size: 0.6rem;
+  }
+
+  .rwDetail {
+    margin-left: 40px;
+    padding-left: calc(0.5rem + 0.6rem);
+  }
+
+  .rwDetailLabel {
+    font-size: 0.65rem;
+  }
+
+  .rwDetailValue {
+    font-size: 0.7rem;
+  }
+
+  .rwDetailGold {
+    font-size: 0.78rem;
   }
 }
 
@@ -3628,50 +4195,44 @@
   }
 
   .rewardHeaderTitle {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
 
   .rewardHeaderTier {
-    font-size: 0.5rem;
-    padding: 0.15rem 0.4rem;
-  }
-
-  .rewardSectionTitle {
-    font-size: 0.5rem;
-    padding-top: 0.5rem;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
   }
 
   .rewardBoxGrid {
     gap: 0.4rem;
-    padding: 0.5rem;
+    padding: 0.75rem 0.5rem;
   }
 
   .rewardCard {
-    padding: 0.5rem 0.4rem;
-    min-width: 70px;
-    max-width: 85px;
-    border-radius: 10px;
+    padding: 0.6rem 0.4rem;
+    min-width: 75px;
+    max-width: 90px;
+    border-radius: 8px;
   }
 
   .rewardCardImgWrap {
     width: 48px;
     height: 48px;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.3rem;
   }
 
   .rewardCardImg {
-    width: 38px !important;
-    height: 38px !important;
+    width: 40px !important;
+    height: 40px !important;
   }
 
   .rewardCardPungyoBadge {
-    font-size: 0.4rem;
+    font-size: 0.45rem;
     padding: 0.1rem 0.3rem;
-    border-radius: 6px;
   }
 
   .rewardCardName {
-    font-size: 0.5rem;
+    font-size: 0.55rem;
   }
 
   .rewardCardQty {
@@ -3679,11 +4240,11 @@
   }
 
   .baseRewardFullSection {
-    padding: 0.5rem;
+    padding: 0.6rem 0.5rem;
   }
 
   .baseRewardFullTitle {
-    font-size: 0.5rem;
+    font-size: 0.55rem;
     margin-bottom: 0.4rem;
   }
 
@@ -3692,23 +4253,23 @@
   }
 
   .baseRewardFullItem {
-    padding: 0.35rem 0.4rem;
+    padding: 0.35rem 0.5rem;
     gap: 0.35rem;
-    min-width: 78px;
-    border-radius: 8px;
+    min-width: 0;
+    flex: 1 1 45%;
   }
 
   .baseRewardFullImg {
-    width: 26px !important;
-    height: 26px !important;
+    width: 28px !important;
+    height: 28px !important;
   }
 
   .baseRewardFullLabel {
-    font-size: 0.42rem;
+    font-size: 0.5rem;
   }
 
   .baseRewardFullValue {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
   }
 }
 

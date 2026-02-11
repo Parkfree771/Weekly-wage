@@ -4,6 +4,31 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import NextImage from 'next/image';
 import styles from '@/app/hell-sim/hell-sim.module.css';
 import { saveHellSimResult } from '@/lib/supabase';
+import { fetchPriceData } from '@/lib/price-history-client';
+import {
+  HELL_BOX_REWARDS_DATA,
+  NARAK_BOX_REWARDS_DATA,
+  PRICE_ITEM_MAP,
+  HERO_GEM_IDS,
+  ENGRAVING_IDS,
+  NON_TRACKED_ENGRAVING_SUM,
+  TOTAL_ENGRAVINGS,
+  NORMAL_REFINING_MATS,
+  SPECIAL_REFINING_RATE,
+  SPECIAL_REFINING_PER_ATTEMPT,
+  RARE_GEM_PRICE,
+  BRACELET_USEFUL_PROB,
+  BRACELET_USEFUL_PRICE,
+  BRACELET_PEON,
+  parseRewardValue,
+  parseDualValue,
+  parseGemCount,
+  getUnitPrice as getRewardUnitPrice,
+  calcSpecialRefiningUnitCost,
+  calcEngravingExpectedValue,
+  getHeroGemMaxPrice,
+  calcBoxRewardGold,
+} from '@/lib/hell-reward-calc';
 
 const CANVAS_WIDTH = 360;
 const CANVAS_HEIGHT = 600;
@@ -66,32 +91,7 @@ const HELL_BASE_REWARDS = [
   { 파편: 18000, 파괴석결정: 110, 수호석결정: 680, 돌파석: 15 },
 ];
 
-// 지옥 상자 보상 (단계별)
-const HELL_BOX_REWARDS_DATA: Record<string, string[]> = {
-  '파괴석/수호석': ['500/1,500', '600/1,800', '900/2,700', '1,200/3,600', '1,600/4,800', '2,200/6,600', '3,000/9,000', '4,500/13,500', '6,500/19,500', '9,000/27,000', '15,000/45,000'],
-  '돌파석': ['60', '36', '48', '64', '90', '130', '190', '250', '350', '500', '850'],
-  '융화재료': ['-', '90', '125', '150', '225', '300', '450', '600', '850', '1,200', '2,000'],
-  '재련 보조': ['10/30', '15/45', '20/60', '25/75', '36/108', '48/144', '72/216', '96/288', '132/396', '192/576', '320/960'],
-  '귀속골드': ['4,500', '7,200', '9,500', '12,000', '16,000', '22,000', '32,000', '45,000', '65,000', '95,000', '130,000'],
-  '어빌리티스톤 키트': ['8', '10', '15', '20', '30', '30', '45', '60', '80', '120', '200'],
-  '팔찌': ['고대 x3', '고대 x5', '고대 x7', '고대 x10', '고대 x15', '고대 x20', '고대 x25', '고대 x35', '고대 x50', '고대 x70', '고대 x120'],
-  '특수재련': ['24', '40', '56', '70', '96', '130', '180', '260', '380', '500', '850'],
-  '천상 도전권': ['-', '-', '-', '-', '-', '2', '4', '7', '10', '15', '20'],
-  '젬선택': ['희귀 x3', '희귀 x5', '희귀 x7', '영웅 x1', '영웅 x1, 희귀 질서 x1, 희귀 혼돈 x1', '영웅 x1, 희귀 질서 x2, 희귀 혼돈 x2', '영웅 x2', '영웅 x2, 희귀 질서 x2, 희귀 혼돈 x2', '영웅 x3', '영웅 x4', '영웅 x5'],
-  '운명의 돌': ['7', '12', '15', '18', '27', '36', '54', '72', '100', '150', '240'],
-};
-
-// 나락 상자 보상 (단계별)
-const NARAK_BOX_REWARDS_DATA: Record<string, string[]> = {
-  '재련보조': ['50/150', '75/225', '100/300', '125/375', '180/540', '240/720', '360/1,080', '480/1,440', '660/1,980', '960/2,880', '1,600/4,800'],
-  '귀속골드': ['22,500', '36,000', '47,500', '60,000', '80,000', '110,000', '160,000', '225,000', '325,000', '475,000', '650,000'],
-  '어빌리티스톤 키트': ['40', '50', '75', '100', '125', '150', '225', '300', '400', '600', '1,000'],
-  '팔찌': ['고대 x15', '고대 x25', '고대 x35', '고대 x50', '고대 x75', '고대 x100', '고대 x125', '고대 x175', '고대 x250', '고대 x350', '고대 x600'],
-  '귀속 각인서 랜덤': ['2', '4', '6', '8', '10', '12', '18', '24', '36', '48', '80'],
-  '귀속 보석': ['희귀 x15', '희귀 x25', '희귀 x35', '영웅 x5', '영웅 x5, 희귀 질서 x5, 희귀 혼돈 x5', '영웅 x5, 희귀 질서 x10, 희귀 혼돈 x10', '영웅 x10', '영웅 x10, 희귀 질서 x10, 희귀 혼돈 x10', '영웅 x15', '영웅 x20', '영웅 x25'],
-  '젬선택': ['희귀 x15', '희귀 x25', '희귀 x35', '영웅 x5', '영웅 x5, 희귀 질서 x5, 희귀 혼돈 x5', '영웅 x5, 희귀 질서 x10, 희귀 혼돈 x10', '영웅 x10', '영웅 x10, 희귀 질서 x10, 희귀 혼돈 x10', '영웅 x15', '영웅 x20', '영웅 x25'],
-  '운명의 돌': ['35', '60', '75', '90', '135', '180', '270', '360', '500', '750', '1,200'],
-};
+// 지옥/나락 상자 보상 데이터는 @/lib/hell-reward-calc에서 import
 
 // 보상 이미지 매핑
 const REWARD_IMAGES: Record<string, string> = {
@@ -110,7 +110,7 @@ const REWARD_IMAGES: Record<string, string> = {
   // 나락 상자 보상
   '재련보조': '/breath-lava5.webp',
   '귀속 각인서 랜덤': '/engraving.webp',
-  '귀속 보석': '/duddndgmlrnl.webp', // 영웅+희귀 혼합 이미지
+  '귀속 보석': '/gem-fear-8.webp',
 };
 
 // 단계별 젬 이미지 선택
@@ -1825,34 +1825,76 @@ export default function PinballTower() {
 }
 
 // 전체 보상 테이블 컴포넌트
+// (상수/함수는 @/lib/hell-reward-calc에서 import)
+
+// 기본 보상 시세 매핑
+const PRICE_BASE_MAP: Record<string, { id: string; bundle: number; fallbackId?: string; fallbackBundle?: number }> = {
+  '파편': { id: '66130143', bundle: 3000 },
+  '파괴석결정': { id: '66102007', bundle: 100, fallbackId: '66102006', fallbackBundle: 100 },
+  '수호석결정': { id: '66102107', bundle: 100, fallbackId: '66102106', fallbackBundle: 100 },
+  '돌파석': { id: '66110226', bundle: 1, fallbackId: '66110225', fallbackBundle: 1 },
+};
+
+// 표시명 매핑
+const DISPLAY_NAMES: Record<string, string> = {
+  '융화재료': '상비도스',
+};
+
+function getDisplayName(key: string): string {
+  return DISPLAY_NAMES[key] || key;
+}
+
+function getBaseDisplayName(name: string): string {
+  if (name === '파편') return '운명의 파편';
+  if (name === '파괴석결정') return '파괴석 결정';
+  if (name === '수호석결정') return '수호석 결정';
+  if (name === '돌파석') return '위대한 운명의 돌파석';
+  return name;
+}
+
+// 기본 보상 골드 가치 계산
+function calcBaseRewardGold(
+  rewardName: string,
+  tier: number,
+  prices: Record<string, number>
+): number {
+  const mapping = PRICE_BASE_MAP[rewardName];
+  if (!mapping) return 0;
+
+  const baseReward = HELL_BASE_REWARDS[tier];
+  const qty = baseReward[rewardName as keyof typeof baseReward] as number;
+  if (!qty) return 0;
+
+  const unitPrice = getRewardUnitPrice(mapping.id, mapping.bundle, prices, mapping.fallbackId, mapping.fallbackBundle);
+  return Math.floor(qty * unitPrice);
+}
+
 function RewardTable() {
   const [tableMode, setTableMode] = useState<'hell' | 'narak'>('hell');
+  const [selectedTier, setSelectedTier] = useState<number>(6);
+  const [expandedReward, setExpandedReward] = useState<string | null>(null);
+  const [prices, setPrices] = useState<Record<string, number>>({});
+  const [priceLoading, setPriceLoading] = useState(true);
+  const [exchangeRate, setExchangeRate] = useState<number>(8500);
 
-  // 단계별 층수 범위
-  const TIERS = [
-    { tier: 0, range: '0~9층' },
-    { tier: 1, range: '10~19층' },
-    { tier: 2, range: '20~29층' },
-    { tier: 3, range: '30~39층' },
-    { tier: 4, range: '40~49층' },
-    { tier: 5, range: '50~59층' },
-    { tier: 6, range: '60~69층' },
-    { tier: 7, range: '70~79층' },
-    { tier: 8, range: '80~89층' },
-    { tier: 9, range: '90~99층' },
-    { tier: 10, range: '100층' },
-  ];
+  useEffect(() => {
+    fetchPriceData()
+      .then(({ latest }) => setPrices(latest))
+      .catch(() => {})
+      .finally(() => setPriceLoading(false));
+  }, []);
 
-  // 지옥 모드 상자 보상 목록
+  const peonGoldValue = 8.5 * (exchangeRate / 100);
+  const specialRefiningCost = calcSpecialRefiningUnitCost(prices);
+  // 골드:로크 비율 (100골드 당 로크)
+  const wonPer100Gold = exchangeRate > 0 ? Math.round(275000 / exchangeRate) : 0;
+
+  const TIER_LABELS = ['0~9', '10~19', '20~29', '30~39', '40~49', '50~59', '60~69', '70~79', '80~89', '90~99', '100'];
+
   const HELL_REWARDS = [
     '파괴석/수호석', '돌파석', '융화재료', '재련 보조', '귀속골드',
     '어빌리티스톤 키트', '팔찌', '특수재련', '천상 도전권', '젬선택', '운명의 돌'
   ];
-
-  // 지옥 기본 보상 목록
-  const HELL_BASE = ['파편', '파괴석결정', '수호석결정', '돌파석'];
-
-  // 나락 모드 상자 보상 목록
   const NARAK_REWARDS = [
     '재련보조', '귀속골드', '어빌리티스톤 키트', '팔찌',
     '귀속 각인서 랜덤', '귀속 보석', '젬선택', '운명의 돌'
@@ -1860,95 +1902,289 @@ function RewardTable() {
 
   const rewards = tableMode === 'hell' ? HELL_REWARDS : NARAK_REWARDS;
   const rewardData = tableMode === 'hell' ? HELL_BOX_REWARDS_DATA : NARAK_BOX_REWARDS_DATA;
+  const hasPrices = Object.keys(prices).length > 0;
+
+  // 보상별 골드 가치 계산 & 정렬
+  const sortedRewards = rewards
+    .map((name) => {
+      const rawVal = rewardData[name]?.[selectedTier];
+      const available = !!rawVal && rawVal !== '-';
+      const goldValue = available && hasPrices
+        ? calcBoxRewardGold(name, selectedTier, prices, tableMode, peonGoldValue, specialRefiningCost)
+        : null;
+      return { name, rawVal: rawVal || '-', available, goldValue: goldValue ?? 0 };
+    })
+    .sort((a, b) => {
+      if (!a.available && !b.available) return 0;
+      if (!a.available) return 1;
+      if (!b.available) return -1;
+      return b.goldValue - a.goldValue;
+    });
+
+  const avgGold = (() => {
+    const available = sortedRewards.filter(r => r.available && r.goldValue !== null);
+    if (available.length === 0) return 0;
+    return Math.floor(available.reduce((s, r) => s + r.goldValue, 0) / available.length);
+  })();
+
+  // 단가 소수점 표시 (정수면 정수, 소수면 1자리)
+  function fmtPrice(v: number): string {
+    return v % 1 === 0 ? v.toLocaleString() : v.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  }
+  const peonDetail = `1페온 = 블크 8.5개, 블크100 = ${exchangeRate.toLocaleString()}G → ${fmtPrice(peonGoldValue)}G/페온`;
+
+  // 상세 설명 생성
+  function getRewardDetail(name: string, rawVal: string): string {
+    if (name === '귀속골드') return '귀속 골드 직접 지급';
+    if (name === '운명의 돌') return `${rawVal}개 × 900G/개 (고정가)`;
+    if (name === '천상 도전권') return `${rawVal}개 × 3,000G/개 (고정가)`;
+    if (name === '어빌리티스톤 키트') {
+      const perItem = Math.floor(9 * peonGoldValue);
+      return `${rawVal}개 × 9페온 × ${fmtPrice(peonGoldValue)}G/페온 = ${rawVal}개 × ${perItem.toLocaleString()}G | ${peonDetail}`;
+    }
+    if (name === '특수재련') {
+      const medianAttempts = Math.ceil(Math.log(0.5) / Math.log(1 - SPECIAL_REFINING_RATE));
+      const totalItems = medianAttempts * SPECIAL_REFINING_PER_ATTEMPT;
+      return `${rawVal}개 × ${specialRefiningCost.toLocaleString()}G/개 | 산출: 일반재련(세르카 20→21) ÷ ${totalItems.toLocaleString()}개(중앙값 ${medianAttempts}회 × ${SPECIAL_REFINING_PER_ATTEMPT}개, 확률 ${(SPECIAL_REFINING_RATE * 100).toFixed(1)}%)`;
+    }
+    if (name === '팔찌') {
+      const match = rawVal.match(/x\s*(\d+)/);
+      if (!match) return rawVal;
+      const qty = parseInt(match[1]);
+      const peonGold = BRACELET_PEON * peonGoldValue;
+      const perBracelet = BRACELET_USEFUL_PRICE + peonGold;
+      const total = Math.floor(qty * BRACELET_USEFUL_PROB * perBracelet);
+      return `${qty}개 × 유효확률 ${(BRACELET_USEFUL_PROB * 100).toFixed(2)}% × (${BRACELET_USEFUL_PRICE.toLocaleString()}G + ${BRACELET_PEON}페온 × ${fmtPrice(peonGoldValue)}G = ${fmtPrice(perBracelet)}G) = ${total.toLocaleString()}G | ${peonDetail}`;
+    }
+    if (name === '젬선택') {
+      const { hero, rare } = parseGemCount(rawVal);
+      const parts: string[] = [];
+      if (hero > 0) parts.push(`영웅 ${hero}개 × ${getHeroGemMaxPrice(prices).toLocaleString()}G(시세)`);
+      if (rare > 0) parts.push(`희귀 ${rare}개 × ${RARE_GEM_PRICE.toLocaleString()}G(고정가)`);
+      return parts.join(' + ') || rawVal;
+    }
+    if (name === '귀속 각인서 랜덤') return `${rawVal}개 × ${calcEngravingExpectedValue(prices).toLocaleString()}G/개 (추적 ${ENGRAVING_IDS.length}종 + 비추적 ${TOTAL_ENGRAVINGS - ENGRAVING_IDS.length}종, 총 ${TOTAL_ENGRAVINGS}종 평균)`;
+    if (name === '귀속 보석') {
+      const gemPrice = Math.round(prices['auction_gem_fear_8'] || 0);
+      return `${rawVal}개 × ${gemPrice.toLocaleString()}G/개 (8레벨 겁화 보석 시세)`;
+    }
+    if (name === '파괴석/수호석') {
+      const [v1, v2] = parseDualValue(rawVal);
+      const mapping = PRICE_ITEM_MAP[name];
+      const raw1 = (prices[mapping.id] || 0);
+      const raw2 = mapping.id2 ? (prices[mapping.id2] || 0) : 0;
+      const unit1 = raw1 / mapping.bundle;
+      const unit2 = mapping.id2 && mapping.bundle2 ? raw2 / mapping.bundle2 : 0;
+      return `파괴석 ${v1.toLocaleString()}개 × ${fmtPrice(unit1)}G(${fmtPrice(raw1)}G/${mapping.bundle}개) + 수호석 ${v2.toLocaleString()}개 × ${fmtPrice(unit2)}G(${fmtPrice(raw2)}G/${mapping.bundle2}개)`;
+    }
+    if (name === '재련 보조' || name === '재련보조') {
+      const [v1, v2] = parseDualValue(rawVal);
+      const mapping = PRICE_ITEM_MAP[name];
+      const unit1 = (prices[mapping.id] || 0) / mapping.bundle;
+      const unit2 = mapping.id2 && mapping.bundle2 ? (prices[mapping.id2] || 0) / mapping.bundle2 : 0;
+      return `용암의 숨결 ${v1.toLocaleString()}개 × ${fmtPrice(unit1)}G + 빙하의 숨결 ${v2.toLocaleString()}개 × ${fmtPrice(unit2)}G`;
+    }
+    if (name === '돌파석') {
+      const mapping = PRICE_ITEM_MAP[name];
+      const unitPrice = (prices[mapping.id] || 0) / mapping.bundle;
+      return `${rawVal}개 × ${fmtPrice(unitPrice)}G/개 (시세)`;
+    }
+    if (name === '융화재료') {
+      const mapping = PRICE_ITEM_MAP[name];
+      const unitPrice = (prices[mapping.id] || 0) / mapping.bundle;
+      return `${rawVal}개 × ${fmtPrice(unitPrice)}G/개 (시세)`;
+    }
+    return rawVal;
+  }
 
   return (
     <div className={styles.rewardTableSection}>
-      {/* 모드 선택 버튼 */}
+      {/* 모드 선택 */}
       <div className={styles.rewardTableHeader}>
-        <button
-          className={`${styles.rewardTableModeBtn} ${tableMode === 'hell' ? styles.rewardTableModeBtnActive : ''}`}
-          onClick={() => setTableMode('hell')}
-        >
-          지옥 보상
-        </button>
-        <button
-          className={`${styles.rewardTableModeBtn} ${tableMode === 'narak' ? styles.rewardTableModeBtnActive : ''}`}
-          onClick={() => setTableMode('narak')}
-        >
-          나락 보상
-        </button>
+        <div className={styles.modeSwitchTrack}>
+          <button
+            className={`${styles.modeSwitchBtn} ${tableMode === 'hell' ? styles.modeSwitchBtnActive : ''}`}
+            onClick={() => { setTableMode('hell'); setExpandedReward(null); }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/celtic_key_5.webp" alt="" className={styles.modeSwitchIcon} />
+            <span>지옥</span>
+          </button>
+          <button
+            className={`${styles.modeSwitchBtn} ${tableMode === 'narak' ? styles.modeSwitchBtnActive : ''}`}
+            onClick={() => { setTableMode('narak'); setExpandedReward(null); }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/key_5.webp" alt="" className={styles.modeSwitchIcon} />
+            <span>나락</span>
+          </button>
+        </div>
       </div>
 
-      {/* 보상 테이블 - 세로: 단계, 가로: 보상 */}
-      <div className={styles.rewardTableContent}>
-        <div className={styles.rewardTableScroll}>
-          <table className={styles.rewardTable}>
-            <thead>
-              <tr>
-                <th className={styles.rewardTableCorner}>단계</th>
-                {rewards.map((reward, idx) => (
-                  <th key={idx} className={styles.rewardTableHeaderCell}>
-                    <div className={styles.rewardHeaderItem}>
-                      {REWARD_IMAGES[reward] && (
-                        <NextImage
-                          src={REWARD_IMAGES[reward]}
-                          alt={reward}
-                          width={48}
-                          height={48}
-                          className={styles.rewardHeaderIcon}
-                        />
-                      )}
-                      <span className={styles.rewardHeaderName}>{reward}</span>
-                    </div>
-                  </th>
-                ))}
-                {/* 지옥 모드: 기본 보상 헤더 */}
-                {tableMode === 'hell' && HELL_BASE.map((name, idx) => (
-                  <th key={`base-${idx}`} className={styles.rewardTableHeaderCell}>
-                    <div className={styles.rewardHeaderItem}>
-                      <NextImage
-                        src={BASE_REWARD_IMAGES[name]}
-                        alt={name}
-                        width={48}
-                        height={48}
-                        className={styles.rewardHeaderIcon}
-                      />
-                      <span className={styles.rewardHeaderName}>
-                        {name === '파편' ? '운명의 파편' : name === '파괴석결정' ? '파괴석 결정' : name === '수호석결정' ? '수호석 결정' : '위대한 돌파석'}
-                      </span>
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {TIERS.map(({ tier, range }) => (
-                <tr key={tier} className={styles.rewardTableRow}>
-                  <td className={styles.rewardTableTierCell}>
-                    <div className={styles.tierInfo}>
-                      <span className={styles.tierNum}>단계 {tier}</span>
-                      <span className={styles.tierRange}>{range}</span>
-                    </div>
-                  </td>
-                  {rewards.map((reward, rIdx) => (
-                    <td key={rIdx} className={styles.rewardTableCell}>
-                      {rewardData[reward]?.[tier] || '-'}
-                    </td>
-                  ))}
-                  {/* 지옥 모드: 기본 보상 데이터 */}
-                  {tableMode === 'hell' && (
-                    <>
-                      <td className={styles.rewardTableCell}>{HELL_BASE_REWARDS[tier].파편.toLocaleString()}</td>
-                      <td className={styles.rewardTableCell}>{HELL_BASE_REWARDS[tier].파괴석결정}</td>
-                      <td className={styles.rewardTableCell}>{HELL_BASE_REWARDS[tier].수호석결정}</td>
-                      <td className={styles.rewardTableCell}>{HELL_BASE_REWARDS[tier].돌파석}</td>
-                    </>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className={styles.rwBody}>
+        {/* 단계 선택 */}
+        <div className={styles.tierSelector}>
+          <div className={styles.tierTrack}>
+            {TIER_LABELS.map((label, idx) => (
+              <button
+                key={idx}
+                className={`${styles.tierChip} ${selectedTier === idx ? styles.tierChipActive : ''}`}
+                onClick={() => { setSelectedTier(idx); setExpandedReward(null); }}
+              >
+                <span className={styles.tierChipNum}>{idx}</span>
+                <span className={styles.tierChipRange}>{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* 환율 입력 */}
+        <div className={styles.exchangeRateRow}>
+          <div className={styles.exchangeRateCard}>
+            <div className={styles.exchangeRatioRow}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/royal.webp" alt="" className={styles.exchangeRateIcon} />
+              <span className={styles.exchangeRateFixed}>2750</span>
+              <span className={styles.exchangeRateSeparator}>=</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/blue.webp" alt="" className={styles.exchangeRateIcon} />
+              <span className={styles.exchangeRateFixed}>100</span>
+              <span className={styles.exchangeRateSeparator}>=</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/gold.webp" alt="" className={styles.exchangeRateIcon} />
+              <input
+                type="number"
+                className={styles.exchangeRateInput}
+                value={exchangeRate || ''}
+                onChange={(e) => setExchangeRate(Number(e.target.value) || 0)}
+                placeholder="8500"
+                min={0}
+              />
+            </div>
+            <div className={styles.exchangeRatioRow}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/gold.webp" alt="" className={styles.exchangeRateIcon} />
+              <span className={styles.exchangeRateFixed}>100</span>
+              <span className={styles.exchangeRateSeparator}>=</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/royal.webp" alt="" className={styles.exchangeRateIcon} />
+              <input
+                type="number"
+                className={styles.exchangeRateInput}
+                value={wonPer100Gold || ''}
+                onChange={(e) => {
+                  const v = Number(e.target.value) || 0;
+                  setExchangeRate(v > 0 ? Math.round(275000 / v) : 0);
+                }}
+                placeholder="32"
+                min={0}
+              />
+            </div>
+            <div className={styles.exchangeRateResult}>
+              페온 1개 = {Math.floor(peonGoldValue).toLocaleString()}골드
+            </div>
+          </div>
+        </div>
+
+        {/* 평균 골드 배너 */}
+        {hasPrices && !priceLoading && (
+          <div className={styles.avgBanner}>
+            <div className={styles.avgBannerGlow} />
+            <NextImage src="/gold.webp" alt="골드" width={36} height={36} className={styles.avgBannerIcon} />
+            <div className={styles.avgBannerText}>
+              <span className={styles.avgBannerLabel}>단계 {selectedTier} 평균 기댓값</span>
+              <span className={styles.avgBannerValue}>{avgGold.toLocaleString()} G</span>
+            </div>
+            <div className={styles.avgBannerCount}>
+              {sortedRewards.filter(r => r.available).length}종
+            </div>
+          </div>
+        )}
+
+        {/* 보상 카드 목록 */}
+        {priceLoading ? (
+          <div className={styles.rwLoading}>시세 불러오는 중...</div>
+        ) : !hasPrices ? (
+          <div className={styles.rwLoading}>시세 데이터를 불러올 수 없습니다</div>
+        ) : (
+          <div className={styles.rwCardList}>
+            {sortedRewards.map((reward, idx) => {
+              const isExpanded = expandedReward === reward.name;
+              const rewardImg = getRewardImage(reward.name, selectedTier);
+              const rank = reward.available ? idx + 1 : null;
+              return (
+                <div
+                  key={reward.name}
+                  className={`${styles.rwCard} ${!reward.available ? styles.rwCardDisabled : ''} ${isExpanded ? styles.rwCardExpanded : ''}`}
+                >
+                  <div
+                    className={styles.rwCardMain}
+                    onClick={() => reward.available && setExpandedReward(isExpanded ? null : reward.name)}
+                  >
+                    {/* 순위 뱃지 */}
+                    {rank && rank <= 3 && (
+                      <span className={`${styles.rwRankBadge} ${rank === 1 ? styles.rwRank1 : rank === 2 ? styles.rwRank2 : styles.rwRank3}`}>
+                        {rank}
+                      </span>
+                    )}
+
+                    {/* 이미지 */}
+                    <div className={styles.rwCardImgWrap}>
+                      {rewardImg ? (
+                        <NextImage src={rewardImg} alt={reward.name} width={56} height={56} className={styles.rwCardImg} />
+                      ) : (
+                        <div className={styles.rwCardImgPlaceholder} />
+                      )}
+                    </div>
+
+                    {/* 정보 */}
+                    <div className={styles.rwCardInfo}>
+                      <span className={styles.rwCardName}>{getDisplayName(reward.name)}</span>
+                      <span className={styles.rwCardQty}>{reward.rawVal}</span>
+                    </div>
+
+                    {/* 골드 가치 */}
+                    <div className={styles.rwCardGold}>
+                      {reward.available ? (
+                        <>
+                          <NextImage src="/gold.webp" alt="" width={18} height={18} />
+                          <span>{reward.goldValue.toLocaleString()}</span>
+                        </>
+                      ) : (
+                        <span className={styles.rwCardUnavailable}>-</span>
+                      )}
+                    </div>
+
+                    {/* 펼침 아이콘 */}
+                    {reward.available && (
+                      <span className={`${styles.rwExpandIcon} ${isExpanded ? styles.rwExpandIconOpen : ''}`}>
+                        &#9662;
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 상세 패널 */}
+                  {isExpanded && (
+                    <div className={styles.rwDetail}>
+                      <div className={styles.rwDetailRow}>
+                        <span className={styles.rwDetailLabel}>수량</span>
+                        <span className={styles.rwDetailValue}>{reward.rawVal}</span>
+                      </div>
+                      <div className={styles.rwDetailRow}>
+                        <span className={styles.rwDetailLabel}>산출</span>
+                        <span className={styles.rwDetailValue}>{getRewardDetail(reward.name, reward.rawVal)}</span>
+                      </div>
+                      <div className={styles.rwDetailRow}>
+                        <span className={styles.rwDetailLabel}>골드 가치</span>
+                        <span className={styles.rwDetailGold}>{reward.goldValue.toLocaleString()} G</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

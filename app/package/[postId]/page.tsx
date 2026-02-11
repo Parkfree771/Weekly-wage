@@ -12,15 +12,14 @@ import {
   deletePackagePost,
 } from '@/lib/package-service';
 import type { PackagePost, PackageType, PackageItem } from '@/types/package';
+import { calcTicketAverage } from '@/lib/hell-reward-calc';
+import {
+  formatNumber,
+  PRICE_BUNDLE_SIZE,
+  CRYSTAL_PER_UNIT_FALLBACK,
+  getItemUnitPrice,
+} from '@/lib/package-shared';
 import styles from '../package.module.css';
-
-function formatNumber(n: number): string {
-  if (n === 0) return '0';
-  if (Math.abs(n) < 10) {
-    return n.toFixed(3);
-  }
-  return Math.round(n).toLocaleString('ko-KR');
-}
 
 function formatDate(timestamp: any): string {
   if (!timestamp) return '';
@@ -35,26 +34,6 @@ function getTypeBadgeClass(type: PackageType): string {
   if (type === '3+1') return styles.typeBadge31;
   if (type === '2+1') return styles.typeBadge21;
   return styles.typeBadgeNormal;
-}
-
-const PRICE_BUNDLE_SIZE: Record<string, number> = {
-  '66102007': 100,
-  '66102107': 100,
-  '66130143': 3000,
-};
-
-// 기존 패키지 하위 호환: crystalPerUnit 없는 구 데이터용 폴백
-const CRYSTAL_PER_UNIT_FALLBACK: Record<string, number> = {
-  'crystal_blue-crystal-input': 1,
-  'crystal_pheon': 8.5,
-  'crystal_gem-reset-ticket': 100,
-  'crystal_ninav-blessing': 360,
-};
-
-function getItemPrice(itemId: string, prices: Record<string, number>): number {
-  const raw = prices[itemId] || 0;
-  const bundle = PRICE_BUNDLE_SIZE[itemId] || 1;
-  return raw / bundle;
 }
 
 export default function PackageDetailPage() {
@@ -105,7 +84,7 @@ export default function PackageDetailPage() {
             const withValue = data.items.map((item, idx) => {
               const value = item.goldOverride != null
                 ? item.goldOverride * item.quantity
-                : getItemPrice(item.itemId, {}) * item.quantity; // 시세 아직 없으므로 0 기반
+                : getItemUnitPrice(item.itemId, {}) * item.quantity; // 시세 아직 없으므로 0 기반
               return { idx, value };
             });
             // 시세가 아직 없을 수 있으므로 나중에 latestPrices 로드 후 재계산
@@ -151,7 +130,7 @@ export default function PackageDetailPage() {
       }
       const value = item.goldOverride != null
         ? item.goldOverride * item.quantity
-        : getItemPrice(effectiveItemId, latestPrices) * item.quantity;
+        : getItemUnitPrice(effectiveItemId, latestPrices) * item.quantity;
       return { idx, value };
     });
     withValue.sort((a, b) => b.value - a.value);
@@ -237,8 +216,19 @@ export default function PackageDetailPage() {
 
   const detailGoldPerWon = detailWonPer100Gold > 0 ? 100 / detailWonPer100Gold : 0;
 
-  // crystal 아이템의 실제 단가 (환율 변경 시 crystalPerUnit 기반 재계산)
+  // 환율 기반 bcRate (100 블크 = 2750 로크)
+  const bcRate = detailGoldPerWon > 0 ? detailGoldPerWon * 2750 : 0;
+
+  // goldOverride 아이템의 실제 단가 (환율 변경 시 재계산)
   const getCrystalAdjustedUnit = (item: PackageItem): number => {
+    // 티켓: 환율 기반 동적 계산
+    if (item.itemId === 'fixed_hell-legendary-ticket')
+      return bcRate > 0 ? calcTicketAverage('hell', 7, latestPrices, bcRate) : (item.goldOverride || 0);
+    if (item.itemId === 'fixed_hell-heroic-ticket')
+      return bcRate > 0 ? calcTicketAverage('hell', 6, latestPrices, bcRate) : (item.goldOverride || 0);
+    if (item.itemId === 'fixed_naraka-legendary-ticket')
+      return bcRate > 0 ? calcTicketAverage('narak', 2, latestPrices, bcRate) : (item.goldOverride || 0);
+    // crystal 아이템
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && detailGoldPerWon > 0) {
       return item.crystalPerUnit * detailGoldPerWon * 27.5;
     }
@@ -267,7 +257,7 @@ export default function PackageDetailPage() {
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
       } else {
-        const unitPrice = getItemPrice(effectiveItemId, latestPrices);
+        const unitPrice = getItemUnitPrice(effectiveItemId, latestPrices);
         const sub = unitPrice * item.quantity;
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
@@ -463,14 +453,13 @@ export default function PackageDetailPage() {
               {post.items.map((item, idx) => {
                 const effective = getEffectiveItem(item, idx);
                 const isFixed = item.goldOverride != null;
-                const isCrystal = !!(item.crystalPerUnit && item.crystalPerUnit > 0);
                 const effectiveItemId =
                   item.choiceOptions && item.choiceOptions.length > 0
                     ? choiceSelections[idx] || item.itemId
                     : item.itemId;
                 const unitPrice = isFixed
                   ? getCrystalAdjustedUnit(item)
-                  : getItemPrice(effectiveItemId, latestPrices);
+                  : getItemUnitPrice(effectiveItemId, latestPrices);
                 const subtotal = itemSubtotals[idx] || 0;
                 const hasChoices = item.choiceOptions && item.choiceOptions.length > 0;
 
@@ -496,14 +485,16 @@ export default function PackageDetailPage() {
                         )}
                       </span>
                     </label>
-                    {effective.icon && (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={effective.icon}
-                        alt={effective.name}
-                        className={styles.itemCardIcon}
-                      />
-                    )}
+                    <div className={styles.itemCardIconWrap}>
+                      {effective.icon && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={effective.icon}
+                          alt={effective.name}
+                          className={styles.itemCardIcon}
+                        />
+                      )}
+                    </div>
                     <div className={styles.itemCardName}>{effective.name}</div>
 
                     {hasChoices && item.choiceOptions!.length <= 3 && (
@@ -542,15 +533,15 @@ export default function PackageDetailPage() {
                       </select>
                     )}
 
-                    <div className={styles.itemCardPriceLine}>
-                      {isFixed
-                        ? `${formatNumber(unitPrice)}G${isCrystal ? '' : ' (고정)'}`
-                        : `${formatNumber(unitPrice)}G`}
-                      {' x '}
-                      {item.quantity}개
-                    </div>
-                    <div className={styles.itemCardSubtotal}>
-                      {formatNumber(subtotal)}G
+                    <div className={styles.itemCardBottom}>
+                      <div className={styles.itemCardPriceLine}>
+                        {`${formatNumber(unitPrice)}G`}
+                        {' x '}
+                        {item.quantity}개
+                      </div>
+                      <div className={styles.itemCardSubtotal}>
+                        {formatNumber(subtotal)}G
+                      </div>
                     </div>
                   </div>
                 );

@@ -3,6 +3,12 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PackagePost, PackageType } from '@/types/package';
+import {
+  formatNumber,
+  PRICE_BUNDLE_SIZE,
+  CRYSTAL_PER_UNIT_FALLBACK,
+} from '@/lib/package-shared';
+import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import styles from './PackageGalleryCard.module.css';
 
 type Props = {
@@ -16,14 +22,6 @@ function getBadgeClass(type: PackageType): string {
   return styles.badgeNormal;
 }
 
-function formatNumber(n: number): string {
-  if (n === 0) return '0';
-  if (Math.abs(n) < 10) {
-    return n.toFixed(3);
-  }
-  return Math.round(n).toLocaleString('ko-KR');
-}
-
 function formatShortDate(timestamp: any): string {
   if (!timestamp) return '';
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -33,19 +31,29 @@ function formatShortDate(timestamp: any): string {
   return `${y}.${m}.${d}`;
 }
 
-const PRICE_BUNDLE_SIZE: Record<string, number> = {
-  '66102007': 100,
-  '66102107': 100,
-  '66130143': 3000,
+// 갤러리 카드 아이콘 크기 오버라이드 (기본 50px, 셀 76px 고정)
+const GALLERY_ICON_SIZE: Record<string, number> = {
+  'fixed_gold-input': 36,
+  'fixed_hell-heroic-ticket': 72,
+  'crystal_pheon': 66,
+  'expected_gem-choice': 66,
 };
+const GALLERY_ICON_RE: [RegExp, number][] = [
+  [/^674/, 66], // 젬 선택 아이템 (영웅 젬 상자에서 선택된 젬)
+];
+function getGalleryIconSize(itemId: string): number | undefined {
+  if (GALLERY_ICON_SIZE[itemId]) return GALLERY_ICON_SIZE[itemId];
+  for (const [re, size] of GALLERY_ICON_RE) {
+    if (re.test(itemId)) return size;
+  }
+  return undefined;
+}
 
-// 기존 패키지 하위 호환: crystalPerUnit 없는 구 데이터용 폴백
-const CRYSTAL_PER_UNIT_FALLBACK: Record<string, number> = {
-  'crystal_blue-crystal-input': 1,
-  'crystal_pheon': 8.5,
-  'crystal_gem-reset-ticket': 100,
-  'crystal_ninav-blessing': 360,
-};
+// 기존 데이터 대응: 개별 선택 아이콘 → 상자 아이콘 복원
+function getDisplayIcon(icon: string): string {
+  if (/gem-(order|chaos)-/.test(icon)) return '/gem-hero.webp';
+  return icon;
+}
 
 export default function PackageGalleryCard({ post, latestPrices }: Props) {
   const router = useRouter();
@@ -83,6 +91,20 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
 
   const goldPerWon = wonPer100Gold > 0 ? 100 / wonPer100Gold : 0;
 
+  // 티켓 동적 시세 계산 (시세 변동 시 자동 반영)
+  const getTicketDynamicUnit = (itemId: string, fallback: number): number => {
+    const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
+    if (bcRate > 0 && Object.keys(latestPrices).length > 0) {
+      if (itemId === 'fixed_hell-legendary-ticket')
+        return calcTicketAverage('hell', 7, latestPrices, bcRate);
+      if (itemId === 'fixed_hell-heroic-ticket')
+        return calcTicketAverage('hell', 6, latestPrices, bcRate);
+      if (itemId === 'fixed_naraka-legendary-ticket')
+        return calcTicketAverage('narak', 2, latestPrices, bcRate);
+    }
+    return fallback;
+  };
+
   // 아이템별 소계 (N선택 토글 로직용)
   const itemSubtotals = useMemo(() => {
     return post.items.map((item) => {
@@ -95,7 +117,8 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
         if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
       }
       if (item.goldOverride != null) {
-        return item.goldOverride * item.quantity;
+        const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
+        return dynamicUnit * item.quantity;
       }
       const raw = latestPrices[item.itemId] || 0;
       const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
@@ -139,7 +162,10 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
         const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
         if (fallback) return sum + fallback * goldPerWon * 27.5 * item.quantity;
       }
-      if (item.goldOverride != null) return sum + item.goldOverride * item.quantity;
+      if (item.goldOverride != null) {
+        const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
+        return sum + dynamicUnit * item.quantity;
+      }
       const raw = latestPrices[item.itemId] || 0;
       const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
       return sum + (raw / bundle) * item.quantity;
@@ -186,7 +212,10 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
               >
                 {item.icon ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={item.icon} alt={item.name} className={styles.itemCellIcon} />
+                  <img
+                    src={getDisplayIcon(item.icon)}
+                    alt={item.name} className={styles.itemCellIcon}
+                    style={(() => { const s = getGalleryIconSize(item.itemId); return s ? { width: s, height: s } : undefined; })()} />
                 ) : (
                   <div className={styles.itemCellPlaceholder}>기타</div>
                 )}
