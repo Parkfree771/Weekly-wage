@@ -32,6 +32,7 @@ export type PackagePost = {
   packageType: PackageType;
   royalCrystalPrice: number;
   items: PackageItem[];
+  selectableCount?: number; // 0 또는 미설정 = 전체, N = N개 선택
 
   // 환율 (등록 시 입력값)
   goldPerWon?: number;

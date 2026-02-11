@@ -72,6 +72,11 @@
   color: #6b7280;
 }
 
+.badgeSelect {
+  background: rgba(139, 92, 246, 0.12);
+  color: #a78bfa;
+}
+
 /* ─── 아이템 그리드 ─── */
 .itemGrid {
   display: flex;

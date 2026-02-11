@@ -48,14 +48,64 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
   const [wonPer100Gold, setWonPer100Gold] = useState<number>(defaultWon);
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>(() => {
     const initial: Record<number, boolean> = {};
-    post.items.forEach((_, idx) => {
-      initial[idx] = true;
-    });
+    if (post.selectableCount && post.selectableCount > 0) {
+      // 가장 비싼 N개만 체크
+      const withValue = post.items.map((item, idx) => {
+        const value = item.goldOverride != null
+          ? item.goldOverride * item.quantity
+          : (() => {
+              const raw = latestPrices[item.itemId] || 0;
+              const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
+              return (raw / bundle) * item.quantity;
+            })();
+        return { idx, value };
+      });
+      withValue.sort((a, b) => b.value - a.value);
+      post.items.forEach((_, idx) => { initial[idx] = false; });
+      withValue.slice(0, post.selectableCount).forEach((v) => {
+        initial[v.idx] = true;
+      });
+    } else {
+      post.items.forEach((_, idx) => {
+        initial[idx] = true;
+      });
+    }
     return initial;
   });
 
+  // 아이템별 소계 (N선택 토글 로직용)
+  const itemSubtotals = useMemo(() => {
+    return post.items.map((item) => {
+      if (item.goldOverride != null) return item.goldOverride * item.quantity;
+      const raw = latestPrices[item.itemId] || 0;
+      const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
+      return (raw / bundle) * item.quantity;
+    });
+  }, [post.items, latestPrices]);
+
   const handleToggleCheck = (idx: number) => {
-    setCheckedItems((prev) => ({ ...prev, [idx]: !prev[idx] }));
+    const sc = post.selectableCount || 0;
+    setCheckedItems((prev) => {
+      const isChecked = prev[idx] !== false;
+      if (isChecked) {
+        return { ...prev, [idx]: false };
+      }
+      if (sc > 0) {
+        const checkedCount = Object.values(prev).filter((v) => v !== false).length;
+        if (checkedCount >= sc) {
+          let minIdx = -1;
+          let minValue = Infinity;
+          Object.entries(prev).forEach(([i, checked]) => {
+            if (checked !== false) {
+              const val = itemSubtotals[+i] || 0;
+              if (val < minValue) { minValue = val; minIdx = +i; }
+            }
+          });
+          if (minIdx >= 0) return { ...prev, [minIdx]: false, [idx]: true };
+        }
+      }
+      return { ...prev, [idx]: true };
+    });
   };
 
   const totalGold = useMemo(() => {
@@ -89,6 +139,11 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
           <span className={`${styles.cardBadge} ${getBadgeClass(post.packageType)}`}>
             {post.packageType}
           </span>
+          {post.selectableCount && post.selectableCount > 0 && (
+            <span className={`${styles.cardBadge} ${styles.badgeSelect}`}>
+              {post.selectableCount}선택
+            </span>
+          )}
         </div>
 
         <div className={styles.itemGrid}>

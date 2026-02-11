@@ -562,6 +562,42 @@
   color: #fff;
 }
 
+/* N선택 입력 */
+.selectableCountRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.selectableCountInput {
+  width: 70px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.9rem;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.selectableCountInput:focus {
+  border-color: #8b5cf6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.selectableCountHint {
+  font-size: 0.78rem;
+  color: #8b5cf6;
+  font-weight: 600;
+}
+
+/* 패키지 구성 박스 - 미선택 아이템 */
+.packageBoxItemUnchecked {
+  opacity: 0.4;
+}
+
 /* 골드 환율 섹션 */
 .rateSection {
   padding: 1.25rem;
@@ -915,6 +951,11 @@
 .typeBadgeNormal {
   background: rgba(107, 114, 128, 0.12);
   color: #6b7280;
+}
+
+.typeBadgeSelect {
+  background: rgba(139, 92, 246, 0.12);
+  color: #8b5cf6;
 }
 
 /* ─── 좌우 분할 (결과 + 아이템) ─── */
@@ -1749,6 +1790,20 @@
   font-style: italic;
 }
 
+.innerQuantityRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: 2.5rem;
+  margin-top: 0.3rem;
+}
+
+.innerQuantityLabel {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 /* ─── 아이템 추가 그리드 ─── */
 .availableSection {
   margin-bottom: 1.5rem;
@@ -1783,6 +1838,43 @@
 .availableItemAdded {
   border-color: rgba(249, 115, 22, 0.4);
   background: rgba(249, 115, 22, 0.06);
+}
+
+.availableItemCustom {
+  border: 2px dashed var(--border-color);
+  background: transparent;
+}
+
+.availableItemCustom:hover {
+  border-color: #f97316;
+  border-style: dashed;
+}
+
+.availableItemCustomPlus {
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.customItemRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.customNameInput {
+  flex: 1;
+  min-width: 80px;
+  max-width: 140px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  background: var(--card-bg);
+  color: var(--text-color);
 }
 
 .availableItemIcon {

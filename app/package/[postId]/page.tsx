@@ -93,6 +93,23 @@ export default function PackageDetailPage() {
             }
             initialChecked[idx] = true;
           });
+          // N선택: 가장 비싼 N개만 초기 체크
+          if (data.selectableCount && data.selectableCount > 0) {
+            const withValue = data.items.map((item, idx) => {
+              const value = item.goldOverride != null
+                ? item.goldOverride * item.quantity
+                : getItemPrice(item.itemId, {}) * item.quantity; // 시세 아직 없으므로 0 기반
+              return { idx, value };
+            });
+            // 시세가 아직 없을 수 있으므로 나중에 latestPrices 로드 후 재계산
+            data.items.forEach((_, idx) => {
+              initialChecked[idx] = false;
+            });
+            withValue.sort((a, b) => b.value - a.value);
+            withValue.slice(0, data.selectableCount).forEach((v) => {
+              initialChecked[v.idx] = true;
+            });
+          }
           setChoiceSelections(initial);
           setCheckedItems(initialChecked);
           if (data.goldPerWon && data.goldPerWon > 0) {
@@ -111,6 +128,30 @@ export default function PackageDetailPage() {
     };
     load();
   }, [postId]);
+
+  // 시세 로드 후 N선택 재계산
+  useEffect(() => {
+    if (!post || !post.selectableCount || post.selectableCount <= 0) return;
+    if (Object.keys(latestPrices).length === 0) return;
+    const withValue = post.items.map((item, idx) => {
+      let effectiveItemId = item.itemId;
+      if (item.choiceOptions && item.choiceOptions.length > 0) {
+        effectiveItemId = choiceSelections[idx] || item.itemId;
+      }
+      const value = item.goldOverride != null
+        ? item.goldOverride * item.quantity
+        : getItemPrice(effectiveItemId, latestPrices) * item.quantity;
+      return { idx, value };
+    });
+    withValue.sort((a, b) => b.value - a.value);
+    const newChecked: Record<number, boolean> = {};
+    post.items.forEach((_, idx) => { newChecked[idx] = false; });
+    withValue.slice(0, post.selectableCount).forEach((v) => {
+      newChecked[v.idx] = true;
+    });
+    setCheckedItems(newChecked);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestPrices, post?.id]);
 
   useEffect(() => {
     if (!user || !postId) return;
@@ -143,7 +184,29 @@ export default function PackageDetailPage() {
   };
 
   const handleToggleCheck = (idx: number) => {
-    setCheckedItems((prev) => ({ ...prev, [idx]: !prev[idx] }));
+    const sc = post?.selectableCount || 0;
+    setCheckedItems((prev) => {
+      const isChecked = prev[idx] !== false;
+      if (isChecked) {
+        return { ...prev, [idx]: false };
+      }
+      if (sc > 0) {
+        const checkedCount = Object.values(prev).filter((v) => v !== false).length;
+        if (checkedCount >= sc) {
+          // 체크된 것 중 가장 싼 것 해제
+          let minIdx = -1;
+          let minValue = Infinity;
+          Object.entries(prev).forEach(([i, checked]) => {
+            if (checked !== false) {
+              const val = itemSubtotals[+i] || 0;
+              if (val < minValue) { minValue = val; minIdx = +i; }
+            }
+          });
+          if (minIdx >= 0) return { ...prev, [minIdx]: false, [idx]: true };
+        }
+      }
+      return { ...prev, [idx]: true };
+    });
   };
 
   const getEffectiveItem = (item: PackageItem, idx: number) => {
@@ -234,9 +297,16 @@ export default function PackageDetailPage() {
           <div className={styles.resultPanel}>
             <div className={styles.resultBox}>
               {/* 뱃지 + 제목 */}
-              <span className={`${styles.typeBadge} ${getTypeBadgeClass(post.packageType)}`}>
-                {post.packageType}
-              </span>
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span className={`${styles.typeBadge} ${getTypeBadgeClass(post.packageType)}`}>
+                  {post.packageType}
+                </span>
+                {post.selectableCount && post.selectableCount > 0 && (
+                  <span className={`${styles.typeBadge} ${styles.typeBadgeSelect}`}>
+                    {post.selectableCount}선택
+                  </span>
+                )}
+              </div>
               <h1 className={styles.resultTitle}>{post.title}</h1>
 
               <div className={styles.resultDivider} />
