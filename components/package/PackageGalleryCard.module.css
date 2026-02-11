@@ -102,27 +102,12 @@
   filter: grayscale(0.6);
 }
 
-/* 체크박스 (아이콘 위 오버레이) */
-.itemCheckLabel {
+/* 체크박스 (아이콘 우상단 오버레이) */
+.itemCheckBox {
   position: absolute;
   top: -2px;
   right: -2px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 2;
-}
-
-.itemCheckInput {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-.itemCheckBox {
   width: 16px;
   height: 16px;
   border-radius: 4px;
@@ -134,12 +119,12 @@
   transition: all 0.15s;
 }
 
-.itemCheckLabel:hover .itemCheckBox {
+.itemCheckBoxChecked {
+  background: #f97316;
   border-color: #f97316;
 }
 
-.itemCheckInput:checked + .itemCheckBox {
-  background: #f97316;
+.itemCell:hover .itemCheckBox {
   border-color: #f97316;
 }
 

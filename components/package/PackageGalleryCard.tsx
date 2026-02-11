@@ -179,6 +179,10 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
               <div
                 key={idx}
                 className={`${styles.itemCell} ${!isChecked ? styles.itemCellUnchecked : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleCheck(idx);
+                }}
               >
                 {item.icon ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
@@ -186,27 +190,13 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                 ) : (
                   <div className={styles.itemCellPlaceholder}>기타</div>
                 )}
-                <label
-                  className={styles.itemCheckLabel}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleCheck(idx);
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => {}}
-                    className={styles.itemCheckInput}
-                  />
-                  <span className={styles.itemCheckBox}>
-                    {isChecked && (
-                      <svg viewBox="0 0 12 10" className={styles.itemCheckIcon}>
-                        <polyline points="1.5 5 4.5 8 10.5 2" />
-                      </svg>
-                    )}
-                  </span>
-                </label>
+                <span className={`${styles.itemCheckBox} ${isChecked ? styles.itemCheckBoxChecked : ''}`}>
+                  {isChecked && (
+                    <svg viewBox="0 0 12 10" className={styles.itemCheckIcon}>
+                      <polyline points="1.5 5 4.5 8 10.5 2" />
+                    </svg>
+                  )}
+                </span>
               </div>
             );
           })}

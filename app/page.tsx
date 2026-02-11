@@ -78,6 +78,12 @@ export default function Home() {
               <Card.Body className="p-3" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
                   <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.11</span>
+                    <span style={{ color: 'var(--text-primary)' }}>
+                      패키지 가격 추가 (티켓 등 관리자가 임의로 가격 설정했습니다. 특히 지옥, 나락 등 가격을 측정하기 애매한 상품들이 있습니다. 각 품목 가격 어떻게 설정하면 좋을지 의견 있으시면 옆 문의하기로 보내주시면 감사하겠습니다.) &#8592;
+                    </span>
+                  </li>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.09</span>
                     <span style={{ color: 'var(--text-primary)' }}>패키지 효율 계산기 추가</span>
                   </li>
