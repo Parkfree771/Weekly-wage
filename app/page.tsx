@@ -44,10 +44,6 @@ export default function Home() {
 
         {/* 문의하기 & 업데이트 내역 */}
         <Row className="g-3 mt-3">
-          {/* 컨텐츠 중간 광고 */}
-          <Col xs={12}>
-            <AdBanner slot="8616653628" />
-          </Col>
           <Col md={6}>
             <Card className="h-100" style={{ overflow: 'hidden' }}>
               <Card.Header
