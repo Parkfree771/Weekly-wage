@@ -378,38 +378,117 @@
 }
 
 @media (max-width: 576px) {
+  /* 가로 레이아웃 유지, 오른쪽 축소 */
   .galleryCard {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 145px;
   }
 
-  .rightBox {
-    border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
+  /* 왼쪽 박스: 축소 */
   .leftBox {
+    padding: 0.75rem;
     min-height: auto;
+    gap: 0.6rem;
   }
 
   .cardTitle {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
 
   .cardBadge {
-    font-size: 0.6rem;
-    padding: 0.1rem 0.4rem;
+    font-size: 0.55rem;
+    padding: 0.1rem 0.35rem;
   }
 
   .itemCell {
-    width: 56px;
-    height: 56px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .itemCellIcon {
+    width: 38px;
+    height: 38px;
+    border-radius: 6px;
+  }
+
+  .itemCheckBox {
+    width: 14px;
+    height: 14px;
+  }
+
+  .itemCheckIcon {
+    width: 8px;
+    height: 6px;
   }
 
   .leftMeta {
-    font-size: 0.62rem;
+    font-size: 0.58rem;
+  }
+
+  /* 오른쪽 박스: 축소 + border-left 유지 */
+  .rightBox {
+    padding: 0.65rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: none;
+  }
+
+  .resultLabel {
+    font-size: 0.72rem;
+  }
+
+  .resultValue {
+    font-size: 0.82rem;
+  }
+
+  .resultValueGold {
+    font-size: 0.82rem;
+  }
+
+  .resultDivider {
+    margin: 0.4rem 0;
+  }
+
+  .rateHint {
+    display: none;
+  }
+
+  .rateRow {
+    padding: 0.3rem 0.4rem;
+    gap: 0.25rem;
+  }
+
+  .rateIconGold {
+    width: 16px;
+    height: 16px;
+  }
+
+  .rateIconRoyal {
+    width: 22px;
+    height: 22px;
+  }
+
+  .rateFixed {
+    font-size: 0.7rem;
+  }
+
+  .rateSep {
+    font-size: 0.7rem;
+  }
+
+  .rateInput {
+    width: 36px;
+    font-size: 0.7rem;
+  }
+
+  .benefitLabel {
+    font-size: 0.72rem;
   }
 
   .benefitValue {
-    font-size: 0.9rem;
+    font-size: 0.82rem;
+  }
+
+  .detailLink {
+    font-size: 0.7rem;
+    padding-top: 0.5rem;
   }
 }

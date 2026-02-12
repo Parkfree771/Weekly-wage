@@ -5,15 +5,15 @@ import { Metadata } from 'next'
 export const metadata: Metadata = {
   title: '주간 골드 계산기 - 더보기 효율, 레이드 보상',
 
-  description: '로골로골 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상을 실시간 거래소 가격으로 계산하세요. 로아 세르카, 로아 카제로스 레이드 골드 수익과 더보기 손익을 한눈에.',
+  description: '로아로골 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상을 실시간 거래소 가격으로 계산하세요. 로아 세르카, 로아 카제로스 레이드 골드 수익과 더보기 손익을 한눈에.',
 
-  keywords: '로골로골, 로아 주간 골드, 로아 골드 계산, 로아 더보기, 로아 더보기 효율, 로아 레이드 보상, 로아 세르카, 로아 카제로스, 로아 주급, 로아 골드 수익, 로스트아크 주간 골드, 세르카 보상, 더보기 손익, 원정대 주급',
+  keywords: '로아로골, 로아 주간 골드, 로아 골드 계산, 로아 더보기, 로아 더보기 효율, 로아 레이드 보상, 로아 세르카, 로아 카제로스, 로아 주급, 로아 골드 수익, 로스트아크 주간 골드, 세르카 보상, 더보기 손익, 원정대 주급',
 
   openGraph: {
-    title: '로골로골 | 주간 골드 계산기 - 더보기 효율, 레이드 보상',
-    description: '로골로골 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상, 로아 세르카/카제로스 골드 수익을 확인하세요.',
+    title: '로아로골 | 주간 골드 계산기 - 더보기 효율, 레이드 보상',
+    description: '로아로골 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상, 로아 세르카/카제로스 골드 수익을 확인하세요.',
     url: 'https://lostarkweeklygold.kr/weekly-gold',
-    siteName: '로골로골',
+    siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
@@ -37,7 +37,7 @@ export default function WeeklyGoldLayout({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            "name": "로골로골 - 주간 골드 계산기",
+            "name": "로아로골 - 주간 골드 계산기",
             "url": "https://lostarkweeklygold.kr/weekly-gold",
             "description": "로아 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상, 로아 세르카/카제로스 골드 수익을 실시간 시세로 계산",
             "applicationCategory": "GameApplication",
@@ -77,7 +77,7 @@ export default function WeeklyGoldLayout({
                 "name": "로아 더보기는 언제 선택하는 게 이득인가요?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "로아 더보기 효율은 로아 거래소 시세에 따라 달라집니다. 초록색이면 로아 더보기가 이득, 빨간색이면 기본 골드가 유리합니다. 로골로골에서 실시간으로 확인하세요."
+                  "text": "로아 더보기 효율은 로아 거래소 시세에 따라 달라집니다. 초록색이면 로아 더보기가 이득, 빨간색이면 기본 골드가 유리합니다. 로아로골에서 실시간으로 확인하세요."
                 }
               },
               {
@@ -85,7 +85,7 @@ export default function WeeklyGoldLayout({
                 "name": "로아 세르카 더보기 효율은 어떻게 확인하나요?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "로아 세르카 더보기 효율은 로골로골에서 실시간 거래소 가격으로 자동 계산됩니다. 로아 세르카 보상과 더보기 손익을 한눈에 확인할 수 있습니다."
+                  "text": "로아 세르카 더보기 효율은 로아로골에서 실시간 거래소 가격으로 자동 계산됩니다. 로아 세르카 보상과 더보기 손익을 한눈에 확인할 수 있습니다."
                 }
               },
               {

@@ -2,13 +2,13 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: '이용약관',
-  description: '로골로골의 이용약관입니다. 서비스 이용 시 권리와 의무, 면책조항, 데이터 출처 등을 안내합니다.',
-  keywords: '로골로골, 이용약관, 서비스약관',
+  description: '로아로골의 이용약관입니다. 서비스 이용 시 권리와 의무, 면책조항, 데이터 출처 등을 안내합니다.',
+  keywords: '로아로골, 이용약관, 서비스약관',
   openGraph: {
-    title: '로골로골 | 이용약관',
-    description: '로골로골의 이용약관 및 서비스 정책',
+    title: '로아로골 | 이용약관',
+    description: '로아로골의 이용약관 및 서비스 정책',
     url: 'https://lostarkweeklygold.kr/terms',
-    siteName: '로골로골',
+    siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
@@ -37,7 +37,7 @@ export default function TermsLayout({
             "description": "로스트아크 골드 계산기의 이용약관 및 서비스 정책",
             "publisher": {
               "@type": "Organization",
-              "name": "로골로골"
+              "name": "로아로골"
             }
           })
         }}

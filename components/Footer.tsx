@@ -11,9 +11,9 @@ export default function Footer() {
       <Container>
         <Row className="justify-content-center text-center">
           <Col md={8}>
-            {/* 첫째 줄: 로골로골 저작권 */}
+            {/* 첫째 줄: 로아로골 저작권 */}
             <p className="footer-copyright">
-              &copy; {new Date().getFullYear()} <strong>로골로골</strong>
+              &copy; {new Date().getFullYear()} <strong>로아로골</strong>
             </p>
             {/* 둘째 줄: 스마일게이트 저작권 */}
             <p className="footer-game-copyright">
@@ -26,8 +26,6 @@ export default function Footer() {
               <a href="/privacy">개인정보처리방침</a>
               <span className="footer-divider">|</span>
               <a href="/terms">이용약관</a>
-              <span className="footer-divider">|</span>
-              <a href="/avatar">아바타</a>
               <span className="footer-divider">|</span>
               <button
                 className="footer-toggle"

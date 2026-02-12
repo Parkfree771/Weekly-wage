@@ -100,7 +100,7 @@ export default function ConsentModal() {
       </Modal.Header>
       <Modal.Body className={styles.body}>
         <p className={styles.description}>
-          로골로골 서비스 이용을 위해 아래 항목에 동의해주세요.
+          로아로골 서비스 이용을 위해 아래 항목에 동의해주세요.
         </p>
 
         <div className={styles.userInfo}>

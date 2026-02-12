@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@imgly/background-removal": "^1.7.0",
     "@netlify/functions": "^5.1.2",
     "@supabase/supabase-js": "^2.91.1",
     "bootstrap": "^5.3.8",

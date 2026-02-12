@@ -33,33 +33,33 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://lostarkweeklygold.kr'),
   title: {
-    template: '로골로골 | %s',
-    default: "로골로골 - 로아 시세 거래소 가격 차트",
+    template: '로아로골 | %s',
+    default: "로아로골 - 로아 시세 거래소 가격 차트",
   },
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
     apple: '/apple-icon.png',
   },
-  description: "로골로골 - 로아 시세 확인 사이트! 로아 거래소 실시간 가격과 로아 과거 시세 차트를 한눈에. 로아 재련 재료, 로아 각인서, 로아 보석 등 모든 로아 아이템 가격 변동을 확인하세요.",
+  description: "로아로골 - 로아 시세 확인 사이트! 로아 거래소 실시간 가격과 로아 과거 시세 차트를 한눈에. 로아 재련 재료, 로아 각인서, 로아 보석 등 모든 로아 아이템 가격 변동을 확인하세요.",
 
-  keywords: "로골로골, 로아 시세, 로아 거래소, 로아 가격, 로아 아이템 시세, 로아 경매장, 로아 과거 시세, 로아 시세 차트, 로아 재련 재료 시세, 로아 각인서 시세, 로아 보석 시세, 로스트아크 시세, 로스트아크 거래소, 로스트아크 가격",
+  keywords: "로아로골, 로아 시세, 로아 거래소, 로아 가격, 로아 아이템 시세, 로아 경매장, 로아 과거 시세, 로아 시세 차트, 로아 재련 재료 시세, 로아 각인서 시세, 로아 보석 시세, 로스트아크 시세, 로스트아크 거래소, 로스트아크 가격",
 
-  authors: [{ name: "로골로골" }],
-  creator: "로골로골",
-  publisher: "로골로골",
+  authors: [{ name: "로아로골" }],
+  creator: "로아로골",
+  publisher: "로아로골",
 
   openGraph: {
-    title: "로골로골 - 로아 시세 거래소 가격 차트",
-    description: "로골로골 - 로아 시세 확인 사이트! 로아 거래소 실시간 가격, 로아 과거 시세 차트, 로아 재련 재료, 로아 각인서 시세까지.",
+    title: "로아로골 - 로아 시세 거래소 가격 차트",
+    description: "로아로골 - 로아 시세 확인 사이트! 로아 거래소 실시간 가격, 로아 과거 시세 차트, 로아 재련 재료, 로아 각인서 시세까지.",
     url: "https://lostarkweeklygold.kr",
-    siteName: "로골로골",
+    siteName: "로아로골",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "로골로골 - 로아 시세 거래소 가격 차트"
+        alt: "로아로골 - 로아 시세 거래소 가격 차트"
       }
     ],
     locale: "ko_KR",
@@ -67,8 +67,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "로골로골 - 로아 시세 거래소 가격 차트",
-    description: "로골로골 - 로아 시세, 로아 거래소 가격, 로아 과거 시세 차트 확인",
+    title: "로아로골 - 로아 시세 거래소 가격 차트",
+    description: "로아로골 - 로아 시세, 로아 거래소 가격, 로아 과거 시세 차트 확인",
     images: ["/og-image.png"],
   },
   robots: {
@@ -139,10 +139,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebSite",
-            "name": "로골로골",
+            "name": "로아로골",
             "alternateName": ["로아 시세", "로아 거래소", "로스트아크 시세"],
             "url": "https://lostarkweeklygold.kr",
-            "description": "로골로골 - 로아 시세 확인 사이트! 로아 거래소 실시간 가격, 로아 과거 시세 차트, 로아 재련 재료 시세, 로아 각인서 시세, 로아 보석 시세를 한눈에 확인하세요.",
+            "description": "로아로골 - 로아 시세 확인 사이트! 로아 거래소 실시간 가격, 로아 과거 시세 차트, 로아 재련 재료 시세, 로아 각인서 시세, 로아 보석 시세를 한눈에 확인하세요.",
             "potentialAction": {
               "@type": "SearchAction",
               "target": "https://lostarkweeklygold.kr/weekly-gold?search={search_term_string}",

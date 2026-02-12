@@ -18,8 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/refining', label: '재련 계산' },
   { href: '/life-master', label: '생활 계산' },
   { href: '/hell-sim', label: '지옥 시뮬' },
-  { href: '/avatar', label: '아바타' },
-  { href: '/package', label: '패키지' },
+{ href: '/package', label: '패키지' },
   { href: '/mypage', label: '마이페이지' },
 ];
 
@@ -42,8 +41,7 @@ export default function Navbar() {
     const pageClass = href === '/refining' ? 'nav-refining' :
                       href === '/life-master' ? 'nav-life' :
                       href === '/hell-sim' ? 'nav-hell' :
-                      href === '/avatar' ? 'nav-avatar' :
-                      href === '/package' ? 'nav-package' :
+href === '/package' ? 'nav-package' :
                       href === '/mypage' ? 'nav-mypage' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
@@ -61,12 +59,12 @@ export default function Navbar() {
           <Link href="/" className="navbar-brand d-flex align-items-center gap-2 text-decoration-none">
             <Image
               src="/icon.png"
-              alt="로골로골"
+              alt="로아로골"
               width={32}
               height={32}
               style={{ borderRadius: '6px' }}
             />
-            <span className="navbar-brand-text">로골로골</span>
+            <span className="navbar-brand-text">로아로골</span>
           </Link>
 
           {/* 데스크톱 메뉴 - 로고 바로 옆 */}
@@ -164,12 +162,12 @@ export default function Navbar() {
               <div className="d-flex align-items-center gap-2">
                 <Image
                   src="/icon.png"
-                  alt="로골로골"
+                  alt="로아로골"
                   width={28}
                   height={28}
                   style={{ borderRadius: '6px' }}
                 />
-                <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>로골로골</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>로아로골</span>
               </div>
             </Offcanvas.Title>
           </Offcanvas.Header>

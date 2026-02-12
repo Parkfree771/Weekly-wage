@@ -2,19 +2,19 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: '벌목 계산기 - 생활 효율, 융화재료 제작',
-  description: '로골로골 벌목 효율 계산기! 로아 생활 콘텐츠 효율, 로아 융화재료 제작 손익, 로아 생활의 가루 수익을 실시간 거래소 시세로 계산하세요. 로아 목재 시세도 확인 가능.',
-  keywords: '로골로골, 로아 벌목, 로아 벌목 효율, 로아 벌목 계산기, 로아 생활, 로아 생활 효율, 로아 융화재료, 로아 융화재료 제작, 로아 생활의 가루, 로아 목재 시세, 로스트아크 벌목, 아비도스 융화재료',
+  description: '로아로골 벌목 효율 계산기! 로아 생활 콘텐츠 효율, 로아 융화재료 제작 손익, 로아 생활의 가루 수익을 실시간 거래소 시세로 계산하세요. 로아 목재 시세도 확인 가능.',
+  keywords: '로아로골, 로아 벌목, 로아 벌목 효율, 로아 벌목 계산기, 로아 생활, 로아 생활 효율, 로아 융화재료, 로아 융화재료 제작, 로아 생활의 가루, 로아 목재 시세, 로스트아크 벌목, 아비도스 융화재료',
   openGraph: {
-    title: '로골로골 | 벌목 계산기 - 생활 효율, 융화재료 제작',
-    description: '로골로골 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익을 실시간 시세로 계산하세요.',
+    title: '로아로골 | 벌목 계산기 - 생활 효율, 융화재료 제작',
+    description: '로아로골 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익을 실시간 시세로 계산하세요.',
     url: 'https://lostarkweeklygold.kr/life-master',
-    siteName: '로골로골',
+    siteName: '로아로골',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: '로골로골 - 벌목 계산기'
+        alt: '로아로골 - 벌목 계산기'
       }
     ],
     locale: 'ko_KR',
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '로골로골 | 벌목 계산기 - 생활 효율, 융화재료 제작',
-    description: '로골로골 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익 계산',
+    title: '로아로골 | 벌목 계산기 - 생활 효율, 융화재료 제작',
+    description: '로아로골 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익 계산',
     images: ['/og-image.png'],
   },
   alternates: {
@@ -46,7 +46,7 @@ export default function LifeMasterLayout({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            "name": "로골로골 - 벌목 계산기",
+            "name": "로아로골 - 벌목 계산기",
             "url": "https://lostarkweeklygold.kr/life-master",
             "description": "로아 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익을 실시간 거래소 가격으로 분석",
             "applicationCategory": "GameApplication",
@@ -78,7 +78,7 @@ export default function LifeMasterLayout({
                 "name": "로아 벌목 효율은 어떻게 계산하나요?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "로아 벌목 효율은 로아 목재 시세와 로아 융화재료 시세를 기준으로 계산됩니다. 로골로골에서 로아 벌목 손익을 실시간으로 확인하세요."
+                  "text": "로아 벌목 효율은 로아 목재 시세와 로아 융화재료 시세를 기준으로 계산됩니다. 로아로골에서 로아 벌목 손익을 실시간으로 확인하세요."
                 }
               },
               {
@@ -102,7 +102,7 @@ export default function LifeMasterLayout({
                 "name": "로아 생활 중 어떤 콘텐츠가 가장 효율적인가요?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "로아 생활 효율은 시세에 따라 달라집니다. 로아 벌목, 로아 채광, 로아 고고학 등 각 콘텐츠별 효율을 로골로골에서 비교해보세요."
+                  "text": "로아 생활 효율은 시세에 따라 달라집니다. 로아 벌목, 로아 채광, 로아 고고학 등 각 콘텐츠별 효율을 로아로골에서 비교해보세요."
                 }
               }
             ]
