@@ -569,12 +569,8 @@ ins.adsbygoogle {
     contain: layout style;
 }
 
-/* TODO: 확인 후 삭제 */
 .ad-banner-container {
-    border: 2px dashed #6366f1;
-    border-radius: 8px;
-    min-height: 90px;
-    background-color: rgba(99, 102, 241, 0.03);
+    text-align: center;
 }
 
 /* 이미지 aspect-ratio 기본 설정 */

@@ -44,7 +44,7 @@ export default function AdBanner({ slot, className }: AdBannerProps) {
   if (!isDev && hidden) return null;
 
   return (
-    <div ref={containerRef} className={`ad-banner-container ${className || ''}`}>
+    <div ref={containerRef} className={`ad-banner-container ${className || ''}`} style={{ maxHeight: '150px' }}>
       {isDev ? (
         <div style={{
           width: '100%',
@@ -64,10 +64,10 @@ export default function AdBanner({ slot, className }: AdBannerProps) {
       ) : (
         <ins
           className="adsbygoogle"
-          style={{ display: 'block', maxHeight: '120px', overflow: 'hidden' }}
+          style={{ display: 'block' }}
           data-ad-client="ca-pub-6944494802169618"
           data-ad-slot={slot}
-          data-ad-format="horizontal"
+          data-ad-format="auto"
           data-full-width-responsive="true"
         />
       )}
