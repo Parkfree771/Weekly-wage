@@ -307,13 +307,12 @@ export default function PackageDetailPage() {
   return (
     <Container fluid style={{ maxWidth: '1100px' }}>
       <div className={styles.detailWrapper}>
-        <Link href="/package" className={styles.backLink}>
-          &#8592; 목록으로 돌아가기
-        </Link>
-
         <div className={styles.detailSplitRow}>
           {/* 왼쪽: 요약 카드 */}
           <div className={styles.resultPanel}>
+            <Link href="/package" className={styles.backLink}>
+              &#8592; 목록으로 돌아가기
+            </Link>
             <div className={styles.resultBox}>
               {/* 뱃지 + 제목 */}
               <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>

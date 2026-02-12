@@ -896,7 +896,7 @@
   padding: clamp(1rem, 3vw, 2rem) 0;
 }
 
-/* 뒤로가기 */
+/* 뒤로가기 - sectionTitle 총 높이와 맞춤 */
 .backLink {
   display: inline-flex;
   align-items: center;
@@ -904,7 +904,7 @@
   color: var(--text-muted);
   text-decoration: none;
   font-size: 0.85rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.55rem;
   transition: color 0.2s;
 }
 
@@ -986,6 +986,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 0.75rem;
+  grid-auto-rows: 1fr;
 }
 
 .itemCard {
@@ -1545,6 +1546,10 @@
   .resultBox {
     max-width: 400px;
   }
+
+  .backLink {
+    margin-bottom: 0.75rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1555,36 +1560,212 @@
 }
 
 @media (max-width: 576px) {
-  .itemCardsGrid {
-    grid-template-columns: repeat(2, 1fr);
+  .backLink {
+    font-size: 0.72rem;
+    margin-bottom: 0.3rem;
+  }
+
+  /* 상세 페이지: 좌우 분할 복원 */
+  .detailSplitRow {
+    grid-template-columns: 170px 1fr;
     gap: 0.5rem;
+    align-items: start;
   }
 
-  .itemCard {
-    padding: 0.85rem 0.6rem;
-  }
-
-  .itemCardIconWrap {
-    height: 48px;
-  }
-
-  .itemCardIcon {
-    width: 44px;
-    height: 44px;
-  }
-
-  .itemCardName {
-    font-size: 0.75rem;
-    min-height: 2em;
-  }
-
-  .itemCardSubtotal {
-    font-size: 0.85rem;
+  .resultPanel {
+    position: static;
   }
 
   .resultBox {
-    padding: 1rem;
+    padding: 0.6rem;
     max-width: 100%;
+    border-radius: 10px;
+  }
+
+  .resultBox::before {
+    height: 3px;
+  }
+
+  .resultTitle {
+    font-size: 0.75rem;
+    margin: 0.25rem 0 0;
+    line-height: 1.3;
+  }
+
+  .typeBadge {
+    font-size: 0.55rem;
+    padding: 0.1rem 0.3rem;
+  }
+
+  .resultDivider {
+    margin: 0.3rem 0;
+  }
+
+  .resultRow {
+    padding: 0.12rem 0;
+  }
+
+  .resultRowLabel {
+    font-size: 0.6rem;
+  }
+
+  .resultRowValue {
+    font-size: 0.68rem;
+  }
+
+  .resultRowValueGold {
+    font-size: 0.68rem;
+  }
+
+  .resultBenefitNum {
+    font-size: 0.78rem;
+  }
+
+  .resultRateInput {
+    padding: 0.2rem 0.3rem;
+    gap: 0.15rem;
+  }
+
+  .resultRateIcon {
+    width: 12px;
+    height: 12px;
+  }
+
+  .resultRateFixed {
+    font-size: 0.6rem;
+  }
+
+  .resultRateSep {
+    font-size: 0.6rem;
+  }
+
+  .resultRateNumber {
+    width: 28px;
+    font-size: 0.6rem;
+  }
+
+  .resultRow:has(.resultRateInput) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+  }
+
+  .resultRateInput {
+    width: 100%;
+  }
+
+  .resultMeta {
+    padding: 0;
+  }
+
+  .resultMetaDate {
+    font-size: 0.58rem;
+  }
+
+  .resultActions {
+    padding-top: 0.2rem;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .likeBtn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.58rem;
+  }
+
+  .viewCountText {
+    font-size: 0.58rem;
+  }
+
+  .editBtn,
+  .deleteBtn {
+    font-size: 0.55rem;
+    padding: 0.15rem 0.35rem;
+  }
+
+  .itemCardsSection {
+    padding-top: 0;
+  }
+
+  .sectionTitle {
+    font-size: 0.72rem;
+    margin-bottom: 0.3rem;
+    padding-bottom: 0.25rem;
+    border-bottom-width: 1px;
+  }
+
+  /* 아이템 카드: 3열 초소형 */
+  .itemCardsGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.2rem;
+  }
+
+  .itemCard {
+    padding: 0.3rem 0.2rem;
+    gap: 0.1rem;
+    border-radius: 6px;
+  }
+
+  .itemCardIconWrap {
+    height: 22px;
+  }
+
+  .itemCardIcon {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+  }
+
+  .itemCardName {
+    font-size: 0.48rem;
+    min-height: 1.2em;
+    line-height: 1.15;
+  }
+
+  .itemCardPriceLine {
+    font-size: 0.42rem;
+    padding-bottom: 0.1rem;
+  }
+
+  .itemCardSubtotal {
+    font-size: 0.5rem;
+    padding-top: 0.15rem;
+  }
+
+  .itemCardCheckBox {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  .itemCardCheckIcon {
+    width: 7px;
+    height: 5px;
+  }
+
+  .itemCardCheckLabel {
+    top: 0.15rem;
+    right: 0.15rem;
+  }
+
+  .itemCardChoiceBtn {
+    font-size: 0.45rem;
+    padding: 0.15rem 0.2rem;
+    gap: 0.15rem;
+  }
+
+  .itemCardChoiceBtnIcon {
+    width: 11px;
+    height: 11px;
+  }
+
+  .itemCardChoiceSelect {
+    font-size: 0.48rem;
+    padding: 0.15rem 0.25rem;
+  }
+
+  .itemCardBottom {
+    margin-top: auto;
   }
 
   .itemCheckList {
