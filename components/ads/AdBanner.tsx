@@ -67,7 +67,7 @@ export default function AdBanner({ slot, className }: AdBannerProps) {
           style={{ display: 'block' }}
           data-ad-client="ca-pub-6944494802169618"
           data-ad-slot={slot}
-          data-ad-format="auto"
+          data-ad-format="horizontal"
           data-full-width-responsive="true"
         />
       )}
