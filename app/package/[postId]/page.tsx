@@ -19,6 +19,7 @@ import {
   CRYSTAL_PER_UNIT_FALLBACK,
   getItemUnitPrice,
 } from '@/lib/package-shared';
+import AdBanner from '@/components/ads/AdBanner';
 import styles from '../package.module.css';
 
 function formatDate(timestamp: any): string {
@@ -547,6 +548,11 @@ export default function PackageDetailPage() {
               })}
             </div>
           </section>
+        </div>
+
+        {/* 모바일 하단 광고 */}
+        <div className="d-block d-md-none my-3">
+          <AdBanner slot="8616653628" />
         </div>
       </div>
     </Container>

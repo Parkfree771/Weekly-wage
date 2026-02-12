@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { Spinner } from 'react-bootstrap';
 import { useTheme } from '@/components/ThemeProvider';
+import AdBanner from '@/components/ads/AdBanner';
 import styles from './LifeCraftCalculator.module.css';
 
 // 아이템 ID
@@ -94,9 +95,9 @@ export default function LifeCraftCalculator() {
   });
   const [customFusionPrice, setCustomFusionPrice] = useState<number | null>(null);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [priceDate, setPriceDate] = useState<string>('');
+  const [priceDate, setPriceDate] = useState<string>('갱신 버튼을 눌러주세요');
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
   const [hasManualRefreshed, setHasManualRefreshed] = useState(false);
@@ -173,10 +174,7 @@ export default function LifeCraftCalculator() {
     }
   }, []);
 
-  // 페이지 방문 시 가격 로드
-  useEffect(() => {
-    fetchAllPrices(true);
-  }, [fetchAllPrices]);
+  // 페이지 방문 시 가격 로드하지 않음 (갱신 버튼으로 수동 로드)
 
   // 쿨다운 타이머 (갱신 버튼 누른 후에만 작동)
   useEffect(() => {
@@ -541,15 +539,6 @@ export default function LifeCraftCalculator() {
       saleProfitPercent,
     };
   }, [currentItem, craftMode, actualCraftCount, materialUnitPrices, feeReduction, currentPrice]);
-
-  if (isLoading) {
-    return (
-      <div className={styles.loadingContainer}>
-        <Spinner animation="border" />
-        <p>데이터 로딩 중...</p>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.container}>
@@ -919,6 +908,11 @@ export default function LifeCraftCalculator() {
             </div>
           </div>
         )}
+        </div>
+
+        {/* 모바일 중간 광고 */}
+        <div className="d-block d-lg-none my-3">
+          <AdBanner slot="8616653628" />
         </div>
 
         {/* 사이드바 */}

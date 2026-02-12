@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
 import { getPackagePosts } from '@/lib/package-service';
 import { useAuth } from '@/contexts/AuthContext';
 import type { PackagePost, PackageSortBy } from '@/types/package';
+import AdBanner from '@/components/ads/AdBanner';
 import styles from './package.module.css';
 
 const PAGE_SIZE = 16;
@@ -117,12 +118,18 @@ export default function PackageGalleryPage() {
         ) : (
           <>
             <div className={styles.galleryGrid}>
-              {posts.map((post) => (
-                <PackageGalleryCard
-                  key={post.id}
-                  post={post}
-                  latestPrices={latestPrices}
-                />
+              {posts.map((post, index) => (
+                <React.Fragment key={post.id}>
+                  <PackageGalleryCard
+                    post={post}
+                    latestPrices={latestPrices}
+                  />
+                  {index === 1 && posts.length > 2 && (
+                    <div className="d-block d-md-none" style={{ gridColumn: '1 / -1' }}>
+                      <AdBanner slot="8616653628" />
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
             </div>
 

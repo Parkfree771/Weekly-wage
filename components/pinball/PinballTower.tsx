@@ -5,6 +5,7 @@ import NextImage from 'next/image';
 import styles from '@/app/hell-sim/hell-sim.module.css';
 import { saveHellSimResult } from '@/lib/supabase';
 import { fetchPriceData } from '@/lib/price-history-client';
+import AdBanner from '@/components/ads/AdBanner';
 import {
   HELL_BOX_REWARDS_DATA,
   NARAK_BOX_REWARDS_DATA,
@@ -33,9 +34,9 @@ import {
 const CANVAS_WIDTH = 360;
 const CANVAS_HEIGHT = 600;
 const TOTAL_FLOORS = 100;
-const FLOOR_HEIGHT = 120;
+const FLOOR_HEIGHT = 50;
 const BALL_RADIUS = 10;
-const GRAVITY = 0.5;
+const GRAVITY = 0.7;
 
 const PLATFORM_WIDTH = 120;
 const PLATFORM_HEIGHT = 12;
@@ -595,10 +596,10 @@ export default function PinballTower() {
     };
   }, []);
 
-  // 배경 이미지 로드 (b1.png만)
+  // 배경 이미지 로드 (b1.webp만)
   useEffect(() => {
     const img = new Image();
-    img.src = '/b1.png';
+    img.src = '/b1.webp';
     img.onload = () => {
       bgImageRef.current = img;
       setBgLoaded(true);
@@ -656,7 +657,7 @@ export default function PinballTower() {
 
   const GROUND_Y = TOTAL_FLOORS * FLOOR_HEIGHT;
   const CEILING_PADDING = 50;
-  const SKY_HEIGHT = CANVAS_HEIGHT; // b1.png가 차지하는 높이 (맨 위 영역)
+  const SKY_HEIGHT = CANVAS_HEIGHT; // b1.webp가 차지하는 높이 (맨 위 영역)
 
   const floorToY = useCallback((floor: number) => {
     return CEILING_PADDING + floor * FLOOR_HEIGHT;
@@ -1002,7 +1003,7 @@ export default function PinballTower() {
       const targetCameraY = ball.y - CANVAS_HEIGHT / 2;
       const cameraDiff = targetCameraY - cameraYRef.current;
       const ballSpeed = Math.abs(ball.vy);
-      const cameraSpeed = ballSpeed > 10 ? 0.3 : ballSpeed > 5 ? 0.2 : 0.15;
+      const cameraSpeed = ballSpeed > 15 ? 0.45 : ballSpeed > 8 ? 0.35 : 0.25;
       cameraYRef.current += cameraDiff * cameraSpeed;
       cameraYRef.current = Math.max(0, Math.min(cameraYRef.current, GROUND_Y - CANVAS_HEIGHT + 100));
     }
@@ -1084,9 +1085,9 @@ export default function PinballTower() {
     ctx.save();
     ctx.translate(0, -cameraYRef.current);
 
-    // 3. b1.png 배경 이미지 (맨 위 영역에만)
+    // 3. b1.webp 배경 이미지 (맨 위 영역에만)
     if (bgLoaded && bgImageRef.current) {
-      // b1.png를 월드 좌표 0 ~ SKY_HEIGHT 영역에 그림
+      // b1.webp를 월드 좌표 0 ~ SKY_HEIGHT 영역에 그림
       ctx.drawImage(bgImageRef.current, 0, 0, CANVAS_WIDTH, SKY_HEIGHT);
 
       // 이미지와 배경 사이 자연스러운 전환 (테마별 색상)
@@ -1114,27 +1115,24 @@ export default function PinballTower() {
       const screenY = ember.y - cameraYRef.current;
       if (screenY < -30 || screenY > CANVAS_HEIGHT + 30) return;
 
-      // 기본 알파 (수명 기반)
       const lifeAlpha = ember.life / ember.maxLife;
-
-      // 깊이 기반 알파 (아래쪽일수록 더 진하게, 0.4 ~ 1.0)
       const depthRatio = ember.y / emberWorldHeight;
       const depthAlpha = 0.4 + depthRatio * 0.6;
-
-      // 최종 알파
       const finalAlpha = lifeAlpha * depthAlpha;
+      const size = ember.size * lifeAlpha;
 
-      // 깊이에 따라 글로우 강도도 증가
-      const glowIntensity = 10 + depthRatio * 20;
-
+      // 글로우 효과 (shadowBlur 대신 큰 반투명 원으로 대체 - 성능 개선)
+      ctx.globalAlpha = finalAlpha * 0.3;
       ctx.beginPath();
-      ctx.arc(ember.x, ember.y, ember.size * lifeAlpha, 0, Math.PI * 2);
+      ctx.arc(ember.x, ember.y, size * 2.5, 0, Math.PI * 2);
       ctx.fillStyle = ember.color;
-      ctx.globalAlpha = finalAlpha;
-      ctx.shadowColor = ember.color;
-      ctx.shadowBlur = glowIntensity;
       ctx.fill();
-      ctx.shadowBlur = 0;
+
+      // 코어
+      ctx.globalAlpha = finalAlpha;
+      ctx.beginPath();
+      ctx.arc(ember.x, ember.y, size, 0, Math.PI * 2);
+      ctx.fill();
       ctx.globalAlpha = 1;
     });
 
@@ -1293,7 +1291,7 @@ export default function PinballTower() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // 시작 화면: b1.png
+      // 시작 화면: b1.webp
       if (bgLoaded && bgImageRef.current) {
         ctx.drawImage(bgImageRef.current, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       } else {
@@ -1817,6 +1815,11 @@ export default function PinballTower() {
 
         </div>
       )}
+
+      {/* 모바일 중간 광고 */}
+      <div className="d-block d-lg-none my-3">
+        <AdBanner slot="8616653628" />
+      </div>
 
       {/* 전체 보상 테이블 - 항상 표시 */}
       <RewardTable />

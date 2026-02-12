@@ -1,3 +1,5 @@
+const isDev = process.env.NODE_ENV === 'development';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Netlify CDN 캐시 무효화를 위해 standalone 모드 필수
@@ -10,6 +12,8 @@ const nextConfig = {
 
   // 이미지 최적화
   images: {
+    // dev 모드에서 이미지 최적화 끄기 (CPU 부하 방지)
+    unoptimized: isDev,
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000, // 1년
     deviceSizes: [640, 750, 828, 1080, 1200],

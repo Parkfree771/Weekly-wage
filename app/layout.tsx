@@ -3,6 +3,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ConsentModal from '@/components/auth/ConsentModal';
+import AdLayout from '@/components/ads/AdLayout';
 
 import ConsoleFilter from '@/components/ConsoleFilter';
 import ImagePreloader from '@/components/ImagePreloader';
@@ -103,9 +104,9 @@ export default function RootLayout({
           <ConsoleFilter />
           <AuthProvider>
             <Navbar />
-            <main style={{ minHeight: 'calc(100vh - 200px)' }}>
+            <AdLayout>
               {children}
-            </main>
+            </AdLayout>
             <Footer />
             <ConsentModal />
           </AuthProvider>

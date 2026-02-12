@@ -20,6 +20,15 @@ let lastLatestCacheKey = '';
 let pendingRequest: Promise<{ history: HistoryData; latest: LatestPrices }> | null = null;
 
 /**
+ * 타임아웃이 있는 fetch (기본 15초)
+ */
+function fetchWithTimeout(url: string, timeoutMs: number = 15000): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timeoutId));
+}
+
+/**
  * 한국 시간(KST) 정보 가져오기
  */
 function getKSTInfo(): { date: string; hour: number; minute: number } {
@@ -118,14 +127,14 @@ export async function fetchPriceData(): Promise<{ history: HistoryData; latest: 
 
       // 캐시 키를 URL 쿼리 파라미터로 전달 → CDN이 URL별로 캐시
       if (needHistory) {
-        promises.push(fetch(`/api/price-data/history?k=${historyCacheKey}`).then(res => {
+        promises.push(fetchWithTimeout(`/api/price-data/history?k=${historyCacheKey}`).then(res => {
           if (!res.ok) throw new Error('Failed to fetch history');
           return res.json();
         }));
       }
 
       if (needLatest) {
-        promises.push(fetch(`/api/price-data/latest?k=${latestCacheKey}`).then(res => {
+        promises.push(fetchWithTimeout(`/api/price-data/latest?k=${latestCacheKey}`).then(res => {
           if (!res.ok) throw new Error('Failed to fetch latest');
           return res.json();
         }));

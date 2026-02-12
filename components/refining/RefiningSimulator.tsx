@@ -26,7 +26,8 @@ import {
   type EquipmentAPIResponse
 } from '../../lib/equipmentParser';
 import { saveRefiningResult, RefiningResult } from '../../lib/supabase';
-import RefiningStats from './RefiningStats';
+import dynamic from 'next/dynamic';
+const RefiningStats = dynamic(() => import('./RefiningStats'), { ssr: false });
 
 type Equipment = EquipmentType;
 

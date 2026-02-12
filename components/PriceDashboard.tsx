@@ -148,28 +148,24 @@ export default function PriceDashboard() {
   useEffect(() => {
     const fetchPrices = async () => {
       try {
-        const { getItemPriceHistory } = await import('@/lib/price-history-client');
+        const { getMultipleItemPriceHistory } = await import('@/lib/price-history-client');
+        const itemIds = DASHBOARD_ITEMS.map(item => item.id);
+        const allHistory = await getMultipleItemPriceHistory(itemIds, 30);
         const priceMap: Record<string, PriceData> = {};
 
-        await Promise.all(
-          DASHBOARD_ITEMS.map(async (item) => {
-            try {
-              const history = await getItemPriceHistory(item.id, 30);
-              if (history.length > 0) {
-                const currentPrice = history[history.length - 1]?.price || 0;
-                const previousPrice = history.length >= 2
-                  ? history[history.length - 2]?.price || currentPrice
-                  : currentPrice;
-                const change = previousPrice > 0
-                  ? ((currentPrice - previousPrice) / previousPrice) * 100
-                  : 0;
-                priceMap[item.id] = { current: currentPrice, previous: previousPrice, change };
-              }
-            } catch (err) {
-              console.error(`Failed to fetch price for ${item.id}:`, err);
-            }
-          })
-        );
+        for (const item of DASHBOARD_ITEMS) {
+          const history = allHistory[item.id] || [];
+          if (history.length > 0) {
+            const currentPrice = history[history.length - 1]?.price || 0;
+            const previousPrice = history.length >= 2
+              ? history[history.length - 2]?.price || currentPrice
+              : currentPrice;
+            const change = previousPrice > 0
+              ? ((currentPrice - previousPrice) / previousPrice) * 100
+              : 0;
+            priceMap[item.id] = { current: currentPrice, previous: previousPrice, change };
+          }
+        }
 
         setPrices(priceMap);
         const now = new Date();

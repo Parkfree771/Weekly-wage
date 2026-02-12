@@ -5,8 +5,14 @@ import { Container, Row, Col, Card } from 'react-bootstrap';
 import RefiningCalculator from '@/components/refining/RefiningCalculator';
 import RefiningSimulator from '@/components/refining/RefiningSimulator';
 import AdvancedRefiningSimulator from '@/components/refining/AdvancedRefiningSimulator';
-import RefiningStats from '@/components/refining/RefiningStats';
+import dynamic from 'next/dynamic';
+import AdBanner from '@/components/ads/AdBanner';
 import styles from './refining.module.css';
+
+const RefiningStats = dynamic(() => import('@/components/refining/RefiningStats'), {
+  ssr: false,
+  loading: () => <div style={{ minHeight: '200px' }} />,
+});
 
 // 3개 탭으로 통합: 평균 시뮬 / 일반 재련 / 상급 재련
 type RefiningMode = 'average' | 'normal' | 'advanced';
@@ -80,6 +86,11 @@ export default function RefiningPage() {
               {mode === 'advanced' && (
                 <AdvancedRefiningSimulator modeSelector={ModeSelector} />
               )}
+            </div>
+
+            {/* 모바일 중간 광고 */}
+            <div className="d-block d-lg-none my-3">
+              <AdBanner slot="8616653628" />
             </div>
 
             {/* 통계 - 실제 시뮬(일반/상급)일 때만 표시 */}

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
+import AdBanner from '@/components/ads/AdBanner';
 import styles from './weekly-gold.module.css';
 
 // Dynamic imports로 코드 분할 (CLS 방지를 위해 최소 높이 지정)
@@ -162,6 +163,11 @@ export default function WeeklyGoldPage() {
                     </Card>
                   </Col>
                 </Row>
+              </div>
+
+              {/* 모바일 중간 광고 */}
+              <div className="d-block d-lg-none my-3">
+                <AdBanner slot="8616653628" />
               </div>
 
               {/* 더보기 효율 계산기 섹션 */}
