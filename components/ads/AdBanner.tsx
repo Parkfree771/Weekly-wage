@@ -44,7 +44,7 @@ export default function AdBanner({ slot, className }: AdBannerProps) {
   if (!isDev && hidden) return null;
 
   return (
-    <div ref={containerRef} className={`ad-banner-container ${className || ''}`} style={{ maxHeight: '50px' }}>
+    <div ref={containerRef} className={`ad-banner-container ${className || ''}`} style={{ maxHeight: '60px', overflow: 'hidden' }}>
       {isDev ? (
         <div style={{
           width: '100%',

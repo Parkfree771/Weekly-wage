@@ -42,6 +42,11 @@ export default function Home() {
           <PriceComparisonStats />
         </PriceChartProvider>
 
+        {/* 모바일 중간 광고 */}
+        <div className="d-block d-lg-none my-3">
+          <AdBanner slot="8616653628" />
+        </div>
+
         {/* 문의하기 & 업데이트 내역 */}
         <Row className="g-3 mt-3">
           <Col md={6}>
