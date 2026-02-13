@@ -5,7 +5,6 @@ import NextImage from 'next/image';
 import styles from '@/app/hell-sim/hell-sim.module.css';
 import { saveHellSimResult } from '@/lib/supabase';
 import { fetchPriceData } from '@/lib/price-history-client';
-import AdBanner from '@/components/ads/AdBanner';
 import {
   HELL_BOX_REWARDS_DATA,
   NARAK_BOX_REWARDS_DATA,
@@ -1815,11 +1814,6 @@ export default function PinballTower() {
 
         </div>
       )}
-
-      {/* 모바일 광고 - 보상 테이블 위 */}
-      <div className="d-block d-lg-none my-3">
-        <AdBanner slot="8616653628" />
-      </div>
 
       {/* 전체 보상 테이블 - 항상 표시 */}
       <RewardTable />

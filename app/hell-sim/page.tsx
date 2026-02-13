@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Container, Row, Col } from 'react-bootstrap';
 import styles from './hell-sim.module.css';
 import { getHellSimTotalCount } from '@/lib/supabase';
+import AdBanner from '@/components/ads/AdBanner';
 const PinballTower = dynamic(
   () => import('@/components/pinball/PinballTower'),
   { ssr: false }
@@ -38,6 +39,11 @@ export default function HellSimPage() {
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 공을 떨어뜨려 지하 100층까지 도달하세요
               </p>
+            </div>
+
+            {/* 모바일 광고 */}
+            <div className="d-block d-lg-none my-3">
+              <AdBanner slot="8616653628" />
             </div>
 
             {/* 게임 */}
