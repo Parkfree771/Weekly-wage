@@ -1968,11 +1968,9 @@ function RewardTable() {
     if (name === '파괴석/수호석') {
       const [v1, v2] = parseDualValue(rawVal);
       const mapping = PRICE_ITEM_MAP[name];
-      const raw1 = (prices[mapping.id] || 0);
-      const raw2 = mapping.id2 ? (prices[mapping.id2] || 0) : 0;
-      const unit1 = raw1 / mapping.bundle;
-      const unit2 = mapping.id2 && mapping.bundle2 ? raw2 / mapping.bundle2 : 0;
-      return `파괴석 ${v1.toLocaleString()}개 × ${fmtPrice(unit1)}G(${fmtPrice(raw1)}G/${mapping.bundle}개) + 수호석 ${v2.toLocaleString()}개 × ${fmtPrice(unit2)}G(${fmtPrice(raw2)}G/${mapping.bundle2}개)`;
+      const unit1 = getRewardUnitPrice(mapping.id, mapping.bundle, prices, mapping.fallbackId, mapping.fallbackBundle);
+      const unit2 = mapping.id2 && mapping.bundle2 ? getRewardUnitPrice(mapping.id2, mapping.bundle2, prices, mapping.fallbackId2, mapping.fallbackBundle2) : 0;
+      return `파괴석 결정 ${v1.toLocaleString()}개 × ${fmtPrice(unit1)}G + 수호석 결정 ${v2.toLocaleString()}개 × ${fmtPrice(unit2)}G`;
     }
     if (name === '재련 보조' || name === '재련보조') {
       const [v1, v2] = parseDualValue(rawVal);
@@ -1983,12 +1981,12 @@ function RewardTable() {
     }
     if (name === '돌파석') {
       const mapping = PRICE_ITEM_MAP[name];
-      const unitPrice = (prices[mapping.id] || 0) / mapping.bundle;
+      const unitPrice = getRewardUnitPrice(mapping.id, mapping.bundle, prices, mapping.fallbackId, mapping.fallbackBundle);
       return `${rawVal}개 × ${fmtPrice(unitPrice)}G/개 (시세)`;
     }
     if (name === '융화재료') {
       const mapping = PRICE_ITEM_MAP[name];
-      const unitPrice = (prices[mapping.id] || 0) / mapping.bundle;
+      const unitPrice = getRewardUnitPrice(mapping.id, mapping.bundle, prices, mapping.fallbackId, mapping.fallbackBundle);
       return `${rawVal}개 × ${fmtPrice(unitPrice)}G/개 (시세)`;
     }
     return rawVal;

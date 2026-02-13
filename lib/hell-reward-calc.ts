@@ -27,11 +27,11 @@ export const NARAK_BOX_REWARDS_DATA: Record<string, string[]> = {
   '운명의 돌': ['35', '60', '75', '90', '135', '180', '270', '360', '500', '750', '1,200'],
 };
 
-// JSON 시세 아이템 매핑
-export const PRICE_ITEM_MAP: Record<string, { id: string; bundle: number; id2?: string; bundle2?: number }> = {
-  '파괴석/수호석': { id: '66102006', bundle: 100, id2: '66102106', bundle2: 100 },
-  '돌파석': { id: '66110225', bundle: 1 },
-  '융화재료': { id: '6861012', bundle: 1 },
+// JSON 시세 아이템 매핑 (계승 재료 ID 사용, fallback은 일반 재료 × 5 환산)
+export const PRICE_ITEM_MAP: Record<string, { id: string; bundle: number; fallbackId?: string; fallbackBundle?: number; id2?: string; bundle2?: number; fallbackId2?: string; fallbackBundle2?: number }> = {
+  '파괴석/수호석': { id: '66102007', bundle: 100, fallbackId: '66102006', fallbackBundle: 100, id2: '66102107', bundle2: 100, fallbackId2: '66102106', fallbackBundle2: 100 },
+  '돌파석': { id: '66110226', bundle: 1, fallbackId: '66110225', fallbackBundle: 1 },
+  '융화재료': { id: '6861013', bundle: 1, fallbackId: '6861012', fallbackBundle: 1 },
   '재련 보조': { id: '66111131', bundle: 1, id2: '66111132', bundle2: 1 },
   '재련보조': { id: '66111131', bundle: 1, id2: '66111132', bundle2: 1 },
 };
@@ -105,7 +105,7 @@ export function getUnitPrice(id: string, bundle: number, prices: Record<string, 
 export function calcSpecialRefiningUnitCost(prices: Record<string, number>): number {
   const 파괴석단가 = getUnitPrice('66102007', 100, prices, '66102006', 100);
   const 돌파석단가 = getUnitPrice('66110226', 1, prices, '66110225', 1);
-  const 상비도스단가 = (prices['6861012'] || 0);
+  const 상비도스단가 = getUnitPrice('6861013', 1, prices, '6861012', 1);
   const 파편단가 = (prices['66130143'] || 0) / 3000;
   const 용암단가 = getUnitPrice('66111131', 1, prices);
 
@@ -190,13 +190,13 @@ export function calcBoxRewardGold(
 
   if (mapping.id2 && mapping.bundle2 !== undefined) {
     const [qty1, qty2] = parseDualValue(rawVal);
-    const unitPrice1 = (prices[mapping.id] || 0) / mapping.bundle;
-    const unitPrice2 = (prices[mapping.id2] || 0) / mapping.bundle2;
+    const unitPrice1 = getUnitPrice(mapping.id, mapping.bundle, prices, mapping.fallbackId, mapping.fallbackBundle);
+    const unitPrice2 = getUnitPrice(mapping.id2, mapping.bundle2, prices, mapping.fallbackId2, mapping.fallbackBundle2);
     return Math.floor(qty1 * unitPrice1 + qty2 * unitPrice2);
   }
 
   const qty = parseRewardValue(rawVal);
-  const unitPrice = (prices[mapping.id] || 0) / mapping.bundle;
+  const unitPrice = getUnitPrice(mapping.id, mapping.bundle, prices, mapping.fallbackId, mapping.fallbackBundle);
   return Math.floor(qty * unitPrice);
 }
 

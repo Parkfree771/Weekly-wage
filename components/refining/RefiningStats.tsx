@@ -560,9 +560,6 @@ export default function RefiningStats() {
                       ? '레벨을 선택하세요'
                       : `${selectedLevel}→${selectedLevel + 1} 강화`}
                 </span>
-                {selectedLevel !== null && stats && (
-                  <span className={styles.resultsAvg}>평균 장기백 {stats.jangin.mean}%</span>
-                )}
                 {selectedRange && rangeTotals && rangeTotals.levelsWithData > 0 && (
                   <span className={styles.resultsAvg}>시도 {rangeTotals.attempts.toLocaleString()}회</span>
                 )}
@@ -760,7 +757,7 @@ export default function RefiningStats() {
                 {/* 평균값 기준 재료 소모량 */}
                 {stats.avgMaterials && (
                   <div className={styles.materialsCard}>
-                    <div className={styles.materialsTitle}>평균값 기준 재료 소모량</div>
+                    <div className={styles.materialsTitle}>평균값 기준 재료 소모량 (장기백 {stats.jangin.mean}%)</div>
                     <div className={styles.materialsGrid}>
                       <div className={styles.materialItem}>
                         <span className={styles.materialLabel}>시도 횟수</span>

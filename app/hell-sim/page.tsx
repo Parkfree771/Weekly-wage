@@ -41,11 +41,6 @@ export default function HellSimPage() {
               </p>
             </div>
 
-            {/* 모바일 광고 */}
-            <div className="d-block d-lg-none my-3">
-              <AdBanner slot="8616653628" />
-            </div>
-
             {/* 게임 */}
             <PinballTower />
 
