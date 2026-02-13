@@ -14,6 +14,8 @@ interface AdSidebarProps {
 }
 
 export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) {
+  // 광고 일시 중지 - 라이선스 확인 후 해제
+  return null;
   const adRef = useRef<boolean>(false);
   const containerRef = useRef<HTMLElement>(null);
   const [hidden, setHidden] = useState(false);

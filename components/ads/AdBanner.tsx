@@ -14,6 +14,8 @@ interface AdBannerProps {
 }
 
 export default function AdBanner({ slot, className }: AdBannerProps) {
+  // 광고 일시 중지 - 라이선스 확인 후 해제
+  return null;
   const adRef = useRef<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hidden, setHidden] = useState(false);
