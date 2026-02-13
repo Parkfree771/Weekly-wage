@@ -1713,11 +1713,6 @@ export default function PinballTower() {
         </div>
       </div>
 
-      {/* 모바일 중간 광고 */}
-      <div className="d-block d-lg-none my-3">
-        <AdBanner slot="8616653628" />
-      </div>
-
       {/* 최종 상자 보상 - 전체 너비 */}
       {gameEnded && finalBoxes.length > 0 && (
         <div className={styles.rewardFullWidth}>
@@ -1820,6 +1815,11 @@ export default function PinballTower() {
 
         </div>
       )}
+
+      {/* 모바일 광고 - 보상 테이블 위 */}
+      <div className="d-block d-lg-none my-3">
+        <AdBanner slot="8616653628" />
+      </div>
 
       {/* 전체 보상 테이블 - 항상 표시 */}
       <RewardTable />

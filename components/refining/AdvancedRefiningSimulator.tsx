@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Form, Button } from 'react-bootstrap';
-import { useSearchHistory } from '@/lib/useSearchHistory';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
 import styles from './RefiningSimulator.module.css';
@@ -29,9 +27,7 @@ import {
 } from '../../lib/advancedRefiningData';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import {
-  parseEquipmentData,
   type Equipment as EquipmentType,
-  type EquipmentAPIResponse
 } from '../../lib/equipmentParser';
 import { saveAdvancedRefiningResult, AdvancedRefiningResult } from '../../lib/supabase';
 
@@ -57,7 +53,9 @@ interface StageStats {
 
 interface AdvancedRefiningSimulatorProps {
   onSearchComplete?: (searched: boolean) => void;
-  modeSelector?: React.ReactNode;
+  equipments?: Equipment[];
+  searched?: boolean;
+  characterInfo?: { name: string; itemLevel: string; image?: string } | null;
 }
 
 interface AttemptResult {
@@ -97,37 +95,22 @@ const gradeLabels: Record<SuccessGrade, string> = {
   super: '대대',
 };
 
-// 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
-const getTodayPriceDate = () => {
-  const now = new Date();
-  return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
-};
-
 const gradeColors: Record<SuccessGrade, string> = {
   success: '#10b981',
   great: '#3b82f6',
   super: '#f59e0b',
 };
 
-export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelector }: AdvancedRefiningSimulatorProps) {
+export default function AdvancedRefiningSimulator({ onSearchComplete, equipments: externalEquipments, searched: externalSearched, characterInfo: externalCharacterInfo }: AdvancedRefiningSimulatorProps) {
   const { theme } = useTheme();
 
-  // 검색 관련 상태
-  const [characterName, setCharacterName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [equipments, setEquipments] = useState<Equipment[]>([]);
-  const [searched, setSearched] = useState(false);
-  const [characterInfo, setCharacterInfo] = useState<{ name: string; itemLevel: string; image?: string } | null>(null);
+  // 상급 재련은 업화 장비만 (계승/에스더 제외)
+  const equipments = (externalEquipments || []).filter(eq => !eq.isSuccession && !eq.isEsther);
+  const searched = externalSearched || false;
+  const characterInfo = externalCharacterInfo || null;
+
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
 
-  // 자동완성
-  const { history, addToHistory, getSuggestions } = useSearchHistory();
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
 
   // 상급재련 상태
@@ -185,6 +168,17 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
   // 거래소 가격
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
 
+  // 골드 합산 포함/제외 체크박스
+  const [goldIncludeMap, setGoldIncludeMap] = useState<Record<string, boolean>>({
+    수호석: true, 파괴석: true, 돌파석: true, 아비도스: true, 운명파편: true, 골드: true,
+    빙하: true, 용암: true,
+    야금술1단: true, 야금술2단: true, 야금술3단: true, 야금술4단: true,
+    재봉술1단: true, 재봉술2단: true, 재봉술3단: true, 재봉술4단: true,
+  });
+  const toggleGoldInclude = (key: string) => {
+    setGoldIncludeMap(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   // 애니메이션
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -197,6 +191,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
     normalTurn: { useBreath: false, useBook: false },
     ancestorTurn: { useBreath: false, useBook: false },
     enhancedAncestorTurn: { useBreath: false, useBook: false },
+    speed: 1000,
   });
   // 최신 상태 참조용 ref (stale closure 방지)
   const latestStateRef = useRef({
@@ -235,113 +230,13 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
     }
   }, [attemptHistory]);
 
-  // 캐릭터 검색
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!characterName.trim()) {
-      setError('캐릭터명을 입력해주세요.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(characterName.trim())}`);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('캐릭터를 찾을 수 없습니다.');
-        }
-        throw new Error('캐릭터 정보를 가져오는데 실패했습니다.');
-      }
-
-      const data = await response.json();
-
-      if (!data.equipment || !Array.isArray(data.equipment)) {
-        throw new Error('장비 정보를 찾을 수 없습니다.');
-      }
-
-      const parsedEquipments = parseEquipmentData(data.equipment as EquipmentAPIResponse[]);
-      // 업화 장비만 필터링 (상급 재련은 업화 장비에서만 가능)
-      const filteredEquipments = parsedEquipments.filter(eq => !eq.isSuccession && !eq.isEsther);
-
-      if (filteredEquipments.length === 0) {
-        throw new Error('상급 재련 가능한 장비가 없습니다. (업화 장비만 가능)');
-      }
-
-      // 캐릭터 정보 저장
-      if (data.profile) {
-        setCharacterInfo({
-          name: data.profile.CharacterName || characterName,
-          itemLevel: data.profile.ItemAvgLevel || '알 수 없음',
-          image: data.profile.CharacterImage || undefined
-        });
-      }
-
-      setEquipments(filteredEquipments);
-      addToHistory(characterName.trim());
-      setShowSuggestions(false);
-      setSearched(true);
-      onSearchComplete?.(true);
+  // 외부 장비 데이터 변경 시 초기화
+  useEffect(() => {
+    if (equipments.length > 0) {
       setSelectedEquipment(null);
       resetSimulation();
-    } catch (error: any) {
-      setError(error.message || '예상치 못한 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
     }
-  };
-
-  const handleInputChange = (value: string) => {
-    setCharacterName(value);
-    if (error) setError(null);
-    if (value.trim()) {
-      const matches = getSuggestions(value);
-      setSuggestions(matches);
-      setShowSuggestions(matches.length > 0);
-    } else {
-      setSuggestions(history);
-      setShowSuggestions(history.length > 0);
-    }
-    setSelectedIndex(-1);
-  };
-
-  const handleSelectSuggestion = (name: string) => {
-    setCharacterName(name);
-    setShowSuggestions(false);
-    setSuggestions([]);
-    inputRef.current?.focus();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showSuggestions || suggestions.length === 0) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
-    } else if (e.key === 'Enter' && selectedIndex >= 0) {
-      e.preventDefault();
-      handleSelectSuggestion(suggestions[selectedIndex]);
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false);
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node) &&
-        inputRef.current && !inputRef.current.contains(e.target as Node)
-      ) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [externalEquipments]);
 
   const handleSelectEquipment = (equipment: Equipment) => {
     setSelectedEquipment(equipment);
@@ -424,8 +319,6 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
       console.error('[상급재련 통계] selectedEquipment가 없습니다!');
       return;
     }
-
-    console.log('[상급재련 통계] saveStageCompletion 호출:', { toLevel, stats });
 
     const isWeapon = selectedEquipment.type === 'weapon';
     const equipmentName = isWeapon ? '업화 무기' : '업화 방어구';
@@ -761,13 +654,9 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
       // 중복 저장 방지: 장비명-시작레벨-도착레벨 조합으로 체크
       const saveKey = `${selectedEquipment.name}-${stats.startLevel}-${newMilestone}`;
 
-      console.log('[상급재련 통계] 마일스톤 도달:', { saveKey, alreadySaved: savedMilestonesRef.current.has(saveKey) });
-
       if (!savedMilestonesRef.current.has(saveKey)) {
         // 저장 전에 키 등록 (중복 방지)
         savedMilestonesRef.current.add(saveKey);
-
-        console.log('[상급재련 통계] 저장 실행:', stats.startLevel, '→', newMilestone, stats);
 
         // 현재 stats를 복사하여 저장
         const statsToSave: StageStats = {
@@ -837,10 +726,15 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
 
     setAttemptHistory(prev => [...prev.slice(-49), result]);
 
+    // 자동모드일 때는 속도에 맞게 잠금 시간 단축
+    const animDelay = isAutoMode
+      ? Math.min(autoSettings.speed * 0.4, 300)
+      : 300;
+
     setTimeout(() => {
       setIsAnimating(false);
       processingRef.current = false;
-    }, 300);
+    }, animDelay);
   };
 
   // 목표 레벨 자동 계산 (현재 레벨 기준으로 다음 10단위)
@@ -899,7 +793,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
         setUseBook(as.normalTurn.useBook);
       }
 
-      // 0.5초마다 재련 시도
+      // 설정 속도에 따라 재련 시도
       autoIntervalRef.current = setInterval(() => {
         const state = latestStateRef.current;
 
@@ -935,7 +829,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
             attemptRefiningRef.current();
           }, 50);
         }
-      }, 700);
+      }, autoSettings.speed);
 
       return () => {
         if (autoIntervalRef.current) {
@@ -944,7 +838,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
         }
       };
     }
-  }, [isAutoMode, selectedEquipment, autoTargetLevel]);
+  }, [isAutoMode, selectedEquipment, autoTargetLevel, autoSettings.speed]);
 
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {
@@ -986,83 +880,27 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
   };
 
   const getTotalGoldCost = () => {
-    let total = accumulatedCost.골드;
-    total += getMaterialGoldCost('수호석', accumulatedCost.수호석);
-    total += getMaterialGoldCost('파괴석', accumulatedCost.파괴석);
-    total += getMaterialGoldCost('돌파석', accumulatedCost.돌파석);
-    total += getMaterialGoldCost('아비도스', accumulatedCost.아비도스);
-    total += getMaterialGoldCost('운명파편', accumulatedCost.운명파편);
-    total += getMaterialGoldCost('빙하', accumulatedCost.빙하);
-    total += getMaterialGoldCost('용암', accumulatedCost.용암);
-    // 장인의 야금술/재봉술 비용 추가
-    total += getMaterialGoldCost('야금술1단', accumulatedCost.야금술1단);
-    total += getMaterialGoldCost('야금술2단', accumulatedCost.야금술2단);
-    total += getMaterialGoldCost('야금술3단', accumulatedCost.야금술3단);
-    total += getMaterialGoldCost('야금술4단', accumulatedCost.야금술4단);
-    total += getMaterialGoldCost('재봉술1단', accumulatedCost.재봉술1단);
-    total += getMaterialGoldCost('재봉술2단', accumulatedCost.재봉술2단);
-    total += getMaterialGoldCost('재봉술3단', accumulatedCost.재봉술3단);
-    total += getMaterialGoldCost('재봉술4단', accumulatedCost.재봉술4단);
+    let total = goldIncludeMap['골드'] ? accumulatedCost.골드 : 0;
+    if (goldIncludeMap['수호석']) total += getMaterialGoldCost('수호석', accumulatedCost.수호석);
+    if (goldIncludeMap['파괴석']) total += getMaterialGoldCost('파괴석', accumulatedCost.파괴석);
+    if (goldIncludeMap['돌파석']) total += getMaterialGoldCost('돌파석', accumulatedCost.돌파석);
+    if (goldIncludeMap['아비도스']) total += getMaterialGoldCost('아비도스', accumulatedCost.아비도스);
+    if (goldIncludeMap['운명파편']) total += getMaterialGoldCost('운명파편', accumulatedCost.운명파편);
+    if (goldIncludeMap['빙하']) total += getMaterialGoldCost('빙하', accumulatedCost.빙하);
+    if (goldIncludeMap['용암']) total += getMaterialGoldCost('용암', accumulatedCost.용암);
+    if (goldIncludeMap['야금술1단']) total += getMaterialGoldCost('야금술1단', accumulatedCost.야금술1단);
+    if (goldIncludeMap['야금술2단']) total += getMaterialGoldCost('야금술2단', accumulatedCost.야금술2단);
+    if (goldIncludeMap['야금술3단']) total += getMaterialGoldCost('야금술3단', accumulatedCost.야금술3단);
+    if (goldIncludeMap['야금술4단']) total += getMaterialGoldCost('야금술4단', accumulatedCost.야금술4단);
+    if (goldIncludeMap['재봉술1단']) total += getMaterialGoldCost('재봉술1단', accumulatedCost.재봉술1단);
+    if (goldIncludeMap['재봉술2단']) total += getMaterialGoldCost('재봉술2단', accumulatedCost.재봉술2단);
+    if (goldIncludeMap['재봉술3단']) total += getMaterialGoldCost('재봉술3단', accumulatedCost.재봉술3단);
+    if (goldIncludeMap['재봉술4단']) total += getMaterialGoldCost('재봉술4단', accumulatedCost.재봉술4단);
     return total;
   };
 
   return (
     <div className={styles.container}>
-      {/* 검색창 */}
-      <Form onSubmit={handleSearch} className="mb-2">
-        <div className={styles.searchWrapper}>
-          <div className={styles.searchInner}>
-            <div className={styles.searchInputGroup}>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <Form.Control
-                  ref={inputRef}
-                  placeholder="캐릭터명을 입력하세요"
-                  value={characterName}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onFocus={() => {
-                    if (history.length > 0 && !characterName.trim()) {
-                      setSuggestions(history);
-                      setShowSuggestions(true);
-                    }
-                  }}
-                  className={styles.searchInput}
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <div ref={suggestionsRef} className={styles.suggestions}>
-                    {suggestions.map((name, idx) => (
-                      <div
-                        key={name}
-                        className={`${styles.suggestionItem} ${idx === selectedIndex ? styles.suggestionItemSelected : ''}`}
-                        onClick={() => handleSelectSuggestion(name)}
-                      >
-                        {name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <Button type="submit" className={styles.searchButton} disabled={isLoading} style={{ backgroundColor: '#6366f1', borderColor: '#6366f1', color: 'white' }}>
-                {isLoading ? '검색중...' : '검색'}
-              </Button>
-            </div>
-          </div>
-        </div>
-        {error && (
-          <div className={styles.errorWrapper}>
-            <div className={styles.errorMessage}>{error}</div>
-          </div>
-        )}
-        <div className={styles.lastUpdated}>
-          <small className={styles.lastUpdatedText}>
-            {getTodayPriceDate()} | 실시간 시세와 차이가 있을 수 있습니다
-          </small>
-        </div>
-      </Form>
-
-      {/* 모드 선택 탭 */}
-      {modeSelector}
-
       {/* 검색 전 빈 상태 */}
       {!searched && (
         <div className={styles.emptyState}>
@@ -1475,6 +1313,26 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                               </div>
                             </div>
 
+                            {/* 속도 설정 */}
+                            <div className={styles.autoDropdownTurnSection}>
+                              <div className={styles.autoDropdownSectionTitle}>강화 속도</div>
+                              <div className={styles.speedButtonGroup}>
+                                {[
+                                  { label: 'x3', value: 333 },
+                                  { label: 'x6', value: 167 },
+                                  { label: 'x9', value: 111 },
+                                ].map((option) => (
+                                  <button
+                                    key={option.value}
+                                    className={`${styles.speedButton} ${autoSettings.speed === option.value ? styles.speedButtonActive : ''}`}
+                                    onClick={() => setAutoSettings({ ...autoSettings, speed: autoSettings.speed === option.value ? 1000 : option.value })}
+                                  >
+                                    {option.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
                             {/* 시작 버튼 */}
                             <button className={styles.autoDropdownStartBtn} onClick={toggleAutoMode}>
                               자동강화 시작
@@ -1504,32 +1362,21 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                       {attemptHistory.map((attempt, index) => (
                         <div
                           key={index}
+                          className={styles.advHistoryItem}
                           style={{
-                            padding: '0.35rem 0.5rem',
-                            borderRadius: '5px',
                             borderLeft: `3px solid ${gradeColors[attempt.grade]}`,
-                            background: 'var(--card-bg)',
-                            marginBottom: '0.2rem',
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)' }}>#{attempt.attemptNumber}</span>
-                            <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <div className={styles.advHistoryRow}>
+                            <span className={styles.advHistoryNum}>#{attempt.attemptNumber}</span>
+                            <span className={styles.advHistoryType}>
                               {attempt.isBonusTurn ? '선조' : '일반'}
                             </span>
-                            <span style={{
-                              marginLeft: 'auto',
-                              fontSize: '0.6rem',
-                              fontWeight: 700,
-                              padding: '0.1rem 0.3rem',
-                              borderRadius: '3px',
-                              background: gradeColors[attempt.grade],
-                              color: 'white',
-                            }}>
+                            <span className={styles.advHistoryGrade} style={{ background: gradeColors[attempt.grade] }}>
                               {gradeLabels[attempt.grade]}
                             </span>
                           </div>
-                          <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', marginTop: '0.15rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          <div className={styles.advHistoryDetail}>
                             <span>+{attempt.exp} EXP → Lv.{attempt.level}</span>
                             {attempt.card && <span style={{ color: '#fbbf24', fontWeight: 600 }}>{attempt.card}</span>}
                             {attempt.isFree && <span style={{ color: '#10b981', fontWeight: 600 }}>무료</span>}
@@ -1566,43 +1413,48 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                 <div className={styles.totalCostContainer}>
                   <div className={styles.totalMaterialsList}>
                     {accumulatedCost.수호석 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('수호석')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['수호석']} onChange={() => toggleGoldInclude('수호석')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/destiny-guardian-stone5.webp" alt="수호석" width={28} height={28} />
                         <span className={styles.materialName}>수호석</span>
                         <span className={styles.materialAmount}>{accumulatedCost.수호석.toLocaleString()}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('수호석', accumulatedCost.수호석).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['수호석'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('수호석', accumulatedCost.수호석).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.파괴석 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('파괴석')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['파괴석']} onChange={() => toggleGoldInclude('파괴석')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/destiny-destruction-stone5.webp" alt="파괴석" width={28} height={28} />
                         <span className={styles.materialName}>파괴석</span>
                         <span className={styles.materialAmount}>{accumulatedCost.파괴석.toLocaleString()}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('파괴석', accumulatedCost.파괴석).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['파괴석'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('파괴석', accumulatedCost.파괴석).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.돌파석 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('돌파석')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['돌파석']} onChange={() => toggleGoldInclude('돌파석')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/destiny-breakthrough-stone5.webp" alt="돌파석" width={28} height={28} />
                         <span className={styles.materialName}>돌파석</span>
                         <span className={styles.materialAmount}>{accumulatedCost.돌파석.toLocaleString()}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('돌파석', accumulatedCost.돌파석).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['돌파석'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('돌파석', accumulatedCost.돌파석).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.아비도스 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('아비도스')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['아비도스']} onChange={() => toggleGoldInclude('아비도스')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/abidos-fusion5.webp?v=3" alt="아비도스" width={28} height={28} />
                         <span className={styles.materialName}>아비도스</span>
                         <span className={styles.materialAmount}>{accumulatedCost.아비도스.toLocaleString()}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('아비도스', accumulatedCost.아비도스).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['아비도스'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('아비도스', accumulatedCost.아비도스).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.운명파편 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('운명파편')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['운명파편']} onChange={() => toggleGoldInclude('운명파편')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/destiny-shard-bag-large5.webp" alt="운명파편" width={28} height={28} />
                         <span className={styles.materialName}>운명파편</span>
                         <span className={styles.materialAmount}>{accumulatedCost.운명파편.toLocaleString()}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('운명파편', accumulatedCost.운명파편).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['운명파편'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('운명파편', accumulatedCost.운명파편).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.실링 > 0 && (
@@ -1614,91 +1466,102 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, modeSelect
                       </div>
                     )}
                     {accumulatedCost.빙하 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('빙하')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['빙하']} onChange={() => toggleGoldInclude('빙하')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/breath-glacier5.webp" alt="빙하" width={28} height={28} />
                         <span className={styles.materialName}>빙하의 숨결</span>
                         <span className={styles.materialAmount}>{accumulatedCost.빙하.toLocaleString()}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('빙하', accumulatedCost.빙하).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['빙하'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('빙하', accumulatedCost.빙하).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.용암 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('용암')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['용암']} onChange={() => toggleGoldInclude('용암')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/breath-lava5.webp" alt="용암" width={28} height={28} />
                         <span className={styles.materialName}>용암의 숨결</span>
                         <span className={styles.materialAmount}>{accumulatedCost.용암.toLocaleString()}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('용암', accumulatedCost.용암).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['용암'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('용암', accumulatedCost.용암).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.야금술1단 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('야금술1단')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['야금술1단']} onChange={() => toggleGoldInclude('야금술1단')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/master-metallurgy-1-5.webp" alt="장인의 야금술 1단계" width={28} height={28} />
                         <span className={styles.materialName}>장인의 야금술 1단계</span>
                         <span className={styles.materialAmount}>{accumulatedCost.야금술1단}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('야금술1단', accumulatedCost.야금술1단).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['야금술1단'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('야금술1단', accumulatedCost.야금술1단).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.야금술2단 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('야금술2단')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['야금술2단']} onChange={() => toggleGoldInclude('야금술2단')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/master-metallurgy-2-5.webp" alt="장인의 야금술 2단계" width={28} height={28} />
                         <span className={styles.materialName}>장인의 야금술 2단계</span>
                         <span className={styles.materialAmount}>{accumulatedCost.야금술2단}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('야금술2단', accumulatedCost.야금술2단).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['야금술2단'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('야금술2단', accumulatedCost.야금술2단).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.야금술3단 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('야금술3단')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['야금술3단']} onChange={() => toggleGoldInclude('야금술3단')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/master-metallurgy-3-5.webp" alt="장인의 야금술 3단계" width={28} height={28} />
                         <span className={styles.materialName}>장인의 야금술 3단계</span>
                         <span className={styles.materialAmount}>{accumulatedCost.야금술3단}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('야금술3단', accumulatedCost.야금술3단).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['야금술3단'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('야금술3단', accumulatedCost.야금술3단).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.야금술4단 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('야금술4단')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['야금술4단']} onChange={() => toggleGoldInclude('야금술4단')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/master-metallurgy-4-5.webp" alt="장인의 야금술 4단계" width={28} height={28} />
                         <span className={styles.materialName}>장인의 야금술 4단계</span>
                         <span className={styles.materialAmount}>{accumulatedCost.야금술4단}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('야금술4단', accumulatedCost.야금술4단).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['야금술4단'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('야금술4단', accumulatedCost.야금술4단).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.재봉술1단 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('재봉술1단')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['재봉술1단']} onChange={() => toggleGoldInclude('재봉술1단')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/master-tailoring-1-5.webp" alt="장인의 재봉술 1단계" width={28} height={28} />
                         <span className={styles.materialName}>장인의 재봉술 1단계</span>
                         <span className={styles.materialAmount}>{accumulatedCost.재봉술1단}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('재봉술1단', accumulatedCost.재봉술1단).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['재봉술1단'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('재봉술1단', accumulatedCost.재봉술1단).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.재봉술2단 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('재봉술2단')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['재봉술2단']} onChange={() => toggleGoldInclude('재봉술2단')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/master-tailoring-2-5.webp" alt="장인의 재봉술 2단계" width={28} height={28} />
                         <span className={styles.materialName}>장인의 재봉술 2단계</span>
                         <span className={styles.materialAmount}>{accumulatedCost.재봉술2단}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('재봉술2단', accumulatedCost.재봉술2단).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['재봉술2단'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('재봉술2단', accumulatedCost.재봉술2단).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.재봉술3단 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('재봉술3단')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['재봉술3단']} onChange={() => toggleGoldInclude('재봉술3단')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/master-tailoring-3-5.webp" alt="장인의 재봉술 3단계" width={28} height={28} />
                         <span className={styles.materialName}>장인의 재봉술 3단계</span>
                         <span className={styles.materialAmount}>{accumulatedCost.재봉술3단}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('재봉술3단', accumulatedCost.재봉술3단).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['재봉술3단'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('재봉술3단', accumulatedCost.재봉술3단).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.재봉술4단 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('재봉술4단')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['재봉술4단']} onChange={() => toggleGoldInclude('재봉술4단')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/master-tailoring-4-5.webp" alt="장인의 재봉술 4단계" width={28} height={28} />
                         <span className={styles.materialName}>장인의 재봉술 4단계</span>
                         <span className={styles.materialAmount}>{accumulatedCost.재봉술4단}</span>
-                        <span className={styles.materialGold}>{getMaterialGoldCost('재봉술4단', accumulatedCost.재봉술4단).toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['재봉술4단'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('재봉술4단', accumulatedCost.재봉술4단).toLocaleString()}G</span>
                       </div>
                     )}
                     {accumulatedCost.골드 > 0 && (
-                      <div className={styles.totalMaterialItem}>
+                      <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('골드')}>
+                        <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['골드']} onChange={() => toggleGoldInclude('골드')} onClick={(e) => e.stopPropagation()} />
                         <Image src="/gold.webp" alt="골드" width={28} height={28} />
                         <span className={styles.materialName}>강화 골드</span>
                         <span></span>
-                        <span className={styles.materialGold}>{accumulatedCost.골드.toLocaleString()}G</span>
+                        <span className={`${styles.materialGold} ${!goldIncludeMap['골드'] ? styles.materialGoldExcluded : ''}`}>{accumulatedCost.골드.toLocaleString()}G</span>
                       </div>
                     )}
                   </div>

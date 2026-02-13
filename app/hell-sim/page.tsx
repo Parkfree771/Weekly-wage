@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { Container, Row, Col } from 'react-bootstrap';
 import styles from './hell-sim.module.css';
 import { getHellSimTotalCount } from '@/lib/supabase';
-
 const PinballTower = dynamic(
   () => import('@/components/pinball/PinballTower'),
   { ssr: false }

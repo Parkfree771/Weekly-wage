@@ -559,7 +559,7 @@ span.equipmentName,
 }
 
 .equipmentNameMobile {
-  font-size: 0.7rem;
+  font-size: 0.8rem !important;
 }
 
 span.equipmentGrade,

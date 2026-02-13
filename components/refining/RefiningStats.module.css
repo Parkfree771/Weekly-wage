@@ -720,6 +720,150 @@
   color: #a855f7;
 }
 
+/* ========================================
+   구간 합산
+   ======================================== */
+
+.rangeSection {
+  padding: 1rem 1.5rem;
+  background-color: var(--card-body-bg-stone);
+  border-bottom: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.rangeSectionTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.6rem;
+}
+
+.rangeButtons {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.rangeBtn {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  background-color: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rangeBtn:hover {
+  border-color: var(--text-muted);
+  transform: translateY(-1px);
+}
+
+.rangeBtnActiveWeapon {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.rangeBtnActiveArmor {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+/* 구간 합산 결과 */
+.rangeResultsSection {
+  margin-bottom: 1rem;
+}
+
+.rangeWarning {
+  padding: 0.6rem 1rem;
+  margin-bottom: 0.75rem;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f59e0b;
+  text-align: center;
+}
+
+.rangeCheckbox {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: #6366f1;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.materialItemClickable {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.materialItemClickable:hover {
+  background-color: var(--card-body-bg-blue);
+}
+
+.materialGoldExcluded {
+  text-decoration: line-through;
+  opacity: 0.4;
+}
+
+/* 구간 합산 시도 횟수 행 */
+.rangeAttemptsRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 구간 합산 재료 그리드 */
+.rangeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.rangeGridItem {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.rangeGridMul,
+.rangeGridEq {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.rangeGridGold {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
 /* 중간 화면 대응 */
 @media (max-width: 1400px) and (min-width: 901px) {
   .statsContainer {
@@ -911,6 +1055,50 @@
     text-align: center;
   }
 
+  /* 구간 합산 모바일 900px */
+  .rangeSection {
+    padding: 0.75rem;
+  }
+
+  .rangeSectionTitle {
+    font-size: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .rangeBtn {
+    padding: 0.45rem 0.8rem;
+    font-size: 0.8rem;
+    border-radius: 8px;
+  }
+
+  .rangeCheckbox {
+    width: 13px;
+    height: 13px;
+  }
+
+  .rangeGrid {
+    gap: 0.4rem;
+  }
+
+  .rangeGridItem {
+    padding: 0.4rem 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .rangeGridMul,
+  .rangeGridEq {
+    font-size: 0.8rem;
+  }
+
+  .rangeGridGold {
+    font-size: 0.85rem;
+  }
+
+  .rangeWarning {
+    font-size: 0.75rem;
+    padding: 0.5rem;
+  }
+
   .filterArea {
     flex-wrap: nowrap;
     padding: 0.6rem;
@@ -1038,6 +1226,65 @@
 
   .advancedLevelBtn {
     min-width: 50px;
+  }
+
+  /* 구간 합산 모바일 500px */
+  .rangeSection {
+    padding: 0.5rem;
+  }
+
+  .rangeSectionTitle {
+    font-size: 0.7rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .rangeBtn {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.7rem;
+    border-radius: 6px;
+    border-width: 1.5px;
+  }
+
+  .rangeCheckbox {
+    width: 12px;
+    height: 12px;
+  }
+
+  .rangeAttemptsRow {
+    padding: 0.4rem 0.75rem;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .rangeGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .rangeGridItem {
+    padding: 0.35rem 0.4rem;
+    gap: 0.2rem;
+  }
+
+  .rangeGridItem img {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .rangeGridMul,
+  .rangeGridEq {
+    font-size: 0.7rem;
+  }
+
+  .rangeGridGold {
+    font-size: 0.75rem;
+  }
+
+  .rangeWarning {
+    font-size: 0.7rem;
+    padding: 0.4rem;
+    margin-bottom: 0.5rem;
   }
 
   .filterArea {

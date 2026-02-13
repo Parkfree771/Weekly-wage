@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Form, Button, InputGroup, Row, Col, Card, Badge, ButtonGroup } from 'react-bootstrap';
-import { useSearchHistory } from '@/lib/useSearchHistory';
+import { useState, useEffect } from 'react';
+import { Form, Row, Col, Card, Badge } from 'react-bootstrap';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
 import { getAverageTries, getSuccessionAverageTries } from '../../lib/refiningSimulationData';
@@ -24,10 +23,8 @@ import {
   type AdvancedRefiningOptions as NewAdvancedRefiningOptions
 } from '../../lib/advancedRefiningData';
 import {
-  parseEquipmentData,
   getGradeColor,
   type Equipment as EquipmentType,
-  type EquipmentAPIResponse
 } from '../../lib/equipmentParser';
 
 // 장비 정보는 이제 equipmentParser에서 import
@@ -157,32 +154,23 @@ type RefiningMode = 'normal' | 'succession';
 
 type RefiningCalculatorProps = {
   onSearchComplete?: (searched: boolean) => void;
-  modeSelector?: React.ReactNode;
+  equipments?: Equipment[];
+  searched?: boolean;
+  characterInfo?: { name: string; itemLevel: string; image?: string } | null;
 };
 
-// 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
-const getTodayPriceDate = () => {
-  const now = new Date();
-  return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
-};
-
-export default function RefiningCalculator({ onSearchComplete, modeSelector }: RefiningCalculatorProps) {
+export default function RefiningCalculator({
+  onSearchComplete,
+  equipments: externalEquipments,
+  searched: externalSearched,
+  characterInfo: externalCharacterInfo,
+}: RefiningCalculatorProps) {
   const { theme } = useTheme();
-  // 평균 시뮬에서는 업화/전율 장비 각각 따로 계산 (장비별 isSuccession 기반)
-  const [characterName, setCharacterName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [equipments, setEquipments] = useState<Equipment[]>([]);
-  const [searched, setSearched] = useState(false);
-  const [characterInfo, setCharacterInfo] = useState<{ name: string; itemLevel: string; image?: string } | null>(null);
 
-  // 자동완성 관련 상태
-  const { history, addToHistory, getSuggestions } = useSearchHistory();
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
+  // Props에서 전달받은 검색 결과
+  const equipments = externalEquipments || [];
+  const searched = externalSearched || false;
+  const characterInfo = externalCharacterInfo || null;
 
   // 모바일 감지
   const [isMobile, setIsMobile] = useState(false);
@@ -279,6 +267,61 @@ export default function RefiningCalculator({ onSearchComplete, modeSelector }: R
   });
 
   const [materials, setMaterials] = useState<Materials | null>(null);
+
+  // 장비 데이터가 변경되면 (새 검색) 상태 초기화
+  useEffect(() => {
+    if (equipments.length > 0) {
+      // 목표 레벨 초기화 (사용자가 선택하기 전까지 null)
+      const initialTargets: Record<string, { normal: number | null, advanced: number | null }> = {};
+      equipments.forEach(eq => {
+        initialTargets[eq.name] = { normal: null, advanced: null };
+      });
+      setTargetLevels(initialTargets);
+
+      // 재료 옵션 및 귀속 상태 초기화
+      setMaterialOptions({
+        glacierBreath: { enabled: false, isBound: false },
+        lavaBreath: { enabled: false, isBound: false },
+        tailoring: { enabled: false, isBound: false },
+        tailoring1518: { enabled: false, isBound: false },
+        tailoring1920: { enabled: false, isBound: false },
+        metallurgy: { enabled: false, isBound: false },
+        metallurgy1518: { enabled: false, isBound: false },
+        metallurgy1920: { enabled: false, isBound: false },
+      });
+      setAdvancedMaterialOptions({
+        armorNormalBreath: { enabled: false, isBound: false },
+        armorBonusBreath: { enabled: false, isBound: false },
+        armorNormalBook1: { enabled: false, isBound: false },
+        armorBonusBook1: { enabled: false, isBound: false },
+        armorNormalBook2: { enabled: false, isBound: false },
+        armorBonusBook2: { enabled: false, isBound: false },
+        armorNormalBook3: { enabled: false, isBound: false },
+        armorBonusBook3: { enabled: false, isBound: false },
+        armorNormalBook4: { enabled: false, isBound: false },
+        armorBonusBook4: { enabled: false, isBound: false },
+        weaponNormalBreath: { enabled: false, isBound: false },
+        weaponBonusBreath: { enabled: false, isBound: false },
+        weaponNormalBook1: { enabled: false, isBound: false },
+        weaponBonusBook1: { enabled: false, isBound: false },
+        weaponNormalBook2: { enabled: false, isBound: false },
+        weaponBonusBook2: { enabled: false, isBound: false },
+        weaponNormalBook3: { enabled: false, isBound: false },
+        weaponBonusBook3: { enabled: false, isBound: false },
+        weaponNormalBook4: { enabled: false, isBound: false },
+        weaponBonusBook4: { enabled: false, isBound: false },
+      });
+      setBoundMaterials({
+        '수호석': true,
+        '파괴석': true,
+        '돌파석': true,
+        '운명파편': true,
+        '아비도스': false,
+      });
+      setSelectedArmorBulkLevel({ normal: null, advanced: null });
+      setSelectedWeaponBulkLevel({ normal: null, advanced: null });
+    }
+  }, [equipments]);
 
   // 재료량 계산 로직 (useEffect로 분리)
   useEffect(() => {
@@ -486,222 +529,6 @@ export default function RefiningCalculator({ onSearchComplete, modeSelector }: R
 
     fetchMarketPrices();
   }, []);
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!characterName.trim()) {
-      setError('캐릭터명을 입력해주세요.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // 로스트아크 API 호출
-      const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(characterName.trim())}`);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('캐릭터를 찾을 수 없습니다. 캐릭터명을 정확히 입력해주세요.');
-        }
-        throw new Error('캐릭터 정보를 가져오는데 실패했습니다.');
-      }
-
-      const data = await response.json();
-
-      // 장비 정보 파싱
-      if (!data.equipment || !Array.isArray(data.equipment)) {
-        throw new Error('장비 정보를 찾을 수 없습니다.');
-      }
-
-      const parsedEquipments = parseEquipmentData(data.equipment as EquipmentAPIResponse[]);
-
-      if (parsedEquipments.length === 0) {
-        throw new Error('1640 레벨(+11) 이상의 장비가 없습니다.');
-      }
-
-      setEquipments(parsedEquipments);
-
-      // 목표 레벨 초기화 (사용자가 선택하기 전까지 null)
-      const initialTargets: Record<string, { normal: number | null, advanced: number | null }> = {};
-      parsedEquipments.forEach(eq => {
-        initialTargets[eq.name] = { normal: null, advanced: null };
-      });
-      setTargetLevels(initialTargets);
-
-      // 캐릭터 정보 저장 (프로필에서 가져옴)
-      if (data.profile) {
-        setCharacterInfo({
-          name: data.profile.CharacterName || characterName,
-          itemLevel: data.profile.ItemAvgLevel || '알 수 없음',
-          image: data.profile.CharacterImage || undefined
-        });
-      }
-
-      // 재료 옵션 및 귀속 상태 초기화
-      setMaterialOptions({
-        glacierBreath: { enabled: false, isBound: false },
-        lavaBreath: { enabled: false, isBound: false },
-        tailoring: { enabled: false, isBound: false },
-        tailoring1518: { enabled: false, isBound: false },
-        tailoring1920: { enabled: false, isBound: false },
-        metallurgy: { enabled: false, isBound: false },
-        metallurgy1518: { enabled: false, isBound: false },
-        metallurgy1920: { enabled: false, isBound: false },
-      });
-      setAdvancedMaterialOptions({
-        armorNormalBreath: { enabled: false, isBound: false },
-        armorBonusBreath: { enabled: false, isBound: false },
-        armorNormalBook1: { enabled: false, isBound: false },
-        armorBonusBook1: { enabled: false, isBound: false },
-        armorNormalBook2: { enabled: false, isBound: false },
-        armorBonusBook2: { enabled: false, isBound: false },
-        armorNormalBook3: { enabled: false, isBound: false },
-        armorBonusBook3: { enabled: false, isBound: false },
-        armorNormalBook4: { enabled: false, isBound: false },
-        armorBonusBook4: { enabled: false, isBound: false },
-        weaponNormalBreath: { enabled: false, isBound: false },
-        weaponBonusBreath: { enabled: false, isBound: false },
-        weaponNormalBook1: { enabled: false, isBound: false },
-        weaponBonusBook1: { enabled: false, isBound: false },
-        weaponNormalBook2: { enabled: false, isBound: false },
-        weaponBonusBook2: { enabled: false, isBound: false },
-        weaponNormalBook3: { enabled: false, isBound: false },
-        weaponBonusBook3: { enabled: false, isBound: false },
-        weaponNormalBook4: { enabled: false, isBound: false },
-        weaponBonusBook4: { enabled: false, isBound: false },
-      });
-      setBoundMaterials({
-        '수호석': true,
-        '파괴석': true,
-        '돌파석': true,
-        '운명파편': true,
-        '아비도스': false,
-      });
-      setSelectedArmorBulkLevel({ normal: null, advanced: null });
-      setSelectedWeaponBulkLevel({ normal: null, advanced: null });
-
-      addToHistory(characterName.trim()); // 검색 성공 시 히스토리에 추가
-      setShowSuggestions(false);
-      setSearched(true);
-      onSearchComplete?.(true);
-    } catch (error: any) {
-      setError(error.message || '예상치 못한 오류가 발생했습니다.');
-      // 에러 발생 시 기존 데이터 유지
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 입력값 변경 시 자동완성 목록 업데이트
-  const handleInputChange = (value: string) => {
-    setCharacterName(value);
-    if (error) setError(null);
-
-    // 입력이 없으면 전체 히스토리 표시, 입력이 있으면 필터링된 결과 표시
-    if (value.trim()) {
-      const matches = getSuggestions(value);
-      setSuggestions(matches);
-      setShowSuggestions(matches.length > 0);
-    } else {
-      setSuggestions(history);
-      setShowSuggestions(history.length > 0);
-    }
-    setSelectedIndex(-1);
-  };
-
-  // 자동완성 항목 선택
-  const handleSelectSuggestion = (name: string) => {
-    setCharacterName(name);
-    setShowSuggestions(false);
-    setSuggestions([]);
-    inputRef.current?.focus();
-  };
-
-  // 키보드 네비게이션
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showSuggestions || suggestions.length === 0) return;
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
-    } else if (e.key === 'Enter' && selectedIndex >= 0) {
-      e.preventDefault();
-      handleSelectSuggestion(suggestions[selectedIndex]);
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false);
-    }
-  };
-
-  // 외부 클릭 시 드롭다운 닫기
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(e.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(e.target as Node)
-      ) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleReset = () => {
-    setCharacterName('');
-    setEquipments([]);
-    setSearched(false);
-    setError(null);
-    setCharacterInfo(null);
-    setTargetLevels({});
-    setMaterialOptions({
-      glacierBreath: { enabled: false, isBound: false },
-      lavaBreath: { enabled: false, isBound: false },
-      tailoring: { enabled: false, isBound: false },
-      tailoring1518: { enabled: false, isBound: false },
-      tailoring1920: { enabled: false, isBound: false },
-      metallurgy: { enabled: false, isBound: false },
-      metallurgy1518: { enabled: false, isBound: false },
-      metallurgy1920: { enabled: false, isBound: false },
-    });
-    setAdvancedMaterialOptions({
-      armorNormalBreath: { enabled: false, isBound: false },
-      armorBonusBreath: { enabled: false, isBound: false },
-      armorNormalBook1: { enabled: false, isBound: false },
-      armorBonusBook1: { enabled: false, isBound: false },
-      armorNormalBook2: { enabled: false, isBound: false },
-      armorBonusBook2: { enabled: false, isBound: false },
-      armorNormalBook3: { enabled: false, isBound: false },
-      armorBonusBook3: { enabled: false, isBound: false },
-      armorNormalBook4: { enabled: false, isBound: false },
-      armorBonusBook4: { enabled: false, isBound: false },
-      weaponNormalBreath: { enabled: false, isBound: false },
-      weaponBonusBreath: { enabled: false, isBound: false },
-      weaponNormalBook1: { enabled: false, isBound: false },
-      weaponBonusBook1: { enabled: false, isBound: false },
-      weaponNormalBook2: { enabled: false, isBound: false },
-      weaponBonusBook2: { enabled: false, isBound: false },
-      weaponNormalBook3: { enabled: false, isBound: false },
-      weaponBonusBook3: { enabled: false, isBound: false },
-      weaponNormalBook4: { enabled: false, isBound: false },
-      weaponBonusBook4: { enabled: false, isBound: false },
-    });
-    setBoundMaterials({
-      '수호석': true,
-      '파괴석': true,
-      '돌파석': true,
-      '운명파편': true,
-      '아비도스': false,
-    });
-    setSelectedArmorBulkLevel({ normal: null, advanced: null });
-    setSelectedWeaponBulkLevel({ normal: null, advanced: null });
-  };
 
   // 계산이 필요한 장비 필터링
   const getEquipmentsToRefine = () => {
@@ -1147,118 +974,6 @@ export default function RefiningCalculator({ onSearchComplete, modeSelector }: R
 
   return (
     <div className={styles.container}>
-      {/* 검색창 */}
-      <Form onSubmit={handleSearch} className="mb-2">
-        <div className={styles.searchWrapper}>
-          <div className={styles.searchInner}>
-            <div className={styles.searchInputGroup}>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <Form.Control
-                  ref={inputRef}
-                  placeholder="캐릭터명을 입력하세요"
-                  value={characterName}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  onFocus={() => {
-                    // 입력이 없으면 전체 히스토리 표시, 입력이 있으면 필터링된 결과 표시
-                    if (characterName.trim()) {
-                      const matches = getSuggestions(characterName);
-                      if (matches.length > 0) {
-                        setSuggestions(matches);
-                        setShowSuggestions(true);
-                      }
-                    } else if (history.length > 0) {
-                      setSuggestions(history);
-                      setShowSuggestions(true);
-                    }
-                  }}
-                  onKeyDown={handleKeyDown}
-                  disabled={isLoading}
-                  className={styles.searchInput}
-                  autoComplete="off"
-                />
-                {/* 자동완성 드롭다운 */}
-                {showSuggestions && suggestions.length > 0 && (
-                  <div
-                    ref={suggestionsRef}
-                    style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      right: 0,
-                      backgroundColor: 'var(--card-bg)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      marginTop: '4px',
-                      boxShadow: 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.15))',
-                      zIndex: 1000,
-                      maxHeight: '200px',
-                      overflowY: 'auto',
-                    }}
-                  >
-                    {suggestions.map((name, index) => (
-                      <div
-                        key={name}
-                        onClick={() => handleSelectSuggestion(name)}
-                        style={{
-                          padding: '10px 14px',
-                          cursor: 'pointer',
-                          backgroundColor: selectedIndex === index ? 'var(--hover-bg, rgba(0,0,0,0.05))' : 'transparent',
-                          color: 'var(--text-primary)',
-                          fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
-                          borderBottom: index < suggestions.length - 1 ? '1px solid var(--border-color)' : 'none',
-                          transition: 'background-color 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          setSelectedIndex(index);
-                          e.currentTarget.style.backgroundColor = 'var(--hover-bg, rgba(0,0,0,0.05))';
-                        }}
-                        onMouseLeave={(e) => {
-                          if (selectedIndex !== index) {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }
-                        }}
-                      >
-                        {name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className={styles.searchButton}
-                style={{ backgroundColor: '#6366f1', borderColor: '#6366f1', color: 'white' }}
-              >
-                {isLoading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    검색 중...
-                  </>
-                ) : (
-                  '검색'
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-        {error && (
-          <div className={styles.errorWrapper}>
-            <div className={`${styles.errorMessage} ${theme === 'dark' ? styles.errorMessageDark : styles.errorMessageLight}`}>
-              {error}
-            </div>
-          </div>
-        )}
-        <div className={styles.lastUpdated}>
-          <small className={styles.lastUpdatedText}>
-            {getTodayPriceDate()} | 실시간 시세와 차이가 있을 수 있습니다
-          </small>
-        </div>
-      </Form>
-
-      {/* 모드 선택 탭 */}
-      {modeSelector}
-
       {/* 장비 정보 및 목표 레벨 설정 */}
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: 'clamp(0.25rem, 2vw, 1rem)', marginTop: 'clamp(1rem, 3vw, 1.5rem)' }}>
         <>
@@ -1422,9 +1137,6 @@ export default function RefiningCalculator({ onSearchComplete, modeSelector }: R
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.15rem' }}>
                               <span className={`${styles.equipmentName} ${isMobile ? styles.equipmentNameMobile : ''}`}>
                                 {eq.name}
-                              </span>
-                              <span className={`${styles.equipmentGrade} ${isMobile ? styles.equipmentGradeMobile : ''}`}>
-                                {eq.grade}
                               </span>
                             </div>
                             <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>

@@ -40,8 +40,6 @@ export interface RefiningResult {
 // 재련 결과 저장 함수
 export async function saveRefiningResult(result: RefiningResult): Promise<boolean> {
   try {
-    console.log('Saving refining result:', JSON.stringify(result, null, 2));
-
     const { data, error } = await supabase
       .from('refining_results')
       .insert([result])
@@ -380,6 +378,16 @@ export interface RefiningStatsSummary {
   median_gold: number;
   median_lava_breath: number;
   median_glacier_breath: number;
+  // 평균값 재료
+  avg_attempts: number | null;
+  avg_destruction_crystal: number | null;
+  avg_guardian_crystal: number | null;
+  avg_great_breakthrough: number | null;
+  avg_advanced_abidos: number | null;
+  avg_fate_fragment: number | null;
+  avg_gold: number | null;
+  avg_lava_breath: number | null;
+  avg_glacier_breath: number | null;
 }
 
 // 집계 테이블에서 통계 조회 (단일 breath_type)
@@ -472,6 +480,19 @@ export async function getRefiningStatsSummaryAll(
       median_glacier_breath: Math.round(data.reduce((sum, d) => sum + (d.median_glacier_breath || 0) * (d.total_count || 0), 0) / totalCount),
     };
 
+    // 가중 평균값 재료
+    const avgMaterials = {
+      avg_attempts: Math.round(data.reduce((sum, d) => sum + (d.avg_attempts || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
+      avg_destruction_crystal: Math.round(data.reduce((sum, d) => sum + (d.avg_destruction_crystal || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
+      avg_guardian_crystal: Math.round(data.reduce((sum, d) => sum + (d.avg_guardian_crystal || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
+      avg_great_breakthrough: Math.round(data.reduce((sum, d) => sum + (d.avg_great_breakthrough || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
+      avg_advanced_abidos: Math.round(data.reduce((sum, d) => sum + (d.avg_advanced_abidos || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
+      avg_fate_fragment: Math.round(data.reduce((sum, d) => sum + (d.avg_fate_fragment || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
+      avg_gold: Math.round(data.reduce((sum, d) => sum + (d.avg_gold || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
+      avg_lava_breath: Math.round(data.reduce((sum, d) => sum + (d.avg_lava_breath || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
+      avg_glacier_breath: Math.round(data.reduce((sum, d) => sum + (d.avg_glacier_breath || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
+    };
+
     return {
       total_count: totalCount,
       jangin_avg: Math.round(weightedAvg * 100) / 100,
@@ -483,6 +504,7 @@ export async function getRefiningStatsSummaryAll(
       jangin_p75: maxCountData.jangin_p75,
       ...histSum,
       ...medianMaterials,
+      ...avgMaterials,
     };
   } catch (err) {
     console.error('Error fetching all refining stats summary:', err);
@@ -585,8 +607,6 @@ export interface AdvancedRefiningResult {
 // 상급재련 결과 저장 함수
 export async function saveAdvancedRefiningResult(result: AdvancedRefiningResult): Promise<boolean> {
   try {
-    console.log('Saving advanced refining result:', JSON.stringify(result, null, 2));
-
     const { data, error } = await supabase
       .from('advanced_refining_results')
       .insert([{
@@ -787,8 +807,6 @@ export interface HellSimResult {
 // 지옥/나락 시뮬 결과 저장 함수
 export async function saveHellSimResult(result: HellSimResult): Promise<boolean> {
   try {
-    console.log('Saving hell sim result:', JSON.stringify(result, null, 2));
-
     const { data, error } = await supabase
       .from('hell_sim_results')
       .insert([{
