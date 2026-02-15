@@ -84,6 +84,14 @@ export default function Home() {
               <Card.Body className="p-3" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
                   <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.15</span>
+                    <span style={{ color: 'var(--text-primary)' }}>패키지 등록 페이지 구성품 추가 및 거래소 시세 연동 적용</span>
+                  </li>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}></span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>패키지 추가해주신 분들께 격한 감사를 표합니다. 운명의 파편은 아이콘이 주머니지만, 주머니 개수가 아닌 파편 총 개수를 입력해주세요.</span>
+                  </li>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.13</span>
                     <span style={{ color: 'var(--text-primary)' }}>재련 시뮬 속도 개선, 재료 선택 버튼 추가</span>
                   </li>

@@ -117,11 +117,40 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     type: 'simple',
     itemId: '6861011',
   },
+  // ── 장인의 야금술/재봉술 ──
+  {
+    id: 'master-metallurgy-3',
+    icon: '/master-metallurgy-3.webp',
+    name: '장인의 야금술 : 3단계',
+    type: 'simple',
+    itemId: '66112715',
+  },
+  {
+    id: 'master-metallurgy-4',
+    icon: '/master-metallurgy-4.webp',
+    name: '장인의 야금술 : 4단계',
+    type: 'simple',
+    itemId: '66112717',
+  },
+  {
+    id: 'master-tailoring-3',
+    icon: '/master-tailoring-3.webp',
+    name: '장인의 재봉술 : 3단계',
+    type: 'simple',
+    itemId: '66112716',
+  },
+  {
+    id: 'master-tailoring-4',
+    icon: '/master-tailoring-4.webp',
+    name: '장인의 재봉술 : 4단계',
+    type: 'simple',
+    itemId: '66112718',
+  },
   // ── 파편 ──
   {
     id: 'destiny-shard',
     icon: '/destiny-shard-bag-large5.webp',
-    name: '운명의 파편 주머니(대)',
+    name: '운명의 파편',
     type: 'simple',
     itemId: '66130143',
   },
