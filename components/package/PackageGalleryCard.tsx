@@ -49,6 +49,14 @@ function getGalleryIconSize(itemId: string): number | undefined {
   return undefined;
 }
 
+// 갤러리 카드 아이콘 밝기 오버라이드 (기본 1.3, CSS filter: brightness)
+const GALLERY_ICON_BRIGHTNESS: Record<string, number> = {
+  '66112715': 1,   // 장인의 야금술 : 3단계
+  '66112717': 1,   // 장인의 야금술 : 4단계
+  '66112716': 1,   // 장인의 재봉술 : 3단계
+  '66112718': 1,   // 장인의 재봉술 : 4단계
+};
+
 // 기존 데이터 대응: 개별 선택 아이콘 → 상자 아이콘 복원
 function getDisplayIcon(icon: string): string {
   if (/gem-(order|chaos)-/.test(icon)) return '/gem-hero.webp';
@@ -215,7 +223,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                   <img
                     src={getDisplayIcon(item.icon)}
                     alt={item.name} className={styles.itemCellIcon}
-                    style={(() => { const s = getGalleryIconSize(item.itemId); return s ? { width: s, height: s } : undefined; })()} />
+                    style={(() => { const s = getGalleryIconSize(item.itemId); const b = GALLERY_ICON_BRIGHTNESS[item.itemId]; return { ...(s ? { width: s, height: s } : {}), ...(b != null ? { filter: `brightness(${b})` } : {}) }; })()} />
                 ) : (
                   <div className={styles.itemCellPlaceholder}>기타</div>
                 )}

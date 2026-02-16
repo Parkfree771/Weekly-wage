@@ -22,6 +22,12 @@ export type Character = {
   lastUpdated: string;
 };
 
+// 원정대 공통 컨텐츠 체크 상태
+export type CommonContentState = {
+  date: string;  // "2026-02-16"
+  checks: { [contentName: string]: boolean };
+};
+
 // 레이드 체크 상태
 export type RaidCheckState = {
   [raidName: string]: boolean[];  // 관문별 체크 상태
@@ -74,6 +80,8 @@ export type UserProfile = {
   mainCharacter?: string;  // 대표 캐릭터 이름
   characters: Character[];  // 선택된 캐릭터 (최대 6개)
   allCharacters?: Character[];  // 전체 원정대 캐릭터 목록
+  // 원정대 공통 컨텐츠
+  commonContent?: CommonContentState;
   // 주간 체크리스트
   weeklyChecklist: WeeklyChecklist;
   lastWeeklyReset?: string;  // 마지막 주간 초기화 시간 (ISO string)

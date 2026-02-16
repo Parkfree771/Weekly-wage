@@ -13,6 +13,7 @@ import {
   Character,
   WeeklyChecklist,
   WeeklyGoldRecord,
+  CommonContentState,
   getTop3RaidGroups,
   getRaidGroupName,
   raidGroupImages,
@@ -50,6 +51,24 @@ function getAllRaidGroups(itemLevel: number) {
   return groups;
 }
 
+// 원정대 공통 컨텐츠 정의
+const COMMON_CONTENTS = [
+  { name: '운수대통 복 주머니', shortName: '복', image: '/lucky-pouch.webp', color: '#e6a817', days: [1, 4, 6, 0], maxChecks: 3 },
+  { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [2, 4, 6, 0] },
+  { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [1, 5, 0] },
+];
+
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+
+// KST 기준 현재 주 시작일(수요일 06시 기준) 및 요일 구하기
+function getKSTWeekInfo() {
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kst = new Date(now.getTime() + kstOffset);
+  const dayOfWeek = kst.getUTCDay();
+  return { weekStart: getCurrentWeekStart(), dayOfWeek };
+}
+
 export default function MyPage() {
   const router = useRouter();
   const { user, userProfile, loading, refreshUserProfile, signInWithGoogle, setNickname: updateNickname } = useAuth();
@@ -58,6 +77,7 @@ export default function MyPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [weeklyChecklist, setWeeklyChecklist] = useState<WeeklyChecklist>({});
   const [weeklyGoldHistory, setWeeklyGoldHistory] = useState<WeeklyGoldRecord[]>([]);
+  const [commonContent, setCommonContent] = useState<CommonContentState>({ date: '', checks: {} });
   const [showAllCharacters, setShowAllCharacters] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -116,6 +136,15 @@ export default function MyPage() {
     setWeeklyChecklist(checklist);
     setWeeklyGoldHistory(goldHistory);
 
+    // 공통 컨텐츠 로드 (주간 초기화 - 수요일 06시 기준)
+    const { weekStart } = getKSTWeekInfo();
+    const saved = userProfile.commonContent;
+    if (saved && saved.date === weekStart) {
+      setCommonContent(saved);
+    } else {
+      setCommonContent({ date: weekStart, checks: {} });
+    }
+
     // 전체 원정대 목록도 로드
     if (userProfile.allCharacters && userProfile.allCharacters.length > 0) {
       setAllSiblings(userProfile.allCharacters);
@@ -148,6 +177,7 @@ export default function MyPage() {
 
       // 2. 초기화
       const resetChecklist = resetWeeklyChecklist(checklist, chars);
+      const resetCommon: CommonContentState = { date: getCurrentWeekStart(), checks: {} };
       const now = new Date().toISOString();
 
       // Firestore 업데이트
@@ -167,11 +197,13 @@ export default function MyPage() {
           await updateDoc(userRef, {
             weeklyChecklist: resetChecklist,
             weeklyGoldHistory: updatedHistory,
+            commonContent: resetCommon,
             lastWeeklyReset: now,
           });
 
           setWeeklyChecklist(resetChecklist);
           setWeeklyGoldHistory(updatedHistory);
+          setCommonContent(resetCommon);
           console.log('[주간 초기화] 완료');
         } catch (error) {
           console.error('[주간 초기화] 실패:', error);
@@ -528,6 +560,39 @@ export default function MyPage() {
     setHasChanges(true);
   };
 
+  // 공통 컨텐츠 토글 (key: "요일번호-컨텐츠명")
+  const toggleCommonContent = (day: number, contentName: string) => {
+    const key = `${day}-${contentName}`;
+    const content = COMMON_CONTENTS.find(c => c.name === contentName);
+
+    setCommonContent(prev => {
+      const currentChecked = prev.checks[key] === true;
+
+      // 체크 해제는 항상 가능
+      if (currentChecked) {
+        return { ...prev, checks: { ...prev.checks, [key]: false } };
+      }
+
+      // maxChecks 제한 체크
+      if (content?.maxChecks) {
+        const checkedCount = Object.entries(prev.checks)
+          .filter(([k, v]) => k.endsWith(`-${contentName}`) && v === true)
+          .length;
+        if (checkedCount >= content.maxChecks) return prev;
+      }
+
+      return { ...prev, checks: { ...prev.checks, [key]: true } };
+    });
+    setHasChanges(true);
+  };
+
+  // 특정 컨텐츠의 현재 체크 수
+  const getContentCheckCount = (contentName: string) => {
+    return Object.entries(commonContent.checks)
+      .filter(([k, v]) => k.endsWith(`-${contentName}`) && v === true)
+      .length;
+  };
+
   // 추가 골드 변경
   const updateAdditionalGold = (charName: string, value: number) => {
     setWeeklyChecklist(prev => {
@@ -658,6 +723,7 @@ export default function MyPage() {
       await updateDoc(userRef, {
         characters,
         weeklyChecklist,
+        commonContent,
       });
 
       setHasChanges(false);
@@ -868,6 +934,62 @@ export default function MyPage() {
             <Spinner animation="border" size="sm" /> 캐릭터 이미지 로딩 중...
           </div>
         )}
+
+        {/* 원정대 공통 컨텐츠 */}
+        {characters.length > 0 && (() => {
+          const { dayOfWeek } = getKSTWeekInfo();
+          // 요일 순서: 월(1) 화(2) 목(4) 금(5) 토(6) 일(0) — 수요일은 컨텐츠 없으므로 제외
+          const dayOrder = [1, 2, 4, 5, 6, 0];
+          const renderDayGroup = (day: number) => {
+            const dayContents = COMMON_CONTENTS.filter(c => c.days.includes(day));
+            const isToday = day === dayOfWeek;
+
+            return (
+              <div key={day} className={`${styles.commonDayGroup} ${isToday ? styles.commonDayToday : ''}`} style={{ flex: dayContents.length }}>
+                <div className={styles.commonDayLabel}>{DAY_LABELS[day]}</div>
+                <div className={styles.commonDayCards}>
+                  {dayContents.map(content => {
+                    const key = `${day}-${content.name}`;
+                    const checked = commonContent.checks[key] === true;
+                    const maxReached = !checked && content.maxChecks != null && getContentCheckCount(content.name) >= content.maxChecks;
+                    return (
+                      <div
+                        key={key}
+                        className={`${styles.commonCard} ${checked ? styles.commonChecked : ''} ${maxReached ? styles.commonDisabled : ''}`}
+                        onClick={() => !maxReached && toggleCommonContent(day, content.name)}
+                      >
+                        <div className={styles.commonCardBg} style={{ background: content.color }}>
+                          <Image
+                            src={content.image}
+                            alt={content.name}
+                            fill
+                            className={styles.raidImage}
+                            unoptimized
+                          />
+                        </div>
+                        <div className={styles.commonCardOverlay} />
+                        <div className={styles.commonCardInfo}>
+                          <span className={styles.commonCardName}>{content.name}</span>
+                          <span className={styles.commonCardShortName}>{content.shortName}</span>
+                        </div>
+                        {checked && <div className={styles.commonCardCheck}>✓</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          };
+
+          return (
+            <div className={styles.commonSection}>
+              <div className={styles.commonHeader}>원정대 공통 컨텐츠</div>
+              <div className={styles.commonRow}>
+                {dayOrder.map(renderDayGroup)}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* 캐릭터 없음 */}
         {characters.length === 0 && (

@@ -1182,6 +1182,233 @@
 }
 
 
+/* ==========================================================================
+   원정대 공통 컨텐츠 섹션
+   ========================================================================== */
+.commonSection {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.commonHeader {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+/* 요일 그룹 행 */
+.commonRow {
+  display: flex;
+  gap: 6px;
+}
+
+
+/* 요일 그룹 (테두리로 묶음) */
+.commonDayGroup {
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.commonDayToday {
+  border-color: #a855f7;
+}
+
+/* 요일 라벨 */
+.commonDayLabel {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 4px 0;
+  background: var(--card-header-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.commonDayToday .commonDayLabel {
+  color: #a855f7;
+}
+
+/* 그룹 내 카드들 */
+.commonDayCards {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+}
+
+/* 공통 컨텐츠 카드 */
+.commonCard {
+  flex: 1;
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.commonCard:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.commonChecked {
+  border-color: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+.commonDisabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.commonDisabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.commonCardBg {
+  position: absolute;
+  inset: 0;
+}
+
+.commonCardOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.75) 100%);
+  z-index: 1;
+}
+
+.commonCardInfo {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 3px;
+  z-index: 2;
+}
+
+.commonCardName {
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+  line-height: 1.2;
+}
+
+.commonCardShortName {
+  display: none;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+  line-height: 1.2;
+}
+
+.commonCardCheck {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background: #22c55e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  z-index: 5;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .commonSection {
+    padding: 10px;
+  }
+
+  .commonRow {
+    gap: 5px;
+  }
+
+  .commonDayGroup {
+    border-radius: 8px;
+  }
+
+  .commonDayLabel {
+    font-size: 10px;
+    padding: 3px 0;
+  }
+
+  .commonDayCards {
+    gap: 2px;
+    padding: 2px;
+  }
+
+  .commonCardName {
+    display: none;
+  }
+
+  .commonCardShortName {
+    display: block;
+  }
+
+  .commonCardCheck {
+    width: 13px;
+    height: 13px;
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .commonRow {
+    gap: 4px;
+  }
+
+  .commonDayGroup {
+    border-radius: 6px;
+    border-width: 1px;
+  }
+
+  .commonDayLabel {
+    font-size: 9px;
+    padding: 2px 0;
+  }
+
+  .commonDayCards {
+    gap: 1px;
+    padding: 2px;
+  }
+
+  .commonCard {
+    border-width: 1.5px;
+    border-radius: 4px;
+  }
+
+  .commonCardInfo {
+    padding: 2px;
+  }
+
+  .commonCardShortName {
+    font-size: 9px;
+  }
+
+  .commonCardCheck {
+    width: 10px;
+    height: 10px;
+    font-size: 7px;
+    top: 1px;
+    right: 1px;
+  }
+}
+
 /* 안내 문구 */
 .notice {
   margin-top: 16px;
