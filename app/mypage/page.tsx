@@ -54,8 +54,8 @@ function getAllRaidGroups(itemLevel: number) {
 // 원정대 공통 컨텐츠 정의
 const COMMON_CONTENTS = [
   { name: '운수대통 복 주머니', shortName: '복', image: '/lucky-pouch.webp', color: '#e6a817', days: [1, 4, 6, 0], maxChecks: 3 },
-  { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [2, 4, 6, 0] },
-  { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [1, 5, 0] },
+  { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0] },
+  { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0] },
 ];
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
