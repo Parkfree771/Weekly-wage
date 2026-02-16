@@ -84,6 +84,10 @@ export default function Home() {
               <Card.Body className="p-3" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
                   <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.16</span>
+                    <span style={{ color: 'var(--text-primary)' }}>마이페이지 카게, 필보, 복주머니 체크 추가</span>
+                  </li>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.15</span>
                     <span style={{ color: 'var(--text-primary)' }}>패키지 등록 페이지 구성품 추가 및 거래소 시세 연동 적용</span>
                   </li>

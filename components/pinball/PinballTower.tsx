@@ -99,7 +99,7 @@ const REWARD_IMAGES: Record<string, string> = {
   '파괴석/수호석': '/vkrhltngh.webp',
   '돌파석': '/top-destiny-breakthrough-stone5.webp',
   '융화재료': '/top-abidos-fusion5.webp',
-  '재련 보조': '/breath-lava5.webp',
+  '재련 보조': '/material-select-box.webp',
   '귀속골드': '/gold.webp',
   '어빌리티스톤 키트': '/djqlfflxltmxhs.webp',
   '팔찌': '/vkfwl.webp',
@@ -108,7 +108,7 @@ const REWARD_IMAGES: Record<string, string> = {
   '젬선택': '/duddndgmlrnl.webp', // 영웅+희귀 혼합 이미지
   '운명의 돌': '/dnsauddmlehf.webp',
   // 나락 상자 보상
-  '재련보조': '/breath-lava5.webp',
+  '재련보조': '/material-select-box.webp',
   '귀속 각인서 랜덤': '/engraving.webp',
   '귀속 보석': '/gem-fear-8.webp',
 };
@@ -1835,6 +1835,10 @@ const PRICE_BASE_MAP: Record<string, { id: string; bundle: number; fallbackId?: 
 // 표시명 매핑
 const DISPLAY_NAMES: Record<string, string> = {
   '융화재료': '상비도스',
+  '재련 보조': '용숨/빙숨',
+  '재련보조': '용숨/빙숨',
+  '파괴석/수호석': '파괴석 결정/수호석 결정',
+  '돌파석': '위대한 운명의 돌파석',
 };
 
 function getDisplayName(key: string): string {
