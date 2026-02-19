@@ -23,6 +23,7 @@ import { db } from './firebase-client';
 import type {
   PackagePost,
   PackagePostCreateData,
+  PackageComment,
   PackageListOptions,
 } from '@/types/package';
 
@@ -38,6 +39,7 @@ export async function createPackagePost(
     ...data,
     viewCount: 0,
     likeCount: 0,
+    commentCount: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -159,5 +161,64 @@ export async function checkPackageLike(
 export async function incrementPackageViewCount(postId: string): Promise<void> {
   await updateDoc(doc(db, COLLECTION, postId), {
     viewCount: increment(1),
+  });
+}
+
+// ─── 댓글 ───
+
+/** 댓글 생성 → 생성된 문서 ID 반환 */
+export async function createPackageComment(
+  postId: string,
+  data: Omit<PackageComment, 'id' | 'createdAt' | 'updatedAt'>,
+): Promise<string> {
+  const commentRef = await addDoc(
+    collection(db, COLLECTION, postId, 'comments'),
+    {
+      ...data,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    },
+  );
+  await updateDoc(doc(db, COLLECTION, postId), {
+    commentCount: increment(1),
+  });
+  return commentRef.id;
+}
+
+/** 댓글 목록 조회 (최신순) */
+export async function getPackageComments(
+  postId: string,
+): Promise<PackageComment[]> {
+  const q = query(
+    collection(db, COLLECTION, postId, 'comments'),
+    orderBy('createdAt', 'desc'),
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((docSnap) => ({
+    id: docSnap.id,
+    ...docSnap.data(),
+  })) as PackageComment[];
+}
+
+/** 댓글 수정 (content만) */
+export async function updatePackageComment(
+  postId: string,
+  commentId: string,
+  content: string,
+): Promise<void> {
+  await updateDoc(doc(db, COLLECTION, postId, 'comments', commentId), {
+    content,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/** 댓글 삭제 */
+export async function deletePackageComment(
+  postId: string,
+  commentId: string,
+): Promise<void> {
+  await deleteDoc(doc(db, COLLECTION, postId, 'comments', commentId));
+  await updateDoc(doc(db, COLLECTION, postId), {
+    commentCount: increment(-1),
   });
 }

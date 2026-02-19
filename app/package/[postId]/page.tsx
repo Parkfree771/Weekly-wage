@@ -20,6 +20,7 @@ import {
   getItemUnitPrice,
 } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
+import CommentSection from '@/components/package/CommentSection';
 import styles from '../package.module.css';
 
 function formatDate(timestamp: any): string {
@@ -41,7 +42,7 @@ export default function PackageDetailPage() {
   const params = useParams();
   const router = useRouter();
   const postId = params.postId as string;
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
   const [post, setPost] = useState<PackagePost | null>(null);
   const [loading, setLoading] = useState(true);
@@ -549,6 +550,19 @@ export default function PackageDetailPage() {
             </div>
           </section>
         </div>
+
+        {/* 댓글 섹션 */}
+        {post && (
+          <CommentSection
+            postId={postId}
+            commentCount={post.commentCount || 0}
+            onCommentCountChange={(delta) =>
+              setPost((prev) =>
+                prev ? { ...prev, commentCount: (prev.commentCount || 0) + delta } : null,
+              )
+            }
+          />
+        )}
 
         {/* 모바일 하단 광고 */}
         <div className="d-block d-md-none my-3">

@@ -41,6 +41,7 @@ export type PackagePost = {
   // 통계
   viewCount: number;
   likeCount: number;
+  commentCount: number;
 
   // 시간
   createdAt: Timestamp | any;
@@ -48,12 +49,24 @@ export type PackagePost = {
 };
 
 /** 게시물 생성 시 전달 데이터 */
-export type PackagePostCreateData = Omit<PackagePost, 'id' | 'viewCount' | 'likeCount' | 'createdAt' | 'updatedAt'>;
+export type PackagePostCreateData = Omit<PackagePost, 'id' | 'viewCount' | 'likeCount' | 'commentCount' | 'createdAt' | 'updatedAt'>;
 
 /** 좋아요 문서 */
 export type PackageLike = {
   uid: string;
   createdAt: Timestamp | any;
+};
+
+/** 댓글 문서 */
+export type PackageComment = {
+  id: string;
+  postId: string;
+  authorUid: string;
+  authorNickname: string;
+  authorPhotoURL: string | null;
+  content: string;
+  createdAt: Timestamp | any;
+  updatedAt: Timestamp | any;
 };
 
 // ─── 갤러리 조회 옵션 ───
