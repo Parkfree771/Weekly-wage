@@ -24,6 +24,8 @@
   background-size: cover;
   background-position: center right;
   min-height: 270px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* 헤더: 제목 + 뱃지 */
@@ -83,7 +85,16 @@
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 0.4rem;
-  flex: 1;
+  flex: 0 0 auto;
+  max-height: 245px; /* 76px × 3행 + gap × 2 */
+  overflow: hidden;
+}
+
+.moreText {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: -0.3rem;
 }
 
 .itemCell {
@@ -378,6 +389,10 @@
     width: 66px;
     height: 66px;
   }
+
+  .itemGrid {
+    max-height: 215px; /* 66px × 3행 + gap × 2 */
+  }
 }
 
 @media (max-width: 576px) {
@@ -405,6 +420,14 @@
   .itemCell {
     width: 44px;
     height: 44px;
+  }
+
+  .itemGrid {
+    max-height: 148px; /* 44px × 3행 + gap × 2 */
+  }
+
+  .moreText {
+    font-size: 0.58rem;
   }
 
   .itemCellIcon {
@@ -444,6 +467,16 @@
 
   .resultValueGold {
     font-size: 0.82rem;
+  }
+
+  .resultRow:has(.resultValueGold) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+  }
+
+  .resultRow:has(.resultValueGold) .resultValueGold::before {
+    content: '= ';
   }
 
   .resultDivider {

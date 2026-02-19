@@ -238,6 +238,9 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
             );
           })}
         </div>
+        {post.items.length > 12 && (
+          <span className={styles.moreText}>...외 {post.items.length}개 아이템</span>
+        )}
 
         <div className={styles.leftMeta}>
           <div className={styles.metaLeft}>

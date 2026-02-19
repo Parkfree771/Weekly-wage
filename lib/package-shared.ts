@@ -266,9 +266,9 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   {
     id: 'ninav-blessing',
     icon: '/slskqm.webp',
-    name: '니나브의 축복',
+    name: '니나브의 축복 (15일)',
     type: 'crystal',
-    crystalPerUnit: 360, // 9900원 = 9900 RC, 9900/27.5 = 360 BC 환산
+    crystalPerUnit: 180, // 4950원 = 9900/2, 4950/27.5 = 180 BC 환산
   },
   // ── 카드팩 ──
   {
@@ -296,59 +296,59 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   {
     id: 'beatrice-blessing',
     icon: '/beatrice-blessing.webp',
-    name: '베아트리스의 축복',
-    type: 'fixed',
-    fixedGold: 0,
+    name: '베아트리스의 축복 (15일)',
+    type: 'crystal',
+    crystalPerUnit: 180, // 4950원 = 9900/2, 4950/27.5 = 180 BC 환산
   },
   {
     id: 'pet-function',
     icon: '/pet-function.webp',
     name: '펫 기능 (15일)',
-    type: 'fixed',
-    fixedGold: 0,
+    type: 'crystal',
+    crystalPerUnit: 60, // 60 블루 크리스탈
   },
   {
     id: 'pet-support',
     icon: '/pet-support.webp',
     name: '펫 지원 효과 (15일)',
-    type: 'fixed',
-    fixedGold: 0,
+    type: 'crystal',
+    crystalPerUnit: 60, // 60 블루 크리스탈
   },
   // ── 기타 ──
   {
     id: 'leap-essence',
     icon: '/leap-essence.webp',
     name: '도약의 정수',
-    type: 'fixed',
-    fixedGold: 0,
+    type: 'crystal',
+    crystalPerUnit: 10, // 1개당 10 블루 크리스탈
   },
   {
     id: 'life-energy',
     icon: '/life-energy.webp',
     name: '중급 생명의 기운',
-    type: 'fixed',
-    fixedGold: 0,
+    type: 'crystal',
+    crystalPerUnit: 23, // 23 블루 크리스탈
   },
   {
     id: 'legendary-cardpack',
     icon: '/legendary-cardpack.webp',
     name: '전설 카드팩',
     type: 'fixed',
-    fixedGold: 0,
+    fixedGold: 8000,
   },
   {
     id: 'legendary-card-select',
     icon: '/legendary-cardpack.webp',
     name: '전설 카드 선택팩',
     type: 'fixed',
-    fixedGold: 0,
+    fixedGold: 16000,
   },
   {
     id: 'battle-item-box',
     icon: '/battle-item-box.webp',
     name: '배틀 아이템 상자',
     type: 'fixed',
-    fixedGold: 0,
+    fixedGold: 82, // 정령 회복약 기준
   },
   // ── 품질 ──
   {
@@ -356,21 +356,21 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     icon: '/weapon-quality.webp',
     name: '무기 품질',
     type: 'fixed',
-    fixedGold: 0,
+    fixedGold: 800,
   },
   {
     id: 'armor-quality',
     icon: '/armor-quality.webp',
     name: '방어구 품질',
     type: 'fixed',
-    fixedGold: 0,
+    fixedGold: 300,
   },
   {
     id: 'quality-confirm',
     icon: '/quality-confirm.webp',
-    name: '무기 품질 확정권',
+    name: '품질 확정권',
     type: 'fixed',
-    fixedGold: 0,
+    fixedGold: 300000, // 30만골
   },
   {
     id: 'shilling',
@@ -384,7 +384,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     icon: '/cerka-core2.webp',
     name: '유물 코어 (선택)',
     type: 'fixed',
-    fixedGold: 0,
+    fixedGold: 300000, // 30만골
   },
   // ── 재화 ──
   {
@@ -462,7 +462,12 @@ export const CRYSTAL_PER_UNIT_FALLBACK: Record<string, number> = {
   'crystal_blue-crystal-input': 1,
   'crystal_pheon': 8.5,
   'crystal_gem-reset-ticket': 100,
-  'crystal_ninav-blessing': 360,
+  'crystal_ninav-blessing': 180,
+  'crystal_beatrice-blessing': 180,
+  'crystal_pet-function': 60,
+  'crystal_pet-support': 60,
+  'crystal_leap-essence': 10,
+  'crystal_life-energy': 23,
 };
 
 // 동적 티켓 ID (fixed 뱃지 숨김용)
