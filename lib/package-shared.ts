@@ -106,7 +106,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   {
     id: 'superior-abidos',
     icon: '/top-abidos-fusion5.webp',
-    name: '상급 아비도스 융화 재료',
+    name: '상비도스',
     type: 'simple',
     itemId: '6861013',
   },
@@ -153,6 +153,21 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     name: '운명의 파편',
     type: 'simple',
     itemId: '66130143',
+  },
+  // ── 운명의 돌 / 어빌리티스톤 키트 ──
+  {
+    id: 'karma-stone',
+    icon: '/dnsauddmlehf.webp',
+    name: '운명의 돌',
+    type: 'fixed',
+    fixedGold: 900,
+  },
+  {
+    id: 'ability-stone-kit',
+    icon: '/djqlfflxltmxhs.webp',
+    name: '어빌리티스톤 키트',
+    type: 'crystal',
+    crystalPerUnit: 76.5, // 9 페온 × 8.5 블크/페온
   },
   // ── 젬 ──
   {
@@ -277,6 +292,100 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     type: 'fixed',
     fixedGold: 50,
   },
+  // ── 축복 / 펫 ──
+  {
+    id: 'beatrice-blessing',
+    icon: '/beatrice-blessing.webp',
+    name: '베아트리스의 축복',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  {
+    id: 'pet-function',
+    icon: '/pet-function.webp',
+    name: '펫 기능 (15일)',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  {
+    id: 'pet-support',
+    icon: '/pet-support.webp',
+    name: '펫 지원 효과 (15일)',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  // ── 기타 ──
+  {
+    id: 'leap-essence',
+    icon: '/leap-essence.webp',
+    name: '도약의 정수',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  {
+    id: 'life-energy',
+    icon: '/life-energy.webp',
+    name: '중급 생명의 기운',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  {
+    id: 'legendary-cardpack',
+    icon: '/legendary-cardpack.webp',
+    name: '전설 카드팩',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  {
+    id: 'legendary-card-select',
+    icon: '/legendary-cardpack.webp',
+    name: '전설 카드 선택팩',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  {
+    id: 'battle-item-box',
+    icon: '/battle-item-box.webp',
+    name: '배틀 아이템 상자',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  // ── 품질 ──
+  {
+    id: 'weapon-quality',
+    icon: '/weapon-quality.webp',
+    name: '무기 품질',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  {
+    id: 'armor-quality',
+    icon: '/armor-quality.webp',
+    name: '방어구 품질',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  {
+    id: 'quality-confirm',
+    icon: '/quality-confirm.webp',
+    name: '무기 품질 확정권',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  {
+    id: 'shilling',
+    icon: '/shilling.webp',
+    name: '실링',
+    type: 'fixed',
+    fixedGold: 0,
+  },
+  {
+    id: 'relic-core',
+    icon: '/cerka-core2.webp',
+    name: '유물 코어 (선택)',
+    type: 'fixed',
+    fixedGold: 0,
+  },
   // ── 재화 ──
   {
     id: 'gold-input',
@@ -318,12 +427,27 @@ export const ICON_SIZE_CATALOG: Record<string, number> = {
   'hell-heroic-ticket': 110,
   'pheon': 110,
   'gem-choice': 110, 'gem-hero': 110,
+  'weapon-quality': 110, 'armor-quality': 110, 'karma-stone': 110,
+  'shilling': 65, 'blue-crystal-input': 65,
+  'master-tailoring-3': 65, 'master-tailoring-4': 65,
+  'master-metallurgy-3': 65, 'master-metallurgy-4': 65,
+  'bracelet-reconversion': 65,
+  'relic-core': 65,
+  'cardpack-legendary': 65, 'cardpack-rare': 65, 'cardpack-all': 65,
+  'ninav-blessing': 65, 'engraving-choice': 65,
+  'destruction-crystal': 65, 'guardian-crystal': 65, 'crystal-choice': 65,
+  'great-breakthrough': 65, 'breakthrough-stone': 65,
+  'lava-breath': 65, 'glacier-breath': 65, 'breath-choice': 65,
+  'superior-abidos': 65, 'abidos-fusion': 65,
 };
-export const ICON_SIZE_BOX: Record<string, number> = {
-  'gold-input': 24,
-  'hell-heroic-ticket': 42,
-  'pheon': 42,
-  'gem-choice': 42, 'gem-hero': 42,
+export const ICON_SIZE_BOX: Record<string, number> = {};
+
+// 아이콘 위치 오버라이드 (object-position)
+export const ICON_POSITION: Record<string, string> = {};
+
+// 아이콘 위치 미세 조정 (transform)
+export const ICON_SCALE: Record<string, string> = {
+  'weapon-quality': 'translateY(-7px) scale(0.93)',
 };
 
 // 묶음 단위 (API 가격이 이 수량 기준)

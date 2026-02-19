@@ -13,6 +13,8 @@ import {
   TEMPLATES_MAP,
   ICON_SIZE_CATALOG,
   ICON_SIZE_BOX,
+  ICON_POSITION,
+  ICON_SCALE,
   DYNAMIC_TICKET_IDS,
   formatNumber,
   getItemUnitPrice,
@@ -427,7 +429,10 @@ export default function PackageRegisterPage() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={template.icon} alt={template.name}
                               className={styles.packageBoxItemIcon}
-                              style={ICON_SIZE_BOX[template.id] ? { width: ICON_SIZE_BOX[template.id], height: ICON_SIZE_BOX[template.id] } : undefined}
+                              style={{
+                                ...(ICON_SIZE_BOX[template.id] ? { width: ICON_SIZE_BOX[template.id], height: ICON_SIZE_BOX[template.id] } : {}),
+                                ...(ICON_POSITION[template.id] ? { objectFit: 'cover' as const, objectPosition: ICON_POSITION[template.id] } : {}),
+                              }}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             <span className={styles.packageBoxItemName}>{template.name}</span>
                             {template.type === 'gold' ? (
@@ -620,11 +625,17 @@ export default function PackageRegisterPage() {
                   <button key={template.id} type="button"
                     className={`${styles.availableItem} ${isAdded ? styles.availableItemAdded : ''}`}
                     onClick={() => handleAddItem(template.id)}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={template.icon} alt={template.name}
-                      className={styles.availableItemIcon}
-                      style={ICON_SIZE_CATALOG[template.id] ? { width: ICON_SIZE_CATALOG[template.id], height: ICON_SIZE_CATALOG[template.id] } : undefined}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    <div className={styles.availableItemIconWrap}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={template.icon} alt={template.name}
+                        className={styles.availableItemIcon}
+                        style={{
+                          ...(ICON_SIZE_CATALOG[template.id] ? { maxWidth: ICON_SIZE_CATALOG[template.id], maxHeight: ICON_SIZE_CATALOG[template.id] } : {}),
+                          ...(ICON_POSITION[template.id] ? { objectFit: 'cover' as const, objectPosition: ICON_POSITION[template.id] } : {}),
+                          ...(ICON_SCALE[template.id] ? { transform: ICON_SCALE[template.id] } : {}),
+                        }}
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    </div>
                     <span className={styles.availableItemName}>{template.name}</span>
                   </button>
                 );
