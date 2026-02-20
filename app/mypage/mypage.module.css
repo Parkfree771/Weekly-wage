@@ -468,8 +468,9 @@
 }
 
 .raidChecked {
-  border-color: #22c55e;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+  border-color: #4ade80;
+  border-width: 3px;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
 }
 
 .raidImage {
@@ -521,18 +522,18 @@
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 20px;
-  height: 20px;
-  background: #22c55e;
+  width: 22px;
+  height: 22px;
+  background: linear-gradient(135deg, #4ade80, #22c55e);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 12px;
-  font-weight: bold;
-  z-index: 3;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  font-size: 13px;
+  font-weight: 900;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 8px rgba(34, 197, 94, 0.4);
 }
 
 .raidEmpty {
@@ -911,17 +912,26 @@
 /* 체크됨 */
 .dailyChecked {
   border-color: #4ade80;
-  background: rgba(34, 197, 94, 0.4);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.5), rgba(16, 185, 129, 0.35));
   color: #fff;
-  box-shadow: 0 0 5px rgba(34, 197, 94, 0.4);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5), inset 0 0 6px rgba(34, 197, 94, 0.15);
+  transform: scale(1.04);
 }
 
 /* 휴게 사용 체크 (금색) */
 .dailyBonusChecked {
   border-color: #fbbf24;
-  background: rgba(251, 191, 36, 0.4);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.5), rgba(245, 158, 11, 0.35));
   color: #fff;
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.55), inset 0 0 6px rgba(251, 191, 36, 0.15);
+  transform: scale(1.04);
+}
+
+/* 체크마크 */
+.dailyCheckMark {
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 /* 놓친 날 */
@@ -1395,7 +1405,8 @@
   }
 
   .dailyLabel {
-    font-size: 11px;
+    font-size: 9px;
+    white-space: nowrap;
   }
 
   .dailyDayBtn {
@@ -1556,8 +1567,9 @@
 }
 
 .commonChecked {
-  border-color: #22c55e;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+  border-color: #4ade80;
+  border-width: 3px;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
 }
 
 .commonDisabled {
@@ -1612,18 +1624,18 @@
   position: absolute;
   top: 2px;
   right: 2px;
-  width: 16px;
-  height: 16px;
-  background: #22c55e;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #4ade80, #22c55e);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 10px;
-  font-weight: bold;
-  z-index: 5;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  font-size: 11px;
+  font-weight: 900;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 8px rgba(34, 197, 94, 0.4);
 }
 
 /* 반응형 */

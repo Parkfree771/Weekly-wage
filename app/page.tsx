@@ -49,11 +49,11 @@ export default function Home() {
 
         {/* 문의하기 & 업데이트 내역 */}
         <Row className="g-3 mt-3">
-          <Col md={6}>
+          <Col md={6} className="order-2 order-md-1">
             <InquiryBoard />
           </Col>
 
-          <Col md={6}>
+          <Col md={6} className="order-1 order-md-2">
             <Card className="h-100" style={{ overflow: 'hidden' }}>
               <Card.Header
                 className="py-2"

@@ -1469,7 +1469,10 @@ export default function MyPage() {
                                 className={`${styles.dailyDayBtn} ${checked ? (bonusFlags[idx] ? styles.dailyBonusChecked : styles.dailyChecked) : ''}`}
                                 onClick={() => toggleDailyCheck(char.name, field, idx)}
                               >
-                                <span className={styles.dailyDayText}>{day}</span>
+                                {checked
+                                  ? <span className={styles.dailyCheckMark}>✓</span>
+                                  : <span className={styles.dailyDayText}>{day}</span>
+                                }
                               </button>
                             );
                           })}
