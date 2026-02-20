@@ -29,6 +29,7 @@ export default function InquiryBoard() {
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
 
   const userEmail = user?.email || null;
+  const admin = isAdmin(userEmail);
 
   const loadPosts = useCallback(async (p: number) => {
     setLoading(true);
@@ -51,7 +52,7 @@ export default function InquiryBoard() {
   const handlePostClick = (post: InquiryPost) => {
     // 비공개 글 접근 차단
     if ((post as any)._redacted) {
-      alert('비밀글은 작성자와 관리자만 볼 수 있습니다.');
+      alert('비공개 글은 작성자와 관리자만 볼 수 있습니다.');
       return;
     }
     setDetailPostId(post.id);
@@ -104,21 +105,16 @@ export default function InquiryBoard() {
                     className={`${styles.postRow} ${redacted ? styles.postRowRedacted : ''}`}
                     onClick={() => handlePostClick(post)}
                   >
-                    <div className={styles.postLeft}>
-                      {post.isPrivate && <span className={styles.lockIcon}>&#128274;</span>}
-                      <span className={redacted ? styles.postTitleRedacted : styles.postTitle}>
-                        {post.title}
-                      </span>
+                    <span className={redacted ? styles.postTitleRedacted : styles.postTitle}>
+                      {post.title}
                       {post.commentCount > 0 && (
-                        <span className={styles.commentBadge}>[{post.commentCount}]</span>
+                        <span className={styles.commentBadge}>&nbsp;[{post.commentCount}]</span>
                       )}
-                    </div>
-                    <div className={styles.postRight}>
-                      {!redacted && (
-                        <span className={styles.postAuthor}>{post.authorNickname}</span>
-                      )}
-                      <span className={styles.postDate}>{formatShortDate(post.createdAt)}</span>
-                    </div>
+                    </span>
+                    <span className={styles.postAuthor}>
+                      {!redacted && (!post.isPrivate || admin) ? post.authorNickname : ''}
+                    </span>
+                    <span className={styles.postDate}>{formatShortDate(post.createdAt)}</span>
                   </div>
                 );
               })}

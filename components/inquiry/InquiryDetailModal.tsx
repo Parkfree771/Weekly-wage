@@ -8,6 +8,7 @@ import {
   getInquiryComments,
   createInquiryComment,
   deleteInquiryComment,
+  updateInquiryPost,
   deleteInquiryPost,
   isAdmin,
   ADMIN_EMAIL,
@@ -46,6 +47,10 @@ export default function InquiryDetailModal({ postId, onClose, onDeleted }: Props
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editPrivate, setEditPrivate] = useState(false);
 
   const userEmail = user?.email || null;
   const admin = isAdmin(userEmail);
@@ -72,7 +77,34 @@ export default function InquiryDetailModal({ postId, onClose, onDeleted }: Props
   if (!postId) return null;
 
   const canComment = post && (!post.isPrivate || admin || post.authorEmail === userEmail);
+  const canEdit = post && post.authorUid === user?.uid;
   const canDelete = post && (admin || post.authorUid === user?.uid);
+
+  const handleStartEdit = () => {
+    if (!post) return;
+    setEditTitle(post.title);
+    setEditContent(post.content);
+    setEditPrivate(post.isPrivate);
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!post || !editTitle.trim() || !editContent.trim()) return;
+    setSubmitting(true);
+    try {
+      await updateInquiryPost(post.id, {
+        title: editTitle.trim(),
+        content: editContent.trim(),
+        isPrivate: editPrivate,
+      });
+      setPost({ ...post, title: editTitle.trim(), content: editContent.trim(), isPrivate: editPrivate });
+      setEditing(false);
+      onDeleted();
+    } catch (err) {
+      console.error('게시물 수정 실패:', err);
+    }
+    setSubmitting(false);
+  };
 
   const handleAddComment = async () => {
     if (!user || !post || !newComment.trim()) return;
@@ -149,22 +181,80 @@ export default function InquiryDetailModal({ postId, onClose, onDeleted }: Props
                 )}
               </span>
               <span className={styles.detailDate}>{formatDate(post.createdAt)}</span>
-              {post.isPrivate && <span className={styles.privateBadge}>비밀글</span>}
+              {post.isPrivate && <span className={styles.privateBadge}>비공개</span>}
             </div>
 
             {/* 글 내용 */}
-            <div className={styles.detailContent}>
-              {post.content.split('\n').map((line, i) => (
-                <p key={i} style={{ margin: '0.25rem 0' }}>{line || '\u00A0'}</p>
-              ))}
-            </div>
-
-            {canDelete && (
-              <div className="text-end mt-2">
-                <Button variant="outline-danger" size="sm" onClick={handleDeletePost}>
-                  삭제
-                </Button>
+            {editing ? (
+              <div>
+                <Form.Group className="mb-2">
+                  <Form.Control
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    maxLength={50}
+                    disabled={submitting}
+                    style={{ fontSize: '0.88rem' }}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-2">
+                  <Form.Control
+                    as="textarea"
+                    rows={5}
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    maxLength={1000}
+                    disabled={submitting}
+                    style={{ fontSize: '0.88rem' }}
+                  />
+                  <Form.Text className="text-muted">{editContent.length}/1000</Form.Text>
+                </Form.Group>
+                <Form.Check
+                  type="switch"
+                  id="edit-private-toggle"
+                  label="비공개"
+                  checked={editPrivate}
+                  onChange={(e) => setEditPrivate(e.target.checked)}
+                  disabled={submitting}
+                  style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}
+                />
+                <div className="text-end" style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                  <Button variant="secondary" size="sm" onClick={() => setEditing(false)} disabled={submitting}>
+                    취소
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleSaveEdit}
+                    disabled={submitting || !editTitle.trim() || !editContent.trim()}
+                  >
+                    {submitting ? <Spinner animation="border" size="sm" /> : '저장'}
+                  </Button>
+                </div>
               </div>
+            ) : (
+              <>
+                <div className={styles.detailContent}>
+                  {post.content.split('\n').map((line, i) => (
+                    <p key={i} style={{ margin: '0.25rem 0' }}>{line || '\u00A0'}</p>
+                  ))}
+                </div>
+
+                {(canEdit || canDelete) && (
+                  <div className="text-end mt-2" style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                    {canEdit && (
+                      <Button variant="outline-secondary" size="sm" onClick={handleStartEdit}>
+                        수정
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button variant="outline-danger" size="sm" onClick={handleDeletePost}>
+                        삭제
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </>
             )}
 
             {/* 댓글 */}

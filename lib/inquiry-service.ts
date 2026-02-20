@@ -67,7 +67,7 @@ export async function getInquiryPosts(
   const admin = isAdmin(userEmail);
   const filtered = allPosts.map((post) => {
     if (post.isPrivate && !admin && post.authorEmail !== userEmail) {
-      return { ...post, title: '비밀글입니다', content: '', _redacted: true } as any;
+      return { ...post, title: '비공개 글입니다', content: '', _redacted: true } as any;
     }
     return post;
   });
@@ -87,6 +87,18 @@ export async function getInquiryPost(
   const docSnap = await getDoc(doc(db, COLLECTION, postId));
   if (!docSnap.exists()) return null;
   return { id: docSnap.id, ...docSnap.data() } as InquiryPost;
+}
+
+// ─── 게시물 수정 ───
+
+export async function updateInquiryPost(
+  postId: string,
+  data: { title: string; content: string; isPrivate: boolean },
+): Promise<void> {
+  await updateDoc(doc(db, COLLECTION, postId), {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
 }
 
 // ─── 게시물 삭제 ───

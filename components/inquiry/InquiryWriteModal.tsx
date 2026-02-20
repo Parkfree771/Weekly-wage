@@ -74,7 +74,7 @@ export default function InquiryWriteModal({ show, onClose, onCreated }: Props) {
         <Form.Check
           type="switch"
           id="private-toggle"
-          label="비밀글"
+          label="비공개"
           checked={isPrivate}
           onChange={(e) => setIsPrivate(e.target.checked)}
           disabled={submitting}
