@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { Container, Row, Col, Card } from 'react-bootstrap';
-import ContactForm from '@/components/ContactForm';
+import InquiryBoard from '@/components/inquiry/InquiryBoard';
 import PriceDashboard from '@/components/PriceDashboard';
 import AdBanner from '@/components/ads/AdBanner';
 import styles from './page.module.css';
@@ -50,22 +50,7 @@ export default function Home() {
         {/* 문의하기 & 업데이트 내역 */}
         <Row className="g-3 mt-3">
           <Col md={6}>
-            <Card className="h-100" style={{ overflow: 'hidden' }}>
-              <Card.Header
-                className="py-2"
-                style={{
-                  backgroundColor: 'var(--card-header-bg)',
-                  borderBottom: '1px solid var(--border-color)'
-                }}
-              >
-                <h3 style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)', margin: 0 }}>
-                  문의하기
-                </h3>
-              </Card.Header>
-              <Card.Body className="p-0" style={{ overflow: 'hidden' }}>
-                <ContactForm />
-              </Card.Body>
-            </Card>
+            <InquiryBoard />
           </Col>
 
           <Col md={6}>
