@@ -14,6 +14,7 @@ import {
   WeeklyChecklist,
   WeeklyGoldRecord,
   CommonContentState,
+  DailyContentState,
   getTop3RaidGroups,
   getRaidGroupName,
   raidGroupImages,
@@ -59,6 +60,43 @@ const COMMON_CONTENTS = [
 ];
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+const WEEKLY_DAY_LABELS = ['수', '목', '금', '토', '일', '월', '화'];
+
+// 카던 레벨별 라벨 (1730+ 균열, 1640+ 전선, 미만 카던)
+function getChaosDungeonLabel(itemLevel: number): string {
+  if (itemLevel >= 1730) return '1730 균열';
+  if (itemLevel >= 1720) return '1720 전선';
+  if (itemLevel >= 1700) return '1700 전선';
+  if (itemLevel >= 1680) return '1680 전선';
+  if (itemLevel >= 1660) return '1660 전선';
+  if (itemLevel >= 1640) return '1640 전선';
+  return '카던';
+}
+
+// 가토 레벨별 라벨
+function getGuardianRaidLabel(itemLevel: number): string {
+  if (itemLevel >= 1730) return '1730 가토';
+  if (itemLevel >= 1720) return '1720 가토';
+  if (itemLevel >= 1700) return '1700 가토';
+  if (itemLevel >= 1680) return '1680 가토';
+  if (itemLevel >= 1640) return '1640 가토';
+  return '가토';
+}
+// JS dayOfWeek → 주간 인덱스 (수=0 ~ 화=6)
+const WEEKLY_DAY_MAP: Record<number, number> = { 3: 0, 4: 1, 5: 2, 6: 3, 0: 4, 1: 5, 2: 6 };
+
+const EMPTY_DAILY: DailyContentState = { checks: new Array(7).fill(false), restGauge: 0 };
+
+// 현재 휴식게이지 계산 (체크한 날 소모분만 반영, 미완료 누적은 주간 초기화 시)
+function computeCurrentRest(state: DailyContentState): number {
+  let rest = state.restGauge;
+  for (let i = 0; i < 7; i++) {
+    if (state.checks[i]) {
+      if (rest >= 20) rest -= 20;
+    }
+  }
+  return rest;
+}
 
 // KST 기준 현재 주 시작일(수요일 06시 기준) 및 요일 구하기
 function getKSTWeekInfo() {
@@ -115,6 +153,19 @@ export default function MyPage() {
 
   // 난이도 설정 열린 레이드 (캐릭터명-그룹명)
   const [difficultyOpenKey, setDifficultyOpenKey] = useState<string | null>(null);
+
+  // 일일 컨텐츠 펼치기 상태 (localStorage 유지)
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const saved = localStorage.getItem('mypage-expandedCards');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+
+  // 일일 컨텐츠 휴게 설정 열림 (charName-field)
+  const [dailySettingsOpen, setDailySettingsOpen] = useState<string | null>(null);
+
 
   // 닉네임 변경
   const [editingNickname, setEditingNickname] = useState(false);
@@ -236,6 +287,11 @@ export default function MyPage() {
       });
   }, [user, userProfile, refreshUserProfile]);
 
+  // 펼침 상태 localStorage 저장
+  useEffect(() => {
+    try { localStorage.setItem('mypage-expandedCards', JSON.stringify(expandedCards)); } catch {}
+  }, [expandedCards]);
+
   // 로그인 체크 - 로그인 프롬프트를 표시하므로 리다이렉트 불필요
 
   // 창 닫을 때 변경사항 경고
@@ -350,8 +406,8 @@ export default function MyPage() {
       })).sort((a: Character, b: Character) => b.itemLevel - a.itemLevel);
 
       setAllSiblings(chars);
-      // 상위 6개 자동 선택
-      const top6 = new Set(chars.slice(0, 6).map(c => c.name));
+      // 상위 6개 자동 선택 (1640 이상만)
+      const top6 = new Set(chars.filter(c => c.itemLevel >= 1640).slice(0, 6).map(c => c.name));
       setSelectedCharNames(top6);
       setRegisterStep(2);
     } catch (error) {
@@ -543,8 +599,8 @@ export default function MyPage() {
     setHasChanges(true);
   };
 
-  // 낙원/할의 모래시계 토글
-  const toggleExtra = (charName: string, field: 'paradise' | 'sandOfTime') => {
+  // 낙원/할의 모래시계/카던/가토 토글
+  const toggleExtra = (charName: string, field: 'paradise' | 'sandOfTime' | 'chaosDungeon' | 'guardianRaid') => {
     setWeeklyChecklist(prev => {
       const charState = prev[charName] || createEmptyWeeklyState(
         characters.find(c => c.name === charName)?.itemLevel || 0
@@ -554,6 +610,48 @@ export default function MyPage() {
         [charName]: {
           ...charState,
           [field]: !charState[field],
+        },
+      };
+    });
+    setHasChanges(true);
+  };
+
+  // 일일 컨텐츠 (카던/가토) 요일별 토글
+  const toggleDailyCheck = (charName: string, field: 'chaosDungeon' | 'guardianRaid', dayIdx: number) => {
+    setWeeklyChecklist(prev => {
+      const charState = prev[charName] || createEmptyWeeklyState(
+        characters.find(c => c.name === charName)?.itemLevel || 0
+      );
+      const current: DailyContentState = charState[field] && typeof charState[field] === 'object'
+        ? charState[field] as DailyContentState
+        : { checks: new Array(7).fill(false), restGauge: 0 };
+      const newChecks = [...current.checks];
+      newChecks[dayIdx] = !newChecks[dayIdx];
+      return {
+        ...prev,
+        [charName]: {
+          ...charState,
+          [field]: { ...current, checks: newChecks },
+        },
+      };
+    });
+    setHasChanges(true);
+  };
+
+  // 휴게 수동 설정
+  const setRestGauge = (charName: string, field: 'chaosDungeon' | 'guardianRaid', value: number) => {
+    setWeeklyChecklist(prev => {
+      const charState = prev[charName] || createEmptyWeeklyState(
+        characters.find(c => c.name === charName)?.itemLevel || 0
+      );
+      const current: DailyContentState = charState[field] && typeof charState[field] === 'object'
+        ? charState[field] as DailyContentState
+        : { checks: new Array(7).fill(false), restGauge: 0 };
+      return {
+        ...prev,
+        [charName]: {
+          ...charState,
+          [field]: { ...current, restGauge: value },
         },
       };
     });
@@ -827,6 +925,23 @@ export default function MyPage() {
   }
 
   const displayCharacters = showAllCharacters ? characters : characters.slice(0, 6);
+
+  // 데스크톱: 같은 줄 2캐릭 동시 펼침/닫힘
+  const sortedChars = [...displayCharacters].sort((a, b) => b.itemLevel - a.itemLevel);
+  const toggleDailyExpand = (charName: string) => {
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth > 900;
+    setExpandedCards(prev => {
+      const newState = !prev[charName];
+      const next = { ...prev, [charName]: newState };
+      if (isDesktop) {
+        const idx = sortedChars.findIndex(c => c.name === charName);
+        const partnerIdx = idx % 2 === 0 ? idx + 1 : idx - 1;
+        const partner = sortedChars[partnerIdx];
+        if (partner) next[partner.name] = newState;
+      }
+      return next;
+    });
+  };
 
   return (
     <div className={styles.pageWrapper}>
@@ -1214,23 +1329,29 @@ export default function MyPage() {
 
                     {/* 2줄: 모래시계 + 낙원 + 추가골드 */}
                     <div className={styles.itemRow}>
-                      {/* 할의 모래시계 */}
-                      <div
-                        className={`${styles.raidCard} ${charState.sandOfTime ? styles.raidChecked : ''}`}
-                        onClick={() => toggleExtra(char.name, 'sandOfTime')}
-                      >
-                        <Image
-                          src="/gkf.webp"
-                          alt="할의 모래시계"
-                          fill
-                          className={styles.raidImage}
-                        />
-                        <div className={styles.raidOverlay} />
-                        <div className={styles.raidInfo}>
-                          <span className={styles.raidName}>모래시계</span>
+                      {/* 할의 모래시계 (1730 이상) / 빈 슬롯 (미만) */}
+                      {char.itemLevel >= 1730 ? (
+                        <div
+                          className={`${styles.raidCard} ${charState.sandOfTime ? styles.raidChecked : ''}`}
+                          onClick={() => toggleExtra(char.name, 'sandOfTime')}
+                        >
+                          <Image
+                            src="/gkf.webp"
+                            alt="할의 모래시계"
+                            fill
+                            className={styles.raidImage}
+                          />
+                          <div className={styles.raidOverlay} />
+                          <div className={styles.raidInfo}>
+                            <span className={styles.raidName}>모래시계</span>
+                          </div>
+                          {charState.sandOfTime && <div className={styles.raidCheck}>✓</div>}
                         </div>
-                        {charState.sandOfTime && <div className={styles.raidCheck}>✓</div>}
-                      </div>
+                      ) : (
+                        <div className={`${styles.raidCard} ${styles.raidEmpty}`}>
+                          <div className={styles.emptySlot}>-</div>
+                        </div>
+                      )}
 
                       {/* 낙원 */}
                       <div
@@ -1268,6 +1389,104 @@ export default function MyPage() {
                   </div>
                 </div>
 
+                {/* 일일 컨텐츠 (카던/가토) */}
+                {expandedCards[char.name] && (() => {
+                  const renderDaily = (
+                    label: string,
+                    field: 'chaosDungeon' | 'guardianRaid',
+                  ) => {
+                    const state: DailyContentState =
+                      charState[field] && typeof charState[field] === 'object'
+                        ? charState[field] as DailyContentState
+                        : EMPTY_DAILY;
+                    const rest = computeCurrentRest(state);
+                    const fullBars = Math.floor(rest / 20);
+                    const hasHalf = (rest % 20) >= 10;
+
+                    const bonusFlags: boolean[] = [];
+                    let r = state.restGauge;
+                    for (let i = 0; i < 7; i++) {
+                      if (state.checks[i]) {
+                        if (r >= 20) {
+                          bonusFlags.push(true);
+                          r -= 20;
+                        } else {
+                          bonusFlags.push(false);
+                        }
+                      } else {
+                        bonusFlags.push(false);
+                      }
+                    }
+
+                    const settingsKey = `${char.name}-${field}`;
+                    const isSettingsOpen = dailySettingsOpen === settingsKey;
+
+                    return (
+                      <div className={styles.dailyBlock}>
+                        <div className={styles.dailyHeader}>
+                          <span className={styles.dailyLabel}>{label}</span>
+                          <div className={styles.restGauge}>
+                            {[0, 1, 2, 3, 4].map(i => (
+                              <div
+                                key={i}
+                                className={`${styles.restBar} ${i < fullBars ? styles.restFull : ''} ${i === fullBars && hasHalf ? styles.restHalf : ''}`}
+                              />
+                            ))}
+                            <span className={styles.restText}>{rest / 20}</span>
+                          </div>
+                          <button
+                            className={styles.dailyGearBtn}
+                            onClick={() => setDailySettingsOpen(isSettingsOpen ? null : settingsKey)}
+                          >
+                            ⚙
+                          </button>
+                        </div>
+                        {isSettingsOpen && (
+                          <div className={styles.restSetter}>
+                            <span className={styles.restSetterLabel}>휴게 설정</span>
+                            <div className={styles.restSetterBars}>
+                              {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(v => (
+                                <button
+                                  key={v}
+                                  className={`${styles.restSetterBtn} ${state.restGauge === v ? styles.restSetterActive : ''}`}
+                                  onClick={() => {
+                                    setRestGauge(char.name, field, v);
+                                    setDailySettingsOpen(null);
+                                  }}
+                                >
+                                  {v / 20}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className={styles.dailyChecks}>
+                          {WEEKLY_DAY_LABELS.map((day, idx) => {
+                            const checked = state.checks[idx];
+                            return (
+                              <button
+                                key={idx}
+                                className={`${styles.dailyDayBtn} ${checked ? (bonusFlags[idx] ? styles.dailyBonusChecked : styles.dailyChecked) : ''}`}
+                                onClick={() => toggleDailyCheck(char.name, field, idx)}
+                              >
+                                <span className={styles.dailyDayText}>{day}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  };
+
+                  if (char.itemLevel < 1640) return null;
+                  return (
+                    <div className={styles.dailyRow}>
+                      {renderDaily(getChaosDungeonLabel(char.itemLevel), 'chaosDungeon')}
+                      {renderDaily(getGuardianRaidLabel(char.itemLevel), 'guardianRaid')}
+                    </div>
+                  );
+                })()}
+
                 {/* 카드 푸터 */}
                 <div className={styles.cardFooter}>
                   <div className={styles.excludeMoreGold}>
@@ -1275,7 +1494,7 @@ export default function MyPage() {
                       className={styles.moreGoldDropdownBtn}
                       onClick={() => setMoreGoldDropdownChar(moreGoldDropdownChar === char.name ? null : char.name)}
                     >
-                      더보기 비용 설정 {moreGoldDropdownChar === char.name ? '−' : '+'}
+                      더보기 비용 {moreGoldDropdownChar === char.name ? '−' : '+'}
                     </button>
 
                     {/* 더보기 비용 드롭다운 */}
@@ -1310,6 +1529,15 @@ export default function MyPage() {
                       </div>
                     )}
                   </div>
+                  {char.itemLevel >= 1640 && (
+                    <button
+                      className={styles.dailyToggle}
+                      onClick={() => toggleDailyExpand(char.name)}
+                      title="일일 컨텐츠"
+                    >
+                      {expandedCards[char.name] ? '▲' : '▼'}
+                    </button>
+                  )}
                   <div className={styles.charTotalGold}>
                     <span className={styles.goldLabel}>총 획득</span>
                     <span className={styles.goldValue}>{charGold.toLocaleString()}<small>G</small></span>
@@ -1379,7 +1607,8 @@ export default function MyPage() {
               <div className={styles.characterSelectGrid}>
                 {allSiblings.map((char) => {
                   const isSelected = selectedCharNames.has(char.name);
-                  const canSelect = isSelected || selectedCharNames.size < 6;
+                  const tooLow = char.itemLevel < 1640;
+                  const canSelect = !tooLow && (isSelected || selectedCharNames.size < 6);
 
                   return (
                     <div
@@ -1394,6 +1623,7 @@ export default function MyPage() {
                         <span className={styles.selectName}>{char.name}</span>
                         <span className={styles.selectDetails}>
                           {char.class} · Lv.{char.itemLevel.toFixed(0)}
+                          {tooLow && ' (1640 미만)'}
                         </span>
                       </div>
                     </div>
@@ -1456,7 +1686,8 @@ export default function MyPage() {
               <div className={styles.characterSelectGrid}>
                 {allSiblings.map((char) => {
                   const isSelected = selectedCharNames.has(char.name);
-                  const canSelect = isSelected || selectedCharNames.size < 6;
+                  const tooLow = char.itemLevel < 1640;
+                  const canSelect = !tooLow && (isSelected || selectedCharNames.size < 6);
 
                   return (
                     <div
@@ -1471,6 +1702,7 @@ export default function MyPage() {
                         <span className={styles.selectName}>{char.name}</span>
                         <span className={styles.selectDetails}>
                           {char.class} · Lv.{char.itemLevel.toFixed(0)}
+                          {tooLow && ' (1640 미만)'}
                         </span>
                       </div>
                     </div>
