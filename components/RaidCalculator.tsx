@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, Table, Form, Badge, Accordion, Row, Col, Button, Collapse } from 'react-bootstrap';
 import Image from 'next/image';
 import { raids } from '@/data/raids';
@@ -13,6 +13,7 @@ type Character = {
 
 type RaidCalculatorProps = {
   selectedCharacters: Character[];
+  onGateSelectionChange?: (gateSelection: GateSelection, characterGold: { [char: string]: number }) => void;
 };
 
 type GateSelection = {
@@ -44,7 +45,7 @@ const updateGateSelection = (
 };
 
 
-export default function RaidCalculator({ selectedCharacters }: RaidCalculatorProps) {
+export default function RaidCalculator({ selectedCharacters, onGateSelectionChange }: RaidCalculatorProps) {
   const [gateSelection, setGateSelection] = useState<GateSelection>({});
   const [showAllRaids, setShowAllRaids] = useState<{ [key: string]: boolean }>({});
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
@@ -329,6 +330,16 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
       hasAnyMore
     };
   }, [gateSelection, groupedRaids, corePerGate]);
+
+  // 부모에게 gateSelection/characterGold 전달 (무한 루프 방지)
+  const prevGoldRef = useRef('');
+  useEffect(() => {
+    const serialized = JSON.stringify(calculatedData.characterGold);
+    if (serialized !== prevGoldRef.current) {
+      prevGoldRef.current = serialized;
+      onGateSelectionChange?.(gateSelection, calculatedData.characterGold);
+    }
+  }, [gateSelection, calculatedData.characterGold, onGateSelectionChange]);
 
   // 메모이제이션된 결과를 사용하는 래퍼 함수들
   const calculateRaidGroupGold = useCallback((characterName: string, groupName: string) => {
@@ -918,6 +929,7 @@ export default function RaidCalculator({ selectedCharacters }: RaidCalculatorPro
           </div>
         </Card.Body>
       </Card>
+
     </div>
   );
 }

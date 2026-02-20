@@ -1,0 +1,342 @@
+import { RaidReward, MATERIAL_IDS, MATERIAL_NAMES } from './raidRewards';
+
+/**
+ * 레이드 기본 클리어 보상 (더보기와 무관하게 항상 획득하는 재료)
+ */
+export const raidClearRewards: RaidReward[] = [
+  // 세르카 나메
+  {
+    raidName: '세르카 나메',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 405 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 810 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 8 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 9100 },
+    ]
+  },
+  {
+    raidName: '세르카 나메',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 500 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 1000 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 12 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 11000 },
+    ]
+  },
+  // 세르카 하드
+  {
+    raidName: '세르카 하드',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 385 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 770 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 7 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 8300 },
+    ]
+  },
+  {
+    raidName: '세르카 하드',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 475 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 950 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 10 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 10100 },
+    ]
+  },
+  // 세르카 노말
+  {
+    raidName: '세르카 노말',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 880 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1760 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 12 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 6200 },
+    ]
+  },
+  {
+    raidName: '세르카 노말',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 1100 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 2200 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 15 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 7900 },
+    ]
+  },
+  // 종막 하드
+  {
+    raidName: '종막 하드',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 385 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 770 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 7 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 8300 },
+    ]
+  },
+  {
+    raidName: '종막 하드',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 475 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 950 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 10 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 10100 },
+    ]
+  },
+  // 종막 노말
+  {
+    raidName: '종막 노말',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 880 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1760 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 12 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 6200 },
+    ]
+  },
+  {
+    raidName: '종막 노말',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 1100 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 2200 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 15 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 7900 },
+    ]
+  },
+  // 4막 하드
+  {
+    raidName: '4막 하드',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 980 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1960 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 11 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 6800 },
+    ]
+  },
+  {
+    raidName: '4막 하드',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 1150 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 2300 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 16 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 8600 },
+    ]
+  },
+  // 4막 노말
+  {
+    raidName: '4막 노말',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 820 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1640 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 9 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 5400 },
+    ]
+  },
+  {
+    raidName: '4막 노말',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 960 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1920 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 12 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 6800 },
+    ]
+  },
+  // 3막 하드
+  {
+    raidName: '3막 하드',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 440 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 880 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 6 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 3400 },
+    ]
+  },
+  {
+    raidName: '3막 하드',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 520 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1040 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 6 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 4000 },
+    ]
+  },
+  {
+    raidName: '3막 하드',
+    gate: 3,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 640 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1280 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 8 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 5600 },
+    ]
+  },
+  // 3막 노말
+  {
+    raidName: '3막 노말',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 320 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 640 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 4 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 2600 },
+    ]
+  },
+  {
+    raidName: '3막 노말',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 400 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 800 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 4 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 3000 },
+    ]
+  },
+  {
+    raidName: '3막 노말',
+    gate: 3,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 520 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1040 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 6 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 4200 },
+    ]
+  },
+  // 2막 하드
+  {
+    raidName: '2막 하드',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 640 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1280 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 7 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 4600 },
+    ]
+  },
+  {
+    raidName: '2막 하드',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 700 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1400 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 8 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 6000 },
+    ]
+  },
+  // 2막 노말
+  {
+    raidName: '2막 노말',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 540 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1080 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 5 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 4000 },
+    ]
+  },
+  {
+    raidName: '2막 노말',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 640 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1280 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 6 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 4600 },
+    ]
+  },
+  // 1막 하드
+  {
+    raidName: '1막 하드',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 580 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1160 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 6 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 4200 },
+    ]
+  },
+  {
+    raidName: '1막 하드',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 660 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1320 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 7 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 5400 },
+    ]
+  },
+  // 1막 노말
+  {
+    raidName: '1막 노말',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 480 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 960 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 4 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 3600 },
+    ]
+  },
+  {
+    raidName: '1막 노말',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 580 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 1160 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 5 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 4400 },
+    ]
+  },
+  // 베히모스
+  {
+    raidName: '베히모스',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 210 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 420 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 2 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 3000 },
+    ]
+  },
+  {
+    raidName: '베히모스',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 270 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 540 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 3 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 4000 },
+    ]
+  },
+  // 서막
+  {
+    raidName: '서막',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 200 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 400 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 2 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 2700 },
+    ]
+  },
+  {
+    raidName: '서막',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 260 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE, amount: 520 },
+      { itemId: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.FATE_BREAKTHROUGH_STONE, amount: 3 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 3800 },
+    ]
+  },
+];

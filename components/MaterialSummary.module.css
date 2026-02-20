@@ -1,0 +1,406 @@
+/* ==========================================================================
+   캐릭터별 획득 재료 요약 - 3열 카드 그리드
+   ========================================================================== */
+
+.container {
+  margin-top: 0.25rem;
+}
+
+/* 캐릭터 카드 */
+.characterCard {
+  height: 100%;
+  padding: 0.85rem 0.9rem;
+  border-radius: 10px;
+  background: var(--char-card-bg, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.15s ease;
+}
+
+.characterCard:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+:global(:root) .characterCard {
+  --char-card-bg: rgba(255, 255, 255, 0.7);
+}
+
+:global([data-theme="dark"]) .characterCard {
+  --char-card-bg: rgba(255, 255, 255, 0.04);
+}
+
+:global([data-theme="dark"]) .characterCard:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* 캐릭터 헤더 */
+.charHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-bottom: 0.45rem;
+  margin-bottom: 0.45rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.charHeader::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: #4f46e5;
+  flex-shrink: 0;
+}
+
+:global([data-theme="dark"]) .charHeader::before {
+  background: #818cf8;
+}
+
+.charName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.charLevel {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.moreBadge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #fff;
+  background: #dc3545;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+/* 재료 목록 - 세로 컴팩트 */
+.materialsList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* 재료 아이템: 아이콘 x수량 x단가 = 골드 */
+.materialRow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.matIcon {
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.matOp {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.matAmount {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.matPrice {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.matEquals {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.matValue {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #d97706;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+:global([data-theme="dark"]) .matValue {
+  color: #fbbf24;
+}
+
+/* 캐릭터 합산 */
+.charTotal {
+  margin-top: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.charTotalLine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  margin-bottom: 0.15rem;
+}
+
+.charTotalGold {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.charTotalOp {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.charTotalMoreCost {
+  font-weight: 600;
+  color: #dc2626;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="dark"]) .charTotalMoreCost {
+  color: #f87171;
+}
+
+.charTotalMaterial {
+  font-weight: 600;
+  color: #059669;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="dark"]) .charTotalMaterial {
+  color: #34d399;
+}
+
+.charTotalResult {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #4f46e5;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="dark"]) .charTotalResult {
+  color: #818cf8;
+}
+
+/* 전체 합산 */
+.grandTotalBox {
+  margin-top: 1rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 10px;
+  border: 2px solid #4f46e5;
+  background: var(--grand-total-bg, rgba(79, 70, 229, 0.04));
+}
+
+:global([data-theme="dark"]) .grandTotalBox {
+  border-color: #818cf8;
+  background: rgba(129, 140, 248, 0.08);
+}
+
+.grandTotalRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.grandTotalItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.92rem;
+}
+
+.grandTotalLabel {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.grandTotalValue {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.grandTotalOp {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.grandTotalMoreCost {
+  font-weight: 700;
+  color: #dc2626;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="dark"]) .grandTotalMoreCost {
+  color: #f87171;
+}
+
+.grandTotalMaterial {
+  font-weight: 700;
+  color: #059669;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="dark"]) .grandTotalMaterial {
+  color: #34d399;
+}
+
+.grandTotalFinalRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.grandTotalFinalLabel {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.grandTotalFinal {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 800;
+  font-size: 1.35rem;
+  color: #4f46e5;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+:global([data-theme="dark"]) .grandTotalFinal {
+  color: #818cf8;
+}
+
+/* 로딩 */
+.loadingState {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ==========================================================================
+   반응형
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .characterCard {
+    padding: 0.5rem 0.6rem;
+  }
+
+  .charName {
+    font-size: 0.78rem;
+  }
+
+  .charLevel {
+    font-size: 0.62rem;
+  }
+
+  .matIcon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .matAmount {
+    font-size: 0.7rem;
+  }
+
+  .matValue {
+    font-size: 0.7rem;
+  }
+
+  .charTotalLine {
+    font-size: 0.68rem;
+  }
+
+  .charTotalResult {
+    font-size: 0.82rem;
+  }
+
+  .grandTotalItem {
+    font-size: 0.78rem;
+  }
+
+  .grandTotalFinal {
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .characterCard {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .charName {
+    font-size: 0.72rem;
+  }
+
+  .matIcon {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .matAmount {
+    font-size: 0.65rem;
+  }
+
+  .matValue {
+    font-size: 0.65rem;
+  }
+
+  .charTotalLine {
+    font-size: 0.62rem;
+  }
+
+  .charTotalResult {
+    font-size: 0.75rem;
+  }
+
+  .grandTotalRow {
+    gap: 0.35rem;
+  }
+
+  .grandTotalFinal {
+    font-size: 0.82rem;
+  }
+}

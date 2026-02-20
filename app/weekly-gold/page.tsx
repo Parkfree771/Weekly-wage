@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -9,6 +9,10 @@ import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
 import styles from './weekly-gold.module.css';
+
+const MaterialSummary = dynamic(() => import('@/components/MaterialSummary'), {
+  loading: () => null
+});
 
 // Dynamic imports로 코드 분할 (CLS 방지를 위해 최소 높이 지정)
 const RaidCalculator = dynamic(() => import('@/components/RaidCalculator'), {
@@ -50,6 +54,13 @@ export default function WeeklyGoldPage() {
   const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
   const [searched, setSearched] = useState(false);
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
+  const [gateSelection, setGateSelection] = useState<{[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}>({});
+  const [characterGold, setCharacterGold] = useState<{[char: string]: number}>({});
+
+  const handleGateSelectionChange = useCallback((gs: {[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}, cg: {[char: string]: number}) => {
+    setGateSelection(gs);
+    setCharacterGold(cg);
+  }, []);
 
   // 모바일 감지
   useEffect(() => {
@@ -111,28 +122,61 @@ export default function WeeklyGoldPage() {
             {/* 캐릭터 검색 */}
             <CharacterSearch onSelectionChange={setSelectedCharacters} onSearch={handleSearch} searched={searched} />
 
-            {/* 검색 후 원정대 주급 계산기 - 검색 결과가 가장 위에 표시 */}
-            {searched && selectedCharacters.length > 0 && (
-              <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)', position: 'relative' }}>
-                <Card className="border-0 shadow-lg weekly-gold-header-card" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
-                  <Card.Header
-                    className="py-2 border-0"
-                  >
-                    <div className="text-center">
-                      <h3 className="weekly-gold-header-title mb-0">
-                        원정대 주간 골드 계산
-                      </h3>
-                    </div>
-                  </Card.Header>
-                  <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-blue)'}}>
-                    <RaidCalculator selectedCharacters={selectedCharacters} />
-                  </Card.Body>
-                </Card>
-              </div>
-            )}
-
-            {/* 가격 데이터 공유를 위한 Provider */}
+            {/* 가격 데이터 공유를 위한 Provider - RaidCalculator도 포함 */}
             <PriceProvider>
+              {/* 검색 후 원정대 주급 계산기 - 검색 결과가 가장 위에 표시 */}
+              {searched && selectedCharacters.length > 0 && (
+                <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)', position: 'relative' }}>
+                  <Card className="border-0 shadow-lg weekly-gold-header-card" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
+                    <Card.Header
+                      className="py-2 border-0"
+                    >
+                      <div className="text-center">
+                        <h3 className="weekly-gold-header-title mb-0">
+                          원정대 주간 골드 계산
+                        </h3>
+                      </div>
+                    </Card.Header>
+                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-blue)'}}>
+                      <RaidCalculator selectedCharacters={selectedCharacters} onGateSelectionChange={handleGateSelectionChange} />
+                    </Card.Body>
+                  </Card>
+                </div>
+              )}
+
+              {/* 캐릭터별 획득 재료 및 골드 가치 */}
+              {searched && selectedCharacters.length > 0 && Object.keys(gateSelection).length > 0 && (
+                <div style={{ marginTop: 'clamp(1.5rem, 3vw, 2rem)' }}>
+                  <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
+                    <Card.Header
+                      className="py-2 border-0"
+                      style={{
+                        background: 'var(--card-header-bg)',
+                        borderBottom: '1px solid var(--border-color)'
+                      }}
+                    >
+                      <div className="text-center">
+                        <h3 className="mb-0" style={{
+                          fontWeight: 600,
+                          fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
+                          color: 'var(--text-primary)',
+                          letterSpacing: '-0.025em'
+                        }}>
+                          캐릭터별 획득 재료 및 골드 가치
+                        </h3>
+                      </div>
+                    </Card.Header>
+                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-blue)'}}>
+                      <MaterialSummary
+                        selectedCharacters={selectedCharacters}
+                        gateSelection={gateSelection}
+                        characterGold={characterGold}
+                      />
+                    </Card.Body>
+                  </Card>
+                </div>
+              )}
+
               {/* 세르카 보상 정보 */}
               <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
                 <Row className="justify-content-center">
