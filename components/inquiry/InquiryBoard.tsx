@@ -97,14 +97,16 @@ export default function InquiryBoard() {
             </div>
           ) : (
             <div className={styles.postList}>
-              {posts.map((post) => {
+              {posts.map((post, idx) => {
                 const redacted = (post as any)._redacted;
+                const rowNum = totalCount - ((page - 1) * PAGE_SIZE + idx);
                 return (
                   <div
                     key={post.id}
                     className={`${styles.postRow} ${redacted ? styles.postRowRedacted : ''}`}
                     onClick={() => handlePostClick(post)}
                   >
+                    <span className={styles.postNum}>{rowNum}</span>
                     <span className={redacted ? styles.postTitleRedacted : styles.postTitle}>
                       {post.title}
                       {post.commentCount > 0 && (

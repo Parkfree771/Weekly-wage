@@ -66,16 +66,13 @@
   background: transparent;
 }
 
-/* 비공개 배지 */
-.privateMark {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.08);
-  padding: 0.1rem 0.3rem;
-  border-radius: 3px;
+/* 번호 (고정 폭) */
+.postNum {
+  width: 28px;
   flex-shrink: 0;
-  margin-right: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 /* 제목 (가변, 남은 공간 차지) */
