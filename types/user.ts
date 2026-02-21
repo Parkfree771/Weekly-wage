@@ -8,6 +8,7 @@ export type WeeklyGoldRecord = {
   totalGold: number;      // 총 골드
   raidGold: number;       // 레이드 골드
   additionalGold: number; // 추가 골드
+  commonGold?: number;    // 공통 컨텐츠 골드 (복주머니, 카오스게이트 등)
   characterCount: number; // 캐릭터 수
 };
 
@@ -261,13 +262,21 @@ export function getCurrentWeekStart(): string {
   return `${year}-${month}-${day}`;
 }
 
+// 공통 컨텐츠 골드 정의 (복주머니, 카오스게이트 등)
+const COMMON_CONTENT_GOLD: Record<string, number> = {
+  '운수대통 복 주머니': 8100,
+  '카오스 게이트': 3500,
+};
+
 // 총 골드 계산 (체크리스트 기반)
 export function calculateTotalGoldFromChecklist(
   characters: Character[],
-  weeklyChecklist: WeeklyChecklist
-): { totalGold: number; raidGold: number; additionalGold: number } {
+  weeklyChecklist: WeeklyChecklist,
+  commonContent?: CommonContentState,
+): { totalGold: number; raidGold: number; additionalGold: number; commonGold: number } {
   let raidGold = 0;
   let additionalGold = 0;
+  let commonGold = 0;
 
   characters.forEach(char => {
     const state = weeklyChecklist[char.name];
@@ -293,10 +302,21 @@ export function calculateTotalGoldFromChecklist(
     additionalGold += state.additionalGold || 0;
   });
 
+  // 공통 컨텐츠 골드
+  if (commonContent) {
+    Object.entries(commonContent.checks).forEach(([key, checked]) => {
+      if (!checked) return;
+      const contentName = key.split('-').slice(1).join('-');
+      const gold = COMMON_CONTENT_GOLD[contentName] || 0;
+      commonGold += gold;
+    });
+  }
+
   return {
-    totalGold: raidGold + additionalGold,
+    totalGold: raidGold + additionalGold + commonGold,
     raidGold,
-    additionalGold
+    additionalGold,
+    commonGold,
   };
 }
 

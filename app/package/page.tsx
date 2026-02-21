@@ -7,6 +7,7 @@ import PackageGalleryCard from '@/components/package/PackageGalleryCard';
 import { getPackagePosts } from '@/lib/package-service';
 import { useAuth } from '@/contexts/AuthContext';
 import type { PackagePost, PackageSortBy } from '@/types/package';
+import { calculatePostEfficiency } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
 import styles from './package.module.css';
 
@@ -21,7 +22,7 @@ export default function PackageGalleryPage() {
   const [hasMore, setHasMore] = useState(true);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
 
-  const [sortBy, setSortBy] = useState<PackageSortBy>('createdAt');
+  const [sortBy, setSortBy] = useState<PackageSortBy>('efficiency');
 
   useEffect(() => {
     fetch('/api/price-data/latest')
@@ -45,14 +46,25 @@ export default function PackageGalleryPage() {
           startAfterDoc: isLoadMore ? lastDocRef.current : undefined,
         });
 
+        let fetched = result.posts;
+
+        // 효율순: 클라이언트에서 계산 후 정렬
+        if (sortBy === 'efficiency' && Object.keys(latestPrices).length > 0) {
+          fetched = [...fetched].sort(
+            (a, b) =>
+              calculatePostEfficiency(b, latestPrices) -
+              calculatePostEfficiency(a, latestPrices),
+          );
+        }
+
         if (isLoadMore) {
-          setPosts((prev) => [...prev, ...result.posts]);
+          setPosts((prev) => [...prev, ...fetched]);
         } else {
-          setPosts(result.posts);
+          setPosts(fetched);
         }
 
         lastDocRef.current = result.lastDoc;
-        setHasMore(result.posts.length === PAGE_SIZE);
+        setHasMore(sortBy !== 'efficiency' && result.posts.length === PAGE_SIZE);
       } catch (err) {
         console.error('게시물 로딩 실패:', err);
       } finally {
@@ -60,7 +72,7 @@ export default function PackageGalleryPage() {
         setLoadingMore(false);
       }
     },
-    [sortBy],
+    [sortBy, latestPrices],
   );
 
   useEffect(() => {
@@ -96,6 +108,7 @@ export default function PackageGalleryPage() {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as PackageSortBy)}
             >
+              <option value="efficiency">효율순</option>
               <option value="createdAt">최신순</option>
               <option value="likeCount">인기순</option>
             </select>

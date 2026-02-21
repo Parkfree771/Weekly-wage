@@ -54,9 +54,9 @@ function getAllRaidGroups(itemLevel: number) {
 
 // 원정대 공통 컨텐츠 정의
 const COMMON_CONTENTS = [
-  { name: '운수대통 복 주머니', shortName: '복', image: '/lucky-pouch.webp', color: '#e6a817', days: [1, 4, 6, 0], maxChecks: 3 },
-  { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0] },
-  { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0] },
+  { name: '운수대통 복 주머니', shortName: '복', image: '/lucky-pouch.webp', color: '#e6a817', days: [1, 4, 6, 0], maxChecks: 3, gold: 8100 },
+  { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 3500 },
+  { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0], gold: 0 },
 ];
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -87,12 +87,37 @@ const WEEKLY_DAY_MAP: Record<number, number> = { 3: 0, 4: 1, 5: 2, 6: 3, 0: 4, 1
 
 const EMPTY_DAILY: DailyContentState = { checks: new Array(7).fill(false), restGauge: 0 };
 
-// 현재 휴식게이지 계산 (체크한 날 소모분만 반영, 미완료 누적은 주간 초기화 시)
-function computeCurrentRest(state: DailyContentState): number {
+// KST 06:00 기준 현재 게임 요일의 주간 인덱스 (0=수 ~ 6=화)
+function getCurrentGameDayIdx(): number {
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kst = new Date(now.getTime() + kstOffset);
+  let gameDay = kst.getUTCDay(); // 0=일 ~ 6=토
+  // 06시 이전이면 전날로 취급
+  if (kst.getUTCHours() < 6) {
+    gameDay = (gameDay + 6) % 7;
+  }
+  return WEEKLY_DAY_MAP[gameDay];
+}
+
+// 현재 휴식게이지 계산 (지나간 미체크 날 +10 자동 누적)
+function computeCurrentRest(state: DailyContentState, todayIdx: number): number {
   let rest = state.restGauge;
   for (let i = 0; i < 7; i++) {
-    if (state.checks[i]) {
-      if (rest >= 20) rest -= 20;
+    if (i < todayIdx) {
+      // 지나간 날: 체크 → 소모, 미체크 → 누적
+      if (state.checks[i]) {
+        if (rest >= 20) rest -= 20;
+      } else {
+        rest = Math.min(100, rest + 10);
+      }
+    } else if (i === todayIdx) {
+      // 오늘: 체크했으면 소모, 안 했으면 아직 안 쌓임
+      if (state.checks[i]) {
+        if (rest >= 20) rest -= 20;
+      }
+    } else {
+      break; // 미래 날은 무시
     }
   }
   return rest;
@@ -206,7 +231,7 @@ export default function MyPage() {
       console.log('[주간 초기화] 수요일 06시 지남, 체크리스트 초기화 시작');
 
       // 1. 먼저 현재 골드를 기록에 저장
-      const { totalGold, raidGold, additionalGold } = calculateTotalGoldFromChecklist(chars, checklist);
+      const { totalGold, raidGold, additionalGold, commonGold } = calculateTotalGoldFromChecklist(chars, checklist, saved || undefined);
 
       // 지난 주 시작일 계산 (현재 주 시작일 - 7일)
       const lastWeekStart = userProfile.lastWeeklyReset
@@ -223,6 +248,7 @@ export default function MyPage() {
         totalGold,
         raidGold,
         additionalGold,
+        commonGold,
         characterCount: chars.length,
       };
 
@@ -866,8 +892,16 @@ export default function MyPage() {
       total += state.additionalGold || 0;
     });
 
+    // 공통 컨텐츠 골드 (복주머니, 카오스게이트 등)
+    Object.entries(commonContent.checks).forEach(([key, checked]) => {
+      if (!checked) return;
+      const contentName = key.split('-').slice(1).join('-');
+      const content = COMMON_CONTENTS.find(c => c.name === contentName);
+      if (content?.gold) total += content.gold;
+    });
+
     return total;
-  }, [characters, weeklyChecklist]);
+  }, [characters, weeklyChecklist, commonContent]);
 
   // 레이드 체크 여부 확인
   const isRaidChecked = (charName: string, raidName: string) => {
@@ -1086,6 +1120,9 @@ export default function MyPage() {
                         <div className={styles.commonCardInfo}>
                           <span className={styles.commonCardName}>{content.name}</span>
                           <span className={styles.commonCardShortName}>{content.shortName}</span>
+                          {content.gold > 0 && (
+                            <span className={styles.commonCardGold}>{content.gold.toLocaleString()}G</span>
+                          )}
                         </div>
                         {checked && <div className={styles.commonCardCheck}>✓</div>}
                       </div>
@@ -1399,19 +1436,25 @@ export default function MyPage() {
                       charState[field] && typeof charState[field] === 'object'
                         ? charState[field] as DailyContentState
                         : EMPTY_DAILY;
-                    const rest = computeCurrentRest(state);
+                    const gameDayIdx = getCurrentGameDayIdx();
+                    const rest = computeCurrentRest(state, gameDayIdx);
                     const fullBars = Math.floor(rest / 20);
                     const hasHalf = (rest % 20) >= 10;
 
                     const bonusFlags: boolean[] = [];
                     let r = state.restGauge;
                     for (let i = 0; i < 7; i++) {
-                      if (state.checks[i]) {
-                        if (r >= 20) {
-                          bonusFlags.push(true);
-                          r -= 20;
+                      if (i <= gameDayIdx) {
+                        if (state.checks[i]) {
+                          if (r >= 20) {
+                            bonusFlags.push(true);
+                            r -= 20;
+                          } else {
+                            bonusFlags.push(false);
+                          }
                         } else {
                           bonusFlags.push(false);
+                          if (i < gameDayIdx) r = Math.min(100, r + 10);
                         }
                       } else {
                         bonusFlags.push(false);
@@ -1578,6 +1621,7 @@ export default function MyPage() {
           <div className={styles.notice}>
             <p>매주 수요일 06:00 이후 첫 접속 시 이전 주 골드가 자동 저장됩니다.</p>
             <p>레이드 체크 후 상단의 '저장하기' 버튼을 눌러야 변경사항이 반영됩니다.</p>
+            <p>카오스게이트, 필드보스, 복주머니 등은 재료의 가치는 제외하고 획득하는 골드만 설정했습니다.</p>
             <p>아바타 변경이 안될 시 인게임에서 아바타 해제 → 영지 이동 → 아바타 재장착 → 영지 밖 이동 후 다시 시도해주세요.</p>
           </div>
         )}

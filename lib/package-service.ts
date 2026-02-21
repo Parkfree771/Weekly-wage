@@ -59,15 +59,18 @@ export async function getPackagePosts(options: PackageListOptions): Promise<{
 
   const constraints: any[] = [];
 
-  // 정렬
-  constraints.push(orderBy(sortBy, 'desc'));
+  // 효율순은 클라이언트 정렬이므로 createdAt 기준 전체 조회
+  if (sortBy === 'efficiency') {
+    constraints.push(orderBy('createdAt', 'desc'));
+  } else {
+    constraints.push(orderBy(sortBy, 'desc'));
 
-  // 페이지네이션
-  if (startAfterDoc) {
-    constraints.push(startAfter(startAfterDoc));
+    if (startAfterDoc) {
+      constraints.push(startAfter(startAfterDoc));
+    }
+
+    constraints.push(firestoreLimit(pageSize));
   }
-
-  constraints.push(firestoreLimit(pageSize));
 
   const q = query(collection(db, COLLECTION), ...constraints);
   const snapshot = await getDocs(q);

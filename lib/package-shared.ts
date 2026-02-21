@@ -1,4 +1,5 @@
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
+import type { PackagePost } from '@/types/package';
 
 // ─── 선택지 옵션 ───
 export type ChoiceOption = {
@@ -523,4 +524,53 @@ export function getUnitPrice(
     default:
       return 0;
   }
+}
+
+/** 패키지 게시물의 효율(G/원)을 계산 — 갤러리 정렬용 */
+export function calculatePostEfficiency(
+  post: PackagePost,
+  latestPrices: Record<string, number>,
+): number {
+  const goldPerWon = post.goldPerWon || 0;
+  const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
+  const hasPrices = Object.keys(latestPrices).length > 0;
+
+  const getTicketUnit = (itemId: string, fallback: number): number => {
+    if (bcRate > 0 && hasPrices) {
+      if (itemId === 'fixed_hell-legendary-ticket')
+        return calcTicketAverage('hell', 7, latestPrices, bcRate);
+      if (itemId === 'fixed_hell-heroic-ticket')
+        return calcTicketAverage('hell', 6, latestPrices, bcRate);
+      if (itemId === 'fixed_naraka-legendary-ticket')
+        return calcTicketAverage('narak', 2, latestPrices, bcRate);
+    }
+    return fallback;
+  };
+
+  const itemValues = post.items.map((item) => {
+    if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
+      return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
+    }
+    if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
+      const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
+      if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
+    }
+    if (item.goldOverride != null) {
+      return getTicketUnit(item.itemId, item.goldOverride) * item.quantity;
+    }
+    const raw = latestPrices[item.itemId] || 0;
+    const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
+    return (raw / bundle) * item.quantity;
+  });
+
+  let totalGold: number;
+  if (post.selectableCount && post.selectableCount > 0) {
+    const sorted = [...itemValues].sort((a, b) => b - a);
+    totalGold = sorted.slice(0, post.selectableCount).reduce((s, v) => s + v, 0);
+  } else {
+    totalGold = itemValues.reduce((s, v) => s + v, 0);
+  }
+
+  const multiplier = post.packageType === '3+1' ? 4 / 3 : post.packageType === '2+1' ? 3 / 2 : 1;
+  return post.royalCrystalPrice > 0 ? (totalGold * multiplier) / post.royalCrystalPrice : 0;
 }

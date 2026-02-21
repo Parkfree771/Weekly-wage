@@ -71,7 +71,7 @@ export type PackageComment = {
 
 // ─── 갤러리 조회 옵션 ───
 
-export type PackageSortBy = 'createdAt' | 'likeCount';
+export type PackageSortBy = 'efficiency' | 'createdAt' | 'likeCount';
 
 export type PackageListOptions = {
   sortBy: PackageSortBy;
