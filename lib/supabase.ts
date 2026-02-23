@@ -907,3 +907,129 @@ export async function getHellSimTotalCount(): Promise<number> {
     return 0;
   }
 }
+
+// ============================================
+// 칭호 통계 (Title Statistics)
+// ============================================
+
+// 원정대 데이터 타입
+export interface ExpeditionData {
+  expedition_key: string;
+  server: string;
+  representative_char: string;
+  max_item_level: number;
+  max_combat_power: number | null;
+}
+
+// 원정대 데이터 UPSERT
+export async function saveExpeditionData(data: ExpeditionData): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('expeditions')
+      .upsert({
+        expedition_key: data.expedition_key,
+        server: data.server,
+        representative_char: data.representative_char,
+        max_item_level: data.max_item_level,
+        max_combat_power: data.max_combat_power,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'expedition_key',
+      });
+
+    if (error) {
+      console.error('Supabase error (expedition):', error.message, error.details);
+      return false;
+    }
+
+    return true;
+  } catch (err: any) {
+    console.error('Error saving expedition data:', err?.message || err);
+    return false;
+  }
+}
+
+// 칭호 기록 추가 (중복 시 무시)
+export async function saveExpeditionTitle(expeditionKey: string, title: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('expedition_titles')
+      .upsert({
+        expedition_key: expeditionKey,
+        title: title,
+        detected_at: new Date().toISOString(),
+      }, {
+        onConflict: 'expedition_key,title',
+        ignoreDuplicates: true,
+      });
+
+    if (error) {
+      console.error('Supabase error (title):', error.message, error.details);
+      return false;
+    }
+
+    return true;
+  } catch (err: any) {
+    console.error('Error saving expedition title:', err?.message || err);
+    return false;
+  }
+}
+
+// 칭호 통계 캐시 타입
+export interface CombatPowerBucket {
+  range: number;
+  count: number;
+}
+
+export interface TitleStats {
+  avg_item_level: number;
+  avg_combat_power: number;
+  sample_count: number;
+  updated_at: string;
+  distribution: CombatPowerBucket[];
+}
+
+// 캐시 테이블에서 통계 읽기 (가벼운 단순 SELECT)
+export async function getCachedTitleStats(title: string): Promise<TitleStats | null> {
+  try {
+    const { data, error } = await supabase
+      .from('title_stats_cache')
+      .select('avg_item_level, avg_combat_power, sample_count, updated_at, combat_power_distribution')
+      .eq('title', title)
+      .single();
+
+    if (error || !data || data.sample_count === 0) return null;
+
+    return {
+      avg_item_level: Number(data.avg_item_level),
+      avg_combat_power: Number(data.avg_combat_power),
+      sample_count: Number(data.sample_count),
+      updated_at: data.updated_at,
+      distribution: (data.combat_power_distribution || []) as CombatPowerBucket[],
+    };
+  } catch (err) {
+    console.error('Error fetching cached title stats:', err);
+    return null;
+  }
+}
+
+
+// 칭호별 샘플 수 조회
+export async function getTitleSampleCount(title: string): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from('expedition_titles')
+      .select('*', { count: 'exact', head: true })
+      .eq('title', title);
+
+    if (error) {
+      console.error('Error fetching title sample count:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (err) {
+    console.error('Error fetching title sample count:', err);
+    return 0;
+  }
+}

@@ -69,6 +69,10 @@ export default function Home() {
               <Card.Body className="p-3" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
                   <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.23</span>
+                    <span style={{ color: 'var(--text-primary)' }}>칭호 통계 페이지 추가</span>
+                  </li>
+                  <li style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginRight: '0.5rem' }}>02.21</span>
                     <span style={{ color: 'var(--text-primary)' }}>주간 계산 재료가치 계산 추가</span>
                   </li>

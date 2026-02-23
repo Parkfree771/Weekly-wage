@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/hell-sim', label: '지옥 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
 { href: '/package', label: '패키지' },
+  { href: '/title', label: '칭호 통계' },
   { href: '/mypage', label: '마이페이지' },
 ];
 
@@ -44,6 +45,7 @@ export default function Navbar() {
                       href === '/hell-sim' ? 'nav-hell' :
                       href === '/bracelet' ? 'nav-bracelet' :
 href === '/package' ? 'nav-package' :
+                      href === '/title' ? 'nav-title' :
                       href === '/mypage' ? 'nav-mypage' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
@@ -51,7 +53,7 @@ href === '/package' ? 'nav-package' :
 
   return (
     <BSNavbar
-      expand="md"
+      expand="lg"
       className="main-navbar"
       fixed="top"
     >
@@ -70,7 +72,7 @@ href === '/package' ? 'nav-package' :
           </Link>
 
           {/* 데스크톱 메뉴 - 로고 바로 옆 */}
-          <Nav className="d-none d-md-flex align-items-center gap-2 ms-4">
+          <Nav className="d-none d-lg-flex align-items-center gap-2 ms-4">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
@@ -84,7 +86,7 @@ href === '/package' ? 'nav-package' :
         </div>
 
         {/* 모바일 버튼들 */}
-        <div className="d-flex align-items-center gap-2 d-md-none">
+        <div className="d-flex align-items-center gap-2 d-lg-none">
           <Link
             href="/"
             className="navbar-theme-toggle"
@@ -122,7 +124,7 @@ href === '/package' ? 'nav-package' :
         </div>
 
         {/* 데스크톱 테마 토글 + 홈버튼 + 로그인 */}
-        <div className="d-none d-md-flex align-items-center gap-2">
+        <div className="d-none d-lg-flex align-items-center gap-2">
           <Link
             href="/"
             className="navbar-theme-toggle"

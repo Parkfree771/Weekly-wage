@@ -24,6 +24,8 @@ function getPageConfig(pathname: string): PageConfig {
   if (pathname.startsWith('/package/')) return { contentWidth: 1100, adTop: 80 };
   // 패키지 목록
   if (pathname === '/package') return { contentWidth: 1400, adTop: 80 };
+  // 칭호 통계
+  if (pathname === '/title') return { contentWidth: 1200, adTop: 110 };
   // 홈 - Container maxWidth:1400
   return { contentWidth: 1400, adTop: 60 };
 }

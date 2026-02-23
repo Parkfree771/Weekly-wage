@@ -760,6 +760,23 @@ body {
   box-shadow: 0 3px 10px rgba(168, 85, 247, 0.35);
 }
 
+/* 칭호 통계 - 어두운 빨간색 */
+.navbar-nav-link.nav-title:hover {
+  color: #b91c1c;
+  border-color: #b91c1c;
+  background-color: rgba(185, 28, 28, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-nav-link.nav-title.active {
+  color: #fff;
+  font-weight: 700;
+  background-color: #b91c1c;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(185, 28, 28, 0.35);
+}
+
 /* 패키지 - 오렌지색 */
 .navbar-nav-link.nav-package:hover {
   color: #f97316;
@@ -856,6 +873,19 @@ body {
   background-color: #a855f7;
   border-color: transparent;
   box-shadow: 0 3px 10px rgba(168, 85, 247, 0.4);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-title:hover {
+  color: #b91c1c;
+  background-color: rgba(60, 60, 65, 0.9);
+  border-color: #b91c1c;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-title.active {
+  background-color: #b91c1c;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(185, 28, 28, 0.4);
 }
 
 [data-theme="dark"] .navbar-nav-link.nav-package:hover {
@@ -981,6 +1011,11 @@ body {
   color: #a855f7;
 }
 
+.navbar-offcanvas-link.nav-title:hover {
+  background-color: rgba(185, 28, 28, 0.08);
+  color: #b91c1c;
+}
+
 .navbar-offcanvas-link.nav-package:hover {
   background-color: rgba(249, 115, 22, 0.08);
   color: #f97316;
@@ -1008,6 +1043,10 @@ body {
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-mypage:hover {
   background-color: rgba(168, 85, 247, 0.15);
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-title:hover {
+  background-color: rgba(185, 28, 28, 0.15);
 }
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-package:hover {
@@ -1050,6 +1089,12 @@ body {
   font-weight: 600;
 }
 
+.navbar-offcanvas-link.nav-title.active {
+  color: #fff;
+  background-color: #b91c1c;
+  font-weight: 600;
+}
+
 .navbar-offcanvas-link.nav-package.active {
   color: #fff;
   background-color: #f97316;
@@ -1078,6 +1123,10 @@ body {
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-mypage.active {
   background-color: #a855f7;
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-title.active {
+  background-color: #b91c1c;
 }
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-package.active {
