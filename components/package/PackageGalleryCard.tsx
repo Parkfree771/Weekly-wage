@@ -285,7 +285,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
         </div>
 
         <div className={styles.itemGrid}>
-          {(isGacha ? gachaDisplayOrder : post.items.map((_, i) => i)).map((idx) => {
+          {(isGacha ? gachaDisplayOrder : post.items.map((_, i) => i)).map((idx, renderIdx) => {
             const item = post.items[idx];
             const displayIdx = isGacha ? gachaDisplayOrder.indexOf(idx) : idx;
             const isChecked = checkedItems[idx] !== false;
@@ -295,7 +295,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
             return (
               <div
                 key={idx}
-                className={`${styles.itemCell} ${!isChecked && gachaPhase === 'idle' ? styles.itemCellUnchecked : ''} ${isGachaHighlighted ? styles.itemCellHighlight : ''} ${isGachaWon ? styles.itemCellWon : ''} ${isGachaDimmed ? styles.itemCellDimmed : ''}`}
+                className={`${styles.itemCell} ${renderIdx >= 15 ? styles.itemCellHidden : ''} ${!isChecked && gachaPhase === 'idle' ? styles.itemCellUnchecked : ''} ${isGachaHighlighted ? styles.itemCellHighlight : ''} ${isGachaWon ? styles.itemCellWon : ''} ${isGachaDimmed ? styles.itemCellDimmed : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (gachaPhase !== 'idle') return;
@@ -325,8 +325,8 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
             );
           })}
         </div>
-        {post.items.length > 12 && (
-          <span className={styles.moreText}>...외 {post.items.length}개 아이템</span>
+        {post.items.length > 15 && (
+          <span className={styles.moreText}>...외 {post.items.length - 15}개 아이템</span>
         )}
 
         <div className={styles.leftMeta}>

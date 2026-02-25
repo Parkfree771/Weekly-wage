@@ -538,6 +538,7 @@
     padding: 0.75rem;
     min-height: auto;
     gap: 0.6rem;
+    overflow: visible;
   }
 
   .cardTitle {
@@ -549,23 +550,37 @@
     padding: 0.1rem 0.35rem;
   }
 
-  .itemCell {
-    width: 40px;
-    height: 40px;
+  .itemGrid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
+    max-height: none;
+    overflow: visible;
+    flex: unset;
   }
 
-  .itemGrid {
-    max-height: 130px; /* 40px × 3행 + gap × 2 */
+  .itemCell {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    box-sizing: border-box;
+    flex-shrink: unset;
+    border-width: 1px;
+    border-radius: 6px;
+  }
+
+  .itemCellHidden {
+    display: none;
   }
 
   .moreText {
-    font-size: 0.58rem;
+    font-size: 0.62rem;
   }
 
   .itemCellIcon {
-    width: 32px;
-    height: 32px;
-    border-radius: 5px;
+    width: 72%;
+    height: 72%;
+    border-radius: 4px;
   }
 
   .itemCheckBox {

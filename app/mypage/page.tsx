@@ -62,6 +62,42 @@ const COMMON_CONTENTS = [
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 const WEEKLY_DAY_LABELS = ['수', '목', '금', '토', '일', '월', '화'];
 
+// 가디언 토벌 로테이션 (1730+ 주간 순환)
+const GUARDIAN_ROTATION = [
+  { name: '베스칼', element: '화구', image: '/qptm.webp' },
+  { name: '루멘칼리고', element: '암구', image: '' },
+  { name: '가르가디스', element: '토구', image: '' },
+  { name: '스콜라키아', element: '토구', image: '/tmzhf.webp' },
+  { name: '크라티오스', element: '뇌구', image: '/zmfk.webp' },
+  { name: '아게오로스', element: '세구', image: '' },
+  { name: '드렉탈라스', element: '화구', image: '/emfpr.webp' },
+  { name: '소나벨', element: '암구', image: '' },
+];
+
+// 1730 미만 고정 가디언
+const GUARDIAN_FIXED = [
+  { minLevel: 1720, name: '크라티오스', element: '뇌구', image: '/zmfk.webp' },
+  { minLevel: 1700, name: '드렉탈라스', element: '화구', image: '/emfpr.webp' },
+  { minLevel: 1680, name: '스콜라키아', element: '토구', image: '/tmzhf.webp' },
+];
+
+// 기준주: 2026-02-25 (수) = 베스칼 (인덱스 0)
+const GUARDIAN_REF_WEEK = '2026-02-25';
+
+function getCurrentGuardian(itemLevel: number): { name: string; element: string; image: string } {
+  if (itemLevel >= 1730) {
+    const refDate = new Date(GUARDIAN_REF_WEEK + 'T00:00:00+09:00');
+    const currentWeek = new Date(getCurrentWeekStart() + 'T00:00:00+09:00');
+    const diffWeeks = Math.round((currentWeek.getTime() - refDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    const index = ((diffWeeks % GUARDIAN_ROTATION.length) + GUARDIAN_ROTATION.length) % GUARDIAN_ROTATION.length;
+    return GUARDIAN_ROTATION[index];
+  }
+  for (const g of GUARDIAN_FIXED) {
+    if (itemLevel >= g.minLevel) return g;
+  }
+  return { name: '가디언 토벌', element: '', image: '' };
+}
+
 // 카던 레벨별 라벨 (1730+ 균열, 1640+ 전선, 미만 카던)
 function getChaosDungeonLabel(itemLevel: number): string {
   if (itemLevel >= 1730) return '1730 균열';
@@ -1364,9 +1400,44 @@ export default function MyPage() {
                       );
                     })()}
 
-                    {/* 2줄: 모래시계 + 낙원 + 추가골드 */}
+                    {/* 2줄: 가디언토벌 + 모래시계/낙원 + 낙원/빈칸 */}
                     <div className={styles.itemRow}>
-                      {/* 할의 모래시계 (1730 이상) / 빈 슬롯 (미만) */}
+                      {/* 가디언 토벌 (전 캐릭터) */}
+                      {(() => {
+                        const guardianState: DailyContentState =
+                          charState.guardianRaid && typeof charState.guardianRaid === 'object'
+                            ? charState.guardianRaid as DailyContentState
+                            : EMPTY_DAILY;
+                        const gameDayIdx = getCurrentGameDayIdx();
+                        const todayChecked = guardianState.checks[gameDayIdx];
+                        const guardian = getCurrentGuardian(char.itemLevel);
+                        return (
+                          <div
+                            className={`${styles.raidCard} ${todayChecked ? styles.raidChecked : ''}`}
+                            onClick={() => toggleDailyCheck(char.name, 'guardianRaid', gameDayIdx)}
+                          >
+                            {guardian.image ? (
+                              <Image
+                                src={guardian.image}
+                                alt={guardian.name}
+                                fill
+                                className={styles.raidImage}
+                                unoptimized
+                              />
+                            ) : (
+                              <div className={styles.guardianCardPlaceholder} />
+                            )}
+                            <div className={styles.raidOverlay} />
+                            <div className={styles.raidInfo}>
+                              <span className={styles.raidName}>{guardian.name}</span>
+                              {guardian.element && <span className={styles.raidDifficulty}>{guardian.element}</span>}
+                            </div>
+                            {todayChecked && <div className={styles.raidCheck}>✓</div>}
+                          </div>
+                        );
+                      })()}
+
+                      {/* 1730+: 모래시계 / <1730: 낙원 */}
                       {char.itemLevel >= 1730 ? (
                         <div
                           className={`${styles.raidCard} ${charState.sandOfTime ? styles.raidChecked : ''}`}
@@ -1385,49 +1456,53 @@ export default function MyPage() {
                           {charState.sandOfTime && <div className={styles.raidCheck}>✓</div>}
                         </div>
                       ) : (
+                        <div
+                          className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`}
+                          onClick={() => toggleExtra(char.name, 'paradise')}
+                        >
+                          <Image
+                            src="/skrdnjs.webp"
+                            alt="낙원"
+                            fill
+                            className={styles.raidImage}
+                          />
+                          <div className={styles.raidOverlay} />
+                          <div className={styles.raidInfo}>
+                            <span className={styles.raidName}>낙원</span>
+                          </div>
+                          {charState.paradise && <div className={styles.raidCheck}>✓</div>}
+                        </div>
+                      )}
+
+                      {/* 1730+: 낙원 / <1730: 빈칸 */}
+                      {char.itemLevel >= 1730 ? (
+                        <div
+                          className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`}
+                          onClick={() => toggleExtra(char.name, 'paradise')}
+                        >
+                          <Image
+                            src="/skrdnjs.webp"
+                            alt="낙원"
+                            fill
+                            className={styles.raidImage}
+                          />
+                          <div className={styles.raidOverlay} />
+                          <div className={styles.raidInfo}>
+                            <span className={styles.raidName}>낙원</span>
+                          </div>
+                          {charState.paradise && <div className={styles.raidCheck}>✓</div>}
+                        </div>
+                      ) : (
                         <div className={`${styles.raidCard} ${styles.raidEmpty}`}>
                           <div className={styles.emptySlot}>-</div>
                         </div>
                       )}
-
-                      {/* 낙원 */}
-                      <div
-                        className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`}
-                        onClick={() => toggleExtra(char.name, 'paradise')}
-                      >
-                        <Image
-                          src="/skrdnjs.webp"
-                          alt="낙원"
-                          fill
-                          className={styles.raidImage}
-                        />
-                        <div className={styles.raidOverlay} />
-                        <div className={styles.raidInfo}>
-                          <span className={styles.raidName}>낙원</span>
-                        </div>
-                        {charState.paradise && <div className={styles.raidCheck}>✓</div>}
-                      </div>
-
-                      {/* 추가 골드 */}
-                      <div className={styles.goldCard}>
-                        <div className={styles.goldCardContent}>
-                          <span className={styles.goldCardLabel}>추가 골드</span>
-                          <Form.Control
-                            type="number"
-                            value={charState.additionalGold || ''}
-                            onChange={(e) => updateAdditionalGold(char.name, parseInt(e.target.value) || 0)}
-                            placeholder="0"
-                            className={styles.goldCardInput}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* 일일 컨텐츠 (카던/가토) */}
-                {expandedCards[char.name] && (() => {
+                {/* 일일 컨텐츠 (카던/가토) - 항상 표시 */}
+                {(() => {
                   const renderDaily = (
                     label: string,
                     field: 'chaosDungeon' | 'guardianRaid',
@@ -1575,18 +1650,27 @@ export default function MyPage() {
                       </div>
                     )}
                   </div>
-                  {char.itemLevel >= 1640 && (
-                    <button
-                      className={styles.dailyToggle}
-                      onClick={() => toggleDailyExpand(char.name)}
-                      title="일일 컨텐츠"
-                    >
-                      {expandedCards[char.name] ? '▲' : '▼'}
-                    </button>
-                  )}
-                  <div className={styles.charTotalGold}>
-                    <span className={styles.goldLabel}>총 획득</span>
-                    <span className={styles.goldValue}>{charGold.toLocaleString()}<small>G</small></span>
+                  <div className={styles.footerRight}>
+                    <div className={styles.charTotalGold}>
+                      <span className={styles.goldLabel}>추가획득 골드</span>
+                      <span className={`${styles.goldValue} ${styles.goldValueEditable}`}>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={(charState.additionalGold ?? 0).toLocaleString()}
+                          onChange={(e) => {
+                            const num = parseInt(e.target.value.replace(/,/g, '')) || 0;
+                            updateAdditionalGold(char.name, num);
+                          }}
+                          className={styles.footerGoldInput}
+                          onClick={(e) => { e.stopPropagation(); (e.target as HTMLInputElement).select(); }}
+                        /><small>G</small>
+                      </span>
+                    </div>
+                    <div className={styles.charTotalGold}>
+                      <span className={styles.goldLabel}>총 획득</span>
+                      <span className={styles.goldValue}>{charGold.toLocaleString()}<small>G</small></span>
+                    </div>
                   </div>
                 </div>
               </div>
