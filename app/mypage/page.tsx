@@ -65,13 +65,13 @@ const WEEKLY_DAY_LABELS = ['수', '목', '금', '토', '일', '월', '화'];
 // 가디언 토벌 로테이션 (1730+ 주간 순환)
 const GUARDIAN_ROTATION = [
   { name: '베스칼', element: '화구', image: '/qptm.webp' },
-  { name: '루멘칼리고', element: '암구', image: '' },
-  { name: '가르가디스', element: '토구', image: '' },
+  { name: '루멘칼리고', element: '암구', image: '/fnaps.webp' },
+  { name: '가르가디스', element: '토구', image: '/rkfm.webp' },
   { name: '스콜라키아', element: '토구', image: '/tmzhf.webp' },
   { name: '크라티오스', element: '뇌구', image: '/zmfk.webp' },
-  { name: '아게오로스', element: '세구', image: '' },
+  { name: '아게오로스', element: '세구', image: '/dkrp.webp' },
   { name: '드렉탈라스', element: '화구', image: '/emfpr.webp' },
-  { name: '소나벨', element: '암구', image: '' },
+  { name: '소나벨', element: '암구', image: '/thsk.webp' },
 ];
 
 // 1730 미만 고정 가디언
