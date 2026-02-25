@@ -79,6 +79,7 @@ const GUARDIAN_FIXED = [
   { minLevel: 1720, name: '크라티오스', element: '뇌구', image: '/zmfk.webp' },
   { minLevel: 1700, name: '드렉탈라스', element: '화구', image: '/emfpr.webp' },
   { minLevel: 1680, name: '스콜라키아', element: '토구', image: '/tmzhf.webp' },
+  { minLevel: 1640, name: '아게오로스', element: '세구', image: '/dkrp.webp' },
 ];
 
 // 기준주: 2026-02-25 (수) = 베스칼 (인덱스 0)
