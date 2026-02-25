@@ -76,14 +76,35 @@
   color: #a78bfa;
 }
 
+.badgeGacha {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+/* 가챠 확률 뱃지 */
+.itemProbBadge {
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: #fbbf24;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 0 0.25rem;
+  border-radius: 3px;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
 /* ─── 아이템 그리드 ─── */
 .itemGrid {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 0.4rem;
+  gap: 0.35rem;
   flex: 0 0 auto;
-  max-height: 245px; /* 76px × 3행 + gap × 2 */
+  max-height: 200px; /* 62px × 3행 + gap × 2 */
   overflow: hidden;
 }
 
@@ -99,8 +120,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 76px;
-  height: 76px;
+  width: 62px;
+  height: 62px;
   cursor: pointer;
   transition: opacity 0.2s, filter 0.2s;
   background: rgba(30, 30, 60, 0.65);
@@ -152,9 +173,9 @@
 
 /* 아이콘 */
 .itemCellIcon {
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
   object-fit: contain;
   filter: brightness(1);
 }
@@ -360,6 +381,115 @@
   color: #f87171;
 }
 
+/* ─── 가챠 아이템 셀 상태 ─── */
+.itemCellHighlight {
+  border-color: #f97316;
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+  transition: none;
+}
+
+.itemCellWon {
+  border-color: #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+}
+
+.itemCellDimmed {
+  opacity: 0.3;
+  filter: grayscale(0.5);
+}
+
+.itemCheckBoxWon {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+
+/* ─── 가챠 버튼 ─── */
+.gachaBtn {
+  width: 100%;
+  padding: 0.55rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #f97316, #ef4444);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(249, 115, 22, 0.35);
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+}
+
+.gachaBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.5);
+}
+
+.gachaBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.gachaBtnSpinning {
+  animation: gachaCardPulse 0.5s ease-in-out infinite;
+}
+
+@keyframes gachaCardPulse {
+  0%, 100% { box-shadow: 0 3px 12px rgba(249, 115, 22, 0.35); }
+  50% { box-shadow: 0 3px 20px rgba(249, 115, 22, 0.65); }
+}
+
+/* ─── 가챠 결과 ─── */
+.gachaResultArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  animation: gachaCardFadeIn 0.3s ease;
+}
+
+@keyframes gachaCardFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.gachaResultName {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #22c55e;
+  text-align: center;
+  word-break: keep-all;
+  line-height: 1.3;
+}
+
+.gachaResultGold {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f97316;
+}
+
+.gachaResultBenefit {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.gachaReroll {
+  margin-top: 0.3rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #f97316;
+  background: transparent;
+  border: 1px solid #f97316;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gachaReroll:hover {
+  background: rgba(249, 115, 22, 0.1);
+}
+
 /* ─── 상세보기 링크 ─── */
 .detailLink {
   margin-top: auto;
@@ -383,12 +513,17 @@
   }
 
   .itemCell {
-    width: 66px;
-    height: 66px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .itemCellIcon {
+    width: 38px;
+    height: 38px;
   }
 
   .itemGrid {
-    max-height: 215px; /* 66px × 3행 + gap × 2 */
+    max-height: 180px; /* 56px × 3행 + gap × 2 */
   }
 }
 
@@ -415,12 +550,12 @@
   }
 
   .itemCell {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
   }
 
   .itemGrid {
-    max-height: 148px; /* 44px × 3행 + gap × 2 */
+    max-height: 130px; /* 40px × 3행 + gap × 2 */
   }
 
   .moreText {
@@ -428,9 +563,9 @@
   }
 
   .itemCellIcon {
-    width: 38px;
-    height: 38px;
-    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    border-radius: 5px;
   }
 
   .itemCheckBox {
@@ -530,5 +665,28 @@
   .detailLink {
     font-size: 0.7rem;
     padding-top: 0.5rem;
+  }
+
+  .gachaBtn {
+    padding: 0.4rem;
+    font-size: 0.72rem;
+    border-radius: 8px;
+  }
+
+  .gachaResultName {
+    font-size: 0.65rem;
+  }
+
+  .gachaResultGold {
+    font-size: 0.8rem;
+  }
+
+  .gachaResultBenefit {
+    font-size: 0.82rem;
+  }
+
+  .gachaReroll {
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
   }
 }

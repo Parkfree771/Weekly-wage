@@ -13,12 +13,13 @@ export type PackageItem = {
   goldOverride?: number; // 골드/고정가 아이템용 (시세 대신 이 값 사용)
   crystalPerUnit?: number; // 블크 기반 아이템용 (환율 변경 시 재계산에 사용)
   choiceOptions?: { itemId: string; name: string; icon?: string }[]; // 선택지 목록 (선택 아이템용)
+  probability?: number; // 가챠 아이템 확률 (0~100, 예: 10.0 = 10%)
 };
 
 // ─── 게시물 ───
 
 /** 패키지 타입 */
-export type PackageType = '3+1' | '2+1' | '일반';
+export type PackageType = '3+1' | '2+1' | '일반' | '가챠';
 
 /** 패키지 효율 게시물 */
 export type PackagePost = {

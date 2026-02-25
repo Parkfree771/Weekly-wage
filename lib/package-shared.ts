@@ -24,6 +24,7 @@ export type TemplateItem = {
 
 // ─── 추가된 아이템 상태 ───
 export type AddedItem = {
+  id: string; // 인스턴스 고유 ID (같은 템플릿 중복 추가 지원)
   templateId: string;
   quantity: number;
   selectedChoiceId?: string;
@@ -526,6 +527,61 @@ export function getUnitPrice(
   }
 }
 
+/** 단일 가챠 아이템의 골드 가치 계산 */
+export function calculateGachaItemGold(
+  item: import('@/types/package').PackageItem,
+  prices: Record<string, number>,
+  goldPerWon: number,
+  bcRate: number,
+): number {
+  // 크리스탈 기반 아이템
+  if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
+    return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
+  }
+  if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
+    const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
+    if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
+  }
+  // 선택(choice) 아이템 → 선택지 중 최고가
+  if (item.choiceOptions && item.choiceOptions.length > 0) {
+    let maxPrice = 0;
+    for (const c of item.choiceOptions) {
+      const p = getItemUnitPrice(c.itemId, prices);
+      if (p > maxPrice) maxPrice = p;
+    }
+    return maxPrice * item.quantity;
+  }
+  // 동적 티켓
+  if (item.goldOverride != null) {
+    if (bcRate > 0) {
+      if (item.itemId === 'fixed_hell-legendary-ticket')
+        return calcTicketAverage('hell', 7, prices, bcRate) * item.quantity;
+      if (item.itemId === 'fixed_hell-heroic-ticket')
+        return calcTicketAverage('hell', 6, prices, bcRate) * item.quantity;
+      if (item.itemId === 'fixed_naraka-legendary-ticket')
+        return calcTicketAverage('narak', 2, prices, bcRate) * item.quantity;
+    }
+    return item.goldOverride * item.quantity;
+  }
+  // 시세 아이템
+  const raw = prices[item.itemId] || 0;
+  const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
+  return (raw / bundle) * item.quantity;
+}
+
+/** 가챠 기대값 = Σ(아이템골드 × 확률/100) */
+export function calculateGachaExpectedValue(
+  items: import('@/types/package').PackageItem[],
+  prices: Record<string, number>,
+  goldPerWon: number,
+  bcRate: number,
+): number {
+  return items.reduce((sum, item) => {
+    const gold = calculateGachaItemGold(item, prices, goldPerWon, bcRate);
+    return sum + gold * ((item.probability || 0) / 100);
+  }, 0);
+}
+
 /** 패키지 게시물의 효율(G/원)을 계산 — 갤러리 정렬용 */
 export function calculatePostEfficiency(
   post: PackagePost,
@@ -534,6 +590,12 @@ export function calculatePostEfficiency(
   const goldPerWon = post.goldPerWon || 0;
   const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
   const hasPrices = Object.keys(latestPrices).length > 0;
+
+  // 가챠 패키지: 기대값 기반 효율
+  if (post.packageType === '가챠') {
+    const expectedGold = calculateGachaExpectedValue(post.items, latestPrices, goldPerWon, bcRate);
+    return post.royalCrystalPrice > 0 ? expectedGold / post.royalCrystalPrice : 0;
+  }
 
   const getTicketUnit = (itemId: string, fallback: number): number => {
     if (bcRate > 0 && hasPrices) {

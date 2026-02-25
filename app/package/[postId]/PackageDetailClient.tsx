@@ -18,6 +18,7 @@ import {
   PRICE_BUNDLE_SIZE,
   CRYSTAL_PER_UNIT_FALLBACK,
   getItemUnitPrice,
+  calculateGachaItemGold,
 } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
 import CommentSection from '@/components/package/CommentSection';
@@ -35,6 +36,7 @@ function formatDate(timestamp: any): string {
 function getTypeBadgeClass(type: PackageType): string {
   if (type === '3+1') return styles.typeBadge31;
   if (type === '2+1') return styles.typeBadge21;
+  if (type === '가챠') return styles.typeBadgeGacha;
   return styles.typeBadgeNormal;
 }
 
@@ -52,6 +54,14 @@ export default function PackageDetailPage() {
   const [choiceSelections, setChoiceSelections] = useState<Record<number, string>>({});
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
   const [detailWonPer100Gold, setDetailWonPer100Gold] = useState<number>(0);
+
+  // 가챠 state
+  const [gachaPhase, setGachaPhase] = useState<'idle' | 'spinning' | 'result'>('idle');
+  const [highlightIdx, setHighlightIdx] = useState(-1);
+  const [winnerIdx, setWinnerIdx] = useState(-1);
+  const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 가챠 제외 아이템 (제외 시 골드 0으로 계산, 확률은 유지)
+  const [gachaExcluded, setGachaExcluded] = useState<Record<number, boolean>>({});
 
   const isOwner = user && post && user.uid === post.authorUid;
 
@@ -169,6 +179,68 @@ export default function PackageDetailPage() {
     } catch (err) {
       console.error('삭제 실패:', err);
     }
+  };
+
+  // 가챠 cleanup
+  useEffect(() => {
+    return () => {
+      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
+    };
+  }, []);
+
+  // 가챠: 확률 기반 랜덤 선택
+  const selectGachaWinner = (items: PackageItem[]): number => {
+    const rand = Math.random() * 100;
+    let cumulative = 0;
+    for (let i = 0; i < items.length; i++) {
+      cumulative += items[i].probability || 0;
+      if (rand <= cumulative) return i;
+    }
+    return items.length - 1;
+  };
+
+  // 가챠 애니메이션 시작
+  const startGacha = () => {
+    if (!post || gachaPhase === 'spinning') return;
+    const items = post.items;
+    const targetIdx = selectGachaWinner(items);
+
+    setGachaPhase('spinning');
+    setWinnerIdx(-1);
+
+    // 총 스텝 수: 최소 3바퀴 + 타겟까지
+    const minCycles = 3;
+    const totalSteps = minCycles * items.length + targetIdx + 1;
+
+    let step = 0;
+    const tick = () => {
+      const currentIdx = step % items.length;
+      setHighlightIdx(currentIdx);
+      step++;
+
+      if (step > totalSteps) {
+        // 도착
+        setHighlightIdx(targetIdx);
+        setWinnerIdx(targetIdx);
+        setGachaPhase('result');
+        return;
+      }
+
+      // 이징: 점점 느려짐
+      const progress = step / totalSteps;
+      const interval = 50 + Math.pow(progress, 2.5) * 400;
+      spinTimerRef.current = setTimeout(tick, interval);
+    };
+
+    tick();
+  };
+
+  // 가챠 리셋
+  const resetGacha = () => {
+    if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
+    setGachaPhase('idle');
+    setHighlightIdx(-1);
+    setWinnerIdx(-1);
   };
 
   const handleChoiceSelect = (idx: number, choiceItemId: string) => {
@@ -305,6 +377,227 @@ export default function PackageDetailPage() {
   const bundleCash = cashGold * buyCount;
   const bundleGold = totalGold * getCount;
   const bundleBenefit = bundleCash > 0 ? ((bundleGold - bundleCash) / bundleCash) * 100 : 0;
+
+  // 가챠 전용 렌더링
+  if (post.packageType === '가챠') {
+    const gachaItems = post.items;
+    const gachaBcRate = detailGoldPerWon > 0 ? detailGoldPerWon * 2750 : 0;
+    const gachaItemGolds = gachaItems.map((item) =>
+      calculateGachaItemGold(item, latestPrices, detailGoldPerWon, gachaBcRate),
+    );
+    // 제외 아이템 반영 기대값: 제외된 아이템은 골드 0으로 계산
+    const expectedGold = gachaItems.reduce(
+      (s, item, i) => s + (gachaExcluded[i] ? 0 : gachaItemGolds[i]) * ((item.probability || 0) / 100), 0,
+    );
+    const hasExcluded = Object.values(gachaExcluded).some(Boolean);
+    const gachaCashGold = post.royalCrystalPrice * detailGoldPerWon;
+    const wonItem = winnerIdx >= 0 ? gachaItems[winnerIdx] : null;
+    const wonGold = winnerIdx >= 0 ? gachaItemGolds[winnerIdx] : 0;
+    const wonBenefit = gachaCashGold > 0 ? ((wonGold - gachaCashGold) / gachaCashGold) * 100 : 0;
+
+    return (
+      <Container fluid style={{ maxWidth: '900px' }}>
+        <div className={styles.detailWrapper}>
+          <Link href="/package" className={styles.backLink}>
+            &#8592; 목록으로 돌아가기
+          </Link>
+
+          {/* 헤더 */}
+          <div className={styles.detailHeader}>
+            <div className={styles.detailHeaderTop}>
+              <h1 className={styles.detailTitle}>
+                <span className={`${styles.typeBadge} ${styles.typeBadgeGacha}`} style={{ marginRight: '0.5rem' }}>
+                  가챠
+                </span>
+                {post.title}
+              </h1>
+            </div>
+            <span className={styles.detailDate}>{formatDate(post.createdAt)}</span>
+          </div>
+
+          {/* 환율 + 기대값 */}
+          <div className={styles.gachaExpectedRow}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className={styles.gachaExpectedLabel}>환율</span>
+              <div className={styles.resultRateInput}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/gold.webp" alt="" className={styles.resultRateIcon} />
+                <span className={styles.resultRateFixed}>100</span>
+                <span className={styles.resultRateSep}>:</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/royal.webp" alt="" className={styles.resultRateIcon} />
+                <input
+                  type="number"
+                  className={styles.resultRateNumber}
+                  value={detailWonPer100Gold || ''}
+                  onChange={(e) => setDetailWonPer100Gold(parseInt(e.target.value) || 0)}
+                  placeholder="32"
+                  min={1}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span className={styles.gachaExpectedLabel}>{hasExcluded ? '기대값 (제외 반영)' : '기대값'}</span>
+              <span className={styles.gachaExpectedGold}>{formatNumber(expectedGold)} G</span>
+              {post.royalCrystalPrice > 0 && (
+                <span className={styles.gachaExpectedEfficiency}>
+                  ({formatNumber(expectedGold / post.royalCrystalPrice)} G/원)
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* 제외 안내 */}
+          {gachaPhase === 'idle' && (
+            <p className={styles.gachaExcludeHint}>
+              아이템을 클릭하면 기대값 계산에서 제외됩니다 (확률은 유지)
+            </p>
+          )}
+
+          {/* 아이템 그리드 */}
+          <div className={styles.gachaGrid}>
+            {gachaItems.map((item, idx) => {
+              const gold = gachaItemGolds[idx];
+              const isHighlight = highlightIdx === idx && gachaPhase === 'spinning';
+              const isWon = winnerIdx === idx && gachaPhase === 'result';
+              const isDimmed = gachaPhase === 'result' && winnerIdx !== idx;
+              const isExcluded = !!gachaExcluded[idx];
+              return (
+                <div
+                  key={idx}
+                  className={`${styles.gachaItemCard} ${isHighlight ? styles.gachaItemCardHighlight : ''} ${isWon ? styles.gachaItemCardWon : ''} ${isDimmed ? styles.gachaItemCardDimmed : ''} ${isExcluded && gachaPhase === 'idle' ? styles.gachaItemCardExcluded : ''}`}
+                  onClick={() => {
+                    if (gachaPhase !== 'idle') return;
+                    setGachaExcluded((prev) => ({ ...prev, [idx]: !prev[idx] }));
+                  }}
+                  style={gachaPhase === 'idle' ? { cursor: 'pointer' } : undefined}
+                >
+                  <div className={`${styles.gachaCheckbox} ${isWon ? styles.gachaCheckboxActive : ''} ${isExcluded && gachaPhase === 'idle' ? styles.gachaCheckboxExcluded : ''}`}>
+                    {isWon && (
+                      <svg viewBox="0 0 12 10" className={styles.gachaCheckIcon}>
+                        <polyline points="1.5 5 4.5 8 10.5 2" />
+                      </svg>
+                    )}
+                    {isExcluded && gachaPhase === 'idle' && (
+                      <svg viewBox="0 0 12 12" className={styles.gachaCheckIcon}>
+                        <line x1="2" y1="2" x2="10" y2="10" />
+                        <line x1="10" y1="2" x2="2" y2="10" />
+                      </svg>
+                    )}
+                  </div>
+                  {item.icon && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={item.icon} alt={item.name} className={styles.gachaItemIcon}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  )}
+                  <div className={styles.gachaItemName}>{item.name}</div>
+                  {item.quantity > 1 && (
+                    <span className={styles.gachaItemQty}>x{item.quantity}</span>
+                  )}
+                  <span className={`${styles.gachaProbBadge} ${(item.probability || 0) <= 5 ? styles.gachaProbBadgeRare : ''}`}>
+                    {item.probability}%
+                  </span>
+                  <span className={styles.gachaItemGold}>
+                    {isExcluded ? '제외' : `${formatNumber(gold)}G`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 가챠 버튼 */}
+          <button
+            className={`${styles.gachaButton} ${gachaPhase === 'spinning' ? styles.gachaButtonSpinning : ''}`}
+            onClick={startGacha}
+            disabled={gachaPhase === 'spinning'}
+          >
+            {gachaPhase === 'spinning' ? '뽑는 중...' : '가챠!'}
+          </button>
+
+          {/* 결과 */}
+          {gachaPhase === 'result' && wonItem && (
+            <div className={styles.gachaResult}>
+              <div className={styles.gachaResultTitle}>당첨!</div>
+              <div className={styles.gachaResultItemName}>
+                {wonItem.name} {wonItem.quantity > 1 ? `x${wonItem.quantity}` : ''}
+              </div>
+              <div className={styles.gachaResultRow}>
+                <span className={styles.gachaResultLabel}>골드 가치</span>
+                <span className={styles.gachaResultGold}>{formatNumber(wonGold)} G</span>
+              </div>
+              <div className={styles.gachaResultRow}>
+                <span className={styles.gachaResultLabel}>가챠 가격</span>
+                <span className={styles.gachaResultValue}>{formatNumber(post.royalCrystalPrice)}원</span>
+              </div>
+              {detailGoldPerWon > 0 && (
+                <>
+                  <div className={styles.gachaResultRow}>
+                    <span className={styles.gachaResultLabel}>현금 골드</span>
+                    <span className={styles.gachaResultValue}>{formatNumber(gachaCashGold)} G</span>
+                  </div>
+                  <div className={styles.gachaResultRow}>
+                    <span className={styles.gachaResultLabel}>이득률</span>
+                    <span className={`${styles.gachaResultBenefit} ${wonBenefit >= 0 ? styles.benefitUp : styles.benefitDown}`}>
+                      {wonBenefit >= 0 ? '+' : ''}{wonBenefit.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className={styles.gachaResultRow}>
+                    <span className={styles.gachaResultLabel}>확률</span>
+                    <span className={styles.gachaResultValue}>{wonItem.probability}%</span>
+                  </div>
+                </>
+              )}
+              <button className={styles.gachaRerollButton} onClick={resetGacha}>
+                다시 뽑기
+              </button>
+            </div>
+          )}
+
+          {/* 액션 */}
+          <div className={styles.detailActions}>
+            <div className={styles.detailActionsLeft}>
+              <button
+                className={`${styles.likeBtn} ${liked ? styles.likeBtnActive : ''}`}
+                onClick={handleLike}
+                disabled={!user}
+                title={user ? '좋아요' : '로그인 후 이용 가능'}
+              >
+                {liked ? '\u2665' : '\u2661'} {likeCount}
+              </button>
+              <span className={styles.viewCountText}>
+                {'\uD83D\uDC41'} {post.viewCount || 0}
+              </span>
+            </div>
+            {isOwner && (
+              <div className={styles.resultActionsRight}>
+                <Link href={`/package/edit/${postId}`} className={styles.editBtn}>
+                  수정
+                </Link>
+                <button className={styles.deleteBtn} onClick={handleDelete}>
+                  삭제
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 댓글 */}
+          <CommentSection
+            postId={postId}
+            commentCount={post.commentCount || 0}
+            onCommentCountChange={(delta) =>
+              setPost((prev) =>
+                prev ? { ...prev, commentCount: (prev.commentCount || 0) + delta } : null,
+              )
+            }
+          />
+
+          <div className="d-block d-md-none my-3">
+            <AdBanner slot="8616653628" />
+          </div>
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <Container fluid style={{ maxWidth: '1100px' }}>

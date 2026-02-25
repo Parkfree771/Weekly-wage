@@ -18,20 +18,26 @@ import {
   formatNumber,
   getItemUnitPrice,
   getUnitPrice,
+  calculateGachaItemGold,
+  calculateGachaExpectedValue,
 } from '@/lib/package-shared';
 import styles from '../../package.module.css';
 
 let editCustomCounter = 0;
 
 /** PackageItem[] → AddedItem[] 역매핑 */
+let editItemCounter = 0;
 function mapItemsToAdded(items: PackageItem[]): AddedItem[] {
   return items
     .map((item) => {
+      editItemCounter += 1;
       // Custom type
       if (item.itemId.startsWith('custom_')) {
         editCustomCounter += 1;
+        const tid = `custom-${editCustomCounter}`;
         return {
-          templateId: `custom-${editCustomCounter}`,
+          id: tid,
+          templateId: tid,
           quantity: item.quantity,
           isCustom: true,
           customName: item.name,
@@ -42,28 +48,28 @@ function mapItemsToAdded(items: PackageItem[]): AddedItem[] {
       if (item.itemId.startsWith('gold_')) {
         const templateId = item.itemId.replace('gold_', '');
         if (TEMPLATES_MAP[templateId]) {
-          return { templateId, quantity: 1, goldAmount: item.goldOverride || 0 };
+          return { id: `${templateId}_${editItemCounter}`, templateId, quantity: 1, goldAmount: item.goldOverride || 0 };
         }
       }
       // Fixed type
       if (item.itemId.startsWith('fixed_')) {
         const templateId = item.itemId.replace('fixed_', '');
         if (TEMPLATES_MAP[templateId]) {
-          return { templateId, quantity: item.quantity };
+          return { id: `${templateId}_${editItemCounter}`, templateId, quantity: item.quantity };
         }
       }
       // Crystal type (블크 기반 아이템)
       if (item.itemId.startsWith('crystal_')) {
         const templateId = item.itemId.replace('crystal_', '');
         if (TEMPLATES_MAP[templateId]) {
-          return { templateId, quantity: item.quantity };
+          return { id: `${templateId}_${editItemCounter}`, templateId, quantity: item.quantity };
         }
       }
       // Expected type (확률 기대값)
       if (item.itemId.startsWith('expected_')) {
         const templateId = item.itemId.replace('expected_', '');
         if (TEMPLATES_MAP[templateId]) {
-          return { templateId, quantity: item.quantity };
+          return { id: `${templateId}_${editItemCounter}`, templateId, quantity: item.quantity };
         }
       }
       // Choice type (has choiceOptions)
@@ -77,6 +83,7 @@ function mapItemsToAdded(items: PackageItem[]): AddedItem[] {
         );
         if (template) {
           return {
+            id: `${template.id}_${editItemCounter}`,
             templateId: template.id,
             quantity: item.quantity,
             selectedChoiceId: item.itemId,
@@ -88,7 +95,7 @@ function mapItemsToAdded(items: PackageItem[]): AddedItem[] {
         (t) => t.type === 'simple' && t.itemId === item.itemId,
       );
       if (template) {
-        return { templateId: template.id, quantity: item.quantity };
+        return { id: `${template.id}_${editItemCounter}`, templateId: template.id, quantity: item.quantity };
       }
       return null;
     })
@@ -117,11 +124,13 @@ export default function PackageEditPage() {
   const [unofficialRate, setUnofficialRate] = useState<number>(0);
   const [officialGold, setOfficialGold] = useState<number>(0);
   const [selectableCount, setSelectableCount] = useState<number>(0);
-  const [checkedTemplateIds, setCheckedTemplateIds] = useState<Set<string>>(new Set());
+  const [checkedItemIds, setCheckedItemIds] = useState<Set<string>>(new Set());
+  const [gachaProbabilities, setGachaProbabilities] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const customCounterRef = useRef(0);
+  const itemCounterRef = useRef(0);
 
   // 가격 fetch
   useEffect(() => {
@@ -153,6 +162,17 @@ export default function PackageEditPage() {
         customCounterRef.current = editCustomCounter;
         setAddedItems(mapped);
 
+        // 가챠 확률 복원
+        if (post.packageType === '가챠') {
+          const probMap: Record<string, number> = {};
+          mapped.forEach((m, idx) => {
+            if (idx < post.items.length && post.items[idx].probability != null) {
+              probMap[m.id] = post.items[idx].probability!;
+            }
+          });
+          setGachaProbabilities(probMap);
+        }
+
         // 환율 복원
         if (post.goldPerWon && post.goldPerWon > 0) {
           const restoredOfficialGold = Math.round(post.goldPerWon * 2750);
@@ -179,50 +199,46 @@ export default function PackageEditPage() {
     const template = TEMPLATES_MAP[templateId];
     if (!template) return;
 
-    setAddedItems((prev) => {
-      const existing = prev.find((a) => a.templateId === templateId);
-      if (existing) {
-        return prev.filter((a) => a.templateId !== templateId);
-      }
-      const newItem: AddedItem = { templateId, quantity: 1 };
-      if (template.type === 'choice' && template.choices?.length) {
-        newItem.selectedChoiceId = template.choices[0].itemId;
-      }
-      if (template.type === 'gold') {
-        newItem.goldAmount = 0;
-      }
-      if (template.boxItem) {
-        newItem.innerQuantity = 1;
-      }
-      return [...prev, newItem];
-    });
+    itemCounterRef.current += 1;
+    const newItem: AddedItem = { id: `${templateId}_${itemCounterRef.current}`, templateId, quantity: 1 };
+    if (template.type === 'choice' && template.choices?.length) {
+      newItem.selectedChoiceId = template.choices[0].itemId;
+    }
+    if (template.type === 'gold') {
+      newItem.goldAmount = 0;
+    }
+    if (template.boxItem) {
+      newItem.innerQuantity = 1;
+    }
+    setAddedItems((prev) => [...prev, newItem]);
   };
 
-  const handleRemoveItem = (templateId: string) => {
-    setAddedItems((prev) => prev.filter((a) => a.templateId !== templateId));
+  const handleRemoveItem = (itemId: string) => {
+    setAddedItems((prev) => prev.filter((a) => a.id !== itemId));
   };
 
-  const handleQuantityChange = (templateId: string, qty: number) => {
+  const handleQuantityChange = (itemId: string, qty: number) => {
     setAddedItems((prev) =>
       prev.map((a) =>
-        a.templateId === templateId ? { ...a, quantity: Math.max(0, qty) } : a,
+        a.id === itemId ? { ...a, quantity: Math.max(0, qty) } : a,
       ),
     );
   };
 
-  const handleInnerQuantityChange = (templateId: string, qty: number) => {
+  const handleInnerQuantityChange = (itemId: string, qty: number) => {
     setAddedItems((prev) =>
       prev.map((a) =>
-        a.templateId === templateId ? { ...a, innerQuantity: Math.max(0, qty) } : a,
+        a.id === itemId ? { ...a, innerQuantity: Math.max(0, qty) } : a,
       ),
     );
   };
 
   const handleAddCustomItem = () => {
     customCounterRef.current += 1;
-    const id = `custom-${customCounterRef.current}`;
+    const cid = `custom-${customCounterRef.current}`;
     setAddedItems((prev) => [...prev, {
-      templateId: id,
+      id: cid,
+      templateId: cid,
       quantity: 1,
       isCustom: true,
       customName: '',
@@ -230,34 +246,34 @@ export default function PackageEditPage() {
     }]);
   };
 
-  const handleCustomNameChange = (templateId: string, name: string) => {
+  const handleCustomNameChange = (itemId: string, name: string) => {
     setAddedItems((prev) =>
       prev.map((a) =>
-        a.templateId === templateId ? { ...a, customName: name } : a,
+        a.id === itemId ? { ...a, customName: name } : a,
       ),
     );
   };
 
-  const handleCustomGoldChange = (templateId: string, gold: number) => {
+  const handleCustomGoldChange = (itemId: string, gold: number) => {
     setAddedItems((prev) =>
       prev.map((a) =>
-        a.templateId === templateId ? { ...a, customGoldPerUnit: gold } : a,
+        a.id === itemId ? { ...a, customGoldPerUnit: gold } : a,
       ),
     );
   };
 
-  const handleChoiceChange = (templateId: string, choiceId: string) => {
+  const handleChoiceChange = (itemId: string, choiceId: string) => {
     setAddedItems((prev) =>
       prev.map((a) =>
-        a.templateId === templateId ? { ...a, selectedChoiceId: choiceId } : a,
+        a.id === itemId ? { ...a, selectedChoiceId: choiceId } : a,
       ),
     );
   };
 
-  const handleGoldChange = (templateId: string, amount: number) => {
+  const handleGoldChange = (itemId: string, amount: number) => {
     setAddedItems((prev) =>
       prev.map((a) =>
-        a.templateId === templateId ? { ...a, goldAmount: amount } : a,
+        a.id === itemId ? { ...a, goldAmount: amount } : a,
       ),
     );
   };
@@ -285,25 +301,25 @@ export default function PackageEditPage() {
   // selectableCount > 0일 때 가장 비싼 N개 자동 선택
   useEffect(() => {
     if (selectableCount <= 0 || addedItems.length === 0) {
-      setCheckedTemplateIds(new Set(addedItems.map((a) => a.templateId)));
+      setCheckedItemIds(new Set(addedItems.map((a) => a.id)));
       return;
     }
     const withValue = addedItems.map((a, idx) => ({
-      templateId: a.templateId,
+      id: a.id,
       value: itemSubtotals[idx] || 0,
     }));
     withValue.sort((a, b) => b.value - a.value);
-    const topN = new Set(withValue.slice(0, selectableCount).map((v) => v.templateId));
-    setCheckedTemplateIds(topN);
+    const topN = new Set(withValue.slice(0, selectableCount).map((v) => v.id));
+    setCheckedItemIds(topN);
   }, [addedItems, itemSubtotals, selectableCount]);
 
   // 총 골드 계산 (체크된 아이템만)
   const totalGoldValue = useMemo(() => {
     return addedItems.reduce((sum, added, idx) => {
-      if (selectableCount > 0 && !checkedTemplateIds.has(added.templateId)) return sum;
+      if (selectableCount > 0 && !checkedItemIds.has(added.id)) return sum;
       return sum + (itemSubtotals[idx] || 0);
     }, 0);
-  }, [addedItems, itemSubtotals, selectableCount, checkedTemplateIds]);
+  }, [addedItems, itemSubtotals, selectableCount, checkedItemIds]);
 
   const multiplier = packageType === '3+1' ? 4 / 3 : packageType === '2+1' ? 3 / 2 : 1;
   const adjustedValue = totalGoldValue * multiplier;
@@ -331,6 +347,10 @@ export default function PackageEditPage() {
     if (addedItems.length === 0) errors.items = '아이템을 1개 이상 추가해주세요.';
     if (royalCrystalPrice <= 0) errors.price = '현금 가격을 입력해주세요.';
     if (goldPerWon <= 0) errors.rate = '환율을 입력해주세요.';
+    if (packageType === '가챠') {
+      const probSum = addedItems.reduce((s, a) => s + (gachaProbabilities[a.id] || 0), 0);
+      if (Math.abs(probSum - 100) >= 0.1) errors.prob = '확률 합계가 100%여야 합니다.';
+    }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       setError(Object.values(errors)[0]);
@@ -429,6 +449,17 @@ export default function PackageEditPage() {
         })
         .filter(Boolean) as PackageItem[];
 
+      // 가챠: 아이템에 확률 주입
+      if (packageType === '가챠') {
+        let idx = 0;
+        for (const added of addedItems) {
+          if (idx < items.length) {
+            items[idx].probability = gachaProbabilities[added.id] || 0;
+          }
+          idx++;
+        }
+      }
+
       await updatePackagePost(postId, {
         title: title.trim(),
         packageType,
@@ -509,26 +540,35 @@ export default function PackageEditPage() {
                     {addedItems.map((added) => {
                       if (added.isCustom) {
                         const cSubtotal = (added.customGoldPerUnit || 0) * added.quantity;
-                        const isChecked = checkedTemplateIds.has(added.templateId);
+                        const isChecked = checkedItemIds.has(added.id);
                         return (
-                          <div key={added.templateId} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
+                          <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
                             <div className={styles.customItemRow}>
                               <input type="text" className={styles.customNameInput}
                                 value={added.customName || ''}
-                                onChange={(e) => handleCustomNameChange(added.templateId, e.target.value)}
+                                onChange={(e) => handleCustomNameChange(added.id, e.target.value)}
                                 placeholder="아이템 이름" maxLength={30} />
                               <input type="number" className={styles.quantityInput}
                                 value={added.customGoldPerUnit || ''}
-                                onChange={(e) => handleCustomGoldChange(added.templateId, parseInt(e.target.value) || 0)}
+                                onChange={(e) => handleCustomGoldChange(added.id, parseInt(e.target.value) || 0)}
                                 placeholder="골드" style={{ width: '80px' }} min={0} />
                               <span className={styles.packageBoxItemX}>x</span>
                               <input type="number" className={styles.quantityInput}
                                 value={added.quantity || ''}
-                                onChange={(e) => handleQuantityChange(added.templateId, parseInt(e.target.value) || 0)}
+                                onChange={(e) => handleQuantityChange(added.id, parseInt(e.target.value) || 0)}
                                 min={0} />
                               <span className={styles.packageBoxItemSubtotal}>{formatNumber(cSubtotal)}G</span>
+                              {packageType === '가챠' && (
+                                <>
+                                  <input type="number" className={styles.gachaProbInput}
+                                    value={gachaProbabilities[added.id] ?? ''}
+                                    onChange={(e) => setGachaProbabilities((p) => ({ ...p, [added.id]: parseFloat(e.target.value) || 0 }))}
+                                    placeholder="%" min={0} max={100} step={0.1} />
+                                  <span className={styles.gachaProbUnit}>%</span>
+                                </>
+                              )}
                               <button type="button" className={styles.removeItemBtn}
-                                onClick={() => handleRemoveItem(added.templateId)} title="제거">&times;</button>
+                                onClick={() => handleRemoveItem(added.id)} title="제거">&times;</button>
                             </div>
                           </div>
                         );
@@ -539,9 +579,9 @@ export default function PackageEditPage() {
                       const qty = template.type === 'gold' ? 1 : added.quantity;
                       const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
                       const subtotal = unitPrice * qty * inner;
-                      const isChecked = checkedTemplateIds.has(added.templateId);
+                      const isChecked = checkedItemIds.has(added.id);
                       return (
-                        <div key={added.templateId} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
+                        <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
                           <div className={styles.packageBoxItemMain}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={template.icon} alt={template.name}
@@ -555,20 +595,29 @@ export default function PackageEditPage() {
                             {template.type === 'gold' ? (
                               <input type="number" className={styles.quantityInput}
                                 value={added.goldAmount || ''}
-                                onChange={(e) => handleGoldChange(added.templateId, parseInt(e.target.value) || 0)}
+                                onChange={(e) => handleGoldChange(added.id, parseInt(e.target.value) || 0)}
                                 placeholder="골드" style={{ width: '100px' }} />
                             ) : (
                               <>
                                 <span className={styles.packageBoxItemX}>x</span>
                                 <input type="number" className={styles.quantityInput}
                                   value={added.quantity || ''}
-                                  onChange={(e) => handleQuantityChange(added.templateId, parseInt(e.target.value) || 0)}
+                                  onChange={(e) => handleQuantityChange(added.id, parseInt(e.target.value) || 0)}
                                   min={0} />
                               </>
                             )}
                             <span className={styles.packageBoxItemSubtotal}>{formatNumber(subtotal)}G</span>
+                            {packageType === '가챠' && (
+                              <>
+                                <input type="number" className={styles.gachaProbInput}
+                                  value={gachaProbabilities[added.id] ?? ''}
+                                  onChange={(e) => setGachaProbabilities((p) => ({ ...p, [added.id]: parseFloat(e.target.value) || 0 }))}
+                                  placeholder="%" min={0} max={100} step={0.1} />
+                                <span className={styles.gachaProbUnit}>%</span>
+                              </>
+                            )}
                             <button type="button" className={styles.removeItemBtn}
-                              onClick={() => handleRemoveItem(added.templateId)} title="제거">&times;</button>
+                              onClick={() => handleRemoveItem(added.id)} title="제거">&times;</button>
                           </div>
                           {template.type === 'choice' && template.choices && template.choices.length <= 3 && (
                             <div className={styles.choiceBranch}>
@@ -578,7 +627,7 @@ export default function PackageEditPage() {
                                 return (
                                   <button key={choice.itemId} type="button"
                                     className={`${styles.choiceOption} ${isSelected ? styles.choiceOptionSelected : ''}`}
-                                    onClick={() => handleChoiceChange(added.templateId, choice.itemId)}>
+                                    onClick={() => handleChoiceChange(added.id, choice.itemId)}>
                                     {choice.icon && (
                                       /* eslint-disable-next-line @next/next/no-img-element */
                                       <img src={choice.icon} alt={choice.name} className={styles.choiceOptionIcon}
@@ -596,7 +645,7 @@ export default function PackageEditPage() {
                           {template.type === 'choice' && template.choices && template.choices.length > 3 && (
                             <div className={styles.choiceDropdown}>
                               <select className={styles.choiceSelect} value={added.selectedChoiceId || ''}
-                                onChange={(e) => handleChoiceChange(added.templateId, e.target.value)}>
+                                onChange={(e) => handleChoiceChange(added.id, e.target.value)}>
                                 {template.choices.map((choice) => {
                                   const choicePrice = getItemUnitPrice(choice.itemId, latestPrices);
                                   return (
@@ -613,7 +662,7 @@ export default function PackageEditPage() {
                               <span className={styles.innerQuantityLabel}>상자당</span>
                               <input type="number" className={styles.quantityInput}
                                 value={added.innerQuantity || ''}
-                                onChange={(e) => handleInnerQuantityChange(added.templateId, parseInt(e.target.value) || 0)}
+                                onChange={(e) => handleInnerQuantityChange(added.id, parseInt(e.target.value) || 0)}
                                 min={0} />
                               <span className={styles.innerQuantityLabel}>개</span>
                             </div>
@@ -628,12 +677,21 @@ export default function PackageEditPage() {
                   </div>
                 )}
               </div>
-              {addedItems.length > 0 && (
+              {addedItems.length > 0 && packageType !== '가챠' && (
                 <div className={styles.packageBoxTotal}>
                   <span>총 골드 가치</span>
                   <span className={styles.packageBoxTotalValue}>{formatNumber(totalGoldValue)} G</span>
                 </div>
               )}
+              {addedItems.length > 0 && packageType === '가챠' && (() => {
+                const probSum = addedItems.reduce((s, a) => s + (gachaProbabilities[a.id] || 0), 0);
+                const isOk = Math.abs(probSum - 100) < 0.01;
+                return (
+                  <div className={`${styles.gachaProbSum} ${isOk ? styles.gachaProbSumOk : styles.gachaProbSumError}`}>
+                    확률 합계: {probSum.toFixed(1)}% {isOk ? '' : '(100%가 되어야 합니다)'}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* 우측: 패키지 정보 + 골드 환율 */}
@@ -648,12 +706,13 @@ export default function PackageEditPage() {
                   {fieldErrors.title && <p className={styles.fieldErrorMsg}>{fieldErrors.title}</p>}
                 </div>
                 <div className={styles.typeButtonRow}>
-                  {(['일반', '2+1', '3+1'] as PackageType[]).map((t) => (
+                  {(['일반', '2+1', '3+1', '가챠'] as PackageType[]).map((t) => (
                     <button key={t} type="button"
                       className={`${styles.typeButton} ${packageType === t ? styles.typeButtonActive : ''}`}
                       onClick={() => setPackageType(t)}>{t}</button>
                   ))}
                 </div>
+                {packageType !== '가챠' && (
                 <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
                   <label className={styles.formLabel} htmlFor="pkg-selectable">N선택 (0=전체)</label>
                   <div className={styles.selectableCountRow}>
@@ -668,6 +727,7 @@ export default function PackageEditPage() {
                     )}
                   </div>
                 </div>
+                )}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel} htmlFor="pkg-rc">패키지 현금 가격 (원) *</label>
                   <input id="pkg-rc" type="number" className={`${styles.formInput} ${fieldErrors.price ? styles.formInputError : ''}`}
@@ -737,10 +797,10 @@ export default function PackageEditPage() {
             <h2 className={styles.sectionTitle}>아이템 추가</h2>
             <div className={styles.availableGrid}>
               {TEMPLATE_ITEMS.map((template) => {
-                const isAdded = addedItems.some((a) => a.templateId === template.id);
+                const addedCount = addedItems.filter((a) => a.templateId === template.id).length;
                 return (
                   <button key={template.id} type="button"
-                    className={`${styles.availableItem} ${isAdded ? styles.availableItemAdded : ''}`}
+                    className={`${styles.availableItem} ${addedCount > 0 ? styles.availableItemAdded : ''}`}
                     onClick={() => handleAddItem(template.id)}>
                     <div className={styles.availableItemIconWrap}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -752,6 +812,9 @@ export default function PackageEditPage() {
                           ...(ICON_SCALE[template.id] ? { transform: ICON_SCALE[template.id] } : {}),
                         }}
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      {addedCount > 1 && (
+                        <span className={styles.availableItemCount}>{addedCount}</span>
+                      )}
                     </div>
                     <span className={styles.availableItemName}>{template.name}</span>
                   </button>
@@ -769,7 +832,37 @@ export default function PackageEditPage() {
           {/* 계산 결과 사이드바 */}
           <div className={styles.calcSidebar}>
             <h3 className={styles.calcSidebarTitle}>계산 결과</h3>
-            {addedItems.length > 0 && royalCrystalPrice > 0 && (
+            {packageType === '가챠' && addedItems.length > 0 && royalCrystalPrice > 0 ? (() => {
+              const gachaItems: import('@/types/package').PackageItem[] = addedItems.map((added) => {
+                if (added.isCustom) {
+                  return { itemId: `custom_${added.templateId}`, name: added.customName || '기타', quantity: added.quantity, goldOverride: added.customGoldPerUnit || 0, probability: gachaProbabilities[added.id] || 0 };
+                }
+                const template = TEMPLATES_MAP[added.templateId];
+                if (!template) return { itemId: '', name: '', quantity: 0, probability: 0 };
+                const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0);
+                const qty = template.type === 'gold' ? 1 : added.quantity;
+                const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
+                return { itemId: template.itemId || `fixed_${template.id}`, name: template.name, quantity: qty * inner, goldOverride: unitPrice, probability: gachaProbabilities[added.id] || 0 };
+              });
+              const expectedGold = gachaItems.reduce((s, it) => s + (it.goldOverride || 0) * it.quantity * ((it.probability || 0) / 100), 0);
+              const gachaEfficiency = royalCrystalPrice > 0 ? expectedGold / royalCrystalPrice : 0;
+              return (
+                <>
+                  <div className={styles.calcRow}>
+                    <span className={styles.calcLabel}>기대값</span>
+                    <span className={styles.calcValue}>{formatNumber(expectedGold)} G</span>
+                  </div>
+                  <div className={styles.calcRow}>
+                    <span className={styles.calcLabel}>가챠 가격</span>
+                    <span className={styles.calcValue}>{formatNumber(royalCrystalPrice)}원</span>
+                  </div>
+                  <div className={styles.calcRow}>
+                    <span className={styles.calcLabel}>기대 효율</span>
+                    <span className={styles.calcEfficiency}>{formatNumber(gachaEfficiency)} G/원</span>
+                  </div>
+                </>
+              );
+            })() : addedItems.length > 0 && royalCrystalPrice > 0 && (
               <>
                 <div className={styles.calcRow}>
                   <span className={styles.calcLabel}>1개 골드 가치</span>
