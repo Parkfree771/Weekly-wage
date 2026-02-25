@@ -277,7 +277,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
           <span className={`${styles.cardBadge} ${getBadgeClass(post.packageType)}`}>
             {post.packageType}
           </span>
-          {post.selectableCount && post.selectableCount > 0 && (
+          {post.selectableCount != null && post.selectableCount > 0 && (
             <span className={`${styles.cardBadge} ${styles.badgeSelect}`}>
               {post.selectableCount}선택
             </span>
