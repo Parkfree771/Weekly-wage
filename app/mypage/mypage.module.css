@@ -220,6 +220,91 @@
   gap: 16px;
 }
 
+/* 카드 래퍼 (사이드바 포함) */
+.cardWrapper {
+  position: relative;
+}
+
+.cardWrapperRight {
+  /* marker for right-column sidebar positioning */
+}
+
+.cardWrapper .characterCard {
+  width: 100%;
+}
+
+.cardWrapper .materialSidebar {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 8px);
+}
+
+.cardWrapperRight .materialSidebar {
+  right: auto;
+  left: calc(100% + 8px);
+}
+
+/* 재화 사이드바 */
+.materialSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.45rem 0.4rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+:global([data-theme="dark"]) .materialSidebar {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.sidebarSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sidebarSection + .sidebarSection {
+  margin-top: 0.25rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.sidebarTitle {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.materialRow2 {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.matIcon2 {
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.matOp2 {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.matAmount2 {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
 /* 캐릭터 카드 */
 .characterCard {
   position: relative;
@@ -1333,6 +1418,18 @@
     grid-template-columns: 1fr;
     max-width: 450px;
     margin: 0 auto;
+  }
+
+  .cardWrapper .materialSidebar,
+  .cardWrapperRight .materialSidebar {
+    position: static;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.15rem 0.7rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0 0 10px 10px;
+    border-top: none;
   }
 
   .characterImage,

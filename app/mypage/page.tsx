@@ -54,7 +54,7 @@ function getAllRaidGroups(itemLevel: number) {
 
 // 원정대 공통 컨텐츠 정의
 const COMMON_CONTENTS = [
-  { name: '운수대통 복 주머니', shortName: '복', image: '/lucky-pouch.webp', color: '#e6a817', days: [1, 4, 6, 0], maxChecks: 3, gold: 8100 },
+  { name: '운수대통 복 주머니', shortName: '복', image: '/lucky-pouch.webp', color: '#e6a817', days: [1, 4, 6, 0], maxChecks: 3, gold: 5000 },
   { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 3500 },
   { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0], gold: 0 },
 ];
@@ -119,6 +119,82 @@ function getGuardianRaidLabel(itemLevel: number): string {
   if (itemLevel >= 1640) return '1640 가토';
   return '가토';
 }
+// 카던(균열/전선) 1일 1회 노휴게 기준 재화 획득량 (레벨별 이미지 분리)
+const CHAOS_DAILY_REWARDS: { minLevel: number; materials: { image: string; alt: string; daily: number }[] }[] = [
+  {
+    minLevel: 1730,
+    materials: [
+      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 325.63 },
+      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1116.84 },
+      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 16.95 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 43455.42 },
+    ],
+  },
+  {
+    minLevel: 1720,
+    materials: [
+      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 746 },
+      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 2207.33 },
+      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 50.5 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 40262.83 },
+    ],
+  },
+  {
+    minLevel: 1700,
+    materials: [
+      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 636.57 },
+      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 1739.86 },
+      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 41.29 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 32876 },
+    ],
+  },
+  {
+    minLevel: 1680,
+    materials: [
+      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 473.78 },
+      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 1148.78 },
+      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 36.67 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 31813.78 },
+    ],
+  },
+];
+
+function getChaosDailyReward(itemLevel: number) {
+  return CHAOS_DAILY_REWARDS.find(r => itemLevel >= r.minLevel) || null;
+}
+
+// 가디언 토벌 1일 1회 노휴게 기준 재화 획득량 (데이터 추후 업데이트)
+const GUARDIAN_DAILY_REWARDS: { minLevel: number; materials: { image: string; alt: string; daily: number }[] }[] = [
+  {
+    minLevel: 1730,
+    materials: [
+      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 10.5 },
+    ],
+  },
+  {
+    minLevel: 1720,
+    materials: [
+      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 6.58 },
+    ],
+  },
+  {
+    minLevel: 1700,
+    materials: [
+      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 5.31 },
+    ],
+  },
+  {
+    minLevel: 1680,
+    materials: [
+      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 4.88 },
+    ],
+  },
+];
+
+function getGuardianDailyReward(itemLevel: number) {
+  return GUARDIAN_DAILY_REWARDS.find(r => itemLevel >= r.minLevel) || null;
+}
+
 // JS dayOfWeek → 주간 인덱스 (수=0 ~ 화=6)
 const WEEKLY_DAY_MAP: Record<number, number> = { 3: 0, 4: 1, 5: 2, 6: 3, 0: 4, 1: 5, 2: 6 };
 
@@ -1197,7 +1273,7 @@ export default function MyPage() {
           {displayCharacters
             .slice()
             .sort((a, b) => b.itemLevel - a.itemLevel)
-            .map((char) => {
+            .map((char, charIdx) => {
             const charState = weeklyChecklist[char.name] || createEmptyWeeklyState(char.itemLevel);
             const top3Raids = getTop3RaidGroups(char.itemLevel);
 
@@ -1228,8 +1304,52 @@ export default function MyPage() {
             const checkedRaids = getCheckedRaids(char.name);
             const allRaidGroups = getAllRaidGroups(char.itemLevel);
 
+            // 사이드바 데이터
+            const chaosReward = getChaosDailyReward(char.itemLevel);
+            const chaosChecks = charState.chaosDungeon?.checks.filter(Boolean).length || 0;
+            const guardianReward = getGuardianDailyReward(char.itemLevel);
+            const guardianChecks = charState.guardianRaid?.checks.filter(Boolean).length || 0;
+            const isRightCol = charIdx % 2 === 1;
+            const hasChaos = chaosReward && chaosChecks > 0;
+            const hasGuardian = guardianReward && guardianChecks > 0;
+
+            const materialSidebar = (hasChaos || hasGuardian) ? (
+              <div className={styles.materialSidebar}>
+                {hasChaos && (
+                  <div className={styles.sidebarSection}>
+                    <span className={styles.sidebarTitle}>카던</span>
+                    {chaosReward.materials.map((mat, mi) => (
+                      <div key={mi} className={styles.materialRow2}>
+                        <Image src={mat.image} alt={mat.alt} width={24} height={24} className={styles.matIcon2} />
+                        <span className={styles.matOp2}>×</span>
+                        <span className={styles.matAmount2}>
+                          {Math.round(mat.daily * chaosChecks).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {hasGuardian && (
+                  <div className={styles.sidebarSection}>
+                    <span className={styles.sidebarTitle}>가토</span>
+                    {guardianReward.materials.map((mat, mi) => (
+                      <div key={mi} className={styles.materialRow2}>
+                        <Image src={mat.image} alt={mat.alt} width={24} height={24} className={styles.matIcon2} />
+                        <span className={styles.matOp2}>×</span>
+                        <span className={styles.matAmount2}>
+                          {Math.round(mat.daily * guardianChecks).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null;
+
             return (
-              <div key={char.name} className={styles.characterCard}>
+              <div key={char.name} className={`${styles.cardWrapper} ${isRightCol ? styles.cardWrapperRight : ''}`}>
+              {materialSidebar}
+              <div className={styles.characterCard}>
                 {/* 카드 헤더: 닉네임 + 갱신버튼 + 레벨 */}
                 <div className={styles.cardHeader}>
                   <span className={styles.characterName}>{char.name}</span>
@@ -1674,6 +1794,7 @@ export default function MyPage() {
                     </div>
                   </div>
                 </div>
+              </div>
               </div>
             );
           })}
