@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Container, Card, Button, Form, Spinner, Alert, Modal } from 'react-bootstrap';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Container, Card, Button, Form, Spinner, Alert, Modal, Row, Col } from 'react-bootstrap';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,8 @@ import { registerCharacter, saveWeeklyChecklist, refreshCharacter, updateCharact
 import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service';
 import NicknameModal from '@/components/auth/NicknameModal';
 import { raids } from '@/data/raids';
+import { raidClearRewards } from '@/data/raidClearRewards';
+import { raidRewards, MATERIAL_IDS } from '@/data/raidRewards';
 import {
   Character,
   WeeklyChecklist,
@@ -1016,6 +1018,155 @@ export default function MyPage() {
     return total;
   }, [characters, weeklyChecklist, commonContent]);
 
+  // 주간 재화 합산 데이터 (레이드 + 카던 + 가토)
+  // itemId → 이미지/이름 직접 매핑 (카던 짧은 이름 문제 방지)
+  const itemIdInfoRef: Record<number, { name: string; image: string }> = {
+    [MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL]: { name: '운명의 파괴석 결정', image: '/top-destiny-destruction-stone5.webp' },
+    [MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL]: { name: '운명의 수호석 결정', image: '/top-destiny-guardian-stone5.webp' },
+    [MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE]: { name: '위대한 운명의 돌파석', image: '/top-destiny-breakthrough-stone5.webp' },
+    [MATERIAL_IDS.FATE_DESTRUCTION_STONE]: { name: '운명의 파괴석', image: '/destiny-destruction-stone5.webp' },
+    [MATERIAL_IDS.FATE_GUARDIAN_STONE]: { name: '운명의 수호석', image: '/destiny-guardian-stone5.webp' },
+    [MATERIAL_IDS.FATE_BREAKTHROUGH_STONE]: { name: '운명의 돌파석', image: '/destiny-breakthrough-stone5.webp' },
+    [MATERIAL_IDS.FATE_FRAGMENT]: { name: '운명의 파편', image: '/destiny-shard-bag-large5.webp' },
+  };
+
+  const weeklyMaterialData = useMemo(() => {
+    const itemIdInfo = itemIdInfoRef;
+    // 카던 alt → itemId 매핑
+    const chaosAltToItemId: Record<string, number> = {
+      '파괴석 결정': MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL,
+      '수호석 결정': MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL,
+      '위대한 돌파석': MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE,
+      '파편': MATERIAL_IDS.FATE_FRAGMENT,
+      '파괴석': MATERIAL_IDS.FATE_DESTRUCTION_STONE,
+      '수호석': MATERIAL_IDS.FATE_GUARDIAN_STONE,
+      '돌파석': MATERIAL_IDS.FATE_BREAKTHROUGH_STONE,
+    };
+    const ORDER = [
+      MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL,
+      MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL,
+      MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE,
+      MATERIAL_IDS.FATE_DESTRUCTION_STONE,
+      MATERIAL_IDS.FATE_GUARDIAN_STONE,
+      MATERIAL_IDS.FATE_BREAKTHROUGH_STONE,
+      MATERIAL_IDS.FATE_FRAGMENT,
+    ];
+
+    type MatEntry = { itemId: number; itemName: string; image: string; amount: number };
+    type GuardianEntry = { image: string; alt: string; amount: number };
+    type ConversionEntry = {
+      sourceItemId: number;
+      targetItemId: number;
+      convertedAmount: number;  // 교환으로 얻는 결정
+      originalCrystal: number;  // 원래 결정 수량
+      totalCrystal: number;     // 합산 결정 수량
+    };
+    type CharData = {
+      characterName: string;
+      itemLevel: number;
+      materials: MatEntry[];
+      guardianMaterials: GuardianEntry[];
+      hasMore: boolean;
+      conversions: ConversionEntry[];
+    };
+    const CONVERSION_PAIRS = [
+      { source: MATERIAL_IDS.FATE_DESTRUCTION_STONE, target: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, ratio: 5 },
+      { source: MATERIAL_IDS.FATE_GUARDIAN_STONE, target: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, ratio: 5 },
+      { source: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, target: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, ratio: 5 },
+    ];
+
+    const charDataList: CharData[] = [];
+
+    for (const char of characters) {
+      const charState = weeklyChecklist[char.name] || createEmptyWeeklyState(char.itemLevel);
+      const amountMap: Record<number, number> = {};
+      let hasMore = false;
+
+      // 1. 레이드 클리어 보상 + 더보기 보상
+      Object.entries(charState.raids).forEach(([raidName, gates]) => {
+        const buyMore = charState.raidMoreGoldExclude?.[raidName] === true;
+        gates.forEach((checked, i) => {
+          if (!checked) return;
+          const gateNum = i + 1;
+          const clearReward = raidClearRewards.find(r => r.raidName === raidName && r.gate === gateNum);
+          if (clearReward) {
+            for (const mat of clearReward.materials) {
+              if (mat.itemId === 0) continue;
+              amountMap[mat.itemId] = (amountMap[mat.itemId] || 0) + mat.amount;
+            }
+          }
+          if (buyMore) {
+            hasMore = true;
+            const moreReward = raidRewards.find(r => r.raidName === raidName && r.gate === gateNum);
+            if (moreReward) {
+              for (const mat of moreReward.materials) {
+                if (mat.itemId === 0) continue;
+                amountMap[mat.itemId] = (amountMap[mat.itemId] || 0) + mat.amount;
+              }
+            }
+          }
+        });
+      });
+
+      // 2. 카던 재화
+      const chaosReward = getChaosDailyReward(char.itemLevel);
+      const chaosChecks = charState.chaosDungeon?.checks.filter(Boolean).length || 0;
+      if (chaosReward && chaosChecks > 0) {
+        for (const mat of chaosReward.materials) {
+          const itemId = chaosAltToItemId[mat.alt];
+          if (itemId != null) {
+            amountMap[itemId] = (amountMap[itemId] || 0) + Math.round(mat.daily * chaosChecks);
+          }
+        }
+      }
+
+      // 3. 가토 재화 (보석 - itemId 없으므로 별도)
+      const guardianReward = getGuardianDailyReward(char.itemLevel);
+      const guardianChecks = charState.guardianRaid?.checks.filter(Boolean).length || 0;
+      const guardianMaterials: GuardianEntry[] = [];
+      if (guardianReward && guardianChecks > 0) {
+        for (const mat of guardianReward.materials) {
+          guardianMaterials.push({ image: mat.image, alt: mat.alt, amount: Math.round(mat.daily * guardianChecks) });
+        }
+      }
+
+      // itemId 기반으로 이미지/이름 확정
+      const materials: MatEntry[] = ORDER
+        .filter(id => amountMap[id])
+        .map(id => ({
+          itemId: id,
+          itemName: itemIdInfo[id]?.name || '',
+          image: itemIdInfo[id]?.image || '/default-material.webp',
+          amount: amountMap[id],
+        }));
+
+      // 교환 변환 계산 (파괴석→결정, 수호석→결정, 돌파석→위대한돌파석)
+      const conversions: ConversionEntry[] = [];
+      for (const pair of CONVERSION_PAIRS) {
+        const sourceAmount = amountMap[pair.source] || 0;
+        const targetAmount = amountMap[pair.target] || 0;
+        if (sourceAmount > 0) {
+          const converted = Math.floor(sourceAmount / pair.ratio);
+          conversions.push({
+            sourceItemId: pair.source,
+            targetItemId: pair.target,
+            convertedAmount: converted,
+            originalCrystal: targetAmount,
+            totalCrystal: targetAmount + converted,
+          });
+        }
+      }
+
+      const hasAnyMat = materials.length > 0 || guardianMaterials.length > 0;
+      if (!hasAnyMat) continue;
+
+      charDataList.push({ characterName: char.name, itemLevel: char.itemLevel, materials, guardianMaterials, hasMore, conversions });
+    }
+
+    charDataList.sort((a, b) => b.itemLevel - a.itemLevel);
+    return { charDataList, hasAny: charDataList.length > 0 };
+  }, [characters, weeklyChecklist]);
+
   // 레이드 체크 여부 확인
   const isRaidChecked = (charName: string, raidName: string) => {
     const charState = weeklyChecklist[charName];
@@ -1810,6 +1961,68 @@ export default function MyPage() {
             >
               {showAllCharacters ? '접기' : `더보기 (+${characters.length - 6})`}
             </Button>
+          </div>
+        )}
+
+        {/* 주간 재화 합산 (레이드 + 카던 + 가토) */}
+        {weeklyMaterialData.hasAny && (
+          <div className={styles.dailyMaterialSection}>
+            <div className={styles.dailyMaterialTitle}>주간 재화 합산 <span className={styles.dailyMaterialSubtitle}>(카던, 가토, 레이드, 레이드 더보기)</span></div>
+            <Row className="align-items-stretch g-2">
+              {weeklyMaterialData.charDataList.map(charData => (
+                <Col lg={2} md={4} sm={6} key={charData.characterName}>
+                  <div className={styles.dailyMaterialCard}>
+                    <div className={styles.dailyCharHeader}>
+                      <span className={styles.dailyCharName}>{charData.characterName}</span>
+                      <span className={styles.dailyCharLevel}>Lv.{charData.itemLevel.toFixed(0)}</span>
+                      {charData.hasMore && <span className={styles.dailyMoreBadge}>더보기</span>}
+                    </div>
+
+                    {/* 레이드 + 카던 재료 (통합) */}
+                    <div className={styles.dailyMatList}>
+                      {charData.materials.map(mat => {
+                        const asTarget = charData.conversions.find(c => c.targetItemId === mat.itemId);
+                        const asSource = charData.conversions.find(c => c.sourceItemId === mat.itemId);
+                        const targetInfo = asSource ? itemIdInfoRef[asSource.targetItemId] : null;
+                        const hasTargetRow = asSource ? charData.materials.some(m => m.itemId === asSource.targetItemId) : false;
+                        return (
+                          <div key={mat.itemId}>
+                            <div className={styles.dailyMatRow}>
+                              <Image src={mat.image} alt={mat.itemName} width={26} height={26} className={styles.dailyMatIcon} />
+                              <span className={styles.dailyMatOp}>&times;</span>
+                              <span className={styles.dailyMatAmount}>{mat.amount.toLocaleString()}</span>
+                              {asTarget && asTarget.convertedAmount > 0 && (
+                                <span className={styles.conversionTarget}>
+                                  <span className={styles.conversionPlus}>+{asTarget.convertedAmount.toLocaleString()}</span>
+                                  <span className={styles.conversionEquals}>= {asTarget.totalCrystal.toLocaleString()}</span>
+                                </span>
+                              )}
+                              {asSource && asSource.convertedAmount > 0 && targetInfo && (
+                                <span className={styles.conversionInline}>
+                                  <span className={styles.conversionArrowRight}>&rarr;</span>
+                                  <Image src={targetInfo.image} alt={targetInfo.name} width={18} height={18} className={styles.conversionInlineIcon} />
+                                  <span className={styles.conversionInlineAmount}>&times;{asSource.convertedAmount.toLocaleString()}</span>
+                                  {hasTargetRow && <span className={styles.conversionArrowUp}>&#8593;</span>}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* 가토 보석 (별도) */}
+                      {charData.guardianMaterials.length > 0 && charData.guardianMaterials.map((mat, mi) => (
+                        <div key={`g-${mi}`} className={styles.dailyMatRow}>
+                          <Image src={mat.image} alt={mat.alt} width={26} height={26} className={styles.dailyMatIcon} />
+                          <span className={styles.dailyMatOp}>&times;</span>
+                          <span className={styles.dailyMatAmount}>{mat.amount.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Col>
+              ))}
+            </Row>
           </div>
         )}
 

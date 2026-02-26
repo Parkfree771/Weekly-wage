@@ -1931,3 +1931,307 @@
 .feedbackError {
   color: #ef4444;
 }
+
+/* ==========================================================================
+   일일 재화 합산 (카던/가토) - MaterialSummary 스타일 미러
+   ========================================================================== */
+
+.dailyMaterialSection {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.dailyMaterialTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.6rem;
+  padding-left: 0.25rem;
+}
+
+.dailyMaterialSubtitle {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* 캐릭터 카드 */
+.dailyMaterialCard {
+  height: 100%;
+  padding: 0.85rem 0.9rem;
+  border-radius: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.15s ease;
+}
+
+.dailyMaterialCard:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+:global([data-theme="dark"]) .dailyMaterialCard {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:global([data-theme="dark"]) .dailyMaterialCard:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* 캐릭터 헤더 */
+.dailyCharHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-bottom: 0.45rem;
+  margin-bottom: 0.45rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dailyCharHeader::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: #4f46e5;
+  flex-shrink: 0;
+}
+
+:global([data-theme="dark"]) .dailyCharHeader::before {
+  background: #818cf8;
+}
+
+.dailyCharName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.dailyCharLevel {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.dailyMoreBadge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #fff;
+  background: #dc3545;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+/* 재료 목록 */
+.dailyMatList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* 재료 행 */
+.dailyMatRow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.dailyMatIcon {
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.dailyMatOp {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.dailyMatAmount {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 교환 변환 표시 - 결정 행 (타겟) */
+.conversionTarget {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.conversionPlus {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #059669;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="dark"]) .conversionPlus {
+  color: #34d399;
+}
+
+.conversionEquals {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4f46e5;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="dark"]) .conversionEquals {
+  color: #818cf8;
+}
+
+/* 교환 변환 표시 - 파괴석/수호석/돌파석 행 인라인 */
+.conversionInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.conversionArrowRight {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.conversionInlineIcon {
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.conversionInlineAmount {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #059669;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="dark"]) .conversionInlineAmount {
+  color: #34d399;
+}
+
+.conversionArrowUp {
+  font-size: 0.65rem;
+  color: #4f46e5;
+  font-weight: 700;
+  line-height: 1;
+}
+
+:global([data-theme="dark"]) .conversionArrowUp {
+  color: #818cf8;
+}
+
+/* ── 주간 재화 반응형 ── */
+@media (max-width: 768px) {
+  .dailyMaterialCard {
+    padding: 0.5rem 0.6rem;
+  }
+
+  .dailyCharName {
+    font-size: 0.78rem;
+  }
+
+  .dailyCharLevel {
+    font-size: 0.62rem;
+  }
+
+  .dailyMatIcon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .dailyMatAmount {
+    font-size: 0.7rem;
+  }
+
+  .conversionPlus {
+    font-size: 0.58rem;
+  }
+
+  .conversionEquals {
+    font-size: 0.62rem;
+  }
+
+  .conversionInlineIcon {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .conversionInlineAmount {
+    font-size: 0.6rem;
+  }
+
+  .conversionArrowRight {
+    font-size: 0.6rem;
+  }
+
+  .conversionArrowUp {
+    font-size: 0.55rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dailyMaterialCard {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .dailyCharName {
+    font-size: 0.72rem;
+  }
+
+  .dailyMatIcon {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .dailyMatAmount {
+    font-size: 0.65rem;
+  }
+
+  .conversionPlus {
+    font-size: 0.52rem;
+  }
+
+  .conversionEquals {
+    font-size: 0.55rem;
+  }
+
+  .conversionInlineIcon {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .conversionInlineAmount {
+    font-size: 0.52rem;
+  }
+
+  .conversionArrowRight {
+    font-size: 0.52rem;
+  }
+
+  .conversionArrowUp {
+    font-size: 0.48rem;
+  }
+
+  .dailyGrandTotalList {
+    gap: 0.4rem 0.8rem;
+  }
+}
