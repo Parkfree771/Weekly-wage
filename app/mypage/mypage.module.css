@@ -1422,14 +1422,7 @@
 
   .cardWrapper .materialSidebar,
   .cardWrapperRight .materialSidebar {
-    position: static;
-    flex-direction: row;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 0.15rem 0.7rem;
-    padding: 0.35rem 0.6rem;
-    border-radius: 0 0 10px 10px;
-    border-top: none;
+    display: none;
   }
 
   .characterImage,
