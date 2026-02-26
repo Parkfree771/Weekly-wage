@@ -582,6 +582,17 @@ export function calculateGachaExpectedValue(
   }, 0);
 }
 
+/** 10회 가챠 결과를 중복 그룹핑 (빈도순 정렬) */
+export function groupMultiResults(
+  results: number[],
+): { origIdx: number; count: number }[] {
+  const map = new Map<number, number>();
+  for (const idx of results) map.set(idx, (map.get(idx) || 0) + 1);
+  return Array.from(map.entries())
+    .map(([origIdx, count]) => ({ origIdx, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
 /** 패키지 게시물의 효율(G/원)을 계산 — 갤러리 정렬용 */
 export function calculatePostEfficiency(
   post: PackagePost,

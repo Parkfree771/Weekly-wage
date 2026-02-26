@@ -199,6 +199,10 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
   const [gachaHighlight, setGachaHighlight] = useState(-1);
   const [gachaWinner, setGachaWinner] = useState(-1);
   const gachaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [gachaMode, setGachaMode] = useState<'single' | 'multi'>('single');
+  const [gachaMultiResults, setGachaMultiResults] = useState<number[]>([]);
+  const [multiRevealCount, setMultiRevealCount] = useState(0);
+  const [multiHighlights, setMultiHighlights] = useState<number[]>([]);
 
   const gachaItemGolds = useMemo(() => {
     if (!isGacha) return [];
@@ -207,33 +211,35 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
     );
   }, [isGacha, post.items, latestPrices, goldPerWon, gachaBcRate]);
 
-  const handleGacha = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (gachaPhase === 'spinning') return;
-
-    const items = post.items;
-    // 확률 기반 가중 랜덤 → 원본 인덱스
+  // 가챠 1회: 확률 기반 가중 랜덤
+  const selectOneWinner = (): number => {
     const rand = Math.random() * 100;
     let cumulative = 0;
-    let targetOrigIdx = items.length - 1;
-    for (let i = 0; i < items.length; i++) {
-      cumulative += items[i].probability || 0;
-      if (rand <= cumulative) { targetOrigIdx = i; break; }
+    for (let i = 0; i < post.items.length; i++) {
+      cumulative += post.items[i].probability || 0;
+      if (rand <= cumulative) return i;
     }
-    // 원본 인덱스 → 표시 순서 인덱스
+    return post.items.length - 1;
+  };
+
+  const handleGacha = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (gachaPhase !== 'idle') return;
+
+    setGachaMode('single');
+    const targetOrigIdx = selectOneWinner();
     const targetDisplayIdx = gachaDisplayOrder.indexOf(targetOrigIdx);
 
     setGachaPhase('spinning');
     setGachaWinner(-1);
 
-    const count = items.length;
+    const count = post.items.length;
     const minCycles = 2;
     const totalSteps = minCycles * count + targetDisplayIdx + 1;
     let step = 0;
 
     const tick = () => {
-      const currentDisplayIdx = step % count;
-      setGachaHighlight(currentDisplayIdx);
+      setGachaHighlight(step % count);
       step++;
       if (step > totalSteps) {
         setGachaHighlight(targetDisplayIdx);
@@ -248,12 +254,100 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
     tick();
   };
 
+  // 가챠 10회: 동시 출발 + 순차 착지
+  const handleGachaMulti = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (gachaPhase !== 'idle') return;
+
+    const results: number[] = [];
+    for (let r = 0; r < 10; r++) results.push(selectOneWinner());
+
+    setGachaMode('multi');
+    setGachaPhase('spinning');
+    setGachaMultiResults(results);
+    setMultiRevealCount(0);
+    setMultiHighlights([]);
+
+    const count = post.items.length;
+    const TICK_MS = 35;
+    const STAGGER_TICKS = 3; // ~105ms 간격으로 출발
+    const CYCLES = 2;
+
+    // 각 롤 데이터 사전 계산
+    const rolls = results.map((origIdx, rollIndex) => {
+      const targetDisplayIdx = gachaDisplayOrder.indexOf(origIdx);
+      const totalPositions = CYCLES * count + targetDisplayIdx + 1;
+      const totalTicks = Math.round(totalPositions * 2.5);
+      return {
+        targetDisplayIdx,
+        startTick: rollIndex * STAGGER_TICKS,
+        totalPositions,
+        totalTicks,
+        landed: false,
+      };
+    });
+
+    let currentTick = 0;
+    let revealCount = 0;
+
+    const masterTick = () => {
+      const highlights: number[] = [];
+      let allLanded = true;
+
+      for (const roll of rolls) {
+        if (currentTick < roll.startTick) {
+          allLanded = false;
+          continue;
+        }
+
+        const elapsed = currentTick - roll.startTick;
+
+        if (elapsed >= roll.totalTicks) {
+          if (!roll.landed) {
+            roll.landed = true;
+            revealCount++;
+            setMultiRevealCount(revealCount);
+          }
+          continue;
+        }
+
+        allLanded = false;
+        const progress = elapsed / roll.totalTicks;
+        const easedProgress = 1 - Math.pow(1 - progress, 2);
+        const visualPos = Math.min(
+          Math.floor(easedProgress * roll.totalPositions),
+          roll.totalPositions - 1,
+        );
+        highlights.push(visualPos % count);
+      }
+
+      setMultiHighlights(highlights);
+
+      if (allLanded) {
+        gachaTimerRef.current = setTimeout(() => {
+          setMultiHighlights([]);
+          setGachaPhase('result');
+        }, 300);
+        return;
+      }
+
+      currentTick++;
+      gachaTimerRef.current = setTimeout(masterTick, TICK_MS);
+    };
+
+    masterTick();
+  };
+
   const resetGacha = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (gachaTimerRef.current) clearTimeout(gachaTimerRef.current);
     setGachaPhase('idle');
     setGachaHighlight(-1);
     setGachaWinner(-1);
+    setGachaMode('single');
+    setGachaMultiResults([]);
+    setMultiRevealCount(0);
+    setMultiHighlights([]);
   };
 
   const cashGold = post.royalCrystalPrice * goldPerWon;
@@ -289,9 +383,20 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
             const item = post.items[idx];
             const displayIdx = isGacha ? gachaDisplayOrder.indexOf(idx) : idx;
             const isChecked = checkedItems[idx] !== false;
-            const isGachaHighlighted = isGacha && gachaPhase === 'spinning' && gachaHighlight === displayIdx;
-            const isGachaWon = isGacha && gachaPhase === 'result' && gachaWinner === displayIdx;
-            const isGachaDimmed = isGacha && gachaPhase === 'result' && gachaWinner !== displayIdx;
+            const revealedSlice = gachaMultiResults.slice(0, multiRevealCount);
+            const isGachaHighlighted = isGacha && gachaPhase === 'spinning' && (
+              (gachaMode === 'single' && gachaHighlight === displayIdx) ||
+              (gachaMode === 'multi' && multiHighlights.includes(displayIdx))
+            );
+            const isGachaWon = isGacha && (
+              (gachaPhase === 'result' && gachaMode === 'single' && gachaWinner === displayIdx) ||
+              (gachaPhase === 'result' && gachaMode === 'multi' && gachaMultiResults.includes(idx)) ||
+              (gachaPhase === 'spinning' && gachaMode === 'multi' && revealedSlice.includes(idx))
+            );
+            const isGachaDimmed = isGacha && gachaPhase === 'result' && (
+              (gachaMode === 'single' && gachaWinner !== displayIdx) ||
+              (gachaMode === 'multi' && !gachaMultiResults.includes(idx))
+            );
             return (
               <div
                 key={idx}
@@ -321,6 +426,12 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                     </svg>
                   )}
                 </span>
+                {(() => {
+                  if (!isGacha || gachaMode !== 'multi') return null;
+                  const slice = gachaPhase === 'result' ? gachaMultiResults : gachaMultiResults.slice(0, multiRevealCount);
+                  const cnt = slice.filter(r => r === idx).length;
+                  return cnt > 1 ? <span className={styles.itemMultiCount}>x{cnt}</span> : null;
+                })()}
               </div>
             );
           })}
@@ -413,41 +524,73 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
           {isGacha && (
             <>
               <div className={styles.resultDivider} />
-              {gachaPhase === 'result' && gachaWinner >= 0 ? (() => {
+
+              {/* 1회 결과 - 컴팩트 2줄 */}
+              {gachaPhase === 'result' && gachaMode === 'single' && gachaWinner >= 0 && (() => {
                 const winOrigIdx = gachaDisplayOrder[gachaWinner];
+                const wonGold = gachaItemGolds[winOrigIdx];
+                const benefit = cashGold > 0 ? ((wonGold - cashGold) / cashGold) * 100 : 0;
                 return (
                 <div className={styles.gachaResultArea} onClick={(e) => e.stopPropagation()}>
-                  <div className={styles.gachaResultName}>
-                    {post.items[winOrigIdx].name}
-                    {post.items[winOrigIdx].quantity > 1 ? ` x${post.items[winOrigIdx].quantity}` : ''}
+                  <div className={styles.gachaResultRow}>
+                    <span className={styles.gachaResultName}>
+                      {post.items[winOrigIdx].name}
+                      {post.items[winOrigIdx].quantity > 1 ? ` x${post.items[winOrigIdx].quantity}` : ''}
+                    </span>
+                    <span className={styles.gachaResultGold}>{formatNumber(wonGold)}G</span>
                   </div>
-                  <div className={styles.gachaResultGold}>
-                    {formatNumber(gachaItemGolds[winOrigIdx])} G
+                  <div className={styles.gachaResultRow}>
+                    {goldPerWon > 0 && (
+                      <span className={`${styles.gachaResultBenefit} ${benefit >= 0 ? styles.benefitPositive : styles.benefitNegative}`}>
+                        {benefit >= 0 ? '+' : ''}{benefit.toFixed(1)}%
+                      </span>
+                    )}
+                    <button className={styles.gachaReroll} onClick={resetGacha}>다시 뽑기</button>
                   </div>
-                  {goldPerWon > 0 && (() => {
-                    const wonGold = gachaItemGolds[winOrigIdx];
-                    const benefit = cashGold > 0 ? ((wonGold - cashGold) / cashGold) * 100 : 0;
-                    return (
-                      <div className={styles.gachaResultBenefit}>
-                        <span className={benefit >= 0 ? styles.benefitPositive : styles.benefitNegative}>
-                          {benefit >= 0 ? '+' : ''}{benefit.toFixed(1)}%
-                        </span>
-                      </div>
-                    );
-                  })()}
-                  <button className={styles.gachaReroll} onClick={resetGacha}>
-                    다시 뽑기
-                  </button>
                 </div>
                 );
-              })() : (
-                <button
-                  className={`${styles.gachaBtn} ${gachaPhase === 'spinning' ? styles.gachaBtnSpinning : ''}`}
-                  onClick={handleGacha}
-                  disabled={gachaPhase === 'spinning'}
-                >
-                  {gachaPhase === 'spinning' ? '뽑는 중...' : '가챠!'}
-                </button>
+              })()}
+
+              {/* 10회 스피닝 진행 표시 */}
+              {gachaPhase === 'spinning' && gachaMode === 'multi' && multiRevealCount > 0 && (
+                <div className={styles.gachaResultArea} onClick={(e) => e.stopPropagation()}>
+                  <div className={styles.gachaMultiTitle}>{multiRevealCount}/10</div>
+                </div>
+              )}
+
+              {/* 10회 최종 결과 - 컴팩트 2줄 */}
+              {gachaPhase === 'result' && gachaMode === 'multi' && (() => {
+                const totalWonGold = gachaMultiResults.reduce((sum, ri) => sum + gachaItemGolds[ri], 0);
+                const totalCash = cashGold * 10;
+                const multiBenefit = totalCash > 0 ? ((totalWonGold - totalCash) / totalCash) * 100 : 0;
+                return (
+                  <div className={styles.gachaResultArea} onClick={(e) => e.stopPropagation()}>
+                    <div className={styles.gachaResultRow}>
+                      <span className={styles.gachaResultName}>10회 결과</span>
+                      <span className={styles.gachaResultGold}>{formatNumber(totalWonGold)}G</span>
+                    </div>
+                    <div className={styles.gachaResultRow}>
+                      {goldPerWon > 0 && (
+                        <span className={`${styles.gachaResultBenefit} ${multiBenefit >= 0 ? styles.benefitPositive : styles.benefitNegative}`}>
+                          {multiBenefit >= 0 ? '+' : ''}{multiBenefit.toFixed(1)}%
+                        </span>
+                      )}
+                      <button className={styles.gachaReroll} onClick={resetGacha}>다시 뽑기</button>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 버튼 (idle 일 때만) */}
+              {gachaPhase === 'idle' && (
+                <div className={styles.gachaBtnGroup}>
+                  <button className={styles.gachaBtn} onClick={handleGacha}>
+                    가챠
+                  </button>
+                  <button className={`${styles.gachaBtn} ${styles.gachaBtnMulti}`} onClick={handleGachaMulti}>
+                    10회
+                  </button>
+                </div>
               )}
             </>
           )}

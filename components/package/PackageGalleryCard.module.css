@@ -403,9 +403,32 @@
   border-color: #22c55e;
 }
 
+/* 10회 중복 카운트 뱃지 */
+.itemMultiCount {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  background: #8b5cf6;
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  padding: 0px 4px;
+  border-radius: 7px;
+  line-height: 1.4;
+  z-index: 3;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── 가챠 버튼 그룹 ─── */
+.gachaBtnGroup {
+  display: flex;
+  gap: 0.35rem;
+  width: 100%;
+}
+
 /* ─── 가챠 버튼 ─── */
 .gachaBtn {
-  width: 100%;
+  flex: 1;
   padding: 0.55rem;
   font-size: 0.9rem;
   font-weight: 800;
@@ -439,55 +462,81 @@
   50% { box-shadow: 0 3px 20px rgba(249, 115, 22, 0.65); }
 }
 
-/* ─── 가챠 결과 ─── */
+/* ─── 가챠 결과 (컴팩트 2줄) ─── */
 .gachaResultArea {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  animation: gachaCardFadeIn 0.3s ease;
+  gap: 0.15rem;
+  animation: gachaCardFadeIn 0.2s ease;
 }
 
 @keyframes gachaCardFadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.gachaResultRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
 }
 
 .gachaResultName {
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: #22c55e;
-  text-align: center;
-  word-break: keep-all;
-  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .gachaResultGold {
-  font-size: 1rem;
+  font-size: 0.78rem;
   font-weight: 800;
   color: #f97316;
+  flex-shrink: 0;
 }
 
 .gachaResultBenefit {
-  font-size: 1.1rem;
+  font-size: 0.78rem;
   font-weight: 800;
 }
 
 .gachaReroll {
-  margin-top: 0.3rem;
-  padding: 0.3rem 0.8rem;
-  font-size: 0.7rem;
+  margin-left: auto;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.6rem;
   font-weight: 700;
   color: #f97316;
   background: transparent;
   border: 1px solid #f97316;
-  border-radius: 6px;
+  border-radius: 5px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .gachaReroll:hover {
   background: rgba(249, 115, 22, 0.1);
+}
+
+/* ─── 10회 가챠 버튼 ─── */
+.gachaBtnMulti {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  box-shadow: 0 3px 12px rgba(139, 92, 246, 0.35);
+}
+
+.gachaBtnMulti:hover {
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.5);
+}
+
+/* ─── 10회 가챠 진행 카운터 ─── */
+.gachaMultiTitle {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #a78bfa;
+  text-align: center;
 }
 
 /* ─── 상세보기 링크 ─── */
@@ -689,19 +738,38 @@
   }
 
   .gachaResultName {
-    font-size: 0.65rem;
+    font-size: 0.58rem;
   }
 
   .gachaResultGold {
-    font-size: 0.8rem;
+    font-size: 0.65rem;
   }
 
   .gachaResultBenefit {
-    font-size: 0.82rem;
+    font-size: 0.65rem;
   }
 
   .gachaReroll {
+    font-size: 0.52rem;
+    padding: 0.12rem 0.35rem;
+  }
+
+  .gachaBtnGroup {
+    gap: 0.2rem;
+  }
+
+  .gachaBtnMulti {
+    font-size: 0.62rem;
+  }
+
+  .gachaMultiTitle {
     font-size: 0.6rem;
-    padding: 0.2rem 0.5rem;
+  }
+
+  .itemMultiCount {
+    font-size: 0.5rem;
+    padding: 0px 3px;
+    top: -4px;
+    left: -4px;
   }
 }

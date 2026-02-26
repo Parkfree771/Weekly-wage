@@ -2366,6 +2366,22 @@
   border-color: #ef4444;
 }
 
+/* 10회 중복 카운트 뱃지 */
+.gachaItemMultiCount {
+  position: absolute;
+  top: 0.3rem;
+  left: 0.5rem;
+  background: #8b5cf6;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 9px;
+  line-height: 1.5;
+  z-index: 3;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
 @keyframes checkPop {
   0% { transform: scale(0.3); }
   60% { transform: scale(1.3); }
@@ -2430,12 +2446,20 @@
   background: rgba(245, 158, 11, 0.1);
 }
 
+/* 가챠 버튼 그룹 */
+.gachaBtnGroup {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 500px;
+  margin: 0 auto 1.5rem;
+}
+
 /* 가챠 버튼 */
 .gachaButton {
-  display: block;
+  flex: 1;
   width: 100%;
-  max-width: 320px;
-  margin: 0 auto 1.5rem;
+  max-width: none;
+  margin: 0;
   padding: 1rem 2rem;
   font-size: 1.3rem;
   font-weight: 800;
@@ -2548,6 +2572,108 @@
   color: #fff;
 }
 
+/* ─── 10회 가챠 버튼 ─── */
+.gachaBtnMulti {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4) !important;
+}
+
+.gachaBtnMulti:hover {
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.5) !important;
+}
+
+/* ─── 10회 가챠 결과 (상세 페이지) ─── */
+.gachaMultiResult {
+  text-align: center;
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border: 2px solid #8b5cf6;
+  border-radius: 14px;
+  margin-bottom: 1.5rem;
+  animation: gachaFadeIn 0.4s ease;
+}
+
+.gachaMultiTable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.gachaMultiTableRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--input-bg);
+  border-radius: 8px;
+  gap: 0.5rem;
+}
+
+.gachaMultiTableName {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.gachaMultiTableIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.gachaMultiTableQty {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.gachaMultiTableCount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #a78bfa;
+  flex-shrink: 0;
+  min-width: 2.5rem;
+  text-align: center;
+}
+
+.gachaMultiTableGold {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f97316;
+  flex-shrink: 0;
+  min-width: 5rem;
+  text-align: right;
+}
+
+.gachaMultiTotalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 0.5rem;
+}
+
+.gachaMultiTotalLabel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.gachaMultiTotalGold {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #f97316;
+}
+
 /* 등록 페이지: 확률 입력 */
 .gachaProbInput {
   width: 58px;
@@ -2610,6 +2736,10 @@
     font-size: 1.1rem;
     padding: 0.85rem 1.5rem;
   }
+
+  .gachaBtnGroup {
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 576px) {
@@ -2661,14 +2791,57 @@
     height: 6px;
   }
 
+  .gachaItemMultiCount {
+    font-size: 0.55rem;
+    padding: 0px 5px;
+    top: 0.15rem;
+    left: 0.2rem;
+  }
+
   .gachaButton {
-    font-size: 1rem;
-    padding: 0.75rem;
+    font-size: 0.95rem;
+    padding: 0.7rem 0.5rem;
     border-radius: 10px;
+  }
+
+  .gachaBtnGroup {
+    gap: 0.3rem;
+    max-width: 100%;
   }
 
   .gachaResult {
     padding: 1rem;
+  }
+
+  .gachaMultiResult {
+    padding: 0.75rem;
+  }
+
+  .gachaMultiTableRow {
+    padding: 0.3rem 0.5rem;
+  }
+
+  .gachaMultiTableName {
+    font-size: 0.72rem;
+  }
+
+  .gachaMultiTableIcon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .gachaMultiTableCount {
+    font-size: 0.72rem;
+    min-width: 2rem;
+  }
+
+  .gachaMultiTableGold {
+    font-size: 0.78rem;
+    min-width: 3.5rem;
+  }
+
+  .gachaMultiTotalGold {
+    font-size: 1rem;
   }
 
   .gachaResultTitle {
