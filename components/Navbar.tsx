@@ -16,6 +16,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: '/weekly-gold', label: '주간 계산' },
   { href: '/refining', label: '재련 계산' },
+  { href: '/combat-power', label: '전투력 분석' },
   { href: '/life-master', label: '생활 계산' },
   { href: '/hell-sim', label: '지옥 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
@@ -41,6 +42,7 @@ export default function Navbar() {
 
   const getNavClass = (href: string) => {
     const pageClass = href === '/refining' ? 'nav-refining' :
+                      href === '/combat-power' ? 'nav-combat' :
                       href === '/life-master' ? 'nav-life' :
                       href === '/hell-sim' ? 'nav-hell' :
                       href === '/bracelet' ? 'nav-bracelet' :

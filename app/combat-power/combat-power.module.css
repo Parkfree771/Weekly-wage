@@ -1,0 +1,1466 @@
+/* ═══════════════════════════════════════
+   전투력 분석 - Premium Spec Dashboard
+   ═══════════════════════════════════════ */
+
+/* === Page === */
+.pageContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.pageTitle {
+  font-size: clamp(1.3rem, 3vw, 1.8rem);
+  font-weight: 800;
+  background: var(--gradient-text-violet);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.3rem;
+}
+
+.pageSubtitle {
+  font-size: clamp(0.8rem, 2vw, 0.95rem);
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* === Delta Banner === */
+.deltaBanner {
+  position: sticky;
+  top: 56px;
+  z-index: 20;
+  margin-bottom: 1rem;
+}
+
+.deltaBannerInner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.deltaBannerLabel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.deltaBannerValue {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.resetBtn {
+  margin-left: auto;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.resetBtn:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* === Delta badges === */
+.deltaPos {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.deltaNeg {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════
+   Main Layout (2-column)
+   ═══════════════════════════ */
+.mainLayout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+/* === Profile (Left) === */
+.profileCol {
+  position: sticky;
+  top: 70px;
+}
+
+.profileCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.profileImgWrap {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.04));
+  position: relative;
+}
+
+.profileImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profileImgEmpty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: var(--text-muted);
+  opacity: 0.3;
+}
+
+.profileBody {
+  padding: 1rem;
+}
+
+.profileName {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 0.15rem;
+  line-height: 1.3;
+}
+
+.profileTitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.profileTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.7rem;
+}
+
+.profileTag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  background: var(--card-body-bg-stone);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.profileStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+.pStat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.55rem;
+  background: var(--card-body-bg-stone);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.pStatLabel {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.pStatVal {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pStatHL {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #8b5cf6;
+}
+
+/* ═══════════════════════════
+   Spec Column (Right)
+   ═══════════════════════════ */
+.specCol {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* === Card Shell === */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.cardHead {
+  padding: 0.65rem 1rem;
+  background: var(--card-header-bg-violet);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 5px;
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.cardBody {
+  padding: 0.75rem 1rem;
+}
+
+.cardFlex1 {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ═══════════════════════════
+   Equipment + Accessories Grid
+   ═══════════════════════════ */
+.equipAccGrid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0;
+}
+
+.leftCol,
+.rightCol {
+  min-width: 0;
+}
+
+.colLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 0 0.4rem 6px;
+  margin-bottom: 0.25rem;
+}
+
+.colDivider {
+  width: 1px;
+  background: var(--border-color);
+  margin: 0 0.75rem;
+  align-self: stretch;
+}
+
+/* === Item Row (shared for equip + acc) === */
+.itemRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  margin-bottom: 0.2rem;
+  transition: background 0.15s ease;
+}
+
+.itemRow:hover {
+  background: var(--card-body-bg-stone);
+}
+
+.itemIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  border: 2px solid;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.itemBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemNameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.itemName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qualBadge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  background: var(--card-body-bg-stone);
+  padding: 0.08rem 0.35rem;
+  border-radius: 3px;
+}
+
+.itemMeta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.08rem 0.3rem;
+  border-radius: 3px;
+  background: rgba(139, 92, 246, 0.08);
+  color: #8b5cf6;
+  white-space: nowrap;
+}
+
+.statTag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Quality: 컴팩트 인라인 (이름 옆 짧은 바 + 숫자) */
+.qualInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.qualMiniBar {
+  width: 32px;
+  height: 3.5px;
+  background: var(--card-body-bg-stone);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.qualMiniFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.qualNum {
+  font-size: 0.68rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  min-width: 16px;
+}
+
+/* Quality bar (장비 이름 아래 게이지) */
+.qualRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 3px;
+}
+
+.qualTrack {
+  flex: 1;
+  max-width: 110px;
+  height: 5px;
+  background: var(--card-body-bg-stone);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.qualFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* Effects: 세로 나열 */
+.effectsCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 3px;
+}
+
+.effectLine {
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.55;
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.effectLabel {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.effectVal {
+  font-weight: 800;
+}
+
+.gradeBadge {
+  font-weight: 800;
+  font-size: 0.66rem;
+}
+
+/* 팔찌 고유효과 키워드 (가로) */
+.braceletKeywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 3px;
+}
+
+.braceletKw {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+/* Swap controls */
+.swapWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.swapSel {
+  padding: 0.18rem 0.35rem;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 100px;
+}
+
+/* Engraving + Stone side-by-side */
+.engStoneRow {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.engSection {
+  flex: 1;
+  min-width: 0;
+  max-width: 50%;
+}
+
+.stoneSection {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Sub-dividers (stone, bracelet) */
+.subDivider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.subDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+/* Stone effects (세로) */
+.stonePos {
+  font-size: 0.75rem;
+  color: #3b82f6;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.stonePos b { font-weight: 800; }
+
+.stoneNeg {
+  font-size: 0.75rem;
+  color: #ef4444;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.stoneNeg b { font-weight: 800; }
+
+/* ═══════════════════════════
+   Mid Row: Engravings + Gems
+   ═══════════════════════════ */
+.midRow {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: 1rem;
+}
+
+/* === Engravings (compact) === */
+.engCard {
+  /* inherits .card */
+}
+
+.engRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 0.25rem;
+  transition: background 0.15s ease;
+}
+
+.engRow:hover {
+  background: var(--card-body-bg-stone);
+}
+
+.engIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.engName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.engLvBadge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: white;
+  padding: 0.12rem 0.4rem;
+  border-radius: 5px;
+  flex-shrink: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.swapSm {
+  padding: 0.12rem 0.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 62px;
+  flex-shrink: 0;
+}
+
+.emptySlot {
+  font-size: 0.82rem;
+  color: var(--text-disabled);
+  font-style: italic;
+  padding-left: 0.3rem;
+}
+
+/* === Gems === */
+.gemCard {
+  /* inherits .card */
+}
+
+.gemGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.25rem;
+}
+
+.gemRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.gemRow:hover {
+  background: var(--card-body-bg-stone);
+}
+
+.gemIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1.5px solid;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.gemBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.gemLevelRow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.gemDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.gemLv {
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.gemType {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.gemSkill {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.swapXs {
+  padding: 0.1rem 0.2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 52px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════
+   Enhance Level Stepper
+   ═══════════════════════════ */
+.enhStepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.enhBtn {
+  width: 28px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-body-bg-stone);
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.enhBtn:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.12);
+  color: #8b5cf6;
+}
+
+.enhBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.enhVal {
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0 0.5rem;
+  color: var(--text-primary);
+  min-width: 36px;
+  text-align: center;
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  line-height: 30px;
+  background: var(--card-bg);
+}
+
+/* ═══════════════════════════
+   Gem Diamond Layout
+   ═══════════════════════════ */
+.gemDiamond {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0;
+}
+
+.gemDmRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3rem;
+}
+
+.gemDmCenter {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.gemPair {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.gemCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 86px;
+}
+
+.gemCellEmpty {
+  width: 86px;
+  height: 90px;
+  visibility: hidden;
+}
+
+.gemCellIconWrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 9px;
+  transition: transform 0.15s ease;
+}
+
+.gemCell:hover .gemCellIconWrap {
+  transform: translateY(-2px);
+}
+
+.gemCellImg {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  border: 2px solid;
+  object-fit: cover;
+}
+
+.gemCellLv {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: white;
+  padding: 0.08rem 0.3rem;
+  border-radius: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  line-height: 1.2;
+}
+
+.gemCellSkill {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.3;
+}
+
+.gemCellFoot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.gemSelWrap {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--card-body-bg-stone);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.gemSelWrap:hover {
+  border-color: #8b5cf6;
+}
+
+.gemCellSel {
+  padding: 0.2rem 0.15rem 0.2rem 0.4rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 56px;
+  text-align: center;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  outline: none;
+}
+
+.gemSelArrow {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  padding-right: 0.3rem;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.gemCellDelta {
+  margin-top: 2px;
+  text-align: center;
+}
+
+/* ═══════════════════════════
+   Bottom Row: Cards + Ark
+   ═══════════════════════════ */
+.bottomRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.cardSetRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  margin-bottom: 0.2rem;
+  background: var(--card-body-bg-stone);
+  border: 1px solid var(--border-color);
+}
+
+.cardSetName {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cardSetCount {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #8b5cf6;
+}
+
+.cardSetAwaken {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* Ark Passive */
+.arkGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.arkItem {
+  text-align: center;
+  padding: 0.65rem 0.5rem;
+  border-radius: 8px;
+  background: var(--card-body-bg-stone);
+  border: 1px solid var(--border-color);
+}
+
+.arkLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.arkVal {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.arkEvo { color: #10b981; }
+.arkEnl { color: #3b82f6; }
+.arkLeap { color: #f59e0b; }
+
+/* ═══════════════════════════
+   Ark Grid
+   ═══════════════════════════ */
+.agEffectsSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.agEffectTag {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  background: var(--card-body-bg-stone);
+  border: 1px solid var(--border-color);
+  font-size: 0.78rem;
+}
+
+.agEffectName {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.agEffectVal {
+  font-weight: 800;
+  color: #8b5cf6;
+  font-size: 0.72rem;
+}
+
+.agEffectTip {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.68rem;
+}
+
+/* Ark Grid: Circular Ring */
+.agRing {
+  position: relative;
+  width: 380px;
+  height: 380px;
+  margin: 1rem auto 1.5rem;
+}
+
+.agRingNode {
+  position: absolute;
+  left: var(--ag-x);
+  top: var(--ag-y);
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100px;
+  text-align: center;
+}
+
+.agRingIcon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 3px solid;
+  object-fit: cover;
+  transition: transform 0.15s ease;
+}
+
+.agRingNode:hover .agRingIcon {
+  transform: scale(1.08);
+}
+
+.agRingName {
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.agRingPoint {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #10b981;
+}
+
+/* Ark Grid: Core Detail Cards */
+.agCoreList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.agCoreCard {
+  padding: 0.8rem;
+  border-radius: 10px;
+  background: var(--card-body-bg-stone);
+  border: 1px solid var(--border-color);
+  transition: box-shadow 0.15s ease;
+}
+
+.agCoreCard:hover {
+  box-shadow: 0 2px 14px rgba(139, 92, 246, 0.1);
+}
+
+.agCoreCardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.agCoreCardIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 9px;
+  border: 2.5px solid;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.agCoreCardName {
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agCoreCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.agCoreCardPt {
+  font-weight: 800;
+  color: #10b981;
+}
+
+/* Ark Grid: Gem List within core card */
+.agGemList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.agGemItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.agGemItemIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 2px solid;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.agGemItemBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.agGemItemNameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.agGemItemName {
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 질서/혼돈 포인트 */
+.agGemPointRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.agGemPtTotal {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.agGemPtOrder {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.agGemPtChaos {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+/* 젬 효과 목록 */
+.agGemEffList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.agGemEffRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.agGemEffLabel {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.agGemEffVal {
+  font-weight: 800;
+  color: #10b981;
+}
+
+/* ═══════════════════════════
+   Loading / Empty
+   ═══════════════════════════ */
+.loadingContainer { text-align: center; padding: 3rem 1rem; }
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loadingText { color: var(--text-muted); font-size: 0.9rem; font-weight: 600; }
+
+.emptyState { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
+.emptyStateIcon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+.emptyStateText { font-size: 1rem; font-weight: 600; }
+.emptyStateSubtext { font-size: 0.85rem; color: var(--text-disabled); margin-top: 0.5rem; }
+
+/* ═══════════════════════════
+   Responsive
+   ═══════════════════════════ */
+@media (max-width: 1100px) {
+  .mainLayout {
+    grid-template-columns: 240px 1fr;
+    gap: 1rem;
+  }
+
+  .midRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .pageContainer { padding: 1rem 0.6rem; }
+
+  .mainLayout {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
+  .profileCol { position: static; }
+
+  .profileCard {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .profileImgWrap {
+    width: 130px;
+    aspect-ratio: auto;
+    flex-shrink: 0;
+  }
+
+  .profileBody {
+    flex: 1;
+    padding: 0.65rem;
+  }
+
+  .profileName { font-size: 1rem; }
+
+  .profileStats {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .equipAccGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .colDivider {
+    width: auto;
+    height: 1px;
+    margin: 0.5rem 0;
+  }
+
+  .midRow {
+    grid-template-columns: 1fr;
+  }
+
+  .engStoneRow {
+    flex-direction: column;
+  }
+
+  .engSection {
+    max-width: 100%;
+  }
+
+  .stoneSection {
+    width: 100%;
+  }
+
+  .bottomRow {
+    flex-direction: column;
+  }
+
+  .agRing {
+    width: 300px;
+    height: 300px;
+  }
+
+  .agRingIcon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .agRingNode {
+    width: 86px;
+  }
+
+  .agRingName {
+    font-size: 0.7rem;
+    max-width: 86px;
+  }
+
+  .agCoreList {
+    grid-template-columns: 1fr;
+  }
+
+  .gemDmRow {
+    gap: 1.5rem;
+  }
+
+  .gemCell {
+    width: 72px;
+  }
+
+  .gemCellEmpty {
+    width: 72px;
+    height: 80px;
+  }
+
+  .gemCellIconWrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .cardBody { padding: 0.6rem 0.7rem; }
+}
+
+@media (max-width: 480px) {
+  .profileCard {
+    flex-direction: column;
+  }
+
+  .profileImgWrap {
+    width: 100%;
+    aspect-ratio: 1.6;
+  }
+
+  .profileStats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .agRing {
+    width: 250px;
+    height: 250px;
+  }
+
+  .agRingIcon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .agRingNode {
+    width: 72px;
+  }
+
+  .agRingName {
+    font-size: 0.62rem;
+    max-width: 72px;
+  }
+
+  .agRingPoint {
+    font-size: 0.58rem;
+  }
+
+  .agGemItemIcon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .gemDmRow {
+    gap: 0.6rem;
+  }
+
+  .gemCell {
+    width: 60px;
+  }
+
+  .gemCellEmpty {
+    width: 60px;
+    height: 68px;
+  }
+
+  .gemCellIconWrap {
+    width: 38px;
+    height: 38px;
+  }
+
+  .gemCellSkill {
+    font-size: 0.56rem;
+  }
+
+  .gemSelWrap {
+    border-radius: 5px;
+  }
+
+  .gemCellSel {
+    width: 46px;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.1rem 0.15rem 0.25rem;
+  }
+
+  .itemIcon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .enhStepper {
+    border-radius: 4px;
+  }
+
+  .enhBtn {
+    width: 24px;
+    height: 26px;
+  }
+
+  .enhVal {
+    font-size: 0.68rem;
+    min-width: 30px;
+    line-height: 26px;
+    padding: 0 0.3rem;
+  }
+}

@@ -48,6 +48,11 @@
   --neutral-color: #6b7280;
   --neutral-bg: rgba(107, 114, 128, 0.1);
 
+  /* Grade Colors (상/중/하) */
+  --grade-high: #f59e0b;
+  --grade-mid: #7c3aed;
+  --grade-low: #2563eb;
+
   /* Table Colors */
   --table-row-alternate: rgba(0, 0, 0, 0.02);
 
@@ -100,6 +105,11 @@
   --loss-bg: rgba(248, 113, 113, 0.15);
   --neutral-color: #9ca3af;
   --neutral-bg: rgba(156, 163, 175, 0.15);
+
+  /* Grade Colors (상/중/하) */
+  --grade-high: #fbbf24;
+  --grade-mid: #a78bfa;
+  --grade-low: #60a5fa;
 
   /* Table Colors */
   --table-row-alternate: rgba(255, 255, 255, 0.05);
@@ -692,6 +702,23 @@ body {
   box-shadow: 0 3px 10px rgba(99, 102, 241, 0.35);
 }
 
+/* 전투력 분석 - 보라색 */
+.navbar-nav-link.nav-combat:hover {
+  color: #8b5cf6;
+  border-color: #8b5cf6;
+  background-color: rgba(139, 92, 246, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-nav-link.nav-combat.active {
+  color: #fff;
+  font-weight: 700;
+  background-color: #8b5cf6;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(139, 92, 246, 0.35);
+}
+
 /* 생활 계산 - 초록색 */
 .navbar-nav-link.nav-life:hover {
   color: #22c55e;
@@ -822,6 +849,18 @@ body {
   background-color: #6366f1;
   border-color: transparent;
   box-shadow: 0 3px 10px rgba(99, 102, 241, 0.4);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-combat:hover {
+  background-color: rgba(60, 60, 65, 0.9);
+  border-color: #8b5cf6;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .navbar-nav-link.nav-combat.active {
+  background-color: #8b5cf6;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(139, 92, 246, 0.4);
 }
 
 [data-theme="dark"] .navbar-nav-link.nav-life:hover {
@@ -991,6 +1030,11 @@ body {
   color: #6366f1;
 }
 
+.navbar-offcanvas-link.nav-combat:hover {
+  background-color: rgba(139, 92, 246, 0.08);
+  color: #8b5cf6;
+}
+
 .navbar-offcanvas-link.nav-life:hover {
   background-color: rgba(34, 197, 94, 0.08);
   color: #22c55e;
@@ -1029,6 +1073,10 @@ body {
   background-color: rgba(99, 102, 241, 0.15);
 }
 
+[data-theme="dark"] .navbar-offcanvas-link.nav-combat:hover {
+  background-color: rgba(139, 92, 246, 0.15);
+}
+
 [data-theme="dark"] .navbar-offcanvas-link.nav-life:hover {
   background-color: rgba(34, 197, 94, 0.15);
 }
@@ -1062,6 +1110,12 @@ body {
 .navbar-offcanvas-link.nav-refining.active {
   color: #fff;
   background-color: #6366f1;
+  font-weight: 600;
+}
+
+.navbar-offcanvas-link.nav-combat.active {
+  color: #fff;
+  background-color: #8b5cf6;
   font-weight: 600;
 }
 
@@ -1107,6 +1161,10 @@ body {
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-refining.active {
   background-color: #6366f1;
+}
+
+[data-theme="dark"] .navbar-offcanvas-link.nav-combat.active {
+  background-color: #8b5cf6;
 }
 
 [data-theme="dark"] .navbar-offcanvas-link.nav-life.active {
