@@ -329,19 +329,66 @@ export function getGemPower(tier: number, level: number): number {
 // ════════════════════════════════════
 // 장신구 연마 효과
 // ════════════════════════════════════
-// 공격력+ (기본공격력 142,857 기준)
+// 값: 전투력 증가% (combat power coefficient)
+// 키 네이밍: 'X+' = flat 수치, 'X%' = 퍼센트 수치
+
 export const ACCESSORY_GRINDING_POWER: Record<string, Record<string, number>> = {
-  '공격력': { '하': 0.0560, '중': 0.1365, '상': 0.2730 },
-  // 반지 특수
-  '치명타 적중률': { '하': 0.309680, '중': 0.735490, '상': 1.200010 },
-  '치명타 피해량': { '하': 0.330000, '중': 0.720000, '상': 1.200000 },
-  '치명타 피해': { '하': 0.330000, '중': 0.720000, '상': 1.200000 },
-  // 목걸이 특수 (기존 추가피해 30% 가정)
-  '추가 피해': { '하': 0.46152, '중': 1.23072, '상': 1.99992 },
-  '적에게 주는 피해': { '하': 0.55, '중': 1.20, '상': 2.00 },
-  '적에게 주는 피해 증가': { '하': 0.55, '중': 1.20, '상': 2.00 },
-  // 귀걸이: 공격력%는 수치 그대로, 무기 공격력%는 기본 공격력에서 계산
-  // → 별도 처리 필요
+  // ── 공통 (목걸이/귀걸이/반지) ──
+  // 공격력+ flat (기본공격력 142,857 기준, value / 142857 × 100)
+  '공격력+': { '하': 0.0560, '중': 0.1365, '상': 0.2730 },
+  // 무기 공격력+ flat (sqrt(1 + value/무기공) - 1, 무기공 250,000 기준 근사)
+  '무기 공격력+': { '하': 0.039, '중': 0.096, '상': 0.192 },
+
+  // ── 목걸이 전용 ──
+  // 추가 피해% (기존 추가피해 30% 가정, value / 1.30)
+  '추가 피해%': { '하': 0.46152, '중': 1.23072, '상': 1.99992 },
+  // 적에게 주는 피해% (수치 = 전투력%)
+  '적에게 주는 피해%': { '하': 0.55, '중': 1.20, '상': 2.00 },
+
+  // ── 귀걸이 전용 ──
+  // 공격력% (수치 그대로 전투력 증가)
+  '공격력%': { '하': 0.40, '중': 0.95, '상': 1.55 },
+  // 무기 공격력% (sqrt(1 + x/100) - 1 변환)
+  '무기 공격력%': { '하': 0.40, '중': 0.89, '상': 1.49 },
+
+  // ── 반지 전용 ──
+  '치명타 적중률%': { '하': 0.309680, '중': 0.735490, '상': 1.200010 },
+  '치명타 피해%': { '하': 0.330000, '중': 0.720000, '상': 1.200000 },
+};
+
+// ── 하위 호환: 기존 키 이름으로도 조회 가능 ──
+// (parseAccessoryGrinding이 새 키로 변환하므로 새 코드에서는 사용 안 함)
+export const ACCESSORY_GRINDING_ALIASES: Record<string, string> = {
+  '공격력': '공격력+',
+  '치명타 적중률': '치명타 적중률%',
+  '치명타 피해량': '치명타 피해%',
+  '치명타 피해': '치명타 피해%',
+  '추가 피해': '추가 피해%',
+  '적에게 주는 피해': '적에게 주는 피해%',
+  '적에게 주는 피해 증가': '적에게 주는 피해%',
+  '무기 공격력': '무기 공격력+',
+};
+
+// ── 악세서리 타입별 연마 옵션 카탈로그 ──
+export const ACCESSORY_GRINDING_OPTIONS: Record<string, { id: string; label: string }[]> = {
+  '목걸이': [
+    { id: '추가 피해%', label: '추가 피해' },
+    { id: '적에게 주는 피해%', label: '적에게 주는 피해' },
+    { id: '공격력+', label: '공격력(+)' },
+    { id: '무기 공격력+', label: '무기 공격력(+)' },
+  ],
+  '귀걸이': [
+    { id: '공격력%', label: '공격력(%)' },
+    { id: '무기 공격력%', label: '무기 공격력(%)' },
+    { id: '공격력+', label: '공격력(+)' },
+    { id: '무기 공격력+', label: '무기 공격력(+)' },
+  ],
+  '반지': [
+    { id: '치명타 적중률%', label: '치명타 적중률' },
+    { id: '치명타 피해%', label: '치명타 피해' },
+    { id: '공격력+', label: '공격력(+)' },
+    { id: '무기 공격력+', label: '무기 공격력(+)' },
+  ],
 };
 
 // ════════════════════════════════════
@@ -367,26 +414,289 @@ export const STAT_POWER_PER_100: Record<string, number> = {
 // ════════════════════════════════════
 // 팔찌 효과
 // ════════════════════════════════════
-// 전투 특성 → 전투 스탯에서 계산
-// 무기 공격력 → 기본 공격력에서 계산
+// 전투 특성(치명/특화/신속) → 전투 스탯에서 계산
+// 힘/민첩/지능 → 기본 공격력에서 계산
 // 도약 포인트 → 아크 패시브에서 계산
+// 아래는 팔찌 고유 부여/고정 효과 전체 카탈로그
 
-export const BRACELET_EFFECT_POWER: Record<string, number> = {
-  // 주요 옵션 (상옵 기준)
-  '적주피 3%': 3.0,
-  '추피 4%': 3.0768,
-  '치적 5%': 3.5,
-  '치피 10%': 3.333,
-  '백어택 스킬 적주피 3.5%': 2.45,
-  '헤드어택 스킬 적주피 3.5%': 2.45,
-  '타대 스킬 적주피 3.5%': 3.5,
-  // 고정 효과 키워드 (간이 매칭용)
-  '정밀': 3.5,    // 치적 5% 상당
-  '습격': 3.0,    // 적주피 상당
-  '급소': 2.45,   // 백어택 상당
-  '강타': 2.45,   // 헤드어택 상당
-  '열정': 2.0,
-  '신념': 2.0,
+// ── 팔찌 전체 옵션 카탈로그 ──
+// category: 분류, tiers: [하, 중, 상] 수치, combatPower: 전투력 영향 여부
+
+export type BraceletOptionDef = {
+  id: string;
+  category: 'fixed' | 'dealer_combo' | 'dealer_simple' | 'weapon_buff' | 'support_combo' | 'support_simple';
+  description: string;
+  tiers: [string, string, string]; // [하, 중, 상]
+  combatPower: boolean;
+  // API 텍스트 매칭 키워드 (첫 줄 기준, 긴 것 우선)
+  matchKeywords: string[];
+  // 복합효과 2번째 줄 매칭 키워드 (없으면 단일 라인)
+  comboKeywords?: string[];
+};
+
+export const BRACELET_ALL_OPTIONS: BraceletOptionDef[] = [
+  // ═══════════════════════════════════
+  // 고정효과 (전투력 미반영)
+  // ═══════════════════════════════════
+  {
+    id: 'atk_move_speed', category: 'fixed',
+    description: '공격 및 이동 속도 증가',
+    tiers: ['4%', '5%', '6%'], combatPower: false,
+    matchKeywords: ['공격 및 이동 속도'],
+  },
+  {
+    id: 'seed_dmg', category: 'fixed',
+    description: '시드 등급 이하 몬스터에게 주는 피해 증가',
+    tiers: ['4%', '5%', '6%'], combatPower: false,
+    matchKeywords: ['시드 등급 이하 몬스터에게 주는 피해'],
+  },
+  {
+    id: 'seed_def', category: 'fixed',
+    description: '시드 등급 이하 몬스터에게 받는 피해 감소',
+    tiers: ['6%', '8%', '10%'], combatPower: false,
+    matchKeywords: ['시드 등급 이하 몬스터에게 받는 피해'],
+  },
+  {
+    id: 'phys_def', category: 'fixed',
+    description: '물리 방어력',
+    tiers: ['+5000', '+6000', '+7000'], combatPower: false,
+    matchKeywords: ['물리 방어력'],
+  },
+  {
+    id: 'mag_def', category: 'fixed',
+    description: '마법 방어력',
+    tiers: ['+5000', '+6000', '+7000'], combatPower: false,
+    matchKeywords: ['마법 방어력'],
+  },
+  {
+    id: 'max_hp', category: 'fixed',
+    description: '최대 생명력',
+    tiers: ['+11200', '+14000', '+16800'], combatPower: false,
+    matchKeywords: ['최대 생명력'],
+  },
+  {
+    id: 'hp_regen', category: 'fixed',
+    description: '전투 중 생명력 회복량',
+    tiers: ['+100', '+130', '+160'], combatPower: false,
+    matchKeywords: ['전투 중 생명력 회복량'],
+  },
+  {
+    id: 'resource_regen', category: 'fixed',
+    description: '전투자원 자연 회복량',
+    tiers: ['8%', '10%', '12%'], combatPower: false,
+    matchKeywords: ['전투자원 자연 회복량'],
+  },
+  {
+    id: 'move_cd', category: 'fixed',
+    description: '이동기 및 기상기 재사용 대기 시간 감소',
+    tiers: ['8%', '10%', '12%'], combatPower: false,
+    matchKeywords: ['이동기 및 기상기 재사용 대기 시간'],
+  },
+  {
+    id: 'cc_immune', category: 'fixed',
+    description: '경직 및 피격 이상 면역',
+    tiers: ['80초', '70초', '60초'], combatPower: false,
+    matchKeywords: ['경직 및 피격 이상에 면역'],
+  },
+
+  // ═══════════════════════════════════
+  // 부여효과 - 복합 딜러 (전투력 반영)
+  // ═══════════════════════════════════
+  {
+    id: 'crit_rate_combo', category: 'dealer_combo',
+    description: '치명타 적중률 + 치명타 적주피 1.5%',
+    tiers: ['3.4%', '4.2%', '5.0%'], combatPower: true,
+    matchKeywords: ['치명타 적중률이'],
+    comboKeywords: ['치명타로 적중 시 적에게 주는 피해'],
+  },
+  {
+    id: 'crit_dmg_combo', category: 'dealer_combo',
+    description: '치명타 피해 + 치명타 적주피 1.5%',
+    tiers: ['6.8%', '8.4%', '10.0%'], combatPower: true,
+    matchKeywords: ['치명타 피해가'],
+    comboKeywords: ['치명타로 적중 시 적에게 주는 피해'],
+  },
+  {
+    id: 'enemy_dmg_combo', category: 'dealer_combo',
+    description: '적에게 주는 피해 + 무력화 상태 적주피',
+    tiers: ['2.0%+4.0%', '2.5%+4.5%', '3.0%+5.0%'], combatPower: true,
+    matchKeywords: ['적에게 주는 피해가'],
+    comboKeywords: ['무력화 상태의 적에게 주는 피해'],
+  },
+  {
+    id: 'add_dmg_combo', category: 'dealer_combo',
+    description: '추가 피해 + 대악마 계열 피해량 2.5%',
+    tiers: ['2.5%', '3.0%', '3.5%'], combatPower: true,
+    matchKeywords: ['추가 피해가'],
+    comboKeywords: ['대악마 계열 피해량'],
+  },
+  {
+    id: 'cd_enemy_dmg', category: 'dealer_combo',
+    description: '쿨타임 증가 2% + 적에게 주는 피해 증가',
+    tiers: ['4.5%', '5.0%', '5.5%'], combatPower: true,
+    matchKeywords: ['재사용 대기 시간이', '적에게 주는 피해가'],
+  },
+
+  // ═══════════════════════════════════
+  // 부여효과 - 서포터 복합
+  // ═══════════════════════════════════
+  {
+    id: 'def_reduce', category: 'support_combo',
+    description: '방어력 감소 + 아군 공격력 강화',
+    tiers: ['1.8%+2.0%', '2.1%+2.5%', '2.5%+3.0%'], combatPower: true,
+    matchKeywords: ['대상의 방어력을'],
+    comboKeywords: ['아군 공격력 강화 효과'],
+  },
+  {
+    id: 'crit_resist_reduce', category: 'support_combo',
+    description: '치명타 저항 감소 + 아군 공격력 강화',
+    tiers: ['1.8%+2.0%', '2.1%+2.5%', '2.5%+3.0%'], combatPower: true,
+    matchKeywords: ['대상의 치명타 저항을'],
+    comboKeywords: ['아군 공격력 강화 효과'],
+  },
+  {
+    id: 'shield_dmg', category: 'support_combo',
+    description: '보호효과 적주피 + 아군 공격력 강화',
+    tiers: ['0.9%+2.0%', '1.1%+2.5%', '1.3%+3.0%'], combatPower: true,
+    matchKeywords: ['보호 효과가 적용된 대상'],
+    comboKeywords: ['아군 공격력 강화 효과'],
+  },
+  {
+    id: 'crit_dmg_resist_reduce', category: 'support_combo',
+    description: '치명타 피해 저항 감소 + 아군 공격력 강화',
+    tiers: ['3.6%+2.0%', '4.2%+2.5%', '4.8%+3.0%'], combatPower: true,
+    matchKeywords: ['대상의 치명타 피해 저항을'],
+    comboKeywords: ['아군 공격력 강화 효과'],
+  },
+
+  // ═══════════════════════════════════
+  // 부여효과 - 무기 공격력 버프 (전투력 반영)
+  // ═══════════════════════════════════
+  {
+    id: 'weapon_stack', category: 'weapon_buff',
+    description: '적중시 무기 공격력 중첩 + 공이속 1%',
+    tiers: ['1160', '1320', '1480'], combatPower: true,
+    matchKeywords: ['매 초 마다', '무기 공격력이'],
+    comboKeywords: ['공격 및 이동 속도가'],
+  },
+  {
+    id: 'weapon_hp_cond', category: 'weapon_buff',
+    description: '무기 공격력 + 체력 50% 이상 추가 무기 공격력',
+    tiers: ['7200+2000', '8100+2200', '9000+2400'], combatPower: true,
+    matchKeywords: ['무기 공격력이'],
+    comboKeywords: ['생명력이 50% 이상'],
+  },
+  {
+    id: 'weapon_time_stack', category: 'weapon_buff',
+    description: '무기 공격력 + 30초마다 무기 공격력 중첩',
+    tiers: ['6900+120', '7800+140', '8700+150'], combatPower: true,
+    matchKeywords: ['무기 공격력이'],
+    comboKeywords: ['30초 마다'],
+  },
+
+  // ═══════════════════════════════════
+  // 부여효과 - 단일 딜러 (전투력 반영)
+  // ═══════════════════════════════════
+  {
+    id: 'enemy_dmg', category: 'dealer_simple',
+    description: '적에게 주는 피해 증가',
+    tiers: ['2.0%', '2.5%', '3.0%'], combatPower: true,
+    matchKeywords: ['적에게 주는 피해가'],
+  },
+  {
+    id: 'add_dmg', category: 'dealer_simple',
+    description: '추가 피해',
+    tiers: ['+3.0%', '+3.5%', '+4.0%'], combatPower: true,
+    matchKeywords: ['추가 피해'],
+  },
+  {
+    id: 'back_atk_dmg', category: 'dealer_simple',
+    description: '백어택 스킬 적주피',
+    tiers: ['2.5%', '3.0%', '3.5%'], combatPower: true,
+    matchKeywords: ['백어택 스킬이 적에게 주는 피해'],
+  },
+  {
+    id: 'head_atk_dmg', category: 'dealer_simple',
+    description: '헤드어택 스킬 적주피',
+    tiers: ['2.5%', '3.0%', '3.5%'], combatPower: true,
+    matchKeywords: ['헤드어택 스킬이 적에게 주는 피해'],
+  },
+  {
+    id: 'neutral_atk_dmg', category: 'dealer_simple',
+    description: '방향성 공격이 아닌 스킬(타대) 적주피',
+    tiers: ['2.5%', '3.0%', '3.5%'], combatPower: true,
+    matchKeywords: ['방향성 공격이 아닌 스킬이 적에게 주는 피해'],
+  },
+  {
+    id: 'crit_rate', category: 'dealer_simple',
+    description: '치명타 적중률',
+    tiers: ['+3.4%', '+4.2%', '+5.0%'], combatPower: true,
+    matchKeywords: ['치명타 적중률'],
+  },
+  {
+    id: 'crit_dmg', category: 'dealer_simple',
+    description: '치명타 피해',
+    tiers: ['+6.8%', '+8.4%', '+10.0%'], combatPower: true,
+    matchKeywords: ['치명타 피해'],
+  },
+  {
+    id: 'weapon_flat', category: 'dealer_simple',
+    description: '무기 공격력',
+    tiers: ['+7200', '+8100', '+9000'], combatPower: true,
+    matchKeywords: ['무기 공격력'],
+  },
+
+  // ═══════════════════════════════════
+  // 부여효과 - 단일 서포터
+  // ═══════════════════════════════════
+  {
+    id: 'party_protect', category: 'support_simple',
+    description: '파티원 보호 및 회복 효과',
+    tiers: ['2.5%', '3.0%', '3.5%'], combatPower: false,
+    matchKeywords: ['파티원 보호 및 회복 효과'],
+  },
+  {
+    id: 'ally_atk_enhance', category: 'support_simple',
+    description: '아군 공격력 강화 효과',
+    tiers: ['+4.0%', '+5.0%', '+6.0%'], combatPower: true,
+    matchKeywords: ['아군 공격력 강화 효과'],
+  },
+  {
+    id: 'ally_dmg_enhance', category: 'support_simple',
+    description: '아군 피해량 강화 효과',
+    tiers: ['+6.0%', '+7.5%', '+9.0%'], combatPower: true,
+    matchKeywords: ['아군 피해량 강화 효과'],
+  },
+];
+
+// ── 팔찌 부여효과 전투력 계수 (상/중/하) ──
+// id → { 하, 중, 상 } 전투력 증가%
+// 출처: combat-power-research.ts BRACELET_EFFECTS / BRACELET_WEAPON_BUFF
+
+export const BRACELET_EFFECT_POWER: Record<string, { 하: number; 중: number; 상: number }> = {
+  // 복합 딜러
+  'crit_rate_combo':    { 하: 3.5,    중: 4.0,    상: 4.5 },
+  'crit_dmg_combo':     { 하: 3.5,    중: 4.0,    상: 4.5 },
+  'enemy_dmg_combo':    { 하: 2.8,    중: 3.4,    상: 4.0 },
+  'add_dmg_combo':      { 하: 3.5,    중: 4.0,    상: 4.5 },
+  'cd_enemy_dmg':       { 하: 3.5,    중: 4.0,    상: 4.5 },
+  // 단일 딜러
+  'enemy_dmg':          { 하: 2.0,    중: 2.5,    상: 3.0 },
+  'add_dmg':            { 하: 2.3076, 중: 2.6922, 상: 3.0768 },
+  'back_atk_dmg':       { 하: 1.75,   중: 2.10,   상: 2.45 },
+  'head_atk_dmg':       { 하: 1.75,   중: 2.10,   상: 2.45 },
+  'neutral_atk_dmg':    { 하: 2.5,    중: 3.0,    상: 3.5 },
+  'crit_rate':          { 하: 2.38,   중: 2.94,   상: 3.5 },
+  'crit_dmg':           { 하: 2.26644, 중: 2.79972, 상: 3.333 },
+  // 무공 버프 (무기공격력 184,000 기준 근사)
+  'weapon_stack':       { 하: 1.88,   중: 2.14,   상: 2.40 },
+  'weapon_hp_cond':     { 하: 0.54,   중: 0.59,   상: 0.65 },
+  'weapon_time_stack':  { 하: 1.05,   중: 1.13,   상: 1.21 },
+  // 무기 공격력 flat (기본 공격력에서 계산, 근사)
+  'weapon_flat':        { 하: 1.44,   중: 1.62,   상: 1.80 },
+  // 서포터 (아군 강화 효과는 전투력 반영)
+  'ally_atk_enhance':   { 하: 0.52,   중: 0.65,   상: 0.78 },
+  'ally_dmg_enhance':   { 하: 0.52,   중: 0.65,   상: 0.78 },
 };
 
 // ════════════════════════════════════

@@ -20,6 +20,7 @@ import {
   COMBAT_STAT_COEFFICIENT,
   BRACELET_EFFECT_POWER,
   ACCESSORY_GRINDING_POWER,
+  ACCESSORY_GRINDING_ALIASES,
   getBaseItemLevelPower,
   ARK_PASSIVE_POWER_PER_POINT,
 } from './combatPowerTables';
@@ -186,8 +187,11 @@ export function calculateBreakdown(data: CombatPowerData): PowerBreakdown {
   // ── 8. 팔찌 ──
   let braceletContrib = 0;
   for (const effect of data.bracelet) {
-    const power = BRACELET_EFFECT_POWER[effect.name] || 0;
-    braceletContrib += power;
+    const powerTiers = BRACELET_EFFECT_POWER[effect.id];
+    if (powerTiers) {
+      const grade = effect.grade as '상' | '중' | '하';
+      braceletContrib += powerTiers[grade] || powerTiers['중'] || 0;
+    }
   }
   if (braceletContrib > 0 || data.bracelet.length > 0) {
     items.push({
@@ -203,11 +207,11 @@ export function calculateBreakdown(data: CombatPowerData): PowerBreakdown {
   let accessoryContrib = 0;
   for (const acc of data.accessories) {
     for (const eff of acc.effects) {
-      for (const [key, grades] of Object.entries(ACCESSORY_GRINDING_POWER)) {
-        if (eff.name.includes(key)) {
-          accessoryContrib += grades[eff.grade] || grades['중'] || 0;
-          break;
-        }
+      // 정확한 키 매칭 (새 파서는 ACCESSORY_GRINDING_POWER 키와 동일한 name 출력)
+      const resolvedName = ACCESSORY_GRINDING_ALIASES[eff.name] || eff.name;
+      const grades = ACCESSORY_GRINDING_POWER[resolvedName];
+      if (grades) {
+        accessoryContrib += grades[eff.grade] || grades['중'] || 0;
       }
     }
   }

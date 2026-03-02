@@ -1,6 +1,8 @@
 // 전투력 관련 데이터 파서
 // API 응답에서 전투력 관련 요소 추출 + 표시용 원본 데이터
 
+import { BRACELET_ALL_OPTIONS } from './combatPowerTables';
+
 // ============================
 // 타입 정의
 // ============================
@@ -9,7 +11,8 @@ export type CombatProfile = {
   characterName: string;
   className: string;
   itemLevel: number;
-  combatPower: number;
+  combatPower: number;    // 전투력 (프로필 CombatPower 필드, 예: 5067.31)
+  attackPower: number;    // 공격력 (Stats 배열 '공격력', 예: 201378)
   characterImage?: string;
   serverName?: string;
   guildName?: string;
@@ -55,8 +58,9 @@ export type BraceletItem = {
   name: string;
   icon: string;
   grade: string;
-  effects: string[];     // 팔찌 효과 텍스트
-  stats: string[];       // 전투 특성
+  effects: { text: string; grade: string }[];  // 팔찌 효과 (콤보는 " | " 으로 합쳐진 한 줄)
+  keywords: string[];    // 고유 키워드 (정밀/습격 등)
+  stats: string[];       // 전투 특성 (치명/특화/신속)
 };
 
 export type WeaponInfo = {
@@ -81,11 +85,20 @@ export type GemInfo = {
   icon?: string;
 };
 
+export type CardInfo = {
+  name: string;
+  icon: string;
+  awakeCount: number;
+  awakeTotal: number;
+  grade: string;
+};
+
 export type CardSetInfo = {
   name: string;
   activeCount: number;
   awakening: number;
   effects: string[];     // 세트 효과 설명들
+  cards: CardInfo[];     // 세트 구성 카드 (이미지 포함)
 };
 
 export type ArkPassiveInfo = {
@@ -100,8 +113,10 @@ export type AccessoryGrinding = {
 };
 
 export type BraceletEffect = {
-  name: string;
-  value: number;
+  id: string;        // BRACELET_ALL_OPTIONS의 id (e.g., 'crit_rate_combo')
+  name: string;      // 표시용 이름 (e.g., '치적+치적주피')
+  grade: string;     // 상/중/하
+  value: number;     // 주 수치 (e.g., 3.4)
 };
 
 export type CombatStats = {
@@ -213,11 +228,17 @@ export function parseProfile(profileData: any): CombatProfile | null {
     (profileData.ItemAvgLevel || '0').replace(/,/g, '')
   );
 
-  let combatPower = 0;
+  // 전투력: 프로필 최상위 CombatPower 필드 (예: "5,067.31")
+  const combatPower = parseFloat(
+    (profileData.CombatPower || '0').replace(/,/g, '')
+  );
+
+  // 공격력: Stats 배열 내 '공격력' (예: "201,378")
+  let attackPower = 0;
   if (profileData.Stats && Array.isArray(profileData.Stats)) {
-    const cpStat = profileData.Stats.find((s: any) => s.Type === '공격력');
-    if (cpStat) {
-      combatPower = parseInt((cpStat.Value || '0').replace(/,/g, ''), 10);
+    const atkStat = profileData.Stats.find((s: any) => s.Type === '공격력');
+    if (atkStat) {
+      attackPower = parseInt((atkStat.Value || '0').replace(/,/g, ''), 10);
     }
   }
 
@@ -226,6 +247,7 @@ export function parseProfile(profileData: any): CombatProfile | null {
     className: profileData.CharacterClassName || '',
     itemLevel,
     combatPower,
+    attackPower,
     characterImage: profileData.CharacterImage || undefined,
     serverName: profileData.ServerName || undefined,
     guildName: profileData.GuildName || undefined,
@@ -427,8 +449,28 @@ export function parseAccessoryItems(equipmentData: any[]): AccessoryItem[] {
 
         // 연마 효과 - 구조 탐색 우선
         if (val.includes('연마 효과')) {
+          // 방법 0: ItemPartBox → Element_001에 <br> 구분 효과 (실제 API 형식)
+          if (el?.type === 'ItemPartBox' && el?.value?.Element_001) {
+            const rawHtml = String(el.value.Element_001);
+            const lines = rawHtml.split(/<br\s*\/?>/i);
+            for (const line of lines) {
+              const cleaned = line.replace(/<img[^>]*>/gi, '').trim();
+              // "효과명 <FONT color='HEX'>+수치[%]</FONT>"
+              const match = cleaned.match(
+                /([가-힣\s]+)\s*<FONT[^>]*COLOR=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>([^<]*)<\/FONT>/i,
+              );
+              if (match) {
+                const effectText = `${match[1].trim()} ${match[3].trim()}`;
+                const hex = match[2];
+                if (effectText.length > 2 && /\d/.test(effectText)) {
+                  grindingEffects.push({ text: effectText, grade: classifyGrindingGrade(hex) });
+                }
+              }
+            }
+          }
+
           // 방법 1: IndentStringGroup → contentStr 개별 요소 = 개별 효과
-          if (el?.type === 'IndentStringGroup' && el?.value) {
+          if (grindingEffects.length === 0 && el?.type === 'IndentStringGroup' && el?.value) {
             for (const gk in el.value) {
               const group = el.value[gk];
               if (!group?.contentStr) continue;
@@ -436,7 +478,7 @@ export function parseAccessoryItems(equipmentData: any[]): AccessoryItem[] {
                 ? group.contentStr : { '0': String(group.contentStr) };
               for (const ck in contentObj) {
                 const raw = String(contentObj[ck]);
-                const fontMatch = raw.match(/<[Ff][Oo][Nn][Tt][^>]*[Cc][Oo][Ll][Oo][Rr]=['"]?#([A-Fa-f0-9]{6})['"]?[^>]*>/);
+                const fontMatch = raw.match(/<[Ff][Oo][Nn][Tt][^>]*[Cc][Oo][Ll][Oo][Rr]=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>/);
                 const text = raw.replace(/<[^>]*>/g, '').replace(/[{}"\[\]\\]/g, '').replace(/\\n/g, ' ').trim();
                 // 숫자가 있는 실제 효과만 (헤더 "연마 효과" 등 제외)
                 if (text.length > 2 && /\d/.test(text) && !grindingEffects.some(e => e.text === text)) {
@@ -454,7 +496,7 @@ export function parseAccessoryItems(equipmentData: any[]): AccessoryItem[] {
 
           // 방법 2: FONT 태그 개별 추출 + 키워드 분할 fallback
           if (grindingEffects.length === 0) {
-            const fontRegex = /<[Ff][Oo][Nn][Tt][^>]*[Cc][Oo][Ll][Oo][Rr]=['"]?#([A-Fa-f0-9]{6})['"]?[^>]*>([^<]*)<\/[Ff][Oo][Nn][Tt]>/g;
+            const fontRegex = /<[Ff][Oo][Nn][Tt][^>]*[Cc][Oo][Ll][Oo][Rr]=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>([^<]*)<\/[Ff][Oo][Nn][Tt]>/g;
             const fontMatches = [...val.matchAll(fontRegex)];
             for (const fm of fontMatches) {
               const hex = fm[1];
@@ -665,83 +707,87 @@ export function classifyBraceletGrade(text: string): string {
   return '하';
 }
 
-// 팔찌 문장 분리 ("~한다." "~된다." 등 단위)
-function splitBraceletSentences(text: string): string[] {
-  if (!text.includes('다.') || text.length < 10) return [text];
-  // "다." 뒤에서 분리 (lookbehind)
-  const parts = text.split(/(?<=다\.)/);
-  return parts.map(p => p.trim()).filter(p => p.length > 1);
+/** 팔찌 효과 텍스트 압축: "추가 피해가 2.5% 증가한다." → "추가 피해 +2.5%" */
+function compactBraceletText(raw: string): string {
+  let t = raw.trim();
+  // "~이/가 X% 증가한다." → "~ +X%"
+  t = t.replace(/이?\s*([\d,]+\.?\d*%?)\s*증가한다\.?$/, ' +$1');
+  // "~이/가 X% 감소한다." → "~ -X%"
+  t = t.replace(/이?\s*([\d,]+\.?\d*%?)\s*감소한다\.?$/, ' -$1');
+  // "~이/가 X 증가한다." → "~ +X"
+  t = t.replace(/이?\s*([\d,]+)\s*증가한다\.?$/, ' +$1');
+  // 선행 조사 정리 ("추가 피해가 " → "추가 피해 ")
+  t = t.replace(/([가-힣])[가이] \+/, '$1 +');
+  t = t.replace(/([가-힣])[가이] \-/, '$1 -');
+  return t.trim();
 }
 
-// 팔찌 파싱 (표시용)
+// 팔찌 파싱 (표시용) — <img> 블록 기준 그룹핑
 export function parseBraceletItem(equipmentData: any[]): BraceletItem | null {
   if (!equipmentData || !Array.isArray(equipmentData)) return null;
 
   const bracelet = equipmentData.find((item: any) => item.Type === '팔찌');
   if (!bracelet) return null;
 
-  const effects: string[] = [];
+  const effects: { text: string; grade: string }[] = [];
+  const keywords: string[] = [];
   const stats: string[] = [];
-  const effectKeywords = ['정밀', '습격', '급소', '강타', '열정', '신념', '축복'];
+  const kwList = ['정밀', '습격', '급소', '강타', '열정', '신념', '축복'];
 
   try {
     const tooltip = JSON.parse(bracelet.Tooltip);
     for (const key in tooltip) {
       if (!key.startsWith('Element_')) continue;
       const el = tooltip[key];
-      const val = JSON.stringify(el);
-      const cleaned = val.replace(/<[^>]*>/g, '');
+      if (!el) continue;
 
-      // 전투 특성
-      const statMatches = cleaned.match(/(치명|특화|신속|제압|인내|숙련)\s*\+\s*(\d+)/g);
-      if (statMatches) {
-        for (const sm of statMatches) {
-          if (!stats.includes(sm.trim())) stats.push(sm.trim());
+      // 고유 키워드 (SingleTextBox 등에서 등장)
+      const elStr = JSON.stringify(el).replace(/<[^>]*>/g, '');
+      for (const kw of kwList) {
+        if (elStr.includes(kw) && !keywords.includes(kw)) keywords.push(kw);
+      }
+
+      // ItemPartBox: "팔찌 효과" 본문 파싱
+      if (el.type !== 'ItemPartBox' || !el.value) continue;
+      const valStr = JSON.stringify(el.value);
+      if (!valStr.includes('팔찌 효과')) continue;
+
+      const rawHtml = String(el.value?.Element_001 || '');
+      if (!rawHtml) continue;
+
+      // <BR>로 줄 분리 → <img> 기준 블록 그룹핑
+      const lines = rawHtml.split(/<BR\s*\/?>/i);
+      const blocks: string[] = [];
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (trimmed.includes('<img')) {
+          blocks.push(trimmed);
+        } else if (blocks.length > 0) {
+          // 콤보 효과 2번째 줄 → 이전 블록에 이어붙임
+          blocks[blocks.length - 1] += '\n' + trimmed;
         }
       }
 
-      // 방법 1: IndentStringGroup 구조 탐색 (개별 contentStr = 개별 효과)
-      if (el?.type === 'IndentStringGroup' && el?.value) {
-        for (const gk in el.value) {
-          const group = el.value[gk];
-          if (!group?.contentStr) continue;
-          const contentObj = typeof group.contentStr === 'object'
-            ? group.contentStr : { '0': String(group.contentStr) };
-          for (const ck in contentObj) {
-            const raw = String(contentObj[ck]);
-            const text = raw.replace(/<[^>]*>/g, '').replace(/[{}"\[\]\\]/g, '').replace(/\\n/g, ' ').trim();
-            if (text.length < 2) continue;
-            // 스탯 라인 제외 (이미 위에서 캡처)
-            if (/^(치명|특화|신속|제압|인내|숙련)\s*\+\s*\d+$/.test(text)) continue;
-            // "다." 단위 문장 분리
-            const sentences = splitBraceletSentences(text);
-            for (const sent of sentences) {
-              if (sent.length > 1 && !effects.includes(sent)) {
-                effects.push(sent);
-              }
-            }
-          }
-        }
-      }
+      for (const block of blocks) {
+        const stripped = block.replace(/<[^>]*>/g, '').trim();
 
-      // 방법 2: fallback - 키워드 + 수치 효과
-      if (effects.length === 0) {
-        for (const kw of effectKeywords) {
-          if (cleaned.includes(kw) && !effects.includes(kw)) {
-            effects.push(kw);
-          }
+        // 전투 특성 (치명/특화/신속) → stats
+        const statMatch = stripped.match(/^(치명|특화|신속|제압|인내|숙련)\s*\+\s*[\d,]+$/);
+        if (statMatch) {
+          if (!stats.includes(stripped)) stats.push(stripped);
+          continue;
         }
-        const numericEffects = cleaned.match(/(치명타 피해|추가 피해|공격력|무기 공격력|적에게 주는 피해)[^,\n\r{}"\[\]]*/g);
-        if (numericEffects) {
-          for (const ne of numericEffects) {
-            const trimmed = ne.replace(/[{}"\[\]]/g, '').trim();
-            const sentences = splitBraceletSentences(trimmed);
-            for (const sent of sentences) {
-              if (sent.length > 3 && !effects.includes(sent)) {
-                effects.push(sent);
-              }
-            }
-          }
+
+        // FONT 색상으로 등급 판별
+        const grade = determineBraceletGrade(block);
+
+        // 텍스트 압축: 줄마다 compact → " | "로 합침
+        const subLines = stripped.split('\n').map(s => s.trim()).filter(s => s.length > 1);
+        const compacted = subLines.map(compactBraceletText).join(' | ');
+
+        if (compacted.length > 1) {
+          effects.push({ text: compacted, grade });
         }
       }
     }
@@ -754,6 +800,7 @@ export function parseBraceletItem(equipmentData: any[]): BraceletItem | null {
     icon: bracelet.Icon || '',
     grade: bracelet.Grade || '',
     effects,
+    keywords,
     stats,
   };
 }
@@ -867,6 +914,20 @@ export function parseCardSets(cardsData: any): CardSetInfo[] {
   const result: CardSetInfo[] = [];
   if (!cardsData?.Effects || !Array.isArray(cardsData.Effects)) return result;
 
+  // 개별 카드 정보 (Cards 배열)
+  const allCards: CardInfo[] = [];
+  if (cardsData.Cards && Array.isArray(cardsData.Cards)) {
+    for (const c of cardsData.Cards) {
+      allCards.push({
+        name: c.Name || '',
+        icon: c.Icon || '',
+        awakeCount: c.AwakeCount || 0,
+        awakeTotal: c.AwakeTotal || 0,
+        grade: c.Grade || '',
+      });
+    }
+  }
+
   for (const effect of cardsData.Effects) {
     const items = effect.Items || [];
     if (items.length === 0) continue;
@@ -892,7 +953,11 @@ export function parseCardSets(cardsData: any): CardSetInfo[] {
     }
 
     if (setName) {
-      result.push({ name: setName, activeCount, awakening, effects });
+      // 각성합계 텍스트 파싱 실패 시 개별 카드 AwakeCount 합산으로 폴백
+      if (awakening === 0 && allCards.length > 0) {
+        awakening = allCards.reduce((sum, c) => sum + c.awakeCount, 0);
+      }
+      result.push({ name: setName, activeCount, awakening, effects, cards: allCards });
     }
   }
 
@@ -917,6 +982,39 @@ export function parseArkPassive(arkpassiveData: any): ArkPassiveInfo | null {
 }
 
 // 장신구 연마 효과 파싱 (분석용)
+// API 형식: ItemPartBox > Element_001에 <br> 구분된 효과 리스트
+// 각 효과: "효과명 <FONT color='HEX'>+수치[%]</FONT>"
+// FONT 색상: FE9600=상(금), CE43FC=중(보라), 00B5FF=하(파랑)
+
+// 효과 키워드 → ACCESSORY_GRINDING_POWER 키 매핑 (긴 것 우선)
+const GRINDING_EFFECT_MAP: { keyword: string; flatKey: string; pctKey: string }[] = [
+  { keyword: '적에게 주는 피해', flatKey: '', pctKey: '적에게 주는 피해%' },
+  { keyword: '치명타 적중률', flatKey: '', pctKey: '치명타 적중률%' },
+  { keyword: '무기 공격력', flatKey: '무기 공격력+', pctKey: '무기 공격력%' },
+  { keyword: '치명타 피해', flatKey: '', pctKey: '치명타 피해%' },
+  { keyword: '추가 피해', flatKey: '', pctKey: '추가 피해%' },
+  { keyword: '공격력', flatKey: '공격력+', pctKey: '공격력%' },
+];
+
+function classifyGrindingEffectLine(
+  effectName: string,
+  valueText: string,
+  hexColor: string,
+): { name: string; grade: string } | null {
+  const isPercent = valueText.includes('%');
+
+  // 긴 키워드부터 매칭 (무기 공격력 before 공격력)
+  for (const { keyword, flatKey, pctKey } of GRINDING_EFFECT_MAP) {
+    if (!effectName.includes(keyword)) continue;
+    const key = isPercent ? pctKey : flatKey;
+    if (!key) return null; // 전투력에 영향 없는 flat 효과 (치적, 치피 등은 항상 %)
+    const grade = hexColor ? classifyGrindingGrade(hexColor) : '중';
+    return { name: key, grade };
+  }
+
+  return null; // 전투력에 미반영되는 효과 (최대 마나, 최대 생명력, 상태이상 등)
+}
+
 export function parseAccessoryGrinding(equipmentData: any[]): AccessoryGrinding[] {
   const result: AccessoryGrinding[] = [];
   if (!equipmentData || !Array.isArray(equipmentData)) return result;
@@ -929,18 +1027,51 @@ export function parseAccessoryGrinding(equipmentData: any[]): AccessoryGrinding[
       const tooltip = JSON.parse(item.Tooltip);
       for (const key in tooltip) {
         if (!key.startsWith('Element_')) continue;
-        const val = JSON.stringify(tooltip[key]);
-        if (val.includes('연마 효과')) {
-          const patterns = [
-            /공격력\s*[\+]?\s*[\d.]+/g, /무기 공격력\s*[\+]?\s*[\d.]+/g,
-            /추가 피해\s*[\+]?\s*[\d.]+/g, /적에게 주는 피해[^<]*/g,
-            /치명타 피해\s*[\+]?\s*[\d.]+/g, /치명타 적중률\s*[\+]?\s*[\d.]+/g,
-          ];
-          for (const pattern of patterns) {
-            const matches = val.match(pattern);
-            if (matches) {
-              for (const m of matches) {
-                effects.push({ name: m.replace(/<[^>]*>/g, '').trim(), grade: '중' });
+        const el = tooltip[key];
+        if (!el) continue;
+        const elStr = JSON.stringify(el);
+        if (!elStr.includes('연마')) continue;
+
+        // ItemPartBox: Element_001에 HTML 형식으로 효과 나열
+        if (el.type === 'ItemPartBox' && el.value) {
+          const rawHtml = String(el.value?.Element_001 || '');
+          if (!rawHtml) continue;
+
+          // <br>로 분리된 각 효과 라인 파싱
+          const lines = rawHtml.split(/<br\s*\/?>/i);
+          for (const line of lines) {
+            // 이미지 태그 제거 후 효과명 추출
+            const cleaned = line.replace(/<img[^>]*>/gi, '').trim();
+            // 패턴: "효과명 <FONT ...>+수치[%]</FONT>"
+            const match = cleaned.match(
+              /([가-힣\s]+)\s*<FONT[^>]*COLOR=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>([^<]*)<\/FONT>/i,
+            );
+            if (match) {
+              const effectName = match[1].trim();
+              const hex = match[2];
+              const valueText = match[3].trim();
+              const classified = classifyGrindingEffectLine(effectName, valueText, hex);
+              if (classified) effects.push(classified);
+            }
+          }
+        }
+
+        // IndentStringGroup fallback (이전 API 형식 호환)
+        if (effects.length === 0 && el.type === 'IndentStringGroup' && el.value) {
+          for (const gk in el.value) {
+            const group = el.value[gk];
+            if (!group?.contentStr) continue;
+            const cs = typeof group.contentStr === 'object' ? group.contentStr : { '0': group.contentStr };
+            for (const ck in cs) {
+              const raw = String(cs[ck]);
+              const fontMatch = raw.match(/<FONT[^>]*COLOR=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>/i);
+              const text = raw.replace(/<[^>]*>/g, '').trim();
+              const parts = splitEffectText(text);
+              for (const part of parts) {
+                if (part.length < 3 || !/\d/.test(part)) continue;
+                const isPercent = part.includes('%');
+                const classified = classifyGrindingEffectLine(part, isPercent ? '%' : '', fontMatch ? fontMatch[1] : '');
+                if (classified) effects.push(classified);
               }
             }
           }
@@ -953,6 +1084,69 @@ export function parseAccessoryGrinding(equipmentData: any[]): AccessoryGrinding[
 }
 
 // 팔찌 효과 파싱 (분석용)
+// API 형식: ItemPartBox > Element_001에 <BR> 구분된 효과 리스트
+// 각 효과 블록은 <img> 태그로 시작, 다음 <img> 전까지가 하나의 효과 (복합 효과는 2줄)
+// FONT 색상으로 등급 판별: FE9600=상, CE43FC=중, 00B5FF=하, 99ff99=고정값
+
+function classifyBraceletTier(hexColor: string): string {
+  const hex = hexColor.toUpperCase();
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  // 상 (Gold/Orange): FE9600 등
+  if (r > 200 && g > 100 && g < 180 && b < 50) return '상';
+  // 중 (Purple): CE43FC 등
+  if (r > 150 && b > 200 && g < 100) return '중';
+  // 하 (Sky blue): 00B5FF 등
+  if (b > 200 && g > 140 && r < 50) return '하';
+  // 하 (Green): 91FE02 등
+  if (g > 200 && r < 180 && b < 50) return '하';
+  return '';
+}
+
+function matchBraceletOption(
+  blockText: string,
+): { id: string; description: string; value: number } | null {
+  const stripped = blockText.replace(/<[^>]*>/g, '').trim();
+
+  // 전투 특성 / 힘민지 / 도약 → 별도 처리 대상, 여기선 스킵
+  if (/^(치명|특화|신속|제압|인내|숙련|힘|민첩|지능)\s*\+/.test(stripped)) return null;
+
+  // BRACELET_ALL_OPTIONS에서 매칭 (긴 키워드 우선 = 배열 앞에 위치)
+  // 복합 효과: matchKeywords + comboKeywords 모두 포함해야 매칭
+  // 단일 효과: matchKeywords만 포함하면 매칭
+  for (const opt of BRACELET_ALL_OPTIONS) {
+    const hasMain = opt.matchKeywords.every(kw => stripped.includes(kw));
+    if (!hasMain) continue;
+
+    if (opt.comboKeywords && opt.comboKeywords.length > 0) {
+      const hasCombo = opt.comboKeywords.every(kw => stripped.includes(kw));
+      if (!hasCombo) continue;
+    }
+
+    // 수치 추출 (첫 번째 % 수치 또는 flat 수치)
+    const numMatch = stripped.match(/([\d,]+\.?\d*)\s*%?/);
+    const value = numMatch ? parseFloat(numMatch[1].replace(/,/g, '')) : 0;
+
+    return { id: opt.id, description: opt.description, value };
+  }
+
+  return null;
+}
+
+function determineBraceletGrade(blockHtml: string): string {
+  // 첫 번째 FONT 태그의 색상으로 등급 판별 (99ff99 고정값 제외)
+  const fontRegex = /<FONT[^>]*COLOR=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>/gi;
+  const matches = [...blockHtml.matchAll(fontRegex)];
+  for (const m of matches) {
+    const hex = m[1].toUpperCase();
+    if (hex === '99FF99' || hex === 'A9D0F5') continue; // 고정값/헤더 색상 스킵
+    const grade = classifyBraceletTier(hex);
+    if (grade) return grade;
+  }
+  return '중';
+}
+
 export function parseBraceletEffects(equipmentData: any[]): BraceletEffect[] {
   const result: BraceletEffect[] = [];
   if (!equipmentData || !Array.isArray(equipmentData)) return result;
@@ -964,24 +1158,45 @@ export function parseBraceletEffects(equipmentData: any[]): BraceletEffect[] {
     const tooltip = JSON.parse(bracelet.Tooltip);
     for (const key in tooltip) {
       if (!key.startsWith('Element_')) continue;
-      const val = JSON.stringify(tooltip[key]);
+      const el = tooltip[key];
+      if (!el || el.type !== 'ItemPartBox' || !el.value) continue;
 
-      const effectPatterns = [
-        { pattern: /치명타 피해\s*\+\s*([\d.]+)/g, name: '치명타 피해 +' },
-        { pattern: /추가 피해\s*\+\s*([\d.]+)/g, name: '추가 피해 +' },
-        { pattern: /공격력\s*\+\s*([\d]+)/g, name: '공격력 +' },
-        { pattern: /무기 공격력\s*\+\s*([\d.]+)/g, name: '무기 공격력 +' },
-      ];
-      for (const { pattern, name } of effectPatterns) {
-        const matches = val.matchAll(pattern);
-        for (const match of matches) {
-          result.push({ name, value: parseFloat(match[1]) });
+      const elStr = JSON.stringify(el);
+      if (!elStr.includes('팔찌 효과')) continue;
+
+      const rawHtml = String(el.value?.Element_001 || '');
+      if (!rawHtml) continue;
+
+      // <BR>로 줄 분리
+      const lines = rawHtml.split(/<BR\s*\/?>/i);
+
+      // <img> 태그 기준으로 블록 그룹핑
+      // <img>로 시작하는 줄 = 새 효과 블록의 시작
+      // <img> 없는 줄 = 이전 블록의 연속 (복합 효과 2번째 줄)
+      const blocks: string[] = [];
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (trimmed.includes('<img')) {
+          blocks.push(trimmed);
+        } else if (blocks.length > 0) {
+          // 이전 블록에 이어붙이기
+          blocks[blocks.length - 1] += ' ' + trimmed;
         }
       }
 
-      const fixedEffects = ['정밀', '습격', '급소', '강타', '열정', '신념'];
-      for (const effectName of fixedEffects) {
-        if (val.includes(effectName)) result.push({ name: effectName, value: 1 });
+      // 각 블록을 매칭
+      for (const block of blocks) {
+        const matched = matchBraceletOption(block);
+        if (!matched) continue;
+
+        const grade = determineBraceletGrade(block);
+        result.push({
+          id: matched.id,
+          name: matched.description,
+          grade,
+          value: matched.value,
+        });
       }
     }
   } catch { /* */ }
