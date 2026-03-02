@@ -17,6 +17,7 @@ import {
   getCardSetPower,
   getArkPassivePower,
   CARD_SET_POWER,
+  getBaseItemLevelPower,
 } from '@/lib/combatPowerTables';
 import styles from '@/app/combat-power/combat-power.module.css';
 
@@ -125,7 +126,10 @@ function PowerDelta({ value }: { value: number }) {
   );
 }
 
-// 악세 연마 텍스트 → 파싱된 효과 이름 매칭 (인덱스가 아닌 키워드 기반)
+// 전투력 무관 연마 효과 키워드 (이 키워드 포함 시 시뮬 매칭 스킵)
+const GRIND_SKIP_KEYWORDS = ['아군 공격력 강화', '아군 피해강화', '최대 마나', '최대 생명력', '상태이상 공격 지속', '파티원 회복'];
+
+// 악세 연마 텍스트 → 파싱된 효과 이름 매칭 (키워드 기반)
 const GRIND_MATCH_KEYWORDS = [
   { keyword: '적에게 주는 피해', names: ['적에게 주는 피해%'] },
   { keyword: '치명타 적중률', names: ['치명타 적중률%'] },
@@ -139,6 +143,9 @@ function findParsedEffect(
   grindText: string,
   parsedEffects: { name: string; grade: string }[],
 ): { name: string; grade: string } | null {
+  // 전투력 무관 효과는 즉시 null (예: "아군 공격력 강화"가 "공격력"에 오매칭 방지)
+  if (GRIND_SKIP_KEYWORDS.some(kw => grindText.includes(kw))) return null;
+
   for (const { keyword, names } of GRIND_MATCH_KEYWORDS) {
     if (!grindText.includes(keyword)) continue;
     for (const pe of parsedEffects) {
@@ -159,6 +166,7 @@ export default function CombatPowerDashboard({ data }: Props) {
   const [accOverrides, setAccOverrides] = useState<Record<string, AccOverride>>({});
   const [cardOverrides, setCardOverrides] = useState<Record<number, number>>({});
   const [arkOverrides, setArkOverrides] = useState<{ evolution?: number; enlightenment?: number; leap?: number }>({});
+  const [stoneOverrides, setStoneOverrides] = useState<Record<number, number>>({}); // key: stone engraving idx, value: new abilityStoneLevel (0-4)
 
   /* ── delta 콜백 ── */
   const getGemDelta = useCallback((idx: number, newLevel: number) => {
@@ -173,6 +181,14 @@ export default function CombatPowerDashboard({ data }: Props) {
     const eng = data.engravings[idx];
     if (!eng) return 0;
     return simulateEngravingChange(data, eng.name, newLevel)?.powerChange || 0;
+  }, [data]);
+
+  const getStoneDelta = useCallback((stoneEngIdx: number, newStoneLv: number) => {
+    const se = data.abilityStone?.engravings[stoneEngIdx];
+    if (!se) return 0;
+    const eng = data.engravings.find(e => e.name === se.name);
+    if (!eng) return 0;
+    return simulateEngravingChange(data, eng.name, eng.level, newStoneLv)?.powerChange || 0;
   }, [data]);
 
   const getBraceletDelta = useCallback((idx: number, override: BraceletOverride) => {
@@ -219,6 +235,20 @@ export default function CombatPowerDashboard({ data }: Props) {
     return simulateChange(data.profile.combatPower, currentPower, singlePower).powerChange;
   }, [data, arkOverrides]);
 
+  // 강화 단계 변경 → 전투력 변화 (아이템 레벨 기반)
+  const getEnhDelta = useCallback((eqIdx: number, newEnhLv: number) => {
+    const eq = data.equipmentItems[eqIdx];
+    if (!eq || newEnhLv === eq.enhanceLevel) return 0;
+    // T4 기준 강화 1단계당 개별 장비 아이템 레벨 ~2.5 변동
+    const ITEM_LV_PER_STEP = 2.5;
+    const pieceDelta = (newEnhLv - eq.enhanceLevel) * ITEM_LV_PER_STEP;
+    const avgDelta = pieceDelta / data.equipmentItems.length;
+    const currentBase = getBaseItemLevelPower(data.profile.itemLevel);
+    const newBase = getBaseItemLevelPower(data.profile.itemLevel + avgDelta);
+    if (currentBase <= 0) return 0;
+    return Math.round(data.profile.combatPower * (newBase / currentBase - 1));
+  }, [data]);
+
   const arkTotalDelta = useMemo(() => {
     if (!data.arkPassive) return 0;
     const ark = data.arkPassive;
@@ -236,12 +266,14 @@ export default function CombatPowerDashboard({ data }: Props) {
     let d = 0;
     for (const [idx, lv] of Object.entries(gemOverrides)) d += getGemDelta(Number(idx), lv);
     for (const [idx, lv] of Object.entries(engOverrides)) d += getEngDelta(Number(idx), lv);
+    for (const [idx, lv] of Object.entries(enhanceOverrides)) d += getEnhDelta(Number(idx), lv);
     for (const [idx, ov] of Object.entries(braceletOverrides)) d += getBraceletDelta(Number(idx), ov);
     for (const [key, ov] of Object.entries(accOverrides)) d += getAccDelta(key, ov);
     for (const [idx, aw] of Object.entries(cardOverrides)) d += getCardDelta(Number(idx), aw);
+    for (const [idx, lv] of Object.entries(stoneOverrides)) d += getStoneDelta(Number(idx), lv);
     d += arkTotalDelta;
     return d;
-  }, [gemOverrides, engOverrides, braceletOverrides, accOverrides, cardOverrides, arkTotalDelta, getGemDelta, getEngDelta, getBraceletDelta, getAccDelta, getCardDelta]);
+  }, [gemOverrides, engOverrides, enhanceOverrides, braceletOverrides, accOverrides, cardOverrides, stoneOverrides, arkTotalDelta, getGemDelta, getEngDelta, getEnhDelta, getBraceletDelta, getAccDelta, getCardDelta, getStoneDelta]);
 
   const engSlots: (EngravingInfo | null)[] = [];
   for (let i = 0; i < 5; i++) engSlots.push(data.engravings[i] || null);
@@ -249,7 +281,7 @@ export default function CombatPowerDashboard({ data }: Props) {
   const resetAll = () => {
     setGemOverrides({}); setEngOverrides({}); setEnhanceOverrides({});
     setBraceletOverrides({}); setAccOverrides({});
-    setCardOverrides({}); setArkOverrides({});
+    setCardOverrides({}); setArkOverrides({}); setStoneOverrides({});
   };
 
   const handleArkPassive = (type: 'evolution' | 'enlightenment' | 'leap', delta: number) => {
@@ -339,18 +371,6 @@ export default function CombatPowerDashboard({ data }: Props) {
 
   return (
     <div>
-      {totalDelta !== 0 && (
-        <div className={styles.deltaBanner}>
-          <div className={styles.deltaBannerInner}>
-            <span className={styles.deltaBannerLabel}>예상 전투력 변화</span>
-            <span className={`${styles.deltaBannerValue} ${totalDelta > 0 ? styles.deltaPos : styles.deltaNeg}`}>
-              {totalDelta > 0 ? '+' : ''}{totalDelta.toLocaleString()}
-            </span>
-            <button className={styles.resetBtn} onClick={resetAll}>초기화</button>
-          </div>
-        </div>
-      )}
-
       <div className={styles.mainLayout}>
         <aside className={styles.profileCol}>
           <div className={styles.profileCard}>
@@ -378,6 +398,19 @@ export default function CombatPowerDashboard({ data }: Props) {
               </div>
             </div>
           </div>
+
+          {/* 전투력 변화 (사이드바) */}
+          {totalDelta !== 0 && (
+            <div className={styles.deltaCard}>
+              <div className={styles.deltaCardHeader}>전투력 변화</div>
+              <div className={styles.deltaCardBody}>
+                <span className={`${styles.deltaCardValue} ${totalDelta > 0 ? styles.deltaPos : styles.deltaNeg}`}>
+                  {totalDelta > 0 ? '+' : ''}{totalDelta.toLocaleString()}
+                </span>
+                <button className={styles.resetBtn} onClick={resetAll}>초기화</button>
+              </div>
+            </div>
+          )}
         </aside>
 
         <div className={styles.specCol}>
@@ -390,14 +423,25 @@ export default function CombatPowerDashboard({ data }: Props) {
                   <div className={styles.colLabel}>장비</div>
                   {data.equipmentItems.map((eq, i) => {
                     const ov = enhanceOverrides[i];
-                    const baseName = shortenEquipName(eq.name, eq.type);
-                    const displayName = ov !== undefined ? baseName.replace(/^\+\d+/, `+${ov}`) : baseName;
+                    const enhLv = ov ?? eq.enhanceLevel;
+                    const nameOnly = eq.name.replace(/^\+\d+\s*/, '');
+                    const isWeapon = eq.type === '무기';
                     return (
                       <div key={i} className={styles.itemRow}>
-                        {eq.icon && <img src={eq.icon} alt={eq.type} className={styles.itemIcon} style={{ borderColor: getGradeColor(eq.grade) }} />}
+                        {eq.icon && (
+                          eq.name.includes('전율') ? (
+                            <div style={{ position: 'relative', flexShrink: 0, width: 56, height: 56 }}>
+                              <img src={eq.icon} alt={eq.type} style={{ width: 46, height: 46, borderRadius: 6, objectFit: 'cover', position: 'absolute', top: 5, left: 5 }} />
+                              <img src="/wjsdbf3.webp" alt="" style={{ position: 'absolute', top: -2, left: 1, width: 60, height: 60, pointerEvents: 'none' }} />
+                            </div>
+                          ) : (
+                            <img src={eq.icon} alt={eq.type} className={styles.itemIcon} style={{ borderColor: getGradeColor(eq.grade) }} />
+                          )
+                        )}
                         <div className={styles.itemBody}>
                           <div className={styles.itemNameRow}>
-                            <span className={styles.itemName} style={{ color: getGradeColor(eq.grade) }}>{displayName}</span>
+                            <span className={`${styles.enhBadge} ${isWeapon ? styles.enhBadgeWeapon : styles.enhBadgeArmor}`}>+{enhLv}</span>
+                            <span className={styles.itemName} style={{ color: getGradeColor(eq.grade) }}>{nameOnly}</span>
                             {eq.transcendence > 0 && <span className={styles.tag}>초월 {eq.transcendence}</span>}
                           </div>
                           <div className={styles.qualRow}>
@@ -405,101 +449,128 @@ export default function CombatPowerDashboard({ data }: Props) {
                             <span className={styles.qualNum} style={{ color: getQualityColor(eq.quality) }}>{eq.quality}</span>
                           </div>
                         </div>
-                        <div className={styles.enhStepper}>
-                          <button className={styles.enhBtn} onClick={() => handleEnhance(i, -1)} disabled={(ov ?? eq.enhanceLevel) <= 0}>
-                            <svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                          </button>
-                          <span className={styles.enhVal} style={ov !== undefined ? { color: '#8b5cf6' } : {}}>+{ov ?? eq.enhanceLevel}</span>
-                          <button className={styles.enhBtn} onClick={() => handleEnhance(i, 1)} disabled={(ov ?? eq.enhanceLevel) >= 25}>
-                            <svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><line x1="5" y1="2" x2="5" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                          </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                          <div className={styles.enhStepper}>
+                            <button className={styles.enhBtn} onClick={() => handleEnhance(i, -1)} disabled={enhLv <= 0}>
+                              <svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                            </button>
+                            <span className={styles.enhVal} style={ov !== undefined ? { color: '#8b5cf6' } : {}}>+{enhLv}</span>
+                            <button className={styles.enhBtn} onClick={() => handleEnhance(i, 1)} disabled={enhLv >= 25}>
+                              <svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><line x1="5" y1="2" x2="5" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                            </button>
+                          </div>
+                          {ov !== undefined && <PowerDelta value={getEnhDelta(i, ov)} />}
                         </div>
                       </div>
                     );
                   })}
 
-                  {/* 카드 */}
-                  {data.cardSets.length > 0 && (
+                  {/* 각인 + 어빌리티 스톤 원형 */}
+                  {(engSlots.some(e => e) || data.abilityStone) && (
                     <>
-                      <div className={styles.subDivider}><span>카드</span></div>
-                      {data.cardSets.map((card, i) => {
-                        const cardPower = CARD_SET_POWER[card.name];
-                        const thresholds = cardPower ? Object.keys(cardPower).map(Number).sort((a, b) => a - b) : [];
-                        const effectiveThreshold = thresholds.filter(t => card.awakening >= t).pop() ?? 0;
-                        const ov = cardOverrides[i];
-                        const selectedThreshold = ov ?? effectiveThreshold;
-                        const changed = ov !== undefined && ov !== effectiveThreshold;
-                        return (
-                          <div key={i} className={styles.cardSimRow}>
-                            <div className={styles.cardSimInfo}>
-                              <span className={styles.cardSetName}>{card.name}</span>
-                              <span className={styles.cardSetCount}>{card.activeCount}세트</span>
-                              {card.awakening > 0 && <span className={styles.cardSetAwaken}>각성 {card.awakening}</span>}
-                            </div>
-                            {card.cards.length > 0 && (
-                              <div className={styles.cardImageRow}>
-                                {card.cards.map((c, j) => (
-                                  <div key={j} className={styles.cardImageCell}>
-                                    {c.icon && <img src={c.icon} alt={c.name} className={styles.cardImage} style={{ borderColor: getGradeColor(c.grade) }} />}
-                                    <span className={styles.cardAwakeCount}>{c.awakeCount}/{c.awakeTotal}</span>
-                                  </div>
-                                ))}
-                              </div>
+                      <div className={styles.subDivider}><span>각인 / 스톤</span></div>
+                      <div className={styles.engCircleWrap}>
+                        <div className={styles.engCircleBg}>
+                          <svg viewBox="0 0 280 280" className={styles.engCircleSvg}>
+                            {(() => {
+                              const c = 140;
+                              const pent = (r: number) => Array.from({ length: 5 }, (_, i) => {
+                                const rad = ((i / 5) * 360 - 90) * Math.PI / 180;
+                                return `${c + r * Math.cos(rad)},${c + r * Math.sin(rad)}`;
+                              }).join(' ');
+                              return (
+                                <>
+                                  {/* 안쪽 오각형 (채움) */}
+                                  <polygon points={pent(58)} fill="var(--card-body-bg-stone)" stroke="var(--border-color)" strokeWidth="1" strokeLinejoin="round" />
+                                  {/* 바깥 오각형 (효과 잇는 선) */}
+                                  <polygon points={pent(90)} fill="none" stroke="var(--border-color)" strokeWidth="1" strokeLinejoin="round" opacity="0.5" />
+                                </>
+                              );
+                            })()}
+
+                            {/* 연결선: 스톤 → 각 꼭짓점 */}
+                            {engSlots.map((eng, i) => {
+                              if (!eng) return null;
+                              const angle = (i / 5) * 360 - 90;
+                              const rad = (angle * Math.PI) / 180;
+                              const stoneEng = data.abilityStone?.engravings.find(se => se.name === eng.name);
+                              return (
+                                <line key={`line-${i}`}
+                                  x1={140 + 18 * Math.cos(rad)} y1={140 + 18 * Math.sin(rad)}
+                                  x2={140 + 90 * Math.cos(rad)} y2={140 + 90 * Math.sin(rad)}
+                                  stroke={stoneEng ? '#38bdf8' : 'var(--border-color)'}
+                                  strokeWidth={stoneEng ? '1.5' : '1'}
+                                  opacity={stoneEng ? '0.7' : '0.25'}
+                                />
+                              );
+                            })}
+
+                            {/* 중앙 스톤 원 */}
+                            {data.abilityStone && (
+                              <circle cx="140" cy="140" r="18" fill="var(--card-bg)" stroke={getGradeColor(data.abilityStone.grade)} strokeWidth="2" />
                             )}
-                            {thresholds.length > 0 && (
-                              <div className={styles.cardSimControls}>
-                                <div className={styles.engLvToggle}>
-                                  {[0, ...thresholds].map(t => (
-                                    <button key={t}
-                                      className={`${styles.engLvBtn} ${selectedThreshold === t ? styles.engLvBtnActive : ''}`}
-                                      style={selectedThreshold === t ? { background: t === 0 ? '#6b7280' : '#8b5cf6', color: '#fff' } : {}}
-                                      onClick={() => {
-                                        setCardOverrides(prev => {
-                                          const next = { ...prev };
-                                          if (t === effectiveThreshold) delete next[i]; else next[i] = t;
-                                          return next;
-                                        });
-                                      }}
-                                    >{t === 0 ? '없음' : `${t}각`}</button>
+                          </svg>
+
+                          {/* 중앙: 스톤 아이콘 */}
+                          {data.abilityStone?.icon && (
+                            <div className={styles.engCircleCenter}>
+                              <img src={data.abilityStone.icon} alt="스톤" className={styles.engStoneIcon} style={{ borderColor: getGradeColor(data.abilityStone.grade) }} />
+                            </div>
+                          )}
+
+                          {/* 각인 이름 + 다이아몬드 + 스톤Lv */}
+                          {engSlots.map((eng, i) => {
+                            if (!eng) return null;
+                            const ov = engOverrides[i];
+                            const currentLv = ov ?? eng.level;
+                            const angle = (i / 5) * 360 - 90;
+                            const rad = (angle * Math.PI) / 180;
+                            const stoneEng = data.abilityStone?.engravings.find(se => se.name === eng.name);
+                            const stoneEngIdx = stoneEng ? data.abilityStone!.engravings.indexOf(stoneEng) : -1;
+                            const stoneLv = stoneEngIdx >= 0 ? (stoneOverrides[stoneEngIdx] ?? eng.abilityStoneLevel) : 0;
+                            const stoneChanged = stoneEngIdx >= 0 && stoneOverrides[stoneEngIdx] !== undefined && stoneOverrides[stoneEngIdx] !== eng.abilityStoneLevel;
+                            return (
+                              <div key={i} className={styles.engCircleControls} style={{ '--eng-x': `${50 + 39 * Math.cos(rad)}%`, '--eng-y': `${50 + 39 * Math.sin(rad)}%` } as React.CSSProperties}>
+                                <span className={styles.engCircleName}>{eng.name}</span>
+                                <div className={styles.engCircleDiamonds}>
+                                  {[1, 2, 3, 4].map(lv => (
+                                    <button key={lv} className={styles.engDiamond}
+                                      style={{ color: lv <= currentLv ? '#f43c06' : '#4b5563' }}
+                                      onClick={() => setEngOverrides(prev => {
+                                        const next = { ...prev };
+                                        const newLv = lv === currentLv ? lv - 1 : lv;
+                                        if (newLv === eng.level) delete next[i]; else next[i] = newLv;
+                                        return next;
+                                      })}
+                                    >◆</button>
                                   ))}
                                 </div>
-                                {changed && <PowerDelta value={getCardDelta(i, ov!)} />}
+                                {stoneEng && (
+                                  <div className={styles.engStoneLvStepper}>
+                                    <button className={styles.engStoneLvBtn} disabled={stoneLv <= 0}
+                                      onClick={() => setStoneOverrides(prev => {
+                                        const next = { ...prev };
+                                        const nv = stoneLv - 1;
+                                        if (nv === eng.abilityStoneLevel) delete next[stoneEngIdx]; else next[stoneEngIdx] = nv;
+                                        return next;
+                                      })}>−</button>
+                                    <span className={styles.engStoneLvVal}>Lv.{stoneLv}</span>
+                                    <button className={styles.engStoneLvBtn} disabled={stoneLv >= 4}
+                                      onClick={() => setStoneOverrides(prev => {
+                                        const next = { ...prev };
+                                        const nv = stoneLv + 1;
+                                        if (nv === eng.abilityStoneLevel) delete next[stoneEngIdx]; else next[stoneEngIdx] = nv;
+                                        return next;
+                                      })}>+</button>
+                                    {stoneChanged && <span className={styles.engStoneLvDelta}><PowerDelta value={getStoneDelta(stoneEngIdx, stoneLv)} /></span>}
+                                  </div>
+                                )}
+                                {ov !== undefined && ov !== eng.level && <PowerDelta value={getEngDelta(i, ov)} />}
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </>
-                  )}
+                            );
+                          })}
+                        </div>
 
-                  {/* 아크 패시브 */}
-                  {data.arkPassive && (
-                    <>
-                      <div className={styles.subDivider} style={{ marginTop: '2rem' }}><span>아크 패시브</span></div>
-                      <div className={styles.arkRow}>
-                        {([
-                          { type: 'evolution' as const, label: '진화' },
-                          { type: 'enlightenment' as const, label: '깨달음' },
-                          { type: 'leap' as const, label: '도약' },
-                        ]).map(({ type, label }) => {
-                          const val = arkOverrides[type] ?? data.arkPassive![type];
-                          const changed = arkOverrides[type] !== undefined;
-                          return (
-                            <div key={type} className={styles.arkItem}>
-                              <span className={styles.arkLabel}>{label}</span>
-                              <div className={styles.enhStepper}>
-                                <button className={styles.enhBtn} onClick={() => handleArkPassive(type, -1)} disabled={val <= 0}>
-                                  <svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                                </button>
-                                <span className={styles.enhVal} style={changed ? { color: '#8b5cf6' } : {}}>{val}</span>
-                                <button className={styles.enhBtn} onClick={() => handleArkPassive(type, 1)}>
-                                  <svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><line x1="5" y1="2" x2="5" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                                </button>
-                              </div>
-                              {changed && <PowerDelta value={getArkTypeDelta(type)} />}
-                            </div>
-                          );
-                        })}
                       </div>
                     </>
                   )}
@@ -523,13 +594,9 @@ export default function CombatPowerDashboard({ data }: Props) {
                           <div className={styles.effectsCol}>
                             {acc.stats.map((s, j) => <div key={`s${j}`} className={styles.statLine}>{s}</div>)}
                             {acc.grindingEffects.map((eff, j) => {
-                              // 이름 기반 매칭 (우선), 실패 시 인덱스 폴백
-                              let parsedEff = parsedAcc ? findParsedEffect(eff.text, parsedAcc.effects) : null;
-                              let parsedEffIdx = parsedEff ? parsedAcc!.effects.indexOf(parsedEff) : -1;
-                              if (!parsedEff && parsedAcc && parsedAcc.effects[j]) {
-                                parsedEff = parsedAcc.effects[j];
-                                parsedEffIdx = j;
-                              }
+                              // 이름 기반 매칭 (전투력 무관 효과는 null → 텍스트만 표시)
+                              const parsedEff = parsedAcc ? findParsedEffect(eff.text, parsedAcc.effects) : null;
+                              const parsedEffIdx = parsedEff ? parsedAcc!.effects.indexOf(parsedEff) : -1;
                               const accKey = `${i}-${parsedEffIdx}`;
                               const ov = parsedEffIdx >= 0 ? accOverrides[accKey] : undefined;
                               const accOptions = ACCESSORY_GRINDING_OPTIONS[acc.type] || [];
@@ -539,11 +606,15 @@ export default function CombatPowerDashboard({ data }: Props) {
                               const changed = ov !== undefined && parsedEff && (ov.name !== resolvedOrigName || ov.grade !== parsedEff.grade);
 
                               if (parsedEff && accOptions.length > 0) {
+                                const fmtPow = (v: number | undefined) => {
+                                  if (v == null) return '';
+                                  return v < 0.1 ? v.toFixed(3) + '%' : v.toFixed(2) + '%';
+                                };
                                 return (
                                   <div key={`g${j}`} className={styles.braceletSimRow}>
                                     <select className={styles.braceletSelect}
                                       value={currentName}
-                                      style={changed ? { borderColor: '#8b5cf6' } : {}}
+                                      style={changed ? { borderColor: '#8b5cf6', color: gradeColorRaw(currentGrade) } : { color: gradeColorRaw(currentGrade) }}
                                       onChange={(e) => {
                                         const newName = e.target.value;
                                         setAccOverrides(prev => {
@@ -554,7 +625,7 @@ export default function CombatPowerDashboard({ data }: Props) {
                                         });
                                       }}>
                                       {accOptions.map(o => (
-                                        <option key={o.id} value={o.id}>{o.label}</option>
+                                        <option key={o.id} value={o.id}>{o.label} {fmtPow(ACCESSORY_GRINDING_POWER[o.id]?.[currentGrade])}</option>
                                       ))}
                                     </select>
                                     <GradeToggle
@@ -651,68 +722,126 @@ export default function CombatPowerDashboard({ data }: Props) {
             </div>
           </section>
 
-          {/* ══ 각인 / 스톤 ══ */}
-          <section className={styles.card}>
-            <div className={styles.cardHead}><h3 className={styles.cardTitle}>각인 / 스톤</h3></div>
-            <div className={styles.cardBody}>
-              <div className={styles.engStoneRow}>
-                {engSlots.map((eng, i) => {
-                  if (!eng) return null;
-                  const ov = engOverrides[i];
-                  const changed = ov !== undefined && ov !== eng.level;
-                  return (
-                    <div key={i} className={styles.engItem}>
-                      <div className={styles.engItemHead}>
-                        {eng.icon && <img src={eng.icon} alt={eng.name} className={styles.engIcon} />}
-                        <span className={styles.engName}>{eng.name}</span>
-                        <span className={styles.engLvBadge} style={{ backgroundColor: getEngLevelColor(eng.level), boxShadow: `0 0 6px ${getEngLevelColor(eng.level)}40` }}>
-                          Lv.{eng.level}
-                        </span>
-                      </div>
-                      <div className={styles.engItemControls}>
-                        <div className={styles.engLvToggle}>
-                          {[0, 1, 2, 3, 4].map(lv => (
-                            <button key={lv}
-                              className={`${styles.engLvBtn} ${(ov ?? eng.level) === lv ? styles.engLvBtnActive : ''}`}
-                              style={(ov ?? eng.level) === lv ? { background: getEngLevelColor(lv), color: '#fff' } : {}}
-                              onClick={() => setEngOverrides(prev => {
-                                const next = { ...prev };
-                                if (lv === eng.level) delete next[i]; else next[i] = lv;
-                                return next;
-                              })}
-                            >{lv}</button>
-                          ))}
-                        </div>
-                        {changed && <PowerDelta value={getEngDelta(i, ov!)} />}
-                      </div>
-                    </div>
-                  );
-                })}
-                {data.abilityStone && (
-                  <div className={styles.engItem}>
-                    <div className={styles.engItemHead}>
-                      {data.abilityStone.icon && <img src={data.abilityStone.icon} alt="스톤" className={styles.engIcon} style={{ borderColor: getGradeColor(data.abilityStone.grade) }} />}
-                      <span className={styles.engName} style={{ color: getGradeColor(data.abilityStone.grade) }}>어빌리티 스톤</span>
-                    </div>
-                    <div className={styles.engItemControls} style={{ gap: '0.2rem' }}>
-                      {data.abilityStone.engravings.map((e, j) => (
-                        <span key={j} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.72rem' }}>
-                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{e.name}</span>
-                          <span className={styles.engLvBadge} style={{ backgroundColor: '#3b82f6' }}>+{e.level}</span>
-                        </span>
-                      ))}
-                      {data.abilityStone.reduction && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.72rem' }}>
-                          <span style={{ fontWeight: 700, color: 'var(--text-muted)' }}>{data.abilityStone.reduction.name}</span>
-                          <span className={styles.engLvBadge} style={{ backgroundColor: '#ef4444' }}>-{data.abilityStone.reduction.level}</span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
+          {/* ══ 카드 / 아크 패시브 ══ */}
+          {(data.cardSets.length > 0 || data.arkPassive) && (
+            <section className={styles.card}>
+              <div className={styles.cardHead}>
+                <h3 className={styles.cardTitle}>카드 / 아크 패시브</h3>
+                {data.arkPassive?.title && <span className={styles.badge}>{data.arkPassive.title}</span>}
               </div>
-            </div>
-          </section>
+              <div className={styles.cardBody}>
+                <div className={styles.cardArkLayout}>
+                  {/* 왼쪽: 카드 이미지 */}
+                  {data.cardSets.length > 0 && (
+                    <div className={styles.cardArkLeft}>
+                      <div className={styles.cardArkSubtitle}>카드</div>
+                      {data.cardSets.map((cardSet, si) => {
+                        const cardPower = CARD_SET_POWER[cardSet.name];
+                        const thresholds = cardPower ? Object.keys(cardPower).map(Number).sort((a, b) => a - b) : [];
+                        const effectiveThreshold = thresholds.filter(t => cardSet.awakening >= t).pop() ?? 0;
+                        const ov = cardOverrides[si];
+                        const selectedThreshold = ov ?? effectiveThreshold;
+                        const changed = ov !== undefined && ov !== effectiveThreshold;
+                        return (
+                          <div key={si}>
+                            <div className={styles.cardSetHeader}>
+                              <span className={styles.cardSetName}>{cardSet.name}</span>
+                              <span className={styles.cardSetCount}>{cardSet.activeCount}세트</span>
+                              {cardSet.awakening > 0 && <span className={styles.cardSetAwaken}>각성 {cardSet.awakening}</span>}
+                            </div>
+                            <div className={styles.cardImgGrid}>
+                              {cardSet.cards.map((c, j) => (
+                                <div key={j} className={styles.cardImgCell}>
+                                  {c.icon && <img src={c.icon} alt={c.name} className={styles.cardImgThumb} style={{ borderColor: getGradeColor(c.grade) }} />}
+                                  <span className={styles.cardAwakeCount}>{c.awakeCount}/{c.awakeTotal}</span>
+                                </div>
+                              ))}
+                            </div>
+                            {thresholds.length > 0 && (
+                              <div className={styles.cardSimControls}>
+                                <div className={styles.engLvToggle}>
+                                  {[0, ...thresholds].map(t => (
+                                    <button key={t}
+                                      className={`${styles.engLvBtn} ${selectedThreshold === t ? styles.engLvBtnActive : ''}`}
+                                      style={selectedThreshold === t ? { background: t === 0 ? '#6b7280' : '#8b5cf6', color: '#fff' } : {}}
+                                      onClick={() => {
+                                        setCardOverrides(prev => {
+                                          const next = { ...prev };
+                                          if (t === effectiveThreshold) delete next[si]; else next[si] = t;
+                                          return next;
+                                        });
+                                      }}
+                                    >{t === 0 ? '없음' : `${t}각`}</button>
+                                  ))}
+                                </div>
+                                {changed && <PowerDelta value={getCardDelta(si, ov!)} />}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* 오른쪽: 아크 패시브 */}
+                  {data.arkPassive && (
+                    <div className={styles.cardArkRight}>
+                      <div className={styles.cardArkSubtitle}>아크 패시브</div>
+                      <div className={styles.arkColGrid}>
+                        {([
+                          { type: 'evolution' as const, label: '진화', cls: styles.arkEvo, catColor: '#f59e0b' },
+                          { type: 'enlightenment' as const, label: '깨달음', cls: styles.arkEnl, catColor: '#83e9ff' },
+                          { type: 'leap' as const, label: '도약', cls: styles.arkLeap, catColor: '#c2ea55' },
+                        ]).map(({ type, label, cls, catColor }) => {
+                          const val = arkOverrides[type] ?? data.arkPassive![type];
+                          const changed = arkOverrides[type] !== undefined;
+                          const pointInfo = data.arkPassive!.points.find(p => p.name.includes(label));
+                          const catEffects = data.arkPassive!.effects.filter(e => e.category === label);
+                          return (
+                            <div key={type} className={styles.arkCol}>
+                              {/* 포인트 헤더 */}
+                              <div className={styles.arkColHeader} style={{ borderBottomColor: catColor }}>
+                                <span className={`${styles.arkColLabel} ${cls}`}>{label}</span>
+                                <span className={`${styles.arkColVal} ${cls}`}>{val}</span>
+                                {pointInfo?.description && (
+                                  <span className={styles.arkColDesc}>{pointInfo.description}</span>
+                                )}
+                              </div>
+                              {/* 스텝퍼 */}
+                              <div className={styles.arkColControls}>
+                                <div className={styles.enhStepper}>
+                                  <button className={styles.enhBtn} onClick={() => handleArkPassive(type, -1)} disabled={val <= 0}>
+                                    <svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                                  </button>
+                                  <span className={styles.enhVal} style={changed ? { color: '#8b5cf6' } : {}}>{val}</span>
+                                  <button className={styles.enhBtn} onClick={() => handleArkPassive(type, 1)}>
+                                    <svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><line x1="5" y1="2" x2="5" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                                  </button>
+                                </div>
+                                {changed && <PowerDelta value={getArkTypeDelta(type)} />}
+                              </div>
+                              {/* 해당 카테고리 효과 세로 나열 */}
+                              {catEffects.length > 0 && (
+                                <div className={styles.arkColEffects}>
+                                  {catEffects.map((eff, i) => (
+                                    <div key={i} className={styles.arkEffectChip}>
+                                      {eff.icon && <img src={eff.icon} alt={eff.name} className={styles.arkEffectChipIcon} />}
+                                      <span className={styles.arkEffectChipName}>{eff.name}</span>
+                                      <span className={styles.arkEffectChipLv}>Lv.{eff.level}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* ══ 보석 ══ */}
           {gems.length > 0 && (

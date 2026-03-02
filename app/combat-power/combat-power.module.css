@@ -112,6 +112,39 @@
 .profileCol {
   position: sticky;
   top: 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* === Delta Card (sidebar) === */
+.deltaCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.deltaCardHeader {
+  padding: 0.5rem 0.75rem;
+  background: var(--card-header-bg-violet);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.deltaCardBody {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+}
+
+.deltaCardValue {
+  font-size: 1.1rem;
+  font-weight: 800;
 }
 
 .profileCard {
@@ -442,6 +475,25 @@
   text-overflow: ellipsis;
 }
 
+/* 재련 레벨 배지 (무기=빨강, 방어구=파랑) */
+.enhBadge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: white;
+  padding: 0.1rem 0.35rem;
+  border-radius: 5px;
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+
+.enhBadgeWeapon {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.enhBadgeArmor {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
 .qualBadge {
   font-size: 0.72rem;
   font-weight: 800;
@@ -631,7 +683,7 @@
   font-size: 0.7rem;
   font-weight: 700;
   cursor: pointer;
-  max-width: 160px;
+  max-width: 220px;
   min-width: 0;
   flex: 1;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -1078,35 +1130,261 @@
 }
 
 /* ═══════════════════════════
-   Card + Ark Passive (in leftCol)
+   각인 + 스톤 원형 레이아웃
    ═══════════════════════════ */
-
-/* 카드 시뮬레이션 행 */
-.cardSimRow {
-  padding: 0.5rem;
-  border-radius: 6px;
-  margin-bottom: 0.25rem;
-  transition: background 0.15s ease;
-  text-align: center;
+.engCircleWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
 }
 
-.cardSimRow:hover {
+.engCircleBg {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  aspect-ratio: 1;
+}
+
+.engCircleSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 스톤 카드 (원 아래) */
+.engStoneCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  background: var(--card-body-bg-stone);
+  border: 1px solid var(--border-color);
+}
+
+.engStoneCardIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.engStoneCardBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.engStoneCardName {
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.engStoneCardEffects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.engStoneCardEff {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* 중앙 스톤 아이콘 (HTML 오버레이) */
+.engCircleCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.engStoneIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid;
+  object-fit: cover;
+}
+
+/* 이름 + 다이아몬드 컨트롤 (노드 원 바깥) */
+.engCircleControls {
+  position: absolute;
+  left: var(--eng-x);
+  top: var(--eng-y);
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  z-index: 3;
+}
+
+.engCircleName {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f43c06;
+  white-space: nowrap;
+}
+
+.engCircleDiamonds {
+  display: flex;
+  gap: 0.05rem;
+}
+
+.engDiamond {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.7rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.engDiamond:hover {
+  transform: scale(1.3);
+}
+
+/* 스톤 효과 시뮬레이션 */
+.engStoneSimWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 100%;
+}
+
+.engStoneSimRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
+}
+
+.engStoneSimRow:hover {
   background: var(--card-body-bg-stone);
 }
 
-.cardSimInfo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
+.engStoneSimName {
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-width: 70px;
 }
 
-.cardSimControls {
+.engStoneSimReduce {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.engStoneLvStepper {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  margin-top: 2px;
+  background: var(--card-body-bg-stone);
+}
+
+.engStoneLvBtn {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #38bdf8;
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s ease;
+}
+
+.engStoneLvBtn:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.engStoneLvBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.engStoneLvDelta {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.engStoneLvVal {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #38bdf8;
+  padding: 0 0.2rem;
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+
+/* ═══════════════════════════
+   Card + Ark Passive (side-by-side section)
+   ═══════════════════════════ */
+.cardArkLayout {
+  display: grid;
+  grid-template-columns: 3fr 7fr;
+  gap: 1.25rem;
+}
+
+.cardArkLeft {
+  min-width: 0;
+}
+
+.cardArkRight {
+  min-width: 0;
+  flex: 1;
+  border-left: 1px solid var(--border-color);
+  padding-left: 1.25rem;
+}
+
+.cardArkSubtitle {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+/* 카드 헤더 */
+.cardSetHeader {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
 }
 
 .cardSetName {
@@ -1131,68 +1409,146 @@
   flex-shrink: 0;
 }
 
-/* 카드 이미지 행 */
-.cardImageRow {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.4rem;
-  flex-wrap: wrap;
+/* 카드 이미지 3x2 그리드 */
+.cardImgGrid {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 0.2rem;
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
   justify-content: center;
 }
 
-.cardImageCell {
+.cardImgCell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
+  gap: 0.1rem;
 }
 
-.cardImage {
-  width: 68px;
-  height: 84px;
+.cardImgThumb {
+  width: 72px;
+  height: 90px;
   border-radius: 5px;
   border: 2px solid;
   object-fit: cover;
 }
 
 .cardAwakeCount {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 700;
   color: var(--text-muted);
 }
 
-/* Ark Passive (vertical chips, horizontal flow) */
-.arkRow {
+.cardSimControls {
   display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
-  margin-top: 0.3rem;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
 }
 
-.arkItem {
+/* 아크 패시브 3컬럼 (진화 | 깨달음 | 도약) */
+.arkColGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+}
+
+.arkCol {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.2rem;
 }
 
-.arkLabel {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-weight: 700;
-  white-space: nowrap;
+.arkColHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.3rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 2px solid var(--border-color);
+  width: 100%;
 }
 
-.arkVal {
-  font-size: 1.3rem;
+.arkColLabel {
+  font-size: 0.85rem;
   font-weight: 800;
+}
+
+.arkColVal {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.arkColDesc {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.arkColControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding-bottom: 0.15rem;
+  width: 100%;
+}
+
+.arkColControls .enhStepper {
+  margin-left: 0;
 }
 
 .arkEvo { color: #10b981; }
 .arkEnl { color: #3b82f6; }
 .arkLeap { color: #f59e0b; }
+
+.arkColEffects {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+}
+
+.arkEffectChip {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.1rem 0.2rem;
+  border-radius: 5px;
+  transition: background 0.15s ease;
+}
+
+.arkEffectChip:hover {
+  background: var(--card-body-bg-stone);
+}
+
+.arkEffectChipIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.arkEffectChipName {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arkEffectChipLv {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #8b5cf6;
+  flex-shrink: 0;
+  margin-left: auto;
+}
 
 /* ═══════════════════════════
    Ark Grid
@@ -1533,6 +1889,18 @@
 
   .bottomRow {
     flex-direction: column;
+  }
+
+  .cardArkLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .cardImgGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .arkPointGrid {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .agRing {

@@ -101,10 +101,28 @@ export type CardSetInfo = {
   cards: CardInfo[];     // 세트 구성 카드 (이미지 포함)
 };
 
+export type ArkPassivePoint = {
+  name: string;         // 진화, 깨달음, 도약
+  value: number;        // 포인트 값 (e.g., 140)
+  description: string;  // "6랭크 21레벨"
+};
+
+export type ArkPassiveEffect = {
+  category: string;     // 진화, 깨달음, 도약
+  name: string;         // 노드 이름 (e.g., "치명", "포식자")
+  tier: number;         // 티어 (1~5)
+  level: number;        // 노드 레벨
+  icon: string;         // 아이콘 URL
+  description: string;  // 효과 설명 (HTML 제거)
+};
+
 export type ArkPassiveInfo = {
+  title: string;        // 아크패시브 칭호 (e.g., "포식자")
   evolution: number;
   enlightenment: number;
   leap: number;
+  points: ArkPassivePoint[];
+  effects: ArkPassiveEffect[];
 };
 
 export type AccessoryGrinding = {
@@ -251,7 +269,7 @@ export function parseProfile(profileData: any): CombatProfile | null {
     characterImage: profileData.CharacterImage || undefined,
     serverName: profileData.ServerName || undefined,
     guildName: profileData.GuildName || undefined,
-    title: profileData.Title || undefined,
+    title: profileData.Title ? profileData.Title.replace(/<[^>]*>/g, '').trim() || undefined : undefined,
     expeditionLevel: profileData.ExpeditionLevel || undefined,
     characterLevel: profileData.CharacterLevel || undefined,
   };
@@ -537,13 +555,24 @@ export function parseAccessoryItems(equipmentData: any[]): AccessoryItem[] {
       // 파싱 실패
     }
 
+    // 연마 효과 이름 기반 중복 제거 (같은 효과명이면 먼저 파싱된 것만 유지)
+    const seenNames = new Set<string>();
+    const uniqueGrinding: typeof grindingEffects = [];
+    for (const eff of grindingEffects) {
+      const name = eff.text.replace(/[\s+\-]?\d[\d.]*%?$/, '').trim();
+      if (!seenNames.has(name)) {
+        seenNames.add(name);
+        uniqueGrinding.push(eff);
+      }
+    }
+
     result.push({
       type: item.Type || '',
       name: item.Name || '',
       icon: item.Icon || '',
       grade: item.Grade || '',
       quality,
-      grindingEffects,
+      grindingEffects: uniqueGrinding,
       engravingEffects,
       stats,
     });
@@ -964,21 +993,59 @@ export function parseCardSets(cardsData: any): CardSetInfo[] {
   return result;
 }
 
+// HTML 태그 제거 유틸
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').replace(/\|\|/g, '').replace(/\s+/g, ' ').trim();
+}
+
 // 아크 패시브 파싱
 export function parseArkPassive(arkpassiveData: any): ArkPassiveInfo | null {
   if (!arkpassiveData?.Points || !Array.isArray(arkpassiveData.Points)) return null;
 
+  const title = arkpassiveData.Title || '';
   let evolution = 0, enlightenment = 0, leap = 0;
+  const points: ArkPassivePoint[] = [];
 
   for (const point of arkpassiveData.Points) {
     const name = point.Name || '';
     const value = point.Value || 0;
+    const description = point.Description || '';
     if (name.includes('진화')) evolution = value;
     else if (name.includes('깨달음')) enlightenment = value;
     else if (name.includes('도약')) leap = value;
+    points.push({ name, value, description });
   }
 
-  return { evolution, enlightenment, leap };
+  // Effects 파싱 (개별 노드 정보)
+  const effects: ArkPassiveEffect[] = [];
+  if (arkpassiveData.Effects && Array.isArray(arkpassiveData.Effects)) {
+    for (const eff of arkpassiveData.Effects) {
+      const category = eff.Name || '';
+      const icon = eff.Icon || '';
+      const desc = eff.Description || '';
+
+      // Description에서 티어, 이름, 레벨 추출
+      // e.g., "<FONT ...>깨달음</FONT> 1티어 <FONT ...>끝나지 않는 분노 Lv.1</FONT>"
+      const tierMatch = desc.match(/(\d)티어/);
+      const nameMatch = desc.match(/\d티어\s*(?:<[^>]*>)*\s*(.+?)\s+Lv\.(\d+)/);
+      const tier = tierMatch ? parseInt(tierMatch[1]) : 0;
+      const nodeName = nameMatch ? stripHtml(nameMatch[1]) : '';
+      const level = nameMatch ? parseInt(nameMatch[2]) : 0;
+
+      // ToolTip에서 효과 설명 추출
+      let effectDesc = '';
+      try {
+        const tooltip = typeof eff.ToolTip === 'string' ? JSON.parse(eff.ToolTip) : eff.ToolTip;
+        if (tooltip?.Element_002?.value) {
+          effectDesc = stripHtml(String(tooltip.Element_002.value));
+        }
+      } catch { /* ignore parse errors */ }
+
+      effects.push({ category, name: nodeName, tier, level, icon, description: effectDesc });
+    }
+  }
+
+  return { title, evolution, enlightenment, leap, points, effects };
 }
 
 // 장신구 연마 효과 파싱 (분석용)
