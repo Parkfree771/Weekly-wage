@@ -102,8 +102,8 @@ export default function CombatPowerDashboard({ data }: Props) {
     const gem = data.gems[idx];
     if (!gem) return 0;
     return simulateChange(data.profile.combatPower,
-      getGemPower(gem.tier, gem.level, gem.type),
-      getGemPower(gem.tier, newLevel, gem.type)
+      getGemPower(gem.tier, gem.level),
+      getGemPower(gem.tier, newLevel)
     ).powerChange;
   }, [data]);
 
