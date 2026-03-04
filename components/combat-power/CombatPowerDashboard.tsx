@@ -16,13 +16,24 @@ import {
   ACCESSORY_GRINDING_OPTIONS,
   getCardSetPower,
   getArkPassivePower,
+  getKarmaPower,
+  KARMA_POWER,
   CARD_SET_POWER,
   getBaseItemLevelPower,
+  getWeaponEnhancePowerChange,
+  getArmorEnhancePowerChange,
+  ENLIGHTENMENT_MAIN_NODE_MULTIPLIER,
 } from '@/lib/combatPowerTables';
 import styles from '@/app/combat-power/combat-power.module.css';
 
-type BraceletOverride = { id: string; grade: '하' | '중' | '상' };
-type AccOverride = { name: string; grade: '하' | '중' | '상' };
+type BraceletEditEffect = { id: string; grade: '하' | '중' | '상' };
+type BraceletEditStat = { type: string; value: number };
+type BraceletEditState = {
+  stats: BraceletEditStat[];
+  effects: BraceletEditEffect[];
+};
+type AccEditEffect = { name: string; grade: '하' | '중' | '상' };
+type AccEditState = { effects: AccEditEffect[] };
 type Props = { data: CombatPowerData };
 
 function getQualityColor(q: number): string {
@@ -66,7 +77,7 @@ function shortenEquipName(name: string, type: string): string {
   return name.replace(new RegExp(`\\s*${type}\\s*$`), '').trim() || name;
 }
 
-const braceletCombatOptions = BRACELET_ALL_OPTIONS.filter(o => o.combatPower);
+const braceletAllOptions = BRACELET_ALL_OPTIONS;
 
 /* ─── 등급 세그먼트 토글 ─── */
 function GradeToggle({ value, onChange }: { value: string; onChange: (g: '하' | '중' | '상') => void }) {
@@ -99,21 +110,22 @@ function GrindingEffect({ text, grade }: { text: string; grade: string }) {
 }
 
 function BraceletEffectLine({ text, grade }: { text: string; grade?: string }) {
-  const numMatch = text.match(/([\d,]+\.?\d*\s*%?)/);
-  if (numMatch && grade) {
-    const idx = text.indexOf(numMatch[1]);
-    const before = text.slice(0, idx);
-    const num = numMatch[1];
-    const after = text.slice(idx + num.length);
-    return (
-      <span className={styles.effectLine}>
-        <span className={styles.effectLabel}>{before}</span>
-        <span className={styles.effectVal} style={{ color: gradeColor(grade) }}>{num}</span>
-        <span className={styles.effectLabel}>{after}</span>
-      </span>
-    );
-  }
-  return <span className={styles.effectLine}>{text}</span>;
+  if (!grade) return <span className={styles.braceletEffText}>{text}</span>;
+  const sentences = text.split(/(?<=다\.)\s+/);
+  return (
+    <span className={styles.braceletEffText}>
+      {sentences.map((sentence, si) => (
+        <span key={si}>
+          {si > 0 && <br />}
+          {sentence.split(/([\d,]+\.?\d*\s*%?)/g).map((part, i) =>
+            /^[\d,]+\.?\d*\s*%?$/.test(part)
+              ? <span key={i} style={{ color: gradeColor(grade), fontWeight: 800 }}>{part}</span>
+              : part
+          )}
+        </span>
+      ))}
+    </span>
+  );
 }
 
 function PowerDelta({ value }: { value: number }) {
@@ -126,44 +138,23 @@ function PowerDelta({ value }: { value: number }) {
   );
 }
 
-// 전투력 무관 연마 효과 키워드 (이 키워드 포함 시 시뮬 매칭 스킵)
-const GRIND_SKIP_KEYWORDS = ['아군 공격력 강화', '아군 피해강화', '최대 마나', '최대 생명력', '상태이상 공격 지속', '파티원 회복'];
-
-// 악세 연마 텍스트 → 파싱된 효과 이름 매칭 (키워드 기반)
-const GRIND_MATCH_KEYWORDS = [
-  { keyword: '적에게 주는 피해', names: ['적에게 주는 피해%'] },
-  { keyword: '치명타 적중률', names: ['치명타 적중률%'] },
-  { keyword: '무기 공격력', names: ['무기 공격력+', '무기 공격력%'] },
-  { keyword: '치명타 피해', names: ['치명타 피해%'] },
-  { keyword: '추가 피해', names: ['추가 피해%'] },
-  { keyword: '공격력', names: ['공격력+', '공격력%'] },
-];
-
-function findParsedEffect(
-  grindText: string,
-  parsedEffects: { name: string; grade: string }[],
-): { name: string; grade: string } | null {
-  // 전투력 무관 효과는 즉시 null (예: "아군 공격력 강화"가 "공격력"에 오매칭 방지)
-  if (GRIND_SKIP_KEYWORDS.some(kw => grindText.includes(kw))) return null;
-
-  for (const { keyword, names } of GRIND_MATCH_KEYWORDS) {
-    if (!grindText.includes(keyword)) continue;
-    for (const pe of parsedEffects) {
-      if (names.includes(pe.name)) return pe;
-    }
-  }
-  return null;
-}
-
 /* ═══════════════════════════════════════ */
 export default function CombatPowerDashboard({ data }: Props) {
   const { profile, combatStats } = data;
 
+  // 힘/민/지 중 해당 캐릭의 주 스탯만 표시하도록 필터
+  const filterStatsByMain = useCallback((stats: string[]) => {
+    return stats.filter(s => {
+      const m = s.match(/^(힘|민첩|지능)/);
+      return !m || m[1] === profile.mainStatType;
+    });
+  }, [profile.mainStatType]);
+
   const [gemOverrides, setGemOverrides] = useState<Record<number, number>>({});
   const [engOverrides, setEngOverrides] = useState<Record<number, number>>({});
   const [enhanceOverrides, setEnhanceOverrides] = useState<Record<number, number>>({});
-  const [braceletOverrides, setBraceletOverrides] = useState<Record<number, BraceletOverride>>({});
-  const [accOverrides, setAccOverrides] = useState<Record<string, AccOverride>>({});
+  const [braceletEdit, setBraceletEdit] = useState<BraceletEditState | null>(null);
+  const [accEdits, setAccEdits] = useState<Record<number, AccEditState>>({});
   const [cardOverrides, setCardOverrides] = useState<Record<number, number>>({});
   const [arkOverrides, setArkOverrides] = useState<{ evolution?: number; enlightenment?: number; leap?: number }>({});
   const [stoneOverrides, setStoneOverrides] = useState<Record<number, number>>({}); // key: stone engraving idx, value: new abilityStoneLevel (0-4)
@@ -191,26 +182,75 @@ export default function CombatPowerDashboard({ data }: Props) {
     return simulateEngravingChange(data, eng.name, eng.level, newStoneLv)?.powerChange || 0;
   }, [data]);
 
-  const getBraceletDelta = useCallback((idx: number, override: BraceletOverride) => {
-    const eff = data.bracelet[idx];
-    if (!eff) return 0;
-    const currentPower = BRACELET_EFFECT_POWER[eff.id]?.[eff.grade as '상' | '중' | '하'] ?? 0;
-    const newPower = BRACELET_EFFECT_POWER[override.id]?.[override.grade] ?? 0;
-    return simulateChange(data.profile.combatPower, currentPower, newPower).powerChange;
+  const braceletTotalDelta = useMemo(() => {
+    if (!braceletEdit) return 0;
+    let delta = 0;
+    for (let i = 0; i < 3; i++) {
+      const orig = data.bracelet[i];
+      const edit = braceletEdit.effects[i];
+      if (!edit) continue;
+      if (orig && orig.id === edit.id && orig.grade === edit.grade) continue;
+      const currentPower = orig ? (BRACELET_EFFECT_POWER[orig.id]?.[orig.grade as '하' | '중' | '상'] ?? 0) : 0;
+      const newPower = BRACELET_EFFECT_POWER[edit.id]?.[edit.grade] ?? 0;
+      delta += simulateChange(data.profile.combatPower, currentPower, newPower).powerChange;
+    }
+    return delta;
+  }, [data, braceletEdit]);
+
+  const initBraceletEdit = useCallback(() => {
+    const stats: BraceletEditStat[] = [];
+    if (data.braceletItem?.stats) {
+      for (const s of data.braceletItem.stats) {
+        const m = s.match(/^(특화|치명|신속|제압|인내|숙련|힘|민첩|지능)\s*\+\s*([\d,]+)/);
+        if (!m) continue;
+        // 힘/민/지 중 해당 캐릭 주 스탯만 포함
+        if (['힘', '민첩', '지능'].includes(m[1]) && m[1] !== profile.mainStatType) continue;
+        stats.push({ type: m[1], value: parseInt(m[2].replace(/,/g, '')) });
+      }
+    }
+    const effects: BraceletEditEffect[] = data.bracelet.map(e => ({
+      id: e.id, grade: (e.grade as '하' | '중' | '상') || '하',
+    }));
+    setBraceletEdit({ stats, effects });
   }, [data]);
 
-  const getAccDelta = useCallback((key: string, override: AccOverride) => {
-    const [accIdx, effIdx] = key.split('-').map(Number);
-    const acc = data.accessories[accIdx];
-    if (!acc) return 0;
-    const eff = acc.effects[effIdx];
-    if (!eff) return 0;
-    const resolvedOld = ACCESSORY_GRINDING_ALIASES[eff.name] || eff.name;
-    const resolvedNew = ACCESSORY_GRINDING_ALIASES[override.name] || override.name;
-    const currentPower = ACCESSORY_GRINDING_POWER[resolvedOld]?.[eff.grade] ?? 0;
-    const newPower = ACCESSORY_GRINDING_POWER[resolvedNew]?.[override.grade] ?? 0;
-    return simulateChange(data.profile.combatPower, currentPower, newPower).powerChange;
+  const initAccEdit = useCallback((accIdx: number) => {
+    const parsedAcc = data.accessories[accIdx];
+    const accType = data.accessoryItems[accIdx]?.type;
+    const options = ACCESSORY_GRINDING_OPTIONS[accType] || [];
+    const effects: AccEditEffect[] = [];
+    if (parsedAcc?.effects) {
+      for (const e of parsedAcc.effects) {
+        const resolved = ACCESSORY_GRINDING_ALIASES[e.name] || e.name;
+        effects.push({ name: resolved, grade: (e.grade as '하' | '중' | '상') || '하' });
+      }
+    }
+    while (effects.length < 3 && options.length > 0) {
+      effects.push({ name: options[0].id, grade: '하' });
+    }
+    setAccEdits(prev => ({ ...prev, [accIdx]: { effects } }));
   }, [data]);
+
+  const accTotalDelta = useMemo(() => {
+    let total = 0;
+    for (const [accIdxStr, edit] of Object.entries(accEdits)) {
+      const accIdx = Number(accIdxStr);
+      const parsedAcc = data.accessories[accIdx];
+      if (!parsedAcc) continue;
+      for (let i = 0; i < edit.effects.length; i++) {
+        const orig = parsedAcc.effects[i];
+        const edited = edit.effects[i];
+        if (!edited) continue;
+        const origName = orig ? (ACCESSORY_GRINDING_ALIASES[orig.name] || orig.name) : '';
+        const origGrade = (orig?.grade as '하' | '중' | '상') || '하';
+        if (origName === edited.name && origGrade === edited.grade) continue;
+        const currentPower = ACCESSORY_GRINDING_POWER[origName]?.[origGrade] ?? 0;
+        const newPower = ACCESSORY_GRINDING_POWER[edited.name]?.[edited.grade] ?? 0;
+        total += simulateChange(data.profile.combatPower, currentPower, newPower).powerChange;
+      }
+    }
+    return total;
+  }, [data, accEdits]);
 
   const getCardDelta = useCallback((idx: number, newThreshold: number) => {
     const card = data.cardSets[idx];
@@ -235,19 +275,33 @@ export default function CombatPowerDashboard({ data }: Props) {
     return simulateChange(data.profile.combatPower, currentPower, singlePower).powerChange;
   }, [data, arkOverrides]);
 
-  // 강화 단계 변경 → 전투력 변화 (아이템 레벨 기반)
+  // 전체 힘/민/지 합계 (방어구 5부위)
+  const totalMainStat = useMemo(() => {
+    return data.equipmentItems
+      .filter(eq => eq.type !== '무기')
+      .reduce((sum, eq) => sum + (eq.mainStat || 0), 0);
+  }, [data]);
+
+  // 강화 단계 변경 → 전투력 변화
   const getEnhDelta = useCallback((eqIdx: number, newEnhLv: number) => {
     const eq = data.equipmentItems[eqIdx];
     if (!eq || newEnhLv === eq.enhanceLevel) return 0;
-    // T4 기준 강화 1단계당 개별 장비 아이템 레벨 ~2.5 변동
-    const ITEM_LV_PER_STEP = 2.5;
-    const pieceDelta = (newEnhLv - eq.enhanceLevel) * ITEM_LV_PER_STEP;
-    const avgDelta = pieceDelta / data.equipmentItems.length;
-    const currentBase = getBaseItemLevelPower(data.profile.itemLevel);
-    const newBase = getBaseItemLevelPower(data.profile.itemLevel + avgDelta);
-    if (currentBase <= 0) return 0;
-    return Math.round(data.profile.combatPower * (newBase / currentBase - 1));
-  }, [data]);
+
+    // 무기: 무기 공격력 비율 기반 계산 (sqrt)
+    if (eq.type === '무기') {
+      return getWeaponEnhancePowerChange(data.profile.combatPower, eq.enhanceLevel, newEnhLv);
+    }
+
+    // 방어구: 힘/민/지 비율 기반 계산
+    if (eq.mainStat > 0 && totalMainStat > 0) {
+      return getArmorEnhancePowerChange(
+        data.profile.combatPower, eq.mainStat, totalMainStat,
+        eq.enhanceLevel, newEnhLv,
+      );
+    }
+
+    return 0;
+  }, [data, totalMainStat]);
 
   const arkTotalDelta = useMemo(() => {
     if (!data.arkPassive) return 0;
@@ -267,20 +321,20 @@ export default function CombatPowerDashboard({ data }: Props) {
     for (const [idx, lv] of Object.entries(gemOverrides)) d += getGemDelta(Number(idx), lv);
     for (const [idx, lv] of Object.entries(engOverrides)) d += getEngDelta(Number(idx), lv);
     for (const [idx, lv] of Object.entries(enhanceOverrides)) d += getEnhDelta(Number(idx), lv);
-    for (const [idx, ov] of Object.entries(braceletOverrides)) d += getBraceletDelta(Number(idx), ov);
-    for (const [key, ov] of Object.entries(accOverrides)) d += getAccDelta(key, ov);
+    d += braceletTotalDelta;
+    d += accTotalDelta;
     for (const [idx, aw] of Object.entries(cardOverrides)) d += getCardDelta(Number(idx), aw);
     for (const [idx, lv] of Object.entries(stoneOverrides)) d += getStoneDelta(Number(idx), lv);
     d += arkTotalDelta;
     return d;
-  }, [gemOverrides, engOverrides, enhanceOverrides, braceletOverrides, accOverrides, cardOverrides, stoneOverrides, arkTotalDelta, getGemDelta, getEngDelta, getEnhDelta, getBraceletDelta, getAccDelta, getCardDelta, getStoneDelta]);
+  }, [gemOverrides, engOverrides, enhanceOverrides, braceletTotalDelta, accTotalDelta, cardOverrides, stoneOverrides, arkTotalDelta, getGemDelta, getEngDelta, getEnhDelta, getCardDelta, getStoneDelta]);
 
   const engSlots: (EngravingInfo | null)[] = [];
   for (let i = 0; i < 5; i++) engSlots.push(data.engravings[i] || null);
 
   const resetAll = () => {
     setGemOverrides({}); setEngOverrides({}); setEnhanceOverrides({});
-    setBraceletOverrides({}); setAccOverrides({});
+    setBraceletEdit(null); setAccEdits({});
     setCardOverrides({}); setArkOverrides({}); setStoneOverrides({});
   };
 
@@ -296,29 +350,6 @@ export default function CombatPowerDashboard({ data }: Props) {
   };
 
   const braceletKeywords = data.braceletItem?.keywords || [];
-  const braceletEffects = data.braceletItem?.effects || [];
-
-  // 팔찌 표시 텍스트 → data.bracelet 인덱스 매칭
-  const findBraceletSimIdx = useCallback((effectText: string): number | null => {
-    for (let i = 0; i < data.bracelet.length; i++) {
-      const eff = data.bracelet[i];
-      if (!BRACELET_EFFECT_POWER[eff.id]) continue;
-      const opt = BRACELET_ALL_OPTIONS.find(o => o.id === eff.id);
-      if (!opt) continue;
-      if (opt.matchKeywords.some(kw => effectText.includes(kw)) ||
-          opt.comboKeywords?.some(kw => effectText.includes(kw))) {
-        return i;
-      }
-    }
-    return null;
-  }, [data.bracelet]);
-
-  // 악세 연마 텍스트 → parsedAcc.effects 에서 이름 기반 매칭 후 인덱스 리턴
-  const findAccEffIdx = useCallback((grindText: string, parsedEffects: { name: string; grade: string }[]): number | null => {
-    const found = findParsedEffect(grindText, parsedEffects);
-    if (!found) return null;
-    return parsedEffects.indexOf(found);
-  }, []);
 
   const gems = data.gems;
   const gemSlots: (GemInfo | null)[] = Array.from({ length: 11 }, (_, i) => gems[i] || null);
@@ -401,13 +432,27 @@ export default function CombatPowerDashboard({ data }: Props) {
 
           {/* 전투력 변화 (사이드바) */}
           {totalDelta !== 0 && (
-            <div className={styles.deltaCard}>
-              <div className={styles.deltaCardHeader}>전투력 변화</div>
-              <div className={styles.deltaCardBody}>
-                <span className={`${styles.deltaCardValue} ${totalDelta > 0 ? styles.deltaPos : styles.deltaNeg}`}>
-                  {totalDelta > 0 ? '+' : ''}{totalDelta.toLocaleString()}
-                </span>
+            <div className={`${styles.deltaCard} ${totalDelta > 0 ? styles.deltaCardPos : styles.deltaCardNeg}`}>
+              <div className={styles.deltaCardHeader}>
+                <span>전투력 변화</span>
                 <button className={styles.resetBtn} onClick={resetAll}>초기화</button>
+              </div>
+              <div className={styles.deltaCardBody}>
+                <div className={styles.deltaFlowCurrent}>
+                  <span className={styles.deltaFlowLabel}>현재 전투력</span>
+                  <span className={styles.deltaFlowValue}>{profile.combatPower.toLocaleString()}</span>
+                </div>
+                <div className={styles.deltaFlowArrow}>
+                  <div className={styles.deltaFlowArrowLine} />
+                  <div className={`${styles.deltaFlowBadge} ${totalDelta > 0 ? styles.deltaFlowBadgePos : styles.deltaFlowBadgeNeg}`}>
+                    {totalDelta > 0 ? '+' : ''}{totalDelta.toLocaleString()}
+                  </div>
+                  <div className={styles.deltaFlowArrowLine} />
+                </div>
+                <div className={`${styles.deltaFlowFinal} ${totalDelta > 0 ? styles.deltaFinalPos : styles.deltaFinalNeg}`}>
+                  <span className={styles.deltaFinalLabel}>변화 후 전투력</span>
+                  <span className={styles.deltaFinalValue}>{(profile.combatPower + totalDelta).toLocaleString()}</span>
+                </div>
               </div>
             </div>
           )}
@@ -582,7 +627,8 @@ export default function CombatPowerDashboard({ data }: Props) {
                 <div className={styles.rightCol}>
                   <div className={styles.colLabel}>악세서리</div>
                   {data.accessoryItems.map((acc, i) => {
-                    const parsedAcc = data.accessories[i];
+                    const accEdit = accEdits[i];
+                    const accOptions = ACCESSORY_GRINDING_OPTIONS[acc.type] || [];
                     return (
                       <div key={i} className={styles.itemRow}>
                         {acc.icon && <img src={acc.icon} alt={acc.type} className={styles.itemIcon} style={{ borderColor: getGradeColor(acc.grade) }} />}
@@ -590,72 +636,80 @@ export default function CombatPowerDashboard({ data }: Props) {
                           <div className={styles.itemNameRow}>
                             <span className={styles.itemName} style={{ color: getGradeColor(acc.grade) }}>{acc.type}</span>
                             {acc.quality > 0 && <span className={styles.qualBadge} style={{ color: getQualityColor(acc.quality) }}>{acc.quality}</span>}
+                            {accOptions.length > 0 && (
+                              <button className={styles.braceletSwapBtn}
+                                onClick={() => accEdit
+                                  ? setAccEdits(prev => { const n = { ...prev }; delete n[i]; return n; })
+                                  : initAccEdit(i)
+                                }>
+                                {accEdit ? '원래대로' : '악세 교체'}
+                              </button>
+                            )}
                           </div>
-                          <div className={styles.effectsCol}>
-                            {acc.stats.map((s, j) => <div key={`s${j}`} className={styles.statLine}>{s}</div>)}
-                            {acc.grindingEffects.map((eff, j) => {
-                              // 이름 기반 매칭 (전투력 무관 효과는 null → 텍스트만 표시)
-                              const parsedEff = parsedAcc ? findParsedEffect(eff.text, parsedAcc.effects) : null;
-                              const parsedEffIdx = parsedEff ? parsedAcc!.effects.indexOf(parsedEff) : -1;
-                              const accKey = `${i}-${parsedEffIdx}`;
-                              const ov = parsedEffIdx >= 0 ? accOverrides[accKey] : undefined;
-                              const accOptions = ACCESSORY_GRINDING_OPTIONS[acc.type] || [];
-                              const resolvedOrigName = parsedEff ? (ACCESSORY_GRINDING_ALIASES[parsedEff.name] || parsedEff.name) : '';
-                              const currentName = ov?.name ?? resolvedOrigName;
-                              const currentGrade = ov?.grade ?? (parsedEff?.grade as '하' | '중' | '상') ?? (eff.grade as '하' | '중' | '상');
-                              const changed = ov !== undefined && parsedEff && (ov.name !== resolvedOrigName || ov.grade !== parsedEff.grade);
 
-                              if (parsedEff && accOptions.length > 0) {
+                          {!accEdit ? (
+                            /* 기본 표시: 텍스트 그대로 */
+                            <div className={styles.effectsCol}>
+                              {filterStatsByMain(acc.stats).map((s, j) => <div key={`s${j}`} className={styles.statLine}>{s}</div>)}
+                              {acc.grindingEffects.map((eff, j) => (
+                                <div key={`g${j}`} className={styles.statLine}>
+                                  <GrindingEffect text={eff.text} grade={eff.grade} />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            /* 교체 에디터 */
+                            <div className={styles.effectsCol}>
+                              {filterStatsByMain(acc.stats).map((s, j) => <div key={`s${j}`} className={styles.statLine}>{s}</div>)}
+                              {accEdit.effects.map((eff, j) => {
                                 const fmtPow = (v: number | undefined) => {
                                   if (v == null) return '';
                                   return v < 0.1 ? v.toFixed(3) + '%' : v.toFixed(2) + '%';
                                 };
                                 return (
-                                  <div key={`g${j}`} className={styles.braceletSimRow}>
+                                  <div key={`ae${j}`} className={styles.braceletSimRow}>
                                     <select className={styles.braceletSelect}
-                                      value={currentName}
-                                      style={changed ? { borderColor: '#8b5cf6', color: gradeColorRaw(currentGrade) } : { color: gradeColorRaw(currentGrade) }}
+                                      value={eff.name}
+                                      style={{ color: gradeColorRaw(eff.grade) }}
                                       onChange={(e) => {
-                                        const newName = e.target.value;
-                                        setAccOverrides(prev => {
-                                          const next = { ...prev };
-                                          if (newName === resolvedOrigName && currentGrade === parsedEff!.grade) delete next[accKey];
-                                          else next[accKey] = { name: newName, grade: currentGrade };
-                                          return next;
+                                        setAccEdits(prev => {
+                                          const edit = prev[i];
+                                          if (!edit) return prev;
+                                          const effects = [...edit.effects];
+                                          effects[j] = { ...effects[j], name: e.target.value };
+                                          return { ...prev, [i]: { ...edit, effects } };
                                         });
                                       }}>
                                       {accOptions.map(o => (
-                                        <option key={o.id} value={o.id}>{o.label} {fmtPow(ACCESSORY_GRINDING_POWER[o.id]?.[currentGrade])}</option>
+                                        <option key={o.id} value={o.id}>
+                                          {o.label} {fmtPow(ACCESSORY_GRINDING_POWER[o.id]?.[eff.grade])}
+                                        </option>
                                       ))}
                                     </select>
                                     <GradeToggle
-                                      value={currentGrade}
+                                      value={eff.grade}
                                       onChange={(newGrade) => {
-                                        setAccOverrides(prev => {
-                                          const next = { ...prev };
-                                          if (currentName === resolvedOrigName && newGrade === parsedEff!.grade) delete next[accKey];
-                                          else next[accKey] = { name: currentName, grade: newGrade };
-                                          return next;
+                                        setAccEdits(prev => {
+                                          const edit = prev[i];
+                                          if (!edit) return prev;
+                                          const effects = [...edit.effects];
+                                          effects[j] = { ...effects[j], grade: newGrade };
+                                          return { ...prev, [i]: { ...edit, effects } };
                                         });
                                       }}
                                     />
-                                    {changed && <PowerDelta value={getAccDelta(accKey, ov!)} />}
                                   </div>
                                 );
-                              }
-                              return (
-                                <div key={`g${j}`} className={styles.simRow}>
-                                  <GrindingEffect text={eff.text} grade={eff.grade} />
-                                </div>
-                              );
-                            })}
-                          </div>
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
                   })}
 
                   {/* 팔찌 */}
+                  {data.braceletItem && <div className={styles.subDivider}><span>팔찌</span></div>}
                   {data.braceletItem && (
                     <div className={styles.braceletBlock}>
                       {data.braceletItem.icon && <img src={data.braceletItem.icon} alt="팔찌" className={styles.itemIcon} style={{ borderColor: getGradeColor(data.braceletItem.grade) }} />}
@@ -667,53 +721,113 @@ export default function CombatPowerDashboard({ data }: Props) {
                               {braceletKeywords.map((kw, j) => <span key={j} className={styles.braceletKw}>{kw}</span>)}
                             </div>
                           )}
+                          <button
+                            className={styles.braceletSwapBtn}
+                            onClick={() => braceletEdit ? setBraceletEdit(null) : initBraceletEdit()}
+                          >
+                            {braceletEdit ? '원래대로' : '팔찌 교체'}
+                          </button>
                         </div>
-                        <div className={styles.effectsCol}>
-                          {data.braceletItem.stats.map((s, j) => <div key={`s${j}`} className={styles.statLine}>{s}</div>)}
-                          {braceletEffects.map((eff, j) => {
-                            const simIdx = findBraceletSimIdx(eff.text);
-                            if (simIdx !== null) {
-                              const simEff = data.bracelet[simIdx];
-                              const ov = braceletOverrides[simIdx];
-                              const currentId = ov?.id ?? simEff.id;
-                              const currentGrade = ov?.grade ?? (simEff.grade as '하' | '중' | '상');
-                              const changed = ov !== undefined && (ov.id !== simEff.id || ov.grade !== simEff.grade);
+
+                        {!braceletEdit ? (
+                          /* 기본 표시: 텍스트 그대로 */
+                          <div className={styles.effectsCol}>
+                            {filterStatsByMain(data.braceletItem.stats).map((s, j) => <div key={`s${j}`} className={styles.statLine}>{s}</div>)}
+                            {data.bracelet.map((eff, i) => (
+                              <div key={`b${i}`} className={styles.statLine}><BraceletEffectLine text={eff.name} grade={eff.grade} /></div>
+                            ))}
+                          </div>
+                        ) : (
+                          /* 교체 에디터: 스탯 + 효과 (현재 팔찌 순서 그대로) */
+                          <div className={styles.effectsCol}>
+                            {braceletEdit.stats.map((stat, i) => {
+                              const isMainStat = ['힘', '민첩', '지능'].includes(stat.type);
                               return (
-                                <div key={`e${j}`} className={styles.braceletSimRow}>
+                                <div key={`bs${i}`} className={styles.braceletSimRow}>
                                   <select className={styles.braceletSelect}
-                                    value={currentId}
-                                    style={changed ? { borderColor: '#8b5cf6' } : {}}
+                                    value={stat.type}
                                     onChange={(e) => {
-                                      const newId = e.target.value;
-                                      setBraceletOverrides(prev => {
-                                        const next = { ...prev };
-                                        if (newId === simEff.id && currentGrade === simEff.grade) delete next[simIdx];
-                                        else next[simIdx] = { id: newId, grade: currentGrade };
-                                        return next;
+                                      setBraceletEdit(prev => {
+                                        if (!prev) return prev;
+                                        const stats = [...prev.stats];
+                                        stats[i] = { ...stats[i], type: e.target.value };
+                                        return { ...prev, stats };
                                       });
                                     }}>
-                                    {braceletCombatOptions.map(o => (
-                                      <option key={o.id} value={o.id}>{o.description}</option>
-                                    ))}
+                                    {isMainStat ? (
+                                      <>
+                                        <option value="힘">힘</option>
+                                        <option value="민첩">민첩</option>
+                                        <option value="지능">지능</option>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <option value="특화">특화</option>
+                                        <option value="치명">치명</option>
+                                        <option value="신속">신속</option>
+                                      </>
+                                    )}
                                   </select>
-                                  <GradeToggle
-                                    value={currentGrade}
-                                    onChange={(newGrade) => {
-                                      setBraceletOverrides(prev => {
-                                        const next = { ...prev };
-                                        if (currentId === simEff.id && newGrade === simEff.grade) delete next[simIdx];
-                                        else next[simIdx] = { id: currentId, grade: newGrade };
-                                        return next;
+                                  <input type="number"
+                                    className={styles.braceletStatInput}
+                                    value={stat.value}
+                                    onChange={(e) => {
+                                      const v = Math.max(0, parseInt(e.target.value) || 0);
+                                      setBraceletEdit(prev => {
+                                        if (!prev) return prev;
+                                        const stats = [...prev.stats];
+                                        stats[i] = { ...stats[i], value: v };
+                                        return { ...prev, stats };
                                       });
                                     }}
                                   />
-                                  {changed && <PowerDelta value={getBraceletDelta(simIdx, ov!)} />}
                                 </div>
                               );
-                            }
-                            return <div key={`e${j}`} className={styles.statLine}><BraceletEffectLine text={eff.text} grade={eff.grade} /></div>;
-                          })}
-                        </div>
+                            })}
+                            {braceletEdit.effects.map((eff, i) => {
+                              const fmtPow = (v: number) => v < 0.1 ? v.toFixed(3) + '%' : v.toFixed(2) + '%';
+                              return (
+                                <div key={`be${i}`} className={styles.braceletSimRow}>
+                                  <select className={styles.braceletSelect}
+                                    value={eff.id}
+                                    style={{ color: gradeColorRaw(eff.grade) }}
+                                    onChange={(e) => {
+                                      const newId = e.target.value;
+                                      setBraceletEdit(prev => {
+                                        if (!prev) return prev;
+                                        const effects = [...prev.effects] as BraceletEditEffect[];
+                                        effects[i] = { ...effects[i], id: newId };
+                                        return { ...prev, effects };
+                                      });
+                                    }}>
+                                    {braceletAllOptions.map(o => (
+                                      <option key={o.id} value={o.id}>
+                                        {o.description}{o.power[eff.grade] > 0 ? ` ${fmtPow(o.power[eff.grade])}` : ''}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <GradeToggle
+                                    value={eff.grade}
+                                    onChange={(newGrade) => {
+                                      setBraceletEdit(prev => {
+                                        if (!prev) return prev;
+                                        const effects = [...prev.effects] as BraceletEditEffect[];
+                                        effects[i] = { ...effects[i], grade: newGrade };
+                                        return { ...prev, effects };
+                                      });
+                                    }}
+                                  />
+                                </div>
+                              );
+                            })}
+                            {braceletTotalDelta !== 0 && (
+                              <div className={styles.braceletDeltaRow}>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>전투력 변화</span>
+                                <PowerDelta value={braceletTotalDelta} />
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -784,9 +898,17 @@ export default function CombatPowerDashboard({ data }: Props) {
                   )}
 
                   {/* 오른쪽: 아크 패시브 */}
-                  {data.arkPassive && (
+                  {data.arkPassive && (() => {
+                    const karmaData = data.arkPassive!.karma;
+                    const totalKarmaPower = karmaData ? getKarmaPower(karmaData) : 0;
+                    return (
                     <div className={styles.cardArkRight}>
-                      <div className={styles.cardArkSubtitle}>아크 패시브</div>
+                      <div className={styles.cardArkSubtitle}>
+                        아크 패시브
+                        {totalKarmaPower > 0 && (
+                          <span className={styles.karmaTotal}>카르마 +{totalKarmaPower.toFixed(2)}%</span>
+                        )}
+                      </div>
                       <div className={styles.arkColGrid}>
                         {([
                           { type: 'evolution' as const, label: '진화', cls: styles.arkEvo, catColor: '#f59e0b' },
@@ -797,6 +919,14 @@ export default function CombatPowerDashboard({ data }: Props) {
                           const changed = arkOverrides[type] !== undefined;
                           const pointInfo = data.arkPassive!.points.find(p => p.name.includes(label));
                           const catEffects = data.arkPassive!.effects.filter(e => e.category === label);
+                          const karmaInfo = karmaData?.[type];
+                          // 카르마 전투력 기여: 진화=랭크×0.6%, 도약=레벨×0.02%, 깨달음=4단계 메인 ×1.231
+                          const karmaPowerPct = type === 'evolution' && karmaInfo
+                            ? karmaInfo.rank * KARMA_POWER.evolution.perRank
+                            : type === 'leap' && karmaInfo
+                              ? karmaInfo.level * KARMA_POWER.leap.perLevel
+                              : 0;
+                          const enlKarmaActive = type === 'enlightenment' && val >= 80;
                           return (
                             <div key={type} className={styles.arkCol}>
                               {/* 포인트 헤더 */}
@@ -807,6 +937,24 @@ export default function CombatPowerDashboard({ data }: Props) {
                                   <span className={styles.arkColDesc}>{pointInfo.description}</span>
                                 )}
                               </div>
+                              {/* 카르마 정보 */}
+                              {karmaInfo && karmaInfo.rank > 0 && (
+                                <div className={styles.karmaInfo}>
+                                  <span className={styles.karmaLabel}>카르마</span>
+                                  <span className={styles.karmaVal}>
+                                    {karmaInfo.rank}랭크 {karmaInfo.level}레벨
+                                  </span>
+                                  {karmaPowerPct > 0 && (
+                                    <span className={styles.karmaPower}>+{karmaPowerPct.toFixed(2)}%</span>
+                                  )}
+                                  {type === 'enlightenment' && enlKarmaActive && (
+                                    <span className={styles.karmaPower}>×{ENLIGHTENMENT_MAIN_NODE_MULTIPLIER}</span>
+                                  )}
+                                  {type === 'enlightenment' && !enlKarmaActive && val >= 72 && (
+                                    <span className={styles.karmaNote}>메인 미활성</span>
+                                  )}
+                                </div>
+                              )}
                               {/* 스텝퍼 */}
                               <div className={styles.arkColControls}>
                                 <div className={styles.enhStepper}>
@@ -837,7 +985,8 @@ export default function CombatPowerDashboard({ data }: Props) {
                         })}
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
               </div>
             </section>

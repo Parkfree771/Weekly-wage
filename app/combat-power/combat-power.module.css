@@ -79,8 +79,8 @@
 .deltaPos {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
   white-space: nowrap;
@@ -90,8 +90,8 @@
 .deltaNeg {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
   white-space: nowrap;
@@ -124,10 +124,24 @@
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.deltaCardPos {
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 2px 12px rgba(239, 68, 68, 0.1);
+}
+
+.deltaCardNeg {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.1);
 }
 
 .deltaCardHeader {
-  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.85rem;
   background: var(--card-header-bg-violet);
   border-bottom: 1px solid var(--border-color);
   font-size: 0.82rem;
@@ -136,15 +150,109 @@
 }
 
 .deltaCardBody {
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* -- 현재 전투력 -- */
+.deltaFlowCurrent {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 0.75rem;
+  padding: 0.5rem 0.65rem;
+  background: var(--card-body-bg-stone);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
 }
 
-.deltaCardValue {
-  font-size: 1.1rem;
+.deltaFlowLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.deltaFlowValue {
+  font-size: 1.05rem;
   font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* -- 화살표 + 변화량 -- */
+.deltaFlowArrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+}
+
+.deltaFlowArrowLine {
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.deltaFlowBadge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: -0.01em;
+}
+
+.deltaFlowBadgePos {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.deltaFlowBadgeNeg {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* -- 변화 후 전투력 -- */
+.deltaFlowFinal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+}
+
+.deltaFinalPos {
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.deltaFinalNeg {
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.deltaFinalLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.deltaFinalValue {
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.deltaFinalPos .deltaFinalValue {
+  color: #ef4444;
+}
+
+.deltaFinalNeg .deltaFinalValue {
+  color: #3b82f6;
 }
 
 .profileCard {
@@ -612,6 +720,15 @@
   font-size: 0.66rem;
 }
 
+/* 팔찌 효과 텍스트 (inline flow, flex 아님) */
+.braceletEffText {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  display: inline;
+}
+
 /* 팔찌 고유효과 키워드 (가로) */
 .braceletKeywords {
   display: flex;
@@ -703,6 +820,61 @@
   outline: none;
   border-color: #8b5cf6;
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.12);
+}
+
+/* 팔찌 교체 버튼 */
+.braceletSwapBtn {
+  margin-left: auto;
+  padding: 0.15rem 0.5rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--card-body-bg-stone);
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+.braceletSwapBtn:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+/* 팔찌 스탯 수치 입력 */
+.braceletStatInput {
+  width: 58px;
+  padding: 0.2rem 0.35rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--card-body-bg-stone);
+  color: var(--text-primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  flex-shrink: 0;
+}
+.braceletStatInput:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.12);
+}
+/* hide spinner */
+.braceletStatInput::-webkit-inner-spin-button,
+.braceletStatInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* 팔찌 전투력 변화 행 */
+.braceletDeltaRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.25rem 0 0;
+  border-top: 1px dashed var(--border-color);
+  margin-top: 0.2rem;
 }
 
 /* Swap controls */
@@ -1486,6 +1658,44 @@
   font-size: 0.68rem;
   color: var(--text-muted);
   font-weight: 600;
+}
+
+/* 카르마 정보 */
+.karmaTotal {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #a78bfa;
+  margin-left: 0.4rem;
+}
+
+.karmaInfo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0;
+  font-size: 0.65rem;
+}
+
+.karmaLabel {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.karmaVal {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.karmaPower {
+  color: #a78bfa;
+  font-weight: 700;
+}
+
+.karmaNote {
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  font-style: italic;
 }
 
 .arkColControls {

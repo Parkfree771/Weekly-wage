@@ -14,6 +14,7 @@ import type { CombatPowerData, GemInfo, EngravingInfo } from './combatPowerData'
 import {
   getEngravingCoefficient,
   getGemPower,
+  getGemBaseAtkPercent,
   getCardSetPower,
   getArkPassivePower,
   getCombatLevelPercent,
@@ -23,6 +24,11 @@ import {
   ACCESSORY_GRINDING_ALIASES,
   getBaseItemLevelPower,
   ARK_PASSIVE_POWER_PER_POINT,
+  ENLIGHTENMENT_MAIN_NODE_MULTIPLIER,
+  ARK_GRID_EFFECT_PER_LEVEL,
+  ARK_GRID_EFFECT_INFO,
+  getCoreTableKey,
+  getCoreOptionPower,
 } from './combatPowerTables';
 
 // ════════════════════════════════════
@@ -101,17 +107,22 @@ export function calculateBreakdown(data: CombatPowerData): PowerBreakdown {
     });
   }
 
-  // ── 3. 아크 패시브 ──
+  // ── 3. 아크 패시브 (곱연산 결합: 진화 × 깨달음 × 도약 × 카르마) ──
   if (data.arkPassive) {
     const evoContrib = data.arkPassive.evolution * ARK_PASSIVE_POWER_PER_POINT.evolution;
     const enlContrib = data.arkPassive.enlightenment * ARK_PASSIVE_POWER_PER_POINT.enlightenment;
     const leapContrib = data.arkPassive.leap * ARK_PASSIVE_POWER_PER_POINT.leap;
-    const totalArkContrib = evoContrib + enlContrib + leapContrib;
+    const hasEnlKarma = data.arkPassive.enlightenment >= 80;
+    // 곱연산 결합 (개별 합산이 아닌 실제 곱연산)
+    const totalArkContrib = getArkPassivePower(
+      data.arkPassive.evolution, data.arkPassive.enlightenment, data.arkPassive.leap
+    );
 
+    const enlKarmaStr = hasEnlKarma ? ` ×${ENLIGHTENMENT_MAIN_NODE_MULTIPLIER}` : '';
     items.push({
       category: '아크 패시브',
       label: '아크 패시브',
-      currentValue: `진화 ${data.arkPassive.evolution}(${evoContrib.toFixed(1)}%) / 깨달음 ${data.arkPassive.enlightenment}(${enlContrib.toFixed(1)}%) / 도약 ${data.arkPassive.leap}(${leapContrib.toFixed(1)}%)`,
+      currentValue: `진화 ${data.arkPassive.evolution}(${evoContrib.toFixed(1)}%) / 깨달음 ${data.arkPassive.enlightenment}(${enlContrib.toFixed(1)}%${enlKarmaStr}) / 도약 ${data.arkPassive.leap}(${leapContrib.toFixed(1)}%)`,
       contribution: totalArkContrib,
       estimatedPower: totalPower > 0 ? Math.round(totalPower * totalArkContrib / (100 + totalArkContrib)) : 0,
     });
@@ -134,27 +145,45 @@ export function calculateBreakdown(data: CombatPowerData): PowerBreakdown {
     }
   }
 
-  // ── 5. 보석 (각각 독립 곱연산) ──
-  const gemSummary: Record<string, { count: number; totalPower: number; levels: number[] }> = {};
+  // ── 5. 보석 (각각 독립 곱연산, 기본공격력% 별도) ──
+  // 실측 검증: 보석은 개별 곱연산 (합산 아님)
+  //   1개 제거 0.003%, 2개 제거 0.0005%, 9개 제거 0.0007% 오차
+  let gemProduct = 1;
+  let gemBaseAtkTotal = 0;
+  const gemSummary: Record<string, { count: number; levels: number[] }> = {};
   for (const gem of data.gems) {
-    const contrib = getGemPower(gem.tier, gem.level);
+    const power = getGemPower(gem.tier, gem.level);
+    gemProduct *= (1 + power / 100);
+    gemBaseAtkTotal += getGemBaseAtkPercent(gem.tier, gem.level);
     const key = `T${gem.tier}`;
-    if (!gemSummary[key]) {
-      gemSummary[key] = { count: 0, totalPower: 0, levels: [] };
-    }
+    if (!gemSummary[key]) gemSummary[key] = { count: 0, levels: [] };
     gemSummary[key].count++;
-    gemSummary[key].totalPower += contrib;
     gemSummary[key].levels.push(gem.level);
   }
 
-  for (const [tierKey, info] of Object.entries(gemSummary)) {
-    const avgLevel = info.levels.reduce((a, b) => a + b, 0) / info.levels.length;
+  // 보석 개별 곱연산 기여 (Π(1+gem_i%) - 1)
+  const gemContrib = (gemProduct - 1) * 100;
+  if (gemContrib > 0) {
+    const tierLabels = Object.entries(gemSummary)
+      .map(([k, v]) => `${k} ${v.count}개(평균Lv.${(v.levels.reduce((a, b) => a + b, 0) / v.levels.length).toFixed(1)})`)
+      .join(', ');
     items.push({
       category: '보석',
-      label: `${tierKey} 보석`,
-      currentValue: `${info.count}개 (평균 Lv.${avgLevel.toFixed(1)})`,
-      contribution: info.totalPower,
-      estimatedPower: totalPower > 0 ? Math.round(totalPower * info.totalPower / (100 + info.totalPower)) : 0,
+      label: '보석 스킬 효과',
+      currentValue: tierLabels,
+      contribution: gemContrib,
+      estimatedPower: totalPower > 0 ? Math.round(totalPower * gemContrib / (100 + gemContrib)) : 0,
+    });
+  }
+
+  // T4 보석 기본공격력% (별도 곱연산 팩터)
+  if (gemBaseAtkTotal > 0) {
+    items.push({
+      category: '보석',
+      label: '보석 기본공격력%',
+      currentValue: `${data.gems.length}개 합계 +${gemBaseAtkTotal.toFixed(2)}%`,
+      contribution: gemBaseAtkTotal,
+      estimatedPower: totalPower > 0 ? Math.round(totalPower * gemBaseAtkTotal / (100 + gemBaseAtkTotal)) : 0,
     });
   }
 
@@ -223,6 +252,54 @@ export function calculateBreakdown(data: CombatPowerData): PowerBreakdown {
       contribution: accessoryContrib,
       estimatedPower: totalPower > 0 ? Math.round(totalPower * accessoryContrib / (100 + accessoryContrib)) : 0,
     });
+  }
+
+  // ── 10. 아크 그리드 (젬 효과 + 코어 옵션) ──
+  if (data.arkGrid && data.arkGrid.cores.length > 0) {
+    // 10-1. 젬 효과 (딜러: 서포터 전용 효과 제외)
+    // 풀 모델: 추가피해/공격력은 합연산(다른 소스와 풀), 보스피해는 독립 곱연산
+    // 브레이크다운에서는 그리드 젬 기여분만 표시 (실제 곱연산 배율은 풀 포함 시 더 작음)
+    let gemEffectContrib = 0;
+    const effectDetails: string[] = [];
+    for (const eff of data.arkGrid.effects) {
+      const info = ARK_GRID_EFFECT_INFO[eff.name];
+      // 딜러 캐릭터: 서포터 전용 효과(낙인력, 아군피해강화, 아군공격강화) 제외
+      if (!info || !info.affectsDpsCombatPower) continue;
+      if (info.perLevel > 0) {
+        const contrib = eff.level * info.perLevel;
+        gemEffectContrib += contrib;
+        effectDetails.push(`${eff.name} Lv${eff.level}(${contrib.toFixed(2)}%)`);
+      }
+    }
+    if (gemEffectContrib > 0) {
+      items.push({
+        category: '아크 그리드',
+        label: '그리드 젬 효과',
+        currentValue: effectDetails.join(', '),
+        contribution: gemEffectContrib,
+        estimatedPower: totalPower > 0 ? Math.round(totalPower * gemEffectContrib / (100 + gemEffectContrib)) : 0,
+      });
+    }
+
+    // 10-2. 코어 옵션 (각 코어별 독립 곱연산)
+    for (const core of data.arkGrid.cores) {
+      const { tableKey } = getCoreTableKey(core.name);
+      if (!tableKey) continue;
+
+      const grade = (core.grade === '고대' ? '고대' : '유물') as '유물' | '고대';
+      const coreContrib = getCoreOptionPower(tableKey, grade, core.point);
+
+      if (coreContrib > 0) {
+        const shortName = core.name.replace(/.*코어\s*:\s*/, '');
+        items.push({
+          category: '아크 그리드',
+          label: `코어 ${shortName}`,
+          currentValue: `${core.coreType} ${grade} ${core.point}P`,
+          contribution: coreContrib,
+          estimatedPower: totalPower > 0 ? Math.round(totalPower * coreContrib / (100 + coreContrib)) : 0,
+        });
+      }
+    }
   }
 
   // contribution 내림차순 정렬

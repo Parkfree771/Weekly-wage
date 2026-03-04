@@ -13,6 +13,7 @@ export type CombatProfile = {
   itemLevel: number;
   combatPower: number;    // 전투력 (프로필 CombatPower 필드, 예: 5067.31)
   attackPower: number;    // 공격력 (Stats 배열 '공격력', 예: 201378)
+  mainStatType: '힘' | '민첩' | '지능';  // 주 스탯 (가장 높은 값 기준)
   characterImage?: string;
   serverName?: string;
   guildName?: string;
@@ -33,6 +34,7 @@ export type EquipmentItem = {
   transcendence: number; // 초월 단계
   elixir: string[];      // 엘릭서 효과
   setName: string;       // 세트 효과명
+  mainStat: number;      // 무기: 무기 공격력, 방어구: 힘/민/지 (기본 효과)
 };
 
 export type AccessoryItem = {
@@ -116,11 +118,21 @@ export type ArkPassiveEffect = {
   description: string;  // 효과 설명 (HTML 제거)
 };
 
+export type KarmaInfo = {
+  rank: number;         // 랭크 (1~6)
+  level: number;        // 레벨 (1~30)
+};
+
 export type ArkPassiveInfo = {
   title: string;        // 아크패시브 칭호 (e.g., "포식자")
   evolution: number;
   enlightenment: number;
   leap: number;
+  karma: {
+    evolution: KarmaInfo;
+    enlightenment: KarmaInfo;
+    leap: KarmaInfo;
+  };
   points: ArkPassivePoint[];
   effects: ArkPassiveEffect[];
 };
@@ -132,7 +144,7 @@ export type AccessoryGrinding = {
 
 export type BraceletEffect = {
   id: string;        // BRACELET_ALL_OPTIONS의 id (e.g., 'crit_rate_combo')
-  name: string;      // 표시용 이름 (e.g., '치적+치적주피')
+  name: string;      // 인게임 풀 텍스트 (e.g., '치명타 적중률이 3.4% 증가한다. 공격이 치명타로 적중 시...')
   grade: string;     // 상/중/하
   value: number;     // 주 수치 (e.g., 3.4)
 };
@@ -253,10 +265,20 @@ export function parseProfile(profileData: any): CombatProfile | null {
 
   // 공격력: Stats 배열 내 '공격력' (예: "201,378")
   let attackPower = 0;
+  let mainStatType: '힘' | '민첩' | '지능' = '힘';
   if (profileData.Stats && Array.isArray(profileData.Stats)) {
     const atkStat = profileData.Stats.find((s: any) => s.Type === '공격력');
     if (atkStat) {
       attackPower = parseInt((atkStat.Value || '0').replace(/,/g, ''), 10);
+    }
+    // 주 스탯 판별: 힘/민첩/지능 중 가장 높은 값
+    let maxVal = 0;
+    for (const t of ['힘', '민첩', '지능'] as const) {
+      const found = profileData.Stats.find((s: any) => s.Type === t);
+      if (found) {
+        const v = parseInt((found.Value || '0').replace(/,/g, ''), 10);
+        if (v > maxVal) { maxVal = v; mainStatType = t; }
+      }
     }
   }
 
@@ -266,6 +288,7 @@ export function parseProfile(profileData: any): CombatProfile | null {
     itemLevel,
     combatPower,
     attackPower,
+    mainStatType,
     characterImage: profileData.CharacterImage || undefined,
     serverName: profileData.ServerName || undefined,
     guildName: profileData.GuildName || undefined,
@@ -307,7 +330,7 @@ export function parseEquipmentItems(equipmentData: any[]): EquipmentItem[] {
     if (!armorTypes.includes(item.Type)) continue;
 
     let quality = 0, itemLevel = 0, enhanceLevel = 0, advancedLevel = 0;
-    let transcendence = 0;
+    let transcendence = 0, mainStat = 0;
     const elixir: string[] = [];
     let setName = '';
 
@@ -328,6 +351,22 @@ export function parseEquipmentItems(equipmentData: any[]): EquipmentItem[] {
       // 강화 단계
       const enhanceMatch = (item.Name || '').match(/^\+(\d+)/);
       if (enhanceMatch) enhanceLevel = parseInt(enhanceMatch[1], 10);
+
+      // 기본 효과에서 힘/민/지(방어구) 또는 무기 공격력(무기) 추출
+      for (const key in tooltip) {
+        if (!key.startsWith('Element_')) continue;
+        const el = tooltip[key];
+        if (el?.type === 'ItemPartBox' && el?.value?.Element_000?.includes('기본 효과')) {
+          const cleaned = (el.value.Element_001 || '').replace(/<[^>]*>/g, '');
+          if (item.Type === '무기') {
+            const m = cleaned.match(/무기 공격력 \+([0-9,]+)/);
+            if (m) mainStat = parseInt(m[1].replace(/,/g, ''), 10);
+          } else {
+            const m = cleaned.match(/(?:힘|민첩|지능) \+([0-9,]+)/);
+            if (m) mainStat = parseInt(m[1].replace(/,/g, ''), 10);
+          }
+        }
+      }
 
       // 상급 재련, 초월, 엘릭서, 세트 등 tooltip에서 추출
       for (const key in tooltip) {
@@ -379,6 +418,7 @@ export function parseEquipmentItems(equipmentData: any[]): EquipmentItem[] {
       transcendence,
       elixir,
       setName,
+      mainStat,
     });
   }
 
@@ -455,12 +495,14 @@ export function parseAccessoryItems(equipmentData: any[]): AccessoryItem[] {
         const val = JSON.stringify(el);
         const cleaned = val.replace(/<[^>]*>/g, '');
 
-        // 전투 특성
-        if (cleaned.includes('치명') || cleaned.includes('특화') || cleaned.includes('신속')) {
-          const statMatches = cleaned.match(/(치명|특화|신속|제압|인내|숙련)\s*\+\s*(\d+)/g);
+        // 전투 특성 + 기본 스탯 (힘/민첩/지능)
+        if (cleaned.includes('치명') || cleaned.includes('특화') || cleaned.includes('신속')
+            || cleaned.includes('힘') || cleaned.includes('민첩') || cleaned.includes('지능')) {
+          const statMatches = cleaned.match(/(치명|특화|신속|제압|인내|숙련|힘|민첩|지능)\s*\+\s*([\d,]+)/g);
           if (statMatches) {
             for (const sm of statMatches) {
-              if (!stats.includes(sm.trim())) stats.push(sm.trim());
+              const normalized = sm.replace(/,/g, '').trim();
+              if (!stats.includes(normalized)) stats.push(normalized);
             }
           }
         }
@@ -801,8 +843,8 @@ export function parseBraceletItem(equipmentData: any[]): BraceletItem | null {
       for (const block of blocks) {
         const stripped = block.replace(/<[^>]*>/g, '').trim();
 
-        // 전투 특성 (치명/특화/신속) → stats
-        const statMatch = stripped.match(/^(치명|특화|신속|제압|인내|숙련)\s*\+\s*[\d,]+$/);
+        // 전투 특성 + 기본 스탯 (힘/민첩/지능) → stats
+        const statMatch = stripped.match(/^(치명|특화|신속|제압|인내|숙련|힘|민첩|지능)\s*\+\s*[\d,]+$/);
         if (statMatch) {
           if (!stats.includes(stripped)) stats.push(stripped);
           continue;
@@ -1004,15 +1046,33 @@ export function parseArkPassive(arkpassiveData: any): ArkPassiveInfo | null {
 
   const title = arkpassiveData.Title || '';
   let evolution = 0, enlightenment = 0, leap = 0;
+  const karma = {
+    evolution: { rank: 0, level: 0 },
+    enlightenment: { rank: 0, level: 0 },
+    leap: { rank: 0, level: 0 },
+  };
   const points: ArkPassivePoint[] = [];
 
   for (const point of arkpassiveData.Points) {
     const name = point.Name || '';
     const value = point.Value || 0;
     const description = point.Description || '';
-    if (name.includes('진화')) evolution = value;
-    else if (name.includes('깨달음')) enlightenment = value;
-    else if (name.includes('도약')) leap = value;
+
+    // 카르마 랭크/레벨 파싱: "6랭크 21레벨"
+    const karmaMatch = description.match(/(\d+)랭크\s*(\d+)레벨/);
+    const karmaRank = karmaMatch ? parseInt(karmaMatch[1]) : 0;
+    const karmaLevel = karmaMatch ? parseInt(karmaMatch[2]) : 0;
+
+    if (name.includes('진화')) {
+      evolution = value;
+      karma.evolution = { rank: karmaRank, level: karmaLevel };
+    } else if (name.includes('깨달음')) {
+      enlightenment = value;
+      karma.enlightenment = { rank: karmaRank, level: karmaLevel };
+    } else if (name.includes('도약')) {
+      leap = value;
+      karma.leap = { rank: karmaRank, level: karmaLevel };
+    }
     points.push({ name, value, description });
   }
 
@@ -1045,7 +1105,7 @@ export function parseArkPassive(arkpassiveData: any): ArkPassiveInfo | null {
     }
   }
 
-  return { title, evolution, enlightenment, leap, points, effects };
+  return { title, evolution, enlightenment, leap, karma, points, effects };
 }
 
 // 장신구 연마 효과 파싱 (분석용)
@@ -1173,7 +1233,7 @@ function classifyBraceletTier(hexColor: string): string {
 
 function matchBraceletOption(
   blockText: string,
-): { id: string; description: string; value: number } | null {
+): { id: string; fullText: string; value: number } | null {
   const stripped = blockText.replace(/<[^>]*>/g, '').trim();
 
   // 전투 특성 / 힘민지 / 도약 → 별도 처리 대상, 여기선 스킵
@@ -1195,7 +1255,8 @@ function matchBraceletOption(
     const numMatch = stripped.match(/([\d,]+\.?\d*)\s*%?/);
     const value = numMatch ? parseFloat(numMatch[1].replace(/,/g, '')) : 0;
 
-    return { id: opt.id, description: opt.description, value };
+    // 축약하지 않고 API 원문 텍스트 그대로 반환
+    return { id: opt.id, fullText: stripped, value };
   }
 
   return null;
@@ -1260,7 +1321,7 @@ export function parseBraceletEffects(equipmentData: any[]): BraceletEffect[] {
         const grade = determineBraceletGrade(block);
         result.push({
           id: matched.id,
-          name: matched.description,
+          name: matched.fullText,  // 인게임 원문 텍스트 그대로
           grade,
           value: matched.value,
         });
