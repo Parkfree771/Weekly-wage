@@ -22,8 +22,10 @@ import {
   BRACELET_EFFECT_POWER,
   ACCESSORY_GRINDING_POWER,
   ACCESSORY_GRINDING_ALIASES,
+  ADD_DMG_RAW,
   getBaseItemLevelPower,
   ARK_PASSIVE_POWER_PER_POINT,
+  KARMA_POWER,
   ENLIGHTENMENT_MAIN_NODE_MULTIPLIER,
   ARK_GRID_EFFECT_PER_LEVEL,
   ARK_GRID_EFFECT_INFO,
@@ -43,12 +45,23 @@ export type PowerBreakdownItem = {
   estimatedPower: number; // 추정 전투력 기여량 (참고용)
 };
 
+// 추가 피해 풀 상세 (합연산 소스별 raw %)
+export type AddDmgPoolInfo = {
+  weapon: number;      // 무기 품질 추가피해%
+  accessory: number;   // 악세 연마 추가피해% raw 합계
+  bracelet: number;    // 팔찌 추가피해% raw 합계
+  grid: number;        // 그리드 젬 추가피해% raw 합계
+  total: number;       // 전체 합계 = 전투력 기여%
+};
+
 export type PowerBreakdown = {
   totalPower: number;     // 총 전투력 (API 실제 값)
   basePower: number;      // 기본 전투력 (아이템 레벨 기반 추정)
   items: PowerBreakdownItem[];
   // 곱연산 검증: 모든 요소를 곱해서 나온 전투력 배율
   totalMultiplier: number;
+  // 추가 피해 풀 (시뮬레이션 시 소스별 변경용)
+  addDmgPool: AddDmgPoolInfo;
 };
 
 export type SimulationResult = {
@@ -94,35 +107,85 @@ export function calculateBreakdown(data: CombatPowerData): PowerBreakdown {
     });
   }
 
-  // ── 2. 무기 품질 (추가 피해%) ──
+  // ── 2. 추가 피해 풀 (합연산: 무기 품질 + 악세 + 팔찌 + 그리드 젬) ──
+  // 먼저 모든 소스에서 raw 추가피해%를 수집한 뒤 합산
+  const addDmgPool: AddDmgPoolInfo = { weapon: 0, accessory: 0, bracelet: 0, grid: 0, total: 0 };
+  const addDmgSources: string[] = [];
+
+  // 2-1. 무기 품질
   if (data.weapon) {
-    // 추가 피해% = 전투력 증가%
-    const qualityContrib = data.weapon.additionalDamage || 0;
+    addDmgPool.weapon = data.weapon.additionalDamage || 0;
+    addDmgSources.push(`무기 ${addDmgPool.weapon}%`);
+  }
+
+  // 2-2. 악세 연마 "추가 피해%" (raw 값 사용)
+  for (const acc of data.accessories) {
+    for (const eff of acc.effects) {
+      const resolvedName = ACCESSORY_GRINDING_ALIASES[eff.name] || eff.name;
+      if (resolvedName === '추가 피해%') {
+        const raw = ADD_DMG_RAW.accessory[eff.grade] || 0;
+        addDmgPool.accessory += raw;
+      }
+    }
+  }
+  if (addDmgPool.accessory > 0) addDmgSources.push(`악세 ${addDmgPool.accessory.toFixed(1)}%`);
+
+  // 2-3. 팔찌 "add_dmg" (단일 추가피해, raw 값 사용)
+  for (const effect of data.bracelet) {
+    if (effect.id === 'add_dmg') {
+      const raw = ADD_DMG_RAW.bracelet_simple[effect.grade] || 0;
+      addDmgPool.bracelet += raw;
+    }
+  }
+  if (addDmgPool.bracelet > 0) addDmgSources.push(`팔찌 ${addDmgPool.bracelet.toFixed(1)}%`);
+
+  // 2-4. 그리드 젬 "추가 피해"
+  if (data.arkGrid) {
+    const addDmgEffect = data.arkGrid.effects.find(e => e.name === '추가 피해');
+    if (addDmgEffect) {
+      addDmgPool.grid = addDmgEffect.level * ADD_DMG_RAW.grid_per_level;
+      addDmgSources.push(`그리드 ${addDmgPool.grid.toFixed(2)}%`);
+    }
+  }
+
+  // 풀 합계 → 하나의 곱연산 팩터
+  addDmgPool.total = addDmgPool.weapon + addDmgPool.accessory + addDmgPool.bracelet + addDmgPool.grid;
+  if (addDmgPool.total > 0) {
     items.push({
-      category: '무기 품질',
-      label: `무기 품질 (${data.weapon.grade})`,
-      currentValue: `품질 ${data.weapon.quality} (추가피해 ${qualityContrib}%)`,
-      contribution: qualityContrib,
-      estimatedPower: totalPower > 0 ? Math.round(totalPower * qualityContrib / (100 + qualityContrib)) : 0,
+      category: '추가 피해',
+      label: '추가 피해 (합연산 풀)',
+      currentValue: addDmgSources.join(' + ') + ` = ${addDmgPool.total.toFixed(2)}%`,
+      contribution: addDmgPool.total,
+      estimatedPower: totalPower > 0 ? Math.round(totalPower * addDmgPool.total / (100 + addDmgPool.total)) : 0,
     });
   }
 
-  // ── 3. 아크 패시브 (곱연산 결합: 진화 × 깨달음 × 도약 × 카르마) ──
+  // ── 3. 아크 패시브 (곱연산 결합: 진화 × 깨달음 × 도약 × 깨달음카르마 × 진화카르마 × 도약카르마) ──
   if (data.arkPassive) {
     const evoContrib = data.arkPassive.evolution * ARK_PASSIVE_POWER_PER_POINT.evolution;
     const enlContrib = data.arkPassive.enlightenment * ARK_PASSIVE_POWER_PER_POINT.enlightenment;
     const leapContrib = data.arkPassive.leap * ARK_PASSIVE_POWER_PER_POINT.leap;
     const hasEnlKarma = data.arkPassive.enlightenment >= 80;
-    // 곱연산 결합 (개별 합산이 아닌 실제 곱연산)
+    const karma = data.arkPassive.karma;
+
+    // 카르마 보너스 계산
+    const evoKarmaContrib = karma ? karma.evolution.rank * KARMA_POWER.evolution.perRank : 0;
+    const leapKarmaContrib = karma ? karma.leap.level * KARMA_POWER.leap.perLevel : 0;
+
+    // 곱연산 결합 (카르마 포함)
     const totalArkContrib = getArkPassivePower(
-      data.arkPassive.evolution, data.arkPassive.enlightenment, data.arkPassive.leap
+      data.arkPassive.evolution, data.arkPassive.enlightenment, data.arkPassive.leap,
+      karma,
     );
 
     const enlKarmaStr = hasEnlKarma ? ` ×${ENLIGHTENMENT_MAIN_NODE_MULTIPLIER}` : '';
+    const karmaStr = karma
+      ? ` | 카르마: 진화 ${karma.evolution.rank}랭크(+${evoKarmaContrib.toFixed(1)}%) 도약 ${karma.leap.level}레벨(+${leapKarmaContrib.toFixed(2)}%)`
+      : '';
     items.push({
       category: '아크 패시브',
       label: '아크 패시브',
-      currentValue: `진화 ${data.arkPassive.evolution}(${evoContrib.toFixed(1)}%) / 깨달음 ${data.arkPassive.enlightenment}(${enlContrib.toFixed(1)}%${enlKarmaStr}) / 도약 ${data.arkPassive.leap}(${leapContrib.toFixed(1)}%)`,
+      currentValue: `진화 ${data.arkPassive.evolution}(${evoContrib.toFixed(1)}%) / 깨달음 ${data.arkPassive.enlightenment}(${enlContrib.toFixed(1)}%${enlKarmaStr}) / 도약 ${data.arkPassive.leap}(${leapContrib.toFixed(1)}%)${karmaStr}`,
       contribution: totalArkContrib,
       estimatedPower: totalPower > 0 ? Math.round(totalPower * totalArkContrib / (100 + totalArkContrib)) : 0,
     });
@@ -213,31 +276,32 @@ export function calculateBreakdown(data: CombatPowerData): PowerBreakdown {
     }
   }
 
-  // ── 8. 팔찌 ──
+  // ── 8. 팔찌 (추가피해 add_dmg는 풀에 포함되므로 제외) ──
   let braceletContrib = 0;
   for (const effect of data.bracelet) {
+    if (effect.id === 'add_dmg') continue; // 풀에서 처리
     const powerTiers = BRACELET_EFFECT_POWER[effect.id];
     if (powerTiers) {
       const grade = effect.grade as '상' | '중' | '하';
       braceletContrib += powerTiers[grade] || powerTiers['중'] || 0;
     }
   }
-  if (braceletContrib > 0 || data.bracelet.length > 0) {
+  if (braceletContrib > 0 || data.bracelet.filter(e => e.id !== 'add_dmg').length > 0) {
     items.push({
       category: '팔찌',
       label: '팔찌 효과',
-      currentValue: `${data.bracelet.length}개 효과`,
+      currentValue: `${data.bracelet.filter(e => e.id !== 'add_dmg').length}개 효과 (추가피해 제외)`,
       contribution: braceletContrib,
       estimatedPower: totalPower > 0 ? Math.round(totalPower * braceletContrib / (100 + braceletContrib)) : 0,
     });
   }
 
-  // ── 9. 장신구 연마 ──
+  // ── 9. 장신구 연마 (추가 피해%는 풀에 포함되므로 제외) ──
   let accessoryContrib = 0;
   for (const acc of data.accessories) {
     for (const eff of acc.effects) {
-      // 정확한 키 매칭 (새 파서는 ACCESSORY_GRINDING_POWER 키와 동일한 name 출력)
       const resolvedName = ACCESSORY_GRINDING_ALIASES[eff.name] || eff.name;
+      if (resolvedName === '추가 피해%') continue; // 풀에서 처리
       const grades = ACCESSORY_GRINDING_POWER[resolvedName];
       if (grades) {
         accessoryContrib += grades[eff.grade] || grades['중'] || 0;
@@ -248,7 +312,7 @@ export function calculateBreakdown(data: CombatPowerData): PowerBreakdown {
     items.push({
       category: '장신구 연마',
       label: '장신구 연마 효과',
-      currentValue: `${data.accessories.length}개 장신구`,
+      currentValue: `${data.accessories.length}개 장신구 (추가피해 제외)`,
       contribution: accessoryContrib,
       estimatedPower: totalPower > 0 ? Math.round(totalPower * accessoryContrib / (100 + accessoryContrib)) : 0,
     });
@@ -256,14 +320,12 @@ export function calculateBreakdown(data: CombatPowerData): PowerBreakdown {
 
   // ── 10. 아크 그리드 (젬 효과 + 코어 옵션) ──
   if (data.arkGrid && data.arkGrid.cores.length > 0) {
-    // 10-1. 젬 효과 (딜러: 서포터 전용 효과 제외)
-    // 풀 모델: 추가피해/공격력은 합연산(다른 소스와 풀), 보스피해는 독립 곱연산
-    // 브레이크다운에서는 그리드 젬 기여분만 표시 (실제 곱연산 배율은 풀 포함 시 더 작음)
+    // 10-1. 젬 효과 (딜러: 서포터 전용 효과 제외, 추가피해는 풀에서 처리)
     let gemEffectContrib = 0;
     const effectDetails: string[] = [];
     for (const eff of data.arkGrid.effects) {
+      if (eff.name === '추가 피해') continue; // 풀에서 처리
       const info = ARK_GRID_EFFECT_INFO[eff.name];
-      // 딜러 캐릭터: 서포터 전용 효과(낙인력, 아군피해강화, 아군공격강화) 제외
       if (!info || !info.affectsDpsCombatPower) continue;
       if (info.perLevel > 0) {
         const contrib = eff.level * info.perLevel;
@@ -275,7 +337,7 @@ export function calculateBreakdown(data: CombatPowerData): PowerBreakdown {
       items.push({
         category: '아크 그리드',
         label: '그리드 젬 효과',
-        currentValue: effectDetails.join(', '),
+        currentValue: effectDetails.join(', ') + ' (추가피해 제외)',
         contribution: gemEffectContrib,
         estimatedPower: totalPower > 0 ? Math.round(totalPower * gemEffectContrib / (100 + gemEffectContrib)) : 0,
       });
@@ -311,7 +373,7 @@ export function calculateBreakdown(data: CombatPowerData): PowerBreakdown {
     totalMultiplier *= (1 + item.contribution / 100);
   }
 
-  return { totalPower, basePower, items, totalMultiplier };
+  return { totalPower, basePower, items, totalMultiplier, addDmgPool };
 }
 
 // ════════════════════════════════════

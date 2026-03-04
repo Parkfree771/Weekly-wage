@@ -80,14 +80,25 @@ export const ARK_PASSIVE_POWER_PER_POINT = {
 export const ENLIGHTENMENT_MAIN_NODE_MULTIPLIER = 1.231;
 
 // 아크 패시브 전체 전투력 기여% (곱연산 결합)
-// 진화 × 깨달음 × 도약 × 깨달음4단계카르마 를 하나의 % 팩터로 반환
+// 진화 × 깨달음 × 도약 × 깨달음4단계카르마 × 진화카르마 × 도약카르마 를 하나의 % 팩터로 반환
 // simulateChange와 함께 사용: 개별 요소 변경 시 다른 요소가 상쇄되어 정확한 delta 계산
-export function getArkPassivePower(evolution: number, enlightenment: number, leap: number): number {
+export function getArkPassivePower(
+  evolution: number,
+  enlightenment: number,
+  leap: number,
+  karma?: { evolution: { rank: number; level: number }; enlightenment: { rank: number; level: number }; leap: { rank: number; level: number } },
+): number {
   const evoFactor = 1 + evolution * ARK_PASSIVE_POWER_PER_POINT.evolution / 100;
   const enlFactor = 1 + enlightenment * ARK_PASSIVE_POWER_PER_POINT.enlightenment / 100;
   const leapFactor = 1 + leap * ARK_PASSIVE_POWER_PER_POINT.leap / 100;
   const enlKarma = enlightenment >= 80 ? ENLIGHTENMENT_MAIN_NODE_MULTIPLIER : 1.0;
-  return (evoFactor * enlFactor * leapFactor * enlKarma - 1) * 100;
+
+  // 카르마 보너스: 진화 rank × 0.6%, 도약 level × 0.02%
+  // 깨달음 카르마: 무기공격력%로 기본 공격력에 이미 포함 → 별도 계산 불필요
+  const evoKarmaFactor = karma ? 1 + karma.evolution.rank * KARMA_POWER.evolution.perRank / 100 : 1;
+  const leapKarmaFactor = karma ? 1 + karma.leap.level * KARMA_POWER.leap.perLevel / 100 : 1;
+
+  return (evoFactor * enlFactor * leapFactor * enlKarma * evoKarmaFactor * leapKarmaFactor - 1) * 100;
 }
 
 // ════════════════════════════════════
@@ -383,6 +394,19 @@ export function getGemBaseAtkPercent(tier: number, level: number): number {
   if (tier !== 4) return 0;
   return GEM_T4_BASE_ATK_PER_GEM[level] || 0;
 }
+
+// ════════════════════════════════════
+// 추가 피해 풀 모델 (raw 추가피해% 값)
+// ════════════════════════════════════
+// 무기 품질 + 악세 + 팔찌 + 그리드 젬 → 합연산 후 하나의 곱연산 팩터
+export const ADD_DMG_RAW = {
+  // 악세 연마 "추가 피해%" raw 값 (목걸이 전용)
+  accessory: { '하': 0.6, '중': 1.6, '상': 2.6 } as Record<string, number>,
+  // 팔찌 "add_dmg" (단일) raw 값
+  bracelet_simple: { '하': 3.0, '중': 3.5, '상': 4.0 } as Record<string, number>,
+  // 그리드 젬 추가피해 per level
+  grid_per_level: 0.08,
+} as const;
 
 // ════════════════════════════════════
 // 장신구 연마 효과
@@ -1219,38 +1243,57 @@ export const PET_PATROL_POWER: Record<string, number> = {
 };
 
 // ════════════════════════════════════
-// T4 무기 강화 단계별 무기 공격력 테이블
+// T4 장비 강화 단계별 스탯 테이블
 // ════════════════════════════════════
-// 운명의 전율 기준 실측값. 비율은 T4 무기 공통.
+
+// ── 전율 (운명의 전율) ──
 // 1~16강: 단계당 ~2.64%~2.91% 증가 (점진적)
 // 17~25강: 단계당 정확히 2.5% 증가
-export const T4_WEAPON_ATK_BY_LEVEL: Record<number, number> = {
-  1: 128059,
-  2: 131439,
-  3: 134936,
-  4: 138556,
-  5: 142303,
-  6: 146182,
-  7: 150196,
-  8: 154350,
-  9: 158649,
-  10: 163099,
-  11: 167706,
-  12: 172473,
-  13: 177406,
-  14: 182514,
-  15: 187799,
-  16: 193270,
-  17: 198101,
-  18: 203054,
-  19: 208130,
-  20: 213333,
-  21: 218667,
-  22: 224133,
-  23: 229737,
-  24: 235480,
-  25: 241367,
+export const T4_JEONRYUL_ATK_BY_LEVEL: Record<number, number> = {
+  1: 128059, 2: 131439, 3: 134936, 4: 138556, 5: 142303,
+  6: 146182, 7: 150196, 8: 154350, 9: 158649, 10: 163099,
+  11: 167706, 12: 172473, 13: 177406, 14: 182514, 15: 187799,
+  16: 193270, 17: 198101, 18: 203054, 19: 208130, 20: 213333,
+  21: 218667, 22: 224133, 23: 229737, 24: 235480, 25: 241367,
 };
+
+// ── 업화 (계승 전 장비) ──
+// 1~4강: 단계당 ~8.5~10% 증가 (대폭), 5~25강: 단계당 ~2.2~2.7% 증가
+export const T4_UPHWA_WEAPON_ATK_BY_LEVEL: Record<number, number> = {
+  1: 67051, 2: 73796, 3: 80599, 4: 87463, 5: 89390,
+  6: 91381, 7: 93439, 8: 95566, 9: 97764, 10: 100036,
+  11: 102384, 12: 104811, 13: 107429, 14: 110139, 15: 112944,
+  16: 115847, 17: 118851, 18: 121961, 19: 125180, 20: 128511,
+  21: 131959, 22: 135527, 23: 139221, 24: 143044, 25: 147000,
+};
+
+// 업화 방어구: 부위별 힘/민/지 (비율은 전 부위 동일, 대표값으로 투구 사용)
+export const T4_UPHWA_ARMOR_STAT_BY_LEVEL: Record<number, number> = {
+  1: 38669, 2: 42565, 3: 46495, 4: 50459, 5: 51572,
+  6: 52722, 7: 53911, 8: 55139, 9: 56409, 10: 57721,
+  11: 59077, 12: 60478, 13: 61991, 14: 63556, 15: 65176,
+  16: 66852, 17: 68588, 18: 70384, 19: 72243, 20: 74167,
+  21: 76158, 22: 78219, 23: 80352, 24: 82560, 25: 84845,
+};
+
+/** 하위 호환용 별칭 */
+export const T4_WEAPON_ATK_BY_LEVEL = T4_JEONRYUL_ATK_BY_LEVEL;
+
+/** 장비 이름에서 세트 종류 판별 */
+export function getEquipmentSetType(equipmentName: string): '전율' | '업화' {
+  if (equipmentName.includes('업화')) return '업화';
+  return '전율';
+}
+
+/** 세트 종류에 맞는 무기 테이블 반환 */
+function getWeaponTable(setType: '전율' | '업화'): Record<number, number> {
+  return setType === '업화' ? T4_UPHWA_WEAPON_ATK_BY_LEVEL : T4_JEONRYUL_ATK_BY_LEVEL;
+}
+
+/** 세트 종류에 맞는 방어구 비율 테이블 반환 */
+function getArmorTable(setType: '전율' | '업화'): Record<number, number> {
+  return setType === '업화' ? T4_UPHWA_ARMOR_STAT_BY_LEVEL : T4_JEONRYUL_ATK_BY_LEVEL;
+}
 
 /** 무기 강화 단계 변경 시 전투력 변화 계산
  *  기본 공격력 = sqrt(힘민지 × 무기공 / 6) → 무기공만 변경 시 변화율 = sqrt(비율) - 1
@@ -1259,9 +1302,11 @@ export function getWeaponEnhancePowerChange(
   combatPower: number,
   currentLevel: number,
   newLevel: number,
+  equipmentName?: string,
 ): number {
-  const from = T4_WEAPON_ATK_BY_LEVEL[currentLevel];
-  const to = T4_WEAPON_ATK_BY_LEVEL[newLevel];
+  const table = getWeaponTable(getEquipmentSetType(equipmentName || ''));
+  const from = table[currentLevel];
+  const to = table[newLevel];
   if (!from || !to || from === to) return 0;
   const changeRate = Math.sqrt(to / from) - 1;
   return Math.round(combatPower * changeRate);
@@ -1282,10 +1327,12 @@ export function getArmorEnhancePowerChange(
   totalMainStat: number,
   currentLevel: number,
   newLevel: number,
+  equipmentName?: string,
 ): number {
   if (currentLevel === newLevel || totalMainStat <= 0 || currentMainStat <= 0) return 0;
-  const from = T4_WEAPON_ATK_BY_LEVEL[currentLevel];
-  const to = T4_WEAPON_ATK_BY_LEVEL[newLevel];
+  const table = getArmorTable(getEquipmentSetType(equipmentName || ''));
+  const from = table[currentLevel];
+  const to = table[newLevel];
   if (!from || !to) return 0;
   // 해당 부위의 힘 변화량
   const ratio = to / from;

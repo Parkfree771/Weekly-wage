@@ -18,8 +18,8 @@ function getPageConfig(pathname: string): PageConfig {
   if (pathname === '/hell-sim') return { contentWidth: 1200, adTop: 110 };
   // 생활 계산 - Container maxWidth:1200
   if (pathname === '/life-master') return { contentWidth: 1200, adTop: 110 };
-  // 마이페이지 - CSS max-width:1400, padding-top:80px + 헤더
-  if (pathname === '/mypage') return { contentWidth: 1400, adTop: 130 };
+  // 마이페이지 - CSS max-width:1400 + 재화 사이드바(~100px×2) 여유
+  if (pathname === '/mypage') return { contentWidth: 1600, adTop: 130 };
   // 패키지 상세/등록/수정
   if (pathname.startsWith('/package/')) return { contentWidth: 1100, adTop: 80 };
   // 패키지 목록

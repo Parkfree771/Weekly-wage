@@ -8,7 +8,7 @@ type Props = {
 };
 
 const CATEGORY_BAR_CLASS: Record<string, string> = {
-  '무기 품질': styles.barWeapon,
+  '추가 피해': styles.barWeapon,
   '각인': styles.barEngraving,
   '보석': styles.barGem,
   '카드': styles.barCard,
