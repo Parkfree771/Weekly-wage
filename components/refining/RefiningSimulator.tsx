@@ -689,7 +689,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                         )}
                         {equipment.isSuccession && (
                           <Image
-                            src="/wjsdbf2.webp"
+                            src="/wjsdbf3.webp"
                             alt=""
                             width={56}
                             height={56}

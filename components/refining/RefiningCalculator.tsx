@@ -1118,7 +1118,7 @@ export default function RefiningCalculator({
                               {/* 전율 장비 테두리 이미지 */}
                               {eq.isSuccession && (
                                 <Image
-                                  src="/wjsdbf2.webp"
+                                  src="/wjsdbf3.webp"
                                   alt=""
                                   width={isMobile ? 52 : 68}
                                   height={isMobile ? 52 : 68}

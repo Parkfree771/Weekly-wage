@@ -1,0 +1,1596 @@
+// 캐릭터 스펙 데이터 파서
+// API 응답에서 장비/스펙 관련 요소 추출 + 표시용 원본 데이터
+
+// ============================
+// 타입 정의
+// ============================
+
+export type CombatProfile = {
+  characterName: string;
+  className: string;
+  itemLevel: number;
+  combatPower: number;    // 전투력 (프로필 CombatPower 필드, 예: 5067.31)
+  attackPower: number;    // 공격력 (Stats 배열 '공격력', 예: 201378)
+  mainStatType: '힘' | '민첩' | '지능';  // 주 스탯 (가장 높은 값 기준)
+  characterImage?: string;
+  serverName?: string;
+  guildName?: string;
+  title?: string;
+  expeditionLevel?: number;
+  characterLevel?: number;
+};
+
+export type EquipmentItem = {
+  type: string;          // 투구, 어깨, 상의, 하의, 장갑, 무기
+  name: string;          // +25 운명의 전율 투구
+  icon: string;          // 아이콘 URL
+  grade: string;         // 고대, 유물, 에스더
+  quality: number;       // 품질 0~100
+  itemLevel: number;     // 아이템 레벨
+  enhanceLevel: number;  // 강화 단계
+  advancedLevel: number; // 상급 재련 단계
+  transcendence: number; // 초월 단계
+  elixir: string[];      // 엘릭서 효과
+  setName: string;       // 세트 효과명
+  mainStat: number;      // 무기: 무기 공격력, 방어구: 힘/민/지 (기본 효과)
+};
+
+export type AccessoryItem = {
+  type: string;          // 목걸이, 귀걸이, 반지
+  name: string;
+  icon: string;
+  grade: string;
+  quality: number;
+  grindingEffects: { text: string; grade: string }[];  // 연마 효과 (text + 상/중/하 등급)
+  engravingEffects: string[]; // 각인 효과
+  stats: string[];            // 특성 (치명, 특화 등)
+};
+
+export type AbilityStoneItem = {
+  name: string;
+  icon: string;
+  grade: string;
+  engravings: { name: string; level: number }[];
+  reduction: { name: string; level: number } | null;
+};
+
+export type BraceletItem = {
+  name: string;
+  icon: string;
+  grade: string;
+  effects: { text: string; grade: string }[];  // 팔찌 효과 (콤보는 " | " 으로 합쳐진 한 줄)
+  keywords: string[];    // 고유 키워드 (정밀/습격 등)
+  stats: string[];       // 전투 특성 (치명/특화/신속)
+};
+
+export type WeaponInfo = {
+  quality: number;
+  additionalDamage: number;
+  grade: string;
+};
+
+export type EngravingInfo = {
+  name: string;
+  level: number;
+  abilityStoneLevel: number;
+  isArkPassive: boolean;
+  icon?: string;
+};
+
+export type GemInfo = {
+  tier: number;
+  level: number;
+  type: string;          // 멸화/홍염/겁화/작열
+  skillName: string;
+  icon?: string;
+};
+
+export type CardInfo = {
+  name: string;
+  icon: string;
+  awakeCount: number;
+  awakeTotal: number;
+  grade: string;
+};
+
+export type CardSetInfo = {
+  name: string;
+  activeCount: number;
+  awakening: number;
+  effects: string[];     // 세트 효과 설명들
+  cards: CardInfo[];     // 세트 구성 카드 (이미지 포함)
+};
+
+export type ArkPassivePoint = {
+  name: string;         // 진화, 깨달음, 도약
+  value: number;        // 포인트 값 (e.g., 140)
+  description: string;  // "6랭크 21레벨"
+};
+
+export type ArkPassiveEffect = {
+  category: string;     // 진화, 깨달음, 도약
+  name: string;         // 노드 이름 (e.g., "치명", "포식자")
+  tier: number;         // 티어 (1~5)
+  level: number;        // 노드 레벨
+  icon: string;         // 아이콘 URL
+  description: string;  // 효과 설명 (HTML 제거)
+};
+
+export type KarmaInfo = {
+  rank: number;         // 랭크 (1~6)
+  level: number;        // 레벨 (1~30)
+};
+
+export type ArkPassiveInfo = {
+  title: string;        // 아크패시브 칭호 (e.g., "포식자")
+  evolution: number;
+  enlightenment: number;
+  leap: number;
+  karma: {
+    evolution: KarmaInfo;
+    enlightenment: KarmaInfo;
+    leap: KarmaInfo;
+  };
+  points: ArkPassivePoint[];
+  effects: ArkPassiveEffect[];
+};
+
+export type AccessoryGrinding = {
+  slot: string;
+  effects: { name: string; grade: string }[];
+};
+
+export type BraceletEffect = {
+  id: string;        // BRACELET_ALL_OPTIONS의 id (e.g., 'crit_rate_combo')
+  name: string;      // 인게임 풀 텍스트 (e.g., '치명타 적중률이 3.4% 증가한다. 공격이 치명타로 적중 시...')
+  grade: string;     // 상/중/하
+  value: number;     // 주 수치 (e.g., 3.4)
+};
+
+export type CombatStats = {
+  crit: number;
+  specialization: number;
+  swiftness: number;
+  domination: number;
+  endurance: number;
+  expertise: number;
+};
+
+// 아크 그리드
+export type ArkGridGem = {
+  icon: string;
+  grade: string;
+  name: string;
+  point: number;
+  orderPoint: number;   // 질서 포인트
+  chaosPoint: number;   // 혼돈 포인트
+  effects: string[];    // "추가 피해 +0.40%" 등
+  _debug?: string;      // 디버그용 raw tooltip (임시)
+};
+
+export type ArkGridCore = {
+  name: string;
+  icon: string;
+  grade: string;
+  point: number;       // 현재 포인트
+  coreType: string;    // "질서 - 해" 등
+  willpower: number;   // 의지력
+  gems: ArkGridGem[];
+};
+
+export type ArkGridEffect = {
+  name: string;
+  level: number;
+  tooltip: string;     // "추가 피해 +3.39%"
+};
+
+export type ArkGridInfo = {
+  cores: ArkGridCore[];
+  effects: ArkGridEffect[];
+};
+
+export type CombatPowerData = {
+  profile: CombatProfile;
+  // 표시용 원본 데이터
+  equipmentItems: EquipmentItem[];
+  accessoryItems: AccessoryItem[];
+  abilityStone: AbilityStoneItem | null;
+  braceletItem: BraceletItem | null;
+  // 분석용 파싱 데이터
+  weapon: WeaponInfo | null;
+  engravings: EngravingInfo[];
+  gems: GemInfo[];
+  cardSets: CardSetInfo[];
+  arkPassive: ArkPassiveInfo | null;
+  accessories: AccessoryGrinding[];
+  bracelet: BraceletEffect[];
+  combatStats: CombatStats;
+  // 아크 그리드
+  arkGrid: ArkGridInfo | null;
+};
+
+// ============================
+// 등급 색상
+// ============================
+export function getGradeColor(grade: string): string {
+  const colors: Record<string, string> = {
+    '에스더': '#3dd2cc',
+    '고대': '#d97706',
+    '유물': '#9333ea',
+    '영웅': '#3b82f6',
+    '희귀': '#10b981',
+    '전설': '#f59e0b',
+  };
+  return colors[grade] || '#6b7280';
+}
+
+// ============================
+// 연마 효과 등급 분류 (상/중/하)
+// ============================
+function classifyGrindingGrade(hexColor: string): string {
+  const hex = hexColor.toUpperCase();
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+
+  // 상 (Gold/Orange/Yellow): high R, medium-high G, low B
+  if (r > 180 && g > 120 && b < 130) return '상';
+  // 중 (Purple): medium R, low G, high B
+  if (b > 150 && g < 140 && r > 80) return '중';
+  // 하 (Sky blue/Cyan): high B, medium-high G
+  if (b > 180 && g > 140 && r < 170) return '하';
+  // 하 (Green): high G
+  if (g > 180 && r < 170 && b < 130) return '하';
+
+  return '';
+}
+
+// ============================
+// 파서 함수들
+// ============================
+
+export function parseProfile(profileData: any): CombatProfile | null {
+  if (!profileData) return null;
+
+  const itemLevel = parseFloat(
+    (profileData.ItemAvgLevel || '0').replace(/,/g, '')
+  );
+
+  // 전투력: 프로필 최상위 CombatPower 필드 (예: "5,067.31")
+  const combatPower = parseFloat(
+    (profileData.CombatPower || '0').replace(/,/g, '')
+  );
+
+  // 공격력: Stats 배열 내 '공격력' (예: "201,378")
+  let attackPower = 0;
+  let mainStatType: '힘' | '민첩' | '지능' = '힘';
+  if (profileData.Stats && Array.isArray(profileData.Stats)) {
+    const atkStat = profileData.Stats.find((s: any) => s.Type === '공격력');
+    if (atkStat) {
+      attackPower = parseInt((atkStat.Value || '0').replace(/,/g, ''), 10);
+    }
+    // 주 스탯 판별: 힘/민첩/지능 중 가장 높은 값
+    let maxVal = 0;
+    for (const t of ['힘', '민첩', '지능'] as const) {
+      const found = profileData.Stats.find((s: any) => s.Type === t);
+      if (found) {
+        const v = parseInt((found.Value || '0').replace(/,/g, ''), 10);
+        if (v > maxVal) { maxVal = v; mainStatType = t; }
+      }
+    }
+  }
+
+  return {
+    characterName: profileData.CharacterName || '',
+    className: profileData.CharacterClassName || '',
+    itemLevel,
+    combatPower,
+    attackPower,
+    mainStatType,
+    characterImage: profileData.CharacterImage || undefined,
+    serverName: profileData.ServerName || undefined,
+    guildName: profileData.GuildName || undefined,
+    title: profileData.Title ? profileData.Title.replace(/<[^>]*>/g, '').trim() || undefined : undefined,
+    expeditionLevel: profileData.ExpeditionLevel || undefined,
+    characterLevel: profileData.CharacterLevel || undefined,
+  };
+}
+
+export function parseCombatStats(profileData: any): CombatStats {
+  const stats: CombatStats = {
+    crit: 0, specialization: 0, swiftness: 0,
+    domination: 0, endurance: 0, expertise: 0,
+  };
+  if (!profileData?.Stats || !Array.isArray(profileData.Stats)) return stats;
+
+  const statMap: Record<string, keyof CombatStats> = {
+    '치명': 'crit', '특화': 'specialization', '신속': 'swiftness',
+    '제압': 'domination', '인내': 'endurance', '숙련': 'expertise',
+  };
+
+  for (const stat of profileData.Stats) {
+    const key = statMap[stat.Type];
+    if (key) {
+      stats[key] = parseInt((stat.Value || '0').replace(/,/g, ''), 10);
+    }
+  }
+  return stats;
+}
+
+// 장비 아이템 파싱 (표시용)
+export function parseEquipmentItems(equipmentData: any[]): EquipmentItem[] {
+  const result: EquipmentItem[] = [];
+  if (!equipmentData || !Array.isArray(equipmentData)) return result;
+
+  const armorTypes = ['무기', '투구', '어깨', '상의', '하의', '장갑'];
+
+  for (const item of equipmentData) {
+    if (!armorTypes.includes(item.Type)) continue;
+
+    let quality = 0, itemLevel = 0, enhanceLevel = 0, advancedLevel = 0;
+    let transcendence = 0, mainStat = 0;
+    const elixir: string[] = [];
+    let setName = '';
+
+    try {
+      const tooltip = JSON.parse(item.Tooltip);
+
+      // 품질
+      if (tooltip.Element_001?.value?.qualityValue !== undefined) {
+        quality = tooltip.Element_001.value.qualityValue;
+      }
+
+      // 아이템 레벨
+      if (tooltip.Element_001?.value?.leftStr2) {
+        const m = tooltip.Element_001.value.leftStr2.match(/아이템 레벨 (\d+)/);
+        if (m) itemLevel = parseInt(m[1], 10);
+      }
+
+      // 강화 단계
+      const enhanceMatch = (item.Name || '').match(/^\+(\d+)/);
+      if (enhanceMatch) enhanceLevel = parseInt(enhanceMatch[1], 10);
+
+      // 기본 효과에서 힘/민/지(방어구) 또는 무기 공격력(무기) 추출
+      for (const key in tooltip) {
+        if (!key.startsWith('Element_')) continue;
+        const el = tooltip[key];
+        if (el?.type === 'ItemPartBox' && el?.value?.Element_000?.includes('기본 효과')) {
+          const cleaned = (el.value.Element_001 || '').replace(/<[^>]*>/g, '');
+          if (item.Type === '무기') {
+            const m = cleaned.match(/무기 공격력 \+([0-9,]+)/);
+            if (m) mainStat = parseInt(m[1].replace(/,/g, ''), 10);
+          } else {
+            const m = cleaned.match(/(?:힘|민첩|지능) \+([0-9,]+)/);
+            if (m) mainStat = parseInt(m[1].replace(/,/g, ''), 10);
+          }
+        }
+      }
+
+      // 상급 재련, 초월, 엘릭서, 세트 등 tooltip에서 추출
+      for (const key in tooltip) {
+        if (!key.startsWith('Element_')) continue;
+        const val = JSON.stringify(tooltip[key]);
+
+        // 상급 재련
+        if (val.includes('상급 재련')) {
+          const m = val.replace(/<[^>]*>/g, '').match(/상급\s*재련[^\d]*(\d+)\s*단계/);
+          if (m) advancedLevel = parseInt(m[1], 10);
+        }
+
+        // 초월
+        if (val.includes('초월')) {
+          const m = val.replace(/<[^>]*>/g, '').match(/(\d+)단계/);
+          if (m && !val.includes('상급')) transcendence = parseInt(m[1], 10);
+        }
+
+        // 엘릭서
+        if (val.includes('엘릭서') && val.includes('Lv')) {
+          const cleaned = val.replace(/<[^>]*>/g, '');
+          const matches = cleaned.match(/\[(.+?)\]\s*Lv\.?\s*(\d+)/g);
+          if (matches) {
+            for (const m of matches) {
+              elixir.push(m.replace(/\[|\]/g, '').trim());
+            }
+          }
+        }
+
+        // 세트 효과
+        if (val.includes('세트 효과') || val.includes('Lv.')) {
+          const setMatch = val.replace(/<[^>]*>/g, '').match(/(악몽|사멸|환각|지배|구원|갈망|배신|매혹)\s/);
+          if (setMatch && !setName) setName = setMatch[1];
+        }
+      }
+    } catch {
+      // 파싱 실패
+    }
+
+    result.push({
+      type: item.Type,
+      name: item.Name || '',
+      icon: item.Icon || '',
+      grade: item.Grade || '',
+      quality,
+      itemLevel,
+      enhanceLevel,
+      advancedLevel,
+      transcendence,
+      elixir,
+      setName,
+      mainStat,
+    });
+  }
+
+  // 순서 정렬: 무기, 투구, 어깨, 상의, 하의, 장갑
+  const order = ['무기', '투구', '어깨', '상의', '하의', '장갑'];
+  result.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
+
+  return result;
+}
+
+// 연마 효과 키워드 (긴 것부터 → 짧은 것 순서로 매칭)
+const EFFECT_KEYWORDS = [
+  '상태이상 공격 지속시간', '공격력 강화 효과', '적에게 주는 피해',
+  '파티원 회복 효과', '치명타 적중률', '무기 공격력', '치명타 피해',
+  '최대 생명력', '최대 마나', '추가 피해', '공격력',
+];
+
+// 합쳐진 텍스트를 개별 효과로 분리 (키워드 위치 기반)
+function splitEffectText(text: string): string[] {
+  if (text.length < 15) return [text];
+
+  // 키워드 위치 탐색
+  const positions: { start: number; len: number }[] = [];
+  for (const kw of EFFECT_KEYWORDS) {
+    let from = 0;
+    while (true) {
+      const idx = text.indexOf(kw, from);
+      if (idx === -1) break;
+      // 이미 더 긴 키워드에 포함된 위치인지 확인
+      const overlap = positions.some(p => idx >= p.start && idx < p.start + p.len);
+      if (!overlap) positions.push({ start: idx, len: kw.length });
+      from = idx + kw.length;
+    }
+  }
+
+  if (positions.length === 0) return [text];
+  positions.sort((a, b) => a.start - b.start);
+
+  const parts: string[] = [];
+  for (let i = 0; i < positions.length; i++) {
+    const start = positions[i].start;
+    const end = i + 1 < positions.length ? positions[i + 1].start : text.length;
+    const part = text.substring(start, end).trim();
+    if (part.length > 2) parts.push(part);
+  }
+  return parts.length > 0 ? parts : [text];
+}
+
+// 장신구 파싱 (표시용)
+export function parseAccessoryItems(equipmentData: any[]): AccessoryItem[] {
+  const result: AccessoryItem[] = [];
+  if (!equipmentData || !Array.isArray(equipmentData)) return result;
+
+  const accessoryTypes = ['목걸이', '귀걸이', '반지'];
+
+  for (const item of equipmentData) {
+    if (!accessoryTypes.some(t => item.Type?.includes(t))) continue;
+
+    let quality = 0;
+    const grindingEffects: { text: string; grade: string }[] = [];
+    const engravingEffects: string[] = [];
+    const stats: string[] = [];
+
+    try {
+      const tooltip = JSON.parse(item.Tooltip);
+
+      if (tooltip.Element_001?.value?.qualityValue !== undefined) {
+        quality = tooltip.Element_001.value.qualityValue;
+      }
+
+      for (const key in tooltip) {
+        if (!key.startsWith('Element_')) continue;
+        const el = tooltip[key];
+        const val = JSON.stringify(el);
+        const cleaned = val.replace(/<[^>]*>/g, '');
+
+        // 전투 특성 + 기본 스탯 (힘/민첩/지능)
+        if (cleaned.includes('치명') || cleaned.includes('특화') || cleaned.includes('신속')
+            || cleaned.includes('힘') || cleaned.includes('민첩') || cleaned.includes('지능')) {
+          const statMatches = cleaned.match(/(치명|특화|신속|제압|인내|숙련|힘|민첩|지능)\s*\+\s*([\d,]+)/g);
+          if (statMatches) {
+            for (const sm of statMatches) {
+              const normalized = sm.replace(/,/g, '').trim();
+              if (!stats.includes(normalized)) stats.push(normalized);
+            }
+          }
+        }
+
+        // 연마 효과 - 구조 탐색 우선
+        if (val.includes('연마 효과')) {
+          // 방법 0: ItemPartBox → Element_001에 <br> 구분 효과 (실제 API 형식)
+          if (el?.type === 'ItemPartBox' && el?.value?.Element_001) {
+            const rawHtml = String(el.value.Element_001);
+            const lines = rawHtml.split(/<br\s*\/?>/i);
+            for (const line of lines) {
+              const cleaned = line.replace(/<img[^>]*>/gi, '').trim();
+              // "효과명 <FONT color='HEX'>+수치[%]</FONT>"
+              const match = cleaned.match(
+                /([가-힣\s]+)\s*<FONT[^>]*COLOR=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>([^<]*)<\/FONT>/i,
+              );
+              if (match) {
+                const effectText = `${match[1].trim()} ${match[3].trim()}`;
+                const hex = match[2];
+                if (effectText.length > 2 && /\d/.test(effectText)) {
+                  grindingEffects.push({ text: effectText, grade: classifyGrindingGrade(hex) });
+                }
+              }
+            }
+          }
+
+          // 방법 1: IndentStringGroup → contentStr 개별 요소 = 개별 효과
+          if (grindingEffects.length === 0 && el?.type === 'IndentStringGroup' && el?.value) {
+            for (const gk in el.value) {
+              const group = el.value[gk];
+              if (!group?.contentStr) continue;
+              const contentObj = typeof group.contentStr === 'object'
+                ? group.contentStr : { '0': String(group.contentStr) };
+              for (const ck in contentObj) {
+                const raw = String(contentObj[ck]);
+                const fontMatch = raw.match(/<[Ff][Oo][Nn][Tt][^>]*[Cc][Oo][Ll][Oo][Rr]=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>/);
+                const text = raw.replace(/<[^>]*>/g, '').replace(/[{}"\[\]\\]/g, '').replace(/\\n/g, ' ').trim();
+                // 숫자가 있는 실제 효과만 (헤더 "연마 효과" 등 제외)
+                if (text.length > 2 && /\d/.test(text) && !grindingEffects.some(e => e.text === text)) {
+                  // 합쳐진 텍스트면 분리
+                  const parts = splitEffectText(text);
+                  for (const part of parts) {
+                    if (!grindingEffects.some(e => e.text === part)) {
+                      grindingEffects.push({ text: part, grade: fontMatch ? classifyGrindingGrade(fontMatch[1]) : '' });
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // 방법 2: FONT 태그 개별 추출 + 키워드 분할 fallback
+          if (grindingEffects.length === 0) {
+            const fontRegex = /<[Ff][Oo][Nn][Tt][^>]*[Cc][Oo][Ll][Oo][Rr]=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>([^<]*)<\/[Ff][Oo][Nn][Tt]>/g;
+            const fontMatches = [...val.matchAll(fontRegex)];
+            for (const fm of fontMatches) {
+              const hex = fm[1];
+              const rawText = fm[2].replace(/\\n/g, '').replace(/[{}"\[\]]/g, '').trim();
+              if (rawText.length < 3 || !/\d/.test(rawText)) continue;
+              const parts = splitEffectText(rawText);
+              for (const part of parts) {
+                if (part.length > 2 && /\d/.test(part) && !grindingEffects.some(e => e.text === part)) {
+                  grindingEffects.push({ text: part, grade: classifyGrindingGrade(hex) });
+                }
+              }
+            }
+          }
+
+          // 방법 3: 키워드 분할 최후 수단
+          if (grindingEffects.length === 0) {
+            const parts = splitEffectText(cleaned);
+            for (const part of parts) {
+              const trimmed = part.replace(/[{}"\[\]]/g, '').trim();
+              if (trimmed.length > 2 && /\d/.test(trimmed) && !grindingEffects.some(e => e.text === trimmed)) {
+                grindingEffects.push({ text: trimmed, grade: '' });
+              }
+            }
+          }
+        }
+
+        // 각인 효과
+        if (cleaned.includes('활성도')) {
+          const engMatches = cleaned.match(/\[(.+?)\]\s*활성도\s*\+?\s*(\d+)/g);
+          if (engMatches) {
+            for (const em of engMatches) {
+              engravingEffects.push(em.replace(/\[|\]/g, '').trim());
+            }
+          }
+        }
+      }
+    } catch {
+      // 파싱 실패
+    }
+
+    // 연마 효과 이름 기반 중복 제거 (같은 효과명이면 먼저 파싱된 것만 유지)
+    const seenNames = new Set<string>();
+    const uniqueGrinding: typeof grindingEffects = [];
+    for (const eff of grindingEffects) {
+      const name = eff.text.replace(/[\s+\-]?\d[\d.]*%?$/, '').trim();
+      if (!seenNames.has(name)) {
+        seenNames.add(name);
+        uniqueGrinding.push(eff);
+      }
+    }
+
+    result.push({
+      type: item.Type || '',
+      name: item.Name || '',
+      icon: item.Icon || '',
+      grade: item.Grade || '',
+      quality,
+      grindingEffects: uniqueGrinding,
+      engravingEffects,
+      stats,
+    });
+  }
+
+  return result;
+}
+
+// 어빌리티 스톤 파싱
+export function parseAbilityStone(equipmentData: any[]): AbilityStoneItem | null {
+  if (!equipmentData || !Array.isArray(equipmentData)) return null;
+
+  const stone = equipmentData.find((item: any) =>
+    item.Type === '어빌리티 스톤' || item.Type?.includes('스톤')
+  );
+  if (!stone) return null;
+
+  const engravings: { name: string; level: number }[] = [];
+  let reduction: { name: string; level: number } | null = null;
+
+  // contentStr에서 각인/감소 추출 헬퍼
+  function extractFromText(text: string) {
+    const clean = text.replace(/<[^>]*>/g, '').replace(/[{}"\[\]\\]/g, ' ').trim();
+    // [이름] 활성도 +숫자 (활성도 키워드 필수)
+    const engMatch = clean.match(/\[(.+?)\]\s*활성도\s*\+?\s*(\d+)/);
+    if (engMatch && !engravings.some(e => e.name === engMatch[1].trim())) {
+      engravings.push({ name: engMatch[1].trim(), level: parseInt(engMatch[2], 10) });
+    }
+    // [이름] 감소 +숫자
+    const redMatch = clean.match(/\[(.+?)\]\s*감소\s*\+?\s*(\d+)/);
+    if (redMatch && !reduction) {
+      reduction = { name: redMatch[1].trim(), level: parseInt(redMatch[2], 10) };
+    }
+  }
+
+  try {
+    const tooltip = JSON.parse(stone.Tooltip);
+    for (const key in tooltip) {
+      if (!key.startsWith('Element_')) continue;
+      const el = tooltip[key];
+
+      // 방법 1: 전체 문자열화 후 패턴 매칭
+      const val = JSON.stringify(el);
+      const cleaned = val.replace(/<[^>]*>/g, '');
+
+      const matches = cleaned.match(/\[(.+?)\]\s*활성도\s*\+?\s*(\d+)/g);
+      if (matches) {
+        for (const m of matches) {
+          const parsed = m.match(/\[(.+?)\]\s*활성도\s*\+?\s*(\d+)/);
+          if (parsed && !engravings.some(e => e.name === parsed[1].trim())) {
+            engravings.push({ name: parsed[1].trim(), level: parseInt(parsed[2], 10) });
+          }
+        }
+      }
+
+      // 감소 효과
+      if (!reduction) {
+        const reductionMatch = cleaned.match(/\[(.+?)\]\s*감소\s*\+?\s*(\d+)/);
+        if (reductionMatch) {
+          reduction = { name: reductionMatch[1].trim(), level: parseInt(reductionMatch[2], 10) };
+        }
+      }
+
+      // 방법 2: IndentStringGroup 구조 직접 탐색
+      if (el?.type === 'IndentStringGroup' && el?.value) {
+        for (const gk in el.value) {
+          const group = el.value[gk];
+          // contentStr 탐색
+          if (group?.contentStr) {
+            if (typeof group.contentStr === 'object') {
+              for (const ck in group.contentStr) {
+                extractFromText(String(group.contentStr[ck]));
+              }
+            } else if (typeof group.contentStr === 'string') {
+              extractFromText(group.contentStr);
+            }
+          }
+          // topStr 탐색
+          if (group?.topStr) {
+            extractFromText(typeof group.topStr === 'string' ? group.topStr : JSON.stringify(group.topStr));
+          }
+        }
+      }
+
+      // 방법 3: 활성도/감소 키워드가 포함된 Element에서만 넓은 패턴 시도
+      if (engravings.length === 0 && (cleaned.includes('활성도') || cleaned.includes('감소'))) {
+        const broadMatches = cleaned.match(/\[([가-힣\w\s]+?)\]\s*(?:활성도\s*)?(?:\+|Lv\.?)\s*(\d+)/g);
+        if (broadMatches) {
+          for (const m of broadMatches) {
+            const parsed = m.match(/\[([가-힣\w\s]+?)\]\s*(?:활성도\s*)?(?:\+|Lv\.?)\s*(\d+)/);
+            if (parsed) {
+              const name = parsed[1].trim();
+              const level = parseInt(parsed[2], 10);
+              if (name.length > 1 && level >= 0 && level <= 10 && !engravings.some(e => e.name === name)) {
+                engravings.push({ name, level });
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // 파싱 실패
+  }
+
+  return {
+    name: stone.Name || '',
+    icon: stone.Icon || '',
+    grade: stone.Grade || '',
+    engravings,
+    reduction,
+  };
+}
+
+// ============================
+// 팔찌 효과 등급 분류 (상/중/하)
+// ============================
+type BraceletGradeRule = {
+  keyword: string;
+  percent?: { mid: number; high: number };
+  flat?: { mid: number; high: number };
+};
+
+// 긴 키워드 우선 매칭 (overlap 방지)
+const BRACELET_GRADE_RULES: BraceletGradeRule[] = [
+  { keyword: '상태이상 공격 지속시간', percent: { mid: 0.50, high: 0.90 } },
+  { keyword: '공격력 강화 효과', percent: { mid: 1.80, high: 3.10 } },
+  { keyword: '파티원 회복 효과', percent: { mid: 0.80, high: 1.40 } },
+  { keyword: '적에게 주는 피해', percent: { mid: 0.75, high: 1.25 } },
+  { keyword: '치명타 적중률', percent: { mid: 0.80, high: 1.40 } },
+  { keyword: '무기 공격력', percent: { mid: 1.00, high: 1.65 } },
+  { keyword: '치명타 피해', percent: { mid: 2.00, high: 3.70 } },
+  { keyword: '최대 생명력', flat: { mid: 6000, high: 14000 } },
+  { keyword: '추가 피해', percent: { mid: 1.00, high: 1.85 } },
+  { keyword: '최대 마나', flat: { mid: 16, high: 36 } },
+  { keyword: '공격력', percent: { mid: 1.00, high: 1.65 }, flat: { mid: 520, high: 1240 } },
+];
+
+export function classifyBraceletGrade(text: string): string {
+  const rule = BRACELET_GRADE_RULES.find(r => text.includes(r.keyword));
+  if (!rule) return '';
+
+  const percentMatch = text.match(/([\d,]+\.?\d*)\s*%/);
+  const flatMatch = text.match(/([\d,]+)/);
+
+  let thresholds: { mid: number; high: number } | undefined;
+  let value: number;
+
+  if (percentMatch && rule.percent) {
+    value = parseFloat(percentMatch[1].replace(/,/g, ''));
+    thresholds = rule.percent;
+  } else if (flatMatch && rule.flat) {
+    value = parseFloat(flatMatch[1].replace(/,/g, ''));
+    thresholds = rule.flat;
+  } else {
+    return '';
+  }
+
+  if (value >= thresholds.high) return '상';
+  if (value >= thresholds.mid) return '중';
+  return '하';
+}
+
+/** 팔찌 효과 텍스트 압축: "추가 피해가 2.5% 증가한다." → "추가 피해 +2.5%" */
+function compactBraceletText(raw: string): string {
+  let t = raw.trim();
+  // "~이/가 X% 증가한다." → "~ +X%"
+  t = t.replace(/이?\s*([\d,]+\.?\d*%?)\s*증가한다\.?$/, ' +$1');
+  // "~이/가 X% 감소한다." → "~ -X%"
+  t = t.replace(/이?\s*([\d,]+\.?\d*%?)\s*감소한다\.?$/, ' -$1');
+  // "~이/가 X 증가한다." → "~ +X"
+  t = t.replace(/이?\s*([\d,]+)\s*증가한다\.?$/, ' +$1');
+  // 선행 조사 정리 ("추가 피해가 " → "추가 피해 ")
+  t = t.replace(/([가-힣])[가이] \+/, '$1 +');
+  t = t.replace(/([가-힣])[가이] \-/, '$1 -');
+  return t.trim();
+}
+
+// 팔찌 파싱 (표시용) — <img> 블록 기준 그룹핑
+export function parseBraceletItem(equipmentData: any[]): BraceletItem | null {
+  if (!equipmentData || !Array.isArray(equipmentData)) return null;
+
+  const bracelet = equipmentData.find((item: any) => item.Type === '팔찌');
+  if (!bracelet) return null;
+
+  const effects: { text: string; grade: string }[] = [];
+  const keywords: string[] = [];
+  const stats: string[] = [];
+  const kwList = ['정밀', '습격', '급소', '강타', '열정', '신념', '축복'];
+
+  try {
+    const tooltip = JSON.parse(bracelet.Tooltip);
+    for (const key in tooltip) {
+      if (!key.startsWith('Element_')) continue;
+      const el = tooltip[key];
+      if (!el) continue;
+
+      // 고유 키워드 (SingleTextBox 등에서 등장)
+      const elStr = JSON.stringify(el).replace(/<[^>]*>/g, '');
+      for (const kw of kwList) {
+        if (elStr.includes(kw) && !keywords.includes(kw)) keywords.push(kw);
+      }
+
+      // ItemPartBox: "팔찌 효과" 본문 파싱
+      if (el.type !== 'ItemPartBox' || !el.value) continue;
+      const valStr = JSON.stringify(el.value);
+      if (!valStr.includes('팔찌 효과')) continue;
+
+      const rawHtml = String(el.value?.Element_001 || '');
+      if (!rawHtml) continue;
+
+      // <BR>로 줄 분리 → <img> 기준 블록 그룹핑
+      const lines = rawHtml.split(/<BR\s*\/?>/i);
+      const blocks: string[] = [];
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (trimmed.includes('<img')) {
+          blocks.push(trimmed);
+        } else if (blocks.length > 0) {
+          // 콤보 효과 2번째 줄 → 이전 블록에 이어붙임
+          blocks[blocks.length - 1] += '\n' + trimmed;
+        }
+      }
+
+      for (const block of blocks) {
+        const stripped = block.replace(/<[^>]*>/g, '').trim();
+
+        // 전투 특성 + 기본 스탯 (힘/민첩/지능) → stats
+        const statMatch = stripped.match(/^(치명|특화|신속|제압|인내|숙련|힘|민첩|지능)\s*\+\s*[\d,]+$/);
+        if (statMatch) {
+          if (!stats.includes(stripped)) stats.push(stripped);
+          continue;
+        }
+
+        // FONT 색상으로 등급 판별
+        const grade = determineBraceletGrade(block);
+
+        // 텍스트 압축: 줄마다 compact → " | "로 합침
+        const subLines = stripped.split('\n').map(s => s.trim()).filter(s => s.length > 1);
+        const compacted = subLines.map(compactBraceletText).join(' | ');
+
+        if (compacted.length > 1) {
+          effects.push({ text: compacted, grade });
+        }
+      }
+    }
+  } catch {
+    // 파싱 실패
+  }
+
+  return {
+    name: bracelet.Name || '',
+    icon: bracelet.Icon || '',
+    grade: bracelet.Grade || '',
+    effects,
+    keywords,
+    stats,
+  };
+}
+
+// 무기 정보 파싱 (분석용)
+export function parseWeaponInfo(equipmentData: any[]): WeaponInfo | null {
+  if (!equipmentData || !Array.isArray(equipmentData)) return null;
+
+  const weapon = equipmentData.find((item: any) => item.Type === '무기');
+  if (!weapon) return null;
+
+  let quality = 0, additionalDamage = 0;
+
+  try {
+    const tooltip = JSON.parse(weapon.Tooltip);
+    if (tooltip.Element_001?.value?.qualityValue !== undefined) {
+      quality = tooltip.Element_001.value.qualityValue;
+    }
+    for (const key in tooltip) {
+      if (key.startsWith('Element_')) {
+        const val = JSON.stringify(tooltip[key]);
+        const dmgMatch = val.match(/추가 피해\s*\+?\s*([\d.]+)%/);
+        if (dmgMatch) additionalDamage = parseFloat(dmgMatch[1]);
+      }
+    }
+  } catch { /* */ }
+
+  return { quality, additionalDamage, grade: weapon.Grade || '' };
+}
+
+// 각인 정보 파싱
+export function parseEngravings(engravingsData: any): EngravingInfo[] {
+  const result: EngravingInfo[] = [];
+  if (!engravingsData) return result;
+
+  // ArkPassiveEffects (아크 패시브 각인)
+  if (engravingsData.ArkPassiveEffects && Array.isArray(engravingsData.ArkPassiveEffects)) {
+    for (const effect of engravingsData.ArkPassiveEffects) {
+      const name = effect.Name || '';
+      const level = effect.Level || 0;
+      const abilityStoneLevel = effect.AbilityStoneLevel || 0;
+      if (name) {
+        result.push({
+          name: name.replace(/\s*Lv\.\s*\d+/, '').trim(),
+          level,
+          abilityStoneLevel,
+          isArkPassive: true,
+          icon: effect.Icon || undefined,
+        });
+      }
+    }
+  }
+
+  // Effects (일반 각인)
+  if (engravingsData.Effects && Array.isArray(engravingsData.Effects)) {
+    for (const effect of engravingsData.Effects) {
+      const name = effect.Name || '';
+      const match = name.match(/(.+?)\s*Lv\.\s*(\d+)/);
+      if (match) {
+        result.push({
+          name: match[1].trim(),
+          level: parseInt(match[2], 10),
+          abilityStoneLevel: 0,
+          isArkPassive: false,
+          icon: effect.Icon || undefined,
+        });
+      }
+    }
+  }
+
+  return result;
+}
+
+// 보석 정보 파싱
+export function parseGems(gemsData: any): GemInfo[] {
+  const result: GemInfo[] = [];
+  if (!gemsData?.Gems || !Array.isArray(gemsData.Gems)) return result;
+
+  for (const gem of gemsData.Gems) {
+    const name = gem.Name || '';
+    const levelMatch = name.match(/(\d+)레벨/);
+    const level = levelMatch ? parseInt(levelMatch[1], 10) : 0;
+
+    let type = '멸화';
+    if (name.includes('홍염')) type = '홍염';
+    else if (name.includes('겁화')) type = '겁화';
+    else if (name.includes('작열')) type = '작열';
+
+    let tier = 4;
+    if ((type === '멸화' || type === '홍염') && !name.includes('겁화') && !name.includes('작열')) {
+      tier = 3;
+    }
+    if (type === '겁화' || type === '작열') tier = 4;
+
+    result.push({
+      tier,
+      level,
+      type,
+      skillName: gem.SkillName || gem.SkilName || '',
+      icon: gem.Icon,
+    });
+  }
+
+  // 레벨 내림차순 정렬
+  result.sort((a, b) => b.level - a.level);
+  return result;
+}
+
+// 카드 세트 파싱
+export function parseCardSets(cardsData: any): CardSetInfo[] {
+  const result: CardSetInfo[] = [];
+  if (!cardsData?.Effects || !Array.isArray(cardsData.Effects)) return result;
+
+  // 개별 카드 정보 (Cards 배열)
+  const allCards: CardInfo[] = [];
+  if (cardsData.Cards && Array.isArray(cardsData.Cards)) {
+    for (const c of cardsData.Cards) {
+      allCards.push({
+        name: c.Name || '',
+        icon: c.Icon || '',
+        awakeCount: c.AwakeCount || 0,
+        awakeTotal: c.AwakeTotal || 0,
+        grade: c.Grade || '',
+      });
+    }
+  }
+
+  for (const effect of cardsData.Effects) {
+    const items = effect.Items || [];
+    if (items.length === 0) continue;
+
+    const effects: string[] = [];
+    let setName = '';
+    let activeCount = 0;
+    let awakening = 0;
+
+    for (const item of items) {
+      const name = item.Name || '';
+      effects.push(name);
+
+      const setMatch = name.match(/(.+?)\s*(\d+)세트/);
+      if (setMatch) {
+        setName = setMatch[1].trim();
+        activeCount = parseInt(setMatch[2], 10);
+      }
+      const awakeningMatch = name.match(/각성합계\s*(\d+)/);
+      if (awakeningMatch) {
+        awakening = Math.max(awakening, parseInt(awakeningMatch[1], 10));
+      }
+    }
+
+    if (setName) {
+      // 각성합계 텍스트 파싱 실패 시 개별 카드 AwakeCount 합산으로 폴백
+      if (awakening === 0 && allCards.length > 0) {
+        awakening = allCards.reduce((sum, c) => sum + c.awakeCount, 0);
+      }
+      result.push({ name: setName, activeCount, awakening, effects, cards: allCards });
+    }
+  }
+
+  return result;
+}
+
+// HTML 태그 제거 유틸
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').replace(/\|\|/g, '').replace(/\s+/g, ' ').trim();
+}
+
+// 아크 패시브 파싱
+export function parseArkPassive(arkpassiveData: any): ArkPassiveInfo | null {
+  if (!arkpassiveData?.Points || !Array.isArray(arkpassiveData.Points)) return null;
+
+  const title = arkpassiveData.Title || '';
+  let evolution = 0, enlightenment = 0, leap = 0;
+  const karma = {
+    evolution: { rank: 0, level: 0 },
+    enlightenment: { rank: 0, level: 0 },
+    leap: { rank: 0, level: 0 },
+  };
+  const points: ArkPassivePoint[] = [];
+
+  for (const point of arkpassiveData.Points) {
+    const name = point.Name || '';
+    const value = point.Value || 0;
+    const description = point.Description || '';
+
+    // 카르마 랭크/레벨 파싱: "6랭크 21레벨"
+    const karmaMatch = description.match(/(\d+)랭크\s*(\d+)레벨/);
+    const karmaRank = karmaMatch ? parseInt(karmaMatch[1]) : 0;
+    const karmaLevel = karmaMatch ? parseInt(karmaMatch[2]) : 0;
+
+    if (name.includes('진화')) {
+      evolution = value;
+      karma.evolution = { rank: karmaRank, level: karmaLevel };
+    } else if (name.includes('깨달음')) {
+      enlightenment = value;
+      karma.enlightenment = { rank: karmaRank, level: karmaLevel };
+    } else if (name.includes('도약')) {
+      leap = value;
+      karma.leap = { rank: karmaRank, level: karmaLevel };
+    }
+    points.push({ name, value, description });
+  }
+
+  // Effects 파싱 (개별 노드 정보)
+  const effects: ArkPassiveEffect[] = [];
+  if (arkpassiveData.Effects && Array.isArray(arkpassiveData.Effects)) {
+    for (const eff of arkpassiveData.Effects) {
+      const category = eff.Name || '';
+      const icon = eff.Icon || '';
+      const desc = eff.Description || '';
+
+      // Description에서 티어, 이름, 레벨 추출
+      // e.g., "<FONT ...>깨달음</FONT> 1티어 <FONT ...>끝나지 않는 분노 Lv.1</FONT>"
+      const tierMatch = desc.match(/(\d)티어/);
+      const nameMatch = desc.match(/\d티어\s*(?:<[^>]*>)*\s*(.+?)\s+Lv\.(\d+)/);
+      const tier = tierMatch ? parseInt(tierMatch[1]) : 0;
+      const nodeName = nameMatch ? stripHtml(nameMatch[1]) : '';
+      const level = nameMatch ? parseInt(nameMatch[2]) : 0;
+
+      // ToolTip에서 효과 설명 추출
+      let effectDesc = '';
+      try {
+        const tooltip = typeof eff.ToolTip === 'string' ? JSON.parse(eff.ToolTip) : eff.ToolTip;
+        if (tooltip?.Element_002?.value) {
+          effectDesc = stripHtml(String(tooltip.Element_002.value));
+        }
+      } catch { /* ignore parse errors */ }
+
+      effects.push({ category, name: nodeName, tier, level, icon, description: effectDesc });
+    }
+  }
+
+  return { title, evolution, enlightenment, leap, karma, points, effects };
+}
+
+// 장신구 연마 효과 파싱 (분석용)
+// API 형식: ItemPartBox > Element_001에 <br> 구분된 효과 리스트
+// 각 효과: "효과명 <FONT color='HEX'>+수치[%]</FONT>"
+// FONT 색상: FE9600=상(금), CE43FC=중(보라), 00B5FF=하(파랑)
+
+// 효과 키워드 → ACCESSORY_GRINDING_POWER 키 매핑 (긴 것 우선)
+const GRINDING_EFFECT_MAP: { keyword: string; flatKey: string; pctKey: string }[] = [
+  { keyword: '적에게 주는 피해', flatKey: '', pctKey: '적에게 주는 피해%' },
+  { keyword: '치명타 적중률', flatKey: '', pctKey: '치명타 적중률%' },
+  { keyword: '무기 공격력', flatKey: '무기 공격력+', pctKey: '무기 공격력%' },
+  { keyword: '치명타 피해', flatKey: '', pctKey: '치명타 피해%' },
+  { keyword: '추가 피해', flatKey: '', pctKey: '추가 피해%' },
+  { keyword: '공격력', flatKey: '공격력+', pctKey: '공격력%' },
+];
+
+function classifyGrindingEffectLine(
+  effectName: string,
+  valueText: string,
+  hexColor: string,
+): { name: string; grade: string } | null {
+  const isPercent = valueText.includes('%');
+
+  // 긴 키워드부터 매칭 (무기 공격력 before 공격력)
+  for (const { keyword, flatKey, pctKey } of GRINDING_EFFECT_MAP) {
+    if (!effectName.includes(keyword)) continue;
+    const key = isPercent ? pctKey : flatKey;
+    if (!key) return null; // 전투력에 영향 없는 flat 효과 (치적, 치피 등은 항상 %)
+    const grade = hexColor ? classifyGrindingGrade(hexColor) : '중';
+    return { name: key, grade };
+  }
+
+  return null; // 전투력에 미반영되는 효과 (최대 마나, 최대 생명력, 상태이상 등)
+}
+
+export function parseAccessoryGrinding(equipmentData: any[]): AccessoryGrinding[] {
+  const result: AccessoryGrinding[] = [];
+  if (!equipmentData || !Array.isArray(equipmentData)) return result;
+
+  const accessoryTypes = ['목걸이', '귀걸이', '반지'];
+  for (const item of equipmentData) {
+    if (!accessoryTypes.some(t => item.Type?.includes(t))) continue;
+    const effects: { name: string; grade: string }[] = [];
+    try {
+      const tooltip = JSON.parse(item.Tooltip);
+      for (const key in tooltip) {
+        if (!key.startsWith('Element_')) continue;
+        const el = tooltip[key];
+        if (!el) continue;
+        const elStr = JSON.stringify(el);
+        if (!elStr.includes('연마')) continue;
+
+        // ItemPartBox: Element_001에 HTML 형식으로 효과 나열
+        if (el.type === 'ItemPartBox' && el.value) {
+          const rawHtml = String(el.value?.Element_001 || '');
+          if (!rawHtml) continue;
+
+          // <br>로 분리된 각 효과 라인 파싱
+          const lines = rawHtml.split(/<br\s*\/?>/i);
+          for (const line of lines) {
+            // 이미지 태그 제거 후 효과명 추출
+            const cleaned = line.replace(/<img[^>]*>/gi, '').trim();
+            // 패턴: "효과명 <FONT ...>+수치[%]</FONT>"
+            const match = cleaned.match(
+              /([가-힣\s]+)\s*<FONT[^>]*COLOR=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>([^<]*)<\/FONT>/i,
+            );
+            if (match) {
+              const effectName = match[1].trim();
+              const hex = match[2];
+              const valueText = match[3].trim();
+              const classified = classifyGrindingEffectLine(effectName, valueText, hex);
+              if (classified) effects.push(classified);
+            }
+          }
+        }
+
+        // IndentStringGroup fallback (이전 API 형식 호환)
+        if (effects.length === 0 && el.type === 'IndentStringGroup' && el.value) {
+          for (const gk in el.value) {
+            const group = el.value[gk];
+            if (!group?.contentStr) continue;
+            const cs = typeof group.contentStr === 'object' ? group.contentStr : { '0': group.contentStr };
+            for (const ck in cs) {
+              const raw = String(cs[ck]);
+              const fontMatch = raw.match(/<FONT[^>]*COLOR=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>/i);
+              const text = raw.replace(/<[^>]*>/g, '').trim();
+              const parts = splitEffectText(text);
+              for (const part of parts) {
+                if (part.length < 3 || !/\d/.test(part)) continue;
+                const isPercent = part.includes('%');
+                const classified = classifyGrindingEffectLine(part, isPercent ? '%' : '', fontMatch ? fontMatch[1] : '');
+                if (classified) effects.push(classified);
+              }
+            }
+          }
+        }
+      }
+    } catch { /* */ }
+    if (effects.length > 0) result.push({ slot: item.Type || '', effects });
+  }
+  return result;
+}
+
+// 팔찌 효과 파싱 (분석용)
+// API 형식: ItemPartBox > Element_001에 <BR> 구분된 효과 리스트
+// 각 효과 블록은 <img> 태그로 시작, 다음 <img> 전까지가 하나의 효과 (복합 효과는 2줄)
+// FONT 색상으로 등급 판별: FE9600=상, CE43FC=중, 00B5FF=하, 99ff99=고정값
+
+function classifyBraceletTier(hexColor: string): string {
+  const hex = hexColor.toUpperCase();
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  // 상 (Gold/Orange): FE9600 등
+  if (r > 200 && g > 100 && g < 180 && b < 50) return '상';
+  // 중 (Purple): CE43FC 등
+  if (r > 150 && b > 200 && g < 100) return '중';
+  // 하 (Sky blue): 00B5FF 등
+  if (b > 200 && g > 140 && r < 50) return '하';
+  // 하 (Green): 91FE02 등
+  if (g > 200 && r < 180 && b < 50) return '하';
+  return '';
+}
+
+function matchBraceletOption(
+  blockText: string,
+): { id: string; fullText: string; value: number } | null {
+  const stripped = blockText.replace(/<[^>]*>/g, '').trim();
+
+  // 전투 특성 / 힘민지 / 도약 → 별도 처리 대상, 여기선 스킵
+  if (/^(치명|특화|신속|제압|인내|숙련|힘|민첩|지능)\s*\+/.test(stripped)) return null;
+
+  // BRACELET_ALL_OPTIONS에서 매칭 (긴 키워드 우선 = 배열 앞에 위치)
+  // 복합 효과: matchKeywords + comboKeywords 모두 포함해야 매칭
+  // 단일 효과: matchKeywords만 포함하면 매칭
+  for (const opt of BRACELET_ALL_OPTIONS) {
+    const hasMain = opt.matchKeywords.every(kw => stripped.includes(kw));
+    if (!hasMain) continue;
+
+    if (opt.comboKeywords && opt.comboKeywords.length > 0) {
+      const hasCombo = opt.comboKeywords.every(kw => stripped.includes(kw));
+      if (!hasCombo) continue;
+    }
+
+    // 수치 추출 (첫 번째 % 수치 또는 flat 수치)
+    const numMatch = stripped.match(/([\d,]+\.?\d*)\s*%?/);
+    const value = numMatch ? parseFloat(numMatch[1].replace(/,/g, '')) : 0;
+
+    // 축약하지 않고 API 원문 텍스트 그대로 반환
+    return { id: opt.id, fullText: stripped, value };
+  }
+
+  return null;
+}
+
+function determineBraceletGrade(blockHtml: string): string {
+  // 첫 번째 FONT 태그의 색상으로 등급 판별 (99ff99 고정값 제외)
+  const fontRegex = /<FONT[^>]*COLOR=['"]?#?([A-Fa-f0-9]{6})['"]?[^>]*>/gi;
+  const matches = [...blockHtml.matchAll(fontRegex)];
+  for (const m of matches) {
+    const hex = m[1].toUpperCase();
+    if (hex === '99FF99' || hex === 'A9D0F5') continue; // 고정값/헤더 색상 스킵
+    const grade = classifyBraceletTier(hex);
+    if (grade) return grade;
+  }
+  return '중';
+}
+
+export function parseBraceletEffects(equipmentData: any[]): BraceletEffect[] {
+  const result: BraceletEffect[] = [];
+  if (!equipmentData || !Array.isArray(equipmentData)) return result;
+
+  const bracelet = equipmentData.find((item: any) => item.Type === '팔찌');
+  if (!bracelet) return result;
+
+  try {
+    const tooltip = JSON.parse(bracelet.Tooltip);
+    for (const key in tooltip) {
+      if (!key.startsWith('Element_')) continue;
+      const el = tooltip[key];
+      if (!el || el.type !== 'ItemPartBox' || !el.value) continue;
+
+      const elStr = JSON.stringify(el);
+      if (!elStr.includes('팔찌 효과')) continue;
+
+      const rawHtml = String(el.value?.Element_001 || '');
+      if (!rawHtml) continue;
+
+      // <BR>로 줄 분리
+      const lines = rawHtml.split(/<BR\s*\/?>/i);
+
+      // <img> 태그 기준으로 블록 그룹핑
+      // <img>로 시작하는 줄 = 새 효과 블록의 시작
+      // <img> 없는 줄 = 이전 블록의 연속 (복합 효과 2번째 줄)
+      const blocks: string[] = [];
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (trimmed.includes('<img')) {
+          blocks.push(trimmed);
+        } else if (blocks.length > 0) {
+          // 이전 블록에 이어붙이기
+          blocks[blocks.length - 1] += ' ' + trimmed;
+        }
+      }
+
+      // 각 블록을 매칭
+      for (const block of blocks) {
+        const matched = matchBraceletOption(block);
+        if (!matched) continue;
+
+        const grade = determineBraceletGrade(block);
+        result.push({
+          id: matched.id,
+          name: matched.fullText,  // 인게임 원문 텍스트 그대로
+          grade,
+          value: matched.value,
+        });
+      }
+    }
+  } catch { /* */ }
+
+  return result;
+}
+
+// 아크 그리드 파싱
+export function parseArkGrid(arkgridData: any): ArkGridInfo | null {
+  if (!arkgridData?.Slots || !Array.isArray(arkgridData.Slots)) return null;
+
+  const cores: ArkGridCore[] = [];
+
+  for (const slot of arkgridData.Slots) {
+    let coreType = '';
+    let willpower = 0;
+
+    try {
+      const tooltip = JSON.parse(slot.Tooltip);
+      // 코어 타입 (Element_003 or 004 → "질서 - 해")
+      for (const key in tooltip) {
+        const el = tooltip[key];
+        if (el?.type === 'ItemPartBox') {
+          const val = JSON.stringify(el.value);
+          const cleaned = val.replace(/<[^>]*>/g, '');
+          if (cleaned.includes('코어 타입')) {
+            const m = cleaned.match(/Element_001["\s:]*([^"]+)/);
+            if (m) coreType = m[1].trim();
+          }
+          if (cleaned.includes('의지력')) {
+            const m = cleaned.match(/(\d+)\s*포인트/);
+            if (m) willpower = parseInt(m[1], 10);
+          }
+        }
+      }
+    } catch { /* */ }
+
+    // 젬 파싱
+    const gems: ArkGridGem[] = [];
+    if (slot.Gems && Array.isArray(slot.Gems)) {
+      for (const gem of slot.Gems) {
+        let gemName = '';
+        let gemPoint = 0;
+        let orderPoint = 0;
+        let chaosPoint = 0;
+        const effects: string[] = [];
+
+        let debugTooltip = '';
+        try {
+          const gtt = JSON.parse(gem.Tooltip);
+          // 디버그: 전체 tooltip 텍스트 (HTML 제거)
+          debugTooltip = JSON.stringify(gtt).replace(/<[^>]*>/g, '').substring(0, 500);
+
+          // 이름
+          const nameEl = gtt.Element_000;
+          if (nameEl?.value) {
+            gemName = nameEl.value.replace(/<[^>]*>/g, '').trim();
+          }
+
+          // 모든 Element 순회 (ItemPartBox 외 타입도 포함)
+          for (const k in gtt) {
+            const el = gtt[k];
+            if (!el) continue;
+            const val = JSON.stringify(el.value || el);
+            const cleaned = val.replace(/<[^>]*>/g, '');
+
+            // 젬 포인트 (ItemPartBox)
+            if (cleaned.includes('젬 포인트')) {
+              const m = cleaned.match(/젬 포인트\s*[:：]\s*(\d+)/);
+              if (m) gemPoint = parseInt(m[1], 10);
+            }
+
+            // 젬 효과 - 모든 효과 라인 캡처
+            if (cleaned.includes('젬 효과') && effects.length === 0) {
+              // 1차: <br> 기반 분할 (HTML 원본에서)
+              const html = val.replace(/\\r\\n/g, '').replace(/\\n/g, '');
+              const brParts = html.split(/<br\s*\/?>/i);
+              for (const part of brParts) {
+                const c = part.replace(/<[^>]*>/g, '').replace(/[{}"\\[\]]/g, '').trim();
+                // 숫자가 있고 헤더가 아닌 모든 라인
+                if (c.length > 1 && /\d/.test(c) &&
+                  !c.includes('젬 효과') && !c.includes('의지력') &&
+                  !c.includes('젬 포인트') && !c.includes('Element_')) {
+                  if (!effects.includes(c)) effects.push(c);
+                }
+              }
+              // 2차 fallback: \n 기반 분할
+              if (effects.length === 0) {
+                const lines = cleaned.split(/\\n|\\r|\n|,/);
+                for (const line of lines) {
+                  const c = line.replace(/[{}"\\[\]]/g, '').trim();
+                  if (c.length > 1 && /\d/.test(c) &&
+                    !c.includes('젬 효과') && !c.includes('의지력') &&
+                    !c.includes('젬 포인트') && !c.includes('Element_')) {
+                    if (!effects.includes(c)) effects.push(c);
+                  }
+                }
+              }
+            }
+          }
+
+          // 효과에서 질서/혼돈 포인트 추출
+          for (const eff of effects) {
+            if (orderPoint === 0 && eff.includes('질서')) {
+              const m = eff.match(/질서\s*(\d+)/);
+              if (m) orderPoint = parseInt(m[1], 10);
+            }
+            if (chaosPoint === 0 && eff.includes('혼돈')) {
+              const m = eff.match(/혼돈\s*(\d+)/);
+              if (m) chaosPoint = parseInt(m[1], 10);
+            }
+          }
+
+          // 전체 tooltip broad search fallback
+          if (orderPoint === 0 || chaosPoint === 0) {
+            const fullText = JSON.stringify(gtt).replace(/<[^>]*>/g, '');
+            if (orderPoint === 0) {
+              const om = fullText.match(/질서\s*[:：]?\s*(\d+)/);
+              if (om) orderPoint = parseInt(om[1], 10);
+            }
+            if (chaosPoint === 0) {
+              const cm = fullText.match(/혼돈\s*[:：]?\s*(\d+)/);
+              if (cm) chaosPoint = parseInt(cm[1], 10);
+            }
+          }
+        } catch { /* */ }
+
+        gems.push({
+          icon: gem.Icon || '',
+          grade: gem.Grade || '',
+          name: gemName,
+          point: gemPoint,
+          orderPoint,
+          chaosPoint,
+          effects,
+          _debug: debugTooltip,
+        });
+      }
+    }
+
+    cores.push({
+      name: slot.Name || '',
+      icon: slot.Icon || '',
+      grade: slot.Grade || '',
+      point: slot.Point || 0,
+      coreType,
+      willpower,
+      gems,
+    });
+  }
+
+  // 효과 합산
+  const effects: ArkGridEffect[] = [];
+  if (arkgridData.Effects && Array.isArray(arkgridData.Effects)) {
+    for (const eff of arkgridData.Effects) {
+      effects.push({
+        name: eff.Name || '',
+        level: eff.Level || 0,
+        tooltip: (eff.Tooltip || '').replace(/<[^>]*>/g, '').trim(),
+      });
+    }
+  }
+
+  return { cores, effects };
+}
+
+// ============================
+// 종합 파서
+// ============================
+export function parseCombatPowerData(apiResponse: any): CombatPowerData | null {
+  const profile = parseProfile(apiResponse.profile);
+  if (!profile) return null;
+
+  return {
+    profile,
+    equipmentItems: parseEquipmentItems(apiResponse.equipment),
+    accessoryItems: parseAccessoryItems(apiResponse.equipment),
+    abilityStone: parseAbilityStone(apiResponse.equipment),
+    braceletItem: parseBraceletItem(apiResponse.equipment),
+    weapon: parseWeaponInfo(apiResponse.equipment),
+    engravings: parseEngravings(apiResponse.engravings),
+    gems: parseGems(apiResponse.gems),
+    cardSets: parseCardSets(apiResponse.cards),
+    arkPassive: parseArkPassive(apiResponse.arkpassive),
+    accessories: parseAccessoryGrinding(apiResponse.equipment),
+    bracelet: parseBraceletEffects(apiResponse.equipment),
+    combatStats: parseCombatStats(apiResponse.profile),
+    arkGrid: parseArkGrid(apiResponse.arkgrid),
+  };
+}
+
+// ============================
+// 팔찌 / 악세서리 옵션 카탈로그 (UI용)
+// ============================
+
+export type BraceletOptionDef = {
+  id: string;
+  category: 'fixed' | 'dealer_combo' | 'dealer_simple' | 'weapon_buff' | 'support_combo' | 'support_simple';
+  description: string;
+  tierTexts: [string, string, string];
+  matchKeywords: string[];
+  comboKeywords?: string[];
+};
+
+export const BRACELET_ALL_OPTIONS: BraceletOptionDef[] = [
+  { id: 'atk_move_speed', category: 'fixed', description: '공격 및 이동 속도 증가', tierTexts: ['공격 및 이동 속도가 4% 증가한다.', '공격 및 이동 속도가 5% 증가한다.', '공격 및 이동 속도가 6% 증가한다.'], matchKeywords: ['공격 및 이동 속도'] },
+  { id: 'seed_dmg', category: 'fixed', description: '시드 등급 이하 몬스터 피해 증가', tierTexts: ['시드 등급 이하 몬스터에게 주는 피해가 4% 증가한다.', '시드 등급 이하 몬스터에게 주는 피해가 5% 증가한다.', '시드 등급 이하 몬스터에게 주는 피해가 6% 증가한다.'], matchKeywords: ['시드 등급 이하 몬스터에게 주는 피해'] },
+  { id: 'seed_def', category: 'fixed', description: '시드 등급 이하 몬스터 피해 감소', tierTexts: ['시드 등급 이하 몬스터에게 받는 피해가 6% 감소한다.', '시드 등급 이하 몬스터에게 받는 피해가 8% 감소한다.', '시드 등급 이하 몬스터에게 받는 피해가 10% 감소한다.'], matchKeywords: ['시드 등급 이하 몬스터에게 받는 피해'] },
+  { id: 'phys_def', category: 'fixed', description: '물리 방어력', tierTexts: ['물리 방어력 +5000', '물리 방어력 +6000', '물리 방어력 +7000'], matchKeywords: ['물리 방어력'] },
+  { id: 'mag_def', category: 'fixed', description: '마법 방어력', tierTexts: ['마법 방어력 +5000', '마법 방어력 +6000', '마법 방어력 +7000'], matchKeywords: ['마법 방어력'] },
+  { id: 'max_hp', category: 'fixed', description: '최대 생명력', tierTexts: ['최대 생명력 +11200', '최대 생명력 +14000', '최대 생명력 +16800'], matchKeywords: ['최대 생명력'] },
+  { id: 'hp_regen', category: 'fixed', description: '전투 중 생명력 회복량', tierTexts: ['전투 중 생명력 회복량 +100', '전투 중 생명력 회복량 +130', '전투 중 생명력 회복량 +160'], matchKeywords: ['전투 중 생명력 회복량'] },
+  { id: 'resource_regen', category: 'fixed', description: '전투자원 자연 회복량', tierTexts: ['전투자원 자연 회복량 +8%', '전투자원 자연 회복량 +10%', '전투자원 자연 회복량 +12%'], matchKeywords: ['전투자원 자연 회복량'] },
+  { id: 'move_cd', category: 'fixed', description: '이동기 및 기상기 재사용 대기 시간 감소', tierTexts: ['이동기 및 기상기 재사용 대기 시간이 8% 감소한다.', '이동기 및 기상기 재사용 대기 시간이 10% 감소한다.', '이동기 및 기상기 재사용 대기 시간이 12% 감소한다.'], matchKeywords: ['이동기 및 기상기 재사용 대기 시간'] },
+  { id: 'cc_immune', category: 'fixed', description: '경직 및 피격 이상 면역', tierTexts: ['공격 적중 시 80초 동안 경직 및 피격 이상에 면역이 된다. (재사용 대기 시간 80초)', '공격 적중 시 70초 동안 경직 및 피격 이상에 면역이 된다. (재사용 대기 시간 70초)', '공격 적중 시 60초 동안 경직 및 피격 이상에 면역이 된다. (재사용 대기 시간 60초)'], matchKeywords: ['경직 및 피격 이상에 면역'] },
+  { id: 'crit_rate_combo', category: 'dealer_combo', description: '치적+치적주피', tierTexts: ['치명타 적중률이 3.4% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.', '치명타 적중률이 4.2% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.', '치명타 적중률이 5.0% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.'], matchKeywords: ['치명타 적중률이'], comboKeywords: ['치명타로 적중 시 적에게 주는 피해'] },
+  { id: 'crit_dmg_combo', category: 'dealer_combo', description: '치피+치적주피', tierTexts: ['치명타 피해가 6.8% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.', '치명타 피해가 8.4% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.', '치명타 피해가 10.0% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.'], matchKeywords: ['치명타 피해가'], comboKeywords: ['치명타로 적중 시 적에게 주는 피해'] },
+  { id: 'enemy_dmg_combo', category: 'dealer_combo', description: '적주피+무력화적주피', tierTexts: ['적에게 주는 피해가 2.0% 증가하며, 무력화 상태의 적에게 주는 피해가 4.0% 증가한다.', '적에게 주는 피해가 2.5% 증가하며, 무력화 상태의 적에게 주는 피해가 4.5% 증가한다.', '적에게 주는 피해가 3.0% 증가하며, 무력화 상태의 적에게 주는 피해가 5.0% 증가한다.'], matchKeywords: ['적에게 주는 피해가'], comboKeywords: ['무력화 상태의 적에게 주는 피해'] },
+  { id: 'add_dmg_combo', category: 'dealer_combo', description: '추피+대악마피해', tierTexts: ['추가 피해가 2.5% 증가한다. 악마 및 대악마 계열 피해량이 2.5% 증가한다.', '추가 피해가 3.0% 증가한다. 악마 및 대악마 계열 피해량이 2.5% 증가한다.', '추가 피해가 3.5% 증가한다. 악마 및 대악마 계열 피해량이 2.5% 증가한다.'], matchKeywords: ['추가 피해가'], comboKeywords: ['대악마 계열 피해량'] },
+  { id: 'cd_enemy_dmg', category: 'dealer_combo', description: '쿨증2%+적주피', tierTexts: ['스킬의 재사용 대기 시간이 2% 증가하지만, 적에게 주는 피해가 4.5% 증가한다.', '스킬의 재사용 대기 시간이 2% 증가하지만, 적에게 주는 피해가 5.0% 증가한다.', '스킬의 재사용 대기 시간이 2% 증가하지만, 적에게 주는 피해가 5.5% 증가한다.'], matchKeywords: ['재사용 대기 시간이', '적에게 주는 피해가'] },
+  { id: 'def_reduce', category: 'support_combo', description: '방어력감소+아군공강', tierTexts: ['몬스터에게 공격 적중 시 8초 동안 대상의 방어력을 1.8% 감소시킨다. 아군 공격력 강화 효과 +2.0%', '몬스터에게 공격 적중 시 8초 동안 대상의 방어력을 2.1% 감소시킨다. 아군 공격력 강화 효과 +2.5%', '몬스터에게 공격 적중 시 8초 동안 대상의 방어력을 2.5% 감소시킨다. 아군 공격력 강화 효과 +3.0%'], matchKeywords: ['대상의 방어력을'], comboKeywords: ['아군 공격력 강화 효과'] },
+  { id: 'crit_resist_reduce', category: 'support_combo', description: '치저감소+아군공강', tierTexts: ['몬스터에게 공격 적중 시 8초 동안 대상의 치명타 저항을 1.8% 감소시킨다. 아군 공격력 강화 효과 +2.0%', '몬스터에게 공격 적중 시 8초 동안 대상의 치명타 저항을 2.1% 감소시킨다. 아군 공격력 강화 효과 +2.5%', '몬스터에게 공격 적중 시 8초 동안 대상의 치명타 저항을 2.5% 감소시킨다. 아군 공격력 강화 효과 +3.0%'], matchKeywords: ['대상의 치명타 저항을'], comboKeywords: ['아군 공격력 강화 효과'] },
+  { id: 'shield_dmg', category: 'support_combo', description: '보호적주피+아군공강', tierTexts: ['파티 효과로 보호 효과가 적용된 대상이 5초 동안 적에게 주는 피해가 0.9% 증가한다. 아군 공격력 강화 효과 +2.0%', '파티 효과로 보호 효과가 적용된 대상이 5초 동안 적에게 주는 피해가 1.1% 증가한다. 아군 공격력 강화 효과 +2.5%', '파티 효과로 보호 효과가 적용된 대상이 5초 동안 적에게 주는 피해가 1.3% 증가한다. 아군 공격력 강화 효과 +3.0%'], matchKeywords: ['보호 효과가 적용된 대상'], comboKeywords: ['아군 공격력 강화 효과'] },
+  { id: 'crit_dmg_resist_reduce', category: 'support_combo', description: '치피저감소+아군공강', tierTexts: ['몬스터에게 공격 적중 시 8초 동안 대상의 치명타 피해 저항을 3.6% 감소시킨다. 아군 공격력 강화 효과 +2.0%', '몬스터에게 공격 적중 시 8초 동안 대상의 치명타 피해 저항을 4.2% 감소시킨다. 아군 공격력 강화 효과 +2.5%', '몬스터에게 공격 적중 시 8초 동안 대상의 치명타 피해 저항을 4.8% 감소시킨다. 아군 공격력 강화 효과 +3.0%'], matchKeywords: ['대상의 치명타 피해 저항을'], comboKeywords: ['아군 공격력 강화 효과'] },
+  { id: 'weapon_stack', category: 'weapon_buff', description: '무기공중첩+공이속', tierTexts: ['공격 적중 시 매 초마다 10초 동안 무기 공격력이 1160 증가하며 공격 및 이동 속도가 1% 증가한다. (최대 6중첩)', '공격 적중 시 매 초마다 10초 동안 무기 공격력이 1320 증가하며 공격 및 이동 속도가 1% 증가한다. (최대 6중첩)', '공격 적중 시 매 초마다 10초 동안 무기 공격력이 1480 증가하며 공격 및 이동 속도가 1% 증가한다. (최대 6중첩)'], matchKeywords: ['매 초 마다', '무기 공격력이'], comboKeywords: ['공격 및 이동 속도가'] },
+  { id: 'weapon_hp_cond', category: 'weapon_buff', description: '무기공+체력조건무기공', tierTexts: ['무기 공격력이 7200 증가한다. 자신의 생명력이 50% 이상일 경우 무기 공격력 2000 증가', '무기 공격력이 8100 증가한다. 자신의 생명력이 50% 이상일 경우 무기 공격력 2200 증가', '무기 공격력이 9000 증가한다. 자신의 생명력이 50% 이상일 경우 무기 공격력 2400 증가'], matchKeywords: ['무기 공격력이'], comboKeywords: ['생명력이 50% 이상'] },
+  { id: 'weapon_time_stack', category: 'weapon_buff', description: '무기공+시간중첩무기공', tierTexts: ['무기 공격력이 6900 증가한다. 공격 적중 시 30초마다 120초 동안 무기 공격력이 130 증가한다. (최대 30중첩)', '무기 공격력이 7800 증가한다. 공격 적중 시 30초마다 120초 동안 무기 공격력이 140 증가한다. (최대 30중첩)', '무기 공격력이 8700 증가한다. 공격 적중 시 30초마다 120초 동안 무기 공격력이 150 증가한다. (최대 30중첩)'], matchKeywords: ['무기 공격력이'], comboKeywords: ['30초 마다'] },
+  { id: 'enemy_dmg', category: 'dealer_simple', description: '적주피', tierTexts: ['적에게 주는 피해가 2.0% 증가한다.', '적에게 주는 피해가 2.5% 증가한다.', '적에게 주는 피해가 3.0% 증가한다.'], matchKeywords: ['적에게 주는 피해가'] },
+  { id: 'add_dmg', category: 'dealer_simple', description: '추가 피해', tierTexts: ['추가 피해 +3.0%', '추가 피해 +3.5%', '추가 피해 +4.0%'], matchKeywords: ['추가 피해'] },
+  { id: 'back_atk_dmg', category: 'dealer_simple', description: '백어택 적주피', tierTexts: ['백어택 스킬이 적에게 주는 피해가 2.5% 증가한다.', '백어택 스킬이 적에게 주는 피해가 3.0% 증가한다.', '백어택 스킬이 적에게 주는 피해가 3.5% 증가한다.'], matchKeywords: ['백어택 스킬이 적에게 주는 피해'] },
+  { id: 'head_atk_dmg', category: 'dealer_simple', description: '헤드어택 적주피', tierTexts: ['헤드어택 스킬이 적에게 주는 피해가 2.5% 증가한다.', '헤드어택 스킬이 적에게 주는 피해가 3.0% 증가한다.', '헤드어택 스킬이 적에게 주는 피해가 3.5% 증가한다.'], matchKeywords: ['헤드어택 스킬이 적에게 주는 피해'] },
+  { id: 'neutral_atk_dmg', category: 'dealer_simple', description: '무방향 적주피', tierTexts: ['방향성 공격이 아닌 스킬이 적에게 주는 피해가 2.5% 증가한다.', '방향성 공격이 아닌 스킬이 적에게 주는 피해가 3.0% 증가한다.', '방향성 공격이 아닌 스킬이 적에게 주는 피해가 3.5% 증가한다.'], matchKeywords: ['방향성 공격이 아닌 스킬이 적에게 주는 피해'] },
+  { id: 'crit_rate', category: 'dealer_simple', description: '치명타 적중률', tierTexts: ['치명타 적중률 +3.4%', '치명타 적중률 +4.2%', '치명타 적중률 +5.0%'], matchKeywords: ['치명타 적중률'] },
+  { id: 'crit_dmg', category: 'dealer_simple', description: '치명타 피해', tierTexts: ['치명타 피해 +6.8%', '치명타 피해 +8.4%', '치명타 피해 +10.0%'], matchKeywords: ['치명타 피해'] },
+  { id: 'weapon_flat', category: 'dealer_simple', description: '무기 공격력', tierTexts: ['무기 공격력 +7200', '무기 공격력 +8100', '무기 공격력 +9000'], matchKeywords: ['무기 공격력'] },
+  { id: 'party_protect', category: 'support_simple', description: '파티원 보호 및 회복 효과', tierTexts: ['파티원 보호 및 회복 효과가 2.5% 증가한다.', '파티원 보호 및 회복 효과가 3.0% 증가한다.', '파티원 보호 및 회복 효과가 3.5% 증가한다.'], matchKeywords: ['파티원 보호 및 회복 효과'] },
+  { id: 'ally_atk_enhance', category: 'support_simple', description: '아군 공격력 강화 효과', tierTexts: ['아군 공격력 강화 효과 +4.0%', '아군 공격력 강화 효과 +5.0%', '아군 공격력 강화 효과 +6.0%'], matchKeywords: ['아군 공격력 강화 효과'] },
+  { id: 'ally_dmg_enhance', category: 'support_simple', description: '아군 피해량 강화 효과', tierTexts: ['아군 피해량 강화 효과 +6.0%', '아군 피해량 강화 효과 +7.5%', '아군 피해량 강화 효과 +9.0%'], matchKeywords: ['아군 피해량 강화 효과'] },
+];
+
+export const ACCESSORY_GRINDING_ALIASES: Record<string, string> = {
+  '공격력': '공격력+',
+  '치명타 적중률': '치명타 적중률%',
+  '치명타 피해량': '치명타 피해%',
+  '치명타 피해': '치명타 피해%',
+  '추가 피해': '추가 피해%',
+  '적에게 주는 피해': '적에게 주는 피해%',
+  '적에게 주는 피해 증가': '적에게 주는 피해%',
+  '무기 공격력': '무기 공격력+',
+};
+
+export const ACCESSORY_GRINDING_OPTIONS: Record<string, { id: string; label: string }[]> = {
+  '목걸이': [
+    { id: '추가 피해%', label: '추가 피해' },
+    { id: '적에게 주는 피해%', label: '적에게 주는 피해' },
+    { id: '공격력+', label: '공격력(+)' },
+    { id: '무기 공격력+', label: '무기 공격력(+)' },
+  ],
+  '귀걸이': [
+    { id: '공격력%', label: '공격력(%)' },
+    { id: '무기 공격력%', label: '무기 공격력(%)' },
+    { id: '공격력+', label: '공격력(+)' },
+    { id: '무기 공격력+', label: '무기 공격력(+)' },
+  ],
+  '반지': [
+    { id: '치명타 적중률%', label: '치명타 적중률' },
+    { id: '치명타 피해%', label: '치명타 피해' },
+    { id: '공격력+', label: '공격력(+)' },
+    { id: '무기 공격력+', label: '무기 공격력(+)' },
+  ],
+};
