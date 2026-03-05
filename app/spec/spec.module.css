@@ -110,8 +110,6 @@
 
 /* === Profile (Left) === */
 .profileCol {
-  position: sticky;
-  top: 70px;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -839,6 +837,91 @@
 .braceletSwapBtn:hover {
   border-color: #8b5cf6;
   color: #8b5cf6;
+}
+
+/* 악세 교체 비교 레이아웃 */
+.accCompareLayout {
+  display: flex;
+  align-items: flex-start;
+}
+.accCompareLayout > .effectsCol {
+  flex: 0 0 45%;
+}
+.accSwapRight {
+  flex: 1;
+  min-width: 0;
+  padding-left: 0.4rem;
+  border-left: 2px solid rgba(139, 92, 246, 0.25);
+}
+.accModeToggle {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 0.25rem;
+}
+.accModeBtn {
+  padding: 0.12rem 0.4rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--card-body-bg-stone);
+  color: var(--text-muted);
+  font-size: 0.56rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.accModeBtn:hover {
+  border-color: #8b5cf6;
+}
+.accModeBtnActive {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.08);
+}
+.accPresetBtns {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 0.2rem;
+}
+.accPresetBtn {
+  padding: 0.15rem 0.3rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--card-body-bg-stone);
+  color: var(--text-secondary);
+  font-size: 0.56rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.accPresetBtn:hover {
+  border-color: #8b5cf6;
+}
+.accPresetBtnActive {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.1);
+}
+.accSwapEffects {
+  margin-top: 0.15rem;
+}
+.accPresetMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+  font-size: 0.6rem;
+}
+.accPresetQual {
+  color: var(--text-muted);
+}
+.accPresetPrice {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 700;
+  color: #eab308;
 }
 
 /* 팔찌 스탯 수치 입력 */
@@ -1687,6 +1770,36 @@
   font-weight: 500;
 }
 
+.karmaStepper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 0.15rem;
+}
+
+.karmaBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s;
+}
+.karmaBtn:hover:not(:disabled) {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+.karmaBtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
 .karmaPower {
   color: #a78bfa;
   font-weight: 700;
@@ -2251,4 +2364,185 @@
     line-height: 26px;
     padding: 0 0.3rem;
   }
+}
+
+/* ═══════════════════════════════════════
+   강화 비용 계산
+   ═══════════════════════════════════════ */
+
+.costSummary {
+  margin-top: 0.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.costSummaryHead {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--card-header-bg, var(--card-bg));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.costSummaryTitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+.breathToggle {
+  display: flex;
+  gap: 2px;
+  background: var(--input-bg, rgba(128,128,128,0.1));
+  border-radius: 6px;
+  padding: 2px;
+}
+.breathBtn {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.45rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.breathBtn:hover {
+  color: var(--text-primary);
+}
+.breathBtnActive {
+  background: #8b5cf6;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(139,92,246,0.3);
+}
+.breathBtnActive:hover {
+  color: #fff;
+}
+.costSummaryBody {
+  padding: 0.5rem 0.65rem;
+}
+.costRow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0;
+  font-size: 0.72rem;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.08);
+}
+.costRow:last-of-type {
+  border-bottom: none;
+}
+.costCheckLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  cursor: pointer;
+}
+.costCheckLabel input[type="checkbox"] {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  accent-color: #8b5cf6;
+}
+.costRowCompact {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0;
+  font-size: 0.72rem;
+}
+.costEngName {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.costMatIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.costMatName {
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.costQty {
+  color: var(--text-primary);
+  font-weight: 600;
+  min-width: 42px;
+  text-align: right;
+  margin-left: auto;
+}
+.costMul, .costEq {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+.costUnit {
+  color: var(--text-muted);
+  min-width: 32px;
+  text-align: right;
+  font-size: 0.68rem;
+}
+.costGold {
+  color: #f59e0b;
+  font-weight: 700;
+  min-width: 60px;
+  text-align: right;
+}
+.costTotalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.5rem;
+  margin-top: 0.3rem;
+  border-top: 2px solid var(--border-color);
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+.costTotalVal {
+  color: #f59e0b;
+  font-size: 0.95rem;
+}
+
+.costSubtotalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.35rem;
+  margin-top: 0.2rem;
+  border-top: 1px solid var(--border-color);
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.costSubtotalVal {
+  color: #eab308;
+  font-size: 0.78rem;
+}
+
+.costGrandTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: var(--card-bg);
+  border: 2px solid rgba(245, 158, 11, 0.3);
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin-top: 0.4rem;
+}
+.costGrandTotalVal {
+  color: #f59e0b;
+  font-size: 1rem;
 }

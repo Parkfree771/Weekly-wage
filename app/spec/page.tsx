@@ -5,10 +5,10 @@ import { Container } from 'react-bootstrap';
 import { Form, Button } from 'react-bootstrap';
 import { useSearchHistory } from '@/lib/useSearchHistory';
 import { parseCombatPowerData, type CombatPowerData } from '@/lib/combatPowerData';
-import CombatPowerDashboard from '@/components/combat-power/CombatPowerDashboard';
-import styles from './combat-power.module.css';
+import SpecUpDashboard from '@/components/spec-up/SpecUpDashboard';
+import styles from './spec.module.css';
 
-export default function CombatPowerPage() {
+export default function SpecUpPage() {
   const [characterName, setCharacterName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -123,9 +123,9 @@ export default function CombatPowerPage() {
   return (
     <Container fluid className={styles.pageContainer}>
       <div className="text-center mb-4">
-        <h1 className={styles.pageTitle}>전투력 분석</h1>
+        <h1 className={styles.pageTitle}>스펙업 계산</h1>
         <p className={styles.pageSubtitle}>
-          캐릭터의 전투력 구성 요소를 분석하고 업그레이드 시뮬레이션을 해보세요
+          캐릭터 스펙을 조회하고 업그레이드에 필요한 골드를 계산하세요
         </p>
       </div>
 
@@ -238,10 +238,10 @@ export default function CombatPowerPage() {
                 {isLoading ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                    분석 중...
+                    조회 중...
                   </>
                 ) : (
-                  '분석'
+                  '조회'
                 )}
               </Button>
             </div>
@@ -261,22 +261,22 @@ export default function CombatPowerPage() {
       {isLoading && (
         <div className={styles.loadingContainer}>
           <div className={styles.loadingSpinner} />
-          <div className={styles.loadingText}>전투력 데이터를 분석하는 중...</div>
+          <div className={styles.loadingText}>캐릭터 정보를 조회하는 중...</div>
         </div>
       )}
 
       {/* 결과 */}
       {combatData && !isLoading && (
-        <CombatPowerDashboard data={combatData} />
+        <SpecUpDashboard data={combatData} />
       )}
 
       {/* 빈 상태 */}
       {!combatData && !isLoading && !error && (
         <div className={styles.emptyState}>
           <div className={styles.emptyStateIcon}>&#9876;</div>
-          <div className={styles.emptyStateText}>캐릭터를 검색하여 전투력을 분석해보세요</div>
+          <div className={styles.emptyStateText}>캐릭터를 검색하여 스펙업 비용을 계산해보세요</div>
           <div className={styles.emptyStateSubtext}>
-            각 요소별 기여도 분석과 업그레이드 시뮬레이션을 제공합니다
+            장비 강화, 보석, 각인 등 업그레이드에 필요한 골드를 확인할 수 있습니다
           </div>
         </div>
       )}

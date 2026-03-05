@@ -1,7 +1,5 @@
-// 전투력 관련 데이터 파서
-// API 응답에서 전투력 관련 요소 추출 + 표시용 원본 데이터
-
-import { BRACELET_ALL_OPTIONS } from './combatPowerTables';
+// 캐릭터 스펙 데이터 파서
+// API 응답에서 장비/스펙 관련 요소 추출 + 표시용 원본 데이터
 
 // ============================
 // 타입 정의
@@ -1515,3 +1513,84 @@ export function parseCombatPowerData(apiResponse: any): CombatPowerData | null {
     arkGrid: parseArkGrid(apiResponse.arkgrid),
   };
 }
+
+// ============================
+// 팔찌 / 악세서리 옵션 카탈로그 (UI용)
+// ============================
+
+export type BraceletOptionDef = {
+  id: string;
+  category: 'fixed' | 'dealer_combo' | 'dealer_simple' | 'weapon_buff' | 'support_combo' | 'support_simple';
+  description: string;
+  tierTexts: [string, string, string];
+  matchKeywords: string[];
+  comboKeywords?: string[];
+};
+
+export const BRACELET_ALL_OPTIONS: BraceletOptionDef[] = [
+  { id: 'atk_move_speed', category: 'fixed', description: '공격 및 이동 속도 증가', tierTexts: ['공격 및 이동 속도가 4% 증가한다.', '공격 및 이동 속도가 5% 증가한다.', '공격 및 이동 속도가 6% 증가한다.'], matchKeywords: ['공격 및 이동 속도'] },
+  { id: 'seed_dmg', category: 'fixed', description: '시드 등급 이하 몬스터 피해 증가', tierTexts: ['시드 등급 이하 몬스터에게 주는 피해가 4% 증가한다.', '시드 등급 이하 몬스터에게 주는 피해가 5% 증가한다.', '시드 등급 이하 몬스터에게 주는 피해가 6% 증가한다.'], matchKeywords: ['시드 등급 이하 몬스터에게 주는 피해'] },
+  { id: 'seed_def', category: 'fixed', description: '시드 등급 이하 몬스터 피해 감소', tierTexts: ['시드 등급 이하 몬스터에게 받는 피해가 6% 감소한다.', '시드 등급 이하 몬스터에게 받는 피해가 8% 감소한다.', '시드 등급 이하 몬스터에게 받는 피해가 10% 감소한다.'], matchKeywords: ['시드 등급 이하 몬스터에게 받는 피해'] },
+  { id: 'phys_def', category: 'fixed', description: '물리 방어력', tierTexts: ['물리 방어력 +5000', '물리 방어력 +6000', '물리 방어력 +7000'], matchKeywords: ['물리 방어력'] },
+  { id: 'mag_def', category: 'fixed', description: '마법 방어력', tierTexts: ['마법 방어력 +5000', '마법 방어력 +6000', '마법 방어력 +7000'], matchKeywords: ['마법 방어력'] },
+  { id: 'max_hp', category: 'fixed', description: '최대 생명력', tierTexts: ['최대 생명력 +11200', '최대 생명력 +14000', '최대 생명력 +16800'], matchKeywords: ['최대 생명력'] },
+  { id: 'hp_regen', category: 'fixed', description: '전투 중 생명력 회복량', tierTexts: ['전투 중 생명력 회복량 +100', '전투 중 생명력 회복량 +130', '전투 중 생명력 회복량 +160'], matchKeywords: ['전투 중 생명력 회복량'] },
+  { id: 'resource_regen', category: 'fixed', description: '전투자원 자연 회복량', tierTexts: ['전투자원 자연 회복량 +8%', '전투자원 자연 회복량 +10%', '전투자원 자연 회복량 +12%'], matchKeywords: ['전투자원 자연 회복량'] },
+  { id: 'move_cd', category: 'fixed', description: '이동기 및 기상기 재사용 대기 시간 감소', tierTexts: ['이동기 및 기상기 재사용 대기 시간이 8% 감소한다.', '이동기 및 기상기 재사용 대기 시간이 10% 감소한다.', '이동기 및 기상기 재사용 대기 시간이 12% 감소한다.'], matchKeywords: ['이동기 및 기상기 재사용 대기 시간'] },
+  { id: 'cc_immune', category: 'fixed', description: '경직 및 피격 이상 면역', tierTexts: ['공격 적중 시 80초 동안 경직 및 피격 이상에 면역이 된다. (재사용 대기 시간 80초)', '공격 적중 시 70초 동안 경직 및 피격 이상에 면역이 된다. (재사용 대기 시간 70초)', '공격 적중 시 60초 동안 경직 및 피격 이상에 면역이 된다. (재사용 대기 시간 60초)'], matchKeywords: ['경직 및 피격 이상에 면역'] },
+  { id: 'crit_rate_combo', category: 'dealer_combo', description: '치적+치적주피', tierTexts: ['치명타 적중률이 3.4% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.', '치명타 적중률이 4.2% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.', '치명타 적중률이 5.0% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.'], matchKeywords: ['치명타 적중률이'], comboKeywords: ['치명타로 적중 시 적에게 주는 피해'] },
+  { id: 'crit_dmg_combo', category: 'dealer_combo', description: '치피+치적주피', tierTexts: ['치명타 피해가 6.8% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.', '치명타 피해가 8.4% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.', '치명타 피해가 10.0% 증가한다. 공격이 치명타로 적중 시 적에게 주는 피해가 1.5% 증가한다.'], matchKeywords: ['치명타 피해가'], comboKeywords: ['치명타로 적중 시 적에게 주는 피해'] },
+  { id: 'enemy_dmg_combo', category: 'dealer_combo', description: '적주피+무력화적주피', tierTexts: ['적에게 주는 피해가 2.0% 증가하며, 무력화 상태의 적에게 주는 피해가 4.0% 증가한다.', '적에게 주는 피해가 2.5% 증가하며, 무력화 상태의 적에게 주는 피해가 4.5% 증가한다.', '적에게 주는 피해가 3.0% 증가하며, 무력화 상태의 적에게 주는 피해가 5.0% 증가한다.'], matchKeywords: ['적에게 주는 피해가'], comboKeywords: ['무력화 상태의 적에게 주는 피해'] },
+  { id: 'add_dmg_combo', category: 'dealer_combo', description: '추피+대악마피해', tierTexts: ['추가 피해가 2.5% 증가한다. 악마 및 대악마 계열 피해량이 2.5% 증가한다.', '추가 피해가 3.0% 증가한다. 악마 및 대악마 계열 피해량이 2.5% 증가한다.', '추가 피해가 3.5% 증가한다. 악마 및 대악마 계열 피해량이 2.5% 증가한다.'], matchKeywords: ['추가 피해가'], comboKeywords: ['대악마 계열 피해량'] },
+  { id: 'cd_enemy_dmg', category: 'dealer_combo', description: '쿨증2%+적주피', tierTexts: ['스킬의 재사용 대기 시간이 2% 증가하지만, 적에게 주는 피해가 4.5% 증가한다.', '스킬의 재사용 대기 시간이 2% 증가하지만, 적에게 주는 피해가 5.0% 증가한다.', '스킬의 재사용 대기 시간이 2% 증가하지만, 적에게 주는 피해가 5.5% 증가한다.'], matchKeywords: ['재사용 대기 시간이', '적에게 주는 피해가'] },
+  { id: 'def_reduce', category: 'support_combo', description: '방어력감소+아군공강', tierTexts: ['몬스터에게 공격 적중 시 8초 동안 대상의 방어력을 1.8% 감소시킨다. 아군 공격력 강화 효과 +2.0%', '몬스터에게 공격 적중 시 8초 동안 대상의 방어력을 2.1% 감소시킨다. 아군 공격력 강화 효과 +2.5%', '몬스터에게 공격 적중 시 8초 동안 대상의 방어력을 2.5% 감소시킨다. 아군 공격력 강화 효과 +3.0%'], matchKeywords: ['대상의 방어력을'], comboKeywords: ['아군 공격력 강화 효과'] },
+  { id: 'crit_resist_reduce', category: 'support_combo', description: '치저감소+아군공강', tierTexts: ['몬스터에게 공격 적중 시 8초 동안 대상의 치명타 저항을 1.8% 감소시킨다. 아군 공격력 강화 효과 +2.0%', '몬스터에게 공격 적중 시 8초 동안 대상의 치명타 저항을 2.1% 감소시킨다. 아군 공격력 강화 효과 +2.5%', '몬스터에게 공격 적중 시 8초 동안 대상의 치명타 저항을 2.5% 감소시킨다. 아군 공격력 강화 효과 +3.0%'], matchKeywords: ['대상의 치명타 저항을'], comboKeywords: ['아군 공격력 강화 효과'] },
+  { id: 'shield_dmg', category: 'support_combo', description: '보호적주피+아군공강', tierTexts: ['파티 효과로 보호 효과가 적용된 대상이 5초 동안 적에게 주는 피해가 0.9% 증가한다. 아군 공격력 강화 효과 +2.0%', '파티 효과로 보호 효과가 적용된 대상이 5초 동안 적에게 주는 피해가 1.1% 증가한다. 아군 공격력 강화 효과 +2.5%', '파티 효과로 보호 효과가 적용된 대상이 5초 동안 적에게 주는 피해가 1.3% 증가한다. 아군 공격력 강화 효과 +3.0%'], matchKeywords: ['보호 효과가 적용된 대상'], comboKeywords: ['아군 공격력 강화 효과'] },
+  { id: 'crit_dmg_resist_reduce', category: 'support_combo', description: '치피저감소+아군공강', tierTexts: ['몬스터에게 공격 적중 시 8초 동안 대상의 치명타 피해 저항을 3.6% 감소시킨다. 아군 공격력 강화 효과 +2.0%', '몬스터에게 공격 적중 시 8초 동안 대상의 치명타 피해 저항을 4.2% 감소시킨다. 아군 공격력 강화 효과 +2.5%', '몬스터에게 공격 적중 시 8초 동안 대상의 치명타 피해 저항을 4.8% 감소시킨다. 아군 공격력 강화 효과 +3.0%'], matchKeywords: ['대상의 치명타 피해 저항을'], comboKeywords: ['아군 공격력 강화 효과'] },
+  { id: 'weapon_stack', category: 'weapon_buff', description: '무기공중첩+공이속', tierTexts: ['공격 적중 시 매 초마다 10초 동안 무기 공격력이 1160 증가하며 공격 및 이동 속도가 1% 증가한다. (최대 6중첩)', '공격 적중 시 매 초마다 10초 동안 무기 공격력이 1320 증가하며 공격 및 이동 속도가 1% 증가한다. (최대 6중첩)', '공격 적중 시 매 초마다 10초 동안 무기 공격력이 1480 증가하며 공격 및 이동 속도가 1% 증가한다. (최대 6중첩)'], matchKeywords: ['매 초 마다', '무기 공격력이'], comboKeywords: ['공격 및 이동 속도가'] },
+  { id: 'weapon_hp_cond', category: 'weapon_buff', description: '무기공+체력조건무기공', tierTexts: ['무기 공격력이 7200 증가한다. 자신의 생명력이 50% 이상일 경우 무기 공격력 2000 증가', '무기 공격력이 8100 증가한다. 자신의 생명력이 50% 이상일 경우 무기 공격력 2200 증가', '무기 공격력이 9000 증가한다. 자신의 생명력이 50% 이상일 경우 무기 공격력 2400 증가'], matchKeywords: ['무기 공격력이'], comboKeywords: ['생명력이 50% 이상'] },
+  { id: 'weapon_time_stack', category: 'weapon_buff', description: '무기공+시간중첩무기공', tierTexts: ['무기 공격력이 6900 증가한다. 공격 적중 시 30초마다 120초 동안 무기 공격력이 130 증가한다. (최대 30중첩)', '무기 공격력이 7800 증가한다. 공격 적중 시 30초마다 120초 동안 무기 공격력이 140 증가한다. (최대 30중첩)', '무기 공격력이 8700 증가한다. 공격 적중 시 30초마다 120초 동안 무기 공격력이 150 증가한다. (최대 30중첩)'], matchKeywords: ['무기 공격력이'], comboKeywords: ['30초 마다'] },
+  { id: 'enemy_dmg', category: 'dealer_simple', description: '적주피', tierTexts: ['적에게 주는 피해가 2.0% 증가한다.', '적에게 주는 피해가 2.5% 증가한다.', '적에게 주는 피해가 3.0% 증가한다.'], matchKeywords: ['적에게 주는 피해가'] },
+  { id: 'add_dmg', category: 'dealer_simple', description: '추가 피해', tierTexts: ['추가 피해 +3.0%', '추가 피해 +3.5%', '추가 피해 +4.0%'], matchKeywords: ['추가 피해'] },
+  { id: 'back_atk_dmg', category: 'dealer_simple', description: '백어택 적주피', tierTexts: ['백어택 스킬이 적에게 주는 피해가 2.5% 증가한다.', '백어택 스킬이 적에게 주는 피해가 3.0% 증가한다.', '백어택 스킬이 적에게 주는 피해가 3.5% 증가한다.'], matchKeywords: ['백어택 스킬이 적에게 주는 피해'] },
+  { id: 'head_atk_dmg', category: 'dealer_simple', description: '헤드어택 적주피', tierTexts: ['헤드어택 스킬이 적에게 주는 피해가 2.5% 증가한다.', '헤드어택 스킬이 적에게 주는 피해가 3.0% 증가한다.', '헤드어택 스킬이 적에게 주는 피해가 3.5% 증가한다.'], matchKeywords: ['헤드어택 스킬이 적에게 주는 피해'] },
+  { id: 'neutral_atk_dmg', category: 'dealer_simple', description: '무방향 적주피', tierTexts: ['방향성 공격이 아닌 스킬이 적에게 주는 피해가 2.5% 증가한다.', '방향성 공격이 아닌 스킬이 적에게 주는 피해가 3.0% 증가한다.', '방향성 공격이 아닌 스킬이 적에게 주는 피해가 3.5% 증가한다.'], matchKeywords: ['방향성 공격이 아닌 스킬이 적에게 주는 피해'] },
+  { id: 'crit_rate', category: 'dealer_simple', description: '치명타 적중률', tierTexts: ['치명타 적중률 +3.4%', '치명타 적중률 +4.2%', '치명타 적중률 +5.0%'], matchKeywords: ['치명타 적중률'] },
+  { id: 'crit_dmg', category: 'dealer_simple', description: '치명타 피해', tierTexts: ['치명타 피해 +6.8%', '치명타 피해 +8.4%', '치명타 피해 +10.0%'], matchKeywords: ['치명타 피해'] },
+  { id: 'weapon_flat', category: 'dealer_simple', description: '무기 공격력', tierTexts: ['무기 공격력 +7200', '무기 공격력 +8100', '무기 공격력 +9000'], matchKeywords: ['무기 공격력'] },
+  { id: 'party_protect', category: 'support_simple', description: '파티원 보호 및 회복 효과', tierTexts: ['파티원 보호 및 회복 효과가 2.5% 증가한다.', '파티원 보호 및 회복 효과가 3.0% 증가한다.', '파티원 보호 및 회복 효과가 3.5% 증가한다.'], matchKeywords: ['파티원 보호 및 회복 효과'] },
+  { id: 'ally_atk_enhance', category: 'support_simple', description: '아군 공격력 강화 효과', tierTexts: ['아군 공격력 강화 효과 +4.0%', '아군 공격력 강화 효과 +5.0%', '아군 공격력 강화 효과 +6.0%'], matchKeywords: ['아군 공격력 강화 효과'] },
+  { id: 'ally_dmg_enhance', category: 'support_simple', description: '아군 피해량 강화 효과', tierTexts: ['아군 피해량 강화 효과 +6.0%', '아군 피해량 강화 효과 +7.5%', '아군 피해량 강화 효과 +9.0%'], matchKeywords: ['아군 피해량 강화 효과'] },
+];
+
+export const ACCESSORY_GRINDING_ALIASES: Record<string, string> = {
+  '공격력': '공격력+',
+  '치명타 적중률': '치명타 적중률%',
+  '치명타 피해량': '치명타 피해%',
+  '치명타 피해': '치명타 피해%',
+  '추가 피해': '추가 피해%',
+  '적에게 주는 피해': '적에게 주는 피해%',
+  '적에게 주는 피해 증가': '적에게 주는 피해%',
+  '무기 공격력': '무기 공격력+',
+};
+
+export const ACCESSORY_GRINDING_OPTIONS: Record<string, { id: string; label: string }[]> = {
+  '목걸이': [
+    { id: '추가 피해%', label: '추가 피해' },
+    { id: '적에게 주는 피해%', label: '적에게 주는 피해' },
+    { id: '공격력+', label: '공격력(+)' },
+    { id: '무기 공격력+', label: '무기 공격력(+)' },
+  ],
+  '귀걸이': [
+    { id: '공격력%', label: '공격력(%)' },
+    { id: '무기 공격력%', label: '무기 공격력(%)' },
+    { id: '공격력+', label: '공격력(+)' },
+    { id: '무기 공격력+', label: '무기 공격력(+)' },
+  ],
+  '반지': [
+    { id: '치명타 적중률%', label: '치명타 적중률' },
+    { id: '치명타 피해%', label: '치명타 피해' },
+    { id: '공격력+', label: '공격력(+)' },
+    { id: '무기 공격력+', label: '무기 공격력(+)' },
+  ],
+};

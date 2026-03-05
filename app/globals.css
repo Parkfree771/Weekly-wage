@@ -702,7 +702,7 @@ body {
   box-shadow: 0 3px 10px rgba(99, 102, 241, 0.35);
 }
 
-/* 전투력 분석 - 보라색 */
+/* 스펙업 계산 - 보라색 */
 .navbar-nav-link.nav-combat:hover {
   color: #8b5cf6;
   border-color: #8b5cf6;
