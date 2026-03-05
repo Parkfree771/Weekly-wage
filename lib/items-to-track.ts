@@ -30,7 +30,7 @@ export type TrackedItem = {
 };
 
 // 카테고리 타입
-export type ItemCategory = 'refine_succession' | 'refine' | 'refine_additional' | 'gem' | 'engraving' | 'accessory' | 'jewel';
+export type ItemCategory = 'refine' | 'gem' | 'refine_additional' | 'engraving' | 'accessory' | 'bracelet' | 'jewel';
 
 // 재련 추가 재료 서브카테고리 타입
 export type RefineAdditionalSubCategory = 'weapon' | 'armor';
@@ -62,7 +62,7 @@ export const REFINE_ADDITIONAL_SUBCATEGORIES: Record<RefineAdditionalSubCategory
 
 // 추적할 아이템 목록
 export const TRACKED_ITEMS: TrackedItem[] = [
-  // === 0. 계승 재련 재료 ===
+  // === 0. 재련 재료 (계승) ===
   {
     id: '6861013',
     name: '상급 아비도스 융화 재료',
@@ -92,7 +92,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     iconBorderColor: '#c2410c' // 세르카 주황
   },
 
-  // === 1. 재련 재료 ===
+  // === 0-1. 재련 재료 (일반) ===
   {
     id: '6861012',
     name: '아비도스 융화 재료',
@@ -720,7 +720,69 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     }
   },
 
-  // === 6. 보석 (경매장) ===
+  // === 6. 팔찌 (경매장) ===
+  // 고대 팔찌: 특화100+/치명100+, 부여효과 3개
+  {
+    id: 'auction_bracelet_spec_crit',
+    name: '특화 100+ / 치명 100+',
+    displayName: '고대 팔찌\n특화 100+ / 치명 100+\n부여 효과 3개',
+    type: 'auction',
+    searchName: '',
+    categoryCode: 200040, // 팔찌
+    icon: '/vkfwl.webp',
+    iconBorderColor: '#06b6d4', // 청록 (악세 동일)
+    filters: {
+      ItemGrade: '고대',
+      ItemTier: 4,
+      EtcOptions: [
+        { FirstOption: 2, SecondOption: 16, MinValue: 100, MaxValue: null }, // 특화 100+
+        { FirstOption: 2, SecondOption: 15, MinValue: 100, MaxValue: null }, // 치명 100+
+        { FirstOption: 4, SecondOption: 2, MinValue: 3, MaxValue: 3 }       // 부여효과 3개
+      ]
+    }
+  },
+  // 고대 팔찌: 치명100+/신속100+, 부여효과 3개
+  {
+    id: 'auction_bracelet_crit_swift',
+    name: '치명 100+ / 신속 100+',
+    displayName: '고대 팔찌\n치명 100+ / 신속 100+\n부여 효과 3개',
+    type: 'auction',
+    searchName: '',
+    categoryCode: 200040,
+    icon: '/vkfwl.webp',
+    iconBorderColor: '#f59e0b',
+    filters: {
+      ItemGrade: '고대',
+      ItemTier: 4,
+      EtcOptions: [
+        { FirstOption: 2, SecondOption: 15, MinValue: 100, MaxValue: null }, // 치명 100+
+        { FirstOption: 2, SecondOption: 18, MinValue: 100, MaxValue: null }, // 신속 100+
+        { FirstOption: 4, SecondOption: 2, MinValue: 3, MaxValue: 3 }       // 부여효과 3개
+      ]
+    }
+  },
+  // 고대 팔찌: 특화100+/신속100+, 부여효과 3개
+  {
+    id: 'auction_bracelet_spec_swift',
+    name: '특화 100+ / 신속 100+',
+    displayName: '고대 팔찌\n특화 100+ / 신속 100+\n부여 효과 3개',
+    type: 'auction',
+    searchName: '',
+    categoryCode: 200040,
+    icon: '/vkfwl.webp',
+    iconBorderColor: '#f59e0b',
+    filters: {
+      ItemGrade: '고대',
+      ItemTier: 4,
+      EtcOptions: [
+        { FirstOption: 2, SecondOption: 16, MinValue: 100, MaxValue: null }, // 특화 100+
+        { FirstOption: 2, SecondOption: 18, MinValue: 100, MaxValue: null }, // 신속 100+
+        { FirstOption: 4, SecondOption: 2, MinValue: 3, MaxValue: 3 }       // 부여효과 3개
+      ]
+    }
+  },
+
+  // === 7. 보석 (경매장) ===
   {
     id: 'auction_gem_fear_8',
     name: '8레벨 겁화의 보석',
@@ -785,12 +847,12 @@ export function getItemsBySubCategory(subCategory: RefineAdditionalSubCategory):
 // 카테고리별 아이템 필터 함수
 export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
-    refine_succession: ['66102007', '66102107', '66110226', '6861013'],
-    refine: ['6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
-    refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
+    refine: ['66102007', '66102107', '66110226', '6861013', '6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
+    refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
     accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high', 'auction_necklace_support_refine3', 'auction_necklace_support_refine3_high', 'auction_ring_support_refine3', 'auction_ring_support_refine3_high'],
+    bracelet: ['auction_bracelet_spec_crit', 'auction_bracelet_crit_swift', 'auction_bracelet_spec_swift'],
     jewel: ['auction_gem_fear_8', 'auction_gem_fear_9', 'auction_gem_fear_10', 'auction_gem_flame_10']
   };
 
@@ -806,12 +868,12 @@ export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
 // 아이템 ID로 아이템과 카테고리 찾기
 export function findItemById(itemId: string): { item: TrackedItem; category: ItemCategory; subCategory?: RefineAdditionalSubCategory } | null {
   const categoryMap: Record<ItemCategory, string[]> = {
-    refine_succession: ['66102007', '66102107', '66110226', '6861013'],
-    refine: ['6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
-    refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
+    refine: ['66102007', '66102107', '66110226', '6861013', '6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
+    refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
     accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high', 'auction_necklace_support_refine3', 'auction_necklace_support_refine3_high', 'auction_ring_support_refine3', 'auction_ring_support_refine3_high'],
+    bracelet: ['auction_bracelet_spec_crit', 'auction_bracelet_crit_swift', 'auction_bracelet_spec_swift'],
     jewel: ['auction_gem_fear_8', 'auction_gem_fear_9', 'auction_gem_fear_10', 'auction_gem_flame_10']
   };
 

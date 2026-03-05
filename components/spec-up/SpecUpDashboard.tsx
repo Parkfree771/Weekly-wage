@@ -348,6 +348,11 @@ export default function SpecUpDashboard({ data }: Props) {
       for (let lv = karmaInfo.level; lv < targetLevel; lv++) {
         total += KARMA_UPGRADE_GOLD[lv] || 0;
       }
+      // 랭크 승급 비용: 랭크가 올라갈 때마다 1100G
+      const currentRank = getRankFromKarmaLevel(karmaInfo.level);
+      const targetRank = getRankFromKarmaLevel(targetLevel);
+      const rankUps = targetRank - currentRank;
+      if (rankUps > 0) total += rankUps * 1100;
     }
     return Math.round(total);
   }, [karmaOverrides, data.arkPassive]);

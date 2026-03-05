@@ -7,7 +7,7 @@ import React from 'react';
  * - 나머지는 부모 색상 상속
  */
 export function ColoredItemName({ name }: { name: string }) {
-  const regex = /(\d+\.?\d*%)\s*(\(상\))|(\d+\.?\d*%)\s*(\(중\))|(\(상\))|(\(중\))/g;
+  const regex = /(\d+\.?\d*%)\s*(\(상\))|(\d+\.?\d*%)\s*(\(중\))|(\(상\))|(\(중\))|(\d+\+)/g;
   const parts: React.JSX.Element[] = [];
   let lastIndex = 0;
   let match;
@@ -39,6 +39,12 @@ export function ColoredItemName({ name }: { name: string }) {
       parts.push(
         <span key={`match-${match.index}`} style={{ color: '#A020F0', fontWeight: '700' }}>
           {match[6]}
+        </span>
+      );
+    } else if (match[7]) {
+      parts.push(
+        <span key={`match-${match.index}`} style={{ color: '#A020F0', fontWeight: '700' }}>
+          {match[7]}
         </span>
       );
     }

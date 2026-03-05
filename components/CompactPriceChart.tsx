@@ -226,7 +226,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
   const formatPrice = useCallback((value: number) => {
     // 악세, 보석 카테고리는 소수점 없이 표시
-    if (categoryStyle?.label === '악세' || categoryStyle?.label === '보석') {
+    if (categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌' || categoryStyle?.label === '보석') {
       return Math.round(value).toLocaleString('ko-KR');
     }
     if (value < 100) {
@@ -237,7 +237,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
   const formatTooltipPrice = useCallback((value: number) => {
     // 악세, 보석 카테고리는 소수점 없이 표시
-    if (categoryStyle?.label === '악세' || categoryStyle?.label === '보석') {
+    if (categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌' || categoryStyle?.label === '보석') {
       return Math.round(value).toLocaleString('ko-KR') + ' G';
     }
     if (value < 100) {
@@ -779,7 +779,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div>
-                {categoryStyle?.label === '악세' && selectedItem.displayName ? (
+                {(categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌') && selectedItem.displayName ? (
                   (() => {
                     const parts = selectedItem.displayName.split('\n');
                     if (parts.length === 3) {
@@ -1025,7 +1025,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div>
-                {categoryStyle?.label === '악세' && selectedItem.displayName ? (
+                {(categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌') && selectedItem.displayName ? (
                   (() => {
                     const parts = selectedItem.displayName.split('\n');
                     if (parts.length === 3) {

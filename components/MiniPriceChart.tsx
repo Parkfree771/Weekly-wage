@@ -31,16 +31,18 @@ type MiniPriceChartProps = {
   onClick?: () => void;
   slotIndex: number;
   isMobile?: boolean;
+  period?: PeriodOption;
+  onRemove?: () => void;
 };
 
 type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
-export default function MiniPriceChart({ item, categoryStyle, isSelected, onClick, slotIndex, isMobile = false }: MiniPriceChartProps) {
+export default function MiniPriceChart({ item, categoryStyle, isSelected, onClick, slotIndex, isMobile = false, period, onRemove }: MiniPriceChartProps) {
   const { theme } = useTheme();
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const selectedPeriod: PeriodOption = '1m';
+  const selectedPeriod: PeriodOption = period || '1m';
 
   useEffect(() => {
     setIsMounted(true);
@@ -107,15 +109,23 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
 
   // 기간 필터링을 위한 cutoffDate 계산
   const cutoffDate = useMemo(() => {
+    if (selectedPeriod === 'all') return null;
     const now = new Date();
     const cutoff = new Date();
-    cutoff.setMonth(now.getMonth() - 1); // 1m
+    switch (selectedPeriod) {
+      case '7d': cutoff.setDate(now.getDate() - 7); break;
+      case '1m': cutoff.setMonth(now.getMonth() - 1); break;
+      case '3m': cutoff.setMonth(now.getMonth() - 3); break;
+      case '6m': cutoff.setMonth(now.getMonth() - 6); break;
+      case '1y': cutoff.setFullYear(now.getFullYear() - 1); break;
+    }
     return cutoff;
-  }, []);
+  }, [selectedPeriod]);
 
   // 기간 필터링
   const filteredHistory = useMemo(() => {
     if (history.length === 0) return [];
+    if (!cutoffDate) return history;
 
     return history.filter(entry => {
       const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
@@ -126,6 +136,7 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
   // 비교 히스토리 필터링
   const filteredComparisonHistory = useMemo(() => {
     if (comparisonHistory.length === 0) return [];
+    if (!cutoffDate) return comparisonHistory;
 
     return comparisonHistory.filter(entry => {
       const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
@@ -175,7 +186,7 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
 
   const formatPrice = useCallback((value: number) => {
     // 악세, 보석 카테고리는 소수점 없이 표시
-    if (categoryStyle?.label === '악세' || categoryStyle?.label === '보석') {
+    if (categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌' || categoryStyle?.label === '보석') {
       if (value >= 10000) {
         return Math.round(value / 1000) + 'k';
       }
@@ -323,7 +334,7 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
           </div>
           {stats && (
             <div style={{ fontSize: isMobile ? '0.65rem' : '0.95rem', fontWeight: 700, color: chartColor, flexShrink: 0 }}>
-              {(categoryStyle?.label === '악세' || categoryStyle?.label === '보석')
+              {(categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌' || categoryStyle?.label === '보석')
                 ? Math.round(stats.current).toLocaleString()
                 : stats.current.toLocaleString()}G
             </div>
@@ -413,7 +424,7 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
                       fontSize: '10px',
                     }}>
                       <div style={{ fontWeight: 600, color: chartColor }}>{label}</div>
-                      <div>결정: {(categoryStyle?.label === '악세' || categoryStyle?.label === '보석')
+                      <div>결정: {(categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌' || categoryStyle?.label === '보석')
                         ? Math.round(mainPrice).toLocaleString()
                         : mainPrice.toLocaleString()} G</div>
                       {compPrice !== undefined && compPrice !== null && (

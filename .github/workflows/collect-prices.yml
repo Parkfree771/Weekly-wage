@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       category:
-        description: 'Category to collect (refine_succession,refine,gem / refine_additional,engraving / accessory,jewel / all)'
+        description: 'Category to collect (refine,gem / refine_additional,engraving / accessory,bracelet,jewel / all)'
         required: false
         default: 'all'
       force_append_history:
@@ -26,16 +26,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  collect-auction-accessory-jewel:
-    # 10분: 경매장 - 악세 + 보석 (14개) - 00시에 먼저 실행되어 _raw 처리
-    if: github.event.schedule == '10 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'accessory,jewel')
+  collect-auction-accessory-bracelet-jewel:
+    # 10분: 경매장 - 악세 + 팔찌 + 보석 (17개) - 00시에 먼저 실행되어 _raw 처리
+    if: github.event.schedule == '10 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'accessory,bracelet,jewel')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Collect auction prices (accessory + jewel)
+      - name: Collect auction prices (accessory + bracelet + jewel)
         run: |
           response=$(curl -f -s -w "\n%{http_code}" --max-time 180 \
-            -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=accessory,jewel" \
+            -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=accessory,bracelet,jewel" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -H "X-Netlify-Background: true")
@@ -51,15 +51,15 @@ jobs:
           fi
 
   collect-market-refine-gem:
-    # 15분: 거래소 - 계승 재련 재료 + 재련 재료 + 젬 (17개)
-    if: github.event.schedule == '15 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'refine_succession,refine,gem')
+    # 15분: 거래소 - 재련 재료 + 젬 (17개)
+    if: github.event.schedule == '15 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'refine,gem')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Collect market prices (refine_succession + refine + gem)
+      - name: Collect market prices (refine + gem)
         run: |
           response=$(curl -f -s -w "\n%{http_code}" --max-time 180 \
-            -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine_succession,refine,gem" \
+            -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine,gem" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -H "X-Netlify-Background: true")
@@ -78,7 +78,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_append_history == 'yes'
         run: |
           echo "Forcing history append..."
-          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine_succession,refine,gem" \
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine,gem" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json"
 

@@ -12,7 +12,7 @@ import { PriceContext } from './PriceComparisonStats';
 import { useTheme } from './ThemeProvider';
 
 // 카테고리 표시 순서
-const CATEGORY_ORDER: ItemCategory[] = ['refine_succession', 'gem', 'refine', 'refine_additional', 'engraving', 'accessory', 'jewel'];
+const CATEGORY_ORDER: ItemCategory[] = ['refine', 'gem', 'refine_additional', 'engraving', 'accessory', 'bracelet', 'jewel'];
 
 // TRACKED_ITEMS를 Map으로 변환 (O(1) 조회용)
 const TRACKED_ITEMS_MAP = new Map(TRACKED_ITEMS.map(item => [item.id, item]));
@@ -20,8 +20,17 @@ const TRACKED_ITEMS_MAP = new Map(TRACKED_ITEMS.map(item => [item.id, item]));
 // 아이템 ID로 아이템 조회 (최적화)
 const getTrackedItemById = (id: string): TrackedItem | undefined => TRACKED_ITEMS_MAP.get(id);
 
-// 악세서리 아이템 이름에서 (상), (중) 색상 처리 함수
+// 아이템 이름 색상 처리 함수 (악세: 상/중, 팔찌: 숫자+)
 const renderAccessoryItemName = (name: string, category: ItemCategory) => {
+  if (category === 'bracelet') {
+    const parts = name.split(/(\d+\+)/g);
+    return parts.map((part, idx) => {
+      if (/^\d+\+$/.test(part)) {
+        return <span key={idx} style={{ color: '#a020f0', fontWeight: 700 }}>{part}</span>;
+      }
+      return part;
+    });
+  }
   if (category !== 'accessory') return name;
   const parts = name.split(/(\(상\)|\(중\))/g);
   return parts.map((part, idx) => {
@@ -90,7 +99,7 @@ type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 // Provider를 별도로 export - 실제 데이터를 관리
 export function PriceChartProvider({ children, dashboard }: { children: ReactNode; dashboard?: ReactNode }) {
   const { theme } = useTheme();
-  const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('refine_succession');
+  const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('refine');
   const [selectedSubCategory, setSelectedSubCategory] = useState<RefineAdditionalSubCategory | null>(null);
   const [selectedItem, setSelectedItem] = useState<TrackedItem | null>(null);
   const [history, setHistory] = useState<PriceEntry[]>([]);
@@ -137,7 +146,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     }
 
     // 저장된 아이템이 없으면 기본값 (정수의 돌파석)
-    const defaultCategoryItems = getItemsByCategory('refine_succession');
+    const defaultCategoryItems = getItemsByCategory('refine');
     const defaultItem = defaultCategoryItems.find(item => item.id === '66102007') || defaultCategoryItems[0];
     setSelectedItem(defaultItem);
     setIsConfigLoaded(true);

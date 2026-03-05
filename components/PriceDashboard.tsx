@@ -58,6 +58,10 @@ const DASHBOARD_ITEMS: PriceItem[] = [
   { id: 'auction_necklace_support_refine3_high', name: '고대 목걸이 낙인력(상)/게이지(상)', shortName: '서폿목 상상', icon: '/ancient-necklace.webp' },
   { id: 'auction_ring_support_refine3', name: '고대 반지 아피강(상)/아공강(중)', shortName: '서폿반 상중', icon: '/ancient-ring.webp' },
   { id: 'auction_ring_support_refine3_high', name: '고대 반지 아공강(상)/아피강(상)', shortName: '서폿반 상상', icon: '/ancient-ring.webp' },
+  // 팔찌 (경매장)
+  { id: 'auction_bracelet_spec_crit', name: '특화 100+ / 치명 100+', shortName: '특치', icon: '/vkfwl.webp' },
+  { id: 'auction_bracelet_crit_swift', name: '치명 100+ / 신속 100+', shortName: '치신', icon: '/vkfwl.webp' },
+  { id: 'auction_bracelet_spec_swift', name: '특화 100+ / 신속 100+', shortName: '특신', icon: '/vkfwl.webp' },
 ];
 
 const STORAGE_KEY = 'priceDashboardConfig';
