@@ -44,6 +44,8 @@ const PRELOAD_IMAGES = [
   '/mococo.webp',
 
   // 레이드 보스 이미지
+  '/wlvuddmltjdekd1.webp',
+  '/wlvuddmltjdekd2.webp',
   '/cerka.webp',
   '/abrelshud.webp',
   '/illiakan.webp',

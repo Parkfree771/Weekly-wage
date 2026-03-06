@@ -24,6 +24,13 @@ type GateSelection = {
   };
 };
 
+// 레이드 이름에서 그룹명 추출 (마지막 단어 = 난이도 제외)
+// '세르카 나메' → '세르카', '지평의 성당 3단계' → '지평의 성당'
+const getRaidGroupName = (raidName: string): string => {
+  const parts = raidName.split(' ');
+  return parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0];
+};
+
 // Deep clone 대체 유틸리티: 필요한 부분만 얕은 복사
 const updateGateSelection = (
   prev: GateSelection,
@@ -53,6 +60,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
 
   // 레이드 그룹명과 이미지 파일명 매핑
   const raidImages: { [key: string]: string } = {
+    '지평의 성당': '/wlvuddmltjdekd1.webp',
     '세르카': '/cerka2.webp',
     '종막': '/abrelshud.webp',
     '4막': '/illiakan.webp',
@@ -65,6 +73,9 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
 
   // 레이드별 관문당 코어 획득량 (더보기 안 할 때 기준)
   const corePerGate: { [key: string]: number } = {
+    '지평의 성당 3단계': 3,
+    '지평의 성당 2단계': 2,
+    '지평의 성당 1단계': 2,
     '세르카 나메': 3,
     '세르카 하드': 2,
     '세르카 노말': 2,
@@ -86,7 +97,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
   const groupedRaids = useMemo(() => {
     const grouped: { [key: string]: any[] } = {};
     raids.forEach(raid => {
-      const groupName = raid.name.split(' ')[0];
+      const groupName = getRaidGroupName(raid.name);
       if (!grouped[groupName]) {
         grouped[groupName] = [];
       }
@@ -113,7 +124,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
       });
 
       for (const raid of characterRaids) {
-        const groupName = raid.name.split(' ')[0];
+        const groupName = getRaidGroupName(raid.name);
 
         // 같은 그룹에서 이미 선택된 경우 건너뛰기
         if (selectedGroups.includes(groupName)) {
@@ -123,6 +134,11 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
         // 최대 3개 그룹까지만 선택
         if (selectedGroups.length >= 3) {
           break;
+        }
+
+        // 지평의 성당은 자동 선택하지 않음 (정보 미확정)
+        if (groupName === '지평의 성당') {
+          continue;
         }
 
         // 세르카, 종막, 4막인 경우 더보기o (골드 적게)로 체크 (코어 파밍 가능)
@@ -176,6 +192,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
   };
 
   const handleHeaderChange = useCallback((characterName: string, raidName: string, selection: 'withMore' | 'withoutMore') => {
+    if (raidName.startsWith('지평의 성당')) return;
     setGateSelection(prev => {
       const raid = raids.find(r => r.name === raidName)!;
       const allSelected = raid.gates.every(gate =>
@@ -183,7 +200,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
       );
 
       const newSelection = allSelected ? 'none' : selection;
-      const groupName = raidName.split(' ')[0];
+      const groupName = getRaidGroupName(raidName);
 
       // 불변성을 유지하면서 새 객체 생성
       let result = { ...prev };
@@ -215,10 +232,11 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
   }, [groupedRaids]);
 
   const handleGateChange = useCallback((characterName: string, raidName: string, gate: number, selection: 'none' | 'withMore' | 'withoutMore') => {
+    if (raidName.startsWith('지평의 성당')) return;
     setGateSelection(prev => {
       const currentSelection = prev[characterName]?.[raidName]?.[gate];
       const newSelection = currentSelection === selection ? 'none' : selection;
-      const groupName = raidName.split(' ')[0];
+      const groupName = getRaidGroupName(raidName);
 
       // 불변성을 유지하면서 새 객체 생성
       let result = { ...prev };
@@ -291,7 +309,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                 }
 
                 // 코어 계산 (세르카, 종막, 4막만)
-                if (groupName === '세르카' || groupName === '종막' || groupName === '4막') {
+                if (groupName === '지평의 성당' || groupName === '세르카' || groupName === '종막' || groupName === '4막') {
                   const baseCores = corePerGate[raidName] || 0;
                   if (baseCores > 0) {
                     const multiplier = selection === 'withoutMore' ? 2 : 1;
@@ -387,7 +405,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
 
         // 해당 캐릭터의 세르카, 종막, 4막 관문을 변경
         for (const raidName in result[characterName]) {
-          // 세르카, 종막, 4막인 경우 (코어 파밍 가능 레이드)
+          // 세르카, 종막, 4막인 경우 (코어 파밍 가능 레이드, 지평의 성당 제외)
           if (raidName.startsWith('세르카') || raidName.startsWith('종막') || raidName.startsWith('4막')) {
             result[characterName][raidName] = { ...result[characterName][raidName] };
             for (const gate in result[characterName][raidName]) {
@@ -428,20 +446,21 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
     <div className="raid-calculator-page">
       <Row className="align-items-stretch">
         {selectedCharacters.map(character => {
-          const checkedGroups = getCheckedRaidGroups(character.characterName);
+          const checkedGroups = getCheckedRaidGroups(character.characterName).filter(g => g !== '지평의 성당');
           const uncheckedGroups = Object.keys(groupedRaids).filter(g => !checkedGroups.includes(g));
           const showAll = showAllRaids[character.characterName] || false;
-          const isCerka = character.itemLevel >= 1710;
+          const hasBackground = character.itemLevel >= 1700;
+          const bgImage = character.itemLevel >= 1750 ? '/wlvuddmltjdekd2.webp' : character.itemLevel >= 1700 ? '/wlvuddmltjdekd1.webp' : null;
 
           return (
             <Col lg={4} md={6} sm={12} key={character.characterName} className="mb-3 mb-md-4">
-              <Card className={`character-raid-card ${isCerka ? 'cerka-character' : ''}`} style={{ borderColor: 'var(--border-color)', height: '100%', position: 'relative', overflow: 'hidden' }}>
+              <Card className={`character-raid-card ${hasBackground ? 'cerka-character' : ''}`} style={{ borderColor: 'var(--border-color)', height: '100%', position: 'relative', overflow: 'hidden' }}>
 
-                {isCerka && (
+                {bgImage && (
                   <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
                     <Image
-                      src="/cerka.webp"
-                      alt="세르카 배경"
+                      src={bgImage}
+                      alt="레이드 배경"
                       fill
                       style={{ objectFit: 'cover', opacity: 1 }}
                       priority={true}
@@ -485,8 +504,8 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
 
                     {/* 오른쪽: 코어 파밍 버튼 + 골드 */}
                     <div className="d-flex align-items-center gap-2" style={{ flexShrink: 0 }}>
-                      {/* 코어 파밍 더보기 토글 버튼 (1710 레벨 이상만 - 세르카/종막/4막 가능) */}
-                      {character.itemLevel >= 1710 && (
+                      {/* 코어 파밍 더보기 토글 버튼 (1700 레벨 이상만 - 지평의 성당/세르카/종막/4막 가능) */}
+                      {character.itemLevel >= 1700 && (
                         <Button
                           variant={coreFarmingMoreEnabled[character.characterName] ? "primary" : "secondary"}
                           size="sm"
@@ -588,7 +607,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                             {hasMoreSelected(character.characterName, groupName) && (
                               <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.68rem' }}>더보기</Badge>
                             )}
-                            {(groupName === '세르카' || groupName === '종막' || groupName === '4막') && (
+                            {(groupName === '지평의 성당' || groupName === '세르카' || groupName === '종막' || groupName === '4막') && (
                               <span className="ms-1 d-inline-flex align-items-center">
                                 <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 20 : 26} height={isMobile ? 20 : 26} style={{ borderRadius: '3px' }} />
                                 <span style={{ marginLeft: '3px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.75rem' : '0.88rem' }}>
@@ -602,18 +621,22 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                           <Accordion flush>
                             {groupedRaids[groupName].map(raid => {
                               const isSelected = hasAnyGateSelected(character.characterName, raid.name);
+                              const isDisabledRaid = raid.name.startsWith('지평의 성당');
                               return (
                               <Accordion.Item eventKey={raid.name} key={raid.name} className="raid-difficulty-accordion">
                                 <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.4rem' : '0.6rem' }}>
-                                  <span style={{ fontWeight: isSelected ? 600 : 400 }}>{raid.name}</span>
+                                  <span style={{ fontWeight: isSelected ? 600 : 400, opacity: isDisabledRaid ? 0.5 : 1 }}>{raid.name}</span>
                                   <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.68rem' }}>
                                     {raid.level}
                                   </Badge>
-                                  {isSelected && (
+                                  {isDisabledRaid && (
+                                    <Badge bg="warning" text="dark" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.65rem' }}>준비중</Badge>
+                                  )}
+                                  {!isDisabledRaid && isSelected && (
                                     <Badge bg="success" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.65rem' }}>✓</Badge>
                                   )}
                                 </Accordion.Header>
-                                <Accordion.Body style={{ padding: isMobile ? '0.25rem' : '0.9rem' }}>
+                                <Accordion.Body style={{ padding: isMobile ? '0.25rem' : '0.9rem', opacity: isDisabledRaid ? 0.5 : 1 }}>
                                   <Table bordered responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.65rem' : '0.9rem', tableLayout: 'fixed' }}>
                                     <thead>
                                       <tr>
@@ -624,6 +647,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                             label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>클골</span>}
                                             checked={getHeaderCheckState(character.characterName, raid.name, 'withMore')}
                                             onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')}
+                                            disabled={isDisabledRaid}
                                             style={{ marginBottom: 0 }}
                                           />
                                         </th>
@@ -633,6 +657,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                             label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>더보기</span>}
                                             checked={getHeaderCheckState(character.characterName, raid.name, 'withoutMore')}
                                             onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')}
+                                            disabled={isDisabledRaid}
                                             style={{ marginBottom: 0 }}
                                           />
                                         </th>
@@ -643,8 +668,8 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                         <tr key={`${raid.name}-${gate.gate}`}>
                                           <td style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', whiteSpace: 'nowrap' }}>{gate.gate}관</td>
                                           <td
-                                            onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}
-                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: 'pointer' }}
+                                            onClick={() => !isDisabledRaid && handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}
+                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: isDisabledRaid ? 'default' : 'pointer' }}
                                           >
                                             <Form.Check
                                               type="radio"
@@ -653,12 +678,13 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                               label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>{gate.gold.toLocaleString()}</span>}
                                               checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withMore'}
                                               onChange={() => {}}
+                                              disabled={isDisabledRaid}
                                               style={{ marginBottom: 0 }}
                                             />
                                           </td>
                                           <td
-                                            onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withoutMore')}
-                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: 'pointer' }}
+                                            onClick={() => !isDisabledRaid && handleGateChange(character.characterName, raid.name, gate.gate, 'withoutMore')}
+                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: isDisabledRaid ? 'default' : 'pointer' }}
                                           >
                                             <Form.Check
                                               type="radio"
@@ -667,6 +693,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                               label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>{(gate.gold - gate.moreGold).toLocaleString()}</span>}
                                               checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withoutMore'}
                                               onChange={() => {}}
+                                              disabled={isDisabledRaid}
                                               style={{ marginBottom: 0 }}
                                             />
                                           </td>
@@ -758,7 +785,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                     <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
                                       0 G
                                     </Badge>
-                                    {(groupName === '세르카' || groupName === '종막' || groupName === '4막') && (
+                                    {(groupName === '지평의 성당' || groupName === '세르카' || groupName === '종막' || groupName === '4막') && (
                                       <span className="ms-1 d-inline-flex align-items-center" style={{ opacity: 0.7 }}>
                                         <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 20 : 26} height={isMobile ? 20 : 26} style={{ borderRadius: '3px' }} />
                                         <span style={{ marginLeft: '3px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.75rem' : '0.88rem' }}>
@@ -772,18 +799,22 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                   <Accordion flush>
                                     {groupedRaids[groupName].map(raid => {
                                       const isSelected = hasAnyGateSelected(character.characterName, raid.name);
+                                      const isDisabledRaid = raid.name.startsWith('지평의 성당');
                                       return (
                                       <Accordion.Item eventKey={raid.name} key={raid.name} className="raid-difficulty-accordion">
                                         <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.4rem' : '0.6rem' }}>
-                                          <span style={{ fontWeight: isSelected ? 600 : 400 }}>{raid.name}</span>
+                                          <span style={{ fontWeight: isSelected ? 600 : 400, opacity: isDisabledRaid ? 0.5 : 1 }}>{raid.name}</span>
                                           <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.68rem' }}>
                                             {raid.level}
                                           </Badge>
-                                          {isSelected && (
+                                          {isDisabledRaid && (
+                                            <Badge bg="warning" text="dark" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.65rem' }}>준비중</Badge>
+                                          )}
+                                          {!isDisabledRaid && isSelected && (
                                             <Badge bg="success" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.65rem' }}>✓</Badge>
                                           )}
                                         </Accordion.Header>
-                                        <Accordion.Body style={{ padding: isMobile ? '0.25rem' : '0.9rem' }}>
+                                        <Accordion.Body style={{ padding: isMobile ? '0.25rem' : '0.9rem', opacity: isDisabledRaid ? 0.5 : 1 }}>
                                           <Table striped bordered hover responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.65rem' : '0.9rem', tableLayout: 'fixed' }}>
                                             <thead>
                                               <tr>
@@ -794,6 +825,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                                     label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>클골</span>}
                                                     checked={getHeaderCheckState(character.characterName, raid.name, 'withMore')}
                                                     onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')}
+                                                    disabled={isDisabledRaid}
                                                     style={{ marginBottom: 0 }}
                                                   />
                                                 </th>
@@ -803,6 +835,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                                     label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>더보기</span>}
                                                     checked={getHeaderCheckState(character.characterName, raid.name, 'withoutMore')}
                                                     onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')}
+                                                    disabled={isDisabledRaid}
                                                     style={{ marginBottom: 0 }}
                                                   />
                                                 </th>
@@ -813,8 +846,8 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                                 <tr key={`${raid.name}-${gate.gate}`}>
                                                   <td style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', whiteSpace: 'nowrap' }}>{gate.gate}관</td>
                                                   <td
-                                                    onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}
-                                                    style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: 'pointer' }}
+                                                    onClick={() => !isDisabledRaid && handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}
+                                                    style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: isDisabledRaid ? 'default' : 'pointer' }}
                                                   >
                                                     <Form.Check
                                                       type="radio"
@@ -823,12 +856,13 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                                       label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>{gate.gold.toLocaleString()}</span>}
                                                       checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withMore'}
                                                       onChange={() => {}}
+                                                      disabled={isDisabledRaid}
                                                       style={{ marginBottom: 0 }}
                                                     />
                                                   </td>
                                                   <td
-                                                    onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withoutMore')}
-                                                    style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: 'pointer' }}
+                                                    onClick={() => !isDisabledRaid && handleGateChange(character.characterName, raid.name, gate.gate, 'withoutMore')}
+                                                    style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: isDisabledRaid ? 'default' : 'pointer' }}
                                                   >
                                                     <Form.Check
                                                       type="radio"
@@ -837,6 +871,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                                       label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>{(gate.gold - gate.moreGold).toLocaleString()}</span>}
                                                       checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withoutMore'}
                                                       onChange={() => {}}
+                                                      disabled={isDisabledRaid}
                                                       style={{ marginBottom: 0 }}
                                                     />
                                                   </td>

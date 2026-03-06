@@ -1,5 +1,32 @@
 export const raids = [
   {
+    name: '지평의 성당 3단계',
+    level: 1750,
+    image: '/wlvuddmltjdekd1.webp',
+    gates: [
+      { gate: 1, gold: 20000, moreGold: 6400 },
+      { gate: 2, gold: 30000, moreGold: 9600 },
+    ],
+  },
+  {
+    name: '지평의 성당 2단계',
+    level: 1720,
+    image: '/wlvuddmltjdekd1.webp',
+    gates: [
+      { gate: 1, gold: 16000, moreGold: 5120 },
+      { gate: 2, gold: 24000, moreGold: 7680 },
+    ],
+  },
+  {
+    name: '지평의 성당 1단계',
+    level: 1700,
+    image: '/wlvuddmltjdekd1.webp',
+    gates: [
+      { gate: 1, gold: 13500, moreGold: 4320 },
+      { gate: 2, gold: 16500, moreGold: 5280 },
+    ],
+  },
+  {
     name: '세르카 나메',
     level: 1740,
     image: '/cerka.webp',

@@ -104,9 +104,9 @@ export default function WeeklyGoldPage() {
              <noscript>
   <div style={{/*...*/}}>
     {/* 제목 변경 */}
-    <h2>세르카 레이드 보상 및 주간 골드 계산기</h2>
+    <h2>지평의 성당 레이드 보상 및 주간 골드 계산기</h2>
     {/* 설명 변경 */}
-    <p>세르카(1710) 포함 원정대 캐릭터들의 주간 골드 수익을 자동으로 계산하고...</p>
+    <p>지평의 성당(1700~1750) 포함 원정대 캐릭터들의 주간 골드 수익을 자동으로 계산하고...</p>
                   <h3>주요 기능</h3>
                   <ul>
                     <li>캐릭터명 입력만으로 원정대 전체 주간 골드 수익 자동 계산</li>
@@ -177,7 +177,7 @@ export default function WeeklyGoldPage() {
                 </div>
               )}
 
-              {/* 세르카 보상 정보 */}
+              {/* 지평의 성당 보상 정보 */}
               <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
                 <Row className="justify-content-center">
                   <Col xl={12} lg={12} md={12}>
@@ -198,7 +198,7 @@ export default function WeeklyGoldPage() {
                             letterSpacing: '-0.025em'
                           }}
                         >
-                          세르카 클리어 보상 정보
+                          클리어 보상 정보
                         </h3>
                       </Card.Header>
                       <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>

@@ -140,7 +140,7 @@
 }
 
 /* ==========================================================================
-   [세르카 1710+ 전용] 배경 투명화
+   [1700+ 전용] 배경 이미지 캐릭터 투명화
    ========================================================================== */
 
 .pageWrapper :global(.cerka-character.card),
@@ -168,7 +168,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 세르카 텍스트: 흰색 + 진한 그림자 */
+/* 배경 이미지 캐릭터 텍스트: 흰색 + 진한 그림자 */
 .pageWrapper :global(.cerka-character),
 .pageWrapper :global(.cerka-character span),
 .pageWrapper :global(.cerka-character div),
@@ -189,14 +189,14 @@
   font-weight: 700 !important;
 }
 
-/* 세르카 구분선 */
+/* 배경 이미지 캐릭터 구분선 */
 .pageWrapper :global(.cerka-character .card-header),
 .pageWrapper :global(.cerka-character .table td),
 .pageWrapper :global(.cerka-character .accordion-item) {
   border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
-/* 세르카 전용 체크박스 */
+/* 배경 이미지 캐릭터 전용 체크박스 */
 .pageWrapper :global(.cerka-character .form-check-input) {
   background-color: rgba(255, 255, 255, 0.15) !important;
   border-color: rgba(255, 255, 255, 0.4) !important;
@@ -208,7 +208,7 @@
   box-shadow: 0 0 10px rgba(194, 65, 12, 0.6) !important;
 }
 
-/* 세르카 아코디언 화살표 */
+/* 배경 이미지 캐릭터 아코디언 화살표 */
 .pageWrapper :global(.cerka-character .accordion-button::after) {
   filter: brightness(0) invert(1) drop-shadow(0 1px 2px #000);
 }
@@ -318,7 +318,7 @@
 }
 
 /* ==========================================================================
-   [세르카 캐릭터] 테이블 강제 투명화 + 흰색 글씨
+   [배경 이미지 캐릭터] 테이블 강제 투명화 + 흰색 글씨
    ========================================================================== */
 
 .pageWrapper :global(.cerka-character .accordion-body) {

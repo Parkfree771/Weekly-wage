@@ -43,7 +43,6 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 
 const NAV_STANDALONE: NavItem[] = [
-  { href: '/title', label: '칭호 통계' },
   { href: '/mypage', label: '마이페이지' },
 ];
 
@@ -57,7 +56,6 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/refining', label: '재련 시뮬' },
   { href: '/hell-sim', label: '지옥 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
-  { href: '/title', label: '칭호 통계' },
   { href: '/mypage', label: '마이페이지' },
 ];
 
@@ -88,7 +86,6 @@ export default function Navbar() {
                       href === '/hell-reward' ? 'nav-hell' :
                       href === '/bracelet' ? 'nav-bracelet' :
                       href === '/package' ? 'nav-package' :
-                      href === '/title' ? 'nav-title' :
                       href === '/mypage' ? 'nav-mypage' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();

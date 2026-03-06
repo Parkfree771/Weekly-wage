@@ -20,15 +20,91 @@ const getMaterialImage = (itemName: string): string => {
     '운명의 파괴석 결정': 'destiny-destruction-stone2.webp?v=3',
     '운명의 수호석 결정': 'destiny-guardian-stone2.webp?v=3',
     '위대한 운명의 돌파석': 'destiny-breakthrough-stone2.webp?v=3',
+    '운명의 파괴석': 'destiny-destruction-stone.webp',
+    '운명의 수호석': 'destiny-guardian-stone.webp',
+    '운명의 돌파석': 'destiny-breakthrough-stone.webp',
     '운명의 파편': 'destiny-shard-bag-large.webp',
     '코어': 'cerka-core.webp',
     '고통의 가시': 'pulsating-thorn.webp',
+    '은총의 파편': 'cerka-core.webp', // 임시 이미지 (추후 교체)
   };
   return imageMap[itemName] || 'default-material.webp';
 };
 
 // 기본 클리어 보상 데이터
-const basicClearRewards = {
+const basicClearRewards: { [key: string]: { gate: number; materials: { itemId: number; itemName: string; amount: number }[] }[] } = {
+  '지평의 성당 3단계': [
+    {
+      gate: 1,
+      materials: [
+        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
+        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
+        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 0, itemName: '은총의 파편', amount: 24 },
+        { itemId: 0, itemName: '코어', amount: 3 },
+      ]
+    },
+    {
+      gate: 2,
+      materials: [
+        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
+        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
+        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 0, itemName: '은총의 파편', amount: 36 },
+        { itemId: 0, itemName: '코어', amount: 3 },
+      ]
+    }
+  ],
+  '지평의 성당 2단계': [
+    {
+      gate: 1,
+      materials: [
+        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
+        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
+        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 0, itemName: '은총의 파편', amount: 12 },
+        { itemId: 0, itemName: '코어', amount: 2 },
+      ]
+    },
+    {
+      gate: 2,
+      materials: [
+        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
+        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
+        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 0, itemName: '은총의 파편', amount: 18 },
+        { itemId: 0, itemName: '코어', amount: 2 },
+      ]
+    }
+  ],
+  '지평의 성당 1단계': [
+    {
+      gate: 1,
+      materials: [
+        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
+        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
+        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 0, itemName: '은총의 파편', amount: 4 },
+        { itemId: 0, itemName: '코어', amount: 2 },
+      ]
+    },
+    {
+      gate: 2,
+      materials: [
+        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
+        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
+        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 0, itemName: '은총의 파편', amount: 6 },
+        { itemId: 0, itemName: '코어', amount: 2 },
+      ]
+    }
+  ],
   '세르카 나메': [
     {
       gate: 1,
@@ -97,7 +173,7 @@ type GateData = {
   moreMaterialValue: number;
 };
 
-type CerkaData = {
+type RewardData = {
   raidName: string;
   level: number;
   image: string;
@@ -107,6 +183,7 @@ type CerkaData = {
   totalBasicMaterialValue: number;
   totalMoreMaterialValue: number;
   finalValue: number; // 클골 + 기본재료 + 더보기재료 - 더보기비용
+  disabled: boolean; // 비활성화 (정보 미확정)
 };
 
 const CerkaRewardInfo: React.FC = () => {
@@ -146,21 +223,21 @@ const CerkaRewardInfo: React.FC = () => {
     }));
   };
 
-  // 가격 데이터를 기반으로 세르카 보상 계산 (메모이제이션)
-  const cerkaData = useMemo(() => {
+  // 가격 데이터를 기반으로 보상 계산 (메모이제이션)
+  const rewardData = useMemo(() => {
     if (Object.keys(unitPrices).length === 0) {
       return [];
     }
 
-    const targetRaids = ['세르카 나메', '세르카 하드'];
-    const result: CerkaData[] = [];
+    const targetRaids = ['지평의 성당 3단계', '지평의 성당 2단계', '세르카 나메', '세르카 하드'];
+    const result: RewardData[] = [];
 
     targetRaids.forEach(raidName => {
       const raidInfo = raids.find(r => r.name === raidName);
       if (!raidInfo) return;
 
       const moreRewardData = raidRewards.filter(r => r.raidName === raidName);
-      const basicRewardData = basicClearRewards[raidName as keyof typeof basicClearRewards];
+      const basicRewardData = basicClearRewards[raidName];
 
       let totalClearGold = 0;
       let totalMoreGold = 0;
@@ -215,6 +292,7 @@ const CerkaRewardInfo: React.FC = () => {
         };
       });
 
+      const isDisabled = raidName.startsWith('지평의 성당');
       result.push({
         raidName,
         level: raidInfo.level,
@@ -224,7 +302,8 @@ const CerkaRewardInfo: React.FC = () => {
         totalMoreGold,
         totalBasicMaterialValue,
         totalMoreMaterialValue,
-        finalValue: totalClearGold + totalBasicMaterialValue + totalMoreMaterialValue - totalMoreGold
+        finalValue: totalClearGold + totalBasicMaterialValue + totalMoreMaterialValue - totalMoreGold,
+        disabled: isDisabled
       });
     });
 
@@ -248,7 +327,7 @@ const CerkaRewardInfo: React.FC = () => {
   };
 
   // 체크 상태 반영한 총 가치 계산
-  const getCalculatedFinalValue = (raidData: CerkaData): number => {
+  const getCalculatedFinalValue = (raidData: RewardData): number => {
     let totalBasic = 0;
     let totalMore = 0;
     raidData.gates.forEach(gate => {
@@ -271,19 +350,20 @@ const CerkaRewardInfo: React.FC = () => {
     );
   }
 
-  const selectedData = cerkaData.find(r => r.raidName === selectedRaid);
+  const selectedData = rewardData.find(r => r.raidName === selectedRaid);
 
   return (
     <div>
       {/* 레이드 카드 그리드 */}
       <div className={styles.raidCardsGrid}>
-        {cerkaData.map((raid, index) => {
+        {rewardData.map((raid, index) => {
           const isSelected = selectedRaid === raid.raidName;
           return (
             <div
               key={raid.raidName}
               className={`${styles.raidCard} ${isSelected ? styles.selected : ''}`}
-              onClick={() => handleRaidSelect(raid.raidName)}
+              onClick={() => !raid.disabled && handleRaidSelect(raid.raidName)}
+              style={raid.disabled ? { cursor: 'default', opacity: 0.7 } : undefined}
             >
               <div className={styles.imageWrapper}>
                 <Image
@@ -292,16 +372,22 @@ const CerkaRewardInfo: React.FC = () => {
                   fill
                   className={styles.raidImage}
                   sizes="(max-width: 768px) 150px, 200px"
-                  priority={index < 2}
+                  priority={index < 3}
                 />
                 <div className={styles.overlay} />
               </div>
               <div className={styles.cardContent}>
                 <h3 className={styles.raidName}>{raid.raidName}</h3>
                 <p className={styles.raidLevel}>Lv. {raid.level}</p>
-                <div className={styles.goldBadge}>
-                  {getCalculatedFinalValue(raid).toLocaleString()}G
-                </div>
+                {raid.disabled ? (
+                  <div className={styles.goldBadge} style={{ opacity: 0.6 }}>
+                    준비중
+                  </div>
+                ) : (
+                  <div className={styles.goldBadge}>
+                    {getCalculatedFinalValue(raid).toLocaleString()}G
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -389,7 +475,7 @@ const CerkaRewardInfo: React.FC = () => {
                               <span>{mat.itemName}</span>
                             </div>
                           </td>
-                          <td>{mat.amount.toLocaleString()}</td>
+                          <td>{mat.amount > 0 ? mat.amount.toLocaleString() : '-'}</td>
                           <td>
                             {mat.itemId === 0 ? '-' :
                               (mat.unitPrice >= 1 ? mat.unitPrice.toFixed(2) : mat.unitPrice.toFixed(4))}
@@ -419,91 +505,101 @@ const CerkaRewardInfo: React.FC = () => {
             </div>
 
             {/* 더보기 보상 (1관문, 2관문) */}
-            <div className={styles.sectionTitle}>더보기 보상</div>
-            <div className={styles.gatesGrid}>
-              {selectedData.gates.map((gate) => (
-                <div key={`more-${gate.gate}`} className={`${styles.gateSection} ${styles.moreSection}`}>
-                  <div className={styles.gateHeader}>
-                    <span className={styles.gateName}>{gate.gate}관문 더보기</span>
-                  </div>
+            {selectedData.gates.some(g => g.moreMaterials.length > 0) && (
+              <>
+                <div className={styles.sectionTitle}>더보기 보상</div>
+                <div className={styles.gatesGrid}>
+                  {selectedData.gates.map((gate) => (
+                    <div key={`more-${gate.gate}`} className={`${styles.gateSection} ${styles.moreSection}`}>
+                      <div className={styles.gateHeader}>
+                        <span className={styles.gateName}>{gate.gate}관문 더보기</span>
+                      </div>
 
-                  {/* 더보기 비용 */}
-                  <div className={`${styles.goldRow} ${styles.costRow}`}>
-                    <div className={styles.goldLabel}>
-                      <Image src="/gold.webp" alt="골드" width={18} height={18} />
-                      <span>더보기 비용</span>
-                    </div>
-                    <div className={styles.costValue}>
-                      -{gate.moreGold.toLocaleString()}
-                    </div>
-                  </div>
+                      {/* 더보기 비용 */}
+                      <div className={`${styles.goldRow} ${styles.costRow}`}>
+                        <div className={styles.goldLabel}>
+                          <Image src="/gold.webp" alt="골드" width={18} height={18} />
+                          <span>더보기 비용</span>
+                        </div>
+                        <div className={styles.costValue}>
+                          -{gate.moreGold.toLocaleString()}
+                        </div>
+                      </div>
 
-                  {/* 재료 테이블 */}
-                  <Table size="sm" className={styles.materialTable}>
-                    <thead>
-                      <tr>
-                        <th></th>
-                        <th>재료</th>
-                        <th>수량</th>
-                        <th>단가</th>
-                        <th>총가치</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {gate.moreMaterials.map((mat, idx) => {
-                        const isChecked = isMaterialChecked(selectedData.raidName, 'more', gate.gate, mat.itemId);
-                        return (
-                        <tr key={idx} className={isChecked ? '' : styles.uncheckedRow}>
-                          <td>
-                            <Form.Check
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => handleMaterialCheck(selectedData.raidName, 'more', gate.gate, mat.itemId)}
-                              className={styles.materialCheckbox}
-                            />
-                          </td>
-                          <td>
-                            <div className={styles.materialCell}>
-                              <Image
-                                src={`/${getMaterialImage(mat.itemName)}`}
-                                alt={mat.itemName}
-                                width={22}
-                                height={22}
-                              />
-                              <span>{mat.itemName}</span>
-                            </div>
-                          </td>
-                          <td>{mat.amount.toLocaleString()}</td>
-                          <td>
-                            {mat.itemId === 0 ? '-' :
-                              (mat.unitPrice >= 1 ? mat.unitPrice.toFixed(2) : mat.unitPrice.toFixed(4))}
-                          </td>
-                          <td>
-                            {mat.itemId === 0 ? '-' : mat.totalPrice.toLocaleString()}
-                          </td>
-                        </tr>
-                      );
-                      })}
-                    </tbody>
-                    <tfoot>
-                      <tr className={styles.subtotalRow}>
-                        <td colSpan={4}>재료 가치</td>
-                        <td>{getCheckedMoreMaterialValue(selectedData.raidName, gate).toLocaleString()}</td>
-                      </tr>
-                      <tr className={styles.gateTotalRow}>
-                        <td colSpan={4}><strong>더보기 손익</strong></td>
-                        <td>
-                          <strong className={getCheckedMoreMaterialValue(selectedData.raidName, gate) - gate.moreGold >= 0 ? styles.profit : styles.loss}>
-                            {(getCheckedMoreMaterialValue(selectedData.raidName, gate) - gate.moreGold) >= 0 ? '+' : ''}
-                            {(getCheckedMoreMaterialValue(selectedData.raidName, gate) - gate.moreGold).toLocaleString()}
-                          </strong>
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </Table>
+                      {/* 재료 테이블 */}
+                      {gate.moreMaterials.length > 0 ? (
+                        <Table size="sm" className={styles.materialTable}>
+                          <thead>
+                            <tr>
+                              <th></th>
+                              <th>재료</th>
+                              <th>수량</th>
+                              <th>단가</th>
+                              <th>총가치</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {gate.moreMaterials.map((mat, idx) => {
+                              const isChecked = isMaterialChecked(selectedData.raidName, 'more', gate.gate, mat.itemId);
+                              return (
+                              <tr key={idx} className={isChecked ? '' : styles.uncheckedRow}>
+                                <td>
+                                  <Form.Check
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => handleMaterialCheck(selectedData.raidName, 'more', gate.gate, mat.itemId)}
+                                    className={styles.materialCheckbox}
+                                  />
+                                </td>
+                                <td>
+                                  <div className={styles.materialCell}>
+                                    <Image
+                                      src={`/${getMaterialImage(mat.itemName)}`}
+                                      alt={mat.itemName}
+                                      width={22}
+                                      height={22}
+                                    />
+                                    <span>{mat.itemName}</span>
+                                  </div>
+                                </td>
+                                <td>{mat.amount > 0 ? mat.amount.toLocaleString() : '-'}</td>
+                                <td>
+                                  {mat.itemId === 0 ? '-' :
+                                    (mat.unitPrice >= 1 ? mat.unitPrice.toFixed(2) : mat.unitPrice.toFixed(4))}
+                                </td>
+                                <td>
+                                  {mat.itemId === 0 ? '-' : mat.totalPrice.toLocaleString()}
+                                </td>
+                              </tr>
+                            );
+                            })}
+                          </tbody>
+                          <tfoot>
+                            <tr className={styles.subtotalRow}>
+                              <td colSpan={4}>재료 가치</td>
+                              <td>{getCheckedMoreMaterialValue(selectedData.raidName, gate).toLocaleString()}</td>
+                            </tr>
+                            <tr className={styles.gateTotalRow}>
+                              <td colSpan={4}><strong>더보기 손익</strong></td>
+                              <td>
+                                <strong className={getCheckedMoreMaterialValue(selectedData.raidName, gate) - gate.moreGold >= 0 ? styles.profit : styles.loss}>
+                                  {(getCheckedMoreMaterialValue(selectedData.raidName, gate) - gate.moreGold) >= 0 ? '+' : ''}
+                                  {(getCheckedMoreMaterialValue(selectedData.raidName, gate) - gate.moreGold).toLocaleString()}
+                                </strong>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </Table>
+                      ) : (
+                        <div className="text-center py-3 text-muted" style={{ fontSize: '0.85rem' }}>
+                          재료 정보 업데이트 예정
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
 
             {/* 최종 합계 */}
             {(() => {

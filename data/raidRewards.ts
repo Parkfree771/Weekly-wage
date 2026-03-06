@@ -23,9 +23,10 @@ export const MATERIAL_IDS = {
   FATE_DESTRUCTION_STONE_CRYSTAL: 66102007, // 운명의 파괴석 결정 (Bundle: 100)
   GREAT_FATE_BREAKTHROUGH_STONE: 66110226, // 위대한 운명의 돌파석 (Bundle: 1)
   ADVANCED_ABIDOS_FUSION: 6861013, // 상급 아비도스 융화 재료 (Bundle: 1)
-  // 가격 없는 특수 재료 (세르카 레이드) - ID 0은 가격 계산 제외
+  // 가격 없는 특수 재료 - ID 0은 가격 계산 제외
   CERKA_CORE: 0, // 코어 (거래 불가)
   PULSATING_THORN: 0, // 고통의 가시 (거래 불가)
+  GRACE_FRAGMENT: 0, // 은총의 파편 (거래 불가)
 };
 
 export const MATERIAL_NAMES = {
@@ -42,6 +43,7 @@ export const MATERIAL_NAMES = {
   // 특수 재료
   CERKA_CORE: '코어',
   PULSATING_THORN: '고통의 가시',
+  GRACE_FRAGMENT: '은총의 파편',
 };
 
 // 묶음 단위 - 개당 가격 계산을 위한 나눗수
@@ -59,6 +61,81 @@ export const MATERIAL_BUNDLE_SIZES: { [key: number]: number } = {
 };
 
 export const raidRewards: RaidReward[] = [
+  // 지평의 성당 3단계 (수량 미확정 = 0)
+  {
+    raidName: '지평의 성당 3단계',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 0 },
+      { itemId: MATERIAL_IDS.GRACE_FRAGMENT, itemName: MATERIAL_NAMES.GRACE_FRAGMENT, amount: 24 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 3 },
+    ]
+  },
+  {
+    raidName: '지평의 성당 3단계',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 0 },
+      { itemId: MATERIAL_IDS.GRACE_FRAGMENT, itemName: MATERIAL_NAMES.GRACE_FRAGMENT, amount: 36 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 3 },
+    ]
+  },
+  // 지평의 성당 2단계 (수량 미확정 = 0)
+  {
+    raidName: '지평의 성당 2단계',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 0 },
+      { itemId: MATERIAL_IDS.GRACE_FRAGMENT, itemName: MATERIAL_NAMES.GRACE_FRAGMENT, amount: 12 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 2 },
+    ]
+  },
+  {
+    raidName: '지평의 성당 2단계',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 0 },
+      { itemId: MATERIAL_IDS.GRACE_FRAGMENT, itemName: MATERIAL_NAMES.GRACE_FRAGMENT, amount: 18 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 2 },
+    ]
+  },
+  // 지평의 성당 1단계 (수량 미확정 = 0)
+  {
+    raidName: '지평의 성당 1단계',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 0 },
+      { itemId: MATERIAL_IDS.GRACE_FRAGMENT, itemName: MATERIAL_NAMES.GRACE_FRAGMENT, amount: 4 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 2 },
+    ]
+  },
+  {
+    raidName: '지평의 성당 1단계',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_GUARDIAN_STONE_CRYSTAL, amount: 0 },
+      { itemId: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, itemName: MATERIAL_NAMES.GREAT_FATE_BREAKTHROUGH_STONE, amount: 0 },
+      { itemId: MATERIAL_IDS.FATE_FRAGMENT, itemName: MATERIAL_NAMES.FATE_FRAGMENT, amount: 0 },
+      { itemId: MATERIAL_IDS.GRACE_FRAGMENT, itemName: MATERIAL_NAMES.GRACE_FRAGMENT, amount: 6 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 2 },
+    ]
+  },
   // 세르카 나메
   {
     raidName: '세르카 나메',
