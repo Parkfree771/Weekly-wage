@@ -789,7 +789,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '8레벨 겁화의 보석',
     categoryCode: 210000, // 보석 카테고리
-    icon: '/gem-fear-8.webp',
+    icon: '/8fpqpfqhtjr.webp',
     iconBorderColor: '#9333ea', // 보라색
     filters: {
       ItemTier: 4
@@ -801,7 +801,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '9레벨 겁화의 보석',
     categoryCode: 210000, // 보석 카테고리
-    icon: '/gem-fear-8.webp', // 8레벨과 동일한 이미지
+    icon: '/8fpqpfqhtjr.webp',
     iconBorderColor: '#9333ea', // 보라색
     filters: {
       ItemTier: 4
@@ -813,7 +813,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '10레벨 겁화의 보석',
     categoryCode: 210000,
-    icon: '/gem-fear-10.webp',
+    icon: '/10fpqpfrjqghk.webp',
     iconBorderColor: '#9333ea', // 보라색
     filters: {
       ItemTier: 4
@@ -825,7 +825,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     type: 'auction',
     searchName: '10레벨 작열의 보석',
     categoryCode: 210000,
-    icon: '/gem-flame-10.webp',
+    icon: '/10fpqpfwkrduf.webp',
     iconBorderColor: '#dc2626', // 빨간색
     filters: {
       ItemTier: 4

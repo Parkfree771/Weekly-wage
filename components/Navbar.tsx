@@ -28,6 +28,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/spec', label: '스펙업 계산' },
       { href: '/life-master', label: '생활 계산' },
       { href: '/package', label: '패키지 계산' },
+      { href: '/hell-reward', label: '지옥 보상 계산' },
     ],
   },
   {
@@ -52,6 +53,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/spec', label: '스펙업 계산' },
   { href: '/life-master', label: '생활 계산' },
   { href: '/package', label: '패키지 계산' },
+  { href: '/hell-reward', label: '지옥 보상 계산' },
   { href: '/refining', label: '재련 시뮬' },
   { href: '/hell-sim', label: '지옥 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
@@ -83,6 +85,7 @@ export default function Navbar() {
                       href === '/spec' ? 'nav-combat' :
                       href === '/life-master' ? 'nav-life' :
                       href === '/hell-sim' ? 'nav-hell' :
+                      href === '/hell-reward' ? 'nav-hell' :
                       href === '/bracelet' ? 'nav-bracelet' :
                       href === '/package' ? 'nav-package' :
                       href === '/title' ? 'nav-title' :

@@ -908,6 +908,59 @@ export async function getHellSimTotalCount(): Promise<number> {
   }
 }
 
+// 지옥시뮬 통계 대시보드 조회 (hell_sim_stats 요약 테이블)
+export interface HellSimStatsRow {
+  game_mode: string;
+  key_type: string;
+  total_count: number;
+  avg_floor: number;
+  death_count: number;
+  death_rate: number;
+  revive_count: number;
+  revive_rate: number;
+  floor_1_10: number;
+  floor_11_20: number;
+  floor_21_30: number;
+  floor_31_40: number;
+  floor_41_50: number;
+  floor_51_60: number;
+  floor_61_70: number;
+  floor_71_80: number;
+  floor_81_90: number;
+  floor_91_100: number;
+  // 히든 보상 통계
+  hidden_box: number;
+  hidden_chance: number;
+  hidden_rocket: number;
+  hidden_pungyo: number;
+  hidden_life: number;
+  avg_hidden_count: number;
+  // 나락 전용: 부활 후 행동 통계
+  revive_then_stop: number;       // 부활 후 중단 (보상 획득)
+  revive_then_survived: number;   // 부활 후 도전 → 생존 (더 많은 보상)
+  revive_then_death: number;      // 부활 후 도전 → 사망 (보상 없음)
+  no_reward_rate: number;         // 전체 중 보상 못 받은 비율
+  updated_at: string;
+}
+
+export async function getHellSimDashboardStats(): Promise<HellSimStatsRow[]> {
+  try {
+    const { data, error } = await supabase
+      .from('hell_sim_stats')
+      .select('*');
+
+    if (error || !data) {
+      console.error('Error fetching hell sim dashboard stats:', error);
+      return [];
+    }
+
+    return data as HellSimStatsRow[];
+  } catch (err) {
+    console.error('Error fetching hell sim dashboard stats:', err);
+    return [];
+  }
+}
+
 // ============================================
 // 칭호 통계 (Title Statistics)
 // ============================================

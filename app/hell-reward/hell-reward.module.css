@@ -1,0 +1,681 @@
+/* ========================================
+   지옥 보상 계산기 페이지
+   ======================================== */
+
+/* 레벨 선택 (1700/1730) */
+.levelTabs {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.levelTab {
+  padding: 0.7rem 2.8rem;
+  border-radius: 24px;
+  border: 2.5px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.levelTab:hover {
+  border-color: #6366f1;
+  color: var(--text-primary);
+}
+
+.levelTabActive {
+  background: #6366f1;
+  color: #fff;
+  border-color: #6366f1;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+/* 모드 선택 (지옥/나락) */
+.modeToggle {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.modeBtn {
+  flex: 1;
+  max-width: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.5rem;
+  border: 2.5px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.modeBtn:hover {
+  border-color: #6366f1;
+  color: var(--text-primary);
+}
+
+.modeBtnActive {
+  font-weight: 800;
+  color: var(--text-primary);
+  border-color: #6366f1;
+  background: var(--active-bg, rgba(99, 102, 241, 0.08));
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.15);
+}
+
+.modeBtnIcon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+/* 단계 선택 칩 */
+.tierSelector {
+  margin-bottom: 1.5rem;
+}
+
+.tierTrack {
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  background: var(--card-bg);
+  border-radius: 14px;
+  border: 1.5px solid var(--border-color);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.tierTrack::-webkit-scrollbar {
+  display: none;
+}
+
+.tierChip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0.65rem 0;
+  min-width: 58px;
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-muted);
+}
+
+.tierChip:hover {
+  background: rgba(99, 102, 241, 0.06);
+  color: var(--text-primary);
+}
+
+.tierChipActive {
+  background: #6366f1;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+}
+
+.tierChipActive:hover {
+  background: #7577f5;
+}
+
+.tierChipNum {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.tierChipRange {
+  font-size: 0.6rem;
+  font-weight: 600;
+  opacity: 0.55;
+  line-height: 1;
+}
+
+.tierChipActive .tierChipRange {
+  opacity: 0.85;
+}
+
+/* 환율 + 평균 배너 row */
+.infoRow {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  align-items: stretch;
+}
+
+/* 환율 입력 */
+.exchangeCard {
+  flex: 1;
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.exchangeRatioRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.exchangeIcon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.exchangeFixed {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.exchangeSep {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.exchangeInput {
+  width: 80px;
+  padding: 0.35rem 0.5rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-body-bg-stone, rgba(0,0,0,0.02));
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.exchangeInput:focus {
+  border-color: #6366f1;
+}
+
+.exchangeResult {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* 평균 골드 배너 */
+.avgBanner {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1.25rem;
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.avgBannerIcon {
+  flex-shrink: 0;
+}
+
+.avgBannerText {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.avgBannerLabel {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.avgBannerValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #f59e0b;
+  line-height: 1.15;
+}
+
+.avgBannerCount {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.25rem 0.6rem;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .avgBannerCount {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 로딩 */
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* 보상 카드 목록 */
+.rewardList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rewardCard {
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.rewardCard:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.rewardCardExpanded {
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.rewardCardDisabled {
+  opacity: 0.35;
+}
+
+.rewardCardMain {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  cursor: pointer;
+  position: relative;
+}
+
+/* 순위 뱃지 */
+.rankBadge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #fff;
+  z-index: 1;
+}
+
+.rank1 {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+}
+
+.rank2 {
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+}
+
+.rank3 {
+  background: linear-gradient(135deg, #d97706, #b45309);
+}
+
+/* 이미지 */
+.rewardImgWrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .rewardImgWrap {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rewardImg {
+  width: 60px !important;
+  height: 60px !important;
+  object-fit: contain;
+}
+
+.rewardImgSmall {
+  width: 72px;
+  height: 72px;
+}
+
+.rewardImgSmall .rewardImg {
+  width: 44px !important;
+  height: 44px !important;
+}
+
+/* 정보 */
+.rewardInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rewardName {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 가격 유형 뱃지 */
+.priceBadge {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  line-height: 1.2;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.priceBadge_live {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+[data-theme="dark"] .priceBadge_live {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.priceBadge_fixed {
+  background: rgba(148, 163, 184, 0.12);
+  color: #64748b;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+[data-theme="dark"] .priceBadge_fixed {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.priceBadge_peon {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+[data-theme="dark"] .priceBadge_peon {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.priceBadge_mixed {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+[data-theme="dark"] .priceBadge_mixed {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.rewardInfoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rewardQty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.rewardPriceSummary {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: pre-line;
+  flex-shrink: 0;
+  text-align: right;
+  line-height: 1.4;
+}
+
+/* 골드 가치 */
+.rewardGold {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #f59e0b;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.rewardUnavailable {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 1.3rem;
+}
+
+/* 펼침 아이콘 */
+.expandIcon {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.expandIconOpen {
+  transform: rotate(180deg);
+}
+
+/* 상세 패널 */
+.detail {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-color);
+  background: rgba(99, 102, 241, 0.03);
+}
+
+[data-theme="dark"] .detail {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.35rem 0;
+  gap: 0.75rem;
+}
+
+.detailRow:not(:last-child) {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detailLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.detailValue {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: right;
+  word-break: break-word;
+}
+
+.detailGold {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+/* ---- 반응형: 768px ---- */
+@media (max-width: 768px) {
+  .levelTab {
+    padding: 0.6rem 2rem;
+    font-size: 0.95rem;
+  }
+
+  .modeBtn {
+    font-size: 0.9rem;
+    padding: 0.65rem 1rem;
+  }
+
+  .modeBtnIcon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .tierChip {
+    min-width: 48px;
+    padding: 0.55rem 0;
+  }
+
+  .tierChipNum {
+    font-size: 0.95rem;
+  }
+
+  .tierChipRange {
+    font-size: 0.52rem;
+  }
+
+  .infoRow {
+    flex-direction: column;
+  }
+
+  .avgBannerValue {
+    font-size: 1.3rem;
+  }
+
+  .rewardImgWrap {
+    width: 62px;
+    height: 62px;
+  }
+
+  .rewardImg {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .rewardName {
+    font-size: 0.92rem;
+  }
+
+  .rewardGold {
+    font-size: 1.15rem;
+  }
+}
+
+/* ---- 반응형: 480px ---- */
+@media (max-width: 480px) {
+  .levelTabs {
+    gap: 0.5rem;
+  }
+
+  .levelTab {
+    padding: 0.55rem 1.5rem;
+    font-size: 0.88rem;
+  }
+
+  .modeToggle {
+    gap: 0.5rem;
+  }
+
+  .modeBtn {
+    font-size: 0.82rem;
+    padding: 0.55rem 0.75rem;
+  }
+
+  .tierChip {
+    min-width: 38px;
+  }
+
+  .tierChipNum {
+    font-size: 0.85rem;
+  }
+
+  .rewardCardMain {
+    padding: 0.8rem 0.85rem;
+    gap: 0.75rem;
+  }
+
+  .rewardImgWrap {
+    width: 54px;
+    height: 54px;
+  }
+
+  .rewardImg {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .rewardName {
+    font-size: 0.88rem;
+  }
+
+  .rewardGold {
+    font-size: 1.05rem;
+  }
+
+  .priceBadge {
+    font-size: 0.55rem;
+    padding: 0.1rem 0.35rem;
+  }
+
+  .rewardPriceSummary {
+    font-size: 0.65rem;
+  }
+
+  .avgBannerValue {
+    font-size: 1.1rem;
+  }
+}

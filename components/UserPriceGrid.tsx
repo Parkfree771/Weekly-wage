@@ -136,24 +136,38 @@ function StatCard({ itemId, stats, theme }: { itemId: string; stats: ItemStats |
       {/* 첫 줄: 이미지 + 이름 (왼쪽) / 가격 + 어제대비% (오른쪽, x버튼 옆) */}
       <div style={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: '10px',
       }}>
         {item.icon && (
-          <Image src={item.icon} alt="" width={40} height={40} style={{ borderRadius: '5px', flexShrink: 0 }} />
+          <Image src={item.icon} alt="" width={52} height={52} style={{ borderRadius: '6px', flexShrink: 0 }} />
         )}
         <div style={{
-          fontSize: '0.85rem',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          lineHeight: 1.3,
           flex: 1,
           minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '2px',
         }}>
-          {item.name}
+          <div style={{
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            lineHeight: 1.3,
+          }}>
+            {item.name}
+          </div>
+          <div style={{
+            fontSize: '0.68rem',
+            fontWeight: 600,
+            color: 'var(--text-muted)',
+            lineHeight: 1,
+          }}>
+            {item.type === 'auction' ? '경매장' : '거래소'}
+          </div>
         </div>
         {stats && (
           <div style={{ textAlign: 'right', flexShrink: 0, paddingRight: '20px' }}>
