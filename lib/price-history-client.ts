@@ -273,6 +273,25 @@ export async function getMultipleItemPriceHistory(
 }
 
 /**
+ * latest_prices.json만 조회 (history 불필요한 페이지용)
+ * - 이미 캐시가 있으면 캐시 사용
+ * - 없으면 latest만 fetch
+ */
+export async function fetchLatestPrices(): Promise<LatestPrices> {
+  const latestCacheKey = getLatestCacheKey();
+
+  if (cachedLatest && lastLatestCacheKey === latestCacheKey) {
+    return cachedLatest;
+  }
+
+  const res = await fetchWithTimeout(`/api/price-data/latest?k=${latestCacheKey}`);
+  if (!res.ok) throw new Error('Failed to fetch latest prices');
+  cachedLatest = await res.json();
+  lastLatestCacheKey = latestCacheKey;
+  return cachedLatest!;
+}
+
+/**
  * 캐시 강제 초기화 (필요시)
  */
 export function clearPriceCache(): void {

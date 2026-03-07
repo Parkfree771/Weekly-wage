@@ -51,6 +51,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
+      url: 'https://lostarkweeklygold.kr/cathedral',
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+    {
       url: 'https://lostarkweeklygold.kr/mypage',
       lastModified: new Date(),
       changeFrequency: 'weekly',
