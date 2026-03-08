@@ -2,11 +2,11 @@
 
 import dynamic from 'next/dynamic';
 import { Container } from 'react-bootstrap';
-import PriceDashboard from '@/components/PriceDashboard';
 import AdBanner from '@/components/ads/AdBanner';
 import styles from './page.module.css';
 
-// Recharts를 사용하는 컴포넌트를 Dynamic Import로 지연 로드
+const PriceDashboard = dynamic(() => import('@/components/PriceDashboard'), { ssr: false });
+
 const PriceComparisonStats = dynamic(() => import('@/components/PriceComparisonStats'), {
   loading: () => (
     <div className="text-center py-5" style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

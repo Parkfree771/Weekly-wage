@@ -2,7 +2,16 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { TRACKED_ITEMS, ItemCategory, getItemsByCategory, findItemById } from '@/lib/items-to-track';
-import { CATEGORY_STYLES } from './ItemSelector';
+// CATEGORY_STYLES 직접 정의 (ItemSelector 순환 import 방지)
+const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; darkThemeColor: string; darkBg: string }> = {
+  refine: { label: '재련 재료', color: '#818cf8', darkColor: '#6366f1', lightBg: '#e0e7ff', darkThemeColor: '#818cf8', darkBg: '#3730a3' },
+  gem: { label: '젬', color: '#8A2BE2', darkColor: '#4B0082', lightBg: '#F5EEFF', darkThemeColor: '#c084fc', darkBg: '#3c2a4a' },
+  refine_additional: { label: '재련 추가 재료', color: '#34d399', darkColor: '#059669', lightBg: '#d1fae5', darkThemeColor: '#34d399', darkBg: '#064e3b' },
+  engraving: { label: '유물 각인서', color: '#ff9b7a', darkColor: '#E11D48', lightBg: '#fff1f2', darkThemeColor: '#f87171', darkBg: '#4d222a' },
+  accessory: { label: '악세', color: '#5fd4e8', darkColor: '#0E7490', lightBg: '#ecfeff', darkThemeColor: '#67e8f9', darkBg: '#1e3a4a' },
+  bracelet: { label: '팔찌', color: '#5fd4e8', darkColor: '#0E7490', lightBg: '#ecfeff', darkThemeColor: '#67e8f9', darkBg: '#1e3a4a' },
+  jewel: { label: '보석', color: '#FF69B4', darkColor: '#C71585', lightBg: '#FFF0F5', darkThemeColor: '#f472b6', darkBg: '#4a2239' },
+};
 import { fetchPriceData } from '@/lib/price-history-client';
 import { useTheme } from './ThemeProvider';
 import Image from 'next/image';
@@ -140,7 +149,7 @@ function StatCard({ itemId, stats, theme }: { itemId: string; stats: ItemStats |
         gap: '10px',
       }}>
         {item.icon && (
-          <Image src={item.icon} alt="" width={52} height={52} style={{ borderRadius: '6px', flexShrink: 0 }} />
+          <Image src={item.icon} alt="" width={52} height={52} style={{ borderRadius: '6px', flexShrink: 0 }} loading="lazy" unoptimized />
         )}
         <div style={{
           flex: 1,
@@ -362,6 +371,7 @@ export default function UserPriceGrid() {
       }}>
         {CATEGORY_ORDER.map((cat) => {
           const cs = CATEGORY_STYLES[cat];
+          if (!cs) return null;
           const isSelected = selectedCategory === cat;
           return (
             <button
@@ -423,7 +433,7 @@ export default function UserPriceGrid() {
                 }}
               >
                 {item.icon && (
-                  <Image src={item.icon} alt="" width={22} height={22} style={{ borderRadius: '3px' }} />
+                  <Image src={item.icon} alt="" width={22} height={22} style={{ borderRadius: '3px' }} loading="lazy" unoptimized />
                 )}
                 {item.name}
                 {isInSlot && <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>✓</span>}

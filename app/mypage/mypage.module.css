@@ -213,35 +213,262 @@
   color: var(--text-primary);
 }
 
-/* 카드 그리드 (2열) */
+/* 카드 그리드 (1열) */
 .cardGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 16px;
 }
 
-/* 카드 래퍼 (사이드바 포함) */
+/* 카드 래퍼 (캐릭터카드 + 오른쪽 일일상자) */
 .cardWrapper {
-  position: relative;
-}
-
-.cardWrapperRight {
-  /* marker for right-column sidebar positioning */
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
 }
 
 .cardWrapper .characterCard {
-  width: 100%;
+  flex: 3;
+  min-width: 0;
 }
 
-.cardWrapper .materialSidebar {
-  position: absolute;
-  top: 0;
-  right: calc(100% + 8px);
+/* 오른쪽 일일 컨텐츠 상자 (데스크톱) */
+.dailySideBox {
+  flex: 1;
+  min-width: 280px;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.1);
 }
 
-.cardWrapperRight .materialSidebar {
-  right: auto;
-  left: calc(100% + 8px);
+:global([data-theme="dark"]) .dailySideBox {
+  background: rgba(30, 30, 35, 0.95);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.dailySideTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+/* sideDaily — 상자 형태 블록 */
+.sideDaily {
+  background: #f5f6f8;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sideDaily:last-of-type {
+  margin-bottom: 0;
+}
+
+:global([data-theme="dark"]) .sideDaily {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.restRowLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* 라벨 — 그림자 제거 */
+.sideDaily .dailyLabel {
+  color: var(--text-primary) !important;
+  text-shadow: none !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+/* 휴게 바 — 클릭 가능 */
+.sideDaily .restBar {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  cursor: pointer !important;
+}
+
+.sideDaily .restBar:hover {
+  border-color: rgba(0, 0, 0, 0.25) !important;
+}
+
+.sideDaily .restFull {
+  background: #3b82f6 !important;
+  border-color: #60a5fa !important;
+}
+
+.sideDaily .restHalf {
+  background: linear-gradient(to right, #3b82f6 50%, rgba(0, 0, 0, 0.05) 50%) !important;
+  border-color: #60a5fa !important;
+}
+
+.sideDaily .restText {
+  color: #2563eb !important;
+  text-shadow: none !important;
+}
+
+
+/* 요일 버튼 */
+.sideDaily .dailyDayBtn {
+  border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
+  background: #fff !important;
+  color: var(--text-secondary) !important;
+  border-radius: 6px !important;
+}
+
+.sideDaily .dailyDayBtn:hover {
+  border-color: var(--text-muted) !important;
+  background: #f0f0f2 !important;
+  color: var(--text-primary) !important;
+}
+
+/* 체크 상태 */
+.sideDaily .dailyChecked {
+  border-color: #22c55e !important;
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.sideDaily .dailyBonusChecked {
+  border-color: #f59e0b !important;
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.sideDaily .dailyCheckMark {
+  color: inherit;
+}
+
+/* 다크 모드 */
+:global([data-theme="dark"]) .sideDaily .dailyLabel {
+  color: #e5e5e5 !important;
+}
+
+:global([data-theme="dark"]) .sideDaily .restBar {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+:global([data-theme="dark"]) .sideDaily .restText {
+  color: #93c5fd !important;
+}
+
+:global([data-theme="dark"]) .restRowLabel {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+:global([data-theme="dark"]) .sideDaily .restBar:hover {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+:global([data-theme="dark"]) .sideDaily .dailyDayBtn {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+:global([data-theme="dark"]) .sideDaily .dailyDayBtn:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+
+:global([data-theme="dark"]) .sideDaily .dailyChecked {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #4ade80 !important;
+  border-color: #4ade80 !important;
+}
+
+:global([data-theme="dark"]) .sideDaily .dailyBonusChecked {
+  background: rgba(251, 191, 36, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: #fbbf24 !important;
+}
+
+/* 재화 영역 */
+.sideMaterialSection {
+  border-top: 1px solid var(--border-color);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.sideMaterialTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.sideMaterialRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.sideMaterialRow + .sideMaterialRow {
+  border-top: 1px dashed var(--border-color);
+}
+
+.sideMaterialLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 44px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.sideMaterialItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.sideMaterialItem {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sideMatTextIcon {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.sideMatOp {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.sideMatAmount {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* 재화 사이드바 */
@@ -552,6 +779,14 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+/* 카던 카드 (이미지 없음, 텍스트만) */
+.chaosCard {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .raidChecked {
   border-color: #4ade80;
   border-width: 3px;
@@ -619,6 +854,38 @@
   font-weight: 900;
   z-index: 10;
   box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.raidMoreCheck {
+  position: absolute;
+  top: 4px;
+  right: 30px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 13px;
+  font-weight: 900;
+  z-index: 10;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.raidMoreActive {
+  background: linear-gradient(135deg, #f87171, #dc2626);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 8px rgba(220, 38, 38, 0.4);
+}
+
+.raidMoreInactive {
+  background: rgba(100, 100, 100, 0.5);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.raidMoreInactive:hover {
+  background: rgba(220, 50, 50, 0.6);
 }
 
 .raidEmpty {
@@ -1010,7 +1277,6 @@
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 .dailyBonus {
@@ -1415,13 +1681,15 @@
 
 @media (max-width: 900px) {
   .cardGrid {
-    grid-template-columns: 1fr;
     max-width: 450px;
     margin: 0 auto;
   }
 
-  .cardWrapper .materialSidebar,
-  .cardWrapperRight .materialSidebar {
+  .cardWrapper {
+    flex-direction: column;
+  }
+
+  .dailySideBox {
     display: none;
   }
 

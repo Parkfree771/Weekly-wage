@@ -176,6 +176,8 @@
   border-radius: 10px;
   padding: 0.875rem;
   border: 1px solid var(--border-color);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .gateHeader {
@@ -222,6 +224,7 @@
 /* 재료 테이블 */
 .materialTable {
   width: 100%;
+  min-width: 380px;
   color: var(--text-primary);
   border-collapse: separate;
   border-spacing: 0;
@@ -707,6 +710,14 @@
     border-right: none;
     border-bottom: 1px solid var(--border-color);
   }
+  .shopItem {
+    padding: 0.65rem 0.85rem;
+    gap: 0.7rem;
+  }
+  .shopItemIcon, .shopItemIconFill {
+    width: 44px;
+    height: 44px;
+  }
   .shopDetail {
     padding: 1.25rem;
   }
@@ -721,17 +732,18 @@
     margin: 1rem auto;
   }
   .raidCard {
-    width: 170px;
+    width: calc(33% - 0.5rem);
+    min-width: 0;
     border-radius: 8px;
   }
   .cardContent { padding: 0.5rem; }
   .raidName { font-size: 0.75rem !important; line-height: 1.1; white-space: nowrap; }
-  .raidLevel { font-size: 0.8rem; }
-  .goldBadge { font-size: 0.8rem; }
-  .graceBadge { font-size: 0.7rem; }
+  .raidLevel { font-size: 0.72rem; }
+  .goldBadge { font-size: 0.72rem; }
+  .graceBadge { font-size: 0.62rem; }
 
   .detailHeader { font-size: 1.05rem; padding: 0.75rem 1rem; }
-  .detailBody { padding: 1rem; }
+  .detailBody { padding: 0.75rem; }
   .gatesGrid { grid-template-columns: 1fr; gap: 1rem; }
   .gateSection { padding: 0.75rem; }
   .gateName { font-size: 1rem; }
@@ -746,43 +758,78 @@
   .finalItemValue { font-size: 0.88rem; }
 
   .shopList { max-height: 250px; }
-  .gemGrid { grid-template-columns: repeat(2, 1fr); }
+  .shopItem { padding: 0.55rem 0.75rem; gap: 0.6rem; font-size: 0.85rem; }
+  .shopItemIcon, .shopItemIconFill { width: 40px; height: 40px; }
+  .shopItemName { font-size: 0.85rem; }
+  .shopItemQty { font-size: 0.78rem; }
+  .shopDetail { padding: 1rem; }
+  .shopDetailIcon, .shopDetailIconFill { width: 90px; height: 90px; margin-bottom: 0.75rem; }
+  .shopDetailName { font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .gemGrid { grid-template-columns: repeat(3, 1fr); }
   .gemCard { padding: 0.5rem 0.3rem; }
   .gemName { font-size: 0.65rem; }
 
-  .materialTable thead th { font-size: 0.8rem; padding: 0.5rem 0.4rem; }
-  .materialTable tbody td { padding: 0.5rem 0.4rem; font-size: 0.8rem; }
-  .materialCell span { font-size: 0.75rem; white-space: nowrap; }
+  .materialTable thead th { font-size: 0.78rem; padding: 0.5rem 0.3rem; }
+  .materialTable tbody td { padding: 0.5rem 0.3rem; font-size: 0.78rem; }
+  .materialCell span { font-size: 0.72rem; white-space: nowrap; }
+
+  .rewardWide { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
 @media (max-width: 576px) {
   .raidCardsGrid { gap: 0.35rem; padding: 0 0.25rem; }
-  .raidCard { width: 110px; border-radius: 6px; }
-  .cardContent { padding: 0.35rem; }
-  .raidName { font-size: 0.6rem !important; white-space: nowrap; }
-  .raidLevel { font-size: 0.7rem; }
-  .goldBadge { font-size: 0.7rem; }
-  .graceBadge { font-size: 0.6rem; }
+  .raidCard { width: calc(33% - 0.35rem); min-width: 0; border-radius: 6px; }
+  .cardContent { padding: 0.3rem; gap: 0; }
+  .raidName { font-size: 0.62rem !important; white-space: nowrap; }
+  .raidLevel { font-size: 0.58rem; }
+  .goldBadge { font-size: 0.58rem; }
+  .graceBadge { font-size: 0.5rem; }
 
-  .detailBody { padding: 0.75rem; }
-  .gateSection { padding: 0.625rem; }
+  .detailBody { padding: 0.5rem; }
+  .gateSection { padding: 0.5rem; }
   .gatesGrid { margin-bottom: 1rem; gap: 0.75rem; }
   .gateName { font-size: 0.9rem; }
   .gateHeader { margin-bottom: 0.5rem; padding-bottom: 0.35rem; }
   .infoRow { padding: 0.35rem 0.5rem; margin-bottom: 0.3rem; }
-  .infoLabel { font-size: 0.8rem; gap: 0.3rem; }
-  .goldValue, .costValue, .graceValue, .coreValue { font-size: 0.82rem; }
+  .infoLabel { font-size: 0.78rem; gap: 0.25rem; }
+  .goldValue, .costValue, .graceValue, .coreValue { font-size: 0.8rem; }
 
-  .finalSection { padding: 0.875rem; }
-  .finalTitle { font-size: 0.88rem; margin-bottom: 0.75rem; }
+  .finalSection { padding: 0.75rem; }
+  .finalTitle { font-size: 0.85rem; margin-bottom: 0.75rem; }
   .finalGrid { grid-template-columns: repeat(2, 1fr); gap: 0.3rem; }
   .finalGridItem { padding: 0.4rem 0.2rem; }
   .finalLabel { font-size: 0.65rem; }
   .finalItemValue { font-size: 0.78rem; }
 
-  .materialTable thead th { font-size: 0.75rem; padding: 0.45rem 0.3rem; }
-  .materialTable tbody td { padding: 0.45rem 0.3rem; font-size: 0.75rem; }
-  .materialCell span { font-size: 0.65rem; }
+  /* 재료 테이블 - 모바일 가로 스크롤 */
+  .materialTable { font-size: 0.72rem; }
+  .materialTable col:nth-child(1) { width: 28px; }
+  .materialTable col:nth-child(3) { width: 80px; }
+  .materialTable col:nth-child(4) { width: 60px; }
+  .materialTable col:nth-child(5) { width: 80px; }
+  .materialTable thead th { font-size: 0.7rem; padding: 0.4rem 0.25rem; }
+  .materialTable tbody td { padding: 0.4rem 0.25rem; font-size: 0.7rem; }
+  .materialCell span { font-size: 0.62rem; }
+  .materialCell img { width: 18px !important; height: 18px !important; }
+
+  /* 상점 - 모바일 최적화 */
+  .shopList { max-height: 220px; }
+  .shopItem { padding: 0.5rem 0.65rem; gap: 0.5rem; font-size: 0.8rem; }
+  .shopItemIcon, .shopItemIconFill { width: 36px; height: 36px; border-radius: 6px; }
+  .shopItemName { font-size: 0.8rem; }
+  .shopItemQty { font-size: 0.72rem; }
+  .shopDetail { padding: 0.75rem; }
+  .shopDetailIcon, .shopDetailIconFill { width: 80px; height: 80px; margin-bottom: 0.5rem; border-radius: 12px; }
+  .shopDetailName { font-size: 1rem; margin-bottom: 0.4rem; }
+  .shopDetailRow { padding: 0.4rem 0; }
+  .shopDetailLabel, .shopDetailValue { font-size: 0.85rem; }
+  .shopCompactInfo { font-size: 0.8rem; }
+  .costIcon { width: 24px; height: 24px; }
+  .shopDetailCostItem { padding: 0.25rem 0.5rem; font-size: 0.78rem; }
+  .gemGrid { grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+  .gemCard { padding: 0.4rem 0.25rem; }
+  .gemName { font-size: 0.6rem; }
+  .gemPrice { font-size: 0.72rem; }
 }
 
 /* ==========================================================================

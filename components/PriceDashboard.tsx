@@ -424,6 +424,8 @@ export default function PriceDashboard() {
                   width={44}
                   height={44}
                   style={{ marginBottom: '8px', borderRadius: '6px' }}
+                  loading="lazy"
+                  unoptimized
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/icon.png';
                   }}
@@ -600,6 +602,8 @@ export default function PriceDashboard() {
                         width={32}
                         height={32}
                         style={{ borderRadius: '6px' }}
+                        loading="lazy"
+                        unoptimized
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = '/icon.png';
                         }}

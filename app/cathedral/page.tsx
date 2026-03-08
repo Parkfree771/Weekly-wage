@@ -290,6 +290,7 @@ export default function CathedralPage() {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
   const [selectedShopItem, setSelectedShopItem] = useState<number | null>(null);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
+  const [priceLoading, setPriceLoading] = useState(true);
   const [materialChecks, setMaterialChecks] = useState<Record<string, Record<string, Record<string, boolean>>>>({});
 
   const selectedStageData = STAGES.find(s => s.name === selectedStage);
@@ -316,11 +317,13 @@ export default function CathedralPage() {
   useEffect(() => {
     (async () => {
       try {
-        const { fetchLatestPrices } = await import('@/lib/price-history-client');
-        const latest = await fetchLatestPrices();
+        const mod = await import('@/lib/price-history-client');
+        const latest = await mod.fetchLatestPrices();
         setLatestPrices(latest);
       } catch (e) {
         console.error('Failed to fetch prices:', e);
+      } finally {
+        setPriceLoading(false);
       }
     })();
   }, []);
@@ -447,8 +450,8 @@ export default function CathedralPage() {
                           </div>
                         </td>
                         <td>{mat.amount > 0 ? mat.amount.toLocaleString() : '미정'}</td>
-                        <td>{mat.itemId === '0' ? '-' : unitPrice >= 1 ? unitPrice.toFixed(2) : unitPrice.toFixed(4)}</td>
-                        <td>{mat.itemId === '0' || mat.amount === 0 ? '-' : totalPrice.toLocaleString()}</td>
+                        <td>{mat.itemId === '0' ? '-' : priceLoading ? '—' : unitPrice >= 1 ? unitPrice.toFixed(2) : unitPrice.toFixed(4)}</td>
+                        <td>{mat.itemId === '0' || mat.amount === 0 ? '-' : priceLoading ? '—' : totalPrice.toLocaleString()}</td>
                       </tr>
                       );
                     })}
@@ -456,7 +459,7 @@ export default function CathedralPage() {
                   <tfoot>
                     <tr className={styles.subtotalRow}>
                       <td colSpan={4}>재료 가치</td>
-                      <td>{getCheckedValue(mats, type, gate).toLocaleString()}</td>
+                      <td>{priceLoading ? '—' : getCheckedValue(mats, type, gate).toLocaleString()}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -536,13 +539,13 @@ export default function CathedralPage() {
                       <div className={styles.finalGridItem}>
                         <div className={styles.finalLabel}>기본 재료 가치</div>
                         <div className={styles.finalItemValue}>
-                          +{totalBasicValue.toLocaleString()}
+                          {priceLoading ? '—' : `+${totalBasicValue.toLocaleString()}`}
                         </div>
                       </div>
                       <div className={styles.finalGridItem}>
                         <div className={styles.finalLabel}>더보기 재료 가치</div>
                         <div className={styles.finalItemValue}>
-                          +{totalMoreValue.toLocaleString()}
+                          {priceLoading ? '—' : `+${totalMoreValue.toLocaleString()}`}
                         </div>
                       </div>
                       <div className={styles.finalGridItem}>
@@ -556,7 +559,7 @@ export default function CathedralPage() {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
                           <Image src="/gold.webp" alt="골드" width={24} height={24} />
                           <span className={styles.finalItemValue} style={{ color: '#c9a84c', fontSize: '1.15rem' }}>
-                            {finalValue.toLocaleString()}
+                            {priceLoading ? '—' : finalValue.toLocaleString()}
                           </span>
                         </div>
                       </div>
@@ -589,7 +592,7 @@ export default function CathedralPage() {
                 </Card.Header>
                 <Card.Body className="p-0" style={{ backgroundColor: 'var(--card-bg)' }}>
                   {/* 데스크톱: 좌우 분할 */}
-                  <div className={`${styles.shopContainer} d-none d-lg-flex`}>
+                  <div className={styles.shopContainer}>
                     <div className={styles.shopList}>
                       <div className={styles.shopListHeader}>
                         은총의 파편 교환 목록
@@ -609,11 +612,11 @@ export default function CathedralPage() {
                           >
                             {item.hasBg ? (
                               <div className={styles.shopItemIconFill}>
-                                <Image src={item.image} alt="" width={52} height={52} style={{ borderRadius: '6px', objectFit: 'cover' }} />
+                                <Image src={item.image} alt="" width={52} height={52} style={{ borderRadius: '6px', objectFit: 'cover', width: '100%', height: '100%' }} />
                               </div>
                             ) : (
                               <div className={styles.shopItemIcon} style={{ borderColor: tc.border, background: tc.iconBg }}>
-                                <Image src={item.image} alt="" width={52} height={52} />
+                                <Image src={item.image} alt="" width={52} height={52} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                               </div>
                             )}
                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -655,11 +658,11 @@ export default function CathedralPage() {
                             <div className={styles.shopDetailTop}>
                               {selectedShopData.hasBg ? (
                                 <div className={styles.shopDetailIconFill}>
-                                  <Image src={selectedShopData.image} alt="" width={130} height={130} style={{ objectFit: 'cover' }} />
+                                  <Image src={selectedShopData.image} alt="" width={130} height={130} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                                 </div>
                               ) : (
                                 <div className={styles.shopDetailIcon} style={{ borderColor: tc.border, background: tc.iconBg }}>
-                                  <Image src={selectedShopData.image} alt="" width={110} height={110} />
+                                  <Image src={selectedShopData.image} alt="" width={110} height={110} style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
                                 </div>
                               )}
                               <div className={styles.shopDetailName} style={{ color: tc.name }}>
@@ -722,7 +725,7 @@ export default function CathedralPage() {
                                       <span className={styles.gemName}>{comp.name}</span>
                                       <div className={styles.gemPrice}>
                                         <Image src="/gold.webp" alt="골드" width={16} height={16} />
-                                        <span>{latestPrices[comp.itemId] ? latestPrices[comp.itemId].toLocaleString() : '-'}</span>
+                                        <span>{priceLoading ? '—' : latestPrices[comp.itemId] ? latestPrices[comp.itemId].toLocaleString() : '-'}</span>
                                       </div>
                                     </div>
                                   ))}
@@ -739,54 +742,6 @@ export default function CathedralPage() {
                     </div>
                   </div>
 
-                  {/* 모바일/태블릿: 테이블 */}
-                  <div className="d-lg-none p-2 p-md-3">
-                    <div style={{ overflowX: 'auto' }}>
-                      <table className={styles.shopMobileTable}>
-                        <thead>
-                          <tr>
-                            <th>품목</th>
-                            <th>수량</th>
-                            <th>Lv.</th>
-                            <th>제작 비용</th>
-                            <th>제한</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {SHOP_ITEMS.map((item) => {
-                            const tc = THEME_COLORS[item.theme];
-                            return (
-                            <tr key={item.id}>
-                              <td style={{ color: tc.name }}>{item.name}</td>
-                              <td>{item.qty}</td>
-                              <td>{item.requiredLevel}</td>
-                              <td style={{ fontSize: '0.78rem', textAlign: 'left' }}>
-                                {item.costs.length > 0
-                                  ? item.costs.map(c => `${c.name} ${c.amount.toLocaleString()}`).join(' + ')
-                                  : '-'
-                                }
-                              </td>
-                              <td>
-                                <span
-                                  className={styles.limitBadge}
-                                  style={{
-                                    fontSize: '0.68rem',
-                                    padding: '0.15rem 0.35rem',
-                                    color: tc.accent,
-                                    background: `${tc.accent}18`,
-                                    border: `1px solid ${tc.accent}40`,
-                                  }}
-                                >
-                                  {item.limitType === 'once' ? '1회' : '무제한'}
-                                </span>
-                              </td>
-                            </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
                 </Card.Body>
               </Card>
             </div>

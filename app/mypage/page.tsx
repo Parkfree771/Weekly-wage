@@ -3,7 +3,21 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Container, Card, Button, Form, Spinner, Alert, Modal, Row, Col } from 'react-bootstrap';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import NextImage from 'next/image';
+import { memo } from 'react';
+
+// 작은 정적 아이콘용 (재화 아이콘 등 - 최적화 API 호출 생략)
+const StaticIcon = memo(function StaticIcon({ src, alt, width, height, className }: { src: string; alt: string; width: number; height: number; className?: string }) {
+  return <NextImage src={src} alt={alt} width={width} height={height} className={className} unoptimized loading="lazy" />;
+});
+
+// fill 모드 카드 이미지용 (레이드/가토/균열 카드 배경)
+const CardBgImage = memo(function CardBgImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  return <NextImage src={src} alt={alt} fill className={className} sizes="180px" loading="lazy" unoptimized />;
+});
+
+// 하위 호환용 alias
+const Image = NextImage;
 import { useAuth } from '@/contexts/AuthContext';
 import { registerCharacter, saveWeeklyChecklist, refreshCharacter, updateCharacterImages } from '@/lib/user-service';
 import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service';
@@ -28,7 +42,8 @@ import {
   getCurrentWeekStart,
   calculateTotalGoldFromChecklist,
 } from '@/types/user';
-import WeeklyGoldChart from '@/components/WeeklyGoldChart';
+import dynamic from 'next/dynamic';
+const WeeklyGoldChart = dynamic(() => import('@/components/WeeklyGoldChart'), { ssr: false });
 import styles from './mypage.module.css';
 
 // 레이드 그룹별 가능한 난이도 가져오기
@@ -56,10 +71,34 @@ function getAllRaidGroups(itemLevel: number) {
 
 // 원정대 공통 컨텐츠 정의
 const COMMON_CONTENTS = [
-  { name: '운수대통 복 주머니', shortName: '복', image: '/lucky-pouch.webp', color: '#e6a817', days: [1, 4, 6, 0], maxChecks: 3, gold: 5000 },
+  { name: '운수대통 복 주머니', shortName: '복', image: '/lucky-pouch.webp', color: '#e6a817', days: [1, 4, 6, 0], maxChecks: 3, gold: 4500 },
   { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 3500 },
   { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0], gold: 0 },
 ];
+
+// 공통 컨텐츠 재화 보상 (1회 기준)
+type CommonMaterialReward = { image?: string; label: string; amount: number };
+const COMMON_CONTENT_MATERIALS: Record<string, CommonMaterialReward[]> = {
+  '운수대통 복 주머니': [
+    { image: '/gold.webp', label: '골드', amount: 4500 },
+  ],
+  '카오스 게이트': [
+    { image: '/breath-lava5.webp', label: '용숨', amount: 6 },
+    { image: '/breath-glacier5.webp', label: '빙숨', amount: 6 },
+    { image: '/gold.webp', label: '귀속골드', amount: 3500 },
+    { image: '/destiny-shard-bag-large5.webp', label: '운파', amount: 12000 },
+    { image: '/1fpqrjqghk.webp', label: '보석', amount: 6 },
+  ],
+  '필드보스': [
+    { image: '/top-destiny-destruction-stone5.webp', label: '파결', amount: 484 },
+    { image: '/top-destiny-guardian-stone5.webp', label: '수결', amount: 1490 },
+    { image: '/top-destiny-breakthrough-stone5.webp', label: '위돌', amount: 40 },
+    { image: '/breath-lava5.webp', label: '용숨', amount: 3 },
+    { image: '/breath-glacier5.webp', label: '빙숨', amount: 3 },
+    { image: '/1fpqrjqghk.webp', label: '보석', amount: 21 },
+    { image: '/cjstkd.webp', label: '천상', amount: 0.8 },
+  ],
+};
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 const WEEKLY_DAY_LABELS = ['수', '목', '금', '토', '일', '월', '화'];
@@ -126,10 +165,10 @@ const CHAOS_DAILY_REWARDS: { minLevel: number; materials: { image: string; alt: 
   {
     minLevel: 1730,
     materials: [
-      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 325.63 },
-      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1116.84 },
-      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 16.95 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 43455.42 },
+      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 327.11 },
+      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1082.58 },
+      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 17.74 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 44208.74 },
     ],
   },
   {
@@ -170,7 +209,7 @@ const GUARDIAN_DAILY_REWARDS: { minLevel: number; materials: { image: string; al
   {
     minLevel: 1730,
     materials: [
-      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 10.5 },
+      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 10.56 },
     ],
   },
   {
@@ -288,6 +327,7 @@ export default function MyPage() {
   // 더보기 비용 드롭다운 열린 캐릭터
   const [moreGoldDropdownChar, setMoreGoldDropdownChar] = useState<string | null>(null);
 
+
   // 레이드 스크롤 인덱스 (캐릭터별)
   const [raidScrollIndex, setRaidScrollIndex] = useState<Record<string, number>>({});
 
@@ -305,6 +345,15 @@ export default function MyPage() {
 
   // 일일 컨텐츠 휴게 설정 열림 (charName-field)
   const [dailySettingsOpen, setDailySettingsOpen] = useState<string | null>(null);
+
+  // 데스크톱 여부 (레이드 표시 개수 분기)
+  const [isDesktop, setIsDesktop] = useState(true);
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth > 900);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
 
   // 닉네임 변경
@@ -1030,142 +1079,6 @@ export default function MyPage() {
     [MATERIAL_IDS.FATE_FRAGMENT]: { name: '운명의 파편', image: '/destiny-shard-bag-large5.webp' },
   };
 
-  const weeklyMaterialData = useMemo(() => {
-    const itemIdInfo = itemIdInfoRef;
-    // 카던 alt → itemId 매핑
-    const chaosAltToItemId: Record<string, number> = {
-      '파괴석 결정': MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL,
-      '수호석 결정': MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL,
-      '위대한 돌파석': MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE,
-      '파편': MATERIAL_IDS.FATE_FRAGMENT,
-      '파괴석': MATERIAL_IDS.FATE_DESTRUCTION_STONE,
-      '수호석': MATERIAL_IDS.FATE_GUARDIAN_STONE,
-      '돌파석': MATERIAL_IDS.FATE_BREAKTHROUGH_STONE,
-    };
-    const ORDER = [
-      MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL,
-      MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL,
-      MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE,
-      MATERIAL_IDS.FATE_DESTRUCTION_STONE,
-      MATERIAL_IDS.FATE_GUARDIAN_STONE,
-      MATERIAL_IDS.FATE_BREAKTHROUGH_STONE,
-      MATERIAL_IDS.FATE_FRAGMENT,
-    ];
-
-    type MatEntry = { itemId: number; itemName: string; image: string; amount: number };
-    type GuardianEntry = { image: string; alt: string; amount: number };
-    type ConversionEntry = {
-      sourceItemId: number;
-      targetItemId: number;
-      convertedAmount: number;  // 교환으로 얻는 결정
-      originalCrystal: number;  // 원래 결정 수량
-      totalCrystal: number;     // 합산 결정 수량
-    };
-    type CharData = {
-      characterName: string;
-      itemLevel: number;
-      materials: MatEntry[];
-      guardianMaterials: GuardianEntry[];
-      hasMore: boolean;
-      conversions: ConversionEntry[];
-    };
-    const CONVERSION_PAIRS = [
-      { source: MATERIAL_IDS.FATE_DESTRUCTION_STONE, target: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, ratio: 5 },
-      { source: MATERIAL_IDS.FATE_GUARDIAN_STONE, target: MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL, ratio: 5 },
-      { source: MATERIAL_IDS.FATE_BREAKTHROUGH_STONE, target: MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE, ratio: 5 },
-    ];
-
-    const charDataList: CharData[] = [];
-
-    for (const char of characters) {
-      const charState = weeklyChecklist[char.name] || createEmptyWeeklyState(char.itemLevel);
-      const amountMap: Record<number, number> = {};
-      let hasMore = false;
-
-      // 1. 레이드 클리어 보상 + 더보기 보상
-      Object.entries(charState.raids).forEach(([raidName, gates]) => {
-        const buyMore = charState.raidMoreGoldExclude?.[raidName] === true;
-        gates.forEach((checked, i) => {
-          if (!checked) return;
-          const gateNum = i + 1;
-          const clearReward = raidClearRewards.find(r => r.raidName === raidName && r.gate === gateNum);
-          if (clearReward) {
-            for (const mat of clearReward.materials) {
-              if (mat.itemId === 0) continue;
-              amountMap[mat.itemId] = (amountMap[mat.itemId] || 0) + mat.amount;
-            }
-          }
-          if (buyMore) {
-            hasMore = true;
-            const moreReward = raidRewards.find(r => r.raidName === raidName && r.gate === gateNum);
-            if (moreReward) {
-              for (const mat of moreReward.materials) {
-                if (mat.itemId === 0) continue;
-                amountMap[mat.itemId] = (amountMap[mat.itemId] || 0) + mat.amount;
-              }
-            }
-          }
-        });
-      });
-
-      // 2. 카던 재화
-      const chaosReward = getChaosDailyReward(char.itemLevel);
-      const chaosChecks = charState.chaosDungeon?.checks.filter(Boolean).length || 0;
-      if (chaosReward && chaosChecks > 0) {
-        for (const mat of chaosReward.materials) {
-          const itemId = chaosAltToItemId[mat.alt];
-          if (itemId != null) {
-            amountMap[itemId] = (amountMap[itemId] || 0) + Math.round(mat.daily * chaosChecks);
-          }
-        }
-      }
-
-      // 3. 가토 재화 (보석 - itemId 없으므로 별도)
-      const guardianReward = getGuardianDailyReward(char.itemLevel);
-      const guardianChecks = charState.guardianRaid?.checks.filter(Boolean).length || 0;
-      const guardianMaterials: GuardianEntry[] = [];
-      if (guardianReward && guardianChecks > 0) {
-        for (const mat of guardianReward.materials) {
-          guardianMaterials.push({ image: mat.image, alt: mat.alt, amount: Math.round(mat.daily * guardianChecks) });
-        }
-      }
-
-      // itemId 기반으로 이미지/이름 확정
-      const materials: MatEntry[] = ORDER
-        .filter(id => amountMap[id])
-        .map(id => ({
-          itemId: id,
-          itemName: itemIdInfo[id]?.name || '',
-          image: itemIdInfo[id]?.image || '/default-material.webp',
-          amount: amountMap[id],
-        }));
-
-      // 교환 변환 계산 (파괴석→결정, 수호석→결정, 돌파석→위대한돌파석)
-      const conversions: ConversionEntry[] = [];
-      for (const pair of CONVERSION_PAIRS) {
-        const sourceAmount = amountMap[pair.source] || 0;
-        const targetAmount = amountMap[pair.target] || 0;
-        if (sourceAmount > 0) {
-          const converted = Math.floor(sourceAmount / pair.ratio);
-          conversions.push({
-            sourceItemId: pair.source,
-            targetItemId: pair.target,
-            convertedAmount: converted,
-            originalCrystal: targetAmount,
-            totalCrystal: targetAmount + converted,
-          });
-        }
-      }
-
-      const hasAnyMat = materials.length > 0 || guardianMaterials.length > 0;
-      if (!hasAnyMat) continue;
-
-      charDataList.push({ characterName: char.name, itemLevel: char.itemLevel, materials, guardianMaterials, hasMore, conversions });
-    }
-
-    charDataList.sort((a, b) => b.itemLevel - a.itemLevel);
-    return { charDataList, hasAny: charDataList.length > 0 };
-  }, [characters, weeklyChecklist]);
 
   // 레이드 체크 여부 확인
   const isRaidChecked = (charName: string, raidName: string) => {
@@ -1224,21 +1137,9 @@ export default function MyPage() {
 
   const displayCharacters = showAllCharacters ? characters : characters.slice(0, 6);
 
-  // 데스크톱: 같은 줄 2캐릭 동시 펼침/닫힘
-  const sortedChars = [...displayCharacters].sort((a, b) => b.itemLevel - a.itemLevel);
+  // 캐릭터별 일일 컨텐츠 펼침/닫힘
   const toggleDailyExpand = (charName: string) => {
-    const isDesktop = typeof window !== 'undefined' && window.innerWidth > 900;
-    setExpandedCards(prev => {
-      const newState = !prev[charName];
-      const next = { ...prev, [charName]: newState };
-      if (isDesktop) {
-        const idx = sortedChars.findIndex(c => c.name === charName);
-        const partnerIdx = idx % 2 === 0 ? idx + 1 : idx - 1;
-        const partner = sortedChars[partnerIdx];
-        if (partner) next[partner.name] = newState;
-      }
-      return next;
-    });
+    setExpandedCards(prev => ({ ...prev, [charName]: !prev[charName] }));
   };
 
   return (
@@ -1372,13 +1273,7 @@ export default function MyPage() {
                         onClick={() => !maxReached && toggleCommonContent(day, content.name)}
                       >
                         <div className={styles.commonCardBg} style={{ background: content.color }}>
-                          <Image
-                            src={content.image}
-                            alt={content.name}
-                            fill
-                            className={styles.raidImage}
-                            unoptimized
-                          />
+                          <CardBgImage src={content.image} alt={content.name} className={styles.raidImage} />
                         </div>
                         <div className={styles.commonCardOverlay} />
                         <div className={styles.commonCardInfo}>
@@ -1419,7 +1314,7 @@ export default function MyPage() {
           </Card>
         )}
 
-        {/* 캐릭터 카드 그리드 (2열) */}
+        {/* 캐릭터 카드 그리드 (1열) */}
         <div className={styles.cardGrid}>
           {displayCharacters
             .slice()
@@ -1455,51 +1350,96 @@ export default function MyPage() {
             const checkedRaids = getCheckedRaids(char.name);
             const allRaidGroups = getAllRaidGroups(char.itemLevel);
 
-            // 사이드바 데이터
+            // 재화 데이터
             const chaosReward = getChaosDailyReward(char.itemLevel);
             const chaosChecks = charState.chaosDungeon?.checks.filter(Boolean).length || 0;
             const guardianReward = getGuardianDailyReward(char.itemLevel);
             const guardianChecks = charState.guardianRaid?.checks.filter(Boolean).length || 0;
-            const isRightCol = charIdx % 2 === 1;
             const hasChaos = chaosReward && chaosChecks > 0;
             const hasGuardian = guardianReward && guardianChecks > 0;
 
-            const materialSidebar = (hasChaos || hasGuardian) ? (
-              <div className={styles.materialSidebar}>
-                {hasChaos && (
-                  <div className={styles.sidebarSection}>
-                    <span className={styles.sidebarTitle}>카던</span>
-                    {chaosReward.materials.map((mat, mi) => (
-                      <div key={mi} className={styles.materialRow2}>
-                        <Image src={mat.image} alt={mat.alt} width={24} height={24} className={styles.matIcon2} />
-                        <span className={styles.matOp2}>×</span>
-                        <span className={styles.matAmount2}>
-                          {Math.round(mat.daily * chaosChecks).toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
+            // 일일 컨텐츠 렌더 함수 (데스크톱: 오른쪽 상자, 모바일: 카드 내부)
+            const renderDailySide = (
+              label: string,
+              field: 'chaosDungeon' | 'guardianRaid',
+              blockClass: string = styles.sideDaily,
+            ) => {
+              const state: DailyContentState =
+                charState[field] && typeof charState[field] === 'object'
+                  ? charState[field] as DailyContentState
+                  : EMPTY_DAILY;
+              const gameDayIdx = getCurrentGameDayIdx();
+              const rest = computeCurrentRest(state, gameDayIdx);
+              const fullBars = Math.floor(rest / 20);
+              const hasHalf = (rest % 20) >= 10;
+
+              const bonusFlags: boolean[] = [];
+              let r = state.restGauge;
+              for (let i = 0; i < 7; i++) {
+                if (i <= gameDayIdx) {
+                  if (state.checks[i]) {
+                    if (r >= 20) { bonusFlags.push(true); r -= 20; }
+                    else { bonusFlags.push(false); }
+                  } else {
+                    bonusFlags.push(false);
+                    if (i < gameDayIdx) r = Math.min(100, r + 10);
+                  }
+                } else { bonusFlags.push(false); }
+              }
+
+              const settingsKey = `${char.name}-${field}`;
+              const isSettingsOpen = dailySettingsOpen === settingsKey;
+
+              return (
+                <div className={blockClass}>
+                  <div className={styles.dailyHeader}>
+                    <span className={styles.dailyLabel}>{label}</span>
+                    <span className={styles.restRowLabel}>휴게</span>
+                    <div className={styles.restGauge}>
+                      {[0, 1, 2, 3, 4].map(i => {
+                        const isFull = i < fullBars;
+                        const isHalf = i === fullBars && hasHalf;
+                        return (
+                          <div
+                            key={i}
+                            className={`${styles.restBar} ${isFull ? styles.restFull : ''} ${isHalf ? styles.restHalf : ''}`}
+                            onClick={() => {
+                              if (isFull || isHalf) {
+                                // 찬 칸 클릭 → 빼기
+                                setRestGauge(char.name, field, Math.max(0, state.restGauge - 20));
+                              } else {
+                                // 빈 칸 클릭 → 채우기
+                                setRestGauge(char.name, field, Math.min(100, state.restGauge + 20));
+                              }
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
                   </div>
-                )}
-                {hasGuardian && (
-                  <div className={styles.sidebarSection}>
-                    <span className={styles.sidebarTitle}>가토</span>
-                    {guardianReward.materials.map((mat, mi) => (
-                      <div key={mi} className={styles.materialRow2}>
-                        <Image src={mat.image} alt={mat.alt} width={24} height={24} className={styles.matIcon2} />
-                        <span className={styles.matOp2}>×</span>
-                        <span className={styles.matAmount2}>
-                          {Math.round(mat.daily * guardianChecks).toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
+                  <div className={styles.dailyChecks}>
+                    {WEEKLY_DAY_LABELS.map((day, idx) => {
+                      const checked = state.checks[idx];
+                      return (
+                        <button
+                          key={idx}
+                          className={`${styles.dailyDayBtn} ${checked ? (bonusFlags[idx] ? styles.dailyBonusChecked : styles.dailyChecked) : ''}`}
+                          onClick={() => toggleDailyCheck(char.name, field, idx)}
+                        >
+                          {checked
+                            ? <span className={styles.dailyCheckMark}>✓</span>
+                            : <span className={styles.dailyDayText}>{day}</span>
+                          }
+                        </button>
+                      );
+                    })}
                   </div>
-                )}
-              </div>
-            ) : null;
+                </div>
+              );
+            };
 
             return (
-              <div key={char.name} className={`${styles.cardWrapper} ${isRightCol ? styles.cardWrapperRight : ''}`}>
-              {materialSidebar}
+              <div key={char.name} className={styles.cardWrapper}>
               <div className={styles.characterCard}>
                 {/* 카드 헤더: 닉네임 + 갱신버튼 + 레벨 */}
                 <div className={styles.cardHeader}>
@@ -1533,6 +1473,7 @@ export default function MyPage() {
                         height={150}
                         className={styles.characterImage}
                         unoptimized
+                        loading="lazy"
                       />
                     ) : (
                       <div className={styles.characterPlaceholder}>
@@ -1543,13 +1484,14 @@ export default function MyPage() {
 
                   {/* 오른쪽: 2줄 */}
                   <div className={styles.cardRight}>
-                    {/* 1줄: 레이드 3개 + 넘기기 버튼 */}
+                    {/* 1줄: 레이드 4개 + 넘기기 버튼 */}
                     {(() => {
                       const startIdx = raidScrollIndex[char.name] || 0;
+                      const raidCount = isDesktop ? 4 : 3;
                       const visibleRaids: { raid: typeof raids[0] | null; groupName: string }[] = [];
 
-                      // 현재 보여줄 3개 레이드 계산
-                      for (let i = 0; i < 3; i++) {
+                      // 현재 보여줄 레이드 계산
+                      for (let i = 0; i < raidCount; i++) {
                         const groupIdx = startIdx + i;
                         if (groupIdx < allRaidGroups.length) {
                           const groupName = allRaidGroups[groupIdx];
@@ -1565,7 +1507,7 @@ export default function MyPage() {
                       }
 
                       const canScrollLeft = startIdx > 0;
-                      const canScrollRight = startIdx + 3 < allRaidGroups.length;
+                      const canScrollRight = startIdx + raidCount < allRaidGroups.length;
 
                       return (
                         <div className={styles.raidRowWrapper}>
@@ -1605,18 +1547,25 @@ export default function MyPage() {
                                   className={`${styles.raidCard} ${checked ? styles.raidChecked : ''}`}
                                   onClick={() => toggleRaid(char.name, raid.name)}
                                 >
-                                  <Image
-                                    src={groupImage}
-                                    alt={groupName}
-                                    fill
-                                    className={styles.raidImage}
-                                  />
+                                  <CardBgImage src={groupImage} alt={groupName} className={styles.raidImage} />
                                   <div className={styles.raidOverlay} />
                                   <div className={styles.raidInfo}>
                                     <span className={styles.raidName}>{groupName}</span>
                                     {difficulty && <span className={styles.raidDifficulty}>{difficulty}</span>}
                                     <span className={styles.raidLevel}>Lv.{raid.level}</span>
                                   </div>
+                                  {checked && (
+                                    <div
+                                      className={`${styles.raidMoreCheck} ${charState.raidMoreGoldExclude?.[raid.name] ? styles.raidMoreActive : styles.raidMoreInactive}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleRaidMoreGoldExclude(char.name, raid.name);
+                                      }}
+                                      title={charState.raidMoreGoldExclude?.[raid.name] ? '더보기 구매 중 (클릭하여 해제)' : '더보기 미구매 (클릭하여 구매)'}
+                                    >
+                                      ✓
+                                    </div>
+                                  )}
                                   {checked && <div className={styles.raidCheck}>✓</div>}
 
                                   {/* 톱니바퀴 버튼 */}
@@ -1662,7 +1611,7 @@ export default function MyPage() {
                               className={`${styles.raidNavBtn} ${styles.raidNavRight}`}
                               onClick={() => setRaidScrollIndex(prev => ({
                                 ...prev,
-                                [char.name]: Math.min(allRaidGroups.length - 3, (prev[char.name] || 0) + 1)
+                                [char.name]: Math.min(allRaidGroups.length - raidCount, (prev[char.name] || 0) + 1)
                               }))}
                             >
                               ›
@@ -1672,8 +1621,31 @@ export default function MyPage() {
                       );
                     })()}
 
-                    {/* 2줄: 가디언토벌 + 모래시계/낙원 + 낙원/빈칸 */}
+                    {/* 2줄: (데스크톱:카던+) 가디언토벌 + 모래시계/낙원 + 낙원/빈칸 */}
                     <div className={styles.itemRow}>
+                      {/* 카던 (데스크톱만, 이미지 없음, 텍스트) */}
+                      {isDesktop && (() => {
+                        const chaosState: DailyContentState =
+                          charState.chaosDungeon && typeof charState.chaosDungeon === 'object'
+                            ? charState.chaosDungeon as DailyContentState
+                            : EMPTY_DAILY;
+                        const gameDayIdx = getCurrentGameDayIdx();
+                        const todayChecked = chaosState.checks[gameDayIdx];
+                        return (
+                          <div
+                            className={`${styles.raidCard} ${todayChecked ? styles.raidChecked : ''}`}
+                            onClick={() => toggleDailyCheck(char.name, 'chaosDungeon', gameDayIdx)}
+                          >
+                            <CardBgImage src={char.itemLevel >= 1730 ? '/zkejs.webp' : '/wjstjs.webp'} alt={char.itemLevel >= 1730 ? '균열' : '전선'} className={styles.raidImage} />
+                            <div className={styles.raidOverlay} />
+                            <div className={styles.raidInfo}>
+                              <span className={styles.raidName}>{getChaosDungeonLabel(char.itemLevel)}</span>
+                            </div>
+                            {todayChecked && <div className={styles.raidCheck}>✓</div>}
+                          </div>
+                        );
+                      })()}
+
                       {/* 가디언 토벌 (전 캐릭터) */}
                       {(() => {
                         const guardianState: DailyContentState =
@@ -1689,13 +1661,7 @@ export default function MyPage() {
                             onClick={() => toggleDailyCheck(char.name, 'guardianRaid', gameDayIdx)}
                           >
                             {guardian.image ? (
-                              <Image
-                                src={guardian.image}
-                                alt={guardian.name}
-                                fill
-                                className={styles.raidImage}
-                                unoptimized
-                              />
+                              <CardBgImage src={guardian.image} alt={guardian.name} className={styles.raidImage} />
                             ) : (
                               <div className={styles.guardianCardPlaceholder} />
                             )}
@@ -1715,12 +1681,7 @@ export default function MyPage() {
                           className={`${styles.raidCard} ${charState.sandOfTime ? styles.raidChecked : ''}`}
                           onClick={() => toggleExtra(char.name, 'sandOfTime')}
                         >
-                          <Image
-                            src="/gkf.webp"
-                            alt="할의 모래시계"
-                            fill
-                            className={styles.raidImage}
-                          />
+                          <CardBgImage src="/gkf.webp" alt="할의 모래시계" className={styles.raidImage} />
                           <div className={styles.raidOverlay} />
                           <div className={styles.raidInfo}>
                             <span className={styles.raidName}>모래시계</span>
@@ -1732,12 +1693,7 @@ export default function MyPage() {
                           className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`}
                           onClick={() => toggleExtra(char.name, 'paradise')}
                         >
-                          <Image
-                            src="/skrdnjs.webp"
-                            alt="낙원"
-                            fill
-                            className={styles.raidImage}
-                          />
+                          <CardBgImage src="/skrdnjs.webp" alt="낙원" className={styles.raidImage} />
                           <div className={styles.raidOverlay} />
                           <div className={styles.raidInfo}>
                             <span className={styles.raidName}>낙원</span>
@@ -1752,12 +1708,7 @@ export default function MyPage() {
                           className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`}
                           onClick={() => toggleExtra(char.name, 'paradise')}
                         >
-                          <Image
-                            src="/skrdnjs.webp"
-                            alt="낙원"
-                            fill
-                            className={styles.raidImage}
-                          />
+                          <CardBgImage src="/skrdnjs.webp" alt="낙원" className={styles.raidImage} />
                           <div className={styles.raidOverlay} />
                           <div className={styles.raidInfo}>
                             <span className={styles.raidName}>낙원</span>
@@ -1773,112 +1724,13 @@ export default function MyPage() {
                   </div>
                 </div>
 
-                {/* 일일 컨텐츠 (카던/가토) - 항상 표시 */}
-                {(() => {
-                  const renderDaily = (
-                    label: string,
-                    field: 'chaosDungeon' | 'guardianRaid',
-                  ) => {
-                    const state: DailyContentState =
-                      charState[field] && typeof charState[field] === 'object'
-                        ? charState[field] as DailyContentState
-                        : EMPTY_DAILY;
-                    const gameDayIdx = getCurrentGameDayIdx();
-                    const rest = computeCurrentRest(state, gameDayIdx);
-                    const fullBars = Math.floor(rest / 20);
-                    const hasHalf = (rest % 20) >= 10;
-
-                    const bonusFlags: boolean[] = [];
-                    let r = state.restGauge;
-                    for (let i = 0; i < 7; i++) {
-                      if (i <= gameDayIdx) {
-                        if (state.checks[i]) {
-                          if (r >= 20) {
-                            bonusFlags.push(true);
-                            r -= 20;
-                          } else {
-                            bonusFlags.push(false);
-                          }
-                        } else {
-                          bonusFlags.push(false);
-                          if (i < gameDayIdx) r = Math.min(100, r + 10);
-                        }
-                      } else {
-                        bonusFlags.push(false);
-                      }
-                    }
-
-                    const settingsKey = `${char.name}-${field}`;
-                    const isSettingsOpen = dailySettingsOpen === settingsKey;
-
-                    return (
-                      <div className={styles.dailyBlock}>
-                        <div className={styles.dailyHeader}>
-                          <span className={styles.dailyLabel}>{label}</span>
-                          <div className={styles.restGauge}>
-                            {[0, 1, 2, 3, 4].map(i => (
-                              <div
-                                key={i}
-                                className={`${styles.restBar} ${i < fullBars ? styles.restFull : ''} ${i === fullBars && hasHalf ? styles.restHalf : ''}`}
-                              />
-                            ))}
-                            <span className={styles.restText}>{rest / 20}</span>
-                          </div>
-                          <button
-                            className={styles.dailyGearBtn}
-                            onClick={() => setDailySettingsOpen(isSettingsOpen ? null : settingsKey)}
-                          >
-                            ⚙
-                          </button>
-                        </div>
-                        {isSettingsOpen && (
-                          <div className={styles.restSetter}>
-                            <span className={styles.restSetterLabel}>휴게 설정</span>
-                            <div className={styles.restSetterBars}>
-                              {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(v => (
-                                <button
-                                  key={v}
-                                  className={`${styles.restSetterBtn} ${state.restGauge === v ? styles.restSetterActive : ''}`}
-                                  onClick={() => {
-                                    setRestGauge(char.name, field, v);
-                                    setDailySettingsOpen(null);
-                                  }}
-                                >
-                                  {v / 20}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        <div className={styles.dailyChecks}>
-                          {WEEKLY_DAY_LABELS.map((day, idx) => {
-                            const checked = state.checks[idx];
-                            return (
-                              <button
-                                key={idx}
-                                className={`${styles.dailyDayBtn} ${checked ? (bonusFlags[idx] ? styles.dailyBonusChecked : styles.dailyChecked) : ''}`}
-                                onClick={() => toggleDailyCheck(char.name, field, idx)}
-                              >
-                                {checked
-                                  ? <span className={styles.dailyCheckMark}>✓</span>
-                                  : <span className={styles.dailyDayText}>{day}</span>
-                                }
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  };
-
-                  if (char.itemLevel < 1640) return null;
-                  return (
-                    <div className={styles.dailyRow}>
-                      {renderDaily(getChaosDungeonLabel(char.itemLevel), 'chaosDungeon')}
-                      {renderDaily(getGuardianRaidLabel(char.itemLevel), 'guardianRaid')}
-                    </div>
-                  );
-                })()}
+                {/* 일일 컨텐츠 (카던/가토) - 모바일만 표시 */}
+                {!isDesktop && char.itemLevel >= 1640 && (
+                  <div className={styles.dailyRow}>
+                    {renderDailySide(getChaosDungeonLabel(char.itemLevel), 'chaosDungeon', styles.dailyBlock)}
+                    {renderDailySide(getGuardianRaidLabel(char.itemLevel), 'guardianRaid', styles.dailyBlock)}
+                  </div>
+                )}
 
                 {/* 카드 푸터 */}
                 <div className={styles.cardFooter}>
@@ -1890,7 +1742,6 @@ export default function MyPage() {
                       더보기 비용 {moreGoldDropdownChar === char.name ? '−' : '+'}
                     </button>
 
-                    {/* 더보기 비용 드롭다운 */}
                     {moreGoldDropdownChar === char.name && (
                       <div className={styles.moreGoldDropdown}>
                         {checkedRaids.length === 0 ? (
@@ -1946,6 +1797,155 @@ export default function MyPage() {
                   </div>
                 </div>
               </div>
+
+              {/* 오른쪽 일일 컨텐츠 상자 (데스크톱) */}
+              {isDesktop && char.itemLevel >= 1640 && (
+                <div className={styles.dailySideBox}>
+                  <span className={styles.dailySideTitle}>일일 컨텐츠</span>
+                  {renderDailySide(getChaosDungeonLabel(char.itemLevel), 'chaosDungeon')}
+                  {renderDailySide(getGuardianRaidLabel(char.itemLevel), 'guardianRaid')}
+
+                  {/* 수급량 */}
+                  {(() => {
+                    // 카던/가토 수급량
+                    const hasDailyMats = hasChaos || hasGuardian;
+
+                    // 레이드별 재료 계산
+                    const raidMats: { raidName: string; groupName: string; materials: { itemId: number; name: string; image: string; amount: number }[] }[] = [];
+                    Object.entries(charState.raids).forEach(([raidName, gates]) => {
+                      if (!gates.some(v => v)) return;
+                      const amountMap: Record<number, number> = {};
+                      const buyMore = charState.raidMoreGoldExclude?.[raidName] === true;
+
+                      gates.forEach((checked, i) => {
+                        if (!checked) return;
+                        const gateNum = i + 1;
+                        const clearReward = raidClearRewards.find(r => r.raidName === raidName && r.gate === gateNum);
+                        if (clearReward) {
+                          for (const mat of clearReward.materials) {
+                            if (mat.itemId === 0 || mat.amount === 0) continue;
+                            amountMap[mat.itemId] = (amountMap[mat.itemId] || 0) + mat.amount;
+                          }
+                        }
+                        if (buyMore) {
+                          const moreReward = raidRewards.find(r => r.raidName === raidName && r.gate === gateNum);
+                          if (moreReward) {
+                            for (const mat of moreReward.materials) {
+                              if (mat.itemId === 0 || mat.amount === 0) continue;
+                              amountMap[mat.itemId] = (amountMap[mat.itemId] || 0) + mat.amount;
+                            }
+                          }
+                        }
+                      });
+
+                      const mats = Object.entries(amountMap)
+                        .filter(([, amt]) => amt > 0)
+                        .map(([id, amt]) => {
+                          const numId = Number(id);
+                          const info = itemIdInfoRef[numId];
+                          return {
+                            itemId: numId,
+                            name: info?.name || `재료#${id}`,
+                            image: info?.image || '/default-material.webp',
+                            amount: amt,
+                          };
+                        });
+
+                      if (mats.length > 0) {
+                        raidMats.push({
+                          raidName,
+                          groupName: getRaidGroupName(raidName),
+                          materials: mats,
+                        });
+                      }
+                    });
+
+                    const hasCommonChecked = charIdx === 0 && Object.values(commonContent.checks).some(v => v);
+                    const hasAny = hasDailyMats || raidMats.length > 0 || hasCommonChecked;
+                    if (!hasAny) return null;
+
+                    return (
+                      <div className={styles.sideMaterialSection}>
+                        <span className={styles.sideMaterialTitle}>주간 수급량</span>
+                        {hasChaos && (
+                          <div className={styles.sideMaterialRow}>
+                            <span className={styles.sideMaterialLabel}>카던</span>
+                            <div className={styles.sideMaterialItems}>
+                              {chaosReward.materials.map((mat, mi) => (
+                                <div key={mi} className={styles.sideMaterialItem}>
+                                  <StaticIcon src={mat.image} alt={mat.alt} width={20} height={20} className={styles.matIcon2} />
+                                  <span className={styles.sideMatOp}>×</span>
+                                  <span className={styles.sideMatAmount}>
+                                    {Math.round(mat.daily * chaosChecks).toLocaleString()}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {hasGuardian && (
+                          <div className={styles.sideMaterialRow}>
+                            <span className={styles.sideMaterialLabel}>가토</span>
+                            <div className={styles.sideMaterialItems}>
+                              {guardianReward.materials.map((mat, mi) => (
+                                <div key={mi} className={styles.sideMaterialItem}>
+                                  <StaticIcon src={mat.image} alt={mat.alt} width={20} height={20} className={styles.matIcon2} />
+                                  <span className={styles.sideMatOp}>×</span>
+                                  <span className={styles.sideMatAmount}>
+                                    {Math.round(mat.daily * guardianChecks).toLocaleString()}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {raidMats.map(({ raidName: rn, groupName: gn, materials: mats }) => (
+                          <div key={rn} className={styles.sideMaterialRow}>
+                            <span className={styles.sideMaterialLabel}>{gn}</span>
+                            <div className={styles.sideMaterialItems}>
+                              {mats.map((mat) => (
+                                <div key={mat.itemId} className={styles.sideMaterialItem}>
+                                  <StaticIcon src={mat.image} alt={mat.name} width={20} height={20} className={styles.matIcon2} />
+                                  <span className={styles.sideMatOp}>×</span>
+                                  <span className={styles.sideMatAmount}>{mat.amount.toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                        {/* 공통 컨텐츠 재화 (원정대 최고 캐릭터만) */}
+                        {charIdx === 0 && COMMON_CONTENTS.map(content => {
+                          const checkedCount = Object.entries(commonContent.checks)
+                            .filter(([k, v]) => k.endsWith(`-${content.name}`) && v === true).length;
+                          if (checkedCount === 0) return null;
+                          const rewards = COMMON_CONTENT_MATERIALS[content.name];
+                          if (!rewards || rewards.length === 0) return null;
+                          return (
+                            <div key={content.name} className={styles.sideMaterialRow}>
+                              <span className={styles.sideMaterialLabel}>{content.shortName}</span>
+                              <div className={styles.sideMaterialItems}>
+                                {rewards.map((r, ri) => (
+                                  <div key={ri} className={styles.sideMaterialItem}>
+                                    {r.image ? (
+                                      <StaticIcon src={r.image} alt={r.label} width={20} height={20} className={styles.matIcon2} />
+                                    ) : (
+                                      <span className={styles.sideMatTextIcon}>{r.label}</span>
+                                    )}
+                                    <span className={styles.sideMatOp}>×</span>
+                                    <span className={styles.sideMatAmount}>
+                                      {Math.round(r.amount * checkedCount).toLocaleString()}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
               </div>
             );
           })}
@@ -1964,67 +1964,6 @@ export default function MyPage() {
           </div>
         )}
 
-        {/* 주간 재화 합산 (레이드 + 카던 + 가토) */}
-        {weeklyMaterialData.hasAny && (
-          <div className={styles.dailyMaterialSection}>
-            <div className={styles.dailyMaterialTitle}>주간 재화 합산 <span className={styles.dailyMaterialSubtitle}>(카던, 가토, 레이드, 레이드 더보기)</span></div>
-            <Row className="align-items-stretch g-2">
-              {weeklyMaterialData.charDataList.map(charData => (
-                <Col lg={2} md={4} sm={6} key={charData.characterName}>
-                  <div className={styles.dailyMaterialCard}>
-                    <div className={styles.dailyCharHeader}>
-                      <span className={styles.dailyCharName}>{charData.characterName}</span>
-                      <span className={styles.dailyCharLevel}>Lv.{charData.itemLevel.toFixed(0)}</span>
-                      {charData.hasMore && <span className={styles.dailyMoreBadge}>더보기</span>}
-                    </div>
-
-                    {/* 레이드 + 카던 재료 (통합) */}
-                    <div className={styles.dailyMatList}>
-                      {charData.materials.map(mat => {
-                        const asTarget = charData.conversions.find(c => c.targetItemId === mat.itemId);
-                        const asSource = charData.conversions.find(c => c.sourceItemId === mat.itemId);
-                        const targetInfo = asSource ? itemIdInfoRef[asSource.targetItemId] : null;
-                        const hasTargetRow = asSource ? charData.materials.some(m => m.itemId === asSource.targetItemId) : false;
-                        return (
-                          <div key={mat.itemId}>
-                            <div className={styles.dailyMatRow}>
-                              <Image src={mat.image} alt={mat.itemName} width={26} height={26} className={styles.dailyMatIcon} />
-                              <span className={styles.dailyMatOp}>&times;</span>
-                              <span className={styles.dailyMatAmount}>{mat.amount.toLocaleString()}</span>
-                              {asTarget && asTarget.convertedAmount > 0 && (
-                                <span className={styles.conversionTarget}>
-                                  <span className={styles.conversionPlus}>+{asTarget.convertedAmount.toLocaleString()}</span>
-                                  <span className={styles.conversionEquals}>= {asTarget.totalCrystal.toLocaleString()}</span>
-                                </span>
-                              )}
-                              {asSource && asSource.convertedAmount > 0 && targetInfo && (
-                                <span className={styles.conversionInline}>
-                                  <span className={styles.conversionArrowRight}>&rarr;</span>
-                                  <Image src={targetInfo.image} alt={targetInfo.name} width={18} height={18} className={styles.conversionInlineIcon} />
-                                  <span className={styles.conversionInlineAmount}>&times;{asSource.convertedAmount.toLocaleString()}</span>
-                                  {hasTargetRow && <span className={styles.conversionArrowUp}>&#8593;</span>}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* 가토 보석 (별도) */}
-                      {charData.guardianMaterials.length > 0 && charData.guardianMaterials.map((mat, mi) => (
-                        <div key={`g-${mi}`} className={styles.dailyMatRow}>
-                          <Image src={mat.image} alt={mat.alt} width={26} height={26} className={styles.dailyMatIcon} />
-                          <span className={styles.dailyMatOp}>&times;</span>
-                          <span className={styles.dailyMatAmount}>{mat.amount.toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </Col>
-              ))}
-            </Row>
-          </div>
-        )}
 
         {/* 주간 골드 차트 (맨 아래) */}
         {characters.length > 0 && (
