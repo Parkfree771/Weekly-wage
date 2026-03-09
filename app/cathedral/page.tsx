@@ -317,8 +317,8 @@ export default function CathedralPage() {
   useEffect(() => {
     (async () => {
       try {
-        const mod = await import('@/lib/price-history-client');
-        const latest = await mod.fetchLatestPrices();
+        const { fetchLatestPrices } = await import('@/lib/price-history-client');
+        const latest = await fetchLatestPrices();
         setLatestPrices(latest);
       } catch (e) {
         console.error('Failed to fetch prices:', e);
