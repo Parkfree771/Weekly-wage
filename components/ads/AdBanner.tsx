@@ -8,6 +8,11 @@ declare global {
   }
 }
 
+// 애드센스 활성화 시 true로 변경
+const ADSENSE_ACTIVE = false;
+
+const FEEDBACK_URL = 'https://forms.gle/n9XKQJmheLhZcSf69';
+
 interface AdBannerProps {
   slot: string;
   className?: string;
@@ -19,7 +24,7 @@ export default function AdBanner({ slot, className }: AdBannerProps) {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    if (adRef.current) return;
+    if (!ADSENSE_ACTIVE || adRef.current) return;
     adRef.current = true;
 
     try {
@@ -28,7 +33,6 @@ export default function AdBanner({ slot, className }: AdBannerProps) {
       // AdSense not loaded yet
     }
 
-    // 3초 후 광고 로드 여부 확인
     const timer = setTimeout(() => {
       const ins = containerRef.current?.querySelector('ins.adsbygoogle');
       if (ins && (ins as HTMLElement).offsetHeight === 0) {
@@ -40,6 +44,23 @@ export default function AdBanner({ slot, className }: AdBannerProps) {
   }, []);
 
   const isDev = process.env.NODE_ENV === 'development';
+
+  // 애드센스 비활성 → 자체 홍보 배너
+  if (!ADSENSE_ACTIVE) {
+    return (
+      <a
+        href={FEEDBACK_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`promo-banner-horizontal ${className || ''}`}
+      >
+        <span className="promo-banner-text">
+          <strong>로아로골</strong>에 원하는 기능이 있나요?
+        </span>
+        <span className="promo-banner-cta">아이디어 보내기</span>
+      </a>
+    );
+  }
 
   if (!isDev && hidden) return null;
 

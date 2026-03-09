@@ -80,7 +80,7 @@ function getClientIp(req: NextRequest): string {
 // 미들웨어
 // ============================================================
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // API 라우트만 처리

@@ -8,6 +8,11 @@ declare global {
   }
 }
 
+// 애드센스 활성화 시 true로 변경
+const ADSENSE_ACTIVE = false;
+
+const FEEDBACK_URL = 'https://forms.gle/n9XKQJmheLhZcSf69';
+
 interface AdSidebarProps {
   position: 'left' | 'right';
   topOffset?: number;
@@ -19,7 +24,7 @@ export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) 
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    if (adRef.current) return;
+    if (!ADSENSE_ACTIVE || adRef.current) return;
     adRef.current = true;
 
     try {
@@ -28,7 +33,6 @@ export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) 
       // AdSense not loaded yet
     }
 
-    // 3초 후 광고 로드 여부 확인
     const timer = setTimeout(() => {
       const ins = containerRef.current?.querySelector('ins.adsbygoogle');
       if (ins && (ins as HTMLElement).offsetHeight === 0) {
@@ -40,6 +44,32 @@ export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) 
   }, []);
 
   const isDev = process.env.NODE_ENV === 'development';
+
+  // 애드센스 비활성 → 자체 홍보 배너
+  if (!ADSENSE_ACTIVE) {
+    return (
+      <aside
+        className={`ad-sidebar ad-sidebar-${position}`}
+        style={{ paddingTop: `${topOffset}px` }}
+      >
+        <div className="ad-sidebar-sticky">
+          <a
+            href={FEEDBACK_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="promo-banner-vertical"
+          >
+            <div className="promo-v-icon">💡</div>
+            <div className="promo-v-title">로아로골 건의함</div>
+            <div className="promo-v-desc">
+              이런 기능이 있으면<br />좋겠다! 하는 아이디어를<br />보내주세요
+            </div>
+            <div className="promo-v-cta">건의하기</div>
+          </a>
+        </div>
+      </aside>
+    );
+  }
 
   if (!isDev && hidden) return null;
 

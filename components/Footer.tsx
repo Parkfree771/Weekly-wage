@@ -27,6 +27,8 @@ export default function Footer() {
               <span className="footer-divider">|</span>
               <a href="/terms">이용약관</a>
               <span className="footer-divider">|</span>
+              <a href="https://forms.gle/n9XKQJmheLhZcSf69" target="_blank" rel="noopener noreferrer">건의하기</a>
+              <span className="footer-divider">|</span>
               <button
                 className="footer-toggle"
                 onClick={() => setIsOpen(!isOpen)}

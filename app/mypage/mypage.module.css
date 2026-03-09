@@ -70,6 +70,24 @@
 }
 
 /* 캐릭터 등록 버튼 */
+.feedbackBtn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.feedbackBtn:hover {
+  border-color: #a855f7;
+  color: #a855f7;
+}
+
 .registerBtn {
   padding: 8px 16px;
   font-size: 13px;
@@ -2095,11 +2113,28 @@
 
 /* 닉네임 섹션 */
 .nicknameSection {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   padding: 10px 14px;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 10px;
+}
+
+.feedbackLink {
+  margin-bottom: 16px;
+  text-align: right;
+}
+
+.feedbackLink a {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.feedbackLink a:hover {
+  color: #a855f7;
+  text-decoration: underline;
 }
 
 .nicknameDisplay {

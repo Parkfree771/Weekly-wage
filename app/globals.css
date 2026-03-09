@@ -1322,6 +1322,110 @@ body {
   top: 56px;
 }
 
+/* ---- 자체 홍보 배너 (애드센스 비활성 시) ---- */
+
+/* 수평 배너 (모바일/인컨텐츠) */
+.promo-banner-horizontal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(99, 102, 241, 0.12) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.promo-banner-horizontal:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.16) 100%);
+}
+
+.promo-banner-text {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.promo-banner-text strong {
+  color: #6366f1;
+}
+
+.promo-banner-cta {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  background: #6366f1;
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 수직 배너 (데스크톱 사이드바) */
+.promo-banner-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.5rem 0.75rem;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.04) 0%, rgba(99, 102, 241, 0.1) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.promo-banner-vertical:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.06) 0%, rgba(99, 102, 241, 0.14) 100%);
+}
+
+.promo-v-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.promo-v-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #6366f1;
+}
+
+.promo-v-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.promo-v-cta {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: #6366f1;
+  padding: 0.35rem 0.85rem;
+  border-radius: 6px;
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .promo-banner-horizontal {
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .promo-banner-text {
+    font-size: 0.75rem;
+  }
+
+  .promo-banner-cta {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+  }
+}
+
 /* UserPriceGrid 반응형 그리드 */
 .user-price-grid {
   display: grid;

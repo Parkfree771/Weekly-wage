@@ -1148,6 +1148,14 @@ export default function MyPage() {
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>마이페이지</h1>
           <div className={styles.headerRight}>
+            <a
+              href="https://forms.gle/n9XKQJmheLhZcSf69"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.feedbackBtn}
+            >
+              문의하기
+            </a>
             <button
               className={styles.registerBtn}
               onClick={() => setShowRegisterModal(true)}

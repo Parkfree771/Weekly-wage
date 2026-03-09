@@ -196,7 +196,10 @@ export default function HellSimDashboard() {
                           <div className={styles.histogramBarWrap}>
                             <div
                               className={`${styles.histogramBar} ${isNarak ? styles.histogramBarNarak : ''}`}
-                              style={{ height: `${(d.percentage / maxPercentage) * 100}%` }}
+                              style={{
+                                height: `${(d.percentage / maxPercentage) * 100}%`,
+                                opacity: d.percentage > 0 ? 0.45 + (d.percentage / maxPercentage) * 0.55 : 1,
+                              }}
                             />
                           </div>
                           <div className={styles.histogramLabel}>{d.label}</div>
@@ -217,19 +220,17 @@ export default function HellSimDashboard() {
                         const pct = hiddenTotal > 0 ? (count / hiddenTotal * 100) : 0;
                         return (
                           <div key={r.key} className={styles.hiddenItem}>
-                            <div className={styles.hiddenItemHeader}>
-                              <span className={styles.hiddenItemName}>{r.label}</span>
-                              <span className={`${styles.hiddenItemPct} ${styles[r.color]}`}>
-                                {pct.toFixed(1)}%
-                              </span>
-                            </div>
+                            <span className={styles.hiddenItemName}>{r.label}</span>
                             <div className={styles.hiddenBarTrack}>
                               <div
                                 className={`${styles.hiddenBarFill} ${styles[r.color + 'Bg']}`}
                                 style={{ width: `${Math.min(pct, 100)}%` }}
                               />
                             </div>
-                            <div className={styles.hiddenItemCount}>{count}회</div>
+                            <span className={`${styles.hiddenItemPct} ${styles[r.color]}`}>
+                              {pct.toFixed(1)}%
+                            </span>
+                            <span className={styles.hiddenItemCount}>{count}회</span>
                           </div>
                         );
                       })}

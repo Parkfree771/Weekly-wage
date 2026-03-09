@@ -123,6 +123,10 @@ export default function LoginButton() {
             <Dropdown.Divider />
           </>
         )}
+        <Dropdown.Item href="https://forms.gle/n9XKQJmheLhZcSf69" target="_blank" rel="noopener noreferrer">
+          문의하기
+        </Dropdown.Item>
+        <Dropdown.Divider />
         <Dropdown.Item onClick={() => setShowDeleteModal(true)} className={styles.deleteItem}>
           계정 탈퇴
         </Dropdown.Item>
