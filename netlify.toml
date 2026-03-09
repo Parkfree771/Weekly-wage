@@ -12,3 +12,7 @@
 
 [build.environment]
   NODE_VERSION = "20"
+
+# Durable Cache 비활성화 - 배포 시 이전 캐시가 남아 페이지 갱신 안 되는 문제 방지
+[context.production.environment]
+  NETLIFY_PURGE_DURABLE_CACHE = "true"
