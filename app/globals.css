@@ -1388,6 +1388,17 @@ body {
   line-height: 1;
 }
 
+.promo-v-icon-img {
+  width: 32px;
+  height: 32px;
+}
+
+.promo-banner-icon {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+}
+
 .promo-v-title {
   font-size: 0.85rem;
   font-weight: 700;
@@ -1410,6 +1421,62 @@ body {
   margin-top: 0.25rem;
 }
 
+/* 설문조사 배너 (사이드바 수직) */
+.promo-banner-survey {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.04) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border-color: rgba(16, 185, 129, 0.15);
+  margin-top: 0.75rem;
+}
+
+.promo-banner-survey:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, rgba(16, 185, 129, 0.14) 100%);
+}
+
+.promo-banner-survey .promo-v-title {
+  color: #10b981;
+}
+
+.promo-v-cta-survey {
+  background: #10b981 !important;
+}
+
+/* 모바일 배너 반반 레이아웃 */
+.promo-banner-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.promo-banner-row .promo-banner-horizontal {
+  flex: 1;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.6rem;
+  text-align: center;
+}
+
+.promo-banner-row .promo-banner-text {
+  font-size: 0.78rem;
+}
+
+.promo-banner-horizontal-survey {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(16, 185, 129, 0.12) 100%);
+  border-color: rgba(16, 185, 129, 0.15);
+}
+
+.promo-banner-horizontal-survey:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.16) 100%);
+}
+
+.promo-banner-horizontal-survey strong {
+  color: #10b981;
+}
+
+.promo-cta-survey {
+  background: #10b981 !important;
+}
+
 @media (max-width: 768px) {
   .promo-banner-horizontal {
     gap: 0.5rem;
@@ -1423,6 +1490,19 @@ body {
   .promo-banner-cta {
     font-size: 0.7rem;
     padding: 0.25rem 0.6rem;
+  }
+
+  .promo-banner-row {
+    gap: 0.4rem;
+  }
+
+  .promo-banner-row .promo-banner-text {
+    font-size: 0.68rem;
+  }
+
+  .promo-banner-row .promo-banner-cta {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
   }
 }
 

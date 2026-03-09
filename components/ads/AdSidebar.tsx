@@ -12,6 +12,7 @@ declare global {
 const ADSENSE_ACTIVE = false;
 
 const FEEDBACK_URL = 'https://forms.gle/n9XKQJmheLhZcSf69';
+const SURVEY_URL = 'https://forms.gle/4dBKrh3kSFtazmxH7';
 
 interface AdSidebarProps {
   position: 'left' | 'right';
@@ -45,8 +46,9 @@ export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) 
 
   const isDev = process.env.NODE_ENV === 'development';
 
-  // 애드센스 비활성 → 자체 홍보 배너
+  // 애드센스 비활성 → 자체 홍보 배너 (오른쪽만)
   if (!ADSENSE_ACTIVE) {
+    if (position === 'left') return null;
     return (
       <aside
         className={`ad-sidebar ad-sidebar-${position}`}
@@ -59,12 +61,25 @@ export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) 
             rel="noopener noreferrer"
             className="promo-banner-vertical"
           >
-            <div className="promo-v-icon">💡</div>
+            <img src="/icon-lightbulb.svg" alt="" className="promo-v-icon-img" />
             <div className="promo-v-title">로아로골 건의함</div>
             <div className="promo-v-desc">
               이런 기능이 있으면<br />좋겠다! 하는 아이디어를<br />보내주세요
             </div>
             <div className="promo-v-cta">건의하기</div>
+          </a>
+          <a
+            href={SURVEY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="promo-banner-vertical promo-banner-survey"
+          >
+            <img src="/icon-assignment.svg" alt="" className="promo-v-icon-img" />
+            <div className="promo-v-title">이용 설문조사</div>
+            <div className="promo-v-desc">
+              어떤 기능을 사용하고<br />계신가요? 의견을<br />들려주세요
+            </div>
+            <div className="promo-v-cta promo-v-cta-survey">참여하기</div>
           </a>
         </div>
       </aside>
