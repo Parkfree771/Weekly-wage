@@ -1293,16 +1293,33 @@ body {
    좌우 대칭 사이드바 광고 레이아웃
    ========================================================================== */
 
-/* 사이드바: 콘텐츠 오른쪽 바로 옆, fixed로 스크롤 따라감 */
-.ad-sidebar-float {
-  position: fixed;
+.ad-layout {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.ad-layout-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ad-sidebar {
   width: 160px;
-  z-index: 10;
+  flex-shrink: 0;
+}
+
+.ad-sidebar-left {
+  margin-right: 8px;
+}
+
+.ad-sidebar-right {
+  margin-left: 8px;
 }
 
 .ad-sidebar-sticky {
-  display: flex;
-  flex-direction: column;
+  position: sticky;
+  top: 56px;
 }
 
 /* ---- 자체 홍보 배너 (애드센스 비활성 시) ---- */
@@ -1354,16 +1371,17 @@ body {
   gap: 0.6rem;
   padding: 1.5rem 0.75rem;
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.04) 0%, rgba(99, 102, 241, 0.1) 100%);
-  border: 1px solid rgba(99, 102, 241, 0.15);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.18) 100%);
+  border: 1.5px solid rgba(99, 102, 241, 0.3);
   text-decoration: none;
   text-align: center;
   transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
 }
 
 .promo-banner-vertical:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.06) 0%, rgba(99, 102, 241, 0.14) 100%);
+  border-color: rgba(99, 102, 241, 0.5);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0.24) 100%);
 }
 
 .promo-v-icon {
@@ -1406,14 +1424,14 @@ body {
 
 /* 설문조사 배너 (사이드바 수직) */
 .promo-banner-survey {
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.04) 0%, rgba(16, 185, 129, 0.1) 100%);
-  border-color: rgba(16, 185, 129, 0.15);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.18) 100%);
+  border-color: rgba(16, 185, 129, 0.3);
   margin-top: 0.75rem;
 }
 
 .promo-banner-survey:hover {
-  border-color: rgba(16, 185, 129, 0.3);
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, rgba(16, 185, 129, 0.14) 100%);
+  border-color: rgba(16, 185, 129, 0.5);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.24) 100%);
 }
 
 .promo-banner-survey .promo-v-title {
@@ -1443,13 +1461,13 @@ body {
 }
 
 .promo-banner-horizontal-survey {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(16, 185, 129, 0.12) 100%);
-  border-color: rgba(16, 185, 129, 0.15);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.18) 100%);
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .promo-banner-horizontal-survey:hover {
-  border-color: rgba(16, 185, 129, 0.3);
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.16) 100%);
+  border-color: rgba(16, 185, 129, 0.5);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.24) 100%);
 }
 
 .promo-banner-horizontal-survey strong {

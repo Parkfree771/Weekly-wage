@@ -1,47 +1,56 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import AdSidebar from './AdSidebar';
 
-// 모든 페이지에서 메인 페이지 기준(1400px) 통일
-const CONTENT_WIDTH = 1400;
-const SIDEBAR_WIDTH = 160;
-const SIDEBAR_GAP = 16;
+interface PageConfig {
+  contentWidth: number;
+  adTop: number;
+}
+
+function getPageConfig(pathname: string): PageConfig {
+  if (pathname === '/refining') return { contentWidth: 1400, adTop: 110 };
+  if (pathname === '/weekly-gold') return { contentWidth: 1800, adTop: 110 };
+  if (pathname === '/hell-sim') return { contentWidth: 1200, adTop: 110 };
+  if (pathname === '/life-master') return { contentWidth: 1200, adTop: 110 };
+  if (pathname === '/mypage') return { contentWidth: 1600, adTop: 130 };
+  if (pathname.startsWith('/package/')) return { contentWidth: 1100, adTop: 80 };
+  if (pathname === '/package') return { contentWidth: 1400, adTop: 80 };
+  return { contentWidth: 1400, adTop: 60 };
+}
+
+// 양쪽 사이드바: 160px * 2 + 갭 8px * 2 = 336px
+const AD_EXTRA = 336;
 
 export default function AdLayout({ children }: { children: React.ReactNode }) {
-  const [sidebarLeft, setSidebarLeft] = useState<number | null>(null);
+  const pathname = usePathname();
+  const { contentWidth, adTop } = getPageConfig(pathname);
+  const [showSideAds, setShowSideAds] = useState(false);
 
   useEffect(() => {
-    const check = () => {
-      const viewportW = window.innerWidth;
-      const contentEnd = (viewportW + CONTENT_WIDTH) / 2;
-      const spaceRight = viewportW - contentEnd;
+    const minViewport = contentWidth + AD_EXTRA;
 
-      if (spaceRight >= SIDEBAR_WIDTH + SIDEBAR_GAP) {
-        setSidebarLeft(contentEnd + SIDEBAR_GAP);
-      } else {
-        setSidebarLeft(null);
-      }
+    const check = () => {
+      setShowSideAds(window.innerWidth >= minViewport);
     };
 
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
-  }, []);
+  }, [contentWidth]);
+
+  const layoutStyle: React.CSSProperties = showSideAds
+    ? { maxWidth: `${contentWidth + AD_EXTRA}px` }
+    : {};
 
   return (
-    <>
-      <main style={{ minHeight: 'calc(100vh - 200px)' }}>
+    <div className="ad-layout" style={layoutStyle}>
+      {showSideAds && <AdSidebar position="left" topOffset={adTop} />}
+      <main className="ad-layout-main" style={{ minHeight: 'calc(100vh - 200px)' }}>
         {children}
       </main>
-      {sidebarLeft !== null && (
-        <div
-          className="ad-sidebar-float"
-          style={{ left: `${sidebarLeft}px` }}
-        >
-          <AdSidebar position="right" topOffset={80} />
-        </div>
-      )}
-    </>
+      {showSideAds && <AdSidebar position="right" topOffset={adTop} />}
+    </div>
   );
 }

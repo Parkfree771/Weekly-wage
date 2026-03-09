@@ -9,12 +9,10 @@ interface AdSidebarProps {
 }
 
 export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) {
-  if (position === 'left') return null;
-
   return (
     <aside
-      className="ad-sidebar-float"
-      style={{ top: `${topOffset}px` }}
+      className={`ad-sidebar ad-sidebar-${position}`}
+      style={{ paddingTop: `${topOffset}px` }}
     >
       <div className="ad-sidebar-sticky">
         <a
