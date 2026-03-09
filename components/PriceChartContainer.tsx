@@ -387,15 +387,28 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   }, [isGridView]);
 
   const handleSelectItem = useCallback((item: TrackedItem) => {
-    // 4분할 모드일 때 아이템 클릭하면 단일 모드로 전환하고 해당 아이템 선택
     if (isGridView) {
-      setIsGridView(false);
-      setSelectedItem(item);
-      setSelectedSlot(null);
+      if (selectedSlot !== null) {
+        // 슬롯이 선택되어 있으면 해당 슬롯의 아이템 교체
+        setGridItems(prev => {
+          const next = [...prev];
+          next[selectedSlot] = item;
+          return next;
+        });
+      } else {
+        // 슬롯 미선택 시 첫 번째 빈 슬롯에 넣거나, 없으면 0번 슬롯 교체
+        setGridItems(prev => {
+          const next = [...prev];
+          const emptyIdx = next.findIndex(g => g === null);
+          const targetIdx = emptyIdx >= 0 ? emptyIdx : 0;
+          next[targetIdx] = item;
+          return next;
+        });
+      }
     } else {
       setSelectedItem(item);
     }
-  }, [isGridView]);
+  }, [isGridView, selectedSlot]);
 
   const handleSlotClick = useCallback((slotIndex: number) => {
     setSelectedSlot(prev => prev === slotIndex ? null : slotIndex);
