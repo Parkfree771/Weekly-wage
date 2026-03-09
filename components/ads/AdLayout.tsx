@@ -1,64 +1,47 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
 import AdSidebar from './AdSidebar';
 
-interface PageConfig {
-  contentWidth: number;
-  adTop: number; // 광고 시작 위치 (px) - 페이지 제목 아래 컨텐츠와 어깨 맞춤
-}
-
-function getPageConfig(pathname: string): PageConfig {
-  // 재련 계산 - 실제 컨텐츠(계산기/시뮬레이터) max-width:1400
-  if (pathname === '/refining') return { contentWidth: 1400, adTop: 110 };
-  // 주간 계산 - Container maxWidth:1800
-  if (pathname === '/weekly-gold') return { contentWidth: 1800, adTop: 110 };
-  // 지옥 시뮬 - 실제 게임 영역(.gameLayout) max-width:1200
-  if (pathname === '/hell-sim') return { contentWidth: 1200, adTop: 110 };
-  // 생활 계산 - Container maxWidth:1200
-  if (pathname === '/life-master') return { contentWidth: 1200, adTop: 110 };
-  // 마이페이지 - CSS max-width:1400 + 재화 사이드바(~100px×2) 여유
-  if (pathname === '/mypage') return { contentWidth: 1600, adTop: 130 };
-  // 패키지 상세/등록/수정
-  if (pathname.startsWith('/package/')) return { contentWidth: 1100, adTop: 80 };
-  // 패키지 목록
-  if (pathname === '/package') return { contentWidth: 1400, adTop: 80 };
-  // 홈 - Container maxWidth:1400
-  return { contentWidth: 1400, adTop: 60 };
-}
-
-// 광고 1개: 160px, 갭: 8px, 좌우 합계: 160*2 + 8*2 = 336px
-const AD_EXTRA = 336;
+// 모든 페이지에서 메인 페이지 기준(1400px) 통일
+const CONTENT_WIDTH = 1400;
+const SIDEBAR_WIDTH = 160;
+const SIDEBAR_GAP = 16;
 
 export default function AdLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const { contentWidth, adTop } = getPageConfig(pathname);
-  const [showSideAds, setShowSideAds] = useState(false);
+  const [sidebarLeft, setSidebarLeft] = useState<number | null>(null);
 
   useEffect(() => {
-    const minViewport = contentWidth + AD_EXTRA;
-
     const check = () => {
-      setShowSideAds(window.innerWidth >= minViewport);
+      const viewportW = window.innerWidth;
+      const contentEnd = (viewportW + CONTENT_WIDTH) / 2;
+      const spaceRight = viewportW - contentEnd;
+
+      if (spaceRight >= SIDEBAR_WIDTH + SIDEBAR_GAP) {
+        setSidebarLeft(contentEnd + SIDEBAR_GAP);
+      } else {
+        setSidebarLeft(null);
+      }
     };
 
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
-  }, [contentWidth]);
-
-  const layoutStyle: React.CSSProperties = showSideAds
-    ? { maxWidth: `${contentWidth + AD_EXTRA}px` }
-    : {};
+  }, []);
 
   return (
-    <div className="ad-layout" style={layoutStyle}>
-      {showSideAds && <AdSidebar position="left" topOffset={adTop} />}
-      <main className="ad-layout-main" style={{ minHeight: 'calc(100vh - 200px)' }}>
+    <>
+      <main style={{ minHeight: 'calc(100vh - 200px)' }}>
         {children}
       </main>
-      {showSideAds && <AdSidebar position="right" topOffset={adTop} />}
-    </div>
+      {sidebarLeft !== null && (
+        <div
+          className="ad-sidebar-float"
+          style={{ left: `${sidebarLeft}px` }}
+        >
+          <AdSidebar position="right" topOffset={80} />
+        </div>
+      )}
+    </>
   );
 }

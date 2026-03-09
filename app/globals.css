@@ -1293,33 +1293,16 @@ body {
    좌우 대칭 사이드바 광고 레이아웃
    ========================================================================== */
 
-.ad-layout {
-  display: flex;
-  justify-content: center;
-  margin: 0 auto;
-}
-
-.ad-layout-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.ad-sidebar {
+/* 사이드바: 콘텐츠 오른쪽 바로 옆, fixed로 스크롤 따라감 */
+.ad-sidebar-float {
+  position: fixed;
   width: 160px;
-  flex-shrink: 0;
-}
-
-.ad-sidebar-left {
-  margin-right: 8px;
-}
-
-.ad-sidebar-right {
-  margin-left: 8px;
+  z-index: 10;
 }
 
 .ad-sidebar-sticky {
-  position: sticky;
-  top: 56px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ---- 자체 홍보 배너 (애드센스 비활성 시) ---- */
