@@ -940,6 +940,22 @@ body {
   box-shadow: 0 3px 10px rgba(249, 115, 22, 0.4);
 }
 
+/* Nav Beta Badge */
+.nav-badge-beta {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}
+
 /* Nav Dropdown */
 .nav-dropdown-wrapper {
   position: relative;

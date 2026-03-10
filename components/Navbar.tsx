@@ -11,6 +11,7 @@ import LoginButton from './auth/LoginButton';
 type NavItem = {
   href: string;
   label: string;
+  badge?: string;
 };
 
 type NavGroup = {
@@ -43,7 +44,7 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 
 const NAV_STANDALONE: NavItem[] = [
-  { href: '/cathedral', label: '지평의 성당' },
+  { href: '/cathedral', label: '지평의 성당', badge: 'beta' },
   { href: '/mypage', label: '마이페이지' },
 ];
 
@@ -57,7 +58,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/refining', label: '재련 시뮬' },
   { href: '/hell-sim', label: '지옥 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
-  { href: '/cathedral', label: '지평의 성당' },
+  { href: '/cathedral', label: '지평의 성당', badge: 'beta' },
   { href: '/mypage', label: '마이페이지' },
 ];
 
@@ -185,6 +186,7 @@ export default function Navbar() {
                 className={`navbar-nav-link ${getNavClass(item.href)}`}
               >
                 {item.label}
+                {item.badge && <span className="nav-badge-beta">{item.badge}</span>}
               </Link>
             ))}
           </Nav>
@@ -318,6 +320,7 @@ export default function Navbar() {
                   onClick={handleClose}
                 >
                   {item.label}
+                  {item.badge && <span className="nav-badge-beta">{item.badge}</span>}
                 </Link>
               ))}
             </Nav>
