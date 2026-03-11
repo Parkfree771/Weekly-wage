@@ -13,27 +13,6 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# 배포 시 Durable Cache 자동 퍼지
+# Durable Cache 비활성화 - 배포 시 이전 캐시가 남아 페이지 갱신 안 되는 문제 방지
 [context.production.environment]
   NETLIFY_PURGE_DURABLE_CACHE = "true"
-
-# HTML 페이지 - 항상 서버에서 최신 확인 (배포 후 즉시 반영)
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
-    Netlify-CDN-Cache-Control = "public, max-age=0, must-revalidate"
-
-# _next/static 빌드 자산 - 해시 포함이라 장기 캐싱 안전
-[[headers]]
-  for = "/_next/static/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Netlify-CDN-Cache-Control = "public, max-age=31536000, immutable"
-
-# _next/data (페이지 데이터 JSON) - 배포마다 갱신
-[[headers]]
-  for = "/_next/data/*"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
-    Netlify-CDN-Cache-Control = "public, max-age=0, must-revalidate"
