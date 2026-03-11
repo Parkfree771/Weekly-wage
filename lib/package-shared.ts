@@ -105,6 +105,21 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
       { itemId: '66111132', name: '빙하의 숨결', icon: '/breath-glacier5.webp' },
     ],
   },
+  // ── 파괴석 / 수호석 ──
+  {
+    id: 'destruction-stone',
+    icon: '/destiny-destruction-stone5.webp',
+    name: '운명의 파괴석',
+    type: 'simple',
+    itemId: '66102006',
+  },
+  {
+    id: 'guardian-stone',
+    icon: '/destiny-guardian-stone5.webp',
+    name: '운명의 수호석',
+    type: 'simple',
+    itemId: '66102106',
+  },
   // ── 아비도스 ──
   {
     id: 'superior-abidos',
@@ -118,7 +133,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     icon: '/abidos-fusion5.webp?v=3',
     name: '아비도스 융화 재료',
     type: 'simple',
-    itemId: '6861011',
+    itemId: '6861012',
   },
   // ── 장인의 야금술/재봉술 ──
   {
@@ -438,6 +453,7 @@ export const ICON_SIZE_CATALOG: Record<string, number> = {
   'relic-core': 65,
   'cardpack-legendary': 65, 'cardpack-rare': 65, 'cardpack-all': 65,
   'ninav-blessing': 65, 'engraving-choice': 65,
+  'destruction-stone': 65, 'guardian-stone': 65,
   'destruction-crystal': 65, 'guardian-crystal': 65, 'crystal-choice': 65,
   'great-breakthrough': 65, 'breakthrough-stone': 65,
   'lava-breath': 65, 'glacier-breath': 65, 'breath-choice': 65,
@@ -455,6 +471,8 @@ export const ICON_SCALE: Record<string, string> = {
 
 // 묶음 단위 (API 가격이 이 수량 기준)
 export const PRICE_BUNDLE_SIZE: Record<string, number> = {
+  '66102006': 100,   // 운명의 파괴석 (100개 단위)
+  '66102106': 100,   // 운명의 수호석 (100개 단위)
   '66102007': 100,   // 운명의 파괴석 결정 (100개 단위)
   '66102107': 100,   // 운명의 수호석 결정 (100개 단위)
   '66130143': 3000,  // 운명의 파편 (3000개 단위)

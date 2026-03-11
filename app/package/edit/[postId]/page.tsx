@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Container, Spinner } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
 import { getPackagePost, updatePackagePost } from '@/lib/package-service';
-import type { PackageItem, PackageType } from '@/types/package';
+import type { PackageItem, PackageType, PriceCurrency } from '@/types/package';
 import {
   type AddedItem,
   TEMPLATE_ITEMS,
@@ -119,7 +119,9 @@ export default function PackageEditPage() {
 
   const [title, setTitle] = useState('');
   const [packageType, setPackageType] = useState<PackageType>('일반');
+  const [priceCurrency, setPriceCurrency] = useState<PriceCurrency>('cash');
   const [royalCrystalPrice, setRoyalCrystalPrice] = useState<number>(0);
+  const [blueCrystalPrice, setBlueCrystalPrice] = useState<number>(0);
   const [tradeMode, setTradeMode] = useState<'unofficial' | 'official'>('official');
   const [unofficialRate, setUnofficialRate] = useState<number>(0);
   const [officialGold, setOfficialGold] = useState<number>(0);
@@ -153,7 +155,14 @@ export default function PackageEditPage() {
         }
         setTitle(post.title);
         setPackageType(post.packageType);
-        setRoyalCrystalPrice(post.royalCrystalPrice);
+        if (post.priceCurrency) {
+          setPriceCurrency(post.priceCurrency);
+        }
+        if (post.priceCurrency === 'blueCrystal' && post.blueCrystalPrice) {
+          setBlueCrystalPrice(post.blueCrystalPrice);
+        } else {
+          setRoyalCrystalPrice(post.royalCrystalPrice);
+        }
         if (post.selectableCount && post.selectableCount > 0) {
           setSelectableCount(post.selectableCount);
         }
@@ -278,14 +287,28 @@ export default function PackageEditPage() {
     );
   };
 
+  const handleBonusToggle = (itemId: string) => {
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId ? { ...a, isBonus: !a.isBonus } : a,
+      ),
+    );
+  };
+
   // 골드:현금 비율 계산 (1 RC = 1원, 100 BC = 2750 RC 고정)
   const goldPerWon = tradeMode === 'unofficial'
     ? (unofficialRate > 0 ? 100 / unofficialRate : 0)
     : (officialGold > 0 ? officialGold / 2750 : 0);
 
+  // 블크 → 원 환산 가격 (100 BC = 2750원)
+  const effectiveCashPrice = priceCurrency === 'cash'
+    ? royalCrystalPrice
+    : blueCrystalPrice * 27.5;
+
   // 아이템별 소계 계산
   const itemSubtotals = useMemo(() => {
     return addedItems.map((added) => {
+      if (added.isBonus) return 0;
       if (added.isCustom) {
         return (added.customGoldPerUnit || 0) * added.quantity;
       }
@@ -323,15 +346,15 @@ export default function PackageEditPage() {
 
   const multiplier = packageType === '3+1' ? 4 / 3 : packageType === '2+1' ? 3 / 2 : 1;
   const adjustedValue = totalGoldValue * multiplier;
-  const efficiency = royalCrystalPrice > 0 ? adjustedValue / royalCrystalPrice : 0;
+  const efficiency = effectiveCashPrice > 0 ? adjustedValue / effectiveCashPrice : 0;
   const ratePer100 = goldPerWon > 0 ? Math.round(100 / goldPerWon) : 0;
-  const singleCashGold = royalCrystalPrice * goldPerWon;
+  const singleCashGold = effectiveCashPrice * goldPerWon;
   const singleBenefit = singleCashGold > 0
     ? ((totalGoldValue - singleCashGold) / singleCashGold) * 100
     : 0;
   const buyCount = packageType === '3+1' ? 3 : packageType === '2+1' ? 2 : 1;
   const getCount = packageType === '3+1' ? 4 : packageType === '2+1' ? 3 : 1;
-  const fullCashGold = royalCrystalPrice * buyCount * goldPerWon;
+  const fullCashGold = effectiveCashPrice * buyCount * goldPerWon;
   const fullPackageGold = totalGoldValue * getCount;
   const fullBenefit = fullCashGold > 0
     ? ((fullPackageGold - fullCashGold) / fullCashGold) * 100
@@ -345,7 +368,8 @@ export default function PackageEditPage() {
     const errors: Record<string, string> = {};
     if (!title.trim()) errors.title = '제목을 입력해주세요.';
     if (addedItems.length === 0) errors.items = '아이템을 1개 이상 추가해주세요.';
-    if (royalCrystalPrice <= 0) errors.price = '현금 가격을 입력해주세요.';
+    if (priceCurrency === 'cash' && royalCrystalPrice <= 0) errors.price = '현금 가격을 입력해주세요.';
+    if (priceCurrency === 'blueCrystal' && blueCrystalPrice <= 0) errors.price = '블루크리스탈 가격을 입력해주세요.';
     if (goldPerWon <= 0) errors.rate = '환율을 입력해주세요.';
     if (packageType === '가챠') {
       const probSum = addedItems.reduce((s, a) => s + (gachaProbabilities[a.id] || 0), 0);
@@ -463,7 +487,9 @@ export default function PackageEditPage() {
       await updatePackagePost(postId, {
         title: title.trim(),
         packageType,
-        royalCrystalPrice,
+        royalCrystalPrice: effectiveCashPrice,
+        priceCurrency,
+        ...(priceCurrency === 'blueCrystal' ? { blueCrystalPrice } : {}),
         items,
         ...(goldPerWon > 0 ? { goldPerWon } : { goldPerWon: 0 }),
         selectableCount: selectableCount > 0 ? selectableCount : 0,
@@ -539,10 +565,10 @@ export default function PackageEditPage() {
                   <div className={styles.packageBoxList}>
                     {addedItems.map((added) => {
                       if (added.isCustom) {
-                        const cSubtotal = (added.customGoldPerUnit || 0) * added.quantity;
+                        const cSubtotal = added.isBonus ? 0 : (added.customGoldPerUnit || 0) * added.quantity;
                         const isChecked = checkedItemIds.has(added.id);
                         return (
-                          <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
+                          <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''} ${added.isBonus ? styles.packageBoxItemBonus : ''}`}>
                             <div className={styles.customItemRow}>
                               <input type="text" className={styles.customNameInput}
                                 value={added.customName || ''}
@@ -557,7 +583,9 @@ export default function PackageEditPage() {
                                 value={added.quantity || ''}
                                 onChange={(e) => handleQuantityChange(added.id, parseInt(e.target.value) || 0)}
                                 min={0} />
-                              <span className={styles.packageBoxItemSubtotal}>{formatNumber(cSubtotal)}G</span>
+                              <span className={styles.packageBoxItemSubtotal}>{added.isBonus ? '보너스' : `${formatNumber(cSubtotal)}G`}</span>
+                              <button type="button" className={`${styles.bonusToggleBtn} ${added.isBonus ? styles.bonusToggleBtnActive : ''}`}
+                                onClick={() => handleBonusToggle(added.id)} title="보너스 아이템 (0골드)">B</button>
                               {packageType === '가챠' && (
                                 <>
                                   <input type="number" className={styles.gachaProbInput}
@@ -578,10 +606,10 @@ export default function PackageEditPage() {
                       const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0);
                       const qty = template.type === 'gold' ? 1 : added.quantity;
                       const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
-                      const subtotal = unitPrice * qty * inner;
+                      const subtotal = added.isBonus ? 0 : unitPrice * qty * inner;
                       const isChecked = checkedItemIds.has(added.id);
                       return (
-                        <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
+                        <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''} ${added.isBonus ? styles.packageBoxItemBonus : ''}`}>
                           <div className={styles.packageBoxItemMain}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={template.icon} alt={template.name}
@@ -606,7 +634,9 @@ export default function PackageEditPage() {
                                   min={0} />
                               </>
                             )}
-                            <span className={styles.packageBoxItemSubtotal}>{formatNumber(subtotal)}G</span>
+                            <span className={styles.packageBoxItemSubtotal}>{added.isBonus ? '보너스' : `${formatNumber(subtotal)}G`}</span>
+                            <button type="button" className={`${styles.bonusToggleBtn} ${added.isBonus ? styles.bonusToggleBtnActive : ''}`}
+                              onClick={() => handleBonusToggle(added.id)} title="보너스 아이템 (0골드)">B</button>
                             {packageType === '가챠' && (
                               <>
                                 <input type="number" className={styles.gachaProbInput}
@@ -729,11 +759,35 @@ export default function PackageEditPage() {
                 </div>
                 )}
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="pkg-rc">패키지 현금 가격 (원) *</label>
-                  <input id="pkg-rc" type="number" className={`${styles.formInput} ${fieldErrors.price ? styles.formInputError : ''}`}
-                    value={royalCrystalPrice || ''}
-                    onChange={(e) => { setRoyalCrystalPrice(parseInt(e.target.value) || 0); if (fieldErrors.price) setFieldErrors((p) => { const n = { ...p }; delete n.price; return n; }); }}
-                    placeholder="예: 33000" min={0} />
+                  <label className={styles.formLabel}>패키지 가격 *</label>
+                  <div className={styles.priceCurrencyToggle}>
+                    <button type="button"
+                      className={`${styles.priceCurrencyBtn} ${priceCurrency === 'cash' ? styles.priceCurrencyBtnActive : ''}`}
+                      onClick={() => setPriceCurrency('cash')}>현금 (원)</button>
+                    <button type="button"
+                      className={`${styles.priceCurrencyBtn} ${priceCurrency === 'blueCrystal' ? styles.priceCurrencyBtnActive : ''}`}
+                      onClick={() => setPriceCurrency('blueCrystal')}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/blue.webp" alt="" style={{ width: 16, height: 16, verticalAlign: 'middle', marginRight: 4 }} />
+                      블루크리스탈
+                    </button>
+                  </div>
+                  {priceCurrency === 'cash' ? (
+                    <input id="pkg-rc" type="number" className={`${styles.formInput} ${fieldErrors.price ? styles.formInputError : ''}`}
+                      value={royalCrystalPrice || ''}
+                      onChange={(e) => { setRoyalCrystalPrice(parseInt(e.target.value) || 0); if (fieldErrors.price) setFieldErrors((p) => { const n = { ...p }; delete n.price; return n; }); }}
+                      placeholder="예: 33000" min={0} />
+                  ) : (
+                    <div className={styles.bcPriceRow}>
+                      <input id="pkg-bc" type="number" className={`${styles.formInput} ${fieldErrors.price ? styles.formInputError : ''}`}
+                        value={blueCrystalPrice || ''}
+                        onChange={(e) => { setBlueCrystalPrice(parseInt(e.target.value) || 0); if (fieldErrors.price) setFieldErrors((p) => { const n = { ...p }; delete n.price; return n; }); }}
+                        placeholder="예: 500" min={0} />
+                      {effectiveCashPrice > 0 && (
+                        <span className={styles.bcPriceHint}>= {formatNumber(effectiveCashPrice)}원</span>
+                      )}
+                    </div>
+                  )}
                   {fieldErrors.price && <p className={styles.fieldErrorMsg}>{fieldErrors.price}</p>}
                 </div>
               </div>
@@ -832,7 +886,7 @@ export default function PackageEditPage() {
           {/* 계산 결과 사이드바 */}
           <div className={styles.calcSidebar}>
             <h3 className={styles.calcSidebarTitle}>계산 결과</h3>
-            {packageType === '가챠' && addedItems.length > 0 && royalCrystalPrice > 0 ? (() => {
+            {packageType === '가챠' && addedItems.length > 0 && effectiveCashPrice > 0 ? (() => {
               const gachaItems: import('@/types/package').PackageItem[] = addedItems.map((added) => {
                 if (added.isCustom) {
                   return { itemId: `custom_${added.templateId}`, name: added.customName || '기타', quantity: added.quantity, goldOverride: added.customGoldPerUnit || 0, probability: gachaProbabilities[added.id] || 0 };
@@ -845,7 +899,7 @@ export default function PackageEditPage() {
                 return { itemId: template.itemId || `fixed_${template.id}`, name: template.name, quantity: qty * inner, goldOverride: unitPrice, probability: gachaProbabilities[added.id] || 0 };
               });
               const expectedGold = gachaItems.reduce((s, it) => s + (it.goldOverride || 0) * it.quantity * ((it.probability || 0) / 100), 0);
-              const gachaEfficiency = royalCrystalPrice > 0 ? expectedGold / royalCrystalPrice : 0;
+              const gachaEfficiency = effectiveCashPrice > 0 ? expectedGold / effectiveCashPrice : 0;
               return (
                 <>
                   <div className={styles.calcRow}>
@@ -854,7 +908,11 @@ export default function PackageEditPage() {
                   </div>
                   <div className={styles.calcRow}>
                     <span className={styles.calcLabel}>가챠 가격</span>
-                    <span className={styles.calcValue}>{formatNumber(royalCrystalPrice)}원</span>
+                    <span className={styles.calcValue}>
+                      {priceCurrency === 'blueCrystal'
+                        ? `${formatNumber(blueCrystalPrice)} 블크 (${formatNumber(effectiveCashPrice)}원)`
+                        : `${formatNumber(effectiveCashPrice)}원`}
+                    </span>
                   </div>
                   <div className={styles.calcRow}>
                     <span className={styles.calcLabel}>기대 효율</span>
@@ -862,7 +920,7 @@ export default function PackageEditPage() {
                   </div>
                 </>
               );
-            })() : addedItems.length > 0 && royalCrystalPrice > 0 && (
+            })() : addedItems.length > 0 && effectiveCashPrice > 0 && (
               <>
                 <div className={styles.calcRow}>
                   <span className={styles.calcLabel}>1개 골드 가치</span>
@@ -870,7 +928,11 @@ export default function PackageEditPage() {
                 </div>
                 <div className={styles.calcRow}>
                   <span className={styles.calcLabel}>패키지 가격</span>
-                  <span className={styles.calcValue}>{formatNumber(royalCrystalPrice)}원</span>
+                  <span className={styles.calcValue}>
+                    {priceCurrency === 'blueCrystal'
+                      ? `${formatNumber(blueCrystalPrice)} 블크 (${formatNumber(effectiveCashPrice)}원)`
+                      : `${formatNumber(effectiveCashPrice)}원`}
+                  </span>
                 </div>
                 <div className={styles.calcRow}>
                   <span className={styles.calcLabel}>효율</span>
@@ -895,7 +957,7 @@ export default function PackageEditPage() {
                         <div className={styles.calcRow}>
                           <span className={styles.calcLabel}>{packageType} 지출</span>
                           <span className={styles.calcValue}>
-                            {formatNumber(royalCrystalPrice * buyCount)}원
+                            {formatNumber(effectiveCashPrice * buyCount)}원
                           </span>
                         </div>
                         <div className={styles.calcRow}>
