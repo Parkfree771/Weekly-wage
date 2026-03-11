@@ -983,6 +983,26 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
             </div>
           )}
 
+          {/* 범례 */}
+          <div className="d-flex align-items-center justify-content-center" style={{ gap: '14px', flexShrink: 0 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke={chartColor} strokeWidth="2" strokeDasharray="4 3" /></svg>
+              평균가
+            </span>
+            {currentCustomLines?.sellPrice != null && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#10b981" strokeWidth="2.5" strokeDasharray="8 4" /></svg>
+                판매가
+              </span>
+            )}
+            {currentCustomLines?.buyPrice != null && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#f59e0b" strokeWidth="2.5" strokeDasharray="8 4" /></svg>
+                구매가
+              </span>
+            )}
+          </div>
+
           {stats && (
             <div className="text-end" style={{ flex: '1' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: chartColor }}>
