@@ -455,7 +455,17 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
           {/* 패키지 가격 */}
           <div className={styles.resultRow}>
             <span className={styles.resultLabel}>패키지 가격</span>
-            <span className={styles.resultValue}>{formatNumber(post.royalCrystalPrice)}원</span>
+            <span className={styles.resultValue}>
+              {post.priceCurrency === 'blueCrystal' && post.blueCrystalPrice ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/blue.webp" alt="" style={{ width: 14, height: 14, verticalAlign: 'middle', marginRight: 3 }} />
+                  {formatNumber(post.blueCrystalPrice)}
+                </>
+              ) : (
+                <>{formatNumber(post.royalCrystalPrice)}원</>
+              )}
+            </span>
           </div>
 
           {/* 총 골드 가치 / 기대값 */}
