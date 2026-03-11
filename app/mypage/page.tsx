@@ -71,17 +71,13 @@ function getAllRaidGroups(itemLevel: number) {
 
 // 원정대 공통 컨텐츠 정의
 const COMMON_CONTENTS = [
-  { name: '운수대통 복 주머니', shortName: '복', image: '/lucky-pouch.webp', color: '#e6a817', days: [1, 4, 6, 0], maxChecks: 3, gold: 4500 },
-  { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 3500 },
   { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0], gold: 0 },
+  { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 3500 },
 ];
 
 // 공통 컨텐츠 재화 보상 (1회 기준)
 type CommonMaterialReward = { image?: string; label: string; amount: number };
 const COMMON_CONTENT_MATERIALS: Record<string, CommonMaterialReward[]> = {
-  '운수대통 복 주머니': [
-    { image: '/gold.webp', label: '골드', amount: 4500 },
-  ],
   '카오스 게이트': [
     { image: '/breath-lava5.webp', label: '용숨', amount: 6 },
     { image: '/breath-glacier5.webp', label: '빙숨', amount: 6 },

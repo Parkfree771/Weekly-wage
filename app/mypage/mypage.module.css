@@ -1967,7 +1967,7 @@
 }
 
 .commonCardName {
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   color: #fff;
   text-shadow: 0 1px 4px rgba(0,0,0,0.9);
@@ -1976,7 +1976,7 @@
 
 .commonCardShortName {
   display: none;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   color: #fff;
   text-shadow: 0 1px 4px rgba(0,0,0,0.9);
@@ -1985,7 +1985,7 @@
 
 .commonCardGold {
   display: block;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 600;
   color: #fbbf24;
   text-shadow: 0 1px 3px rgba(0,0,0,0.9);
@@ -2040,6 +2040,7 @@
 
   .commonCardShortName {
     display: block;
+    font-size: 12px;
   }
 
   .commonCardCheck {
@@ -2079,7 +2080,7 @@
   }
 
   .commonCardShortName {
-    font-size: 9px;
+    font-size: 11px;
   }
 
   .commonCardCheck {

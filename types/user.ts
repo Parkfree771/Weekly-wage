@@ -264,7 +264,6 @@ export function getCurrentWeekStart(): string {
 
 // 공통 컨텐츠 골드 정의 (복주머니, 카오스게이트 등)
 const COMMON_CONTENT_GOLD: Record<string, number> = {
-  '운수대통 복 주머니': 8100,
   '카오스 게이트': 3500,
 };
 
