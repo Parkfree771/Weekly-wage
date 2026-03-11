@@ -287,14 +287,6 @@ export default function PackageEditPage() {
     );
   };
 
-  const handleBonusToggle = (itemId: string) => {
-    setAddedItems((prev) =>
-      prev.map((a) =>
-        a.id === itemId ? { ...a, isBonus: !a.isBonus } : a,
-      ),
-    );
-  };
-
   // 골드:현금 비율 계산 (1 RC = 1원, 100 BC = 2750 RC 고정)
   const goldPerWon = tradeMode === 'unofficial'
     ? (unofficialRate > 0 ? 100 / unofficialRate : 0)
@@ -308,7 +300,6 @@ export default function PackageEditPage() {
   // 아이템별 소계 계산
   const itemSubtotals = useMemo(() => {
     return addedItems.map((added) => {
-      if (added.isBonus) return 0;
       if (added.isCustom) {
         return (added.customGoldPerUnit || 0) * added.quantity;
       }
@@ -565,10 +556,10 @@ export default function PackageEditPage() {
                   <div className={styles.packageBoxList}>
                     {addedItems.map((added) => {
                       if (added.isCustom) {
-                        const cSubtotal = added.isBonus ? 0 : (added.customGoldPerUnit || 0) * added.quantity;
+                        const cSubtotal = (added.customGoldPerUnit || 0) * added.quantity;
                         const isChecked = checkedItemIds.has(added.id);
                         return (
-                          <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''} ${added.isBonus ? styles.packageBoxItemBonus : ''}`}>
+                          <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
                             <div className={styles.customItemRow}>
                               <input type="text" className={styles.customNameInput}
                                 value={added.customName || ''}
@@ -583,9 +574,7 @@ export default function PackageEditPage() {
                                 value={added.quantity || ''}
                                 onChange={(e) => handleQuantityChange(added.id, parseInt(e.target.value) || 0)}
                                 min={0} />
-                              <span className={styles.packageBoxItemSubtotal}>{added.isBonus ? '보너스' : `${formatNumber(cSubtotal)}G`}</span>
-                              <button type="button" className={`${styles.bonusToggleBtn} ${added.isBonus ? styles.bonusToggleBtnActive : ''}`}
-                                onClick={() => handleBonusToggle(added.id)} title="보너스 아이템 (0골드)">B</button>
+                              <span className={styles.packageBoxItemSubtotal}>{formatNumber(cSubtotal)}G</span>
                               {packageType === '가챠' && (
                                 <>
                                   <input type="number" className={styles.gachaProbInput}
@@ -606,10 +595,10 @@ export default function PackageEditPage() {
                       const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0);
                       const qty = template.type === 'gold' ? 1 : added.quantity;
                       const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
-                      const subtotal = added.isBonus ? 0 : unitPrice * qty * inner;
+                      const subtotal = unitPrice * qty * inner;
                       const isChecked = checkedItemIds.has(added.id);
                       return (
-                        <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''} ${added.isBonus ? styles.packageBoxItemBonus : ''}`}>
+                        <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
                           <div className={styles.packageBoxItemMain}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={template.icon} alt={template.name}
@@ -634,9 +623,7 @@ export default function PackageEditPage() {
                                   min={0} />
                               </>
                             )}
-                            <span className={styles.packageBoxItemSubtotal}>{added.isBonus ? '보너스' : `${formatNumber(subtotal)}G`}</span>
-                            <button type="button" className={`${styles.bonusToggleBtn} ${added.isBonus ? styles.bonusToggleBtnActive : ''}`}
-                              onClick={() => handleBonusToggle(added.id)} title="보너스 아이템 (0골드)">B</button>
+                            <span className={styles.packageBoxItemSubtotal}>{formatNumber(subtotal)}G</span>
                             {packageType === '가챠' && (
                               <>
                                 <input type="number" className={styles.gachaProbInput}

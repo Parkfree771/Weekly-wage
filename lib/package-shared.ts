@@ -33,7 +33,7 @@ export type AddedItem = {
   isCustom?: boolean;
   customName?: string;
   customGoldPerUnit?: number;
-  isBonus?: boolean; // 보너스 아이템 (0골드로 계산)
+
 };
 
 // ─── 패키지에 넣을 수 있는 아이템 목록 ───
