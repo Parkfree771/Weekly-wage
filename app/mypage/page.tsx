@@ -857,24 +857,9 @@ export default function MyPage() {
         return { ...prev, checks: { ...prev.checks, [key]: false } };
       }
 
-      // maxChecks 제한 체크
-      if (content?.maxChecks) {
-        const checkedCount = Object.entries(prev.checks)
-          .filter(([k, v]) => k.endsWith(`-${contentName}`) && v === true)
-          .length;
-        if (checkedCount >= content.maxChecks) return prev;
-      }
-
       return { ...prev, checks: { ...prev.checks, [key]: true } };
     });
     setHasChanges(true);
-  };
-
-  // 특정 컨텐츠의 현재 체크 수
-  const getContentCheckCount = (contentName: string) => {
-    return Object.entries(commonContent.checks)
-      .filter(([k, v]) => k.endsWith(`-${contentName}`) && v === true)
-      .length;
   };
 
   // 추가 골드 변경
@@ -1269,12 +1254,11 @@ export default function MyPage() {
                   {dayContents.map(content => {
                     const key = `${day}-${content.name}`;
                     const checked = commonContent.checks[key] === true;
-                    const maxReached = !checked && content.maxChecks != null && getContentCheckCount(content.name) >= content.maxChecks;
                     return (
                       <div
                         key={key}
-                        className={`${styles.commonCard} ${checked ? styles.commonChecked : ''} ${maxReached ? styles.commonDisabled : ''}`}
-                        onClick={() => !maxReached && toggleCommonContent(day, content.name)}
+                        className={`${styles.commonCard} ${checked ? styles.commonChecked : ''}`}
+                        onClick={() => toggleCommonContent(day, content.name)}
                       >
                         <div className={styles.commonCardBg} style={{ background: content.color }}>
                           <CardBgImage src={content.image} alt={content.name} className={styles.raidImage} />
