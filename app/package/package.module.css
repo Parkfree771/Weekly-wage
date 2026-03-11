@@ -437,6 +437,43 @@
   color: #ef4444;
 }
 
+/* 보너스 아이템 토글 */
+.bonusToggleBtn {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border-color);
+  background: var(--input-bg);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.bonusToggleBtn:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.bonusToggleBtnActive {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.bonusToggleBtnActive:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.packageBoxItemBonus {
+  opacity: 0.6;
+}
+
 .selectedItemSubtotal {
   font-size: 0.75rem;
   color: #f97316;
@@ -550,6 +587,62 @@
   background: #ea580c;
   border-color: #ea580c;
   color: #fff;
+}
+
+/* 가격 통화 토글 */
+.priceCurrencyToggle {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.priceCurrencyBtn {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.priceCurrencyBtn:hover {
+  border-color: #f97316;
+  color: #f97316;
+}
+
+.priceCurrencyBtnActive {
+  background: #f97316;
+  border-color: #f97316;
+  color: #fff;
+}
+
+.priceCurrencyBtnActive:hover {
+  background: #ea580c;
+  border-color: #ea580c;
+  color: #fff;
+}
+
+.bcPriceRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bcPriceRow .formInput {
+  flex: 1;
+}
+
+.bcPriceHint {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 /* N선택 입력 */

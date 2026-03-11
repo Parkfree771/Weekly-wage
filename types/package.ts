@@ -21,6 +21,9 @@ export type PackageItem = {
 /** 패키지 타입 */
 export type PackageType = '3+1' | '2+1' | '일반' | '가챠';
 
+/** 가격 통화 타입 */
+export type PriceCurrency = 'cash' | 'blueCrystal';
+
 /** 패키지 효율 게시물 */
 export type PackagePost = {
   id: string;
@@ -32,7 +35,9 @@ export type PackagePost = {
   title: string;
   description: string;
   packageType: PackageType;
-  royalCrystalPrice: number;
+  royalCrystalPrice: number; // 원 환산 가격 (기존 호환)
+  priceCurrency?: PriceCurrency; // 가격 통화 ('cash' | 'blueCrystal')
+  blueCrystalPrice?: number; // 블루크리스탈 가격 (블크 결제 시)
   items: PackageItem[];
   selectableCount?: number; // 0 또는 미설정 = 전체, N = N개 선택
 

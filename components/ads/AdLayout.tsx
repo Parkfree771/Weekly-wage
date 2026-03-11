@@ -25,6 +25,7 @@ const AD_EXTRA = 336;
 
 export default function AdLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const hideSidebar = pathname === '/package/register';
   const { contentWidth, adTop } = getPageConfig(pathname);
   const [showSideAds, setShowSideAds] = useState(false);
 
@@ -46,11 +47,11 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="ad-layout" style={layoutStyle}>
-      {showSideAds && <AdSidebar position="left" topOffset={adTop} />}
+      {showSideAds && !hideSidebar && <AdSidebar position="left" topOffset={adTop} />}
       <main className="ad-layout-main" style={{ minHeight: 'calc(100vh - 200px)' }}>
         {children}
       </main>
-      {showSideAds && <AdSidebar position="right" topOffset={adTop} />}
+      {showSideAds && !hideSidebar && <AdSidebar position="right" topOffset={adTop} />}
     </div>
   );
 }
