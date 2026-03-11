@@ -68,28 +68,28 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '상급 아비도스 융화 재료',
     type: 'market',
     icon: '/abidos-fusion2.webp?v=3',
-    iconBorderColor: '#c2410c' // 세르카 주황
+    iconBorderColor: '#6366f1' // 인디고 (재련 재료)
   },
   {
     id: '66102007',
     name: '운명의 파괴석 결정',
     type: 'market',
     icon: '/destiny-destruction-stone2.webp?v=3',
-    iconBorderColor: '#c2410c' // 세르카 주황
+    iconBorderColor: '#6366f1' // 인디고 (재련 재료)
   },
   {
     id: '66102107',
     name: '운명의 수호석 결정',
     type: 'market',
     icon: '/destiny-guardian-stone2.webp?v=3',
-    iconBorderColor: '#c2410c' // 세르카 주황
+    iconBorderColor: '#6366f1' // 인디고 (재련 재료)
   },
   {
     id: '66110226',
     name: '위대한 운명의 돌파석',
     type: 'market',
     icon: '/destiny-breakthrough-stone2.webp?v=3',
-    iconBorderColor: '#c2410c' // 세르카 주황
+    iconBorderColor: '#6366f1' // 인디고 (재련 재료)
   },
 
   // === 0-1. 재련 재료 (일반) ===
@@ -308,7 +308,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 아드레날린',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35' // 주황색
+    iconBorderColor: '#E11D48' // 주황색
   },
   {
     id: '65200505',
@@ -316,7 +316,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 원한',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35'
+    iconBorderColor: '#E11D48'
   },
   {
     id: '65203305',
@@ -324,7 +324,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 돌격대장',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35'
+    iconBorderColor: '#E11D48'
   },
   {
     id: '65201005',
@@ -332,7 +332,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 예리한 둔기',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35'
+    iconBorderColor: '#E11D48'
   },
   {
     id: '65203505',
@@ -340,7 +340,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 질량 증가',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35'
+    iconBorderColor: '#E11D48'
   },
   {
     id: '65202805',
@@ -348,7 +348,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 저주받은 인형',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35'
+    iconBorderColor: '#E11D48'
   },
   {
     id: '65203005',
@@ -356,7 +356,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 기습의 대가',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35'
+    iconBorderColor: '#E11D48'
   },
   {
     id: '65203705',
@@ -364,7 +364,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 타격의 대가',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35'
+    iconBorderColor: '#E11D48'
   },
   {
     id: '65203405',
@@ -372,7 +372,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 각성',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35'
+    iconBorderColor: '#E11D48'
   },
   {
     id: '65204105',
@@ -380,7 +380,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 전문의',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35'
+    iconBorderColor: '#E11D48'
   },
   {
     id: '65200605',
@@ -388,7 +388,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 슈퍼차지',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35'
+    iconBorderColor: '#E11D48'
   },
   {
     id: '65201505',
@@ -396,7 +396,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     displayName: '유물 각인서: 결투의 대가',
     type: 'market',
     icon: '/engraving.webp',
-    iconBorderColor: '#ff6b35'
+    iconBorderColor: '#E11D48'
   },
 
   // === 5. 악세 (경매장) ===
@@ -409,7 +409,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200010, // 목걸이
     icon: '/ancient-necklace.webp',
-    iconBorderColor: '#06b6d4', // 청록색 (목걸이)
+    iconBorderColor: '#0E7490', // 악세
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -441,7 +441,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200030, // 반지
     icon: '/ancient-ring.webp',
-    iconBorderColor: '#3b82f6', // 파란색 (반지)
+    iconBorderColor: '#0E7490', // 악세
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -473,7 +473,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200020, // 귀걸이
     icon: '/ancient-earring.webp',
-    iconBorderColor: '#10b981', // 에메랄드 (귀걸이)
+    iconBorderColor: '#0E7490', // 악세
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -505,7 +505,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200010, // 목걸이
     icon: '/ancient-necklace.webp',
-    iconBorderColor: '#06b6d4', // 청록색 (목걸이)
+    iconBorderColor: '#0E7490', // 악세
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -537,7 +537,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200030, // 반지
     icon: '/ancient-ring.webp',
-    iconBorderColor: '#3b82f6', // 파란색 (반지)
+    iconBorderColor: '#0E7490', // 악세
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -569,7 +569,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200020, // 귀걸이
     icon: '/ancient-earring.webp',
-    iconBorderColor: '#10b981', // 에메랄드 (귀걸이)
+    iconBorderColor: '#0E7490', // 악세
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -601,7 +601,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200010, // 목걸이
     icon: '/ancient-necklace.webp',
-    iconBorderColor: '#06b6d4', // 청록색 (목걸이)
+    iconBorderColor: '#0E7490', // 악세
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -633,7 +633,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200010, // 목걸이
     icon: '/ancient-necklace.webp',
-    iconBorderColor: '#06b6d4', // 청록색 (목걸이)
+    iconBorderColor: '#0E7490', // 악세
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -665,7 +665,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200030, // 반지
     icon: '/ancient-ring.webp',
-    iconBorderColor: '#3b82f6', // 파란색 (반지)
+    iconBorderColor: '#0E7490', // 악세
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -697,7 +697,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200030, // 반지
     icon: '/ancient-ring.webp',
-    iconBorderColor: '#3b82f6', // 파란색 (반지)
+    iconBorderColor: '#0E7490', // 악세
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -730,7 +730,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200040, // 팔찌
     icon: '/vkfwl.webp',
-    iconBorderColor: '#06b6d4', // 청록 (악세 동일)
+    iconBorderColor: '#0E7490', // 팔찌
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -750,7 +750,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200040,
     icon: '/vkfwl.webp',
-    iconBorderColor: '#f59e0b',
+    iconBorderColor: '#0E7490', // 팔찌
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -770,7 +770,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '',
     categoryCode: 200040,
     icon: '/vkfwl.webp',
-    iconBorderColor: '#f59e0b',
+    iconBorderColor: '#0E7490', // 팔찌
     filters: {
       ItemGrade: '고대',
       ItemTier: 4,
@@ -790,7 +790,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '8레벨 겁화의 보석',
     categoryCode: 210000, // 보석 카테고리
     icon: '/8fpqpfqhtjr.webp',
-    iconBorderColor: '#9333ea', // 보라색
+    iconBorderColor: '#C71585', // 보석
     filters: {
       ItemTier: 4
     }
@@ -802,7 +802,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '9레벨 겁화의 보석',
     categoryCode: 210000, // 보석 카테고리
     icon: '/8fpqpfqhtjr.webp',
-    iconBorderColor: '#9333ea', // 보라색
+    iconBorderColor: '#C71585', // 보석
     filters: {
       ItemTier: 4
     }
@@ -814,7 +814,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '10레벨 겁화의 보석',
     categoryCode: 210000,
     icon: '/10fpqpfrjqghk.webp',
-    iconBorderColor: '#9333ea', // 보라색
+    iconBorderColor: '#C71585', // 보석
     filters: {
       ItemTier: 4
     }
@@ -826,7 +826,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     searchName: '10레벨 작열의 보석',
     categoryCode: 210000,
     icon: '/10fpqpfwkrduf.webp',
-    iconBorderColor: '#dc2626', // 빨간색
+    iconBorderColor: '#C71585', // 보석
     filters: {
       ItemTier: 4
     }
@@ -847,7 +847,7 @@ export function getItemsBySubCategory(subCategory: RefineAdditionalSubCategory):
 // 카테고리별 아이템 필터 함수
 export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
-    refine: ['66102007', '66102107', '66110226', '6861013', '6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
+    refine: ['66102007', '66102107', '66110226', '6861013', '6861012', '66102006', '66102106', '66110225', '6861011', '66130143', '66130133'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
     refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
@@ -868,7 +868,7 @@ export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
 // 아이템 ID로 아이템과 카테고리 찾기
 export function findItemById(itemId: string): { item: TrackedItem; category: ItemCategory; subCategory?: RefineAdditionalSubCategory } | null {
   const categoryMap: Record<ItemCategory, string[]> = {
-    refine: ['66102007', '66102107', '66110226', '6861013', '6861012', '6861011', '66130143', '66130133', '66102006', '66102106', '66110225'],
+    refine: ['66102007', '66102107', '66110226', '6861013', '6861012', '66102006', '66102106', '66110225', '6861011', '66130143', '66130133'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
     refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],

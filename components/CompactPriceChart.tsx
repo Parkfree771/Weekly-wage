@@ -984,7 +984,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           )}
 
           {/* 범례 */}
-          <div className="d-flex align-items-center justify-content-center" style={{ gap: '14px', flexShrink: 0 }}>
+          <div className="d-flex align-items-center justify-content-center flex-wrap" style={{ gap: '12px', flexShrink: 0 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
               <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke={chartColor} strokeWidth="2" strokeDasharray="4 3" /></svg>
               평균가
@@ -999,6 +999,30 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#f59e0b" strokeWidth="2.5" strokeDasharray="8 4" /></svg>
                 구매가
+              </span>
+            )}
+            {activeReferenceLines?.has('min') && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#3b82f6" strokeWidth="2" strokeDasharray="6 3" /></svg>
+                최저가
+              </span>
+            )}
+            {activeReferenceLines?.has('max') && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#ef4444" strokeWidth="2" strokeDasharray="6 3" /></svg>
+                최고가
+              </span>
+            )}
+            {activeReferenceLines?.has('current') && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#8b5cf6" strokeWidth="2" strokeDasharray="6 3" /></svg>
+                현재가
+              </span>
+            )}
+            {activeReferenceLines?.has('avg') && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#6b7280" strokeWidth="2" strokeDasharray="6 3" /></svg>
+                기간평균
               </span>
             )}
           </div>
