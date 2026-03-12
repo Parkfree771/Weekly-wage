@@ -76,9 +76,13 @@ const nextConfig = {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin-allow-popups',
           },
-          // Cloudflare CDN 캐시 방지 — HTML/JS 페이지는 항상 최신 버전 서빙
+          // CDN 캐시 방지 — HTML 페이지는 항상 최신 버전 서빙
           {
             key: 'CDN-Cache-Control',
+            value: 'no-store',
+          },
+          {
+            key: 'Netlify-CDN-Cache-Control',
             value: 'no-store',
           },
         ],
@@ -93,6 +97,10 @@ const nextConfig = {
           },
           {
             key: 'CDN-Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Netlify-CDN-Cache-Control',
             value: 'public, max-age=31536000, immutable',
           },
         ],
