@@ -76,31 +76,14 @@ const nextConfig = {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin-allow-popups',
           },
-          // CDN 캐시 방지 — HTML 페이지는 항상 최신 버전 서빙
-          {
-            key: 'CDN-Cache-Control',
-            value: 'no-store',
-          },
-          {
-            key: 'Netlify-CDN-Cache-Control',
-            value: 'no-store',
-          },
         ],
       },
-      // 정적 자산 장기 캐싱 (파일명에 해시 포함 → 변경 시 URL 자체가 바뀜)
+      // 정적 자산 장기 캐싱
       {
         source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-          {
-            key: 'CDN-Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-          {
-            key: 'Netlify-CDN-Cache-Control',
             value: 'public, max-age=31536000, immutable',
           },
         ],
