@@ -39,6 +39,26 @@ const TAILORING_COMPONENTS = [
   { itemId: '66112554', name: '재봉술 : 업화 [19-20]', icon: '/tailoring-karma.webp' },
 ];
 
+// 고대 코어 구성 요소
+const ANCIENT_CORE_COMPONENTS = [
+  { itemId: '0', name: '질서의 해', icon: '/wlftjdmlgo.webp' },
+  { itemId: '0', name: '질서의 달', icon: '/wlftjdmlekf.webp' },
+  { itemId: '0', name: '질서의 별', icon: '/wlftjdmlquf.webp' },
+  { itemId: '0', name: '혼돈의 해', icon: '/ghsehsdmlgo.webp' },
+  { itemId: '0', name: '혼돈의 달', icon: '/ghsehsdmlekf.webp' },
+  { itemId: '0', name: '혼돈의 별', icon: '/ghsehsdmlquf.webp' },
+];
+
+// 유물 코어 구성 요소
+const RELIC_CORE_COMPONENTS = [
+  { itemId: '0', name: '질서의 해', icon: '/wlftjdmlgo2.png' },
+  { itemId: '0', name: '질서의 달', icon: '/wlftjdmlekf2.png' },
+  { itemId: '0', name: '질서의 별', icon: '/wlftjdmlquf2.png' },
+  { itemId: '0', name: '혼돈의 해', icon: '/ghsehsdmlgo2.png' },
+  { itemId: '0', name: '혼돈의 달', icon: '/ghsehsdmlekf2.png' },
+  { itemId: '0', name: '혼돈의 별', icon: '/ghsehsdmlquf2.png' },
+];
+
 // 재료 이미지 매핑
 const MATERIAL_IMAGES: { [key: string]: string } = {
   '운명의 파괴석 결정': '/destiny-destruction-stone2.webp',
@@ -444,7 +464,7 @@ export default function CathedralPage() {
                         <td>
                           <div className={styles.materialCell}>
                             {MATERIAL_IMAGES[mat.name] && (
-                              <Image src={MATERIAL_IMAGES[mat.name]} alt={mat.name} width={22} height={22} />
+                              <Image src={MATERIAL_IMAGES[mat.name]} alt={mat.name} width={38} height={38} />
                             )}
                             <span>{mat.name}</span>
                           </div>
@@ -649,6 +669,8 @@ export default function CathedralPage() {
                         const tc = THEME_COLORS[selectedShopData.theme];
                         const components = selectedShopData.theme === 'gem' ? GEM_COMPONENTS
                           : selectedShopData.theme === 'refine' ? REFINE_COMPONENTS
+                          : selectedShopData.theme === 'ancient' ? ANCIENT_CORE_COMPONENTS
+                          : selectedShopData.theme === 'relic' ? RELIC_CORE_COMPONENTS
                           : selectedShopData.id === 7 ? METALLURGY_COMPONENTS
                           : selectedShopData.id === 8 ? TAILORING_COMPONENTS
                           : null;
@@ -719,8 +741,13 @@ export default function CathedralPage() {
                               <div className={styles.shopDetailSection}>
                                 <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>구성 요소</div>
                                 <div className={styles.gemGrid}>
-                                  {components.map((comp) => (
-                                    <div key={comp.itemId} className={styles.gemCard} style={{ background: tc.bg, borderColor: tc.border }}>
+                                  {components.map((comp) => comp.itemId === '0' ? (
+                                    <div key={comp.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem' }}>
+                                      <Image src={comp.icon} alt={comp.name} width={100} height={100} />
+                                      <span className={styles.gemName}>{comp.name}</span>
+                                    </div>
+                                  ) : (
+                                    <div key={comp.name} className={styles.gemCard} style={{ background: tc.bg, borderColor: tc.border }}>
                                       <Image src={comp.icon} alt={comp.name} width={48} height={48} />
                                       <span className={styles.gemName}>{comp.name}</span>
                                       <div className={styles.gemPrice}>
