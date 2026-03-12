@@ -5,6 +5,10 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# 배포 성공 후 Durable Cache 전체 퍼지 (Cloudflare 경유 캐시 포함)
+[[plugins]]
+  package = "./plugins/purge-cache"
+
 [functions]
   node_bundler = "esbuild"
   # 주의: .env.local 파일 포함 설정은 배포 에러의 주원인이므로 제거했습니다.
