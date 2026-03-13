@@ -69,6 +69,13 @@ export default function Footer() {
                   <p className="footer-disclaimer">
                     본 사이트는 로스트아크 공식 서비스가 아닙니다.
                   </p>
+                  <p className="footer-disclaimer" style={{ marginTop: '0.5rem' }}>
+                    [미니게임 아이콘]{' '}
+                    <a href="https://www.flaticon.com/free-icons/monster" title="monster icons">Monster icons by Freepik</a>{' · '}
+                    <a href="https://www.flaticon.com/free-icons/clouds" title="clouds icons">Clouds icons by juicy_fish</a>{' · '}
+                    <a href="https://www.flaticon.com/free-icons/joshua-tree" title="joshua tree icons">Joshua tree icons by Freepik</a>
+                    {' - Flaticon'}
+                  </p>
                 </div>
               </Col>
             </Row>

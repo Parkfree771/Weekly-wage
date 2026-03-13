@@ -45,6 +45,7 @@ const NAV_GROUPS: NavGroup[] = [
 
 const NAV_STANDALONE: NavItem[] = [
   { href: '/cathedral', label: '지평의 성당', badge: 'beta' },
+  { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
 ];
 
@@ -59,6 +60,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/hell-sim', label: '지옥 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
   { href: '/cathedral', label: '지평의 성당', badge: 'beta' },
+  { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
 ];
 
@@ -90,6 +92,7 @@ export default function Navbar() {
                       href === '/bracelet' ? 'nav-bracelet' :
                       href === '/package' ? 'nav-package' :
                       href === '/cathedral' ? 'nav-weekly' :
+                      href === '/minigame' ? 'nav-minigame' :
                       href === '/mypage' ? 'nav-mypage' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
@@ -310,9 +313,9 @@ export default function Navbar() {
                 </Link>
               ))}
 
-              {/* 독립 메뉴 */}
+              {/* 기타 메뉴 */}
               <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
-              {NAV_STANDALONE.map((item) => (
+              {NAV_STANDALONE.filter(item => item.href !== '/minigame').map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}

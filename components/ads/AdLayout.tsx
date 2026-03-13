@@ -25,7 +25,7 @@ const AD_EXTRA = 336;
 
 export default function AdLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const hideSidebar = pathname === '/package/register' || pathname.startsWith('/package/edit/');
+  const hideSidebar = pathname === '/package/register' || pathname.startsWith('/package/edit/') || pathname === '/minigame';
   const { contentWidth, adTop } = getPageConfig(pathname);
   const [showSideAds, setShowSideAds] = useState(false);
 
