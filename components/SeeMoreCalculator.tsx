@@ -23,7 +23,7 @@ const getMaterialImage = (itemName: string): string => {
     // 특수 재료 (거래 불가)
     '코어': 'cerka-core.webp',
     '고통의 가시': 'pulsating-thorn.webp',
-    '은총의 파편': 'cerka-core.webp', // 임시 이미지 (추후 교체)
+    '은총의 파편': 'dmschddmlvkvus.webp',
   };
 
   return imageMap[itemName] || 'default-material.webp';
@@ -183,9 +183,6 @@ const SeeMoreCalculator: React.FC = () => {
           const isLoss = profitLoss < 0;
           const isSelected = selectedRaid === raid.name;
 
-          // 지평의 성당은 준비중 (비활성화)
-          const isDisabled = raid.name.startsWith('지평의 성당');
-
           // LCP 최적화: 처음 6개 이미지는 priority 로딩
           const isPriorityImage = index < 6;
 
@@ -193,8 +190,8 @@ const SeeMoreCalculator: React.FC = () => {
             <div
               key={raid.name}
               className={`${styles.raidCard} ${isSelected ? styles.selected : ''}`}
-              onClick={() => !isDisabled && handleRaidSelect(raid.name)}
-              style={isDisabled ? { opacity: 0.7, cursor: 'default' } : { opacity: 1, cursor: 'pointer' }}
+              onClick={() => handleRaidSelect(raid.name)}
+              style={{ opacity: 1, cursor: 'pointer' }}
             >
               <div className={styles.imageWrapper}>
                 <Image
@@ -215,11 +212,7 @@ const SeeMoreCalculator: React.FC = () => {
                   Lv. {raid.level}
                 </p>
 
-                {isDisabled ? (
-                  <div className={`${styles.goldBadge} ${styles.neutralBadge}`} style={{ opacity: 0.6 }}>
-                    준비중
-                  </div>
-                ) : profitData[raid.name] && (
+                {profitData[raid.name] && (
                   <div className={`${styles.goldBadge} ${isProfit ? styles.profitBadge : isLoss ? styles.lossBadge : styles.neutralBadge}`}>
                     {isProfit ? '+' : ''}{Math.round(profitLoss).toLocaleString()}
                   </div>

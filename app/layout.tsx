@@ -3,6 +3,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ConsentModal from '@/components/auth/ConsentModal';
+import UpdatePopup from '@/components/UpdatePopup';
 import AdLayout from '@/components/ads/AdLayout';
 
 import ConsoleFilter from '@/components/ConsoleFilter';
@@ -109,6 +110,7 @@ export default function RootLayout({
             </AdLayout>
             <Footer />
             <ConsentModal />
+            <UpdatePopup />
           </AuthProvider>
         </ThemeProvider>
 

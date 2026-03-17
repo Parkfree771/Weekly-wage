@@ -1,7 +1,7 @@
 'use client';
 
-const FEEDBACK_URL = 'https://forms.gle/n9XKQJmheLhZcSf69';
-const SURVEY_URL = 'https://forms.gle/4dBKrh3kSFtazmxH7';
+import Image from 'next/image';
+import Link from 'next/link';
 
 interface AdBannerProps {
   slot: string;
@@ -10,29 +10,34 @@ interface AdBannerProps {
 
 export default function AdBanner({ slot, className }: AdBannerProps) {
   return (
-    <div className={`promo-banner-row ${className || ''}`}>
-      <a
-        href={FEEDBACK_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="promo-banner-horizontal"
-      >
-        <span className="promo-banner-text">
-          <img src="/icon-lightbulb.svg" alt="" className="promo-banner-icon" /> <strong>건의함</strong> — 원하는 기능이 있나요?
-        </span>
-        <span className="promo-banner-cta">건의하기</span>
-      </a>
-      <a
-        href={SURVEY_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="promo-banner-horizontal promo-banner-horizontal-survey"
-      >
-        <span className="promo-banner-text">
-          <img src="/icon-assignment.svg" alt="" className="promo-banner-icon" /> <strong>설문조사</strong> — 어떤 기능을 쓰시나요?
-        </span>
-        <span className="promo-banner-cta promo-cta-survey">참여하기</span>
-      </a>
+    <div className={`inline-update-card ${className || ''}`}>
+      <Image
+        src="/wlvuddmltjdekd1.webp"
+        alt="지평의 성당"
+        fill
+        style={{ objectFit: 'cover', objectPosition: 'center 30%' }}
+      />
+      <div className="inline-update-overlay" />
+      <div className="inline-update-inner">
+        <div className="inline-update-header">
+          <div className="inline-update-title">지평의 성당</div>
+          <div className="inline-update-subtitle">3.18 오전 10시 업데이트 예정</div>
+        </div>
+        <div className="inline-update-buttons">
+          <Link href="/weekly-gold" className="inline-update-btn">
+            <Image src="/gold.webp" alt="" width={20} height={20} />
+            <span>클리어 보상, 더보기 효율</span>
+          </Link>
+          <Link href="/cathedral" className="inline-update-btn">
+            <Image src="/dmschddmlvkvus.webp" alt="" width={20} height={20} />
+            <span>은총의 파편 상점</span>
+          </Link>
+          <Link href="/mypage" className="inline-update-btn">
+            <Image src="/top-destiny-destruction-stone5.webp" alt="" width={20} height={20} />
+            <span>1750 수급량 확인</span>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

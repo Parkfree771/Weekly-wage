@@ -26,7 +26,7 @@ const getMaterialImage = (itemName: string): string => {
     '운명의 파편': 'destiny-shard-bag-large.webp',
     '코어': 'cerka-core.webp',
     '고통의 가시': 'pulsating-thorn.webp',
-    '은총의 파편': 'cerka-core.webp', // 임시 이미지 (추후 교체)
+    '은총의 파편': 'dmschddmlvkvus.webp',
   };
   return imageMap[itemName] || 'default-material.webp';
 };
@@ -292,7 +292,6 @@ const CerkaRewardInfo: React.FC = () => {
         };
       });
 
-      const isDisabled = raidName.startsWith('지평의 성당');
       result.push({
         raidName,
         level: raidInfo.level,
@@ -303,7 +302,7 @@ const CerkaRewardInfo: React.FC = () => {
         totalBasicMaterialValue,
         totalMoreMaterialValue,
         finalValue: totalClearGold + totalBasicMaterialValue + totalMoreMaterialValue - totalMoreGold,
-        disabled: isDisabled
+        disabled: false
       });
     });
 

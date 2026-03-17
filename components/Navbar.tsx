@@ -8,6 +8,9 @@ import { useTheme } from './ThemeProvider';
 import { Container, Navbar as BSNavbar, Nav, Offcanvas } from 'react-bootstrap';
 import LoginButton from './auth/LoginButton';
 
+const FEEDBACK_URL = 'https://forms.gle/n9XKQJmheLhZcSf69';
+const SURVEY_URL = 'https://forms.gle/4dBKrh3kSFtazmxH7';
+
 type NavItem = {
   href: string;
   label: string;
@@ -189,7 +192,7 @@ export default function Navbar() {
                 className={`navbar-nav-link ${getNavClass(item.href)}`}
               >
                 {item.label}
-                {item.badge && <span className="nav-badge-beta">{item.badge}</span>}
+                {item.badge && <span className="nav-badge-new">{item.badge}</span>}
               </Link>
             ))}
           </Nav>
@@ -235,6 +238,24 @@ export default function Navbar() {
 
         {/* 데스크톱 테마 토글 + 홈버튼 + 로그인 */}
         <div className="d-none d-lg-flex align-items-center gap-2">
+          <a
+            href={FEEDBACK_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="navbar-theme-toggle"
+            aria-label="건의함"
+          >
+            <Image src="/icon-lightbulb.svg" alt="건의함" width={22} height={22} />
+          </a>
+          <a
+            href={SURVEY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="navbar-theme-toggle"
+            aria-label="설문조사"
+          >
+            <Image src="/icon-assignment.svg" alt="설문조사" width={22} height={22} />
+          </a>
           <Link
             href="/"
             className="navbar-theme-toggle"
@@ -323,9 +344,32 @@ export default function Navbar() {
                   onClick={handleClose}
                 >
                   {item.label}
-                  {item.badge && <span className="nav-badge-beta">{item.badge}</span>}
+                  {item.badge && <span className="nav-badge-new">{item.badge}</span>}
                 </Link>
               ))}
+            </Nav>
+            <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
+            <Nav className="flex-column gap-2">
+              <a
+                href={FEEDBACK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="navbar-offcanvas-link nav-weekly"
+                onClick={handleClose}
+              >
+                <Image src="/icon-lightbulb.svg" alt="" width={16} height={16} style={{ marginRight: '6px' }} />
+                건의함
+              </a>
+              <a
+                href={SURVEY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="navbar-offcanvas-link nav-weekly"
+                onClick={handleClose}
+              >
+                <Image src="/icon-assignment.svg" alt="" width={16} height={16} style={{ marginRight: '6px' }} />
+                설문조사
+              </a>
             </Nav>
             <hr className="my-3" />
             <div className="d-flex justify-content-center">

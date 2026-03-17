@@ -15,28 +15,29 @@ const GEM_COMPONENTS = [
   { itemId: '67410503', name: '혼돈의 젬 : 붕괴', icon: '/gem-chaos-collapse.webp' },
 ];
 
-// 재련 재료 상자 구성 요소
+// 재련 재료 상자 구성 요소 (은총 60개 소모)
 const REFINE_COMPONENTS = [
-  { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/destiny-destruction-stone2.webp' },
-  { itemId: '66102107', name: '운명의 수호석 결정', icon: '/destiny-guardian-stone2.webp' },
-  { itemId: '66110226', name: '위대한 운명의 돌파석', icon: '/destiny-breakthrough-stone2.webp' },
-  { itemId: '66130143', name: '운명의 파편 주머니(대)', icon: '/destiny-shard-bag-large.webp' },
+  { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/destiny-destruction-stone2.webp', amount: 1000 },
+  { itemId: '66102107', name: '운명의 수호석 결정', icon: '/destiny-guardian-stone2.webp', amount: 1000 },
+  { itemId: '66110226', name: '위대한 운명의 돌파석', icon: '/destiny-breakthrough-stone2.webp', amount: 1000 },
+  { itemId: '66130143', name: '운명의 파편', icon: '/destiny-shard-bag-large.webp', amount: 1000 },
 ];
+const REFINE_BOX_GRACE_COST = 60; // 재련 상자 1개당 은총 소모량
 
 // 야금술 상자 구성 요소
 const METALLURGY_COMPONENTS = [
-  { itemId: '66112715', name: '장인의 야금술 : 3단계', icon: '/master-metallurgy-3.webp' },
-  { itemId: '66112717', name: '장인의 야금술 : 4단계', icon: '/master-metallurgy-4.webp' },
-  { itemId: '66112551', name: '야금술 : 업화 [15-18]', icon: '/metallurgy-karma.webp' },
-  { itemId: '66112553', name: '야금술 : 업화 [19-20]', icon: '/metallurgy-karma.webp' },
+  { itemId: '66112717', name: '장인의 야금술 : 4단계', icon: '/master-metallurgy-4.webp', amount: 1 },
+  { itemId: '66112715', name: '장인의 야금술 : 3단계', icon: '/master-metallurgy-3.webp', amount: 1 },
+  { itemId: '66112553', name: '야금술 : 업화 [19-20]', icon: '/metallurgy-karma.webp', amount: 1 },
+  { itemId: '66112551', name: '야금술 : 업화 [15-18]', icon: '/metallurgy-karma.webp', amount: 1 },
 ];
 
 // 재봉술 상자 구성 요소
 const TAILORING_COMPONENTS = [
-  { itemId: '66112716', name: '장인의 재봉술 : 3단계', icon: '/master-tailoring-3.webp' },
-  { itemId: '66112718', name: '장인의 재봉술 : 4단계', icon: '/master-tailoring-4.webp' },
-  { itemId: '66112552', name: '재봉술 : 업화 [15-18]', icon: '/tailoring-karma.webp' },
-  { itemId: '66112554', name: '재봉술 : 업화 [19-20]', icon: '/tailoring-karma.webp' },
+  { itemId: '66112718', name: '장인의 재봉술 : 4단계', icon: '/master-tailoring-4.webp', amount: 1 },
+  { itemId: '66112716', name: '장인의 재봉술 : 3단계', icon: '/master-tailoring-3.webp', amount: 1 },
+  { itemId: '66112554', name: '재봉술 : 업화 [19-20]', icon: '/tailoring-karma.webp', amount: 1 },
+  { itemId: '66112552', name: '재봉술 : 업화 [15-18]', icon: '/tailoring-karma.webp', amount: 1 },
 ];
 
 // 고대 코어 구성 요소
@@ -69,6 +70,7 @@ const MATERIAL_IMAGES: { [key: string]: string } = {
   '운명의 돌파석': '/destiny-breakthrough-stone.webp',
   '운명의 파편': '/destiny-shard-bag-large.webp',
   '코어': '/cerka-core2.webp',
+  '은총의 파편': '/dmschddmlvkvus.webp',
 };
 
 // 묶음 단위 (개당 가격 = 시세 / bundleSize)
@@ -333,6 +335,31 @@ export default function CathedralPage() {
   };
   const selectedShopData = SHOP_ITEMS.find(s => s.id === selectedShopItem);
 
+  // 선택 상자 체크 상태 (shopItemId → 선택된 itemId)
+  const [shopSelectItem, setShopSelectItem] = useState<Record<number, string>>({});
+
+  // 재련 상자 체크 상태 (itemId → boolean, 기본 true)
+  const [refineChecks, setRefineChecks] = useState<Record<string, boolean>>({});
+  const isRefineChecked = (itemId: string) => refineChecks[itemId] ?? true;
+  const toggleRefineCheck = (itemId: string) => setRefineChecks(prev => ({ ...prev, [itemId]: !isRefineChecked(itemId) }));
+
+  // 선택 상자에서 가장 비싼 아이템 자동 선택
+  const getSelectedItemId = (shopId: number, components: { itemId: string; name: string }[]): string => {
+    if (shopSelectItem[shopId]) return shopSelectItem[shopId];
+    // 시세 기준 가장 비싼 것 자동 선택
+    let maxPrice = -1;
+    let maxId = components[0]?.itemId || '';
+    components.forEach(comp => {
+      if (comp.itemId === '0') return;
+      const price = latestPrices[comp.itemId] || 0;
+      if (price > maxPrice) {
+        maxPrice = price;
+        maxId = comp.itemId;
+      }
+    });
+    return maxId;
+  };
+
   // 시세 조회 (latest만, history 다운로드 안 함)
   useEffect(() => {
     (async () => {
@@ -375,8 +402,9 @@ export default function CathedralPage() {
                 const isSelected = selectedStage === stage.name;
                 const totalGold = stage.gates.reduce((sum, g) => sum + g.gold, 0);
                 const totalGrace = stage.gates.reduce((sum, g) => {
-                  const grace = g.materials.find(m => m.name === '은총의 파편');
-                  return sum + (grace?.amount || 0);
+                  const basicGrace = g.materials.find(m => m.name === '은총의 파편');
+                  const moreGrace = g.moreMaterials.find(m => m.name === '은총의 파편');
+                  return sum + (basicGrace?.amount || 0) + (moreGrace?.amount || 0);
                 }, 0);
                 return (
                   <div
@@ -675,7 +703,7 @@ export default function CathedralPage() {
                           : selectedShopData.id === 8 ? TAILORING_COMPONENTS
                           : null;
                         return (
-                          <div className={styles.shopDetailContent}>
+                          <div className={styles.shopDetailContent} style={(selectedShopData.id === 7 || selectedShopData.id === 8 || selectedShopData.theme === 'refine') ? { maxWidth: '550px' } : undefined}>
                             {/* 1. 아이콘 + 이름 */}
                             <div className={styles.shopDetailTop}>
                               {selectedShopData.hasBg ? (
@@ -720,6 +748,9 @@ export default function CathedralPage() {
                                       {cost.name === '골드' && (
                                         <Image src="/gold.webp" alt="골드" width={24} height={24} />
                                       )}
+                                      {cost.name === '은총의 파편' && (
+                                        <Image src="/dmschddmlvkvus.webp" alt="은총의 파편" width={24} height={24} />
+                                      )}
                                       {cost.name === '코어 정수' && (
                                         <Image src="/wjdtn.webp?v=2" alt="코어 정수" width={24} height={24} />
                                       )}
@@ -740,23 +771,248 @@ export default function CathedralPage() {
                             {components && (
                               <div className={styles.shopDetailSection}>
                                 <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>구성 요소</div>
-                                <div className={styles.gemGrid}>
-                                  {components.map((comp) => comp.itemId === '0' ? (
-                                    <div key={comp.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem' }}>
-                                      <Image src={comp.icon} alt={comp.name} width={100} height={100} />
-                                      <span className={styles.gemName}>{comp.name}</span>
-                                    </div>
-                                  ) : (
-                                    <div key={comp.name} className={styles.gemCard} style={{ background: tc.bg, borderColor: tc.border }}>
-                                      <Image src={comp.icon} alt={comp.name} width={48} height={48} />
-                                      <span className={styles.gemName}>{comp.name}</span>
-                                      <div className={styles.gemPrice}>
-                                        <Image src="/gold.webp" alt="골드" width={16} height={16} />
-                                        <span>{priceLoading ? '—' : latestPrices[comp.itemId] ? latestPrices[comp.itemId].toLocaleString() : '-'}</span>
+                                {selectedShopData.theme === 'refine' ? (() => {
+                                  // 재련 재료 상자: 수량 × 단가 = 가치 테이블
+                                  const refineComps = components as typeof REFINE_COMPONENTS;
+                                  let boxTotalValue = 0;
+                                  const rows = refineComps.map(comp => {
+                                    const bundleSize = BUNDLE_SIZES[comp.itemId] || 1;
+                                    const bundlePrice = latestPrices[comp.itemId] || 0;
+                                    const unitPrice = bundlePrice / bundleSize;
+                                    const checked = isRefineChecked(comp.itemId);
+                                    const totalValue = Math.round(unitPrice * comp.amount);
+                                    if (checked) boxTotalValue += totalValue;
+                                    return { ...comp, unitPrice, totalValue, checked };
+                                  });
+                                  const graceValue = Math.round(boxTotalValue / REFINE_BOX_GRACE_COST);
+                                  return (
+                                    <>
+                                      <table className={styles.materialTable} style={{ marginBottom: '0.75rem' }}>
+                                        <colgroup>
+                                          <col style={{ width: '44px' }} />
+                                          <col style={{ width: '40%' }} />
+                                          <col style={{ width: '60px' }} />
+                                          <col style={{ width: '80px' }} />
+                                          <col style={{ width: '105px' }} />
+                                        </colgroup>
+                                        <thead>
+                                          <tr>
+                                            <th style={{ textAlign: 'center' }}>선택</th>
+                                            <th>아이템</th>
+                                            <th style={{ textAlign: 'center' }}>수량</th>
+                                            <th style={{ textAlign: 'center' }}>단가</th>
+                                            <th style={{ textAlign: 'center' }}>가치</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {rows.map((row) => (
+                                            <tr
+                                              key={row.name}
+                                              style={{ cursor: 'pointer', opacity: row.checked ? 1 : 0.5 }}
+                                              onClick={() => toggleRefineCheck(row.itemId)}
+                                            >
+                                              <td style={{ textAlign: 'center', fontSize: '1.1rem' }}>
+                                                {row.checked ? '✅' : '⬜'}
+                                              </td>
+                                              <td>
+                                                <div className={styles.materialCell}>
+                                                  <Image src={row.icon} alt={row.name} width={32} height={32} />
+                                                  <span style={{ fontSize: '0.8rem' }}>{row.name}</span>
+                                                </div>
+                                              </td>
+                                              <td style={{ textAlign: 'center' }}>{row.amount.toLocaleString()}</td>
+                                              <td style={{ textAlign: 'center' }}>{priceLoading ? '—' : row.unitPrice >= 1 ? row.unitPrice.toFixed(1) : row.unitPrice.toFixed(3)}</td>
+                                              <td style={{ textAlign: 'center' }}>
+                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                                  <Image src="/gold.webp" alt="" width={14} height={14} />
+                                                  <span>{priceLoading ? '—' : row.totalValue.toLocaleString()}</span>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                        <tfoot>
+                                          <tr className={styles.subtotalRow}>
+                                            <td colSpan={4}>상자 총 가치</td>
+                                            <td style={{ textAlign: 'center' }}>
+                                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                                <Image src="/gold.webp" alt="" width={14} height={14} />
+                                                <span>{priceLoading ? '—' : boxTotalValue.toLocaleString()}</span>
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        </tfoot>
+                                      </table>
+                                      <div className={styles.graceValueCard}>
+                                        <div className={styles.graceValueRow}>
+                                          <div className={styles.graceValueLabel}>
+                                            <Image src="/dmschddmlvkvus.webp" alt="은총의 파편" width={28} height={28} />
+                                            <span>은총의 파편 1개 가치</span>
+                                          </div>
+                                          <div className={styles.graceValueAmount}>
+                                            <Image src="/gold.webp" alt="골드" width={20} height={20} />
+                                            <span>{priceLoading ? '—' : graceValue.toLocaleString()}</span>
+                                            <span className={styles.graceValueUnit}>G</span>
+                                          </div>
+                                        </div>
+                                        <div className={styles.graceValueFormula}>
+                                          상자 가치 {priceLoading ? '—' : boxTotalValue.toLocaleString()}G ÷ 은총 {REFINE_BOX_GRACE_COST}개
+                                        </div>
                                       </div>
-                                    </div>
-                                  ))}
-                                </div>
+                                    </>
+                                  );
+                                })() : (selectedShopData.id === 7 || selectedShopData.id === 8) ? (() => {
+                                  // 야금술/재봉술 선택 상자: 라디오 + 수량 + 단가 + 가치
+                                  const craftComps = components as typeof METALLURGY_COMPONENTS;
+                                  const selectedId = getSelectedItemId(selectedShopData.id, craftComps);
+                                  return (
+                                    <>
+                                      <table className={styles.materialTable} style={{ marginBottom: '0.75rem' }}>
+                                        <colgroup>
+                                          <col style={{ width: '44px' }} />
+                                          <col style={{ width: '40%' }} />
+                                          <col style={{ width: '60px' }} />
+                                          <col style={{ width: '80px' }} />
+                                          <col style={{ width: '105px' }} />
+                                        </colgroup>
+                                        <thead>
+                                          <tr>
+                                            <th style={{ textAlign: 'center' }}>선택</th>
+                                            <th>아이템</th>
+                                            <th style={{ textAlign: 'center' }}>수량</th>
+                                            <th style={{ textAlign: 'center' }}>단가</th>
+                                            <th style={{ textAlign: 'center' }}>가치</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {craftComps.map((comp) => {
+                                            const isSelected = comp.itemId === selectedId;
+                                            const unitPrice = latestPrices[comp.itemId] || 0;
+                                            const value = Math.round(unitPrice * comp.amount);
+                                            return (
+                                              <tr
+                                                key={comp.itemId}
+                                                style={{ cursor: 'pointer', opacity: isSelected ? 1 : 0.5 }}
+                                                onClick={() => setShopSelectItem(prev => ({ ...prev, [selectedShopData.id]: comp.itemId }))}
+                                              >
+                                                <td style={{ textAlign: 'center', fontSize: '1.1rem' }}>
+                                                  {isSelected ? '✅' : '⬜'}
+                                                </td>
+                                                <td>
+                                                  <div className={styles.materialCell}>
+                                                    <Image src={comp.icon} alt={comp.name} width={32} height={32} />
+                                                    <span style={{ fontSize: '0.8rem' }}>{comp.name}</span>
+                                                  </div>
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>{comp.amount.toLocaleString()}</td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                                    <Image src="/gold.webp" alt="" width={14} height={14} />
+                                                    <span>{priceLoading ? '—' : unitPrice ? unitPrice.toLocaleString() : '-'}</span>
+                                                  </div>
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                                    <Image src="/gold.webp" alt="" width={14} height={14} />
+                                                    <span>{priceLoading ? '—' : value.toLocaleString()}</span>
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                        <tfoot>
+                                          <tr className={styles.subtotalRow}>
+                                            <td colSpan={4}>선택 아이템 가치</td>
+                                            <td style={{ textAlign: 'center' }}>
+                                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                                <Image src="/gold.webp" alt="" width={14} height={14} />
+                                                <span>{priceLoading ? '—' : (() => {
+                                                  const sel = craftComps.find(c => c.itemId === selectedId);
+                                                  return sel ? Math.round((latestPrices[sel.itemId] || 0) * sel.amount).toLocaleString() : '-';
+                                                })()}</span>
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        </tfoot>
+                                      </table>
+                                    </>
+                                  );
+                                })() : components.every(c => c.itemId !== '0') ? (() => {
+                                  // 젬 선택 상자: 라디오 + 시세 테이블
+                                  const selectedId = getSelectedItemId(selectedShopData.id, components);
+                                  const selectedComp = components.find(c => c.itemId === selectedId);
+                                  const selectedPrice = selectedComp ? (latestPrices[selectedComp.itemId] || 0) : 0;
+                                  const qty = selectedShopData.qty;
+                                  const totalValue = Math.round(selectedPrice * qty);
+                                  return (
+                                    <>
+                                      <table className={styles.materialTable} style={{ marginBottom: '0.75rem' }}>
+                                        <colgroup>
+                                          <col style={{ width: '36px' }} />
+                                          <col style={{ width: '40px' }} />
+                                          <col />
+                                          <col style={{ width: '80px' }} />
+                                        </colgroup>
+                                        <thead>
+                                          <tr>
+                                            <th style={{ textAlign: 'center' }}>선택</th>
+                                            <th style={{ textAlign: 'center' }}></th>
+                                            <th>이름</th>
+                                            <th style={{ textAlign: 'center' }}>시세</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {components.map((comp) => {
+                                            const isSelected = comp.itemId === selectedId;
+                                            return (
+                                              <tr
+                                                key={comp.itemId}
+                                                style={{ cursor: 'pointer', opacity: isSelected ? 1 : 0.5 }}
+                                                onClick={() => setShopSelectItem(prev => ({ ...prev, [selectedShopData.id]: comp.itemId }))}
+                                              >
+                                                <td style={{ textAlign: 'center', fontSize: '1.1rem' }}>
+                                                  {isSelected ? '✅' : '⬜'}
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                  <Image src={comp.icon} alt={comp.name} width={32} height={32} title={comp.name} />
+                                                </td>
+                                                <td style={{ fontSize: '0.82rem' }}>{comp.name}</td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                                    <Image src="/gold.webp" alt="" width={14} height={14} />
+                                                    <span>{priceLoading ? '—' : latestPrices[comp.itemId] ? latestPrices[comp.itemId].toLocaleString() : '-'}</span>
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                        <tfoot>
+                                          <tr className={styles.subtotalRow}>
+                                            <td colSpan={3}>선택 아이템 가치{qty > 1 ? ` (×${qty})` : ''}</td>
+                                            <td style={{ textAlign: 'center' }}>
+                                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                                <Image src="/gold.webp" alt="" width={14} height={14} />
+                                                <span>{priceLoading ? '—' : totalValue.toLocaleString()}</span>
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        </tfoot>
+                                      </table>
+                                    </>
+                                  );
+                                })() : (
+                                  // 코어 (itemId === '0') — 시세 없음, 기존 그리드
+                                  <div className={styles.gemGrid}>
+                                    {components.map((comp) => (
+                                      <div key={comp.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem' }}>
+                                        <Image src={comp.icon} alt={comp.name} width={100} height={100} />
+                                        <span className={styles.gemName}>{comp.name}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

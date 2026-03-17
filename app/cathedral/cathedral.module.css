@@ -300,6 +300,21 @@
   justify-content: center;
 }
 
+.shopSelectCheckbox {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shopSelectCheckbox input {
+  display: none;
+}
+
+.shopSelectCheckbox label {
+  display: none;
+}
+
 .materialCell {
   display: flex;
   align-items: center;
@@ -479,6 +494,7 @@
   flex-direction: column;
   gap: 0.75rem;
 }
+
 
 .shopDetailTop {
   display: flex;
@@ -861,4 +877,50 @@
   background-color: #3d2a1a !important;
   color: #e8d5a3 !important;
   -webkit-text-fill-color: #e8d5a3 !important;
+}
+
+/* 은총의 파편 가치 카드 */
+.graceValueCard {
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.08), rgba(201, 168, 76, 0.15));
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+}
+
+.graceValueRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.graceValueLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.graceValueAmount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #c9a84c;
+}
+
+.graceValueUnit {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.graceValueFormula {
+  margin-top: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: right;
 }

@@ -970,20 +970,27 @@ body {
   box-shadow: 0 3px 10px rgba(249, 115, 22, 0.4);
 }
 
-/* Nav Beta Badge */
-.nav-badge-beta {
+/* Nav New Badge */
+.nav-badge-new {
   display: inline-block;
   margin-left: 5px;
-  padding: 1px 5px;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.4;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.5;
   color: #fff;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  border-radius: 4px;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  border-radius: 8px;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   vertical-align: middle;
+  animation: newBadgePulse 2s ease-in-out infinite;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4);
+}
+
+@keyframes newBadgePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 /* Nav Dropdown */
@@ -1385,6 +1392,213 @@ body {
 .ad-sidebar-sticky {
   position: sticky;
   top: 56px;
+}
+
+/* ---- 사이드바 업데이트 카드 (팝업 동일 디자인) ---- */
+.sidebar-update-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card-bg, #1a1a2e);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.sidebar-update-image {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+}
+
+.sidebar-update-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+}
+
+.sidebar-update-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.sidebar-update-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #fff;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  border-radius: 12px;
+  margin-bottom: 0.3rem;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+.sidebar-update-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  margin-bottom: 0.15rem;
+}
+
+.sidebar-update-subtitle {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  line-height: 1.4;
+}
+
+.sidebar-update-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.6rem;
+}
+
+.sidebar-update-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  background: var(--card-header-bg, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  color: var(--text-primary, #e0e0e0);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.sidebar-update-btn:hover {
+  background: rgba(201, 168, 76, 0.15);
+  border-color: rgba(201, 168, 76, 0.4);
+  color: #c9a84c;
+  transform: translateX(3px);
+}
+
+.sidebar-beta-badge {
+  display: inline-block;
+  margin-left: 3px;
+  padding: 0px 4px;
+  font-size: 7px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}
+
+/* ---- 인라인 업데이트 카드 (AdBanner - 이미지 위 오버레이) ---- */
+.inline-update-card {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  min-height: 280px;
+}
+
+.inline-update-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+  z-index: 1;
+}
+
+.inline-update-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 280px;
+  padding: 1rem;
+}
+
+.inline-update-header {
+  text-align: center;
+  margin-bottom: 0.6rem;
+}
+
+.inline-update-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  margin-bottom: 0.15rem;
+}
+
+.inline-update-subtitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.inline-update-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 0.4rem;
+}
+
+.inline-update-btn {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.4rem;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e0e0e0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.inline-update-btn:hover {
+  background: rgba(201, 168, 76, 0.25);
+  border-color: rgba(201, 168, 76, 0.5);
+  color: #c9a84c;
+}
+
+@media (max-width: 576px) {
+  .inline-update-card {
+    min-height: 220px;
+  }
+  .inline-update-inner {
+    min-height: 220px;
+    padding: 0.75rem;
+  }
+  .inline-update-title {
+    font-size: 1.1rem;
+  }
+  .inline-update-btn {
+    font-size: 0.65rem;
+    padding: 0.45rem 0.3rem;
+    gap: 0.3rem;
+  }
 }
 
 /* ---- 자체 홍보 배너 (애드센스 비활성 시) ---- */

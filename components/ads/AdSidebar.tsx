@@ -1,7 +1,7 @@
 'use client';
 
-const FEEDBACK_URL = 'https://forms.gle/n9XKQJmheLhZcSf69';
-const SURVEY_URL = 'https://forms.gle/4dBKrh3kSFtazmxH7';
+import Image from 'next/image';
+import Link from 'next/link';
 
 interface AdSidebarProps {
   position: 'left' | 'right';
@@ -15,32 +15,38 @@ export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) 
       style={{ paddingTop: `${topOffset}px` }}
     >
       <div className="ad-sidebar-sticky">
-        <a
-          href={FEEDBACK_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="promo-banner-vertical"
-        >
-          <img src="/icon-lightbulb.svg" alt="" className="promo-v-icon-img" />
-          <div className="promo-v-title">로아로골 건의함</div>
-          <div className="promo-v-desc">
-            이런 기능이 있으면<br />좋겠다! 하는 아이디어를<br />보내주세요
+        <div className="sidebar-update-card">
+          {/* 배경 이미지 */}
+          <div className="sidebar-update-image">
+            <Image
+              src="/wlvuddmltjdekd1.webp"
+              alt="지평의 성당"
+              fill
+              style={{ objectFit: 'cover', objectPosition: 'center 30%' }}
+            />
+            <div className="sidebar-update-overlay" />
+            <div className="sidebar-update-content">
+              <div className="sidebar-update-title">지평의 성당</div>
+              <div className="sidebar-update-subtitle">3월 18일 오전 10시<br />업데이트 예정</div>
+            </div>
           </div>
-          <div className="promo-v-cta">건의하기</div>
-        </a>
-        <a
-          href={SURVEY_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="promo-banner-vertical promo-banner-survey"
-        >
-          <img src="/icon-assignment.svg" alt="" className="promo-v-icon-img" />
-          <div className="promo-v-title">이용 설문조사</div>
-          <div className="promo-v-desc">
-            어떤 기능을 사용하고<br />계신가요? 의견을<br />들려주세요
+
+          {/* 버튼 영역 */}
+          <div className="sidebar-update-buttons">
+            <Link href="/weekly-gold" className="sidebar-update-btn">
+              <Image src="/gold.webp" alt="" width={18} height={18} />
+              <span>주간 골드 계산</span>
+            </Link>
+            <Link href="/cathedral" className="sidebar-update-btn">
+              <Image src="/dmschddmlvkvus.webp" alt="" width={18} height={18} />
+              <span>지평의 성당 <span className="sidebar-beta-badge">BETA</span></span>
+            </Link>
+            <Link href="/mypage" className="sidebar-update-btn">
+              <Image src="/top-destiny-destruction-stone5.webp" alt="" width={18} height={18} />
+              <span>마이페이지</span>
+            </Link>
           </div>
-          <div className="promo-v-cta promo-v-cta-survey">참여하기</div>
-        </a>
+        </div>
       </div>
     </aside>
   );
