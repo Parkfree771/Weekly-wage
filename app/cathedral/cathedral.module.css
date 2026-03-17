@@ -1,9 +1,41 @@
 /* ==========================================================================
-   지평의 성당 페이지
-   색감: 골드(#c9a84c) + 크림슨(#8b2232) 기반, 그라디언트 없음
+   지평의 성당 페이지 — 따뜻한 크림/브라운 테마 (패키지 갤러리 카드 동일)
    ========================================================================== */
 
-/* 레이드 카드 그리드 */
+/* ─── 페이지 레벨 테마 변수 ─── */
+.detailCard,
+.shopContainer {
+  --ct-bg: #fdf6ee;
+  --ct-bg-alt: #f9efe3;
+  --ct-bg-surface: #f5ead8;
+  --ct-text: #4a3728;
+  --ct-text-secondary: #8b7355;
+  --ct-text-muted: #b09a80;
+  --ct-border: rgba(180, 140, 90, 0.25);
+  --ct-border-light: rgba(180, 140, 90, 0.12);
+  --ct-accent: #c9a84c;
+  --ct-accent-bg: rgba(201, 168, 76, 0.06);
+  --ct-accent-border: rgba(201, 168, 76, 0.2);
+  --ct-shadow: 0 2px 12px rgba(120, 80, 30, 0.1);
+}
+
+:global([data-theme="dark"]) .detailCard,
+:global([data-theme="dark"]) .shopContainer {
+  --ct-bg: #1e1812;
+  --ct-bg-alt: #261e15;
+  --ct-bg-surface: #2e2318;
+  --ct-text: #e8ddd0;
+  --ct-text-secondary: #b09a80;
+  --ct-text-muted: #7a6a55;
+  --ct-border: rgba(180, 140, 90, 0.18);
+  --ct-border-light: rgba(180, 140, 90, 0.08);
+  --ct-accent: #c9a84c;
+  --ct-accent-bg: rgba(201, 168, 76, 0.08);
+  --ct-accent-border: rgba(201, 168, 76, 0.15);
+  --ct-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── 레이드 카드 그리드 ─── */
 .raidCardsGrid {
   display: flex;
   flex-wrap: wrap;
@@ -21,14 +53,14 @@
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(120, 80, 30, 0.12);
   border: 3px solid transparent;
   width: 200px;
 }
 
 .raidCard:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 24px rgba(120, 80, 30, 0.2);
 }
 
 .raidCard.selected {
@@ -37,83 +69,37 @@
   transform: translateY(-4px);
 }
 
-.imageWrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.raidImage {
-  object-fit: cover;
-  width: 100%;
-  height: 100%;
-}
+.imageWrapper { position: relative; width: 100%; height: 100%; }
+.raidImage { object-fit: cover; width: 100%; height: 100%; }
 
 .overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.65) 100%);
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.65) 100%);
   z-index: 1;
 }
 
 .cardContent {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 0.75rem;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 0.75rem; z-index: 2;
+  display: flex; flex-direction: column; gap: 0.1rem;
 }
 
-.raidName {
-  font-size: 1rem;
-  font-weight: 700;
-  color: white;
-  margin: 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.raidLevel {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-}
-
-.goldBadge {
-  margin-top: 0.15rem;
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #ffd700;
-  text-shadow: 0 0 6px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,1);
-}
-
-.graceBadge {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #e8d5a3;
-  text-shadow: 0 0 6px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,1);
-}
+.raidName { font-size: 1rem; font-weight: 700; color: white; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+.raidLevel { font-size: 0.85rem; font-weight: 500; color: rgba(255,255,255,0.9); margin: 0; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+.goldBadge { margin-top: 0.15rem; font-size: 0.9rem; font-weight: 800; color: #ffd700; text-shadow: 0 0 6px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,1); }
+.graceBadge { font-size: 0.78rem; font-weight: 700; color: #e8d5a3; text-shadow: 0 0 6px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,1); }
 
 /* ==========================================================================
-   상세 카드
+   상세 카드 — 따뜻한 배경 레이아웃
    ========================================================================== */
 
 .detailCard {
-  border: 1px solid var(--border-color);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  border-radius: 16px;
-  background-color: var(--card-bg);
+  border: 1px solid var(--ct-border);
+  box-shadow: var(--ct-shadow);
+  border-radius: 14px;
+  background: var(--ct-bg);
   overflow: hidden;
   animation: slideIn 0.3s ease-out;
-  contain: layout style;
 }
 
 @keyframes slideIn {
@@ -122,279 +108,292 @@
 }
 
 .detailHeader {
-  background-color: #3d2a1a !important;
-  color: #e8d5a3 !important;
-  font-size: 1.15rem;
+  background: var(--ct-bg-surface) !important;
+  color: var(--ct-text) !important;
+  font-size: 0.95rem;
   font-weight: 700;
-  padding: 0.875rem 1.25rem;
+  padding: 0.6rem 1rem;
   border: none !important;
-  border-bottom: 2px solid #c9a84c !important;
-  -webkit-text-fill-color: #e8d5a3 !important;
+  border-bottom: 2px solid var(--ct-accent) !important;
+  -webkit-text-fill-color: var(--ct-text) !important;
 }
 
 .detailBody {
-  padding: 1.5rem;
-  background-color: var(--card-bg);
+  padding: 1rem;
+  background: var(--ct-bg);
 }
 
 .sectionTitle {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 0.75rem;
+  color: var(--ct-text);
+  margin-bottom: 0.5rem;
   padding-left: 0.5rem;
-  border-left: 4px solid #c9a84c;
+  border-left: 4px solid var(--ct-accent);
 }
 
-/* 보상 테이블 확장 래퍼 */
 .rewardWide {
-  max-width: 1340px;
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
-  width: calc(100% + 140px);
-  margin-left: -70px;
 }
 
-@media (max-width: 1340px) {
-  .rewardWide {
-    width: 100%;
-    margin-left: auto;
-  }
-}
-
-/* 관문 그리드 */
+/* ─── 관문 그리드 ─── */
 .gatesGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
-  contain: layout style;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
 }
 
 .gateSection {
-  background: var(--card-header-bg);
+  background: var(--ct-bg-alt);
   border-radius: 10px;
-  padding: 0.875rem;
-  border: 1px solid var(--border-color);
+  padding: 0.6rem;
+  border: 1px solid var(--ct-border-light);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
 
 .gateHeader {
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid rgba(201, 168, 76, 0.3);
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid var(--ct-accent-border);
 }
 
 .gateName {
-  font-size: 1.1rem;
+  font-size: 0.88rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--ct-text);
 }
 
-/* 정보 행 */
+/* ─── 정보 행 ─── */
 .infoRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0.75rem;
+  padding: 0.3rem 0.5rem;
   border-radius: 6px;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.25rem;
 }
 
 .goldRow { background: rgba(201, 168, 76, 0.08); }
-.costRow { background: rgba(139, 34, 50, 0.08); }
+.costRow { background: rgba(192, 100, 60, 0.06); }
 .graceRow { background: rgba(201, 168, 76, 0.06); }
-.coreRow { background: rgba(100, 100, 100, 0.06); }
+.coreRow { background: rgba(160, 130, 90, 0.05); }
 
 .infoLabel {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.9rem;
+  gap: 0.3rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--ct-text);
 }
 
-.goldValue { font-size: 1rem; font-weight: 700; color: #c9a84c; }
-.costValue { font-size: 1rem; font-weight: 700; color: #c0392b; }
-.graceValue { font-size: 1rem; font-weight: 700; color: #c9a84c; }
-.coreValue { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.goldValue { font-size: 0.85rem; font-weight: 700; color: var(--ct-accent); }
+.costValue { font-size: 0.85rem; font-weight: 700; color: #c0392b; }
+.graceValue { font-size: 0.85rem; font-weight: 700; color: var(--ct-accent); }
+.coreValue { font-size: 0.85rem; font-weight: 700; color: var(--ct-text); }
 
-/* 재료 테이블 */
+/* ─── 재료 테이블 ─── */
 .materialTable {
   width: 100%;
-  min-width: 380px;
-  color: var(--text-primary);
+  min-width: 300px;
+  color: var(--ct-text);
   border-collapse: separate;
   border-spacing: 0;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid var(--border-color);
-  margin-top: 0.5rem;
+  border: 1px solid var(--ct-accent-border);
+  margin-top: 0.4rem;
   table-layout: fixed;
 }
 
-/* 고정 컬럼 너비: 체크 | 재료 | 수량 | 단가 | 총가치 */
-.materialTable col:nth-child(1) { width: 32px; }
+.materialTable col:nth-child(1) { width: 28px; }
 .materialTable col:nth-child(2) { width: auto; }
-.materialTable col:nth-child(3) { width: 110px; }
-.materialTable col:nth-child(4) { width: 80px; }
-.materialTable col:nth-child(5) { width: 115px; }
+.materialTable col:nth-child(3) { width: 65px; }
+.materialTable col:nth-child(4) { width: 60px; }
+.materialTable col:nth-child(5) { width: 80px; }
 
 .materialTable thead th {
-  background: var(--card-header-bg);
+  background: var(--ct-bg-surface);
   font-weight: 700;
-  font-size: 0.85rem;
-  padding: 0.6rem 0.5rem;
-  color: var(--text-primary);
-  border-bottom: 2px solid var(--border-color);
-  border-right: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  padding: 0.4rem 0.3rem;
+  color: var(--ct-text);
+  border-bottom: 2px solid var(--ct-accent-border);
+  border-right: 1px solid var(--ct-border-light);
   text-align: center;
 }
 
-.materialTable thead th:last-child {
-  border-right: none;
-}
+.materialTable thead th:last-child { border-right: none; }
 
 .materialTable tbody td {
-  padding: 0.6rem 0.4rem;
-  border-bottom: 1px solid var(--border-color);
-  border-right: 1px solid var(--border-color);
+  padding: 0.35rem 0.25rem;
+  border-bottom: 1px solid var(--ct-border-light);
+  border-right: 1px solid var(--ct-border-light);
   vertical-align: middle;
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   text-align: center;
+  background: var(--ct-bg);
 }
 
-.materialTable tbody td:nth-child(2) {
-  text-align: left;
-  overflow: visible;
-}
-
-.materialTable tbody td:last-child {
-  border-right: none;
-}
-
-.materialTable tbody tr:last-child td {
-  border-bottom: none;
-}
+.materialTable tbody td:nth-child(2) { text-align: left; }
+.materialTable tbody td:last-child { border-right: none; }
+.materialTable tbody tr:last-child td { border-bottom: none; }
 
 .subtotalRow td {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-color);
-  padding: 0.5rem;
+  color: var(--ct-text-secondary);
+  border-bottom: 1px solid var(--ct-border-light);
+  padding: 0.35rem 0.3rem;
+  background: var(--ct-bg-alt);
 }
 
 .gateTotalRow td {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-primary);
-  padding: 0.6rem 0.5rem;
+  color: var(--ct-text);
+  padding: 0.4rem 0.3rem;
 }
 
-.materialCheckbox {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.materialCheckbox { display: flex; align-items: center; justify-content: center; }
 
-.shopSelectCheckbox {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.shopSelectCheckbox { cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.shopSelectCheckbox input { display: none; }
+.shopSelectCheckbox label { display: none; }
 
-.shopSelectCheckbox input {
-  display: none;
-}
+.materialCell { display: flex; align-items: center; gap: 0.3rem; }
+.materialCell span { font-size: 0.75rem; white-space: nowrap; }
+.materialCell img { width: 26px !important; height: 26px !important; }
 
-.shopSelectCheckbox label {
-  display: none;
-}
-
-.materialCell {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.materialCell span {
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-/* 합계 */
+/* ─── 합계 ─── */
 .finalSection {
-  background: rgba(201, 168, 76, 0.06);
-  border: 1px solid rgba(201, 168, 76, 0.25);
-  border-radius: 12px;
-  padding: 1.25rem;
+  background: var(--ct-bg-alt);
+  border: 1px solid var(--ct-accent-border);
+  border-radius: 10px;
+  padding: 0.75rem;
 }
 
 .finalTitle {
-  font-size: 1.05rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 1rem;
+  color: var(--ct-text);
+  margin-bottom: 0.5rem;
   text-align: center;
 }
 
 .finalGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .finalGridItem {
   text-align: center;
-  padding: 0.5rem 0.25rem;
-  background: rgba(255, 255, 255, 0.03);
+  padding: 0.35rem 0.2rem;
+  background: var(--ct-bg);
   border-radius: 8px;
+  border: 1px solid var(--ct-border-light);
 }
 
 .finalLabel {
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 0.35rem;
+  color: var(--ct-text-secondary);
+  margin-bottom: 0.2rem;
 }
 
 .finalItemValue {
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--ct-text);
 }
 
 /* ==========================================================================
-   은총의 파편 상점
+   은총의 파편 상점 — 따뜻한 배경 레이아웃
    ========================================================================== */
+
+/* ─── 상점 카드 래퍼 ─── */
+.shopCard {
+  border-radius: 14px !important;
+  overflow: hidden;
+  background: transparent !important;
+  border: 1px solid var(--ct-border) !important;
+  box-shadow: var(--ct-shadow) !important;
+
+  --ct-bg: #fdf6ee;
+  --ct-bg-alt: #f9efe3;
+  --ct-bg-surface: #f5ead8;
+  --ct-text: #4a3728;
+  --ct-text-secondary: #8b7355;
+  --ct-text-muted: #b09a80;
+  --ct-border: rgba(180, 140, 90, 0.25);
+  --ct-border-light: rgba(180, 140, 90, 0.12);
+  --ct-accent: #c9a84c;
+  --ct-accent-bg: rgba(201, 168, 76, 0.06);
+  --ct-accent-border: rgba(201, 168, 76, 0.2);
+  --ct-shadow: 0 2px 12px rgba(120, 80, 30, 0.1);
+}
+
+:global([data-theme="dark"]) .shopCard {
+  --ct-bg: #1e1812;
+  --ct-bg-alt: #261e15;
+  --ct-bg-surface: #2e2318;
+  --ct-text: #e8ddd0;
+  --ct-text-secondary: #b09a80;
+  --ct-text-muted: #7a6a55;
+  --ct-border: rgba(180, 140, 90, 0.18);
+  --ct-border-light: rgba(180, 140, 90, 0.08);
+  --ct-accent: #c9a84c;
+  --ct-accent-bg: rgba(201, 168, 76, 0.08);
+  --ct-accent-border: rgba(201, 168, 76, 0.15);
+  --ct-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.shopCardHeader {
+  background: var(--ct-bg-surface) !important;
+  border: none !important;
+  border-bottom: 2px solid var(--ct-accent) !important;
+  padding: 0.65rem 1rem !important;
+  text-align: center;
+}
+
+.shopCardTitle {
+  font-weight: 700;
+  font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+  color: var(--ct-text);
+  letter-spacing: -0.025em;
+  margin: 0;
+}
 
 .shopContainer {
   display: flex;
   gap: 0;
-  min-height: 550px;
+  min-height: 600px;
+  background: var(--ct-bg);
+  border-radius: 0 0 14px 14px;
 }
 
 .shopList {
-  width: 450px;
-  min-width: 450px;
-  border-right: 1px solid var(--border-color);
+  width: 360px;
+  min-width: 360px;
+  border-right: 1px solid var(--ct-border-light);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  max-height: 700px;
+  background: var(--ct-bg);
 }
 
 .shopListHeader {
-  padding: 0.85rem 1.25rem;
-  font-size: 0.95rem;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: #c9a84c;
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border-color);
+  color: var(--ct-accent);
+  background: var(--ct-bg-alt);
+  border-bottom: 1px solid var(--ct-border-light);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -403,88 +402,60 @@
 .shopItem {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.85rem 1.25rem;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
   cursor: pointer;
   transition: background 0.15s ease;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 0.95rem;
-  color: var(--text-primary);
+  border-bottom: 1px solid var(--ct-border-light);
+  font-size: 0.85rem;
+  color: var(--ct-text);
 }
 
 .shopItem:hover {
-  background: rgba(201, 168, 76, 0.06);
+  background: var(--ct-accent-bg);
 }
 
 .shopItem.active {
-  background: rgba(201, 168, 76, 0.1);
-  border-left: 3px solid #c9a84c;
+  background: var(--ct-bg-alt);
+  border-left: 3px solid var(--ct-accent);
 }
 
 .shopItemIcon {
-  width: 60px;
-  height: 60px;
+  width: 42px;
+  height: 42px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ct-accent-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--ct-border-light);
 }
 
 .shopItemIconFill {
-  width: 60px;
-  height: 60px;
+  width: 42px;
+  height: 42px;
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
+  border: 1px solid var(--ct-border-light);
 }
 
-.shopItemIconFill img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
+.shopItemIconFill img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.shopDetailIconFill {
-  width: 130px;
-  height: 130px;
-  border-radius: 16px;
-  overflow: hidden;
-  margin-bottom: 1.25rem;
-}
+.shopItemName { flex: 1; font-weight: 600; font-size: 0.82rem; line-height: 1.3; }
+.shopItemQty { font-size: 0.78rem; color: var(--ct-text-secondary); font-weight: 500; white-space: nowrap; }
 
-.shopDetailIconFill img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.shopItemName {
-  flex: 1;
-  font-weight: 600;
-  font-size: 0.95rem;
-  line-height: 1.3;
-}
-
-.shopItemQty {
-  font-size: 0.88rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
+/* ─── 상점 상세 ─── */
 .shopDetail {
   flex: 1;
-  padding: 1.5rem;
+  padding: 1.15rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   overflow-y: auto;
+  background: var(--ct-bg-alt);
 }
 
 .shopDetailContent {
@@ -492,25 +463,53 @@
   max-width: 420px;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
-
 
 .shopDetailTop {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.shopDetailSection {
-  width: 100%;
+.shopDetailIconFill {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+  border: 2px solid var(--ct-border);
 }
+
+.shopDetailIconFill img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.shopDetailIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  background: var(--ct-accent-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ct-accent-border);
+  margin-bottom: 0.5rem;
+}
+
+.shopDetailName {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ct-text);
+  margin-bottom: 0.3rem;
+  text-align: center;
+}
+
+.shopDetailSection { width: 100%; }
 
 .shopDetailSectionTitle {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.3rem;
   padding-left: 0.1rem;
 }
 
@@ -519,28 +518,9 @@
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: var(--text-secondary);
-  font-size: 1rem;
-}
-
-.shopDetailIcon {
-  width: 130px;
-  height: 130px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--border-color);
-  margin-bottom: 1.25rem;
-}
-
-.shopDetailName {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 0.75rem;
-  text-align: center;
+  color: var(--ct-text-muted);
+  font-size: 0.9rem;
+  background: var(--ct-bg-alt);
 }
 
 .shopDetailInfo {
@@ -548,246 +528,176 @@
   max-width: 380px;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.6rem;
 }
 
 .shopDetailRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid var(--border-color);
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--ct-border-light);
 }
 
-.shopDetailLabel {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
+.shopDetailLabel { font-size: 0.82rem; font-weight: 600; color: var(--ct-text-secondary); }
+.shopDetailValue { font-size: 0.82rem; font-weight: 700; color: var(--ct-text); }
 
-.shopDetailValue {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-/* 압축 정보 한줄 */
+/* 압축 정보 */
 .shopCompactInfo {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.4rem 0;
-  font-size: 0.9rem;
+  padding: 0.3rem 0;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--ct-text);
 }
 
-.shopCompactItem {
-  font-weight: 700;
-}
-
-.shopCompactDivider {
-  color: var(--text-secondary);
-  opacity: 0.5;
-}
+.shopCompactItem { font-weight: 700; }
+.shopCompactDivider { color: var(--ct-text-secondary); opacity: 0.5; }
 
 .shopDetailCostList {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 0.75rem;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
 }
 
 .shopDetailCostItem {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
+  gap: 0.3rem;
+  background: var(--ct-bg);
+  border: 1px solid var(--ct-border);
   border-radius: 8px;
-  padding: 0.35rem 0.7rem;
-  font-size: 0.85rem;
+  padding: 0.28rem 0.5rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--ct-text);
 }
 
-.costIcon {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-}
+.costIcon { width: 22px; height: 22px; flex-shrink: 0; }
 
 .limitBadge {
   display: inline-block;
-  padding: 0.2rem 0.5rem;
+  padding: 0.15rem 0.4rem;
   border-radius: 5px;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
 .limitOnce {
-  background: rgba(192, 57, 43, 0.12);
+  background: rgba(192, 100, 60, 0.08);
   color: #c0392b;
-  border: 1px solid rgba(192, 57, 43, 0.25);
+  border: 1px solid rgba(192, 100, 60, 0.18);
 }
 
 .limitUnlimited {
-  background: rgba(39, 174, 96, 0.12);
+  background: rgba(39, 174, 96, 0.08);
   color: #27ae60;
-  border: 1px solid rgba(39, 174, 96, 0.25);
+  border: 1px solid rgba(39, 174, 96, 0.18);
 }
 
-/* 영웅 젬 구성 요소 그리드 */
+/* ─── 젬 그리드 ─── */
 .gemGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 .gemCard {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.65rem 0.4rem;
-  background: rgba(139, 92, 246, 0.06);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  gap: 0.3rem;
+  padding: 0.5rem 0.3rem;
+  background: var(--ct-bg);
+  border: 1px solid var(--ct-border);
   border-radius: 10px;
   text-align: center;
 }
 
-.gemName {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
+.gemName { font-size: 0.7rem; font-weight: 600; color: var(--ct-text); line-height: 1.2; }
+.gemPrice { display: flex; align-items: center; gap: 0.25rem; font-size: 0.78rem; font-weight: 700; color: var(--ct-accent); }
 
-.gemPrice {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #c9a84c;
-}
-
-/* 모바일 상점 테이블 */
+/* ─── 모바일 상점 테이블 ─── */
 .shopMobileTable {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid var(--border-color);
-  font-size: 0.83rem;
+  border: 1px solid var(--ct-accent-border);
+  font-size: 0.8rem;
 }
 
 .shopMobileTable thead th {
-  background: var(--card-header-bg);
+  background: var(--ct-bg-surface);
   font-weight: 700;
-  padding: 0.6rem 0.4rem;
-  color: var(--text-primary);
-  border-bottom: 2px solid var(--border-color);
+  padding: 0.5rem 0.35rem;
+  color: var(--ct-text);
+  border-bottom: 2px solid var(--ct-accent-border);
   text-align: center;
   white-space: nowrap;
 }
 
 .shopMobileTable tbody td {
-  padding: 0.55rem 0.4rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 0.45rem 0.35rem;
+  border-bottom: 1px solid var(--ct-border-light);
   vertical-align: middle;
   text-align: center;
-  color: var(--text-primary);
+  color: var(--ct-text);
+  background: var(--ct-bg);
 }
 
-.shopMobileTable tbody td:first-child {
-  text-align: left;
-  font-weight: 600;
-}
-
-.shopMobileTable tbody tr:last-child td {
-  border-bottom: none;
-}
+.shopMobileTable tbody td:first-child { text-align: left; font-weight: 600; }
+.shopMobileTable tbody tr:last-child td { border-bottom: none; }
 
 /* ==========================================================================
    반응형
    ========================================================================== */
 
 @media (max-width: 992px) {
-  .shopContainer {
-    flex-direction: column;
-  }
+  .shopContainer { flex-direction: column; }
   .shopList {
-    width: 100%;
-    min-width: unset;
-    max-height: 300px;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
+    width: 100%; min-width: unset; max-height: 280px;
+    border-right: none; border-bottom: 1px solid var(--ct-border-light);
   }
-  .shopItem {
-    padding: 0.65rem 0.85rem;
-    gap: 0.7rem;
-  }
-  .shopItemIcon, .shopItemIconFill {
-    width: 44px;
-    height: 44px;
-  }
-  .shopDetail {
-    padding: 1.25rem;
-  }
-  .gemGrid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  .shopDetail { padding: 1rem; }
+  .gemGrid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 768px) {
-  .raidCardsGrid {
-    gap: 0.5rem;
-    margin: 1rem auto;
-  }
-  .raidCard {
-    width: calc(33% - 0.5rem);
-    min-width: 0;
-    border-radius: 8px;
-  }
+  .raidCardsGrid { gap: 0.5rem; margin: 1rem auto; }
+  .raidCard { width: calc(33% - 0.5rem); min-width: 0; border-radius: 8px; }
   .cardContent { padding: 0.5rem; }
   .raidName { font-size: 0.75rem !important; line-height: 1.1; white-space: nowrap; }
   .raidLevel { font-size: 0.72rem; }
   .goldBadge { font-size: 0.72rem; }
   .graceBadge { font-size: 0.62rem; }
 
-  .detailHeader { font-size: 1.05rem; padding: 0.75rem 1rem; }
-  .detailBody { padding: 0.75rem; }
-  .gatesGrid { grid-template-columns: 1fr; gap: 1rem; }
-  .gateSection { padding: 0.75rem; }
-  .gateName { font-size: 1rem; }
-  .infoRow { padding: 0.45rem 0.65rem; }
-  .infoLabel { font-size: 0.85rem; }
-  .goldValue, .costValue, .graceValue, .coreValue { font-size: 0.9rem; }
+  .detailHeader { font-size: 0.92rem; padding: 0.55rem 0.85rem; }
+  .detailBody { padding: 0.65rem; }
+  .gatesGrid { grid-template-columns: 1fr; gap: 0.6rem; }
+  .gateSection { padding: 0.5rem; }
+  .gateName { font-size: 0.85rem; }
 
-  .finalSection { padding: 1rem; }
-  .finalTitle { font-size: 0.95rem; }
-  .finalGrid { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
-  .finalLabel { font-size: 0.72rem; }
-  .finalItemValue { font-size: 0.88rem; }
+  .finalSection { padding: 0.65rem; }
+  .finalTitle { font-size: 0.82rem; }
+  .finalGrid { grid-template-columns: repeat(2, 1fr); gap: 0.35rem; }
 
-  .shopList { max-height: 250px; }
-  .shopItem { padding: 0.55rem 0.75rem; gap: 0.6rem; font-size: 0.85rem; }
-  .shopItemIcon, .shopItemIconFill { width: 40px; height: 40px; }
-  .shopItemName { font-size: 0.85rem; }
-  .shopItemQty { font-size: 0.78rem; }
-  .shopDetail { padding: 1rem; }
-  .shopDetailIcon, .shopDetailIconFill { width: 90px; height: 90px; margin-bottom: 0.75rem; }
-  .shopDetailName { font-size: 1.1rem; margin-bottom: 0.5rem; }
-  .gemGrid { grid-template-columns: repeat(3, 1fr); }
-  .gemCard { padding: 0.5rem 0.3rem; }
-  .gemName { font-size: 0.65rem; }
+  .shopList { max-height: 240px; }
+  .shopItem { padding: 0.5rem 0.65rem; gap: 0.5rem; font-size: 0.82rem; }
+  .shopItemIcon, .shopItemIconFill { width: 38px; height: 38px; }
+  .shopItemName { font-size: 0.82rem; }
+  .shopDetail { padding: 0.85rem; }
+  .shopDetailIcon, .shopDetailIconFill { width: 72px; height: 72px; margin-bottom: 0.5rem; }
+  .shopDetailName { font-size: 0.95rem; }
 
-  .materialTable thead th { font-size: 0.78rem; padding: 0.5rem 0.3rem; }
-  .materialTable tbody td { padding: 0.5rem 0.3rem; font-size: 0.78rem; }
-  .materialCell span { font-size: 0.72rem; white-space: nowrap; }
+  .materialTable thead th { font-size: 0.72rem; padding: 0.35rem 0.25rem; }
+  .materialTable tbody td { padding: 0.35rem 0.25rem; font-size: 0.72rem; }
+  .materialCell span { font-size: 0.68rem; }
 
   .rewardWide { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
@@ -801,90 +711,59 @@
   .goldBadge { font-size: 0.58rem; }
   .graceBadge { font-size: 0.5rem; }
 
-  .detailBody { padding: 0.5rem; }
-  .gateSection { padding: 0.5rem; }
-  .gatesGrid { margin-bottom: 1rem; gap: 0.75rem; }
-  .gateName { font-size: 0.9rem; }
-  .gateHeader { margin-bottom: 0.5rem; padding-bottom: 0.35rem; }
-  .infoRow { padding: 0.35rem 0.5rem; margin-bottom: 0.3rem; }
-  .infoLabel { font-size: 0.78rem; gap: 0.25rem; }
-  .goldValue, .costValue, .graceValue, .coreValue { font-size: 0.8rem; }
+  .detailBody { padding: 0.45rem; }
+  .gateSection { padding: 0.4rem; }
+  .gatesGrid { gap: 0.5rem; }
+  .gateName { font-size: 0.8rem; }
+  .gateHeader { margin-bottom: 0.35rem; padding-bottom: 0.25rem; }
+  .infoRow { padding: 0.25rem 0.4rem; margin-bottom: 0.2rem; }
+  .infoLabel { font-size: 0.72rem; gap: 0.2rem; }
+  .goldValue, .costValue, .graceValue, .coreValue { font-size: 0.75rem; }
 
-  .finalSection { padding: 0.75rem; }
-  .finalTitle { font-size: 0.85rem; margin-bottom: 0.75rem; }
-  .finalGrid { grid-template-columns: repeat(2, 1fr); gap: 0.3rem; }
-  .finalGridItem { padding: 0.4rem 0.2rem; }
-  .finalLabel { font-size: 0.65rem; }
-  .finalItemValue { font-size: 0.78rem; }
+  .finalSection { padding: 0.55rem; }
+  .finalTitle { font-size: 0.78rem; margin-bottom: 0.4rem; }
+  .finalGrid { grid-template-columns: repeat(2, 1fr); gap: 0.25rem; }
+  .finalGridItem { padding: 0.3rem 0.15rem; }
+  .finalLabel { font-size: 0.6rem; }
+  .finalItemValue { font-size: 0.72rem; }
 
-  /* 재료 테이블 - 모바일 가로 스크롤 */
-  .materialTable { font-size: 0.72rem; }
-  .materialTable col:nth-child(1) { width: 28px; }
-  .materialTable col:nth-child(3) { width: 80px; }
-  .materialTable col:nth-child(4) { width: 60px; }
-  .materialTable col:nth-child(5) { width: 80px; }
-  .materialTable thead th { font-size: 0.7rem; padding: 0.4rem 0.25rem; }
-  .materialTable tbody td { padding: 0.4rem 0.25rem; font-size: 0.7rem; }
-  .materialCell span { font-size: 0.62rem; }
-  .materialCell img { width: 18px !important; height: 18px !important; }
+  .materialTable { font-size: 0.68rem; }
+  .materialTable col:nth-child(1) { width: 24px; }
+  .materialTable col:nth-child(3) { width: 55px; }
+  .materialTable col:nth-child(4) { width: 50px; }
+  .materialTable col:nth-child(5) { width: 65px; }
+  .materialTable thead th { font-size: 0.65rem; padding: 0.3rem 0.2rem; }
+  .materialTable tbody td { padding: 0.3rem 0.2rem; font-size: 0.65rem; }
+  .materialCell span { font-size: 0.6rem; }
+  .materialCell img { width: 20px !important; height: 20px !important; }
 
-  /* 상점 - 모바일 최적화 */
-  .shopList { max-height: 220px; }
-  .shopItem { padding: 0.5rem 0.65rem; gap: 0.5rem; font-size: 0.8rem; }
-  .shopItemIcon, .shopItemIconFill { width: 36px; height: 36px; border-radius: 6px; }
-  .shopItemName { font-size: 0.8rem; }
-  .shopItemQty { font-size: 0.72rem; }
-  .shopDetail { padding: 0.75rem; }
-  .shopDetailIcon, .shopDetailIconFill { width: 80px; height: 80px; margin-bottom: 0.5rem; border-radius: 12px; }
-  .shopDetailName { font-size: 1rem; margin-bottom: 0.4rem; }
-  .shopDetailRow { padding: 0.4rem 0; }
-  .shopDetailLabel, .shopDetailValue { font-size: 0.85rem; }
-  .shopCompactInfo { font-size: 0.8rem; }
-  .costIcon { width: 24px; height: 24px; }
-  .shopDetailCostItem { padding: 0.25rem 0.5rem; font-size: 0.78rem; }
-  .gemGrid { grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
-  .gemCard { padding: 0.4rem 0.25rem; }
-  .gemName { font-size: 0.6rem; }
-  .gemPrice { font-size: 0.72rem; }
+  .shopList { max-height: 200px; }
+  .shopItem { padding: 0.4rem 0.55rem; gap: 0.4rem; font-size: 0.78rem; }
+  .shopItemIcon, .shopItemIconFill { width: 34px; height: 34px; border-radius: 6px; }
+  .shopItemName { font-size: 0.78rem; }
+  .shopDetail { padding: 0.65rem; }
+  .shopDetailIcon, .shopDetailIconFill { width: 64px; height: 64px; margin-bottom: 0.4rem; border-radius: 10px; }
+  .shopDetailName { font-size: 0.88rem; margin-bottom: 0.25rem; }
+  .shopDetailRow { padding: 0.3rem 0; }
+  .shopDetailLabel, .shopDetailValue { font-size: 0.78rem; }
+  .shopCompactInfo { font-size: 0.75rem; }
+  .shopDetailCostItem { padding: 0.2rem 0.4rem; font-size: 0.72rem; }
+  .costIcon { width: 20px; height: 20px; }
+  .gemGrid { grid-template-columns: repeat(3, 1fr); gap: 0.35rem; }
+  .gemCard { padding: 0.35rem 0.2rem; }
+  .gemName { font-size: 0.58rem; }
+  .gemPrice { font-size: 0.68rem; }
 }
 
 /* ==========================================================================
-   다크모드
+   은총의 파편 가치 카드
    ========================================================================== */
 
-[data-theme="dark"] .raidCard { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); }
-[data-theme="dark"] .raidCard:hover { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); }
-[data-theme="dark"] .raidCard.selected { box-shadow: 0 8px 24px rgba(201, 168, 76, 0.4); }
-[data-theme="dark"] .detailCard { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); }
-[data-theme="dark"] .gateSection { background: rgba(0, 0, 0, 0.2); }
-[data-theme="dark"] .goldRow { background: rgba(201, 168, 76, 0.1); }
-[data-theme="dark"] .costRow { background: rgba(192, 57, 43, 0.1); }
-[data-theme="dark"] .graceRow { background: rgba(201, 168, 76, 0.08); }
-[data-theme="dark"] .coreRow { background: rgba(100, 100, 100, 0.1); }
-[data-theme="dark"] .finalSection { background: rgba(201, 168, 76, 0.08); }
-[data-theme="dark"] .shopItem:hover { background: rgba(201, 168, 76, 0.08); }
-[data-theme="dark"] .shopItem.active { background: rgba(201, 168, 76, 0.12); }
-
-/* 라이트모드 detailHeader */
-:root .detailHeader {
-  background-color: #f5efe0 !important;
-  color: #5a3e1b !important;
-  -webkit-text-fill-color: #5a3e1b !important;
-  border-bottom: 2px solid #c9a84c !important;
-}
-
-[data-theme="dark"] .detailHeader {
-  background-color: #3d2a1a !important;
-  color: #e8d5a3 !important;
-  -webkit-text-fill-color: #e8d5a3 !important;
-}
-
-/* 은총의 파편 가치 카드 */
 .graceValueCard {
-  background: linear-gradient(135deg, rgba(201, 168, 76, 0.08), rgba(201, 168, 76, 0.15));
-  border: 1px solid rgba(201, 168, 76, 0.3);
-  border-radius: 12px;
-  padding: 0.85rem 1rem;
+  background: var(--ct-bg-alt);
+  border: 1px solid var(--ct-accent-border);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
 }
 
 .graceValueRow {
@@ -897,30 +776,30 @@
 .graceValueLabel {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: 0.4rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--ct-text);
 }
 
 .graceValueAmount {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 800;
-  color: #c9a84c;
+  color: var(--ct-accent);
 }
 
 .graceValueUnit {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   opacity: 0.8;
 }
 
 .graceValueFormula {
-  margin-top: 0.4rem;
-  font-size: 0.72rem;
-  color: var(--text-muted);
+  margin-top: 0.3rem;
+  font-size: 0.68rem;
+  color: var(--ct-text-muted);
   text-align: right;
 }

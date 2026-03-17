@@ -1,25 +1,58 @@
-/* ─── 갤러리 카드: 2단 레이아웃 ─── */
+/* ─── 갤러리 카드: 2단 레이아웃 (따뜻한 테마) ─── */
 .galleryCard {
   display: grid;
   grid-template-columns: 1fr 280px;
-  border: 1px solid var(--border-color);
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: var(--shadow-md);
   transition: all 0.2s ease;
+
+  /* 라이트 모드 (기본) */
+  --gc-bg: #fdf6ee;
+  --gc-bg-alt: #f9efe3;
+  --gc-text: #4a3728;
+  --gc-text-secondary: #8b7355;
+  --gc-text-muted: #b09a80;
+  --gc-border: rgba(180, 140, 90, 0.25);
+  --gc-border-light: rgba(180, 140, 90, 0.15);
+  --gc-item-bg: rgba(249, 115, 22, 0.06);
+  --gc-item-border: rgba(180, 140, 90, 0.3);
+  --gc-divider: rgba(180, 140, 90, 0.2);
+  --gc-input-bg: rgba(249, 115, 22, 0.04);
+  --gc-shadow: 0 2px 12px rgba(180, 140, 90, 0.15);
+  --gc-shadow-hover: 0 6px 24px rgba(180, 140, 90, 0.25);
+
+  border: 1px solid var(--gc-border);
+  box-shadow: var(--gc-shadow);
 }
 
 .galleryCard:hover {
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--gc-shadow-hover);
 }
 
-/* ─── 왼쪽 박스: 배경 이미지 + 아이템 ─── */
+/* ─── 다크 모드 ─── */
+:global([data-theme="dark"]) .galleryCard {
+  --gc-bg: #1e1812;
+  --gc-bg-alt: #261e15;
+  --gc-text: #e8ddd0;
+  --gc-text-secondary: #b09a80;
+  --gc-text-muted: #7a6a55;
+  --gc-border: rgba(180, 140, 90, 0.18);
+  --gc-border-light: rgba(180, 140, 90, 0.1);
+  --gc-item-bg: rgba(249, 115, 22, 0.08);
+  --gc-item-border: rgba(180, 140, 90, 0.2);
+  --gc-divider: rgba(180, 140, 90, 0.12);
+  --gc-input-bg: rgba(249, 115, 22, 0.06);
+  --gc-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  --gc-shadow-hover: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* ─── 왼쪽 박스: 아이템 ─── */
 .leftBox {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background-color: #1a1a2e;
+  background: var(--gc-bg);
   min-height: 270px;
   min-width: 0;
   overflow: hidden;
@@ -35,8 +68,7 @@
 .cardTitle {
   font-size: clamp(0.85rem, 2vw, 0.95rem);
   font-weight: 700;
-  color: #fff;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  color: var(--gc-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -57,27 +89,47 @@
 }
 
 .badge31 {
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+:global([data-theme="dark"]) .badge31 {
   color: #ef4444;
 }
 
 .badge21 {
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+:global([data-theme="dark"]) .badge21 {
   color: #3b82f6;
 }
 
 .badgeNormal {
-  background: rgba(107, 114, 128, 0.12);
-  color: #6b7280;
+  background: rgba(120, 100, 80, 0.1);
+  color: #78644e;
+}
+
+:global([data-theme="dark"]) .badgeNormal {
+  color: #9a8a70;
 }
 
 .badgeSelect {
-  background: rgba(139, 92, 246, 0.12);
+  background: rgba(139, 92, 246, 0.1);
+  color: #7c3aed;
+}
+
+:global([data-theme="dark"]) .badgeSelect {
   color: #a78bfa;
 }
 
 .badgeGacha {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+:global([data-theme="dark"]) .badgeGacha {
   color: #f87171;
 }
 
@@ -89,12 +141,17 @@
   transform: translateX(-50%);
   font-size: 0.5rem;
   font-weight: 700;
-  color: #fbbf24;
-  background: rgba(0, 0, 0, 0.7);
+  color: #d97706;
+  background: rgba(255, 247, 237, 0.9);
   padding: 0 0.25rem;
   border-radius: 3px;
   white-space: nowrap;
   line-height: 1.3;
+}
+
+:global([data-theme="dark"]) .itemProbBadge {
+  color: #fbbf24;
+  background: rgba(0, 0, 0, 0.7);
 }
 
 /* ─── 아이템 그리드 ─── */
@@ -104,14 +161,14 @@
   align-content: flex-start;
   gap: 0.35rem;
   flex: 0 0 auto;
-  max-height: 200px; /* 62px × 3행 + gap × 2 */
+  max-height: 200px; /* 62px x 3행 + gap x 2 */
   overflow: hidden;
 }
 
 .moreText {
   font-size: 0.7rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--gc-text-muted);
   margin-top: -0.3rem;
 }
 
@@ -124,8 +181,8 @@
   height: 62px;
   cursor: pointer;
   transition: opacity 0.2s, filter 0.2s;
-  background: rgba(30, 30, 60, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--gc-item-bg);
+  border: 1px solid var(--gc-item-border);
   border-radius: 10px;
   flex-shrink: 0;
 }
@@ -144,8 +201,8 @@
   width: 16px;
   height: 16px;
   border-radius: 4px;
-  border: 2px solid rgba(255, 255, 255, 0.7);
-  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--gc-text-muted);
+  background: var(--gc-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,18 +234,18 @@
   height: 42px;
   border-radius: 6px;
   object-fit: contain;
-  filter: brightness(1);
 }
 
 .itemCellPlaceholder {
   width: 100%;
   height: 100%;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--gc-item-bg);
+  border: 1px dashed var(--gc-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--gc-text-muted);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -201,8 +258,7 @@
   align-items: center;
   padding: 0;
   font-size: 0.7rem;
-  color: #fff;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  color: var(--gc-text-secondary);
   font-weight: 600;
   margin-top: auto;
 }
@@ -223,11 +279,11 @@
 
 /* ─── 오른쪽 박스: 계산 결과 ─── */
 .rightBox {
-  background: #1a1a2e;
+  background: var(--gc-bg-alt);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid var(--gc-border-light);
   transition: background 0.2s;
 }
 
@@ -249,13 +305,13 @@
 .resultLabel {
   font-size: 0.85rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--gc-text-secondary);
 }
 
 .resultValue {
   font-size: 1rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--gc-text);
   text-align: right;
 }
 
@@ -268,14 +324,14 @@
 
 .resultDivider {
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--gc-divider);
   margin: 0.75rem 0;
 }
 
 /* ─── 환율 입력 ─── */
 .rateHint {
   font-size: 0.6rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--gc-text-muted);
   font-weight: 500;
   text-align: right;
   margin-top: -0.2rem;
@@ -285,8 +341,8 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--gc-input-bg);
+  border: 1px solid var(--gc-border);
   border-radius: 8px;
   padding: 0.4rem 0.6rem;
   transition: border-color 0.2s;
@@ -315,13 +371,13 @@
 .rateFixed {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--gc-text);
 }
 
 .rateSep {
   font-size: 0.8rem;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--gc-text-muted);
 }
 
 .rateInput {
@@ -338,7 +394,7 @@
 }
 
 .rateInput::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--gc-text-muted);
   font-weight: 500;
 }
 
@@ -365,7 +421,7 @@
 .benefitLabel {
   font-size: 0.85rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--gc-text-secondary);
 }
 
 .benefitValue {
@@ -374,10 +430,18 @@
 }
 
 .benefitPositive {
+  color: #16a34a;
+}
+
+:global([data-theme="dark"]) .benefitPositive {
   color: #4ade80;
 }
 
 .benefitNegative {
+  color: #dc2626;
+}
+
+:global([data-theme="dark"]) .benefitNegative {
   color: #f87171;
 }
 
@@ -485,11 +549,15 @@
 .gachaResultName {
   font-size: 0.68rem;
   font-weight: 700;
-  color: #22c55e;
+  color: #16a34a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+}
+
+:global([data-theme="dark"]) .gachaResultName {
+  color: #22c55e;
 }
 
 .gachaResultGold {
@@ -543,7 +611,7 @@
 .detailLink {
   margin-top: auto;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--gc-divider);
   text-align: center;
   font-size: 0.78rem;
   font-weight: 600;
@@ -572,7 +640,7 @@
   }
 
   .itemGrid {
-    max-height: 180px; /* 56px × 3행 + gap × 2 */
+    max-height: 180px; /* 56px x 3행 + gap x 2 */
   }
 }
 
@@ -649,7 +717,6 @@
   /* 오른쪽 박스: 축소 + border-left 유지 */
   .rightBox {
     padding: 0.65rem;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
     border-top: none;
   }
 

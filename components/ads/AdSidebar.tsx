@@ -35,15 +35,24 @@ export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) 
           <div className="sidebar-update-buttons">
             <Link href="/weekly-gold" className="sidebar-update-btn">
               <Image src="/gold.webp" alt="" width={18} height={18} />
-              <span>주간 골드 계산</span>
+              <div className="sidebar-btn-text">
+                <span className="sidebar-btn-title">주간 골드 계산</span>
+                <span className="sidebar-btn-desc">지평의 성당 보상, 더보기 효율 확인</span>
+              </div>
             </Link>
             <Link href="/cathedral" className="sidebar-update-btn">
               <Image src="/dmschddmlvkvus.webp" alt="" width={18} height={18} />
-              <span>지평의 성당 <span className="sidebar-beta-badge">BETA</span></span>
+              <div className="sidebar-btn-text">
+                <span className="sidebar-btn-title">지평의 성당 <span className="sidebar-beta-badge">BETA</span></span>
+                <span className="sidebar-btn-desc">은총의 파편 교환 상점 확인</span>
+              </div>
             </Link>
             <Link href="/mypage" className="sidebar-update-btn">
               <Image src="/top-destiny-destruction-stone5.webp" alt="" width={18} height={18} />
-              <span>마이페이지</span>
+              <div className="sidebar-btn-text">
+                <span className="sidebar-btn-title">마이페이지</span>
+                <span className="sidebar-btn-desc">1750 신규 일일 컨텐츠 수급량 확인</span>
+              </div>
             </Link>
           </div>
         </div>

@@ -232,12 +232,12 @@ const STAGES: {
 
 // 테마 색상 매핑
 const THEME_COLORS: { [key: string]: { name: string; accent: string; bg: string; border: string; iconBg: string } } = {
-  ancient:   { name: '#d4c5a0', accent: '#b89d6a', bg: 'rgba(212, 197, 160, 0.06)', border: 'rgba(184, 157, 106, 0.3)', iconBg: 'rgba(42, 26, 10, 0.8)' },
-  relic:     { name: '#e8944c', accent: '#b85c1e', bg: 'rgba(184, 92, 30, 0.06)', border: 'rgba(184, 92, 30, 0.3)', iconBg: 'rgba(26, 10, 0, 0.8)' },
-  gem:       { name: '#a78bfa', accent: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.06)', border: 'rgba(139, 92, 246, 0.3)', iconBg: 'rgba(55, 30, 100, 0.8)' },
-  craft:     { name: '#c9a84c', accent: '#a8893a', bg: 'rgba(201, 168, 76, 0.06)', border: 'rgba(201, 168, 76, 0.3)', iconBg: 'rgba(60, 45, 15, 0.8)' },
-  refine:    { name: '#e06050', accent: '#c0392b', bg: 'rgba(192, 57, 43, 0.06)', border: 'rgba(192, 57, 43, 0.3)', iconBg: 'rgba(50, 15, 15, 0.8)' },
-  gemRandom: { name: '#9b8dd4', accent: '#7c5cbf', bg: 'rgba(124, 92, 191, 0.06)', border: 'rgba(124, 92, 191, 0.3)', iconBg: 'rgba(40, 25, 80, 0.8)' },
+  ancient:   { name: 'var(--text-primary)', accent: '#b89d6a', bg: 'rgba(201, 168, 76, 0.06)', border: 'rgba(184, 157, 106, 0.25)', iconBg: 'rgba(201, 168, 76, 0.08)' },
+  relic:     { name: 'var(--text-primary)', accent: '#b85c1e', bg: 'rgba(184, 92, 30, 0.06)', border: 'rgba(184, 92, 30, 0.2)', iconBg: 'rgba(184, 92, 30, 0.06)' },
+  gem:       { name: 'var(--text-primary)', accent: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.06)', border: 'rgba(139, 92, 246, 0.2)', iconBg: 'rgba(139, 92, 246, 0.06)' },
+  craft:     { name: 'var(--text-primary)', accent: '#a8893a', bg: 'rgba(201, 168, 76, 0.06)', border: 'rgba(201, 168, 76, 0.25)', iconBg: 'rgba(201, 168, 76, 0.08)' },
+  refine:    { name: 'var(--text-primary)', accent: '#c0392b', bg: 'rgba(192, 57, 43, 0.06)', border: 'rgba(192, 57, 43, 0.2)', iconBg: 'rgba(192, 57, 43, 0.06)' },
+  gemRandom: { name: 'var(--text-primary)', accent: '#7c5cbf', bg: 'rgba(124, 92, 191, 0.06)', border: 'rgba(124, 92, 191, 0.2)', iconBg: 'rgba(124, 92, 191, 0.06)' },
 };
 
 // 은총의 파편 상점 데이터
@@ -621,24 +621,13 @@ export default function CathedralPage() {
 
             {/* 은총의 파편 상점 */}
             <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
-              <Card className="border-0 shadow-lg" style={{ borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent' }}>
-                <Card.Header
-                  className="text-center py-2 border-0"
-                  style={{
-                    backgroundColor: 'var(--card-header-bg)',
-                    borderBottom: '2px solid rgba(201, 168, 76, 0.3)',
-                  }}
-                >
-                  <h3 className="mb-0" style={{
-                    fontWeight: 700,
-                    fontSize: 'clamp(1.05rem, 2.2vw, 1.2rem)',
-                    color: 'var(--text-primary)',
-                    letterSpacing: '-0.025em'
-                  }}>
+              <Card className={styles.shopCard}>
+                <Card.Header className={styles.shopCardHeader}>
+                  <h3 className={styles.shopCardTitle}>
                     은총의 파편 상점
                   </h3>
                 </Card.Header>
-                <Card.Body className="p-0" style={{ backgroundColor: 'var(--card-bg)' }}>
+                <Card.Body className="p-0">
                   {/* 데스크톱: 좌우 분할 */}
                   <div className={styles.shopContainer}>
                     <div className={styles.shopList}>
