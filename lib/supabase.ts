@@ -376,6 +376,7 @@ export interface RefiningStatsSummary {
   median_advanced_abidos: number;
   median_fate_fragment: number;
   median_gold: number;
+  median_shilling: number;
   median_lava_breath: number;
   median_glacier_breath: number;
   // 평균값 재료
@@ -386,6 +387,7 @@ export interface RefiningStatsSummary {
   avg_advanced_abidos: number | null;
   avg_fate_fragment: number | null;
   avg_gold: number | null;
+  avg_shilling: number | null;
   avg_lava_breath: number | null;
   avg_glacier_breath: number | null;
 }
@@ -476,6 +478,7 @@ export async function getRefiningStatsSummaryAll(
       median_advanced_abidos: Math.round(data.reduce((sum, d) => sum + (d.median_advanced_abidos || 0) * (d.total_count || 0), 0) / totalCount),
       median_fate_fragment: Math.round(data.reduce((sum, d) => sum + (d.median_fate_fragment || 0) * (d.total_count || 0), 0) / totalCount),
       median_gold: Math.round(data.reduce((sum, d) => sum + (d.median_gold || 0) * (d.total_count || 0), 0) / totalCount),
+      median_shilling: Math.round(data.reduce((sum, d) => sum + (d.median_shilling || 0) * (d.total_count || 0), 0) / totalCount),
       median_lava_breath: Math.round(data.reduce((sum, d) => sum + (d.median_lava_breath || 0) * (d.total_count || 0), 0) / totalCount),
       median_glacier_breath: Math.round(data.reduce((sum, d) => sum + (d.median_glacier_breath || 0) * (d.total_count || 0), 0) / totalCount),
     };
@@ -489,6 +492,7 @@ export async function getRefiningStatsSummaryAll(
       avg_advanced_abidos: Math.round(data.reduce((sum, d) => sum + (d.avg_advanced_abidos || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
       avg_fate_fragment: Math.round(data.reduce((sum, d) => sum + (d.avg_fate_fragment || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
       avg_gold: Math.round(data.reduce((sum, d) => sum + (d.avg_gold || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
+      avg_shilling: Math.round(data.reduce((sum, d) => sum + (d.avg_shilling || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
       avg_lava_breath: Math.round(data.reduce((sum, d) => sum + (d.avg_lava_breath || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
       avg_glacier_breath: Math.round(data.reduce((sum, d) => sum + (d.avg_glacier_breath || 0) * (d.total_count || 0), 0) / totalCount * 10) / 10,
     };

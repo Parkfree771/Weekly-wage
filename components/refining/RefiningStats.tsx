@@ -54,6 +54,7 @@ export default function RefiningStats() {
     advancedAbidos: number;
     fateFragment: number;
     gold: number;
+    shilling: number;
     lavaBreath: number;
     glacierBreath: number;
     // 평균값 합산
@@ -64,6 +65,7 @@ export default function RefiningStats() {
     avgAdvancedAbidos: number;
     avgFateFragment: number;
     avgGold: number;
+    avgShilling: number;
     avgLavaBreath: number;
     avgGlacierBreath: number;
     hasAvgData: boolean;
@@ -75,6 +77,14 @@ export default function RefiningStats() {
   });
   const toggleRangeGold = (key: string) => {
     setRangeGoldInclude(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // 개별 통계 골드 포함 체크박스
+  const [singleGoldInclude, setSingleGoldInclude] = useState<Record<string, boolean>>({
+    stone: true, breakthrough: true, abidos: true, fragment: true, breath: true, gold: true,
+  });
+  const toggleSingleGold = (key: string) => {
+    setSingleGoldInclude(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   // 모바일 감지 및 마운트 상태
@@ -158,10 +168,10 @@ export default function RefiningStats() {
 
       let attempts = 0, destructionCrystal = 0, guardianCrystal = 0;
       let greatBreakthrough = 0, advancedAbidos = 0, fateFragment = 0;
-      let gold = 0, lavaBreath = 0, glacierBreath = 0;
+      let gold = 0, shilling = 0, lavaBreath = 0, glacierBreath = 0;
       let avgAttempts = 0, avgDestructionCrystal = 0, avgGuardianCrystal = 0;
       let avgGreatBreakthrough = 0, avgAdvancedAbidos = 0, avgFateFragment = 0;
-      let avgGold = 0, avgLavaBreath = 0, avgGlacierBreath = 0;
+      let avgGold = 0, avgShilling = 0, avgLavaBreath = 0, avgGlacierBreath = 0;
       let hasAvgData = false;
       let levelsWithData = 0;
 
@@ -174,6 +184,7 @@ export default function RefiningStats() {
           advancedAbidos += data.median_advanced_abidos || 0;
           fateFragment += data.median_fate_fragment || 0;
           gold += data.median_gold || 0;
+          shilling += data.median_shilling || 0;
           lavaBreath += data.median_lava_breath || 0;
           glacierBreath += data.median_glacier_breath || 0;
           // 평균값 합산
@@ -186,6 +197,7 @@ export default function RefiningStats() {
             avgAdvancedAbidos += Number(data.avg_advanced_abidos) || 0;
             avgFateFragment += Number(data.avg_fate_fragment) || 0;
             avgGold += Number(data.avg_gold) || 0;
+            avgShilling += Number(data.avg_shilling) || 0;
             avgLavaBreath += Number(data.avg_lava_breath) || 0;
             avgGlacierBreath += Number(data.avg_glacier_breath) || 0;
           }
@@ -195,7 +207,7 @@ export default function RefiningStats() {
 
       setRangeTotals({
         attempts, destructionCrystal, guardianCrystal, greatBreakthrough,
-        advancedAbidos, fateFragment, gold, lavaBreath, glacierBreath,
+        advancedAbidos, fateFragment, gold, shilling, lavaBreath, glacierBreath,
         avgAttempts: Math.round(avgAttempts * 10) / 10,
         avgDestructionCrystal: Math.round(avgDestructionCrystal * 10) / 10,
         avgGuardianCrystal: Math.round(avgGuardianCrystal * 10) / 10,
@@ -203,6 +215,7 @@ export default function RefiningStats() {
         avgAdvancedAbidos: Math.round(avgAdvancedAbidos * 10) / 10,
         avgFateFragment: Math.round(avgFateFragment * 10) / 10,
         avgGold: Math.round(avgGold * 10) / 10,
+        avgShilling: Math.round(avgShilling * 10) / 10,
         avgLavaBreath: Math.round(avgLavaBreath * 10) / 10,
         avgGlacierBreath: Math.round(avgGlacierBreath * 10) / 10,
         hasAvgData,
@@ -332,55 +345,94 @@ export default function RefiningStats() {
     loadSummaryData(equipmentType, breathType, level);
   };
 
-  // 총 비용 계산 함수 (집계 데이터 기반 - 중앙값)
-  const calculateTotalCost = (data: RefiningStatsSummary): number => {
-    let totalCost = data.median_gold || 0;
-
+  // 개별 통계 재료별 골드 계산 (중앙값)
+  const getSingleMaterialGold = (data: RefiningStatsSummary, key: string): number => {
     const stoneId = equipmentType === 'weapon'
       ? MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL
       : MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL;
-    const stoneAmount = equipmentType === 'weapon'
-      ? data.median_destruction_crystal || 0
-      : data.median_guardian_crystal || 0;
-
-    totalCost += stoneAmount * (marketPrices[stoneId] || 0);
-    totalCost += (data.median_great_breakthrough || 0) * (marketPrices[MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE] || 0);
-    totalCost += (data.median_advanced_abidos || 0) * (marketPrices[MATERIAL_IDS.ADVANCED_ABIDOS_FUSION] || 0);
-    totalCost += (data.median_fate_fragment || 0) * (marketPrices[MATERIAL_IDS.FATE_FRAGMENT] || 0);
-
     const breathId = equipmentType === 'weapon' ? BREATH_IDS.LAVA : BREATH_IDS.GLACIER;
-    const breathAmount = equipmentType === 'weapon'
-      ? data.median_lava_breath || 0
-      : data.median_glacier_breath || 0;
-    totalCost += breathAmount * (marketPrices[breathId] || 0);
+    switch (key) {
+      case 'stone': {
+        const amount = equipmentType === 'weapon'
+          ? data.median_destruction_crystal || 0
+          : data.median_guardian_crystal || 0;
+        return Math.round(amount * (marketPrices[stoneId] || 0));
+      }
+      case 'breakthrough':
+        return Math.round((data.median_great_breakthrough || 0) * (marketPrices[MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE] || 0));
+      case 'abidos':
+        return Math.round((data.median_advanced_abidos || 0) * (marketPrices[MATERIAL_IDS.ADVANCED_ABIDOS_FUSION] || 0));
+      case 'fragment':
+        return Math.round((data.median_fate_fragment || 0) * (marketPrices[MATERIAL_IDS.FATE_FRAGMENT] || 0));
+      case 'breath': {
+        const amount = equipmentType === 'weapon'
+          ? data.median_lava_breath || 0
+          : data.median_glacier_breath || 0;
+        return Math.round(amount * (marketPrices[breathId] || 0));
+      }
+      case 'gold':
+        return data.median_gold || 0;
+      default:
+        return 0;
+    }
+  };
 
-    return Math.round(totalCost);
+  // 총 비용 계산 함수 (집계 데이터 기반 - 중앙값)
+  const calculateTotalCost = (data: RefiningStatsSummary): number => {
+    let total = 0;
+    if (singleGoldInclude.stone) total += getSingleMaterialGold(data, 'stone');
+    if (singleGoldInclude.breakthrough) total += getSingleMaterialGold(data, 'breakthrough');
+    if (singleGoldInclude.abidos) total += getSingleMaterialGold(data, 'abidos');
+    if (singleGoldInclude.fragment) total += getSingleMaterialGold(data, 'fragment');
+    if (singleGoldInclude.breath) total += getSingleMaterialGold(data, 'breath');
+    if (singleGoldInclude.gold) total += getSingleMaterialGold(data, 'gold');
+    return total;
+  };
+
+  // 개별 통계 재료별 골드 계산 (평균값)
+  const getSingleAvgMaterialGold = (data: RefiningStatsSummary, key: string): number => {
+    if (data.avg_attempts == null) return 0;
+    const stoneId = equipmentType === 'weapon'
+      ? MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL
+      : MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL;
+    const breathId = equipmentType === 'weapon' ? BREATH_IDS.LAVA : BREATH_IDS.GLACIER;
+    switch (key) {
+      case 'stone': {
+        const amount = equipmentType === 'weapon'
+          ? Number(data.avg_destruction_crystal) || 0
+          : Number(data.avg_guardian_crystal) || 0;
+        return Math.round(amount * (marketPrices[stoneId] || 0));
+      }
+      case 'breakthrough':
+        return Math.round((Number(data.avg_great_breakthrough) || 0) * (marketPrices[MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE] || 0));
+      case 'abidos':
+        return Math.round((Number(data.avg_advanced_abidos) || 0) * (marketPrices[MATERIAL_IDS.ADVANCED_ABIDOS_FUSION] || 0));
+      case 'fragment':
+        return Math.round((Number(data.avg_fate_fragment) || 0) * (marketPrices[MATERIAL_IDS.FATE_FRAGMENT] || 0));
+      case 'breath': {
+        const amount = equipmentType === 'weapon'
+          ? Number(data.avg_lava_breath) || 0
+          : Number(data.avg_glacier_breath) || 0;
+        return Math.round(amount * (marketPrices[breathId] || 0));
+      }
+      case 'gold':
+        return Math.round(Number(data.avg_gold) || 0);
+      default:
+        return 0;
+    }
   };
 
   // 총 비용 계산 함수 (평균값)
   const calculateAvgTotalCost = (data: RefiningStatsSummary): number => {
     if (data.avg_attempts == null) return 0;
-    let totalCost = Number(data.avg_gold) || 0;
-
-    const stoneId = equipmentType === 'weapon'
-      ? MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL
-      : MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL;
-    const stoneAmount = equipmentType === 'weapon'
-      ? Number(data.avg_destruction_crystal) || 0
-      : Number(data.avg_guardian_crystal) || 0;
-
-    totalCost += stoneAmount * (marketPrices[stoneId] || 0);
-    totalCost += (Number(data.avg_great_breakthrough) || 0) * (marketPrices[MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE] || 0);
-    totalCost += (Number(data.avg_advanced_abidos) || 0) * (marketPrices[MATERIAL_IDS.ADVANCED_ABIDOS_FUSION] || 0);
-    totalCost += (Number(data.avg_fate_fragment) || 0) * (marketPrices[MATERIAL_IDS.FATE_FRAGMENT] || 0);
-
-    const breathId = equipmentType === 'weapon' ? BREATH_IDS.LAVA : BREATH_IDS.GLACIER;
-    const breathAmount = equipmentType === 'weapon'
-      ? Number(data.avg_lava_breath) || 0
-      : Number(data.avg_glacier_breath) || 0;
-    totalCost += breathAmount * (marketPrices[breathId] || 0);
-
-    return Math.round(totalCost);
+    let total = 0;
+    if (singleGoldInclude.stone) total += getSingleAvgMaterialGold(data, 'stone');
+    if (singleGoldInclude.breakthrough) total += getSingleAvgMaterialGold(data, 'breakthrough');
+    if (singleGoldInclude.abidos) total += getSingleAvgMaterialGold(data, 'abidos');
+    if (singleGoldInclude.fragment) total += getSingleAvgMaterialGold(data, 'fragment');
+    if (singleGoldInclude.breath) total += getSingleAvgMaterialGold(data, 'breath');
+    if (singleGoldInclude.gold) total += getSingleAvgMaterialGold(data, 'gold');
+    return total;
   };
 
   // 집계 데이터를 화면에 표시할 형태로 변환
@@ -423,6 +475,7 @@ export default function RefiningStats() {
       advancedAbidos: summaryData.median_advanced_abidos || 0,
       fateFragment: summaryData.median_fate_fragment || 0,
       gold: summaryData.median_gold || 0,
+      shilling: summaryData.median_shilling || 0,
       lavaBreath: summaryData.median_lava_breath || 0,
       glacierBreath: summaryData.median_glacier_breath || 0,
     };
@@ -437,6 +490,7 @@ export default function RefiningStats() {
       advancedAbidos: Number(summaryData.avg_advanced_abidos) || 0,
       fateFragment: Number(summaryData.avg_fate_fragment) || 0,
       gold: Number(summaryData.avg_gold) || 0,
+      shilling: Number(summaryData.avg_shilling) || 0,
       lavaBreath: Number(summaryData.avg_lava_breath) || 0,
       glacierBreath: Number(summaryData.avg_glacier_breath) || 0,
     } : null;
@@ -683,67 +737,77 @@ export default function RefiningStats() {
 
                 {/* 중앙값 기준 재료 소모량 */}
                 <div className={styles.materialsCard}>
-                  <div className={styles.materialsTitle}>중앙값 기준 재료 소모량 (장기백 {stats.jangin.p50}%)</div>
-                  <div className={styles.materialsGrid}>
-                    <div className={styles.materialItem}>
-                      <span className={styles.materialLabel}>시도 횟수</span>
-                      <span className={styles.materialValue}>{stats.materials.attempts}회</span>
+                  <div className={styles.materialsTitle}>중앙값 기준 재료 소모량 (장인의 기운 {stats.jangin.p50}%)</div>
+
+                  <div className={styles.rangeAttemptsRow}>
+                    <span className={styles.materialLabel}>시도 횟수</span>
+                    <span className={styles.materialValue}>{stats.materials.attempts}회</span>
+                  </div>
+
+                  <div className={styles.rangeGrid}>
+                    <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('stone')}>
+                      <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.stone} onChange={() => toggleSingleGold('stone')} onClick={e => e.stopPropagation()} />
+                      <Image src={equipmentType === 'weapon' ? '/top-destiny-destruction-stone5.webp' : '/top-destiny-guardian-stone5.webp'} alt="" width={22} height={22} />
+                      <span className={styles.rangeGridMul}>×</span>
+                      <span className={styles.materialValue}>{(equipmentType === 'weapon' ? stats.materials.destructionCrystal : stats.materials.guardianCrystal).toLocaleString()}</span>
+                      <span className={styles.rangeGridEq}>=</span>
+                      <span className={`${styles.rangeGridGold} ${!singleGoldInclude.stone ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleMaterialGold(summaryData, 'stone').toLocaleString() : 0}G</span>
                     </div>
-                    <div className={styles.materialItem}>
-                      <Image
-                        src={equipmentType === 'weapon' ? '/top-destiny-destruction-stone5.webp' : '/top-destiny-guardian-stone5.webp'}
-                        alt=""
-                        width={24}
-                        height={24}
-                      />
-                      <span className={styles.materialValue}>
-                        {equipmentType === 'weapon' ? stats.materials.destructionCrystal : stats.materials.guardianCrystal}
-                      </span>
+
+                    <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('breakthrough')}>
+                      <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.breakthrough} onChange={() => toggleSingleGold('breakthrough')} onClick={e => e.stopPropagation()} />
+                      <Image src="/top-destiny-breakthrough-stone5.webp" alt="" width={22} height={22} />
+                      <span className={styles.rangeGridMul}>×</span>
+                      <span className={styles.materialValue}>{stats.materials.greatBreakthrough.toLocaleString()}</span>
+                      <span className={styles.rangeGridEq}>=</span>
+                      <span className={`${styles.rangeGridGold} ${!singleGoldInclude.breakthrough ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleMaterialGold(summaryData, 'breakthrough').toLocaleString() : 0}G</span>
                     </div>
-                    <div className={styles.materialItem}>
-                      <Image
-                        src="/top-destiny-breakthrough-stone5.webp"
-                        alt=""
-                        width={24}
-                        height={24}
-                      />
-                      <span className={styles.materialValue}>
-                        {stats.materials.greatBreakthrough}
-                      </span>
+
+                    <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('abidos')}>
+                      <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.abidos} onChange={() => toggleSingleGold('abidos')} onClick={e => e.stopPropagation()} />
+                      <Image src="/top-abidos-fusion5.webp" alt="" width={22} height={22} />
+                      <span className={styles.rangeGridMul}>×</span>
+                      <span className={styles.materialValue}>{stats.materials.advancedAbidos.toLocaleString()}</span>
+                      <span className={styles.rangeGridEq}>=</span>
+                      <span className={`${styles.rangeGridGold} ${!singleGoldInclude.abidos ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleMaterialGold(summaryData, 'abidos').toLocaleString() : 0}G</span>
                     </div>
-                    <div className={styles.materialItem}>
-                      <Image
-                        src="/top-abidos-fusion5.webp"
-                        alt=""
-                        width={24}
-                        height={24}
-                      />
-                      <span className={styles.materialValue}>
-                        {stats.materials.advancedAbidos}
-                      </span>
-                    </div>
-                    <div className={styles.materialItem}>
-                      <Image src="/destiny-shard-bag-large5.webp" alt="" width={24} height={24} />
+
+                    <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('fragment')}>
+                      <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.fragment} onChange={() => toggleSingleGold('fragment')} onClick={e => e.stopPropagation()} />
+                      <Image src="/destiny-shard-bag-large5.webp" alt="" width={22} height={22} />
+                      <span className={styles.rangeGridMul}>×</span>
                       <span className={styles.materialValue}>{stats.materials.fateFragment.toLocaleString()}</span>
+                      <span className={styles.rangeGridEq}>=</span>
+                      <span className={`${styles.rangeGridGold} ${!singleGoldInclude.fragment ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleMaterialGold(summaryData, 'fragment').toLocaleString() : 0}G</span>
                     </div>
+
                     {breathType !== 'none' && (
-                      <div className={styles.materialItem}>
-                        <Image
-                          src={equipmentType === 'weapon' ? '/breath-lava5.webp' : '/breath-glacier5.webp'}
-                          alt=""
-                          width={24}
-                          height={24}
-                        />
-                        <span className={styles.materialValue}>
-                          {equipmentType === 'weapon' ? stats.materials.lavaBreath : stats.materials.glacierBreath}
-                        </span>
+                      <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('breath')}>
+                        <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.breath} onChange={() => toggleSingleGold('breath')} onClick={e => e.stopPropagation()} />
+                        <Image src={equipmentType === 'weapon' ? '/breath-lava5.webp' : '/breath-glacier5.webp'} alt="" width={22} height={22} />
+                        <span className={styles.rangeGridMul}>×</span>
+                        <span className={styles.materialValue}>{(equipmentType === 'weapon' ? stats.materials.lavaBreath : stats.materials.glacierBreath).toLocaleString()}</span>
+                        <span className={styles.rangeGridEq}>=</span>
+                        <span className={`${styles.rangeGridGold} ${!singleGoldInclude.breath ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleMaterialGold(summaryData, 'breath').toLocaleString() : 0}G</span>
                       </div>
                     )}
-                    <div className={styles.materialItem}>
-                      <Image src="/gold.webp" alt="" width={24} height={24} />
-                      <span className={styles.materialValue}>{stats.materials.gold.toLocaleString()}</span>
+
+                    <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('gold')}>
+                      <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.gold} onChange={() => toggleSingleGold('gold')} onClick={e => e.stopPropagation()} />
+                      <Image src="/gold.webp" alt="" width={22} height={22} />
+                      <span className={styles.rangeGridEq}>=</span>
+                      <span className={`${styles.rangeGridGold} ${!singleGoldInclude.gold ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleMaterialGold(summaryData, 'gold').toLocaleString() : 0}G</span>
                     </div>
+
+                    {stats.materials.shilling > 0 && (
+                      <div className={styles.rangeGridItem}>
+                        <Image src="/shilling.webp" alt="실링" width={22} height={22} />
+                        <span className={styles.rangeGridMul}>×</span>
+                        <span className={styles.materialValue}>{stats.materials.shilling.toLocaleString()}</span>
+                      </div>
+                    )}
                   </div>
+
                   {summaryData && (
                     <div className={styles.totalCostSection}>
                       <span className={styles.totalCostLabel}>예상 총비용</span>
@@ -757,52 +821,75 @@ export default function RefiningStats() {
                 {/* 평균값 기준 재료 소모량 */}
                 {stats.avgMaterials && (
                   <div className={styles.materialsCard}>
-                    <div className={styles.materialsTitle}>평균값 기준 재료 소모량 (장기백 {stats.jangin.mean}%)</div>
-                    <div className={styles.materialsGrid}>
-                      <div className={styles.materialItem}>
-                        <span className={styles.materialLabel}>시도 횟수</span>
-                        <span className={styles.materialValue}>{stats.avgMaterials.attempts}회</span>
+                    <div className={styles.materialsTitle}>평균값 기준 재료 소모량 (장인의 기운 {stats.jangin.mean}%)</div>
+
+                    <div className={styles.rangeAttemptsRow}>
+                      <span className={styles.materialLabel}>시도 횟수</span>
+                      <span className={styles.materialValue}>{stats.avgMaterials.attempts}회</span>
+                    </div>
+
+                    <div className={styles.rangeGrid}>
+                      <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('stone')}>
+                        <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.stone} onChange={() => toggleSingleGold('stone')} onClick={e => e.stopPropagation()} />
+                        <Image src={equipmentType === 'weapon' ? '/top-destiny-destruction-stone5.webp' : '/top-destiny-guardian-stone5.webp'} alt="" width={22} height={22} />
+                        <span className={styles.rangeGridMul}>×</span>
+                        <span className={styles.materialValue}>{(equipmentType === 'weapon' ? stats.avgMaterials.destructionCrystal : stats.avgMaterials.guardianCrystal).toLocaleString()}</span>
+                        <span className={styles.rangeGridEq}>=</span>
+                        <span className={`${styles.rangeGridGold} ${!singleGoldInclude.stone ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleAvgMaterialGold(summaryData, 'stone').toLocaleString() : 0}G</span>
                       </div>
-                      <div className={styles.materialItem}>
-                        <Image
-                          src={equipmentType === 'weapon' ? '/top-destiny-destruction-stone5.webp' : '/top-destiny-guardian-stone5.webp'}
-                          alt=""
-                          width={24}
-                          height={24}
-                        />
-                        <span className={styles.materialValue}>
-                          {equipmentType === 'weapon' ? stats.avgMaterials.destructionCrystal.toLocaleString() : stats.avgMaterials.guardianCrystal.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className={styles.materialItem}>
-                        <Image src="/top-destiny-breakthrough-stone5.webp" alt="" width={24} height={24} />
+
+                      <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('breakthrough')}>
+                        <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.breakthrough} onChange={() => toggleSingleGold('breakthrough')} onClick={e => e.stopPropagation()} />
+                        <Image src="/top-destiny-breakthrough-stone5.webp" alt="" width={22} height={22} />
+                        <span className={styles.rangeGridMul}>×</span>
                         <span className={styles.materialValue}>{stats.avgMaterials.greatBreakthrough.toLocaleString()}</span>
+                        <span className={styles.rangeGridEq}>=</span>
+                        <span className={`${styles.rangeGridGold} ${!singleGoldInclude.breakthrough ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleAvgMaterialGold(summaryData, 'breakthrough').toLocaleString() : 0}G</span>
                       </div>
-                      <div className={styles.materialItem}>
-                        <Image src="/top-abidos-fusion5.webp" alt="" width={24} height={24} />
+
+                      <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('abidos')}>
+                        <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.abidos} onChange={() => toggleSingleGold('abidos')} onClick={e => e.stopPropagation()} />
+                        <Image src="/top-abidos-fusion5.webp" alt="" width={22} height={22} />
+                        <span className={styles.rangeGridMul}>×</span>
                         <span className={styles.materialValue}>{stats.avgMaterials.advancedAbidos.toLocaleString()}</span>
+                        <span className={styles.rangeGridEq}>=</span>
+                        <span className={`${styles.rangeGridGold} ${!singleGoldInclude.abidos ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleAvgMaterialGold(summaryData, 'abidos').toLocaleString() : 0}G</span>
                       </div>
-                      <div className={styles.materialItem}>
-                        <Image src="/destiny-shard-bag-large5.webp" alt="" width={24} height={24} />
+
+                      <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('fragment')}>
+                        <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.fragment} onChange={() => toggleSingleGold('fragment')} onClick={e => e.stopPropagation()} />
+                        <Image src="/destiny-shard-bag-large5.webp" alt="" width={22} height={22} />
+                        <span className={styles.rangeGridMul}>×</span>
                         <span className={styles.materialValue}>{stats.avgMaterials.fateFragment.toLocaleString()}</span>
+                        <span className={styles.rangeGridEq}>=</span>
+                        <span className={`${styles.rangeGridGold} ${!singleGoldInclude.fragment ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleAvgMaterialGold(summaryData, 'fragment').toLocaleString() : 0}G</span>
                       </div>
+
                       {breathType !== 'none' && (
-                        <div className={styles.materialItem}>
-                          <Image
-                            src={equipmentType === 'weapon' ? '/breath-lava5.webp' : '/breath-glacier5.webp'}
-                            alt=""
-                            width={24}
-                            height={24}
-                          />
-                          <span className={styles.materialValue}>
-                            {equipmentType === 'weapon' ? stats.avgMaterials.lavaBreath.toLocaleString() : stats.avgMaterials.glacierBreath.toLocaleString()}
-                          </span>
+                        <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('breath')}>
+                          <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.breath} onChange={() => toggleSingleGold('breath')} onClick={e => e.stopPropagation()} />
+                          <Image src={equipmentType === 'weapon' ? '/breath-lava5.webp' : '/breath-glacier5.webp'} alt="" width={22} height={22} />
+                          <span className={styles.rangeGridMul}>×</span>
+                          <span className={styles.materialValue}>{(equipmentType === 'weapon' ? stats.avgMaterials.lavaBreath : stats.avgMaterials.glacierBreath).toLocaleString()}</span>
+                          <span className={styles.rangeGridEq}>=</span>
+                          <span className={`${styles.rangeGridGold} ${!singleGoldInclude.breath ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleAvgMaterialGold(summaryData, 'breath').toLocaleString() : 0}G</span>
                         </div>
                       )}
-                      <div className={styles.materialItem}>
-                        <Image src="/gold.webp" alt="" width={24} height={24} />
-                        <span className={styles.materialValue}>{stats.avgMaterials.gold.toLocaleString()}</span>
+
+                      <div className={`${styles.rangeGridItem} ${styles.materialItemClickable}`} onClick={() => toggleSingleGold('gold')}>
+                        <input type="checkbox" className={styles.rangeCheckbox} checked={singleGoldInclude.gold} onChange={() => toggleSingleGold('gold')} onClick={e => e.stopPropagation()} />
+                        <Image src="/gold.webp" alt="" width={22} height={22} />
+                        <span className={styles.rangeGridEq}>=</span>
+                        <span className={`${styles.rangeGridGold} ${!singleGoldInclude.gold ? styles.materialGoldExcluded : ''}`}>{summaryData ? getSingleAvgMaterialGold(summaryData, 'gold').toLocaleString() : 0}G</span>
                       </div>
+
+                      {stats.avgMaterials.shilling > 0 && (
+                        <div className={styles.rangeGridItem}>
+                          <Image src="/shilling.webp" alt="실링" width={22} height={22} />
+                          <span className={styles.rangeGridMul}>×</span>
+                          <span className={styles.materialValue}>{stats.avgMaterials.shilling.toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
                     {summaryData && (
                       <div className={styles.totalCostSection}>
@@ -900,6 +987,14 @@ export default function RefiningStats() {
                       <span className={styles.rangeGridEq}>=</span>
                       <span className={`${styles.rangeGridGold} ${!rangeGoldInclude.gold ? styles.materialGoldExcluded : ''}`}>{getRangeMaterialGold('gold').toLocaleString()}G</span>
                     </div>
+
+                    {rangeTotals.shilling > 0 && (
+                      <div className={styles.rangeGridItem}>
+                        <Image src="/shilling.webp" alt="실링" width={22} height={22} />
+                        <span className={styles.rangeGridMul}>×</span>
+                        <span className={styles.materialValue}>{rangeTotals.shilling.toLocaleString()}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* 합계 */}
@@ -971,6 +1066,14 @@ export default function RefiningStats() {
                         <span className={styles.rangeGridEq}>=</span>
                         <span className={`${styles.rangeGridGold} ${!rangeGoldInclude.gold ? styles.materialGoldExcluded : ''}`}>{getRangeAvgMaterialGold('gold').toLocaleString()}G</span>
                       </div>
+
+                      {rangeTotals.avgShilling > 0 && (
+                        <div className={styles.rangeGridItem}>
+                          <Image src="/shilling.webp" alt="실링" width={22} height={22} />
+                          <span className={styles.rangeGridMul}>×</span>
+                          <span className={styles.materialValue}>{rangeTotals.avgShilling.toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className={styles.totalCostSection}>
