@@ -37,10 +37,10 @@ const basicClearRewards: { [key: string]: { gate: number; materials: { itemId: n
     {
       gate: 1,
       materials: [
-        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
-        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
-        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
-        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 405 },
+        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 810 },
+        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 8 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 9100 },
         { itemId: 0, itemName: '은총의 파편', amount: 24 },
         { itemId: 0, itemName: '코어', amount: 3 },
       ]
@@ -48,10 +48,10 @@ const basicClearRewards: { [key: string]: { gate: number; materials: { itemId: n
     {
       gate: 2,
       materials: [
-        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
-        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
-        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
-        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 500 },
+        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 1000 },
+        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 12 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 11000 },
         { itemId: 0, itemName: '은총의 파편', amount: 36 },
         { itemId: 0, itemName: '코어', amount: 3 },
       ]
@@ -61,10 +61,10 @@ const basicClearRewards: { [key: string]: { gate: number; materials: { itemId: n
     {
       gate: 1,
       materials: [
-        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
-        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
-        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
-        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 66102006, itemName: '운명의 파괴석', amount: 980 },
+        { itemId: 66102106, itemName: '운명의 수호석', amount: 1960 },
+        { itemId: 66110225, itemName: '운명의 돌파석', amount: 11 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 6800 },
         { itemId: 0, itemName: '은총의 파편', amount: 12 },
         { itemId: 0, itemName: '코어', amount: 2 },
       ]
@@ -72,10 +72,10 @@ const basicClearRewards: { [key: string]: { gate: number; materials: { itemId: n
     {
       gate: 2,
       materials: [
-        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
-        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
-        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
-        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 66102006, itemName: '운명의 파괴석', amount: 1150 },
+        { itemId: 66102106, itemName: '운명의 수호석', amount: 2300 },
+        { itemId: 66110225, itemName: '운명의 돌파석', amount: 16 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 8600 },
         { itemId: 0, itemName: '은총의 파편', amount: 18 },
         { itemId: 0, itemName: '코어', amount: 2 },
       ]
@@ -85,10 +85,10 @@ const basicClearRewards: { [key: string]: { gate: number; materials: { itemId: n
     {
       gate: 1,
       materials: [
-        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
-        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
-        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
-        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 66102006, itemName: '운명의 파괴석', amount: 820 },
+        { itemId: 66102106, itemName: '운명의 수호석', amount: 1640 },
+        { itemId: 66110225, itemName: '운명의 돌파석', amount: 9 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 5400 },
         { itemId: 0, itemName: '은총의 파편', amount: 4 },
         { itemId: 0, itemName: '코어', amount: 2 },
       ]
@@ -96,10 +96,10 @@ const basicClearRewards: { [key: string]: { gate: number; materials: { itemId: n
     {
       gate: 2,
       materials: [
-        { itemId: 66102007, itemName: '운명의 파괴석 결정', amount: 0 },
-        { itemId: 66102107, itemName: '운명의 수호석 결정', amount: 0 },
-        { itemId: 66110226, itemName: '위대한 운명의 돌파석', amount: 0 },
-        { itemId: 66130143, itemName: '운명의 파편', amount: 0 },
+        { itemId: 66102006, itemName: '운명의 파괴석', amount: 1400 },
+        { itemId: 66102106, itemName: '운명의 수호석', amount: 2800 },
+        { itemId: 66110225, itemName: '운명의 돌파석', amount: 44 },
+        { itemId: 66130143, itemName: '운명의 파편', amount: 11880 },
         { itemId: 0, itemName: '은총의 파편', amount: 6 },
         { itemId: 0, itemName: '코어', amount: 2 },
       ]

@@ -17,27 +17,25 @@ const GEM_COMPONENTS = [
 
 // 재련 재료 상자 구성 요소 (은총 60개 소모)
 const REFINE_COMPONENTS = [
-  { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/destiny-destruction-stone2.webp', amount: 1000 },
-  { itemId: '66102107', name: '운명의 수호석 결정', icon: '/destiny-guardian-stone2.webp', amount: 1000 },
-  { itemId: '66110226', name: '위대한 운명의 돌파석', icon: '/destiny-breakthrough-stone2.webp', amount: 1000 },
-  { itemId: '66130143', name: '운명의 파편', icon: '/destiny-shard-bag-large.webp', amount: 1000 },
+  { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/destiny-destruction-stone2.webp', amount: 2000 },
+  { itemId: '66102107', name: '운명의 수호석 결정', icon: '/destiny-guardian-stone2.webp', amount: 4000 },
+  { itemId: '66110226', name: '위대한 운명의 돌파석', icon: '/destiny-breakthrough-stone2.webp', amount: 60 },
+  { itemId: '66130143', name: '운명의 파편', icon: '/destiny-shard-bag-large.webp', amount: 22500 },
 ];
 const REFINE_BOX_GRACE_COST = 60; // 재련 상자 1개당 은총 소모량
 
 // 야금술 상자 구성 요소
 const METALLURGY_COMPONENTS = [
-  { itemId: '66112717', name: '장인의 야금술 : 4단계', icon: '/master-metallurgy-4.webp', amount: 1 },
-  { itemId: '66112715', name: '장인의 야금술 : 3단계', icon: '/master-metallurgy-3.webp', amount: 1 },
   { itemId: '66112553', name: '야금술 : 업화 [19-20]', icon: '/metallurgy-karma.webp', amount: 1 },
-  { itemId: '66112551', name: '야금술 : 업화 [15-18]', icon: '/metallurgy-karma.webp', amount: 1 },
+  { itemId: '66112717', name: '장인의 야금술 : 4단계', icon: '/master-metallurgy-4.webp', amount: 1 },
+  { itemId: '66112715', name: '장인의 야금술 : 3단계', icon: '/master-metallurgy-3.webp', amount: 2 },
 ];
 
 // 재봉술 상자 구성 요소
 const TAILORING_COMPONENTS = [
-  { itemId: '66112718', name: '장인의 재봉술 : 4단계', icon: '/master-tailoring-4.webp', amount: 1 },
-  { itemId: '66112716', name: '장인의 재봉술 : 3단계', icon: '/master-tailoring-3.webp', amount: 1 },
   { itemId: '66112554', name: '재봉술 : 업화 [19-20]', icon: '/tailoring-karma.webp', amount: 1 },
-  { itemId: '66112552', name: '재봉술 : 업화 [15-18]', icon: '/tailoring-karma.webp', amount: 1 },
+  { itemId: '66112718', name: '장인의 재봉술 : 4단계', icon: '/master-tailoring-4.webp', amount: 1 },
+  { itemId: '66112716', name: '장인의 재봉술 : 3단계', icon: '/master-tailoring-3.webp', amount: 2 },
 ];
 
 // 고대 코어 구성 요소
@@ -110,36 +108,36 @@ const STAGES: {
     gates: [
       { gate: 1, gold: 20000, moreGold: 6400,
         materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 405 },
+          { name: '운명의 수호석 결정', itemId: '66102107', amount: 810 },
+          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 8 },
+          { name: '운명의 파편', itemId: '66130143', amount: 9100 },
           { name: '은총의 파편', itemId: '0', amount: 24 },
           { name: '코어', itemId: '0', amount: 3 },
         ],
         moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 860 },
+          { name: '운명의 수호석 결정', itemId: '66102107', amount: 1720 },
+          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 36 },
+          { name: '운명의 파편', itemId: '66130143', amount: 19000 },
           { name: '은총의 파편', itemId: '0', amount: 24 },
           { name: '코어', itemId: '0', amount: 3 },
         ],
       },
       { gate: 2, gold: 30000, moreGold: 9600,
         materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 500 },
+          { name: '운명의 수호석 결정', itemId: '66102107', amount: 1000 },
+          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 12 },
+          { name: '운명의 파편', itemId: '66130143', amount: 11000 },
           { name: '은총의 파편', itemId: '0', amount: 36 },
           { name: '코어', itemId: '0', amount: 3 },
         ],
         moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 1430 },
+          { name: '운명의 수호석 결정', itemId: '66102107', amount: 2860 },
+          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 60 },
+          { name: '운명의 파편', itemId: '66130143', amount: 32200 },
           { name: '은총의 파편', itemId: '0', amount: 36 },
           { name: '코어', itemId: '0', amount: 3 },
         ],
@@ -151,36 +149,36 @@ const STAGES: {
     gates: [
       { gate: 1, gold: 16000, moreGold: 5120,
         materials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 0 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 0 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석', itemId: '66102006', amount: 980 },
+          { name: '운명의 수호석', itemId: '66102106', amount: 1960 },
+          { name: '운명의 돌파석', itemId: '66110225', amount: 11 },
+          { name: '운명의 파편', itemId: '66130143', amount: 6800 },
           { name: '은총의 파편', itemId: '0', amount: 12 },
           { name: '코어', itemId: '0', amount: 2 },
         ],
         moreMaterials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 0 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 0 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석', itemId: '66102006', amount: 1680 },
+          { name: '운명의 수호석', itemId: '66102106', amount: 3360 },
+          { name: '운명의 돌파석', itemId: '66110225', amount: 53 },
+          { name: '운명의 파편', itemId: '66130143', amount: 14250 },
           { name: '은총의 파편', itemId: '0', amount: 12 },
           { name: '코어', itemId: '0', amount: 2 },
         ],
       },
       { gate: 2, gold: 24000, moreGold: 7680,
         materials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 0 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 0 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석', itemId: '66102006', amount: 1150 },
+          { name: '운명의 수호석', itemId: '66102106', amount: 2300 },
+          { name: '운명의 돌파석', itemId: '66110225', amount: 16 },
+          { name: '운명의 파편', itemId: '66130143', amount: 8600 },
           { name: '은총의 파편', itemId: '0', amount: 18 },
           { name: '코어', itemId: '0', amount: 2 },
         ],
         moreMaterials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 0 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 0 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석', itemId: '66102006', amount: 2880 },
+          { name: '운명의 수호석', itemId: '66102106', amount: 5760 },
+          { name: '운명의 돌파석', itemId: '66110225', amount: 94 },
+          { name: '운명의 파편', itemId: '66130143', amount: 24200 },
           { name: '은총의 파편', itemId: '0', amount: 18 },
           { name: '코어', itemId: '0', amount: 2 },
         ],
@@ -192,36 +190,36 @@ const STAGES: {
     gates: [
       { gate: 1, gold: 13500, moreGold: 4320,
         materials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 0 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 0 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석', itemId: '66102006', amount: 820 },
+          { name: '운명의 수호석', itemId: '66102106', amount: 1640 },
+          { name: '운명의 돌파석', itemId: '66110225', amount: 9 },
+          { name: '운명의 파편', itemId: '66130143', amount: 5400 },
           { name: '은총의 파편', itemId: '0', amount: 4 },
           { name: '코어', itemId: '0', amount: 2 },
         ],
         moreMaterials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 0 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 0 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석', itemId: '66102006', amount: 960 },
+          { name: '운명의 수호석', itemId: '66102106', amount: 1920 },
+          { name: '운명의 돌파석', itemId: '66110225', amount: 12 },
+          { name: '운명의 파편', itemId: '66130143', amount: 6800 },
           { name: '은총의 파편', itemId: '0', amount: 4 },
           { name: '코어', itemId: '0', amount: 2 },
         ],
       },
       { gate: 2, gold: 16500, moreGold: 5280,
         materials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 0 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 0 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석', itemId: '66102006', amount: 1400 },
+          { name: '운명의 수호석', itemId: '66102106', amount: 2800 },
+          { name: '운명의 돌파석', itemId: '66110225', amount: 44 },
+          { name: '운명의 파편', itemId: '66130143', amount: 11880 },
           { name: '은총의 파편', itemId: '0', amount: 6 },
           { name: '코어', itemId: '0', amount: 2 },
         ],
         moreMaterials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 0 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 0 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
+          { name: '운명의 파괴석', itemId: '66102006', amount: 2400 },
+          { name: '운명의 수호석', itemId: '66102106', amount: 4800 },
+          { name: '운명의 돌파석', itemId: '66110225', amount: 78 },
+          { name: '운명의 파편', itemId: '66130143', amount: 20160 },
           { name: '은총의 파편', itemId: '0', amount: 6 },
           { name: '코어', itemId: '0', amount: 2 },
         ],
@@ -317,6 +315,25 @@ export default function CathedralPage() {
 
   const selectedStageData = STAGES.find(s => s.name === selectedStage);
 
+  // 가격 계산 헬퍼
+  const getUnitPrice = (itemId: string) => {
+    if (itemId === '0') return 0;
+    const bundlePrice = latestPrices[itemId] || 0;
+    const bundleSize = BUNDLE_SIZES[itemId] || 1;
+    return bundlePrice / bundleSize;
+  };
+
+  // 은총의 파편 1개 가치 = 재련 상자 총 가치 ÷ 60
+  const graceUnitPrice = REFINE_COMPONENTS.reduce((sum, comp) => {
+    return sum + getUnitPrice(comp.itemId) * comp.amount;
+  }, 0) / REFINE_BOX_GRACE_COST;
+
+  const getMaterialValue = (mat: Material) => {
+    if (mat.name === '은총의 파편') return Math.round(graceUnitPrice * mat.amount);
+    if (mat.itemId === '0' || mat.amount === 0) return 0;
+    return Math.round(getUnitPrice(mat.itemId) * mat.amount);
+  };
+
   // 체크 상태 확인 (기본 true)
   const isChecked = (stage: string, type: string, gate: number, itemId: string) =>
     materialChecks[stage]?.[type]?.[`${gate}-${itemId}`] ?? true;
@@ -401,6 +418,12 @@ export default function CathedralPage() {
               {STAGES.map((stage, index) => {
                 const isSelected = selectedStage === stage.name;
                 const totalGold = stage.gates.reduce((sum, g) => sum + g.gold, 0);
+                const totalMoreGoldCard = stage.gates.reduce((sum, g) => sum + g.moreGold, 0);
+                const totalBasicValueCard = stage.gates.reduce((sum, g) =>
+                  sum + g.materials.reduce((s, m) => s + getMaterialValue(m), 0), 0);
+                const totalMoreValueCard = stage.gates.reduce((sum, g) =>
+                  sum + g.moreMaterials.reduce((s, m) => s + getMaterialValue(m), 0), 0);
+                const cardFinalValue = totalGold + totalBasicValueCard + totalMoreValueCard - totalMoreGoldCard;
                 const totalGrace = stage.gates.reduce((sum, g) => {
                   const basicGrace = g.materials.find(m => m.name === '은총의 파편');
                   const moreGrace = g.moreMaterials.find(m => m.name === '은총의 파편');
@@ -426,7 +449,9 @@ export default function CathedralPage() {
                     <div className={styles.cardContent}>
                       <h3 className={styles.raidName}>{stage.name}</h3>
                       <p className={styles.raidLevel}>Lv. {stage.level}</p>
-                      <div className={styles.goldBadge}>{totalGold.toLocaleString()}G</div>
+                      <div className={styles.goldBadge}>
+                        {priceLoading ? `${totalGold.toLocaleString()}G` : `${cardFinalValue.toLocaleString()}G`}
+                      </div>
                       <div className={styles.graceBadge}>은총 {totalGrace}개</div>
                     </div>
                   </div>
@@ -437,16 +462,6 @@ export default function CathedralPage() {
             {/* 선택한 단계 상세 */}
             {selectedStageData && (() => {
               const sn = selectedStageData.name;
-              const getUnitPrice = (itemId: string) => {
-                if (itemId === '0') return 0;
-                const bundlePrice = latestPrices[itemId] || 0;
-                const bundleSize = BUNDLE_SIZES[itemId] || 1;
-                return bundlePrice / bundleSize;
-              };
-              const getMaterialValue = (mat: Material) => {
-                if (mat.itemId === '0' || mat.amount === 0) return 0;
-                return Math.round(getUnitPrice(mat.itemId) * mat.amount);
-              };
               const getCheckedValue = (mats: Material[], type: string, gate: number) =>
                 mats.reduce((s, m) => s + (isChecked(sn, type, gate, m.itemId) ? getMaterialValue(m) : 0), 0);
 
@@ -458,13 +473,6 @@ export default function CathedralPage() {
 
               const renderMaterialTable = (mats: Material[], type: string, gate: number, colSpan: number) => (
                 <table className={styles.materialTable}>
-                  <colgroup>
-                    <col style={{ width: '32px' }} />
-                    <col />
-                    <col style={{ width: '110px' }} />
-                    <col style={{ width: '80px' }} />
-                    <col style={{ width: '115px' }} />
-                  </colgroup>
                   <thead>
                     <tr>
                       <th></th>
@@ -492,14 +500,14 @@ export default function CathedralPage() {
                         <td>
                           <div className={styles.materialCell}>
                             {MATERIAL_IMAGES[mat.name] && (
-                              <Image src={MATERIAL_IMAGES[mat.name]} alt={mat.name} width={38} height={38} />
+                              <Image src={MATERIAL_IMAGES[mat.name]} alt={mat.name} width={22} height={22} />
                             )}
                             <span>{mat.name}</span>
                           </div>
                         </td>
                         <td>{mat.amount > 0 ? mat.amount.toLocaleString() : '미정'}</td>
-                        <td>{mat.itemId === '0' ? '-' : priceLoading ? '—' : unitPrice >= 1 ? unitPrice.toFixed(2) : unitPrice.toFixed(4)}</td>
-                        <td>{mat.itemId === '0' || mat.amount === 0 ? '-' : priceLoading ? '—' : totalPrice.toLocaleString()}</td>
+                        <td>{mat.name === '은총의 파편' ? (priceLoading ? '—' : graceUnitPrice >= 1 ? graceUnitPrice.toFixed(2) : graceUnitPrice.toFixed(4)) : mat.itemId === '0' ? '-' : priceLoading ? '—' : unitPrice >= 1 ? unitPrice.toFixed(2) : unitPrice.toFixed(4)}</td>
+                        <td>{mat.name === '은총의 파편' ? (priceLoading ? '—' : totalPrice.toLocaleString()) : mat.itemId === '0' || mat.amount === 0 ? '-' : priceLoading ? '—' : totalPrice.toLocaleString()}</td>
                       </tr>
                       );
                     })}
@@ -777,13 +785,6 @@ export default function CathedralPage() {
                                   return (
                                     <>
                                       <table className={styles.materialTable} style={{ marginBottom: '0.75rem' }}>
-                                        <colgroup>
-                                          <col style={{ width: '44px' }} />
-                                          <col style={{ width: '40%' }} />
-                                          <col style={{ width: '60px' }} />
-                                          <col style={{ width: '80px' }} />
-                                          <col style={{ width: '105px' }} />
-                                        </colgroup>
                                         <thead>
                                           <tr>
                                             <th style={{ textAlign: 'center' }}>선택</th>
@@ -857,13 +858,6 @@ export default function CathedralPage() {
                                   return (
                                     <>
                                       <table className={styles.materialTable} style={{ marginBottom: '0.75rem' }}>
-                                        <colgroup>
-                                          <col style={{ width: '44px' }} />
-                                          <col style={{ width: '40%' }} />
-                                          <col style={{ width: '60px' }} />
-                                          <col style={{ width: '80px' }} />
-                                          <col style={{ width: '105px' }} />
-                                        </colgroup>
                                         <thead>
                                           <tr>
                                             <th style={{ textAlign: 'center' }}>선택</th>
@@ -937,12 +931,6 @@ export default function CathedralPage() {
                                   return (
                                     <>
                                       <table className={styles.materialTable} style={{ marginBottom: '0.75rem' }}>
-                                        <colgroup>
-                                          <col style={{ width: '36px' }} />
-                                          <col style={{ width: '40px' }} />
-                                          <col />
-                                          <col style={{ width: '80px' }} />
-                                        </colgroup>
                                         <thead>
                                           <tr>
                                             <th style={{ textAlign: 'center' }}>선택</th>

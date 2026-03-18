@@ -9,11 +9,18 @@ export default function UpdatePopup() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    const dismissed = localStorage.getItem('popup_dismissed_until');
+    if (dismissed && Date.now() < Number(dismissed)) return;
     setShow(true);
   }, []);
 
   const handleClose = () => setShow(false);
 
+  const handleDismissWeek = () => {
+    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+    localStorage.setItem('popup_dismissed_until', String(Date.now() + oneWeek));
+    setShow(false);
+  };
 
   if (!show) return null;
 
@@ -64,6 +71,9 @@ export default function UpdatePopup() {
 
         {/* 하단 닫기 */}
         <div className={styles.footer}>
+          <button className={styles.dismissBtn} onClick={handleDismissWeek}>
+            일주일동안 보지 않기
+          </button>
           <button className={styles.closeBtn} onClick={handleClose}>
             닫기
           </button>

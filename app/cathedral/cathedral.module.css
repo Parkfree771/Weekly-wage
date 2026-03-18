@@ -199,7 +199,6 @@
 /* ─── 재료 테이블 ─── */
 .materialTable {
   width: 100%;
-  min-width: 300px;
   color: var(--ct-text);
   border-collapse: separate;
   border-spacing: 0;
@@ -207,20 +206,20 @@
   overflow: hidden;
   border: 1px solid var(--ct-accent-border);
   margin-top: 0.4rem;
-  table-layout: fixed;
+  font-family: 'Noto Sans KR', sans-serif;
 }
 
-.materialTable col:nth-child(1) { width: 28px; }
-.materialTable col:nth-child(2) { width: auto; }
-.materialTable col:nth-child(3) { width: 65px; }
-.materialTable col:nth-child(4) { width: 60px; }
-.materialTable col:nth-child(5) { width: 80px; }
+.materialTable th:nth-child(1),
+.materialTable td:nth-child(1) {
+  width: 30px;
+  padding: 0.4rem 0.25rem;
+}
 
 .materialTable thead th {
   background: var(--ct-bg-surface);
   font-weight: 700;
-  font-size: 0.75rem;
-  padding: 0.4rem 0.3rem;
+  font-size: 0.95rem;
+  padding: 0.75rem 0.5rem;
   color: var(--ct-text);
   border-bottom: 2px solid var(--ct-accent-border);
   border-right: 1px solid var(--ct-border-light);
@@ -230,11 +229,12 @@
 .materialTable thead th:last-child { border-right: none; }
 
 .materialTable tbody td {
-  padding: 0.35rem 0.25rem;
+  padding: 0.75rem 0.5rem;
   border-bottom: 1px solid var(--ct-border-light);
   border-right: 1px solid var(--ct-border-light);
   vertical-align: middle;
-  font-size: 0.78rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   text-align: center;
   background: var(--ct-bg);
 }
@@ -244,30 +244,53 @@
 .materialTable tbody tr:last-child td { border-bottom: none; }
 
 .subtotalRow td {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--ct-text-secondary);
   border-bottom: 1px solid var(--ct-border-light);
-  padding: 0.35rem 0.3rem;
+  padding: 0.5rem;
   background: var(--ct-bg-alt);
+  text-align: left;
+}
+
+.subtotalRow td:last-child {
+  text-align: center;
 }
 
 .gateTotalRow td {
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: var(--ct-text);
-  padding: 0.4rem 0.3rem;
+  padding: 0.5rem;
+  text-align: left;
 }
 
-.materialCheckbox { display: flex; align-items: center; justify-content: center; }
+.gateTotalRow td:last-child {
+  text-align: center;
+}
+
+.materialCheckbox {
+  margin: 0 !important;
+  display: flex;
+  justify-content: center;
+}
+.materialCheckbox :global(.form-check-input) { accent-color: #27ae60; }
+.materialCheckbox :global(.form-check-input:checked) {
+  background-color: #27ae60;
+  border-color: #27ae60;
+}
+.materialCheckbox :global(.form-check-input:focus) {
+  border-color: #27ae60;
+  box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
+}
 
 .shopSelectCheckbox { cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .shopSelectCheckbox input { display: none; }
 .shopSelectCheckbox label { display: none; }
 
-.materialCell { display: flex; align-items: center; gap: 0.3rem; }
-.materialCell span { font-size: 0.75rem; white-space: nowrap; }
-.materialCell img { width: 26px !important; height: 26px !important; }
+.materialCell { display: flex; align-items: center; gap: 0.5rem; }
+.materialCell span { font-size: 0.9rem; }
+.materialCell img { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
 
 /* ─── 합계 ─── */
 .finalSection {
@@ -695,9 +718,11 @@
   .shopDetailIcon, .shopDetailIconFill { width: 72px; height: 72px; margin-bottom: 0.5rem; }
   .shopDetailName { font-size: 0.95rem; }
 
-  .materialTable thead th { font-size: 0.72rem; padding: 0.35rem 0.25rem; }
-  .materialTable tbody td { padding: 0.35rem 0.25rem; font-size: 0.72rem; }
-  .materialCell span { font-size: 0.68rem; }
+  .materialTable thead th { font-size: 1rem; padding: 0.625rem 0.5rem; }
+  .materialTable tbody td { padding: 0.625rem 0.5rem; font-size: 1rem; }
+  .materialCell span { font-size: 0.85rem; white-space: nowrap; }
+  .materialCell img { width: 36px; height: 36px; }
+  .subtotalRow td, .gateTotalRow td { font-size: 1rem; padding: 0.625rem 0.5rem !important; }
 
   .rewardWide { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
@@ -727,15 +752,11 @@
   .finalLabel { font-size: 0.6rem; }
   .finalItemValue { font-size: 0.72rem; }
 
-  .materialTable { font-size: 0.68rem; }
-  .materialTable col:nth-child(1) { width: 24px; }
-  .materialTable col:nth-child(3) { width: 55px; }
-  .materialTable col:nth-child(4) { width: 50px; }
-  .materialTable col:nth-child(5) { width: 65px; }
-  .materialTable thead th { font-size: 0.65rem; padding: 0.3rem 0.2rem; }
-  .materialTable tbody td { padding: 0.3rem 0.2rem; font-size: 0.65rem; }
-  .materialCell span { font-size: 0.6rem; }
-  .materialCell img { width: 20px !important; height: 20px !important; }
+  .materialTable thead th { font-size: 1rem; padding: 0.5rem 0.4rem; }
+  .materialTable tbody td { padding: 0.5rem 0.4rem; font-size: 1rem; }
+  .materialCell span { font-size: 0.95rem; }
+  .materialCell img { width: 32px; height: 32px; }
+  .subtotalRow td, .gateTotalRow td { font-size: 1rem; padding: 0.5rem 0.4rem !important; }
 
   .shopList { max-height: 200px; }
   .shopItem { padding: 0.4rem 0.55rem; gap: 0.4rem; font-size: 0.78rem; }
