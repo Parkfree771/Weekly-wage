@@ -77,6 +77,18 @@ const SeeMoreCalculator: React.FC = () => {
     }));
   };
 
+  // 은총의 파편 1개 가치 = 재련 상자 총 가치 ÷ 60
+  const graceUnitPrice = useMemo(() => {
+    const refineBox = [
+      { itemId: 66102007, amount: 2000 },
+      { itemId: 66102107, amount: 4000 },
+      { itemId: 66110226, amount: 60 },
+      { itemId: 66130143, amount: 22500 },
+    ];
+    const boxValue = refineBox.reduce((sum, comp) => sum + (unitPrices[comp.itemId] || 0) * comp.amount, 0);
+    return boxValue / 60;
+  }, [unitPrices]);
+
   // 가격 데이터를 기반으로 수익 계산 (메모이제이션)
   const profitData = useMemo(() => {
     if (Object.keys(unitPrices).length === 0) {
@@ -96,8 +108,9 @@ const SeeMoreCalculator: React.FC = () => {
     Object.entries(groupedRewards).forEach(([raidName, rewards]) => {
       newProfitData[raidName] = rewards.map(reward => {
         const materialsWithPrices = reward.materials.map(material => {
-          const unitPrice = unitPrices[material.itemId] || 0;
-          const totalPrice = unitPrice * material.amount;
+          const isGrace = material.itemName === '은총의 파편';
+          const unitPrice = isGrace ? graceUnitPrice : (unitPrices[material.itemId] || 0);
+          const totalPrice = (material.itemId === 0 && !isGrace) ? 0 : unitPrice * material.amount;
 
           return {
             ...material,
@@ -124,7 +137,7 @@ const SeeMoreCalculator: React.FC = () => {
     });
 
     return newProfitData;
-  }, [unitPrices]);
+  }, [unitPrices, graceUnitPrice]);
 
   // 재료 체크 상태 초기화 (레이드 선택 시 또는 profitData 변경 시)
   useEffect(() => {
@@ -321,10 +334,10 @@ const SeeMoreCalculator: React.FC = () => {
                           {material.amount === 0 ? '?' : material.amount.toLocaleString()}
                         </td>
                         <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellPrice}`}>
-                          {material.itemId === 0 ? '-' : (material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4)) + '골드'}
+                          {material.itemId === 0 && material.itemName !== '은총의 파편' ? '-' : (material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4)) + '골드'}
                         </td>
                         <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellTotal}`}>
-                          {material.itemId === 0 ? '-' : Math.round(material.totalPrice).toLocaleString() + '골드'}
+                          {material.itemId === 0 && material.itemName !== '은총의 파편' ? '-' : Math.round(material.totalPrice).toLocaleString() + '골드'}
                         </td>
                       </tr>
                     );
