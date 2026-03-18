@@ -1177,6 +1177,25 @@
   object-fit: contain;
 }
 
+.bundleIconStack {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 72px;
+  height: 48px;
+}
+
+.bundleIconItem {
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  object-fit: contain;
+  position: absolute;
+}
+
+.bundleIconItem:first-child { left: 0; }
+.bundleIconItem:nth-child(2) { left: 24px; }
+
 .itemCardName {
   font-size: 0.85rem;
   font-weight: 700;

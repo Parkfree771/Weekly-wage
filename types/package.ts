@@ -14,6 +14,7 @@ export type PackageItem = {
   crystalPerUnit?: number; // 블크 기반 아이템용 (환율 변경 시 재계산에 사용)
   choiceOptions?: { itemId: string; name: string; icon?: string }[]; // 선택지 목록 (선택 아이템용)
   probability?: number; // 가챠 아이템 확률 (0~100, 예: 10.0 = 10%)
+  bundleItems?: { itemId: string; name: string; icon: string; quantity: number }[]; // 묶음 주머니 내부 아이템들
 };
 
 // ─── 게시물 ───

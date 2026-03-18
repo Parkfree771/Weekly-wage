@@ -471,14 +471,23 @@ export default function PackageEditPage() {
               };
             }
             case 'bundle': {
-              return (template.bundleContents || [])
+              const bundleItems = (template.bundleContents || [])
                 .filter(bc => (added.bundleQuantities?.[bc.itemId] || 0) > 0)
                 .map(bc => ({
                   itemId: bc.itemId,
                   name: bc.name,
-                  quantity: added.quantity * (added.bundleQuantities?.[bc.itemId] || 0),
                   icon: bc.icon,
+                  quantity: added.bundleQuantities?.[bc.itemId] || 0,
                 }));
+              const bundleName = bundleItems.map(bi => `${bi.name} ${bi.quantity}개`).join(' + ');
+              return {
+                itemId: `bundle_${template.id}`,
+                name: bundleName || template.name,
+                quantity: added.quantity,
+                icon: template.icon,
+                goldOverride: getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0),
+                bundleItems,
+              };
             }
             default:
               return null;

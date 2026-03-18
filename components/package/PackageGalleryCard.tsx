@@ -407,7 +407,15 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                   handleToggleCheck(idx);
                 }}
               >
-                {item.icon ? (
+                {item.bundleItems && item.bundleItems.length > 0 ? (
+                  <div className={styles.bundleIconStack}>
+                    {item.bundleItems.map((bi, biIdx) => (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img key={biIdx} src={bi.icon} alt={bi.name} className={styles.bundleIconItem}
+                        style={{ zIndex: item.bundleItems!.length - biIdx }} />
+                    ))}
+                  </div>
+                ) : item.icon ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={getDisplayIcon(item.icon)}

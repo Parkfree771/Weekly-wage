@@ -957,7 +957,15 @@ export default function PackageDetailPage() {
                       </span>
                     </label>
                     <div className={styles.itemCardIconWrap}>
-                      {effective.icon && (
+                      {item.bundleItems && item.bundleItems.length > 0 ? (
+                        <div className={styles.bundleIconStack}>
+                          {item.bundleItems.map((bi, biIdx) => (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img key={biIdx} src={bi.icon} alt={bi.name} className={styles.bundleIconItem}
+                              style={{ zIndex: item.bundleItems!.length - biIdx }} />
+                          ))}
+                        </div>
+                      ) : effective.icon && (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={effective.icon}
@@ -966,7 +974,11 @@ export default function PackageDetailPage() {
                         />
                       )}
                     </div>
-                    <div className={styles.itemCardName}>{effective.name}</div>
+                    <div className={styles.itemCardName}>
+                      {item.bundleItems && item.bundleItems.length > 0
+                        ? item.bundleItems.map(bi => `${bi.name} ${bi.quantity}개`).join(' + ')
+                        : effective.name}
+                    </div>
 
                     {hasChoices && item.choiceOptions!.length <= 3 && (
                       <div className={styles.itemCardChoices}>

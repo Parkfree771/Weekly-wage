@@ -236,6 +236,25 @@
   object-fit: contain;
 }
 
+.bundleIconStack {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 52px;
+  height: 36px;
+}
+
+.bundleIconItem {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  object-fit: contain;
+  position: absolute;
+}
+
+.bundleIconItem:first-child { left: 0; }
+.bundleIconItem:nth-child(2) { left: 16px; }
+
 .itemCellPlaceholder {
   width: 100%;
   height: 100%;
