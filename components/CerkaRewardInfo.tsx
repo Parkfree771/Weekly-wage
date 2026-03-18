@@ -223,6 +223,18 @@ const CerkaRewardInfo: React.FC = () => {
     }));
   };
 
+  // 은총의 파편 1개 가치 = 재련 상자 총 가치 ÷ 60
+  const graceUnitPrice = useMemo(() => {
+    const refineBox = [
+      { itemId: 66102007, amount: 2000 },  // 파괴석 결정
+      { itemId: 66102107, amount: 4000 },  // 수호석 결정
+      { itemId: 66110226, amount: 60 },    // 위대한 돌파석
+      { itemId: 66130143, amount: 22500 }, // 운명의 파편
+    ];
+    const boxValue = refineBox.reduce((sum, comp) => sum + (unitPrices[comp.itemId] || 0) * comp.amount, 0);
+    return boxValue / 60;
+  }, [unitPrices]);
+
   // 가격 데이터를 기반으로 보상 계산 (메모이제이션)
   const rewardData = useMemo(() => {
     if (Object.keys(unitPrices).length === 0) {
@@ -248,8 +260,9 @@ const CerkaRewardInfo: React.FC = () => {
         // 기본 클리어 재료
         const basicGate = basicRewardData?.find(r => r.gate === gateInfo.gate);
         const basicMaterials: MaterialWithPrice[] = basicGate?.materials.map(mat => {
-          const unitPrice = unitPrices[mat.itemId] || 0;
-          const totalPrice = mat.itemId === 0 ? 0 : unitPrice * mat.amount;
+          const isGrace = mat.itemName === '은총의 파편';
+          const unitPrice = isGrace ? graceUnitPrice : (unitPrices[mat.itemId] || 0);
+          const totalPrice = (mat.itemId === 0 && !isGrace) ? 0 : unitPrice * mat.amount;
           return {
             itemId: mat.itemId,
             itemName: mat.itemName,
@@ -262,8 +275,9 @@ const CerkaRewardInfo: React.FC = () => {
         // 더보기 재료
         const moreGate = moreRewardData.find(r => r.gate === gateInfo.gate);
         const moreMaterials: MaterialWithPrice[] = moreGate?.materials.map(mat => {
-          const unitPrice = unitPrices[mat.itemId] || 0;
-          const totalPrice = mat.itemId === 0 ? 0 : unitPrice * mat.amount;
+          const isGrace = mat.itemName === '은총의 파편';
+          const unitPrice = isGrace ? graceUnitPrice : (unitPrices[mat.itemId] || 0);
+          const totalPrice = (mat.itemId === 0 && !isGrace) ? 0 : unitPrice * mat.amount;
           return {
             itemId: mat.itemId,
             itemName: mat.itemName,
@@ -307,7 +321,7 @@ const CerkaRewardInfo: React.FC = () => {
     });
 
     return result;
-  }, [unitPrices]);
+  }, [unitPrices, graceUnitPrice]);
 
   // 체크된 재료만 계산한 관문별 기본 재료 가치
   const getCheckedBasicMaterialValue = (raidName: string, gate: GateData): number => {
@@ -476,11 +490,11 @@ const CerkaRewardInfo: React.FC = () => {
                           </td>
                           <td>{mat.amount > 0 ? mat.amount.toLocaleString() : '-'}</td>
                           <td>
-                            {mat.itemId === 0 ? '-' :
+                            {mat.itemId === 0 && mat.itemName !== '은총의 파편' ? '-' :
                               (mat.unitPrice >= 1 ? mat.unitPrice.toFixed(2) : mat.unitPrice.toFixed(4))}
                           </td>
                           <td>
-                            {mat.itemId === 0 ? '-' : mat.totalPrice.toLocaleString()}
+                            {mat.itemId === 0 && mat.itemName !== '은총의 파편' ? '-' : mat.totalPrice.toLocaleString()}
                           </td>
                         </tr>
                       );
@@ -563,11 +577,11 @@ const CerkaRewardInfo: React.FC = () => {
                                 </td>
                                 <td>{mat.amount > 0 ? mat.amount.toLocaleString() : '-'}</td>
                                 <td>
-                                  {mat.itemId === 0 ? '-' :
+                                  {mat.itemId === 0 && mat.itemName !== '은총의 파편' ? '-' :
                                     (mat.unitPrice >= 1 ? mat.unitPrice.toFixed(2) : mat.unitPrice.toFixed(4))}
                                 </td>
                                 <td>
-                                  {mat.itemId === 0 ? '-' : mat.totalPrice.toLocaleString()}
+                                  {mat.itemId === 0 && mat.itemName !== '은총의 파편' ? '-' : mat.totalPrice.toLocaleString()}
                                 </td>
                               </tr>
                             );

@@ -43,7 +43,7 @@ export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) 
             <Link href="/cathedral" className="sidebar-update-btn">
               <Image src="/dmschddmlvkvus.webp" alt="" width={18} height={18} />
               <div className="sidebar-btn-text">
-                <span className="sidebar-btn-title">지평의 성당 <span className="sidebar-beta-badge">BETA</span></span>
+                <span className="sidebar-btn-title">지평의 성당 <span className="sidebar-beta-badge">NEW</span></span>
                 <span className="sidebar-btn-desc">은총의 파편 교환 상점 확인</span>
               </div>
             </Link>

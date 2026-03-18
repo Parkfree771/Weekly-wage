@@ -38,9 +38,9 @@ export default function UpdatePopup() {
           />
           <div className={styles.imageOverlay} />
           <div className={styles.imageContent}>
-            <div className={styles.updateBadge}>COMING SOON</div>
+            <div className={styles.updateBadge}>NEW</div>
             <h2 className={styles.title}>지평의 성당</h2>
-            <p className={styles.subtitle}>3월 18일 오전 10시 업데이트 예정</p>
+            <p className={styles.subtitle}>지평의 성당 보상 데이터 업데이트</p>
           </div>
         </div>
 
@@ -56,7 +56,7 @@ export default function UpdatePopup() {
           <Link href="/cathedral" className={styles.navButton} onClick={handleClose}>
             <Image src="/dmschddmlvkvus.webp" alt="" width={24} height={24} />
             <div className={styles.navText}>
-              <span className={styles.navTitle}>지평의 성당 <span className={styles.newBadge}>BETA</span></span>
+              <span className={styles.navTitle}>지평의 성당 <span className={styles.newBadge}>NEW</span></span>
               <span className={styles.navDesc}>은총의 파편 교환 상점 확인</span>
             </div>
           </Link>
