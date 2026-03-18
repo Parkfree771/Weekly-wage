@@ -15,6 +15,16 @@ const GEM_COMPONENTS = [
   { itemId: '67410503', name: '혼돈의 젬 : 붕괴', icon: '/gem-chaos-collapse.webp' },
 ];
 
+// 젬 랜덤 상자 영웅 확률 (5% × 개별 확률)
+const GEM_RANDOM_HERO_PROBS: { itemId: string; name: string; icon: string; probability: number }[] = [
+  { itemId: '67400003', name: '질서의 젬 : 안정', icon: '/gem-order-stable.webp', probability: 0.015 },
+  { itemId: '67400103', name: '질서의 젬 : 견고', icon: '/gem-order-solid.webp', probability: 0.0075 },
+  { itemId: '67400203', name: '질서의 젬 : 불변', icon: '/gem-order-immutable.webp', probability: 0.0025 },
+  { itemId: '67410303', name: '혼돈의 젬 : 침식', icon: '/gem-chaos-erosion.webp', probability: 0.015 },
+  { itemId: '67410403', name: '혼돈의 젬 : 왜곡', icon: '/gem-chaos-distortion.webp', probability: 0.0075 },
+  { itemId: '67410503', name: '혼돈의 젬 : 붕괴', icon: '/gem-chaos-collapse.webp', probability: 0.0025 },
+];
+
 // 재련 재료 상자 구성 요소 (은총 60개 소모)
 const REFINE_COMPONENTS = [
   { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/destiny-destruction-stone2.webp', amount: 2000 },
@@ -293,7 +303,7 @@ const SHOP_ITEMS = [
     limit: '제한 없음', limitType: 'unlimited' as const,
   },
   {
-    id: 10, name: '젬 랜덤 상자', qty: 1, requiredLevel: 1700,
+    id: 10, name: '젬 랜덤 상자 (영웅 ~ 고급)', qty: 1, requiredLevel: 1700,
     image: '/duddndgmlrnl.webp', theme: 'gemRandom', hasBg: false,
     costs: [{ name: '은총의 파편', amount: 10 }],
     limit: '제한 없음', limitType: 'unlimited' as const,
@@ -322,11 +332,6 @@ export default function CathedralPage() {
     const bundleSize = BUNDLE_SIZES[itemId] || 1;
     return bundlePrice / bundleSize;
   };
-
-  // 은총의 파편 1개 가치 = 재련 상자 총 가치 ÷ 60
-  const graceUnitPrice = REFINE_COMPONENTS.reduce((sum, comp) => {
-    return sum + getUnitPrice(comp.itemId) * comp.amount;
-  }, 0) / REFINE_BOX_GRACE_COST;
 
   const getMaterialValue = (mat: Material) => {
     if (mat.name === '은총의 파편') return Math.round(graceUnitPrice * mat.amount);
@@ -359,6 +364,12 @@ export default function CathedralPage() {
   const [refineChecks, setRefineChecks] = useState<Record<string, boolean>>({});
   const isRefineChecked = (itemId: string) => refineChecks[itemId] ?? true;
   const toggleRefineCheck = (itemId: string) => setRefineChecks(prev => ({ ...prev, [itemId]: !isRefineChecked(itemId) }));
+
+  // 은총의 파편 1개 가치 = 재련 상자 총 가치(체크된 것만) ÷ 60
+  const graceUnitPrice = REFINE_COMPONENTS.reduce((sum, comp) => {
+    if (!isRefineChecked(comp.itemId)) return sum;
+    return sum + getUnitPrice(comp.itemId) * comp.amount;
+  }, 0) / REFINE_BOX_GRACE_COST;
 
   // 선택 상자에서 가장 비싼 아이템 자동 선택
   const getSelectedItemId = (shopId: number, components: { itemId: string; name: string }[]): string => {
@@ -787,7 +798,7 @@ export default function CathedralPage() {
                                       <table className={styles.materialTable} style={{ marginBottom: '0.75rem' }}>
                                         <thead>
                                           <tr>
-                                            <th style={{ textAlign: 'center' }}>선택</th>
+                                            <th style={{ textAlign: 'center' }}></th>
                                             <th>아이템</th>
                                             <th style={{ textAlign: 'center' }}>수량</th>
                                             <th style={{ textAlign: 'center' }}>단가</th>
@@ -860,7 +871,7 @@ export default function CathedralPage() {
                                       <table className={styles.materialTable} style={{ marginBottom: '0.75rem' }}>
                                         <thead>
                                           <tr>
-                                            <th style={{ textAlign: 'center' }}>선택</th>
+                                            <th style={{ textAlign: 'center' }}></th>
                                             <th>아이템</th>
                                             <th style={{ textAlign: 'center' }}>수량</th>
                                             <th style={{ textAlign: 'center' }}>단가</th>
@@ -906,13 +917,13 @@ export default function CathedralPage() {
                                         </tbody>
                                         <tfoot>
                                           <tr className={styles.subtotalRow}>
-                                            <td colSpan={4}>선택 아이템 가치</td>
+                                            <td colSpan={4}>선택 아이템 가치{selectedShopData.qty > 1 ? ` (×${selectedShopData.qty})` : ''}</td>
                                             <td style={{ textAlign: 'center' }}>
                                               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                                                 <Image src="/gold.webp" alt="" width={14} height={14} />
                                                 <span>{priceLoading ? '—' : (() => {
                                                   const sel = craftComps.find(c => c.itemId === selectedId);
-                                                  return sel ? Math.round((latestPrices[sel.itemId] || 0) * sel.amount).toLocaleString() : '-';
+                                                  return sel ? Math.round((latestPrices[sel.itemId] || 0) * sel.amount * selectedShopData.qty).toLocaleString() : '-';
                                                 })()}</span>
                                               </div>
                                             </td>
@@ -933,7 +944,7 @@ export default function CathedralPage() {
                                       <table className={styles.materialTable} style={{ marginBottom: '0.75rem' }}>
                                         <thead>
                                           <tr>
-                                            <th style={{ textAlign: 'center' }}>선택</th>
+                                            <th style={{ textAlign: 'center' }}></th>
                                             <th style={{ textAlign: 'center' }}></th>
                                             <th>이름</th>
                                             <th style={{ textAlign: 'center' }}>시세</th>
@@ -990,6 +1001,39 @@ export default function CathedralPage() {
                                     ))}
                                   </div>
                                 )}
+                              </div>
+                            )}
+
+                            {/* 젬 랜덤 상자 기대값 */}
+                            {selectedShopData.theme === 'gemRandom' && (
+                              <div className={styles.shopDetailSection}>
+                                <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>구성 요소 (영웅 ~ 고급)</div>
+                                <div className={styles.gemGrid}>
+                                  {GEM_RANDOM_HERO_PROBS.map((gem) => {
+                                    const price = latestPrices[gem.itemId] || 0;
+                                    return (
+                                      <div key={gem.itemId} className={styles.gemCard}>
+                                        <Image src={gem.icon} alt={gem.name} width={48} height={48} />
+                                        <span className={styles.gemName}>{gem.name}</span>
+                                        <span style={{ fontSize: '0.72rem', color: 'var(--ct-text-secondary)', fontWeight: 600 }}>{(gem.probability * 100).toFixed(2)}%</span>
+                                        <span className={styles.gemPrice}>
+                                          <Image src="/gold.webp" alt="" width={14} height={14} />
+                                          {priceLoading ? '—' : price.toLocaleString()}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <div className={styles.graceValueCard} style={{ marginTop: '0.6rem' }}>
+                                  <div className={styles.graceValueRow}>
+                                    <span className={styles.graceValueLabel}>상자 기대값</span>
+                                    <span className={styles.graceValueAmount}>
+                                      <Image src="/gold.webp" alt="" width={20} height={20} />
+                                      {priceLoading ? '—' : Math.round(GEM_RANDOM_HERO_PROBS.reduce((sum, gem) => sum + (latestPrices[gem.itemId] || 0) * gem.probability, 0)).toLocaleString()}
+                                    </span>
+                                  </div>
+                                  <div className={styles.graceValueFormula}>Σ(시세 × 확률) | 희귀·고급 미포함</div>
+                                </div>
                               </div>
                             )}
                           </div>

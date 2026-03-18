@@ -1674,6 +1674,7 @@ export default function MyPage() {
                             <div className={styles.raidInfo}>
                               <span className={styles.raidName}>{guardian.name}</span>
                               {guardian.element && <span className={styles.raidDifficulty}>{guardian.element}</span>}
+                              <span className={styles.raidLevel}>Lv.{char.itemLevel >= 1750 ? '1750' : char.itemLevel >= 1730 ? '1730' : char.itemLevel >= 1720 ? '1720' : char.itemLevel >= 1700 ? '1700' : char.itemLevel >= 1680 ? '1680' : '1640'}</span>
                             </div>
                             {todayChecked && <div className={styles.raidCheck}>✓</div>}
                           </div>
@@ -1690,6 +1691,7 @@ export default function MyPage() {
                           <div className={styles.raidOverlay} />
                           <div className={styles.raidInfo}>
                             <span className={styles.raidName}>모래시계</span>
+                            <span className={styles.raidLevel}>Lv.{char.itemLevel >= 1750 ? '1750' : '1730'}</span>
                           </div>
                           {charState.sandOfTime && <div className={styles.raidCheck}>✓</div>}
                         </div>
