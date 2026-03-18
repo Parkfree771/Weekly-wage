@@ -583,6 +583,13 @@ export function calculateGachaItemGold(
     const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
     if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
   }
+  // 묶음 주머니 → 내부 아이템 시세 합산 × 주머니 수량
+  if (item.bundleItems && item.bundleItems.length > 0) {
+    const perBundleValue = item.bundleItems.reduce((sum, bi) => {
+      return sum + getItemUnitPrice(bi.itemId, prices) * bi.quantity;
+    }, 0);
+    return perBundleValue * item.quantity;
+  }
   // 선택(choice) 아이템 → 선택지 중 최고가
   if (item.choiceOptions && item.choiceOptions.length > 0) {
     let maxPrice = 0;
