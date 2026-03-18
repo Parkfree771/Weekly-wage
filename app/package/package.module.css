@@ -2113,6 +2113,13 @@
   white-space: nowrap;
 }
 
+.bundleContentsRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.3rem;
+}
+
 /* ─── 아이템 추가 그리드 ─── */
 .availableSection {
   margin-bottom: 1.5rem;

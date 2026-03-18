@@ -84,7 +84,19 @@ export default function PackageRegisterPage() {
     if (template.boxItem) {
       newItem.innerQuantity = 1;
     }
+    if (template.type === 'bundle' && template.bundleContents) {
+      newItem.bundleQuantities = {};
+      template.bundleContents.forEach(bc => { newItem.bundleQuantities![bc.itemId] = 0; });
+    }
     setAddedItems((prev) => [...prev, newItem]);
+  };
+
+  const handleBundleQuantityChange = (itemId: string, contentItemId: string, qty: number) => {
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId ? { ...a, bundleQuantities: { ...a.bundleQuantities, [contentItemId]: Math.max(0, qty) } } : a,
+      ),
+    );
   };
 
   const handleRemoveItem = (itemId: string) => {
@@ -327,10 +339,21 @@ export default function PackageRegisterPage() {
                 goldOverride: expectedGold,
               };
             }
+            case 'bundle': {
+              return (template.bundleContents || [])
+                .filter(bc => (added.bundleQuantities?.[bc.itemId] || 0) > 0)
+                .map(bc => ({
+                  itemId: bc.itemId,
+                  name: bc.name,
+                  quantity: added.quantity * (added.bundleQuantities?.[bc.itemId] || 0),
+                  icon: bc.icon,
+                }));
+            }
             default:
               return null;
           }
         })
+        .flat()
         .filter(Boolean) as PackageItem[];
 
       // 가챠: 아이템에 확률 주입
@@ -542,6 +565,21 @@ export default function PackageRegisterPage() {
                                 onChange={(e) => handleInnerQuantityChange(added.id, parseInt(e.target.value) || 0)}
                                 min={0} />
                               <span className={styles.innerQuantityLabel}>개</span>
+                            </div>
+                          )}
+                          {template.type === 'bundle' && template.bundleContents && (
+                            <div className={styles.bundleContentsRow}>
+                              {template.bundleContents.map((bc) => (
+                                <div key={bc.itemId} className={styles.innerQuantityRow}>
+                                  <img src={bc.icon} alt={bc.name} style={{ width: 20, height: 20 }} />
+                                  <span className={styles.innerQuantityLabel}>{bc.name}</span>
+                                  <input type="number" className={styles.quantityInput}
+                                    value={added.bundleQuantities?.[bc.itemId] || ''}
+                                    onChange={(e) => handleBundleQuantityChange(added.id, bc.itemId, parseInt(e.target.value) || 0)}
+                                    min={0} />
+                                  <span className={styles.innerQuantityLabel}>개</span>
+                                </div>
+                              ))}
                             </div>
                           )}
                           {template.type === 'fixed' && (template.fixedGold ?? 0) > 0 &&

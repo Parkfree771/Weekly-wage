@@ -9,17 +9,24 @@ export type ChoiceOption = {
 };
 
 // ─── 템플릿 아이템 타입 ───
+export type BundleContent = {
+  itemId: string;
+  name: string;
+  icon: string;
+};
+
 export type TemplateItem = {
   id: string;
   icon: string;
   name: string;
-  type: 'simple' | 'choice' | 'gold' | 'fixed' | 'crystal' | 'expected';
+  type: 'simple' | 'choice' | 'gold' | 'fixed' | 'crystal' | 'expected' | 'bundle';
   itemId?: string;
   choices?: ChoiceOption[];
   fixedGold?: number;
   crystalPerUnit?: number;
   boxItem?: boolean;
   expectedItems?: { itemId: string; probability: number }[];
+  bundleContents?: BundleContent[];
 };
 
 // ─── 추가된 아이템 상태 ───
@@ -33,7 +40,7 @@ export type AddedItem = {
   isCustom?: boolean;
   customName?: string;
   customGoldPerUnit?: number;
-
+  bundleQuantities?: Record<string, number>; // bundle 타입: 각 아이템별 수량
 };
 
 // ─── 패키지에 넣을 수 있는 아이템 목록 ───
@@ -60,6 +67,16 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     type: 'choice',
     boxItem: true,
     choices: [
+      { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/top-destiny-destruction-stone5.webp' },
+      { itemId: '66102107', name: '운명의 수호석 결정', icon: '/top-destiny-guardian-stone5.webp' },
+    ],
+  },
+  {
+    id: 'crystal-bundle',
+    icon: '/vkrhltngh.webp',
+    name: '파결+수결 묶음 주머니',
+    type: 'bundle',
+    bundleContents: [
       { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/top-destiny-destruction-stone5.webp' },
       { itemId: '66102107', name: '운명의 수호석 결정', icon: '/top-destiny-guardian-stone5.webp' },
     ],
@@ -540,6 +557,11 @@ export function getUnitPrice(
     case 'expected':
       return (template.expectedItems || []).reduce((sum, ei) => {
         return sum + getItemUnitPrice(ei.itemId, prices) * ei.probability;
+      }, 0);
+    case 'bundle':
+      return (template.bundleContents || []).reduce((sum, bc) => {
+        const qty = added.bundleQuantities?.[bc.itemId] || 0;
+        return sum + getItemUnitPrice(bc.itemId, prices) * qty;
       }, 0);
     default:
       return 0;
