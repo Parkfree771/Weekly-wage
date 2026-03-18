@@ -22,7 +22,7 @@ export default function PackageGalleryPage() {
   const [hasMore, setHasMore] = useState(true);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
 
-  const [sortBy, setSortBy] = useState<PackageSortBy>('efficiency');
+  const [sortBy, setSortBy] = useState<PackageSortBy>('createdAt');
 
   useEffect(() => {
     fetch('/api/price-data/latest')
