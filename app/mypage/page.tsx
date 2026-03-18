@@ -138,6 +138,7 @@ function getCurrentGuardian(itemLevel: number): { name: string; element: string;
 
 // 카던 레벨별 라벨 (1730+ 균열, 1640+ 전선, 미만 카던)
 function getChaosDungeonLabel(itemLevel: number): string {
+  if (itemLevel >= 1750) return '1750 균열';
   if (itemLevel >= 1730) return '1730 균열';
   if (itemLevel >= 1720) return '1720 전선';
   if (itemLevel >= 1700) return '1700 전선';
@@ -149,6 +150,7 @@ function getChaosDungeonLabel(itemLevel: number): string {
 
 // 가토 레벨별 라벨
 function getGuardianRaidLabel(itemLevel: number): string {
+  if (itemLevel >= 1750) return '1750 가토';
   if (itemLevel >= 1730) return '1730 가토';
   if (itemLevel >= 1720) return '1720 가토';
   if (itemLevel >= 1700) return '1700 가토';
@@ -158,6 +160,15 @@ function getGuardianRaidLabel(itemLevel: number): string {
 }
 // 카던(균열/전선) 1일 1회 노휴게 기준 재화 획득량 (레벨별 이미지 분리)
 const CHAOS_DAILY_REWARDS: { minLevel: number; materials: { image: string; alt: string; daily: number }[] }[] = [
+  {
+    minLevel: 1750,
+    materials: [
+      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 326.5 },
+      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1246 },
+      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 19 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 53297 },
+    ],
+  },
   {
     minLevel: 1730,
     materials: [
@@ -202,6 +213,12 @@ function getChaosDailyReward(itemLevel: number) {
 
 // 가디언 토벌 1일 1회 노휴게 기준 재화 획득량 (데이터 추후 업데이트)
 const GUARDIAN_DAILY_REWARDS: { minLevel: number; materials: { image: string; alt: string; daily: number }[] }[] = [
+  {
+    minLevel: 1750,
+    materials: [
+      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 12 },
+    ],
+  },
   {
     minLevel: 1730,
     materials: [
