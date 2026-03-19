@@ -21,7 +21,7 @@ export default function AdBanner({ slot, className }: AdBannerProps) {
       <div className="inline-update-inner">
         <div className="inline-update-header">
           <div className="inline-update-title">지평의 성당</div>
-          <div className="inline-update-subtitle">3.18 오전 10시 업데이트 예정</div>
+          <div className="inline-update-subtitle">업데이트 완료</div>
         </div>
         <div className="inline-update-buttons">
           <Link href="/weekly-gold" className="inline-update-btn">

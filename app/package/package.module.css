@@ -1196,11 +1196,16 @@
 .bundleIconItem:first-child { left: 0; }
 .bundleIconItem:nth-child(2) { left: 24px; }
 
+.bundleNameLine {
+  display: block;
+  white-space: nowrap;
+}
+
 .itemCardName {
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-primary);
-  word-break: keep-all;
+  word-break: break-word;
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1669,6 +1674,19 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 0.75rem;
   }
+
+  .bundleIconStack {
+    width: 52px;
+    height: 32px;
+  }
+
+  .bundleIconItem {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+  }
+
+  .bundleIconItem:nth-child(2) { left: 18px; }
 }
 
 @media (max-width: 576px) {
@@ -1821,6 +1839,19 @@
   .itemCardIconWrap {
     height: 22px;
   }
+
+  .bundleIconStack {
+    width: 36px;
+    height: 22px;
+  }
+
+  .bundleIconItem {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+  }
+
+  .bundleIconItem:nth-child(2) { left: 14px; }
 
   .itemCardIcon {
     width: 20px;

@@ -70,21 +70,42 @@ function getAllRaidGroups(itemLevel: number) {
 }
 
 // 원정대 공통 컨텐츠 정의
-const COMMON_CONTENTS = [
+const COMMON_CONTENTS_BASE = [
   { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0], gold: 0 },
-  { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 3500 },
 ];
+
+// 카오스게이트 레벨별 정의
+const CHAOS_GATE_BY_LEVEL: Record<string, { name: string; shortName: string; image: string; color: string; days: number[]; gold: number; level: number }> = {
+  '1730': { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 3500, level: 1730 },
+  '1750': { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 5000, level: 1750 },
+};
+
+function getCommonContents(maxLevel: number) {
+  const chaosGate = maxLevel >= 1750 ? CHAOS_GATE_BY_LEVEL['1750'] : CHAOS_GATE_BY_LEVEL['1730'];
+  return [...COMMON_CONTENTS_BASE, chaosGate];
+}
 
 // 공통 컨텐츠 재화 보상 (1회 기준)
 type CommonMaterialReward = { image?: string; label: string; amount: number };
+const COMMON_CONTENT_MATERIALS_BY_LEVEL: Record<string, Record<string, CommonMaterialReward[]>> = {
+  '카오스 게이트': {
+    '1730': [
+      { image: '/breath-lava5.webp', label: '용숨', amount: 6 },
+      { image: '/breath-glacier5.webp', label: '빙숨', amount: 6 },
+      { image: '/gold.webp', label: '귀속골드', amount: 3500 },
+      { image: '/destiny-shard-bag-large5.webp', label: '운파', amount: 12000 },
+      { image: '/1fpqrjqghk.webp', label: '보석', amount: 6 },
+    ],
+    '1750': [
+      { image: '/breath-lava5.webp', label: '용숨', amount: 7 },
+      { image: '/breath-glacier5.webp', label: '빙숨', amount: 7 },
+      { image: '/gold.webp', label: '귀속골드', amount: 5000 },
+      { image: '/destiny-shard-bag-large5.webp', label: '운파', amount: 12000 },
+      { image: '/1fpqrjqghk.webp', label: '보석', amount: 7 },
+    ],
+  },
+};
 const COMMON_CONTENT_MATERIALS: Record<string, CommonMaterialReward[]> = {
-  '카오스 게이트': [
-    { image: '/breath-lava5.webp', label: '용숨', amount: 6 },
-    { image: '/breath-glacier5.webp', label: '빙숨', amount: 6 },
-    { image: '/gold.webp', label: '귀속골드', amount: 3500 },
-    { image: '/destiny-shard-bag-large5.webp', label: '운파', amount: 12000 },
-    { image: '/1fpqrjqghk.webp', label: '보석', amount: 6 },
-  ],
   '필드보스': [
     { image: '/top-destiny-destruction-stone5.webp', label: '파결', amount: 484 },
     { image: '/top-destiny-guardian-stone5.webp', label: '수결', amount: 1490 },
@@ -1023,6 +1044,18 @@ export default function MyPage() {
     setIsSaving(false);
   };
 
+  // 원정대 최고 레벨
+  const maxCharLevel = useMemo(() => {
+    if (characters.length === 0) return 0;
+    return Math.max(...characters.map(c => c.itemLevel));
+  }, [characters]);
+
+  // 레벨 기반 공통 컨텐츠
+  const COMMON_CONTENTS = useMemo(() => getCommonContents(maxCharLevel), [maxCharLevel]);
+
+  // 카오스게이트 레벨 티어
+  const chaosGateLevelTier = maxCharLevel >= 1750 ? '1750' : '1730';
+
   // 총 골드 계산
   const calculateTotalGold = useCallback(() => {
     let total = 0;
@@ -1063,7 +1096,7 @@ export default function MyPage() {
     });
 
     return total;
-  }, [characters, weeklyChecklist, commonContent]);
+  }, [characters, weeklyChecklist, commonContent, COMMON_CONTENTS]);
 
   // 주간 재화 합산 데이터 (레이드 + 카던 + 가토)
   // itemId → 이미지/이름 직접 매핑 (카던 짧은 이름 문제 방지)
@@ -1286,6 +1319,9 @@ export default function MyPage() {
                           <span className={styles.commonCardShortName}>{content.shortName}</span>
                           {content.gold > 0 && (
                             <span className={styles.commonCardGold}>{content.gold.toLocaleString()}G</span>
+                          )}
+                          {'level' in content && (
+                            <span className={styles.raidLevel}>Lv.{(content as typeof CHAOS_GATE_BY_LEVEL['1730']).level}</span>
                           )}
                         </div>
                         {checked && <div className={styles.commonCardCheck}>✓</div>}
@@ -1925,7 +1961,10 @@ export default function MyPage() {
                           const checkedCount = Object.entries(commonContent.checks)
                             .filter(([k, v]) => k.endsWith(`-${content.name}`) && v === true).length;
                           if (checkedCount === 0) return null;
-                          const rewards = COMMON_CONTENT_MATERIALS[content.name];
+                          const levelRewards = COMMON_CONTENT_MATERIALS_BY_LEVEL[content.name];
+                          const rewards = levelRewards
+                            ? levelRewards[chaosGateLevelTier]
+                            : COMMON_CONTENT_MATERIALS[content.name];
                           if (!rewards || rewards.length === 0) return null;
                           return (
                             <div key={content.name} className={styles.sideMaterialRow}>

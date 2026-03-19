@@ -25,6 +25,35 @@ import AdBanner from '@/components/ads/AdBanner';
 import CommentSection from '@/components/package/CommentSection';
 import styles from '../package.module.css';
 
+const ITEM_SHORT_NAMES: Record<string, string> = {
+  '운명의 파괴석 결정': '운파결',
+  '운명의 수호석 결정': '운수결',
+  '운명의 파괴석': '운파',
+  '운명의 수호석': '운수',
+  '운명의 돌파석': '운돌',
+  '위대한 운명의 돌파석': '위대한 운돌',
+  '운명의 파편': '운명의 파편',
+  '용암의 숨결': '용숨',
+  '빙하의 숨결': '빙숨',
+  '아비도스 융화 재료': '아비도스',
+  '장인의 야금술 : 3단계': '야금술3',
+  '장인의 야금술 : 4단계': '야금술4',
+  '장인의 재봉술 : 3단계': '재봉술3',
+  '장인의 재봉술 : 4단계': '재봉술4',
+  '어빌리티스톤 키트': '어빌리티스톤 키트',
+  '영웅/희귀 젬 상자': '젬 상자',
+  '천상 도전권': '천상권',
+  '나락 전설 티켓': '나락 전설 티켓',
+  '지옥 전설 티켓': '지옥 전설 티켓',
+  '파결+수결 묶음 주머니': '파결+수결',
+  '파괴/수호 결정 선택': '파결/수결',
+  '용숨/빙숨 선택 상자': '용숨/빙숨',
+};
+
+function shortenItemName(name: string): string {
+  return ITEM_SHORT_NAMES[name] || name;
+}
+
 function formatDate(timestamp: any): string {
   if (!timestamp) return '';
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -976,8 +1005,12 @@ export default function PackageDetailPage() {
                     </div>
                     <div className={styles.itemCardName}>
                       {item.bundleItems && item.bundleItems.length > 0
-                        ? item.bundleItems.map(bi => `${bi.name} ${bi.quantity}개`).join(' + ')
-                        : effective.name}
+                        ? item.bundleItems.map((bi, biIdx) => (
+                            <div key={biIdx} className={styles.bundleNameLine}>
+                              {shortenItemName(bi.name)} ×{bi.quantity.toLocaleString()}×{item.quantity}
+                            </div>
+                          ))
+                        : `${shortenItemName(effective.name)} ×${item.quantity.toLocaleString()}`}
                     </div>
 
                     {hasChoices && item.choiceOptions!.length <= 3 && (

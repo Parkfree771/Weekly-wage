@@ -27,7 +27,7 @@ export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) 
             <div className="sidebar-update-overlay" />
             <div className="sidebar-update-content">
               <div className="sidebar-update-title">지평의 성당</div>
-              <div className="sidebar-update-subtitle">3월 18일 오전 10시<br />업데이트 예정</div>
+              <div className="sidebar-update-subtitle">업데이트 완료</div>
             </div>
           </div>
 
