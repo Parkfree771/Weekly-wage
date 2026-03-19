@@ -23,7 +23,7 @@ const PriceChartProvider = dynamic(
   { ssr: false }
 );
 
-const UserPriceGrid = dynamic(() => import('@/components/UserPriceGrid'), { ssr: false });
+const PriceAvgCompare = dynamic(() => import('@/components/PriceAvgCompare'), { ssr: false });
 
 export default function Home() {
   return (
@@ -48,8 +48,8 @@ export default function Home() {
           <AdBanner slot="8616653628" />
         </div>
 
-        {/* 나의 시세 모아보기 (사용자 커스텀 3×3 그리드) */}
-        <UserPriceGrid />
+        {/* 평균 대비 비교 */}
+        <PriceAvgCompare />
 
       </Container>
     </div>

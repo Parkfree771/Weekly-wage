@@ -1809,18 +1809,5 @@ body {
   }
 }
 
-/* UserPriceGrid 반응형 그리드 */
-.user-price-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-@media (max-width: 991px) {
-  .user-price-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-}
 
 

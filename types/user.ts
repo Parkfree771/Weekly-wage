@@ -109,6 +109,7 @@ export type UserProfile = {
 
 // 레이드 그룹 이미지 매핑
 export const raidGroupImages: { [key: string]: string } = {
+  '지평의 성당': '/wlvuddmltjdekd1.webp',
   '세르카': '/cerka2.webp',
   '종막': '/abrelshud.webp',
   '4막': '/illiakan.webp',
@@ -119,8 +120,19 @@ export const raidGroupImages: { [key: string]: string } = {
   '베히모스': '/behemoth.webp'
 };
 
+// 레이드 그룹 줄임말 (사이드바 재료 표시 등)
+export const raidGroupShortNames: { [key: string]: string } = {
+  '지평의 성당': '성심당',
+};
+
+// 두 단어 이상인 레이드 그룹명 목록
+const multiWordGroups = ['지평의 성당'];
+
 // 레이드 그룹명 추출
 export function getRaidGroupName(raidName: string): string {
+  for (const group of multiWordGroups) {
+    if (raidName.startsWith(group)) return group;
+  }
   return raidName.split(' ')[0];
 }
 

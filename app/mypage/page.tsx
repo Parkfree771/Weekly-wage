@@ -34,6 +34,7 @@ import {
   getTop3RaidGroups,
   getRaidGroupName,
   raidGroupImages,
+  raidGroupShortNames,
   createEmptyWeeklyState,
   getRaidsForLevel,
   needsWeeklyReset,
@@ -805,7 +806,14 @@ export default function MyPage() {
       const charState = prev[charName] || createEmptyWeeklyState(
         characters.find(c => c.name === charName)?.itemLevel || 0
       );
-      const currentRaidState = charState.raids[raidName] || [];
+      let currentRaidState = charState.raids[raidName] || [];
+      // 레이드가 초기화되지 않은 경우 (새로 추가된 레이드) → 게이트 수만큼 배열 생성
+      if (currentRaidState.length === 0) {
+        const raidData = raids.find(r => r.name === raidName);
+        if (raidData) {
+          currentRaidState = new Array(raidData.gates.length).fill(false);
+        }
+      }
       const allChecked = currentRaidState.length > 0 && currentRaidState.every(v => v);
       const newRaidState = currentRaidState.map(() => !allChecked);
 
@@ -1576,7 +1584,7 @@ export default function MyPage() {
                               }
 
                               const difficulties = getAvailableDifficulties(groupName, char.itemLevel);
-                              const difficulty = raid.name.split(' ').slice(1).join(' ') || '';
+                              const difficulty = raid.name.startsWith(groupName) ? raid.name.slice(groupName.length).trim() : '';
                               const groupImage = raidGroupImages[groupName] || raid.image;
                               const checked = isRaidChecked(char.name, raid.name);
                               const difficultyKey = `${char.name}-${groupName}`;
@@ -1624,7 +1632,7 @@ export default function MyPage() {
                                   {isDifficultyOpen && (
                                     <div className={styles.difficultyMenu} onClick={(e) => e.stopPropagation()}>
                                       {difficulties.map((diff) => {
-                                        const diffName = diff.name.split(' ').slice(1).join(' ') || '기본';
+                                        const diffName = diff.name.startsWith(groupName) ? (diff.name.slice(groupName.length).trim() || '기본') : (diff.name.split(' ').slice(1).join(' ') || '기본');
                                         const isSelected = diff.name === raid.name;
                                         return (
                                           <button
@@ -1944,7 +1952,7 @@ export default function MyPage() {
                         )}
                         {raidMats.map(({ raidName: rn, groupName: gn, materials: mats }) => (
                           <div key={rn} className={styles.sideMaterialRow}>
-                            <span className={styles.sideMaterialLabel}>{gn}</span>
+                            <span className={styles.sideMaterialLabel}>{raidGroupShortNames[gn] || gn}</span>
                             <div className={styles.sideMaterialItems}>
                               {mats.map((mat) => (
                                 <div key={mat.itemId} className={styles.sideMaterialItem}>
