@@ -371,17 +371,18 @@ export default function CathedralPage() {
     return sum + getUnitPrice(comp.itemId) * comp.amount;
   }, 0) / REFINE_BOX_GRACE_COST;
 
-  // 선택 상자에서 가장 비싼 아이템 자동 선택
-  const getSelectedItemId = (shopId: number, components: { itemId: string; name: string }[]): string => {
+  // 선택 상자에서 가치(단가 × 수량)가 가장 높은 아이템 자동 선택
+  const getSelectedItemId = (shopId: number, components: { itemId: string; name: string; amount?: number }[]): string => {
     if (shopSelectItem[shopId]) return shopSelectItem[shopId];
-    // 시세 기준 가장 비싼 것 자동 선택
-    let maxPrice = -1;
+    let maxValue = -1;
     let maxId = components[0]?.itemId || '';
     components.forEach(comp => {
       if (comp.itemId === '0') return;
       const price = latestPrices[comp.itemId] || 0;
-      if (price > maxPrice) {
-        maxPrice = price;
+      const amount = (comp as { amount?: number }).amount || 1;
+      const value = price * amount;
+      if (value > maxValue) {
+        maxValue = value;
         maxId = comp.itemId;
       }
     });
