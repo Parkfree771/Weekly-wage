@@ -29,7 +29,6 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-weekly',
     items: [
       { href: '/weekly-gold', label: '주간 계산' },
-      { href: '/spec', label: '스펙업 계산' },
       { href: '/life-master', label: '생활 계산' },
       { href: '/package', label: '패키지 계산' },
       { href: '/hell-reward', label: '지옥 보상 계산' },
@@ -55,7 +54,6 @@ const NAV_STANDALONE: NavItem[] = [
 // 모바일 오프캔버스용 전체 목록
 const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/weekly-gold', label: '주간 계산' },
-  { href: '/spec', label: '스펙업 계산' },
   { href: '/life-master', label: '생활 계산' },
   { href: '/package', label: '패키지 계산' },
   { href: '/hell-reward', label: '지옥 보상 계산' },
@@ -88,7 +86,6 @@ export default function Navbar() {
 
   const getNavClass = (href: string) => {
     const pageClass = href === '/refining' ? 'nav-refining' :
-                      href === '/spec' ? 'nav-combat' :
                       href === '/life-master' ? 'nav-life' :
                       href === '/hell-sim' ? 'nav-hell' :
                       href === '/hell-reward' ? 'nav-hell' :

@@ -70,20 +70,22 @@ function getAllRaidGroups(itemLevel: number) {
   return groups;
 }
 
-// 원정대 공통 컨텐츠 정의
-const COMMON_CONTENTS_BASE = [
-  { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0], gold: 0 },
-];
-
-// 카오스게이트 레벨별 정의
-const CHAOS_GATE_BY_LEVEL: Record<string, { name: string; shortName: string; image: string; color: string; days: number[]; gold: number; level: number }> = {
-  '1730': { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 3500, level: 1730 },
-  '1750': { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 5000, level: 1750 },
+// 원정대 공통 컨텐츠 레벨별 정의
+type CommonContentDef = { name: string; shortName: string; image: string; color: string; days: number[]; gold: number; level: number };
+const COMMON_CONTENT_BY_LEVEL: Record<string, Record<string, CommonContentDef>> = {
+  '필드보스': {
+    '1730': { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0], gold: 0, level: 1730 },
+    '1750': { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0], gold: 0, level: 1750 },
+  },
+  '카오스 게이트': {
+    '1730': { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 3500, level: 1730 },
+    '1750': { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 5000, level: 1750 },
+  },
 };
 
 function getCommonContents(maxLevel: number) {
-  const chaosGate = maxLevel >= 1750 ? CHAOS_GATE_BY_LEVEL['1750'] : CHAOS_GATE_BY_LEVEL['1730'];
-  return [...COMMON_CONTENTS_BASE, chaosGate];
+  const tier = maxLevel >= 1750 ? '1750' : '1730';
+  return Object.values(COMMON_CONTENT_BY_LEVEL).map(byLevel => byLevel[tier]);
 }
 
 // 공통 컨텐츠 재화 보상 (1회 기준)
@@ -105,17 +107,26 @@ const COMMON_CONTENT_MATERIALS_BY_LEVEL: Record<string, Record<string, CommonMat
       { image: '/1fpqrjqghk.webp', label: '보석', amount: 7 },
     ],
   },
-};
-const COMMON_CONTENT_MATERIALS: Record<string, CommonMaterialReward[]> = {
-  '필드보스': [
-    { image: '/top-destiny-destruction-stone5.webp', label: '파결', amount: 484 },
-    { image: '/top-destiny-guardian-stone5.webp', label: '수결', amount: 1490 },
-    { image: '/top-destiny-breakthrough-stone5.webp', label: '위돌', amount: 40 },
-    { image: '/breath-lava5.webp', label: '용숨', amount: 3 },
-    { image: '/breath-glacier5.webp', label: '빙숨', amount: 3 },
-    { image: '/1fpqrjqghk.webp', label: '보석', amount: 21 },
-    { image: '/cjstkd.webp', label: '천상', amount: 0.8 },
-  ],
+  '필드보스': {
+    '1730': [
+      { image: '/top-destiny-destruction-stone5.webp', label: '파결', amount: 484 },
+      { image: '/top-destiny-guardian-stone5.webp', label: '수결', amount: 1490 },
+      { image: '/top-destiny-breakthrough-stone5.webp', label: '위돌', amount: 40 },
+      { image: '/breath-lava5.webp', label: '용숨', amount: 3 },
+      { image: '/breath-glacier5.webp', label: '빙숨', amount: 3 },
+      { image: '/1fpqrjqghk.webp', label: '보석', amount: 21 },
+      { image: '/cjstkd.webp', label: '천상', amount: 0.8 },
+    ],
+    '1750': [
+      { image: '/top-destiny-destruction-stone5.webp', label: '파결', amount: 704 },
+      { image: '/top-destiny-guardian-stone5.webp', label: '수결', amount: 1916 },
+      { image: '/top-destiny-breakthrough-stone5.webp', label: '위돌', amount: 47 },
+      { image: '/breath-lava5.webp', label: '용숨', amount: 3 },
+      { image: '/breath-glacier5.webp', label: '빙숨', amount: 3 },
+      { image: '/1fpqrjqghk.webp', label: '보석', amount: 21 },
+      { image: '/cjstkd.webp', label: '천상', amount: 1 },
+    ],
+  },
 };
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -1324,13 +1335,10 @@ export default function MyPage() {
                         <div className={styles.commonCardOverlay} />
                         <div className={styles.commonCardInfo}>
                           <span className={styles.commonCardName}>{content.name}</span>
-                          <span className={styles.commonCardShortName}>{content.shortName}</span>
                           {content.gold > 0 && (
                             <span className={styles.commonCardGold}>{content.gold.toLocaleString()}G</span>
                           )}
-                          {'level' in content && (
-                            <span className={styles.raidLevel}>Lv.{(content as typeof CHAOS_GATE_BY_LEVEL['1730']).level}</span>
-                          )}
+                          <span className={styles.raidLevel}>Lv.{content.level}</span>
                         </div>
                         {checked && <div className={styles.commonCardCheck}>✓</div>}
                       </div>
@@ -1970,9 +1978,7 @@ export default function MyPage() {
                             .filter(([k, v]) => k.endsWith(`-${content.name}`) && v === true).length;
                           if (checkedCount === 0) return null;
                           const levelRewards = COMMON_CONTENT_MATERIALS_BY_LEVEL[content.name];
-                          const rewards = levelRewards
-                            ? levelRewards[chaosGateLevelTier]
-                            : COMMON_CONTENT_MATERIALS[content.name];
+                          const rewards = levelRewards?.[chaosGateLevelTier];
                           if (!rewards || rewards.length === 0) return null;
                           return (
                             <div key={content.name} className={styles.sideMaterialRow}>

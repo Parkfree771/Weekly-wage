@@ -33,12 +33,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: 'https://lostarkweeklygold.kr/spec',
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
       url: 'https://lostarkweeklygold.kr/hell-sim',
       lastModified: new Date(),
       changeFrequency: 'weekly',

@@ -60,12 +60,12 @@ const ANCIENT_CORE_COMPONENTS = [
 
 // 유물 코어 구성 요소
 const RELIC_CORE_COMPONENTS = [
-  { itemId: '0', name: '질서의 해', icon: '/wlftjdmlgo2.png' },
-  { itemId: '0', name: '질서의 달', icon: '/wlftjdmlekf2.png' },
-  { itemId: '0', name: '질서의 별', icon: '/wlftjdmlquf2.png' },
-  { itemId: '0', name: '혼돈의 해', icon: '/ghsehsdmlgo2.png' },
-  { itemId: '0', name: '혼돈의 달', icon: '/ghsehsdmlekf2.png' },
-  { itemId: '0', name: '혼돈의 별', icon: '/ghsehsdmlquf2.png' },
+  { itemId: '0', name: '질서의 해', icon: '/wlftjdmlgo2.webp' },
+  { itemId: '0', name: '질서의 달', icon: '/wlftjdmlekf2.webp' },
+  { itemId: '0', name: '질서의 별', icon: '/wlftjdmlquf2.webp' },
+  { itemId: '0', name: '혼돈의 해', icon: '/ghsehsdmlgo2.webp' },
+  { itemId: '0', name: '혼돈의 달', icon: '/ghsehsdmlekf2.webp' },
+  { itemId: '0', name: '혼돈의 별', icon: '/ghsehsdmlquf2.webp' },
 ];
 
 // 재료 이미지 매핑
