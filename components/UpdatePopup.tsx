@@ -30,7 +30,7 @@ export default function UpdatePopup() {
         {/* 배경 이미지 */}
         <div className={styles.imageWrapper}>
           <Image
-            src="/wlvuddmltjdekd1.webp"
+            src="/wlvuddmltjdekd2.webp"
             alt="지평의 성당"
             fill
             className={styles.bgImage}
@@ -39,33 +39,46 @@ export default function UpdatePopup() {
           <div className={styles.imageOverlay} />
           <div className={styles.imageContent}>
             <div className={styles.updateBadge}>NEW</div>
-            <h2 className={styles.title}>지평의 성당</h2>
-            <p className={styles.subtitle}>지평의 성당 보상 데이터 업데이트</p>
+            <h2 className={styles.title}>주간 교환 달력</h2>
+            <p className={styles.subtitle}>은총의 파편, 언제 뭘 교환할 수 있을까?</p>
           </div>
         </div>
 
-        {/* 버튼 영역 */}
-        <div className={styles.buttonArea}>
-          <Link href="/weekly-gold" className={styles.navButton} onClick={handleClose}>
-            <Image src="/gold.webp" alt="" width={24} height={24} />
-            <div className={styles.navText}>
-              <span className={styles.navTitle}>주간 골드 계산</span>
-              <span className={styles.navDesc}>지평의 성당 보상, 더보기 효율 확인</span>
+        {/* 주차 타임라인 */}
+        <div className={styles.previewArea}>
+          <div className={styles.timeline}>
+            {[1, 2, 3].map(w => (
+              <div key={w} className={styles.tlDot}>
+                <div className={styles.tlDotCircle} />
+                <span className={styles.tlDotLabel}>{w}주</span>
+              </div>
+            ))}
+            <div className={styles.tlDotDots}>⋯</div>
+            <div className={`${styles.tlDot} ${styles.tlDotHighlight}`}>
+              <div className={styles.tlDotCircleGold} />
+              <span className={styles.tlDotLabel}>4주</span>
             </div>
-          </Link>
-          <Link href="/cathedral" className={styles.navButton} onClick={handleClose}>
-            <Image src="/dmschddmlvkvus.webp" alt="" width={24} height={24} />
-            <div className={styles.navText}>
-              <span className={styles.navTitle}>지평의 성당 <span className={styles.newBadge}>NEW</span></span>
-              <span className={styles.navDesc}>은총의 파편 교환 상점 확인</span>
+          </div>
+          <div className={styles.previewHero}>
+            <div className={styles.previewHeroIcon}>
+              <Image src="/rheozhdj.webp" alt="고대 코어" width={52} height={52} unoptimized />
             </div>
-          </Link>
-          <Link href="/mypage" className={styles.navButton} onClick={handleClose}>
-            <Image src="/top-destiny-destruction-stone5.webp" alt="" width={24} height={24} />
-            <div className={styles.navText}>
-              <span className={styles.navTitle}>마이페이지</span>
-              <span className={styles.navDesc}>1750 신규 일일 컨텐츠 수급량 확인</span>
+            <div className={styles.previewHeroInfo}>
+              <span className={styles.previewHeroName}>
+                <span className={styles.gradeAncient}>고대</span> 코어 랜덤 상자
+              </span>
+              <span className={styles.previewHeroCost}>
+                <Image src="/dmschddmlvkvus.webp" alt="" width={16} height={16} unoptimized />
+                <strong>400</strong>개 필요
+              </span>
             </div>
+            <span className={styles.previewHeroWeek}>4주차~</span>
+          </div>
+          <p className={styles.previewDesc}>
+            레벨·더보기별 주차 계산 + 교환 체크 기능
+          </p>
+          <Link href="/cathedral" className={styles.ctaLink} onClick={handleClose}>
+            교환 달력 확인하기 →
           </Link>
         </div>
 

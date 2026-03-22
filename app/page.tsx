@@ -23,7 +23,6 @@ const PriceChartProvider = dynamic(
   { ssr: false }
 );
 
-const PriceAvgCompare = dynamic(() => import('@/components/PriceAvgCompare'), { ssr: false });
 
 export default function Home() {
   return (
@@ -47,9 +46,6 @@ export default function Home() {
         <div className="d-block d-lg-none my-3">
           <AdBanner slot="8616653628" />
         </div>
-
-        {/* 평균 대비 비교 */}
-        <PriceAvgCompare />
 
       </Container>
     </div>

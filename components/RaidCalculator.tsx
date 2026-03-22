@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, Table, Form, Badge, Accordion, Row, Col, Button, Collapse } from 'react-bootstrap';
 import Image from 'next/image';
 import { raids } from '@/data/raids';
-import { calculateRanking } from '@/utils/goldRanking';
 
 type Character = {
   characterName: string;
@@ -398,8 +397,8 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
 
         // 해당 캐릭터의 세르카, 종막, 4막 관문을 변경
         for (const raidName in result[characterName]) {
-          // 세르카, 종막, 4막인 경우 (코어 파밍 가능 레이드, 지평의 성당 제외)
-          if (raidName.startsWith('세르카') || raidName.startsWith('종막') || raidName.startsWith('4막')) {
+          // 지평의 성당, 세르카, 종막, 4막인 경우 (코어 파밍 가능 레이드)
+          if (raidName.startsWith('지평의 성당') || raidName.startsWith('세르카') || raidName.startsWith('종막') || raidName.startsWith('4막')) {
             result[characterName][raidName] = { ...result[characterName][raidName] };
             for (const gate in result[characterName][raidName]) {
               const currentSelection = result[characterName][raidName][gate];
@@ -884,60 +883,6 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
               총 골드: {calculateTotalGold().toLocaleString()} G
             </div>
 
-            {/* 오른쪽: 상위 퍼센트 정보 */}
-            {(() => {
-              const totalGold = calculateTotalGold();
-              if (totalGold > 0) {
-                // 더보기 미사용 기준(Full Reward)으로 계산
-                const ranking = calculateRanking(totalGold);
-
-                // 퍼센트별 색상 지정 (가시성 좋은 색상)
-                let percentColor = '#6c757d'; // 회색 (기본)
-                if (ranking <= 0.1) {
-                  percentColor = '#dc3545'; // 진한 빨강 (신계 0.1%)
-                } else if (ranking <= 1) {
-                  percentColor = '#dc3545'; // 진한 빨강 (최상위 1%)
-                } else if (ranking <= 5) {
-                  percentColor = '#fd7e14'; // 주황 (상위권 5%)
-                } else if (ranking <= 10) {
-                  percentColor = '#fd7e14'; // 주황 (고인물 10%)
-                } else if (ranking <= 20) {
-                  percentColor = '#ffc107'; // 황금색 (준상위 20%)
-                } else if (ranking <= 50) {
-                  percentColor = '#0d6efd'; // 파랑 (중위 50%)
-                } else if (ranking <= 70) {
-                  percentColor = '#198754'; // 초록 (라이트 70%)
-                }
-
-                return (
-                  <div style={{
-                    position: isMobile ? 'relative' : 'absolute',
-                    right: 0,
-                    top: isMobile ? 0 : '0rem',
-                    textAlign: 'right',
-                    marginTop: isMobile ? '0.6rem' : 0
-                  }}>
-                    <p style={{
-                      fontSize: isMobile ? '0.85rem' : '1rem',
-                      color: 'var(--text-primary)',
-                      marginBottom: '0.25rem',
-                      fontWeight: 600
-                    }}>
-                      원정대 주간 골드 수급 상위 <span style={{ color: percentColor, fontWeight: 700 }}>{ranking}%</span>입니다
-                    </p>
-                    <p style={{
-                      fontSize: isMobile ? '0.68rem' : '0.78rem',
-                      color: 'var(--text-muted)',
-                      marginBottom: 0,
-                      fontStyle: 'italic'
-                    }}>
-                      * 1660 이상의 캐릭터 더보기를 하지 않는다는 가정
-                    </p>
-                  </div>
-                );
-              }
-              return null;
-            })()}
           </div>
         </Card.Body>
       </Card>

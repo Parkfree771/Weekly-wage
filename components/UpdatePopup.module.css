@@ -17,7 +17,7 @@
 
 .popup {
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
   border-radius: 16px;
   overflow: hidden;
   background: var(--card-bg, #1a1a2e);
@@ -30,11 +30,11 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* 배경 이미지 영역 */
+/* ─── 배경 이미지 ─── */
 .imageWrapper {
   position: relative;
   width: 100%;
-  height: 280px;
+  height: 200px;
   overflow: hidden;
 }
 
@@ -46,12 +46,7 @@
 .imageOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.2) 0%,
-    rgba(0, 0, 0, 0.4) 50%,
-    rgba(0, 0, 0, 0.75) 100%
-  );
+  background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.7) 100%);
 }
 
 .imageContent {
@@ -59,25 +54,25 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 1.5rem;
+  padding: 1.25rem;
   text-align: center;
 }
 
 .updateBadge {
   display: inline-block;
-  padding: 0.25rem 0.8rem;
-  font-size: 0.7rem;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.65rem;
   font-weight: 800;
   letter-spacing: 2px;
   color: #fff;
   background: linear-gradient(135deg, #c9a84c, #e8c84a);
   border-radius: 20px;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
   box-shadow: 0 2px 10px rgba(201, 168, 76, 0.5);
 }
 
 .title {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: #fff;
   margin: 0 0 0.2rem 0;
@@ -85,93 +80,187 @@
 }
 
 .subtitle {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.88rem;
+  font-weight: 500;
   color: rgba(255, 255, 255, 0.85);
   margin: 0;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* 버튼 영역 */
-.buttonArea {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1.25rem 1.5rem;
+/* ─── 주차 타임라인 + 하이라이트 ─── */
+.previewArea {
+  padding: 1rem 1.25rem;
 }
 
-.navButton {
+/* 가로 타임라인 */
+.timeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 1rem;
+  position: relative;
+  padding: 0 0.5rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 2px;
+  background: var(--border-color, rgba(255,255,255,0.12));
+  transform: translateY(-8px);
+}
+
+.tlDot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.tlDotCircle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted, #666);
+}
+
+.tlDotCircleGold {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #c9a84c;
+  box-shadow: 0 0 10px rgba(201, 168, 76, 0.6);
+}
+
+.tlDotLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted, #888);
+}
+
+.tlDotHighlight .tlDotLabel {
+  color: #c9a84c;
+  font-weight: 800;
+  font-size: 0.72rem;
+}
+
+.tlDotDots {
+  flex: 0.6;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted, #666);
+  letter-spacing: 2px;
+  position: relative;
+  z-index: 1;
+  padding-bottom: 18px;
+}
+
+/* 고대 코어 하이라이트 카드 */
+.previewHero {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 0.7rem 0.85rem;
+  background: rgba(201, 168, 76, 0.08);
+  border: 1.5px solid rgba(201, 168, 76, 0.35);
   border-radius: 10px;
-  background: var(--card-header-bg, rgba(255, 255, 255, 0.08));
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
-  color: var(--text-primary, #e0e0e0);
-  font-size: 0.92rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
+  margin-bottom: 0.75rem;
 }
 
-.navButton:hover {
-  background: rgba(201, 168, 76, 0.15);
-  border-color: rgba(201, 168, 76, 0.4);
-  color: #c9a84c;
-  transform: translateX(4px);
+.previewHeroIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
-.navIcon {
-  font-size: 1.3rem;
-  line-height: 1;
-}
-
-.newBadge {
-  display: inline-block;
-  margin-left: 5px;
-  padding: 1px 6px;
-  font-size: 9px;
-  font-weight: 800;
-  color: #fff;
-  background: linear-gradient(135deg, #ef4444, #f97316);
-  border-radius: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  vertical-align: middle;
-}
-
-.navText {
+.previewHeroInfo {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 3px;
 }
 
-.navTitle {
-  font-size: 0.92rem;
-  font-weight: 600;
+.previewHeroName {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary, #e0e0e0);
 }
 
-.navDesc {
+.gradeAncient {
+  font-weight: 800;
+  color: #d4bc82;
+}
+
+.previewHeroCost {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: #c9a84c;
+}
+
+.previewHeroCost strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.previewHeroWeek {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #c9a84c;
+  flex-shrink: 0;
+  padding: 3px 10px;
+  background: rgba(201, 168, 76, 0.15);
+  border-radius: 6px;
+}
+
+.previewDesc {
   font-size: 0.72rem;
   color: var(--text-muted, #999);
-  font-weight: 400;
+  text-align: center;
+  margin: 0 0 0.5rem 0;
 }
 
-/* 하단 */
+.ctaLink {
+  display: block;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #c9a84c;
+  text-decoration: none;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+
+.ctaLink:hover {
+  background: rgba(201, 168, 76, 0.1);
+  color: #c9a84c;
+}
+
+/* ─── 하단 ─── */
 .footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1.5rem 1.25rem;
-  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  padding: 0.6rem 1.5rem 1rem;
+  border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));
 }
 
 .dismissBtn {
   background: none;
   border: none;
   color: var(--text-muted, #888);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   cursor: pointer;
   padding: 0.3rem 0;
   text-decoration: underline;
@@ -184,33 +273,23 @@
 
 .closeBtn {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  border: 1px solid var(--border-color, rgba(255,255,255,0.15));
   color: var(--text-primary, #e0e0e0);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  padding: 0.4rem 1.2rem;
+  padding: 0.35rem 1rem;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.15s;
 }
 
 .closeBtn:hover {
   background: rgba(255, 255, 255, 0.18);
 }
 
-/* 모바일 */
+/* ─── 모바일 ─── */
 @media (max-width: 480px) {
-  .imageWrapper {
-    height: 230px;
-  }
-  .title {
-    font-size: 1.35rem;
-  }
-  .buttonArea {
-    padding: 1rem 1.25rem;
-  }
-  .navButton {
-    padding: 0.65rem 0.85rem;
-    font-size: 0.85rem;
-  }
+  .imageWrapper { height: 170px; }
+  .title { font-size: 1.3rem; }
+  .previewArea { padding: 0.75rem 1rem; }
 }

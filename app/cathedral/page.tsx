@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import styles from './cathedral.module.css';
@@ -315,6 +315,116 @@ const SHOP_ITEMS = [
     limit: '제한 없음', limitType: 'unlimited' as const,
   },
 ];
+
+// ─── 은총 달력 ───
+const CALENDAR_START = new Date(2026, 2, 18); // 2026-03-18 (수요일)
+
+// 레벨별 주당 은총 수급량
+const GRACE_BY_LEVEL: Record<number, { basic: number; more: number }> = {
+  1700: { basic: 10, more: 20 },
+  1720: { basic: 30, more: 60 },
+  1750: { basic: 60, more: 120 },
+};
+
+const CAL_LEVELS = [1700, 1720, 1750] as const;
+
+type CalShopItem = {
+  id: number;
+  name: string;
+  image: string;
+  theme: string;
+  hasBg: boolean;
+  qty: number;
+  graceCost: number;
+  goldCost: number;
+  limitType: 'once' | 'unlimited';
+  requiredLevel: number;
+};
+
+const CAL_SHOP_ITEMS: CalShopItem[] = SHOP_ITEMS
+  .filter(s => s.costs.some(c => c.name === '은총의 파편' && c.amount > 0))
+  .map(s => ({
+    id: s.id, name: s.name, image: s.image, theme: s.theme, hasBg: s.hasBg, qty: s.qty,
+    graceCost: s.costs.find(c => c.name === '은총의 파편')?.amount || 0,
+    goldCost: s.costs.find(c => c.name === '골드')?.amount || 0,
+    limitType: s.limitType as 'once' | 'unlimited',
+    requiredLevel: s.requiredLevel,
+  }));
+
+// 교환 체크된 아이템의 은총 소비를 반영하여, 각 아이템의 필요 주차 계산
+function calcWeekNeeded(item: CalShopItem, perWeek: number, consumedGrace: number): number {
+  if (item.graceCost === 0) return 1;
+  const needed = item.graceCost + consumedGrace;
+  return Math.ceil(needed / perWeek);
+}
+
+type CalendarWeek = {
+  week: number;
+  startDate: Date;
+  endDate: Date;
+  cumulative: number;
+  items: (CalShopItem & { weekNeeded: number; isExchanged: boolean; isDisabled: boolean })[];
+  isCurrent: boolean;
+};
+
+type ExchangeMap = Map<number, Set<number>>;
+
+function getConsumedGrace(exchangeMap: ExchangeMap, level: number): number {
+  return CAL_SHOP_ITEMS
+    .filter(s => s.requiredLevel <= level)
+    .reduce((sum, s) => {
+      const checks = exchangeMap.get(s.id);
+      return sum + (checks ? s.graceCost * checks.size : 0);
+    }, 0);
+}
+
+function buildCalendar(perWeek: number, totalWeeks: number, exchangeMap: ExchangeMap, level: number): CalendarWeek[] {
+  const levelItems = CAL_SHOP_ITEMS.filter(s => s.requiredLevel <= level);
+  const consumedGrace = getConsumedGrace(exchangeMap, level);
+
+  const now = new Date();
+  const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const weeks: CalendarWeek[] = [];
+
+  for (let w = 0; w < totalWeeks; w++) {
+    const startDate = new Date(CALENDAR_START);
+    startDate.setDate(startDate.getDate() + w * 7);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 6);
+    const weekNum = w + 1;
+    const cumulative = weekNum * perWeek - consumedGrace;
+
+    const weekItems: (CalShopItem & { weekNeeded: number; isExchanged: boolean; isDisabled: boolean })[] = [];
+
+    for (const s of levelItems) {
+      const checks = exchangeMap.get(s.id);
+      const isCheckedHere = checks?.has(weekNum) || false;
+
+      if (s.limitType === 'once') {
+        const checkedAnywhere = checks && checks.size > 0;
+        if (checkedAnywhere) {
+          if (isCheckedHere) weekItems.push({ ...s, weekNeeded: weekNum, isExchanged: true, isDisabled: false });
+        } else {
+          if (cumulative >= s.graceCost) weekItems.push({ ...s, weekNeeded: weekNum, isExchanged: false, isDisabled: false });
+        }
+      } else {
+        if (cumulative >= s.graceCost || isCheckedHere) {
+          weekItems.push({ ...s, weekNeeded: weekNum, isExchanged: isCheckedHere, isDisabled: false });
+        }
+      }
+    }
+
+    weekItems.sort((a, b) => a.graceCost - b.graceCost);
+
+    weeks.push({
+      week: weekNum, startDate, endDate,
+      cumulative,
+      items: weekItems,
+      isCurrent: kstNow >= startDate && kstNow <= endDate,
+    });
+  }
+  return weeks;
+}
 
 export default function CathedralPage() {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
@@ -1051,9 +1161,345 @@ export default function CathedralPage() {
               </Card>
             </div>
 
+            {/* ─── 은총의 파편 주간 달력 ─── */}
+            <GraceCalendar />
+
           </Col>
         </Row>
       </Container>
+    </div>
+  );
+}
+
+// ─── 은총의 파편 주간 달력 컴포넌트 ───
+const GRACE_CAL_STORAGE_KEY = 'graceCalendarExchanges';
+
+function saveExchangeMap(map: ExchangeMap) {
+  try {
+    const obj: Record<string, number[]> = {};
+    map.forEach((weeks, id) => { obj[String(id)] = Array.from(weeks); });
+    localStorage.setItem(GRACE_CAL_STORAGE_KEY, JSON.stringify(obj));
+  } catch {}
+}
+
+function loadExchangeMap(): ExchangeMap {
+  try {
+    const raw = localStorage.getItem(GRACE_CAL_STORAGE_KEY);
+    if (!raw) return new Map();
+    const obj = JSON.parse(raw) as Record<string, number[]>;
+    const map: ExchangeMap = new Map();
+    Object.entries(obj).forEach(([id, weeks]) => map.set(Number(id), new Set(weeks)));
+    return map;
+  } catch { return new Map(); }
+}
+
+function GraceCalendar() {
+  const [level, setLevel] = useState<number>(1750);
+  const [mode, setMode] = useState<'basic' | 'more'>('more');
+  const [exchangeMap, setExchangeMap] = useState<ExchangeMap>(new Map());
+  const [mounted, setMounted] = useState(false);
+  const TOTAL_WEEKS = 24;
+
+  // localStorage에서 복원
+  useEffect(() => {
+    setExchangeMap(loadExchangeMap());
+    setMounted(true);
+  }, []);
+
+  // 변경 시 저장
+  useEffect(() => {
+    if (mounted) saveExchangeMap(exchangeMap);
+  }, [exchangeMap, mounted]);
+
+  // 마우스 드래그 스크롤 (관성 포함)
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const drag = useRef({ active: false, startX: 0, scrollLeft: 0, lastX: 0, velocity: 0, raf: 0 });
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    cancelAnimationFrame(drag.current.raf);
+    drag.current.active = true;
+    drag.current.startX = e.pageX;
+    drag.current.scrollLeft = scrollRef.current.scrollLeft;
+    drag.current.lastX = e.pageX;
+    drag.current.velocity = 0;
+    scrollRef.current.style.cursor = 'grabbing';
+    scrollRef.current.style.scrollBehavior = 'auto';
+  }, []);
+
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!drag.current.active || !scrollRef.current) return;
+    e.preventDefault();
+    const dx = e.pageX - drag.current.startX;
+    scrollRef.current.scrollLeft = drag.current.scrollLeft - dx;
+    drag.current.velocity = e.pageX - drag.current.lastX;
+    drag.current.lastX = e.pageX;
+  }, []);
+
+  const onMouseUp = useCallback(() => {
+    if (!drag.current.active || !scrollRef.current) return;
+    drag.current.active = false;
+    scrollRef.current.style.cursor = 'grab';
+    scrollRef.current.style.scrollBehavior = 'smooth';
+    // 관성 스크롤
+    let v = drag.current.velocity * 2;
+    const coast = () => {
+      if (!scrollRef.current || Math.abs(v) < 0.5) return;
+      scrollRef.current.scrollLeft -= v;
+      v *= 0.92;
+      drag.current.raf = requestAnimationFrame(coast);
+    };
+    coast();
+  }, []);
+
+  // 스크롤 컨테이너 높이 고정 — 체크로 아이템 사라져도 줄어들지 않게
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const h = scrollRef.current.scrollHeight;
+    scrollRef.current.style.minHeight = `${h}px`;
+  }, [level, mode]);
+
+  const toggleExchange = (id: number, weekNum: number) => {
+    setExchangeMap(prev => {
+      const next = new Map(prev);
+      const checks = new Set(prev.get(id) || []);
+      if (checks.has(weekNum)) checks.delete(weekNum); else checks.add(weekNum);
+      if (checks.size === 0) next.delete(id); else next.set(id, checks);
+      return next;
+    });
+  };
+
+  const gracePerWeek = GRACE_BY_LEVEL[level]?.[mode] || 60;
+
+  const weeks = useMemo(() => {
+    return buildCalendar(gracePerWeek, TOTAL_WEEKS, exchangeMap, level);
+  }, [gracePerWeek, exchangeMap, level]);
+
+  const consumedGrace = useMemo(() => getConsumedGrace(exchangeMap, level), [exchangeMap, level]);
+
+  const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+
+  return (
+    <div className={styles.calendarSection}>
+      {/* 헤더 */}
+      <div className={styles.calHeader}>
+        <div>
+          <h2 className={styles.calTitle}>주간 교환 달력</h2>
+          <p className={styles.calSubtitle}>은총의 파편 수급 및 교환 계획</p>
+        </div>
+        <div className={styles.calControls}>
+          {/* 레벨 선택 */}
+          <div className={styles.calToggle}>
+            {CAL_LEVELS.map(lv => {
+              const colors: Record<number, string> = { 1700: '#3b82f6', 1720: '#8b5cf6', 1750: '#c9a84c' };
+              const isActive = level === lv;
+              return (
+                <button
+                  key={lv}
+                  className={`${styles.calToggleBtn} ${isActive ? styles.calToggleLvActive : ''}`}
+                  style={isActive ? { color: colors[lv], borderColor: colors[lv] } : undefined}
+                  onClick={() => { setLevel(lv); setExchangeMap(new Map()); }}
+                >
+                  {lv}
+                </button>
+              );
+            })}
+          </div>
+          {/* 기본/더보기 */}
+          <div className={styles.calToggle}>
+            <button
+              className={`${styles.calToggleBtn} ${mode === 'basic' ? styles.calToggleModeActive : ''}`}
+              style={mode === 'basic' ? { color: '#6b7280' } : undefined}
+              onClick={() => setMode('basic')}
+            >
+              기본
+            </button>
+            <button
+              className={`${styles.calToggleBtn} ${mode === 'more' ? styles.calToggleModeActive : ''}`}
+              style={mode === 'more' ? { color: '#059669' } : undefined}
+              onClick={() => setMode('more')}
+            >
+              더보기
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 수급 정보 + 초기화 */}
+      <div className={styles.calInfoRow}>
+        <div className={styles.calWeeklyInfo}>
+          <Image src="/dmschddmlvkvus.webp" alt="" width={16} height={16} unoptimized />
+          <span>Lv.{level} · 주당 {gracePerWeek}개</span>
+          {consumedGrace > 0 && (
+            <span className={styles.calConsumedInfo}>· 소비 {consumedGrace}개</span>
+          )}
+        </div>
+        <button className={styles.calResetBtn} onClick={() => setExchangeMap(new Map())}>
+          초기화
+        </button>
+      </div>
+      {/* 주차별 카드 */}
+      <div
+        className={styles.calWeekList}
+        ref={scrollRef}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+      >
+        {weeks.map((w) => {
+          const hasItems = w.items.length > 0;
+
+          return (
+            <div key={w.week} className={`${styles.calWeekCard} ${w.isCurrent ? styles.calWeekCardCurrent : ''}`}>
+              {/* 주차 헤더 */}
+              <div className={styles.calWeekCardHeader}>
+                <div className={styles.calWeekCardLeft}>
+                  {w.isCurrent && <span className={styles.calWeekNowDot} />}
+                  <span className={styles.calWeekNum}>{w.week}주차</span>
+                  <span className={styles.calWeekDate}>{fmt(w.startDate)} ~ {fmt(w.endDate)}</span>
+                </div>
+                <div className={styles.calWeekGrace}>
+                  <Image src="/dmschddmlvkvus.webp" alt="" width={20} height={20} unoptimized />
+                  <span>{w.cumulative}</span>
+                </div>
+              </div>
+
+              {/* 아이템 목록 */}
+              <div className={styles.calWeekItems}>
+                {!hasItems && (
+                  <div className={styles.calWeekEmpty}>신규 교환 가능 아이템 없음</div>
+                )}
+                {w.items.map((item, idx) => {
+                  const tc = THEME_COLORS[item.theme] || THEME_COLORS.ancient;
+                  return (
+                    <div
+                      key={`${item.id}-${idx}`}
+                      className={`${styles.calWeekItem} ${item.isExchanged ? styles.calWeekItemChecked : ''} ${item.isDisabled ? styles.calWeekItemDisabled : ''}`}
+                      onClick={() => !item.isDisabled && toggleExchange(item.id, w.week)}
+                    >
+                      {/* 체크박스 */}
+                      <div className={`${styles.calWkCheckbox} ${item.isExchanged ? styles.calWkCheckboxOn : ''}`}>
+                        {item.isExchanged && <span>✓</span>}
+                      </div>
+
+                      {/* 아이콘 */}
+                      {item.hasBg ? (
+                        <div className={styles.calWkIconFill}>
+                          <Image src={item.image} alt={item.name} width={52} height={52} unoptimized />
+                        </div>
+                      ) : (
+                        <div className={styles.calWkIcon}>
+                          <Image src={item.image} alt={item.name} width={48} height={48} unoptimized style={{ transform: 'scale(1.15)' }} />
+                        </div>
+                      )}
+
+                      {/* 정보 */}
+                      <div className={styles.calWkInfo}>
+                        <span className={styles.calWkName}>
+                          {item.name.split(/(유물|고대)/).map((part, pi) =>
+                            part === '유물' ? <span key={pi} className={styles.calWkGradeRelic}>{part}</span>
+                            : part === '고대' ? <span key={pi} className={styles.calWkGradeAncient}>{part}</span>
+                            : <span key={pi}>{part}</span>
+                          )}
+                          {item.qty > 1 && <span className={styles.calWkQty}> ×{item.qty}</span>}
+                        </span>
+                        <div className={styles.calWkCosts}>
+                          {item.graceCost > 0 ? (
+                            <span className={styles.calWkCostTag}>
+                              <Image src="/dmschddmlvkvus.webp" alt="" width={14} height={14} unoptimized />
+                              {item.graceCost}
+                            </span>
+                          ) : (
+                            <span className={styles.calWkFree}>무료</span>
+                          )}
+                          {item.goldCost > 0 && (
+                            <span className={styles.calWkCostTag}>
+                              <Image src="/gold.webp" alt="" width={14} height={14} unoptimized />
+                              {item.goldCost.toLocaleString()}
+                            </span>
+                          )}
+                          <span className={item.limitType === 'once' ? styles.calWkBadgeOnce : styles.calWkBadgeRepeat}>
+                            {item.limitType === 'once' ? '1회' : '무제한'}
+                          </span>
+                        </div>
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 교환 내역 — 레벨별 전체 아이템 고정 표시 */}
+      {(() => {
+        const levelItems = CAL_SHOP_ITEMS.filter(s => s.requiredLevel <= level)
+          .sort((a, b) => a.graceCost - b.graceCost);
+        const totalGrace = levelItems.reduce((s, item) => {
+          const count = exchangeMap.get(item.id)?.size || 0;
+          return s + item.graceCost * count;
+        }, 0);
+        const totalGold = levelItems.reduce((s, item) => {
+          const count = exchangeMap.get(item.id)?.size || 0;
+          return s + item.goldCost * count;
+        }, 0);
+
+        return (
+          <div className={styles.calSummary}>
+            <div className={styles.calSummaryHeader}>
+              <span className={styles.calSummaryTitle}>교환 내역</span>
+              <div className={styles.calSummaryTotals}>
+                <span className={styles.calSummaryTotal}>
+                  <Image src="/dmschddmlvkvus.webp" alt="" width={18} height={18} unoptimized />
+                  {totalGrace.toLocaleString()}
+                </span>
+                {totalGold > 0 && (
+                  <span className={styles.calSummaryTotal}>
+                    <Image src="/gold.webp" alt="" width={18} height={18} unoptimized />
+                    {totalGold.toLocaleString()}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className={styles.calSummaryList}>
+              {levelItems.map((item) => {
+                const count = exchangeMap.get(item.id)?.size || 0;
+                const active = count > 0;
+                return (
+                  <div key={item.id} className={`${styles.calSummaryItem} ${active ? styles.calSummaryItemActive : styles.calSummaryItemInactive}`}>
+                    {item.hasBg ? (
+                      <div className={styles.calSummaryIconFill}>
+                        <Image src={item.image} alt="" width={56} height={56} unoptimized />
+                      </div>
+                    ) : (
+                      <div className={styles.calSummaryIcon}>
+                        <Image src={item.image} alt="" width={48} height={48} unoptimized style={{ transform: 'scale(1.1)' }} />
+                      </div>
+                    )}
+                    <span className={styles.calSummaryItemName}>
+                      {item.name.split(/(유물|고대)/).map((part, pi) =>
+                        part === '유물' ? <span key={pi} className={styles.calWkGradeRelic}>{part}</span>
+                        : part === '고대' ? <span key={pi} className={styles.calWkGradeAncient}>{part}</span>
+                        : <span key={pi}>{part}</span>
+                      )}
+                    </span>
+                    <span className={active ? styles.calSummaryCount : styles.calSummaryNone}>
+                      {active ? `${count}회` : '—'}
+                    </span>
+                    <span className={styles.calSummaryItemCost}>
+                      <Image src="/dmschddmlvkvus.webp" alt="" width={14} height={14} unoptimized />
+                      {active ? (item.graceCost * count).toLocaleString() : '0'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
