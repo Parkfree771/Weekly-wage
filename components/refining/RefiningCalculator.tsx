@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Form, Row, Col, Card, Badge } from 'react-bootstrap';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
-import { getAverageTries, getSuccessionAverageTries } from '../../lib/refiningSimulationData';
+import { getTries, getSuccessionTries, type CalcMode } from '../../lib/refiningSimulationData';
 import styles from './RefiningCalculator.module.css';
 import {
   BASE_PROBABILITY,
@@ -239,6 +239,9 @@ export default function RefiningCalculator({
     '아비도스': false,
   });
 
+  // 계산 모드 (중앙값/평균값/장기백)
+  const [calcMode, setCalcMode] = useState<CalcMode>('median');
+
   // 계산 결과 상태 (비용 포함)
   const [results, setResults] = useState<{ totalGold: number; materialCosts: Record<string, number> }>({
     totalGold: 0,
@@ -331,7 +334,7 @@ export default function RefiningCalculator({
     } else {
       setMaterials(null);
     }
-  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments]);
+  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments, calcMode]);
 
   // 비용 계산 로직 (useEffect로 분리)
   useEffect(() => {
@@ -775,7 +778,7 @@ export default function RefiningCalculator({
 
             // 시뮬레이션 데이터에서 평균 시도 횟수 조회
             // (장인의 기운, 실패 시 확률 증가 규칙이 모두 반영됨)
-            const avgTries = getSuccessionAverageTries(level, useBreath);
+            const avgTries = getSuccessionTries(level, useBreath, calcMode);
             if (avgTries === 0) continue;
 
             // 숨결 효과 (비용 계산용) - 계승 후용 테이블 사용
@@ -825,7 +828,7 @@ export default function RefiningCalculator({
               bookType = '1920';
             }
 
-            const avgTries = getAverageTries(nextLevel, useBreath, useBook);
+            const avgTries = getTries(nextLevel, useBreath, useBook, calcMode);
             if (avgTries === 0) continue;
 
             const materialCostPerTry = eq.type === 'armor'
@@ -2060,9 +2063,31 @@ export default function RefiningCalculator({
           {searched && equipments.length > 0 && materials && (
             <Card className={styles.mainCard}>
               <Card.Header className={styles.cardHeaderAlt}>
-                <h5 className={`mb-0 ${styles.cardTitle}`}>
-                  예상 소모 재료
-                </h5>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <h5 className={`mb-0 ${styles.cardTitle}`}>
+                    예상 소모 재료
+                  </h5>
+                  <div className={styles.calcModeSelector}>
+                    <button
+                      className={`${styles.calcModeBtn} ${calcMode === 'median' ? styles.calcModeBtnActive : ''}`}
+                      onClick={() => setCalcMode('median')}
+                    >
+                      중앙값
+                    </button>
+                    <button
+                      className={`${styles.calcModeBtn} ${calcMode === 'average' ? styles.calcModeBtnActive : ''}`}
+                      onClick={() => setCalcMode('average')}
+                    >
+                      평균값
+                    </button>
+                    <button
+                      className={`${styles.calcModeBtn} ${calcMode === 'pity' ? styles.calcModeBtnActive : ''}`}
+                      onClick={() => setCalcMode('pity')}
+                    >
+                      장기백
+                    </button>
+                  </div>
+                </div>
               </Card.Header>
               <Card.Body className={styles.cardBody} style={{
                 padding: isMobile ? '0.75rem 0.5rem' : undefined
@@ -2564,7 +2589,9 @@ export default function RefiningCalculator({
                       <div className={styles.infoMessage}>
                         <span className={styles.infoMessageIcon}></span>
                         <small className={styles.infoMessageText}>
-                          이 계산은 평균 확률과 장인의 기운 시스템을 반영한 예상 수치입니다. 실제 소모량은 확률에 따라 다를 수 있습니다.
+                          {calcMode === 'median' && '중앙값 기준: 50%의 유저가 이 비용 이하로 성공합니다. 장인의 기운과 실패 시 확률 증가가 반영된 수치입니다.'}
+                          {calcMode === 'average' && '평균값 기준: 장인의 기운과 실패 시 확률 증가가 반영된 예상 수치입니다. 실제 소모량은 확률에 따라 다를 수 있습니다.'}
+                          {calcMode === 'pity' && '장기백 기준: 매번 장인의 기운 100%에서 성공하는 최악의 경우입니다. 실제로는 이보다 적게 소모됩니다.'}
                         </small>
                       </div>
                     </>

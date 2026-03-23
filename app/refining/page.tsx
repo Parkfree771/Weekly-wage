@@ -28,7 +28,7 @@ const getTodayPriceDate = () => {
   return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
 };
 
-// 3개 탭으로 통합: 평균 시뮬 / 일반 재련 / 상급 재련
+// 3개 탭으로 통합: 평균 시뮬 / 실제 시뮬 / 상급 재련
 type RefiningMode = 'average' | 'normal' | 'advanced';
 
 export default function RefiningPage() {
@@ -166,7 +166,7 @@ export default function RefiningPage() {
         className={`${styles.tabButton} ${mode === 'normal' ? styles.tabButtonActive : ''}`}
         onClick={() => setMode('normal')}
       >
-        <span className={styles.tabLabel}>일반 재련</span>
+        <span className={styles.tabLabel}>실제 시뮬</span>
       </button>
       <button
         className={`${styles.tabButton} ${mode === 'advanced' ? styles.tabButtonActive : ''}`}

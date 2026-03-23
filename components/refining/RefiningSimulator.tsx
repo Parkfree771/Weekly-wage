@@ -133,6 +133,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     autoSettings: { useBreath: false, speed: 1000 },
   });
   const attemptRefiningRef = useRef<() => void>(() => {});
+  const levelUpCooldownRef = useRef(false); // 레벨업 후 상태 안정화 대기
   // 장비별 강화 진행 상태 추적 (장비이름 -> 강화된 레벨)
   const [enhancedLevels, setEnhancedLevels] = useState<Record<string, number>>({});
   const [accumulatedCost, setAccumulatedCost] = useState<AccumulatedCost>({
@@ -197,6 +198,9 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
           setIsAutoMode(false);
           return;
         }
+
+        // 레벨업 직후 쿨다운 중이면 스킵 (상태 안정화 대기)
+        if (levelUpCooldownRef.current) return;
 
         // 숨결 설정 적용
         setUseBreath(state.autoSettings.useBreath);
@@ -565,6 +569,14 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
       setJangin(0);
       setCurrentProbBonus(0);
       setItemLevelIncrease(prev => prev + (5 / 6)); // 1강당 0.83333 레벨 증가
+
+      // 자동강화 중 레벨업 시 상태 안정화 대기
+      if (isAutoMode) {
+        levelUpCooldownRef.current = true;
+        setTimeout(() => {
+          levelUpCooldownRef.current = false;
+        }, 300);
+      }
       // 장비별 강화 레벨 저장
       setEnhancedLevels(prev => ({
         ...prev,
