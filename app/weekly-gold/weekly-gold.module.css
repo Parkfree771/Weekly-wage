@@ -247,6 +247,27 @@
 }
 
 /* ==========================================================================
+   [배경 이미지 캐릭터] 모드 버튼 - text-shadow 제거
+   ========================================================================== */
+
+.pageWrapper :global(.cerka-character .optimization-mode-btn) {
+  text-shadow: none !important;
+}
+
+/* 골드 미수령 배지 색상 보존 (cerka 흰색 override 방지) */
+.pageWrapper :global(.cerka-character .badge-gold-excluded) {
+  background-color: #3b82f6 !important;
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+}
+
+.pageWrapper :global(.cerka-character .badge-more-cost) {
+  background-color: #3b82f6 !important;
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+}
+
+/* ==========================================================================
    "다른 레이드 보기" 버튼 색상
    ========================================================================== */
 

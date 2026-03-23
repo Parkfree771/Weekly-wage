@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -9,6 +9,8 @@ import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
 import styles from './weekly-gold.module.css';
+
+const STORAGE_KEY = 'weekly-gold-settings';
 
 const MaterialSummary = dynamic(() => import('@/components/MaterialSummary'), {
   loading: () => null
@@ -56,6 +58,11 @@ export default function WeeklyGoldPage() {
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
   const [gateSelection, setGateSelection] = useState<{[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}>({});
   const [characterGold, setCharacterGold] = useState<{[char: string]: number}>({});
+  const [autoSearchName, setAutoSearchName] = useState<string | undefined>(undefined);
+  const [searchedName, setSearchedName] = useState<string>('');
+  const saveFnRef = useRef<(() => boolean) | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleGateSelectionChange = useCallback((gs: {[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}, cg: {[char: string]: number}) => {
     setGateSelection(gs);
@@ -70,6 +77,19 @@ export default function WeeklyGoldPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // 저장된 설정에서 검색 닉네임 복원 → 자동 검색
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved.searchName) {
+          setAutoSearchName(saved.searchName);
+        }
+      }
+    } catch {}
+  }, []);
+
   const handleSearch = () => {
     setSearched(true);
   };
@@ -78,6 +98,26 @@ export default function WeeklyGoldPage() {
     setSearched(false);
     setSelectedCharacters([]);
   };
+
+  const handleSaveReady = useCallback((fn: () => boolean) => {
+    saveFnRef.current = fn;
+  }, []);
+
+  const handleSave = useCallback(() => {
+    if (saveFnRef.current) {
+      const success = saveFnRef.current();
+      if (success) {
+        setSaveStatus('saved');
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+      }
+    }
+  }, []);
+
+  // cleanup timer
+  useEffect(() => {
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, []);
 
   return (
     <div className={styles.pageWrapper} style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
@@ -120,7 +160,12 @@ export default function WeeklyGoldPage() {
             </div>
 
             {/* 캐릭터 검색 */}
-            <CharacterSearch onSelectionChange={setSelectedCharacters} onSearch={handleSearch} searched={searched} />
+            <CharacterSearch
+              onSelectionChange={setSelectedCharacters}
+              onSearch={handleSearch}
+              searched={searched}
+              autoSearchName={autoSearchName}
+            />
 
             {/* 가격 데이터 공유를 위한 Provider - RaidCalculator도 포함 */}
             <PriceProvider>
@@ -131,14 +176,36 @@ export default function WeeklyGoldPage() {
                     <Card.Header
                       className="py-2 border-0"
                     >
-                      <div className="text-center">
-                        <h3 className="weekly-gold-header-title mb-0">
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div style={{ flex: 1 }} />
+                        <h3 className="weekly-gold-header-title mb-0" style={{ flex: 'none' }}>
                           원정대 주간 골드 계산
                         </h3>
+                        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={handleSave}
+                            title="다음에 접속해도 현재 설정이 유지됩니다"
+                            style={{
+                              fontSize: isMobile ? '0.6rem' : '0.72rem',
+                              padding: isMobile ? '0.3rem 0.6rem' : '0.4rem 0.8rem',
+                              fontWeight: 600,
+                              whiteSpace: 'nowrap',
+                              border: saveStatus === 'saved' ? '1px solid #16a34a' : '1px solid var(--border-color)',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              backgroundColor: saveStatus === 'saved' ? '#16a34a' : 'transparent',
+                              color: saveStatus === 'saved' ? '#fff' : 'var(--text-primary)',
+                              lineHeight: 1.3,
+                            }}
+                          >
+                            {saveStatus === 'saved' ? '저장 완료' : '설정 저장'}
+                          </button>
+                        </div>
                       </div>
                     </Card.Header>
                     <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-blue)'}}>
-                      <RaidCalculator selectedCharacters={selectedCharacters} onGateSelectionChange={handleGateSelectionChange} />
+                      <RaidCalculator selectedCharacters={selectedCharacters} onGateSelectionChange={handleGateSelectionChange} onSaveReady={handleSaveReady} searchName={autoSearchName} />
                     </Card.Body>
                   </Card>
                 </div>

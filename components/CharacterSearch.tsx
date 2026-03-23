@@ -18,9 +18,10 @@ type CharacterSearchProps = {
   onSelectionChange: (selectedCharacters: Character[]) => void;
   onSearch: () => void;
   searched: boolean;
+  autoSearchName?: string; // 저장된 설정 복원 시 자동 검색할 캐릭터명
 };
 
-export default function CharacterSearch({ onSelectionChange, onSearch, searched }: CharacterSearchProps) {
+export default function CharacterSearch({ onSelectionChange, onSearch, searched, autoSearchName }: CharacterSearchProps) {
   const [characterName, setCharacterName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -55,31 +56,26 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
     }
   }, [searched]);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!characterName.trim()) {
-      setError('캐릭터명을 입력해주세요.');
-      return;
-    }
-    
+  // 실제 검색 로직 (내부 함수)
+  const doSearch = async (name: string) => {
     setIsLoading(true);
     setError(null);
     onSearch();
-    
+
     const maxRetries = 3;
     let currentRetry = 0;
-    
+
     while (currentRetry <= maxRetries) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
-        
-        const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(characterName.trim())}`, {
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(name)}`, {
           signal: controller.signal
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error('캐릭터를 찾을 수 없습니다. 캐릭터명을 정확히 입력해주세요.');
@@ -92,14 +88,14 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
           }
           throw new Error('예상치 못한 오류가 발생했습니다.');
         }
-        
+
         const data = await response.json();
-        
+
         if (data && data.siblings && Array.isArray(data.siblings)) {
           if (data.siblings.length === 0) {
             throw new Error('해당 캐릭터의 원정대 정보를 찾을 수 없습니다.');
           }
-          
+
           const formattedCharacters: Character[] = data.siblings.map((sibling: Sibling) => ({
             characterName: sibling.CharacterName,
             itemLevel: parseFloat(sibling.ItemAvgLevel.replace(/,/g, '')),
@@ -110,27 +106,26 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
           setCheckedState(newCheckedState);
           setShowAll(false);
           setRetryCount(0);
-          addToHistory(characterName.trim()); // 검색 성공 시 히스토리에 추가
+          addToHistory(name);
           setShowSuggestions(false);
-          break; // 성공 시 루프 종료
+          break;
         } else {
           throw new Error('잘못된 데이터 형식입니다.');
         }
       } catch (error: any) {
         currentRetry++;
         setRetryCount(currentRetry);
-        
+
         if (error.name === 'AbortError') {
           setError('요청 시간이 초과되었습니다. 다시 시도해주세요.');
           break;
         }
-        
+
         if (currentRetry > maxRetries) {
           setError(error.message || '예상치 못한 오류가 발생했습니다.');
           break;
         }
-        
-        // 재시도 전 대기 (1초, 2초, 3초)
+
         if (currentRetry <= maxRetries) {
           await new Promise(resolve => setTimeout(resolve, currentRetry * 1000));
         }
@@ -141,6 +136,25 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched 
       }
     }
   };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!characterName.trim()) {
+      setError('캐릭터명을 입력해주세요.');
+      return;
+    }
+    await doSearch(characterName.trim());
+  };
+
+  // 자동 검색 (저장된 설정 복원)
+  const autoSearchDone = useRef(false);
+  useEffect(() => {
+    if (autoSearchName && !autoSearchDone.current) {
+      autoSearchDone.current = true;
+      setCharacterName(autoSearchName);
+      doSearch(autoSearchName);
+    }
+  }, [autoSearchName]);
 
   const handleCheckboxChange = useCallback((index: number) => {
     const newCheckedState = [...checkedState];
