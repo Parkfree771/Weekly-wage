@@ -173,7 +173,8 @@ export async function updateCharacterWeekly(
 // 여러 캐릭터의 이미지를 순차적으로 가져와서 업데이트
 export async function updateCharacterImages(
   uid: string,
-  characterNames: string[]
+  characterNames: string[],
+  expeditionIndex: 1 | 2 | 3 = 1
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const userRef = doc(db, 'users', uid);
@@ -184,7 +185,20 @@ export async function updateCharacterImages(
     }
 
     const userProfile = userSnap.data() as UserProfile;
-    const characters = [...(userProfile.characters || [])];
+
+    // 원정대별 데이터 읽기
+    let characters: Character[];
+    let weeklyChecklist: WeeklyChecklist;
+    if (expeditionIndex === 1) {
+      characters = [...(userProfile.characters || [])];
+      weeklyChecklist = userProfile.weeklyChecklist || {};
+    } else {
+      const expKey = expeditionIndex === 2 ? 'expedition2' : 'expedition3';
+      const exp = userProfile[expKey];
+      characters = [...(exp?.characters || [])];
+      weeklyChecklist = exp?.weeklyChecklist || {};
+    }
+
     let updated = false;
 
     // 순차적으로 각 캐릭터의 이미지 가져오기 (API rate limit 고려)
@@ -214,14 +228,22 @@ export async function updateCharacterImages(
       characters.sort((a, b) => b.itemLevel - a.itemLevel);
 
       // 주간 체크리스트도 업데이트 (레벨 변경된 캐릭터)
-      const weeklyChecklist = userProfile.weeklyChecklist || {};
       characters.forEach(char => {
         if (!weeklyChecklist[char.name]) {
           weeklyChecklist[char.name] = createEmptyWeeklyState(char.itemLevel);
         }
       });
 
-      await updateDoc(userRef, { characters, weeklyChecklist });
+      // 원정대별 Firestore 저장
+      if (expeditionIndex === 1) {
+        await updateDoc(userRef, { characters, weeklyChecklist });
+      } else {
+        const prefix = expeditionIndex === 2 ? 'expedition2' : 'expedition3';
+        await updateDoc(userRef, {
+          [`${prefix}.characters`]: characters,
+          [`${prefix}.weeklyChecklist`]: weeklyChecklist,
+        });
+      }
     }
 
     return { success: true };

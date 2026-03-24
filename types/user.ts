@@ -76,6 +76,17 @@ export type UserConsents = {
   characterData: ConsentItem;      // 캐릭터 데이터 수집
 };
 
+// 원정대 데이터 (원정대 2, 3용)
+export type ExpeditionData = {
+  characters: Character[];
+  allCharacters?: Character[];
+  mainCharacter?: string;
+  weeklyChecklist: WeeklyChecklist;
+  commonContent?: CommonContentState;
+  weeklyGoldHistory?: WeeklyGoldRecord[];
+  lastWeeklyReset?: string;
+};
+
 // 사용자 프로필
 export type UserProfile = {
   uid: string;
@@ -85,7 +96,7 @@ export type UserProfile = {
   nickname?: string;
   // 동의 내역
   consents?: UserConsents;
-  // 로스트아크 계정 정보
+  // 로스트아크 계정 정보 (원정대 1 - 기본)
   mainCharacter?: string;  // 대표 캐릭터 이름
   characters: Character[];  // 선택된 캐릭터 (최대 6개)
   allCharacters?: Character[];  // 전체 원정대 캐릭터 목록
@@ -96,6 +107,9 @@ export type UserProfile = {
   lastWeeklyReset?: string;  // 마지막 주간 초기화 시간 (ISO string)
   // 주간 골드 기록 (차트용)
   weeklyGoldHistory?: WeeklyGoldRecord[];
+  // 원정대 2, 3 (선택)
+  expedition2?: ExpeditionData;
+  expedition3?: ExpeditionData;
   // UI 설정
   uiSettings?: {
     priceOrder?: string[];

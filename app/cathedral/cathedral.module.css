@@ -469,6 +469,204 @@
 .shopItemName { flex: 1; font-weight: 600; font-size: 0.82rem; line-height: 1.3; }
 .shopItemQty { font-size: 0.78rem; color: var(--ct-text-secondary); font-weight: 500; white-space: nowrap; }
 
+/* 교환 비용 골드 환산 배지 */
+.shopItemCostBadge {
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 70px;
+}
+
+.shopItemCostValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ct-accent);
+  white-space: nowrap;
+}
+
+.shopItemFree {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #27ae60;
+}
+
+/* 교환 비용 골드 환산 합계 행 */
+.costTotalRow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--ct-bg);
+  border: 1px solid var(--ct-border);
+  border-radius: 8px;
+  padding: 0.28rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ct-text);
+}
+
+.costTotalEquals {
+  color: var(--ct-text-muted);
+  margin-right: 2px;
+}
+
+.costTotalValue {
+  font-weight: 700;
+  color: var(--ct-text);
+}
+
+/* 교환 효율 섹션 */
+/* 젬 선택 3×2 그리드 */
+.gemSelectGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.gemSelectCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.3rem;
+  border-radius: 8px;
+  border: 1px solid var(--ct-border-light);
+  background: var(--ct-bg);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  opacity: 0.5;
+}
+
+.gemSelectCard:hover {
+  background: var(--ct-accent-bg);
+}
+
+.gemSelectActive {
+  opacity: 1;
+  border-color: var(--ct-accent);
+  background: var(--ct-accent-bg);
+}
+
+.gemSelectCheck {
+  font-size: 0.85rem;
+}
+
+.gemSelectName {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ct-text);
+  text-align: center;
+  line-height: 1.25;
+  word-break: keep-all;
+}
+
+.gemSelectPrice {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ct-accent);
+}
+
+.gemRandomProb {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ct-text-secondary);
+}
+
+.gemSelectTotal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ct-text);
+  border-top: 1px solid var(--ct-border);
+}
+
+.gemSelectTotalValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--ct-accent);
+}
+
+.efficiencySection {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: var(--ct-accent-bg);
+  border: 1px solid var(--ct-accent-border);
+  border-radius: 10px;
+}
+
+.efficiencyTitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ct-text);
+  margin-bottom: 0.5rem;
+}
+
+.efficiencyGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.efficiencyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.efficiencyLabel {
+  font-size: 0.78rem;
+  color: var(--ct-text-secondary);
+}
+
+.efficiencyValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ct-text);
+}
+
+.efficiencyResultRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--ct-border-light);
+}
+
+.efficiencyResultLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ct-text);
+}
+
+.efficiencyResultValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.efficiencyProfitTag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
 /* ─── 상점 상세 ─── */
 .shopDetail {
   flex: 1;
@@ -781,10 +979,23 @@
    ========================================================================== */
 
 .graceValueCard {
-  background: var(--ct-bg-alt);
-  border: 1px solid var(--ct-accent-border);
-  border-radius: 10px;
-  padding: 0.7rem 0.85rem;
+  background: linear-gradient(135deg, #1a1207 0%, #2a1f0e 50%, #1a1207 100%);
+  border: 1.5px solid rgba(201, 168, 76, 0.45);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  box-shadow:
+    0 4px 16px rgba(201, 168, 76, 0.18),
+    0 1px 4px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(201, 168, 76, 0.12);
+}
+
+:global(:root) .graceValueCard {
+  background: linear-gradient(135deg, #fdf6ee 0%, #f5ead4 50%, #fdf6ee 100%);
+  border: 1.5px solid rgba(201, 168, 76, 0.4);
+  box-shadow:
+    0 4px 16px rgba(201, 168, 76, 0.2),
+    0 2px 6px rgba(120, 80, 30, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .graceValueRow {
@@ -807,9 +1018,10 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  color: var(--ct-accent);
+  color: #c9a84c;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .graceValueUnit {

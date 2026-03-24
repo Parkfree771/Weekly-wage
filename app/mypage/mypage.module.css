@@ -69,6 +69,98 @@
   flex-wrap: wrap;
 }
 
+/* 원정대 탭 */
+.expeditionTabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.expeditionTab {
+  position: relative;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.expeditionTab:hover {
+  color: var(--text-primary);
+}
+
+.expeditionTab.activeTab {
+  color: #a855f7;
+  border-bottom-color: #a855f7;
+}
+
+.expeditionTab .tabBadge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.expeditionTab.activeTab .tabBadge {
+  color: #a855f7;
+  opacity: 1;
+}
+
+/* 빈 원정대 안내 */
+.emptyExpedition {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.emptyExpedition .emptyIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.emptyExpedition .emptyTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.emptyExpedition .emptyDesc {
+  font-size: 14px;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.emptyExpedition .emptyRegisterBtn {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #a855f7;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emptyExpedition .emptyRegisterBtn:hover {
+  background: #9333ea;
+}
+
 /* 캐릭터 등록 버튼 */
 .feedbackBtn {
   padding: 8px 16px;

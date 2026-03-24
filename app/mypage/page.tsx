@@ -31,6 +31,7 @@ import {
   WeeklyGoldRecord,
   CommonContentState,
   DailyContentState,
+  ExpeditionData,
   getTop3RaidGroups,
   getRaidGroupName,
   raidGroupImages,
@@ -336,6 +337,9 @@ export default function MyPage() {
   const router = useRouter();
   const { user, userProfile, loading, refreshUserProfile, signInWithGoogle, setNickname: updateNickname } = useAuth();
 
+  // 원정대 탭 (1, 2, 3)
+  const [activeExpedition, setActiveExpedition] = useState<1 | 2 | 3>(1);
+
   // 상태
   const [characters, setCharacters] = useState<Character[]>([]);
   const [weeklyChecklist, setWeeklyChecklist] = useState<WeeklyChecklist>({});
@@ -410,13 +414,35 @@ export default function MyPage() {
   const [isSavingNickname, setIsSavingNickname] = useState(false);
   const nicknameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 프로필 데이터 로드 + 주간 초기화 체크
-  useEffect(() => {
-    if (!userProfile || !user) return;
+  // 원정대별 데이터 추출 헬퍼
+  const getExpeditionData = useCallback((profile: typeof userProfile, expIdx: 1 | 2 | 3) => {
+    if (!profile) return { chars: [], checklist: {}, goldHistory: [], saved: undefined, allChars: [], lastReset: undefined };
+    if (expIdx === 1) {
+      return {
+        chars: profile.characters || [],
+        checklist: profile.weeklyChecklist || {},
+        goldHistory: profile.weeklyGoldHistory || [],
+        saved: profile.commonContent,
+        allChars: profile.allCharacters || [],
+        lastReset: profile.lastWeeklyReset,
+      };
+    }
+    const expKey = expIdx === 2 ? 'expedition2' : 'expedition3';
+    const exp = profile[expKey];
+    if (!exp) return { chars: [], checklist: {}, goldHistory: [], saved: undefined, allChars: [], lastReset: undefined };
+    return {
+      chars: exp.characters || [],
+      checklist: exp.weeklyChecklist || {},
+      goldHistory: exp.weeklyGoldHistory || [],
+      saved: exp.commonContent,
+      allChars: exp.allCharacters || [],
+      lastReset: exp.lastWeeklyReset,
+    };
+  }, []);
 
-    const chars = userProfile.characters || [];
-    const checklist = userProfile.weeklyChecklist || {};
-    const goldHistory = userProfile.weeklyGoldHistory || [];
+  // 원정대 데이터 로드 함수
+  const loadExpeditionData = useCallback((profile: typeof userProfile, expIdx: 1 | 2 | 3) => {
+    const { chars, checklist, goldHistory, saved, allChars } = getExpeditionData(profile, expIdx);
 
     setCharacters(chars);
     setWeeklyChecklist(checklist);
@@ -424,7 +450,6 @@ export default function MyPage() {
 
     // 공통 컨텐츠 로드 (주간 초기화 - 수요일 06시 기준)
     const { weekStart } = getKSTWeekInfo();
-    const saved = userProfile.commonContent;
     if (saved && saved.date === weekStart) {
       setCommonContent(saved);
     } else {
@@ -432,20 +457,71 @@ export default function MyPage() {
     }
 
     // 전체 원정대 목록도 로드
-    if (userProfile.allCharacters && userProfile.allCharacters.length > 0) {
-      setAllSiblings(userProfile.allCharacters);
+    if (allChars.length > 0) {
+      setAllSiblings(allChars);
+    } else {
+      setAllSiblings([]);
+    }
+  }, [getExpeditionData]);
+
+  // 원정대 탭 전환
+  const switchExpedition = useCallback((expIdx: 1 | 2 | 3) => {
+    if (expIdx === activeExpedition) return;
+    if (hasChanges) {
+      const confirmed = window.confirm('저장하지 않은 변경사항이 있습니다. 탭을 전환하시겠습니까?');
+      if (!confirmed) return;
+    }
+    setActiveExpedition(expIdx);
+    setHasChanges(false);
+    setExpandedRaidChar(null);
+    setMoreGoldDropdownChar(null);
+    setDifficultyOpenKey(null);
+    setShowAllCharacters(false);
+    imageLoadAttempted.current = false;
+    loadExpeditionData(userProfile, expIdx);
+  }, [activeExpedition, hasChanges, userProfile, loadExpeditionData]);
+
+  // Firestore 필드 prefix (원정대별)
+  const getFirestorePrefix = useCallback((expIdx: 1 | 2 | 3) => {
+    if (expIdx === 1) return '';
+    return expIdx === 2 ? 'expedition2.' : 'expedition3.';
+  }, []);
+
+  // 프로필 데이터 로드 + 주간 초기화 체크
+  useEffect(() => {
+    if (!userProfile || !user) return;
+
+    const { chars, checklist, goldHistory, saved, allChars, lastReset } = getExpeditionData(userProfile, activeExpedition);
+
+    setCharacters(chars);
+    setWeeklyChecklist(checklist);
+    setWeeklyGoldHistory(goldHistory);
+
+    // 공통 컨텐츠 로드 (주간 초기화 - 수요일 06시 기준)
+    const { weekStart } = getKSTWeekInfo();
+    if (saved && saved.date === weekStart) {
+      setCommonContent(saved);
+    } else {
+      setCommonContent({ date: weekStart, checks: {} });
     }
 
-    // 주간 초기화 체크 (수요일 06:00 KST)
-    if (chars.length > 0 && needsWeeklyReset(userProfile.lastWeeklyReset)) {
-      console.log('[주간 초기화] 수요일 06시 지남, 체크리스트 초기화 시작');
+    // 전체 원정대 목록도 로드
+    if (allChars.length > 0) {
+      setAllSiblings(allChars);
+    } else {
+      setAllSiblings([]);
+    }
+
+    // 주간 초기화 체크 (수요일 06:00 KST) - 현재 활성 원정대만
+    if (chars.length > 0 && needsWeeklyReset(lastReset)) {
+      console.log(`[주간 초기화] 원정대${activeExpedition} 수요일 06시 지남, 체크리스트 초기화 시작`);
 
       // 1. 먼저 현재 골드를 기록에 저장
       const { totalGold, raidGold, additionalGold, commonGold } = calculateTotalGoldFromChecklist(chars, checklist, saved || undefined);
 
       // 지난 주 시작일 계산 (현재 주 시작일 - 7일)
-      const lastWeekStart = userProfile.lastWeeklyReset
-        ? userProfile.lastWeeklyReset.split('T')[0]
+      const lastWeekStart = lastReset
+        ? lastReset.split('T')[0]
         : getCurrentWeekStart();
       const lastWeekLabel = getWeekLabel(new Date(lastWeekStart));
 
@@ -468,6 +544,7 @@ export default function MyPage() {
       const now = new Date().toISOString();
 
       // Firestore 업데이트
+      const prefix = getFirestorePrefix(activeExpedition);
       (async () => {
         try {
           const { doc, updateDoc } = await import('firebase/firestore');
@@ -482,28 +559,29 @@ export default function MyPage() {
           }
 
           await updateDoc(userRef, {
-            weeklyChecklist: resetChecklist,
-            weeklyGoldHistory: updatedHistory,
-            commonContent: resetCommon,
-            lastWeeklyReset: now,
+            [`${prefix}weeklyChecklist`]: resetChecklist,
+            [`${prefix}weeklyGoldHistory`]: updatedHistory,
+            [`${prefix}commonContent`]: resetCommon,
+            [`${prefix}lastWeeklyReset`]: now,
           });
 
           setWeeklyChecklist(resetChecklist);
           setWeeklyGoldHistory(updatedHistory);
           setCommonContent(resetCommon);
-          console.log('[주간 초기화] 완료');
+          console.log(`[주간 초기화] 원정대${activeExpedition} 완료`);
         } catch (error) {
           console.error('[주간 초기화] 실패:', error);
         }
       })();
     }
-  }, [userProfile, user]);
+  }, [userProfile, user, activeExpedition, getExpeditionData, getFirestorePrefix]);
 
   // 이미지 없는 캐릭터들의 이미지 로드
   useEffect(() => {
     if (!user || !userProfile || imageLoadAttempted.current) return;
 
-    const charsWithoutImage = (userProfile.characters || [])
+    const { chars } = getExpeditionData(userProfile, activeExpedition);
+    const charsWithoutImage = chars
       .slice(0, 6)
       .filter(c => !c.imageUrl);
 
@@ -512,7 +590,7 @@ export default function MyPage() {
     imageLoadAttempted.current = true;
     setLoadingImages(true);
 
-    updateCharacterImages(user.uid, charsWithoutImage.map(c => c.name))
+    updateCharacterImages(user.uid, charsWithoutImage.map(c => c.name), activeExpedition)
       .then(result => {
         if (result.success) {
           refreshUserProfile();
@@ -521,7 +599,7 @@ export default function MyPage() {
       .finally(() => {
         setLoadingImages(false);
       });
-  }, [user, userProfile, refreshUserProfile]);
+  }, [user, userProfile, refreshUserProfile, activeExpedition, getExpeditionData]);
 
   // 펼침 상태 localStorage 저장
   useEffect(() => {
@@ -689,11 +767,12 @@ export default function MyPage() {
       const { db } = await import('@/lib/firebase-client');
       const userRef = doc(db, 'users', user.uid);
 
+      const prefix = getFirestorePrefix(activeExpedition);
       await updateDoc(userRef, {
-        characters: selectedChars,
-        allCharacters: allSiblings,  // 전체 원정대 저장
-        mainCharacter: selectedChars[0]?.name || '',
-        weeklyChecklist: newChecklist,
+        [`${prefix}characters`]: selectedChars,
+        [`${prefix}allCharacters`]: allSiblings,
+        [`${prefix}mainCharacter`]: selectedChars[0]?.name || '',
+        [`${prefix}weeklyChecklist`]: newChecklist,
         lastUpdated: new Date().toISOString(),
       });
 
@@ -746,10 +825,11 @@ export default function MyPage() {
       const { db } = await import('@/lib/firebase-client');
       const userRef = doc(db, 'users', user.uid);
 
+      const prefix = getFirestorePrefix(activeExpedition);
       await updateDoc(userRef, {
-        characters: selectedChars,
-        mainCharacter: selectedChars[0]?.name || '',
-        weeklyChecklist: newChecklist,
+        [`${prefix}characters`]: selectedChars,
+        [`${prefix}mainCharacter`]: selectedChars[0]?.name || '',
+        [`${prefix}weeklyChecklist`]: newChecklist,
       });
 
       setCharacters(selectedChars);
@@ -758,6 +838,57 @@ export default function MyPage() {
       await refreshUserProfile();
     } catch (error) {
       console.error('편집 저장 실패:', error);
+    }
+
+    setIsRegistering(false);
+  };
+
+  // 원정대 삭제
+  const handleDeleteExpedition = async () => {
+    if (!user) return;
+
+    const confirmMsg = activeExpedition === 1
+      ? '원정대 1의 모든 캐릭터와 체크리스트가 삭제됩니다. 계속하시겠습니까?'
+      : `원정대 ${activeExpedition}의 모든 데이터가 삭제됩니다. 계속하시겠습니까?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsRegistering(true);
+
+    try {
+      const { doc, updateDoc, deleteField } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase-client');
+      const userRef = doc(db, 'users', user.uid);
+
+      if (activeExpedition === 1) {
+        // 원정대 1은 필드를 빈 값으로 초기화
+        await updateDoc(userRef, {
+          characters: [],
+          allCharacters: [],
+          mainCharacter: '',
+          weeklyChecklist: {},
+          commonContent: deleteField(),
+          weeklyGoldHistory: [],
+          lastWeeklyReset: deleteField(),
+        });
+      } else {
+        // 원정대 2/3은 필드 자체를 삭제
+        const expKey = activeExpedition === 2 ? 'expedition2' : 'expedition3';
+        await updateDoc(userRef, {
+          [expKey]: deleteField(),
+        });
+      }
+
+      setCharacters([]);
+      setAllSiblings([]);
+      setWeeklyChecklist({});
+      setWeeklyGoldHistory([]);
+      setCommonContent({ date: '', checks: {} });
+      setShowEditModal(false);
+      setHasChanges(false);
+      await refreshUserProfile();
+    } catch (error) {
+      console.error('원정대 삭제 실패:', error);
     }
 
     setIsRegistering(false);
@@ -1046,10 +1177,11 @@ export default function MyPage() {
       const { db } = await import('@/lib/firebase-client');
       const userRef = doc(db, 'users', user.uid);
 
+      const prefix = getFirestorePrefix(activeExpedition);
       await updateDoc(userRef, {
-        characters,
-        weeklyChecklist,
-        commonContent,
+        [`${prefix}characters`]: characters,
+        [`${prefix}weeklyChecklist`]: weeklyChecklist,
+        [`${prefix}commonContent`]: commonContent,
       });
 
       setHasChanges(false);
@@ -1210,14 +1342,14 @@ export default function MyPage() {
               className={styles.registerBtn}
               onClick={() => setShowRegisterModal(true)}
             >
-              + 캐릭터 등록
+              + {activeExpedition > 1 ? `원정대${activeExpedition} ` : ''}캐릭터 등록
             </button>
             {characters.length > 0 && (
               <button
                 className={styles.editBtn}
                 onClick={openEditModal}
               >
-                원정대 편집
+                원정대{activeExpedition > 1 ? ` ${activeExpedition}` : ''} 편집
               </button>
             )}
             <button
@@ -1295,6 +1427,24 @@ export default function MyPage() {
           )}
         </div>
 
+        {/* 원정대 탭 */}
+        <div className={styles.expeditionTabs}>
+          {([1, 2, 3] as const).map(idx => {
+            const expData = getExpeditionData(userProfile, idx);
+            const hasData = expData.chars.length > 0;
+            return (
+              <button
+                key={idx}
+                className={`${styles.expeditionTab} ${activeExpedition === idx ? styles.activeTab : ''}`}
+                onClick={() => switchExpedition(idx)}
+              >
+                원정대 {idx}
+                {hasData && <span className={styles.tabBadge}>({expData.chars.length})</span>}
+              </button>
+            );
+          })}
+        </div>
+
         {saveMessage && (
           <Alert variant={saveMessage.type === 'success' ? 'success' : 'danger'} className="mb-3">
             {saveMessage.text}
@@ -1361,14 +1511,31 @@ export default function MyPage() {
 
         {/* 캐릭터 없음 */}
         {characters.length === 0 && (
-          <Card className={styles.emptyCard}>
-            <Card.Body className="text-center py-4">
-              <p className="mb-3">등록된 캐릭터가 없습니다.</p>
-              <Button variant="primary" size="sm" onClick={() => setShowRegisterModal(true)}>
-                캐릭터 등록하기
-              </Button>
-            </Card.Body>
-          </Card>
+          activeExpedition === 1 ? (
+            <Card className={styles.emptyCard}>
+              <Card.Body className="text-center py-4">
+                <p className="mb-3">등록된 캐릭터가 없습니다.</p>
+                <Button variant="primary" size="sm" onClick={() => setShowRegisterModal(true)}>
+                  캐릭터 등록하기
+                </Button>
+              </Card.Body>
+            </Card>
+          ) : (
+            <div className={styles.emptyExpedition}>
+              <div className={styles.emptyIcon}>⚔️</div>
+              <div className={styles.emptyTitle}>원정대 {activeExpedition}</div>
+              <div className={styles.emptyDesc}>
+                등록된 캐릭터가 없습니다.<br />
+                다른 서버의 원정대를 등록해보세요.
+              </div>
+              <button
+                className={styles.emptyRegisterBtn}
+                onClick={() => setShowRegisterModal(true)}
+              >
+                + 원정대 등록
+              </button>
+            </div>
+          )
         )}
 
         {/* 캐릭터 카드 그리드 (1열) */}
@@ -2048,7 +2215,9 @@ export default function MyPage() {
         <Modal show={showRegisterModal} onHide={closeRegisterModal} centered size={registerStep === 2 ? 'lg' : undefined}>
           <Modal.Header closeButton>
             <Modal.Title>
-              {registerStep === 1 ? '캐릭터 검색' : `원정대 선택 (${selectedCharNames.size}/6)`}
+              {registerStep === 1
+                ? `캐릭터 검색${activeExpedition > 1 ? ` (원정대 ${activeExpedition})` : ''}`
+                : `원정대${activeExpedition > 1 ? ` ${activeExpedition}` : ''} 선택 (${selectedCharNames.size}/6)`}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
@@ -2138,7 +2307,7 @@ export default function MyPage() {
         {/* 원정대 편집 모달 */}
         <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered size="lg">
           <Modal.Header closeButton>
-            <Modal.Title>원정대 편집 ({selectedCharNames.size}/6)</Modal.Title>
+            <Modal.Title>원정대{activeExpedition > 1 ? ` ${activeExpedition}` : ''} 편집 ({selectedCharNames.size}/6)</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {allSiblings.length === 0 ? (
@@ -2176,18 +2345,28 @@ export default function MyPage() {
               </div>
             )}
           </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" size="sm" onClick={() => setShowEditModal(false)}>
-              취소
-            </Button>
+          <Modal.Footer className="d-flex justify-content-between">
             <Button
-              variant="primary"
+              variant="outline-danger"
               size="sm"
-              onClick={handleEditSave}
-              disabled={isRegistering || selectedCharNames.size === 0 || allSiblings.length === 0}
+              onClick={handleDeleteExpedition}
+              disabled={isRegistering}
             >
-              {isRegistering ? <Spinner animation="border" size="sm" /> : '저장'}
+              원정대 삭제
             </Button>
+            <div className="d-flex gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setShowEditModal(false)}>
+                취소
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleEditSave}
+                disabled={isRegistering || selectedCharNames.size === 0 || allSiblings.length === 0}
+              >
+                {isRegistering ? <Spinner animation="border" size="sm" /> : '저장'}
+              </Button>
+            </div>
           </Modal.Footer>
         </Modal>
 

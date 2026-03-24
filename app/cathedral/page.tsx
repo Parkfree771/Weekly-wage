@@ -767,6 +767,11 @@ export default function CathedralPage() {
                       {SHOP_ITEMS.map((item) => {
                         const tc = THEME_COLORS[item.theme];
                         const isActive = selectedShopItem === item.id;
+                        // 교환 비용 골드 환산
+                        const graceCost = item.costs.find(c => c.name === '은총의 파편')?.amount || 0;
+                        const goldCost = item.costs.find(c => c.name === '골드')?.amount || 0;
+                        const totalGoldCost = Math.round(graceCost * graceUnitPrice) + goldCost;
+                        const isFree = item.costs.length === 0;
                         return (
                           <div
                             key={item.id}
@@ -805,6 +810,19 @@ export default function CathedralPage() {
                                   {item.limitType === 'once' ? '1회' : '무제한'}
                                 </span>
                               </div>
+                            </div>
+                            {/* 교환 비용 골드 환산 */}
+                            <div className={styles.shopItemCostBadge}>
+                              {isFree ? (
+                                <span className={styles.shopItemFree}>무료</span>
+                              ) : priceLoading ? (
+                                <span className={styles.shopItemCostValue}>—</span>
+                              ) : (
+                                <span className={styles.shopItemCostValue}>
+                                  <Image src="/gold.webp" alt="" width={14} height={14} />
+                                  {totalGoldCost.toLocaleString()}
+                                </span>
+                              )}
                             </div>
                           </div>
                         );
@@ -876,6 +894,20 @@ export default function CathedralPage() {
                                       <span>{cost.name === '골드' ? '' : `${cost.name} `}{cost.amount.toLocaleString()}</span>
                                     </div>
                                   ))}
+                                  {/* 골드 환산 합계 */}
+                                  {!priceLoading && graceUnitPrice > 0 && (() => {
+                                    const hGrace = selectedShopData.costs.find(c => c.name === '은총의 파편')?.amount || 0;
+                                    const hGold = selectedShopData.costs.find(c => c.name === '골드')?.amount || 0;
+                                    if (hGrace === 0) return null;
+                                    const hTotal = Math.round(hGrace * graceUnitPrice) + hGold;
+                                    return (
+                                      <div className={styles.costTotalRow} style={{ borderColor: tc.border }}>
+                                        <span className={styles.costTotalEquals}>=</span>
+                                        <Image src="/gold.webp" alt="" width={18} height={18} />
+                                        <span className={styles.costTotalValue}>{hTotal.toLocaleString()}</span>
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               ) : (
                                 <div className={styles.shopDetailCostList}>
@@ -1026,25 +1058,11 @@ export default function CathedralPage() {
                                             );
                                           })}
                                         </tbody>
-                                        <tfoot>
-                                          <tr className={styles.subtotalRow}>
-                                            <td colSpan={4}>선택 아이템 가치{selectedShopData.qty > 1 ? ` (×${selectedShopData.qty})` : ''}</td>
-                                            <td style={{ textAlign: 'center' }}>
-                                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                                <Image src="/gold.webp" alt="" width={14} height={14} />
-                                                <span>{priceLoading ? '—' : (() => {
-                                                  const sel = craftComps.find(c => c.itemId === selectedId);
-                                                  return sel ? Math.round((latestPrices[sel.itemId] || 0) * sel.amount * selectedShopData.qty).toLocaleString() : '-';
-                                                })()}</span>
-                                              </div>
-                                            </td>
-                                          </tr>
-                                        </tfoot>
                                       </table>
                                     </>
                                   );
                                 })() : components.every(c => c.itemId !== '0') ? (() => {
-                                  // 젬 선택 상자: 라디오 + 시세 테이블
+                                  // 젬 선택 상자: 3×2 그리드 카드
                                   const selectedId = getSelectedItemId(selectedShopData.id, components);
                                   const selectedComp = components.find(c => c.itemId === selectedId);
                                   const selectedPrice = selectedComp ? (latestPrices[selectedComp.itemId] || 0) : 0;
@@ -1052,53 +1070,27 @@ export default function CathedralPage() {
                                   const totalValue = Math.round(selectedPrice * qty);
                                   return (
                                     <>
-                                      <table className={styles.materialTable} style={{ marginBottom: '0.75rem' }}>
-                                        <thead>
-                                          <tr>
-                                            <th style={{ textAlign: 'center' }}></th>
-                                            <th style={{ textAlign: 'center' }}></th>
-                                            <th>이름</th>
-                                            <th style={{ textAlign: 'center' }}>시세</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {components.map((comp) => {
-                                            const isSelected = comp.itemId === selectedId;
-                                            return (
-                                              <tr
-                                                key={comp.itemId}
-                                                style={{ cursor: 'pointer', opacity: isSelected ? 1 : 0.5 }}
-                                                onClick={() => setShopSelectItem(prev => ({ ...prev, [selectedShopData.id]: comp.itemId }))}
-                                              >
-                                                <td style={{ textAlign: 'center', fontSize: '1.1rem' }}>
-                                                  {isSelected ? '✅' : '⬜'}
-                                                </td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                  <Image src={comp.icon} alt={comp.name} width={32} height={32} title={comp.name} />
-                                                </td>
-                                                <td style={{ fontSize: '0.82rem' }}>{comp.name}</td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                                    <Image src="/gold.webp" alt="" width={14} height={14} />
-                                                    <span>{priceLoading ? '—' : latestPrices[comp.itemId] ? latestPrices[comp.itemId].toLocaleString() : '-'}</span>
-                                                  </div>
-                                                </td>
-                                              </tr>
-                                            );
-                                          })}
-                                        </tbody>
-                                        <tfoot>
-                                          <tr className={styles.subtotalRow}>
-                                            <td colSpan={3}>선택 아이템 가치{qty > 1 ? ` (×${qty})` : ''}</td>
-                                            <td style={{ textAlign: 'center' }}>
-                                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                                <Image src="/gold.webp" alt="" width={14} height={14} />
-                                                <span>{priceLoading ? '—' : totalValue.toLocaleString()}</span>
-                                              </div>
-                                            </td>
-                                          </tr>
-                                        </tfoot>
-                                      </table>
+                                      <div className={styles.gemSelectGrid}>
+                                        {components.map((comp) => {
+                                          const isSelected = comp.itemId === selectedId;
+                                          const price = latestPrices[comp.itemId] || 0;
+                                          return (
+                                            <div
+                                              key={comp.itemId}
+                                              className={`${styles.gemSelectCard} ${isSelected ? styles.gemSelectActive : ''}`}
+                                              onClick={() => setShopSelectItem(prev => ({ ...prev, [selectedShopData.id]: comp.itemId }))}
+                                            >
+                                              <div className={styles.gemSelectCheck}>{isSelected ? '✅' : '⬜'}</div>
+                                              <Image src={comp.icon} alt={comp.name} width={36} height={36} />
+                                              <span className={styles.gemSelectName}>{comp.name}</span>
+                                              <span className={styles.gemSelectPrice}>
+                                                <Image src="/gold.webp" alt="" width={13} height={13} />
+                                                {priceLoading ? '—' : price ? price.toLocaleString() : '-'}
+                                              </span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
                                     </>
                                   );
                                 })() : (
@@ -1119,34 +1111,106 @@ export default function CathedralPage() {
                             {selectedShopData.theme === 'gemRandom' && (
                               <div className={styles.shopDetailSection}>
                                 <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>구성 요소 (영웅 ~ 고급)</div>
-                                <div className={styles.gemGrid}>
+                                <div className={styles.gemSelectGrid}>
                                   {GEM_RANDOM_HERO_PROBS.map((gem) => {
                                     const price = latestPrices[gem.itemId] || 0;
                                     return (
-                                      <div key={gem.itemId} className={styles.gemCard}>
-                                        <Image src={gem.icon} alt={gem.name} width={48} height={48} />
-                                        <span className={styles.gemName}>{gem.name}</span>
-                                        <span style={{ fontSize: '0.72rem', color: 'var(--ct-text-secondary)', fontWeight: 600 }}>{(gem.probability * 100).toFixed(2)}%</span>
-                                        <span className={styles.gemPrice}>
-                                          <Image src="/gold.webp" alt="" width={14} height={14} />
+                                      <div key={gem.itemId} className={styles.gemSelectCard} style={{ opacity: 1, cursor: 'default' }}>
+                                        <span className={styles.gemRandomProb}>{(gem.probability * 100).toFixed(2)}%</span>
+                                        <Image src={gem.icon} alt={gem.name} width={36} height={36} />
+                                        <span className={styles.gemSelectName}>{gem.name}</span>
+                                        <span className={styles.gemSelectPrice}>
+                                          <Image src="/gold.webp" alt="" width={13} height={13} />
                                           {priceLoading ? '—' : price.toLocaleString()}
                                         </span>
                                       </div>
                                     );
                                   })}
                                 </div>
-                                <div className={styles.graceValueCard} style={{ marginTop: '0.6rem' }}>
-                                  <div className={styles.graceValueRow}>
-                                    <span className={styles.graceValueLabel}>상자 기대값</span>
-                                    <span className={styles.graceValueAmount}>
-                                      <Image src="/gold.webp" alt="" width={20} height={20} />
-                                      {priceLoading ? '—' : Math.round(GEM_RANDOM_HERO_PROBS.reduce((sum, gem) => sum + (latestPrices[gem.itemId] || 0) * gem.probability, 0)).toLocaleString()}
-                                    </span>
-                                  </div>
-                                  <div className={styles.graceValueFormula}>Σ(시세 × 확률) | 희귀·고급 미포함</div>
-                                </div>
                               </div>
                             )}
+
+                            {/* 5. 교환 효율 (가치 계산 가능한 아이템만) */}
+                            {!priceLoading && graceUnitPrice > 0 && (() => {
+                              const effGraceCost = selectedShopData.costs.find(c => c.name === '은총의 파편')?.amount || 0;
+                              const effGoldCost = selectedShopData.costs.find(c => c.name === '골드')?.amount || 0;
+                              const effTotalCost = Math.round(effGraceCost * graceUnitPrice) + effGoldCost;
+                              const isFreeItem = selectedShopData.costs.length === 0;
+
+                              let itemValue = 0;
+                              let valueName = '';
+
+                              // 젬 선택 상자 (id 4, 5, 6)
+                              if (selectedShopData.theme === 'gem' && components && components.every(c => c.itemId !== '0')) {
+                                const selId = getSelectedItemId(selectedShopData.id, components);
+                                const selPrice = latestPrices[selId] || 0;
+                                itemValue = Math.round(selPrice * selectedShopData.qty);
+                                valueName = '선택 젬 가치';
+                              }
+                              // 야금술 (id 7), 재봉술 (id 8)
+                              else if (selectedShopData.id === 7 || selectedShopData.id === 8) {
+                                const craftComps = components as typeof METALLURGY_COMPONENTS;
+                                const selId = getSelectedItemId(selectedShopData.id, craftComps);
+                                const sel = craftComps.find(c => c.itemId === selId);
+                                if (sel) {
+                                  itemValue = Math.round((latestPrices[sel.itemId] || 0) * sel.amount * selectedShopData.qty);
+                                }
+                                valueName = '선택 아이템 가치';
+                              }
+                              // 젬 랜덤 상자 (id 10)
+                              else if (selectedShopData.theme === 'gemRandom') {
+                                itemValue = Math.round(GEM_RANDOM_HERO_PROBS.reduce((sum, gem) => sum + (latestPrices[gem.itemId] || 0) * gem.probability, 0));
+                                valueName = '상자 기대값';
+                              }
+
+                              if (itemValue <= 0) return null;
+
+                              const efficiency = effTotalCost > 0 ? Math.round((itemValue / effTotalCost) * 100) : null;
+
+                              return (
+                                <div className={styles.efficiencySection}>
+                                  <div className={styles.efficiencyTitle}>교환 효율</div>
+                                  <div className={styles.efficiencyGrid}>
+                                    <div className={styles.efficiencyRow}>
+                                      <span className={styles.efficiencyLabel}>{valueName}</span>
+                                      <span className={styles.efficiencyValue}>
+                                        <Image src="/gold.webp" alt="" width={16} height={16} />
+                                        {itemValue.toLocaleString()}
+                                      </span>
+                                    </div>
+                                    {!isFreeItem && (
+                                      <div className={styles.efficiencyRow}>
+                                        <span className={styles.efficiencyLabel}>교환 비용</span>
+                                        <span className={styles.efficiencyValue}>
+                                          <Image src="/gold.webp" alt="" width={16} height={16} />
+                                          {effTotalCost.toLocaleString()}
+                                        </span>
+                                      </div>
+                                    )}
+                                    <div className={styles.efficiencyResultRow}>
+                                      <span className={styles.efficiencyResultLabel}>
+                                        {isFreeItem ? '순이익' : '효율'}
+                                      </span>
+                                      {isFreeItem ? (
+                                        <span className={styles.efficiencyResultValue} style={{ color: '#27ae60' }}>
+                                          +{itemValue.toLocaleString()}G
+                                        </span>
+                                      ) : efficiency !== null ? (
+                                        <span className={styles.efficiencyResultValue} style={{ color: efficiency >= 100 ? '#27ae60' : '#c0392b' }}>
+                                          {efficiency}%
+                                          <span className={styles.efficiencyProfitTag} style={{
+                                            color: efficiency >= 100 ? '#27ae60' : '#c0392b',
+                                            background: efficiency >= 100 ? 'rgba(39, 174, 96, 0.1)' : 'rgba(192, 57, 43, 0.1)',
+                                          }}>
+                                            {efficiency >= 100 ? `+${(itemValue - effTotalCost).toLocaleString()}G` : `${(itemValue - effTotalCost).toLocaleString()}G`}
+                                          </span>
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         );
                       })() : (
