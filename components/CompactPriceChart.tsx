@@ -52,10 +52,11 @@ type EventInfo = {
 };
 
 const EVENTS: EventInfo[] = [
-  { date: '2025-11-07', label: '7주년 라방', color: '#ff6b6b' },
-  { date: '2025-12-07', label: '로아온', color: '#ffa500' },
-  { date: '2025-12-10', label: '윈터❄️', color: '#00BFFF' },
-  { date: '2026-01-07', label: '세르카🎃', color: '#9c4dcc' }
+  { date: '2025-11-07', label: '7주년 라방' },
+  { date: '2025-12-07', label: '로아온' },
+  { date: '2025-12-10', label: '윈터' },
+  { date: '2026-01-07', label: '세르카' },
+  { date: '2026-03-18', label: '지평의 성당' },
 ];
 
 type CategoryStyle = {
@@ -204,7 +205,16 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       // 이벤트 찾기
       const event = EVENTS.find(e => e.date === dateString);
       const eventLabel = event?.label;
-      const eventColor = event?.color;
+      // 이벤트 점 색상 (60-30-10 법칙)
+      // 특별이벤트(10% 강조): 기본 청록, 재련재료=주황(파란의 보색), 팔찌=주황
+      // 수요일: 기본 빨간색, 유물각인서=파란색
+      const isSpecialEvent = !!event;
+      const catLabel = categoryStyle?.label;
+      const eventColor = isSpecialEvent
+        ? (catLabel === '재련 재료' || catLabel === '팔찌' ? '#f97316' : '#14b8a6')
+        : (dayOfWeek === 3
+          ? (catLabel === '유물 각인서' ? '#3b82f6' : '#ef4444')
+          : undefined);
 
       // 비교 가격 가져오기 (날짜 매칭)
       const comparisonPrice = comparisonPriceMap.get(dateString);
@@ -222,7 +232,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       });
     });
     return Array.from(dateMap.values()).sort((a, b) => a.rawTime - b.rawTime);
-  }, [filteredHistory, comparisonPriceMap]);
+  }, [filteredHistory, comparisonPriceMap, categoryStyle]);
 
   const formatPrice = useCallback((value: number) => {
     // 악세, 보석 카테고리는 소수점 없이 표시
@@ -460,10 +470,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
     const data = payload[0].payload;
     const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : '');
-    // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
-    const eventColor = (categoryStyle?.label === '유물 각인서' || categoryStyle?.label === '보석')
-      ? '#3b82f6'
-      : (data.eventColor || '#ef4444');
+    const eventColor = data.eventColor || '#ef4444';
 
     // 비교 가격 및 차이 계산
     const mainPrice = data.가격;
@@ -530,10 +537,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
     const data = payload[0].payload;
     const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : '');
-    // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
-    const eventColor = (categoryStyle?.label === '유물 각인서' || categoryStyle?.label === '보석')
-      ? '#3b82f6'
-      : (data.eventColor || '#ef4444');
+    const eventColor = data.eventColor || '#ef4444';
 
     // 비교 가격 및 차이 계산
     const mainPrice = data.가격;
@@ -594,49 +598,55 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     );
   };
 
+  // 기간별 점 표시 규칙:
+  // 7D, 1M: 전부 표시
+  // 3M, 6M, 1Y: 수요일 + 특별 이벤트만
+  // ALL: 특별 이벤트만
+  const showAllDots = selectedPeriod === '7d' || selectedPeriod === '1m';
+  const showWednesdayDots = showAllDots || ['3m', '6m', '1y'].includes(selectedPeriod);
+
   // 커스텀 점 렌더러 (이벤트 라벨 포함)
   const CustomDot = (props: CustomDotProps) => {
     const { cx, cy, payload } = props;
     if (!payload || cx === undefined || cy === undefined) return null;
-    const hasEvent = payload.eventLabel || payload.isWednesday;
-    const eventLabel = payload.eventLabel || (payload.isWednesday ? '수요일' : '');
-    // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
-    const eventColor = (categoryStyle?.label === '유물 각인서' || categoryStyle?.label === '보석')
-      ? '#3b82f6'
-      : (payload.eventColor || '#ef4444');
+    const isSpecialEvent = !!payload.eventLabel;
+    const isWednesday = !isSpecialEvent && payload.isWednesday;
+    const eventColor = payload.eventColor || '#ef4444';
 
-    // ALL 기간에서는 이벤트 없는 일반 점은 표시하지 않음
-    if (!hasEvent) {
-      if (selectedPeriod === 'all') {
-        return null;
+    // 일반 점
+    if (!isSpecialEvent && !isWednesday) {
+      if (!showAllDots) return null;
+      return <circle cx={cx} cy={cy} r={6} fill={chartColor} strokeWidth={3} stroke="var(--card-bg)" />;
+    }
+
+    // 수요일 점
+    if (isWednesday) {
+      if (!showWednesdayDots) return null;
+      if (showAllDots) {
+        // 7D/1M: 라벨 포함
+        return (
+          <g>
+            <circle cx={cx} cy={cy} r={6} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />
+            <text x={cx} y={cy - 15} textAnchor="middle" fill={eventColor}
+              fontSize={11} fontWeight="700"
+              style={{ textShadow: '0 0 3px var(--card-bg), 0 0 3px var(--card-bg), 0 0 3px var(--card-bg)' }}>
+              수요일
+            </text>
+          </g>
+        );
       }
-      return (
-        <circle cx={cx} cy={cy} r={6} fill={chartColor} strokeWidth={3} stroke="var(--card-bg)" />
-      );
+      // 3M/6M/1Y: 점만
+      return <circle cx={cx} cy={cy} r={6} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />;
     }
 
-    // ALL 기간에서는 수요일만 글씨 없이 점만 표시, 다른 이벤트는 글씨 표시
-    if (selectedPeriod === 'all' && payload.isWednesday && !payload.eventLabel) {
-      return (
-        <circle cx={cx} cy={cy} r={6} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />
-      );
-    }
-
+    // 특별 이벤트 점 (항상 표시)
     return (
       <g>
-        <circle cx={cx} cy={cy} r={6} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />
-        <text
-          x={cx}
-          y={cy - 15}
-          textAnchor="middle"
-          fill={eventColor}
-          fontSize={11}
-          fontWeight="700"
-          style={{
-            textShadow: '0 0 3px var(--card-bg), 0 0 3px var(--card-bg), 0 0 3px var(--card-bg)'
-          }}
-        >
-          {eventLabel}
+        <circle cx={cx} cy={cy} r={7} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />
+        <text x={cx} y={cy - 15} textAnchor="middle" fill={eventColor}
+          fontSize={12} fontWeight="900"
+          style={{ textShadow: '0 0 4px var(--card-bg), 0 0 4px var(--card-bg), 0 0 4px var(--card-bg), 0 0 4px var(--card-bg)' }}>
+          {payload.eventLabel}
         </text>
       </g>
     );
@@ -646,26 +656,22 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const CustomDotMobile = (props: CustomDotProps) => {
     const { cx, cy, payload } = props;
     if (!payload || cx === undefined || cy === undefined) return null;
-    const hasEvent = payload.eventLabel || payload.isWednesday;
-    // 유물 각인서, 보석 카테고리에서는 무조건 파란색, 나머지는 개별 색상 또는 빨간색
-    const eventColor = (categoryStyle?.label === '유물 각인서' || categoryStyle?.label === '보석')
-      ? '#3b82f6'
-      : (payload.eventColor || '#ef4444');
+    const isSpecialEvent = !!payload.eventLabel;
+    const isWednesday = !isSpecialEvent && payload.isWednesday;
+    const eventColor = payload.eventColor || '#ef4444';
 
-    // ALL 기간에서는 이벤트 없는 일반 점은 표시하지 않음
-    if (!hasEvent) {
-      if (selectedPeriod === 'all') {
-        return null;
-      }
-      return (
-        <circle cx={cx} cy={cy} r={3} fill={chartColor} strokeWidth={2} stroke="var(--card-bg)" />
-      );
+    if (!isSpecialEvent && !isWednesday) {
+      if (!showAllDots) return null;
+      return <circle cx={cx} cy={cy} r={3} fill={chartColor} strokeWidth={2} stroke="var(--card-bg)" />;
     }
 
-    // 모바일에서는 모든 이벤트를 글씨 없이 점만 표시
-    return (
-      <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />
-    );
+    if (isWednesday) {
+      if (!showWednesdayDots) return null;
+      return <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />;
+    }
+
+    // 특별 이벤트 (항상 표시)
+    return <circle cx={cx} cy={cy} r={4} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />;
   };
 
   // 기간 라벨 맵핑

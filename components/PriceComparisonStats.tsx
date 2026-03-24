@@ -147,6 +147,17 @@ export default function PriceComparisonStats() {
   // 점 색상은 카테고리 색상 사용
   const dotColor = categoryColor;
 
+  // 바 그라디언트: 카테고리색 → 밝은 중간색 → 보색 (탁함 방지)
+  const complementaryMap: Record<string, string> = {
+    '#4F63D2': '#f97316', '#3B50B5': '#f97316', '#7B8EF0': '#f97316',
+    '#E11D48': '#14b8a6', '#f87171': '#14b8a6',
+    '#059669': '#e11d48', '#34d399': '#e11d48',
+    '#0E7490': '#f97316', '#67e8f9': '#f97316',
+    '#4B0082': '#eab308', '#c084fc': '#eab308',
+    '#C71585': '#14b8a6', '#f472b6': '#14b8a6',
+  };
+  const barEndColor = complementaryMap[categoryColor] || '#ef4444';
+
   return (
     <>
       {/* 가격 비교 통계 - 데스크톱 */}
@@ -183,7 +194,7 @@ export default function PriceComparisonStats() {
                 position: 'relative',
                 height: '10px',
                 borderRadius: '5px',
-                background: 'linear-gradient(to right, #3b82f6, #ef4444)',
+                background: `linear-gradient(to right, ${categoryColor} 0%, ${categoryColor}50 35%, ${barEndColor}50 65%, ${barEndColor} 100%)`,
                 boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
               }}>
                 <div style={{
@@ -315,7 +326,7 @@ export default function PriceComparisonStats() {
                 position: 'relative',
                 height: '8px',
                 borderRadius: '4px',
-                background: 'linear-gradient(to right, #3b82f6, #ef4444)',
+                background: `linear-gradient(to right, ${categoryColor} 0%, ${categoryColor}50 35%, ${barEndColor}50 65%, ${barEndColor} 100%)`,
                 boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)'
               }}>
                 <div style={{
