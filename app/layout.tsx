@@ -7,7 +7,6 @@ import UpdatePopup from '@/components/UpdatePopup';
 import AdLayout from '@/components/ads/AdLayout';
 
 import ConsoleFilter from '@/components/ConsoleFilter';
-import ImagePreloader from '@/components/ImagePreloader';
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import Script from "next/script";
@@ -18,7 +17,7 @@ const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
   weight: ["400", "700"],
   display: "swap",
-  preload: false,
+  preload: true,
   adjustFontFallback: true,
   fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 });
@@ -100,7 +99,6 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={notoSansKr.className}>
-        <ImagePreloader />
         <ThemeProvider>
           <ConsoleFilter />
           <AuthProvider>
@@ -114,20 +112,20 @@ export default function RootLayout({
           </AuthProvider>
         </ThemeProvider>
 
-        {/* Google AdSense */}
+        {/* Google AdSense - lazyOnload로 메인 콘텐츠 우선 */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944494802169618"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
 
-        {/* Google Analytics - 최적화된 로딩 */}
+        {/* Google Analytics - lazyOnload로 메인 콘텐츠 우선 */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-QBV4JHCBJF"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
+        <Script id="google-analytics" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}

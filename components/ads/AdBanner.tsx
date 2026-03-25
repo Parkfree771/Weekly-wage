@@ -15,6 +15,8 @@ export default function AdBanner({ slot, className }: AdBannerProps) {
         src="/wlvuddmltjdekd1.webp"
         alt="지평의 성당"
         fill
+        sizes="(max-width: 576px) 100vw, 520px"
+        loading="lazy"
         style={{ objectFit: 'cover', objectPosition: 'center 30%' }}
       />
       <div className="inline-update-overlay" />

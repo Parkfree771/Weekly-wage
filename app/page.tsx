@@ -5,7 +5,10 @@ import { Container } from 'react-bootstrap';
 import AdBanner from '@/components/ads/AdBanner';
 import styles from './page.module.css';
 
-const PriceDashboard = dynamic(() => import('@/components/PriceDashboard'), { ssr: false });
+const PriceDashboard = dynamic(() => import('@/components/PriceDashboard'), {
+  loading: () => <div style={{ minHeight: '320px' }} />,
+  ssr: false
+});
 
 const PriceComparisonStats = dynamic(() => import('@/components/PriceComparisonStats'), {
   loading: () => (
@@ -20,7 +23,10 @@ const PriceComparisonStats = dynamic(() => import('@/components/PriceComparisonS
 
 const PriceChartProvider = dynamic(
   () => import('@/components/PriceChartContainer').then(mod => ({ default: mod.PriceChartProvider })),
-  { ssr: false }
+  {
+    loading: () => <div style={{ minHeight: '650px' }} />,
+    ssr: false
+  }
 );
 
 

@@ -53,8 +53,12 @@ data/price-history.json
 history_new.json
 history_temp.json
 latest_temp.json
+latest_prices_updated.json
 cors.json
 nul
+
+# 로컬 스크립트
+/scripts/
 
 # 내부 문서
 DATA_COLLECTION.md

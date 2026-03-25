@@ -22,6 +22,8 @@ export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) 
               src="/wlvuddmltjdekd1.webp"
               alt="지평의 성당"
               fill
+              sizes="280px"
+              loading="lazy"
               style={{ objectFit: 'cover', objectPosition: 'center 30%' }}
             />
             <div className="sidebar-update-overlay" />

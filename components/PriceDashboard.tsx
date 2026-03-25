@@ -153,7 +153,10 @@ export default function PriceDashboard() {
     const fetchPrices = async () => {
       try {
         const { getMultipleItemPriceHistory } = await import('@/lib/price-history-client');
-        const itemIds = DASHBOARD_ITEMS.map(item => item.id);
+        // 선택된 아이템만 fetch (전체 65개 → 선택된 ~11개)
+        const itemIds = config.selectedItems.length > 0
+          ? config.selectedItems
+          : DASHBOARD_ITEMS.map(item => item.id);
         const allHistory = await getMultipleItemPriceHistory(itemIds, 30);
         const priceMap: Record<string, PriceData> = {};
 
@@ -182,7 +185,8 @@ export default function PriceDashboard() {
     };
 
     fetchPrices();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.selectedItems.length]);
 
   const checkScroll = () => {
     if (scrollRef.current) {

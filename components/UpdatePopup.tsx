@@ -11,7 +11,9 @@ export default function UpdatePopup() {
   useEffect(() => {
     const dismissed = localStorage.getItem('popup_dismissed_until');
     if (dismissed && Date.now() < Number(dismissed)) return;
-    setShow(true);
+    // LCP/CLS 방지: 메인 콘텐츠 렌더링 후 팝업 표시
+    const timer = setTimeout(() => setShow(true), 1500);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleClose = () => setShow(false);
@@ -33,8 +35,9 @@ export default function UpdatePopup() {
             src="/wlvuddmltjdekd2.webp"
             alt="지평의 성당"
             fill
+            sizes="400px"
             className={styles.bgImage}
-            priority
+            loading="lazy"
           />
           <div className={styles.imageOverlay} />
           <div className={styles.imageContent}>

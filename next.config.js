@@ -10,6 +10,11 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
 
+  // 프로덕션 빌드에서 console.log 제거
+  compiler: {
+    removeConsole: isDev ? false : { exclude: ['error', 'warn'] },
+  },
+
   // 이미지 최적화
   images: {
     // dev 모드에서 이미지 최적화 끄기 (CPU 부하 방지)
@@ -52,6 +57,11 @@ const nextConfig = {
     'react-bootstrap': {
       transform: 'react-bootstrap/{{member}}',
     },
+  },
+
+  // CSS 최적화 - 사용하지 않는 CSS 제거
+  experimental: {
+    optimizeCss: true,
   },
   
   // 헤더 최적화
