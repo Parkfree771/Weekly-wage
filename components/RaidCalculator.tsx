@@ -37,7 +37,7 @@ type SavedSettings = {
 };
 
 // 코어를 주는 레이드 그룹
-const CORE_RAID_GROUPS = ['지평의 성당', '세르카', '종막', '4막'];
+const CORE_RAID_GROUPS = ['성당', '세르카', '종막', '4막'];
 
 // 설정 저장 버튼 (저장 완료 피드백 포함)
 function SaveButton({ isMobile, onSave }: { isMobile?: boolean; onSave: () => boolean }) {
@@ -115,7 +115,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
 
   // 레이드 그룹명과 이미지 파일명 매핑
   const raidImages: { [key: string]: string } = {
-    '지평의 성당': '/wlvuddmltjdekd1.webp',
+    '성당': '/wlvuddmltjdekd1.webp',
     '세르카': '/cerka2.webp',
     '종막': '/abrelshud.webp',
     '4막': '/illiakan.webp',
@@ -128,9 +128,9 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
 
   // 레이드별 관문당 코어 획득량 (더보기 안 할 때 기준)
   const corePerGate: { [key: string]: number } = {
-    '지평의 성당 3단계': 3,
-    '지평의 성당 2단계': 2,
-    '지평의 성당 1단계': 2,
+    '성당 3단계': 3,
+    '성당 2단계': 2,
+    '성당 1단계': 2,
     '세르카 나메': 3,
     '세르카 하드': 2,
     '세르카 노말': 2,

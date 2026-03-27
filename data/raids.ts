@@ -1,6 +1,6 @@
 export const raids = [
   {
-    name: '지평의 성당 3단계',
+    name: '성당 3단계',
     level: 1750,
     image: '/wlvuddmltjdekd1.webp',
     gates: [
@@ -9,7 +9,7 @@ export const raids = [
     ],
   },
   {
-    name: '지평의 성당 2단계',
+    name: '성당 2단계',
     level: 1720,
     image: '/wlvuddmltjdekd1.webp',
     gates: [
@@ -18,7 +18,7 @@ export const raids = [
     ],
   },
   {
-    name: '지평의 성당 1단계',
+    name: '성당 1단계',
     level: 1700,
     image: '/wlvuddmltjdekd1.webp',
     gates: [

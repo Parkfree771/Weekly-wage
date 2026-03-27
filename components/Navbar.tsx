@@ -9,7 +9,6 @@ import { Container, Navbar as BSNavbar, Nav, Offcanvas } from 'react-bootstrap';
 import LoginButton from './auth/LoginButton';
 
 const FEEDBACK_URL = 'https://forms.gle/n9XKQJmheLhZcSf69';
-const SURVEY_URL = 'https://forms.gle/4dBKrh3kSFtazmxH7';
 
 type NavItem = {
   href: string;
@@ -28,9 +27,9 @@ const NAV_GROUPS: NavGroup[] = [
     label: '골드 계산',
     colorClass: 'nav-weekly',
     items: [
-      { href: '/weekly-gold', label: '주간 계산' },
-      { href: '/life-master', label: '생활 계산' },
-      { href: '/package', label: '패키지 계산' },
+      { href: '/weekly-gold', label: '주간 골드 계산' },
+      { href: '/life-master', label: '생활 제작 계산' },
+      { href: '/package', label: '패키지 효율 계산' },
       { href: '/hell-reward', label: '지옥 보상 계산' },
     ],
   },
@@ -39,28 +38,26 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-refining',
     items: [
       { href: '/refining', label: '재련 시뮬' },
-      { href: '/hell-sim', label: '지옥 시뮬' },
       { href: '/bracelet', label: '팔찌 시뮬' },
     ],
   },
 ];
 
 const NAV_STANDALONE: NavItem[] = [
-  { href: '/cathedral', label: '지평의 성당', badge: 'new' },
+  { href: '/cathedral', label: '지평의 성당', badge: 'NEW' },
   { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
 ];
 
 // 모바일 오프캔버스용 전체 목록
 const ALL_NAV_ITEMS: NavItem[] = [
-  { href: '/weekly-gold', label: '주간 계산' },
-  { href: '/life-master', label: '생활 계산' },
-  { href: '/package', label: '패키지 계산' },
+  { href: '/weekly-gold', label: '주간 골드 계산' },
+  { href: '/life-master', label: '생활 제작 계산' },
+  { href: '/package', label: '패키지 효율 계산' },
   { href: '/hell-reward', label: '지옥 보상 계산' },
   { href: '/refining', label: '재련 시뮬' },
-  { href: '/hell-sim', label: '지옥 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
-  { href: '/cathedral', label: '지평의 성당', badge: 'new' },
+  { href: '/cathedral', label: '지평의 성당', badge: 'NEW' },
   { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
 ];
@@ -87,7 +84,6 @@ export default function Navbar() {
   const getNavClass = (href: string) => {
     const pageClass = href === '/refining' ? 'nav-refining' :
                       href === '/life-master' ? 'nav-life' :
-                      href === '/hell-sim' ? 'nav-hell' :
                       href === '/hell-reward' ? 'nav-hell' :
                       href === '/bracelet' ? 'nav-bracelet' :
                       href === '/package' ? 'nav-package' :
@@ -128,7 +124,7 @@ export default function Navbar() {
       className="main-navbar"
       fixed="top"
     >
-      <Container fluid style={{ maxWidth: '1400px' }}>
+      <Container fluid style={{ maxWidth: '1400px', padding: '0 12px' }}>
         {/* 로고 + 데스크톱 메뉴 */}
         <div className="d-flex align-items-center">
           <Link href="/" className="navbar-brand d-flex align-items-center gap-2 text-decoration-none">
@@ -164,20 +160,21 @@ export default function Navbar() {
                   </svg>
                 </button>
 
-                {openDropdown === group.label && (
-                  <div className="nav-dropdown-menu">
-                    {group.items.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`nav-dropdown-item ${getNavClass(item.href)}`}
-                        onClick={() => setOpenDropdown(null)}
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
+                <div
+                  className="nav-dropdown-menu"
+                  style={{ display: openDropdown === group.label ? 'block' : 'none' }}
+                >
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`nav-dropdown-item ${getNavClass(item.href)}`}
+                      onClick={() => setOpenDropdown(null)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
             ))}
 
@@ -239,19 +236,9 @@ export default function Navbar() {
             href={FEEDBACK_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="navbar-theme-toggle"
-            aria-label="건의함"
+            className="navbar-feedback-btn"
           >
-            <Image src="/icon-lightbulb.svg" alt="건의함" width={22} height={22} />
-          </a>
-          <a
-            href={SURVEY_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="navbar-theme-toggle"
-            aria-label="설문조사"
-          >
-            <Image src="/icon-assignment.svg" alt="설문조사" width={22} height={22} />
+            문의하기
           </a>
           <Link
             href="/"
@@ -354,18 +341,7 @@ export default function Navbar() {
                 className="navbar-offcanvas-link nav-weekly"
                 onClick={handleClose}
               >
-                <Image src="/icon-lightbulb.svg" alt="" width={16} height={16} style={{ marginRight: '6px' }} />
-                건의함
-              </a>
-              <a
-                href={SURVEY_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="navbar-offcanvas-link nav-weekly"
-                onClick={handleClose}
-              >
-                <Image src="/icon-assignment.svg" alt="" width={16} height={16} style={{ marginRight: '6px' }} />
-                설문조사
+                문의하기
               </a>
             </Nav>
             <hr className="my-3" />

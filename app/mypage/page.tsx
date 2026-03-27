@@ -24,6 +24,9 @@ import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service
 import NicknameModal from '@/components/auth/NicknameModal';
 import { raids } from '@/data/raids';
 import { raidClearRewards } from '@/data/raidClearRewards';
+
+// raids 배열을 Map으로 변환 (O(1) 조회용)
+const raidMap = new Map(raids.map(r => [r.name, r]));
 import { raidRewards, MATERIAL_IDS } from '@/data/raidRewards';
 import {
   Character,
@@ -89,6 +92,29 @@ function getCommonContents(maxLevel: number) {
   return Object.values(COMMON_CONTENT_BY_LEVEL).map(byLevel => byLevel[tier]);
 }
 
+// 할의 모래시계 보상 (보상강화 레벨별)
+const SAND_OF_TIME_REWARDS_1750: { gems: number; stones: number; lavaBreath: number; glacierBreath: number }[] = [
+  { gems: 6, stones: 12, lavaBreath: 12, glacierBreath: 12 }, // 0 (기본)
+  { gems: 12, stones: 24, lavaBreath: 24, glacierBreath: 24 }, // 보상강화 1
+  { gems: 18, stones: 36, lavaBreath: 36, glacierBreath: 36 }, // 보상강화 2
+  { gems: 24, stones: 48, lavaBreath: 48, glacierBreath: 48 }, // 보상강화 3
+  { gems: 30, stones: 60, lavaBreath: 60, glacierBreath: 60 }, // 보상강화 4
+  { gems: 36, stones: 72, lavaBreath: 72, glacierBreath: 72 }, // 보상강화 5
+];
+
+const SAND_OF_TIME_REWARDS_1730: { gems: number; stones: number; lavaBreath: number; glacierBreath: number }[] = [
+  { gems: 15, stones: 30, lavaBreath: 10, glacierBreath: 10 }, // 0 (기본)
+  { gems: 30, stones: 36, lavaBreath: 20, glacierBreath: 20 }, // 보상강화 1
+  { gems: 45, stones: 42, lavaBreath: 30, glacierBreath: 30 }, // 보상강화 2
+  { gems: 60, stones: 48, lavaBreath: 40, glacierBreath: 40 }, // 보상강화 3
+  { gems: 75, stones: 54, lavaBreath: 50, glacierBreath: 50 }, // 보상강화 4
+  { gems: 90, stones: 60, lavaBreath: 60, glacierBreath: 60 }, // 보상강화 5
+];
+
+function getSandOfTimeRewards(itemLevel: number) {
+  return itemLevel >= 1750 ? SAND_OF_TIME_REWARDS_1750 : SAND_OF_TIME_REWARDS_1730;
+}
+
 // 공통 컨텐츠 재화 보상 (1회 기준)
 type CommonMaterialReward = { image?: string; label: string; amount: number };
 const COMMON_CONTENT_MATERIALS_BY_LEVEL: Record<string, Record<string, CommonMaterialReward[]>> = {
@@ -104,28 +130,28 @@ const COMMON_CONTENT_MATERIALS_BY_LEVEL: Record<string, Record<string, CommonMat
       { image: '/breath-lava5.webp', label: '용숨', amount: 7 },
       { image: '/breath-glacier5.webp', label: '빙숨', amount: 7 },
       { image: '/gold.webp', label: '귀속골드', amount: 5000 },
-      { image: '/destiny-shard-bag-large5.webp', label: '운파', amount: 12000 },
+      { image: '/destiny-shard-bag-large5.webp', label: '운파', amount: 13200 },
       { image: '/1fpqrjqghk.webp', label: '보석', amount: 7 },
     ],
   },
   '필드보스': {
     '1730': [
-      { image: '/top-destiny-destruction-stone5.webp', label: '파결', amount: 484 },
-      { image: '/top-destiny-guardian-stone5.webp', label: '수결', amount: 1490 },
-      { image: '/top-destiny-breakthrough-stone5.webp', label: '위돌', amount: 40 },
+      { image: '/top-destiny-destruction-stone5.webp', label: '파결', amount: 486.3 },
+      { image: '/top-destiny-guardian-stone5.webp', label: '수결', amount: 1484.4 },
+      { image: '/top-destiny-breakthrough-stone5.webp', label: '위돌', amount: 41.1 },
       { image: '/breath-lava5.webp', label: '용숨', amount: 3 },
       { image: '/breath-glacier5.webp', label: '빙숨', amount: 3 },
       { image: '/1fpqrjqghk.webp', label: '보석', amount: 21 },
-      { image: '/cjstkd.webp', label: '천상', amount: 0.8 },
+      { image: '/cjstkd.webp', label: '천상', amount: 0.6 },
     ],
     '1750': [
-      { image: '/top-destiny-destruction-stone5.webp', label: '파결', amount: 704 },
-      { image: '/top-destiny-guardian-stone5.webp', label: '수결', amount: 1916 },
-      { image: '/top-destiny-breakthrough-stone5.webp', label: '위돌', amount: 47 },
+      { image: '/top-destiny-destruction-stone5.webp', label: '파결', amount: 699.3 },
+      { image: '/top-destiny-guardian-stone5.webp', label: '수결', amount: 2077.3 },
+      { image: '/top-destiny-breakthrough-stone5.webp', label: '위돌', amount: 51 },
       { image: '/breath-lava5.webp', label: '용숨', amount: 3 },
       { image: '/breath-glacier5.webp', label: '빙숨', amount: 3 },
       { image: '/1fpqrjqghk.webp', label: '보석', amount: 21 },
-      { image: '/cjstkd.webp', label: '천상', amount: 1 },
+      { image: '/cjstkd.webp', label: '천상', amount: 0.5 },
     ],
   },
 };
@@ -177,9 +203,7 @@ function getChaosDungeonLabel(itemLevel: number): string {
   if (itemLevel >= 1720) return '1720 전선';
   if (itemLevel >= 1700) return '1700 전선';
   if (itemLevel >= 1680) return '1680 전선';
-  if (itemLevel >= 1660) return '1660 전선';
-  if (itemLevel >= 1640) return '1640 전선';
-  return '카던';
+  return '';
 }
 
 // 가토 레벨별 라벨
@@ -189,54 +213,53 @@ function getGuardianRaidLabel(itemLevel: number): string {
   if (itemLevel >= 1720) return '1720 가토';
   if (itemLevel >= 1700) return '1700 가토';
   if (itemLevel >= 1680) return '1680 가토';
-  if (itemLevel >= 1640) return '1640 가토';
-  return '가토';
+  return '';
 }
 // 카던(균열/전선) 1일 1회 노휴게 기준 재화 획득량 (레벨별 이미지 분리)
 const CHAOS_DAILY_REWARDS: { minLevel: number; materials: { image: string; alt: string; daily: number }[] }[] = [
   {
     minLevel: 1750,
     materials: [
-      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 326.5 },
-      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1246 },
-      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 19 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 53297 },
+      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 435.8 },
+      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1110.9 },
+      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 20 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 56853.8 },
     ],
   },
   {
     minLevel: 1730,
     materials: [
-      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 327.11 },
-      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1082.58 },
-      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 17.74 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 44208.74 },
+      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 361.5 },
+      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1092.2 },
+      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 17.7 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 43801.2 },
     ],
   },
   {
     minLevel: 1720,
     materials: [
-      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 746 },
-      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 2207.33 },
-      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 50.5 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 40262.83 },
+      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 745.8 },
+      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 2058.2 },
+      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 47 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 40311.9 },
     ],
   },
   {
     minLevel: 1700,
     materials: [
-      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 636.57 },
-      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 1739.86 },
-      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 41.29 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 32876 },
+      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 593.9 },
+      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 1733.4 },
+      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 41.3 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 33557 },
     ],
   },
   {
     minLevel: 1680,
     materials: [
-      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 473.78 },
-      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 1148.78 },
-      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 36.67 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 31813.78 },
+      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 416.7 },
+      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 1190.3 },
+      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 36.2 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 32445.4 },
     ],
   },
 ];
@@ -250,31 +273,31 @@ const GUARDIAN_DAILY_REWARDS: { minLevel: number; materials: { image: string; al
   {
     minLevel: 1750,
     materials: [
-      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 12 },
+      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 11.9 },
     ],
   },
   {
     minLevel: 1730,
     materials: [
-      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 10.56 },
+      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 10.5 },
     ],
   },
   {
     minLevel: 1720,
     materials: [
-      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 6.58 },
+      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 6.4 },
     ],
   },
   {
     minLevel: 1700,
     materials: [
-      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 5.31 },
+      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 5.3 },
     ],
   },
   {
     minLevel: 1680,
     materials: [
-      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 4.88 },
+      { image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 5.2 },
     ],
   },
 ];
@@ -286,7 +309,7 @@ function getGuardianDailyReward(itemLevel: number) {
 // JS dayOfWeek → 주간 인덱스 (수=0 ~ 화=6)
 const WEEKLY_DAY_MAP: Record<number, number> = { 3: 0, 4: 1, 5: 2, 6: 3, 0: 4, 1: 5, 2: 6 };
 
-const EMPTY_DAILY: DailyContentState = { checks: new Array(7).fill(false), restGauge: 0 };
+const EMPTY_DAILY: DailyContentState = { checks: new Array(7).fill(0) };
 
 // KST 06:00 기준 현재 게임 요일의 주간 인덱스 (0=수 ~ 6=화)
 function getCurrentGameDayIdx(): number {
@@ -302,27 +325,6 @@ function getCurrentGameDayIdx(): number {
 }
 
 // 현재 휴식게이지 계산 (지나간 미체크 날 +10 자동 누적)
-function computeCurrentRest(state: DailyContentState, todayIdx: number): number {
-  let rest = state.restGauge;
-  for (let i = 0; i < 7; i++) {
-    if (i < todayIdx) {
-      // 지나간 날: 체크 → 소모, 미체크 → 누적
-      if (state.checks[i]) {
-        if (rest >= 20) rest -= 20;
-      } else {
-        rest = Math.min(100, rest + 10);
-      }
-    } else if (i === todayIdx) {
-      // 오늘: 체크했으면 소모, 안 했으면 아직 안 쌓임
-      if (state.checks[i]) {
-        if (rest >= 20) rest -= 20;
-      }
-    } else {
-      break; // 미래 날은 무시
-    }
-  }
-  return rest;
-}
 
 // KST 기준 현재 주 시작일(수요일 06시 기준) 및 요일 구하기
 function getKSTWeekInfo() {
@@ -359,6 +361,8 @@ export default function MyPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [allSiblings, setAllSiblings] = useState<Character[]>([]);
   const [selectedCharNames, setSelectedCharNames] = useState<Set<string>>(new Set());
+  const [selectedCharOrder, setSelectedCharOrder] = useState<string[]>([]); // 선택 순서
+  const [selectedRepChar, setSelectedRepChar] = useState<string>(''); // 대표 캐릭터
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);
 
@@ -374,8 +378,6 @@ export default function MyPage() {
   // 레이드 확장 패널 열린 캐릭터
   const [expandedRaidChar, setExpandedRaidChar] = useState<string | null>(null);
 
-  // 더보기 비용 드롭다운 열린 캐릭터
-  const [moreGoldDropdownChar, setMoreGoldDropdownChar] = useState<string | null>(null);
 
 
   // 레이드 스크롤 인덱스 (캐릭터별)
@@ -394,10 +396,16 @@ export default function MyPage() {
   });
 
   // 일일 컨텐츠 휴게 설정 열림 (charName-field)
-  const [dailySettingsOpen, setDailySettingsOpen] = useState<string | null>(null);
-
   // 데스크톱 여부 (레이드 표시 개수 분기)
+  // 대표 캐릭터 이름
+  const representativeChar = useMemo(() => {
+    if (activeExpedition === 1) return userProfile?.mainCharacter || characters[0]?.name || '';
+    const expKey = activeExpedition === 2 ? 'expedition2' : 'expedition3';
+    return (userProfile as any)?.[expKey]?.mainCharacter || characters[0]?.name || '';
+  }, [userProfile, activeExpedition, characters]);
+
   const [isDesktop, setIsDesktop] = useState(true);
+  const [row2ScrollIndex, setRow2ScrollIndex] = useState<Record<string, number>>({});
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth > 900);
     check();
@@ -444,9 +452,31 @@ export default function MyPage() {
   const loadExpeditionData = useCallback((profile: typeof userProfile, expIdx: 1 | 2 | 3) => {
     const { chars, checklist, goldHistory, saved, allChars } = getExpeditionData(profile, expIdx);
 
-    setCharacters(chars);
+    // characters 중복 제거 (이름 기준, 높은 레벨 유지)
+    const charMap = new Map<string, typeof chars[0]>();
+    chars.forEach(c => {
+      const ex = charMap.get(c.name);
+      if (!ex || c.itemLevel > ex.itemLevel) charMap.set(c.name, c);
+    });
+    const cleanChars = Array.from(charMap.values());
+    setCharacters(cleanChars);
     setWeeklyChecklist(checklist);
     setWeeklyGoldHistory(goldHistory);
+
+    // DB에 중복이 있었으면 자동 정리 저장
+    if (cleanChars.length < chars.length && profile) {
+      (async () => {
+        try {
+          const { doc, updateDoc } = await import('firebase/firestore');
+          const { db } = await import('@/lib/firebase-client');
+          const uid = (profile as any).uid;
+          if (!uid) return;
+          const userRef = doc(db, 'users', uid);
+          const prefix = expIdx === 1 ? '' : expIdx === 2 ? 'expedition2.' : 'expedition3.';
+          await updateDoc(userRef, { [`${prefix}characters`]: cleanChars });
+        } catch (e) { /* 실패해도 무시 - 다음 저장 시 정리됨 */ }
+      })();
+    }
 
     // 공통 컨텐츠 로드 (주간 초기화 - 수요일 06시 기준)
     const { weekStart } = getKSTWeekInfo();
@@ -456,9 +486,28 @@ export default function MyPage() {
       setCommonContent({ date: weekStart, checks: {} });
     }
 
-    // 전체 원정대 목록도 로드
+    // 전체 원정대 목록도 로드 (이름 기준 중복 제거 + DB 자동 정리)
     if (allChars.length > 0) {
-      setAllSiblings(allChars);
+      const bestByName = new Map<string, typeof allChars[0]>();
+      allChars.forEach(c => {
+        const existing = bestByName.get(c.name);
+        if (!existing || c.itemLevel > existing.itemLevel) bestByName.set(c.name, c);
+      });
+      const cleanAll = Array.from(bestByName.values());
+      setAllSiblings(cleanAll);
+      if (cleanAll.length < allChars.length && userProfile) {
+        (async () => {
+          try {
+            const { doc, updateDoc } = await import('firebase/firestore');
+            const { db } = await import('@/lib/firebase-client');
+            const uid = userProfile.uid;
+            if (!uid) return;
+            const userRef = doc(db, 'users', uid);
+            const prefix = activeExpedition === 1 ? '' : activeExpedition === 2 ? 'expedition2.' : 'expedition3.';
+            await updateDoc(userRef, { [`${prefix}allCharacters`]: cleanAll });
+          } catch (e) { /* 다음 저장 시 정리됨 */ }
+        })();
+      }
     } else {
       setAllSiblings([]);
     }
@@ -474,7 +523,6 @@ export default function MyPage() {
     setActiveExpedition(expIdx);
     setHasChanges(false);
     setExpandedRaidChar(null);
-    setMoreGoldDropdownChar(null);
     setDifficultyOpenKey(null);
     setShowAllCharacters(false);
     imageLoadAttempted.current = false;
@@ -505,9 +553,28 @@ export default function MyPage() {
       setCommonContent({ date: weekStart, checks: {} });
     }
 
-    // 전체 원정대 목록도 로드
+    // 전체 원정대 목록도 로드 (이름 기준 중복 제거 + DB 자동 정리)
     if (allChars.length > 0) {
-      setAllSiblings(allChars);
+      const bestByName = new Map<string, typeof allChars[0]>();
+      allChars.forEach(c => {
+        const existing = bestByName.get(c.name);
+        if (!existing || c.itemLevel > existing.itemLevel) bestByName.set(c.name, c);
+      });
+      const cleanAll = Array.from(bestByName.values());
+      setAllSiblings(cleanAll);
+      if (cleanAll.length < allChars.length && userProfile) {
+        (async () => {
+          try {
+            const { doc, updateDoc } = await import('firebase/firestore');
+            const { db } = await import('@/lib/firebase-client');
+            const uid = userProfile.uid;
+            if (!uid) return;
+            const userRef = doc(db, 'users', uid);
+            const prefix = activeExpedition === 1 ? '' : activeExpedition === 2 ? 'expedition2.' : 'expedition3.';
+            await updateDoc(userRef, { [`${prefix}allCharacters`]: cleanAll });
+          } catch (e) { /* 다음 저장 시 정리됨 */ }
+        })();
+      }
     } else {
       setAllSiblings([]);
     }
@@ -719,10 +786,17 @@ export default function MyPage() {
         lastUpdated: new Date().toISOString(),
       })).sort((a: Character, b: Character) => b.itemLevel - a.itemLevel);
 
-      setAllSiblings(chars);
+      // 이름 기준 중복 제거 (높은 레벨 유지)
+      const bestMap = new Map<string, Character>();
+      chars.forEach(c => { const ex = bestMap.get(c.name); if (!ex || c.itemLevel > ex.itemLevel) bestMap.set(c.name, c); });
+      const dedupedChars = Array.from(bestMap.values());
+
+      setAllSiblings(dedupedChars);
       // 상위 6개 자동 선택 (1640 이상만)
-      const top6 = new Set(chars.filter(c => c.itemLevel >= 1640).slice(0, 6).map(c => c.name));
-      setSelectedCharNames(top6);
+      const top6Names = dedupedChars.filter(c => c.itemLevel >= 1640).slice(0, 6).map(c => c.name);
+      setSelectedCharNames(new Set(top6Names));
+      setSelectedCharOrder(top6Names);
+      setSelectedRepChar(top6Names[0] || '');
       setRegisterStep(2);
     } catch (error) {
       setRegisterError('검색 중 오류가 발생했습니다.');
@@ -733,16 +807,32 @@ export default function MyPage() {
 
   // 캐릭터 선택 토글
   const toggleCharacterSelection = (charName: string) => {
-    setSelectedCharNames(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(charName)) {
-        newSet.delete(charName);
-      } else if (newSet.size < 6) {
-        newSet.add(charName);
-      }
-      return newSet;
+    if (selectedCharNames.has(charName)) {
+      setSelectedCharNames(prev => { const s = new Set(prev); s.delete(charName); return s; });
+      setSelectedCharOrder(prev => prev.filter(n => n !== charName));
+      if (selectedRepChar === charName) setSelectedRepChar('');
+    } else if (selectedCharNames.size < 6) {
+      setSelectedCharNames(prev => new Set([...prev, charName]));
+      setSelectedCharOrder(prev => {
+        if (prev.includes(charName)) return prev;
+        return [...prev, charName];
+      });
+    }
+  };
+
+  // 순서 변경 (위/아래)
+  const moveCharOrder = (name: string, direction: -1 | 1) => {
+    setSelectedCharOrder(prev => {
+      const filtered = prev.filter(n => selectedCharNames.has(n));
+      const idx = filtered.indexOf(name);
+      if (idx < 0) return prev;
+      const newIdx = idx + direction;
+      if (newIdx < 0 || newIdx >= filtered.length) return prev;
+      [filtered[idx], filtered[newIdx]] = [filtered[newIdx], filtered[idx]];
+      return filtered;
     });
   };
+
 
   // 캐릭터 등록 (2단계)
   const handleRegister = async () => {
@@ -752,17 +842,19 @@ export default function MyPage() {
     setRegisterError(null);
 
     try {
-      const selectedChars = allSiblings
-        .filter(c => selectedCharNames.has(c.name))
-        .sort((a, b) => b.itemLevel - a.itemLevel);
+      // 사용자 순서대로 정렬
+      const orderedNames = selectedCharOrder.filter(n => selectedCharNames.has(n));
+      const selectedChars = orderedNames
+        .map(name => allSiblings.find(c => c.name === name)!)
+        .filter(Boolean);
 
-      // 주간 체크리스트 초기화
+      const repChar = selectedRepChar || selectedChars[0]?.name || '';
+
       const newChecklist: WeeklyChecklist = {};
       selectedChars.forEach(char => {
         newChecklist[char.name] = weeklyChecklist[char.name] || createEmptyWeeklyState(char.itemLevel);
       });
 
-      // DB 저장 (전체 원정대 목록도 함께 저장)
       const { doc, updateDoc } = await import('firebase/firestore');
       const { db } = await import('@/lib/firebase-client');
       const userRef = doc(db, 'users', user.uid);
@@ -771,7 +863,7 @@ export default function MyPage() {
       await updateDoc(userRef, {
         [`${prefix}characters`]: selectedChars,
         [`${prefix}allCharacters`]: allSiblings,
-        [`${prefix}mainCharacter`]: selectedChars[0]?.name || '',
+        [`${prefix}mainCharacter`]: repChar,
         [`${prefix}weeklyChecklist`]: newChecklist,
         lastUpdated: new Date().toISOString(),
       });
@@ -800,8 +892,13 @@ export default function MyPage() {
 
   // 원정대 편집 열기
   const openEditModal = () => {
-    // 현재 선택된 캐릭터들 체크
-    setSelectedCharNames(new Set(characters.map(c => c.name)));
+    const uniqueNames = [...new Set(characters.map(c => c.name))];
+    setSelectedCharNames(new Set(uniqueNames));
+    setSelectedCharOrder(uniqueNames);
+    // 기존 대표 캐릭터 또는 첫 번째
+    const expData = getExpeditionData(userProfile, activeExpedition);
+    const currentMain = activeExpedition === 1 ? userProfile?.mainCharacter : expData.chars[0]?.name;
+    setSelectedRepChar(currentMain || characters[0]?.name || '');
     setShowEditModal(true);
   };
 
@@ -812,10 +909,13 @@ export default function MyPage() {
     setIsRegistering(true);
 
     try {
-      const selectedChars = allSiblings.filter(c => selectedCharNames.has(c.name))
-        .sort((a, b) => b.itemLevel - a.itemLevel);
+      const orderedNames = selectedCharOrder.filter(n => selectedCharNames.has(n));
+      const selectedChars = orderedNames
+        .map(name => allSiblings.find(c => c.name === name)!)
+        .filter(Boolean);
 
-      // 주간 체크리스트 유지하면서 업데이트
+      const repChar = selectedRepChar || selectedChars[0]?.name || '';
+
       const newChecklist: WeeklyChecklist = {};
       selectedChars.forEach(char => {
         newChecklist[char.name] = weeklyChecklist[char.name] || createEmptyWeeklyState(char.itemLevel);
@@ -828,7 +928,7 @@ export default function MyPage() {
       const prefix = getFirestorePrefix(activeExpedition);
       await updateDoc(userRef, {
         [`${prefix}characters`]: selectedChars,
-        [`${prefix}mainCharacter`]: selectedChars[0]?.name || '',
+        [`${prefix}mainCharacter`]: repChar,
         [`${prefix}weeklyChecklist`]: newChecklist,
       });
 
@@ -919,21 +1019,21 @@ export default function MyPage() {
     if (result.success && result.character) {
       const updatedChar = result.character;
 
-      // 로컬 상태 업데이트
-      setCharacters(prev => {
-        const newChars = prev.map(c => {
-          if (c.name === characterName) {
-            // 기존 이미지가 있고 새 이미지가 없으면 기존 이미지 유지
-            if (c.imageUrl && !updatedChar.imageUrl) {
-              return { ...updatedChar, imageUrl: c.imageUrl };
-            }
-            return updatedChar;
+      // 로컬 상태 업데이트 (순서 유지)
+      setCharacters(prev => prev.map(c => {
+        if (c.name === characterName) {
+          if (c.imageUrl && !updatedChar.imageUrl) {
+            return { ...updatedChar, imageUrl: c.imageUrl };
           }
-          return c;
-        });
-        // 레벨 높은 순 재정렬
-        return newChars.sort((a, b) => b.itemLevel - a.itemLevel);
-      });
+          return updatedChar;
+        }
+        return c;
+      }));
+
+      // allSiblings도 갱신 (편집 모달에 반영)
+      setAllSiblings(prev => prev.map(c =>
+        c.name === characterName ? { ...updatedChar, imageUrl: c.imageUrl || updatedChar.imageUrl } : c
+      ));
 
       setLastRefreshTime(prev => ({ ...prev, [characterName]: Date.now() }));
       setHasChanges(true);
@@ -949,15 +1049,34 @@ export default function MyPage() {
         characters.find(c => c.name === charName)?.itemLevel || 0
       );
       let currentRaidState = charState.raids[raidName] || [];
-      // 레이드가 초기화되지 않은 경우 (새로 추가된 레이드) → 게이트 수만큼 배열 생성
       if (currentRaidState.length === 0) {
-        const raidData = raids.find(r => r.name === raidName);
+        const raidData = raidMap.get(raidName);
         if (raidData) {
           currentRaidState = new Array(raidData.gates.length).fill(false);
         }
       }
       const allChecked = currentRaidState.length > 0 && currentRaidState.every(v => v);
-      const newRaidState = currentRaidState.map(() => !allChecked);
+      const willCheck = !allChecked;
+      const newRaidState = currentRaidState.map(() => willCheck);
+
+      // 골드 수령 + 더보기 자동 관리
+      const currentReceive = { ...(charState.raidGoldReceive || {}) };
+      const currentMore = { ...(charState.raidMoreGoldExclude || {}) };
+      if (willCheck) {
+        // 현재 체크된 다른 레이드 중 골드 수령 중인 개수 (undefined = 골드 수령)
+        const checkedGoldCount = Object.entries(charState.raids).filter(([name, gates]) => {
+          if (name === raidName) return false;
+          if (!gates.some(v => v)) return false;
+          return currentReceive[name] !== false;
+        }).length;
+        // 3개 이하까지 골드+더보기 활성화, 4개부터 비활성화
+        const withinLimit = checkedGoldCount < 3;
+        currentReceive[raidName] = withinLimit;
+        currentMore[raidName] = withinLimit;
+      } else {
+        delete currentReceive[raidName];
+        delete currentMore[raidName];
+      }
 
       return {
         ...prev,
@@ -967,6 +1086,8 @@ export default function MyPage() {
             ...charState.raids,
             [raidName]: newRaidState,
           },
+          raidGoldReceive: currentReceive,
+          raidMoreGoldExclude: currentMore,
         },
       };
     });
@@ -990,7 +1111,7 @@ export default function MyPage() {
     setHasChanges(true);
   };
 
-  // 일일 컨텐츠 (카던/가토) 요일별 토글
+  // 일일 컨텐츠 (카던/가토) 요일별 사이클 (0→1→2→3→4→0)
   const toggleDailyCheck = (charName: string, field: 'chaosDungeon' | 'guardianRaid', dayIdx: number) => {
     setWeeklyChecklist(prev => {
       const charState = prev[charName] || createEmptyWeeklyState(
@@ -998,14 +1119,16 @@ export default function MyPage() {
       );
       const current: DailyContentState = charState[field] && typeof charState[field] === 'object'
         ? charState[field] as DailyContentState
-        : { checks: new Array(7).fill(false), restGauge: 0 };
+        : { checks: new Array(7).fill(0) };
       const newChecks = [...current.checks];
-      newChecks[dayIdx] = !newChecks[dayIdx];
+      const maxVal = field === 'guardianRaid' ? 2 : 4;
+      const cur = typeof newChecks[dayIdx] === 'number' ? newChecks[dayIdx] : (newChecks[dayIdx] ? 1 : 0);
+      newChecks[dayIdx] = cur >= maxVal ? 0 : cur + 1;
       return {
         ...prev,
         [charName]: {
           ...charState,
-          [field]: { ...current, checks: newChecks },
+          [field]: { checks: newChecks },
         },
       };
     });
@@ -1013,25 +1136,6 @@ export default function MyPage() {
   };
 
   // 휴게 수동 설정
-  const setRestGauge = (charName: string, field: 'chaosDungeon' | 'guardianRaid', value: number) => {
-    setWeeklyChecklist(prev => {
-      const charState = prev[charName] || createEmptyWeeklyState(
-        characters.find(c => c.name === charName)?.itemLevel || 0
-      );
-      const current: DailyContentState = charState[field] && typeof charState[field] === 'object'
-        ? charState[field] as DailyContentState
-        : { checks: new Array(7).fill(false), restGauge: 0 };
-      return {
-        ...prev,
-        [charName]: {
-          ...charState,
-          [field]: { ...current, restGauge: value },
-        },
-      };
-    });
-    setHasChanges(true);
-  };
-
   // 공통 컨텐츠 토글 (key: "요일번호-컨텐츠명")
   const toggleCommonContent = (day: number, contentName: string) => {
     const key = `${day}-${contentName}`;
@@ -1071,7 +1175,7 @@ export default function MyPage() {
   const changeRaidDifficulty = (charName: string, oldRaidName: string, newRaidName: string) => {
     if (oldRaidName === newRaidName) return;
 
-    const newRaid = raids.find(r => r.name === newRaidName);
+    const newRaid = raidMap.get(newRaidName);
     if (!newRaid) return;
 
     setWeeklyChecklist(prev => {
@@ -1132,23 +1236,38 @@ export default function MyPage() {
     setHasChanges(true);
   };
 
-  // 더보기 비용 골드 제외 토글 (전체) - deprecated but kept for compatibility
-  const toggleExcludeMoreGold = (charName: string) => {
+  // 골드 수령 토글
+  const toggleRaidGoldReceive = (charName: string, raidName: string) => {
     setWeeklyChecklist(prev => {
       const charState = prev[charName] || createEmptyWeeklyState(
         characters.find(c => c.name === charName)?.itemLevel || 0
       );
-      // 기본값은 true (체크됨)
-      const currentValue = charState.excludeMoreGold !== false;
+      const currentReceive = charState.raidGoldReceive || {};
+      const currentValue = currentReceive[raidName] !== false; // 기본 true
+
       return {
         ...prev,
         [charName]: {
           ...charState,
-          excludeMoreGold: !currentValue,
+          raidGoldReceive: {
+            ...currentReceive,
+            [raidName]: !currentValue,
+          },
         },
       };
     });
     setHasChanges(true);
+  };
+
+  // 체크된 레이드 중 골드 수령 개수 계산
+  const getGoldReceiveCount = (charName: string): number => {
+    const charState = weeklyChecklist[charName];
+    if (!charState) return 0;
+    return Object.entries(charState.raids).filter(([raidName, gates]) => {
+      const isChecked = gates.some(v => v);
+      const receiveGold = charState.raidGoldReceive?.[raidName] !== false;
+      return isChecked && receiveGold;
+    }).length;
   };
 
   // 체크된 레이드 목록 가져오기
@@ -1159,7 +1278,7 @@ export default function MyPage() {
     return Object.entries(charState.raids)
       .filter(([_, gates]) => gates.some(v => v))
       .map(([raidName]) => {
-        const raid = raids.find(r => r.name === raidName);
+        const raid = raidMap.get(raidName);
         return raid ? { name: raidName, raid } : null;
       })
       .filter(Boolean) as { name: string; raid: typeof raids[0] }[];
@@ -1177,9 +1296,26 @@ export default function MyPage() {
       const { db } = await import('@/lib/firebase-client');
       const userRef = doc(db, 'users', user.uid);
 
+      // allSiblings에 갱신된 캐릭터 레벨 반영 + 중복 제거
+      const sibMap = new Map<string, typeof allSiblings[0]>();
+      allSiblings.forEach(s => {
+        const updated = characters.find(c => c.name === s.name);
+        const merged = updated ? { ...s, itemLevel: updated.itemLevel, imageUrl: updated.imageUrl || s.imageUrl } : s;
+        const ex = sibMap.get(merged.name);
+        if (!ex || merged.itemLevel > ex.itemLevel) sibMap.set(merged.name, merged);
+      });
+      const updatedSiblings = Array.from(sibMap.values());
+      setAllSiblings(updatedSiblings);
+
+      // characters 중복 제거
+      const charMap = new Map<string, typeof characters[0]>();
+      characters.forEach(c => { const ex = charMap.get(c.name); if (!ex || c.itemLevel > ex.itemLevel) charMap.set(c.name, c); });
+      const cleanChars = Array.from(charMap.values());
+
       const prefix = getFirestorePrefix(activeExpedition);
       await updateDoc(userRef, {
-        [`${prefix}characters`]: characters,
+        [`${prefix}characters`]: cleanChars,
+        [`${prefix}allCharacters`]: updatedSiblings,
         [`${prefix}weeklyChecklist`]: weeklyChecklist,
         [`${prefix}commonContent`]: commonContent,
       });
@@ -1207,8 +1343,8 @@ export default function MyPage() {
   // 카오스게이트 레벨 티어
   const chaosGateLevelTier = maxCharLevel >= 1750 ? '1750' : '1730';
 
-  // 총 골드 계산
-  const calculateTotalGold = useCallback(() => {
+  // 총 골드 계산 (useMemo로 값 캐싱 — 매 렌더마다 재계산 방지)
+  const totalGold = useMemo(() => {
     let total = 0;
 
     characters.forEach(char => {
@@ -1216,19 +1352,18 @@ export default function MyPage() {
       if (!state) return;
 
       Object.entries(state.raids).forEach(([raidName, gates]) => {
-        const raid = raids.find(r => r.name === raidName);
+        const raid = raidMap.get(raidName);
         if (raid) {
-          // 레이드별 더보기 설정 확인 (체크 = 더보기 구매 = 비용 차감)
+          const receiveGold = state.raidGoldReceive?.[raidName] !== false;
           const buyMore = state.raidMoreGoldExclude?.[raidName] === true;
 
           gates.forEach((checked, i) => {
             if (checked && raid.gates[i]) {
-              if (buyMore) {
-                // 더보기 구매: 골드 - 더보기 비용
-                total += raid.gates[i].gold - raid.gates[i].moreGold;
-              } else {
-                // 더보기 안 함: 풀 골드
+              if (receiveGold) {
                 total += raid.gates[i].gold;
+              }
+              if (buyMore) {
+                total -= raid.gates[i].moreGold;
               }
             }
           });
@@ -1329,106 +1464,11 @@ export default function MyPage() {
       <Container fluid className={styles.container}>
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>마이페이지</h1>
-          <div className={styles.headerRight}>
-            <a
-              href="https://forms.gle/n9XKQJmheLhZcSf69"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.feedbackBtn}
-            >
-              문의하기
-            </a>
-            <button
-              className={styles.registerBtn}
-              onClick={() => setShowRegisterModal(true)}
-            >
-              + {activeExpedition > 1 ? `원정대${activeExpedition} ` : ''}캐릭터 등록
-            </button>
-            {characters.length > 0 && (
-              <button
-                className={styles.editBtn}
-                onClick={openEditModal}
-              >
-                원정대{activeExpedition > 1 ? ` ${activeExpedition}` : ''} 편집
-              </button>
-            )}
-            <button
-              className={`${styles.saveButton} ${hasChanges ? styles.hasChanges : ''}`}
-              onClick={handleSave}
-              disabled={!hasChanges || isSaving}
-            >
-              {isSaving ? <Spinner animation="border" size="sm" /> : '저장하기'}
-            </button>
-            <div className={styles.totalGoldBadge}>
-              <span className={styles.goldLabel}>이번 주 예상</span>
-              <span className={styles.goldAmount}>{calculateTotalGold().toLocaleString()}G</span>
-            </div>
-          </div>
         </div>
 
-        {/* 닉네임 섹션 */}
-        <div className={styles.nicknameSection}>
-          {!editingNickname ? (
-            <div className={styles.nicknameDisplay}>
-              <span className={styles.nicknameLabel}>닉네임:</span>
-              <span className={styles.nicknameValue}>
-                {userProfile?.nickname || '미설정'}
-              </span>
-              <button
-                className={styles.nicknameEditBtn}
-                onClick={() => {
-                  setEditingNickname(true);
-                  setNewNickname(userProfile?.nickname || '');
-                }}
-              >
-                변경
-              </button>
-            </div>
-          ) : (
-            <div className={styles.nicknameEdit}>
-              <input
-                type="text"
-                className={styles.nicknameInput}
-                value={newNickname}
-                onChange={(e) => setNewNickname(e.target.value)}
-                placeholder="새 닉네임"
-                maxLength={12}
-                disabled={isSavingNickname}
-              />
-              <button
-                className={styles.nicknameSaveBtn}
-                onClick={handleSaveNickname}
-                disabled={nicknameStatus !== 'available' || isSavingNickname}
-              >
-                {isSavingNickname ? <Spinner animation="border" size="sm" /> : '저장'}
-              </button>
-              <button
-                className={styles.nicknameCancelBtn}
-                onClick={() => {
-                  setEditingNickname(false);
-                  setNewNickname('');
-                  setNicknameStatus('idle');
-                  setNicknameMessage('');
-                }}
-                disabled={isSavingNickname}
-              >
-                취소
-              </button>
-              {nicknameMessage && (
-                <span className={`${styles.nicknameFeedback} ${
-                  nicknameStatus === 'available' ? styles.feedbackSuccess :
-                  nicknameStatus === 'taken' || nicknameStatus === 'invalid' ? styles.feedbackError :
-                  ''
-                }`}>
-                  {nicknameMessage}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* 원정대 탭 */}
-        <div className={styles.expeditionTabs}>
+        {/* 원정대 탭 + 버튼 */}
+        <div className={styles.expeditionRow}>
+          <div className={styles.expeditionTabs}>
           {([1, 2, 3] as const).map(idx => {
             const expData = getExpeditionData(userProfile, idx);
             const hasData = expData.chars.length > 0;
@@ -1443,6 +1483,26 @@ export default function MyPage() {
               </button>
             );
           })}
+          </div>
+          <div className={styles.expeditionBtns}>
+            <button className={styles.registerBtn} onClick={() => setShowRegisterModal(true)}>
+              + 캐릭터 등록
+            </button>
+            {characters.length > 0 && (
+              <button className={styles.editBtn} onClick={openEditModal}>편집</button>
+            )}
+            <button
+              className={`${styles.saveButton} ${hasChanges ? styles.hasChanges : ''}`}
+              onClick={handleSave}
+              disabled={!hasChanges || isSaving}
+            >
+              {isSaving ? <Spinner animation="border" size="sm" /> : '저장'}
+            </button>
+            <div className={styles.totalGoldBadge}>
+              <span className={styles.goldLabel}>이번 주 예상</span>
+              <span className={styles.goldAmount}>{totalGold.toLocaleString()}G</span>
+            </div>
+          </div>
         </div>
 
         {saveMessage && (
@@ -1456,58 +1516,6 @@ export default function MyPage() {
             <Spinner animation="border" size="sm" /> 캐릭터 이미지 로딩 중...
           </div>
         )}
-
-        {/* 원정대 공통 컨텐츠 */}
-        {characters.length > 0 && (() => {
-          const { dayOfWeek } = getKSTWeekInfo();
-          // 요일 순서: 월(1) 화(2) 목(4) 금(5) 토(6) 일(0) — 수요일은 컨텐츠 없으므로 제외
-          const dayOrder = [1, 2, 4, 5, 6, 0];
-          const renderDayGroup = (day: number) => {
-            const dayContents = COMMON_CONTENTS.filter(c => c.days.includes(day));
-            const isToday = day === dayOfWeek;
-
-            return (
-              <div key={day} className={`${styles.commonDayGroup} ${isToday ? styles.commonDayToday : ''}`} style={{ flex: dayContents.length }}>
-                <div className={styles.commonDayLabel}>{DAY_LABELS[day]}</div>
-                <div className={styles.commonDayCards}>
-                  {dayContents.map(content => {
-                    const key = `${day}-${content.name}`;
-                    const checked = commonContent.checks[key] === true;
-                    return (
-                      <div
-                        key={key}
-                        className={`${styles.commonCard} ${checked ? styles.commonChecked : ''}`}
-                        onClick={() => toggleCommonContent(day, content.name)}
-                      >
-                        <div className={styles.commonCardBg} style={{ background: content.color }}>
-                          <CardBgImage src={content.image} alt={content.name} className={styles.raidImage} />
-                        </div>
-                        <div className={styles.commonCardOverlay} />
-                        <div className={styles.commonCardInfo}>
-                          <span className={styles.commonCardName}>{content.name}</span>
-                          {content.gold > 0 && (
-                            <span className={styles.commonCardGold}>{content.gold.toLocaleString()}G</span>
-                          )}
-                          <span className={styles.raidLevel}>Lv.{content.level}</span>
-                        </div>
-                        {checked && <div className={styles.commonCardCheck}>✓</div>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          };
-
-          return (
-            <div className={styles.commonSection}>
-              <div className={styles.commonHeader}>원정대 공통 컨텐츠</div>
-              <div className={styles.commonRow}>
-                {dayOrder.map(renderDayGroup)}
-              </div>
-            </div>
-          );
-        })()}
 
         {/* 캐릭터 없음 */}
         {characters.length === 0 && (
@@ -1550,25 +1558,28 @@ export default function MyPage() {
             // 캐릭터별 골드 계산
             let charGold = 0;
             Object.entries(charState.raids).forEach(([raidName, gates]) => {
-              const raid = raids.find(r => r.name === raidName);
+              const raid = raidMap.get(raidName);
               if (raid) {
-                // 레이드별 더보기 설정 확인 (체크 = 더보기 구매 = 비용 차감)
+                const receiveGold = charState.raidGoldReceive?.[raidName] !== false;
                 const buyMore = charState.raidMoreGoldExclude?.[raidName] === true;
-
                 gates.forEach((checked, i) => {
                   if (checked && raid.gates[i]) {
-                    if (buyMore) {
-                      // 더보기 구매: 골드 - 더보기 비용
-                      charGold += raid.gates[i].gold - raid.gates[i].moreGold;
-                    } else {
-                      // 더보기 안 함: 풀 골드
-                      charGold += raid.gates[i].gold;
-                    }
+                    if (receiveGold) charGold += raid.gates[i].gold;
+                    if (buyMore) charGold -= raid.gates[i].moreGold;
                   }
                 });
               }
             });
             charGold += charState.additionalGold || 0;
+            // 대표 캐릭터: 공통 컨텐츠 골드 포함
+            if (char.name === representativeChar) {
+              Object.entries(commonContent.checks).forEach(([key, checked]) => {
+                if (!checked) return;
+                const contentName = key.split('-').slice(1).join('-');
+                const content = COMMON_CONTENTS.find(c => c.name === contentName);
+                if (content?.gold) charGold += content.gold;
+              });
+            }
 
             // 체크된 레이드 목록
             const checkedRaids = getCheckedRaids(char.name);
@@ -1576,13 +1587,16 @@ export default function MyPage() {
 
             // 재화 데이터
             const chaosReward = getChaosDailyReward(char.itemLevel);
-            const chaosChecks = charState.chaosDungeon?.checks.filter(Boolean).length || 0;
+            const chaosChecks = charState.chaosDungeon?.checks.reduce((s, v) => s + (typeof v === 'number' ? v : (v ? 1 : 0)), 0) || 0;
             const guardianReward = getGuardianDailyReward(char.itemLevel);
-            const guardianChecks = charState.guardianRaid?.checks.filter(Boolean).length || 0;
+            const guardianChecks = charState.guardianRaid?.checks.reduce((s, v) => s + (typeof v === 'number' ? v : (v ? 1 : 0)), 0) || 0;
             const hasChaos = chaosReward && chaosChecks > 0;
             const hasGuardian = guardianReward && guardianChecks > 0;
 
             // 일일 컨텐츠 렌더 함수 (데스크톱: 오른쪽 상자, 모바일: 카드 내부)
+            const MULTI_COLORS = ['', styles.dailyX1, styles.dailyX2, styles.dailyX3, styles.dailyX4];
+            const MULTI_CARD_COLORS = ['', styles.dailyCardX1, styles.dailyCardX2, styles.dailyCardX3, styles.dailyCardX4];
+            const MULTI_LABELS = ['', '일반', '휴게', 'PC방', 'PC방+휴게'];
             const renderDailySide = (
               label: string,
               field: 'chaosDungeon' | 'guardianRaid',
@@ -1592,66 +1606,24 @@ export default function MyPage() {
                 charState[field] && typeof charState[field] === 'object'
                   ? charState[field] as DailyContentState
                   : EMPTY_DAILY;
-              const gameDayIdx = getCurrentGameDayIdx();
-              const rest = computeCurrentRest(state, gameDayIdx);
-              const fullBars = Math.floor(rest / 20);
-              const hasHalf = (rest % 20) >= 10;
-
-              const bonusFlags: boolean[] = [];
-              let r = state.restGauge;
-              for (let i = 0; i < 7; i++) {
-                if (i <= gameDayIdx) {
-                  if (state.checks[i]) {
-                    if (r >= 20) { bonusFlags.push(true); r -= 20; }
-                    else { bonusFlags.push(false); }
-                  } else {
-                    bonusFlags.push(false);
-                    if (i < gameDayIdx) r = Math.min(100, r + 10);
-                  }
-                } else { bonusFlags.push(false); }
-              }
-
-              const settingsKey = `${char.name}-${field}`;
-              const isSettingsOpen = dailySettingsOpen === settingsKey;
+              const maxVal = Math.max(...state.checks.map(v => typeof v === 'number' ? v : (v ? 1 : 0)), 0);
 
               return (
-                <div className={blockClass}>
+                <div className={`${blockClass} ${MULTI_CARD_COLORS[maxVal] || ''}`}>
                   <div className={styles.dailyHeader}>
                     <span className={styles.dailyLabel}>{label}</span>
-                    <span className={styles.restRowLabel}>휴게</span>
-                    <div className={styles.restGauge}>
-                      {[0, 1, 2, 3, 4].map(i => {
-                        const isFull = i < fullBars;
-                        const isHalf = i === fullBars && hasHalf;
-                        return (
-                          <div
-                            key={i}
-                            className={`${styles.restBar} ${isFull ? styles.restFull : ''} ${isHalf ? styles.restHalf : ''}`}
-                            onClick={() => {
-                              if (isFull || isHalf) {
-                                // 찬 칸 클릭 → 빼기
-                                setRestGauge(char.name, field, Math.max(0, state.restGauge - 20));
-                              } else {
-                                // 빈 칸 클릭 → 채우기
-                                setRestGauge(char.name, field, Math.min(100, state.restGauge + 20));
-                              }
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
                   </div>
                   <div className={styles.dailyChecks}>
                     {WEEKLY_DAY_LABELS.map((day, idx) => {
-                      const checked = state.checks[idx];
+                      const val = typeof state.checks[idx] === 'number' ? state.checks[idx] : (state.checks[idx] ? 1 : 0);
                       return (
                         <button
                           key={idx}
-                          className={`${styles.dailyDayBtn} ${checked ? (bonusFlags[idx] ? styles.dailyBonusChecked : styles.dailyChecked) : ''}`}
+                          className={`${styles.dailyDayBtn} ${val > 0 ? MULTI_COLORS[val] : ''}`}
                           onClick={() => toggleDailyCheck(char.name, field, idx)}
                         >
-                          {checked
-                            ? <span className={styles.dailyCheckMark}>✓</span>
+                          {val > 0
+                            ? <span className={styles.dailyCheckMark}>×{val}</span>
                             : <span className={styles.dailyDayText}>{day}</span>
                           }
                         </button>
@@ -1667,7 +1639,7 @@ export default function MyPage() {
               <div className={styles.characterCard}>
                 {/* 카드 헤더: 닉네임 + 갱신버튼 + 레벨 */}
                 <div className={styles.cardHeader}>
-                  <span className={styles.characterName}>{char.name}</span>
+                  <span className={styles.characterName}>{char.name}{char.name === representativeChar && <span className={styles.repBadge}>대표</span>}</span>
                   <div className={styles.headerRight}>
                     <button
                       className={`${styles.refreshBtn} ${!canRefresh(char.name) ? styles.refreshDisabled : ''}`}
@@ -1780,14 +1752,26 @@ export default function MyPage() {
                                   </div>
                                   {checked && (
                                     <div
-                                      className={`${styles.raidMoreCheck} ${charState.raidMoreGoldExclude?.[raid.name] ? styles.raidMoreActive : styles.raidMoreInactive}`}
+                                      className={`${styles.raidMoreBadge} ${charState.raidMoreGoldExclude?.[raid.name] ? styles.raidMoreBadgeActive : ''}`}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         toggleRaidMoreGoldExclude(char.name, raid.name);
                                       }}
-                                      title={charState.raidMoreGoldExclude?.[raid.name] ? '더보기 구매 중 (클릭하여 해제)' : '더보기 미구매 (클릭하여 구매)'}
+                                      title={charState.raidMoreGoldExclude?.[raid.name] ? '더보기 구매 중' : '더보기 미구매'}
                                     >
-                                      ✓
+                                      더보기
+                                    </div>
+                                  )}
+                                  {checked && (
+                                    <div
+                                      className={`${styles.raidGoldIcon} ${charState.raidGoldReceive?.[raid.name] !== false ? styles.raidGoldActive : styles.raidGoldInactive}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleRaidGoldReceive(char.name, raid.name);
+                                      }}
+                                      title={charState.raidGoldReceive?.[raid.name] !== false ? '골드 수령 중' : '골드 미수령'}
+                                    >
+                                      <Image src="/gold.webp" alt="골드" width={18} height={18} />
                                     </div>
                                   )}
                                   {checked && <div className={styles.raidCheck}>✓</div>}
@@ -1845,207 +1829,185 @@ export default function MyPage() {
                       );
                     })()}
 
-                    {/* 2줄: (데스크톱:카던+) 가디언토벌 + 모래시계/낙원 + 낙원/빈칸 */}
-                    <div className={styles.itemRow}>
-                      {/* 카던 (데스크톱만, 이미지 없음, 텍스트) */}
-                      {isDesktop && (() => {
-                        const chaosState: DailyContentState =
-                          charState.chaosDungeon && typeof charState.chaosDungeon === 'object'
-                            ? charState.chaosDungeon as DailyContentState
-                            : EMPTY_DAILY;
+                    {/* 2줄: 일일+공통 (1줄과 동일 스크롤 구조) */}
+                    {(() => {
+                      // 모든 2줄 카드를 배열로 구성
+                      type Row2Card = { id: string; render: () => React.ReactNode };
+                      const row2Cards: Row2Card[] = [];
+
+                      // 균열/전선
+                      row2Cards.push({ id: 'chaos', render: () => {
+                        const chaosState: DailyContentState = charState.chaosDungeon && typeof charState.chaosDungeon === 'object' ? charState.chaosDungeon as DailyContentState : EMPTY_DAILY;
                         const gameDayIdx = getCurrentGameDayIdx();
-                        const todayChecked = chaosState.checks[gameDayIdx];
+                        const chaosVal = typeof chaosState.checks[gameDayIdx] === 'number' ? chaosState.checks[gameDayIdx] : (chaosState.checks[gameDayIdx] ? 1 : 0);
                         return (
-                          <div
-                            className={`${styles.raidCard} ${todayChecked ? styles.raidChecked : ''}`}
-                            onClick={() => toggleDailyCheck(char.name, 'chaosDungeon', gameDayIdx)}
-                          >
-                            <CardBgImage src={char.itemLevel >= 1730 ? '/zkejs.webp' : '/wjstjs.webp'} alt={char.itemLevel >= 1730 ? '균열' : '전선'} className={styles.raidImage} />
+                          <div className={`${styles.raidCard} ${chaosVal > 0 ? MULTI_CARD_COLORS[chaosVal] : ''}`} onClick={() => toggleDailyCheck(char.name, 'chaosDungeon', gameDayIdx)}>
+                            <CardBgImage src={char.itemLevel >= 1730 ? '/zkejs.webp' : '/wjstjs.webp'} alt="" className={styles.raidImage} />
                             <div className={styles.raidOverlay} />
                             <div className={styles.raidInfo}>
-                              <span className={styles.raidName}>{getChaosDungeonLabel(char.itemLevel)}</span>
+                              <span className={styles.raidName}>{char.itemLevel >= 1730 ? '균열' : '전선'}</span>
+                              <span className={styles.raidLevel}>Lv.{char.itemLevel >= 1750 ? '1750' : char.itemLevel >= 1730 ? '1730' : char.itemLevel >= 1720 ? '1720' : char.itemLevel >= 1700 ? '1700' : char.itemLevel >= 1680 ? '1680' : '1640'}</span>
                             </div>
-                            {todayChecked && <div className={styles.raidCheck}>✓</div>}
+                            <div className={styles.dailyCardLegend}>
+                              <div className={styles.dailyLegendGrid}>
+                                <span className={styles.dailyLegendRow}><span className={`${styles.legendDotLg} ${styles.dailyX1}`}>1</span>일반</span>
+                                <span className={styles.dailyLegendRow}><span className={`${styles.legendDotLg} ${styles.dailyX2}`}>2</span>휴게</span>
+                                <span className={styles.dailyLegendRow}><span className={`${styles.legendDotLg} ${styles.dailyX3}`}>3</span>PC방</span>
+                                <span className={styles.dailyLegendRow}><span className={`${styles.legendDotLg} ${styles.dailyX4}`}>4</span>PC방+휴게</span>
+                              </div>
+                            </div>
+                            {chaosVal > 0 && <div className={`${styles.raidCheck} ${MULTI_COLORS[chaosVal]}`}>×{chaosVal}</div>}
                           </div>
                         );
-                      })()}
+                      }});
 
-                      {/* 가디언 토벌 (전 캐릭터) */}
-                      {(() => {
-                        const guardianState: DailyContentState =
-                          charState.guardianRaid && typeof charState.guardianRaid === 'object'
-                            ? charState.guardianRaid as DailyContentState
-                            : EMPTY_DAILY;
+                      // 가토
+                      row2Cards.push({ id: 'guardian', render: () => {
+                        const guardianState: DailyContentState = charState.guardianRaid && typeof charState.guardianRaid === 'object' ? charState.guardianRaid as DailyContentState : EMPTY_DAILY;
                         const gameDayIdx = getCurrentGameDayIdx();
-                        const todayChecked = guardianState.checks[gameDayIdx];
+                        const guardVal = typeof guardianState.checks[gameDayIdx] === 'number' ? guardianState.checks[gameDayIdx] : (guardianState.checks[gameDayIdx] ? 1 : 0);
                         const guardian = getCurrentGuardian(char.itemLevel);
                         return (
-                          <div
-                            className={`${styles.raidCard} ${todayChecked ? styles.raidChecked : ''}`}
-                            onClick={() => toggleDailyCheck(char.name, 'guardianRaid', gameDayIdx)}
-                          >
-                            {guardian.image ? (
-                              <CardBgImage src={guardian.image} alt={guardian.name} className={styles.raidImage} />
-                            ) : (
-                              <div className={styles.guardianCardPlaceholder} />
-                            )}
+                          <div className={`${styles.raidCard} ${guardVal > 0 ? MULTI_CARD_COLORS[guardVal] : ''}`} onClick={() => toggleDailyCheck(char.name, 'guardianRaid', gameDayIdx)}>
+                            {guardian.image ? <CardBgImage src={guardian.image} alt={guardian.name} className={styles.raidImage} /> : <div className={styles.guardianCardPlaceholder} />}
                             <div className={styles.raidOverlay} />
                             <div className={styles.raidInfo}>
                               <span className={styles.raidName}>{guardian.name}</span>
                               {guardian.element && <span className={styles.raidDifficulty}>{guardian.element}</span>}
-                              <span className={styles.raidLevel}>Lv.{char.itemLevel >= 1750 ? '1750' : char.itemLevel >= 1730 ? '1730' : char.itemLevel >= 1720 ? '1720' : char.itemLevel >= 1700 ? '1700' : char.itemLevel >= 1680 ? '1680' : '1640'}</span>
                             </div>
-                            {todayChecked && <div className={styles.raidCheck}>✓</div>}
+                            <div className={styles.dailyCardLegend}>
+                              <div className={styles.dailyLegendGrid}>
+                                <span className={styles.dailyLegendRow}><span className={`${styles.legendDotLg} ${styles.dailyX1}`}>1</span>일반</span>
+                                <span className={styles.dailyLegendRow}><span className={`${styles.legendDotLg} ${styles.dailyX2}`}>2</span>휴게</span>
+                              </div>
+                            </div>
+                            {guardVal > 0 && <div className={`${styles.raidCheck} ${MULTI_COLORS[guardVal]}`}>×{guardVal}</div>}
                           </div>
                         );
-                      })()}
+                      }});
 
-                      {/* 1730+: 모래시계 / <1730: 낙원 */}
-                      {char.itemLevel >= 1730 ? (
-                        <div
-                          className={`${styles.raidCard} ${charState.sandOfTime ? styles.raidChecked : ''}`}
-                          onClick={() => toggleExtra(char.name, 'sandOfTime')}
-                        >
-                          <CardBgImage src="/gkf.webp" alt="할의 모래시계" className={styles.raidImage} />
-                          <div className={styles.raidOverlay} />
-                          <div className={styles.raidInfo}>
-                            <span className={styles.raidName}>모래시계</span>
-                            <span className={styles.raidLevel}>Lv.{char.itemLevel >= 1750 ? '1750' : '1730'}</span>
+                      // 모래시계 (1730+) / 낙원 (<1730)
+                      if (char.itemLevel >= 1730) {
+                        row2Cards.push({ id: 'sand', render: () => (
+                          <div className={`${styles.raidCard} ${charState.sandOfTime ? styles.raidChecked : ''}`} onClick={() => toggleExtra(char.name, 'sandOfTime')}>
+                            <CardBgImage src="/gkf.webp" alt="할의 모래시계" className={styles.raidImage} />
+                            <div className={styles.raidOverlay} />
+                            <div className={styles.sandTimeLevels} onClick={(e) => e.stopPropagation()}>
+                              <span className={styles.sandTimeLevelLabel}>보상강화</span>
+                              <div className={styles.sandTimeBtns}>
+                                {[1,2,3,4,5].map(lv => {
+                                  const currentLv = charState.sandOfTimeLevel || 0;
+                                  return <button key={lv} className={`${styles.sandTimeLvBtn} ${lv <= currentLv ? styles.sandTimeLvActive : ''}`} onClick={() => { setWeeklyChecklist(prev => ({ ...prev, [char.name]: { ...prev[char.name], sandOfTimeLevel: currentLv === lv ? lv - 1 : lv }})); setHasChanges(true); }} />;
+                                })}
+                              </div>
+                            </div>
+                            <div className={styles.raidInfo}>
+                              <span className={styles.raidName}>모래시계</span>
+                              <span className={styles.raidLevel}>Lv.{char.itemLevel >= 1750 ? '1750' : '1730'}</span>
+                            </div>
+                            {charState.sandOfTime && <div className={styles.raidCheck}>✓</div>}
                           </div>
-                          {charState.sandOfTime && <div className={styles.raidCheck}>✓</div>}
-                        </div>
-                      ) : (
-                        <div
-                          className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`}
-                          onClick={() => toggleExtra(char.name, 'paradise')}
-                        >
-                          <CardBgImage src="/skrdnjs.webp" alt="낙원" className={styles.raidImage} />
-                          <div className={styles.raidOverlay} />
-                          <div className={styles.raidInfo}>
-                            <span className={styles.raidName}>낙원</span>
+                        )});
+                        // 대표: 공통 컨텐츠 (낙원보다 먼저)
+                        if (char.name === representativeChar) {
+                          const { dayOfWeek } = getKSTWeekInfo();
+                          const todayContents = COMMON_CONTENTS.filter(c => c.days.includes(dayOfWeek));
+                          todayContents.forEach(content => {
+                            row2Cards.push({ id: `common-${content.name}`, render: () => {
+                              const key = `${dayOfWeek}-${content.name}`;
+                              const checked = commonContent.checks[key] === true;
+                              return (
+                                <div className={`${styles.raidCard} ${checked ? styles.raidChecked : ''}`} onClick={() => toggleCommonContent(dayOfWeek, content.name)}>
+                                  <div className={styles.commonCardBg} style={{ background: content.color }}><CardBgImage src={content.image} alt={content.name} className={styles.raidImage} /></div>
+                                  <div className={styles.raidOverlay} />
+                                  <div className={styles.raidInfo}>
+                                    <span className={styles.raidName}>{content.shortName}</span>
+                                    {content.gold > 0 && <span className={styles.raidLevel}>{content.gold.toLocaleString()}G</span>}
+                                  </div>
+                                  {checked && <div className={styles.raidCheck}>✓</div>}
+                                </div>
+                              );
+                            }});
+                          });
+                        }
+                        // 낙원 (1730+)
+                        row2Cards.push({ id: 'paradise', render: () => (
+                          <div className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`} onClick={() => toggleExtra(char.name, 'paradise')}>
+                            <CardBgImage src="/skrdnjs.webp" alt="낙원" className={styles.raidImage} />
+                            <div className={styles.raidOverlay} />
+                            <div className={styles.raidInfo}><span className={styles.raidName}>낙원</span></div>
+                            {charState.paradise && <div className={styles.raidCheck}>✓</div>}
                           </div>
-                          {charState.paradise && <div className={styles.raidCheck}>✓</div>}
-                        </div>
-                      )}
+                        )});
+                      } else {
+                        row2Cards.push({ id: 'paradise', render: () => (
+                          <div className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`} onClick={() => toggleExtra(char.name, 'paradise')}>
+                            <CardBgImage src="/skrdnjs.webp" alt="낙원" className={styles.raidImage} />
+                            <div className={styles.raidOverlay} />
+                            <div className={styles.raidInfo}><span className={styles.raidName}>낙원</span></div>
+                            {charState.paradise && <div className={styles.raidCheck}>✓</div>}
+                          </div>
+                        )});
+                      }
 
-                      {/* 1730+: 낙원 / <1730: 빈칸 */}
-                      {char.itemLevel >= 1730 ? (
-                        <div
-                          className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`}
-                          onClick={() => toggleExtra(char.name, 'paradise')}
-                        >
-                          <CardBgImage src="/skrdnjs.webp" alt="낙원" className={styles.raidImage} />
-                          <div className={styles.raidOverlay} />
-                          <div className={styles.raidInfo}>
-                            <span className={styles.raidName}>낙원</span>
+                      const r2Start = row2ScrollIndex[char.name] || 0;
+                      const r2Count = isDesktop ? 4 : 3;
+                      const visibleR2 = row2Cards.slice(r2Start, r2Start + r2Count);
+                      // 빈 슬롯 채우기
+                      while (visibleR2.length < r2Count) visibleR2.push({ id: `empty-${visibleR2.length}`, render: () => <div className={`${styles.raidCard} ${styles.raidEmpty}`}><div className={styles.emptySlot}>-</div></div> });
+                      const canR2Left = r2Start > 0;
+                      const canR2Right = r2Start + r2Count < row2Cards.length;
+
+                      return (
+                        <div className={styles.raidRowWrapper}>
+                          {canR2Left && <button className={`${styles.raidNavBtn} ${styles.raidNavLeft}`} onClick={() => setRow2ScrollIndex(prev => ({ ...prev, [char.name]: Math.max(0, (prev[char.name] || 0) - 1) }))}>‹</button>}
+                          <div className={styles.itemRow}>
+                            {visibleR2.map(card => <div key={card.id} style={{flex:1}}>{card.render()}</div>)}
                           </div>
-                          {charState.paradise && <div className={styles.raidCheck}>✓</div>}
+                          {canR2Right && <button className={`${styles.raidNavBtn} ${styles.raidNavRight}`} onClick={() => setRow2ScrollIndex(prev => ({ ...prev, [char.name]: (prev[char.name] || 0) + 1 }))}>›</button>}
                         </div>
-                      ) : (
-                        <div className={`${styles.raidCard} ${styles.raidEmpty}`}>
-                          <div className={styles.emptySlot}>-</div>
-                        </div>
-                      )}
-                    </div>
+                      );
+                    })()}
                   </div>
                 </div>
-
-                {/* 일일 컨텐츠 (카던/가토) - 모바일만 표시 */}
-                {!isDesktop && char.itemLevel >= 1640 && (
-                  <div className={styles.dailyRow}>
-                    {renderDailySide(getChaosDungeonLabel(char.itemLevel), 'chaosDungeon', styles.dailyBlock)}
-                    {renderDailySide(getGuardianRaidLabel(char.itemLevel), 'guardianRaid', styles.dailyBlock)}
+                {/* 카드 푸터: 균열 + 가토 */}
+                {char.itemLevel >= 1680 && (
+                  <div className={styles.cardFooter}>
+                    {renderDailySide(getChaosDungeonLabel(char.itemLevel), 'chaosDungeon', styles.footerDaily)}
+                    {renderDailySide(getGuardianRaidLabel(char.itemLevel), 'guardianRaid', styles.footerDaily)}
                   </div>
                 )}
-
-                {/* 카드 푸터 */}
-                <div className={styles.cardFooter}>
-                  <div className={styles.excludeMoreGold}>
-                    <button
-                      className={styles.moreGoldDropdownBtn}
-                      onClick={() => setMoreGoldDropdownChar(moreGoldDropdownChar === char.name ? null : char.name)}
-                    >
-                      더보기 비용 {moreGoldDropdownChar === char.name ? '−' : '+'}
-                    </button>
-
-                    {moreGoldDropdownChar === char.name && (
-                      <div className={styles.moreGoldDropdown}>
-                        {checkedRaids.length === 0 ? (
-                          <div className={styles.moreGoldEmpty}>체크된 레이드 없음</div>
-                        ) : (
-                          checkedRaids.map(({ name, raid }) => {
-                            const buyMore = charState.raidMoreGoldExclude?.[name] === true;
-                            const totalMoreGold = raid.gates.reduce((sum, g) => sum + g.moreGold, 0);
-
-                            return (
-                              <div key={name} className={styles.moreGoldItem}>
-                                <Form.Check
-                                  type="checkbox"
-                                  id={`more-gold-${char.name}-${name}`}
-                                  label={
-                                    <span className={styles.moreGoldLabel}>
-                                      {name}
-                                      <small>(-{totalMoreGold.toLocaleString()}G)</small>
-                                    </span>
-                                  }
-                                  checked={buyMore}
-                                  onChange={() => toggleRaidMoreGoldExclude(char.name, name)}
-                                  className={styles.moreGoldCheck}
-                                />
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className={styles.footerRight}>
-                    <div className={styles.charTotalGold}>
-                      <span className={styles.goldLabel}>추가획득 골드</span>
-                      <span className={`${styles.goldValue} ${styles.goldValueEditable}`}>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          value={(charState.additionalGold ?? 0).toLocaleString()}
-                          onChange={(e) => {
-                            const num = parseInt(e.target.value.replace(/,/g, '')) || 0;
-                            updateAdditionalGold(char.name, num);
-                          }}
-                          className={styles.footerGoldInput}
-                          onClick={(e) => { e.stopPropagation(); (e.target as HTMLInputElement).select(); }}
-                        /><small>G</small>
-                      </span>
-                    </div>
-                    <div className={styles.charTotalGold}>
-                      <span className={styles.goldLabel}>총 획득</span>
-                      <span className={styles.goldValue}>{charGold.toLocaleString()}<small>G</small></span>
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              {/* 오른쪽 일일 컨텐츠 상자 (데스크톱) */}
-              {isDesktop && char.itemLevel >= 1640 && (
+              {/* 오른쪽 수급량 + 골드 상자 (데스크톱) */}
+              {isDesktop && char.itemLevel >= 1680 && (
                 <div className={styles.dailySideBox}>
-                  <span className={styles.dailySideTitle}>일일 컨텐츠</span>
-                  {renderDailySide(getChaosDungeonLabel(char.itemLevel), 'chaosDungeon')}
-                  {renderDailySide(getGuardianRaidLabel(char.itemLevel), 'guardianRaid')}
-
                   {/* 수급량 */}
                   {(() => {
                     // 카던/가토 수급량
                     const hasDailyMats = hasChaos || hasGuardian;
 
                     // 레이드별 재료 계산
-                    const raidMats: { raidName: string; groupName: string; materials: { itemId: number; name: string; image: string; amount: number }[] }[] = [];
+                    const raidMats: { raidName: string; groupName: string; gold: number; materials: { itemId: number; name: string; image: string; amount: number }[] }[] = [];
                     Object.entries(charState.raids).forEach(([raidName, gates]) => {
                       if (!gates.some(v => v)) return;
                       const amountMap: Record<number, number> = {};
                       const buyMore = charState.raidMoreGoldExclude?.[raidName] === true;
+                      const receiveGold = charState.raidGoldReceive?.[raidName] !== false;
+                      let raidGoldAmount = 0;
 
                       gates.forEach((checked, i) => {
                         if (!checked) return;
                         const gateNum = i + 1;
+                        const raid = raidMap.get(raidName);
+                        if (raid?.gates[i]) {
+                          if (receiveGold) {
+                            raidGoldAmount += raid.gates[i].gold;
+                          }
+                          if (buyMore) {
+                            raidGoldAmount -= raid.gates[i].moreGold;
+                          }
+                        }
                         const clearReward = raidClearRewards.find(r => r.raidName === raidName && r.gate === gateNum);
                         if (clearReward) {
                           for (const mat of clearReward.materials) {
@@ -2077,32 +2039,34 @@ export default function MyPage() {
                           };
                         });
 
-                      if (mats.length > 0) {
+                      if (mats.length > 0 || raidGoldAmount > 0) {
                         raidMats.push({
                           raidName,
                           groupName: getRaidGroupName(raidName),
+                          gold: raidGoldAmount,
                           materials: mats,
                         });
                       }
                     });
 
                     const hasCommonChecked = charIdx === 0 && Object.values(commonContent.checks).some(v => v);
-                    const hasAny = hasDailyMats || raidMats.length > 0 || hasCommonChecked;
-                    if (!hasAny) return null;
+                    const hasSandReward = charState.sandOfTime;
+                    const hasAny = hasDailyMats || raidMats.length > 0 || hasCommonChecked || hasSandReward;
 
                     return (
                       <div className={styles.sideMaterialSection}>
-                        <span className={styles.sideMaterialTitle}>주간 수급량</span>
+                        <div className={styles.sideMaterialTitle}>주간 수급량</div>
+                        {!hasAny && <div className={styles.sideMaterialEmpty}>레이드를 체크하면 수급량이 표시됩니다</div>}
                         {hasChaos && (
                           <div className={styles.sideMaterialRow}>
-                            <span className={styles.sideMaterialLabel}>카던</span>
+                            <span className={styles.sideMaterialLabel}>{char.itemLevel >= 1730 ? '균열' : '전선'}</span>
                             <div className={styles.sideMaterialItems}>
                               {chaosReward.materials.map((mat, mi) => (
                                 <div key={mi} className={styles.sideMaterialItem}>
                                   <StaticIcon src={mat.image} alt={mat.alt} width={20} height={20} className={styles.matIcon2} />
                                   <span className={styles.sideMatOp}>×</span>
                                   <span className={styles.sideMatAmount}>
-                                    {Math.round(mat.daily * chaosChecks).toLocaleString()}
+                                    {(() => { const v = mat.daily * chaosChecks; return Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, { maximumFractionDigits: 1 }); })()}
                                   </span>
                                 </div>
                               ))}
@@ -2118,14 +2082,48 @@ export default function MyPage() {
                                   <StaticIcon src={mat.image} alt={mat.alt} width={20} height={20} className={styles.matIcon2} />
                                   <span className={styles.sideMatOp}>×</span>
                                   <span className={styles.sideMatAmount}>
-                                    {Math.round(mat.daily * guardianChecks).toLocaleString()}
+                                    {(() => { const v = mat.daily * guardianChecks; return Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, { maximumFractionDigits: 1 }); })()}
                                   </span>
                                 </div>
                               ))}
                             </div>
                           </div>
                         )}
-                        {raidMats.map(({ raidName: rn, groupName: gn, materials: mats }) => (
+                        {charState.sandOfTime && (() => {
+                          const stLv = charState.sandOfTimeLevel || 0;
+                          const rewards = getSandOfTimeRewards(char.itemLevel);
+                          const stReward = rewards[stLv];
+                          if (!stReward || (stReward.gems === 0 && stReward.stones === 0)) return null;
+                          const gem1Equiv = char.itemLevel >= 1750 ? stReward.gems * 9 : stReward.gems * 6; // 3레벨×9, 2레벨×6
+                          return (
+                            <div className={styles.sideMaterialRow}>
+                              <span className={styles.sideMaterialLabel}>모래</span>
+                              <div className={styles.sideMaterialItems}>
+                                <div className={styles.sideMaterialItem}>
+                                  <StaticIcon src="/1fpqrjqghk.webp" alt="보석" width={20} height={20} className={styles.matIcon2} />
+                                  <span className={styles.sideMatOp}>×</span>
+                                  <span className={styles.sideMatAmount}>{gem1Equiv}</span>
+                                </div>
+                                <div className={styles.sideMaterialItem}>
+                                  <StaticIcon src="/top-destiny-breakthrough-stone5.webp" alt="위돌" width={20} height={20} className={styles.matIcon2} />
+                                  <span className={styles.sideMatOp}>×</span>
+                                  <span className={styles.sideMatAmount}>{stReward.stones}</span>
+                                </div>
+                                <div className={styles.sideMaterialItem}>
+                                  <StaticIcon src="/breath-lava5.webp" alt="용숨" width={20} height={20} className={styles.matIcon2} />
+                                  <span className={styles.sideMatOp}>×</span>
+                                  <span className={styles.sideMatAmount}>{stReward.lavaBreath}</span>
+                                </div>
+                                <div className={styles.sideMaterialItem}>
+                                  <StaticIcon src="/breath-glacier5.webp" alt="빙숨" width={20} height={20} className={styles.matIcon2} />
+                                  <span className={styles.sideMatOp}>×</span>
+                                  <span className={styles.sideMatAmount}>{stReward.glacierBreath}</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        {raidMats.map(({ raidName: rn, groupName: gn, gold: rGold, materials: mats }) => (
                           <div key={rn} className={styles.sideMaterialRow}>
                             <span className={styles.sideMaterialLabel}>{raidGroupShortNames[gn] || gn}</span>
                             <div className={styles.sideMaterialItems}>
@@ -2136,6 +2134,12 @@ export default function MyPage() {
                                   <span className={styles.sideMatAmount}>{mat.amount.toLocaleString()}</span>
                                 </div>
                               ))}
+                              {rGold !== 0 && (
+                                <div className={styles.sideMaterialItem}>
+                                  <StaticIcon src="/gold.webp" alt="골드" width={16} height={16} className={styles.matIcon2} />
+                                  <span className={rGold > 0 ? styles.sideMatGold : styles.sideMatGoldNeg}>{rGold.toLocaleString()}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -2147,11 +2151,13 @@ export default function MyPage() {
                           const levelRewards = COMMON_CONTENT_MATERIALS_BY_LEVEL[content.name];
                           const rewards = levelRewards?.[chaosGateLevelTier];
                           if (!rewards || rewards.length === 0) return null;
+                          const goldReward = rewards.find(r => r.image === '/gold.webp');
+                          const nonGoldRewards = rewards.filter(r => r.image !== '/gold.webp');
                           return (
                             <div key={content.name} className={styles.sideMaterialRow}>
                               <span className={styles.sideMaterialLabel}>{content.shortName}</span>
                               <div className={styles.sideMaterialItems}>
-                                {rewards.map((r, ri) => (
+                                {nonGoldRewards.map((r, ri) => (
                                   <div key={ri} className={styles.sideMaterialItem}>
                                     {r.image ? (
                                       <StaticIcon src={r.image} alt={r.label} width={20} height={20} className={styles.matIcon2} />
@@ -2160,10 +2166,16 @@ export default function MyPage() {
                                     )}
                                     <span className={styles.sideMatOp}>×</span>
                                     <span className={styles.sideMatAmount}>
-                                      {Math.round(r.amount * checkedCount).toLocaleString()}
+                                      {(() => { const v = r.amount * checkedCount; return Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, { maximumFractionDigits: 1 }); })()}
                                     </span>
                                   </div>
                                 ))}
+                                {goldReward && (
+                                  <div className={styles.sideMaterialItem}>
+                                    <StaticIcon src="/gold.webp" alt="골드" width={16} height={16} className={styles.matIcon2} />
+                                    <span className={styles.sideMatGold}>{(goldReward.amount * checkedCount).toLocaleString()}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           );
@@ -2171,6 +2183,30 @@ export default function MyPage() {
                       </div>
                     );
                   })()}
+
+                  {/* 추가골드 + 총획득 */}
+                  <div className={styles.sideGoldSection}>
+                    <div className={styles.sideGoldRow}>
+                      <span className={styles.sideGoldLabel}>추가획득</span>
+                      <span className={styles.sideGoldValue}>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={(charState.additionalGold ?? 0).toLocaleString()}
+                          onChange={(e) => {
+                            const num = parseInt(e.target.value.replace(/,/g, '')) || 0;
+                            updateAdditionalGold(char.name, num);
+                          }}
+                          className={styles.sideGoldInput}
+                          onClick={(e) => { e.stopPropagation(); (e.target as HTMLInputElement).select(); }}
+                        />G
+                      </span>
+                    </div>
+                    <div className={styles.sideGoldRow}>
+                      <span className={styles.sideGoldLabel}>총 획득</span>
+                      <span className={styles.sideGoldTotal}>{charGold.toLocaleString()}G</span>
+                    </div>
+                  </div>
                 </div>
               )}
               </div>
@@ -2196,7 +2232,7 @@ export default function MyPage() {
         {characters.length > 0 && (
           <WeeklyGoldChart
             history={weeklyGoldHistory}
-            currentWeekGold={calculateTotalGold()}
+            currentWeekGold={totalGold}
             currentWeekLabel={getWeekLabel(new Date())}
           />
         )}
@@ -2238,32 +2274,58 @@ export default function MyPage() {
                 </Form.Group>
               </>
             ) : (
-              <div className={styles.characterSelectGrid}>
-                {allSiblings.map((char) => {
-                  const isSelected = selectedCharNames.has(char.name);
-                  const tooLow = char.itemLevel < 1640;
-                  const canSelect = !tooLow && (isSelected || selectedCharNames.size < 6);
-
-                  return (
-                    <div
-                      key={char.name}
-                      className={`${styles.characterSelectItem} ${isSelected ? styles.selected : ''} ${!canSelect ? styles.disabled : ''}`}
-                      onClick={() => canSelect && toggleCharacterSelection(char.name)}
-                    >
-                      <div className={styles.selectCheckbox}>
-                        {isSelected && '✓'}
+              <>
+                {/* 선택된 캐릭터 (드래그로 순서 변경) */}
+                {selectedCharOrder.filter(n => selectedCharNames.has(n)).length > 0 && (
+                  <div className={styles.selectedList}>
+                    <div className={styles.selectedListTitle}>선택된 캐릭터</div>
+                    {selectedCharOrder.filter(n => selectedCharNames.has(n)).map((name, idx) => {
+                      const char = allSiblings.find(c => c.name === name);
+                      if (!char) return null;
+                      const isRep = selectedRepChar === name;
+                      return (
+                        <div
+                          key={`${idx}-${name}`}
+                          className={`${styles.selectedItem} ${isRep ? styles.selectedRep : ''}`}
+                        >
+                          <button className={styles.orderArrowBtn} onClick={() => moveCharOrder(name, -1)} disabled={idx === 0}>▲</button>
+                          <button className={styles.orderArrowBtn} onClick={() => moveCharOrder(name, 1)} disabled={idx === selectedCharOrder.filter(n => selectedCharNames.has(n)).length - 1}>▼</button>
+                          <span className={styles.selectedNum}>{idx + 1}</span>
+                          <div className={styles.selectInfo}>
+                            <span className={styles.selectName}>{char.name}</span>
+                            <span className={styles.selectDetails}>{char.class} · Lv.{char.itemLevel.toFixed(0)}</span>
+                          </div>
+                          <button
+                            className={`${styles.orderRepBtn} ${isRep ? styles.orderRepActive : ''}`}
+                            onClick={() => setSelectedRepChar(isRep ? '' : name)}
+                          >대표</button>
+                          <button className={styles.removeCharBtn} onClick={() => toggleCharacterSelection(name)}>✕</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {/* 추가 가능한 캐릭터 */}
+                <div className={styles.characterSelectGrid}>
+                  {allSiblings.filter(c => !selectedCharNames.has(c.name)).map((char) => {
+                    const tooLow = char.itemLevel < 1640;
+                    const canSelect = !tooLow && selectedCharNames.size < 6;
+                    return (
+                      <div
+                        key={char.name}
+                        className={`${styles.characterSelectItem} ${!canSelect ? styles.disabled : ''}`}
+                        onClick={() => canSelect && toggleCharacterSelection(char.name)}
+                      >
+                        <div className={styles.selectCheckbox}>+</div>
+                        <div className={styles.selectInfo}>
+                          <span className={styles.selectName}>{char.name}</span>
+                          <span className={styles.selectDetails}>{char.class} · Lv.{char.itemLevel.toFixed(0)}{tooLow && ' (1640 미만)'}</span>
+                        </div>
                       </div>
-                      <div className={styles.selectInfo}>
-                        <span className={styles.selectName}>{char.name}</span>
-                        <span className={styles.selectDetails}>
-                          {char.class} · Lv.{char.itemLevel.toFixed(0)}
-                          {tooLow && ' (1640 미만)'}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
             {registerError && (
               <Alert variant="danger" className="mt-3 mb-0">
@@ -2317,32 +2379,56 @@ export default function MyPage() {
                 </p>
               </div>
             ) : (
-              <div className={styles.characterSelectGrid}>
-                {allSiblings.map((char) => {
-                  const isSelected = selectedCharNames.has(char.name);
-                  const tooLow = char.itemLevel < 1640;
-                  const canSelect = !tooLow && (isSelected || selectedCharNames.size < 6);
-
-                  return (
-                    <div
-                      key={char.name}
-                      className={`${styles.characterSelectItem} ${isSelected ? styles.selected : ''} ${!canSelect ? styles.disabled : ''}`}
-                      onClick={() => canSelect && toggleCharacterSelection(char.name)}
-                    >
-                      <div className={styles.selectCheckbox}>
-                        {isSelected && '✓'}
+              <>
+                {selectedCharOrder.filter(n => selectedCharNames.has(n)).length > 0 && (
+                  <div className={styles.selectedList}>
+                    <div className={styles.selectedListTitle}>선택된 캐릭터</div>
+                    {selectedCharOrder.filter(n => selectedCharNames.has(n)).map((name, idx) => {
+                      const char = allSiblings.find(c => c.name === name);
+                      if (!char) return null;
+                      const isRep = selectedRepChar === name;
+                      return (
+                        <div
+                          key={`${idx}-${name}`}
+                          className={`${styles.selectedItem} ${isRep ? styles.selectedRep : ''}`}
+                        >
+                          <button className={styles.orderArrowBtn} onClick={() => moveCharOrder(name, -1)} disabled={idx === 0}>▲</button>
+                          <button className={styles.orderArrowBtn} onClick={() => moveCharOrder(name, 1)} disabled={idx === selectedCharOrder.filter(n => selectedCharNames.has(n)).length - 1}>▼</button>
+                          <span className={styles.selectedNum}>{idx + 1}</span>
+                          <div className={styles.selectInfo}>
+                            <span className={styles.selectName}>{char.name}</span>
+                            <span className={styles.selectDetails}>{char.class} · Lv.{char.itemLevel.toFixed(0)}</span>
+                          </div>
+                          <button
+                            className={`${styles.orderRepBtn} ${isRep ? styles.orderRepActive : ''}`}
+                            onClick={() => setSelectedRepChar(isRep ? '' : name)}
+                          >대표</button>
+                          <button className={styles.removeCharBtn} onClick={() => toggleCharacterSelection(name)}>✕</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <div className={styles.characterSelectGrid}>
+                  {allSiblings.filter(c => !selectedCharNames.has(c.name)).map((char) => {
+                    const tooLow = char.itemLevel < 1640;
+                    const canSelect = !tooLow && selectedCharNames.size < 6;
+                    return (
+                      <div
+                        key={char.name}
+                        className={`${styles.characterSelectItem} ${!canSelect ? styles.disabled : ''}`}
+                        onClick={() => canSelect && toggleCharacterSelection(char.name)}
+                      >
+                        <div className={styles.selectCheckbox}>+</div>
+                        <div className={styles.selectInfo}>
+                          <span className={styles.selectName}>{char.name}</span>
+                          <span className={styles.selectDetails}>{char.class} · Lv.{char.itemLevel.toFixed(0)}{tooLow && ' (1640 미만)'}</span>
+                        </div>
                       </div>
-                      <div className={styles.selectInfo}>
-                        <span className={styles.selectName}>{char.name}</span>
-                        <span className={styles.selectDetails}>
-                          {char.class} · Lv.{char.itemLevel.toFixed(0)}
-                          {tooLow && ' (1640 미만)'}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </Modal.Body>
           <Modal.Footer className="d-flex justify-content-between">

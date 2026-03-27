@@ -33,7 +33,7 @@
   border-radius: 12px;
   border: 1px solid var(--border-color);
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
 }
 
@@ -44,14 +44,14 @@
 }
 
 .searchButton {
-  background-color: #6366f1 !important;
+  background-color: var(--color-primary) !important;
   padding: clamp(0.7rem, 2vw, 0.85rem) clamp(1.5rem, 3vw, 2rem);
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: clamp(0.9rem, 2vw, 1rem);
   font-weight: 700;
   border: none !important;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+  box-shadow: var(--shadow-sm);
   white-space: nowrap;
   color: white !important;
   touch-action: manipulation;
@@ -61,7 +61,7 @@
 .searchButton:hover:not(:disabled) {
   background-color: #5558e3 !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 /* 가격 업데이트 시간 */
@@ -85,7 +85,7 @@
   color: var(--text-muted);
   background-color: var(--card-bg);
   border: 2px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 12px;
   margin-top: 1rem;
 }
 
@@ -114,10 +114,10 @@
   right: 0;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 12px;
   margin-top: 4px;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 .suggestionItem {
@@ -176,7 +176,7 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 1rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .equipmentPanelTitle {
@@ -351,7 +351,7 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 1rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-md);
   min-height: 500px;
 }
 
@@ -405,7 +405,7 @@
 .box {
   background-color: var(--card-body-bg-blue);
   border: 2px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -432,7 +432,7 @@
   gap: 0.75rem;
   padding: 0.75rem;
   background-color: var(--card-bg);
-  border-radius: 10px;
+  border-radius: 12px;
   margin-bottom: 0.75rem;
 }
 
@@ -481,7 +481,7 @@
 .probabilitySection {
   padding: 0.75rem;
   background-color: var(--card-bg);
-  border-radius: 10px;
+  border-radius: 12px;
   margin-bottom: 0.75rem;
   text-align: center;
 }
@@ -618,7 +618,7 @@
   padding: 0.6rem;
   background-color: var(--card-bg);
   border: 2px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.85rem;
@@ -633,7 +633,7 @@
 }
 
 .breathButtonActive {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
   border-color: transparent;
   color: white;
 }
@@ -686,12 +686,12 @@
   font-size: 1rem;
   font-weight: 800;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
   color: white;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--shadow-md);
   margin-bottom: 0.5rem;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -699,7 +699,7 @@
 
 .refiningButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 .refiningButton:disabled {
@@ -714,7 +714,7 @@
   background-color: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -885,7 +885,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 1rem;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
   border-radius: 12px;
   margin-top: 0.75rem;
   color: #ffffff;
@@ -931,7 +931,7 @@
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #6366f1;
+  accent-color: var(--color-primary);
   flex-shrink: 0;
 }
 
@@ -989,7 +989,7 @@
   padding: 0.75rem;
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
   border: 1px solid rgba(99, 102, 241, 0.3);
-  border-radius: 10px;
+  border-radius: 12px;
   margin-bottom: 0.5rem;
   min-height: 2.5rem;
 }
@@ -999,15 +999,15 @@
 }
 
 .itemLevelProgress .levelArrow {
-  color: #6366f1;
+  color: var(--color-primary);
 }
 
 .itemLevelProgress .levelCurrent {
-  color: #6366f1 !important;
+  color: var(--color-primary) !important;
 }
 
 .itemLevelProgress .levelIncrease {
-  color: #6366f1;
+  color: var(--color-primary);
   background: rgba(99, 102, 241, 0.15);
 }
 
@@ -1017,7 +1017,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
-  border-radius: 10px;
+  border-radius: 12px;
   margin-bottom: 0.75rem;
   min-height: 2.5rem;
 }
@@ -1101,7 +1101,7 @@
   text-align: center;
   position: relative;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: 12px;
   flex: 1;
 }
 
@@ -1251,7 +1251,7 @@
 /* 다크모드 */
 [data-theme="dark"] .equipmentPanel,
 [data-theme="dark"] .simulatorPanel {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 [data-theme="dark"] .box {
@@ -1685,7 +1685,7 @@
   border-radius: 12px;
   padding: 0.75rem;
   margin-bottom: 0.75rem;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .autoSettingsHeader {
@@ -1785,7 +1785,7 @@
 
 .autoStartButton:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .autoStartButton:disabled {
@@ -1812,21 +1812,21 @@
 
 .autoButton {
   background: linear-gradient(135deg, #10b981, #059669);
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .autoButton:hover:not(:disabled) {
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 .autoStopButton {
   background: linear-gradient(135deg, #ef4444, #dc2626);
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+  box-shadow: var(--shadow-md);
   animation: autoRunning 1.5s ease-in-out infinite;
 }
 
 .autoStopButton:hover:not(:disabled) {
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 @keyframes autoRunning {
@@ -1909,8 +1909,8 @@
   padding: 0.75rem;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
   z-index: 100;
 }
 

@@ -16,7 +16,7 @@
 }
 
 .commentCount {
-  color: #f97316;
+  color: var(--color-accent);
 }
 
 /* ─── 작성 폼 ─── */
@@ -39,11 +39,10 @@
   font-size: 0.9rem;
   font-family: inherit;
   resize: vertical;
-  transition: border-color 0.2s;
 }
 
 .commentTextarea:focus {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   outline: none;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
@@ -65,23 +64,22 @@
 }
 
 .charCountOver {
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .submitBtn {
-  background: #f97316;
+  background: var(--color-accent);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0.5rem 1.25rem;
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
 }
 
 .submitBtn:hover:not(:disabled) {
-  background: #ea580c;
+  background: var(--color-accent-dark);
 }
 
 .submitBtn:disabled {
@@ -144,7 +142,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #f97316;
+  color: var(--color-accent);
   font-weight: 700;
   font-size: 0.9rem;
   flex-shrink: 0;
@@ -189,17 +187,16 @@
   font-size: 0.72rem;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .editBtn:hover {
-  border-color: #f97316;
-  color: #f97316;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .deleteBtn:hover {
-  border-color: #dc2626;
-  color: #dc2626;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
 /* ─── 댓글 내용 ─── */
@@ -226,7 +223,7 @@
 }
 
 .editTextarea:focus {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   outline: none;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
@@ -241,12 +238,11 @@
 .cancelBtn {
   background: transparent;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 10px;
   padding: 0.3rem 0.8rem;
   font-size: 0.8rem;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .cancelBtn:hover {
@@ -255,19 +251,18 @@
 }
 
 .saveBtn {
-  background: #f97316;
-  border: 1px solid #f97316;
-  border-radius: 6px;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 10px;
   padding: 0.3rem 0.8rem;
   font-size: 0.8rem;
   font-weight: 600;
   color: #fff;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .saveBtn:hover:not(:disabled) {
-  background: #ea580c;
+  background: var(--color-accent-dark);
 }
 
 .saveBtn:disabled {

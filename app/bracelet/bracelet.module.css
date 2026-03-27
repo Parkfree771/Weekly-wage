@@ -79,7 +79,7 @@
   padding: 0.75rem;
   border: none;
   border-radius: 10px;
-  background-color: #5fd4e8;
+  background-color: var(--color-cyan);
   color: #fff;
   font-size: 1rem;
   font-weight: 700;
@@ -89,7 +89,7 @@
 }
 
 .generateButton:hover {
-  background-color: #4bc5d9;
+  background-color: var(--color-cyan-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(95, 212, 232, 0.4);
 }
@@ -125,8 +125,9 @@
 }
 
 .statusValue {
-  color: #5fd4e8;
+  color: var(--color-cyan);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 /* === 팔찌 카드 === */
@@ -146,7 +147,7 @@
 
 .braceletCardSelectable:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-lg);
 }
 
 .braceletCardSelected {
@@ -185,34 +186,34 @@
 }
 
 .braceletCard_current {
-  border-color: #4a9eff;
+  border-color: var(--color-info);
   box-shadow: 0 0 12px rgba(74, 158, 255, 0.15);
   height: 100%;
 }
 
 .cardTitle_current {
-  color: #4a9eff;
+  color: var(--color-info);
 }
 
 .braceletCard_new {
-  border-color: #c8a84e;
+  border-color: var(--color-gold);
   box-shadow: 0 0 12px rgba(200, 168, 78, 0.15);
   height: 100%;
 }
 
 .cardTitle_new {
-  color: #c8a84e;
+  color: var(--color-gold);
 }
 
 .braceletCard_final {
-  border-color: #5fd4e8;
+  border-color: var(--color-cyan);
   box-shadow: 0 0 15px rgba(95, 212, 232, 0.2);
   max-width: 380px;
   margin: 0 auto;
 }
 
 .cardTitle_final {
-  color: #5fd4e8;
+  color: var(--color-cyan);
 }
 
 .cardTitle_single {
@@ -259,17 +260,17 @@
 }
 
 .effectLow {
-  color: #2563eb;
+  color: var(--grade-low);
   font-weight: 700;
 }
 
 .effectMid {
-  color: #7c3aed;
+  color: var(--grade-mid);
   font-weight: 700;
 }
 
 .effectHigh {
-  color: #f59e0b;
+  color: var(--grade-high);
   font-weight: 700;
 }
 
@@ -298,7 +299,8 @@
 .comboProbValue {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #5fd4e8;
+  color: var(--color-cyan);
+  font-variant-numeric: tabular-nums;
 }
 
 /* === 잠금 버튼 === */
@@ -324,7 +326,7 @@
 
 .lockButtonActive {
   opacity: 1;
-  border-color: #5fd4e8;
+  border-color: var(--color-cyan);
   background-color: rgba(95, 212, 232, 0.1);
 }
 
@@ -344,7 +346,7 @@
 }
 
 .lockButtonActive .lockIcon {
-  background-color: #5fd4e8;
+  background-color: var(--color-cyan);
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6-5.1c1.71 0 3.1 1.39 3.1 3.1v2H9V6c0-1.71 1.39-3.1 3.1-3.1H12zM18 20H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6-5.1c1.71 0 3.1 1.39 3.1 3.1v2H9V6c0-1.71 1.39-3.1 3.1-3.1H12zM18 20H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z'/%3E%3C/svg%3E");
 }
@@ -365,7 +367,7 @@
   padding: 0.7rem 1.5rem;
   border: none;
   border-radius: 10px;
-  background-color: #5fd4e8;
+  background-color: var(--color-cyan);
   color: #fff;
   font-size: 0.9rem;
   font-weight: 700;
@@ -375,7 +377,7 @@
 }
 
 .rerollButton:hover:not(:disabled) {
-  background-color: #4bc5d9;
+  background-color: var(--color-cyan-dark);
   transform: translateY(-1px);
 }
 
@@ -393,7 +395,7 @@
   padding: 0.7rem 1.5rem;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #c8a84e, #a88a30);
+  background: linear-gradient(135deg, var(--color-gold), #a88a30);
   color: #fff;
   font-size: 0.9rem;
   font-weight: 700;
@@ -449,7 +451,7 @@
 .comparingDesc {
   text-align: center;
   font-size: 0.85rem;
-  color: #c8a84e;
+  color: var(--color-gold);
   margin-bottom: 1rem;
 }
 
@@ -500,8 +502,8 @@
 }
 
 .rerollInlineButton:hover:not(:disabled) {
-  border-color: #5fd4e8;
-  color: #5fd4e8;
+  border-color: var(--color-cyan);
+  color: var(--color-cyan);
   background-color: rgba(95, 212, 232, 0.05);
 }
 
@@ -518,20 +520,20 @@
   margin: 1rem auto 0;
   padding: 0.85rem;
   border: none;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #c8a84e 0%, #a08030 100%);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--color-gold) 0%, #a08030 100%);
   color: #fff;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 3px 10px rgba(200, 168, 78, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .selectConfirmButton:hover:not(:disabled) {
   background: linear-gradient(180deg, #d8b85e 0%, #b09040 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(200, 168, 78, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 .selectConfirmButtonDisabled {
@@ -541,7 +543,7 @@
 
 .selectConfirmButtonDisabled:hover {
   transform: none;
-  box-shadow: 0 3px 10px rgba(200, 168, 78, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 /* === 최종 결과 === */
@@ -553,7 +555,7 @@
   padding: 0.75rem;
   border: none;
   border-radius: 10px;
-  background-color: #5fd4e8;
+  background-color: var(--color-cyan);
   color: #fff;
   font-size: 1rem;
   font-weight: 700;
@@ -563,7 +565,7 @@
 }
 
 .resetButton:hover {
-  background-color: #4bc5d9;
+  background-color: var(--color-cyan-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(95, 212, 232, 0.4);
 }
@@ -576,17 +578,17 @@
 }
 
 [data-theme="dark"] .braceletCard_current {
-  border-color: #4a9eff;
+  border-color: var(--color-info);
   background-color: rgba(20, 30, 50, 0.9);
 }
 
 [data-theme="dark"] .braceletCard_new {
-  border-color: #c8a84e;
+  border-color: var(--color-gold);
   background-color: rgba(40, 35, 20, 0.9);
 }
 
 [data-theme="dark"] .braceletCard_final {
-  border-color: #5fd4e8;
+  border-color: var(--color-cyan);
   background-color: rgba(20, 40, 45, 0.9);
 }
 
@@ -626,7 +628,7 @@
 }
 
 [data-theme="dark"] .lockButtonActive {
-  border-color: #5fd4e8;
+  border-color: var(--color-cyan);
   background-color: rgba(95, 212, 232, 0.15);
 }
 
@@ -641,15 +643,15 @@
 }
 
 [data-theme="dark"] .effectLow {
-  color: #60a5fa;
+  color: var(--color-info);
 }
 
 [data-theme="dark"] .effectMid {
-  color: #a78bfa;
+  color: var(--color-purple);
 }
 
 [data-theme="dark"] .effectHigh {
-  color: #fbbf24;
+  color: var(--color-gold);
 }
 
 [data-theme="dark"] .comboProbSection {
@@ -666,8 +668,8 @@
 }
 
 [data-theme="dark"] .rerollInlineButton:hover:not(:disabled) {
-  border-color: #5fd4e8;
-  color: #5fd4e8;
+  border-color: var(--color-cyan);
+  color: var(--color-cyan);
   background-color: rgba(95, 212, 232, 0.1);
 }
 

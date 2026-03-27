@@ -161,7 +161,7 @@ export default function PriceComparisonStats() {
   return (
     <>
       {/* 가격 비교 통계 - 데스크톱 */}
-      <Card className="mt-3 d-none d-md-block" style={{ color: 'var(--text-primary)', maxWidth: '1400px', margin: '16px auto 0', overflow: 'hidden' }}>
+      <Card className="mt-3 d-none d-md-block shadow-hard" style={{ color: 'var(--text-primary)', maxWidth: '1400px', margin: '16px auto 0', overflow: 'hidden' }}>
         <Card.Body className="p-2">
           {/* 가격 위치 바 */}
           <div style={{ marginBottom: '8px', position: 'relative' }}>
@@ -185,7 +185,7 @@ export default function PriceComparisonStats() {
                 boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
               }}
             >
-              <div style={{ fontSize: '0.85rem', color: dotColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
+              <div className="font-numeric" style={{ fontSize: '0.85rem', color: dotColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
             </div>
 
             {/* 바 영역 */}
@@ -227,7 +227,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>최저</div>
-                <div style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('avg')}
@@ -242,7 +242,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>평균</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('max')}
@@ -257,7 +257,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>최고</div>
-                <div style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
               </div>
             </div>
           </div>
@@ -272,19 +272,19 @@ export default function PriceComparisonStats() {
           }}>
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginRight: '4px' }}>최저 대비</span>
-              <span style={{ fontSize: '0.8rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span className="font-numeric" style={{ fontSize: '0.8rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromMin >= 0 ? '+' : ''}{stats.changeFromMin.toFixed(1)}%
               </span>
             </div>
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginRight: '4px' }}>평균 대비</span>
-              <span style={{ fontSize: '0.8rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span className="font-numeric" style={{ fontSize: '0.8rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromAvg >= 0 ? '+' : ''}{stats.changeFromAvg.toFixed(1)}%
               </span>
             </div>
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginRight: '4px' }}>최고 대비</span>
-              <span style={{ fontSize: '0.8rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span className="font-numeric" style={{ fontSize: '0.8rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromMax >= 0 ? '+' : ''}{stats.changeFromMax.toFixed(1)}%
               </span>
             </div>
@@ -293,7 +293,7 @@ export default function PriceComparisonStats() {
       </Card>
 
       {/* 가격 비교 통계 - 모바일 */}
-      <Card className="mt-2 d-md-none" style={{ color: 'var(--text-primary)', overflow: 'hidden' }}>
+      <Card className="mt-2 d-md-none shadow-hard" style={{ color: 'var(--text-primary)', overflow: 'hidden' }}>
         <Card.Body className="p-2">
           {/* 가격 위치 바 - 모바일 */}
           <div style={{ marginBottom: '6px', position: 'relative' }}>
@@ -317,7 +317,7 @@ export default function PriceComparisonStats() {
                 boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
               }}
             >
-              <div style={{ fontSize: '0.75rem', color: dotColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
+              <div className="font-numeric" style={{ fontSize: '0.75rem', color: dotColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
             </div>
 
             {/* 바 영역 */}
@@ -359,7 +359,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>최저</div>
-                <div style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('avg')}
@@ -374,7 +374,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>평균</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('max')}
@@ -389,7 +389,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>최고</div>
-                <div style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
               </div>
             </div>
           </div>
@@ -403,19 +403,19 @@ export default function PriceComparisonStats() {
           }}>
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '0.5rem', color: 'var(--text-muted)', marginRight: '2px' }}>최저</span>
-              <span style={{ fontSize: '0.7rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span className="font-numeric" style={{ fontSize: '0.7rem', color: stats.changeFromMin >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromMin >= 0 ? '+' : ''}{stats.changeFromMin.toFixed(1)}%
               </span>
             </div>
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '0.5rem', color: 'var(--text-muted)', marginRight: '2px' }}>평균</span>
-              <span style={{ fontSize: '0.7rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span className="font-numeric" style={{ fontSize: '0.7rem', color: stats.changeFromAvg >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromAvg >= 0 ? '+' : ''}{stats.changeFromAvg.toFixed(1)}%
               </span>
             </div>
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '0.5rem', color: 'var(--text-muted)', marginRight: '2px' }}>최고</span>
-              <span style={{ fontSize: '0.7rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
+              <span className="font-numeric" style={{ fontSize: '0.7rem', color: stats.changeFromMax >= 0 ? '#ef4444' : '#3b82f6', fontWeight: '700' }}>
                 {stats.changeFromMax >= 0 ? '+' : ''}{stats.changeFromMax.toFixed(1)}%
               </span>
             </div>

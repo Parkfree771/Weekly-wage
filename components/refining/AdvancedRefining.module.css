@@ -342,7 +342,7 @@
   margin-bottom: 1.5rem;
   padding: 1rem;
   background: var(--card-body-bg);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .probabilityItem {
@@ -383,7 +383,7 @@
 .materialOptionCard {
   padding: 1rem;
   background: var(--card-body-bg);
-  border-radius: 8px;
+  border-radius: 12px;
   border: 2px solid var(--border-color);
   transition: all 0.2s;
 }
@@ -468,12 +468,12 @@
   transition: all 0.2s;
   background: linear-gradient(135deg, #a855f7, #7c3aed);
   color: white;
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .refineButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 .refineButton:disabled {
@@ -484,11 +484,11 @@
 
 .refineButtonBonus {
   background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .refineButtonBonus:hover:not(:disabled) {
-  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 .refineButtonFree {
@@ -538,7 +538,7 @@
 /* 시도 결과 표시 */
 .lastResult {
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
   margin-bottom: 1rem;
   animation: resultPop 0.3s ease-out;

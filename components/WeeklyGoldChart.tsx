@@ -1,7 +1,15 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import styles from './WeeklyGoldChart.module.css';
+
+function formatGoldShort(gold: number | string): string {
+  const n = typeof gold === 'string' ? Number(gold) : gold;
+  if (isNaN(n)) return String(gold);
+  if (n >= 10000) return `${(n / 10000).toFixed(n % 10000 === 0 ? 0 : 1)}만`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}천`;
+  return n.toLocaleString();
+}
 import { WeeklyGoldRecord } from '@/types/user';
 
 type Props = {
@@ -78,7 +86,7 @@ export default function WeeklyGoldChart({ history, currentWeekGold, currentWeekL
         <div className={styles.yAxis}>
           {yAxisLabels.map((value, idx) => (
             <span key={idx} className={styles.yLabel}>
-              {value.toLocaleString()}
+              {formatGoldShort(value)}
             </span>
           ))}
         </div>
@@ -101,7 +109,7 @@ export default function WeeklyGoldChart({ history, currentWeekGold, currentWeekL
                 <div key={idx} className={styles.barWrapper}>
                   {/* 골드 수치 */}
                   <span className={`${styles.barValue} ${data.isCurrent ? styles.currentValue : ''}`}>
-                    {data.gold.toLocaleString()}
+                    {formatGoldShort(data.gold)}
                   </span>
 
                   {/* 막대 */}
@@ -118,7 +126,7 @@ export default function WeeklyGoldChart({ history, currentWeekGold, currentWeekL
           <div className={styles.xAxisLabels}>
             {chartData.map((data, idx) => (
               <span key={idx} className={`${styles.xLabel} ${data.isCurrent ? styles.currentLabel : ''}`}>
-                {data.label}
+                {data.label.replace(/(\d+)월\s*(\d+)주차/, '$1/$2')}
               </span>
             ))}
           </div>

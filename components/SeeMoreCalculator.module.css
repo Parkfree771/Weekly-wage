@@ -5,7 +5,6 @@
   gap: 0;
   margin: 1rem auto;
   padding: 0;
-  max-width: 1110px;
   contain: layout style;
 }
 
@@ -17,7 +16,7 @@
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   border: 3px solid transparent;
   max-width: 185px;
   width: 100%;
@@ -25,12 +24,12 @@
 
 .raidCard:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-lg);
 }
 
 .raidCard.selected {
   border-color: var(--primary-color);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-4px);
 }
 
@@ -97,6 +96,7 @@
   border: none;
   width: fit-content;
   align-self: flex-start;
+  font-variant-numeric: tabular-nums;
   text-shadow:
     0 0 6px rgba(0, 0, 0, 1),
     0 2px 4px rgba(0, 0, 0, 1),
@@ -104,21 +104,21 @@
 }
 
 .profitBadge {
-  color: #4ade80;
+  color: var(--color-success);
 }
 
 .lossBadge {
-  color: #ff5555;
+  color: var(--color-danger);
 }
 
 .neutralBadge {
-  color: #f3f4f6;
+  color: var(--text-muted);
 }
 
 /* 선택된 레이드 카드 */
 .selectedRaidCard {
   border: 2px solid var(--border-color);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-lg);
   border-radius: 16px;
   background-color: var(--card-bg);
   overflow: hidden;
@@ -161,7 +161,7 @@
 .refreshSection {
   background-color: var(--card-header-bg);
   padding: 15px;
-  border-radius: 8px;
+  border-radius: 10px;
   margin: 20px 0;
 }
 
@@ -288,14 +288,12 @@
 @media (max-width: 1399px) {
   .raidCardsGrid {
     grid-template-columns: repeat(5, 1fr);
-    max-width: 925px;
   }
 }
 
 @media (max-width: 1199px) {
   .raidCardsGrid {
     grid-template-columns: repeat(4, 1fr);
-    max-width: 740px;
   }
 }
 
@@ -348,15 +346,15 @@
   }
 
   .profitBadge {
-    color: #4ade80;
+    color: var(--color-success);
   }
 
   .lossBadge {
-    color: #ff5555;
+    color: var(--color-danger);
   }
 
   .neutralBadge {
-    color: #f3f4f6;
+    color: var(--text-muted);
   }
 
   /* 모바일 카드 스타일 */
@@ -456,15 +454,15 @@
   }
 
   .profitBadge {
-    color: #4ade80;
+    color: var(--color-success);
   }
 
   .lossBadge {
-    color: #ff5555;
+    color: var(--color-danger);
   }
 
   .neutralBadge {
-    color: #f3f4f6;
+    color: var(--text-muted);
   }
 
   /* 작은 화면용 카드 조정 */
@@ -511,64 +509,94 @@
 
 }
 
-/* 모바일 재료 테이블 - 이름 잘림 방지 */
+/* 모바일 재료 테이블 */
 @media (max-width: 576px) {
   .tableCell {
-    padding: 0.4rem 0.3rem;
-    font-size: 0.7rem;
+    padding: 0.5rem 0.4rem;
+    font-size: 0.8rem;
   }
 
   .tableHeaderCell {
-    padding: 0.4rem 0.3rem;
-    font-size: 0.7rem;
+    padding: 0.5rem 0.4rem;
+    font-size: 0.8rem;
   }
 
   .materialIcon {
-    width: 20px;
-    height: 20px;
+    width: 32px;
+    height: 32px;
   }
 
-  /* 재료명 폰트 축소하여 잘림 방지 */
-  .tableCell:first-child span {
+  .materialCellContent span {
     font-size: 0.65rem;
     white-space: nowrap;
+  }
+
+  .materialCellContent {
+    gap: 0.35rem;
+  }
+
+  .checkboxCol {
+    width: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+    padding: 0.5rem 0.15rem !important;
+  }
+
+  .gateSectionHeader {
+    font-size: 0.9rem;
+  }
+
+  .gateSummaryRow {
+    font-size: 0.8rem;
+  }
+
+  .gatesGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .gateSection {
+    padding: 0.75rem;
+  }
+
+  .gateSection h6 {
+    font-size: 0.95rem;
   }
 }
 
 /* 아주 작은 화면 (400px 이하) */
 @media (max-width: 400px) {
   .tableCell {
-    padding: 0.35rem 0.2rem;
-    font-size: 0.65rem;
+    padding: 0.35rem 0.25rem;
+    font-size: 0.7rem;
   }
 
   .tableHeaderCell {
-    padding: 0.35rem 0.2rem;
-    font-size: 0.65rem;
+    padding: 0.35rem 0.25rem;
+    font-size: 0.7rem;
   }
 
   .materialIcon {
-    width: 18px;
-    height: 18px;
+    width: 28px;
+    height: 28px;
   }
 
-  /* 재료명 더 축소 */
-  .tableCell:first-child span {
+  .materialCellContent span {
     font-size: 0.6rem;
   }
 }
 
 /* 다크모드 개선 - 가시성 향상 */
 [data-theme="dark"] .raidCard {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-md);
 }
 
 [data-theme="dark"] .raidCard:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
 }
 
 [data-theme="dark"] .raidCard.selected {
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
+  box-shadow: var(--shadow-lg);
 }
 
 [data-theme="dark"] .gateSection {
@@ -748,11 +776,13 @@
 
 .tableCellPrice {
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .tableCellTotal {
   font-weight: 600;
   color: var(--brand-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .materialIcon {

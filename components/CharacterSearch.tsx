@@ -317,19 +317,20 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched,
               </div>
               <Button
                 type="submit"
-                disabled={isLoading || !characterName.trim()}
+                disabled={isLoading}
                 className="character-search-button"
                 style={{
-                  backgroundColor: '#6366f1',
+                  backgroundColor: 'var(--color-accent)',
                   padding: 'clamp(0.7rem, 2vw, 0.85rem) clamp(1.5rem, 3vw, 2rem)',
                   borderRadius: '12px',
                   fontSize: 'clamp(0.9rem, 2vw, 1rem)',
                   fontWeight: '700',
                   border: 'none',
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 2px 8px rgba(99, 102, 241, 0.2)',
+                  boxShadow: 'var(--shadow-md)',
                   whiteSpace: 'nowrap',
-                  color: 'white'
+                  color: 'white',
+                  opacity: 1
                 }}
               >
                 {isLoading ? (

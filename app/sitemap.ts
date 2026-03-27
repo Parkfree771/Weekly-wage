@@ -33,12 +33,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: 'https://lostarkweeklygold.kr/hell-sim',
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.6,
-    },
-    {
       url: 'https://lostarkweeklygold.kr/bracelet',
       lastModified: new Date(),
       changeFrequency: 'weekly',
@@ -55,6 +49,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.6,
+    },
+    {
+      url: 'https://lostarkweeklygold.kr/hell-reward',
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    },
+    {
+      url: 'https://lostarkweeklygold.kr/minigame',
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.4,
     },
     {
       url: 'https://lostarkweeklygold.kr/about',

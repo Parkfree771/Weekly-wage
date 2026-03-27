@@ -1104,7 +1104,7 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, equipments
                           padding: '0.4rem',
                           fontSize: '0.75rem',
                           fontWeight: 600,
-                          background: useBreath && useBook ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'var(--card-bg)',
+                          background: useBreath && useBook ? 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))' : 'var(--card-bg)',
                           color: useBreath && useBook ? 'white' : 'var(--text-secondary)',
                           border: '1px solid var(--border-color)',
                           borderRadius: '6px',

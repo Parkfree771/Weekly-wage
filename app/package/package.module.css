@@ -1,9 +1,9 @@
 /* 패키지 효율 게시판 */
 .pageWrapper {
   padding: clamp(1rem, 3vw, 2rem) 0;
-  --pkg-primary: #f97316;
-  --pkg-primary-light: rgba(249, 115, 22, 0.08);
-  --pkg-primary-dark: #ea580c;
+  --pkg-primary: var(--color-primary);
+  --pkg-primary-light: var(--color-primary-light);
+  --pkg-primary-dark: var(--color-primary-dark);
 }
 
 /* 헤더 */
@@ -50,11 +50,10 @@
   padding: 0.4rem 0.75rem;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: border-color 0.2s;
 }
 
 .filterSelect:focus {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   outline: none;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
@@ -68,11 +67,10 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 0.35rem 0.65rem;
-  transition: border-color 0.2s;
 }
 
 .galleryRateControl:focus-within {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
@@ -93,7 +91,7 @@
   width: 52px;
   background: transparent;
   border: none;
-  color: #f97316;
+  color: var(--color-accent);
   font-size: 0.85rem;
   font-weight: 700;
   text-align: center;
@@ -118,19 +116,17 @@
   align-items: center;
   gap: 0.35rem;
   color: #fff;
-  background: #f97316;
+  background: var(--color-accent);
   border: none;
   border-radius: 8px;
   padding: 0.5rem 1.2rem;
   font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.2s;
 }
 
 .registerLink:hover {
-  background: #ea580c;
-  transform: translateY(-1px);
+  background: var(--color-accent-dark);
   color: #fff;
 }
 
@@ -235,13 +231,11 @@
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
 }
 
 .loadMoreBtn:hover {
-  border-color: #f97316;
-  color: #f97316;
-  transform: translateY(-1px);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 /* 반응형 - 갤러리 */
@@ -320,7 +314,6 @@
   padding: 0.4rem 0.6rem;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.15s;
   font-size: 0.82rem;
   color: var(--text-primary);
 }
@@ -330,7 +323,7 @@
 }
 
 .itemCheckItem input[type="checkbox"] {
-  accent-color: #f97316;
+  accent-color: var(--color-accent);
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -417,7 +410,7 @@
 }
 
 .quantityInput:focus {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   outline: none;
   box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
 }
@@ -430,11 +423,10 @@
   padding: 0.2rem;
   font-size: 1rem;
   line-height: 1;
-  transition: color 0.2s;
 }
 
 .removeItemBtn:hover {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 /* 보너스 아이템 토글 */
@@ -450,24 +442,23 @@
   cursor: pointer;
   padding: 0;
   line-height: 1;
-  transition: all 0.15s;
   flex-shrink: 0;
 }
 
 .bonusToggleBtn:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: var(--color-info);
+  color: var(--color-info);
 }
 
 .bonusToggleBtnActive {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: var(--color-info);
+  border-color: var(--color-info);
   color: #fff;
 }
 
 .bonusToggleBtnActive:hover {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: var(--color-info);
+  border-color: var(--color-info);
 }
 
 .packageBoxItemBonus {
@@ -476,11 +467,12 @@
 
 .selectedItemSubtotal {
   font-size: 0.75rem;
-  color: #f97316;
+  color: var(--color-accent);
   font-weight: 600;
   flex-shrink: 0;
   min-width: 70px;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 좌우 분할: 패키지 구성 / 패키지 정보+환율 */
@@ -503,7 +495,7 @@
   padding: 1.25rem;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: 12px;
 }
 
 .formRow {
@@ -543,11 +535,10 @@
   color: var(--text-primary);
   padding: 0.55rem 0.85rem;
   font-size: 0.9rem;
-  transition: border-color 0.2s;
 }
 
 .formInput:focus {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   outline: none;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
@@ -569,23 +560,22 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .typeButton:hover {
-  border-color: #f97316;
-  color: #f97316;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .typeButtonActive {
-  background: #f97316;
-  border-color: #f97316;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
   color: #fff;
 }
 
 .typeButtonActive:hover {
-  background: #ea580c;
-  border-color: #ea580c;
+  background: var(--color-accent-dark);
+  border-color: var(--color-accent-dark);
   color: #fff;
 }
 
@@ -606,26 +596,25 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .priceCurrencyBtn:hover {
-  border-color: #f97316;
-  color: #f97316;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .priceCurrencyBtnActive {
-  background: #f97316;
-  border-color: #f97316;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
   color: #fff;
 }
 
 .priceCurrencyBtnActive:hover {
-  background: #ea580c;
-  border-color: #ea580c;
+  background: var(--color-accent-dark);
+  border-color: var(--color-accent-dark);
   color: #fff;
 }
 
@@ -661,18 +650,17 @@
   padding: 0.55rem 0.85rem;
   font-size: 0.9rem;
   text-align: center;
-  transition: border-color 0.2s;
 }
 
 .selectableCountInput:focus {
-  border-color: #8b5cf6;
+  border-color: var(--color-purple);
   outline: none;
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
 
 .selectableCountHint {
   font-size: 0.78rem;
-  color: #8b5cf6;
+  color: var(--color-purple);
   font-weight: 600;
 }
 
@@ -686,7 +674,7 @@
   padding: 1.25rem;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
 }
@@ -721,7 +709,7 @@
   border-top: 1px solid var(--border-color);
   font-size: 0.85rem;
   font-weight: 700;
-  color: #f97316;
+  color: var(--color-accent);
   text-align: center;
 }
 
@@ -734,7 +722,7 @@
   width: 240px;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 1.25rem 1rem;
   box-shadow: var(--shadow-md);
   animation: sidebarIn 0.25s ease;
@@ -759,7 +747,7 @@
 .calcSidebarTitle {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #f97316;
+  color: var(--color-accent);
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid rgba(249, 115, 22, 0.2);
@@ -782,6 +770,7 @@
 .calcValue {
   font-weight: 700;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .calcDivider {
@@ -792,16 +781,17 @@
 
 .calcEfficiency {
   font-size: 0.95rem;
-  color: #f97316;
+  color: var(--color-accent);
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .calcPositive {
-  color: #22c55e;
+  color: var(--color-success);
 }
 
 .calcNegative {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 /* 엄거래/공식 토글 */
@@ -822,7 +812,6 @@
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .tradeModeBtn:not(:last-child) {
@@ -830,7 +819,7 @@
 }
 
 .tradeModeBtnActive {
-  background: #f97316;
+  background: var(--color-accent);
   color: #fff;
 }
 
@@ -858,11 +847,10 @@
   padding: 0.5rem 0.5rem;
   font-size: 0.9rem;
   text-align: center;
-  transition: border-color 0.2s;
 }
 
 .ratioInput:focus {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   outline: none;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
@@ -918,21 +906,19 @@
 /* 등록 버튼 */
 .registerButton {
   color: #fff;
-  background: #f97316;
-  border: 2px solid #f97316;
+  background: var(--color-accent);
+  border: 2px solid var(--color-accent);
   border-radius: 10px;
   padding: 0.6rem 2rem;
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
-  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
 }
 
 .registerButton:hover {
-  background: #ea580c;
-  border-color: #ea580c;
-  transform: translateY(-1px);
+  background: var(--color-accent-dark);
+  border-color: var(--color-accent-dark);
 }
 
 .registerButton:disabled {
@@ -947,7 +933,7 @@
   padding: 3rem 1rem;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 12px;
 }
 
 .loginNoticeText {
@@ -958,7 +944,7 @@
 
 /* 에러 메시지 */
 .errorMsg {
-  color: #ef4444;
+  color: var(--color-danger);
   font-size: 0.85rem;
   margin-top: 0.5rem;
   text-align: center;
@@ -966,14 +952,14 @@
 
 /* 필드별 인라인 에러 */
 .fieldErrorMsg {
-  color: #ef4444;
+  color: var(--color-danger);
   font-size: 0.75rem;
   margin-top: 0.25rem;
   margin-bottom: 0;
 }
 
 .formInputError {
-  border-color: #ef4444 !important;
+  border-color: var(--color-danger) !important;
 }
 
 .formInputError:focus {
@@ -981,7 +967,7 @@
 }
 
 .rateCardError {
-  border-color: #ef4444 !important;
+  border-color: var(--color-danger) !important;
 }
 
 /* ─── 상세 페이지 ─── */
@@ -998,11 +984,10 @@
   text-decoration: none;
   font-size: 0.85rem;
   margin-bottom: 1.55rem;
-  transition: color 0.2s;
 }
 
 .backLink:hover {
-  color: #f97316;
+  color: var(--color-accent);
 }
 
 /* 헤더 */
@@ -1043,22 +1028,22 @@
 
 .typeBadge31 {
   background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 .typeBadge21 {
   background: rgba(59, 130, 246, 0.12);
-  color: #3b82f6;
+  color: var(--color-info);
 }
 
 .typeBadgeNormal {
   background: rgba(107, 114, 128, 0.12);
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .typeBadgeSelect {
   background: rgba(139, 92, 246, 0.12);
-  color: #8b5cf6;
+  color: var(--color-purple);
 }
 
 /* ─── 좌우 분할 (결과 + 아이템) ─── */
@@ -1086,7 +1071,7 @@
   position: relative;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 1.25rem 1rem;
   display: flex;
   flex-direction: column;
@@ -1097,7 +1082,6 @@
 }
 
 .itemCard:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
@@ -1139,16 +1123,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
 }
 
 .itemCardCheckLabel:hover .itemCardCheckBox {
-  border-color: #f97316;
+  border-color: var(--color-accent);
 }
 
 .itemCardCheckInput:checked + .itemCardCheckBox {
-  background: #f97316;
-  border-color: #f97316;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .itemCardCheckIcon {
@@ -1229,10 +1212,11 @@
 .itemCardSubtotal {
   font-size: 1rem;
   font-weight: 800;
-  color: #f97316;
+  color: var(--color-accent);
   padding-top: 0.5rem;
   border-top: 1px solid var(--border-color);
   width: 100%;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 선택 아이템 UI */
@@ -1254,7 +1238,6 @@
   cursor: pointer;
   font-size: 0.72rem;
   color: var(--text-secondary);
-  transition: all 0.15s;
   text-align: left;
 }
 
@@ -1263,7 +1246,7 @@
 }
 
 .itemCardChoiceBtnActive {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   background: rgba(249, 115, 22, 0.08);
   color: var(--text-primary);
   font-weight: 600;
@@ -1288,7 +1271,7 @@
 }
 
 .itemCardChoiceSelect:focus {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   outline: none;
 }
 
@@ -1303,7 +1286,7 @@
   position: relative;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 1.25rem;
   overflow: hidden;
 }
@@ -1315,8 +1298,8 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #f97316, #f59e0b);
-  border-radius: 14px 14px 0 0;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-warning));
+  border-radius: 12px 12px 0 0;
 }
 
 
@@ -1354,18 +1337,21 @@
   font-weight: 700;
   color: var(--text-primary);
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .resultRowValueGold {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #f97316;
+  color: var(--color-accent);
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .resultBenefitNum {
   font-size: 1.05rem;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 환율 입력 */
@@ -1377,11 +1363,10 @@
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 0.25rem 0.45rem;
-  transition: border-color 0.2s;
 }
 
 .resultRateInput:focus-within {
-  border-color: #f97316;
+  border-color: var(--color-accent);
 }
 
 .resultRateIcon {
@@ -1408,7 +1393,7 @@
   width: 36px;
   background: transparent;
   border: none;
-  color: #f97316;
+  color: var(--color-accent);
   font-size: 0.75rem;
   font-weight: 700;
   text-align: center;
@@ -1453,11 +1438,11 @@
 }
 
 .benefitUp {
-  color: #22c55e;
+  color: var(--color-success);
 }
 
 .benefitDown {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 /* ─── 환율 바 ─── */
@@ -1495,7 +1480,6 @@
   font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .rateBarBtn:not(:last-child) {
@@ -1503,7 +1487,7 @@
 }
 
 .rateBarBtnActive {
-  background: #f97316;
+  background: var(--color-accent);
   color: #fff;
 }
 
@@ -1548,7 +1532,7 @@
 }
 
 .rateBarNumberInput:focus {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   outline: none;
   box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
 }
@@ -1587,18 +1571,17 @@
   font-size: 0.82rem;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
 }
 
 .likeBtn:hover {
-  border-color: #f97316;
-  color: #f97316;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .likeBtnActive {
   background: rgba(249, 115, 22, 0.08);
-  border-color: #f97316;
-  color: #f97316;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
   font-weight: 700;
 }
 
@@ -1617,18 +1600,17 @@
   border-radius: 6px;
   font-size: 0.72rem;
   font-weight: 600;
-  border: 1px solid #f97316;
+  border: 1px solid var(--color-accent);
   cursor: pointer;
-  transition: all 0.2s;
   text-decoration: none;
   background: var(--card-bg);
-  color: #f97316;
+  color: var(--color-accent);
   display: inline-flex;
   align-items: center;
 }
 
 .editBtn:hover {
-  background: #f97316;
+  background: var(--color-accent);
   color: #fff;
 }
 
@@ -1637,16 +1619,15 @@
   border-radius: 6px;
   font-size: 0.72rem;
   font-weight: 600;
-  border: 1px solid #ef4444;
+  border: 1px solid var(--color-danger);
   cursor: pointer;
-  transition: all 0.2s;
   text-decoration: none;
   background: var(--card-bg);
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 .deleteBtn:hover {
-  background: #ef4444;
+  background: var(--color-danger);
   color: #fff;
 }
 
@@ -1931,9 +1912,8 @@
   position: relative;
   background: var(--card-bg);
   border: 2px dashed var(--border-color);
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 1.25rem;
-  transition: border-color 0.3s;
   display: flex;
   flex-direction: column;
   height: fit-content;
@@ -2025,10 +2005,11 @@
 .packageBoxItemSubtotal {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #f97316;
+  color: var(--color-accent);
   flex-shrink: 0;
   min-width: 80px;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .packageBoxTotal {
@@ -2044,8 +2025,9 @@
 }
 
 .packageBoxTotalValue {
-  color: #f97316;
+  color: var(--color-accent);
   font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ─── 선택 분기 UI ─── */
@@ -2068,7 +2050,6 @@
   border: 1px solid transparent;
   background: none;
   cursor: pointer;
-  transition: all 0.15s;
   position: relative;
   text-align: left;
   color: var(--text-secondary);
@@ -2092,13 +2073,13 @@
 
 .choiceOptionSelected {
   background: rgba(249, 115, 22, 0.08);
-  border-color: #f97316;
+  border-color: var(--color-accent);
   color: var(--text-primary);
   font-weight: 600;
 }
 
 .choiceOptionSelected::before {
-  background: #f97316;
+  background: var(--color-accent);
 }
 
 .choiceOptionIcon {
@@ -2114,7 +2095,7 @@
 
 .choiceOptionPrice {
   font-weight: 600;
-  color: #f97316;
+  color: var(--color-accent);
   font-size: 0.75rem;
 }
 
@@ -2136,7 +2117,7 @@
 }
 
 .choiceSelect:focus {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   outline: none;
 }
 
@@ -2191,15 +2172,13 @@
   border: 1px solid var(--border-color);
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.15s;
   background: var(--card-bg);
 }
 
 .availableItem:hover {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   background: rgba(249, 115, 22, 0.05);
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .availableItemAdded {
@@ -2215,7 +2194,7 @@
   height: 20px;
   padding: 0 5px;
   border-radius: 10px;
-  background: #f97316;
+  background: var(--color-accent);
   color: #fff;
   font-size: 0.7rem;
   font-weight: 700;
@@ -2223,7 +2202,7 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .availableItemCustom {
@@ -2232,7 +2211,7 @@
 }
 
 .availableItemCustom:hover {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   border-style: dashed;
 }
 
@@ -2392,7 +2371,7 @@
 /* 가챠 뱃지 */
 .typeBadgeGacha {
   background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 /* 가챠 기대값 표시 */
@@ -2416,7 +2395,8 @@
 .gachaExpectedGold {
   font-size: 1.15rem;
   font-weight: 800;
-  color: #f97316;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
 }
 
 .gachaExpectedEfficiency {
@@ -2445,7 +2425,7 @@
   position: relative;
   background: var(--card-bg);
   border: 2px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 1rem 0.75rem;
   display: flex;
   flex-direction: column;
@@ -2456,13 +2436,13 @@
 }
 
 .gachaItemCardHighlight {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   background: rgba(249, 115, 22, 0.08);
   box-shadow: 0 0 16px rgba(249, 115, 22, 0.35);
 }
 
 .gachaItemCardWon {
-  border-color: #22c55e;
+  border-color: var(--color-success);
   background: rgba(34, 197, 94, 0.08);
   box-shadow: 0 0 24px rgba(34, 197, 94, 0.4);
   animation: gachaPop 0.4s ease-out;
@@ -2506,14 +2486,14 @@
 }
 
 .gachaCheckboxActive {
-  background: #22c55e;
-  border-color: #22c55e;
+  background: var(--color-success);
+  border-color: var(--color-success);
   animation: checkPop 0.35s ease-out;
 }
 
 .gachaCheckboxExcluded {
   background: rgba(239, 68, 68, 0.8);
-  border-color: #ef4444;
+  border-color: var(--color-danger);
 }
 
 /* 10회 중복 카운트 뱃지 */
@@ -2521,7 +2501,7 @@
   position: absolute;
   top: 0.3rem;
   left: 0.5rem;
-  background: #8b5cf6;
+  background: var(--color-purple);
   color: #fff;
   font-size: 0.7rem;
   font-weight: 800;
@@ -2529,7 +2509,7 @@
   border-radius: 9px;
   line-height: 1.5;
   z-index: 3;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 @keyframes checkPop {
@@ -2577,8 +2557,9 @@
 .gachaItemGold {
   font-size: 0.9rem;
   font-weight: 800;
-  color: #f97316;
+  color: var(--color-accent);
   margin-top: auto;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 확률 뱃지 */
@@ -2592,7 +2573,7 @@
 }
 
 .gachaProbBadgeRare {
-  color: #f59e0b;
+  color: var(--color-warning);
   background: rgba(245, 158, 11, 0.1);
 }
 
@@ -2614,18 +2595,16 @@
   font-size: 1.3rem;
   font-weight: 800;
   color: #fff;
-  background: linear-gradient(135deg, #f97316, #ef4444);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-danger));
   border: none;
-  border-radius: 14px;
+  border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.4);
-  transition: all 0.2s;
+  box-shadow: var(--shadow-md);
   letter-spacing: 0.1em;
 }
 
 .gachaButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(249, 115, 22, 0.5);
+  box-shadow: var(--shadow-lg);
 }
 
 .gachaButton:disabled {
@@ -2640,8 +2619,8 @@
 }
 
 @keyframes gachaPulse {
-  0%, 100% { box-shadow: 0 4px 16px rgba(249, 115, 22, 0.4); }
-  50% { box-shadow: 0 4px 28px rgba(249, 115, 22, 0.7); }
+  0%, 100% { box-shadow: var(--shadow-md); }
+  50% { box-shadow: var(--shadow-lg); }
 }
 
 /* 가챠 결과 */
@@ -2649,8 +2628,8 @@
   text-align: center;
   padding: 1.5rem;
   background: var(--card-bg);
-  border: 2px solid #22c55e;
-  border-radius: 14px;
+  border: 2px solid var(--color-success);
+  border-radius: 12px;
   margin-bottom: 1.5rem;
   animation: gachaFadeIn 0.4s ease;
 }
@@ -2670,7 +2649,7 @@
 .gachaResultItemName {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #22c55e;
+  color: var(--color-success);
   margin-bottom: 0.5rem;
 }
 
@@ -2695,7 +2674,8 @@
 .gachaResultGold {
   font-size: 1.4rem;
   font-weight: 800;
-  color: #f97316;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
 }
 
 .gachaResultBenefit {
@@ -2709,27 +2689,26 @@
   padding: 0.6rem 2.5rem;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #f97316;
+  color: var(--color-accent);
   background: transparent;
-  border: 2px solid #f97316;
+  border: 2px solid var(--color-accent);
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
 .gachaRerollButton:hover {
-  background: #f97316;
+  background: var(--color-accent);
   color: #fff;
 }
 
 /* ─── 10회 가챠 버튼 ─── */
 .gachaBtnMulti {
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important;
-  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4) !important;
+  background: linear-gradient(135deg, var(--color-purple), #6d28d9) !important;
+  box-shadow: var(--shadow-md) !important;
 }
 
 .gachaBtnMulti:hover {
-  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.5) !important;
+  box-shadow: var(--shadow-lg) !important;
 }
 
 /* ─── 10회 가챠 결과 (상세 페이지) ─── */
@@ -2737,8 +2716,8 @@
   text-align: center;
   padding: 1.5rem;
   background: var(--card-bg);
-  border: 2px solid #8b5cf6;
-  border-radius: 14px;
+  border: 2px solid var(--color-purple);
+  border-radius: 12px;
   margin-bottom: 1.5rem;
   animation: gachaFadeIn 0.4s ease;
 }
@@ -2797,10 +2776,11 @@
 .gachaMultiTableGold {
   font-size: 0.95rem;
   font-weight: 800;
-  color: #f97316;
+  color: var(--color-accent);
   flex-shrink: 0;
   min-width: 5rem;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .gachaMultiTotalRow {
@@ -2821,7 +2801,8 @@
 .gachaMultiTotalGold {
   font-size: 1.3rem;
   font-weight: 800;
-  color: #f97316;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
 }
 
 /* 등록 페이지: 확률 입력 */
@@ -2838,7 +2819,7 @@
 }
 
 .gachaProbInput:focus {
-  border-color: #ef4444;
+  border-color: var(--color-danger);
   outline: none;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
 }
@@ -2865,12 +2846,12 @@
 }
 
 .gachaProbSumOk {
-  color: #22c55e;
+  color: var(--color-success);
   background: rgba(34, 197, 94, 0.08);
 }
 
 .gachaProbSumError {
-  color: #ef4444;
+  color: var(--color-danger);
   background: rgba(239, 68, 68, 0.08);
 }
 

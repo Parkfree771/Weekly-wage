@@ -33,7 +33,7 @@ export default function UpdatePopup() {
         <div className={styles.imageWrapper}>
           <Image
             src="/wlvuddmltjdekd2.webp"
-            alt="지평의 성당"
+            alt="성당"
             fill
             sizes="400px"
             className={styles.bgImage}

@@ -403,7 +403,7 @@ export default function PriceDashboard() {
             return (
               <div
                 key={item.id}
-                className="price-dashboard-item"
+                className="price-dashboard-item shadow-hard"
                 onClick={() => selectItemById(item.id)}
                 style={{
                   display: 'flex',
@@ -418,7 +418,6 @@ export default function PriceDashboard() {
                   height: '140px',
                   flexShrink: 0,
                   transition: 'all 0.25s ease',
-                  boxShadow: '0 4px 12px 0 rgba(0, 0, 0, 0.1)',
                   cursor: 'pointer',
                 }}
               >
@@ -445,7 +444,7 @@ export default function PriceDashboard() {
                 }}>
                   {item.shortName}
                 </span>
-                <span style={{
+                <span className="price-value" style={{
                   fontSize: '0.95rem',
                   fontWeight: 700,
                   color: 'var(--text-primary)',
@@ -455,6 +454,7 @@ export default function PriceDashboard() {
                   {formatPrice(priceData?.current || 0)}
                 </span>
                 <span
+                  className="price-change"
                   style={{
                     fontSize: '0.8rem',
                     fontWeight: 600,
@@ -512,7 +512,7 @@ export default function PriceDashboard() {
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              boxShadow: 'var(--shadow-xl)',
             }}
           >
             {/* 모달 헤더 */}

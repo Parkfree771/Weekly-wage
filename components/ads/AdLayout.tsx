@@ -12,7 +12,6 @@ interface PageConfig {
 function getPageConfig(pathname: string): PageConfig {
   if (pathname === '/refining') return { contentWidth: 1400, adTop: 110 };
   if (pathname === '/weekly-gold') return { contentWidth: 1800, adTop: 110 };
-  if (pathname === '/hell-sim') return { contentWidth: 1200, adTop: 110 };
   if (pathname === '/life-master') return { contentWidth: 1200, adTop: 110 };
   if (pathname === '/mypage') return { contentWidth: 1600, adTop: 130 };
   if (pathname.startsWith('/package/')) return { contentWidth: 1100, adTop: 80 };

@@ -61,9 +61,9 @@ export const MATERIAL_BUNDLE_SIZES: { [key: number]: number } = {
 };
 
 export const raidRewards: RaidReward[] = [
-  // 지평의 성당 3단계
+  // 성당 3단계
   {
-    raidName: '지평의 성당 3단계',
+    raidName: '성당 3단계',
     gate: 1,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 860 },
@@ -75,7 +75,7 @@ export const raidRewards: RaidReward[] = [
     ]
   },
   {
-    raidName: '지평의 성당 3단계',
+    raidName: '성당 3단계',
     gate: 2,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 1430 },
@@ -86,9 +86,9 @@ export const raidRewards: RaidReward[] = [
       { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 3 },
     ]
   },
-  // 지평의 성당 2단계
+  // 성당 2단계
   {
-    raidName: '지평의 성당 2단계',
+    raidName: '성당 2단계',
     gate: 1,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 1680 },
@@ -100,7 +100,7 @@ export const raidRewards: RaidReward[] = [
     ]
   },
   {
-    raidName: '지평의 성당 2단계',
+    raidName: '성당 2단계',
     gate: 2,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 2880 },
@@ -111,9 +111,9 @@ export const raidRewards: RaidReward[] = [
       { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 2 },
     ]
   },
-  // 지평의 성당 1단계
+  // 성당 1단계
   {
-    raidName: '지평의 성당 1단계',
+    raidName: '성당 1단계',
     gate: 1,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 960 },
@@ -125,7 +125,7 @@ export const raidRewards: RaidReward[] = [
     ]
   },
   {
-    raidName: '지평의 성당 1단계',
+    raidName: '성당 1단계',
     gate: 2,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 2400 },

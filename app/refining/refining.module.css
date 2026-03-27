@@ -28,15 +28,15 @@
 }
 
 .tabButton:hover {
-  border-color: #6366f1;
+  border-color: var(--color-primary);
   color: var(--text-primary);
 }
 
 .tabButtonActive {
-  background-color: #6366f1;
+  background-color: var(--color-primary);
   border-color: transparent;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .tabButtonActive:hover {

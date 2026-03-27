@@ -39,10 +39,14 @@ export type RaidMoreGoldExclude = {
   [raidName: string]: boolean;  // true = 더보기 비용 제외, false = 더보기 비용 포함
 };
 
+// 레이드별 골드 수령 설정
+export type RaidGoldReceive = {
+  [raidName: string]: boolean;  // true = 골드 수령, false = 골드 미수령
+};
+
 // 일일 컨텐츠 상태 (카던/가토)
 export type DailyContentState = {
-  checks: boolean[];  // 7일: 수목금토일월화
-  restGauge: number;  // 0-100, 주 시작 시 기본 휴식게이지
+  checks: number[];  // 7일: 수목금토일월화, 0=미체크, 1=x1, 2=x2, 3=x3, 4=x4
 };
 
 // 캐릭터별 주간 체크리스트
@@ -55,6 +59,8 @@ export type CharacterWeeklyState = {
   guardianRaid?: DailyContentState;  // 가디언 토벌
   excludeMoreGold?: boolean; // 전체 더보기 비용 골드 제외 (기본 true) - deprecated
   raidMoreGoldExclude?: RaidMoreGoldExclude; // 레이드별 더보기 비용 제외 설정
+  raidGoldReceive?: RaidGoldReceive; // 레이드별 골드 수령 설정
+  sandOfTimeLevel?: number; // 할의 모래시계 보상강화 레벨 (0~5, 기본 0=미설정)
 };
 
 // 전체 주간 체크리스트
@@ -310,14 +316,16 @@ export function calculateTotalGoldFromChecklist(
     Object.entries(state.raids).forEach(([raidName, gates]) => {
       const raid = raids.find(r => r.name === raidName);
       if (raid) {
+        const receiveGold = state.raidGoldReceive?.[raidName] !== false; // 기본 true
         const buyMore = state.raidMoreGoldExclude?.[raidName] === true;
 
         gates.forEach((checked, i) => {
           if (checked && raid.gates[i]) {
-            if (buyMore) {
-              raidGold += raid.gates[i].gold - raid.gates[i].moreGold;
-            } else {
+            if (receiveGold) {
               raidGold += raid.gates[i].gold;
+            }
+            if (buyMore) {
+              raidGold -= raid.gates[i].moreGold;
             }
           }
         });
@@ -345,19 +353,6 @@ export function calculateTotalGoldFromChecklist(
   };
 }
 
-// 일일 컨텐츠 주 종료 시 최종 휴식게이지 계산
-export function computeFinalRest(state?: DailyContentState): number {
-  if (!state) return 0;
-  let rest = state.restGauge;
-  for (let i = 0; i < 7; i++) {
-    if (state.checks[i]) {
-      if (rest >= 20) rest -= 20;
-    } else {
-      rest = Math.min(100, rest + 10);
-    }
-  }
-  return rest;
-}
 
 // 주간 체크리스트 초기화 (레이드 체크, 추가 골드만 - 캐릭터 정보 유지)
 export function resetWeeklyChecklist(
@@ -392,17 +387,14 @@ export function resetWeeklyChecklist(
       additionalGold: 0,  // 추가 골드 초기화
       paradise: false,    // 낙원 초기화
       sandOfTime: false,  // 모래시계 초기화
-      // 카던/가토: 체크 초기화, 휴식게이지는 이월
-      chaosDungeon: {
-        checks: new Array(7).fill(false),
-        restGauge: computeFinalRest(existingState?.chaosDungeon),
-      },
-      guardianRaid: {
-        checks: new Array(7).fill(false),
-        restGauge: computeFinalRest(existingState?.guardianRaid),
-      },
+      chaosDungeon: { checks: new Array(7).fill(0) },
+      guardianRaid: { checks: new Array(7).fill(0) },
       // 더보기 비용 설정은 유지
       raidMoreGoldExclude: existingState?.raidMoreGoldExclude || {},
+      // 골드 수령 설정은 유지
+      raidGoldReceive: existingState?.raidGoldReceive || {},
+      // 모래시계 보상강화 레벨 유지
+      sandOfTimeLevel: existingState?.sandOfTimeLevel || 0,
     };
   });
 

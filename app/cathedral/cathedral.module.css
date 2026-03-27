@@ -2,37 +2,21 @@
    지평의 성당 페이지 — 따뜻한 크림/브라운 테마 (패키지 갤러리 카드 동일)
    ========================================================================== */
 
-/* ─── 페이지 레벨 테마 변수 ─── */
+/* ─── 페이지 레벨 테마 변수 → 글로벌 디자인 시스템 매핑 ─── */
 .detailCard,
 .shopContainer {
-  --ct-bg: #fdf6ee;
-  --ct-bg-alt: #f9efe3;
-  --ct-bg-surface: #f5ead8;
-  --ct-text: #4a3728;
-  --ct-text-secondary: #8b7355;
-  --ct-text-muted: #b09a80;
-  --ct-border: rgba(180, 140, 90, 0.25);
-  --ct-border-light: rgba(180, 140, 90, 0.12);
-  --ct-accent: #c9a84c;
-  --ct-accent-bg: rgba(201, 168, 76, 0.06);
-  --ct-accent-border: rgba(201, 168, 76, 0.2);
-  --ct-shadow: 0 2px 12px rgba(120, 80, 30, 0.1);
-}
-
-:global([data-theme="dark"]) .detailCard,
-:global([data-theme="dark"]) .shopContainer {
-  --ct-bg: #1e1812;
-  --ct-bg-alt: #261e15;
-  --ct-bg-surface: #2e2318;
-  --ct-text: #e8ddd0;
-  --ct-text-secondary: #b09a80;
-  --ct-text-muted: #7a6a55;
-  --ct-border: rgba(180, 140, 90, 0.18);
-  --ct-border-light: rgba(180, 140, 90, 0.08);
-  --ct-accent: #c9a84c;
-  --ct-accent-bg: rgba(201, 168, 76, 0.08);
-  --ct-accent-border: rgba(201, 168, 76, 0.15);
-  --ct-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  --ct-bg: var(--card-bg);
+  --ct-bg-alt: var(--card-body-bg-blue);
+  --ct-bg-surface: var(--card-body-bg-stone);
+  --ct-text: var(--text-primary);
+  --ct-text-secondary: var(--text-secondary);
+  --ct-text-muted: var(--text-muted);
+  --ct-border: var(--border-color);
+  --ct-border-light: var(--border-color);
+  --ct-accent: var(--color-accent);
+  --ct-accent-bg: var(--color-accent-light);
+  --ct-accent-border: var(--color-accent-light);
+  --ct-shadow: var(--shadow-md);
 }
 
 /* ─── 레이드 카드 그리드 ─── */
@@ -52,21 +36,15 @@
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(120, 80, 30, 0.12);
+  box-shadow: var(--shadow-md);
   border: 3px solid transparent;
   width: 200px;
 }
 
-.raidCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(120, 80, 30, 0.2);
-}
 
 .raidCard.selected {
-  border-color: #c9a84c;
+  border-color: var(--color-gold);
   box-shadow: 0 8px 24px rgba(201, 168, 76, 0.4);
-  transform: translateY(-4px);
 }
 
 .imageWrapper { position: relative; width: 100%; height: 100%; }
@@ -86,8 +64,8 @@
 
 .raidName { font-size: 1rem; font-weight: 700; color: white; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
 .raidLevel { font-size: 0.85rem; font-weight: 500; color: rgba(255,255,255,0.9); margin: 0; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
-.goldBadge { margin-top: 0.15rem; font-size: 0.9rem; font-weight: 800; color: #ffd700; text-shadow: 0 0 6px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,1); }
-.graceBadge { font-size: 0.78rem; font-weight: 700; color: #e8d5a3; text-shadow: 0 0 6px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,1); }
+.goldBadge { margin-top: 0.15rem; font-size: 0.9rem; font-weight: 800; color: var(--color-gold); text-shadow: 0 0 6px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,1); }
+.graceBadge { font-size: 0.78rem; font-weight: 700; color: var(--color-gold); text-shadow: 0 0 6px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,1); }
 
 /* ==========================================================================
    상세 카드 — 따뜻한 배경 레이아웃
@@ -96,15 +74,9 @@
 .detailCard {
   border: 1px solid var(--ct-border);
   box-shadow: var(--ct-shadow);
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--ct-bg);
   overflow: hidden;
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .detailHeader {
@@ -191,10 +163,10 @@
   color: var(--ct-text);
 }
 
-.goldValue { font-size: 0.85rem; font-weight: 700; color: var(--ct-accent); }
-.costValue { font-size: 0.85rem; font-weight: 700; color: #c0392b; }
-.graceValue { font-size: 0.85rem; font-weight: 700; color: var(--ct-accent); }
-.coreValue { font-size: 0.85rem; font-weight: 700; color: var(--ct-text); }
+.goldValue { font-size: 0.85rem; font-weight: 700; color: var(--ct-accent); font-variant-numeric: tabular-nums; }
+.costValue { font-size: 0.85rem; font-weight: 700; color: var(--color-danger); font-variant-numeric: tabular-nums; }
+.graceValue { font-size: 0.85rem; font-weight: 700; color: var(--ct-accent); font-variant-numeric: tabular-nums; }
+.coreValue { font-size: 0.85rem; font-weight: 700; color: var(--ct-text); font-variant-numeric: tabular-nums; }
 
 /* ─── 재료 테이블 ─── */
 .materialTable {
@@ -204,9 +176,10 @@
   border-spacing: 0;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid var(--ct-accent-border);
+  border: 1.5px solid var(--color-primary);
   margin-top: 0.4rem;
-  font-family: 'Noto Sans KR', sans-serif;
+  font-family: inherit;
+  box-shadow: var(--shadow-sm);
 }
 
 .materialTable th:nth-child(1),
@@ -216,13 +189,13 @@
 }
 
 .materialTable thead th {
-  background: var(--ct-bg-surface);
+  background: var(--color-primary) !important;
   font-weight: 700;
-  font-size: 0.95rem;
-  padding: 0.75rem 0.5rem;
-  color: var(--ct-text);
-  border-bottom: 2px solid var(--ct-accent-border);
-  border-right: 1px solid var(--ct-border-light);
+  font-size: 0.9rem;
+  padding: 0.6rem 0.5rem;
+  color: #fff !important;
+  border-bottom: 2px solid var(--color-accent) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
   text-align: center;
 }
 
@@ -237,6 +210,7 @@
   font-weight: 600;
   text-align: center;
   background: var(--ct-bg);
+  font-variant-numeric: tabular-nums;
 }
 
 .materialTable tbody td:nth-child(2) { text-align: left; }
@@ -274,13 +248,13 @@
   display: flex;
   justify-content: center;
 }
-.materialCheckbox :global(.form-check-input) { accent-color: #27ae60; }
+.materialCheckbox :global(.form-check-input) { accent-color: var(--color-success); }
 .materialCheckbox :global(.form-check-input:checked) {
-  background-color: #27ae60;
-  border-color: #27ae60;
+  background-color: var(--color-success);
+  border-color: var(--color-success);
 }
 .materialCheckbox :global(.form-check-input:focus) {
-  border-color: #27ae60;
+  border-color: var(--color-success);
   box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
 }
 
@@ -333,6 +307,7 @@
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--ct-text);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ==========================================================================
@@ -341,46 +316,32 @@
 
 /* ─── 상점 카드 래퍼 ─── */
 .shopCard {
-  border-radius: 14px !important;
+  border-radius: 16px !important;
   overflow: hidden;
   background: transparent !important;
   border: 1px solid var(--ct-border) !important;
   box-shadow: var(--ct-shadow) !important;
 
-  --ct-bg: #fdf6ee;
-  --ct-bg-alt: #f9efe3;
-  --ct-bg-surface: #f5ead8;
-  --ct-text: #4a3728;
-  --ct-text-secondary: #8b7355;
-  --ct-text-muted: #b09a80;
-  --ct-border: rgba(180, 140, 90, 0.25);
-  --ct-border-light: rgba(180, 140, 90, 0.12);
-  --ct-accent: #c9a84c;
-  --ct-accent-bg: rgba(201, 168, 76, 0.06);
-  --ct-accent-border: rgba(201, 168, 76, 0.2);
-  --ct-shadow: 0 2px 12px rgba(120, 80, 30, 0.1);
-}
-
-:global([data-theme="dark"]) .shopCard {
-  --ct-bg: #1e1812;
-  --ct-bg-alt: #261e15;
-  --ct-bg-surface: #2e2318;
-  --ct-text: #e8ddd0;
-  --ct-text-secondary: #b09a80;
-  --ct-text-muted: #7a6a55;
-  --ct-border: rgba(180, 140, 90, 0.18);
-  --ct-border-light: rgba(180, 140, 90, 0.08);
-  --ct-accent: #c9a84c;
-  --ct-accent-bg: rgba(201, 168, 76, 0.08);
-  --ct-accent-border: rgba(201, 168, 76, 0.15);
-  --ct-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  /* 글로벌 디자인 시스템 상속 — detailCard와 동일 */
+  --ct-bg: var(--card-bg);
+  --ct-bg-alt: var(--card-body-bg-blue);
+  --ct-bg-surface: var(--card-body-bg-stone);
+  --ct-text: var(--text-primary);
+  --ct-text-secondary: var(--text-secondary);
+  --ct-text-muted: var(--text-muted);
+  --ct-border: var(--border-color);
+  --ct-border-light: var(--border-color);
+  --ct-accent: var(--color-accent);
+  --ct-accent-bg: var(--color-accent-light);
+  --ct-accent-border: var(--color-accent-light);
+  --ct-shadow: var(--shadow-md);
 }
 
 .shopCardHeader {
   background: var(--ct-bg-surface) !important;
   border: none !important;
-  border-bottom: 2px solid var(--ct-accent) !important;
-  padding: 0.65rem 1rem !important;
+  border-bottom: 2px solid var(--color-primary) !important;
+  padding: 0.5rem 1rem !important;
   text-align: center;
 }
 
@@ -395,31 +356,31 @@
 .shopContainer {
   display: flex;
   gap: 0;
-  min-height: 600px;
+  min-height: 700px;
   background: var(--ct-bg);
-  border-radius: 0 0 14px 14px;
+  border-radius: 0 0 16px 16px;
 }
 
 .shopList {
-  width: 360px;
-  min-width: 360px;
+  flex: 0 0 400px;
   border-right: 1px solid var(--ct-border-light);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--ct-bg);
 }
 
 .shopListHeader {
-  padding: 0.55rem 0.85rem;
-  font-size: 0.82rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: var(--ct-accent);
-  background: var(--ct-bg-alt);
-  border-bottom: 1px solid var(--ct-border-light);
+  color: var(--color-primary);
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
+  box-shadow: 0 -4px 0 0 var(--card-bg);
 }
 
 .shopItem {
@@ -428,19 +389,14 @@
   gap: 0.6rem;
   padding: 0.6rem 0.75rem;
   cursor: pointer;
-  transition: background 0.15s ease;
   border-bottom: 1px solid var(--ct-border-light);
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   color: var(--ct-text);
 }
 
-.shopItem:hover {
-  background: var(--ct-accent-bg);
-}
 
 .shopItem.active {
-  background: var(--ct-bg-alt);
-  border-left: 3px solid var(--ct-accent);
+  background: var(--color-primary-light);
 }
 
 .shopItemIcon {
@@ -466,8 +422,8 @@
 
 .shopItemIconFill img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.shopItemName { flex: 1; font-weight: 600; font-size: 0.82rem; line-height: 1.3; }
-.shopItemQty { font-size: 0.78rem; color: var(--ct-text-secondary); font-weight: 500; white-space: nowrap; }
+.shopItemName { flex: 1; font-weight: 600; font-size: 0.92rem; line-height: 1.3; }
+.shopItemQty { font-size: 0.85rem; color: var(--ct-text-secondary); font-weight: 500; white-space: nowrap; }
 
 /* 교환 비용 골드 환산 배지 */
 .shopItemCostBadge {
@@ -480,16 +436,16 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--ct-accent);
   white-space: nowrap;
 }
 
 .shopItemFree {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: #27ae60;
+  color: var(--color-success);
 }
 
 /* 교환 비용 골드 환산 합계 행 */
@@ -497,23 +453,24 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  background: var(--ct-bg);
-  border: 1px solid var(--ct-border);
+  background: var(--card-bg);
+  border: 2.5px solid #d4621e;
   border-radius: 8px;
-  padding: 0.28rem 0.5rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--ct-text);
+  padding: 0.35rem 0.6rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .costTotalEquals {
-  color: var(--ct-text-muted);
+  color: var(--text-muted);
   margin-right: 2px;
 }
 
 .costTotalValue {
-  font-weight: 700;
-  color: var(--ct-text);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--text-primary);
 }
 
 /* 교환 효율 섹션 */
@@ -535,18 +492,14 @@
   border: 1px solid var(--ct-border-light);
   background: var(--ct-bg);
   cursor: pointer;
-  transition: all 0.15s ease;
   opacity: 0.5;
 }
 
-.gemSelectCard:hover {
-  background: var(--ct-accent-bg);
-}
 
 .gemSelectActive {
   opacity: 1;
-  border-color: var(--ct-accent);
-  background: var(--ct-accent-bg);
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
 }
 
 .gemSelectCheck {
@@ -554,7 +507,7 @@
 }
 
 .gemSelectName {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--ct-text);
   text-align: center;
@@ -566,13 +519,13 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--ct-accent);
 }
 
 .gemRandomProb {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--ct-text-secondary);
 }
@@ -582,7 +535,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0.5rem;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--ct-text);
   border-top: 1px solid var(--ct-border);
@@ -599,13 +552,13 @@
   width: 100%;
   margin-top: 0.75rem;
   padding: 0.75rem;
-  background: var(--ct-accent-bg);
-  border: 1px solid var(--ct-accent-border);
+  background: var(--color-primary-light);
+  border: 1px solid rgba(59, 80, 181, 0.15);
   border-radius: 10px;
 }
 
 .efficiencyTitle {
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--ct-text);
   margin-bottom: 0.5rem;
@@ -624,7 +577,7 @@
 }
 
 .efficiencyLabel {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   color: var(--ct-text-secondary);
 }
 
@@ -632,7 +585,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--ct-text);
 }
@@ -647,7 +600,7 @@
 }
 
 .efficiencyResultLabel {
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--ct-text);
 }
@@ -658,10 +611,11 @@
   gap: 6px;
   font-size: 1rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .efficiencyProfitTag {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 600;
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
@@ -675,7 +629,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--ct-bg-alt);
 }
 
@@ -718,17 +672,17 @@
 }
 
 .shopDetailName {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--ct-text);
   margin-bottom: 0.3rem;
   text-align: center;
 }
 
-.shopDetailSection { width: 100%; }
+.shopDetailSection { width: 100%; min-height: 85px; }
 
 .shopDetailSectionTitle {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 700;
   margin-bottom: 0.3rem;
   padding-left: 0.1rem;
@@ -760,8 +714,8 @@
   border-bottom: 1px solid var(--ct-border-light);
 }
 
-.shopDetailLabel { font-size: 0.82rem; font-weight: 600; color: var(--ct-text-secondary); }
-.shopDetailValue { font-size: 0.82rem; font-weight: 700; color: var(--ct-text); }
+.shopDetailLabel { font-size: 0.9rem; font-weight: 600; color: var(--ct-text-secondary); }
+.shopDetailValue { font-size: 0.9rem; font-weight: 700; color: var(--ct-text); }
 
 /* 압축 정보 */
 .shopCompactInfo {
@@ -770,7 +724,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.3rem 0;
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: var(--ct-text);
 }
@@ -783,6 +737,8 @@
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-top: 0.4rem;
+  align-items: center;
+  min-width: 560px;
 }
 
 .shopDetailCostItem {
@@ -793,30 +749,34 @@
   border: 1px solid var(--ct-border);
   border-radius: 8px;
   padding: 0.28rem 0.5rem;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--ct-text);
 }
 
 .costIcon { width: 22px; height: 22px; flex-shrink: 0; }
 
+/* 교환 비용 이름: 데스크톱=풀네임, 모바일=축약 */
+.costName { display: inline; }
+.costShortName { display: none; }
+
 .limitBadge {
   display: inline-block;
   padding: 0.15rem 0.4rem;
   border-radius: 5px;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
 .limitOnce {
   background: rgba(192, 100, 60, 0.08);
-  color: #c0392b;
+  color: var(--color-danger);
   border: 1px solid rgba(192, 100, 60, 0.18);
 }
 
 .limitUnlimited {
   background: rgba(39, 174, 96, 0.08);
-  color: #27ae60;
+  color: var(--color-success);
   border: 1px solid rgba(39, 174, 96, 0.18);
 }
 
@@ -839,8 +799,117 @@
   text-align: center;
 }
 
-.gemName { font-size: 0.7rem; font-weight: 600; color: var(--ct-text); line-height: 1.2; }
-.gemPrice { display: flex; align-items: center; gap: 0.25rem; font-size: 0.78rem; font-weight: 700; color: var(--ct-accent); }
+.gemName { font-size: 0.8rem; font-weight: 600; color: var(--ct-text); line-height: 1.2; }
+.gemPrice { display: flex; align-items: center; gap: 0.25rem; font-size: 0.88rem; font-weight: 700; color: var(--ct-accent); }
+
+.gemCheckCell {
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+/* 모바일 단일 젬 테이블: 기본 숨김, 768px 이하에서 표시 */
+.gemTableMobile { display: none; }
+
+.gemMobileCheckTh {
+  width: 28px;
+  padding: 0.3rem 0.2rem;
+}
+
+.gemMobilePrice {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── 젬 구성요소 표 ─── */
+.gemTableRow {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.gemTable {
+  width: 580px;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1.5px solid var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  align-self: center;
+}
+
+.gemTable thead th {
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.5rem 0.5rem;
+  text-align: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  white-space: nowrap;
+}
+
+.gemTable thead th:nth-child(3) { border-right: 2px solid var(--color-accent); }
+.gemTable thead th:last-child { border-right: none; }
+
+.gemTable tbody td {
+  padding: 0.5rem 0.5rem;
+  border-bottom: 1px solid var(--ct-border-light);
+  border-right: 1px solid var(--ct-border-light);
+  vertical-align: middle;
+  text-align: center;
+  background: var(--ct-bg);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ct-text);
+}
+
+.gemTable tbody td:nth-child(3) { border-right: 2px solid var(--color-accent-light); }
+.gemTable tbody td:last-child { border-right: none; }
+.gemTable tbody tr:last-child td { border-bottom: none; }
+
+.gemTableCheck {
+  cursor: pointer;
+  font-size: 1rem;
+  width: 36px;
+}
+
+.gemTableName {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: left;
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.gemTableSelected {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.gemTablePrice {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ct-accent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.gemTableProb {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ct-text-secondary);
+  white-space: nowrap;
+}
 
 /* ─── 모바일 상점 테이블 ─── */
 .shopMobileTable {
@@ -850,7 +919,7 @@
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--ct-accent-border);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
 }
 
 .shopMobileTable thead th {
@@ -880,11 +949,12 @@
    ========================================================================== */
 
 @media (max-width: 992px) {
-  .shopContainer { flex-direction: column; }
+  .shopContainer { flex-direction: column; min-height: unset; }
   .shopList {
-    width: 100%; min-width: unset; max-height: 280px;
+    width: 100%; min-width: unset; max-height: none; overflow: visible;
     border-right: none; border-bottom: 1px solid var(--ct-border-light);
   }
+  .shopListHeader { position: static; box-shadow: none; }
   .shopDetail { padding: 1rem; }
   .gemGrid { grid-template-columns: repeat(3, 1fr); }
 }
@@ -908,19 +978,34 @@
   .finalTitle { font-size: 0.82rem; }
   .finalGrid { grid-template-columns: repeat(2, 1fr); gap: 0.35rem; }
 
-  .shopList { max-height: 240px; }
-  .shopItem { padding: 0.5rem 0.65rem; gap: 0.5rem; font-size: 0.82rem; }
+  .shopList { max-height: none; overflow-y: visible; }
+  .shopItem { padding: 0.5rem 0.65rem; gap: 0.5rem; font-size: 0.88rem; }
   .shopItemIcon, .shopItemIconFill { width: 38px; height: 38px; }
-  .shopItemName { font-size: 0.82rem; }
-  .shopDetail { padding: 0.85rem; }
+  .shopItemName { font-size: 0.88rem; }
+  .shopDetail { padding: 0.85rem; overflow-y: visible; }
   .shopDetailIcon, .shopDetailIconFill { width: 72px; height: 72px; margin-bottom: 0.5rem; }
-  .shopDetailName { font-size: 0.95rem; }
+  .shopDetailName { font-size: 1rem; }
+  .shopDetailCostList { min-width: unset; }
+  .costName { display: none; }
+  .costShortName { display: inline; }
 
-  .materialTable thead th { font-size: 1rem; padding: 0.625rem 0.5rem; }
-  .materialTable tbody td { padding: 0.625rem 0.5rem; font-size: 1rem; }
-  .materialCell span { font-size: 0.85rem; white-space: nowrap; }
-  .materialCell img { width: 36px; height: 36px; }
-  .subtotalRow td, .gateTotalRow td { font-size: 1rem; padding: 0.625rem 0.5rem !important; }
+  .materialTable thead th { font-size: 0.85rem; padding: 0.5rem 0.4rem; }
+  .materialTable tbody td { padding: 0.5rem 0.4rem; font-size: 0.85rem; }
+  .materialCell span { font-size: 0.78rem; white-space: nowrap; }
+  .materialCell img { width: 28px; height: 28px; }
+  .subtotalRow td, .gateTotalRow td { font-size: 0.85rem; padding: 0.5rem 0.4rem !important; }
+  .gemTableRow { display: none; }
+  .gemTableMobile { display: table; }
+  .gemTableMobile thead th { font-size: 0.88rem; padding: 0.45rem 0.4rem; }
+  .gemTableMobile thead th:first-child { width: 32px !important; }
+  .gemTableMobile tbody td { padding: 0.4rem 0.4rem; font-size: 0.9rem; }
+  .gemTableMobile tbody td:first-child { width: 32px !important; }
+  .gemTableMobile .gemCheckCell { font-size: 1rem; }
+  .gemTableMobile .materialCell { gap: 0.4rem; }
+  .gemTableMobile .materialCell img { width: 30px !important; height: 30px !important; }
+  .gemTableMobile .materialCell span { font-size: 0.88rem; }
+  .gemTableMobile .gemMobilePrice { gap: 3px; font-size: 0.9rem; font-weight: 700; }
+  .gemTableMobile .gemMobilePrice img { width: 14px !important; height: 14px !important; }
 
   .rewardWide { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
@@ -956,22 +1041,57 @@
   .materialCell img { width: 32px; height: 32px; }
   .subtotalRow td, .gateTotalRow td { font-size: 1rem; padding: 0.5rem 0.4rem !important; }
 
-  .shopList { max-height: 200px; }
-  .shopItem { padding: 0.4rem 0.55rem; gap: 0.4rem; font-size: 0.78rem; }
-  .shopItemIcon, .shopItemIconFill { width: 34px; height: 34px; border-radius: 6px; }
+  .shopList { max-height: none; overflow-y: visible; }
+  .shopListHeader { font-size: 0.8rem; padding: 0.35rem 0.65rem; }
+  .shopItem { padding: 0.35rem 0.5rem; gap: 0.35rem; font-size: 0.8rem; }
+  .shopItemIcon, .shopItemIconFill { width: 30px; height: 30px; border-radius: 5px; }
   .shopItemName { font-size: 0.78rem; }
-  .shopDetail { padding: 0.65rem; }
-  .shopDetailIcon, .shopDetailIconFill { width: 64px; height: 64px; margin-bottom: 0.4rem; border-radius: 10px; }
-  .shopDetailName { font-size: 0.88rem; margin-bottom: 0.25rem; }
-  .shopDetailRow { padding: 0.3rem 0; }
-  .shopDetailLabel, .shopDetailValue { font-size: 0.78rem; }
-  .shopCompactInfo { font-size: 0.75rem; }
-  .shopDetailCostItem { padding: 0.2rem 0.4rem; font-size: 0.72rem; }
-  .costIcon { width: 20px; height: 20px; }
-  .gemGrid { grid-template-columns: repeat(3, 1fr); gap: 0.35rem; }
-  .gemCard { padding: 0.35rem 0.2rem; }
-  .gemName { font-size: 0.58rem; }
-  .gemPrice { font-size: 0.68rem; }
+  .shopItemCostBadge { min-width: 55px; }
+  .shopItemCostValue { font-size: 0.75rem; gap: 2px; }
+  .shopItemCostValue img { width: 12px !important; height: 12px !important; }
+  .shopItemFree { font-size: 0.75rem; }
+  .shopDetail { padding: 0.55rem; overflow-y: visible; max-height: none; }
+  .shopDetailIcon, .shopDetailIconFill { width: 56px; height: 56px; margin-bottom: 0.3rem; border-radius: 8px; }
+  .shopDetailName { font-size: 0.88rem; margin-bottom: 0.2rem; }
+  .shopDetailRow { padding: 0.25rem 0; }
+  .shopDetailLabel, .shopDetailValue { font-size: 0.8rem; }
+  .shopDetailSectionTitle { font-size: 0.8rem; }
+  .shopCompactInfo { font-size: 0.78rem; }
+  .shopDetailCostList { min-width: unset; gap: 0.25rem; }
+  .shopDetailCostItem { padding: 0.2rem 0.35rem; font-size: 0.75rem; gap: 0.2rem; }
+  .shopDetailCostItem img { width: 18px !important; height: 18px !important; }
+  .costName { display: none; }
+  .costShortName { display: inline; }
+  .costIcon { width: 18px; height: 18px; }
+  .costTotalRow { font-size: 0.78rem; padding: 0.25rem 0.45rem; }
+  .costTotalValue { font-size: 0.85rem; }
+  .gemGrid { grid-template-columns: repeat(3, 1fr); gap: 0.3rem; }
+  .gemCard { padding: 0.3rem 0.15rem; }
+  .gemName { font-size: 0.68rem; }
+  .gemPrice { font-size: 0.72rem; }
+
+  /* 젬 테이블 모바일 */
+  .gemTableRow { display: none; }
+  .gemTableMobile { display: table; }
+  .gemTableMobile thead th { font-size: 0.82rem; padding: 0.4rem 0.35rem; }
+  .gemTableMobile thead th:first-child { width: 30px !important; }
+  .gemTableMobile tbody td { padding: 0.35rem 0.35rem; font-size: 0.85rem; }
+  .gemTableMobile tbody td:first-child { width: 30px !important; }
+  .gemTableMobile .gemCheckCell { font-size: 0.95rem; }
+  .gemTableMobile .materialCell { gap: 0.35rem; }
+  .gemTableMobile .materialCell img { width: 26px !important; height: 26px !important; }
+  .gemTableMobile .materialCell span { font-size: 0.82rem; }
+  .gemTableMobile .gemMobilePrice { gap: 3px; font-size: 0.85rem; font-weight: 700; }
+  .gemTableMobile .gemMobilePrice img { width: 13px !important; height: 13px !important; }
+  .materialTable { margin-top: 0.25rem; }
+  .materialTable thead th { font-size: 0.78rem; padding: 0.4rem 0.3rem; }
+  .materialTable tbody td { padding: 0.4rem 0.3rem; font-size: 0.78rem; }
+  .materialTable th:nth-child(1),
+  .materialTable td:nth-child(1) { width: 24px; padding: 0.3rem 0.15rem; }
+  .materialCell { gap: 0.3rem; }
+  .materialCell img { width: 22px !important; height: 22px !important; }
+  .materialCell span { font-size: 0.72rem; white-space: nowrap; }
+  .subtotalRow td, .gateTotalRow td { font-size: 0.78rem; padding: 0.4rem 0.3rem !important; }
 }
 
 /* ==========================================================================
@@ -979,23 +1099,10 @@
    ========================================================================== */
 
 .graceValueCard {
-  background: linear-gradient(135deg, #1a1207 0%, #2a1f0e 50%, #1a1207 100%);
-  border: 1.5px solid rgba(201, 168, 76, 0.45);
+  background: var(--card-bg);
+  border: 2.5px solid #d4621e;
   border-radius: 12px;
   padding: 0.8rem 1rem;
-  box-shadow:
-    0 4px 16px rgba(201, 168, 76, 0.18),
-    0 1px 4px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(201, 168, 76, 0.12);
-}
-
-:global(:root) .graceValueCard {
-  background: linear-gradient(135deg, #fdf6ee 0%, #f5ead4 50%, #fdf6ee 100%);
-  border: 1.5px solid rgba(201, 168, 76, 0.4);
-  box-shadow:
-    0 4px 16px rgba(201, 168, 76, 0.2),
-    0 2px 6px rgba(120, 80, 30, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .graceValueRow {
@@ -1009,7 +1116,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--ct-text);
 }
@@ -1020,8 +1127,8 @@
   gap: 4px;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #c9a84c;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
 }
 
 .graceValueUnit {
@@ -1032,7 +1139,7 @@
 
 .graceValueFormula {
   margin-top: 0.3rem;
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   color: var(--ct-text-muted);
   text-align: right;
 }
@@ -1042,40 +1149,25 @@
    ========================================================================== */
 
 .calendarSection {
-  --ct-bg: #fdf6ee;
-  --ct-bg-alt: #f9efe3;
-  --ct-bg-surface: #f5ead8;
-  --ct-text: #4a3728;
-  --ct-text-secondary: #8b7355;
-  --ct-text-muted: #b09a80;
-  --ct-border: rgba(180, 140, 90, 0.25);
-  --ct-border-light: rgba(180, 140, 90, 0.12);
-  --ct-accent: #c9a84c;
-  --ct-accent-bg: rgba(201, 168, 76, 0.06);
-  --ct-accent-border: rgba(201, 168, 76, 0.2);
-  --ct-shadow: 0 2px 12px rgba(120, 80, 30, 0.1);
+  --ct-bg: var(--card-bg);
+  --ct-bg-alt: var(--card-body-bg-blue);
+  --ct-bg-surface: var(--card-body-bg-stone);
+  --ct-text: var(--text-primary);
+  --ct-text-secondary: var(--text-secondary);
+  --ct-text-muted: var(--text-muted);
+  --ct-border: var(--border-color);
+  --ct-border-light: var(--border-color);
+  --ct-accent: var(--color-accent);
+  --ct-accent-bg: var(--color-accent-light);
+  --ct-accent-border: var(--color-accent-light);
+  --ct-shadow: var(--shadow-md);
 
   margin-top: 2rem;
   background: var(--ct-bg);
   border: 1px solid var(--ct-border);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 1.5rem;
   box-shadow: var(--ct-shadow);
-}
-
-:global([data-theme="dark"]) .calendarSection {
-  --ct-bg: #1e1812;
-  --ct-bg-alt: #261e15;
-  --ct-bg-surface: #2e2318;
-  --ct-text: #e8ddd0;
-  --ct-text-secondary: #b09a80;
-  --ct-text-muted: #7a6a55;
-  --ct-border: rgba(180, 140, 90, 0.18);
-  --ct-border-light: rgba(180, 140, 90, 0.08);
-  --ct-accent: #c9a84c;
-  --ct-accent-bg: rgba(201, 168, 76, 0.08);
-  --ct-accent-border: rgba(201, 168, 76, 0.15);
-  --ct-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* ─── 헤더 ─── */
@@ -1125,13 +1217,7 @@
   font-weight: 700;
   cursor: pointer;
   background: transparent;
-  color: #dc2626;
-  transition: all 0.15s ease;
-}
-
-.calResetBtn:hover {
-  background: rgba(220, 38, 38, 0.08);
-  border-color: #dc2626;
+  color: var(--color-danger);
 }
 
 .calToggle {
@@ -1151,30 +1237,27 @@
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
   background: transparent;
   color: var(--ct-text-muted);
 }
 
-.calToggleBtn:hover { color: var(--ct-text); }
-
 .calToggleLvActive {
   background: var(--ct-bg) !important;
   font-weight: 800 !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   border-bottom: 2px solid currentColor;
 }
 
 .calToggleModeActive {
   background: var(--ct-bg) !important;
   font-weight: 800 !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .calToggleActive {
   background: var(--ct-bg) !important;
-  color: var(--ct-accent) !important;
-  box-shadow: 0 1px 4px rgba(120, 80, 30, 0.12);
+  color: var(--color-primary) !important;
+  box-shadow: var(--shadow-sm);
   font-weight: 700;
 }
 
@@ -1228,7 +1311,6 @@
   border: 1.5px solid var(--ct-border-light);
   border-radius: 14px;
   padding: 1rem 1.2rem;
-  transition: all 0.2s ease;
   min-width: 300px;
   flex-shrink: 0;
   scroll-snap-align: start;
@@ -1301,13 +1383,7 @@
   border: 1.5px solid var(--ct-border-light);
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
   user-select: none;
-}
-
-.calWeekItem:hover {
-  border-color: var(--ct-accent-border);
-  box-shadow: 0 2px 10px rgba(120, 80, 30, 0.08);
 }
 
 .calWeekItemChecked {
@@ -1335,7 +1411,6 @@
   font-size: 0.85rem;
   font-weight: 900;
   color: transparent;
-  transition: all 0.15s ease;
   background: var(--ct-bg);
 }
 
@@ -1387,7 +1462,6 @@
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--ct-text);
-  transition: all 0.15s;
 }
 
 .calWkQty {
@@ -1542,11 +1616,6 @@
   overflow: hidden;
   cursor: pointer;
   opacity: 0.5;
-  transition: opacity 0.15s;
-}
-
-.calExchangedIcon:hover {
-  opacity: 0.8;
 }
 
 .calExchangedCheck {

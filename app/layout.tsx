@@ -3,23 +3,30 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ConsentModal from '@/components/auth/ConsentModal';
-import UpdatePopup from '@/components/UpdatePopup';
 import AdLayout from '@/components/ads/AdLayout';
 
 import ConsoleFilter from '@/components/ConsoleFilter';
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_KR } from "next/font/google";
+import { Noto_Sans_KR, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./globals.css";
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
   preload: true,
   adjustFontFallback: true,
   fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+  preload: true,
+  variable: "--font-mono",
 });
 
 export const viewport: Viewport = {
@@ -98,7 +105,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={notoSansKr.className}>
+      <body className={`${notoSansKr.className} ${jetbrainsMono.variable}`}>
         <ThemeProvider>
           <ConsoleFilter />
           <AuthProvider>
@@ -108,7 +115,6 @@ export default function RootLayout({
             </AdLayout>
             <Footer />
             <ConsentModal />
-            <UpdatePopup />
           </AuthProvider>
         </ThemeProvider>
 

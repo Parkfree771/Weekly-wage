@@ -2,12 +2,13 @@
 'use client';
 
 import { useState, useEffect, ReactNode, useMemo, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Row, Col } from 'react-bootstrap';
 import Image from 'next/image';
 import { TrackedItem, ItemCategory, getItemsByCategory, RefineAdditionalSubCategory, getItemsBySubCategory, REFINE_ADDITIONAL_SUBCATEGORIES, SUCCESSION_TO_NORMAL_MATERIAL_MAP, SUCCESSION_MATERIAL_START_DATE, findItemById, TRACKED_ITEMS } from '@/lib/items-to-track';
 import ItemSelector, { CATEGORY_STYLES } from './ItemSelector';
-import CompactPriceChart from './CompactPriceChart';
-import MiniPriceChart from './MiniPriceChart';
+const CompactPriceChart = dynamic(() => import('./CompactPriceChart'), { ssr: false });
+const MiniPriceChart = dynamic(() => import('./MiniPriceChart'), { ssr: false });
 import { PriceContext } from './PriceComparisonStats';
 import { useTheme } from './ThemeProvider';
 
@@ -481,7 +482,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
               gap: '12px',
             }}>
               {/* 카테고리 상자 */}
-              <div style={{
+              <div className="shadow-hard" style={{
                 backgroundColor: 'var(--card-bg)',
                 borderRadius: '12px',
                 border: '1px solid var(--border-color)',
@@ -529,6 +530,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                   return (
                     <button
                       key={cat}
+                      className="shadow-hard"
                       onClick={() => handleSelectCategory(cat)}
                       style={{
                         display: 'block',
@@ -571,7 +573,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
               </div>
 
               {/* 기간선택 상자 */}
-              <div style={{
+              <div className="shadow-hard" style={{
                 backgroundColor: 'var(--card-bg)',
                 borderRadius: '12px',
                 border: '1px solid var(--border-color)',
@@ -605,6 +607,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                     return (
                       <button
                         key={period}
+                        className="shadow-hard"
                         onClick={() => setSelectedPeriod(period)}
                         style={{
                           padding: '8px 10px',
@@ -644,7 +647,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
               </div>
 
               {/* 보기모드 상자 */}
-              <div style={{
+              <div className="shadow-hard" style={{
                 backgroundColor: 'var(--card-bg)',
                 borderRadius: '12px',
                 border: '1px solid var(--border-color)',
@@ -666,6 +669,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                   gap: '6px',
                 }}>
                   <button
+                    className="shadow-hard"
                     onClick={() => isGridView && handleToggleGridView()}
                     style={{
                       padding: '8px 10px',
@@ -686,6 +690,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                     단일
                   </button>
                   <button
+                    className="shadow-hard"
                     onClick={() => !isGridView && handleToggleGridView()}
                     style={{
                       padding: '8px 10px',
@@ -1050,7 +1055,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              boxShadow: 'var(--shadow-xl)',
             }}
           >
             {/* 모달 헤더 */}

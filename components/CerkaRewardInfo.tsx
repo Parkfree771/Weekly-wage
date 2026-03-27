@@ -14,6 +14,9 @@ const getTodayPriceDate = () => {
   return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
 };
 
+// raids 배열을 Map으로 변환 (O(1) 조회용)
+const raidMap = new Map(raids.map(r => [r.name, r]));
+
 // 재료 이미지 매핑
 const getMaterialImage = (itemName: string): string => {
   const imageMap: { [key: string]: string } = {
@@ -33,7 +36,7 @@ const getMaterialImage = (itemName: string): string => {
 
 // 기본 클리어 보상 데이터
 const basicClearRewards: { [key: string]: { gate: number; materials: { itemId: number; itemName: string; amount: number }[] }[] } = {
-  '지평의 성당 3단계': [
+  '성당 3단계': [
     {
       gate: 1,
       materials: [
@@ -57,7 +60,7 @@ const basicClearRewards: { [key: string]: { gate: number; materials: { itemId: n
       ]
     }
   ],
-  '지평의 성당 2단계': [
+  '성당 2단계': [
     {
       gate: 1,
       materials: [
@@ -81,7 +84,7 @@ const basicClearRewards: { [key: string]: { gate: number; materials: { itemId: n
       ]
     }
   ],
-  '지평의 성당 1단계': [
+  '성당 1단계': [
     {
       gate: 1,
       materials: [
@@ -241,11 +244,11 @@ const CerkaRewardInfo: React.FC = () => {
       return [];
     }
 
-    const targetRaids = ['지평의 성당 3단계', '지평의 성당 2단계', '세르카 나메', '세르카 하드'];
+    const targetRaids = ['성당 3단계', '성당 2단계', '세르카 나메', '세르카 하드'];
     const result: RewardData[] = [];
 
     targetRaids.forEach(raidName => {
-      const raidInfo = raids.find(r => r.name === raidName);
+      const raidInfo = raidMap.get(raidName);
       if (!raidInfo) return;
 
       const moreRewardData = raidRewards.filter(r => r.raidName === raidName);
@@ -420,8 +423,8 @@ const CerkaRewardInfo: React.FC = () => {
           <Card.Header
             className={styles.detailHeader}
             style={{
-              background: 'linear-gradient(135deg, #6b2d8c 0%, #9c4dcc 50%, #e85d04 100%)',
-              backgroundColor: '#6b2d8c'
+              background: `linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 50%, var(--color-accent) 100%)`,
+              backgroundColor: 'var(--color-primary-dark)'
             }}
           >
             <span style={{

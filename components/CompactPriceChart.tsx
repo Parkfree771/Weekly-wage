@@ -56,7 +56,7 @@ const EVENTS: EventInfo[] = [
   { date: '2025-12-07', label: '로아온' },
   { date: '2025-12-10', label: '윈터' },
   { date: '2026-01-07', label: '세르카' },
-  { date: '2026-03-18', label: '지평의 성당' },
+  { date: '2026-03-18', label: '성당' },
 ];
 
 type CategoryStyle = {
@@ -231,7 +231,16 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         hasEvent: !!eventLabel || dayOfWeek === 3
       });
     });
-    return Array.from(dateMap.values()).sort((a, b) => a.rawTime - b.rawTime);
+    const sorted = Array.from(dateMap.values()).sort((a, b) => a.rawTime - b.rawTime);
+
+    // 다운샘플링: 180포인트 초과 시 간격 추출 (이벤트/수요일 포인트는 보존)
+    const MAX_POINTS = 180;
+    if (sorted.length <= MAX_POINTS) return sorted;
+
+    const step = Math.ceil(sorted.length / MAX_POINTS);
+    return sorted.filter((point, i) =>
+      i === 0 || i === sorted.length - 1 || point.hasEvent || i % step === 0
+    );
   }, [filteredHistory, comparisonPriceMap, categoryStyle]);
 
   const formatPrice = useCallback((value: number) => {
@@ -494,13 +503,13 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         <div style={{ fontWeight: '700', color: chartColor, marginBottom: '10px', fontSize: '16px' }}>
           {label} {eventLabel && <span style={{ color: eventColor }}>({eventLabel})</span>}
         </div>
-        <div style={{ fontWeight: '700', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ fontWeight: '700', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums' }}>
           <Image src={selectedItem?.icon || ''} alt="" width={20} height={20} style={{ borderRadius: '4px' }} />
           <span>{formatTooltipPrice(mainPrice)}</span>
         </div>
         {compPrice !== undefined && compPrice !== null && originalPrice !== null && (
           <>
-            <div style={{ fontWeight: '600', fontSize: '14px', color: comparisonColor, marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ fontWeight: '600', fontSize: '14px', color: comparisonColor, marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums' }}>
               <Image src={comparisonData?.normalIcon || ''} alt="" width={18} height={18} style={{ borderRadius: '3px' }} />
               <span>{formatTooltipPrice(originalPrice)}</span>
               <span style={{ color: 'var(--text-secondary)' }}>×{ratio}</span>
@@ -513,7 +522,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums'
               }}>
                 <Image src={selectedItem?.icon || ''} alt="" width={22} height={22} style={{ borderRadius: '4px' }} />
                 <span style={{ fontSize: '18px', fontWeight: '800', color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
@@ -561,13 +571,13 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         <div style={{ fontWeight: '700', color: chartColor, marginBottom: '6px', fontSize: '12px' }}>
           {label} {eventLabel && <span style={{ color: eventColor }}>({eventLabel})</span>}
         </div>
-        <div style={{ fontWeight: '700', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <div style={{ fontWeight: '700', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums' }}>
           <Image src={selectedItem?.icon || ''} alt="" width={16} height={16} style={{ borderRadius: '3px' }} />
           <span>{formatTooltipPrice(mainPrice)}</span>
         </div>
         {compPrice !== undefined && compPrice !== null && originalPrice !== null && (
           <>
-            <div style={{ fontWeight: '600', fontSize: '10px', color: comparisonColor, marginTop: '5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ fontWeight: '600', fontSize: '10px', color: comparisonColor, marginTop: '5px', display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums' }}>
               <Image src={comparisonData?.normalIcon || ''} alt="" width={14} height={14} style={{ borderRadius: '2px' }} />
               <span>{formatTooltipPrice(originalPrice)}</span>
               <span style={{ color: 'var(--text-secondary)' }}>×{ratio}</span>
@@ -580,7 +590,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '5px'
+                gap: '5px',
+                fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums'
               }}>
                 <Image src={selectedItem?.icon || ''} alt="" width={16} height={16} style={{ borderRadius: '3px' }} />
                 <span style={{ fontSize: '14px', fontWeight: '800', color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
@@ -954,6 +965,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               {(['7d', '1m', '3m', 'all'] as PeriodOption[]).map((period) => (
                 <button
                   key={period}
+                  className="shadow-hard"
                   onClick={() => setSelectedPeriod(period)}
                   style={{
                     padding: '4px 16px',
@@ -966,9 +978,6 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                     cursor: 'pointer',
                     transition: 'all 0.25s ease',
                     outline: 'none',
-                    boxShadow: selectedPeriod === period
-                      ? `0 3px 10px ${theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.1)'}`
-                      : `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.05)'}`
                   }}
                   onMouseEnter={(e) => {
                     if (selectedPeriod !== period) {
@@ -1035,10 +1044,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
           {stats && (
             <div className="text-end" style={{ flex: '1' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: chartColor }}>
+              <div className="font-numeric" style={{ fontSize: '1.5rem', fontWeight: '700', color: chartColor }}>
                 {formatTooltipPrice(stats.current)}
               </div>
-              <div style={{ fontSize: '1.4rem', fontWeight: '600', color: changeRate >= 0 ? '#ef4444' : '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+              <div className="font-numeric" style={{ fontSize: '1.4rem', fontWeight: '600', color: changeRate >= 0 ? '#ef4444' : '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
                 <Image
                   src={changeRate >= 0 ? '/up.png' : '/down.png'}
                   alt={changeRate >= 0 ? 'up' : 'down'}
@@ -1234,10 +1243,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           </div>
           {stats && (
             <div className="text-end">
-              <div style={{ fontSize: '1rem', fontWeight: '700', color: chartColor, whiteSpace: 'nowrap' }}>
+              <div className="font-numeric" style={{ fontSize: '1rem', fontWeight: '700', color: chartColor, whiteSpace: 'nowrap' }}>
                 {formatTooltipPrice(stats.current)}
               </div>
-              <div style={{ fontSize: '1rem', fontWeight: '600', color: changeRate >= 0 ? '#ef4444' : '#3b82f6', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px' }}>
+              <div className="font-numeric" style={{ fontSize: '1rem', fontWeight: '600', color: changeRate >= 0 ? '#ef4444' : '#3b82f6', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px' }}>
                 <Image
                   src={changeRate >= 0 ? '/up.png' : '/down.png'}
                   alt={changeRate >= 0 ? 'up' : 'down'}
@@ -1275,8 +1284,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 <LineChart data={chartData} margin={{ top: 25, right: 10, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical={true} horizontal={true} />
-                  <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : ''); const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" transform="rotate(-35)">{payload.value}</text>{eventLabel && (<text x={0} y={12} dy={10} textAnchor="end" fill={eventColor} fontSize={12} fontWeight="700" transform="rotate(-35)">{eventLabel}</text>)}</g>); }} height={80} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
-                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 14 : 16} fontWeight={isAverage ? '900' : '700'} dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 95 : stats && stats.max >= 100000 ? 80 : stats && stats.max >= 10000 ? 75 : 60} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} interval={0} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
+                  <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : ''); const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-35)">{payload.value}</text>{eventLabel && (<text x={0} y={12} dy={10} textAnchor="end" fill={eventColor} fontSize={12} fontWeight="700" transform="rotate(-35)">{eventLabel}</text>)}</g>); }} height={80} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
+                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 14 : 16} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 105 : stats && stats.max >= 100000 ? 90 : stats && stats.max >= 10000 ? 78 : stats && stats.max >= 1000 ? 65 : stats && stats.max >= 100 ? 50 : 45} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} interval={0} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
                   <Tooltip content={<CustomTooltip />} cursor={{ stroke: chartColor, strokeWidth: 2, strokeDasharray: '5 5' }} />
                   <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} />
                   {/* 사용자 선택 참조선 */}
@@ -1314,8 +1323,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 <LineChart data={chartData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />
-                  <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : ''); const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" transform="rotate(-45)">{payload.value}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
-                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; const fontSize = stats ? (stats.max >= 1000000 ? 6 : stats.max >= 100000 ? 7 : stats.max >= 10000 ? 8 : stats.max >= 1000 ? 9 : stats.max >= 100 ? 7.5 : 7) : 8; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={fontSize} fontWeight={isAverage ? '900' : '700'} dx={-2}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 40 : stats && stats.max >= 100000 ? 38 : stats && stats.max >= 10000 ? 40 : stats && stats.max >= 1000 ? 35 : stats && stats.max >= 100 ? 28 : 25} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
+                  <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || (data.isWednesday ? '수요일' : ''); const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-45)">{payload.value}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
+                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; const fontSize = stats ? (stats.max >= 1000000 ? 6 : stats.max >= 100000 ? 7 : stats.max >= 10000 ? 8 : stats.max >= 1000 ? 9 : stats.max >= 100 ? 7.5 : 7) : 8; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={fontSize} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-2}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 46 : stats && stats.max >= 100000 ? 42 : stats && stats.max >= 10000 ? 38 : stats && stats.max >= 1000 ? 34 : stats && stats.max >= 100 ? 26 : 24} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
                   <Tooltip content={<CustomTooltipMobile />} cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: '3 3' }} />
                   <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} />
                   {/* 사용자 선택 참조선 - 모바일 */}

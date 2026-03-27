@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, Badge, Button, Row, Col, Table, Spinner, Form } from 'react-bootstrap';
 import { raids } from '@/data/raids';
@@ -43,6 +43,9 @@ const getTodayPriceDate = () => {
   const now = new Date();
   return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
 };
+
+// raids 배열을 Map으로 변환 (O(1) 조회용)
+const raidMap = new Map(raids.map(r => [r.name, r]));
 
 const SeeMoreCalculator: React.FC = () => {
   const [selectedRaid, setSelectedRaid] = useState<string | null>(null);
@@ -120,7 +123,7 @@ const SeeMoreCalculator: React.FC = () => {
         });
 
         const totalValue = materialsWithPrices.reduce((sum, mat) => sum + mat.totalPrice, 0);
-        const raidInfo = raids.find(r => r.name === raidName);
+        const raidInfo = raidMap.get(raidName);
         const gateInfo = raidInfo?.gates.find(g => g.gate === reward.gate);
         const moreGold = gateInfo?.moreGold || 0;
         const profitLoss = totalValue - moreGold;
@@ -160,31 +163,31 @@ const SeeMoreCalculator: React.FC = () => {
   }, [selectedRaid, profitData]);
 
   // 손익 계산 함수 (체크된 재료만 계산)
-  const calculateProfitLoss = (raidName: string): number => {
+  const calculateProfitLoss = useCallback((raidName: string): number => {
     const raidData = profitData[raidName];
     if (!raidData) return 0;
 
     const totalProfitLoss = raidData.reduce((sum, gate) => {
       const checkedMaterialsValue = gate.materials.reduce((matSum, material) => {
-        const isChecked = isMaterialChecked(raidName, gate.gate, material.itemId);
+        const isChecked = materialChecks[raidName]?.[gate.gate]?.[material.itemId] ?? true;
         return matSum + (isChecked ? material.totalPrice : 0);
       }, 0);
       return sum + (checkedMaterialsValue - gate.moreGold);
     }, 0);
     return totalProfitLoss;
-  };
+  }, [profitData, materialChecks]);
 
   // 관문별 손익 계산 함수 (체크된 재료만 계산)
-  const calculateGateProfitLoss = (raidName: string, gateData: RaidProfitData): { totalValue: number; profitLoss: number } => {
+  const calculateGateProfitLoss = useCallback((raidName: string, gateData: RaidProfitData): { totalValue: number; profitLoss: number } => {
     const checkedMaterialsValue = gateData.materials.reduce((sum, material) => {
-      const isChecked = isMaterialChecked(raidName, gateData.gate, material.itemId);
+      const isChecked = materialChecks[raidName]?.[gateData.gate]?.[material.itemId] ?? true;
       return sum + (isChecked ? material.totalPrice : 0);
     }, 0);
     return {
       totalValue: checkedMaterialsValue,
       profitLoss: checkedMaterialsValue - gateData.moreGold
     };
-  };
+  }, [materialChecks]);
 
   return (
     <div>
@@ -272,17 +275,17 @@ const SeeMoreCalculator: React.FC = () => {
                     bg={calculatedGate.profitLoss > 0 ? 'success' : calculatedGate.profitLoss < 0 ? 'danger' : 'secondary'}
                     className="ms-2"
                   >
-                    {calculatedGate.profitLoss > 0 ? '+' : ''}{Math.round(calculatedGate.profitLoss).toLocaleString()}골드
+                    <span className="font-numeric">{calculatedGate.profitLoss > 0 ? '+' : ''}{Math.round(calculatedGate.profitLoss).toLocaleString()}</span>골드
                   </Badge>
                 </h6>
 
                 <div className={`mb-2 ${styles.gateSummaryRow}`}>
                   <span className={styles.summaryFirstLine}>
-                    <strong>더보기비용:</strong> {gateData.moreGold.toLocaleString()}골드
-                    <strong>재료 가치:</strong> {Math.round(calculatedGate.totalValue).toLocaleString()}골드
+                    <strong>더보기비용:</strong> <span className="font-numeric">{gateData.moreGold.toLocaleString()}</span>골드
+                    <strong>재료 가치:</strong> <span className="font-numeric">{Math.round(calculatedGate.totalValue).toLocaleString()}</span>골드
                   </span>
                   <span className={styles.summarySecondLine}>
-                    <strong>손익:</strong> {Math.round(calculatedGate.totalValue).toLocaleString()} - {gateData.moreGold.toLocaleString()} = <span className={calculatedGate.profitLoss > 0 ? 'text-success' : calculatedGate.profitLoss < 0 ? 'text-danger' : 'text-secondary'} style={{ fontWeight: 700 }}>
+                    <strong>손익:</strong> <span className="font-numeric">{Math.round(calculatedGate.totalValue).toLocaleString()} - {gateData.moreGold.toLocaleString()}</span> = <span className={`font-numeric ${calculatedGate.profitLoss > 0 ? 'text-success' : calculatedGate.profitLoss < 0 ? 'text-danger' : 'text-secondary'}`} style={{ fontWeight: 700 }}>
                       {calculatedGate.profitLoss > 0 ? '+' : ''}{Math.round(calculatedGate.profitLoss).toLocaleString()}골드
                     </span>
                   </span>
@@ -334,10 +337,10 @@ const SeeMoreCalculator: React.FC = () => {
                           {material.amount === 0 ? '?' : material.amount.toLocaleString()}
                         </td>
                         <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellPrice}`}>
-                          {material.itemId === 0 && material.itemName !== '은총의 파편' ? '-' : (material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4)) + '골드'}
+                          {material.itemId === 0 && material.itemName !== '은총의 파편' ? '-' : (material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4))}
                         </td>
                         <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellTotal}`}>
-                          {material.itemId === 0 && material.itemName !== '은총의 파편' ? '-' : Math.round(material.totalPrice).toLocaleString() + '골드'}
+                          {material.itemId === 0 && material.itemName !== '은총의 파편' ? '-' : Math.round(material.totalPrice).toLocaleString()}
                         </td>
                       </tr>
                     );

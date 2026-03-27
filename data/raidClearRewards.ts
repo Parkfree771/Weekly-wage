@@ -4,9 +4,9 @@ import { RaidReward, MATERIAL_IDS, MATERIAL_NAMES } from './raidRewards';
  * 레이드 기본 클리어 보상 (더보기와 무관하게 항상 획득하는 재료)
  */
 export const raidClearRewards: RaidReward[] = [
-  // 지평의 성당 3단계
+  // 성당 3단계
   {
-    raidName: '지평의 성당 3단계',
+    raidName: '성당 3단계',
     gate: 1,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 405 },
@@ -18,7 +18,7 @@ export const raidClearRewards: RaidReward[] = [
     ]
   },
   {
-    raidName: '지평의 성당 3단계',
+    raidName: '성당 3단계',
     gate: 2,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE_CRYSTAL, amount: 500 },
@@ -29,9 +29,9 @@ export const raidClearRewards: RaidReward[] = [
       { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 3 },
     ]
   },
-  // 지평의 성당 2단계
+  // 성당 2단계
   {
-    raidName: '지평의 성당 2단계',
+    raidName: '성당 2단계',
     gate: 1,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 980 },
@@ -43,7 +43,7 @@ export const raidClearRewards: RaidReward[] = [
     ]
   },
   {
-    raidName: '지평의 성당 2단계',
+    raidName: '성당 2단계',
     gate: 2,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 1150 },
@@ -54,9 +54,9 @@ export const raidClearRewards: RaidReward[] = [
       { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 2 },
     ]
   },
-  // 지평의 성당 1단계
+  // 성당 1단계
   {
-    raidName: '지평의 성당 1단계',
+    raidName: '성당 1단계',
     gate: 1,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 820 },
@@ -68,7 +68,7 @@ export const raidClearRewards: RaidReward[] = [
     ]
   },
   {
-    raidName: '지평의 성당 1단계',
+    raidName: '성당 1단계',
     gate: 2,
     materials: [
       { itemId: MATERIAL_IDS.FATE_DESTRUCTION_STONE, itemName: MATERIAL_NAMES.FATE_DESTRUCTION_STONE, amount: 1400 },

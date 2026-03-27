@@ -549,9 +549,17 @@ export default function RefiningStats() {
                             dataKey="count"
                             position="top"
                             fill="var(--text-primary)"
-                            fontSize={13}
+                            fontSize={isMobile ? 9 : 13}
                             fontWeight={700}
-                            offset={8}
+                            offset={isMobile ? 4 : 8}
+                            formatter={((v: unknown) => {
+                              const n = Number(v);
+                              if (!isMobile) return n.toLocaleString();
+                              if (n >= 100000) return `${Math.round(n / 10000)}만`;
+                              if (n >= 10000) return `${(n / 10000).toFixed(1)}만`;
+                              if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+                              return n.toString();
+                            }) as never}
                           />
                           {stats.chartData.map((entry, index) => {
                             const maxCount = Math.max(...stats.chartData.map(d => d.count));

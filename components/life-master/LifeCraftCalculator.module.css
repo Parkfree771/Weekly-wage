@@ -161,7 +161,7 @@
   border-radius: 16px;
   border: 1px solid var(--border-color);
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 /* 아이템 선택 */
@@ -213,7 +213,7 @@
 .itemIcon {
   border-radius: 8px;
   border: 2px solid #ea580c;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .itemInfo {
@@ -532,6 +532,7 @@
   font-weight: 600;
   color: #ea580c;
   margin-top: 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 .materialPriceInput {
@@ -621,6 +622,7 @@
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .compVs {
@@ -701,6 +703,7 @@
   font-size: 1.6rem;
   font-weight: 700;
   color: #ea580c;
+  font-variant-numeric: tabular-nums;
 }
 
 .craftResultValue {
@@ -821,6 +824,7 @@
   font-size: 1rem;
   font-weight: 700;
   color: #ea580c;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 기존 feeSection 호환성 유지 */
@@ -919,6 +923,7 @@
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .cardUnit {
@@ -1027,6 +1032,7 @@
 .profitPercent {
   font-size: 1rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (min-width: 768px) {
@@ -1186,13 +1192,13 @@
   border-radius: 12px;
   border: 1px solid var(--border-color);
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 @media (min-width: 768px) {
   .sidebarCard {
     border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
   }
 }
 
@@ -1333,6 +1339,7 @@
   font-size: 1.1rem;
   font-weight: 700;
   color: #10b981;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (min-width: 768px) {

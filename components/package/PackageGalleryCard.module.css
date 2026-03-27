@@ -1,49 +1,25 @@
-/* ─── 갤러리 카드: 2단 레이아웃 (따뜻한 테마) ─── */
+/* ─── 갤러리 카드: 2단 레이아웃 ─── */
 .galleryCard {
   display: grid;
   grid-template-columns: 1fr 280px;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
-  transition: all 0.2s ease;
 
-  /* 라이트 모드 (기본) */
-  --gc-bg: #fdf6ee;
-  --gc-bg-alt: #f9efe3;
-  --gc-text: #4a3728;
-  --gc-text-secondary: #8b7355;
-  --gc-text-muted: #b09a80;
-  --gc-border: rgba(180, 140, 90, 0.25);
-  --gc-border-light: rgba(180, 140, 90, 0.15);
-  --gc-item-bg: rgba(249, 115, 22, 0.06);
-  --gc-item-border: rgba(180, 140, 90, 0.3);
-  --gc-divider: rgba(180, 140, 90, 0.2);
-  --gc-input-bg: rgba(249, 115, 22, 0.04);
-  --gc-shadow: 0 2px 12px rgba(180, 140, 90, 0.15);
-  --gc-shadow-hover: 0 6px 24px rgba(180, 140, 90, 0.25);
+  --gc-bg: var(--card-bg);
+  --gc-bg-alt: var(--card-body-bg-blue);
+  --gc-text: var(--text-primary);
+  --gc-text-secondary: var(--text-secondary);
+  --gc-text-muted: var(--text-muted);
+  --gc-border: var(--border-color);
+  --gc-border-light: var(--border-color);
+  --gc-item-bg: var(--color-primary-light);
+  --gc-item-border: var(--border-color);
+  --gc-divider: var(--border-color);
+  --gc-input-bg: var(--card-body-bg-blue);
+  --gc-shadow: var(--shadow-md);
 
-  border: 1px solid var(--gc-border);
+  border: 1.5px solid var(--color-primary);
   box-shadow: var(--gc-shadow);
-}
-
-.galleryCard:hover {
-  box-shadow: var(--gc-shadow-hover);
-}
-
-/* ─── 다크 모드 ─── */
-:global([data-theme="dark"]) .galleryCard {
-  --gc-bg: #1e1812;
-  --gc-bg-alt: #261e15;
-  --gc-text: #e8ddd0;
-  --gc-text-secondary: #b09a80;
-  --gc-text-muted: #7a6a55;
-  --gc-border: rgba(180, 140, 90, 0.18);
-  --gc-border-light: rgba(180, 140, 90, 0.1);
-  --gc-item-bg: rgba(249, 115, 22, 0.08);
-  --gc-item-border: rgba(180, 140, 90, 0.2);
-  --gc-divider: rgba(180, 140, 90, 0.12);
-  --gc-input-bg: rgba(249, 115, 22, 0.06);
-  --gc-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-  --gc-shadow-hover: 0 6px 24px rgba(0, 0, 0, 0.45);
 }
 
 /* ─── 왼쪽 박스: 아이템 ─── */
@@ -90,7 +66,7 @@
 
 .badge31 {
   background: rgba(239, 68, 68, 0.1);
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 :global([data-theme="dark"]) .badge31 {
@@ -99,7 +75,7 @@
 
 .badge21 {
   background: rgba(59, 130, 246, 0.1);
-  color: #2563eb;
+  color: var(--color-info);
 }
 
 :global([data-theme="dark"]) .badge21 {
@@ -126,7 +102,7 @@
 
 .badgeGacha {
   background: rgba(239, 68, 68, 0.1);
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 :global([data-theme="dark"]) .badgeGacha {
@@ -180,7 +156,6 @@
   width: 62px;
   height: 62px;
   cursor: pointer;
-  transition: opacity 0.2s, filter 0.2s;
   background: var(--gc-item-bg);
   border: 1px solid var(--gc-item-border);
   border-radius: 10px;
@@ -206,16 +181,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
 }
 
 .itemCheckBoxChecked {
-  background: #f97316;
-  border-color: #f97316;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .itemCell:hover .itemCheckBox {
-  border-color: #f97316;
+  border-color: var(--color-accent);
 }
 
 .itemCheckIcon {
@@ -303,7 +277,6 @@
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--gc-border-light);
-  transition: background 0.2s;
 }
 
 .rightTop {
@@ -332,13 +305,15 @@
   font-weight: 700;
   color: var(--gc-text);
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .resultValueGold {
   font-size: 1rem;
   font-weight: 700;
-  color: #f97316;
+  color: var(--color-accent);
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .resultDivider {
@@ -364,11 +339,10 @@
   border: 1px solid var(--gc-border);
   border-radius: 8px;
   padding: 0.4rem 0.6rem;
-  transition: border-color 0.2s;
 }
 
 .rateRow:focus-within {
-  border-color: #f97316;
+  border-color: var(--color-accent);
 }
 
 .rateIconGold {
@@ -403,7 +377,7 @@
   width: 40px;
   background: transparent;
   border: none;
-  color: #f97316;
+  color: var(--color-accent);
   font-size: 0.8rem;
   font-weight: 700;
   text-align: center;
@@ -446,6 +420,7 @@
 .benefitValue {
   font-size: 1.15rem;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .benefitPositive {
@@ -457,7 +432,7 @@
 }
 
 .benefitNegative {
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 :global([data-theme="dark"]) .benefitNegative {
@@ -466,7 +441,7 @@
 
 /* ─── 가챠 아이템 셀 상태 ─── */
 .itemCellHighlight {
-  border-color: #f97316;
+  border-color: var(--color-accent);
   box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
   transition: none;
 }
@@ -499,7 +474,7 @@
   border-radius: 7px;
   line-height: 1.4;
   z-index: 3;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ─── 가챠 버튼 그룹 ─── */
@@ -516,18 +491,17 @@
   font-size: 0.9rem;
   font-weight: 800;
   color: #fff;
-  background: linear-gradient(135deg, #f97316, #ef4444);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0 3px 12px rgba(249, 115, 22, 0.35);
-  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
   letter-spacing: 0.05em;
 }
 
 .gachaBtn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.5);
+  box-shadow: var(--shadow-md);
 }
 
 .gachaBtn:disabled {
@@ -541,8 +515,8 @@
 }
 
 @keyframes gachaCardPulse {
-  0%, 100% { box-shadow: 0 3px 12px rgba(249, 115, 22, 0.35); }
-  50% { box-shadow: 0 3px 20px rgba(249, 115, 22, 0.65); }
+  0%, 100% { box-shadow: var(--shadow-sm); }
+  50% { box-shadow: var(--shadow-md); }
 }
 
 /* ─── 가챠 결과 (컴팩트 2줄) ─── */
@@ -582,8 +556,9 @@
 .gachaResultGold {
   font-size: 0.78rem;
   font-weight: 800;
-  color: #f97316;
+  color: var(--color-accent);
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .gachaResultBenefit {
@@ -596,12 +571,11 @@
   padding: 0.15rem 0.5rem;
   font-size: 0.6rem;
   font-weight: 700;
-  color: #f97316;
+  color: var(--color-accent);
   background: transparent;
-  border: 1px solid #f97316;
+  border: 1px solid var(--color-accent);
   border-radius: 5px;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
 .gachaReroll:hover {
@@ -611,11 +585,11 @@
 /* ─── 10회 가챠 버튼 ─── */
 .gachaBtnMulti {
   background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-  box-shadow: 0 3px 12px rgba(139, 92, 246, 0.35);
+  box-shadow: var(--shadow-sm);
 }
 
 .gachaBtnMulti:hover {
-  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.5);
+  box-shadow: var(--shadow-md);
 }
 
 /* ─── 10회 가챠 진행 카운터 ─── */
@@ -634,12 +608,11 @@
   text-align: center;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #f97316;
-  transition: color 0.2s;
+  color: var(--color-accent);
 }
 
 .rightBox:hover .detailLink {
-  color: #ea580c;
+  color: var(--color-accent-dark);
 }
 
 /* ─── 반응형 ─── */

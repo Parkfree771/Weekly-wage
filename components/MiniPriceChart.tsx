@@ -37,7 +37,7 @@ type MiniPriceChartProps = {
 
 type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 
-export default function MiniPriceChart({ item, categoryStyle, isSelected, onClick, slotIndex, isMobile = false, period, onRemove }: MiniPriceChartProps) {
+function MiniPriceChartInner({ item, categoryStyle, isSelected, onClick, slotIndex, isMobile = false, period, onRemove }: MiniPriceChartProps) {
   const { theme } = useTheme();
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -181,7 +181,16 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
         fullDate: dateObj,
       });
     });
-    return Array.from(dateMap.values()).sort((a, b) => a.rawTime - b.rawTime);
+    const sorted = Array.from(dateMap.values()).sort((a, b) => a.rawTime - b.rawTime);
+
+    // 다운샘플링: 90포인트 초과 시 간격 추출 (미니 차트는 작으므로 더 적게)
+    const MAX_POINTS = 90;
+    if (sorted.length <= MAX_POINTS) return sorted;
+
+    const step = Math.ceil(sorted.length / MAX_POINTS);
+    return sorted.filter((_, i) =>
+      i === 0 || i === sorted.length - 1 || i % step === 0
+    );
   }, [filteredHistory, comparisonPriceMap]);
 
   const formatPrice = useCallback((value: number) => {
@@ -386,16 +395,16 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
               <XAxis
                 dataKey="날짜"
                 ticks={xAxisTicks}
-                tick={{ fill: 'var(--text-muted)', fontSize: isMobile ? 6 : 8 }}
+                tick={{ fill: 'var(--text-muted)', fontSize: isMobile ? 6 : 8, fontFamily: 'var(--font-mono), monospace' }}
                 height={isMobile ? 15 : 20}
                 stroke="var(--border-color)"
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                tick={{ fill: 'var(--text-muted)', fontSize: isMobile ? 6 : 8 }}
+                tick={{ fill: 'var(--text-muted)', fontSize: isMobile ? 6 : 8, fontFamily: 'var(--font-mono), monospace' }}
                 tickFormatter={formatPrice}
-                width={isMobile ? 25 : 35}
+                width={isMobile ? 30 : 42}
                 domain={yAxisConfig.domain}
                 stroke="var(--border-color)"
                 tickLine={false}
@@ -422,6 +431,7 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
                       borderRadius: '6px',
                       padding: '6px 8px',
                       fontSize: '10px',
+                      fontFamily: 'var(--font-mono), monospace',
                     }}>
                       <div style={{ fontWeight: 600, color: chartColor }}>{label}</div>
                       <div>결정: {(categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌' || categoryStyle?.label === '보석')
@@ -510,7 +520,7 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
                             <polygon points="0 0, 3 1.5, 0 3" fill={diffColor} />
                           </marker>
                         </defs>
-                        <text x={x + 25} y={yMid} dy={2} fontSize={7} fontWeight="700" fill={diffColor}>
+                        <text x={x + 25} y={yMid} dy={2} fontSize={7} fontWeight="700" fill={diffColor} fontFamily="var(--font-mono), monospace">
                           {priceDiff >= 0 ? '+' : '-'}{formatPrice(Math.abs(priceDiff))}
                         </text>
                       </g>
@@ -525,3 +535,6 @@ export default function MiniPriceChart({ item, categoryStyle, isSelected, onClic
     </div>
   );
 }
+
+const MiniPriceChart = React.memo(MiniPriceChartInner);
+export default MiniPriceChart;

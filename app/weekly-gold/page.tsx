@@ -144,9 +144,9 @@ export default function WeeklyGoldPage() {
              <noscript>
   <div style={{/*...*/}}>
     {/* 제목 변경 */}
-    <h2>지평의 성당 레이드 보상 및 주간 골드 계산기</h2>
+    <h2>성당 레이드 보상 및 주간 골드 계산기</h2>
     {/* 설명 변경 */}
-    <p>지평의 성당(1700~1750) 포함 원정대 캐릭터들의 주간 골드 수익을 자동으로 계산하고...</p>
+    <p>성당(1700~1750) 포함 원정대 캐릭터들의 주간 골드 수익을 자동으로 계산하고...</p>
                   <h3>주요 기능</h3>
                   <ul>
                     <li>캐릭터명 입력만으로 원정대 전체 주간 골드 수익 자동 계산</li>
@@ -190,11 +190,11 @@ export default function WeeklyGoldPage() {
                               padding: isMobile ? '0.3rem 0.6rem' : '0.4rem 0.8rem',
                               fontWeight: 600,
                               whiteSpace: 'nowrap',
-                              border: saveStatus === 'saved' ? '1px solid #16a34a' : '1px solid var(--border-color)',
-                              borderRadius: '8px',
+                              border: saveStatus === 'saved' ? '1px solid var(--color-success)' : '1px solid var(--border-color)',
+                              borderRadius: '10px',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
-                              backgroundColor: saveStatus === 'saved' ? '#16a34a' : 'transparent',
+                              backgroundColor: saveStatus === 'saved' ? 'var(--color-success)' : 'transparent',
                               color: saveStatus === 'saved' ? '#fff' : 'var(--text-primary)',
                               lineHeight: 1.3,
                             }}
@@ -244,15 +244,15 @@ export default function WeeklyGoldPage() {
                 </div>
               )}
 
-              {/* 지평의 성당 보상 정보 */}
-              <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
+              {/* 성당 보상 정보 */}
+              <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)', maxWidth: '1100px', margin: '0 auto' }}>
                 <Row className="justify-content-center">
                   <Col xl={12} lg={12} md={12}>
                     <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
                       <Card.Header
                         className="text-center py-2 border-0"
                         style={{
-                          background: 'linear-gradient(135deg, #6b2d8c 0%, #9c4dcc 50%, #e85d04 100%)',
+                          background: 'linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 50%, var(--color-accent) 100%)',
                           borderBottom: '1px solid var(--border-color)'
                         }}
                       >
@@ -282,7 +282,7 @@ export default function WeeklyGoldPage() {
               </div>
 
               {/* 더보기 효율 계산기 섹션 */}
-              <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
+              <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)', maxWidth: '1100px', margin: '0 auto' }}>
                 <Row className="justify-content-center">
                   <Col xl={12} lg={12} md={12}>
                     <div style={{ position: 'relative' }}>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Container, Row, Col, Collapse } from 'react-bootstrap';
 
 export default function Footer() {
@@ -21,11 +22,11 @@ export default function Footer() {
             </p>
             {/* 셋째 줄: 링크들 */}
             <div className="footer-links">
-              <a href="/about">사이트 소개</a>
+              <Link href="/about">사이트 소개</Link>
               <span className="footer-divider">|</span>
-              <a href="/privacy">개인정보처리방침</a>
+              <Link href="/privacy">개인정보처리방침</Link>
               <span className="footer-divider">|</span>
-              <a href="/terms">이용약관</a>
+              <Link href="/terms">이용약관</Link>
               <span className="footer-divider">|</span>
               <a href="https://forms.gle/n9XKQJmheLhZcSf69" target="_blank" rel="noopener noreferrer">건의하기</a>
               <span className="footer-divider">|</span>

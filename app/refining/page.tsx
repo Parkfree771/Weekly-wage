@@ -243,7 +243,7 @@ export default function RefiningPage() {
                           </div>
                         )}
                       </div>
-                      <Button type="submit" className={searchStyles.searchButton} disabled={isLoading} style={{ backgroundColor: '#6366f1', borderColor: '#6366f1', color: 'white' }}>
+                      <Button type="submit" className={searchStyles.searchButton} disabled={isLoading} style={{ backgroundColor: 'var(--color-primary)', borderColor: 'var(--color-primary)', color: 'white' }}>
                         {isLoading ? '검색 중...' : '검색'}
                       </Button>
                     </div>

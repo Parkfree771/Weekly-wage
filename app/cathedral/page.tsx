@@ -106,7 +106,7 @@ type Gate = {
   moreMaterials: Material[];
 };
 
-// 지평의 성당 단계별 보상 데이터
+// 성당 단계별 보상 데이터
 const STAGES: {
   name: string;
   level: number;
@@ -114,7 +114,7 @@ const STAGES: {
   gates: Gate[];
 }[] = [
   {
-    name: '지평의 성당 3단계', level: 1750, image: '/wlvuddmltjdekd2.webp',
+    name: '성당 3단계', level: 1750, image: '/wlvuddmltjdekd2.webp',
     gates: [
       { gate: 1, gold: 20000, moreGold: 6400,
         materials: [
@@ -155,7 +155,7 @@ const STAGES: {
     ],
   },
   {
-    name: '지평의 성당 2단계', level: 1720, image: '/wlvuddmltjdekd1.webp',
+    name: '성당 2단계', level: 1720, image: '/wlvuddmltjdekd1.webp',
     gates: [
       { gate: 1, gold: 16000, moreGold: 5120,
         materials: [
@@ -196,7 +196,7 @@ const STAGES: {
     ],
   },
   {
-    name: '지평의 성당 1단계', level: 1700, image: '/wlvuddmltjdekd1.webp',
+    name: '성당 1단계', level: 1700, image: '/wlvuddmltjdekd1.webp',
     gates: [
       { gate: 1, gold: 13500, moreGold: 4320,
         materials: [
@@ -531,7 +531,7 @@ export default function CathedralPage() {
                 지평의 성당
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-                어비스 던전 지평의 성당 클리어 보상과 은총의 파편 교환 상점
+                어비스 던전 성당 클리어 보상과 은총의 파편 교환 상점
               </p>
             </div>
 
@@ -777,10 +777,6 @@ export default function CathedralPage() {
                             key={item.id}
                             className={`${styles.shopItem} ${isActive ? styles.active : ''}`}
                             onClick={() => setSelectedShopItem(isActive ? null : item.id)}
-                            style={isActive ? {
-                              background: tc.bg,
-                              borderLeftColor: tc.accent,
-                            } : undefined}
                           >
                             {item.hasBg ? (
                               <div className={styles.shopItemIconFill}>
@@ -840,7 +836,7 @@ export default function CathedralPage() {
                           : selectedShopData.id === 8 ? TAILORING_COMPONENTS
                           : null;
                         return (
-                          <div className={styles.shopDetailContent} style={(selectedShopData.id === 7 || selectedShopData.id === 8 || selectedShopData.theme === 'refine') ? { maxWidth: '550px' } : undefined}>
+                          <div className={styles.shopDetailContent} style={(selectedShopData.theme === 'gem' || selectedShopData.theme === 'gemRandom') ? { maxWidth: '600px' } : (selectedShopData.id === 7 || selectedShopData.id === 8 || selectedShopData.theme === 'refine') ? { maxWidth: '550px' } : undefined}>
                             {/* 1. 아이콘 + 이름 */}
                             <div className={styles.shopDetailTop}>
                               {selectedShopData.hasBg ? (
@@ -891,7 +887,9 @@ export default function CathedralPage() {
                                       {cost.name === '코어 정수' && (
                                         <Image src="/wjdtn.webp?v=2" alt="코어 정수" width={24} height={24} />
                                       )}
-                                      <span>{cost.name === '골드' ? '' : `${cost.name} `}{cost.amount.toLocaleString()}</span>
+                                      <span className={styles.costName}>{cost.name === '골드' ? '' : `${cost.name} `}</span>
+                                      <span className={styles.costShortName}>{cost.name === '은총의 파편' ? '은총 ' : cost.name === '코어 정수' ? '정수 ' : cost.name === '골드' ? '' : `${cost.name} `}</span>
+                                      <span>{cost.amount.toLocaleString()}</span>
                                     </div>
                                   ))}
                                   {/* 골드 환산 합계 */}
@@ -901,7 +899,7 @@ export default function CathedralPage() {
                                     if (hGrace === 0) return null;
                                     const hTotal = Math.round(hGrace * graceUnitPrice) + hGold;
                                     return (
-                                      <div className={styles.costTotalRow} style={{ borderColor: tc.border }}>
+                                      <div className={styles.costTotalRow}>
                                         <span className={styles.costTotalEquals}>=</span>
                                         <Image src="/gold.webp" alt="" width={18} height={18} />
                                         <span className={styles.costTotalValue}>{hTotal.toLocaleString()}</span>
@@ -1062,35 +1060,101 @@ export default function CathedralPage() {
                                     </>
                                   );
                                 })() : components.every(c => c.itemId !== '0') ? (() => {
-                                  // 젬 선택 상자: 3×2 그리드 카드
+                                  // 젬 선택 상자: 질서/혼돈 표 2개 나란히
                                   const selectedId = getSelectedItemId(selectedShopData.id, components);
                                   const selectedComp = components.find(c => c.itemId === selectedId);
                                   const selectedPrice = selectedComp ? (latestPrices[selectedComp.itemId] || 0) : 0;
                                   const qty = selectedShopData.qty;
                                   const totalValue = Math.round(selectedPrice * qty);
-                                  return (
-                                    <>
-                                      <div className={styles.gemSelectGrid}>
-                                        {components.map((comp) => {
+                                  const orderGems = components.slice(0, 3);
+                                  const chaosGems = components.slice(3, 6);
+                                  const renderGemTable = (gems: typeof components, title: string) => (
+                                    <table className={styles.materialTable} style={{ flex: 1 }}>
+                                      <thead>
+                                        <tr>
+                                          <th style={{ textAlign: 'center', width: '30px' }}></th>
+                                          <th>{title}</th>
+                                          <th style={{ textAlign: 'center' }}>시세</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {gems.map((comp) => {
                                           const isSelected = comp.itemId === selectedId;
                                           const price = latestPrices[comp.itemId] || 0;
                                           return (
-                                            <div
+                                            <tr
                                               key={comp.itemId}
-                                              className={`${styles.gemSelectCard} ${isSelected ? styles.gemSelectActive : ''}`}
+                                              style={{ cursor: 'pointer', opacity: isSelected ? 1 : 0.5 }}
                                               onClick={() => setShopSelectItem(prev => ({ ...prev, [selectedShopData.id]: comp.itemId }))}
                                             >
-                                              <div className={styles.gemSelectCheck}>{isSelected ? '✅' : '⬜'}</div>
-                                              <Image src={comp.icon} alt={comp.name} width={36} height={36} />
-                                              <span className={styles.gemSelectName}>{comp.name}</span>
-                                              <span className={styles.gemSelectPrice}>
-                                                <Image src="/gold.webp" alt="" width={13} height={13} />
-                                                {priceLoading ? '—' : price ? price.toLocaleString() : '-'}
-                                              </span>
-                                            </div>
+                                              <td className={styles.gemCheckCell}>
+                                                {isSelected ? '✅' : '⬜'}
+                                              </td>
+                                              <td>
+                                                <div className={styles.materialCell}>
+                                                  <Image src={comp.icon} alt={comp.name} width={28} height={28} />
+                                                  <span>{comp.name.replace(/질서의 젬 : |혼돈의 젬 : /, '')}</span>
+                                                </div>
+                                              </td>
+                                              <td style={{ textAlign: 'center' }}>
+                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                                  <Image src="/gold.webp" alt="" width={14} height={14} />
+                                                  <span>{priceLoading ? '—' : price ? price.toLocaleString() : '-'}</span>
+                                                </div>
+                                              </td>
+                                            </tr>
                                           );
                                         })}
+                                      </tbody>
+                                    </table>
+                                  );
+                                  const allGems = [...orderGems, ...chaosGems];
+                                  return (
+                                    <>
+                                      {/* 데스크톱: 질서/혼돈 좌우 2개 */}
+                                      <div className={styles.gemTableRow}>
+                                        {renderGemTable(orderGems, '질서')}
+                                        {renderGemTable(chaosGems, '혼돈')}
                                       </div>
+                                      {/* 모바일: 하나의 표 */}
+                                      <table className={`${styles.materialTable} ${styles.gemTableMobile}`}>
+                                        <thead>
+                                          <tr>
+                                            <th className={styles.gemMobileCheckTh}></th>
+                                            <th>젬</th>
+                                            <th style={{ textAlign: 'center' }}>시세</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {allGems.map((comp) => {
+                                            const isSelected = comp.itemId === selectedId;
+                                            const price = latestPrices[comp.itemId] || 0;
+                                            return (
+                                              <tr
+                                                key={comp.itemId}
+                                                style={{ cursor: 'pointer', opacity: isSelected ? 1 : 0.5 }}
+                                                onClick={() => setShopSelectItem(prev => ({ ...prev, [selectedShopData.id]: comp.itemId }))}
+                                              >
+                                                <td className={styles.gemCheckCell}>
+                                                  {isSelected ? '✅' : '⬜'}
+                                                </td>
+                                                <td>
+                                                  <div className={styles.materialCell}>
+                                                    <Image src={comp.icon} alt={comp.name} width={22} height={22} />
+                                                    <span>{comp.name.replace(/질서의 젬 : |혼돈의 젬 : /, '')}</span>
+                                                  </div>
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                  <div className={styles.gemMobilePrice}>
+                                                    <Image src="/gold.webp" alt="" width={12} height={12} />
+                                                    <span>{priceLoading ? '—' : price ? price.toLocaleString() : '-'}</span>
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
                                     </>
                                   );
                                 })() : (
@@ -1111,21 +1175,40 @@ export default function CathedralPage() {
                             {selectedShopData.theme === 'gemRandom' && (
                               <div className={styles.shopDetailSection}>
                                 <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>구성 요소 (영웅 ~ 고급)</div>
-                                <div className={styles.gemSelectGrid}>
-                                  {GEM_RANDOM_HERO_PROBS.map((gem) => {
-                                    const price = latestPrices[gem.itemId] || 0;
-                                    return (
-                                      <div key={gem.itemId} className={styles.gemSelectCard} style={{ opacity: 1, cursor: 'default' }}>
-                                        <span className={styles.gemRandomProb}>{(gem.probability * 100).toFixed(2)}%</span>
-                                        <Image src={gem.icon} alt={gem.name} width={36} height={36} />
-                                        <span className={styles.gemSelectName}>{gem.name}</span>
-                                        <span className={styles.gemSelectPrice}>
-                                          <Image src="/gold.webp" alt="" width={13} height={13} />
-                                          {priceLoading ? '—' : price.toLocaleString()}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
+                                <div className={styles.gemTableRow}>
+                                  {[GEM_RANDOM_HERO_PROBS.slice(0, 3), GEM_RANDOM_HERO_PROBS.slice(3, 6)].map((gems, gi) => (
+                                    <table key={gi} className={styles.materialTable} style={{ flex: 1 }}>
+                                      <thead>
+                                        <tr>
+                                          <th style={{ width: '33%' }}>{gi === 0 ? '질서' : '혼돈'}</th>
+                                          <th style={{ textAlign: 'center', width: '28%' }}>확률</th>
+                                          <th style={{ textAlign: 'center', width: '39%' }}>시세</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {gems.map((gem) => {
+                                          const price = latestPrices[gem.itemId] || 0;
+                                          return (
+                                            <tr key={gem.itemId}>
+                                              <td>
+                                                <div className={styles.materialCell}>
+                                                  <Image src={gem.icon} alt={gem.name} width={28} height={28} />
+                                                  <span>{gem.name.replace(/질서의 젬 : |혼돈의 젬 : /, '')}</span>
+                                                </div>
+                                              </td>
+                                              <td style={{ textAlign: 'center' }}>{(gem.probability * 100).toFixed(2)}%</td>
+                                              <td style={{ textAlign: 'center' }}>
+                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                                  <Image src="/gold.webp" alt="" width={14} height={14} />
+                                                  <span>{priceLoading ? '—' : price.toLocaleString()}</span>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  ))}
                                 </div>
                               </div>
                             )}
@@ -1355,13 +1438,12 @@ function GraceCalendar() {
           {/* 레벨 선택 */}
           <div className={styles.calToggle}>
             {CAL_LEVELS.map(lv => {
-              const colors: Record<number, string> = { 1700: '#3b82f6', 1720: '#8b5cf6', 1750: '#c9a84c' };
               const isActive = level === lv;
               return (
                 <button
                   key={lv}
                   className={`${styles.calToggleBtn} ${isActive ? styles.calToggleLvActive : ''}`}
-                  style={isActive ? { color: colors[lv], borderColor: colors[lv] } : undefined}
+                  style={isActive ? { color: 'var(--color-primary)', borderColor: 'var(--color-primary)' } : undefined}
                   onClick={() => { setLevel(lv); setExchangeMap(new Map()); }}
                 >
                   {lv}
@@ -1373,14 +1455,14 @@ function GraceCalendar() {
           <div className={styles.calToggle}>
             <button
               className={`${styles.calToggleBtn} ${mode === 'basic' ? styles.calToggleModeActive : ''}`}
-              style={mode === 'basic' ? { color: '#6b7280' } : undefined}
+              style={mode === 'basic' ? { color: 'var(--color-primary)' } : undefined}
               onClick={() => setMode('basic')}
             >
               기본
             </button>
             <button
               className={`${styles.calToggleBtn} ${mode === 'more' ? styles.calToggleModeActive : ''}`}
-              style={mode === 'more' ? { color: '#059669' } : undefined}
+              style={mode === 'more' ? { color: 'var(--color-accent)' } : undefined}
               onClick={() => setMode('more')}
             >
               더보기

@@ -114,26 +114,17 @@ export default function LoginButton() {
       </Dropdown.Toggle>
 
       <Dropdown.Menu className={styles.dropdownMenu}>
-        {userProfile?.nickname && (
-          <>
-            <div className={styles.userInfo}>
-              <strong>{userProfile.nickname}</strong>
-              <small>{user.email}</small>
-            </div>
-            <Dropdown.Divider />
-          </>
-        )}
-        <Dropdown.Item href="https://forms.gle/n9XKQJmheLhZcSf69" target="_blank" rel="noopener noreferrer">
-          문의하기
-        </Dropdown.Item>
+        <div className={styles.userInfo}>
+          <strong>{userProfile?.nickname || user.displayName || '사용자'}</strong>
+          <small>{user.email}</small>
+        </div>
         <Dropdown.Divider />
-        <Dropdown.Item onClick={() => setShowDeleteModal(true)} className={styles.deleteItem}>
-          계정 탈퇴
-        </Dropdown.Item>
+        <Dropdown.Item href="/mypage" className={styles.menuItem}>마이페이지</Dropdown.Item>
+        <Dropdown.Item onClick={() => router.push('/mypage')} className={styles.menuItem}>닉네임 변경</Dropdown.Item>
+        <Dropdown.Item href="https://forms.gle/n9XKQJmheLhZcSf69" target="_blank" rel="noopener noreferrer" className={styles.menuItem}>문의하기</Dropdown.Item>
         <Dropdown.Divider />
-        <Dropdown.Item onClick={handleLogout} className={styles.logoutItem}>
-          로그아웃
-        </Dropdown.Item>
+        <Dropdown.Item onClick={() => setShowDeleteModal(true)} className={styles.deleteItem}>계정 탈퇴</Dropdown.Item>
+        <Dropdown.Item onClick={handleLogout} className={styles.logoutItem}>로그아웃</Dropdown.Item>
       </Dropdown.Menu>
 
       {/* 계정 탈퇴 확인 모달 */}

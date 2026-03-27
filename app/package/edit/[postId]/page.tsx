@@ -546,7 +546,7 @@ export default function PackageEditPage() {
     return (
       <Container fluid style={{ maxWidth: '1100px' }}>
         <div className={styles.registerWrapper} style={{ textAlign: 'center', paddingTop: '3rem' }}>
-          <Spinner animation="border" style={{ color: '#f97316' }} />
+          <Spinner animation="border" style={{ color: 'var(--color-primary)' }} />
         </div>
       </Container>
     );
