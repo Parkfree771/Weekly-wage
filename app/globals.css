@@ -97,6 +97,11 @@
   /* Accordion */
   --accordion-icon-invert: 0;
 
+  /* Bootstrap 내부 변수 동기화 — 테마와 일치시킴 */
+  --bs-body-color: var(--text-primary);
+  --bs-body-bg: var(--card-bg);
+  --bs-emphasis-color: var(--text-primary);
+  --bs-emphasis-color-rgb: 26, 31, 54;
 }
 
 [data-theme="dark"] {
@@ -191,6 +196,12 @@
 
   /* Accordion */
   --accordion-icon-invert: 1;
+
+  /* Bootstrap 내부 변수 동기화 — 다크 테마와 일치시킴 */
+  --bs-body-color: var(--text-primary);
+  --bs-body-bg: var(--card-bg);
+  --bs-emphasis-color: var(--text-primary);
+  --bs-emphasis-color-rgb: 224, 228, 236;
 }
 
 /* 폰트 시스템: JetBrains Mono(숫자/영문) → Noto Sans KR(한글) 자동 폴백 */

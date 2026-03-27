@@ -547,7 +547,7 @@
 .footerDaily {
   flex: 1;
   background: var(--card-bg);
-  border: 1.5px solid var(--color-primary);
+  border: 2px solid var(--border-color);
   border-radius: 8px;
   padding: 6px 8px;
 }
@@ -673,15 +673,21 @@
 .legendDotLg.dailyX4 { background: #9333ea; }
 
 /* 카드 테두리 + 체크 배지 색상 (클릭 횟수별) */
-.dailyCardX1 { border-color: #16a34a !important; }
-.dailyCardX2 { border-color: #2563eb !important; }
-.dailyCardX3 { border-color: #ea580c !important; }
-.dailyCardX4 { border-color: #9333ea !important; }
+.dailyCardX1 { border-color: #16a34a !important; border-width: 4px !important; box-shadow: 0 0 12px rgba(22, 163, 74, 0.5) !important; }
+.dailyCardX2 { border-color: #2563eb !important; border-width: 4px !important; box-shadow: 0 0 12px rgba(37, 99, 235, 0.5) !important; }
+.dailyCardX3 { border-color: #ea580c !important; border-width: 4px !important; box-shadow: 0 0 12px rgba(234, 88, 12, 0.5) !important; }
+.dailyCardX4 { border-color: #9333ea !important; border-width: 4px !important; box-shadow: 0 0 12px rgba(147, 51, 234, 0.5) !important; }
+
 
 .raidCheck.dailyX1 { background: #16a34a !important; }
 .raidCheck.dailyX2 { background: #2563eb !important; }
 .raidCheck.dailyX3 { background: #ea580c !important; }
 .raidCheck.dailyX4 { background: #9333ea !important; }
+
+.footerDaily.dailyCardX1 { border-color: #16a34a !important; border-width: 2px !important; box-shadow: none !important; }
+.footerDaily.dailyCardX2 { border-color: #2563eb !important; border-width: 2px !important; box-shadow: none !important; }
+.footerDaily.dailyCardX3 { border-color: #ea580c !important; border-width: 2px !important; box-shadow: none !important; }
+.footerDaily.dailyCardX4 { border-color: #9333ea !important; border-width: 2px !important; box-shadow: none !important; }
 
 .footerDaily .dailyDayBtn:hover {
   border-color: var(--color-primary);
@@ -1070,9 +1076,11 @@
 }
 
 .raidChecked {
-  border-color: var(--color-success);
-  border-width: 3px;
+  border-color: #16a34a;
+  border-width: 4px;
+  box-shadow: 0 0 12px rgba(22, 163, 74, 0.5);
 }
+
 
 .raidImage {
   object-fit: cover;
@@ -3016,4 +3024,62 @@
   .dailyGrandTotalList {
     gap: 0.4rem 0.8rem;
   }
+
+  .demoCta {
+    margin: 0 -10px 16px;
+  }
+
+  .demoCtaInner {
+    padding: 24px 16px;
+  }
+
+  .demoCtaTitle {
+    font-size: 16px;
+  }
+}
+
+/* ===== 데모 모드 ===== */
+.demoCta {
+  margin-bottom: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(59, 130, 246, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.demoCtaInner {
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.demoCtaTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.demoCtaDesc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.demoCtaBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #3b82f6);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.demoCtaBtn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
 }

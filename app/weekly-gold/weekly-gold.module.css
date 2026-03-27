@@ -97,8 +97,13 @@
 .pageWrapper :global(.cerka-character .accordion-collapse),
 .pageWrapper :global(.cerka-character .accordion-body),
 .pageWrapper :global(.cerka-character .table),
+.pageWrapper :global(.cerka-character .table thead),
+.pageWrapper :global(.cerka-character .table tbody),
 .pageWrapper :global(.cerka-character .table td),
 .pageWrapper :global(.cerka-character .table th),
+.pageWrapper :global(.cerka-character .raid-table),
+.pageWrapper :global(.cerka-character .raid-table thead),
+.pageWrapper :global(.cerka-character .raid-table tbody),
 .pageWrapper :global(.cerka-character .raid-group-accordion),
 .pageWrapper :global(.cerka-character .raid-difficulty-accordion) {
   background-color: transparent !important;
@@ -243,6 +248,7 @@
 /* Bootstrap 변수 리셋 — globals.css 기본 스타일 활성화 */
 .pageWrapper :global(.table),
 .pageWrapper :global(.table > :not(caption) > * > *) {
+  --bs-table-color: var(--text-primary) !important;
   --bs-table-bg: var(--card-bg) !important;
   --bs-table-accent-bg: transparent !important;
   --bs-table-striped-bg: transparent !important;

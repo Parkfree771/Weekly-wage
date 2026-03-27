@@ -24,6 +24,7 @@ import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service
 import NicknameModal from '@/components/auth/NicknameModal';
 import { raids } from '@/data/raids';
 import { raidClearRewards } from '@/data/raidClearRewards';
+import { DEMO_CHARACTERS, DEMO_WEEKLY_CHECKLIST, DEMO_GOLD_HISTORY, DEMO_COMMON_CONTENT, DEMO_MAIN_CHARACTER } from '@/data/demoMypage';
 
 // raids 배열을 Map으로 변환 (O(1) 조회용)
 const raidMap = new Map(raids.map(r => [r.name, r]));
@@ -339,6 +340,9 @@ export default function MyPage() {
   const router = useRouter();
   const { user, userProfile, loading, refreshUserProfile, signInWithGoogle, setNickname: updateNickname } = useAuth();
 
+  // 데모 모드 (비로그인 시)
+  const isDemo = !user && !loading;
+
   // 원정대 탭 (1, 2, 3)
   const [activeExpedition, setActiveExpedition] = useState<1 | 2 | 3>(1);
 
@@ -347,6 +351,9 @@ export default function MyPage() {
   const [weeklyChecklist, setWeeklyChecklist] = useState<WeeklyChecklist>({});
   const [weeklyGoldHistory, setWeeklyGoldHistory] = useState<WeeklyGoldRecord[]>([]);
   const [commonContent, setCommonContent] = useState<CommonContentState>({ date: '', checks: {} });
+
+  // 데모 로그인 유도 모달
+  const [demoLoginPrompt, setDemoLoginPrompt] = useState(false);
   const [showAllCharacters, setShowAllCharacters] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -399,10 +406,11 @@ export default function MyPage() {
   // 데스크톱 여부 (레이드 표시 개수 분기)
   // 대표 캐릭터 이름
   const representativeChar = useMemo(() => {
+    if (isDemo) return DEMO_MAIN_CHARACTER;
     if (activeExpedition === 1) return userProfile?.mainCharacter || characters[0]?.name || '';
     const expKey = activeExpedition === 2 ? 'expedition2' : 'expedition3';
     return (userProfile as any)?.[expKey]?.mainCharacter || characters[0]?.name || '';
-  }, [userProfile, activeExpedition, characters]);
+  }, [isDemo, userProfile, activeExpedition, characters]);
 
   const [isDesktop, setIsDesktop] = useState(true);
   const [row2ScrollIndex, setRow2ScrollIndex] = useState<Record<string, number>>({});
@@ -643,6 +651,21 @@ export default function MyPage() {
     }
   }, [userProfile, user, activeExpedition, getExpeditionData, getFirestorePrefix]);
 
+  // 데모 모드 데이터 초기화
+  const demoInitialized = useRef(false);
+  useEffect(() => {
+    if (isDemo && !demoInitialized.current) {
+      demoInitialized.current = true;
+      setCharacters(DEMO_CHARACTERS);
+      setWeeklyChecklist(DEMO_WEEKLY_CHECKLIST);
+      setWeeklyGoldHistory(DEMO_GOLD_HISTORY);
+      setCommonContent(DEMO_COMMON_CONTENT);
+    }
+    if (!isDemo) {
+      demoInitialized.current = false;
+    }
+  }, [isDemo]);
+
   // 이미지 없는 캐릭터들의 이미지 로드
   useEffect(() => {
     if (!user || !userProfile || imageLoadAttempted.current) return;
@@ -675,17 +698,17 @@ export default function MyPage() {
 
   // 로그인 체크 - 로그인 프롬프트를 표시하므로 리다이렉트 불필요
 
-  // 창 닫을 때 변경사항 경고
+  // 창 닫을 때 변경사항 경고 (데모 모드 제외)
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasChanges) {
+      if (hasChanges && !isDemo) {
         e.preventDefault();
         e.returnValue = '';
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasChanges]);
+  }, [hasChanges, isDemo]);
 
   // 닉네임 실시간 검증
   useEffect(() => {
@@ -1416,42 +1439,6 @@ export default function MyPage() {
     );
   }
 
-  // 비로그인 - 로그인 안내 화면 표시
-  if (!user) {
-    return (
-      <div className={styles.pageWrapper}>
-        <Container className="py-5">
-          <div className={styles.loginPrompt}>
-            <h2 className={styles.loginTitle}>로그인이 필요합니다</h2>
-            <p className={styles.loginDesc}>
-              마이페이지를 이용하려면 로그인이 필요합니다.<br />
-              Google 계정으로 간편하게 로그인하세요.
-            </p>
-            <button
-              onClick={signInWithGoogle}
-              className={styles.googleLoginBtn}
-            >
-              <svg width="20" height="20" viewBox="0 0 48 48">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-              </svg>
-              <span>Google 로그인</span>
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className={styles.backHomeBtn}
-            >
-              홈으로 돌아가기
-            </button>
-          </div>
-
-        </Container>
-      </div>
-    );
-  }
-
   const displayCharacters = showAllCharacters ? characters : characters.slice(0, 6);
 
   // 캐릭터별 일일 컨텐츠 펼침/닫힘
@@ -1466,10 +1453,57 @@ export default function MyPage() {
           <h1 className={styles.pageTitle}>마이페이지</h1>
         </div>
 
+        {/* 데모 안내 */}
+        {isDemo && (
+          <div className={styles.demoCta}>
+            <div className={styles.demoCtaInner}>
+              <h3 className={styles.demoCtaTitle}>일간 / 주간 숙제 체크리스트</h3>
+              <p className={styles.demoCtaDesc}>아래는 예시 화면입니다.</p>
+              <button onClick={signInWithGoogle} className={styles.demoCtaBtn}>
+                <svg width="18" height="18" viewBox="0 0 48 48">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Google 로그인
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 데모 로그인 유도 모달 */}
+        <Modal show={demoLoginPrompt} onHide={() => setDemoLoginPrompt(false)} centered size="sm">
+          <Modal.Body className="text-center py-4">
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🔒</div>
+            <h5 style={{ fontWeight: 700, marginBottom: '8px' }}>저장은 로그인 후 가능합니다</h5>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+              Google 계정으로 로그인하고<br />원정대를 등록하면 데이터가 저장됩니다.
+            </p>
+            <button onClick={() => { setDemoLoginPrompt(false); signInWithGoogle(); }} className={styles.googleLoginBtn} style={{ margin: '0 auto 12px' }}>
+              <svg width="18" height="18" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+              <span>Google 로그인</span>
+            </button>
+            <button onClick={() => setDemoLoginPrompt(false)} className={styles.backHomeBtn} style={{ padding: '8px 16px', fontSize: '13px' }}>
+              계속 체험하기
+            </button>
+          </Modal.Body>
+        </Modal>
+
         {/* 원정대 탭 + 버튼 */}
         <div className={styles.expeditionRow}>
           <div className={styles.expeditionTabs}>
-          {([1, 2, 3] as const).map(idx => {
+          {isDemo ? (
+            <button className={`${styles.expeditionTab} ${styles.activeTab}`}>
+              원정대 1
+              <span className={styles.tabBadge}>({characters.length})</span>
+            </button>
+          ) : ([1, 2, 3] as const).map(idx => {
             const expData = getExpeditionData(userProfile, idx);
             const hasData = expData.chars.length > 0;
             return (
@@ -1485,19 +1519,35 @@ export default function MyPage() {
           })}
           </div>
           <div className={styles.expeditionBtns}>
-            <button className={styles.registerBtn} onClick={() => setShowRegisterModal(true)}>
-              + 캐릭터 등록
-            </button>
-            {characters.length > 0 && (
-              <button className={styles.editBtn} onClick={openEditModal}>편집</button>
+            {isDemo ? (
+              <>
+                <button className={styles.registerBtn} onClick={() => setDemoLoginPrompt(true)}>
+                  + 캐릭터 등록
+                </button>
+                <button
+                  className={`${styles.saveButton} ${hasChanges ? styles.hasChanges : ''}`}
+                  onClick={() => setDemoLoginPrompt(true)}
+                >
+                  저장
+                </button>
+              </>
+            ) : (
+              <>
+                <button className={styles.registerBtn} onClick={() => setShowRegisterModal(true)}>
+                  + 캐릭터 등록
+                </button>
+                {characters.length > 0 && (
+                  <button className={styles.editBtn} onClick={openEditModal}>편집</button>
+                )}
+                <button
+                  className={`${styles.saveButton} ${hasChanges ? styles.hasChanges : ''}`}
+                  onClick={handleSave}
+                  disabled={!hasChanges || isSaving}
+                >
+                  {isSaving ? <Spinner animation="border" size="sm" /> : '저장'}
+                </button>
+              </>
             )}
-            <button
-              className={`${styles.saveButton} ${hasChanges ? styles.hasChanges : ''}`}
-              onClick={handleSave}
-              disabled={!hasChanges || isSaving}
-            >
-              {isSaving ? <Spinner animation="border" size="sm" /> : '저장'}
-            </button>
             <div className={styles.totalGoldBadge}>
               <span className={styles.goldLabel}>이번 주 예상</span>
               <span className={styles.goldAmount}>{totalGold.toLocaleString()}G</span>
@@ -1518,7 +1568,7 @@ export default function MyPage() {
         )}
 
         {/* 캐릭터 없음 */}
-        {characters.length === 0 && (
+        {!isDemo && characters.length === 0 && (
           activeExpedition === 1 ? (
             <Card className={styles.emptyCard}>
               <Card.Body className="text-center py-4">
@@ -1642,10 +1692,10 @@ export default function MyPage() {
                   <span className={styles.characterName}>{char.name}{char.name === representativeChar && <span className={styles.repBadge}>대표</span>}</span>
                   <div className={styles.headerRight}>
                     <button
-                      className={`${styles.refreshBtn} ${!canRefresh(char.name) ? styles.refreshDisabled : ''}`}
-                      onClick={() => handleRefresh(char.name)}
-                      disabled={refreshingChar === char.name || !canRefresh(char.name)}
-                      title={canRefresh(char.name) ? '레벨 갱신' : `${Math.floor(getRemainingCooldown(char.name) / 60)}분 ${getRemainingCooldown(char.name) % 60}초 후 가능`}
+                      className={`${styles.refreshBtn} ${!isDemo && !canRefresh(char.name) ? styles.refreshDisabled : ''}`}
+                      onClick={() => isDemo ? setDemoLoginPrompt(true) : handleRefresh(char.name)}
+                      disabled={!isDemo && (refreshingChar === char.name || !canRefresh(char.name))}
+                      title={isDemo ? '레벨 갱신 (로그인 필요)' : canRefresh(char.name) ? '레벨 갱신' : `${Math.floor(getRemainingCooldown(char.name) / 60)}분 ${getRemainingCooldown(char.name) % 60}초 후 가능`}
                     >
                       {refreshingChar === char.name ? (
                         <Spinner animation="border" size="sm" style={{ width: '12px', height: '12px' }} />
@@ -2238,7 +2288,7 @@ export default function MyPage() {
         )}
 
         {/* 안내 문구 */}
-        {characters.length > 0 && (
+        {characters.length > 0 && !isDemo && (
           <div className={styles.notice}>
             <p>매주 수요일 06:00 이후 첫 접속 시 이전 주 골드가 자동 저장됩니다.</p>
             <p>레이드 체크 후 상단의 '저장하기' 버튼을 눌러야 변경사항이 반영됩니다.</p>
@@ -2248,7 +2298,7 @@ export default function MyPage() {
         )}
 
         {/* 캐릭터 등록 모달 (2단계) */}
-        <Modal show={showRegisterModal} onHide={closeRegisterModal} centered size={registerStep === 2 ? 'lg' : undefined}>
+        {!isDemo && <Modal show={showRegisterModal} onHide={closeRegisterModal} centered size={registerStep === 2 ? 'lg' : undefined}>
           <Modal.Header closeButton>
             <Modal.Title>
               {registerStep === 1
@@ -2364,10 +2414,10 @@ export default function MyPage() {
               </>
             )}
           </Modal.Footer>
-        </Modal>
+        </Modal>}
 
         {/* 원정대 편집 모달 */}
-        <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered size="lg">
+        {!isDemo && <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered size="lg">
           <Modal.Header closeButton>
             <Modal.Title>원정대{activeExpedition > 1 ? ` ${activeExpedition}` : ''} 편집 ({selectedCharNames.size}/6)</Modal.Title>
           </Modal.Header>
@@ -2454,10 +2504,10 @@ export default function MyPage() {
               </Button>
             </div>
           </Modal.Footer>
-        </Modal>
+        </Modal>}
 
         {/* 닉네임 미설정 시 모달 */}
-        {userProfile && !userProfile.nickname && <NicknameModal />}
+        {!isDemo && userProfile && !userProfile.nickname && <NicknameModal />}
 
       </Container>
     </div>
