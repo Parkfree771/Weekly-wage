@@ -1599,8 +1599,6 @@ export default function MyPage() {
         {/* 캐릭터 카드 그리드 (1열) */}
         <div className={styles.cardGrid}>
           {displayCharacters
-            .slice()
-            .sort((a, b) => b.itemLevel - a.itemLevel)
             .map((char, charIdx) => {
             const charState = weeklyChecklist[char.name] || createEmptyWeeklyState(char.itemLevel);
             const top3Raids = getTop3RaidGroups(char.itemLevel);
