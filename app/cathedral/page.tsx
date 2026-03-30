@@ -348,7 +348,7 @@ const CAL_SHOP_ITEMS: CalShopItem[] = SHOP_ITEMS
     graceCost: s.costs.find(c => c.name === '은총의 파편')?.amount || 0,
     goldCost: s.costs.find(c => c.name === '골드')?.amount || 0,
     limitType: s.limitType as 'once' | 'unlimited',
-    requiredLevel: s.requiredLevel,
+    requiredLevel: Math.min(s.requiredLevel, 1750),
   }));
 
 // 교환 체크된 아이템의 은총 소비를 반영하여, 각 아이템의 필요 주차 계산
