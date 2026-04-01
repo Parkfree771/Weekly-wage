@@ -116,7 +116,8 @@ export default function HellRewardCalculator() {
   const [expandedReward, setExpandedReward] = useState<string | null>(null);
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [priceLoading, setPriceLoading] = useState(true);
-  const [exchangeRate, setExchangeRate] = useState<number>(8500);
+  const [exchangeRate, setExchangeRate] = useState<number>(13750);
+  const [excludeAbilityStone, setExcludeAbilityStone] = useState<boolean>(true);
 
   useEffect(() => {
     fetchPriceData()
@@ -152,7 +153,10 @@ export default function HellRewardCalculator() {
     });
 
   const avgGold = (() => {
-    const available = sortedRewards.filter(r => r.available && r.goldValue !== null);
+    let available = sortedRewards.filter(r => r.available && r.goldValue !== null);
+    if (excludeAbilityStone) {
+      available = available.filter(r => r.name !== '어빌리티스톤 키트');
+    }
     if (available.length === 0) return 0;
     return Math.floor(available.reduce((s, r) => s + r.goldValue, 0) / available.length);
   })();
@@ -369,7 +373,7 @@ export default function HellRewardCalculator() {
               className={styles.exchangeInput}
               value={exchangeRate || ''}
               onChange={(e) => setExchangeRate(Number(e.target.value) || 0)}
-              placeholder="8500"
+              placeholder="13750"
               min={0}
             />
           </div>
@@ -388,7 +392,7 @@ export default function HellRewardCalculator() {
                 const v = Number(e.target.value) || 0;
                 setExchangeRate(v > 0 ? Math.round(275000 / v) : 0);
               }}
-              placeholder="32"
+              placeholder="20"
               min={0}
             />
           </div>
@@ -398,15 +402,31 @@ export default function HellRewardCalculator() {
         </div>
 
         {hasPrices && !priceLoading && (
-          <div className={styles.avgBanner}>
-            <NextImage src="/gold.webp" alt="골드" width={36} height={36} className={styles.avgBannerIcon} />
-            <div className={styles.avgBannerText}>
-              <span className={styles.avgBannerLabel}>단계 {selectedTier} 평균 기댓값</span>
-              <span className={styles.avgBannerValue}>{avgGold.toLocaleString()} G</span>
+          <div className={styles.avgBannerWrap}>
+            <div className={styles.avgBanner}>
+              <NextImage src="/gold.webp" alt="골드" width={36} height={36} className={styles.avgBannerIcon} />
+              <div className={styles.avgBannerText}>
+                <span className={styles.avgBannerLabel}>단계 {selectedTier} 평균 기댓값</span>
+                <span className={styles.avgBannerValue}>{avgGold.toLocaleString()} G</span>
+              </div>
+              <div className={styles.avgBannerCount}>
+                {(() => {
+                  let available = sortedRewards.filter(r => r.available);
+                  if (excludeAbilityStone) available = available.filter(r => r.name !== '어빌리티스톤 키트');
+                  return available.length;
+                })()}종
+              </div>
             </div>
-            <div className={styles.avgBannerCount}>
-              {sortedRewards.filter(r => r.available).length}종
-            </div>
+            <label className={styles.stoneExcludeLabel}>
+              <input
+                type="checkbox"
+                checked={excludeAbilityStone}
+                onChange={(e) => setExcludeAbilityStone(e.target.checked)}
+                className={styles.stoneExcludeCheck}
+              />
+              <span>어빌리티스톤 키트 제외</span>
+              <span className={styles.stoneExcludeHint}>페온 가치로 인해 기댓값이 과도하게 높아 기본 제외됩니다. 포함하려면 체크 해제하세요.</span>
+            </label>
           </div>
         )}
       </div>

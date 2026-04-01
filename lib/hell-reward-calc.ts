@@ -329,7 +329,8 @@ export function calcTicketAverage(
   tier: number,
   prices: Record<string, number>,
   bcRate: number,
-  level: '1700' | '1730' = '1730'
+  level: '1700' | '1730' = '1730',
+  excludeAbilityStone: boolean = true
 ): number {
   const peonGoldValue = 8.5 * (bcRate / 100);
   const specialRefiningCost = calcSpecialRefiningUnitCost(prices);
@@ -340,6 +341,7 @@ export function calcTicketAverage(
   let sum = 0;
   let count = 0;
   for (const name of rewardNames) {
+    if (excludeAbilityStone && name === '어빌리티스톤 키트') continue;
     const rawVal = data[name]?.[tier];
     if (!rawVal || rawVal === '-') continue;
     const val = calcBoxRewardGold(name, tier, prices, mode, peonGoldValue, specialRefiningCost, level);

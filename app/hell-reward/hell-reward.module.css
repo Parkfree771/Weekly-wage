@@ -274,6 +274,39 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* 평균 배너 + 체크박스 래퍼 */
+.avgBannerWrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+/* 어빌리티스톤 제외 체크박스 */
+.stoneExcludeLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+
+.stoneExcludeCheck {
+  width: 14px;
+  height: 14px;
+  accent-color: #6366f1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.stoneExcludeHint {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
 /* 로딩 */
 .loading {
   text-align: center;
