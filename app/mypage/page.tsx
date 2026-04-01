@@ -2142,7 +2142,7 @@ export default function MyPage() {
                           const rewards = getSandOfTimeRewards(char.itemLevel);
                           const stReward = rewards[stLv];
                           if (!stReward || (stReward.gems === 0 && stReward.stones === 0)) return null;
-                          const gem1Equiv = char.itemLevel >= 1750 ? stReward.gems * 9 : stReward.gems * 6; // 3레벨×9, 2레벨×6
+                          const gem1Equiv = char.itemLevel >= 1750 ? stReward.gems * 9 : stReward.gems * 3; // 3레벨×9, 2레벨×3
                           return (
                             <div className={styles.sideMaterialRow}>
                               <span className={styles.sideMaterialLabel}>모래</span>
