@@ -223,7 +223,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   {
     id: 'gem-hero',
     icon: '/gem-hero.webp',
-    name: '영웅 젬 상자',
+    name: '영웅 젬 선택 상자',
     type: 'choice',
     choices: [
       { itemId: '67400003', name: '질서의 젬 : 안정', icon: '/gem-order-stable.webp?v=3' },
@@ -232,6 +232,20 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
       { itemId: '67410303', name: '혼돈의 젬 : 침식', icon: '/gem-chaos-erosion.webp?v=3' },
       { itemId: '67410403', name: '혼돈의 젬 : 왜곡', icon: '/gem-chaos-distortion.webp?v=3' },
       { itemId: '67410503', name: '혼돈의 젬 : 붕괴', icon: '/gem-chaos-collapse.webp?v=3' },
+    ],
+  },
+  {
+    id: 'gem-hero-random',
+    icon: '/gem-hero.webp',
+    name: '영웅 젬 랜덤 상자',
+    type: 'expected',
+    expectedItems: [
+      { itemId: '67400003', probability: 0.30 },   // 안정 30%
+      { itemId: '67400103', probability: 0.15 },   // 견고 15%
+      { itemId: '67400203', probability: 0.05 },   // 불변 5%
+      { itemId: '67410303', probability: 0.30 },   // 침식 30%
+      { itemId: '67410403', probability: 0.15 },   // 왜곡 15%
+      { itemId: '67410503', probability: 0.05 },   // 붕괴 5%
     ],
   },
   // ── 유각 ──
@@ -461,7 +475,7 @@ export const ICON_SIZE_CATALOG: Record<string, number> = {
   'gold-input': 60,
   'hell-heroic-ticket': 110,
   'pheon': 110,
-  'gem-choice': 110, 'gem-hero': 110,
+  'gem-choice': 110, 'gem-hero': 110, 'gem-hero-random': 110,
   'weapon-quality': 110, 'armor-quality': 110, 'karma-stone': 110,
   'shilling': 65, 'blue-crystal-input': 65,
   'master-tailoring-3': 65, 'master-tailoring-4': 65,

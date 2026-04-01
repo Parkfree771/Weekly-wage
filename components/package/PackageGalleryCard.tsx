@@ -39,6 +39,7 @@ const GALLERY_ICON_SIZE: Record<string, number> = {
   'fixed_hell-heroic-ticket': 58,
   'crystal_pheon': 54,
   'expected_gem-choice': 54,
+  'expected_gem-hero-random': 54,
 };
 const GALLERY_ICON_RE: [RegExp, number][] = [
   [/^674/, 54], // 젬 선택 아이템 (영웅 젬 상자에서 선택된 젬)
