@@ -2,8 +2,8 @@
 
 import dynamic from 'next/dynamic';
 
-const SignalGame = dynamic(() => import('./signal/SignalGame'), { ssr: false });
+const SurvivorsGame = dynamic(() => import('./survivors/SurvivorsGame'), { ssr: false });
 
 export default function MiniGamePage() {
-  return <SignalGame />;
+  return <SurvivorsGame />;
 }
