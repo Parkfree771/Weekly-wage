@@ -30,9 +30,10 @@ export interface EnemyConfig {
 }
 
 export const ENEMY_CONFIGS: Record<EnemyType, EnemyConfig> = {
-  normal: { type: 'normal', speed: 1.2, hp: 20, color: 0xD94A4A, xp: 10, width: 24, height: 16, label: '일반차' },
-  bike: { type: 'bike', speed: 2.5, hp: 8, color: 0xD9884A, xp: 15, width: 16, height: 10, label: '바이크' },
-  truck: { type: 'truck', speed: 0.8, hp: 60, color: 0x8B2252, xp: 30, width: 36, height: 22, label: '트럭' },
+  // DEV: 체력 대폭 상향 (이펙트 테스트용, 잘 안 죽게)
+  normal: { type: 'normal', speed: 1.2, hp: 500, color: 0xD94A4A, xp: 10, width: 24, height: 16, label: '일반차' },
+  bike: { type: 'bike', speed: 2.5, hp: 300, color: 0xD9884A, xp: 15, width: 16, height: 10, label: '바이크' },
+  truck: { type: 'truck', speed: 0.8, hp: 1500, color: 0x8B2252, xp: 30, width: 36, height: 22, label: '트럭' },
 };
 
 export type WeaponEffectType = 'projectile' | 'aura' | 'beam' | 'explosion' | 'lightning' | 'wave';

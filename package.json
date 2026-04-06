@@ -14,6 +14,7 @@
     "@pixi/filter-glow": "^5.2.1",
     "@pixi/filter-motion-blur": "^5.1.1",
     "@pixi/filter-shockwave": "^5.1.1",
+    "@pixi/particle-emitter": "^5.0.10",
     "@supabase/supabase-js": "^2.91.1",
     "bootstrap": "^5.3.8",
     "critters": "^0.0.23",

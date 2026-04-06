@@ -24,6 +24,7 @@ import {
   GameOverOverlay, createGameOverOverlay, showGameOver,
   DevPanel, createDevPanel,
 } from './ui';
+import { EffectManager } from './effects/EffectManager';
 
 export class GameEngine {
   app: PIXI.Application;
@@ -55,6 +56,8 @@ export class GameEngine {
   private _waterCooldown = 0;
   private _earthCooldown = 0;
   private _lightCooldown = 0;
+
+  private effectManager!: EffectManager;
 
   // Mobile joystick
   private joystickActive = false;
@@ -156,6 +159,9 @@ export class GameEngine {
     if (this.isMobile) {
       this.setupJoystick();
     }
+
+    // 이펙트 매니저
+    this.effectManager = new EffectManager(effectLayer);
 
     // Dev panel
     if (this.devMode) {
@@ -279,12 +285,17 @@ export class GameEngine {
     this.autoAttack();
     activateAllWeapons(this.state);
     updateWeaponEffects(this.state);
+    this.effectManager.update(1);
+    // 물 속성이 슬롯에 있으면 이펙트 상시 활성 + 위치 추적
+    this.updateElementEffects();
     updateProjectiles(this.state.projectiles);
-    updateXPOrbs(this.state.xpOrbs, this.state.player);
-    this.handleElementOrbPickup();
+    // DEV: XP 오브/원소 오브 업데이트 제거
+    // updateXPOrbs(this.state.xpOrbs, this.state.player);
+    // this.handleElementOrbPickup();
     updateParticles(this.state.particles);
     this.handleCollisions();
-    this.checkLevelUp();
+    // DEV: 레벨업 제거
+    // this.checkLevelUp();
     this.updateCombo();
     this.updateLevelUpText();
     updateCamera(this.state);
@@ -325,6 +336,54 @@ export class GameEngine {
     if (player.comboTimer > 0) {
       player.comboTimer--;
       if (player.comboTimer <= 0) player.comboCount = 0;
+    }
+  }
+
+  /** 매 프레임: 슬롯에 있는 원소에 따라 이펙트 활성/위치 갱신 */
+  private updateElementEffects() {
+    const { player } = this.state;
+    const px = player.x;
+    const py = player.y;
+
+    // 슬롯에서 현재 활성 원소 수집
+    let hasWater = false;
+    for (const slot of player.weaponSlots) {
+      if (slot.weapon) continue;
+      for (const el of slot.elements) {
+        if (el === '물') hasWater = true;
+      }
+    }
+
+    // 물 이펙트
+    if (hasWater) {
+      const waterRadius = 120;
+      this.effectManager.startWater(px, py, waterRadius);
+      this.effectManager.updateWaterPosition(px, py);
+
+      // 넉백 + 데미지 (매 프레임 범위 내 적 밀어냄)
+      const { enemies, particles } = this.state;
+      for (let i = 0; i < enemies.length; i++) {
+        const e = enemies[i];
+        if (!e.active) continue;
+        const dx = e.x - px;
+        const dy = e.y - py;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < waterRadius && dist > 1) {
+          // 넉백: 바깥 방향으로 밀어냄
+          const pushStrength = 2.5 * (1 - dist / waterRadius); // 중심에 가까울수록 강함
+          e.x += (dx / dist) * pushStrength;
+          e.y += (dy / dist) * pushStrength;
+
+          // 지속 데미지 (30프레임마다 = 0.5초)
+          if (this.state.frameCount % 30 === 0) {
+            e.hp -= 8;
+            spawnHitParticles(particles, e.x, e.y, 0x2563eb);
+            if (e.hp <= 0) this.killEnemy(i);
+          }
+        }
+      }
+    } else {
+      this.effectManager.stopWater();
     }
   }
 
@@ -391,26 +450,7 @@ export class GameEngine {
 
       switch (el) {
         case '물': {
-          // 물: 쿨타임 3회 호출 (30*3=90프레임 = 1.5초)
-          if (!this._waterCooldown) this._waterCooldown = 0;
-          this._waterCooldown++;
-          if (this._waterCooldown < 3) break;
-          this._waterCooldown = 0;
-
-          this.spawnAutoEffect({
-            type: 'wave',
-            uniqueId: 'auto_water',
-            x: player.x, y: player.y,
-            vx: 0, vy: 0,
-            radius: 95,
-            damage: 14,
-            color: 0x3b82f6,
-            life: 70,
-            maxLife: 70,
-            active: true,
-            angle: 0,
-            hitEnemies: new Set(),
-          });
+          // 물: updateElementEffects()에서 매 프레임 처리. 여기서는 아무것도 안 함.
           break;
         }
         case '흙': {
@@ -719,19 +759,18 @@ export class GameEngine {
       }
     }
 
-    // Player-enemy collisions
-    const playerHits = checkPlayerEnemyCollisions(player, enemies, this.spatialHash);
-    if (playerHits.length > 0) {
-      player.hp -= 10;
-      player.invincibleFrames = INVINCIBLE_FRAMES;
-      this.state.shakeFrames = 8;
-
-      if (player.hp <= 0) {
-        player.hp = 0;
-        this.state.gameOver = true;
-        showGameOver(this.gameOverOverlay, this.state, () => this.restart());
-      }
-    }
+    // Player-enemy collisions (DEV: 무적 — 피격 무시)
+    // const playerHits = checkPlayerEnemyCollisions(player, enemies, this.spatialHash);
+    // if (playerHits.length > 0) {
+    //   player.hp -= 10;
+    //   player.invincibleFrames = INVINCIBLE_FRAMES;
+    //   this.state.shakeFrames = 8;
+    //   if (player.hp <= 0) {
+    //     player.hp = 0;
+    //     this.state.gameOver = true;
+    //     showGameOver(this.gameOverOverlay, this.state, () => this.restart());
+    //   }
+    // }
   }
 
   private killEnemy(ei: number) {
@@ -739,12 +778,12 @@ export class GameEngine {
     if (!e.active) return;
 
     spawnExplosionParticles(this.state.particles, e.x, e.y, e.color, 10);
-    spawnXPOrb(this.state.xpOrbs, e.x, e.y, e.xp);
 
-    // 30% chance to drop a random element orb
-    if (Math.random() < ELEMENT_ORB_DROP_CHANCE) {
-      spawnRandomElementOrb(this.state.elementOrbs, e.x, e.y);
-    }
+    // DEV: XP 오브, 원소 오브 드랍 제거
+    // spawnXPOrb(this.state.xpOrbs, e.x, e.y, e.xp);
+    // if (Math.random() < ELEMENT_ORB_DROP_CHANCE) {
+    //   spawnRandomElementOrb(this.state.elementOrbs, e.x, e.y);
+    // }
 
     e.active = false;
 
@@ -793,8 +832,9 @@ export class GameEngine {
 
     drawEnemies(this.entityLayer, this.state, this.enemyGfx);
     drawProjectiles(this.effectLayer, this.state, this.projGfx);
-    drawXPOrbs(this.entityLayer, this.state, this.orbGfx);
-    drawElementOrbs(this.entityLayer, this.state, this.elementOrbGfx);
+    // DEV: 오브 렌더링 제거
+    // drawXPOrbs(this.entityLayer, this.state, this.orbGfx);
+    // drawElementOrbs(this.entityLayer, this.state, this.elementOrbGfx);
     drawParticles(this.particleLayer, this.state, this.particleGfx);
     drawWeaponEffects(this.effectLayer, this.state, this.effectGfx);
     applyCamera(this.worldContainer, this.state);
@@ -823,6 +863,7 @@ export class GameEngine {
 
   destroy() {
     this.destroyed = true;
+    this.effectManager?.destroy();
     window.removeEventListener('keydown', this._keyDown);
     window.removeEventListener('keyup', this._keyUp);
     this.app.ticker.remove(this.gameLoop);
