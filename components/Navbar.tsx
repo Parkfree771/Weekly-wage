@@ -44,7 +44,7 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 
 const NAV_STANDALONE: NavItem[] = [
-  { href: '/cathedral', label: '지평의 성당', badge: 'NEW' },
+  { href: '/cathedral', label: '지평의 성당' },
   { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
 ];
@@ -57,7 +57,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/hell-reward', label: '지옥 보상 계산' },
   { href: '/refining', label: '재련 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
-  { href: '/cathedral', label: '지평의 성당', badge: 'NEW' },
+  { href: '/cathedral', label: '지평의 성당' },
   { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
 ];

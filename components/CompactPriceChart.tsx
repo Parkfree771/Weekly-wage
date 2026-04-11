@@ -206,12 +206,12 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       const event = EVENTS.find(e => e.date === dateString);
       const eventLabel = event?.label;
       // 이벤트 점 색상 (60-30-10 법칙)
-      // 특별이벤트(10% 강조): 기본 청록, 재련재료=주황(파란의 보색), 팔찌=주황
+      // 특별이벤트(10% 강조): 주황으로 전 카테고리 통일
       // 수요일: 기본 빨간색, 유물각인서=파란색
       const isSpecialEvent = !!event;
       const catLabel = categoryStyle?.label;
       const eventColor = isSpecialEvent
-        ? (catLabel === '재련 재료' || catLabel === '팔찌' ? '#f97316' : '#14b8a6')
+        ? '#f97316'
         : (dayOfWeek === 3
           ? (catLabel === '유물 각인서' ? '#3b82f6' : '#ef4444')
           : undefined);
