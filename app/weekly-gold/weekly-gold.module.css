@@ -3,7 +3,21 @@
    ========================================================================== */
 
 .pageWrapper {
-  /* 글로벌 변수를 그대로 상속 — 페이지별 오버라이드 없음 */
+  /* 메인페이지 카드 헤더 변경(583c1ba) 이전의 원래 값으로 복원 —
+     주간 골드 페이지 한정 오버라이드. 헤더와 바디의 톤 차이를 유지. */
+  --card-header-bg: rgba(59, 80, 181, 0.04);
+  --card-header-bg-blue: rgba(59, 80, 181, 0.04);
+  --card-header-bg-stone: rgba(59, 80, 181, 0.04);
+  --card-header-bg-violet: rgba(59, 80, 181, 0.04);
+  --card-header-bg-orange: rgba(232, 114, 42, 0.04);
+}
+
+:global([data-theme="dark"]) .pageWrapper {
+  --card-header-bg: rgba(107, 126, 214, 0.08);
+  --card-header-bg-blue: rgba(107, 126, 214, 0.08);
+  --card-header-bg-stone: rgba(107, 126, 214, 0.06);
+  --card-header-bg-violet: rgba(107, 126, 214, 0.08);
+  --card-header-bg-orange: rgba(212, 165, 74, 0.08);
 }
 
 /* 4. 컴포넌트 스타일링 */
