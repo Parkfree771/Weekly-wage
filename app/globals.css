@@ -38,14 +38,14 @@
   --shadow-xl: 0 20px 40px -6px rgba(59, 80, 181, 0.28), 0 10px 20px -6px rgba(59, 80, 181, 0.15);
 
   /* Generic card backgrounds (fallback) */
-  --card-header-bg: rgba(59, 80, 181, 0.04);
+  --card-header-bg: #ffffff;
   --card-body-bg: #f4f5fb;
 
   /* Card Header Backgrounds */
-  --card-header-bg-blue: rgba(59, 80, 181, 0.04);
-  --card-header-bg-stone: rgba(59, 80, 181, 0.04);
-  --card-header-bg-violet: rgba(59, 80, 181, 0.04);
-  --card-header-bg-orange: rgba(232, 114, 42, 0.04);
+  --card-header-bg-blue: #ffffff;
+  --card-header-bg-stone: #ffffff;
+  --card-header-bg-violet: #ffffff;
+  --card-header-bg-orange: #ffffff;
 
   /* Primary aliases */
   --primary-color: var(--color-primary);
@@ -138,14 +138,14 @@
   --shadow-xl: 0 20px 40px -6px rgba(0, 0, 0, 0.7), 0 10px 20px -6px rgba(0, 0, 0, 0.4);
 
   /* Generic card backgrounds (fallback) */
-  --card-header-bg: rgba(107, 126, 214, 0.08);
+  --card-header-bg: #1c2233;
   --card-body-bg: #252d42;
 
   /* Card Header Backgrounds */
-  --card-header-bg-blue: rgba(107, 126, 214, 0.08);
-  --card-header-bg-stone: rgba(107, 126, 214, 0.06);
-  --card-header-bg-violet: rgba(107, 126, 214, 0.08);
-  --card-header-bg-orange: rgba(212, 165, 74, 0.08);
+  --card-header-bg-blue: #1c2233;
+  --card-header-bg-stone: #1c2233;
+  --card-header-bg-violet: #1c2233;
+  --card-header-bg-orange: #1c2233;
 
   /* Primary aliases */
   --primary-color: var(--color-primary);
@@ -338,6 +338,7 @@ input, select, textarea,
   min-height: 580px;
   border-radius: 16px !important;
   overflow: hidden;
+  border: 2px solid rgba(59, 80, 181, 0.35) !important;
   /* 입체 두께감: 하드 엣지만 (blur 0) */
   box-shadow:
     2px 2px 0 0 rgba(59, 80, 181, 0.3),
@@ -347,6 +348,7 @@ input, select, textarea,
 
 
 [data-theme="dark"] .price-chart-card {
+  border: 2px solid rgba(107, 126, 214, 0.4) !important;
   box-shadow:
     2px 2px 0 0 rgba(107, 126, 214, 0.35),
     4px 4px 0 0 rgba(107, 126, 214, 0.22),
@@ -788,8 +790,8 @@ html {
 /* Main Navbar */
 .main-navbar {
   background: #ffffff;
-  border-bottom: 1px solid rgba(59, 80, 181, 0.1);
-  box-shadow: 0 1px 3px 0 rgba(59, 80, 181, 0.06);
+  border-bottom: 2px solid rgba(59, 80, 181, 0.28);
+  box-shadow: 0 2px 6px 0 rgba(59, 80, 181, 0.12), 0 1px 0 0 rgba(59, 80, 181, 0.08);
   height: 52px;
   z-index: 1030;
   display: flex;
@@ -800,8 +802,8 @@ html {
 
 [data-theme="dark"] .main-navbar {
   background: #141820;
-  border-bottom: 1px solid rgba(107, 126, 214, 0.12);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  border-bottom: 2px solid rgba(107, 126, 214, 0.35);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.5), 0 1px 0 0 rgba(107, 126, 214, 0.12);
 }
 
 @media (max-width: 767px) {
@@ -831,10 +833,10 @@ html, body {
   justify-content: center;
   padding: 6px 14px;
   font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--text-muted);
+  color: var(--text-primary);
   text-decoration: none;
   border-radius: 8px;
   background-color: transparent;
@@ -873,7 +875,7 @@ html, body {
 }
 
 [data-theme="dark"] .navbar-nav-link {
-  color: var(--text-muted);
+  color: var(--text-primary);
 }
 
 [data-theme="dark"] .navbar-nav-link:hover {
@@ -1089,6 +1091,49 @@ html, body {
     3px 3px 0 0 rgba(59, 80, 181, 0.1);
 }
 
+/* 아이템 선택 버튼 - 3단 하드 엣지 입체 */
+.item-select-btn {
+  box-shadow:
+    2px 2px 0 0 rgba(59, 80, 181, 0.28),
+    4px 4px 0 0 rgba(59, 80, 181, 0.18),
+    6px 6px 0 0 rgba(59, 80, 181, 0.1) !important;
+}
+
+.item-select-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow:
+    4px 4px 0 0 rgba(59, 80, 181, 0.32),
+    6px 6px 0 0 rgba(59, 80, 181, 0.22),
+    8px 8px 0 0 rgba(59, 80, 181, 0.12) !important;
+}
+
+.item-select-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    0 0 0 0 rgba(59, 80, 181, 0.22),
+    1px 1px 0 0 rgba(59, 80, 181, 0.12) !important;
+}
+
+[data-theme="dark"] .item-select-btn {
+  box-shadow:
+    2px 2px 0 0 rgba(107, 126, 214, 0.34),
+    4px 4px 0 0 rgba(107, 126, 214, 0.22),
+    6px 6px 0 0 rgba(107, 126, 214, 0.12) !important;
+}
+
+[data-theme="dark"] .item-select-btn:hover {
+  box-shadow:
+    4px 4px 0 0 rgba(107, 126, 214, 0.4),
+    6px 6px 0 0 rgba(107, 126, 214, 0.26),
+    8px 8px 0 0 rgba(107, 126, 214, 0.14) !important;
+}
+
+[data-theme="dark"] .item-select-btn:active {
+  box-shadow:
+    0 0 0 0 rgba(107, 126, 214, 0.22),
+    1px 1px 0 0 rgba(107, 126, 214, 0.14) !important;
+}
+
 .shadow-hard:active {
   box-shadow: 1px 1px 0 0 rgba(59, 80, 181, 0.15) !important;
 }
@@ -1134,6 +1179,7 @@ html, body {
 .price-dashboard-section div::-webkit-scrollbar {
   display: none;
 }
+
 
 /* ==========================================================================
    좌우 대칭 사이드바 광고 레이아웃

@@ -363,6 +363,7 @@ export default function ItemSelector({
             return (
               <button
                 key={item.id}
+                className="item-select-btn"
                 onClick={() => onSelectItem(item)}
                 style={{
                   backgroundColor: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
@@ -370,7 +371,7 @@ export default function ItemSelector({
                   padding: '10px 16px',
                   fontWeight: selectedItem.id === item.id ? '700' : '600',
                   fontSize: '0.875rem',
-                  transition: 'all 0.25s ease',
+                  transition: 'background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease',
                   border: `2px solid ${selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
                     color: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
                   display: 'inline-flex',
@@ -379,9 +380,6 @@ export default function ItemSelector({
                   whiteSpace: 'nowrap',
                   cursor: 'pointer',
                   minWidth: '200px',
-                  boxShadow: selectedItem.id === item.id
-                    ? `0 3px 10px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)'}`
-                    : `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)'}`
                 }}
                 onMouseEnter={(e) => {
                   if (selectedItem.id !== item.id) {

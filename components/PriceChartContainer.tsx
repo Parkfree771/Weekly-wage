@@ -840,7 +840,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                       overflowX: 'auto',
                       scrollbarWidth: 'none',
                       msOverflowStyle: 'none',
-                      padding: '4px 0',
+                      padding: '4px 6px 8px 2px',
                     }}
                   >
                     {currentCategoryItems.map((item) => {
@@ -850,6 +850,12 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                         ? gridItems.some(gi => gi?.id === item.id)
                         : selectedItem?.id === item.id;
 
+                      const baseShadow = theme === 'dark'
+                        ? '2px 2px 0 0 rgba(107,126,214,0.25), 3px 3px 0 0 rgba(107,126,214,0.12)'
+                        : '2px 2px 0 0 rgba(59,80,181,0.2), 3px 3px 0 0 rgba(59,80,181,0.1)';
+                      const hoverShadow = theme === 'dark'
+                        ? '3px 3px 0 0 rgba(107,126,214,0.3), 4px 4px 0 0 rgba(107,126,214,0.15)'
+                        : '3px 3px 0 0 rgba(59,80,181,0.25), 4px 4px 0 0 rgba(59,80,181,0.12)';
                       return (
                         <button
                           key={item.id}
@@ -870,11 +876,15 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                             fontSize: '0.875rem',
                             fontWeight: isSelected ? 700 : 600,
                             cursor: 'pointer',
-                            transition: 'all 0.2s ease',
+                            transition: 'background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.15s, box-shadow 0.15s',
                             whiteSpace: 'nowrap',
                             flexShrink: 0,
+                            boxShadow: baseShadow,
+                            transform: 'translate(0, 0)',
                           }}
                           onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translate(-1px, -1px)';
+                            e.currentTarget.style.boxShadow = hoverShadow;
                             if (!isSelected) {
                               e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
                               e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
@@ -882,6 +892,8 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                             }
                           }}
                           onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translate(0, 0)';
+                            e.currentTarget.style.boxShadow = baseShadow;
                             if (!isSelected) {
                               e.currentTarget.style.backgroundColor = 'var(--card-bg)';
                               e.currentTarget.style.borderColor = 'var(--border-color)';
@@ -1440,15 +1452,18 @@ function SidebarMobileLayout({
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '6px',
+          gap: '10px',
           marginBottom: '12px',
-          padding: '10px',
+          padding: '10px 14px 14px 10px',
           backgroundColor: 'var(--card-bg)',
           borderRadius: '10px',
           border: '1px solid var(--border-color)',
         }}>
           {currentCategoryItems.map((item) => {
             const isSelected = selectedItem?.id === item.id;
+            const baseShadow = theme === 'dark'
+              ? '2px 2px 0 0 rgba(107,126,214,0.25), 3px 3px 0 0 rgba(107,126,214,0.12)'
+              : '2px 2px 0 0 rgba(59,80,181,0.2), 3px 3px 0 0 rgba(59,80,181,0.1)';
             return (
               <button
                 key={item.id}
@@ -1462,7 +1477,7 @@ function SidebarMobileLayout({
                   border: `1px solid ${isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
                   backgroundColor: isSelected
                     ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
-                    : 'transparent',
+                    : 'var(--card-bg)',
                   color: isSelected
                     ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
                     : 'var(--text-secondary)',
@@ -1473,6 +1488,7 @@ function SidebarMobileLayout({
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
+                  boxShadow: baseShadow,
                 }}
               >
                 {renderAccessoryItemName(item.name, selectedCategory)}
