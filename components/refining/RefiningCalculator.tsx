@@ -835,7 +835,7 @@ export default function RefiningCalculator({
               ? ARMOR_MATERIAL_COSTS[nextLevel]
               : WEAPON_MATERIAL_COSTS[nextLevel];
 
-            const breathEffect = getBreathEffect(BASE_PROBABILITY[nextLevel]);
+            const breathEffect = getBreathEffect(BASE_PROBABILITY[level]);
             const breathCountPerTry = useBreath ? breathEffect.max : 0;
 
             if (eq.type === 'armor') {

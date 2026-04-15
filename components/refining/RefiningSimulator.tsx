@@ -354,7 +354,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     if (baseProb === 0) return 0;
 
     // 책 효과 적용 (계승 전 11-20 구간만, 기본 확률 2배)
-    const bookMultiplier = (!isSuccessionMode && useBook) ? getBookEffect(currentLevel) : 1;
+    const bookMultiplier = (!isSuccessionMode && useBook) ? getBookEffect(currentLevel + 1) : 1;
     const effectiveBaseProb = baseProb * bookMultiplier;
 
     let currentProb = effectiveBaseProb + currentProbBonus;
@@ -369,8 +369,8 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     return Math.min(currentProb + breathProb, 1);
   };
 
-  // 책 사용 가능 여부 (계승 전 11-20 구간만)
-  const canUseBook = !isSuccessionMode && currentLevel >= 11 && currentLevel <= 20;
+  // 책 사용 가능 여부 (계승 전 11-20 구간만, 타겟 레벨 기준)
+  const canUseBook = !isSuccessionMode && currentLevel + 1 >= 11 && currentLevel + 1 <= 20;
 
   const getMaterialCost = () => {
     if (!selectedEquipment) return null;
@@ -448,7 +448,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
         }
         // 책 비용 누적 (계승 전만)
         if (useBook && canUseBook) {
-          const bookType = getBookType(currentLevel);
+          const bookType = getBookType(currentLevel + 1);
           if (bookType) {
             if (selectedEquipment.type === 'weapon') {
               newCost[`야금술${bookType}` as keyof AccumulatedCost] += 1;
@@ -862,7 +862,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                                 alt="책" fill style={{ objectFit: 'contain' }}
                               />
                             </div>
-                            <span>{selectedEquipment.type === 'weapon' ? '야금술' : '재봉술'} [{getBookType(currentLevel)}]</span>
+                            <span>{selectedEquipment.type === 'weapon' ? '야금술' : '재봉술'} [{getBookType(currentLevel + 1)}]</span>
                           </button>
                         )}
                       </div>
