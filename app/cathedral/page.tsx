@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import styles from './cathedral.module.css';
+import ExtremePromoBanner from '@/components/ads/ExtremePromoBanner';
 
 // 영웅 젬 구성 요소
 const GEM_COMPONENTS = [
@@ -528,10 +529,10 @@ export default function CathedralPage() {
                 marginTop: 0,
                 marginBottom: '0.5rem'
               }}>
-                지평의 성당
+                은총의 파편 계산
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-                어비스 던전 성당 클리어 보상과 은총의 파편 교환 상점
+                지평의 성당 클리어 보상과 은총의 파편 교환 상점
               </p>
             </div>
 
@@ -748,6 +749,9 @@ export default function CathedralPage() {
               </div>
               );
             })()}
+
+            {/* 모바일 광고 */}
+            <ExtremePromoBanner />
 
             {/* 은총의 파편 상점 */}
             <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>

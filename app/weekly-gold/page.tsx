@@ -8,6 +8,7 @@ import { Container, Row, Col, Card } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
+import ExtremePromoBanner from '@/components/ads/ExtremePromoBanner';
 import styles from './weekly-gold.module.css';
 
 const STORAGE_KEY = 'weekly-gold-settings';
@@ -276,7 +277,8 @@ export default function WeeklyGoldPage() {
                 </Row>
               </div>
 
-              {/* 모바일 중간 광고 */}
+              {/* 모바일 익스트림 홍보 + 광고 */}
+              <ExtremePromoBanner />
               <div className="d-block d-lg-none my-3">
                 <AdBanner slot="8616653628" />
               </div>

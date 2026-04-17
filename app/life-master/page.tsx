@@ -2,6 +2,7 @@
 
 import { Container, Row, Col } from 'react-bootstrap';
 import LifeCraftCalculator from '@/components/life-master/LifeCraftCalculator';
+import ExtremePromoBanner from '@/components/ads/ExtremePromoBanner';
 
 export default function LifeMasterPage() {
   return (
@@ -34,6 +35,8 @@ export default function LifeMasterPage() {
                 </div>
               </noscript>
             </div>
+
+            <ExtremePromoBanner />
 
             {/* 컨텐츠 */}
             <LifeCraftCalculator />

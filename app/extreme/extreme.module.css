@@ -1,0 +1,1138 @@
+/* ==========================================================================
+   익스트림 레이드 페이지 — 레드 테마
+   ========================================================================== */
+
+/* ─── 페이지 타이틀 ─── */
+.pageTitle {
+  font-size: clamp(1.3rem, 3vw, 1.6rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.newBadge {
+  display: inline-block;
+  padding: 3px 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  background: #dc3545;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+.pageSubtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ─── 카운트다운 카드 ─── */
+.countdownCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.countdownLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #dc3545;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.75rem;
+}
+
+.countdownTimer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.timerUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 52px;
+}
+
+.timerNumber {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.timerLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.timerSeparator {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-top: -10px;
+}
+
+.countdownEnded {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ─── 레이드 배너 ─── */
+.raidBanner {
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.raidBannerImage {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ─── 진행 바 ─── */
+.progressSection {
+  margin-top: 1.25rem;
+}
+
+.progressBar {
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #dc3545, #c0392b);
+  border-radius: 3px;
+}
+
+.progressText {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   섹션 1: 칭호 전투력 측정
+   ========================================================================== */
+
+.titleSection {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-md);
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sectionTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.sectionSubtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.searchHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.titleIconInline {
+  flex-shrink: 0;
+  margin-top: -1px;
+}
+
+.searchTitleName {
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.searchSub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.titleNameFire {
+  color: #d4853c;
+}
+
+.titleNameIce {
+  color: #c9a84c;
+}
+
+/* 검색 인풋 */
+.searchInputGroup {
+  display: flex;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.searchInput {
+  flex: 1;
+  background: var(--card-body-bg-blue) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px !important;
+  font-size: 0.9rem !important;
+  padding: 0.5rem 0.75rem !important;
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.searchInput:focus {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.15) !important;
+}
+
+.searchButton {
+  padding: 0.5rem 1.25rem;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.searchButton:hover {
+  background: #c0392b;
+}
+
+.searchButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.errorText {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: #dc3545;
+}
+
+/* 프로필 카드 */
+.profileCard {
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.85rem;
+  margin-top: 0.65rem;
+}
+
+.profileTop {
+  display: flex;
+  gap: 1rem;
+}
+
+.profileImageWrap {
+  width: 130px;
+  min-height: 170px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--card-header-bg);
+  border: 2px solid var(--border-color);
+}
+
+.profileImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profileInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding-top: 0.15rem;
+}
+
+.profileName {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.1rem;
+}
+
+.profileRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.profileLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 58px;
+  flex-shrink: 0;
+}
+
+.profileValue {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profileValueMuted {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.titleMatchFire {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #d4853c;
+}
+
+.titleMatchIce {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #c9a84c;
+}
+
+.titleNoMatch {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.profileRole {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.roleDealer {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.roleSupporter {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.saveButtonFull {
+  width: 100%;
+  padding: 0.5rem;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: auto;
+}
+
+.saveButtonFull:hover {
+  background: #c0392b;
+}
+
+.saveButtonFull:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saveMessage {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+}
+
+.saveSuccess {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.saveError {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.noTitleMessage {
+  padding: 0.5rem 0.75rem;
+  background: rgba(220, 53, 69, 0.06);
+  border: 1px solid rgba(220, 53, 69, 0.15);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   섹션 2: 전투력 차트
+   ========================================================================== */
+
+.chartSection {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chartToggles {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chartModeToggle {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.chartModeBtn {
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.chartModeBtn:hover {
+  color: var(--text-primary);
+}
+
+.chartModeActive {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+}
+
+.chartTitleToggle {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.chartTitleBtn {
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.chartTitleBtn:hover {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.chartTitleActive {
+  background: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: #fff !important;
+}
+
+/* 요약 */
+.summaryRow {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.summaryItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.6rem;
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.summaryLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.dealerColor {
+  color: #dc3545 !important;
+}
+
+.supporterColor {
+  color: #3b82f6 !important;
+}
+
+.summaryValue {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* 차트 */
+.chartContainer {
+  min-height: 320px;
+}
+
+.chartPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   섹션 3: 난이도별 보상
+   ========================================================================== */
+
+.diffSection {
+  margin-bottom: 1.5rem;
+}
+
+.diffGrid {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.diffCard {
+  position: relative;
+  flex: 1;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.diffImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.diffOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.7) 100%);
+}
+
+.diffContent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.65rem 0.85rem;
+  z-index: 1;
+}
+
+.diffNameRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-bottom: 0.25rem;
+}
+
+.diffName {
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+}
+
+.diffLevel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+.diffGold {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f5d442;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  margin-bottom: 0.15rem;
+}
+
+.diffToken {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+/* 난이도별 글씨 색 */
+.diffNightmare .diffName { color: #d8b4fe; }
+.diffNightmare .diffLevel { color: #e9d5ff; }
+
+.diffHard .diffName { color: #f59e0b; }
+.diffHard .diffLevel { color: #fcd34d; }
+
+.diffNormal .diffName { color: #fff; }
+
+/* ==========================================================================
+   최초 클리어 보상 테이블
+   ========================================================================== */
+
+.fcTable {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.fcHeaderRow {
+  display: flex;
+  background: var(--card-body-bg-stone);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.fcHeaderRow > div {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  border-right: 1px solid var(--border-color);
+}
+
+.fcHeaderRow > div:last-child {
+  border-right: none;
+}
+
+.fcColLabel { flex: 0 0 130px; }
+.fcColReward { flex: 1; }
+.fcColNm { flex: 0 0 160px; }
+
+.fcBody {
+  display: flex;
+  background: var(--card-bg);
+}
+
+/* 왼쪽: 구분 3줄 */
+.fcLabels {
+  flex: 0 0 130px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color);
+}
+
+.fcLabelItem {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.fcLabelItem:last-child {
+  border-bottom: none;
+}
+
+.fcLabelNm { color: #d8b4fe; }
+.fcLabelHd { color: #f59e0b; }
+
+/* 가운데: 보상 합쳐진 칸 */
+.fcRewardsMerged {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem;
+  border-right: 1px solid var(--border-color);
+}
+
+.fcItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.fcItemName {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 90px;
+}
+
+.fcItemQty {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* 오른쪽: 나메 전용 */
+.fcNmCol {
+  flex: 0 0 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.75rem 0.5rem;
+}
+
+.fcTitleItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.fcTitleText {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+/* ==========================================================================
+   섹션 4: 타임라인 & 주차
+   ========================================================================== */
+
+.timelineBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 1.5rem 0;
+  padding: 0.75rem 0;
+  position: relative;
+}
+
+.timelineBar::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 8%;
+  right: 8%;
+  height: 3px;
+  background: var(--border-color);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
+.timelineDot {
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 3px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 4px;
+}
+
+.timelineDotLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.timelinePast {
+  background: rgba(220, 53, 69, 0.15);
+  border-color: #dc3545;
+}
+
+.timelinePast .timelineDotLabel {
+  color: #dc3545;
+}
+
+.timelineCurrent {
+  background: #dc3545;
+  border-color: #dc3545;
+  box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.2);
+  animation: currentPulse 2s ease-in-out infinite;
+}
+
+.timelineCurrent .timelineDotLabel {
+  color: #fff;
+  font-weight: 800;
+}
+
+.timelineAct2:not(.timelinePast):not(.timelineCurrent) {
+  border-color: rgba(150, 100, 200, 0.3);
+}
+
+@keyframes currentPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.2); }
+  50% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0.1); }
+}
+
+/* 막 섹션 */
+.actSection {
+  margin-bottom: 2rem;
+}
+
+.actHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.actBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 10px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #fff;
+  background: #dc3545;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.actBadge2 {
+  background: #8b5cf6;
+}
+
+.actTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.actPeriod {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.actTitleReward {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  padding-left: 0.25rem;
+}
+
+.titleName {
+  font-weight: 700;
+  color: #dc3545;
+}
+
+.actSection:last-child .titleName {
+  color: #8b5cf6;
+}
+
+/* 주차 카드 */
+.weekGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.weekCard {
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.85rem 0.75rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.weekCardAct2 {
+  border-color: rgba(139, 92, 246, 0.15);
+}
+
+.weekCurrent {
+  border-color: #dc3545 !important;
+  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.2) !important;
+}
+
+.weekCardAct2.weekCurrent {
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2) !important;
+}
+
+.weekPast {
+  opacity: 0.5;
+}
+
+.weekHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+
+.weekNumber {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.weekLive {
+  display: inline-block;
+  padding: 0px 5px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #fff;
+  background: #dc3545;
+  border-radius: 4px;
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+.weekCardAct2 .weekLive {
+  background: #8b5cf6;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.weekDone {
+  display: inline-block;
+  padding: 0px 5px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.weekDates {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   반응형
+   ========================================================================== */
+
+/* ─── 섹션 순서 제어 ─── */
+.contentOrder {
+  display: flex;
+  flex-direction: column;
+}
+
+.orderReward { order: 1; }
+.orderSearch { order: 2; }
+.orderChart { order: 3; }
+
+/* ==========================================================================
+   반응형 — 768px 이하
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* 카운트다운 */
+  .countdownCard { padding: 1rem; }
+  .timerNumber { font-size: 1.5rem; }
+  .timerUnit { min-width: 40px; }
+
+  /* 모바일 순서: 검색 → 차트 → 보상 */
+  .orderSearch { order: 1; }
+  .orderChart { order: 2; }
+  .orderReward { order: 3; }
+
+  /* 칭호 검색 */
+  .titleSection {
+    padding: 0.85rem 1rem;
+    max-width: none;
+  }
+
+  .profileTop {
+    gap: 0.65rem;
+  }
+
+  .profileImageWrap {
+    width: 100px;
+    min-height: 130px;
+  }
+
+  .profileName { font-size: 1rem; }
+
+  /* 난이도별 보상 — 세로 나열 */
+  .diffGrid {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .diffCard {
+    width: 100%;
+    aspect-ratio: 2 / 1;
+  }
+
+  .diffContent {
+    padding: 0.6rem 0.85rem;
+  }
+
+  .diffOverlay {
+    background: linear-gradient(to right, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0) 100%);
+  }
+
+  /* 최초 클리어 보상 — 세로 변환 */
+  .fcHeaderRow { display: none; }
+
+  .fcBody {
+    flex-direction: column;
+  }
+
+  .fcLabels {
+    flex: none;
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .fcLabelItem {
+    border-bottom: none;
+    border-right: 1px solid var(--border-color);
+    padding: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .fcLabelItem:last-child { border-right: none; }
+
+  .fcRewardsMerged {
+    border-right: none;
+    gap: 1rem;
+    padding: 0.85rem;
+  }
+
+  .fcNmCol {
+    flex: none;
+    border-top: 1px solid var(--border-color);
+    padding: 0.65rem;
+  }
+
+  /* 차트 */
+  .chartHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .summaryRow { gap: 0.5rem; }
+
+  .chartContainer { min-height: 280px; }
+}
+
+/* ==========================================================================
+   반응형 — 480px 이하
+   ========================================================================== */
+@media (max-width: 480px) {
+  /* 프로필 세로 배치 */
+  .profileTop {
+    flex-direction: column;
+  }
+
+  .profileImageWrap {
+    width: 100%;
+    min-height: 200px;
+  }
+
+  /* 난이도 카드 */
+  .diffCard {
+    aspect-ratio: 1.8 / 1;
+  }
+
+  .diffName { font-size: 0.95rem; }
+  .diffGold { font-size: 0.95rem; }
+
+  /* 최초 클리어 보상 아이템 2열 */
+  .fcRewardsMerged {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    justify-items: center;
+  }
+
+  .fcItem img { width: 44px !important; height: 44px !important; }
+
+  /* 요약 세로 */
+  .summaryRow { flex-direction: column; }
+
+  /* 검색 */
+  .searchHeader { justify-content: center; }
+}

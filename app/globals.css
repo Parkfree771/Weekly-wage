@@ -889,7 +889,7 @@ html, body {
   box-shadow: var(--shadow-sm);
 }
 
-/* Nav New Badge - 10% Accent */
+/* Nav New Badge - Red Accent */
 .nav-badge-new {
   display: inline-block;
   margin-left: 5px;
@@ -898,18 +898,12 @@ html, body {
   font-weight: 800;
   line-height: 1.5;
   color: #fff;
-  background: var(--color-accent);
+  background: #dc3545;
   border-radius: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   vertical-align: middle;
-  animation: newBadgePulse 2s ease-in-out infinite;
-  box-shadow: 0 1px 4px rgba(232, 114, 42, 0.4);
-}
-
-@keyframes newBadgePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  box-shadow: 0 1px 4px rgba(220, 53, 69, 0.4);
 }
 
 /* Nav Dropdown */
@@ -1622,6 +1616,129 @@ html, body {
     font-size: 0.65rem;
     padding: 0.2rem 0.5rem;
   }
+}
+
+/* ─── 익스트림 사이드바 홍보 ─── */
+.promo-sidebar-extreme {
+  display: block;
+  border-radius: 10px;
+  overflow: hidden;
+  text-decoration: none;
+  border: 1.5px solid rgba(220, 53, 69, 0.25);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.promo-sidebar-extreme:hover {
+  border-color: rgba(220, 53, 69, 0.5);
+  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.15);
+}
+
+.promo-sidebar-img-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.promo-sidebar-img-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.4));
+}
+
+.promo-sidebar-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 1px 7px;
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: #fff;
+  background: #dc3545;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.promo-sidebar-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.55rem 0.5rem 0.65rem;
+}
+
+.promo-sidebar-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.promo-sidebar-desc {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.promo-sidebar-cta {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #dc3545;
+  margin-top: 0.15rem;
+}
+
+/* ─── 익스트림 모바일 인컨텐츠 홍보 ─── */
+.promo-extreme-mobile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 10px;
+  background: var(--card-bg);
+  border: 1.5px solid rgba(220, 53, 69, 0.2);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.promo-extreme-mobile:hover {
+  border-color: rgba(220, 53, 69, 0.4);
+}
+
+.promo-extreme-mobile-img {
+  width: 60px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.promo-extreme-mobile-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.promo-extreme-mobile-text strong {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.promo-extreme-mobile-text span {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.promo-extreme-mobile-badge {
+  padding: 2px 7px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #fff;
+  background: #dc3545;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 

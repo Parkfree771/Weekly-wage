@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { Container, Row, Col, Form } from 'react-bootstrap';
 import Image from 'next/image';
+import ExtremePromoBanner from '@/components/ads/ExtremePromoBanner';
 import {
   rollInitialEffects,
   rerollEffects,
@@ -342,6 +343,8 @@ export default function BraceletPage() {
       : (ticketsUsed > 0 && (MAX_TICKETS - ticketsUsed) > 0);
 
     return (
+      <>
+      <ExtremePromoBanner />
       <div className={styles.comparingContainer}>
         <div className={styles.braceletIconWrapper}>
           <Image src="/vkfwl.webp" alt="팔찌" width={80} height={80} />
@@ -394,6 +397,7 @@ export default function BraceletPage() {
           선택
         </button>
       </div>
+      </>
     );
   };
 

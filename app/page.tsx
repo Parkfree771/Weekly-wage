@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { Container } from 'react-bootstrap';
 import AdBanner from '@/components/ads/AdBanner';
+import ExtremePromoBanner from '@/components/ads/ExtremePromoBanner';
 import styles from './page.module.css';
 
 const PriceDashboard = dynamic(() => import('@/components/PriceDashboard'), {
@@ -48,7 +49,8 @@ export default function Home() {
           <PriceComparisonStats />
         </PriceChartProvider>
 
-        {/* 모바일 중간 광고 */}
+        {/* 모바일 익스트림 홍보 + 광고 */}
+        <ExtremePromoBanner />
         <div className="d-block d-lg-none my-3">
           <AdBanner slot="8616653628" />
         </div>

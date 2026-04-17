@@ -31,6 +31,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/life-master', label: '생활 제작 계산' },
       { href: '/package', label: '패키지 효율 계산' },
       { href: '/hell-reward', label: '지옥 보상 계산' },
+      { href: '/cathedral', label: '은총의 파편 계산' },
     ],
   },
   {
@@ -44,7 +45,7 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 
 const NAV_STANDALONE: NavItem[] = [
-  { href: '/cathedral', label: '지평의 성당' },
+  { href: '/extreme', label: '익스트림', badge: 'NEW' },
   { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
 ];
@@ -55,9 +56,10 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/life-master', label: '생활 제작 계산' },
   { href: '/package', label: '패키지 효율 계산' },
   { href: '/hell-reward', label: '지옥 보상 계산' },
+  { href: '/cathedral', label: '은총의 파편 계산' },
   { href: '/refining', label: '재련 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
-  { href: '/cathedral', label: '지평의 성당' },
+  { href: '/extreme', label: '익스트림', badge: 'NEW' },
   { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
 ];
@@ -88,6 +90,7 @@ export default function Navbar() {
                       href === '/bracelet' ? 'nav-bracelet' :
                       href === '/package' ? 'nav-package' :
                       href === '/cathedral' ? 'nav-weekly' :
+                      href === '/extreme' ? 'nav-extreme' :
                       href === '/minigame' ? 'nav-minigame' :
                       href === '/mypage' ? 'nav-mypage' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
@@ -172,6 +175,7 @@ export default function Navbar() {
                       onClick={() => setOpenDropdown(null)}
                     >
                       {item.label}
+                      {item.badge && <span className="nav-badge-new">{item.badge}</span>}
                     </Link>
                   ))}
                 </div>

@@ -14,6 +14,7 @@ import RefiningSimulator from '@/components/refining/RefiningSimulator';
 import AdvancedRefiningSimulator from '@/components/refining/AdvancedRefiningSimulator';
 import dynamic from 'next/dynamic';
 import AdBanner from '@/components/ads/AdBanner';
+import ExtremePromoBanner from '@/components/ads/ExtremePromoBanner';
 import styles from './refining.module.css';
 import searchStyles from '@/components/refining/RefiningSimulator.module.css';
 
@@ -292,7 +293,8 @@ export default function RefiningPage() {
               )}
             </div>
 
-            {/* 모바일 중간 광고 */}
+            {/* 모바일 익스트림 홍보 + 광고 */}
+            <ExtremePromoBanner />
             <div className="d-block d-lg-none my-3">
               <AdBanner slot="8616653628" />
             </div>
