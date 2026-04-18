@@ -1104,17 +1104,75 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* ─── 최초 클리어 보상 테이블 (성당/주간골드 materialTable 스타일) ─── */
+/* ─── 난이도 카드 그룹 (카드 + 인라인 모바일 표) ─── */
+.diffGroup {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.diffGroup .diffCard {
+  width: 100%;
+}
+
+/* 모바일: 카드 바로 밑 인라인 표시 / 데스크톱: 숨김 */
+.diffTablesInline {
+  display: none;
+  width: 100%;
+  margin-top: 0.6rem;
+}
+
+/* 데스크톱: 카드 그리드 아래 표시 / 모바일: 숨김 */
+.diffTablesBottom {
+  display: block;
+}
+
+/* ─── 최초/기본 클리어 보상 표 (CSS Grid 기반) ─── */
 .fcTableWrap {
   margin-top: 0.85rem;
   box-shadow:
     3px 3px 0 0 rgba(59, 80, 181, 0.2),
     5px 5px 0 0 rgba(59, 80, 181, 0.1);
   border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid var(--color-primary);
+  background: var(--card-bg);
 }
 
 .fcTableWrap + .fcTableWrap {
   margin-top: 1rem;
+}
+
+.fcTableHeader {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.fcGrid {
+  display: grid;
+}
+
+.fcGrid6 { grid-template-columns: repeat(6, 1fr); }
+.fcGrid4 { grid-template-columns: repeat(4, 1fr); }
+.fcGrid2 { grid-template-columns: repeat(2, 1fr); }
+
+.fcGridCell {
+  padding: 0.9rem 0.75rem;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-bg);
+}
+
+.fcGridCell:last-child {
+  border-right: none;
 }
 
 :global([data-theme="dark"]) .fcTableWrap {
@@ -1627,6 +1685,26 @@
   .fcCellRow { gap: 0.3rem; }
   .fcCellRow img { width: 34px !important; height: 34px !important; }
 
+  /* 표 inline/bottom 전환: 모바일 → 각 카드 밑 인라인 표시 */
+  .diffTablesInline { display: block; }
+  .diffTablesBottom { display: none; }
+
+  /* 모바일 표 크기 축소 */
+  .fcTableHeader { font-size: 0.85rem; padding: 0.55rem 0.4rem; }
+  .fcGridCell { padding: 0.65rem 0.35rem; }
+
+  /* 나이트메어 6칸 → 첫 줄 4칸 + 두번째 줄 칭호 2칸 (span 2) */
+  .fcGrid6 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .fcGrid6 > .fcGridCell:nth-child(4) { border-right: none; }
+  .fcGrid6 > .fcGridCell:nth-child(n+5) {
+    grid-column: span 2;
+    border-top: 1px solid var(--border-color);
+  }
+  .fcGrid6 > .fcGridCell:nth-child(5) { border-right: 1px solid var(--border-color); }
+  .fcGrid6 > .fcGridCell:nth-child(6) { border-right: none; }
+
   .fcNmCol {
     flex: none;
     border-top: 1px solid var(--border-color);
@@ -1640,11 +1718,34 @@
     gap: 0.4rem;
   }
 
+  .chartSection { padding: 1rem 0.85rem 1.1rem; }
+
+  /* 모드·칭호 토글 버튼 폰트 축소 */
+  .chartModeBtn { font-size: 0.68rem; padding: 3px 8px; }
+  .chartTitleBtn { font-size: 0.62rem; padding: 3px 9px; }
+
+  /* 통계 요약 상자 폰트 축소 */
   .summaryRow { gap: 0.5rem; }
+  .summaryItem { padding: 0.55rem 0.65rem; gap: 0.25rem; }
+  .summaryLabel { font-size: 0.64rem; gap: 0.25rem; }
+  .summaryValue { font-size: 0.95rem; }
+  .summaryUnit { font-size: 0.62rem; }
+
+  /* 섹션 타이틀 · 예시용 배지 · 안내 배너 축소 */
+  .sectionTitle { font-size: 0.95rem; }
+  .classStatsTitle { font-size: 0.9rem; }
+  .demoInlineBadge { font-size: 0.6rem; padding: 1px 6px; margin-left: 0.35rem; }
+  .demoBanner { font-size: 0.7rem; padding: 0.45rem 0.65rem; }
+  .demoBannerBadge { font-size: 0.62rem; padding: 1px 8px; }
 
   .chartContainer { min-height: 280px; }
 
-  .chartLegendRow { justify-content: center; }
+  .chartLegendRow {
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .legendItem { font-size: 0.68rem; }
 
   /* 직업별 통계 — 모바일 컬럼 축소 */
   .classTableHeader,

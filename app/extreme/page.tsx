@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
-import { Container, Row, Col, Form, Table } from 'react-bootstrap';
+import { Container, Row, Col, Form } from 'react-bootstrap';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer, Legend, Line, ComposedChart, ReferenceLine,
@@ -182,6 +182,9 @@ export default function ExtremePage() {
   // 난이도
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
 
+  // 차트 평균선 hover 상태
+  const [hoveredAvgLine, setHoveredAvgLine] = useState<'dealer' | 'supporter' | null>(null);
+
   // 타이머
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -234,6 +237,99 @@ export default function ExtremePage() {
   const progressPercent = isAfterEvent ? 100 : isBeforeEvent ? 0 : Math.round((elapsedWeeks / TOTAL_WEEKS) * 100);
 
   const selectedDiff = DIFFICULTIES.find(d => d.name === selectedDifficulty);
+
+  // 보상 표 렌더링 (데스크톱 하단 + 모바일 카드별 인라인 양쪽에서 공통 사용)
+  const renderRewardTables = (diff: Difficulty) => (
+    <>
+      <div className={styles.fcTableWrap}>
+        <div className={styles.fcTableHeader}>최초 클리어 보상 · {diff.name}</div>
+        <div className={`${styles.fcGrid} ${diff.name === '나이트메어' ? styles.fcGrid6 : styles.fcGrid4}`}>
+          <div className={styles.fcGridCell}>
+            <div className={styles.fcCell}>
+              <span className={styles.fcCellLabel}>도약의 전설 카드 선택 팩 Ⅲ</span>
+              <div className={styles.fcCellRow}>
+                <Image src="/legendary-cardpack.webp" alt="전설 카드팩" width={40} height={40} />
+                <span className={styles.fcCellValue}>x1</span>
+              </div>
+            </div>
+          </div>
+          <div className={styles.fcGridCell}>
+            <div className={styles.fcCell}>
+              <span className={styles.fcCellLabel}>영웅 젬 선택 상자</span>
+              <div className={styles.fcCellRow}>
+                <Image src="/gem-hero.webp" alt="영웅 젬 선택 상자" width={40} height={40} />
+                <span className={styles.fcCellValue}>x1</span>
+              </div>
+            </div>
+          </div>
+          <div className={styles.fcGridCell}>
+            <div className={styles.fcCell}>
+              <span className={styles.fcCellLabel}>젬 가공 초기화권</span>
+              <div className={styles.fcCellRow}>
+                <Image src="/gem-reset-ticket.webp" alt="젬 가공 초기화권" width={40} height={40} />
+                <span className={styles.fcCellValue}>x1</span>
+              </div>
+            </div>
+          </div>
+          <div className={styles.fcGridCell}>
+            <div className={styles.fcCell}>
+              <span className={styles.fcCellLabel}>불과 얼음의 주화</span>
+              <div className={styles.fcCellRow}>
+                <Image src="/xhzms.webp" alt="불과 얼음의 주화" width={40} height={40} />
+                <span className={styles.fcCellValue}>x100</span>
+              </div>
+            </div>
+          </div>
+          {diff.name === '나이트메어' && (
+            <>
+              <div className={styles.fcGridCell}>
+                <div className={styles.fcCell}>
+                  <span className={styles.fcCellLabel}>전설 칭호</span>
+                  <div className={styles.fcCellRow}>
+                    <Image src="/extreme-fire.webp" alt="홍염의 군주" width={40} height={40} className={styles.titleIconFire} />
+                    <span className={`${styles.fcCellValue} ${styles.titleMatchFire}`}>홍염의 군주</span>
+                  </div>
+                </div>
+              </div>
+              <div className={styles.fcGridCell}>
+                <div className={styles.fcCell}>
+                  <span className={styles.fcCellLabel}>전설 칭호</span>
+                  <div className={styles.fcCellRow}>
+                    <Image src="/extreme-ice.webp" alt="혹한의 군주" width={40} height={40} />
+                    <span className={`${styles.fcCellValue} ${styles.titleMatchIce}`}>혹한의 군주</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className={styles.fcTableWrap}>
+        <div className={styles.fcTableHeader}>기본 클리어 보상 · {diff.name}</div>
+        <div className={`${styles.fcGrid} ${styles.fcGrid2}`}>
+          <div className={styles.fcGridCell}>
+            <div className={styles.fcCell}>
+              <span className={styles.fcCellLabel}>클리어 골드</span>
+              <div className={styles.fcCellRow}>
+                <Image src="/gold.webp" alt="골드" width={28} height={28} />
+                <span className={styles.fcCellValue}>{diff.gold.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+          <div className={styles.fcGridCell}>
+            <div className={styles.fcCell}>
+              <span className={styles.fcCellLabel}>불과 얼음의 주화</span>
+              <div className={styles.fcCellRow}>
+                <Image src="/xhzms.webp" alt="불과 얼음의 주화" width={36} height={36} />
+                <span className={styles.fcCellValue}>x{diff.token}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
   // 현재 진행 중인 칭호 확인
   const hasMatchingTitle = profile && TITLES.some(t => t.name === profile.title);
@@ -389,145 +485,46 @@ export default function ExtremePage() {
                     : styles.diffNormal;
                   const isActive = selectedDifficulty === diff.name;
                   return (
-                    <button
-                      type="button"
-                      key={diff.name}
-                      className={`${styles.diffCard} ${isActive ? styles.diffCardActive : ''}`}
-                      onClick={() => setSelectedDifficulty(isActive ? null : diff.name)}
-                      aria-pressed={isActive}
-                    >
-                      <Image
-                        src="/dlrtmxmfla.webp"
-                        alt={diff.name}
-                        width={300}
-                        height={225}
-                        className={styles.diffImage}
-                      />
-                      <div className={styles.diffOverlay} />
-                      <div className={`${styles.diffContent} ${colorClass}`}>
-                        <div className={styles.diffNameRow}>
-                          <span className={styles.diffName}>{diff.name}</span>
-                          <span className={styles.diffLevel}>Lv. {diff.level}</span>
+                    <div key={diff.name} className={styles.diffGroup}>
+                      <button
+                        type="button"
+                        className={`${styles.diffCard} ${isActive ? styles.diffCardActive : ''}`}
+                        onClick={() => setSelectedDifficulty(isActive ? null : diff.name)}
+                        aria-pressed={isActive}
+                      >
+                        <Image
+                          src="/dlrtmxmfla.webp"
+                          alt={diff.name}
+                          width={300}
+                          height={225}
+                          className={styles.diffImage}
+                        />
+                        <div className={styles.diffOverlay} />
+                        <div className={`${styles.diffContent} ${colorClass}`}>
+                          <div className={styles.diffNameRow}>
+                            <span className={styles.diffName}>{diff.name}</span>
+                            <span className={styles.diffLevel}>Lv. {diff.level}</span>
+                          </div>
+                          <div className={styles.diffGold}>{diff.gold.toLocaleString()}G</div>
+                          <div className={styles.diffToken}>토큰 {diff.token}개</div>
                         </div>
-                        <div className={styles.diffGold}>{diff.gold.toLocaleString()}G</div>
-                        <div className={styles.diffToken}>토큰 {diff.token}개</div>
-                      </div>
-                    </button>
+                      </button>
+                      {/* 모바일: 각 카드 바로 밑에 표 인라인 표시 */}
+                      {isActive && (
+                        <div className={styles.diffTablesInline}>
+                          {renderRewardTables(diff)}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
 
-              {/* 난이도 카드 클릭 시 보상 표 2종 (최초 / 기본) 표시 */}
+              {/* 데스크톱: 카드 그리드 아래에 통합 표 1회 표시 */}
               {selectedDiff && (
-                <>
-                  {/* 최초 클리어 보상 — 1회성 (카드팩/젬/주화/칭호) */}
-                  <div className={styles.fcTableWrap}>
-                    <Table className={styles.fcTable}>
-                      <thead>
-                        <tr>
-                          <th colSpan={selectedDiff.name === '나이트메어' ? 6 : 4}>
-                            최초 클리어 보상 · {selectedDiff.name}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>
-                            <div className={styles.fcCell}>
-                              <span className={styles.fcCellLabel}>도약의 전설 카드 선택 팩 Ⅲ</span>
-                              <div className={styles.fcCellRow}>
-                                <Image src="/legendary-cardpack.webp" alt="전설 카드팩" width={40} height={40} />
-                                <span className={styles.fcCellValue}>x1</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <div className={styles.fcCell}>
-                              <span className={styles.fcCellLabel}>영웅 젬 선택 상자</span>
-                              <div className={styles.fcCellRow}>
-                                <Image src="/gem-hero.webp" alt="영웅 젬 선택 상자" width={40} height={40} />
-                                <span className={styles.fcCellValue}>x1</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <div className={styles.fcCell}>
-                              <span className={styles.fcCellLabel}>젬 가공 초기화권</span>
-                              <div className={styles.fcCellRow}>
-                                <Image src="/gem-reset-ticket.webp" alt="젬 가공 초기화권" width={40} height={40} />
-                                <span className={styles.fcCellValue}>x1</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <div className={styles.fcCell}>
-                              <span className={styles.fcCellLabel}>불과 얼음의 주화</span>
-                              <div className={styles.fcCellRow}>
-                                <Image src="/xhzms.webp" alt="불과 얼음의 주화" width={40} height={40} />
-                                <span className={styles.fcCellValue}>x100</span>
-                              </div>
-                            </div>
-                          </td>
-                          {selectedDiff.name === '나이트메어' && (
-                            <>
-                              <td>
-                                <div className={styles.fcCell}>
-                                  <span className={styles.fcCellLabel}>전설 칭호</span>
-                                  <div className={styles.fcCellRow}>
-                                    <Image src="/extreme-fire.webp" alt="홍염의 군주" width={40} height={40} className={styles.titleIconFire} />
-                                    <span className={`${styles.fcCellValue} ${styles.titleMatchFire}`}>홍염의 군주</span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td>
-                                <div className={styles.fcCell}>
-                                  <span className={styles.fcCellLabel}>전설 칭호</span>
-                                  <div className={styles.fcCellRow}>
-                                    <Image src="/extreme-ice.webp" alt="혹한의 군주" width={40} height={40} />
-                                    <span className={`${styles.fcCellValue} ${styles.titleMatchIce}`}>혹한의 군주</span>
-                                  </div>
-                                </div>
-                              </td>
-                            </>
-                          )}
-                        </tr>
-                      </tbody>
-                    </Table>
-                  </div>
-
-                  {/* 기본 클리어 보상 — 매주 반복 (골드/토큰) */}
-                  <div className={styles.fcTableWrap}>
-                    <Table className={styles.fcTable}>
-                      <thead>
-                        <tr>
-                          <th colSpan={2}>기본 클리어 보상 · {selectedDiff.name}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>
-                            <div className={styles.fcCell}>
-                              <span className={styles.fcCellLabel}>클리어 골드</span>
-                              <div className={styles.fcCellRow}>
-                                <Image src="/gold.webp" alt="골드" width={36} height={36} />
-                                <span className={styles.fcCellValue}>{selectedDiff.gold.toLocaleString()}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <div className={styles.fcCell}>
-                              <span className={styles.fcCellLabel}>불과 얼음의 주화</span>
-                              <div className={styles.fcCellRow}>
-                                <Image src="/xhzms.webp" alt="불과 얼음의 주화" width={36} height={36} />
-                                <span className={styles.fcCellValue}>x{selectedDiff.token}</span>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </Table>
-                  </div>
-                </>
+                <div className={styles.diffTablesBottom}>
+                  {renderRewardTables(selectedDiff)}
+                </div>
               )}
             </div>
 
@@ -714,7 +711,7 @@ export default function ExtremePage() {
                             </div>
                           </div>
                           <ResponsiveContainer width="100%" height={340}>
-                            <ComposedChart data={displayData} margin={{ top: 20, right: 18, left: 0, bottom: 0 }}>
+                            <ComposedChart data={displayData} margin={{ top: 20, right: 18, left: -6, bottom: 0 }}>
                               <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical horizontal />
                               <XAxis
                                 dataKey="date"
@@ -729,11 +726,11 @@ export default function ExtremePage() {
                               />
                               <YAxis
                                 tick={{ fontSize: 13, fill: 'var(--text-primary)', fontWeight: 700 }}
-                                tickFormatter={(v: number) => chartMode === 'power' ? `${v.toLocaleString()}${suffix}` : v.toLocaleString()}
+                                tickFormatter={(v: number) => v.toLocaleString()}
                                 domain={chartMode === 'level' ? ['dataMin - 3', 'dataMax + 3'] : ['dataMin - 300', 'dataMax + 300']}
                                 allowDecimals={false}
                                 tickCount={6}
-                                width={chartMode === 'power' ? 72 : 56}
+                                width={chartMode === 'power' ? 60 : 50}
                                 stroke="var(--text-secondary)"
                                 strokeWidth={2}
                                 axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }}
@@ -793,15 +790,29 @@ export default function ExtremePage() {
                                 <ReferenceLine
                                   y={dealerLineAvg}
                                   stroke="#dc3545"
-                                  strokeOpacity={0.35}
+                                  strokeOpacity={0.45}
                                   strokeDasharray="6 5"
                                   strokeWidth={1.5}
                                   label={({ viewBox }: any) => {
+                                    const isHover = hoveredAvgLine === 'dealer';
+                                    const x2 = viewBox.x + viewBox.width;
                                     const text = `딜러 평균 ${Math.round(dealerLineAvg).toLocaleString()}${suffix}`;
-                                    const x = viewBox.x + viewBox.width - 8;
-                                    const y = viewBox.y - 5;
                                     return (
-                                      <text x={x} y={y} textAnchor="end" fill="#dc3545" fontSize={11} fontWeight={800}>{text}</text>
+                                      <g>
+                                        <line
+                                          x1={viewBox.x} x2={x2} y1={viewBox.y} y2={viewBox.y}
+                                          stroke="transparent" strokeWidth={16}
+                                          style={{ pointerEvents: 'stroke', cursor: 'default' }}
+                                          onMouseEnter={() => setHoveredAvgLine('dealer')}
+                                          onMouseLeave={() => setHoveredAvgLine(null)}
+                                        />
+                                        {isHover && (
+                                          <g pointerEvents="none">
+                                            <rect x={x2 - 145} y={viewBox.y - 30} width={138} height={22} rx={5} fill="var(--card-bg)" stroke="#dc3545" strokeWidth={1.5} />
+                                            <text x={x2 - 12} y={viewBox.y - 15} textAnchor="end" fill="#dc3545" fontSize={12} fontWeight={800}>{text}</text>
+                                          </g>
+                                        )}
+                                      </g>
                                     );
                                   }}
                                 />
@@ -810,15 +821,29 @@ export default function ExtremePage() {
                                 <ReferenceLine
                                   y={supporterLineAvg}
                                   stroke="#3b82f6"
-                                  strokeOpacity={0.35}
+                                  strokeOpacity={0.45}
                                   strokeDasharray="6 5"
                                   strokeWidth={1.5}
                                   label={({ viewBox }: any) => {
+                                    const isHover = hoveredAvgLine === 'supporter';
+                                    const x2 = viewBox.x + viewBox.width;
                                     const text = `서포터 평균 ${Math.round(supporterLineAvg).toLocaleString()}${suffix}`;
-                                    const x = viewBox.x + viewBox.width - 8;
-                                    const y = viewBox.y - 5;
                                     return (
-                                      <text x={x} y={y} textAnchor="end" fill="#3b82f6" fontSize={11} fontWeight={800}>{text}</text>
+                                      <g>
+                                        <line
+                                          x1={viewBox.x} x2={x2} y1={viewBox.y} y2={viewBox.y}
+                                          stroke="transparent" strokeWidth={16}
+                                          style={{ pointerEvents: 'stroke', cursor: 'default' }}
+                                          onMouseEnter={() => setHoveredAvgLine('supporter')}
+                                          onMouseLeave={() => setHoveredAvgLine(null)}
+                                        />
+                                        {isHover && (
+                                          <g pointerEvents="none">
+                                            <rect x={x2 - 155} y={viewBox.y - 30} width={148} height={22} rx={5} fill="var(--card-bg)" stroke="#3b82f6" strokeWidth={1.5} />
+                                            <text x={x2 - 12} y={viewBox.y - 15} textAnchor="end" fill="#3b82f6" fontSize={12} fontWeight={800}>{text}</text>
+                                          </g>
+                                        )}
+                                      </g>
                                     );
                                   }}
                                 />
