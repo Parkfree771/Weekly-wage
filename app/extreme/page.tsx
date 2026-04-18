@@ -2,15 +2,15 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
-import { Container, Row, Col, Form } from 'react-bootstrap';
+import { Container, Row, Col, Form, Table } from 'react-bootstrap';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
-  ResponsiveContainer, Legend, Line, ComposedChart,
+  ResponsiveContainer, Legend, Line, ComposedChart, ReferenceLine,
 } from 'recharts';
 import styles from './extreme.module.css';
 import {
-  saveExtremeClear, getChartData, getSummary, getRole,
-  type DailyChartData, type ExtremeSummary,
+  saveExtremeClear, getChartData, getSummary, getClassStats, getRole,
+  type DailyChartData, type ExtremeSummary, type ClassStat,
 } from '@/lib/extreme-service';
 
 // ���── 일정 데이터 ───
@@ -37,6 +37,56 @@ const DIFFICULTIES: Difficulty[] = [
   { name: '나이트메어', level: 1770, gold: 45000, token: 200, gates: 1 },
   { name: '하드', level: 1750, gold: 45000, token: 200, gates: 1 },
   { name: '노말', level: 1720, gold: 20000, token: 150, gates: 1 },
+];
+
+// ─── 예시 차트 데이터 (실제 데이터 없을 때 표시) ───
+const EXAMPLE_CHART_DATA: DailyChartData[] = (() => {
+  const days = 28;
+  const out: DailyChartData[] = [];
+  for (let i = 0; i < days; i++) {
+    const date = new Date(EVENT_START);
+    date.setDate(date.getDate() + i);
+    const t = days > 1 ? i / (days - 1) : 0;
+    const decay = Math.exp(-2.8 * t); // 1 → ~0.06
+    const noisePower = Math.sin(i * 1.7) * 130 + Math.sin(i * 0.55) * 80;
+    const noiseLv = Math.sin(i * 1.3) * 0.45 + Math.sin(i * 0.4) * 0.25;
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    out.push({
+      date: dateStr,
+      dealerPower: Math.round(5500 + (7500 - 5500) * decay + noisePower),
+      supporterPower: Math.round(4300 + (6000 - 4300) * decay + noisePower * 0.7),
+      dealerLevel: Math.round((1770 + (1800 - 1770) * decay + noiseLv) * 100) / 100,
+      supporterLevel: Math.round((1770 + (1800 - 1770) * decay + noiseLv * 0.85) * 100) / 100,
+      dealerCount: 0,
+      supporterCount: 0,
+    });
+  }
+  return out;
+})();
+
+const EXAMPLE_SUMMARY: ExtremeSummary = {
+  totalClears: 127,
+  dealerCount: 85,
+  supporterCount: 42,
+  dealerAvgPower: Math.round(EXAMPLE_CHART_DATA.reduce((s, d) => s + (d.dealerPower || 0), 0) / EXAMPLE_CHART_DATA.length),
+  supporterAvgPower: Math.round(EXAMPLE_CHART_DATA.reduce((s, d) => s + (d.supporterPower || 0), 0) / EXAMPLE_CHART_DATA.length),
+};
+
+// ─── 예시 직업별 통계 ───
+const EXAMPLE_CLASS_STATS: ClassStat[] = [
+  { className: '바드', role: 'supporter', count: 18, avgPower: 4920, avgLevel: 1784.5 },
+  { className: '버서커', role: 'dealer', count: 15, avgPower: 6480, avgLevel: 1783.2 },
+  { className: '도화가', role: 'supporter', count: 14, avgPower: 4780, avgLevel: 1782.8 },
+  { className: '소서리스', role: 'dealer', count: 13, avgPower: 6210, avgLevel: 1781.6 },
+  { className: '데빌헌터', role: 'dealer', count: 11, avgPower: 6050, avgLevel: 1779.3 },
+  { className: '홀리나이트', role: 'supporter', count: 10, avgPower: 4560, avgLevel: 1778.9 },
+  { className: '리퍼', role: 'dealer', count: 10, avgPower: 5940, avgLevel: 1777.5 },
+  { className: '아르카나', role: 'dealer', count: 9, avgPower: 5820, avgLevel: 1776.4 },
+  { className: '블레이드', role: 'dealer', count: 8, avgPower: 5750, avgLevel: 1775.2 },
+  { className: '건슬링어', role: 'dealer', count: 7, avgPower: 5640, avgLevel: 1774.8 },
+  { className: '워로드', role: 'dealer', count: 6, avgPower: 5520, avgLevel: 1773.5 },
+  { className: '기공사', role: 'dealer', count: 3, avgPower: 5410, avgLevel: 1772.1 },
+  { className: '창술사', role: 'dealer', count: 3, avgPower: 5380, avgLevel: 1771.4 },
 ];
 
 // ─── 주간 일정 ─���─
@@ -123,6 +173,7 @@ export default function ExtremePage() {
   const [chartTitle, setChartTitle] = useState<string>(currentTitle.name);
   const [chartData, setChartData] = useState<DailyChartData[]>([]);
   const [summary, setSummary] = useState<ExtremeSummary | null>(null);
+  const [classStats, setClassStats] = useState<ClassStat[]>([]);
   const [chartLoading, setChartLoading] = useState(true);
 
   // 차트 모드 (전투력 / 레벨)
@@ -137,15 +188,17 @@ export default function ExtremePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // ���트 데이터 로드
+  // 차트 데이터 로드
   const loadChartData = useCallback(async () => {
     setChartLoading(true);
-    const [data, sum] = await Promise.all([
+    const [data, sum, classes] = await Promise.all([
       getChartData(chartTitle),
       getSummary(chartTitle),
+      getClassStats(chartTitle),
     ]);
     setChartData(data);
     setSummary(sum);
+    setClassStats(classes);
     setChartLoading(false);
   }, [chartTitle]);
 
@@ -334,8 +387,15 @@ export default function ExtremePage() {
                   const colorClass = diff.name === '나이트메어' ? styles.diffNightmare
                     : diff.name === '하드' ? styles.diffHard
                     : styles.diffNormal;
+                  const isActive = selectedDifficulty === diff.name;
                   return (
-                    <div key={diff.name} className={styles.diffCard}>
+                    <button
+                      type="button"
+                      key={diff.name}
+                      className={`${styles.diffCard} ${isActive ? styles.diffCardActive : ''}`}
+                      onClick={() => setSelectedDifficulty(isActive ? null : diff.name)}
+                      aria-pressed={isActive}
+                    >
                       <Image
                         src="/dlrtmxmfla.webp"
                         alt={diff.name}
@@ -352,65 +412,123 @@ export default function ExtremePage() {
                         <div className={styles.diffGold}>{diff.gold.toLocaleString()}G</div>
                         <div className={styles.diffToken}>토큰 {diff.token}개</div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
 
-              {/* 최초 클리어 보상 */}
-              <h2 className={styles.sectionTitle} style={{ marginTop: '1.5rem' }}>최초 클리어 보상</h2>
-              <div className={styles.fcTable}>
-                {/* 헤더 */}
-                <div className={styles.fcHeaderRow}>
-                  <div className={styles.fcColLabel}>구분</div>
-                  <div className={styles.fcColReward}>기본 최초 클리어 보상</div>
-                  <div className={styles.fcColNm}>나이트메어 전용 보상</div>
-                </div>
-                {/* 바디 */}
-                <div className={styles.fcBody}>
-                  {/* 왼쪽: 구분 */}
-                  <div className={styles.fcLabels}>
-                    <div className={`${styles.fcLabelItem} ${styles.fcLabelNm}`}>EX 나이트메어</div>
-                    <div className={`${styles.fcLabelItem} ${styles.fcLabelHd}`}>EX 하드</div>
-                    <div className={styles.fcLabelItem}>EX 노말</div>
+              {/* 난이도 카드 클릭 시 보상 표 2종 (최초 / 기본) 표시 */}
+              {selectedDiff && (
+                <>
+                  {/* 최초 클리어 보상 — 1회성 (카드팩/젬/주화/칭호) */}
+                  <div className={styles.fcTableWrap}>
+                    <Table className={styles.fcTable}>
+                      <thead>
+                        <tr>
+                          <th colSpan={selectedDiff.name === '나이트메어' ? 6 : 4}>
+                            최초 클리어 보상 · {selectedDiff.name}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>
+                            <div className={styles.fcCell}>
+                              <span className={styles.fcCellLabel}>도약의 전설 카드 선택 팩 Ⅲ</span>
+                              <div className={styles.fcCellRow}>
+                                <Image src="/legendary-cardpack.webp" alt="전설 카드팩" width={40} height={40} />
+                                <span className={styles.fcCellValue}>x1</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className={styles.fcCell}>
+                              <span className={styles.fcCellLabel}>영웅 젬 선택 상자</span>
+                              <div className={styles.fcCellRow}>
+                                <Image src="/gem-hero.webp" alt="영웅 젬 선택 상자" width={40} height={40} />
+                                <span className={styles.fcCellValue}>x1</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className={styles.fcCell}>
+                              <span className={styles.fcCellLabel}>젬 가공 초기화권</span>
+                              <div className={styles.fcCellRow}>
+                                <Image src="/gem-reset-ticket.webp" alt="젬 가공 초기화권" width={40} height={40} />
+                                <span className={styles.fcCellValue}>x1</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className={styles.fcCell}>
+                              <span className={styles.fcCellLabel}>불과 얼음의 주화</span>
+                              <div className={styles.fcCellRow}>
+                                <Image src="/xhzms.webp" alt="불과 얼음의 주화" width={40} height={40} />
+                                <span className={styles.fcCellValue}>x100</span>
+                              </div>
+                            </div>
+                          </td>
+                          {selectedDiff.name === '나이트메어' && (
+                            <>
+                              <td>
+                                <div className={styles.fcCell}>
+                                  <span className={styles.fcCellLabel}>전설 칭호</span>
+                                  <div className={styles.fcCellRow}>
+                                    <Image src="/extreme-fire.webp" alt="홍염의 군주" width={40} height={40} className={styles.titleIconFire} />
+                                    <span className={`${styles.fcCellValue} ${styles.titleMatchFire}`}>홍염의 군주</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td>
+                                <div className={styles.fcCell}>
+                                  <span className={styles.fcCellLabel}>전설 칭호</span>
+                                  <div className={styles.fcCellRow}>
+                                    <Image src="/extreme-ice.webp" alt="혹한의 군주" width={40} height={40} />
+                                    <span className={`${styles.fcCellValue} ${styles.titleMatchIce}`}>혹한의 군주</span>
+                                  </div>
+                                </div>
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      </tbody>
+                    </Table>
                   </div>
-                  {/* 가운데: 보상 (3줄 합침) */}
-                  <div className={styles.fcRewardsMerged}>
-                    <div className={styles.fcItem}>
-                      <Image src="/legendary-cardpack.webp" alt="전설 카드팩" width={52} height={52} />
-                      <span className={styles.fcItemName}>도약의 전설 카드 선택 팩 Ⅲ</span>
-                      <span className={styles.fcItemQty}>x1</span>
-                    </div>
-                    <div className={styles.fcItem}>
-                      <Image src="/gem-hero.webp" alt="영웅 젬 선택" width={52} height={52} />
-                      <span className={styles.fcItemName}>영웅 젬 선택 상자</span>
-                      <span className={styles.fcItemQty}>x1</span>
-                    </div>
-                    <div className={styles.fcItem}>
-                      <Image src="/gem-reset-ticket.webp" alt="젬 가공 초기화권" width={52} height={52} />
-                      <span className={styles.fcItemName}>젬 가공 초기화권</span>
-                      <span className={styles.fcItemQty}>x1</span>
-                    </div>
-                    <div className={styles.fcItem}>
-                      <Image src="/xhzms.webp" alt="불과 얼음의 주화" width={52} height={52} />
-                      <span className={styles.fcItemName}>불과 얼음의 주화</span>
-                      <span className={styles.fcItemQty}>x100</span>
-                    </div>
+
+                  {/* 기본 클리어 보상 — 매주 반복 (골드/토큰) */}
+                  <div className={styles.fcTableWrap}>
+                    <Table className={styles.fcTable}>
+                      <thead>
+                        <tr>
+                          <th colSpan={2}>기본 클리어 보상 · {selectedDiff.name}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>
+                            <div className={styles.fcCell}>
+                              <span className={styles.fcCellLabel}>클리어 골드</span>
+                              <div className={styles.fcCellRow}>
+                                <Image src="/gold.webp" alt="골드" width={36} height={36} />
+                                <span className={styles.fcCellValue}>{selectedDiff.gold.toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className={styles.fcCell}>
+                              <span className={styles.fcCellLabel}>불과 얼음의 주화</span>
+                              <div className={styles.fcCellRow}>
+                                <Image src="/xhzms.webp" alt="불과 얼음의 주화" width={36} height={36} />
+                                <span className={styles.fcCellValue}>x{selectedDiff.token}</span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </Table>
                   </div>
-                  {/* 오른쪽: 나메 전용 (3줄 중 나메만) */}
-                  <div className={styles.fcNmCol}>
-                    <div className={styles.fcTitleItem}>
-                      <Image src="/extreme-fire.webp" alt="홍염의 군주" width={28} height={28} className={styles.titleIconInline} />
-                      <span className={styles.titleMatchFire}>홍염의 군주</span>
-                    </div>
-                    <div className={styles.fcTitleItem}>
-                      <Image src="/extreme-ice.webp" alt="혹한의 군주" width={28} height={28} className={styles.titleIconInline} />
-                      <span className={styles.titleMatchIce}>혹한의 군주</span>
-                    </div>
-                    <span className={styles.fcTitleText}>전설 칭호</span>
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
             </div>
 
             {/* ═══════════════════════════════════════════
@@ -418,12 +536,11 @@ export default function ExtremePage() {
                 ═══════════════════════════════════════════ */}
             <div className={`${styles.titleSection} ${styles.orderSearch}`}>
               <div className={styles.searchHeader}>
-                <Image src={currentTitle.image} alt={currentTitle.name} width={38} height={38} className={styles.titleIconInline} />
+                <Image src={currentTitle.image} alt={currentTitle.name} width={46} height={46} className={`${styles.titleIconInline} ${currentAct === 1 ? styles.titleIconFire : ''}`} />
                 <span className={`${styles.searchTitleName} ${currentAct === 1 ? styles.titleNameFire : styles.titleNameIce}`}>
                   {currentTitle.name}
                 </span>
               </div>
-              <div className={styles.searchSub}>{currentAct}막 클리어 칭호</div>
               <div className={styles.searchInputGroup}>
                 <Form.Control
                   type="text"
@@ -439,6 +556,10 @@ export default function ExtremePage() {
                 </button>
               </div>
               {searchError && <div className={styles.errorText}>{searchError}</div>}
+
+              <div className={styles.saveHint}>
+                칭호 갱신 안될 시 영지 → 영지 밖 이동 후 재검색
+              </div>
 
               {profile && (
                 <div className={styles.profileCard}>
@@ -468,7 +589,7 @@ export default function ExtremePage() {
                       <div className={styles.profileRow}>
                         <span className={styles.profileLabel}>착용 칭호</span>
                         {hasMatchingTitle && matchedTitle && (
-                          <Image src={matchedTitle.image} alt={matchedTitle.name} width={24} height={24} className={styles.titleIconInline} />
+                          <Image src={matchedTitle.image} alt={matchedTitle.name} width={24} height={24} className={`${styles.titleIconInline} ${matchedTitle.act === 1 ? styles.titleIconFire : ''}`} />
                         )}
                         <span className={`${hasMatchingTitle ? (matchedTitle?.act === 1 ? styles.titleMatchFire : styles.titleMatchIce) : styles.titleNoMatch}`}>
                           {profile.title || '미착용'}
@@ -500,8 +621,15 @@ export default function ExtremePage() {
                 섹션 3: 클리어 통계 차트
                 ═══════════════════════════════════════════ */}
             <div className={`${styles.chartSection} ${styles.orderChart}`}>
+              <div className={styles.demoBanner}>
+                <span className={styles.demoBannerBadge}>예시용</span>
+                <span>현재 표시되는 통계는 예시 데이터입니다</span>
+              </div>
               <div className={styles.chartHeader}>
-                <h2 className={styles.sectionTitle}>클리어 통계</h2>
+                <h2 className={styles.sectionTitle}>
+                  클리어 통계
+                  <span className={styles.demoInlineBadge}>예시용</span>
+                </h2>
                 <div className={styles.chartToggles}>
                   <div className={styles.chartModeToggle}>
                     <button className={`${styles.chartModeBtn} ${chartMode === 'power' ? styles.chartModeActive : ''}`} onClick={() => setChartMode('power')}>전투력</button>
@@ -514,54 +642,252 @@ export default function ExtremePage() {
                   </div>
                 </div>
               </div>
-              {summary && summary.totalClears > 0 && (
-                <div className={styles.summaryRow}>
-                  <div className={styles.summaryItem}>
-                    <span className={styles.summaryLabel}>총 클리어</span>
-                    <span className={styles.summaryValue}>{summary.totalClears}명</span>
-                  </div>
-                  <div className={styles.summaryItem}>
-                    <span className={`${styles.summaryLabel} ${styles.dealerColor}`}>딜러 평균</span>
-                    <span className={styles.summaryValue}>{summary.dealerAvgPower ? summary.dealerAvgPower.toLocaleString() : '-'}</span>
-                  </div>
-                  <div className={styles.summaryItem}>
-                    <span className={`${styles.summaryLabel} ${styles.supporterColor}`}>서포터 평균</span>
-                    <span className={styles.summaryValue}>{summary.supporterAvgPower ? summary.supporterAvgPower.toLocaleString() : '-'}</span>
-                  </div>
-                </div>
-              )}
-              <div className={styles.chartContainer}>
-                {chartLoading ? (
-                  <div className={styles.chartPlaceholder}>데이터 로딩 중...</div>
-                ) : chartData.length === 0 ? (
-                  <div className={styles.chartPlaceholder}>아직 등록된 데이터가 없습니다</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={320}>
-                    <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                      <XAxis dataKey="date" tickFormatter={formatChartDate} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-                      <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickFormatter={(v: number) => chartMode === 'power' ? `${(v / 10000).toFixed(0)}만` : v.toLocaleString()} />
-                      <RechartsTooltip
-                        contentStyle={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '0.8rem' }}
-                        formatter={(value: any, name: any) => [value != null ? Number(value).toLocaleString() : '-', name.includes('dealer') ? '딜러' : '서포터']}
-                        labelFormatter={(label: any) => { const d = new Date(String(label)); return `${d.getMonth() + 1}월 ${d.getDate()}일`; }}
-                      />
-                      <Legend formatter={(value: string) => value.includes('dealer') ? '딜러' : '서포터'} />
-                      {chartMode === 'power' ? (
-                        <>
-                          <Line type="monotone" dataKey="dealerPower" stroke="#dc3545" strokeWidth={2.5} dot={{ r: 4 }} name="dealerPower" connectNulls />
-                          <Line type="monotone" dataKey="supporterPower" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 4 }} name="supporterPower" connectNulls />
-                        </>
+              {(() => {
+                const isExample = !chartLoading && chartData.length === 0;
+                const displaySummary = isExample ? EXAMPLE_SUMMARY : summary;
+                const displayData = isExample ? EXAMPLE_CHART_DATA : chartData;
+                const displayClassStats = isExample ? EXAMPLE_CLASS_STATS : classStats;
+                const dealerKey = chartMode === 'power' ? 'dealerPower' : 'dealerLevel';
+                const supporterKey = chartMode === 'power' ? 'supporterPower' : 'supporterLevel';
+                const suffix = chartMode === 'power' ? '점' : '';
+                const dealerAvg = displaySummary?.dealerAvgPower ?? null;
+                const supporterAvg = displaySummary?.supporterAvgPower ?? null;
+
+                // 차트 내 평균선용 값 (chartMode 기준으로 displayData에서 직접 계산)
+                const dealerVals = displayData.map(d => d[dealerKey]).filter((v): v is number => v != null);
+                const supporterVals = displayData.map(d => d[supporterKey]).filter((v): v is number => v != null);
+                const dealerLineAvg = dealerVals.length > 0 ? dealerVals.reduce((a, b) => a + b, 0) / dealerVals.length : null;
+                const supporterLineAvg = supporterVals.length > 0 ? supporterVals.reduce((a, b) => a + b, 0) / supporterVals.length : null;
+
+                return (
+                  <>
+                    {displaySummary && displaySummary.totalClears > 0 && (
+                      <div className={`${styles.summaryRow} ${isExample ? styles.summaryExample : ''}`}>
+                        <div className={`${styles.summaryItem} ${styles.summaryTotal}`}>
+                          <span className={styles.summaryLabel}>총 클리어</span>
+                          <span className={styles.summaryValue}>{displaySummary.totalClears.toLocaleString()}<span className={styles.summaryUnit}>명</span></span>
+                        </div>
+                        <div className={`${styles.summaryItem} ${styles.summaryDealer}`}>
+                          <span className={`${styles.summaryLabel} ${styles.dealerColor}`}>
+                            <span className={styles.summaryDot} style={{ background: '#dc3545' }} />
+                            딜러 평균 전투력
+                          </span>
+                          <span className={styles.summaryValue}>{dealerAvg ? dealerAvg.toLocaleString() : '-'}<span className={styles.summaryUnit}>점</span></span>
+                        </div>
+                        <div className={`${styles.summaryItem} ${styles.summarySupporter}`}>
+                          <span className={`${styles.summaryLabel} ${styles.supporterColor}`}>
+                            <span className={styles.summaryDot} style={{ background: '#3b82f6' }} />
+                            서포터 평균 전투력
+                          </span>
+                          <span className={styles.summaryValue}>{supporterAvg ? supporterAvg.toLocaleString() : '-'}<span className={styles.summaryUnit}>점</span></span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className={styles.chartContainer}>
+                      {chartLoading ? (
+                        <div className={styles.chartPlaceholder}>데이터 로딩 중...</div>
                       ) : (
                         <>
-                          <Line type="monotone" dataKey="dealerLevel" stroke="#dc3545" strokeWidth={2.5} dot={{ r: 4 }} name="dealerLevel" connectNulls />
-                          <Line type="monotone" dataKey="supporterLevel" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 4 }} name="supporterLevel" connectNulls />
+                          {isExample && (
+                            <div className={styles.chartExampleNote}>
+                              <span className={styles.chartExampleBadge}>예시</span>
+                              <span>아직 등록된 데이터가 없습니다 · 데이터가 쌓이면 이렇게 표시돼요</span>
+                            </div>
+                          )}
+                          <div className={styles.chartLegendRow}>
+                            <div className={styles.legendItem}>
+                              <span className={styles.legendSwatch} style={{ background: '#dc3545' }} />
+                              <span className={styles.legendLabel}>딜러</span>
+                            </div>
+                            <div className={styles.legendItem}>
+                              <span className={styles.legendSwatch} style={{ background: '#3b82f6' }} />
+                              <span className={styles.legendLabel}>서포터</span>
+                            </div>
+                            <div className={styles.legendItem}>
+                              <svg width="22" height="4"><line x1="0" y1="2" x2="22" y2="2" stroke="#dc3545" strokeWidth="2" strokeDasharray="4 3" /></svg>
+                              <span className={styles.legendLabel}>딜러 평균</span>
+                            </div>
+                            <div className={styles.legendItem}>
+                              <svg width="22" height="4"><line x1="0" y1="2" x2="22" y2="2" stroke="#3b82f6" strokeWidth="2" strokeDasharray="4 3" /></svg>
+                              <span className={styles.legendLabel}>서포터 평균</span>
+                            </div>
+                          </div>
+                          <ResponsiveContainer width="100%" height={340}>
+                            <ComposedChart data={displayData} margin={{ top: 20, right: 18, left: 0, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical horizontal />
+                              <XAxis
+                                dataKey="date"
+                                tickFormatter={formatChartDate}
+                                tick={{ fontSize: 13, fill: 'var(--text-primary)', fontWeight: 700 }}
+                                minTickGap={28}
+                                tickMargin={8}
+                                stroke="var(--text-secondary)"
+                                strokeWidth={2}
+                                axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }}
+                                tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }}
+                              />
+                              <YAxis
+                                tick={{ fontSize: 13, fill: 'var(--text-primary)', fontWeight: 700 }}
+                                tickFormatter={(v: number) => chartMode === 'power' ? `${v.toLocaleString()}${suffix}` : v.toLocaleString()}
+                                domain={chartMode === 'level' ? ['dataMin - 3', 'dataMax + 3'] : ['dataMin - 300', 'dataMax + 300']}
+                                allowDecimals={false}
+                                tickCount={6}
+                                width={chartMode === 'power' ? 72 : 56}
+                                stroke="var(--text-secondary)"
+                                strokeWidth={2}
+                                axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }}
+                                tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }}
+                              />
+                              <RechartsTooltip
+                                cursor={{ stroke: 'var(--border-color)', strokeWidth: 1, strokeDasharray: '3 3' }}
+                                content={({ active, payload, label }: any) => {
+                                  if (!active || !payload || payload.length === 0) return null;
+                                  const d = new Date(String(label));
+                                  const dealer = payload.find((p: any) => String(p.dataKey).includes('dealer'));
+                                  const supporter = payload.find((p: any) => String(p.dataKey).includes('supporter'));
+                                  return (
+                                    <div className={styles.customTooltip}>
+                                      <div className={styles.tooltipDate}>{d.getMonth() + 1}월 {d.getDate()}일</div>
+                                      {dealer && (
+                                        <div className={styles.tooltipRow}>
+                                          <span className={styles.tooltipDot} style={{ background: '#dc3545' }} />
+                                          <span className={styles.tooltipLabel}>딜러</span>
+                                          <span className={styles.tooltipValue}>{dealer.value != null ? `${Number(dealer.value).toLocaleString()}${suffix}` : '-'}</span>
+                                        </div>
+                                      )}
+                                      {supporter && (
+                                        <div className={styles.tooltipRow}>
+                                          <span className={styles.tooltipDot} style={{ background: '#3b82f6' }} />
+                                          <span className={styles.tooltipLabel}>서포터</span>
+                                          <span className={styles.tooltipValue}>{supporter.value != null ? `${Number(supporter.value).toLocaleString()}${suffix}` : '-'}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                }}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey={dealerKey}
+                                stroke="#dc3545"
+                                strokeWidth={3.5}
+                                dot={{ r: 4, fill: '#dc3545', stroke: 'var(--card-bg)', strokeWidth: 3 }}
+                                activeDot={{ r: 8, fill: '#dc3545', stroke: 'var(--card-bg)', strokeWidth: 3 }}
+                                name="dealer"
+                                connectNulls
+                                isAnimationActive={!isExample}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey={supporterKey}
+                                stroke="#3b82f6"
+                                strokeWidth={3.5}
+                                dot={{ r: 4, fill: '#3b82f6', stroke: 'var(--card-bg)', strokeWidth: 3 }}
+                                activeDot={{ r: 8, fill: '#3b82f6', stroke: 'var(--card-bg)', strokeWidth: 3 }}
+                                name="supporter"
+                                connectNulls
+                                isAnimationActive={!isExample}
+                              />
+                              {dealerLineAvg != null && (
+                                <ReferenceLine
+                                  y={dealerLineAvg}
+                                  stroke="#dc3545"
+                                  strokeOpacity={0.35}
+                                  strokeDasharray="6 5"
+                                  strokeWidth={1.5}
+                                  label={({ viewBox }: any) => {
+                                    const text = `딜러 평균 ${Math.round(dealerLineAvg).toLocaleString()}${suffix}`;
+                                    const x = viewBox.x + viewBox.width - 8;
+                                    const y = viewBox.y - 5;
+                                    return (
+                                      <text x={x} y={y} textAnchor="end" fill="#dc3545" fontSize={11} fontWeight={800}>{text}</text>
+                                    );
+                                  }}
+                                />
+                              )}
+                              {supporterLineAvg != null && (
+                                <ReferenceLine
+                                  y={supporterLineAvg}
+                                  stroke="#3b82f6"
+                                  strokeOpacity={0.35}
+                                  strokeDasharray="6 5"
+                                  strokeWidth={1.5}
+                                  label={({ viewBox }: any) => {
+                                    const text = `서포터 평균 ${Math.round(supporterLineAvg).toLocaleString()}${suffix}`;
+                                    const x = viewBox.x + viewBox.width - 8;
+                                    const y = viewBox.y - 5;
+                                    return (
+                                      <text x={x} y={y} textAnchor="end" fill="#3b82f6" fontSize={11} fontWeight={800}>{text}</text>
+                                    );
+                                  }}
+                                />
+                              )}
+                            </ComposedChart>
+                          </ResponsiveContainer>
                         </>
                       )}
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
+                    </div>
+
+                    {/* 직업별 통계 */}
+                    {!chartLoading && (
+                      <div className={styles.classStatsBlock}>
+                        <div className={styles.classStatsHeader}>
+                          <h3 className={styles.classStatsTitle}>
+                            직업별 통계
+                            <span className={styles.demoInlineBadge}>예시용</span>
+                          </h3>
+                        </div>
+                        <div className={styles.classTable}>
+                          <div className={styles.classTableHeader}>
+                            <span className={styles.colRank}>#</span>
+                            <span className={styles.colClass}>직업</span>
+                            <span className={styles.colRole}>구분</span>
+                            <span className={styles.colCount}>인원</span>
+                            <span className={styles.colPower}>평균 전투력</span>
+                            <span className={styles.colLevel}>평균 레벨</span>
+                          </div>
+                          <div className={styles.classTableBody}>
+                            {displayClassStats.map((c, i) => {
+                              const maxCount = Math.max(...displayClassStats.map(s => s.count), 1);
+                              const widthPct = (c.count / maxCount) * 100;
+                              const isSup = c.role === 'supporter';
+                              return (
+                                <div key={c.className} className={`${styles.classRow} ${i < 3 ? styles.classRowTop : ''}`}>
+                                  <span className={`${styles.colRank} ${i < 3 ? styles.rankTop : ''}`}>{i + 1}</span>
+                                  <span className={styles.colClass}>
+                                    <span className={`${styles.classDot} ${isSup ? styles.supporterBg : styles.dealerBg}`} />
+                                    {c.className}
+                                  </span>
+                                  <span className={styles.colRole}>
+                                    <span className={`${styles.roleTag} ${isSup ? styles.roleSupporter : styles.roleDealer}`}>
+                                      {isSup ? '서포터' : '딜러'}
+                                    </span>
+                                  </span>
+                                  <span className={styles.colCount}>
+                                    <span className={styles.countNumber}>{c.count}</span>
+                                    <span className={styles.countBar}>
+                                      <span
+                                        className={`${styles.countBarFill} ${isSup ? styles.supporterBg : styles.dealerBg}`}
+                                        style={{ width: `${widthPct}%` }}
+                                      />
+                                    </span>
+                                  </span>
+                                  <span className={styles.colPower}>{c.avgPower.toLocaleString()}<span className={styles.colUnit}>점</span></span>
+                                  <span className={styles.colLevel}>{c.avgLevel.toFixed(2)}</span>
+                                </div>
+                              );
+                            })}
+                            {!isExample && displayClassStats.length === 0 && (
+                              <div className={styles.classEmpty}>데이터가 쌓이면 직업별 평균이 표시됩니다</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             </div>{/* contentOrder 닫기 */}

@@ -141,13 +141,23 @@
 .titleSection {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-md);
+  border-radius: 12px;
+  padding: 1.25rem 1.4rem 1.35rem;
+  margin: 0 auto 1.75rem;
+  box-shadow:
+    3px 3px 0 0 rgba(59, 80, 181, 0.2),
+    5px 5px 0 0 rgba(59, 80, 181, 0.1);
   max-width: 480px;
-  margin-left: auto;
-  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.85rem;
+}
+
+:global([data-theme="dark"]) .titleSection {
+  box-shadow:
+    3px 3px 0 0 rgba(107, 126, 214, 0.25),
+    5px 5px 0 0 rgba(107, 126, 214, 0.12);
 }
 
 .sectionTitle {
@@ -167,7 +177,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.searchHeader .titleIconInline {
+  margin-top: -3px;
 }
 
 .titleIconInline {
@@ -176,7 +191,7 @@
 }
 
 .searchTitleName {
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   font-weight: 800;
   line-height: 1;
 }
@@ -190,7 +205,11 @@
 }
 
 .titleNameFire {
-  color: #d4853c;
+  color: #b35d1a;
+}
+
+.titleIconFire {
+  filter: brightness(0.8) saturate(1.1);
 }
 
 .titleNameIce {
@@ -200,19 +219,21 @@
 /* 검색 인풋 */
 .searchInputGroup {
   display: flex;
-  gap: 0.4rem;
-  flex: 1;
-  min-width: 0;
+  gap: 0.5rem;
+  width: 100%;
+  align-items: stretch;
 }
 
 .searchInput {
   flex: 1;
+  min-width: 0;
+  height: 40px;
   background: var(--card-body-bg-blue) !important;
   border: 1px solid var(--border-color) !important;
   color: var(--text-primary) !important;
   border-radius: 8px !important;
   font-size: 0.9rem !important;
-  padding: 0.5rem 0.75rem !important;
+  padding: 0 0.85rem !important;
 }
 
 .searchInput::placeholder {
@@ -225,7 +246,9 @@
 }
 
 .searchButton {
-  padding: 0.5rem 1.25rem;
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 1.25rem;
   background: #dc3545;
   color: #fff;
   border: none;
@@ -246,9 +269,9 @@
 }
 
 .errorText {
-  margin-top: 0.4rem;
   font-size: 0.78rem;
   color: #dc3545;
+  text-align: center;
 }
 
 /* 프로필 카드 */
@@ -257,7 +280,7 @@
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 0.85rem;
-  margin-top: 0.65rem;
+  width: 100%;
 }
 
 .profileTop {
@@ -266,8 +289,8 @@
 }
 
 .profileImageWrap {
-  width: 130px;
-  min-height: 170px;
+  width: 140px;
+  min-height: 210px;
   border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
@@ -326,7 +349,7 @@
 .titleMatchFire {
   font-size: 0.9rem;
   font-weight: 800;
-  color: #d4853c;
+  color: #b35d1a;
 }
 
 .titleMatchIce {
@@ -355,6 +378,25 @@
 .roleSupporter {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
+}
+
+.saveHint {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px dashed rgba(59, 130, 246, 0.5);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #3b82f6;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.saveHintIcon {
+  flex-shrink: 0;
+  font-size: 0.85rem;
 }
 
 .saveButtonFull {
@@ -413,10 +455,18 @@
 .chartSection {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-md);
+  border-radius: 12px;
+  padding: 1.35rem 1.4rem 1.45rem;
+  margin-bottom: 1.75rem;
+  box-shadow:
+    3px 3px 0 0 rgba(59, 80, 181, 0.2),
+    5px 5px 0 0 rgba(59, 80, 181, 0.1);
+}
+
+:global([data-theme="dark"]) .chartSection {
+  box-shadow:
+    3px 3px 0 0 rgba(107, 126, 214, 0.25),
+    5px 5px 0 0 rgba(107, 126, 214, 0.12);
 }
 
 .chartHeader {
@@ -470,7 +520,7 @@
 
 .chartTitleBtn {
   padding: 4px 12px;
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   font-weight: 700;
   background: var(--card-body-bg-blue);
   border: 1px solid var(--border-color);
@@ -493,26 +543,48 @@
 /* 요약 */
 .summaryRow {
   display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: 0.9rem;
+  margin-bottom: 1.3rem;
+  padding-right: 4px;
+  padding-bottom: 4px;
 }
 
 .summaryItem {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 0.6rem;
-  background: var(--card-body-bg-blue);
+  align-items: flex-start;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow:
+    2px 2px 0 0 rgba(59, 80, 181, 0.18),
+    3px 3px 0 0 rgba(59, 80, 181, 0.08);
+}
+
+:global([data-theme="dark"]) .summaryItem {
+  box-shadow:
+    2px 2px 0 0 rgba(107, 126, 214, 0.22),
+    3px 3px 0 0 rgba(107, 126, 214, 0.1);
 }
 
 .summaryLabel {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 0.2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.summaryDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .dealerColor {
@@ -524,9 +596,18 @@
 }
 
 .summaryValue {
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.summaryUnit {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-left: 0.2rem;
 }
 
 /* 차트 */
@@ -540,6 +621,358 @@
   justify-content: center;
   min-height: 320px;
   font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* 예시용 배너 (차트 섹션 최상단) */
+.demoBanner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(90deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.04));
+  border: 1px dashed rgba(220, 53, 69, 0.4);
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #dc3545;
+  text-align: center;
+  flex-wrap: wrap;
+}
+
+.demoBannerBadge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #dc3545;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+/* 인라인 예시용 뱃지 (섹션 타이틀 옆) */
+.demoInlineBadge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(220, 53, 69, 0.14);
+  color: #dc3545;
+  font-weight: 800;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+
+/* 예시 차트 안내 */
+.chartExampleNote {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.85rem;
+  margin-bottom: 0.85rem;
+  background: var(--card-body-bg-blue);
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  flex-wrap: wrap;
+}
+
+.chartExampleBadge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(220, 53, 69, 0.14);
+  color: #dc3545;
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+/* 예시 모드에서는 요약에도 살짝 투명도 + 점선 */
+.summaryExample {
+  opacity: 0.82;
+}
+
+.summaryExample .summaryItem {
+  border-style: dashed;
+}
+
+/* ─── 차트 레전드 ─── */
+.chartLegendRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.9rem;
+  padding: 0 0.25rem 0.4rem;
+  margin-top: -0.2rem;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+
+.legendLabel {
+  line-height: 1;
+}
+
+/* ─── 커스텀 툴팁 ─── */
+.customTooltip {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  box-shadow: var(--shadow-md);
+  min-width: 140px;
+}
+
+.tooltipDate {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.tooltipRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  padding: 0.18rem 0;
+}
+
+.tooltipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tooltipLabel {
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 36px;
+}
+
+.tooltipValue {
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── 직업별 통계 ─── */
+.classStatsBlock {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed var(--border-color);
+}
+
+.classStatsHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.75rem;
+}
+
+.classStatsTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.classTable {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    2px 2px 0 0 rgba(59, 80, 181, 0.18),
+    3px 3px 0 0 rgba(59, 80, 181, 0.08);
+}
+
+:global([data-theme="dark"]) .classTable {
+  box-shadow:
+    2px 2px 0 0 rgba(107, 126, 214, 0.22),
+    3px 3px 0 0 rgba(107, 126, 214, 0.1);
+}
+
+.classTableHeader,
+.classRow {
+  display: grid;
+  grid-template-columns: 36px 1.3fr 0.85fr 1.25fr 1.15fr 0.85fr;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+}
+
+.classTableHeader {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.classTableBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.classRow {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.15s ease;
+}
+
+.classRow:last-child {
+  border-bottom: none;
+}
+
+.classRow:hover {
+  background: rgba(59, 80, 181, 0.06);
+}
+
+.classRowTop {
+  background: linear-gradient(90deg, rgba(220, 53, 69, 0.04), transparent 50%);
+}
+
+.colRank {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.rankTop {
+  color: #dc3545;
+  font-size: 0.9rem;
+}
+
+.colClass {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.classDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dealerBg { background: #dc3545; }
+.supporterBg { background: #3b82f6; }
+
+.colRole {
+  display: flex;
+  align-items: center;
+}
+
+.roleTag {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.roleDealer {
+  background: rgba(220, 53, 69, 0.12);
+  color: #dc3545;
+}
+
+.roleSupporter {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+
+.colCount {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.countNumber {
+  font-weight: 800;
+  color: var(--text-primary);
+  min-width: 18px;
+  text-align: right;
+}
+
+.countBar {
+  flex: 1;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  min-width: 30px;
+}
+
+.countBarFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.colPower {
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.colUnit {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-left: 0.15rem;
+}
+
+.colLevel {
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.classEmpty {
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -566,6 +999,22 @@
   border-radius: 14px;
   overflow: hidden;
   box-shadow: var(--shadow-md);
+  border: 2px solid transparent;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.diffCard:hover {
+  transform: translateY(-2px);
+}
+
+.diffCardActive {
+  border-color: #dc3545;
+  box-shadow:
+    0 0 0 3px rgba(220, 53, 69, 0.25),
+    var(--shadow-md);
 }
 
 .diffImage {
@@ -593,8 +1042,10 @@
   right: 0;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   padding: 0.65rem 0.85rem;
   z-index: 1;
+  text-align: left;
 }
 
 .diffNameRow {
@@ -651,6 +1102,93 @@
   overflow: hidden;
   margin-top: 0.5rem;
   box-shadow: var(--shadow-sm);
+}
+
+/* ─── 최초 클리어 보상 테이블 (성당/주간골드 materialTable 스타일) ─── */
+.fcTableWrap {
+  margin-top: 0.85rem;
+  box-shadow:
+    3px 3px 0 0 rgba(59, 80, 181, 0.2),
+    5px 5px 0 0 rgba(59, 80, 181, 0.1);
+  border-radius: 10px;
+}
+
+.fcTableWrap + .fcTableWrap {
+  margin-top: 1rem;
+}
+
+:global([data-theme="dark"]) .fcTableWrap {
+  box-shadow:
+    3px 3px 0 0 rgba(107, 126, 214, 0.25),
+    5px 5px 0 0 rgba(107, 126, 214, 0.12);
+}
+
+.fcTable {
+  width: 100%;
+  margin-bottom: 0 !important;
+  color: var(--text-primary);
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+  border: 1.5px solid var(--color-primary) !important;
+}
+
+.fcTable thead th {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+  letter-spacing: -0.01em;
+  border: none !important;
+}
+
+.fcTable tbody td {
+  padding: 0.9rem 0.75rem;
+  background: var(--card-bg);
+  border-right: 1px solid var(--border-color) !important;
+  border-bottom: none !important;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.fcTable tbody td:last-child {
+  border-right: none !important;
+}
+
+.fcCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.fcCellLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  word-break: keep-all;
+  letter-spacing: -0.01em;
+}
+
+.fcCellRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.fcCellValue {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 .fcHeaderRow {
@@ -1026,8 +1564,8 @@
   }
 
   .profileImageWrap {
-    width: 100px;
-    min-height: 130px;
+    width: 110px;
+    min-height: 160px;
   }
 
   .profileName { font-size: 1rem; }
@@ -1080,6 +1618,15 @@
     padding: 0.85rem;
   }
 
+  /* 최초 클리어 테이블 모바일 */
+  .fcTable thead th { font-size: 0.85rem; padding: 0.55rem 0.4rem; }
+  .fcTable tbody td { padding: 0.65rem 0.35rem; }
+  .fcCell { gap: 0.3rem; }
+  .fcCellLabel { font-size: 0.7rem; }
+  .fcCellValue { font-size: 0.85rem; }
+  .fcCellRow { gap: 0.3rem; }
+  .fcCellRow img { width: 34px !important; height: 34px !important; }
+
   .fcNmCol {
     flex: none;
     border-top: 1px solid var(--border-color);
@@ -1096,6 +1643,21 @@
   .summaryRow { gap: 0.5rem; }
 
   .chartContainer { min-height: 280px; }
+
+  .chartLegendRow { justify-content: center; }
+
+  /* 직업별 통계 — 모바일 컬럼 축소 */
+  .classTableHeader,
+  .classRow {
+    grid-template-columns: 26px 1.25fr 0.9fr 1fr 1fr;
+    padding: 0.5rem 0.6rem;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+  }
+
+  .colLevel { display: none; }
+
+  .classTableHeader .colLevel { display: none; }
 }
 
 /* ==========================================================================
@@ -1135,4 +1697,16 @@
 
   /* 검색 */
   .searchHeader { justify-content: center; }
+
+  /* 직업별 통계 — 480 이하 더 축소 */
+  .classTableHeader,
+  .classRow {
+    grid-template-columns: 22px 1.2fr 0.85fr 1fr;
+    font-size: 0.75rem;
+  }
+
+  .colPower { display: none; }
+  .classTableHeader .colPower { display: none; }
+
+  .countBar { min-width: 24px; }
 }
