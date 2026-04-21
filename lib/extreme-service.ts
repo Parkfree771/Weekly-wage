@@ -2,9 +2,15 @@ import { supabase } from './supabase';
 
 // ─── 서포터 직업 목록 ───
 const SUPPORT_CLASSES = ['바드', '홀리나이트', '도화가'];
+// ─── 딜/서폿 선택 가능한 하이브리드 직업 ───
+const HYBRID_CLASSES = ['발키리'];
 
 export function getRole(characterClass: string): 'dealer' | 'supporter' {
   return SUPPORT_CLASSES.includes(characterClass) ? 'supporter' : 'dealer';
+}
+
+export function isHybridClass(characterClass: string): boolean {
+  return HYBRID_CLASSES.includes(characterClass);
 }
 
 // ─── 타입 ───

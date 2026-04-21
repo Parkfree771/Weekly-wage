@@ -4,16 +4,16 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { Container, Row, Col, Form } from 'react-bootstrap';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
-  ResponsiveContainer, Legend, Line, ComposedChart, ReferenceLine,
+  XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+  ResponsiveContainer, Line, ComposedChart, ReferenceLine,
 } from 'recharts';
 import styles from './extreme.module.css';
 import {
-  saveExtremeClear, getChartData, getSummary, getClassStats, getRole,
+  saveExtremeClear, getChartData, getSummary, getClassStats, getRole, isHybridClass,
   type DailyChartData, type ExtremeSummary, type ClassStat,
 } from '@/lib/extreme-service';
 
-// ���── 일정 데이터 ───
+// ─── 일정 데이터 ───
 const EVENT_START = new Date(2026, 3, 22, 10, 0, 0); // 2026-04-22 수요일 오전 10시 (KST)
 const TOTAL_WEEKS = 8;
 const ACT1_WEEKS = 4;
@@ -39,57 +39,7 @@ const DIFFICULTIES: Difficulty[] = [
   { name: '노말', level: 1720, gold: 20000, token: 150, gates: 1 },
 ];
 
-// ─── 예시 차트 데이터 (실제 데이터 없을 때 표시) ───
-const EXAMPLE_CHART_DATA: DailyChartData[] = (() => {
-  const days = 28;
-  const out: DailyChartData[] = [];
-  for (let i = 0; i < days; i++) {
-    const date = new Date(EVENT_START);
-    date.setDate(date.getDate() + i);
-    const t = days > 1 ? i / (days - 1) : 0;
-    const decay = Math.exp(-2.8 * t); // 1 → ~0.06
-    const noisePower = Math.sin(i * 1.7) * 130 + Math.sin(i * 0.55) * 80;
-    const noiseLv = Math.sin(i * 1.3) * 0.45 + Math.sin(i * 0.4) * 0.25;
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    out.push({
-      date: dateStr,
-      dealerPower: Math.round(5500 + (7500 - 5500) * decay + noisePower),
-      supporterPower: Math.round(4300 + (6000 - 4300) * decay + noisePower * 0.7),
-      dealerLevel: Math.round((1770 + (1800 - 1770) * decay + noiseLv) * 100) / 100,
-      supporterLevel: Math.round((1770 + (1800 - 1770) * decay + noiseLv * 0.85) * 100) / 100,
-      dealerCount: 0,
-      supporterCount: 0,
-    });
-  }
-  return out;
-})();
-
-const EXAMPLE_SUMMARY: ExtremeSummary = {
-  totalClears: 127,
-  dealerCount: 85,
-  supporterCount: 42,
-  dealerAvgPower: Math.round(EXAMPLE_CHART_DATA.reduce((s, d) => s + (d.dealerPower || 0), 0) / EXAMPLE_CHART_DATA.length),
-  supporterAvgPower: Math.round(EXAMPLE_CHART_DATA.reduce((s, d) => s + (d.supporterPower || 0), 0) / EXAMPLE_CHART_DATA.length),
-};
-
-// ─── 예시 직업별 통계 ───
-const EXAMPLE_CLASS_STATS: ClassStat[] = [
-  { className: '바드', role: 'supporter', count: 18, avgPower: 4920, avgLevel: 1784.5 },
-  { className: '버서커', role: 'dealer', count: 15, avgPower: 6480, avgLevel: 1783.2 },
-  { className: '도화가', role: 'supporter', count: 14, avgPower: 4780, avgLevel: 1782.8 },
-  { className: '소서리스', role: 'dealer', count: 13, avgPower: 6210, avgLevel: 1781.6 },
-  { className: '데빌헌터', role: 'dealer', count: 11, avgPower: 6050, avgLevel: 1779.3 },
-  { className: '홀리나이트', role: 'supporter', count: 10, avgPower: 4560, avgLevel: 1778.9 },
-  { className: '리퍼', role: 'dealer', count: 10, avgPower: 5940, avgLevel: 1777.5 },
-  { className: '아르카나', role: 'dealer', count: 9, avgPower: 5820, avgLevel: 1776.4 },
-  { className: '블레이드', role: 'dealer', count: 8, avgPower: 5750, avgLevel: 1775.2 },
-  { className: '건슬링어', role: 'dealer', count: 7, avgPower: 5640, avgLevel: 1774.8 },
-  { className: '워로드', role: 'dealer', count: 6, avgPower: 5520, avgLevel: 1773.5 },
-  { className: '기공사', role: 'dealer', count: 3, avgPower: 5410, avgLevel: 1772.1 },
-  { className: '창술사', role: 'dealer', count: 3, avgPower: 5380, avgLevel: 1771.4 },
-];
-
-// ─── 주간 일정 ─���─
+// ─── 주간 일정 ───
 type WeekInfo = {
   week: number;
   act: 1 | 2;
@@ -579,9 +529,28 @@ export default function ExtremePage() {
                       <div className={styles.profileRow}>
                         <span className={styles.profileLabel}>직업</span>
                         <span className={styles.profileValue}>{profile.className}</span>
-                        <span className={`${styles.profileRole} ${profile.role === 'supporter' ? styles.roleSupporter : styles.roleDealer}`}>
-                          {profile.role === 'supporter' ? '서포터' : '딜러'}
-                        </span>
+                        {isHybridClass(profile.className) ? (
+                          <div className={styles.roleToggle}>
+                            <button
+                              type="button"
+                              className={`${styles.roleToggleBtn} ${profile.role === 'dealer' ? styles.roleToggleDealerActive : ''}`}
+                              onClick={() => setProfile({ ...profile, role: 'dealer' })}
+                            >
+                              딜러
+                            </button>
+                            <button
+                              type="button"
+                              className={`${styles.roleToggleBtn} ${profile.role === 'supporter' ? styles.roleToggleSupporterActive : ''}`}
+                              onClick={() => setProfile({ ...profile, role: 'supporter' })}
+                            >
+                              서포터
+                            </button>
+                          </div>
+                        ) : (
+                          <span className={`${styles.profileRole} ${profile.role === 'supporter' ? styles.roleSupporter : styles.roleDealer}`}>
+                            {profile.role === 'supporter' ? '서포터' : '딜러'}
+                          </span>
+                        )}
                       </div>
                       <div className={styles.profileRow}>
                         <span className={styles.profileLabel}>착용 칭호</span>
@@ -618,15 +587,8 @@ export default function ExtremePage() {
                 섹션 3: 클리어 통계 차트
                 ═══════════════════════════════════════════ */}
             <div className={`${styles.chartSection} ${styles.orderChart}`}>
-              <div className={styles.demoBanner}>
-                <span className={styles.demoBannerBadge}>예시용</span>
-                <span>현재 표시되는 통계는 예시 데이터입니다</span>
-              </div>
               <div className={styles.chartHeader}>
-                <h2 className={styles.sectionTitle}>
-                  클리어 통계
-                  <span className={styles.demoInlineBadge}>예시용</span>
-                </h2>
+                <h2 className={styles.sectionTitle}>클리어 통계</h2>
                 <div className={styles.chartToggles}>
                   <div className={styles.chartModeToggle}>
                     <button className={`${styles.chartModeBtn} ${chartMode === 'power' ? styles.chartModeActive : ''}`} onClick={() => setChartMode('power')}>전투력</button>
@@ -640,10 +602,10 @@ export default function ExtremePage() {
                 </div>
               </div>
               {(() => {
-                const isExample = !chartLoading && chartData.length === 0;
-                const displaySummary = isExample ? EXAMPLE_SUMMARY : summary;
-                const displayData = isExample ? EXAMPLE_CHART_DATA : chartData;
-                const displayClassStats = isExample ? EXAMPLE_CLASS_STATS : classStats;
+                const displaySummary = summary;
+                const displayData = chartData;
+                const displayClassStats = classStats;
+                const hasData = !chartLoading && displayData.length > 0;
                 const dealerKey = chartMode === 'power' ? 'dealerPower' : 'dealerLevel';
                 const supporterKey = chartMode === 'power' ? 'supporterPower' : 'supporterLevel';
                 const suffix = chartMode === 'power' ? '점' : '';
@@ -659,7 +621,7 @@ export default function ExtremePage() {
                 return (
                   <>
                     {displaySummary && displaySummary.totalClears > 0 && (
-                      <div className={`${styles.summaryRow} ${isExample ? styles.summaryExample : ''}`}>
+                      <div className={styles.summaryRow}>
                         <div className={`${styles.summaryItem} ${styles.summaryTotal}`}>
                           <span className={styles.summaryLabel}>총 클리어</span>
                           <span className={styles.summaryValue}>{displaySummary.totalClears.toLocaleString()}<span className={styles.summaryUnit}>명</span></span>
@@ -684,14 +646,10 @@ export default function ExtremePage() {
                     <div className={styles.chartContainer}>
                       {chartLoading ? (
                         <div className={styles.chartPlaceholder}>데이터 로딩 중...</div>
+                      ) : !hasData ? (
+                        <div className={styles.chartPlaceholder}>아직 등록된 데이터가 없습니다</div>
                       ) : (
                         <>
-                          {isExample && (
-                            <div className={styles.chartExampleNote}>
-                              <span className={styles.chartExampleBadge}>예시</span>
-                              <span>아직 등록된 데이터가 없습니다 · 데이터가 쌓이면 이렇게 표시돼요</span>
-                            </div>
-                          )}
                           <div className={styles.chartLegendRow}>
                             <div className={styles.legendItem}>
                               <span className={styles.legendSwatch} style={{ background: '#dc3545' }} />
@@ -773,7 +731,7 @@ export default function ExtremePage() {
                                 activeDot={{ r: 8, fill: '#dc3545', stroke: 'var(--card-bg)', strokeWidth: 3 }}
                                 name="dealer"
                                 connectNulls
-                                isAnimationActive={!isExample}
+                                isAnimationActive={true}
                               />
                               <Line
                                 type="monotone"
@@ -784,7 +742,7 @@ export default function ExtremePage() {
                                 activeDot={{ r: 8, fill: '#3b82f6', stroke: 'var(--card-bg)', strokeWidth: 3 }}
                                 name="supporter"
                                 connectNulls
-                                isAnimationActive={!isExample}
+                                isAnimationActive={true}
                               />
                               {dealerLineAvg != null && (
                                 <ReferenceLine
@@ -858,10 +816,7 @@ export default function ExtremePage() {
                     {!chartLoading && (
                       <div className={styles.classStatsBlock}>
                         <div className={styles.classStatsHeader}>
-                          <h3 className={styles.classStatsTitle}>
-                            직업별 통계
-                            <span className={styles.demoInlineBadge}>예시용</span>
-                          </h3>
+                          <h3 className={styles.classStatsTitle}>직업별 통계</h3>
                         </div>
                         <div className={styles.classTable}>
                           <div className={styles.classTableHeader}>
@@ -903,7 +858,7 @@ export default function ExtremePage() {
                                 </div>
                               );
                             })}
-                            {!isExample && displayClassStats.length === 0 && (
+                            {displayClassStats.length === 0 && (
                               <div className={styles.classEmpty}>데이터가 쌓이면 직업별 평균이 표시됩니다</div>
                             )}
                           </div>

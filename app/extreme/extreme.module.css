@@ -380,6 +380,35 @@
   color: #3b82f6;
 }
 
+/* 하이브리드 직업(발키리) 역할 선택 토글 */
+.roleToggle {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.roleToggleBtn {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.roleToggleDealerActive {
+  background: rgba(220, 53, 69, 0.14);
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.roleToggleSupporterActive {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
 .saveHint {
   display: block;
   width: 100%;
@@ -623,85 +652,6 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-muted);
-}
-
-/* 예시용 배너 (차트 섹션 최상단) */
-.demoBanner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.55rem 0.85rem;
-  margin-bottom: 1rem;
-  background: linear-gradient(90deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.04));
-  border: 1px dashed rgba(220, 53, 69, 0.4);
-  border-radius: 10px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #dc3545;
-  text-align: center;
-  flex-wrap: wrap;
-}
-
-.demoBannerBadge {
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: #dc3545;
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.7rem;
-  letter-spacing: 0.04em;
-}
-
-/* 인라인 예시용 뱃지 (섹션 타이틀 옆) */
-.demoInlineBadge {
-  display: inline-block;
-  margin-left: 0.5rem;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(220, 53, 69, 0.14);
-  color: #dc3545;
-  font-weight: 800;
-  font-size: 0.65rem;
-  letter-spacing: 0.04em;
-  vertical-align: middle;
-}
-
-/* 예시 차트 안내 */
-.chartExampleNote {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.55rem;
-  padding: 0.55rem 0.85rem;
-  margin-bottom: 0.85rem;
-  background: var(--card-body-bg-blue);
-  border: 1px dashed var(--border-color);
-  border-radius: 10px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-align: center;
-  flex-wrap: wrap;
-}
-
-.chartExampleBadge {
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: rgba(220, 53, 69, 0.14);
-  color: #dc3545;
-  font-weight: 800;
-  font-size: 0.7rem;
-  letter-spacing: 0.04em;
-}
-
-/* 예시 모드에서는 요약에도 살짝 투명도 + 점선 */
-.summaryExample {
-  opacity: 0.82;
-}
-
-.summaryExample .summaryItem {
-  border-style: dashed;
 }
 
 /* ─── 차트 레전드 ─── */
@@ -1249,6 +1199,13 @@
   letter-spacing: -0.01em;
 }
 
+/* 보상 셀 안의 칭호(홍염/혹한의 군주)는 한 줄 강제 + 축소 */
+.fcCellValue.titleMatchFire,
+.fcCellValue.titleMatchIce {
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
 .fcHeaderRow {
   display: flex;
   background: var(--card-body-bg-stone);
@@ -1682,6 +1639,8 @@
   .fcCell { gap: 0.3rem; }
   .fcCellLabel { font-size: 0.7rem; }
   .fcCellValue { font-size: 0.85rem; }
+  .fcCellValue.titleMatchFire,
+  .fcCellValue.titleMatchIce { font-size: 0.7rem; }
   .fcCellRow { gap: 0.3rem; }
   .fcCellRow img { width: 34px !important; height: 34px !important; }
 
@@ -1731,12 +1690,9 @@
   .summaryValue { font-size: 0.95rem; }
   .summaryUnit { font-size: 0.62rem; }
 
-  /* 섹션 타이틀 · 예시용 배지 · 안내 배너 축소 */
+  /* 섹션 타이틀 축소 */
   .sectionTitle { font-size: 0.95rem; }
   .classStatsTitle { font-size: 0.9rem; }
-  .demoInlineBadge { font-size: 0.6rem; padding: 1px 6px; margin-left: 0.35rem; }
-  .demoBanner { font-size: 0.7rem; padding: 0.45rem 0.65rem; }
-  .demoBannerBadge { font-size: 0.62rem; padding: 1px 8px; }
 
   .chartContainer { min-height: 280px; }
 
