@@ -1,294 +1,345 @@
 # 홍염의 군주 · 칭호 통계 페이지 (`/title-stats`)
 
-> 다음 작업 시작 전에 이 문서를 읽고 현재 상태/의사결정 맥락을 파악할 것.
-> 마지막 업데이트: 2026-04-21 (홍염의 군주 레이드 오픈 전일).
+> 마지막 업데이트: 2026-04-21 (홍염의 군주 레이드 오픈 전야, 페이지 사전 공개 완료)
+> 문제 생기면 이 문서부터 읽을 것.
 
 ---
 
 ## 0. 한 줄 요약
 
-로스트아크 "홍염의 군주 / 혹한의 군주" 칭호 전투력 집계 + 80명 명예의 전당. 80명은 **8인 공대 단위 원자적 등록**으로 채우고, 다 차면 **개인 등록**으로 자동 전환.
+로스트아크 "홍염의 군주 / 혹한의 군주" 칭호 전투력 집계 + 10공대 80명 명예의 전당.
+80명은 **8인 공대 단위 원자적 등록**으로 채우고, 다 차면 **개인 등록**으로 자동 전환.
 
 ---
 
-## 1. 관련 파일 (전부 이 경로들이 진실)
+## 1. 핵심 파일 (여기가 진실)
 
 ### 프론트
 | 경로 | 역할 |
 |---|---|
-| `app/title-stats/page.tsx` | 페이지 본체 (히어로·탭·HOF·차트·통계·등록) |
+| `app/title-stats/page.tsx` | 페이지 본체 — 히어로·HOF·차트·통계·등록 (탭은 제거됨, 홍염 단일) |
+| `app/title-stats/layout.tsx` | 메타데이터(SEO) + JSON-LD 구조화 데이터 |
 | `app/title-stats/title-stats.module.css` | 페이지 전용 스타일 |
-| `components/EvilEye.tsx` | 상단 화염 눈동자 (WebGL, `ogl` 의존) |
-| `components/Navbar.tsx` | `NAV_STANDALONE` 안에 `{ href: '/title-stats', label: '홍염의 군주', badge: 'NEW' }` |
-| `components/ads/AdLayout.tsx` | `/title-stats` 는 `hideSidebar` 목록에 포함되어 양옆 광고 제거 |
-| `app/sitemap.ts` | `/title-stats` 엔트리 포함 |
+| `components/EvilEye.tsx` | 상단 WebGL 눈동자 (`ogl` 의존). 마우스 추적 lerp 0.18, shader offset 0.22 |
+| `components/Navbar.tsx` | `{ href: '/title-stats', label: '홍염의 군주', badge: 'NEW' }` |
+| `components/ads/AdLayout.tsx` | 사이드바 완전 제거, maxWidth만 담당 |
+| `app/sitemap.ts` | `/title-stats` 포함 |
 
 ### 서비스 / API
 | 경로 | 역할 |
 |---|---|
-| `lib/extreme-service.ts` | Supabase RPC 래퍼 + 읽기 쿼리 + 에러 한국어 매핑 + 캐시 |
-| `app/api/lostark/route.ts` | 로아 API 프록시 (`profile` + `siblings` + `equipment` 동시 fetch). 이미 존재. |
+| `lib/extreme-service.ts` | Supabase RPC 래퍼 + 읽기 쿼리 + 에러 한국어 매핑 + **phase-aware 캐시** |
+| `app/api/lostark/route.ts` | 로아 API 프록시 (`profile + siblings + equipment` 동시 fetch) |
 
-### DB (Supabase)
+### DB
 | 경로 | 역할 |
 |---|---|
-| `docs/supabase-extreme-v2.sql` | **유일한 진실**. 테이블 5 + RPC 3 + 통계 함수 + RLS + GRANT 전부 포함. 실행 시 기존 extreme_* 전부 DROP 후 재생성. |
+| `docs/supabase-extreme-v2.sql` | **유일한 스키마 진실**. 테이블 5 + RPC 3 + 통계 헬퍼 + RLS + GRANT |
 
-### 메모리
-| 이름 | 내용 |
-|---|---|
-| `feedback_raid_title_logo_pair.md` | 레이드 칭호 이름 쓸 때 로고와 붙여 한 덩어리로. 절대 분리 금지. |
+### 홍보 요소 (현재 전부 비활성)
+- `components/UpdatePopup.tsx` — 홈 진입 팝업. 2026-04-21 제거됨. 파일은 보존
+- `components/ads/AdSidebar.tsx` — 데스크톱 좌우 사이드바. 제거됨. 파일 보존
+- `components/ads/ExtremePromoBanner.tsx` — 모바일 상단 배너. 8개 페이지에서 제거. 파일 보존
+
+### 메타데이터 분리
+- `/title-stats` — 칭호 전투력 통계 + 명예의 전당 중심
+- `/extreme` — 보상 정리 중심 (칭호 통계 언급 제거)
 
 ---
 
 ## 2. 페이지 구조 (위→아래)
 
 ```
-┌──────────────────────────────────────┐
-│  EvilEye 히어로 (풀폭, 320~480px)    │  ← 검은 배경 + 화염 눈동자 + 하단에 "홍염의 군주"
-├──────────────────────────────────────┤
-│  중앙 컴팩트 탭 pill                  │  ← [홍염의 군주] [혹한의 군주]  (줄 안 채움)
-├──────────────────────────────────────┤
-│  명예의 전당                          │  ← 공대 페이지네이션 ◀ PARTY N ▶
-│    ┌─ 공대명 배너 ─┐                 │
-│    │ 8장 캐릭터 카드 (2×4 or 4×2)    │
-├──────────────────────────────────────┤
-│  [하단 섹션 - 1280px 중앙정렬]       │
-│   차트 · 요약 리본 · 직업별 통계      │
-│   등록 섹션 (공대 or 개인 조건부)     │
-└──────────────────────────────────────┘
+[stageSection — 풀와이드 다크 플랫폼, 한몸]
+  ├─ eyeHero (WebGL 눈동자, 클램프 320~480px 높이)
+  └─ hofSection
+     ├─ hofHeader (Hall of Flame · 명예의 전당 · 서브)
+     ├─ hofNav (◀ 공대 페이지네이션 ▶ + 10개 도트)
+     └─ partyRow (공대명 배너 + 8장 카드)
+
+[container — max-width 1600]
+  └─ lowerSections
+     ├─ registrationSection (공대 또는 개인)
+     ├─ chart (칭호 전투력 추이)
+     ├─ summaryRibbon (총 등록/딜평균/서폿평균)
+     └─ classStats (직업별 통계, 1열 세로)
 ```
 
-### HOF 카드 내용 순서 (사용자 명시)
-이미지 → 칭호 뱃지(로고+이름) → 닉네임(세리프체) → 전투력 + `Lv.아이템레벨`
+### 카드 정보 오버레이 (3줄 + 모바일 2줄)
+- 1줄: 🔥 홍염의 군주 · 직업 (모바일 숨김)
+- 2줄: 닉네임(세리프) — 길면 ...으로 truncate
+- 3줄: Lv.아이템레벨
+- 4줄: 전투력: 12,345 (주황)
 
-### 1공대 특별 취급
-`.partyRowGold` 적용. 리본 `FIRST PARTY · 선봉` (금빛 그라데이션). 2공대부터는 오렌지 톤 + `PARTY N` 키커.
+### 공대명 배너 (순수 타이포그래피)
+- 거대 세리프 공대명 (clamp 2.4~4.4rem)
+- 적동색 크림 (#f4dcb8) + 하드 드롭 섀도우 + 화염 후광
+- 1공대는 #ffe4be + 더 진한 화염 글로우
 
 ---
 
-## 3. 2단계 등록 로직 (핵심)
+## 3. 등록 2단계 로직
 
 ```
 mode = hof.length >= 80 ? 'individual' : 'party'
 ```
 
-`hof` 는 `party_id IS NOT NULL` 필터링된 쿼리 결과. 즉 **공대 등록된 멤버만 카운트**.
-10공대 × 8명 = 80 채워지는 순간 자동으로 개인 모드로 전환.
+`hof` = `party_id IS NOT NULL` 필터링 결과 (공대 등록 멤버 수).
+10공대 × 8 = 80 채워지는 순간 자동 전환.
 
-### 공대 모드 (0~79명)
-- 공대 이름 입력 + 8슬롯 전부 검색 → 전원 칭호 확인됨 → `공대 등록하기` 활성화
-- 내부적으로 `registerExtremeParty` RPC 한 방 (원자적 1 공대 + 8 멤버 INSERT)
-- 성공 시 폼 리셋 + `loadAll()` 로 HOF/차트/통계 전부 재조회
+### 공대 모드
+- 공대 이름 입력 + 8슬롯 검색 → 전원 칭호 확인됨 → 등록 버튼 활성화
+- 단일 RPC `registerExtremeParty` (1 공대 + 8 멤버 원자적 INSERT)
+- 성공 시 폼 리셋 + `loadAll()` 재조회
 
 ### 개인 모드 (80명 완성 후)
 - 단일 검색 → `registerExtremeIndividual` RPC
-- **이미지 저장 안 함** (파라미터 자체에 없음)
-- 서버에서 파티수 < 10 이면 `EXT_PARTY_PHASE_ONLY` 로 거절
+- **이미지 저장 X** (파라미터 없음, HOF 바깥은 불필요)
+- 서버에서 `공대수 < 10` 이면 `EXT_PARTY_PHASE_ONLY` 거절
 
 ---
 
-## 4. DB 설계 (v2)
+## 4. DB 설계 (v2 + 2026-04-21 마이그레이션)
 
 ### 테이블 다섯
-
 | 테이블 | PK / UNIQUE | 용도 |
 |---|---|---|
-| `extreme_parties` | `id UUID`, `UNIQUE(title, party_name)` | 1~10공대 레코드 |
-| `extreme_clears` | `id BIGINT`, `UNIQUE(character_name, title)` | 모든 등록 멤버 (공대+개인). `party_id` NULL 이면 개인. |
-| `extreme_roster_locks` | `PK(title, character_name)` | **원정대 잠금** — 공대/개인 등록 시 siblings 전체 닉네임 삽입 |
+| `extreme_parties` | `id UUID`, `UNIQUE(title, party_name)` | 1~10공대 |
+| `extreme_clears` | `id BIGINT`, `UNIQUE(character_name, title)` | 모든 등록 (공대+개인) |
+| `extreme_roster_locks` | `PK(title, character_name)` | **원정대 잠금** — 본캐/부캐 전부 lock |
 | `extreme_daily_stats` | `PK(title, clear_date, role)` | 일별 집계 캐시 |
-| `extreme_class_stats` | `PK(title, character_class, role)` | 직업별 집계 캐시. **v1 버그 수정: role PK 포함** (기존은 발키리 딜/서폿 충돌) |
+| `extreme_class_stats` | `PK(title, character_class, role)` | 직업별 집계 캐시 |
 
 ### RPC 셋
+- `register_extreme_party(title, party_name, members JSONB) → UUID`
+  - advisory lock (동일 칭호 직렬화)
+  - 10공대 초과 / 멤버수 != 8 / 빈 공대명 거절
+  - `v_today := kst_today()` 로 모든 시간값 KST
+- `register_extreme_individual(name, class, role, lvl, pw, title, siblings[]) → BIGINT`
+  - 10공대 완성 전 거절 (`EXT_PARTY_PHASE_ONLY`)
+  - `party_id = NULL`, 이미지 저장 안 함
+- `rebuild_extreme_stats() → (daily_rows, class_rows)`
+  - 수동 삭제 후 집계 재계산용
 
-- **`register_extreme_party(title, party_name, members JSONB)` → UUID**
-  - `pg_advisory_xact_lock(hashtext('extreme_parties:' || title))` 로 같은 칭호의 공대 등록을 직렬화
-  - 10공대 초과 거절
-  - 8멤버 각자 `extreme_clears` INSERT + `extreme_roster_locks` 일괄 INSERT + 통계 증분
-  - 중간 어디서든 실패하면 전체 롤백
-  - 멤버 JSONB 스키마:
-    ```json
-    {
-      "character_name": "...",
-      "character_class": "...",
-      "role": "dealer|supporter",
-      "item_level": 1770.00,
-      "combat_power": 1800,
-      "character_image": "https://...",
-      "sibling_names": ["본캐", "부캐1", "부캐2", ...]
-    }
-    ```
+### 헬퍼
+- `kst_today() → DATE` — `(NOW() AT TIME ZONE 'Asia/Seoul')::DATE`. 모든 시간 표기 KST 기준. 자정 전환이 한국 시각에 정확
 
-- **`register_extreme_individual(name, class, role, level, power, title, sibling_names[])` → BIGINT**
-  - 10공대 완성 안 됐으면 거절
-  - 이미지 저장 X, `party_id = NULL`
-  - roster_locks + 통계 증분은 동일
-
-- **`rebuild_extreme_stats()` → (daily_rows, class_rows)**
-  - 비상용 전체 재집계. 일반 상황에선 쓸 일 없음.
-
-### 증분 통계
-
-`_increment_extreme_stats()` 헬퍼를 RPC 안에서 매건 호출:
-```sql
-INSERT ... ON CONFLICT (title, date, role) DO UPDATE
-SET clear_count = d.clear_count + 1,
-    avg_power   = ROUND((d.avg_power * d.clear_count + new_power) / (d.clear_count + 1)),
-    avg_level   = ROUND((d.avg_level * d.clear_count + new_level) / (d.clear_count + 1), 2);
-```
-누적 평균 공식. O(1), 즉시 반영. 수동 rebuild 불필요.
+### 증분 집계
+`_increment_extreme_stats()` UPSERT — 등록 시마다 O(1) 누적 평균 계산. 별도 rebuild 불필요.
 
 ### RLS
-
-- 모든 테이블 SELECT 는 anon 허용.
-- INSERT/UPDATE/DELETE 정책 **없음** → 클라이언트 직접 수정 불가.
-- RPC 세 개 모두 `SECURITY DEFINER` → RLS 우회, 함수 소유자 권한으로 실행.
-- `GRANT EXECUTE ON FUNCTION ... TO anon, authenticated;`
+- SELECT: anon 허용
+- INSERT/UPDATE/DELETE 정책 없음 → 클라이언트 직접 수정 불가
+- RPC 3개 `SECURITY DEFINER` + `GRANT EXECUTE TO anon, authenticated`
 
 ---
 
-## 5. 중복 방어 4중
+## 5. 중복 방어 4중 + α
 
-| 층 | 수단 | 막는 케이스 |
+| 층 | 수단 | 대상 |
 |---|---|---|
-| 1 | `extreme_parties.UNIQUE(title, party_name)` | 동명 공대 |
-| 2 | `extreme_clears.UNIQUE(character_name, title)` | 같은 캐릭터 재등록 |
-| 3 | `extreme_roster_locks.PK(title, character_name)` | **같은 원정대 내 alt 로 재등록** (본캐 등록 후 부캐로 또) |
-| 4 | 클라이언트 슬롯간 siblings 겹침 체크 | 같은 공대 폼 안에 본캐/부캐 동시 입력 (UX) |
+| 1 | 프론트 슬롯간 `siblingNames` 겹침 | 같은 폼 8칸 안에 본캐+부캐 |
+| 2 | 프론트 `rosterLocks.has(n)` | **이미 등록된 원정대** (검색 시점 차단) |
+| 3 | `extreme_parties UNIQUE(title, party_name)` | 공대명 중복 |
+| 4 | `extreme_clears UNIQUE(character_name, title)` | 같은 캐릭 재등록 |
+| 5 | `extreme_roster_locks PK(title, character_name)` | 본캐/부캐 스왑 (최후 방어) |
+| 6 | advisory lock | 두 공대 1등 경쟁 |
 
-### 원정대 잠금 예시 (사용자가 설명한 상황)
-1. 유저 A가 `Alpha` 로 홍염 공대 등록
-2. `extreme_clears` 에 Alpha 한 줄
-3. `extreme_roster_locks` 에 Alpha, Beta, Gamma, Delta ... 전원 (사이즈 = 원정대 크기)
-4. 유저 A가 `Beta` 로 칭호 갈아끼고 다른 공대/개인 등록 시도
-5. roster_locks 에 `(홍염, Beta)` INSERT → 이미 존재 → 23505 → **전체 트랜잭션 롤백**
-6. 프론트에 "해당 원정대의 캐릭터가 이미 등록되어 있습니다" 표시
+에러 메시지: 공대명 표시 (`"불사조" 공대에 등록된 원정대입니다`) 또는 개인 등록이면 `"개인 등록에 등록된 원정대입니다"`.
 
 ---
 
-## 6. 동시성
+## 6. Phase-aware 캐시
 
-- **공대 등록 레이스**: 두 공대가 동시에 1등/2등 노릴 때. advisory lock 으로 serialize → 먼저 tx 획득한 쪽이 1등, 다음이 2등.
-- **다른 칭호간 병렬**: 홍염/혹한은 각각 다른 해시키로 락 → 동시 진행 OK.
-- **순서 기준**: `extreme_parties.created_at` 오름차순. Postgres `NOW()` 마이크로초 단위라 실질적 동률 없음.
+### 임계값
+```ts
+HOF_FULL_THRESHOLD = 80
+isIndividualPhase = _lastHofCount >= 80
+```
 
----
+### TTL 매트릭스
+| 데이터 | 공대 페이즈 (<80) | 개인 페이즈 (≥80) |
+|---|---|---|
+| HOF | 캐시 X (실시간) | 15분 |
+| rosterLocks | 캐시 X | 10분 |
+| 차트 | 1분 | 15분 |
+| 요약 | 1분 | 15분 |
+| 직업별 통계 | 1분 | 15분 |
 
-## 7. 캐시 전략
+### invalidateCache
+등록 성공 시 호출 → 본인 브라우저 전부 즉시 비움 → `loadAll()` 재호출로 fresh 반영.
 
-| 데이터 | 캐시 |
-|---|---|
-| HOF | **없음** (항상 fresh, 80행짜리 작은 JOIN) |
-| 차트 (daily_stats) | 3분 TTL `Map` |
-| 요약 (class_stats 합산) | 3분 TTL `Map` |
-| 직업별 통계 (class_stats) | 3분 TTL `Map` |
-
-쓰기 RPC 성공 시 `invalidateCache(title)` 호출 → 같은 브라우저/서버 인스턴스의 캐시 즉시 무효화.
-다른 사용자 화면은 최대 3분 스태일 (요구사항 허용 범위).
-
----
-
-## 8. 이미지 정책
-
-- 공대 등록 시 본인 `CharacterImage` URL 을 `extreme_clears.character_image` 에 저장 → HOF 80장 카드 렌더용
-- 공대 멤버의 **siblings 는 닉네임만** 락에 저장, 이미지 미저장
-- 개인 등록(80명 이후)은 이미지 저장 안 함 — 통계 반영만
-- Next.js `<Image unoptimized>` 로 로아 CDN URL 직접 렌더 (저작권/스토리지 회피)
-- 이미지 없음 케이스: `<div className={styles.fameImagePlaceholder}>` 에 직업명만 표시
+### 중복 방지 유지
+- 공대 페이즈는 locks 실시간 → UX 완벽
+- 개인 페이즈는 최대 10분 스테일 가능하지만 **RPC PK 충돌로 서버 최종 방어** → 중복 등록 물리적으로 불가능
 
 ---
 
-## 9. EvilEye
+## 7. 이미지 정책
 
-- `ogl` 패키지 의존 (`package.json` 에 이미 포함)
-- `app/title-stats/page.tsx` 에서 `dynamic(() => import('@/components/EvilEye'), { ssr: false })` 로 로드 (WebGL이라 SSR 불가)
+- 공대 등록 멤버: `CharacterImage` URL 로아 CDN 직접 참조 (`<Image unoptimized referrerPolicy="no-referrer">`)
+- siblings는 닉네임만 lock, 이미지 미저장
+- 개인 등록(80 이후): 이미지 저장 X
+- 이미지 NULL이면 `fameImagePlaceholder` 에 직업명 표시
+
+---
+
+## 8. EvilEye (WebGL)
+
+- `ogl` 패키지 의존
+- `dynamic({ ssr: false })` 로 클라이언트 전용 로드
 - `prefers-reduced-motion: reduce` 감지 시 렌더 스킵
-- 탭별 색:
-  - 홍염: `eyeColor="#FF6F37"`, `flameSpeed=1.0`
-  - 혹한: `eyeColor="#4AA8D8"`, `flameSpeed=0.6`
-- 마우스 따라 동공 이동 (`pupilFollow`)
-- 클린업: unmount 시 rAF 취소 + canvas 제거 + `WEBGL_lose_context` 호출
+- 현재 세팅 (홍염):
+  - `eyeColor="#FF6F37"`, `flameSpeed=1.0`
+  - 마우스 lerp 0.18 (shader 내부 offset 0.22)
+  - 클린업: rAF cancel + canvas 제거 + `WEBGL_lose_context`
 
 ---
 
-## 10. 디자인 토큰
+## 9. 디자인 토큰
 
 ### 색
-- 홍염 메인: `#c16420`, 그라데이션 `#f0a060 → #a84d1a → #6e3308`
-- 혹한 메인: `#3a73a6` (살짝 차가운 블루)
+- 홍염 주조: `#c16420`, 텍스트 `#ffe4be`
+- 혹한 주조: `#3a73a6`
 - 딜러 `#dc3545` / 서포터 `#3b82f6`
-- 메달: 금 `#f4c040~#c28a10` / 은 `#d0d5dc~#8a9099` / 동 `#e08050~#8f4018`
+- 공대명 적동 크림: `#f4dcb8`, 1공대 `#ffe4be`
 
 ### 글꼴
-- 일반: Noto Sans KR (레이아웃 기본)
-- 강조 (히어로 타이틀, HOF 공대명, HOF 헤더, HOF 카드 닉네임): Noto Serif KR
+- 본문: Noto Sans KR
+- 강조(히어로/공대명/닉네임/hof제목): Noto Serif KR
 
 ### 공통 패턴
-- 히어로만 다크 (검은 배경 + 오렌지 글로우) — 페이지 본문과 단절시켜 드라마틱
-- 본문 카드 `.cardBlock`: `var(--card-bg)` + 좌측 3px 세로 오렌지 포인트 바 + 오렌지 오프셋 그림자
-- 인라인 레이드 태그 `.raidTag`: 로고 + 이름 한 덩어리 (`feedback_raid_title_logo_pair.md` 원칙). 부주의로 분리 시 사용자 분노함. 주의.
+- 히어로와 HOF 한몸 (다크 플랫폼이 이어짐)
+- 카드는 포스터형 (aspect 3/5), 이미지가 카드 배경 전체, 정보는 하단 오버레이
+- `transition`/`transform`/hover translateY 전부 제거 (사용자 피드백 원칙)
 
 ---
 
-## 11. 주요 의사결정 · 왜 이렇게 했나
+## 10. 검증 완료된 것 (오픈 전 QA)
 
-| 결정 | 이유 |
-|---|---|
-| HOF 80명 = 공대 단위 | 유저 요구. 레이드는 8인팟 단위로 도전하므로 자연스러운 집계 단위 |
-| 공대 모드 우선, 개인 모드 후행 | HOF 시상대 의미 보존 (랜덤 개인이 먼저 자리 꿰차는 거 방지) |
-| 원자적 RPC | 두 공대 1등 레이스에서 중간 실패로 유령 공대 생성 방지 |
-| advisory lock | 전체 테이블 락 없이 같은 칭호 내에서만 직렬화 → 혹한/홍염 병렬 허용 |
-| roster_locks PK 구조 | 유저가 본캐/부캐 스왑해서 재등록 시도 차단. siblings 를 미리 다 잠궈버림 |
-| 증분 통계 | 수동 rebuild 불필요, 실시간 반영 |
-| HOF 캐시 X | 80행 쿼리 가벼움 + HOF 가득 차는 과정은 실시간성 중요 |
-| EvilEye | 기존 다른 페이지와 시각적 차별화. 드라마틱 히어로. 모바일 배터리 주의. |
-| 이미지 스토리지 X, URL 만 저장 | 저작권/용량/stale 모두 회피. 로아 CDN이 실제로 호스팅 |
-| 81번째부터 이미지 미저장 | HOF 바깥은 시상대 노출 안 되니까 이미지 불필요. 저장 비용 최소화. |
-
----
-
-## 12. 확장 포인트 / 다음 할 일
-
-### 사용자 즉시 해야 할 것
-- [ ] `docs/supabase-extreme-v2.sql` 를 Supabase SQL Editor 에서 실행. **이거 안 하면 아무것도 안 됨.**
-- [ ] 환경변수 확인: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `LOSTARK_API_KEY`
-- [ ] 혹한 오픈 일정 정해지면 `app/title-stats/page.tsx` 의 `RAIDS.ice.openAt` 실제 값으로 업데이트
-
-### 앞으로 논의/추가할 수 있는 것들
-- Supabase Realtime 구독으로 다른 사용자 화면 즉시 반영 (현재 최대 3분 스태일)
-- 80석 가득 찼을 때 "명예의 전당 완성" 이벤트 배너
-- 공대 등록 후 공유 링크 / OG 이미지 생성
-- 개인 등록 단계에서 "내 공대 찾기" 식의 개인 화면
-- 등록 후 수정/삭제 기능 (현재 불가. 관리자 개입만 가능)
-- 공대 멤버 역할별 시각화 (딜 6 + 서폿 2 유효 조합 체크)
-
-### 기존 구조 제약 (알고 있어야 할 것)
-- 로아 API siblings 는 같은 서버 원정대만 반환 → 크로스서버 alt 는 방어 안 됨 (현실적으로 무시 가능)
-- RPC 에러 메시지는 Postgres 원문 → `translateRpcError()` 에서 한국어 매핑. 새 에러 추가 시 여기 분기 추가.
-- 한 번 등록되면 UI로 수정/삭제 불가. RLS가 UPDATE/DELETE 차단. 관리자가 Supabase 콘솔에서 직접 손대야 함.
+- [x] 80명 자동 개인 모드 전환
+- [x] 공대 삭제 시 공대 모드 복귀
+- [x] 개인 등록 서버 게이트 `EXT_PARTY_PHASE_ONLY`
+- [x] 공대명 중복 `uq_parties_title_name`
+- [x] 캐릭 재등록 `uq_clears_char_title`
+- [x] 8명 고정 `EXT_MUST_BE_8`
+- [x] 빈 공대명 `EXT_EMPTY_PARTY_NAME`
+- [x] 통계 정확도 (실 카운트 = 집계 캐시)
+- [x] KST 타임존 적용 (kst_today)
+- [x] Phase-aware 캐시 동작
+- [x] 원정대 잠금 프론트 검색 시점 차단 + 공대명 표시
+- [x] 카드 이미지 no-referrer (로아 CDN hotlink 우회)
 
 ---
 
-## 13. 반복 교정 받은 코딩 원칙 (메모리에 저장됨)
+## 11. 홍보 설정
 
-- **레이드 칭호 이름**: 화면 어디든 `"홍염의 군주"` 텍스트 쓸 때 **반드시** 로고 이미지와 붙여서 한 덩어리. `RaidTag` 컴포넌트 or `.raidTag` 패턴 사용. 분리 배치 X.
-- **사용자가 "X 수정해" 요청**: X만 수정. 주변부 구조/베이스/장판/필드 자의 추가 X.
-- **추측 코딩 금지**: 모르면 Read/Grep 으로 확인 먼저. 토큰 낭비 = 돈.
+### Navbar
+`{ href: '/title-stats', label: '홍염의 군주', badge: 'NEW' }` — NEW 뱃지 포함
+
+### 사이트맵
+`app/sitemap.ts` 에 `/title-stats` 포함 → Google 크롤링 대상
+
+### 커뮤니티 노출
+- 모바일 배너/사이드바/팝업 전부 제거 상태 (사용자 요청)
+- 외부 커뮤니티(인벤/아카라이브/디시) 게시물로 홍보
+- 추천 제목: "홍염 퍼클런 10공대 명예의 전당"
 
 ---
 
-## 14. 트러블슈팅 체크리스트
+## 12. 운영 시 주의사항
+
+### 관리자가 Supabase 콘솔에서 공대 삭제 시
+1. CASCADE로 clears/roster_locks 자동 삭제 O
+2. **통계 캐시(daily_stats, class_stats)는 그대로 남음** — 증분 함수가 INSERT 시점만 +1, 삭제 시 -1 안 함
+3. 반드시 `SELECT rebuild_extreme_stats();` 실행해서 재집계 필요
+
+### 테스트 데이터 초기화
+```sql
+TRUNCATE extreme_roster_locks, extreme_clears, extreme_parties,
+         extreme_daily_stats, extreme_class_stats CASCADE;
+```
+
+### RLS 확인
+```sql
+SELECT tablename, rowsecurity FROM pg_tables WHERE tablename LIKE 'extreme_%';
+-- 5개 전부 true 이어야 함
+```
+
+### Netlify 환경변수 필수
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `LOSTARK_API_KEY`
+
+---
+
+## 13. 트러블슈팅
 
 | 증상 | 원인 후보 |
 |---|---|
-| 등록 시 "이미 등록된 공대 이름" | `uq_parties_title_name` — 공대명 중복 |
-| 등록 시 "이미 등록된 캐릭터" | `uq_clears_char_title` — 그 캐릭터 이미 있음 |
-| 등록 시 "원정대의 캐릭터가 이미 등록" | `extreme_roster_locks` PK 충돌 — 본캐/부캐 어느 하나가 이미 잠김 |
-| 등록 시 "명예의 전당 가득 찼습니다" | `EXT_HOF_FULL` — 이미 10공대 |
-| 개인 등록 안 됨 | `EXT_PARTY_PHASE_ONLY` — 아직 80명 안 찼음 |
-| HOF 비어있음 | 공대 하나도 등록 안 됐거나, 칭호별 탭 잘못 선택 |
-| 차트/통계 스태일 | 3분 TTL 캐시 — 쓰기 후에만 즉시 무효화됨 |
-| RPC 호출 자체가 안 됨 | `GRANT EXECUTE` 누락 or RLS 정책 미적용 → `docs/supabase-extreme-v2.sql` 재실행 |
-| 이미지 안 보임 | `CharacterImage` 가 null / `<Image unoptimized>` 누락 / 로아 CDN URL 만료 |
-| EvilEye 안 보임 | SSR로 렌더됨(dynamic 실패) or `prefers-reduced-motion: reduce` 설정됨 or WebGL 미지원 브라우저 |
+| 공대 이미지 안 뜸 | 로아 CDN hotlink 차단 → `referrerPolicy="no-referrer"` 누락 or URL에 공백 섞임 |
+| 등록 성공해도 화면에 반영 안 됨 | `invalidateCache` 호출 X 또는 `loadAll` 트리거 실패 |
+| "이미 등록된 공대 이름" | 같은 칭호에 동일 `party_name` 존재 |
+| "해당 원정대의 캐릭터가 이미 등록" | `extreme_roster_locks` PK 충돌 — 본캐/부캐 어느 하나가 lock |
+| "공대는 반드시 8명이어야" | `EXT_MUST_BE_8` — 8개 슬롯 미충족 |
+| "아직 공대 등록 단계" | `EXT_PARTY_PHASE_ONLY` — 공대 10개 미만인데 개인 RPC 호출 |
+| 통계 값 불일치 (실카운트 ≠ 캐시) | 관리자 수동 DELETE 후 rebuild 누락 → `SELECT rebuild_extreme_stats();` |
+| 날짜가 밀려서 집계됨 | `kst_today()` 적용 안 됐을 때. RPC 재정의 확인 |
+| EvilEye 안 보임 | SSR 실패 or `prefers-reduced-motion` 설정 or WebGL 미지원 |
+| 히어로 클릭 시 반응 없음 | 마우스 추적은 렌더링만, 클릭 이벤트 없음. 정상 |
+
+---
+
+## 14. 반복된 코딩 원칙 (메모리)
+
+- 레이드 칭호 이름은 **반드시 로고와 붙여서 한 덩어리** (`RaidTag` 컴포넌트)
+- `transition` / `transform` / hover 레이아웃 변경 **금지**
+- globals.css 에 페이지 전용 스타일 금지, module.css 로만
+- 사용자가 "X 수정해" 하면 X만 수정, 주변 임의 개선 X
+
+---
+
+## 15. 오늘(2026-04-21) 한 일 요약
+
+### 시상대 리디자인
+- 메달리온/엠블럼/장식선 전부 제거, 순수 타이포그래피로 회귀
+- 공대명 배너: 거대 세리프 + 적동 크림 + 하드 드롭 섀도우
+- 카드 오버레이 4줄 구조 (칭호+직업 / 닉네임 / Lv. / 전투력:)
+- 모바일에서 칭호바 숨김 + 닉네임 ... truncate
+- 순위 숫자·역할 도트 전부 제거 (사용자 요청)
+
+### 페이지 전체 구조 재편
+- 히어로 + HOF를 하나의 풀와이드 다크 섹션(`stageSection`)으로 통합
+- 탭바 제거 (홍염 단일)
+- 공대 등록 섹션을 시상대 바로 아래로 이동
+- 10공대 전부 네비게이션 (공석 카드로 렌더)
+- 개인 등록 섹션 중앙 정렬 + 컴팩트 프로필 카드
+
+### DB/로직
+- KST 타임존 마이그레이션 (`kst_today()` 헬퍼 + RPC 재정의)
+- Phase-aware 캐시 (공대<80 실시간, 개인≥80 10~15분)
+- `getRosterLocks()` 신규 — 검색 시점 중복 차단 + 공대명 표시
+
+### 검증
+- 5+ 서버 제약 전부 실제 RPC 호출로 검증 완료
+- 통계 정확도 확인 (rebuild_extreme_stats)
+- Netlify egress 예상치 산출
+
+### 홍보/UX
+- 팝업·사이드바·모바일 배너 전부 제거 (사용자 요청)
+- SEO 메타데이터 /extreme 과 /title-stats 로 분리
+- EvilEye 마우스 추적 반응성 향상 (lerp 0.05→0.18, shader offset 0.12→0.22)
+
+### 배포
+- `feature/title-stats` 브랜치 → main 머지 → Netlify 자동 배포
+- 커밋: `0d8b05b`, `9d7ad1d`, `c75b84f`, `62d68c2`, `de2edcc`
+
+---
+
+## 16. 내일(2026-04-22) 오전 10시 오픈 후 체크
+
+1. 10시 정각 이후 첫 등록자 나타나는지 모니터링
+2. 로아 API 호출 레이트(5회/초) 초과 여부 확인
+3. Supabase 대시보드에서 egress·RPC 사용량 추이
+4. 1공대 완성되는 순간 UI 반영 즉시성 확인
+5. 첫 등록 후 `extreme_parties`, `extreme_clears`, `extreme_roster_locks`, `extreme_daily_stats`, `extreme_class_stats` 모두 정상 증가했는지 SQL 한 번 돌려보기
