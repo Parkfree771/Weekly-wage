@@ -51,6 +51,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: 'https://lostarkweeklygold.kr/title-stats',
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    {
       url: 'https://lostarkweeklygold.kr/mypage',
       lastModified: new Date(),
       changeFrequency: 'weekly',

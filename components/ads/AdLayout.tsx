@@ -16,6 +16,7 @@ function getPageConfig(pathname: string): PageConfig {
   if (pathname === '/mypage') return { contentWidth: 1600, adTop: 130 };
   if (pathname.startsWith('/package/')) return { contentWidth: 1100, adTop: 80 };
   if (pathname === '/package') return { contentWidth: 1400, adTop: 80 };
+  if (pathname === '/title-stats') return { contentWidth: 1600, adTop: 80 };
   return { contentWidth: 1400, adTop: 60 };
 }
 
@@ -24,7 +25,7 @@ const AD_EXTRA = 336;
 
 export default function AdLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const hideSidebar = pathname === '/package/register' || pathname.startsWith('/package/edit/') || pathname === '/minigame';
+  const hideSidebar = pathname === '/package/register' || pathname.startsWith('/package/edit/') || pathname === '/minigame' || pathname === '/title-stats';
   const { contentWidth, adTop } = getPageConfig(pathname);
   const [showSideAds, setShowSideAds] = useState(false);
 

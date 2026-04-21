@@ -13,20 +13,41 @@ export function isHybridClass(characterClass: string): boolean {
   return HYBRID_CLASSES.includes(characterClass);
 }
 
-// ─── 타입 ───
-export interface ExtremeClear {
+// ============================================================
+// 타입
+// ============================================================
+export interface PartyMemberInput {
+  character_name: string;
+  character_class: string;
+  role: 'dealer' | 'supporter';
+  item_level: number;
+  combat_power: number;
+  character_image: string | null;
+  sibling_names: string[];   // 원정대 전체 닉네임 (본인 포함). 중복 방지용.
+}
+
+export interface IndividualInput {
   character_name: string;
   character_class: string;
   role: 'dealer' | 'supporter';
   item_level: number;
   combat_power: number;
   title: string;
-  cleared_at: string; // YYYY-MM-DD
+  sibling_names: string[];   // 원정대 전체 닉네임 (본인 포함).
 }
 
-export interface ExtremeClearRecord extends ExtremeClear {
+export interface HallOfFameEntry {
   id: number;
-  created_at: string;
+  characterName: string;
+  characterClass: string;
+  role: 'dealer' | 'supporter';
+  itemLevel: number;
+  combatPower: number;
+  characterImage: string | null;
+  createdAt: string;
+  partyId: string | null;
+  partyName: string | null;
+  partyCreatedAt: string | null;
 }
 
 export interface DailyChartData {
@@ -55,7 +76,9 @@ export interface ClassStat {
   avgLevel: number;
 }
 
-// ─── 캐시 (3분 TTL) ───
+// ============================================================
+// 캐시 (차트/요약/직업별만 3분 TTL, HOF 는 항상 fresh)
+// ============================================================
 const CACHE_TTL = 3 * 60 * 1000;
 const chartCache = new Map<string, { data: DailyChartData[]; ts: number }>();
 const summaryCache = new Map<string, { data: ExtremeSummary; ts: number }>();
@@ -73,31 +96,99 @@ function invalidateCache(title?: string) {
   }
 }
 
-// ─── 저장 (원시 테이블 extreme_clears에 INSERT) ───
-export async function saveExtremeClear(data: ExtremeClear): Promise<{ success: boolean; error?: string }> {
+// ============================================================
+// RPC 에러 메시지 매핑 (Postgres RAISE / UNIQUE 위반 → 한국어)
+// ============================================================
+function translateRpcError(err: { code?: string; message?: string; details?: string } | null): string {
+  if (!err) return '등록에 실패했습니다.';
+
+  // 커스텀 RAISE EXCEPTION 식별자
+  if (err.message?.includes('EXT_EMPTY_PARTY_NAME')) return '공대 이름을 입력해주세요.';
+  if (err.message?.includes('EXT_HOF_FULL')) return '명예의 전당이 이미 10공대로 가득 찼습니다.';
+  if (err.message?.includes('EXT_MUST_BE_8')) return '공대는 반드시 8명이어야 합니다.';
+  if (err.message?.includes('EXT_PARTY_PHASE_ONLY')) return '아직 공대 등록 단계입니다. 10공대가 채워진 후 개인 등록이 열립니다.';
+
+  // UNIQUE 위반
+  if (err.code === '23505') {
+    if (err.message?.includes('uq_parties_title_name') || err.details?.includes('uq_parties_title_name')) {
+      return '이미 등록된 공대 이름입니다.';
+    }
+    if (err.message?.includes('extreme_roster_locks') || err.details?.includes('extreme_roster_locks')) {
+      return '해당 원정대의 캐릭터가 이미 등록되어 있습니다. (본캐/부캐 한 명만 등록 가능)';
+    }
+    if (err.message?.includes('uq_clears_char_title') || err.details?.includes('uq_clears_char_title')) {
+      return '이미 등록된 캐릭터가 포함되어 있습니다.';
+    }
+    return '중복된 데이터입니다.';
+  }
+
+  // CHECK 위반 등
+  if (err.code === '23514') return '입력 값이 올바르지 않습니다.';
+
+  return err.message || '등록에 실패했습니다.';
+}
+
+// ============================================================
+// 공대 등록 RPC
+// ============================================================
+export async function registerExtremeParty(
+  title: string,
+  partyName: string,
+  members: PartyMemberInput[]
+): Promise<{ success: boolean; error?: string; partyId?: string }> {
   try {
-    const { error } = await supabase
-      .from('extreme_clears')
-      .insert([data]);
+    const { data, error } = await supabase.rpc('register_extreme_party', {
+      p_title: title,
+      p_party_name: partyName,
+      p_members: members,
+    });
 
     if (error) {
-      // 23505 = unique_violation (character_name + title 중복)
-      if ((error as { code?: string }).code === '23505') {
-        return { success: false, error: '이미 등록된 캐릭터입니다.' };
-      }
-      console.error('Supabase insert error:', error);
-      return { success: false, error: '저장에 실패했습니다.' };
+      console.error('register_extreme_party error:', error);
+      return { success: false, error: translateRpcError(error) };
     }
 
-    invalidateCache(data.title);
-    return { success: true };
+    invalidateCache(title);
+    return { success: true, partyId: data as string };
   } catch (err) {
-    console.error('Error saving extreme clear:', err);
-    return { success: false, error: '저장 중 오류가 발생했습니다.' };
+    console.error('register_extreme_party exception:', err);
+    return { success: false, error: '등록 중 오류가 발생했습니다.' };
   }
 }
 
-// ─── 차트 데이터 (extreme_daily_stats에서 직접 SELECT) ───
+// ============================================================
+// 개인 등록 RPC (HOF 80석 완료 후에만 서버에서 허용)
+// ============================================================
+export async function registerExtremeIndividual(
+  input: IndividualInput
+): Promise<{ success: boolean; error?: string; id?: number }> {
+  try {
+    const { data, error } = await supabase.rpc('register_extreme_individual', {
+      p_character_name: input.character_name,
+      p_character_class: input.character_class,
+      p_role: input.role,
+      p_item_level: input.item_level,
+      p_combat_power: input.combat_power,
+      p_title: input.title,
+      p_sibling_names: input.sibling_names,
+    });
+
+    if (error) {
+      console.error('register_extreme_individual error:', error);
+      return { success: false, error: translateRpcError(error) };
+    }
+
+    invalidateCache(input.title);
+    return { success: true, id: data as number };
+  } catch (err) {
+    console.error('register_extreme_individual exception:', err);
+    return { success: false, error: '등록 중 오류가 발생했습니다.' };
+  }
+}
+
+// ============================================================
+// 차트 데이터 (일별 × 역할)
+// ============================================================
 export async function getChartData(title: string): Promise<DailyChartData[]> {
   const cached = chartCache.get(title);
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
@@ -116,7 +207,6 @@ export async function getChartData(title: string): Promise<DailyChartData[]> {
       return [];
     }
 
-    // 날짜별로 dealer/supporter 두 행을 하나로 합침
     const map = new Map<string, DailyChartData>();
     for (const row of data) {
       const d = row.clear_date as string;
@@ -154,7 +244,9 @@ export async function getChartData(title: string): Promise<DailyChartData[]> {
   }
 }
 
-// ─── 요약 (extreme_class_stats 전체 합산) ───
+// ============================================================
+// 요약 통계 (class_stats 합산)
+// ============================================================
 export async function getSummary(title: string): Promise<ExtremeSummary> {
   const cached = summaryCache.get(title);
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
@@ -207,7 +299,9 @@ export async function getSummary(title: string): Promise<ExtremeSummary> {
   }
 }
 
-// ─── 직업별 통계 (extreme_class_stats 그대로 가져오기) ───
+// ============================================================
+// 직업별 통계
+// ============================================================
 export async function getClassStats(title: string): Promise<ClassStat[]> {
   const cached = classStatsCache.get(title);
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
@@ -238,6 +332,76 @@ export async function getClassStats(title: string): Promise<ClassStat[]> {
     return result;
   } catch (err) {
     console.error('Error fetching class stats:', err);
+    return [];
+  }
+}
+
+// ============================================================
+// 명예의 전당 (공대 정렬, 항상 fresh)
+// parties JOIN clears · party_created_at ASC, member created_at ASC
+// ============================================================
+export async function getHallOfFame(title: string): Promise<HallOfFameEntry[]> {
+  try {
+    const { data, error } = await supabase
+      .from('extreme_clears')
+      .select(`
+        id, character_name, character_class, role, item_level, combat_power,
+        character_image, created_at, party_id,
+        extreme_parties:party_id ( party_name, created_at )
+      `)
+      .eq('title', title)
+      .not('party_id', 'is', null)
+      .order('created_at', { ascending: true })
+      .limit(80);
+
+    if (error || !data) {
+      console.error('Error fetching hall of fame:', error);
+      return [];
+    }
+
+    type Row = {
+      id: number;
+      character_name: string;
+      character_class: string;
+      role: 'dealer' | 'supporter';
+      item_level: number | string;
+      combat_power: number | string;
+      character_image: string | null;
+      created_at: string;
+      party_id: string | null;
+      extreme_parties: { party_name: string; created_at: string } | { party_name: string; created_at: string }[] | null;
+    };
+
+    const rows = (data as Row[]).map(row => {
+      const p = Array.isArray(row.extreme_parties)
+        ? (row.extreme_parties[0] ?? null)
+        : row.extreme_parties;
+      return {
+        id: row.id,
+        characterName: row.character_name,
+        characterClass: row.character_class,
+        role: row.role,
+        itemLevel: Number(row.item_level),
+        combatPower: Number(row.combat_power),
+        characterImage: row.character_image ?? null,
+        createdAt: row.created_at,
+        partyId: row.party_id,
+        partyName: p?.party_name ?? null,
+        partyCreatedAt: p?.created_at ?? null,
+      } as HallOfFameEntry;
+    });
+
+    // 공대 생성순 → 공대 내 멤버 생성순
+    rows.sort((a, b) => {
+      const pa = a.partyCreatedAt ?? '';
+      const pb = b.partyCreatedAt ?? '';
+      if (pa !== pb) return pa.localeCompare(pb);
+      return a.createdAt.localeCompare(b.createdAt);
+    });
+
+    return rows;
+  } catch (err) {
+    console.error('Error fetching hall of fame:', err);
     return [];
   }
 }

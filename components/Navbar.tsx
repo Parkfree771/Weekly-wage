@@ -45,6 +45,7 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 
 const NAV_STANDALONE: NavItem[] = [
+  { href: '/title-stats', label: '홍염의 군주', badge: 'NEW' },
   { href: '/extreme', label: '익스트림', badge: 'NEW' },
   { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
@@ -59,6 +60,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/cathedral', label: '은총의 파편 계산' },
   { href: '/refining', label: '재련 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
+  { href: '/title-stats', label: '홍염의 군주', badge: 'NEW' },
   { href: '/extreme', label: '익스트림', badge: 'NEW' },
   { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
@@ -91,6 +93,7 @@ export default function Navbar() {
                       href === '/package' ? 'nav-package' :
                       href === '/cathedral' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
+                      href === '/title-stats' ? 'nav-extreme' :
                       href === '/minigame' ? 'nav-minigame' :
                       href === '/mypage' ? 'nav-mypage' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';

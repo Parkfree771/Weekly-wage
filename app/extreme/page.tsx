@@ -1,28 +1,15 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { Container, Row, Col, Form } from 'react-bootstrap';
-import {
-  XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
-  ResponsiveContainer, Line, ComposedChart, ReferenceLine,
-} from 'recharts';
+import Link from 'next/link';
+import { Container, Row, Col } from 'react-bootstrap';
 import styles from './extreme.module.css';
-import {
-  saveExtremeClear, getChartData, getSummary, getClassStats, getRole, isHybridClass,
-  type DailyChartData, type ExtremeSummary, type ClassStat,
-} from '@/lib/extreme-service';
 
 // ─── 일정 데이터 ───
 const EVENT_START = new Date(2026, 3, 22, 10, 0, 0); // 2026-04-22 수요일 오전 10시 (KST)
 const TOTAL_WEEKS = 8;
 const ACT1_WEEKS = 4;
-
-// ─── 칭호 ───
-const TITLES = [
-  { act: 1, name: '홍염의 군주', image: '/extreme-fire.webp' },
-  { act: 2, name: '혹한의 군주', image: '/extreme-ice.webp' },
-];
 
 // ─── 난이도별 보상 ───
 type Difficulty = {
@@ -69,71 +56,16 @@ function buildSchedule(kstNow: Date): WeekInfo[] {
   return weeks;
 }
 
-function formatDate(d: Date): string {
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
 function formatFullDate(d: Date): string {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   return `${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
 }
 
-// ─── 칭호 텍스트 파싱 (API에서 <img> 태그 포함해서 옴) ───
-function parseTitleText(raw: string): string {
-  if (!raw) return '';
-  return raw.replace(/<img[^>]*>(.*?)<\/img>/gi, '').replace(/<[^>]+>/g, '').trim();
-}
-
-// ─── 현재 진행 중인 막 판별 ───
-function getCurrentAct(kstNow: Date): 1 | 2 {
-  const act2Start = new Date(EVENT_START);
-  act2Start.setDate(act2Start.getDate() + ACT1_WEEKS * 7);
-  return kstNow >= act2Start ? 2 : 1;
-}
-
-// ─── 캐릭터 프로필 타입 ───
-type CharProfile = {
-  name: string;
-  className: string;
-  itemLevel: string;
-  combatPower: string;
-  image: string;
-  title: string;
-  role: 'dealer' | 'supporter';
-};
-
 export default function ExtremePage() {
   const [now, setNow] = useState<Date>(new Date());
 
-  // 캐릭터 검색
-  const [searchName, setSearchName] = useState('');
-  const [searching, setSearching] = useState(false);
-  const [profile, setProfile] = useState<CharProfile | null>(null);
-  const [searchError, setSearchError] = useState('');
-
-  // 저장
-  const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  // 현재 막
-  const currentAct = getCurrentAct(new Date(Date.now() + 9 * 60 * 60 * 1000));
-  const currentTitle = TITLES.find(t => t.act === currentAct)!;
-
-  // 차트 데이터
-  const [chartTitle, setChartTitle] = useState<string>(currentTitle.name);
-  const [chartData, setChartData] = useState<DailyChartData[]>([]);
-  const [summary, setSummary] = useState<ExtremeSummary | null>(null);
-  const [classStats, setClassStats] = useState<ClassStat[]>([]);
-  const [chartLoading, setChartLoading] = useState(true);
-
-  // 차트 모드 (전투력 / 레벨)
-  const [chartMode, setChartMode] = useState<'power' | 'level'>('power');
-
   // 난이도
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
-
-  // 차트 평균선 hover 상태
-  const [hoveredAvgLine, setHoveredAvgLine] = useState<'dealer' | 'supporter' | null>(null);
 
   // 타이머
   useEffect(() => {
@@ -141,25 +73,7 @@ export default function ExtremePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // 차트 데이터 로드
-  const loadChartData = useCallback(async () => {
-    setChartLoading(true);
-    const [data, sum, classes] = await Promise.all([
-      getChartData(chartTitle),
-      getSummary(chartTitle),
-      getClassStats(chartTitle),
-    ]);
-    setChartData(data);
-    setSummary(sum);
-    setClassStats(classes);
-    setChartLoading(false);
-  }, [chartTitle]);
-
-  useEffect(() => {
-    loadChartData();
-  }, [loadChartData]);
-
-  const kstNow = now; // EVENT_START가 로컬 시간 기준이므로 보정 불필요
+  const kstNow = now;
   const schedule = useMemo(() => buildSchedule(kstNow), [now]);
 
   const eventEnd = new Date(EVENT_START);
@@ -181,8 +95,6 @@ export default function ExtremePage() {
   const diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000);
 
   const currentWeek = schedule.find(w => w.isCurrent);
-  const act1Weeks = schedule.filter(w => w.act === 1);
-  const act2Weeks = schedule.filter(w => w.act === 2);
   const elapsedWeeks = schedule.filter(w => w.isPast).length + (currentWeek ? 1 : 0);
   const progressPercent = isAfterEvent ? 100 : isBeforeEvent ? 0 : Math.round((elapsedWeeks / TOTAL_WEEKS) * 100);
 
@@ -281,89 +193,6 @@ export default function ExtremePage() {
     </>
   );
 
-  // 현재 진행 중인 칭호 확인
-  const hasMatchingTitle = profile && TITLES.some(t => t.name === profile.title);
-  const matchedTitle = profile ? TITLES.find(t => t.name === profile.title) : null;
-
-  // ─── 캐릭터 검색 ───
-  const handleSearch = async () => {
-    if (!searchName.trim()) return;
-    setSearching(true);
-    setSearchError('');
-    setProfile(null);
-    setSaveMessage(null);
-
-    try {
-      const res = await fetch(`/api/lostark?characterName=${encodeURIComponent(searchName.trim())}`);
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setSearchError(err.message || '캐릭터를 찾을 수 없습니다.');
-        return;
-      }
-      const data = await res.json();
-      const p = data.profile;
-      if (!p) {
-        setSearchError('프로필 정보를 찾을 수 없습니다.');
-        return;
-      }
-
-      setProfile({
-        name: p.CharacterName || searchName,
-        className: p.CharacterClassName || '',
-        itemLevel: p.ItemAvgLevel || '0',
-        combatPower: p.CombatPower || '',
-        image: p.CharacterImage || '',
-        title: parseTitleText(p.Title || ''),
-        role: getRole(p.CharacterClassName || ''),
-      });
-    } catch {
-      setSearchError('검색 중 오류가 발생했습니다.');
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  // ─── 저장 ───
-  const handleSave = async () => {
-    if (!profile || !matchedTitle) return;
-    const power = parseFloat(profile.combatPower.replace(/,/g, ''));
-    if (isNaN(power) || power <= 0) {
-      setSaveMessage({ type: 'error', text: '전투력 정보를 가져올 수 없습니다.' });
-      return;
-    }
-
-    setSaving(true);
-    setSaveMessage(null);
-
-    const today = new Date();
-    const kstToday = new Date(today.getTime() + 9 * 60 * 60 * 1000);
-    const dateStr = `${kstToday.getFullYear()}-${String(kstToday.getMonth() + 1).padStart(2, '0')}-${String(kstToday.getDate()).padStart(2, '0')}`;
-
-    const result = await saveExtremeClear({
-      character_name: profile.name,
-      character_class: profile.className,
-      role: profile.role,
-      item_level: parseFloat(profile.itemLevel.replace(/,/g, '')),
-      combat_power: power,
-      title: matchedTitle.name,
-      cleared_at: dateStr,
-    });
-
-    if (result.success) {
-      setSaveMessage({ type: 'success', text: '등록 완료! 통계에 반영됩니다.' });
-      loadChartData();
-    } else {
-      setSaveMessage({ type: 'error', text: result.error || '저장에 실패했습니다.' });
-    }
-    setSaving(false);
-  };
-
-  // 차트 날짜 포맷
-  const formatChartDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
-  };
-
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
       <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '900px', margin: '0 auto', padding: '0 1rem' }}>
@@ -421,12 +250,22 @@ export default function ExtremePage() {
               )}
             </div>
 
-            <div className={styles.contentOrder}>
+            {/* 칭호 통계 페이지 안내 */}
+            <Link href="/title-stats" className={styles.titleStatsLink}>
+              <div className={styles.titleStatsLinkInner}>
+                <Image src="/extreme-fire.webp" alt="홍염의 군주" width={40} height={40} className={styles.titleIconFire} />
+                <div className={styles.titleStatsLinkText}>
+                  <strong>홍염의 군주 · 칭호 전투력 통계</strong>
+                  <span>클리어 전투력 · 직업별 평균 · 히스토리 차트</span>
+                </div>
+                <span className={styles.titleStatsLinkArrow}>→</span>
+              </div>
+            </Link>
 
             {/* ═══════════════════════════════════════════
-                섹션 1: 난이도별 보상
+                섹션: 난이도별 보상
                 ═══════════════════════════════════════════ */}
-            <div className={`${styles.diffSection} ${styles.orderReward}`}>
+            <div className={styles.diffSection}>
               <h2 className={styles.sectionTitle}>난이도별 보상</h2>
               <div className={styles.diffGrid}>
                 {DIFFICULTIES.map((diff) => {
@@ -477,400 +316,6 @@ export default function ExtremePage() {
                 </div>
               )}
             </div>
-
-            {/* ═══════════════════════════════════════════
-                섹션 2: 칭호 전투력 측정
-                ═══════════════════════════════════════════ */}
-            <div className={`${styles.titleSection} ${styles.orderSearch}`}>
-              <div className={styles.searchHeader}>
-                <Image src={currentTitle.image} alt={currentTitle.name} width={46} height={46} className={`${styles.titleIconInline} ${currentAct === 1 ? styles.titleIconFire : ''}`} />
-                <span className={`${styles.searchTitleName} ${currentAct === 1 ? styles.titleNameFire : styles.titleNameIce}`}>
-                  {currentTitle.name}
-                </span>
-              </div>
-              <div className={styles.searchInputGroup}>
-                <Form.Control
-                  type="text"
-                  placeholder="캐릭터명"
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className={styles.searchInput}
-                  disabled={searching}
-                />
-                <button className={styles.searchButton} onClick={handleSearch} disabled={searching || !searchName.trim()}>
-                  {searching ? '...' : '검색'}
-                </button>
-              </div>
-              {searchError && <div className={styles.errorText}>{searchError}</div>}
-
-              <div className={styles.saveHint}>
-                칭호 갱신 안될 시 영지 → 영지 밖 이동 후 재검색
-              </div>
-
-              {profile && (
-                <div className={styles.profileCard}>
-                  <div className={styles.profileTop}>
-                    {profile.image && (
-                      <div className={styles.profileImageWrap}>
-                        <Image src={profile.image} alt={profile.name} width={200} height={300} className={styles.profileImage} />
-                      </div>
-                    )}
-                    <div className={styles.profileInfo}>
-                      <div className={styles.profileName}>{profile.name}</div>
-                      <div className={styles.profileRow}>
-                        <span className={styles.profileLabel}>레벨</span>
-                        <span className={styles.profileValue}>Lv. {profile.itemLevel}</span>
-                      </div>
-                      <div className={styles.profileRow}>
-                        <span className={styles.profileLabel}>전투력</span>
-                        <span className={styles.profileValue}>{profile.combatPower || '-'}</span>
-                      </div>
-                      <div className={styles.profileRow}>
-                        <span className={styles.profileLabel}>직업</span>
-                        <span className={styles.profileValue}>{profile.className}</span>
-                        {isHybridClass(profile.className) ? (
-                          <div className={styles.roleToggle}>
-                            <button
-                              type="button"
-                              className={`${styles.roleToggleBtn} ${profile.role === 'dealer' ? styles.roleToggleDealerActive : ''}`}
-                              onClick={() => setProfile({ ...profile, role: 'dealer' })}
-                            >
-                              딜러
-                            </button>
-                            <button
-                              type="button"
-                              className={`${styles.roleToggleBtn} ${profile.role === 'supporter' ? styles.roleToggleSupporterActive : ''}`}
-                              onClick={() => setProfile({ ...profile, role: 'supporter' })}
-                            >
-                              서포터
-                            </button>
-                          </div>
-                        ) : (
-                          <span className={`${styles.profileRole} ${profile.role === 'supporter' ? styles.roleSupporter : styles.roleDealer}`}>
-                            {profile.role === 'supporter' ? '서포터' : '딜러'}
-                          </span>
-                        )}
-                      </div>
-                      <div className={styles.profileRow}>
-                        <span className={styles.profileLabel}>착용 칭호</span>
-                        {hasMatchingTitle && matchedTitle && (
-                          <Image src={matchedTitle.image} alt={matchedTitle.name} width={24} height={24} className={`${styles.titleIconInline} ${matchedTitle.act === 1 ? styles.titleIconFire : ''}`} />
-                        )}
-                        <span className={`${hasMatchingTitle ? (matchedTitle?.act === 1 ? styles.titleMatchFire : styles.titleMatchIce) : styles.titleNoMatch}`}>
-                          {profile.title || '미착용'}
-                        </span>
-                      </div>
-                      {hasMatchingTitle ? (
-                        <>
-                          <button className={styles.saveButtonFull} onClick={handleSave} disabled={saving}>
-                            {saving ? '저장 중...' : '통계에 등록하기'}
-                          </button>
-                          {saveMessage && (
-                            <div className={`${styles.saveMessage} ${saveMessage.type === 'success' ? styles.saveSuccess : styles.saveError}`}>
-                              {saveMessage.text}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className={styles.noTitleMessage}>
-                          {currentTitle.name} 칭호를 착용한 상태에서 검색해주세요.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* ═══════════════════════════════════════════
-                섹션 3: 클리어 통계 차트
-                ═══════════════════════════════════════════ */}
-            <div className={`${styles.chartSection} ${styles.orderChart}`}>
-              <div className={styles.chartHeader}>
-                <h2 className={styles.sectionTitle}>클리어 통계</h2>
-                <div className={styles.chartToggles}>
-                  <div className={styles.chartModeToggle}>
-                    <button className={`${styles.chartModeBtn} ${chartMode === 'power' ? styles.chartModeActive : ''}`} onClick={() => setChartMode('power')}>전투력</button>
-                    <button className={`${styles.chartModeBtn} ${chartMode === 'level' ? styles.chartModeActive : ''}`} onClick={() => setChartMode('level')}>레벨</button>
-                  </div>
-                  <div className={styles.chartTitleToggle}>
-                    {TITLES.map((t) => (
-                      <button key={t.name} className={`${styles.chartTitleBtn} ${chartTitle === t.name ? styles.chartTitleActive : ''}`} onClick={() => setChartTitle(t.name)}>{t.name}</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              {(() => {
-                const displaySummary = summary;
-                const displayData = chartData;
-                const displayClassStats = classStats;
-                const hasData = !chartLoading && displayData.length > 0;
-                const dealerKey = chartMode === 'power' ? 'dealerPower' : 'dealerLevel';
-                const supporterKey = chartMode === 'power' ? 'supporterPower' : 'supporterLevel';
-                const suffix = chartMode === 'power' ? '점' : '';
-                const dealerAvg = displaySummary?.dealerAvgPower ?? null;
-                const supporterAvg = displaySummary?.supporterAvgPower ?? null;
-
-                // 차트 내 평균선용 값 (chartMode 기준으로 displayData에서 직접 계산)
-                const dealerVals = displayData.map(d => d[dealerKey]).filter((v): v is number => v != null);
-                const supporterVals = displayData.map(d => d[supporterKey]).filter((v): v is number => v != null);
-                const dealerLineAvg = dealerVals.length > 0 ? dealerVals.reduce((a, b) => a + b, 0) / dealerVals.length : null;
-                const supporterLineAvg = supporterVals.length > 0 ? supporterVals.reduce((a, b) => a + b, 0) / supporterVals.length : null;
-
-                return (
-                  <>
-                    {displaySummary && displaySummary.totalClears > 0 && (
-                      <div className={styles.summaryRow}>
-                        <div className={`${styles.summaryItem} ${styles.summaryTotal}`}>
-                          <span className={styles.summaryLabel}>총 클리어</span>
-                          <span className={styles.summaryValue}>{displaySummary.totalClears.toLocaleString()}<span className={styles.summaryUnit}>명</span></span>
-                        </div>
-                        <div className={`${styles.summaryItem} ${styles.summaryDealer}`}>
-                          <span className={`${styles.summaryLabel} ${styles.dealerColor}`}>
-                            <span className={styles.summaryDot} style={{ background: '#dc3545' }} />
-                            딜러 평균 전투력
-                          </span>
-                          <span className={styles.summaryValue}>{dealerAvg ? dealerAvg.toLocaleString() : '-'}<span className={styles.summaryUnit}>점</span></span>
-                        </div>
-                        <div className={`${styles.summaryItem} ${styles.summarySupporter}`}>
-                          <span className={`${styles.summaryLabel} ${styles.supporterColor}`}>
-                            <span className={styles.summaryDot} style={{ background: '#3b82f6' }} />
-                            서포터 평균 전투력
-                          </span>
-                          <span className={styles.summaryValue}>{supporterAvg ? supporterAvg.toLocaleString() : '-'}<span className={styles.summaryUnit}>점</span></span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className={styles.chartContainer}>
-                      {chartLoading ? (
-                        <div className={styles.chartPlaceholder}>데이터 로딩 중...</div>
-                      ) : !hasData ? (
-                        <div className={styles.chartPlaceholder}>아직 등록된 데이터가 없습니다</div>
-                      ) : (
-                        <>
-                          <div className={styles.chartLegendRow}>
-                            <div className={styles.legendItem}>
-                              <span className={styles.legendSwatch} style={{ background: '#dc3545' }} />
-                              <span className={styles.legendLabel}>딜러</span>
-                            </div>
-                            <div className={styles.legendItem}>
-                              <span className={styles.legendSwatch} style={{ background: '#3b82f6' }} />
-                              <span className={styles.legendLabel}>서포터</span>
-                            </div>
-                            <div className={styles.legendItem}>
-                              <svg width="22" height="4"><line x1="0" y1="2" x2="22" y2="2" stroke="#dc3545" strokeWidth="2" strokeDasharray="4 3" /></svg>
-                              <span className={styles.legendLabel}>딜러 평균</span>
-                            </div>
-                            <div className={styles.legendItem}>
-                              <svg width="22" height="4"><line x1="0" y1="2" x2="22" y2="2" stroke="#3b82f6" strokeWidth="2" strokeDasharray="4 3" /></svg>
-                              <span className={styles.legendLabel}>서포터 평균</span>
-                            </div>
-                          </div>
-                          <ResponsiveContainer width="100%" height={340}>
-                            <ComposedChart data={displayData} margin={{ top: 20, right: 18, left: -6, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical horizontal />
-                              <XAxis
-                                dataKey="date"
-                                tickFormatter={formatChartDate}
-                                tick={{ fontSize: 13, fill: 'var(--text-primary)', fontWeight: 700 }}
-                                minTickGap={28}
-                                tickMargin={8}
-                                stroke="var(--text-secondary)"
-                                strokeWidth={2}
-                                axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }}
-                                tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }}
-                              />
-                              <YAxis
-                                tick={{ fontSize: 13, fill: 'var(--text-primary)', fontWeight: 700 }}
-                                tickFormatter={(v: number) => v.toLocaleString()}
-                                domain={chartMode === 'level' ? ['dataMin - 3', 'dataMax + 3'] : ['dataMin - 300', 'dataMax + 300']}
-                                allowDecimals={false}
-                                tickCount={6}
-                                width={chartMode === 'power' ? 60 : 50}
-                                stroke="var(--text-secondary)"
-                                strokeWidth={2}
-                                axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }}
-                                tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }}
-                              />
-                              <RechartsTooltip
-                                cursor={{ stroke: 'var(--border-color)', strokeWidth: 1, strokeDasharray: '3 3' }}
-                                content={({ active, payload, label }: any) => {
-                                  if (!active || !payload || payload.length === 0) return null;
-                                  const d = new Date(String(label));
-                                  const dealer = payload.find((p: any) => String(p.dataKey).includes('dealer'));
-                                  const supporter = payload.find((p: any) => String(p.dataKey).includes('supporter'));
-                                  return (
-                                    <div className={styles.customTooltip}>
-                                      <div className={styles.tooltipDate}>{d.getMonth() + 1}월 {d.getDate()}일</div>
-                                      {dealer && (
-                                        <div className={styles.tooltipRow}>
-                                          <span className={styles.tooltipDot} style={{ background: '#dc3545' }} />
-                                          <span className={styles.tooltipLabel}>딜러</span>
-                                          <span className={styles.tooltipValue}>{dealer.value != null ? `${Number(dealer.value).toLocaleString()}${suffix}` : '-'}</span>
-                                        </div>
-                                      )}
-                                      {supporter && (
-                                        <div className={styles.tooltipRow}>
-                                          <span className={styles.tooltipDot} style={{ background: '#3b82f6' }} />
-                                          <span className={styles.tooltipLabel}>서포터</span>
-                                          <span className={styles.tooltipValue}>{supporter.value != null ? `${Number(supporter.value).toLocaleString()}${suffix}` : '-'}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                }}
-                              />
-                              <Line
-                                type="monotone"
-                                dataKey={dealerKey}
-                                stroke="#dc3545"
-                                strokeWidth={3.5}
-                                dot={{ r: 4, fill: '#dc3545', stroke: 'var(--card-bg)', strokeWidth: 3 }}
-                                activeDot={{ r: 8, fill: '#dc3545', stroke: 'var(--card-bg)', strokeWidth: 3 }}
-                                name="dealer"
-                                connectNulls
-                                isAnimationActive={true}
-                              />
-                              <Line
-                                type="monotone"
-                                dataKey={supporterKey}
-                                stroke="#3b82f6"
-                                strokeWidth={3.5}
-                                dot={{ r: 4, fill: '#3b82f6', stroke: 'var(--card-bg)', strokeWidth: 3 }}
-                                activeDot={{ r: 8, fill: '#3b82f6', stroke: 'var(--card-bg)', strokeWidth: 3 }}
-                                name="supporter"
-                                connectNulls
-                                isAnimationActive={true}
-                              />
-                              {dealerLineAvg != null && (
-                                <ReferenceLine
-                                  y={dealerLineAvg}
-                                  stroke="#dc3545"
-                                  strokeOpacity={0.45}
-                                  strokeDasharray="6 5"
-                                  strokeWidth={1.5}
-                                  label={({ viewBox }: any) => {
-                                    const isHover = hoveredAvgLine === 'dealer';
-                                    const x2 = viewBox.x + viewBox.width;
-                                    const text = `딜러 평균 ${Math.round(dealerLineAvg).toLocaleString()}${suffix}`;
-                                    return (
-                                      <g>
-                                        <line
-                                          x1={viewBox.x} x2={x2} y1={viewBox.y} y2={viewBox.y}
-                                          stroke="transparent" strokeWidth={16}
-                                          style={{ pointerEvents: 'stroke', cursor: 'default' }}
-                                          onMouseEnter={() => setHoveredAvgLine('dealer')}
-                                          onMouseLeave={() => setHoveredAvgLine(null)}
-                                        />
-                                        {isHover && (
-                                          <g pointerEvents="none">
-                                            <rect x={x2 - 145} y={viewBox.y - 30} width={138} height={22} rx={5} fill="var(--card-bg)" stroke="#dc3545" strokeWidth={1.5} />
-                                            <text x={x2 - 12} y={viewBox.y - 15} textAnchor="end" fill="#dc3545" fontSize={12} fontWeight={800}>{text}</text>
-                                          </g>
-                                        )}
-                                      </g>
-                                    );
-                                  }}
-                                />
-                              )}
-                              {supporterLineAvg != null && (
-                                <ReferenceLine
-                                  y={supporterLineAvg}
-                                  stroke="#3b82f6"
-                                  strokeOpacity={0.45}
-                                  strokeDasharray="6 5"
-                                  strokeWidth={1.5}
-                                  label={({ viewBox }: any) => {
-                                    const isHover = hoveredAvgLine === 'supporter';
-                                    const x2 = viewBox.x + viewBox.width;
-                                    const text = `서포터 평균 ${Math.round(supporterLineAvg).toLocaleString()}${suffix}`;
-                                    return (
-                                      <g>
-                                        <line
-                                          x1={viewBox.x} x2={x2} y1={viewBox.y} y2={viewBox.y}
-                                          stroke="transparent" strokeWidth={16}
-                                          style={{ pointerEvents: 'stroke', cursor: 'default' }}
-                                          onMouseEnter={() => setHoveredAvgLine('supporter')}
-                                          onMouseLeave={() => setHoveredAvgLine(null)}
-                                        />
-                                        {isHover && (
-                                          <g pointerEvents="none">
-                                            <rect x={x2 - 155} y={viewBox.y - 30} width={148} height={22} rx={5} fill="var(--card-bg)" stroke="#3b82f6" strokeWidth={1.5} />
-                                            <text x={x2 - 12} y={viewBox.y - 15} textAnchor="end" fill="#3b82f6" fontSize={12} fontWeight={800}>{text}</text>
-                                          </g>
-                                        )}
-                                      </g>
-                                    );
-                                  }}
-                                />
-                              )}
-                            </ComposedChart>
-                          </ResponsiveContainer>
-                        </>
-                      )}
-                    </div>
-
-                    {/* 직업별 통계 */}
-                    {!chartLoading && (
-                      <div className={styles.classStatsBlock}>
-                        <div className={styles.classStatsHeader}>
-                          <h3 className={styles.classStatsTitle}>직업별 통계</h3>
-                        </div>
-                        <div className={styles.classTable}>
-                          <div className={styles.classTableHeader}>
-                            <span className={styles.colRank}>#</span>
-                            <span className={styles.colClass}>직업</span>
-                            <span className={styles.colRole}>구분</span>
-                            <span className={styles.colCount}>인원</span>
-                            <span className={styles.colPower}>평균 전투력</span>
-                            <span className={styles.colLevel}>평균 레벨</span>
-                          </div>
-                          <div className={styles.classTableBody}>
-                            {displayClassStats.map((c, i) => {
-                              const maxCount = Math.max(...displayClassStats.map(s => s.count), 1);
-                              const widthPct = (c.count / maxCount) * 100;
-                              const isSup = c.role === 'supporter';
-                              return (
-                                <div key={c.className} className={`${styles.classRow} ${i < 3 ? styles.classRowTop : ''}`}>
-                                  <span className={`${styles.colRank} ${i < 3 ? styles.rankTop : ''}`}>{i + 1}</span>
-                                  <span className={styles.colClass}>
-                                    <span className={`${styles.classDot} ${isSup ? styles.supporterBg : styles.dealerBg}`} />
-                                    {c.className}
-                                  </span>
-                                  <span className={styles.colRole}>
-                                    <span className={`${styles.roleTag} ${isSup ? styles.roleSupporter : styles.roleDealer}`}>
-                                      {isSup ? '서포터' : '딜러'}
-                                    </span>
-                                  </span>
-                                  <span className={styles.colCount}>
-                                    <span className={styles.countNumber}>{c.count}</span>
-                                    <span className={styles.countBar}>
-                                      <span
-                                        className={`${styles.countBarFill} ${isSup ? styles.supporterBg : styles.dealerBg}`}
-                                        style={{ width: `${widthPct}%` }}
-                                      />
-                                    </span>
-                                  </span>
-                                  <span className={styles.colPower}>{c.avgPower.toLocaleString()}<span className={styles.colUnit}>점</span></span>
-                                  <span className={styles.colLevel}>{c.avgLevel.toFixed(2)}</span>
-                                </div>
-                              );
-                            })}
-                            {displayClassStats.length === 0 && (
-                              <div className={styles.classEmpty}>데이터가 쌓이면 직업별 평균이 표시됩니다</div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-
-            </div>{/* contentOrder 닫기 */}
 
           </Col>
         </Row>

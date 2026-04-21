@@ -1,0 +1,1870 @@
+/* ==========================================================================
+   홍염의 군주 · 칭호 통계 페이지
+   ========================================================================== */
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 3rem;
+}
+
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ==========================================================================
+   히어로 · EvilEye
+   ========================================================================== */
+.eyeHero {
+  position: relative;
+  height: clamp(320px, 38vw, 480px);
+  width: 100%;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 60%, #1a0806 0%, #0a0402 70%, #000 100%);
+  isolation: isolate;
+}
+
+.eyeHero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 25%),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 0%, transparent 30%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.eyeCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.eyeFallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(230, 100, 40, 0.45) 0%, transparent 40%),
+    #0a0402;
+  z-index: 1;
+}
+
+.eyeTextOverlay {
+  position: absolute;
+  bottom: clamp(24px, 6vw, 56px);
+  left: 0;
+  right: 0;
+  text-align: center;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.eyeTitle {
+  font-family: 'Noto Serif KR', 'Noto Sans KR', serif;
+  font-size: clamp(1.8rem, 5vw, 3.4rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  margin: 0;
+  color: #f0b080;
+  text-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.9),
+    0 0 24px rgba(230, 100, 40, 0.55),
+    0 0 44px rgba(230, 100, 40, 0.3);
+}
+
+/* 인라인 레이드 라벨: [로고][이름] 한 덩어리 */
+.raidTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1em;
+  vertical-align: -0.35em;
+  white-space: nowrap;
+}
+
+.raidTagLogo {
+  display: inline-block;
+  width: 1.65em;
+  height: 1.65em;
+  object-fit: contain;
+  margin-top: -0.3em;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+.raidTagName {
+  font-weight: 800;
+  color: #b35d1a;
+}
+
+.raidTagNameIce {
+  color: #3a73a6;
+}
+
+.eyeSubtitle {
+  margin-top: 0.8rem;
+  font-size: clamp(0.75rem, 1.2vw, 0.92rem);
+  font-weight: 700;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  color: #a87050;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+/* 히어로 하단 그라데이션 - 페이지 본문과 자연 연결 */
+.eyeHero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, transparent 0%, var(--card-bg) 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   컴팩트 탭 버튼 (중앙 정렬, 줄 꽉 채우지 않음)
+   ========================================================================== */
+.tabBar {
+  display: flex;
+  justify-content: center;
+  margin: -1rem auto 2rem;
+  position: relative;
+  z-index: 4;
+}
+
+.tabPill {
+  display: inline-flex;
+  gap: 4px;
+  padding: 5px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  box-shadow:
+    0 10px 30px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 180, 100, 0.06);
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 1.25rem;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+
+.tabBtn:hover:not(:disabled):not(.tabBtnActive) {
+  color: var(--text-primary);
+  background: rgba(193, 100, 32, 0.06);
+}
+
+.tabBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.tabBtnActive {
+  color: #fff;
+  background: linear-gradient(135deg, #c65a1a 0%, #7a3408 100%);
+  box-shadow:
+    0 3px 10px rgba(180, 70, 10, 0.4),
+    inset 0 1px 0 rgba(255, 220, 180, 0.25);
+}
+
+.tabBtnIce.tabBtnActive {
+  background: linear-gradient(135deg, #4e8fb8 0%, #2a5782 100%);
+  box-shadow:
+    0 3px 10px rgba(40, 80, 130, 0.4),
+    inset 0 1px 0 rgba(200, 220, 255, 0.2);
+}
+
+.tabIcon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.tabLock {
+  margin-left: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  background: var(--card-body-bg-blue);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+}
+
+/* ==========================================================================
+   섹션 제목 / 공통 요소
+   ========================================================================== */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sectionOrnament {
+  display: inline-block;
+  width: 24px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #c16420 50%, transparent 100%);
+}
+
+.sectionKicker {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #c16420;
+}
+
+.sectionTitle {
+  font-size: clamp(1.2rem, 2.3vw, 1.5rem);
+  font-weight: 800;
+  margin: 0.2rem 0 0;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.sectionSub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+
+/* ==========================================================================
+   명예의 전당
+   ========================================================================== */
+.hofSection {
+  margin-bottom: 2.5rem;
+}
+
+.hofHeader {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.hofKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: #c16420;
+  margin-bottom: 0.6rem;
+}
+
+.hofKicker::before,
+.hofKicker::after {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c16420, transparent);
+}
+
+.hofTitle {
+  font-family: 'Noto Serif KR', 'Noto Sans KR', serif;
+  font-size: clamp(1.4rem, 2.8vw, 1.9rem);
+  font-weight: 900;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.hofSubtitle {
+  margin-top: 0.4rem;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* 공대 네비게이터 */
+.hofNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  margin-bottom: 1.3rem;
+}
+
+.hofNavBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.hofNavBtn:hover:not(:disabled) {
+  border-color: #c16420;
+  color: #c16420;
+  transform: translateY(-1px);
+}
+
+.hofNavBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.hofNavLabel {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 140px;
+}
+
+.hofPartyTag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  color: #c16420;
+  text-transform: uppercase;
+}
+
+.hofPartyName {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.hofDots {
+  display: inline-flex;
+  gap: 6px;
+  margin-top: 0.35rem;
+}
+
+.hofDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-color);
+  transition: all 0.15s;
+}
+
+.hofDotActive {
+  background: #c16420;
+  box-shadow: 0 0 8px rgba(193, 100, 32, 0.5);
+}
+
+/* 공대(행) 컨테이너 */
+.partyRow {
+  position: relative;
+  padding: 1.5rem 1.25rem 1.3rem;
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(193, 100, 32, 0.12) 0%, transparent 60%),
+    linear-gradient(180deg, var(--card-bg) 0%, var(--card-body-bg-blue) 100%);
+  border: 1px solid rgba(193, 100, 32, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 180, 0.06),
+    0 12px 30px -12px rgba(193, 100, 32, 0.18);
+}
+
+/* 1공대는 금빛 강조 */
+.partyRowGold {
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(232, 180, 80, 0.2) 0%, transparent 60%),
+    linear-gradient(180deg, var(--card-bg) 0%, var(--card-body-bg-blue) 100%);
+  border-color: rgba(232, 180, 80, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 140, 0.12),
+    0 14px 36px -12px rgba(232, 180, 80, 0.28);
+}
+
+.partyRowGold::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #e8b450 50%, transparent 100%);
+}
+
+.partyRow:not(.partyRowGold)::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #c16420 50%, transparent 100%);
+}
+
+/* 공대 이름 배너 — 행 상단 가운데 크게 */
+.partyNameBanner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin: -0.5rem 0 1.1rem;
+}
+
+.partyNameBannerTag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  color: #c16420;
+  text-transform: uppercase;
+  padding: 0.25rem 0.9rem;
+  border: 1px solid rgba(193, 100, 32, 0.3);
+  background: rgba(193, 100, 32, 0.06);
+  border-radius: 999px;
+}
+
+.partyNameBannerGold .partyNameBannerTag {
+  color: #a67b1c;
+  border-color: rgba(232, 180, 80, 0.45);
+  background: rgba(232, 180, 80, 0.1);
+}
+
+.partyNameBannerText {
+  font-family: 'Noto Serif KR', 'Noto Sans KR', serif;
+  font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+  font-weight: 900;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+
+.partyNameBannerGold .partyNameBannerText {
+  background: linear-gradient(180deg, #f4cf80 0%, #a67b1c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+}
+
+/* 8개 카드 그리드 */
+.partyGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.fameCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.85rem 0.55rem 0.7rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.fameCard:hover {
+  transform: translateY(-3px);
+  border-color: rgba(193, 100, 32, 0.4);
+  box-shadow: 0 10px 24px -8px rgba(193, 100, 32, 0.3);
+}
+
+.fameRank {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(4px);
+  z-index: 2;
+}
+
+.fameRankMedal1 { background: linear-gradient(135deg, #f4c040, #c28a10); color: #2a1800; }
+.fameRankMedal2 { background: linear-gradient(135deg, #d0d5dc, #8a9099); color: #1a1e24; }
+.fameRankMedal3 { background: linear-gradient(135deg, #e08050, #8f4018); color: #fff; }
+
+.fameRole {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.fameRoleDealer { background: #dc3545; box-shadow: 0 0 6px rgba(220, 53, 69, 0.6); }
+.fameRoleSupporter { background: #3b82f6; box-shadow: 0 0 6px rgba(59, 130, 246, 0.6); }
+
+.fameImageWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(193, 100, 32, 0.08) 0%, rgba(0, 0, 0, 0.15) 100%);
+}
+
+.fameImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fameImagePlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.fameImageClassName {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.fameTitleLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #b35d1a;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  padding: 3px 8px 3px 6px;
+  border-radius: 999px;
+  background: rgba(193, 100, 32, 0.1);
+  border: 1px solid rgba(193, 100, 32, 0.22);
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.fameTitleLogo {
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+}
+
+.fameName {
+  font-family: 'Noto Serif KR', 'Noto Sans KR', serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fameMetaRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.famePower {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.1rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #c16420;
+  font-variant-numeric: tabular-nums;
+}
+
+.famePowerUnit {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.fameLevel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 빈 슬롯 */
+.fameCardEmpty {
+  border-style: dashed;
+  opacity: 0.4;
+  background: transparent;
+}
+
+.fameCardEmpty:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border-color);
+}
+
+.fameEmptyIcon {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.fameEmptyText {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* 빈 상태 (아직 등록 없음) */
+.hofEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  gap: 0.6rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 16px;
+  background: var(--card-body-bg-blue);
+}
+
+.hofEmptyTitle {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.hofEmptyDesc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   하단 섹션 공통 (카드 리프레시)
+   ========================================================================== */
+.lowerSections {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  padding-top: 0.5rem;
+}
+
+.cardBlock {
+  padding: 1.75rem 2rem 1.85rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cardBlock::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #c16420 0%, transparent 100%);
+}
+
+/* ==========================================================================
+   차트 섹션
+   ========================================================================== */
+.chartToolbar {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.chartToolbarBtn {
+  padding: 5px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.chartToolbarBtn:hover {
+  color: var(--text-primary);
+}
+
+.chartToolbarActive {
+  background: linear-gradient(135deg, #c16420, #8f3f0a) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 5px rgba(180, 70, 10, 0.3);
+}
+
+.legendRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 0 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legendSwatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.chartContainer {
+  min-height: 420px;
+}
+
+.chartPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: 12px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 12px,
+      rgba(193, 100, 32, 0.035) 12px,
+      rgba(193, 100, 32, 0.035) 24px
+    );
+}
+
+.lockedChart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  gap: 0.6rem;
+  padding: 2rem;
+  text-align: center;
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
+  background: var(--card-body-bg-blue);
+}
+
+.lockedTitle {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.lockedDesc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 340px;
+  line-height: 1.5;
+}
+
+/* 툴팁 */
+.tooltip {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  box-shadow: var(--shadow-md);
+  min-width: 150px;
+}
+
+.tooltipDate {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.tooltipRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
+}
+
+.tooltipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tooltipLabel {
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 40px;
+}
+
+.tooltipValue {
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   통계 요약 — 가로 리본 형태
+   ========================================================================== */
+.summaryRibbon {
+  display: grid;
+  grid-template-columns: 1.5fr 1px 1fr 1px 1fr;
+  align-items: stretch;
+  gap: 0;
+  padding: 1.6rem 2rem;
+  background:
+    linear-gradient(135deg, rgba(193, 100, 32, 0.05) 0%, transparent 60%),
+    var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.summaryRibbon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #c16420 50%, transparent 100%);
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 1.5rem;
+}
+
+.summaryItem:first-child {
+  padding-left: 0;
+}
+
+.summaryItem:last-child {
+  padding-right: 0;
+}
+
+.summaryDivider {
+  width: 1px;
+  height: auto;
+  background: linear-gradient(180deg, transparent, var(--border-color), transparent);
+}
+
+.summaryLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.summaryDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.summaryValue {
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryUnit {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-left: 0.25rem;
+}
+
+.summaryNote {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.summaryTotal .summaryValue {
+  background: linear-gradient(180deg, #f0b080 0%, #a84d1a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ==========================================================================
+   직업별 통계 — 카드형 리스트
+   ========================================================================== */
+.classList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.classCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.classCard:hover {
+  transform: translateY(-1px);
+  border-color: rgba(193, 100, 32, 0.3);
+}
+
+.classCardTop {
+  border-color: rgba(193, 100, 32, 0.45);
+  background:
+    linear-gradient(135deg, rgba(193, 100, 32, 0.1) 0%, transparent 55%),
+    var(--card-body-bg-blue);
+}
+
+.classCardRank {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.classCardRank1 { background: linear-gradient(135deg, #f4c040, #c28a10); color: #2a1800; border-color: #c28a10; }
+.classCardRank2 { background: linear-gradient(135deg, #d0d5dc, #8a9099); color: #1a1e24; border-color: #8a9099; }
+.classCardRank3 { background: linear-gradient(135deg, #e08050, #8f4018); color: #fff; border-color: #8f4018; }
+
+.classCardBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.classCardTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.classCardName {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.classCardRoleTag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.classCardStatRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.classCardStat {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.classCardStatNum {
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.classBar {
+  margin-top: 0.35rem;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+:global([data-theme="dark"]) .classBar {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.classBarFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.dealerBg { background: #dc3545; }
+.supporterBg { background: #3b82f6; }
+
+.roleDealerBg {
+  background: rgba(220, 53, 69, 0.14);
+  color: #dc3545;
+}
+
+.roleSupporterBg {
+  background: rgba(59, 130, 246, 0.14);
+  color: #3b82f6;
+}
+
+.classEmpty {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+}
+
+/* ==========================================================================
+   검색 / 등록
+   ========================================================================== */
+.searchFrame {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.searchLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.searchInputGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  background: var(--card-body-bg-blue) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  border-radius: 12px !important;
+  font-size: 0.95rem !important;
+  padding: 0 1.1rem !important;
+  font-weight: 600;
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted) !important;
+  font-weight: 500;
+}
+
+.searchInput:focus {
+  border-color: #c16420 !important;
+  box-shadow: 0 0 0 2px rgba(193, 100, 32, 0.18) !important;
+}
+
+.searchButton {
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 1.6rem;
+  background: linear-gradient(135deg, #c65a1a, #7a3408);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  box-shadow: 0 3px 8px rgba(180, 70, 10, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.searchButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(180, 70, 10, 0.4);
+}
+
+.searchButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.searchHint {
+  padding: 0.7rem 0.9rem;
+  background: rgba(193, 100, 32, 0.07);
+  border-left: 3px solid #c16420;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b35d1a;
+  line-height: 1.55;
+}
+
+.searchError {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #dc3545;
+}
+
+/* 프로필 카드 */
+.profileCard {
+  padding: 1rem;
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  min-height: 260px;
+}
+
+.profilePlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-muted);
+  gap: 0.4rem;
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 10px,
+      rgba(193, 100, 32, 0.03) 10px,
+      rgba(193, 100, 32, 0.03) 20px
+    );
+}
+
+.placeholderText {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.placeholderSub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+.profileTop {
+  display: flex;
+  gap: 1rem;
+}
+
+.profileImageWrap {
+  width: 130px;
+  min-height: 195px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--card-header-bg);
+  border: 2px solid var(--border-color);
+}
+
+.profileImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profileInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.profileName {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.1rem;
+}
+
+.profileRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.profileLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 58px;
+  flex-shrink: 0;
+}
+
+.profileValue {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.titleMatchFire {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #b35d1a;
+}
+
+.titleMatchIce {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #3a73a6;
+}
+
+.titleNoMatch {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.profileRole {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.roleToggle {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.roleToggleBtn {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.roleToggleDealerActive {
+  background: rgba(220, 53, 69, 0.14);
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.roleToggleSupporterActive {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.saveButton {
+  width: 100%;
+  padding: 0.7rem;
+  margin-top: 0.2rem;
+  background: linear-gradient(135deg, #c65a1a, #7a3408);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(180, 70, 10, 0.3);
+}
+
+.saveButton:hover:not(:disabled) {
+  box-shadow: 0 4px 10px rgba(180, 70, 10, 0.4);
+}
+
+.saveButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.saveMessage {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  margin-top: 0.4rem;
+}
+
+.saveSuccess {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.saveError {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.noTitleMessage {
+  padding: 0.55rem 0.75rem;
+  background: rgba(193, 100, 32, 0.08);
+  border: 1px solid rgba(193, 100, 32, 0.2);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+}
+
+/* ==========================================================================
+   반응형
+   ========================================================================== */
+@media (max-width: 1200px) {
+  .partyGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.7rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .cardBlock { padding: 1.4rem 1.4rem 1.5rem; }
+
+  .summaryRibbon {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    padding: 1.2rem 1.4rem;
+    gap: 1rem;
+  }
+  .summaryItem { padding: 0; border-top: 1px dashed var(--border-color); padding-top: 0.9rem; }
+  .summaryItem:first-child { border-top: none; padding-top: 0; }
+  .summaryDivider { display: none; }
+
+  .searchFrame { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .partyGrid { grid-template-columns: repeat(4, 1fr); gap: 0.55rem; }
+  .fameCard { padding: 0.6rem 0.4rem 0.55rem; }
+  .fameName { font-size: 0.76rem; }
+  .famePower { font-size: 0.72rem; }
+  .fameRank { font-size: 0.62rem; min-width: 20px; height: 20px; }
+
+  .tabBtn { padding: 0.5rem 0.95rem; font-size: 0.85rem; }
+  .tabIcon { width: 20px; height: 20px; }
+
+  .partyRow { padding: 1.3rem 0.85rem 1rem; }
+
+  .classList { grid-template-columns: 1fr; }
+
+  .chartContainer { min-height: 340px; }
+  .chartPlaceholder, .lockedChart { min-height: 340px; }
+
+  .cardBlock { padding: 1.1rem 1rem 1.2rem; border-radius: 14px; }
+
+  .profileTop { gap: 0.65rem; }
+  .profileImageWrap { width: 110px; min-height: 160px; }
+}
+
+@media (max-width: 480px) {
+  .partyGrid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+
+  .hofNav { gap: 0.5rem; }
+  .hofNavLabel { min-width: 100px; }
+
+  .summaryValue { font-size: 1.4rem; }
+
+  .profileTop { flex-direction: column; }
+  .profileImageWrap { width: 100%; min-height: 200px; }
+}
+
+/* ==========================================================================
+   공대 등록 폼
+   ========================================================================== */
+.partyLocked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 180px;
+  padding: 2rem;
+  text-align: center;
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  background: var(--card-body-bg-blue);
+}
+
+.partyNameField {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem;
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.partyNameLabel {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c16420;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.partyNameInput {
+  flex: 1;
+  min-width: 0;
+  height: 40px !important;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  padding: 0 0.9rem !important;
+}
+
+.partyNameInput:focus {
+  border-color: #c16420 !important;
+  box-shadow: 0 0 0 2px rgba(193, 100, 32, 0.18) !important;
+}
+
+/* 8개 슬롯 그리드 */
+.slotGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.7rem;
+  margin-bottom: 1.1rem;
+}
+
+.slot {
+  padding: 0.75rem 0.85rem;
+  background: var(--card-body-bg-blue);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.slotOk {
+  border-color: rgba(22, 163, 74, 0.45);
+  background:
+    linear-gradient(135deg, rgba(22, 163, 74, 0.05) 0%, transparent 55%),
+    var(--card-body-bg-blue);
+}
+
+.slotBad {
+  border-color: rgba(220, 53, 69, 0.45);
+  background:
+    linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, transparent 55%),
+    var(--card-body-bg-blue);
+}
+
+.slotHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.slotNumber {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c65a1a, #7a3408);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  box-shadow: 0 2px 5px rgba(180, 70, 10, 0.3);
+}
+
+.slotOk .slotNumber {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+  box-shadow: 0 2px 5px rgba(22, 163, 74, 0.3);
+}
+
+.slotInput {
+  flex: 1;
+  min-width: 0;
+  height: 36px !important;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px !important;
+  font-size: 0.88rem !important;
+  padding: 0 0.75rem !important;
+}
+
+.slotInput:focus {
+  border-color: #c16420 !important;
+  box-shadow: 0 0 0 2px rgba(193, 100, 32, 0.15) !important;
+}
+
+.slotInput:disabled {
+  opacity: 0.7;
+}
+
+.slotSearchBtn {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 0.85rem;
+  background: linear-gradient(135deg, #c65a1a, #7a3408);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(180, 70, 10, 0.28);
+}
+
+.slotSearchBtn:hover:not(:disabled) {
+  box-shadow: 0 3px 8px rgba(180, 70, 10, 0.4);
+}
+
+.slotSearchBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.slotClearBtn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-muted);
+  border-radius: 8px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.slotClearBtn:hover:not(:disabled) {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.slotErrorText {
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(220, 53, 69, 0.08);
+  border-left: 3px solid #dc3545;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #dc3545;
+}
+
+.slotPreview {
+  display: flex;
+  gap: 0.7rem;
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px dashed var(--border-color);
+}
+
+.slotImageWrap {
+  width: 70px;
+  height: 88px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.slotImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.slotImageFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0.3rem;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.slotInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.slotInfoTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.slotCharName {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slotClass {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.slotStats {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-top: 0.15rem;
+}
+
+.slotStatPower {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.1rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #c16420;
+  font-variant-numeric: tabular-nums;
+}
+
+.slotStatUnit {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.slotStatLevel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.slotRoleTag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.slotTitleCheck {
+  margin-top: 0.2rem;
+}
+
+.slotTitleOk {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+  border: 1px solid rgba(22, 163, 74, 0.3);
+  border-radius: 999px;
+}
+
+.slotTitleBad {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #dc3545;
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  border-radius: 999px;
+}
+
+/* 푸터 */
+.partyFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.partyFooterInfo {
+  flex: 1;
+  min-width: 220px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.partyFooterReady {
+  color: #16a34a;
+  font-weight: 800;
+}
+
+.partyFooterError {
+  color: #dc3545;
+  font-weight: 800;
+}
+
+.partySubmitBtn {
+  flex-shrink: 0;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #c65a1a 0%, #7a3408 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  box-shadow:
+    0 4px 12px rgba(180, 70, 10, 0.35),
+    inset 0 1px 0 rgba(255, 220, 180, 0.25);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.partySubmitBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 16px rgba(180, 70, 10, 0.45),
+    inset 0 1px 0 rgba(255, 220, 180, 0.3);
+}
+
+.partySubmitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 반응형 */
+@media (max-width: 1024px) {
+  .slotGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .slotInfoTop { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+  .partyFooter { flex-direction: column; align-items: stretch; }
+  .partySubmitBtn { width: 100%; }
+  .partyNameField { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+}
