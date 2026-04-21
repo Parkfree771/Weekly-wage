@@ -40,7 +40,7 @@ const RAIDS: Record<RaidKey, Raid> = {
     titleName: '홍염의 군주',
     subtitle: 'Lord of Crimson Flame',
     image: '/extreme-fire.webp',
-    openAt: new Date(2026, 3, 22, 10, 0, 0),
+    openAt: new Date(2026, 3, 21, 0, 0, 0), // 페이지 공개 (실제 레이드 오픈: 2026-04-22 10:00)
     eyeColor: '#FF6F37',
   },
   ice: {
