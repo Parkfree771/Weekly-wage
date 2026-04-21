@@ -51,19 +51,19 @@ export default function UpdatePopup() {
         {/* 컨텐츠 */}
         <div className={styles.previewArea}>
           <div className={styles.featureList}>
-            <div className={styles.featureItem}>
+            <Link href="/title-stats" className={styles.featureItem} onClick={handleClose}>
               <div className={styles.featureText}>
-                <strong>칭호 전투력, 직업 통계</strong>
-                <span>클리어 유저 전투력·레벨 실시간 통계</span>
+                <strong>명예의 전당 · 전투력 통계</strong>
+                <span>칭호 획득자 실시간 통계 · 선봉 10공대 랭킹</span>
               </div>
               <div className={styles.featureIcons}>
                 <Image src="/extreme-fire.webp" alt="홍염의 군주" width={34} height={34} />
                 <Image src="/extreme-ice.webp" alt="혹한의 군주" width={34} height={34} />
               </div>
-            </div>
-            <div className={styles.featureItem}>
+            </Link>
+            <Link href="/extreme" className={styles.featureItem} onClick={handleClose}>
               <div className={styles.featureText}>
-                <strong>보상 정리</strong>
+                <strong>익스트림 레이드 보상 정리</strong>
                 <span>난이도별 골드·토큰·최초 클리어 보상</span>
               </div>
               <div className={styles.featureIcons}>
@@ -71,11 +71,8 @@ export default function UpdatePopup() {
                 <Image src="/legendary-cardpack.webp" alt="전설카드" width={22} height={22} />
                 <Image src="/xhzms.webp" alt="토큰" width={22} height={22} />
               </div>
-            </div>
+            </Link>
           </div>
-          <Link href="/extreme" className={styles.ctaLink} onClick={handleClose}>
-            익스트림 페이지 바로가기 →
-          </Link>
         </div>
 
         {/* 하단 닫기 */}
