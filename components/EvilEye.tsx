@@ -136,7 +136,7 @@ void main() {
   float innerEye = distanceMask - 0.1 * 2.0;
   innerEye *= noiseB.r * 2.0;
 
-  vec2 pupilOffset = uMouse * uPupilFollow * 0.12;
+  vec2 pupilOffset = uMouse * uPupilFollow * 0.22;
   vec2 pupilUv = uv - pupilOffset;
   float pupil = 1.0 - length(pupilUv * vec2(9.0, 2.3));
   pupil *= uPupilSize;
@@ -265,8 +265,8 @@ export default function EvilEye({
 
     function update(time: number) {
       animationFrameId = requestAnimationFrame(update);
-      mouse.x += (mouse.tx - mouse.x) * 0.05;
-      mouse.y += (mouse.ty - mouse.y) * 0.05;
+      mouse.x += (mouse.tx - mouse.x) * 0.18;
+      mouse.y += (mouse.ty - mouse.y) * 0.18;
       program.uniforms.uMouse.value = [mouse.x, mouse.y];
       program.uniforms.uTime.value = time * 0.001;
       renderer.render({ scene: mesh });

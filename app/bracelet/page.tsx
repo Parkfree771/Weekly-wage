@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import { Container, Row, Col, Form } from 'react-bootstrap';
 import Image from 'next/image';
-import ExtremePromoBanner from '@/components/ads/ExtremePromoBanner';
 import {
   rollInitialEffects,
   rerollEffects,
@@ -344,7 +343,6 @@ export default function BraceletPage() {
 
     return (
       <>
-      <ExtremePromoBanner />
       <div className={styles.comparingContainer}>
         <div className={styles.braceletIconWrapper}>
           <Image src="/vkfwl.webp" alt="팔찌" width={80} height={80} />

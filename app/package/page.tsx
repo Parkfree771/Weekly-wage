@@ -9,7 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { PackagePost, PackageSortBy } from '@/types/package';
 import { calculatePostEfficiency } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
-import ExtremePromoBanner from '@/components/ads/ExtremePromoBanner';
 import styles from './package.module.css';
 
 const PAGE_SIZE = 16;
@@ -140,7 +139,6 @@ export default function PackageGalleryPage() {
                   />
                   {index === 1 && posts.length > 2 && (
                     <div className="d-block d-md-none" style={{ gridColumn: '1 / -1' }}>
-                      <ExtremePromoBanner />
                       <AdBanner slot="8616653628" />
                     </div>
                   )}

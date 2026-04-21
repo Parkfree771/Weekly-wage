@@ -4,7 +4,6 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ConsentModal from '@/components/auth/ConsentModal';
 import AdLayout from '@/components/ads/AdLayout';
-import UpdatePopup from '@/components/UpdatePopup';
 
 import ConsoleFilter from '@/components/ConsoleFilter';
 import type { Metadata, Viewport } from "next";
@@ -116,7 +115,6 @@ export default function RootLayout({
             </AdLayout>
             <Footer />
             <ConsentModal />
-            <UpdatePopup />
           </AuthProvider>
         </ThemeProvider>
 

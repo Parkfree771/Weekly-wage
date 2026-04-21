@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import styles from './cathedral.module.css';
-import ExtremePromoBanner from '@/components/ads/ExtremePromoBanner';
 
 // 영웅 젬 구성 요소
 const GEM_COMPONENTS = [
@@ -751,7 +750,6 @@ export default function CathedralPage() {
             })()}
 
             {/* 모바일 광고 */}
-            <ExtremePromoBanner />
 
             {/* 은총의 파편 상점 */}
             <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>

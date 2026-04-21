@@ -2,7 +2,6 @@
 
 import dynamic from 'next/dynamic';
 import { Container, Row, Col } from 'react-bootstrap';
-import ExtremePromoBanner from '@/components/ads/ExtremePromoBanner';
 
 const HellRewardCalculator = dynamic(
   () => import('@/components/hell-reward/HellRewardCalculator'),
@@ -32,7 +31,6 @@ export default function HellRewardPage() {
               </p>
             </div>
 
-            <ExtremePromoBanner />
             <HellRewardCalculator />
           </Col>
         </Row>
