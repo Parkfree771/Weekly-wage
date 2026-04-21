@@ -77,22 +77,47 @@ export interface ClassStat {
 }
 
 // ============================================================
-// 캐시 (차트/요약/직업별만 3분 TTL, HOF 는 항상 fresh)
+// Phase-aware 캐시
+// - 공대 페이즈 (HOF < 80): 실시간 중요, 짧은 TTL 또는 캐시 X
+// - 개인 페이즈 (HOF >= 80): 변동 적음, 긴 TTL로 egress 절약
 // ============================================================
-const CACHE_TTL = 3 * 60 * 1000;
+const HOF_FULL_THRESHOLD = 80;
+
+// 공대 페이즈 TTL
+const TTL_PARTY_STATS = 60 * 1000;       // 차트/요약/직업별 1분
+const TTL_PARTY_HOF = 0;                 // HOF 캐시 X (실시간)
+const TTL_PARTY_LOCKS = 0;               // rosterLocks 캐시 X
+
+// 개인 페이즈 TTL (공대 등록 끝난 후 — 변동 적음, 길게 가져가도 OK)
+const TTL_INDIVIDUAL_STATS = 15 * 60 * 1000;  // 15분
+const TTL_INDIVIDUAL_HOF = 15 * 60 * 1000;    // 15분 (HOF 고정)
+const TTL_INDIVIDUAL_LOCKS = 10 * 60 * 1000;  // 10분
+
+// 페이즈 판정용: 마지막 HOF 조회 길이
+let _lastHofCount = 0;
+function isIndividualPhase(): boolean {
+  return _lastHofCount >= HOF_FULL_THRESHOLD;
+}
+
 const chartCache = new Map<string, { data: DailyChartData[]; ts: number }>();
 const summaryCache = new Map<string, { data: ExtremeSummary; ts: number }>();
 const classStatsCache = new Map<string, { data: ClassStat[]; ts: number }>();
+const hofCache = new Map<string, { data: HallOfFameEntry[]; ts: number }>();
+const locksCache = new Map<string, { data: Map<string, string | null>; ts: number }>();
 
 function invalidateCache(title?: string) {
   if (title) {
     chartCache.delete(title);
     summaryCache.delete(title);
     classStatsCache.delete(title);
+    hofCache.delete(title);
+    locksCache.delete(title);
   } else {
     chartCache.clear();
     summaryCache.clear();
     classStatsCache.clear();
+    hofCache.clear();
+    locksCache.clear();
   }
 }
 
@@ -190,8 +215,9 @@ export async function registerExtremeIndividual(
 // 차트 데이터 (일별 × 역할)
 // ============================================================
 export async function getChartData(title: string): Promise<DailyChartData[]> {
+  const ttl = isIndividualPhase() ? TTL_INDIVIDUAL_STATS : TTL_PARTY_STATS;
   const cached = chartCache.get(title);
-  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+  if (cached && Date.now() - cached.ts < ttl) {
     return cached.data;
   }
 
@@ -248,8 +274,9 @@ export async function getChartData(title: string): Promise<DailyChartData[]> {
 // 요약 통계 (class_stats 합산)
 // ============================================================
 export async function getSummary(title: string): Promise<ExtremeSummary> {
+  const ttl = isIndividualPhase() ? TTL_INDIVIDUAL_STATS : TTL_PARTY_STATS;
   const cached = summaryCache.get(title);
-  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+  if (cached && Date.now() - cached.ts < ttl) {
     return cached.data;
   }
 
@@ -303,8 +330,9 @@ export async function getSummary(title: string): Promise<ExtremeSummary> {
 // 직업별 통계
 // ============================================================
 export async function getClassStats(title: string): Promise<ClassStat[]> {
+  const ttl = isIndividualPhase() ? TTL_INDIVIDUAL_STATS : TTL_PARTY_STATS;
   const cached = classStatsCache.get(title);
-  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+  if (cached && Date.now() - cached.ts < ttl) {
     return cached.data;
   }
 
@@ -341,6 +369,15 @@ export async function getClassStats(title: string): Promise<ClassStat[]> {
 // parties JOIN clears · party_created_at ASC, member created_at ASC
 // ============================================================
 export async function getHallOfFame(title: string): Promise<HallOfFameEntry[]> {
+  // 페이즈별 TTL: 공대 페이즈는 캐시 X (실시간), 개인 페이즈는 5분
+  const ttl = isIndividualPhase() ? TTL_INDIVIDUAL_HOF : TTL_PARTY_HOF;
+  if (ttl > 0) {
+    const cached = hofCache.get(title);
+    if (cached && Date.now() - cached.ts < ttl) {
+      return cached.data;
+    }
+  }
+
   try {
     const { data, error } = await supabase
       .from('extreme_clears')
@@ -399,9 +436,58 @@ export async function getHallOfFame(title: string): Promise<HallOfFameEntry[]> {
       return a.createdAt.localeCompare(b.createdAt);
     });
 
+    // 페이즈 판정용 카운트 + 캐시
+    _lastHofCount = rows.length;
+    hofCache.set(title, { data: rows, ts: Date.now() });
     return rows;
   } catch (err) {
     console.error('Error fetching hall of fame:', err);
     return [];
+  }
+}
+
+// ============================================================
+// 원정대 잠금 목록 (검색 시점 중복 검증용, 항상 fresh)
+// character_name → party_name (null이면 개인 등록)
+// ============================================================
+export async function getRosterLocks(title: string): Promise<Map<string, string | null>> {
+  // 페이즈별 TTL: 공대 페이즈는 캐시 X, 개인 페이즈는 2분
+  const ttl = isIndividualPhase() ? TTL_INDIVIDUAL_LOCKS : TTL_PARTY_LOCKS;
+  if (ttl > 0) {
+    const cached = locksCache.get(title);
+    if (cached && Date.now() - cached.ts < ttl) {
+      return cached.data;
+    }
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('extreme_roster_locks')
+      .select('character_name, party_id, extreme_parties:party_id ( party_name )')
+      .eq('title', title);
+
+    if (error || !data) {
+      console.error('Error fetching roster locks:', error);
+      return new Map();
+    }
+
+    type Row = {
+      character_name: string;
+      party_id: string | null;
+      extreme_parties: { party_name: string } | { party_name: string }[] | null;
+    };
+
+    const map = new Map<string, string | null>();
+    for (const row of data as Row[]) {
+      const joined = Array.isArray(row.extreme_parties)
+        ? (row.extreme_parties[0] ?? null)
+        : row.extreme_parties;
+      map.set(row.character_name, joined?.party_name ?? null);
+    }
+    locksCache.set(title, { data: map, ts: Date.now() });
+    return map;
+  } catch (err) {
+    console.error('Error fetching roster locks:', err);
+    return new Map();
   }
 }

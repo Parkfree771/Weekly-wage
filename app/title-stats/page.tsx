@@ -11,7 +11,7 @@ import {
 import styles from './title-stats.module.css';
 import {
   registerExtremeParty, registerExtremeIndividual,
-  getChartData, getSummary, getClassStats, getHallOfFame,
+  getChartData, getSummary, getClassStats, getHallOfFame, getRosterLocks,
   getRole, isHybridClass,
   type DailyChartData, type ExtremeSummary, type ClassStat, type HallOfFameEntry,
   type PartyMemberInput,
@@ -56,6 +56,10 @@ const RAIDS: Record<RaidKey, Raid> = {
 const PARTY_SIZE = 8;
 const TOTAL_PARTIES = 10;
 
+// ⚠️ 테스트 전용: true 면 칭호 불일치도 등록 통과
+// 운영 직전 반드시 false 로 되돌릴 것
+const TEST_BYPASS_TITLE = false;
+
 type CharProfile = {
   name: string;
   className: string;
@@ -93,6 +97,15 @@ function formatChartDate(dateStr: string) {
 export default function TitleStatsPage() {
   const [selectedKey, setSelectedKey] = useState<RaidKey>('fire');
 
+  // 모바일 감지 (차트 margin/YAxis 조정용)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(typeof window !== 'undefined' && window.innerWidth <= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   // 차트
   const [chartMode, setChartMode] = useState<'power' | 'level'>('power');
   const [chartData, setChartData] = useState<DailyChartData[]>([]);
@@ -103,6 +116,9 @@ export default function TitleStatsPage() {
   // 명예의 전당
   const [hof, setHof] = useState<HallOfFameEntry[]>([]);
   const [partyIndex, setPartyIndex] = useState(0);
+
+  // 원정대 잠금: character_name → party_name (개인 등록이면 null)
+  const [rosterLocks, setRosterLocks] = useState<Map<string, string | null>>(new Map());
 
   // 개인 등록 (명예의 전당 80명 완료 후에만 활성화)
   const [searchName, setSearchName] = useState('');
@@ -145,16 +161,18 @@ export default function TitleStatsPage() {
 
   const loadAll = useCallback(async () => {
     setChartLoading(true);
-    const [chartRes, summaryRes, classesRes, hofRes] = await Promise.all([
+    const [chartRes, summaryRes, classesRes, hofRes, locksRes] = await Promise.all([
       getChartData(selectedRaid.titleName),
       getSummary(selectedRaid.titleName),
       getClassStats(selectedRaid.titleName),
       getHallOfFame(selectedRaid.titleName),
+      getRosterLocks(selectedRaid.titleName),
     ]);
     setChartData(chartRes);
     setSummary(summaryRes);
     setClassStats(classesRes);
     setHof(hofRes);
+    setRosterLocks(locksRes);
     setChartLoading(false);
   }, [selectedRaid.titleName]);
 
@@ -171,7 +189,7 @@ export default function TitleStatsPage() {
     setPartyIndex(0);
   }, [loadAll, isReleased, selectedKey]);
 
-  const hasMatchingTitle = profile && profile.title === selectedRaid.titleName;
+  const hasMatchingTitle = profile && (TEST_BYPASS_TITLE || profile.title === selectedRaid.titleName);
 
   const handleSearch = async () => {
     if (!searchName.trim()) return;
@@ -194,6 +212,15 @@ export default function TitleStatsPage() {
         return;
       }
 
+      const siblingNames = extractSiblingNames(data.siblings, p.CharacterName || searchName);
+      const lockedName = siblingNames.find(n => rosterLocks.has(n));
+      if (lockedName) {
+        const pname = rosterLocks.get(lockedName);
+        const where = pname ? `"${pname}" 공대` : '개인 등록';
+        setSearchError(`이미 ${where}에 등록된 원정대입니다.`);
+        return;
+      }
+
       setProfile({
         name: p.CharacterName || searchName,
         className: p.CharacterClassName || '',
@@ -202,7 +229,7 @@ export default function TitleStatsPage() {
         image: p.CharacterImage || '',
         title: parseTitleText(p.Title || ''),
         role: getRole(p.CharacterClassName || ''),
-        siblingNames: extractSiblingNames(data.siblings, p.CharacterName || searchName),
+        siblingNames,
       });
     } catch {
       setSearchError('검색 중 오류가 발생했습니다.');
@@ -289,6 +316,20 @@ export default function TitleStatsPage() {
       const title = parseTitleText(p.Title || '');
       const siblingNames = extractSiblingNames(data.siblings, p.CharacterName || raw);
 
+      // 이미 등록된 원정대인지 검증 (roster_locks 검사)
+      const lockedName = siblingNames.find(n => rosterLocks.has(n));
+      if (lockedName) {
+        const pname = rosterLocks.get(lockedName);
+        const where = pname ? `"${pname}" 공대` : '개인 등록';
+        setSlotErrors(prev => {
+          const copy = [...prev];
+          copy[index] = `이미 ${where}에 등록된 원정대입니다.`;
+          return copy;
+        });
+        setSlotSearchingIndex(null);
+        return;
+      }
+
       // 다른 슬롯과 원정대 겹침 검사
       const rosterOverlap = partySlots.some((other, i) => {
         if (!other || i === index) return false;
@@ -320,7 +361,7 @@ export default function TitleStatsPage() {
         return copy;
       });
 
-      if (title !== selectedRaid.titleName) {
+      if (!TEST_BYPASS_TITLE && title !== selectedRaid.titleName) {
         setSlotErrors(prev => {
           const copy = [...prev];
           copy[index] = `${selectedRaid.titleName} 칭호 미착용`;
@@ -374,7 +415,7 @@ export default function TitleStatsPage() {
   };
 
   // 공대 등록 가능 여부
-  const allSlotsValid = partySlots.every(s => s && s.title === selectedRaid.titleName);
+  const allSlotsValid = partySlots.every(s => s && (TEST_BYPASS_TITLE || s.title === selectedRaid.titleName));
   const noDuplicateNames = (() => {
     const names = partySlots.filter(Boolean).map(s => s!.name);
     return names.length === new Set(names).size;
@@ -449,55 +490,320 @@ export default function TitleStatsPage() {
   // 현재 공대(페이지) 슬라이스
   const partyStart = partyIndex * PARTY_SIZE;
   const partyEntries = hof.slice(partyStart, partyStart + PARTY_SIZE);
-  const totalFilledParties = Math.max(1, Math.ceil(hof.length / PARTY_SIZE));
-  const maxPartyIndex = Math.max(0, Math.min(TOTAL_PARTIES - 1, totalFilledParties - 1));
+  const maxPartyIndex = TOTAL_PARTIES - 1;
 
-  return (
-    <div className={styles.page}>
-      {/* ═══════════════════════ 히어로: EvilEye ═══════════════════════ */}
-      <div className={styles.eyeHero} aria-label={selectedRaid.titleName}>
-        <div className={styles.eyeCanvas}>
-          <EvilEye
-            eyeColor={selectedRaid.eyeColor}
-            intensity={1.55}
-            pupilSize={0.6}
-            irisWidth={0.25}
-            glowIntensity={0.38}
-            scale={0.75}
-            noiseScale={1.0}
-            pupilFollow={1.0}
-            flameSpeed={isIce ? 0.6 : 1.0}
-            backgroundColor="#000000"
-          />
-        </div>
-        <div className={styles.eyeTextOverlay}>
-          <h1 className={styles.eyeTitle}>{selectedRaid.titleName}</h1>
-          <div className={styles.eyeSubtitle}>{selectedRaid.subtitle}</div>
+  // 등록 섹션 (시상대 바로 아래에 배치하기 위해 분리 렌더)
+  const registrationSection = registrationMode === 'party' ? (
+    <section className={styles.cardBlock}>
+      <div className={styles.sectionHeader}>
+        <div className={styles.sectionLabel}>
+          <span className={styles.sectionOrnament} />
+          <div>
+            <div className={styles.sectionKicker}>Register · Party</div>
+            <h2 className={styles.sectionTitle}>공대 등록</h2>
+            <div className={styles.sectionSub}>
+              명예의 전당 {PARTY_SIZE * TOTAL_PARTIES}석이 채워질 때까지는 <strong>8인 공대 단위</strong>로만 등록됩니다. (남은 자리 {PARTY_SIZE * TOTAL_PARTIES - hof.length}명)
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ═══════════════════════ 컴팩트 탭 ═══════════════════════ */}
-      <div className={styles.container}>
-        <div className={styles.tabBar}>
-          <div className={styles.tabPill}>
-            {(['fire', 'ice'] as const).map((key) => {
-              const r = RAIDS[key];
-              const active = selectedKey === key;
-              const released = new Date() >= r.openAt;
-              const iceClass = key === 'ice' ? styles.tabBtnIce : '';
+      {!isReleased ? (
+        <div className={styles.partyLocked}>
+          <div className={styles.lockedTitle}>아직 등록 기간이 아닙니다</div>
+          <div className={styles.lockedDesc}>
+            <RaidTag /> 레이드 오픈 이후부터 공대 등록이 가능합니다.
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className={styles.partyNameField}>
+            <label className={styles.partyNameLabel}>공대 이름</label>
+            <Form.Control
+              type="text"
+              placeholder="우리 공대 이름을 입력하세요"
+              value={partyName}
+              onChange={(e) => setPartyName(e.target.value)}
+              className={styles.partyNameInput}
+              disabled={partyRegistering}
+            />
+          </div>
+
+          <div className={styles.slotGrid}>
+            {Array.from({ length: PARTY_SIZE }).map((_, i) => {
+              const slot = partySlots[i];
+              const err = slotErrors[i];
+              const searching = slotSearchingIndex === i;
+              const matchTitle = slot && (TEST_BYPASS_TITLE || slot.title === selectedRaid.titleName);
+              const isSup = slot?.role === 'supporter';
+
               return (
-                <button
-                  key={key}
-                  type="button"
-                  className={`${styles.tabBtn} ${iceClass} ${active ? styles.tabBtnActive : ''}`}
-                  onClick={() => setSelectedKey(key)}
-                >
-                  <Image src={r.image} alt="" width={22} height={22} className={styles.tabIcon} />
-                  <span>{r.titleName}</span>
-                  {!released && <span className={styles.tabLock}>오픈 전</span>}
-                </button>
+                <div key={i} className={`${styles.slot} ${matchTitle ? styles.slotOk : ''} ${slot && !matchTitle ? styles.slotBad : ''}`}>
+                  <div className={styles.slotHead}>
+                    <span className={styles.slotNumber}>{i + 1}</span>
+                    <Form.Control
+                      type="text"
+                      placeholder={`${i + 1}번째 공대원 닉네임`}
+                      value={slotSearchNames[i]}
+                      onChange={(e) => handleSlotNameChange(i, e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSlotSearch(i)}
+                      className={styles.slotInput}
+                      disabled={searching || partyRegistering || !!slot}
+                    />
+                    {slot ? (
+                      <button
+                        type="button"
+                        className={styles.slotClearBtn}
+                        onClick={() => handleSlotClear(i)}
+                        disabled={partyRegistering}
+                        aria-label="비우기"
+                      >
+                        ×
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className={styles.slotSearchBtn}
+                        onClick={() => handleSlotSearch(i)}
+                        disabled={searching || !slotSearchNames[i]?.trim() || partyRegistering}
+                      >
+                        {searching ? '…' : '검색'}
+                      </button>
+                    )}
+                  </div>
+
+                  {err && <div className={styles.slotErrorText}>{err}</div>}
+
+                  {slot && (
+                    <div className={styles.slotPreview}>
+                      <div className={styles.slotImageWrap}>
+                        {slot.image ? (
+                          <Image src={slot.image} alt={slot.name} width={100} height={125} className={styles.slotImage} unoptimized referrerPolicy="no-referrer" />
+                        ) : (
+                          <div className={styles.slotImageFallback}>{slot.className}</div>
+                        )}
+                      </div>
+                      <div className={styles.slotInfo}>
+                        <div className={styles.slotInfoTop}>
+                          <span className={styles.slotCharName}>{slot.name}</span>
+                          {isHybridClass(slot.className) ? (
+                            <div className={styles.roleToggle}>
+                              <button
+                                type="button"
+                                className={`${styles.roleToggleBtn} ${slot.role === 'dealer' ? styles.roleToggleDealerActive : ''}`}
+                                onClick={() => handleSlotRoleChange(i, 'dealer')}
+                                disabled={partyRegistering}
+                              >
+                                딜러
+                              </button>
+                              <button
+                                type="button"
+                                className={`${styles.roleToggleBtn} ${slot.role === 'supporter' ? styles.roleToggleSupporterActive : ''}`}
+                                onClick={() => handleSlotRoleChange(i, 'supporter')}
+                                disabled={partyRegistering}
+                              >
+                                서포터
+                              </button>
+                            </div>
+                          ) : (
+                            <span className={`${styles.slotRoleTag} ${isSup ? styles.roleSupporterBg : styles.roleDealerBg}`}>
+                              {isSup ? '서포터' : '딜러'}
+                            </span>
+                          )}
+                        </div>
+                        <div className={styles.slotClass}>{slot.className}</div>
+                        <div className={styles.slotStats}>
+                          <span className={styles.slotStatPower}>{slot.combatPower || '-'}<span className={styles.slotStatUnit}>점</span></span>
+                          <span className={styles.slotStatLevel}>Lv.{slot.itemLevel}</span>
+                        </div>
+                        <div className={styles.slotTitleCheck}>
+                          {matchTitle ? (
+                            <span className={styles.slotTitleOk}>
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M3 7.5L6 10L11 4.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                              <RaidTag /> 확인
+                            </span>
+                          ) : (
+                            <span className={styles.slotTitleBad}>
+                              착용 칭호: {slot.title || '미착용'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })}
+          </div>
+
+          <div className={styles.partyFooter}>
+            <div className={styles.partyFooterInfo}>
+              {!partyName.trim() && <span>공대 이름을 입력해 주세요.</span>}
+              {partyName.trim() && !allSlotsValid && (
+                <span>
+                  {partySlots.filter(s => s && s.title === selectedRaid.titleName).length}/{PARTY_SIZE}명 확인 완료 · 8명 모두 <RaidTag /> 칭호를 착용해야 등록됩니다.
+                </span>
+              )}
+              {partyName.trim() && allSlotsValid && noDuplicateNames && (
+                <span className={styles.partyFooterReady}>등록 준비 완료.</span>
+              )}
+              {!noDuplicateNames && (
+                <span className={styles.partyFooterError}>중복된 캐릭터가 있습니다.</span>
+              )}
+            </div>
+            <button
+              type="button"
+              className={styles.partySubmitBtn}
+              onClick={handlePartyRegister}
+              disabled={!canRegisterParty}
+            >
+              {partyRegistering ? '공대 등록 중...' : '공대 등록하기'}
+            </button>
+          </div>
+
+          {partyMessage && (
+            <div className={`${styles.saveMessage} ${partyMessage.type === 'success' ? styles.saveSuccess : styles.saveError}`}>
+              {partyMessage.text}
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  ) : (
+    <section className={`${styles.cardBlock} ${styles.indSection}`}>
+      <div className={`${styles.sectionHeader} ${styles.indHeader}`}>
+        <div className={styles.sectionKicker}>Register · Individual</div>
+        <h2 className={styles.sectionTitle}>내 전투력 등록</h2>
+        <div className={styles.sectionSub}>
+          <RaidTag /> 칭호 착용 후 검색
+        </div>
+      </div>
+
+      <div className={styles.indSearchRow}>
+        <Form.Control
+          type="text"
+          placeholder="캐릭터명을 입력하세요"
+          value={searchName}
+          onChange={(e) => setSearchName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          className={styles.searchInput}
+          disabled={searching || !isReleased}
+        />
+        <button
+          className={styles.searchButton}
+          onClick={handleSearch}
+          disabled={searching || !searchName.trim() || !isReleased}
+        >
+          {searching ? '검색 중…' : '검색'}
+        </button>
+      </div>
+      <div className={styles.indHint}>칭호 미반영 시 영지 이동 후 재검색</div>
+      {searchError && <div className={styles.searchError}>{searchError}</div>}
+
+      {profile && (
+        <div className={styles.indProfile}>
+          {profile.image ? (
+            <div className={styles.indProfileImage}>
+              <Image src={profile.image} alt={profile.name} width={200} height={300} className={styles.profileImage} unoptimized referrerPolicy="no-referrer" />
+            </div>
+          ) : (
+            <div className={`${styles.indProfileImage} ${styles.indProfileImageEmpty}`}>{profile.className}</div>
+          )}
+          <div className={styles.indProfileInfo}>
+            <div className={styles.indProfileHead}>
+              <span className={styles.indProfileName}>{profile.name}</span>
+              {isHybridClass(profile.className) ? (
+                <div className={styles.roleToggle}>
+                  <button
+                    type="button"
+                    className={`${styles.roleToggleBtn} ${profile.role === 'dealer' ? styles.roleToggleDealerActive : ''}`}
+                    onClick={() => setProfile({ ...profile, role: 'dealer' })}
+                  >
+                    딜러
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.roleToggleBtn} ${profile.role === 'supporter' ? styles.roleToggleSupporterActive : ''}`}
+                    onClick={() => setProfile({ ...profile, role: 'supporter' })}
+                  >
+                    서포터
+                  </button>
+                </div>
+              ) : (
+                <span className={`${styles.profileRole} ${profile.role === 'supporter' ? styles.roleSupporterBg : styles.roleDealerBg}`}>
+                  {profile.role === 'supporter' ? '서포터' : '딜러'}
+                </span>
+              )}
+            </div>
+            <div className={styles.indProfileRow}>
+              <span className={styles.indProfileLabel}>직업</span>
+              <span className={styles.indProfileValue}>{profile.className}</span>
+            </div>
+            <div className={styles.indProfileRow}>
+              <span className={styles.indProfileLabel}>레벨</span>
+              <span className={styles.indProfileValue}>Lv. {profile.itemLevel}</span>
+            </div>
+            <div className={styles.indProfileRow}>
+              <span className={styles.indProfileLabel}>전투력</span>
+              <span className={`${styles.indProfileValue} ${styles.indProfileValuePower}`}>{profile.combatPower || '-'}</span>
+            </div>
+            <div className={styles.indProfileRow}>
+              <span className={styles.indProfileLabel}>칭호</span>
+              <span className={
+                hasMatchingTitle
+                  ? (isIce ? styles.titleMatchIce : styles.titleMatchFire)
+                  : styles.titleNoMatch
+              }>
+                {profile.title || '미착용'}
+              </span>
+            </div>
+            {hasMatchingTitle ? (
+              <>
+                <button className={styles.saveButton} onClick={handleSave} disabled={saving}>
+                  {saving ? '저장 중...' : '통계에 등록하기'}
+                </button>
+                {saveMessage && (
+                  <div className={`${styles.saveMessage} ${saveMessage.type === 'success' ? styles.saveSuccess : styles.saveError}`}>
+                    {saveMessage.text}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className={styles.noTitleMessage}>
+                <RaidTag /> 칭호 미착용
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
+  return (
+    <div className={styles.page}>
+      {/* ═══════════════════════ 시상대 섹션: 히어로 + 탭 + HOF (한몸) ═══════════════════════ */}
+      <div className={styles.stageSection}>
+        {/* 히어로: EvilEye */}
+        <div className={styles.eyeHero} aria-label={selectedRaid.titleName}>
+          <div className={styles.eyeCanvas}>
+            <EvilEye
+              eyeColor={selectedRaid.eyeColor}
+              intensity={1.55}
+              pupilSize={0.6}
+              irisWidth={0.25}
+              glowIntensity={0.38}
+              scale={0.75}
+              noiseScale={1.0}
+              pupilFollow={1.0}
+              flameSpeed={isIce ? 0.6 : 1.0}
+              backgroundColor="#000000"
+            />
+          </div>
+          <div className={styles.eyeTextOverlay}>
+            <h1 className={styles.eyeTitle}>{selectedRaid.titleName}</h1>
+            <div className={styles.eyeSubtitle}>{selectedRaid.subtitle}</div>
           </div>
         </div>
 
@@ -518,13 +824,6 @@ export default function TitleStatsPage() {
                 <RaidTag /> 레이드가 공개되는 순간 가장 빠른 8명이 1공대에 이름을 올립니다.
               </div>
             </div>
-          ) : hof.length === 0 ? (
-            <div className={styles.hofEmpty}>
-              <div className={styles.hofEmptyTitle}>첫 번째 이름을 새길 차례입니다</div>
-              <div className={styles.hofEmptyDesc}>
-                아직 등록된 토벌자가 없습니다. 칭호를 획득하고 아래에서 직접 등록해 보세요.
-              </div>
-            </div>
           ) : (
             <>
               <div className={styles.hofNav}>
@@ -543,7 +842,7 @@ export default function TitleStatsPage() {
                   <span className={styles.hofPartyTag}>PARTY {partyIndex + 1}</span>
                   <span className={styles.hofPartyName}>{partyIndex + 1}공대</span>
                   <div className={styles.hofDots}>
-                    {Array.from({ length: totalFilledParties }).map((_, i) => (
+                    {Array.from({ length: TOTAL_PARTIES }).map((_, i) => (
                       <span
                         key={i}
                         className={`${styles.hofDot} ${i === partyIndex ? styles.hofDotActive : ''}`}
@@ -565,47 +864,34 @@ export default function TitleStatsPage() {
               </div>
 
               <div className={`${styles.partyRow} ${partyIndex === 0 ? styles.partyRowGold : ''}`}>
-                {/* 공대 이름: 행 상단 가운데 크게 */}
+                {/* 공대 이름 — 이름만 */}
                 <div className={`${styles.partyNameBanner} ${partyIndex === 0 ? styles.partyNameBannerGold : ''}`}>
-                  <span className={styles.partyNameBannerTag}>
-                    {partyIndex === 0 ? 'FIRST PARTY · 선봉' : `PARTY ${partyIndex + 1}`}
-                  </span>
-                  <span className={styles.partyNameBannerText}>
+                  <h3 className={styles.partyNameText}>
                     {partyEntries[0]?.partyName || `${partyIndex + 1}공대`}
-                  </span>
+                  </h3>
                 </div>
                 <div className={styles.partyGrid}>
                   {Array.from({ length: PARTY_SIZE }).map((_, slot) => {
                     const entry = partyEntries[slot];
-                    const absoluteRank = partyStart + slot + 1;
                     if (!entry) {
                       return (
                         <div key={slot} className={`${styles.fameCard} ${styles.fameCardEmpty}`}>
-                          <span className={styles.fameRank}>#{absoluteRank}</span>
-                          <div className={styles.fameEmptyIcon}>—</div>
                           <div className={styles.fameEmptyText}>공석</div>
                         </div>
                       );
                     }
-                    const isSup = entry.role === 'supporter';
-                    const medal =
-                      absoluteRank === 1 ? styles.fameRankMedal1
-                      : absoluteRank === 2 ? styles.fameRankMedal2
-                      : absoluteRank === 3 ? styles.fameRankMedal3
-                      : '';
                     return (
                       <div key={entry.id} className={styles.fameCard}>
-                        <span className={`${styles.fameRank} ${medal}`}>#{absoluteRank}</span>
-                        <span className={`${styles.fameRole} ${isSup ? styles.fameRoleSupporter : styles.fameRoleDealer}`} />
                         <div className={styles.fameImageWrap}>
                           {entry.characterImage ? (
                             <Image
                               src={entry.characterImage}
                               alt={entry.characterName}
-                              width={160}
-                              height={200}
+                              width={300}
+                              height={450}
                               className={styles.fameImage}
                               unoptimized
+                              referrerPolicy="no-referrer"
                             />
                           ) : (
                             <div className={styles.fameImagePlaceholder}>
@@ -613,18 +899,21 @@ export default function TitleStatsPage() {
                             </div>
                           )}
                         </div>
-                        <div className={styles.fameTitleLabel}>
-                          <Image src={selectedRaid.image} alt="" width={14} height={14} className={styles.fameTitleLogo} />
-                          <span>{selectedRaid.titleName}</span>
-                        </div>
-                        <div className={styles.fameName}>{entry.characterName}</div>
-                        <div className={styles.fameMetaRow}>
-                          <span className={styles.famePower}>
-                            {entry.combatPower.toLocaleString()}<span className={styles.famePowerUnit}>점</span>
-                          </span>
-                          <span className={styles.fameLevel}>
+                        <div className={styles.fameInfoOverlay}>
+                          <div className={styles.fameTitleBar}>
+                            <Image src={selectedRaid.image} alt="" width={14} height={14} className={styles.fameTitleBarLogo} />
+                            <span className={styles.fameTitleBarName}>{selectedRaid.titleName}</span>
+                            <span className={styles.fameTitleBarDivider} />
+                            <span className={styles.fameTitleBarClass}>{entry.characterClass}</span>
+                          </div>
+                          <div className={styles.fameName}>{entry.characterName}</div>
+                          <div className={styles.fameLevel}>
                             Lv.{entry.itemLevel.toFixed(2)}
-                          </span>
+                          </div>
+                          <div className={styles.famePower}>
+                            <span className={styles.famePowerLabel}>전투력:</span>
+                            <span className={styles.famePowerValue}>{entry.combatPower.toLocaleString()}</span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -634,9 +923,14 @@ export default function TitleStatsPage() {
             </>
           )}
         </section>
+      </div>
 
-        {/* ═══════════════════════ 하단 섹션 ═══════════════════════ */}
+      {/* ═══════════════════════ 하단 섹션 ═══════════════════════ */}
+      <div className={styles.container}>
         <div className={styles.lowerSections}>
+
+          {/* 등록 섹션 — 시상대 바로 아래 */}
+          {registrationSection}
 
           {/* 차트 */}
           <section className={styles.cardBlock}>
@@ -697,7 +991,7 @@ export default function TitleStatsPage() {
                     <div className={styles.chartPlaceholder}>아직 등록된 데이터가 없습니다</div>
                   ) : (
                     <ResponsiveContainer width="100%" height={420}>
-                      <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 10 }}>
+                      <ComposedChart data={chartData} margin={{ top: 20, right: isMobile ? 8 : 30, left: isMobile ? -8 : 10, bottom: 10 }}>
                         <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" vertical horizontal />
                         <XAxis
                           dataKey="date"
@@ -711,12 +1005,12 @@ export default function TitleStatsPage() {
                           tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }}
                         />
                         <YAxis
-                          tick={{ fontSize: 13, fill: 'var(--text-primary)', fontWeight: 700 }}
+                          tick={{ fontSize: isMobile ? 11 : 13, fill: 'var(--text-primary)', fontWeight: 700 }}
                           tickFormatter={(v: number) => v.toLocaleString()}
                           domain={chartMode === 'level' ? ['dataMin - 3', 'dataMax + 3'] : ['dataMin - 300', 'dataMax + 300']}
                           allowDecimals={false}
                           tickCount={6}
-                          width={chartMode === 'power' ? 64 : 54}
+                          width={isMobile ? 54 : (chartMode === 'power' ? 64 : 54)}
                           stroke="var(--text-secondary)"
                           strokeWidth={2}
                           axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }}
@@ -856,14 +1150,8 @@ export default function TitleStatsPage() {
                   return classStats.map((c, i) => {
                     const widthPct = (c.count / maxCount) * 100;
                     const isSup = c.role === 'supporter';
-                    const rankStyle =
-                      i === 0 ? styles.classCardRank1
-                      : i === 1 ? styles.classCardRank2
-                      : i === 2 ? styles.classCardRank3
-                      : '';
                     return (
                       <div key={c.className} className={`${styles.classCard} ${i < 3 ? styles.classCardTop : ''}`}>
-                        <span className={`${styles.classCardRank} ${rankStyle}`}>{i + 1}</span>
                         <div className={styles.classCardBody}>
                           <div className={styles.classCardTopRow}>
                             <span className={styles.classCardName}>{c.className}</span>
@@ -893,312 +1181,6 @@ export default function TitleStatsPage() {
               </div>
             )}
           </section>
-
-          {/* 등록 섹션: 공대 모드(80명 미만) / 개인 모드(80명 채워짐) */}
-          {registrationMode === 'party' ? (
-            <section className={styles.cardBlock}>
-              <div className={styles.sectionHeader}>
-                <div className={styles.sectionLabel}>
-                  <span className={styles.sectionOrnament} />
-                  <div>
-                    <div className={styles.sectionKicker}>Register · Party</div>
-                    <h2 className={styles.sectionTitle}>공대 등록</h2>
-                    <div className={styles.sectionSub}>
-                      명예의 전당 {PARTY_SIZE * TOTAL_PARTIES}석이 채워질 때까지는 <strong>8인 공대 단위</strong>로만 등록됩니다. (남은 자리 {PARTY_SIZE * TOTAL_PARTIES - hof.length}명)
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {!isReleased ? (
-                <div className={styles.partyLocked}>
-                  <div className={styles.lockedTitle}>아직 등록 기간이 아닙니다</div>
-                  <div className={styles.lockedDesc}>
-                    <RaidTag /> 레이드 오픈 이후부터 공대 등록이 가능합니다.
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className={styles.partyNameField}>
-                    <label className={styles.partyNameLabel}>공대 이름</label>
-                    <Form.Control
-                      type="text"
-                      placeholder="우리 공대 이름을 입력하세요"
-                      value={partyName}
-                      onChange={(e) => setPartyName(e.target.value)}
-                      className={styles.partyNameInput}
-                      disabled={partyRegistering}
-                    />
-                  </div>
-
-                  <div className={styles.slotGrid}>
-                    {Array.from({ length: PARTY_SIZE }).map((_, i) => {
-                      const slot = partySlots[i];
-                      const err = slotErrors[i];
-                      const searching = slotSearchingIndex === i;
-                      const matchTitle = slot && slot.title === selectedRaid.titleName;
-                      const isSup = slot?.role === 'supporter';
-
-                      return (
-                        <div key={i} className={`${styles.slot} ${matchTitle ? styles.slotOk : ''} ${slot && !matchTitle ? styles.slotBad : ''}`}>
-                          <div className={styles.slotHead}>
-                            <span className={styles.slotNumber}>{i + 1}</span>
-                            <Form.Control
-                              type="text"
-                              placeholder={`${i + 1}번째 공대원 닉네임`}
-                              value={slotSearchNames[i]}
-                              onChange={(e) => handleSlotNameChange(i, e.target.value)}
-                              onKeyDown={(e) => e.key === 'Enter' && handleSlotSearch(i)}
-                              className={styles.slotInput}
-                              disabled={searching || partyRegistering || !!slot}
-                            />
-                            {slot ? (
-                              <button
-                                type="button"
-                                className={styles.slotClearBtn}
-                                onClick={() => handleSlotClear(i)}
-                                disabled={partyRegistering}
-                                aria-label="비우기"
-                              >
-                                ×
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className={styles.slotSearchBtn}
-                                onClick={() => handleSlotSearch(i)}
-                                disabled={searching || !slotSearchNames[i]?.trim() || partyRegistering}
-                              >
-                                {searching ? '…' : '검색'}
-                              </button>
-                            )}
-                          </div>
-
-                          {err && <div className={styles.slotErrorText}>{err}</div>}
-
-                          {slot && (
-                            <div className={styles.slotPreview}>
-                              <div className={styles.slotImageWrap}>
-                                {slot.image ? (
-                                  <Image src={slot.image} alt={slot.name} width={100} height={125} className={styles.slotImage} unoptimized />
-                                ) : (
-                                  <div className={styles.slotImageFallback}>{slot.className}</div>
-                                )}
-                              </div>
-                              <div className={styles.slotInfo}>
-                                <div className={styles.slotInfoTop}>
-                                  <span className={styles.slotCharName}>{slot.name}</span>
-                                  {isHybridClass(slot.className) ? (
-                                    <div className={styles.roleToggle}>
-                                      <button
-                                        type="button"
-                                        className={`${styles.roleToggleBtn} ${slot.role === 'dealer' ? styles.roleToggleDealerActive : ''}`}
-                                        onClick={() => handleSlotRoleChange(i, 'dealer')}
-                                        disabled={partyRegistering}
-                                      >
-                                        딜러
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className={`${styles.roleToggleBtn} ${slot.role === 'supporter' ? styles.roleToggleSupporterActive : ''}`}
-                                        onClick={() => handleSlotRoleChange(i, 'supporter')}
-                                        disabled={partyRegistering}
-                                      >
-                                        서포터
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <span className={`${styles.slotRoleTag} ${isSup ? styles.roleSupporterBg : styles.roleDealerBg}`}>
-                                      {isSup ? '서포터' : '딜러'}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className={styles.slotClass}>{slot.className}</div>
-                                <div className={styles.slotStats}>
-                                  <span className={styles.slotStatPower}>{slot.combatPower || '-'}<span className={styles.slotStatUnit}>점</span></span>
-                                  <span className={styles.slotStatLevel}>Lv.{slot.itemLevel}</span>
-                                </div>
-                                <div className={styles.slotTitleCheck}>
-                                  {matchTitle ? (
-                                    <span className={styles.slotTitleOk}>
-                                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                        <path d="M3 7.5L6 10L11 4.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                      </svg>
-                                      <RaidTag /> 확인
-                                    </span>
-                                  ) : (
-                                    <span className={styles.slotTitleBad}>
-                                      착용 칭호: {slot.title || '미착용'}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className={styles.partyFooter}>
-                    <div className={styles.partyFooterInfo}>
-                      {!partyName.trim() && <span>공대 이름을 입력해 주세요.</span>}
-                      {partyName.trim() && !allSlotsValid && (
-                        <span>
-                          {partySlots.filter(s => s && s.title === selectedRaid.titleName).length}/{PARTY_SIZE}명 확인 완료 · 8명 모두 <RaidTag /> 칭호를 착용해야 등록됩니다.
-                        </span>
-                      )}
-                      {partyName.trim() && allSlotsValid && noDuplicateNames && (
-                        <span className={styles.partyFooterReady}>등록 준비 완료.</span>
-                      )}
-                      {!noDuplicateNames && (
-                        <span className={styles.partyFooterError}>중복된 캐릭터가 있습니다.</span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      className={styles.partySubmitBtn}
-                      onClick={handlePartyRegister}
-                      disabled={!canRegisterParty}
-                    >
-                      {partyRegistering ? '공대 등록 중...' : '공대 등록하기'}
-                    </button>
-                  </div>
-
-                  {partyMessage && (
-                    <div className={`${styles.saveMessage} ${partyMessage.type === 'success' ? styles.saveSuccess : styles.saveError}`}>
-                      {partyMessage.text}
-                    </div>
-                  )}
-                </>
-              )}
-            </section>
-          ) : (
-            <section className={styles.cardBlock}>
-              <div className={styles.sectionHeader}>
-                <div className={styles.sectionLabel}>
-                  <span className={styles.sectionOrnament} />
-                  <div>
-                    <div className={styles.sectionKicker}>Register · Individual</div>
-                    <h2 className={styles.sectionTitle}>내 전투력 등록</h2>
-                    <div className={styles.sectionSub}>
-                      명예의 전당 80석이 모두 차서 개인 등록이 열렸습니다. <RaidTag /> 칭호 착용 후 검색하세요.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.searchFrame}>
-                <div className={styles.searchLeft}>
-                  <div className={styles.searchInputGroup}>
-                    <Form.Control
-                      type="text"
-                      placeholder="캐릭터명을 입력하세요"
-                      value={searchName}
-                      onChange={(e) => setSearchName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                      className={styles.searchInput}
-                      disabled={searching || !isReleased}
-                    />
-                    <button
-                      className={styles.searchButton}
-                      onClick={handleSearch}
-                      disabled={searching || !searchName.trim() || !isReleased}
-                    >
-                      {searching ? '검색 중…' : '검색'}
-                    </button>
-                  </div>
-                  {searchError && <div className={styles.searchError}>{searchError}</div>}
-                  <div className={styles.searchHint}>
-                    칭호가 최신화되지 않을 경우, 영지 → 영지 밖 이동 후 다시 검색해 주세요.
-                  </div>
-                </div>
-
-                <div className={styles.profileCard}>
-                  {!profile ? (
-                    <div className={styles.profilePlaceholder}>
-                      <div className={styles.placeholderText}>캐릭터 검색 결과가 여기에 표시됩니다</div>
-                      <div className={styles.placeholderSub}>
-                        <RaidTag /> 칭호를 착용한 상태에서 검색해 주세요
-                      </div>
-                    </div>
-                  ) : (
-                    <div className={styles.profileTop}>
-                      {profile.image && (
-                        <div className={styles.profileImageWrap}>
-                          <Image src={profile.image} alt={profile.name} width={200} height={300} className={styles.profileImage} unoptimized />
-                        </div>
-                      )}
-                      <div className={styles.profileInfo}>
-                        <div className={styles.profileName}>{profile.name}</div>
-                        <div className={styles.profileRow}>
-                          <span className={styles.profileLabel}>레벨</span>
-                          <span className={styles.profileValue}>Lv. {profile.itemLevel}</span>
-                        </div>
-                        <div className={styles.profileRow}>
-                          <span className={styles.profileLabel}>전투력</span>
-                          <span className={styles.profileValue}>{profile.combatPower || '-'}</span>
-                        </div>
-                        <div className={styles.profileRow}>
-                          <span className={styles.profileLabel}>직업</span>
-                          <span className={styles.profileValue}>{profile.className}</span>
-                          {isHybridClass(profile.className) ? (
-                            <div className={styles.roleToggle}>
-                              <button
-                                type="button"
-                                className={`${styles.roleToggleBtn} ${profile.role === 'dealer' ? styles.roleToggleDealerActive : ''}`}
-                                onClick={() => setProfile({ ...profile, role: 'dealer' })}
-                              >
-                                딜러
-                              </button>
-                              <button
-                                type="button"
-                                className={`${styles.roleToggleBtn} ${profile.role === 'supporter' ? styles.roleToggleSupporterActive : ''}`}
-                                onClick={() => setProfile({ ...profile, role: 'supporter' })}
-                              >
-                                서포터
-                              </button>
-                            </div>
-                          ) : (
-                            <span className={`${styles.profileRole} ${profile.role === 'supporter' ? styles.roleSupporterBg : styles.roleDealerBg}`}>
-                              {profile.role === 'supporter' ? '서포터' : '딜러'}
-                            </span>
-                          )}
-                        </div>
-                        <div className={styles.profileRow}>
-                          <span className={styles.profileLabel}>착용 칭호</span>
-                          <span className={
-                            hasMatchingTitle
-                              ? (isIce ? styles.titleMatchIce : styles.titleMatchFire)
-                              : styles.titleNoMatch
-                          }>
-                            {profile.title || '미착용'}
-                          </span>
-                        </div>
-                        {hasMatchingTitle ? (
-                          <>
-                            <button className={styles.saveButton} onClick={handleSave} disabled={saving}>
-                              {saving ? '저장 중...' : '통계에 등록하기'}
-                            </button>
-                            {saveMessage && (
-                              <div className={`${styles.saveMessage} ${saveMessage.type === 'success' ? styles.saveSuccess : styles.saveError}`}>
-                                {saveMessage.text}
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <div className={styles.noTitleMessage}>
-                            <RaidTag /> 칭호를 착용한 상태에서 검색해 주세요.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-          )}
-
         </div>
       </div>
     </div>
