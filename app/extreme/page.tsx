@@ -97,6 +97,7 @@ type ShopItem = {
   name: string;
   qty: number;                              // 카드에 표시되는 수량 (x표기)
   components?: ShopComponent[];             // 상자 구성품 (교환 비용 밑에 노출)
+  selectOne?: boolean;                      // true면 components 중 하나만 선택 (라디오). false/미지정이면 전체 합산.
   requiredLevel: number | null;
   image: string;
   theme: keyof typeof SHOP_THEME_COLORS;
@@ -152,9 +153,10 @@ const SHOP_ITEMS: ShopItem[] = [
     costs: [{ name: '토큰', amount: 10 }, { name: '골드', amount: 10000 }],
     limit: { kind: 'weekly', count: 1 },
   },
-  // 8. 야금술 선택 상자
+  // 8. 야금술 선택 상자 (4단계 1개 또는 3단계 2개 중 택1)
   {
     id: 8, name: '야금술 선택 상자', qty: 1,
+    selectOne: true,
     components: [
       { icon: '/master-metallurgy-4.webp', name: '장인의 야금술 : 4단계', count: 1, hasBg: true, itemId: '66112717' },
       { icon: '/master-metallurgy-3.webp', name: '장인의 야금술 : 3단계', count: 2, hasBg: true, itemId: '66112715' },
@@ -163,9 +165,10 @@ const SHOP_ITEMS: ShopItem[] = [
     costs: [{ name: '토큰', amount: 10 }],
     limit: { kind: 'weekly', count: 2 },
   },
-  // 9. 재봉술 선택 상자
+  // 9. 재봉술 선택 상자 (4단계 1개 또는 3단계 2개 중 택1)
   {
     id: 9, name: '재봉술 선택 상자', qty: 1,
+    selectOne: true,
     components: [
       { icon: '/master-tailoring-4.webp', name: '장인의 재봉술 : 4단계', count: 1, hasBg: true, itemId: '66112718' },
       { icon: '/master-tailoring-3.webp', name: '장인의 재봉술 : 3단계', count: 2, hasBg: true, itemId: '66112716' },
@@ -184,12 +187,18 @@ const SHOP_ITEMS: ShopItem[] = [
   // 11~12. 정령된 혼돈의 돌 상자
   {
     id: 11, name: '정령된 혼돈의 돌 상자 (무기)', qty: 1,
+    components: [
+      { icon: '/weapon-quality.webp', name: '정령된 혼돈의 돌 (무기)', count: 1, hasBg: true },
+    ],
     requiredLevel: 1720, image: '/weapon-quality.webp', theme: 'chaosStone', hasBg: true,
     costs: [{ name: '토큰', amount: 2 }],
     limit: { kind: 'weekly', count: 10 },
   },
   {
-    id: 12, name: '정령된 혼돈의 돌 상자 (방어구)', qty: 3,
+    id: 12, name: '정령된 혼돈의 돌 상자 (방어구)', qty: 1,
+    components: [
+      { icon: '/armor-quality.webp', name: '정령된 혼돈의 돌 (방어구)', count: 3, hasBg: true },
+    ],
     requiredLevel: 1720, image: '/armor-quality.webp', theme: 'chaosStone', hasBg: true,
     costs: [{ name: '토큰', amount: 2 }],
     limit: { kind: 'weekly', count: 10 },
@@ -658,6 +667,7 @@ export default function ExtremePage() {
                               {/* 구성품 (1개가 아닌 고정 구성 아이템) */}
                               {selectedShopData.components && selectedShopData.components.length > 0 && (() => {
                                 const comps = selectedShopData.components;
+                                const selectable = !!selectedShopData.selectOne;
                                 const compValues = comps.map(c => {
                                   if (!c.itemId) return null;
                                   const bundlePrice = latestPrices[c.itemId] || 0;
@@ -667,15 +677,53 @@ export default function ExtremePage() {
                                   return { unitPrice, totalValue };
                                 });
                                 const hasPricing = compValues.some(v => v !== null);
-                                const grandTotal = compValues.reduce((sum, v) => sum + (v?.totalValue ?? 0), 0);
+
+                                // 택1 박스: 최고 가치 옵션 자동 선택 (유저 선택 있으면 그걸 우선)
+                                let selectedIdx = 0;
+                                if (selectable) {
+                                  const userPick = shopSelectItem[selectedShopData.id];
+                                  const userPickIdx = userPick ? comps.findIndex(c => c.itemId === userPick) : -1;
+                                  if (userPickIdx >= 0) {
+                                    selectedIdx = userPickIdx;
+                                  } else {
+                                    let maxV = -1;
+                                    comps.forEach((_, i) => {
+                                      const v = compValues[i]?.totalValue ?? 0;
+                                      if (v > maxV) { maxV = v; selectedIdx = i; }
+                                    });
+                                  }
+                                }
+                                const grandTotal = selectable
+                                  ? (compValues[selectedIdx]?.totalValue ?? 0)
+                                  : compValues.reduce((sum, v) => sum + (v?.totalValue ?? 0), 0);
+
                                 return (
                                   <div className={styles.shopDetailSection} style={{ minHeight: 'auto' }}>
-                                    <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>구성품</div>
+                                    <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>
+                                      구성품{selectable ? ' (1개 선택)' : ''}
+                                    </div>
                                     <div className={styles.componentList}>
                                       {comps.map((c, idx) => {
                                         const v = compValues[idx];
+                                        const isSelected = !selectable || idx === selectedIdx;
+                                        const onPick = selectable && c.itemId
+                                          ? () => setShopSelectItem(prev => ({ ...prev, [selectedShopData.id]: c.itemId! }))
+                                          : undefined;
                                         return (
-                                          <div key={idx} className={styles.componentItem} style={{ borderColor: tc.border }}>
+                                          <div
+                                            key={idx}
+                                            className={styles.componentItem}
+                                            style={{
+                                              borderColor: tc.border,
+                                              cursor: selectable ? 'pointer' : 'default',
+                                              opacity: isSelected ? 1 : 0.45,
+                                              ...(selectable && isSelected ? { borderColor: tc.accent, background: tc.iconBg } : {}),
+                                            }}
+                                            onClick={onPick}
+                                          >
+                                            {selectable && (
+                                              <span style={{ fontSize: '1.05rem', flexShrink: 0 }}>{isSelected ? '✅' : '⬜'}</span>
+                                            )}
                                             {c.hasBg ? (
                                               <div className={styles.componentIconFill}>
                                                 <Image src={c.icon} alt={c.name} width={32} height={32} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -705,9 +753,9 @@ export default function ExtremePage() {
                                           </div>
                                         );
                                       })}
-                                      {hasPricing && comps.length > 1 && (
+                                      {hasPricing && (selectable || comps.length > 1) && (
                                         <div className={styles.componentTotalRow} style={{ borderColor: tc.border }}>
-                                          <span className={styles.componentTotalLabel}>총 가치</span>
+                                          <span className={styles.componentTotalLabel}>{selectable ? '선택 옵션 가치' : '총 가치'}</span>
                                           <span className={styles.componentTotalValue} style={{ color: tc.accent }}>
                                             <Image src="/gold.webp" alt="" width={14} height={14} />
                                             {priceLoading ? '—' : grandTotal.toLocaleString()}

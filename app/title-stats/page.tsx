@@ -54,7 +54,7 @@ const RAIDS: Record<RaidKey, Raid> = {
 };
 
 const PARTY_SIZE = 8;
-const TOTAL_PARTIES = 10;
+const TOTAL_PARTIES = 5;
 
 // ⚠️ 테스트 전용: true 면 칭호 불일치도 등록 통과
 // 운영 직전 반드시 false 로 되돌릴 것
@@ -120,7 +120,7 @@ export default function TitleStatsPage() {
   // 원정대 잠금: character_name → party_name (개인 등록이면 null)
   const [rosterLocks, setRosterLocks] = useState<Map<string, string | null>>(new Map());
 
-  // 개인 등록 (명예의 전당 80명 완료 후에만 활성화)
+  // 개인 등록 (명예의 전당 40명 완료 후에만 활성화)
   const [searchName, setSearchName] = useState('');
   const [searching, setSearching] = useState(false);
   const [profile, setProfile] = useState<CharProfile | null>(null);
@@ -128,7 +128,7 @@ export default function TitleStatsPage() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // 공대 등록 (명예의 전당이 80명 미만일 때만 활성화)
+  // 공대 등록 (명예의 전당이 40명 미만일 때만 활성화)
   const [partyName, setPartyName] = useState('');
   const [partySlots, setPartySlots] = useState<(CharProfile | null)[]>(() => Array(PARTY_SIZE).fill(null));
   const [slotSearchNames, setSlotSearchNames] = useState<string[]>(() => Array(PARTY_SIZE).fill(''));
@@ -140,7 +140,7 @@ export default function TitleStatsPage() {
   const selectedRaid = RAIDS[selectedKey];
   const isReleased = new Date() >= selectedRaid.openAt;
   const isIce = selectedKey === 'ice';
-  const hofFull = hof.length >= PARTY_SIZE * TOTAL_PARTIES; // 80명 채워짐 → 개인 등록 해금
+  const hofFull = hof.length >= PARTY_SIZE * TOTAL_PARTIES; // 40명 채워짐 → 개인 등록 해금
   const registrationMode: 'party' | 'individual' = hofFull ? 'individual' : 'party';
 
   // 본문 텍스트에 인라인으로 [로고][이름] 한 덩어리로 들어가는 태그
@@ -778,7 +778,7 @@ export default function TitleStatsPage() {
               <>
                 {isHybridClass(profile.className) && profile.role === null && (
                   <div className={styles.roleHint}>
-                    발키리는 딜러 / 서포터 모두 가능합니다. 위에서 본인 역할을 선택해주세요.
+                    {profile.className}은(는) 딜러 / 서포터 모두 가능합니다. 위에서 본인 역할을 선택해주세요.
                   </div>
                 )}
                 <button className={styles.saveButton} onClick={handleSave} disabled={saving || profile.role === null}>
