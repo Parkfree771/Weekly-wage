@@ -83,11 +83,20 @@ type ShopLimit =
   | { kind: 'weekly'; count: number }       // 원정대 주간 N회
   | { kind: 'unlimited' };                  // 없음
 
+type ShopComponent = {
+  icon: string;
+  name: string;
+  count: number;
+  hasBg?: boolean;
+  itemId?: string;        // latest.json 시세 조회용 (없으면 가격 표시 생략)
+  bundleSize?: number;    // 거래소 번들 단위 (기본 1)
+};
+
 type ShopItem = {
   id: number;
   name: string;
   qty: number;                              // 카드에 표시되는 수량 (x표기)
-  contents?: string;                        // 상자 구성 설명 (ex. "4단계 1개, 3단계 2개")
+  components?: ShopComponent[];             // 상자 구성품 (교환 비용 밑에 노출)
   requiredLevel: number | null;
   image: string;
   theme: keyof typeof SHOP_THEME_COLORS;
@@ -146,7 +155,10 @@ const SHOP_ITEMS: ShopItem[] = [
   // 8. 야금술 선택 상자
   {
     id: 8, name: '야금술 선택 상자', qty: 1,
-    contents: '4단계 1개, 3단계 2개',
+    components: [
+      { icon: '/master-metallurgy-4.webp', name: '장인의 야금술 : 4단계', count: 1, hasBg: true, itemId: '66112717' },
+      { icon: '/master-metallurgy-3.webp', name: '장인의 야금술 : 3단계', count: 2, hasBg: true, itemId: '66112715' },
+    ],
     requiredLevel: 1720, image: '/master-metallurgy-4.webp', theme: 'craft', hasBg: true,
     costs: [{ name: '토큰', amount: 10 }],
     limit: { kind: 'weekly', count: 2 },
@@ -154,7 +166,10 @@ const SHOP_ITEMS: ShopItem[] = [
   // 9. 재봉술 선택 상자
   {
     id: 9, name: '재봉술 선택 상자', qty: 1,
-    contents: '4단계 1개, 3단계 2개',
+    components: [
+      { icon: '/master-tailoring-4.webp', name: '장인의 재봉술 : 4단계', count: 1, hasBg: true, itemId: '66112718' },
+      { icon: '/master-tailoring-3.webp', name: '장인의 재봉술 : 3단계', count: 2, hasBg: true, itemId: '66112716' },
+    ],
     requiredLevel: 1720, image: '/master-tailoring-4.webp', theme: 'craft', hasBg: true,
     costs: [{ name: '토큰', amount: 10 }],
     limit: { kind: 'weekly', count: 2 },
@@ -182,7 +197,9 @@ const SHOP_ITEMS: ShopItem[] = [
   // 13. 아비도스 융화재료 상자
   {
     id: 13, name: '아비도스 융화재료 상자', qty: 1,
-    contents: '100개',
+    components: [
+      { icon: '/abidos-fusion5.webp', name: '아비도스 융화 재료', count: 100, hasBg: true, itemId: '6861012' },
+    ],
     requiredLevel: 1720, image: '/abidos-fusion5.webp', theme: 'abidos', hasBg: true,
     costs: [{ name: '토큰', amount: 20 }],
     limit: { kind: 'weekly', count: 1 },
@@ -190,21 +207,27 @@ const SHOP_ITEMS: ShopItem[] = [
   // 14~16. 상급 아비도스 융화 재료 상자
   {
     id: 14, name: '상급 아비도스 융화 재료 상자', qty: 1,
-    contents: '50개',
+    components: [
+      { icon: '/top-abidos-fusion5.webp', name: '상급 아비도스 융화 재료', count: 50, hasBg: true, itemId: '6861013' },
+    ],
     requiredLevel: 1730, image: '/top-abidos-fusion5.webp', theme: 'abidos', hasBg: true,
     costs: [{ name: '토큰', amount: 20 }],
     limit: { kind: 'weekly', count: 1 },
   },
   {
     id: 15, name: '상급 아비도스 융화 재료 상자', qty: 1,
-    contents: '50개',
+    components: [
+      { icon: '/top-abidos-fusion5.webp', name: '상급 아비도스 융화 재료', count: 50, hasBg: true, itemId: '6861013' },
+    ],
     requiredLevel: 1750, image: '/top-abidos-fusion5.webp', theme: 'abidos', hasBg: true,
     costs: [{ name: '토큰', amount: 20 }],
     limit: { kind: 'weekly', count: 1 },
   },
   {
     id: 16, name: '상급 아비도스 융화 재료 상자', qty: 1,
-    contents: '50개',
+    components: [
+      { icon: '/top-abidos-fusion5.webp', name: '상급 아비도스 융화 재료', count: 50, hasBg: true, itemId: '6861013' },
+    ],
     requiredLevel: 1770, image: '/top-abidos-fusion5.webp', theme: 'abidos', hasBg: true,
     costs: [{ name: '토큰', amount: 20 }],
     limit: { kind: 'weekly', count: 1 },
@@ -212,7 +235,10 @@ const SHOP_ITEMS: ShopItem[] = [
   // 17. 운명의 파괴석/수호석 (기본)
   {
     id: 17, name: '운명의 파괴석/수호석', qty: 1,
-    contents: '파괴석 5,000개 · 수호석 10,000개',
+    components: [
+      { icon: '/destiny-destruction-stone.webp', name: '운명의 파괴석', count: 5000, hasBg: true, itemId: '66102006', bundleSize: 100 },
+      { icon: '/destiny-guardian-stone.webp',   name: '운명의 수호석', count: 10000, hasBg: true, itemId: '66102106', bundleSize: 100 },
+    ],
     requiredLevel: 1720, image: '/vkrhltjrtnghtjr.webp', theme: 'refine', hasBg: true,
     costs: [{ name: '토큰', amount: 5 }, { name: '골드', amount: 2000 }],
     limit: { kind: 'weekly', count: 1 },
@@ -220,21 +246,30 @@ const SHOP_ITEMS: ShopItem[] = [
   // 18~20. 운명의 파괴석/수호석 결정
   {
     id: 18, name: '운명의 파괴석/수호석 결정', qty: 1,
-    contents: '파괴석 결정 1,000개 · 수호석 결정 2,000개',
+    components: [
+      { icon: '/destiny-destruction-stone2.webp', name: '운명의 파괴석 결정', count: 1000, hasBg: true, itemId: '66102007', bundleSize: 100 },
+      { icon: '/destiny-guardian-stone2.webp',   name: '운명의 수호석 결정', count: 2000, hasBg: true, itemId: '66102107', bundleSize: 100 },
+    ],
     requiredLevel: 1730, image: '/vkrhltngh.webp', theme: 'refine', hasBg: true,
     costs: [{ name: '토큰', amount: 5 }, { name: '골드', amount: 2000 }],
     limit: { kind: 'weekly', count: 1 },
   },
   {
     id: 19, name: '운명의 파괴석/수호석 결정', qty: 1,
-    contents: '파괴석 결정 1,000개 · 수호석 결정 2,000개',
+    components: [
+      { icon: '/destiny-destruction-stone2.webp', name: '운명의 파괴석 결정', count: 1000, hasBg: true, itemId: '66102007', bundleSize: 100 },
+      { icon: '/destiny-guardian-stone2.webp',   name: '운명의 수호석 결정', count: 2000, hasBg: true, itemId: '66102107', bundleSize: 100 },
+    ],
     requiredLevel: 1750, image: '/vkrhltngh.webp', theme: 'refine', hasBg: true,
     costs: [{ name: '토큰', amount: 5 }, { name: '골드', amount: 2000 }],
     limit: { kind: 'weekly', count: 1 },
   },
   {
     id: 20, name: '운명의 파괴석/수호석 결정', qty: 1,
-    contents: '파괴석 결정 1,000개 · 수호석 결정 2,000개',
+    components: [
+      { icon: '/destiny-destruction-stone2.webp', name: '운명의 파괴석 결정', count: 1000, hasBg: true, itemId: '66102007', bundleSize: 100 },
+      { icon: '/destiny-guardian-stone2.webp',   name: '운명의 수호석 결정', count: 2000, hasBg: true, itemId: '66102107', bundleSize: 100 },
+    ],
     requiredLevel: 1770, image: '/vkrhltngh.webp', theme: 'refine', hasBg: true,
     costs: [{ name: '토큰', amount: 5 }, { name: '골드', amount: 2000 }],
     limit: { kind: 'weekly', count: 1 },
@@ -594,19 +629,6 @@ export default function ExtremePage() {
                                 </span>
                               </div>
 
-                              {/* 구성 설명 (contents) */}
-                              {selectedShopData.contents && (
-                                <div style={{
-                                  textAlign: 'center',
-                                  fontSize: '0.85rem',
-                                  color: 'var(--text-secondary)',
-                                  padding: '0.2rem 0.6rem',
-                                  marginTop: '-0.25rem',
-                                }}>
-                                  {selectedShopData.contents}
-                                </div>
-                              )}
-
                               {/* 교환 비용 */}
                               <div className={styles.shopDetailSection}>
                                 <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>교환 비용</div>
@@ -632,6 +654,70 @@ export default function ExtremePage() {
                                   )}
                                 </div>
                               </div>
+
+                              {/* 구성품 (1개가 아닌 고정 구성 아이템) */}
+                              {selectedShopData.components && selectedShopData.components.length > 0 && (() => {
+                                const comps = selectedShopData.components;
+                                const compValues = comps.map(c => {
+                                  if (!c.itemId) return null;
+                                  const bundlePrice = latestPrices[c.itemId] || 0;
+                                  const bundleSize = c.bundleSize || 1;
+                                  const unitPrice = bundlePrice / bundleSize;
+                                  const totalValue = Math.round(unitPrice * c.count);
+                                  return { unitPrice, totalValue };
+                                });
+                                const hasPricing = compValues.some(v => v !== null);
+                                const grandTotal = compValues.reduce((sum, v) => sum + (v?.totalValue ?? 0), 0);
+                                return (
+                                  <div className={styles.shopDetailSection} style={{ minHeight: 'auto' }}>
+                                    <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>구성품</div>
+                                    <div className={styles.componentList}>
+                                      {comps.map((c, idx) => {
+                                        const v = compValues[idx];
+                                        return (
+                                          <div key={idx} className={styles.componentItem} style={{ borderColor: tc.border }}>
+                                            {c.hasBg ? (
+                                              <div className={styles.componentIconFill}>
+                                                <Image src={c.icon} alt={c.name} width={32} height={32} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                              </div>
+                                            ) : (
+                                              <div className={styles.componentIcon} style={{ borderColor: tc.border, background: tc.iconBg }}>
+                                                <Image src={c.icon} alt={c.name} width={28} height={28} style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
+                                              </div>
+                                            )}
+                                            <div className={styles.componentMain}>
+                                              <span className={styles.componentName}>{c.name}</span>
+                                              {v && (
+                                                <span className={styles.componentUnit}>
+                                                  {priceLoading ? '—' : `단가 ${v.unitPrice >= 1 ? v.unitPrice.toFixed(1) : v.unitPrice.toFixed(3)} G`}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div className={styles.componentRight}>
+                                              <span className={styles.componentCount} style={{ color: tc.accent }}>× {c.count.toLocaleString()}</span>
+                                              {v && (
+                                                <span className={styles.componentTotal}>
+                                                  <Image src="/gold.webp" alt="" width={12} height={12} />
+                                                  {priceLoading ? '—' : v.totalValue.toLocaleString()}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                      {hasPricing && comps.length > 1 && (
+                                        <div className={styles.componentTotalRow} style={{ borderColor: tc.border }}>
+                                          <span className={styles.componentTotalLabel}>총 가치</span>
+                                          <span className={styles.componentTotalValue} style={{ color: tc.accent }}>
+                                            <Image src="/gold.webp" alt="" width={14} height={14} />
+                                            {priceLoading ? '—' : grandTotal.toLocaleString()}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
 
                               {/* 구성 요소 (유물 각인서 / 영웅 젬 선택) */}
                               {(selectedShopData.theme === 'engraving' || selectedShopData.theme === 'gem') && (() => {

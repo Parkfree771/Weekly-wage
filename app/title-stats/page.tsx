@@ -67,7 +67,7 @@ type CharProfile = {
   combatPower: string;
   image: string;
   title: string;
-  role: 'dealer' | 'supporter';
+  role: 'dealer' | 'supporter' | null;   // 하이브리드(발키리) 신규 검색 시 null. 버튼 선택 후 확정.
   siblingNames: string[];  // 원정대 전체 닉네임 (본인 포함)
 };
 
@@ -221,14 +221,15 @@ export default function TitleStatsPage() {
         return;
       }
 
+      const cls = p.CharacterClassName || '';
       setProfile({
         name: p.CharacterName || searchName,
-        className: p.CharacterClassName || '',
+        className: cls,
         itemLevel: p.ItemAvgLevel || '0',
         combatPower: p.CombatPower || '',
         image: p.CharacterImage || '',
         title: parseTitleText(p.Title || ''),
-        role: getRole(p.CharacterClassName || ''),
+        role: isHybridClass(cls) ? null : getRole(cls),
         siblingNames,
       });
     } catch {
@@ -240,6 +241,10 @@ export default function TitleStatsPage() {
 
   const handleSave = async () => {
     if (!profile || !hasMatchingTitle) return;
+    if (profile.role === null) {
+      setSaveMessage({ type: 'error', text: '딜러 / 서포터 중 하나를 선택해주세요.' });
+      return;
+    }
     const power = parseFloat(profile.combatPower.replace(/,/g, ''));
     if (isNaN(power) || power <= 0) {
       setSaveMessage({ type: 'error', text: '전투력 정보를 가져올 수 없습니다.' });
@@ -344,14 +349,15 @@ export default function TitleStatsPage() {
         return;
       }
 
+      const cls = p.CharacterClassName || '';
       const newProfile: CharProfile = {
         name: p.CharacterName || raw,
-        className: p.CharacterClassName || '',
+        className: cls,
         itemLevel: p.ItemAvgLevel || '0',
         combatPower: p.CombatPower || '',
         image: p.CharacterImage || '',
         title,
-        role: getRole(p.CharacterClassName || ''),
+        role: isHybridClass(cls) ? null : getRole(cls),
         siblingNames,
       };
 
@@ -415,7 +421,7 @@ export default function TitleStatsPage() {
   };
 
   // 공대 등록 가능 여부
-  const allSlotsValid = partySlots.every(s => s && (TEST_BYPASS_TITLE || s.title === selectedRaid.titleName));
+  const allSlotsValid = partySlots.every(s => s && s.role !== null && (TEST_BYPASS_TITLE || s.title === selectedRaid.titleName));
   const noDuplicateNames = (() => {
     const names = partySlots.filter(Boolean).map(s => s!.name);
     return names.length === new Set(names).size;
@@ -440,6 +446,11 @@ export default function TitleStatsPage() {
       const p = partySlots[i];
       if (!p) {
         setPartyMessage({ type: 'error', text: `${i + 1}번 슬롯이 비어있습니다.` });
+        setPartyRegistering(false);
+        return;
+      }
+      if (p.role === null) {
+        setPartyMessage({ type: 'error', text: `${p.name} — 딜러/서포터를 선택해주세요.` });
         setPartyRegistering(false);
         return;
       }
@@ -536,6 +547,7 @@ export default function TitleStatsPage() {
               const searching = slotSearchingIndex === i;
               const matchTitle = slot && (TEST_BYPASS_TITLE || slot.title === selectedRaid.titleName);
               const isSup = slot?.role === 'supporter';
+              const needsRolePick = !!slot && isHybridClass(slot.className) && slot.role === null;
 
               return (
                 <div key={i} className={`${styles.slot} ${matchTitle ? styles.slotOk : ''} ${slot && !matchTitle ? styles.slotBad : ''}`}>
@@ -630,6 +642,9 @@ export default function TitleStatsPage() {
                             </span>
                           )}
                         </div>
+                        {needsRolePick && (
+                          <div className={styles.slotRoleHint}>딜러 / 서포터 선택 필요</div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -761,8 +776,13 @@ export default function TitleStatsPage() {
             </div>
             {hasMatchingTitle ? (
               <>
-                <button className={styles.saveButton} onClick={handleSave} disabled={saving}>
-                  {saving ? '저장 중...' : '통계에 등록하기'}
+                {isHybridClass(profile.className) && profile.role === null && (
+                  <div className={styles.roleHint}>
+                    발키리는 딜러 / 서포터 모두 가능합니다. 위에서 본인 역할을 선택해주세요.
+                  </div>
+                )}
+                <button className={styles.saveButton} onClick={handleSave} disabled={saving || profile.role === null}>
+                  {saving ? '저장 중...' : profile.role === null ? '역할 선택 필요' : '통계에 등록하기'}
                 </button>
                 {saveMessage && (
                   <div className={`${styles.saveMessage} ${saveMessage.type === 'success' ? styles.saveSuccess : styles.saveError}`}>
@@ -813,7 +833,7 @@ export default function TitleStatsPage() {
             <div className={styles.hofKicker}>Hall of Flame</div>
             <h2 className={styles.hofTitle}>명예의 전당</h2>
             <div className={styles.hofSubtitle}>
-              가장 먼저 <RaidTag /> 칭호를 각인한 {PARTY_SIZE * TOTAL_PARTIES}명의 토벌자
+              <RaidTag /> 칭호를 각인한 {PARTY_SIZE * TOTAL_PARTIES}명의 토벌자
             </div>
           </div>
 

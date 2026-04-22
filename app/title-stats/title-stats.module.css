@@ -1413,6 +1413,30 @@
   color: #dc3545;
 }
 
+.roleHint {
+  padding: 0.5rem 0.75rem;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #2563eb;
+  margin-top: 0.3rem;
+  text-align: center;
+}
+
+.slotRoleHint {
+  margin-top: 0.25rem;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #2563eb;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 5px;
+  display: inline-block;
+}
+
 .noTitleMessage {
   padding: 0.55rem 0.75rem;
   background: rgba(193, 100, 32, 0.08);
