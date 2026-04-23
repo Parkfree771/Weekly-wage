@@ -89,9 +89,16 @@ function parseTitleText(raw: string): string {
   return raw.replace(/<img[^>]*>(.*?)<\/img>/gi, '').replace(/<[^>]+>/g, '').trim();
 }
 
+// DB 의 clear_date 는 'YYYY-MM-DD' 문자열.
+// new Date('YYYY-MM-DD') 는 UTC 자정으로 해석되어 로컬 TZ 에 따라 하루 밀릴 수 있으므로 직접 파싱.
+function parseDateParts(dateStr: string): { month: number; day: number } {
+  const [, m, d] = dateStr.split('-');
+  return { month: Number(m), day: Number(d) };
+}
+
 function formatChartDate(dateStr: string) {
-  const d = new Date(dateStr);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+  const { month, day } = parseDateParts(dateStr);
+  return `${month}/${day}`;
 }
 
 export default function TitleStatsPage() {
@@ -1046,7 +1053,7 @@ export default function TitleStatsPage() {
                               label?: string | number;
                             };
                             if (!active || !payload || payload.length === 0) return null;
-                            const d = new Date(String(label));
+                            const { month, day } = parseDateParts(String(label));
                             const datum = payload[0]?.payload;
                             const dailyDealerKey = chartMode === 'power' ? 'dealerPowerDaily' : 'dealerLevelDaily';
                             const dailySupporterKey = chartMode === 'power' ? 'supporterPowerDaily' : 'supporterLevelDaily';
@@ -1060,7 +1067,7 @@ export default function TitleStatsPage() {
                               v != null ? `${Number(v).toLocaleString()}${suffix}` : '-';
                             return (
                               <div className={styles.tooltip}>
-                                <div className={styles.tooltipDate}>{d.getMonth() + 1}월 {d.getDate()}일</div>
+                                <div className={styles.tooltipDate}>{month}월 {day}일</div>
                                 {dealer && (
                                   <div className={styles.tooltipRow}>
                                     <span className={styles.tooltipDot} style={{ background: '#dc3545' }} />

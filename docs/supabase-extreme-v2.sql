@@ -51,7 +51,8 @@ CREATE TABLE extreme_clears (
   title           TEXT        NOT NULL CHECK (title IN ('홍염의 군주', '혹한의 군주')),
   character_image TEXT,                    -- HOF 공대원만 저장 (개인 등록은 NULL)
   party_id        UUID        REFERENCES extreme_parties(id) ON DELETE CASCADE,
-  cleared_at      DATE        NOT NULL DEFAULT CURRENT_DATE,
+  -- Supabase 서버 TZ 가 UTC 이므로 CURRENT_DATE 는 한국 기준 하루 어긋날 수 있음 → KST 로 고정
+  cleared_at      DATE        NOT NULL DEFAULT (NOW() AT TIME ZONE 'Asia/Seoul')::DATE,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
   -- 같은 캐릭터가 같은 칭호로 중복 등록 불가 (공대 2번 가입/ 개인 재등록 방지)
@@ -220,7 +221,7 @@ BEGIN
       p_title,
       NULLIF(v_member->>'character_image', ''),
       v_party_id,
-      CURRENT_DATE
+      (NOW() AT TIME ZONE 'Asia/Seoul')::DATE
     )
     RETURNING id INTO v_source_id;
 
@@ -237,7 +238,7 @@ BEGIN
       v_member->>'role',
       (v_member->>'item_level')::NUMERIC,
       (v_member->>'combat_power')::NUMERIC,
-      CURRENT_DATE
+      (NOW() AT TIME ZONE 'Asia/Seoul')::DATE
     );
   END LOOP;
 
@@ -285,7 +286,7 @@ BEGIN
     p_title,
     NULL,
     NULL,
-    CURRENT_DATE
+    (NOW() AT TIME ZONE 'Asia/Seoul')::DATE
   )
   RETURNING id INTO v_new_id;
 
@@ -297,7 +298,7 @@ BEGIN
     WHERE TRIM(s) <> '';
   END IF;
 
-  PERFORM _increment_extreme_stats(p_title, p_character_class, p_role, p_item_level, p_combat_power, CURRENT_DATE);
+  PERFORM _increment_extreme_stats(p_title, p_character_class, p_role, p_item_level, p_combat_power, (NOW() AT TIME ZONE 'Asia/Seoul')::DATE);
 
   RETURN v_new_id;
 END;
