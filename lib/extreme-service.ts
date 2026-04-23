@@ -52,12 +52,20 @@ export interface HallOfFameEntry {
 
 export interface DailyChartData {
   date: string;
+  // 누적 평균(처음부터 이 날짜까지) — 차트 라인용
   dealerPower: number | null;
   supporterPower: number | null;
   dealerLevel: number | null;
   supporterLevel: number | null;
   dealerCount: number;
   supporterCount: number;
+  // 해당 날짜의 일별 평균 — 툴팁용
+  dealerPowerDaily: number | null;
+  supporterPowerDaily: number | null;
+  dealerLevelDaily: number | null;
+  supporterLevelDaily: number | null;
+  dealerCountDaily: number;
+  supporterCountDaily: number;
 }
 
 export interface ExtremeSummary {
@@ -131,7 +139,7 @@ function translateRpcError(err: { code?: string; message?: string; details?: str
   if (err.message?.includes('EXT_EMPTY_PARTY_NAME')) return '공대 이름을 입력해주세요.';
   if (err.message?.includes('EXT_HOF_FULL')) return '명예의 전당이 이미 10공대로 가득 찼습니다.';
   if (err.message?.includes('EXT_MUST_BE_8')) return '공대는 반드시 8명이어야 합니다.';
-  if (err.message?.includes('EXT_PARTY_PHASE_ONLY')) return '아직 공대 등록 단계입니다. 10공대가 채워진 후 개인 등록이 열립니다.';
+  if (err.message?.includes('EXT_PARTY_PHASE_ONLY')) return '아직 공대 등록 단계입니다. 시상대가 모두 채워진 후 개인 등록이 열립니다.';
 
   // UNIQUE 위반
   if (err.code === '23505') {
@@ -233,35 +241,79 @@ export async function getChartData(title: string): Promise<DailyChartData[]> {
       return [];
     }
 
-    const map = new Map<string, DailyChartData>();
+    // 일별 원본 집계 (툴팁에서 "그날 평균"으로 노출)
+    type DailyRaw = {
+      date: string;
+      dealerPowerDaily: number | null;
+      supporterPowerDaily: number | null;
+      dealerLevelDaily: number | null;
+      supporterLevelDaily: number | null;
+      dealerCountDaily: number;
+      supporterCountDaily: number;
+    };
+    const map = new Map<string, DailyRaw>();
     for (const row of data) {
       const d = row.clear_date as string;
       if (!map.has(d)) {
         map.set(d, {
           date: d,
-          dealerPower: null,
-          supporterPower: null,
-          dealerLevel: null,
-          supporterLevel: null,
-          dealerCount: 0,
-          supporterCount: 0,
+          dealerPowerDaily: null,
+          supporterPowerDaily: null,
+          dealerLevelDaily: null,
+          supporterLevelDaily: null,
+          dealerCountDaily: 0,
+          supporterCountDaily: 0,
         });
       }
       const e = map.get(d)!;
       const power = Math.round(Number(row.avg_power));
       const level = Math.round(Number(row.avg_level) * 100) / 100;
       if (row.role === 'dealer') {
-        e.dealerPower = power;
-        e.dealerLevel = level;
-        e.dealerCount = row.clear_count;
+        e.dealerPowerDaily = power;
+        e.dealerLevelDaily = level;
+        e.dealerCountDaily = row.clear_count;
       } else {
-        e.supporterPower = power;
-        e.supporterLevel = level;
-        e.supporterCount = row.clear_count;
+        e.supporterPowerDaily = power;
+        e.supporterLevelDaily = level;
+        e.supporterCountDaily = row.clear_count;
       }
     }
 
-    const result = [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
+    const sorted = [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
+
+    // 누적 평균(running average) 변환:
+    // 차트 라인은 "처음부터 이 날짜까지 등록된 모든 인원"의 평균.
+    // 일별 값은 툴팁에서 "그날 등록분만" 따로 노출한다.
+    let dPowSum = 0, dLvlSum = 0, dCnt = 0;
+    let sPowSum = 0, sLvlSum = 0, sCnt = 0;
+    const result: DailyChartData[] = sorted.map(e => {
+      if (e.dealerCountDaily > 0 && e.dealerPowerDaily != null && e.dealerLevelDaily != null) {
+        dPowSum += e.dealerPowerDaily * e.dealerCountDaily;
+        dLvlSum += e.dealerLevelDaily * e.dealerCountDaily;
+        dCnt   += e.dealerCountDaily;
+      }
+      if (e.supporterCountDaily > 0 && e.supporterPowerDaily != null && e.supporterLevelDaily != null) {
+        sPowSum += e.supporterPowerDaily * e.supporterCountDaily;
+        sLvlSum += e.supporterLevelDaily * e.supporterCountDaily;
+        sCnt   += e.supporterCountDaily;
+      }
+      return {
+        date: e.date,
+        dealerPower:    dCnt > 0 ? Math.round(dPowSum / dCnt) : null,
+        dealerLevel:    dCnt > 0 ? Math.round((dLvlSum / dCnt) * 100) / 100 : null,
+        supporterPower: sCnt > 0 ? Math.round(sPowSum / sCnt) : null,
+        supporterLevel: sCnt > 0 ? Math.round((sLvlSum / sCnt) * 100) / 100 : null,
+        dealerCount:    dCnt,
+        supporterCount: sCnt,
+        dealerPowerDaily:    e.dealerPowerDaily,
+        supporterPowerDaily: e.supporterPowerDaily,
+        dealerLevelDaily:    e.dealerLevelDaily,
+        supporterLevelDaily: e.supporterLevelDaily,
+        dealerCountDaily:    e.dealerCountDaily,
+        supporterCountDaily: e.supporterCountDaily,
+      };
+    });
+
     chartCache.set(title, { data: result, ts: Date.now() });
     return result;
   } catch (err) {

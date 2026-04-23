@@ -960,7 +960,7 @@ export default function TitleStatsPage() {
                 <div>
                   <div className={styles.sectionKicker}>Chart</div>
                   <h2 className={styles.sectionTitle}>칭호 전투력 추이</h2>
-                  <div className={styles.sectionSub}>날짜별 딜러/서포터 평균 {chartMode === 'power' ? '전투력' : '레벨'}</div>
+                  <div className={styles.sectionSub}>딜러/서포터 누적 평균 {chartMode === 'power' ? '전투력' : '레벨'} · 점에 커서를 올리면 당일 평균 표시</div>
                 </div>
               </div>
               <div className={styles.chartToolbar}>
@@ -1039,7 +1039,7 @@ export default function TitleStatsPage() {
                         <RechartsTooltip
                           cursor={{ stroke: 'var(--border-color)', strokeWidth: 1, strokeDasharray: '3 3' }}
                           content={(props) => {
-                            type TooltipPayload = { dataKey?: string | number; value?: number | string };
+                            type TooltipPayload = { dataKey?: string | number; value?: number | string; payload?: DailyChartData };
                             const { active, payload, label } = props as unknown as {
                               active?: boolean;
                               payload?: TooltipPayload[];
@@ -1047,23 +1047,46 @@ export default function TitleStatsPage() {
                             };
                             if (!active || !payload || payload.length === 0) return null;
                             const d = new Date(String(label));
+                            const datum = payload[0]?.payload;
+                            const dailyDealerKey = chartMode === 'power' ? 'dealerPowerDaily' : 'dealerLevelDaily';
+                            const dailySupporterKey = chartMode === 'power' ? 'supporterPowerDaily' : 'supporterLevelDaily';
                             const dealer = payload.find((p) => String(p.dataKey).includes('dealer'));
                             const supporter = payload.find((p) => String(p.dataKey).includes('supporter'));
+                            const dealerDaily = datum?.[dailyDealerKey];
+                            const supporterDaily = datum?.[dailySupporterKey];
+                            const dealerDailyCount = datum?.dealerCountDaily ?? 0;
+                            const supporterDailyCount = datum?.supporterCountDaily ?? 0;
+                            const fmt = (v: number | null | undefined) =>
+                              v != null ? `${Number(v).toLocaleString()}${suffix}` : '-';
                             return (
                               <div className={styles.tooltip}>
                                 <div className={styles.tooltipDate}>{d.getMonth() + 1}월 {d.getDate()}일</div>
                                 {dealer && (
                                   <div className={styles.tooltipRow}>
                                     <span className={styles.tooltipDot} style={{ background: '#dc3545' }} />
-                                    <span className={styles.tooltipLabel}>딜러</span>
-                                    <span className={styles.tooltipValue}>{dealer.value != null ? `${Number(dealer.value).toLocaleString()}${suffix}` : '-'}</span>
+                                    <span className={styles.tooltipLabel}>딜러 누적</span>
+                                    <span className={styles.tooltipValue}>{fmt(dealer.value as number | null | undefined)}</span>
+                                  </div>
+                                )}
+                                {dealer && dealerDailyCount > 0 && (
+                                  <div className={styles.tooltipRow}>
+                                    <span className={styles.tooltipDot} style={{ background: '#dc3545', opacity: 0.35 }} />
+                                    <span className={styles.tooltipLabel}>당일 ({dealerDailyCount}명)</span>
+                                    <span className={styles.tooltipValue}>{fmt(dealerDaily)}</span>
                                   </div>
                                 )}
                                 {supporter && (
                                   <div className={styles.tooltipRow}>
                                     <span className={styles.tooltipDot} style={{ background: '#3b82f6' }} />
-                                    <span className={styles.tooltipLabel}>서포터</span>
-                                    <span className={styles.tooltipValue}>{supporter.value != null ? `${Number(supporter.value).toLocaleString()}${suffix}` : '-'}</span>
+                                    <span className={styles.tooltipLabel}>서포터 누적</span>
+                                    <span className={styles.tooltipValue}>{fmt(supporter.value as number | null | undefined)}</span>
+                                  </div>
+                                )}
+                                {supporter && supporterDailyCount > 0 && (
+                                  <div className={styles.tooltipRow}>
+                                    <span className={styles.tooltipDot} style={{ background: '#3b82f6', opacity: 0.35 }} />
+                                    <span className={styles.tooltipLabel}>당일 ({supporterDailyCount}명)</span>
+                                    <span className={styles.tooltipValue}>{fmt(supporterDaily)}</span>
                                   </div>
                                 )}
                               </div>

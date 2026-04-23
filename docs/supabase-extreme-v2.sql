@@ -8,7 +8,7 @@
 --
 -- 클라이언트는 RPC 두 개만 호출:
 --   - register_extreme_party(title, party_name, members JSONB)    -- 공대 단위 8인 일괄
---   - register_extreme_individual(name, class, role, lvl, pw, title)  -- 80명 채워진 이후
+--   - register_extreme_individual(name, class, role, lvl, pw, title)  -- 40명 채워진 이후
 -- 테이블 직접 INSERT/UPDATE/DELETE 는 RLS 로 차단.
 -- ============================================================
 
@@ -246,7 +246,7 @@ END;
 $$;
 
 -- ============================================================
--- 7) RPC — 개인 등록 (10공대 모두 찬 후에만)
+-- 7) RPC — 개인 등록 (5공대 모두 찬 후에만)
 --   - character_image 저장 안 함
 --   - party_id = NULL
 -- ============================================================
@@ -266,9 +266,9 @@ DECLARE
   v_party_count INT;
   v_new_id      BIGINT;
 BEGIN
-  -- 10공대 완성 전에는 거부
+  -- 5공대 완성 전에는 거부 (시상대 40석)
   SELECT COUNT(*) INTO v_party_count FROM extreme_parties WHERE title = p_title;
-  IF v_party_count < 10 THEN
+  IF v_party_count < 5 THEN
     RAISE EXCEPTION 'EXT_PARTY_PHASE_ONLY';
   END IF;
 
