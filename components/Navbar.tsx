@@ -46,8 +46,8 @@ const NAV_GROUPS: NavGroup[] = [
 
 const NAV_STANDALONE: NavItem[] = [
   { href: '/title-stats', label: '홍염의 군주', badge: 'NEW' },
+  { href: '/title-stats/frost', label: '혹한의 군주' },
   { href: '/extreme', label: '익스트림', badge: 'NEW' },
-  { href: '/mypage', label: '마이페이지' },
 ];
 
 // 모바일 오프캔버스용 전체 목록
@@ -60,8 +60,8 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/refining', label: '재련 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
   { href: '/title-stats', label: '홍염의 군주', badge: 'NEW' },
+  { href: '/title-stats/frost', label: '혹한의 군주' },
   { href: '/extreme', label: '익스트림', badge: 'NEW' },
-  { href: '/mypage', label: '마이페이지' },
 ];
 
 export default function Navbar() {
@@ -76,6 +76,7 @@ export default function Navbar() {
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
+    if (href === '/title-stats') return pathname === '/title-stats';
     return pathname.startsWith(href);
   };
 
@@ -92,7 +93,7 @@ export default function Navbar() {
                       href === '/cathedral' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
                       href === '/title-stats' ? 'nav-extreme' :
-                      href === '/mypage' ? 'nav-mypage' : 'nav-weekly';
+                      href === '/title-stats/frost' ? 'nav-frost' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
   };

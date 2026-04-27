@@ -160,7 +160,10 @@ void main() {
   vec3 color = uEyeColor * uIntensity * clamp(max(innerRing + innerEye, outerEyeGlow + outerBgGlow) - pupil, 0.0, 3.0);
   color += uBgColor;
 
-  gl_FragColor = vec4(color, 1.0);
+  // 색 밝기 기반 alpha — 검정 영역은 투명하게 빠져 페이지 배경과 자연스럽게 합쳐진다.
+  float lum = max(color.r, max(color.g, color.b));
+  float a = clamp(lum * 1.4, 0.0, 1.0);
+  gl_FragColor = vec4(color, a);
 }
 `;
 

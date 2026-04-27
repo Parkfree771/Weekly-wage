@@ -119,12 +119,14 @@ function invalidateCache(title?: string) {
     summaryCache.delete(title);
     classStatsCache.delete(title);
     hofCache.delete(title);
+    allClearsCache.delete(title);
     locksCache.delete(title);
   } else {
     chartCache.clear();
     summaryCache.clear();
     classStatsCache.clear();
     hofCache.clear();
+    allClearsCache.clear();
     locksCache.clear();
   }
 }
@@ -215,6 +217,41 @@ export async function registerExtremeIndividual(
     return { success: true, id: data as number };
   } catch (err) {
     console.error('register_extreme_individual exception:', err);
+    return { success: false, error: '등록 중 오류가 발생했습니다.' };
+  }
+}
+
+// ============================================================
+// 혹한의 군주 — 개인 등록 RPC (character_image 저장 버전)
+//
+// 홍염은 명전 80명에만 이미지 노출 → register_extreme_individual 은 image=NULL.
+// 혹한은 모든 등록자가 카드 명단에 노출 → 신규 RPC 호출하여 image 저장.
+// 홍염용 registerExtremeIndividual 은 변경 0 (격리).
+// ============================================================
+export async function registerFrostIndividual(
+  input: IndividualInput & { character_image: string | null }
+): Promise<{ success: boolean; error?: string; id?: number }> {
+  try {
+    const { data, error } = await supabase.rpc('register_extreme_individual_with_image', {
+      p_character_name: input.character_name,
+      p_character_class: input.character_class,
+      p_role: input.role,
+      p_item_level: input.item_level,
+      p_combat_power: input.combat_power,
+      p_title: input.title,
+      p_sibling_names: input.sibling_names,
+      p_character_image: input.character_image,
+    });
+
+    if (error) {
+      console.error('register_extreme_individual_with_image error:', error);
+      return { success: false, error: translateRpcError(error) };
+    }
+
+    invalidateCache(input.title);
+    return { success: true, id: data as number };
+  } catch (err) {
+    console.error('register_extreme_individual_with_image exception:', err);
     return { success: false, error: '등록 중 오류가 발생했습니다.' };
   }
 }
@@ -494,6 +531,75 @@ export async function getHallOfFame(title: string): Promise<HallOfFameEntry[]> {
     return rows;
   } catch (err) {
     console.error('Error fetching hall of fame:', err);
+    return [];
+  }
+}
+
+// ============================================================
+// 전체 토벌자 목록 (혹한 페이지 전용 — 공대/개인 구분 없이 등록된 모든 인원)
+// 전투력 내림차순 + 캐시는 stats 와 동일 TTL
+// ============================================================
+const allClearsCache = new Map<string, { data: HallOfFameEntry[]; ts: number }>();
+
+export async function getAllClears(title: string): Promise<HallOfFameEntry[]> {
+  const ttl = isIndividualPhase() ? TTL_INDIVIDUAL_STATS : TTL_PARTY_STATS;
+  const cached = allClearsCache.get(title);
+  if (cached && Date.now() - cached.ts < ttl) {
+    return cached.data;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('extreme_clears')
+      .select(`
+        id, character_name, character_class, role, item_level, combat_power,
+        character_image, created_at, party_id,
+        extreme_parties:party_id ( party_name, created_at )
+      `)
+      .eq('title', title)
+      .order('combat_power', { ascending: false });
+
+    if (error || !data) {
+      console.error('Error fetching all clears:', error);
+      return [];
+    }
+
+    type Row = {
+      id: number;
+      character_name: string;
+      character_class: string;
+      role: 'dealer' | 'supporter';
+      item_level: number | string;
+      combat_power: number | string;
+      character_image: string | null;
+      created_at: string;
+      party_id: string | null;
+      extreme_parties: { party_name: string; created_at: string } | { party_name: string; created_at: string }[] | null;
+    };
+
+    const rows = (data as Row[]).map(row => {
+      const p = Array.isArray(row.extreme_parties)
+        ? (row.extreme_parties[0] ?? null)
+        : row.extreme_parties;
+      return {
+        id: row.id,
+        characterName: row.character_name,
+        characterClass: row.character_class,
+        role: row.role,
+        itemLevel: Number(row.item_level),
+        combatPower: Number(row.combat_power),
+        characterImage: row.character_image ?? null,
+        createdAt: row.created_at,
+        partyId: row.party_id,
+        partyName: p?.party_name ?? null,
+        partyCreatedAt: p?.created_at ?? null,
+      } as HallOfFameEntry;
+    });
+
+    allClearsCache.set(title, { data: rows, ts: Date.now() });
+    return rows;
+  } catch (err) {
+    console.error('Error fetching all clears:', err);
     return [];
   }
 }

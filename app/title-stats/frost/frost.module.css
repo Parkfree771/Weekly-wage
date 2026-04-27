@@ -1,0 +1,479 @@
+/* ===========================================================
+   혹한의 군주 — 홍염의 군주 페이지와 동일 레이아웃/디자인.
+   적동(#c16420 / #f0b080 / #a87050 / #FF6F37 등) → 청(#3b50b5) 매핑만.
+   클래스 hash 매치는 [class*="..."] attribute selector 사용.
+   =========================================================== */
+
+.frostPage {
+  position: relative;
+}
+
+/* ───────── 시상대: 적동 그라디언트 → 청 ───────── */
+.frostPage [class*="stageSection"] {
+  background:
+    radial-gradient(ellipse 60% 45% at 50% 0%, rgba(74, 168, 216, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(74, 168, 216, 0.20) 0%, transparent 70%),
+    linear-gradient(180deg, #000 0%, #030814 18%, #061425 50%, #0a1f33 85%, #0d2540 100%) !important;
+}
+
+.frostPage [class*="stageSection"]::after {
+  background:
+    radial-gradient(ellipse 70% 100% at 50% 100%, rgba(116, 178, 224, 0.16) 0%, transparent 80%) !important;
+}
+
+/* EvilEye 히어로 — 적동 → 청 */
+.frostPage [class*="eyeHero"] {
+  background: radial-gradient(ellipse at 50% 60%, #061425 0%, #03080f 70%, #000 100%) !important;
+}
+
+.frostPage [class*="eyeHero"]::after {
+  background: linear-gradient(to bottom, transparent 0%, #030814 60%, #061425 100%) !important;
+}
+
+/* 메인 타이틀 */
+.frostPage [class*="eyeTitle"] {
+  color: #cce6fb !important;
+  text-shadow:
+    0 0 18px rgba(74, 168, 216, 0.6),
+    0 0 36px rgba(74, 168, 216, 0.35),
+    0 4px 14px rgba(0, 0, 0, 0.85) !important;
+}
+
+.frostPage [class*="eyeSubtitle"] {
+  color: #6fa9d4 !important;
+}
+
+/* 명전 헤더 */
+.frostPage [class*="hofKicker"] { color: #88baea !important; }
+
+.frostPage [class*="hofTitle"] {
+  color: #e6f3ff !important;
+  text-shadow: 0 0 24px rgba(74, 168, 216, 0.35);
+}
+
+/* 공대 이름 — 적동 색감 → 청 */
+.frostPage [class*="partyNameText"] {
+  color: #cce6fb !important;
+  text-shadow:
+    0 0 24px rgba(74, 168, 216, 0.55),
+    0 0 48px rgba(74, 168, 216, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.85) !important;
+}
+
+.frostPage [class*="partyRowGold"] [class*="partyNameText"] {
+  color: #f0f7ff !important;
+  text-shadow:
+    0 0 30px rgba(168, 210, 240, 0.7),
+    0 0 60px rgba(116, 178, 224, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.85) !important;
+}
+
+/* 명전 카드 적동 테두리 → 청 */
+.frostPage [class*="fameCard"] {
+  border-color: rgba(116, 178, 224, 0.45) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(168, 210, 240, 0.12),
+    0 12px 32px -10px rgba(0, 0, 0, 0.85),
+    0 0 22px -8px rgba(74, 168, 216, 0.25) !important;
+}
+
+.frostPage [class*="partyRowGold"] [class*="fameCard"] {
+  border-color: rgba(168, 210, 240, 0.6) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(220, 235, 255, 0.2),
+    0 16px 36px -8px rgba(0, 0, 0, 0.9),
+    0 0 26px -5px rgba(168, 210, 240, 0.4) !important;
+}
+
+.frostPage [class*="fameCardEmpty"] {
+  border-color: rgba(116, 178, 224, 0.22) !important;
+}
+
+.frostPage [class*="fameTitleBarName"] { color: #a8d2f0 !important; }
+.frostPage [class*="partyRowGold"] [class*="fameTitleBarName"] { color: #e6f3ff !important; }
+.frostPage [class*="fameTitleBarDivider"] { background: rgba(116, 178, 224, 0.4) !important; }
+.frostPage [class*="partyRowGold"] [class*="fameTitleBarDivider"] { background: rgba(168, 210, 240, 0.6) !important; }
+
+/* ───────── 핵심 색감 매핑 (적동 → 청) ───────── */
+
+/* 섹션 헤더 */
+.frostPage [class*="sectionKicker"] { color: #3b50b5 !important; }
+
+.frostPage [class*="sectionOrnament"] {
+  background: linear-gradient(90deg, transparent 0%, #3b50b5 50%, transparent 100%) !important;
+}
+
+/* cardBlock 좌측 줄 */
+.frostPage [class*="cardBlock"]::before {
+  background: linear-gradient(180deg, #3b50b5 0%, transparent 100%) !important;
+}
+
+/* summaryRibbon 상단 줄 */
+.frostPage [class*="summaryRibbon"]::before {
+  background: linear-gradient(90deg, transparent 0%, #3b50b5 50%, transparent 100%) !important;
+}
+
+/* 총 등록 인원 — 그라디언트 텍스트 → 단색 */
+.frostPage [class*="summaryTotal"] [class*="summaryValue"] {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: unset !important;
+  color: #3b50b5 !important;
+}
+
+/* 차트 toolbar active — 단색 */
+.frostPage [class*="chartToolbarActive"] {
+  background: #3b50b5 !important;
+  box-shadow: 0 2px 5px rgba(59, 80, 181, 0.3) !important;
+}
+
+/* RaidTag */
+.frostPage [class*="raidTagName"] { color: #3b50b5 !important; }
+
+/* 인풋 focus */
+.frostPage [class*="searchInput"]:focus,
+.frostPage [class*="partyNameInput"]:focus,
+.frostPage [class*="slotInput"]:focus {
+  border-color: #3b50b5 !important;
+  box-shadow: 0 0 0 2px rgba(59, 80, 181, 0.18) !important;
+}
+
+/* primary 버튼 — 단색 #3b50b5 */
+.frostPage [class*="searchButton"],
+.frostPage [class*="saveButton"] {
+  background: #3b50b5 !important;
+  box-shadow: 0 2px 6px rgba(59, 80, 181, 0.3) !important;
+}
+
+.frostPage [class*="searchButton"]:hover:not(:disabled),
+.frostPage [class*="saveButton"]:hover:not(:disabled) {
+  background: #4d63cf !important;
+  box-shadow: 0 4px 10px rgba(59, 80, 181, 0.4) !important;
+}
+
+.frostPage [class*="partySubmitBtn"] {
+  background: #3b50b5 !important;
+  box-shadow:
+    0 4px 12px rgba(59, 80, 181, 0.35),
+    inset 0 1px 0 rgba(220, 230, 255, 0.2) !important;
+}
+
+.frostPage [class*="partySubmitBtn"]:hover:not(:disabled) {
+  background: #4d63cf !important;
+  box-shadow:
+    0 6px 16px rgba(59, 80, 181, 0.45),
+    inset 0 1px 0 rgba(220, 230, 255, 0.25) !important;
+}
+
+.frostPage [class*="slotSearchBtn"] {
+  background: #3b50b5 !important;
+  box-shadow: 0 2px 5px rgba(59, 80, 181, 0.28) !important;
+}
+
+.frostPage [class*="slotSearchBtn"]:hover:not(:disabled) {
+  box-shadow: 0 3px 8px rgba(59, 80, 181, 0.4) !important;
+}
+
+/* 텍스트 색 매핑 */
+.frostPage [class*="indProfileValuePower"] { color: #3b50b5 !important; }
+.frostPage [class*="partyNameLabel"] { color: #3b50b5 !important; }
+.frostPage [class*="slotOk"] [class*="slotNumber"] { color: #3b50b5 !important; }
+.frostPage [class*="slotStatPower"] { color: #3b50b5 !important; }
+
+/* 칭호 매치 (혹한의 군주) */
+.frostPage [class*="titleMatchIce"] { color: #6fa9d4 !important; }
+
+/* 직업별 통계 카드 — 회색/적동 톤 제거 + 인디고 테두리 + 미세 입체감 */
+.frostPage [class*="classCard"] {
+  background: var(--card-bg) !important;
+  border: 1px solid rgba(59, 80, 181, 0.28) !important;
+  border-radius: 10px !important;
+  box-shadow:
+    1px 1px 0 0 rgba(59, 80, 181, 0.18),
+    2px 2px 0 0 rgba(59, 80, 181, 0.09) !important;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s !important;
+}
+
+.frostPage [class*="classCard"]:hover {
+  transform: translate(-1px, -1px) !important;
+  border-color: rgba(59, 80, 181, 0.55) !important;
+  box-shadow:
+    2px 2px 0 0 rgba(59, 80, 181, 0.28),
+    3px 3px 0 0 rgba(59, 80, 181, 0.14) !important;
+}
+
+/* 상위 3개 (classCardTop) — 적동 그라디언트 → 인디고 강조 */
+.frostPage [class*="classCardTop"] {
+  border-color: rgba(59, 80, 181, 0.6) !important;
+  background:
+    linear-gradient(135deg, rgba(59, 80, 181, 0.12) 0%, transparent 55%),
+    var(--card-bg) !important;
+}
+
+:global([data-theme="dark"]) .frostPage [class*="classCard"] {
+  box-shadow:
+    1px 1px 0 0 rgba(107, 126, 214, 0.22),
+    2px 2px 0 0 rgba(107, 126, 214, 0.11) !important;
+}
+
+:global([data-theme="dark"]) .frostPage [class*="classCard"]:hover {
+  box-shadow:
+    2px 2px 0 0 rgba(107, 126, 214, 0.32),
+    3px 3px 0 0 rgba(107, 126, 214, 0.16) !important;
+}
+
+
+/* ───────── 혹한의 군주 칭호 보유자 섹션 ───────── */
+.huntersSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 정렬/역할 필터 — 박스 없이 inline 텍스트 토글 */
+.huntersToolbar {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.huntersToolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.huntersToolbarLabel {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-right: 0.55rem;
+}
+
+.huntersToolbarBtn {
+  position: relative;
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.huntersToolbarBtn:hover {
+  color: #3b50b5;
+}
+
+.huntersToolbarBtnActive {
+  color: #3b50b5;
+}
+
+.huntersToolbarBtnActive::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -2px;
+  height: 2px;
+  background: #3b50b5;
+  border-radius: 1px;
+}
+
+.huntersToolbarDivider {
+  width: 1px;
+  height: 14px;
+  background: var(--border-color);
+  margin: 0 0.25rem;
+}
+
+.huntersCount {
+  font-size: 13px;
+  font-weight: 800;
+  color: #3b50b5;
+  font-variant-numeric: tabular-nums;
+}
+
+.huntersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.huntersCard {
+  position: relative;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+/* hover 시 그림자 한 단계 강하게 (shadow-hard 자동 적용 위에 덮어씀) */
+.huntersCard:hover {
+  transform: translate(-1px, -1px);
+  box-shadow:
+    3px 3px 0 0 rgba(59, 80, 181, 0.28),
+    5px 5px 0 0 rgba(59, 80, 181, 0.14) !important;
+}
+
+:global([data-theme="dark"]) .huntersCard:hover {
+  box-shadow:
+    3px 3px 0 0 rgba(107, 126, 214, 0.35),
+    5px 5px 0 0 rgba(107, 126, 214, 0.18) !important;
+}
+
+.huntersImageWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  background: var(--bg-tertiary, #1a1a1a);
+}
+
+.huntersImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.huntersImagePlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-align: center;
+  padding: 4px;
+}
+
+.huntersRoleTag {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+/* 좌상단 순위 — 박스/배경 없이 숫자만, 검정 위에 떠 있는 느낌 */
+.huntersRankTag {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  z-index: 2;
+  font-family: 'Inter', 'Noto Sans KR', system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: #e8e8e8;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 6px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+/* 1~3등 — gold / silver / bronze tint */
+.huntersRankTop1 {
+  color: #f4d36a;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 8px rgba(0, 0, 0, 0.85),
+    0 0 12px rgba(244, 211, 106, 0.4);
+}
+
+.huntersRankTop2 {
+  color: #d6dee5;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 8px rgba(0, 0, 0, 0.85),
+    0 0 10px rgba(214, 222, 229, 0.3);
+}
+
+.huntersRankTop3 {
+  color: #d99466;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 8px rgba(0, 0, 0, 0.85),
+    0 0 10px rgba(217, 148, 102, 0.3);
+}
+
+.huntersRoleDealer {
+  background: #dc3545;
+  color: #fff;
+}
+
+.huntersRoleSupporter {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.huntersInfo {
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.huntersName {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.huntersClass {
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.huntersPower {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.huntersEmpty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+  background: var(--card-body-bg-blue, var(--bg-secondary));
+}
+
+@media (max-width: 600px) {
+  .huntersGrid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+  .huntersName { font-size: 12px; }
+  .huntersClass { font-size: 9px; }
+  .huntersPower { font-size: 10px; }
+}

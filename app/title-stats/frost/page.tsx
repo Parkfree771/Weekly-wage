@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { Form } from 'react-bootstrap';
@@ -8,10 +8,11 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer, Line, ComposedChart, ReferenceLine,
 } from 'recharts';
-import styles from './title-stats.module.css';
+import styles from '../title-stats.module.css';
+import frost from './frost.module.css';
 import {
-  registerExtremeParty, registerExtremeIndividual,
-  getChartData, getSummary, getClassStats, getHallOfFame, getRosterLocks,
+  registerExtremeParty, registerFrostIndividual,
+  getChartData, getSummary, getClassStats, getHallOfFame, getAllClears, getRosterLocks,
   getRole, isHybridClass,
   type DailyChartData, type ExtremeSummary, type ClassStat, type HallOfFameEntry,
   type PartyMemberInput,
@@ -22,35 +23,13 @@ const EvilEye = dynamic(() => import('@/components/EvilEye'), {
   loading: () => <div className={styles.eyeFallback} />,
 });
 
-// ─── 레이드 정의 ───
-type RaidKey = 'fire' | 'ice';
-
-type Raid = {
-  key: RaidKey;
-  titleName: string;
-  subtitle: string;
-  image: string;
-  openAt: Date;
-  eyeColor: string;
-};
-
-const RAIDS: Record<RaidKey, Raid> = {
-  fire: {
-    key: 'fire',
-    titleName: '홍염의 군주',
-    subtitle: 'Lord of Crimson Flame',
-    image: '/extreme-fire.webp',
-    openAt: new Date(2026, 3, 21, 0, 0, 0), // 페이지 공개 (실제 레이드 오픈: 2026-04-22 10:00)
-    eyeColor: '#FF6F37',
-  },
-  ice: {
-    key: 'ice',
-    titleName: '혹한의 군주',
-    subtitle: 'Lord of Frozen Tundra',
-    image: '/extreme-ice.webp',
-    openAt: new Date(2026, 4, 20, 10, 0, 0),
-    eyeColor: '#4AA8D8',
-  },
+// ─── 레이드 정의 (혹한의 군주 고정) ───
+const RAID = {
+  titleName: '혹한의 군주',
+  subtitle: 'Lord of Frozen Tundra',
+  image: '/extreme-ice.webp',
+  openAt: new Date(2026, 4, 20, 10, 0, 0),
+  eyeColor: '#4AA8D8',
 };
 
 const PARTY_SIZE = 8;
@@ -101,9 +80,7 @@ function formatChartDate(dateStr: string) {
   return `${month}/${day}`;
 }
 
-export default function TitleStatsPage() {
-  const [selectedKey, setSelectedKey] = useState<RaidKey>('fire');
-
+export default function FrostTitleStatsPage() {
   // 모바일 감지 (차트 margin/YAxis 조정용)
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -123,6 +100,28 @@ export default function TitleStatsPage() {
   // 명예의 전당
   const [hof, setHof] = useState<HallOfFameEntry[]>([]);
   const [partyIndex, setPartyIndex] = useState(0);
+
+  // 혹한의 군주 칭호 보유자 명단 (공대/개인 구분 없이 전체)
+  const [allHunters, setAllHunters] = useState<HallOfFameEntry[]>([]);
+  type SortMode = 'created' | 'power' | 'level';
+  type RoleFilter = 'all' | 'dealer' | 'supporter';
+  const [sortMode, setSortMode] = useState<SortMode>('created');
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+
+  const filteredHunters = useMemo(() => {
+    const base = roleFilter === 'all' ? allHunters : allHunters.filter(h => h.role === roleFilter);
+    const sorted = [...base];
+    if (sortMode === 'power') {
+      sorted.sort((a, b) => b.combatPower - a.combatPower);
+    } else if (sortMode === 'level') {
+      sorted.sort((a, b) => b.itemLevel - a.itemLevel);
+    } else {
+      // 등록순 — createdAt 오름차순
+      sorted.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    }
+    return sorted;
+  }, [allHunters, sortMode, roleFilter]);
+
 
   // 원정대 잠금: character_name → party_name (개인 등록이면 null)
   const [rosterLocks, setRosterLocks] = useState<Map<string, string | null>>(new Map());
@@ -144,9 +143,9 @@ export default function TitleStatsPage() {
   const [partyRegistering, setPartyRegistering] = useState(false);
   const [partyMessage, setPartyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const selectedRaid = RAIDS[selectedKey];
-  const isReleased = new Date() >= selectedRaid.openAt;
-  const isIce = selectedKey === 'ice';
+  const selectedRaid = RAID;
+  const isReleased = true; // 페이지 자체는 항상 공개. 칭호 자체가 없어 등록은 자연스럽게 차단됨.
+  const isIce = true;
   const hofFull = hof.length >= PARTY_SIZE * TOTAL_PARTIES; // 40명 채워짐 → 개인 등록 해금
   const registrationMode: 'party' | 'individual' = hofFull ? 'individual' : 'party';
 
@@ -168,33 +167,27 @@ export default function TitleStatsPage() {
 
   const loadAll = useCallback(async () => {
     setChartLoading(true);
-    const [chartRes, summaryRes, classesRes, hofRes, locksRes] = await Promise.all([
+    const [chartRes, summaryRes, classesRes, hofRes, allRes, locksRes] = await Promise.all([
       getChartData(selectedRaid.titleName),
       getSummary(selectedRaid.titleName),
       getClassStats(selectedRaid.titleName),
       getHallOfFame(selectedRaid.titleName),
+      getAllClears(selectedRaid.titleName),
       getRosterLocks(selectedRaid.titleName),
     ]);
     setChartData(chartRes);
     setSummary(summaryRes);
     setClassStats(classesRes);
     setHof(hofRes);
+    setAllHunters(allRes);
     setRosterLocks(locksRes);
     setChartLoading(false);
   }, [selectedRaid.titleName]);
 
   useEffect(() => {
-    if (isReleased) {
-      loadAll();
-    } else {
-      setChartLoading(false);
-      setChartData([]);
-      setSummary(null);
-      setClassStats([]);
-      setHof([]);
-    }
+    loadAll();
     setPartyIndex(0);
-  }, [loadAll, isReleased, selectedKey]);
+  }, [loadAll]);
 
   const hasMatchingTitle = profile && (TEST_BYPASS_TITLE || profile.title === selectedRaid.titleName);
 
@@ -265,7 +258,7 @@ export default function TitleStatsPage() {
     setSaving(true);
     setSaveMessage(null);
 
-    const result = await registerExtremeIndividual({
+    const result = await registerFrostIndividual({
       character_name: profile.name,
       character_class: profile.className,
       role: profile.role,
@@ -273,6 +266,7 @@ export default function TitleStatsPage() {
       combat_power: power,
       title: selectedRaid.titleName,
       sibling_names: profile.siblingNames,
+      character_image: profile.image || null,
     });
 
     if (result.success) {
@@ -521,7 +515,7 @@ export default function TitleStatsPage() {
 
   // 등록 섹션 (시상대 바로 아래에 배치하기 위해 분리 렌더)
   const registrationSection = registrationMode === 'party' ? (
-    <section className={styles.cardBlock}>
+    <section className={`${styles.cardBlock} shadow-hard`}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionLabel}>
           <span className={styles.sectionOrnament} />
@@ -703,7 +697,7 @@ export default function TitleStatsPage() {
       )}
     </section>
   ) : (
-    <section className={`${styles.cardBlock} ${styles.indSection}`}>
+    <section className={`${styles.cardBlock} ${styles.indSection} shadow-hard`}>
       <div className={`${styles.sectionHeader} ${styles.indHeader}`}>
         <div className={styles.sectionKicker}>Register · Individual</div>
         <h2 className={styles.sectionTitle}>내 전투력 등록</h2>
@@ -818,7 +812,7 @@ export default function TitleStatsPage() {
   );
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${frost.frostPage}`}>
       {/* ═══════════════════════ 시상대 섹션: 히어로 + 탭 + HOF (한몸) ═══════════════════════ */}
       <div className={styles.stageSection}>
         {/* 히어로: EvilEye */}
@@ -849,7 +843,7 @@ export default function TitleStatsPage() {
             <div className={styles.hofKicker}>Hall of Flame</div>
             <h2 className={styles.hofTitle}>명예의 전당</h2>
             <div className={styles.hofSubtitle}>
-              <RaidTag /> 칭호를 각인한 {PARTY_SIZE * TOTAL_PARTIES}명의 토벌자
+              <RaidTag /> 칭호를 각인한 {PARTY_SIZE * TOTAL_PARTIES}명
             </div>
           </div>
 
@@ -969,7 +963,7 @@ export default function TitleStatsPage() {
           {registrationSection}
 
           {/* 차트 */}
-          <section className={styles.cardBlock}>
+          <section className={`${styles.cardBlock} shadow-hard`}>
             <div className={styles.sectionHeader}>
               <div className={styles.sectionLabel}>
                 <span className={styles.sectionOrnament} />
@@ -1186,8 +1180,132 @@ export default function TitleStatsPage() {
             </div>
           </section>
 
+          {/* === 혹한의 군주 칭호 보유자 (직업별 통계 위) === */}
+          <section className={`${styles.cardBlock} shadow-hard`}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionLabel}>
+                <span className={styles.sectionOrnament} />
+                <div>
+                  <div className={styles.sectionKicker}>Title Holders</div>
+                  <h2 className={styles.sectionTitle}>혹한의 군주 칭호 보유자</h2>
+                  <div className={styles.sectionSub}>
+                    <RaidTag /> 칭호를 등록한 전체 명단
+                    {filteredHunters.length > 0 && (
+                      <> · <span className={frost.huntersCount}>{filteredHunters.length}명</span></>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 정렬/역할 필터 — 헤더 우측 inline */}
+              <div className={frost.huntersToolbar}>
+                <div className={frost.huntersToolbarGroup}>
+                  <span className={frost.huntersToolbarLabel}>정렬</span>
+                  <button
+                    type="button"
+                    className={`${frost.huntersToolbarBtn} ${sortMode === 'created' ? frost.huntersToolbarBtnActive : ''}`}
+                    onClick={() => setSortMode('created')}
+                  >
+                    등록순
+                  </button>
+                  <button
+                    type="button"
+                    className={`${frost.huntersToolbarBtn} ${sortMode === 'power' ? frost.huntersToolbarBtnActive : ''}`}
+                    onClick={() => setSortMode('power')}
+                  >
+                    전투력순
+                  </button>
+                  <button
+                    type="button"
+                    className={`${frost.huntersToolbarBtn} ${sortMode === 'level' ? frost.huntersToolbarBtnActive : ''}`}
+                    onClick={() => setSortMode('level')}
+                  >
+                    레벨순
+                  </button>
+                </div>
+                <span className={frost.huntersToolbarDivider} />
+                <div className={frost.huntersToolbarGroup}>
+                  <span className={frost.huntersToolbarLabel}>역할</span>
+                  <button
+                    type="button"
+                    className={`${frost.huntersToolbarBtn} ${roleFilter === 'all' ? frost.huntersToolbarBtnActive : ''}`}
+                    onClick={() => setRoleFilter('all')}
+                  >
+                    전체
+                  </button>
+                  <button
+                    type="button"
+                    className={`${frost.huntersToolbarBtn} ${roleFilter === 'dealer' ? frost.huntersToolbarBtnActive : ''}`}
+                    onClick={() => setRoleFilter('dealer')}
+                  >
+                    딜러
+                  </button>
+                  <button
+                    type="button"
+                    className={`${frost.huntersToolbarBtn} ${roleFilter === 'supporter' ? frost.huntersToolbarBtnActive : ''}`}
+                    onClick={() => setRoleFilter('supporter')}
+                  >
+                    서포터
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className={frost.huntersGrid}>
+              {filteredHunters.length === 0 ? (
+                <div className={frost.huntersEmpty}>
+                  {allHunters.length === 0
+                    ? '아직 등록자가 없습니다 — 혹한의 군주 칭호를 가장 먼저 획득해주세요.'
+                    : '조건에 맞는 등록자가 없습니다.'}
+                </div>
+              ) : (
+                filteredHunters.map((entry, idx) => {
+                  const isSup = entry.role === 'supporter';
+                  return (
+                    <div key={entry.id} className={`${frost.huntersCard} shadow-hard`}>
+                      <div className={frost.huntersImageWrap}>
+                        {entry.characterImage ? (
+                          <Image
+                            src={entry.characterImage}
+                            alt={entry.characterName}
+                            width={200}
+                            height={300}
+                            className={frost.huntersImage}
+                            unoptimized
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className={frost.huntersImagePlaceholder}>
+                            {entry.characterClass}
+                          </div>
+                        )}
+                        <span
+                          className={`${frost.huntersRankTag} ${
+                            idx === 0 ? frost.huntersRankTop1
+                              : idx === 1 ? frost.huntersRankTop2
+                              : idx === 2 ? frost.huntersRankTop3
+                              : ''
+                          }`}
+                        >
+                          {idx + 1}
+                        </span>
+                      </div>
+                      <div className={frost.huntersInfo}>
+                        <div className={frost.huntersName}>{entry.characterName}</div>
+                        <div className={frost.huntersClass}>{entry.characterClass}</div>
+                        <div className={frost.huntersPower}>
+                          {entry.combatPower.toLocaleString()}점
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
           {/* 직업별 통계 */}
-          <section className={styles.cardBlock}>
+          <section className={`${styles.cardBlock} shadow-hard`}>
             <div className={styles.sectionHeader}>
               <div className={styles.sectionLabel}>
                 <span className={styles.sectionOrnament} />
