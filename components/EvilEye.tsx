@@ -160,9 +160,12 @@ void main() {
   vec3 color = uEyeColor * uIntensity * clamp(max(innerRing + innerEye, outerEyeGlow + outerBgGlow) - pupil, 0.0, 3.0);
   color += uBgColor;
 
-  // 색 밝기 기반 alpha — 검정 영역은 투명하게 빠져 페이지 배경과 자연스럽게 합쳐진다.
+  // 색 밝기 기반 alpha — 검정 영역만 투명하게 빠져 페이지 배경과 합쳐지고,
+  // 홍채/외곽 글로우처럼 살짝 밝은 영역도 또렷이 남도록 컷오프를 가파르게.
+  // smoothstep(0.0, 0.32, lum): 순수 검정은 0, 중간 밝기(0.16)에서 이미 ~50% 불투명,
+  // 0.32 이상은 완전 불투명 — 기존 1.4 배 선형 곡선 대비 디테일 손실 최소화.
   float lum = max(color.r, max(color.g, color.b));
-  float a = clamp(lum * 1.4, 0.0, 1.0);
+  float a = smoothstep(0.0, 0.32, lum);
   gl_FragColor = vec4(color, a);
 }
 `;
@@ -191,22 +194,43 @@ export default function EvilEye({
       && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduced) return;
 
-    const renderer = new Renderer({ alpha: true, premultipliedAlpha: false });
+    // 고DPI 디스플레이에서 픽셀이 깨져 보이는 것 방지 — DPR 캡(2)로 GPU 비용도 제어.
+    const dpr = Math.min(typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1, 2);
+    const renderer = new Renderer({
+      alpha: true,
+      premultipliedAlpha: false,
+      antialias: true,
+      dpr,
+    });
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, 0);
 
-    const noiseData = generateNoiseTexture(256);
+    // 노이즈 해상도 ↑ — 불꽃 패턴의 미세 디테일이 또렷하게 살아남.
+    const NOISE_SIZE = 512;
+    const noiseData = generateNoiseTexture(NOISE_SIZE);
     const noiseTexture = new Texture(gl, {
       image: noiseData,
-      width: 256,
-      height: 256,
-      generateMipmaps: false,
+      width: NOISE_SIZE,
+      height: NOISE_SIZE,
+      generateMipmaps: true,
       flipY: false,
     });
-    noiseTexture.minFilter = gl.LINEAR;
+    // 밉맵 + 트라이리니어로 축소 시 모아레/지글지글 제거 → 더 매끈한 불꽃.
+    noiseTexture.minFilter = gl.LINEAR_MIPMAP_LINEAR;
     noiseTexture.magFilter = gl.LINEAR;
     noiseTexture.wrapS = gl.REPEAT;
     noiseTexture.wrapT = gl.REPEAT;
+    // 일부 GPU 에서 anisotropic filtering 지원 시 적용 (각도 큰 폴라 좌표 샘플링에 효과적)
+    const anisoExt =
+      gl.getExtension('EXT_texture_filter_anisotropic') ||
+      gl.getExtension('MOZ_EXT_texture_filter_anisotropic') ||
+      gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
+    if (anisoExt) {
+      const max = gl.getParameter(anisoExt.MAX_TEXTURE_MAX_ANISOTROPY_EXT) as number;
+      // texture binding 후 적용해야 하므로 한번 활성화
+      gl.bindTexture(gl.TEXTURE_2D, noiseTexture.texture);
+      gl.texParameterf(gl.TEXTURE_2D, anisoExt.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(max, 8));
+    }
 
     const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
 

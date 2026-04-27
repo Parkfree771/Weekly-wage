@@ -13,7 +13,7 @@ function getPageConfig(pathname: string): PageConfig {
   if (pathname === '/mypage') return { contentWidth: 1600 };
   if (pathname.startsWith('/package/')) return { contentWidth: 1100 };
   if (pathname === '/package') return { contentWidth: 1400 };
-  if (pathname === '/title-stats') return { contentWidth: 1600 };
+  if (pathname.startsWith('/title-stats')) return { contentWidth: 1600 };
   return { contentWidth: 1400 };
 }
 

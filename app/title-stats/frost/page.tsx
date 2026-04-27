@@ -23,6 +23,10 @@ const EvilEye = dynamic(() => import('@/components/EvilEye'), {
   loading: () => <div className={styles.eyeFallback} />,
 });
 
+const SnowField = dynamic(() => import('@/components/SnowField'), {
+  ssr: false,
+});
+
 // ─── 레이드 정의 (혹한의 군주 고정) ───
 const RAID = {
   titleName: '혹한의 군주',
@@ -815,6 +819,9 @@ export default function FrostTitleStatsPage() {
     <div className={`${styles.page} ${frost.frostPage}`}>
       {/* ═══════════════════════ 시상대 섹션: 히어로 + 탭 + HOF (한몸) ═══════════════════════ */}
       <div className={styles.stageSection}>
+        {/* 시상대 전체를 덮는 눈송이 캔버스 — eyeHero ~ HOF 까지 */}
+        <SnowField density={130} zIndex={4} />
+
         {/* 히어로: EvilEye */}
         <div className={styles.eyeHero} aria-label={selectedRaid.titleName}>
           <div className={styles.eyeCanvas}>
