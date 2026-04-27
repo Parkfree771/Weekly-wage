@@ -47,7 +47,6 @@ const NAV_GROUPS: NavGroup[] = [
 const NAV_STANDALONE: NavItem[] = [
   { href: '/title-stats', label: '홍염의 군주', badge: 'NEW' },
   { href: '/extreme', label: '익스트림', badge: 'NEW' },
-  { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
 ];
 
@@ -62,7 +61,6 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/bracelet', label: '팔찌 시뮬' },
   { href: '/title-stats', label: '홍염의 군주', badge: 'NEW' },
   { href: '/extreme', label: '익스트림', badge: 'NEW' },
-  { href: '/minigame', label: '랏폿을 기다리며' },
   { href: '/mypage', label: '마이페이지' },
 ];
 
@@ -94,7 +92,6 @@ export default function Navbar() {
                       href === '/cathedral' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
                       href === '/title-stats' ? 'nav-extreme' :
-                      href === '/minigame' ? 'nav-minigame' :
                       href === '/mypage' ? 'nav-mypage' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
@@ -327,7 +324,7 @@ export default function Navbar() {
 
               {/* 기타 메뉴 */}
               <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
-              {NAV_STANDALONE.filter(item => item.href !== '/minigame').map((item) => (
+              {NAV_STANDALONE.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}

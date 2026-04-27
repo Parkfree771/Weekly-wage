@@ -69,12 +69,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     },
     {
-      url: 'https://lostarkweeklygold.kr/minigame',
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.4,
-    },
-    {
       url: 'https://lostarkweeklygold.kr/about',
       lastModified: new Date(),
       changeFrequency: 'monthly',
