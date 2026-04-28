@@ -33,7 +33,7 @@ const RAID = {
   subtitle: 'Lord of Frozen Tundra',
   image: '/extreme-ice.webp',
   openAt: new Date(2026, 4, 20, 10, 0, 0),
-  eyeColor: '#4AA8D8',
+  eyeColor: '#2D5F8C',
 };
 
 const PARTY_SIZE = 8;
@@ -820,7 +820,7 @@ export default function FrostTitleStatsPage() {
       {/* ═══════════════════════ 시상대 섹션: 히어로 + 탭 + HOF (한몸) ═══════════════════════ */}
       <div className={styles.stageSection}>
         {/* 시상대 전체를 덮는 눈송이 캔버스 — eyeHero ~ HOF 까지 */}
-        <SnowField density={130} zIndex={4} />
+        <SnowField density={130} zIndex={4} color={{ r: 165, g: 200, b: 235 }} />
 
         {/* 히어로: EvilEye */}
         <div className={styles.eyeHero} aria-label={selectedRaid.titleName}>
@@ -830,11 +830,11 @@ export default function FrostTitleStatsPage() {
               intensity={1.55}
               pupilSize={0.6}
               irisWidth={0.25}
-              glowIntensity={0.38}
+              glowIntensity={0.85}
               scale={0.75}
               noiseScale={1.0}
               pupilFollow={1.0}
-              flameSpeed={isIce ? 0.6 : 1.0}
+              flameSpeed={isIce ? 1.0 : 1.0}
               backgroundColor="#000000"
             />
           </div>

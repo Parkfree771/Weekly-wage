@@ -58,14 +58,14 @@ export default function SnowField({
 
     let w = 0;
     let h = 0;
-    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let dpr = Math.min(window.devicePixelRatio || 1, 3);
     const flakes: Snowflake[] = [];
 
     function resize() {
       const rect = parent!.getBoundingClientRect();
       w = rect.width;
       h = rect.height;
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, 3);
       canvas!.width = Math.max(1, Math.round(w * dpr));
       canvas!.height = Math.max(1, Math.round(h * dpr));
       canvas!.style.width = `${w}px`;
@@ -117,11 +117,11 @@ export default function SnowField({
     function drawFlake(f: Snowflake, x: number) {
       const a = f.alpha;
       // 글로우 (큰 입자에만)
-      if (f.size > 1.6) {
+      if (f.size > 2.0) {
         const glowR = f.size * 4.5;
         const grd = ctx!.createRadialGradient(x, f.y, 0, x, f.y, glowR);
-        grd.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${a * 0.45})`);
-        grd.addColorStop(0.6, `rgba(${color.r}, ${color.g}, ${color.b}, ${a * 0.08})`);
+        grd.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${a * 0.25})`);
+        grd.addColorStop(0.6, `rgba(${color.r}, ${color.g}, ${color.b}, ${a * 0.05})`);
         grd.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
         ctx!.fillStyle = grd;
         ctx!.beginPath();

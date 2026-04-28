@@ -49,7 +49,7 @@ const RAIDS: Record<RaidKey, Raid> = {
     subtitle: 'Lord of Frozen Tundra',
     image: '/extreme-ice.webp',
     openAt: new Date(2026, 4, 20, 10, 0, 0),
-    eyeColor: '#4AA8D8',
+    eyeColor: '#2D5F8C',
   },
 };
 

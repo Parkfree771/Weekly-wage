@@ -160,12 +160,9 @@ void main() {
   vec3 color = uEyeColor * uIntensity * clamp(max(innerRing + innerEye, outerEyeGlow + outerBgGlow) - pupil, 0.0, 3.0);
   color += uBgColor;
 
-  // 색 밝기 기반 alpha — 검정 영역만 투명하게 빠져 페이지 배경과 합쳐지고,
-  // 홍채/외곽 글로우처럼 살짝 밝은 영역도 또렷이 남도록 컷오프를 가파르게.
-  // smoothstep(0.0, 0.32, lum): 순수 검정은 0, 중간 밝기(0.16)에서 이미 ~50% 불투명,
-  // 0.32 이상은 완전 불투명 — 기존 1.4 배 선형 곡선 대비 디테일 손실 최소화.
+  // 색 밝기 기반 alpha — 컷오프 범위 좁혀 화염 가장자리·디테일이 또렷.
   float lum = max(color.r, max(color.g, color.b));
-  float a = smoothstep(0.0, 0.32, lum);
+  float a = smoothstep(0.06, 0.22, lum);
   gl_FragColor = vec4(color, a);
 }
 `;
@@ -194,8 +191,8 @@ export default function EvilEye({
       && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduced) return;
 
-    // 고DPI 디스플레이에서 픽셀이 깨져 보이는 것 방지 — DPR 캡(2)로 GPU 비용도 제어.
-    const dpr = Math.min(typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1, 2);
+    // 고DPI 디스플레이에서 픽셀이 깨져 보이는 것 방지 — DPR 캡(3)으로 4K 폰/맥북 화질 확보.
+    const dpr = Math.min(typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1, 3);
     const renderer = new Renderer({
       alpha: true,
       premultipliedAlpha: false,
@@ -205,8 +202,8 @@ export default function EvilEye({
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, 0);
 
-    // 노이즈 해상도 ↑ — 불꽃 패턴의 미세 디테일이 또렷하게 살아남.
-    const NOISE_SIZE = 512;
+    // 노이즈 해상도 — 모든 디스플레이에서 화염 디테일이 또렷하게 살아남 (모니터 DPR 무관).
+    const NOISE_SIZE = 1024;
     const noiseData = generateNoiseTexture(NOISE_SIZE);
     const noiseTexture = new Texture(gl, {
       image: noiseData,
