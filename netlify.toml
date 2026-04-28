@@ -2,6 +2,22 @@
   command = "npm run build"
   # publish = ".next"  # 삭제: Netlify 플러그인이 자동으로 경로 설정
 
+# ─── 도메인 마이그레이션: 구도메인 → 새도메인 영구 301 (경로 보존) ───
+# 구도메인은 alias 라 기본적으로 사이트가 dual-serve 됨 → SEO duplicate.
+# 명시 301 룰로 강제 리다이렉트하여 검색엔진/북마크 모두 새 도메인으로 인계.
+# force = true 로 alias 의 기본 서빙보다 우선 적용.
+[[redirects]]
+  from = "https://lostarkweeklygold.kr/*"
+  to = "https://loalogol.kr/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://www.lostarkweeklygold.kr/*"
+  to = "https://loalogol.kr/:splat"
+  status = 301
+  force = true
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
