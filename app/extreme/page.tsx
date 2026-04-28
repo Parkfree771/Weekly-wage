@@ -61,7 +61,7 @@ const ENGRAVING_COMPONENTS: { itemId: string; name: string; icon: string }[] = [
   { itemId: '65201505', name: '결투의 대가',     icon: '/engraving.webp' },
 ];
 
-// 영웅 젬 6종 (cathedral과 동일)
+// 영웅 젬 6종 (선택 상자용 — 확률 동일)
 const GEM_COMPONENTS: { itemId: string; name: string; icon: string }[] = [
   { itemId: '67400003', name: '질서의 젬 : 안정',  icon: '/gem-order-stable.webp' },
   { itemId: '67400103', name: '질서의 젬 : 견고',  icon: '/gem-order-solid.webp' },
@@ -69,6 +69,16 @@ const GEM_COMPONENTS: { itemId: string; name: string; icon: string }[] = [
   { itemId: '67410303', name: '혼돈의 젬 : 침식',  icon: '/gem-chaos-erosion.webp' },
   { itemId: '67410403', name: '혼돈의 젬 : 왜곡',  icon: '/gem-chaos-distortion.webp' },
   { itemId: '67410503', name: '혼돈의 젬 : 붕괴',  icon: '/gem-chaos-collapse.webp' },
+];
+
+// 영웅 젬 상자(랜덤) 출현 확률 — 안정/침식 30%, 견고/왜곡 15%, 불변/붕괴 5%
+const GEM_RANDOM_HERO_PROBS: { itemId: string; name: string; icon: string; probability: number }[] = [
+  { itemId: '67400003', name: '질서의 젬 : 안정',  icon: '/gem-order-stable.webp',     probability: 0.30 },
+  { itemId: '67400103', name: '질서의 젬 : 견고',  icon: '/gem-order-solid.webp',      probability: 0.15 },
+  { itemId: '67400203', name: '질서의 젬 : 불변',  icon: '/gem-order-immutable.webp',  probability: 0.05 },
+  { itemId: '67410303', name: '혼돈의 젬 : 침식',  icon: '/gem-chaos-erosion.webp',    probability: 0.30 },
+  { itemId: '67410403', name: '혼돈의 젬 : 왜곡',  icon: '/gem-chaos-distortion.webp', probability: 0.15 },
+  { itemId: '67410503', name: '혼돈의 젬 : 붕괴',  icon: '/gem-chaos-collapse.webp',   probability: 0.05 },
 ];
 
 // 희귀 지옥 열쇠 Ⅲ = 1730 지옥 50층대(tier=5) 기댓값
@@ -345,13 +355,58 @@ export default function ExtremePage() {
   const getSelectedInBox = (shopId: number, comps: { itemId: string }[]): string =>
     shopSelectItem[shopId] || getBestItemId(comps);
 
-  // 영웅 젬 상자(랜덤) 기댓값 = 6종 평균가
+  // 영웅 젬 상자(랜덤) 기댓값 = Σ(가격 × 확률)
   const getGemRandomAverage = (): number => {
     if (priceLoading) return 0;
-    const prices = GEM_COMPONENTS.map(g => latestPrices[g.itemId] || 0).filter(p => p > 0);
-    if (prices.length === 0) return 0;
-    return prices.reduce((s, p) => s + p, 0) / prices.length;
+    return GEM_RANDOM_HERO_PROBS.reduce(
+      (sum, gem) => sum + (latestPrices[gem.itemId] || 0) * gem.probability,
+      0
+    );
   };
+
+  // 상점 아이템에서 받는 재화의 골드 가치 (가격 정보가 전무한 아이템은 null)
+  const getItemGoldValue = (item: ShopItem): number | null => {
+    if (priceLoading) return null;
+
+    if (item.theme === 'gem') {
+      const sorted = [...GEM_COMPONENTS].sort((a, b) => (latestPrices[b.itemId] || 0) - (latestPrices[a.itemId] || 0));
+      const selectedId = getSelectedInBox(item.id, sorted);
+      return Math.round((latestPrices[selectedId] || 0) * item.qty);
+    }
+    if (item.theme === 'engraving') {
+      const sorted = [...ENGRAVING_COMPONENTS].sort((a, b) => (latestPrices[b.itemId] || 0) - (latestPrices[a.itemId] || 0));
+      const selectedId = getSelectedInBox(item.id, sorted);
+      return Math.round((latestPrices[selectedId] || 0) * item.qty);
+    }
+    if (item.theme === 'gemRandom') {
+      return Math.round(getGemRandomAverage() * item.qty);
+    }
+    if (item.theme === 'hell') {
+      const perTicket = calcTicketAverage('hell', HELL_TICKET_TIER, latestPrices, HELL_TICKET_BC_RATE, '1730');
+      return Math.round(perTicket * item.qty);
+    }
+    if (item.components && item.components.length > 0) {
+      const compValues = item.components.map(c => {
+        if (!c.itemId) return null;
+        const bundlePrice = latestPrices[c.itemId] || 0;
+        const bundleSize = c.bundleSize || 1;
+        return Math.round((bundlePrice / bundleSize) * c.count);
+      });
+      if (compValues.every(v => v === null)) return null;
+      if (item.selectOne) {
+        const userPick = shopSelectItem[item.id];
+        const userPickIdx = userPick ? item.components.findIndex(c => c.itemId === userPick) : -1;
+        if (userPickIdx >= 0) return compValues[userPickIdx] ?? 0;
+        return Math.max(...compValues.map(v => v ?? 0));
+      }
+      return compValues.reduce<number>((sum, v) => sum + (v ?? 0), 0);
+    }
+    return null;
+  };
+
+  // 골드 교환 비용 (없으면 0)
+  const getGoldCost = (item: ShopItem): number =>
+    item.costs.find(c => c.name === '골드')?.amount || 0;
 
   const eventEnd = new Date(EVENT_START);
   eventEnd.setDate(eventEnd.getDate() + TOTAL_WEEKS * 7 - 1);
@@ -539,8 +594,8 @@ export default function ExtremePage() {
                         {SHOP_ITEMS.map((item) => {
                           const tc = SHOP_THEME_COLORS[item.theme];
                           const isActive = selectedShopItem === item.id;
-                          const tokenCost = item.costs.find(c => c.name === '토큰')?.amount || 0;
-                          const isFree = item.costs.length === 0;
+                          const itemValue = getItemGoldValue(item);
+                          const netGold = itemValue === null ? null : itemValue - getGoldCost(item);
                           return (
                             <div
                               key={item.id}
@@ -579,13 +634,13 @@ export default function ExtremePage() {
                                 </div>
                               </div>
                               <div className={styles.shopItemCostBadge}>
-                                {tokenCost > 0 ? (
-                                  <span className={styles.shopItemCostValue}>
-                                    <Image src="/xhzms.webp" alt="토큰" width={14} height={14} />
-                                    {tokenCost.toLocaleString()}
-                                  </span>
+                                {priceLoading || netGold === null ? (
+                                  <span className={styles.shopItemFree}>—</span>
                                 ) : (
-                                  <span className={styles.shopItemFree}>{isFree ? '미정' : '—'}</span>
+                                  <span className={styles.shopItemCostValue}>
+                                    <Image src="/gold.webp" alt="골드" width={14} height={14} />
+                                    {netGold.toLocaleString()}
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -853,7 +908,7 @@ export default function ExtremePage() {
                                 );
                               })()}
 
-                              {/* 영웅 젬 상자 (랜덤) — 6종 평균 기댓값 */}
+                              {/* 영웅 젬 상자 (랜덤) — 확률 가중 기댓값 */}
                               {selectedShopData.theme === 'gemRandom' && (() => {
                                 const avg = getGemRandomAverage();
                                 const total = Math.round(avg * selectedShopData.qty);
@@ -864,11 +919,12 @@ export default function ExtremePage() {
                                       <thead>
                                         <tr>
                                           <th>아이템</th>
-                                          <th style={{ textAlign: 'center', width: '35%' }}>시세</th>
+                                          <th style={{ textAlign: 'center', width: '20%' }}>확률</th>
+                                          <th style={{ textAlign: 'center', width: '30%' }}>시세</th>
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        {GEM_COMPONENTS.map((comp) => {
+                                        {GEM_RANDOM_HERO_PROBS.map((comp) => {
                                           const price = latestPrices[comp.itemId] || 0;
                                           return (
                                             <tr key={comp.itemId}>
@@ -878,6 +934,7 @@ export default function ExtremePage() {
                                                   <span>{comp.name.replace(/질서의 젬 : |혼돈의 젬 : /, '')}</span>
                                                 </div>
                                               </td>
+                                              <td style={{ textAlign: 'center' }}>{(comp.probability * 100).toFixed(0)}%</td>
                                               <td style={{ textAlign: 'center' }}>
                                                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                                                   <Image src="/gold.webp" alt="" width={14} height={14} />
@@ -890,7 +947,7 @@ export default function ExtremePage() {
                                       </tbody>
                                       <tfoot>
                                         <tr className={styles.subtotalRow}>
-                                          <td>평균 기댓값{selectedShopData.qty > 1 ? ` × ${selectedShopData.qty}` : ''}</td>
+                                          <td colSpan={2}>평균 기댓값{selectedShopData.qty > 1 ? ` × ${selectedShopData.qty}` : ''}</td>
                                           <td style={{ textAlign: 'center' }}>
                                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                                               <Image src="/gold.webp" alt="" width={14} height={14} />
