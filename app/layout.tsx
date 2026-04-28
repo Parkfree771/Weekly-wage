@@ -97,7 +97,11 @@ export const metadata: Metadata = {
   verification: {
     google: "tmTEi92jQrmP3wwpDaxW36nEO4kq6UAWtXLa7FdqOkw",
     other: {
-      "naver-site-verification": "6873351e8c76eb0a0ac7c6d9647b5e8431bec76e",
+      // 마이그레이션 기간: 양쪽 도메인 인증 동시 유지 (구도메인은 3개월 후 만료)
+      "naver-site-verification": [
+        "6873351e8c76eb0a0ac7c6d9647b5e8431bec76e", // lostarkweeklygold.kr (구)
+        "4bfe8356036700e178bec690ed40c09db26fca4d", // loalogol.kr (신)
+      ],
     },
   },
 };
