@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { SITE_URL } from '@/lib/site-config'
 
 export const metadata: Metadata = {
   title: '홍염의 군주 · 혹한의 군주 칭호 전투력 통계 & 명예의 전당 | 로아로골',
@@ -10,13 +11,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: '로아로골 | 홍염의 군주 · 혹한의 군주 칭호 전투력 통계',
     description: '칭호 획득자 전투력·직업 통계와 가장 빠른 10공대 80명 명예의 전당.',
-    url: 'https://lostarkweeklygold.kr/title-stats',
+    url: '/title-stats',
     siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://lostarkweeklygold.kr/title-stats',
+    canonical: '/title-stats',
   },
 }
 
@@ -25,11 +26,11 @@ const jsonLd = {
   '@type': 'WebPage',
   name: '홍염의 군주 · 혹한의 군주 칭호 전투력 통계 & 명예의 전당',
   description: '로스트아크 익스트림 레이드 칭호 획득자의 전투력·레벨·직업 실시간 통계와, 가장 먼저 칭호를 각인한 10공대 80명의 명예의 전당.',
-  url: 'https://lostarkweeklygold.kr/title-stats',
+  url: `${SITE_URL}/title-stats`,
   isPartOf: {
     '@type': 'WebSite',
     name: '로아로골',
-    url: 'https://lostarkweeklygold.kr',
+    url: SITE_URL,
   },
   mainEntity: {
     '@type': 'FAQPage',

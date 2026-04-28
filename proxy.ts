@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { SITE_URL, LEGACY_SITE_URL, NEW_SITE_URL } from '@/lib/site-config';
 
 // ============================================================
 // 레이트 리밋 (인메모리 - 서버리스 인스턴스별 독립)
@@ -43,15 +44,18 @@ function checkRateLimit(key: string, max: number): { allowed: boolean; remaining
 }
 
 // ============================================================
-// CORS 허용 도메인
+// CORS 허용 도메인 — 마이그레이션 기간엔 구·새 도메인 양쪽 허용
 // ============================================================
 
-const ALLOWED_ORIGINS = [
-  'https://lostarkweeklygold.kr',
-  'https://www.lostarkweeklygold.kr',
+const ALLOWED_ORIGINS = Array.from(new Set([
+  SITE_URL,
+  LEGACY_SITE_URL,
+  `https://www.${LEGACY_SITE_URL.replace(/^https?:\/\//, '')}`,
+  NEW_SITE_URL,
+  `https://www.${NEW_SITE_URL.replace(/^https?:\/\//, '')}`,
   'http://localhost:3000',
   'http://localhost:3001',
-];
+]));
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
   const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];

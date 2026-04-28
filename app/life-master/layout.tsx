@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SITE_URL } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   title: '벌목 계산기 - 생활 효율, 융화재료 제작',
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: '로아로골 | 벌목 계산기 - 생활 효율, 융화재료 제작',
     description: '로아로골 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익을 실시간 시세로 계산하세요.',
-    url: 'https://lostarkweeklygold.kr/life-master',
+    url: '/life-master',
     siteName: '로아로골',
     images: [
       {
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
   alternates: {
-    canonical: 'https://lostarkweeklygold.kr/life-master',
+    canonical: '/life-master',
   },
 };
 
@@ -47,7 +48,7 @@ export default function LifeMasterLayout({
             "@context": "https://schema.org",
             "@type": "WebApplication",
             "name": "로아로골 - 벌목 계산기",
-            "url": "https://lostarkweeklygold.kr/life-master",
+            "url": `${SITE_URL}/life-master`,
             "description": "로아 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익을 실시간 거래소 가격으로 분석",
             "applicationCategory": "GameApplication",
             "operatingSystem": "Any",

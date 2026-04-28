@@ -6,6 +6,7 @@ import ConsentModal from '@/components/auth/ConsentModal';
 import AdLayout from '@/components/ads/AdLayout';
 
 import ConsoleFilter from '@/components/ConsoleFilter';
+import { SITE_URL } from '@/lib/site-config';
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
@@ -39,10 +40,13 @@ export const viewport: Viewport = {
 // app/layout.tsx
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://lostarkweeklygold.kr'),
+  metadataBase: new URL(SITE_URL),
   title: {
     template: '로아로골 | %s',
     default: "로아로골 - 로아 시세 거래소 가격 차트",
+  },
+  alternates: {
+    canonical: '/',
   },
   icons: {
     icon: '/favicon.ico',
@@ -60,7 +64,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "로아로골 - 로아 시세 거래소 가격 차트",
     description: "로아로골 - 로아 시세 확인 사이트! 로아 거래소 실시간 가격, 로아 과거 시세 차트, 로아 재련 재료, 로아 각인서 시세까지.",
-    url: "https://lostarkweeklygold.kr",
+    url: SITE_URL,
     siteName: "로아로골",
     images: [
       {
@@ -148,11 +152,11 @@ export default function RootLayout({
             "@type": "WebSite",
             "name": "로아로골",
             "alternateName": ["로아 시세", "로아 거래소", "로스트아크 시세"],
-            "url": "https://lostarkweeklygold.kr",
+            "url": SITE_URL,
             "description": "로아로골 - 로아 시세 확인 사이트! 로아 거래소 실시간 가격, 로아 과거 시세 차트, 로아 재련 재료 시세, 로아 각인서 시세, 로아 보석 시세를 한눈에 확인하세요.",
             "potentialAction": {
               "@type": "SearchAction",
-              "target": "https://lostarkweeklygold.kr/weekly-gold?search={search_term_string}",
+              "target": `${SITE_URL}/weekly-gold?search={search_term_string}`,
               "query-input": "required name=search_term_string"
             }
           }) }}

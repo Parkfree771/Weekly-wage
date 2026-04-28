@@ -7,13 +7,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: '로아로골 | 지옥 보상 계산기',
     description: '로스트아크 지옥/나락 보상을 층수별로 정리하고 실시간 시세 기반으로 골드 가치를 계산합니다.',
-    url: 'https://lostarkweeklygold.kr/hell-reward',
+    url: '/hell-reward',
     siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://lostarkweeklygold.kr/hell-reward',
+    canonical: '/hell-reward',
   },
 }
 

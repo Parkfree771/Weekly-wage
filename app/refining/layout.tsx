@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { SITE_URL } from '@/lib/site-config'
 
 export const metadata: Metadata = {
   title: '재련 시뮬레이터 - 재련 비용 계산, 장기백 평균',
@@ -7,13 +8,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: '로아로골 | 재련 시뮬레이터 - 재련 비용 계산, 장기백 평균',
     description: '로아로골 재련 시뮬레이터! 로아 재련 비용 계산, 로아 장기백 평균 통계, 로아 상급재련 확률을 확인하세요.',
-    url: 'https://lostarkweeklygold.kr/refining',
+    url: '/refining',
     siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://lostarkweeklygold.kr/refining',
+    canonical: '/refining',
   },
 }
 
@@ -33,7 +34,7 @@ export default function RefiningLayout({
             "@context": "https://schema.org",
             "@type": "WebApplication",
             "name": "로아로골 - 재련 시뮬레이터",
-            "url": "https://lostarkweeklygold.kr/refining",
+            "url": `${SITE_URL}/refining`,
             "description": "로아 재련 시뮬레이터! 로아 재련 비용 계산, 로아 장기백 평균 통계, 로아 상급재련/일반재련 확률 확인",
             "applicationCategory": "GameApplication",
             "operatingSystem": "Any",

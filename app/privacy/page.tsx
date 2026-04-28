@@ -2,6 +2,7 @@
 
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import Link from 'next/link';
+import { SITE_URL } from '@/lib/site-config';
 
 export default function PrivacyPolicy() {
   return (
@@ -100,7 +101,7 @@ export default function PrivacyPolicy() {
                   <h6 className="fw-semibold">개인정보보호 책임자</h6>
                   <ul className="mb-0">
                     <li>사이트명: 로스트아크 골드 계산기</li>
-                    <li>웹사이트: https://lostarkweeklygold.kr</li>
+                    <li>웹사이트: {SITE_URL}</li>
                     <li>운영목적: 로스트아크 게임 정보 제공 및 계산 도구 서비스</li>
                   </ul>
                 </div>

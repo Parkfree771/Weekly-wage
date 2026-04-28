@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { SITE_URL } from '@/lib/site-config'
 
 export const metadata: Metadata = {
   title: '혹한의 군주 칭호 전투력 통계 & 명예의 전당 | 로아로골',
@@ -10,13 +11,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: '로아로골 | 혹한의 군주 칭호 전투력 통계',
     description: '익스트림 2막 "혹한의 군주" 칭호 보유자 전투력 통계와 5공대 40명 명예의 전당, 모든 등록자 캐릭터 명단.',
-    url: 'https://lostarkweeklygold.kr/title-stats/frost',
+    url: '/title-stats/frost',
     siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://lostarkweeklygold.kr/title-stats/frost',
+    canonical: '/title-stats/frost',
   },
 }
 
@@ -25,11 +26,11 @@ const jsonLd = {
   '@type': 'WebPage',
   name: '혹한의 군주 칭호 전투력 통계 & 명예의 전당',
   description: '로스트아크 익스트림 2막 전설 칭호 "혹한의 군주" 보유자의 전투력·레벨·직업 실시간 통계와 가장 먼저 칭호를 각인한 5공대 40명의 명예의 전당, 등록한 모든 보유자의 캐릭터 명단.',
-  url: 'https://lostarkweeklygold.kr/title-stats/frost',
+  url: `${SITE_URL}/title-stats/frost`,
   isPartOf: {
     '@type': 'WebSite',
     name: '로아로골',
-    url: 'https://lostarkweeklygold.kr',
+    url: SITE_URL,
   },
   mainEntity: {
     '@type': 'FAQPage',

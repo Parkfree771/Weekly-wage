@@ -10,13 +10,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: '로아로골 | 지평의 성당 - 클리어 보상 & 은총의 파편 교환 상점',
     description: '로아 지평의 성당 1~3단계 클리어 보상, 더보기 손익, 은총의 파편 교환 상점 효율을 실시간 시세로 확인하세요.',
-    url: 'https://lostarkweeklygold.kr/cathedral',
+    url: '/cathedral',
     siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://lostarkweeklygold.kr/cathedral',
+    canonical: '/cathedral',
   },
 }
 

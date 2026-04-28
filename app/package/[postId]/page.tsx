@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { getAdminFirestore } from '@/lib/firebase-admin';
+import { SITE_URL } from '@/lib/site-config';
 import PackageDetailPage from './PackageDetailClient';
 
 type Props = {
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = `${post.title} - 로스트아크 패키지 효율`;
   const description = `${post.title} 패키지의 효율을 확인하세요. ${post.royalCrystalPrice?.toLocaleString() || ''}원, ${post.packageType || '일반'} 타입. 실시간 시세 반영 골드 가치 계산.`;
-  const url = `https://lostarkweeklygold.kr/package/${postId}`;
+  const url = `${SITE_URL}/package/${postId}`;
 
   return {
     title,

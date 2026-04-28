@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { SITE_URL } from '@/lib/site-config'
 
 // layout.tsx
 
@@ -12,13 +13,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: '로아로골 | 주간 골드 계산기 - 더보기 효율, 레이드 보상',
     description: '로아로골 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상, 로아 지평의 성당/세르카/카제로스 골드 수익을 확인하세요.',
-    url: 'https://lostarkweeklygold.kr/weekly-gold',
+    url: '/weekly-gold',
     siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://lostarkweeklygold.kr/weekly-gold',
+    canonical: '/weekly-gold',
   },
 }
 
@@ -38,7 +39,7 @@ export default function WeeklyGoldLayout({
             "@context": "https://schema.org",
             "@type": "WebApplication",
             "name": "로아로골 - 주간 골드 계산기",
-            "url": "https://lostarkweeklygold.kr/weekly-gold",
+            "url": `${SITE_URL}/weekly-gold`,
             "description": "로아 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상, 로아 지평의 성당/세르카/카제로스 골드 수익을 실시간 시세로 계산",
             "applicationCategory": "GameApplication",
             "operatingSystem": "Any",

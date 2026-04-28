@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { SITE_URL } from '@/lib/site-config'
 
 export const metadata: Metadata = {
   title: '로아로골 | 팔찌 시뮬레이터 - 로아 팔찌 부여효과 시뮬',
@@ -7,13 +8,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: '로아로골 | 팔찌 시뮬레이터 - 로아 팔찌 부여효과',
     description: '로스트아크 팔찌 시뮬레이터! 전투 특성을 선택하고 부여 효과를 시뮬레이션하세요.',
-    url: 'https://lostarkweeklygold.kr/bracelet',
+    url: '/bracelet',
     siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://lostarkweeklygold.kr/bracelet',
+    canonical: '/bracelet',
   },
 }
 
@@ -32,7 +33,7 @@ export default function BraceletLayout({
             "@context": "https://schema.org",
             "@type": "WebApplication",
             "name": "로아로골 - 팔찌 시뮬레이터",
-            "url": "https://lostarkweeklygold.kr/bracelet",
+            "url": `${SITE_URL}/bracelet`,
             "description": "로스트아크 팔찌 부여효과 시뮬레이터. 전투 특성을 선택하고 최적의 팔찌를 만들어보세요.",
             "applicationCategory": "GameApplication",
             "operatingSystem": "Any",

@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { SITE_URL } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   title: '마이페이지 - 주간 레이드 체크리스트 & 골드 계산',
@@ -10,13 +11,13 @@ export const metadata: Metadata = {
     title: '로아로골 | 마이페이지',
     description:
       '캐릭터별 주간 레이드 체크, 일일 컨텐츠 관리, 골드 수익 자동 계산.',
-    url: 'https://lostarkweeklygold.kr/mypage',
+    url: '/mypage',
     siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://lostarkweeklygold.kr/mypage',
+    canonical: '/mypage',
   },
 };
 
@@ -35,13 +36,13 @@ export default function MypageLayout({
             '@context': 'https://schema.org',
             '@type': 'WebPage',
             name: '로아로골 - 마이페이지',
-            url: 'https://lostarkweeklygold.kr/mypage',
+            url: `${SITE_URL}/mypage`,
             description:
               '로스트아크 캐릭터별 주간 레이드 체크리스트 및 골드 수익 관리',
             isPartOf: {
               '@type': 'WebSite',
               name: '로아로골',
-              url: 'https://lostarkweeklygold.kr',
+              url: SITE_URL,
             },
           }),
         }}

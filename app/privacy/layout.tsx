@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { SITE_URL } from '@/lib/site-config'
 
 export const metadata: Metadata = {
   title: '개인정보처리방침',
@@ -7,13 +8,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: '로아로골 | 개인정보처리방침',
     description: '로아로골의 개인정보처리방침 및 데이터 보호 정책',
-    url: 'https://lostarkweeklygold.kr/privacy',
+    url: '/privacy',
     siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://lostarkweeklygold.kr/privacy',
+    canonical: '/privacy',
   },
 }
 
@@ -33,7 +34,7 @@ export default function PrivacyLayout({
             "@context": "https://schema.org",
             "@type": "WebPage",
             "name": "개인정보처리방침",
-            "url": "https://lostarkweeklygold.kr/privacy",
+            "url": `${SITE_URL}/privacy`,
             "description": "로스트아크 골드 계산기의 개인정보 처리방침, 데이터 수집 및 보호 정책",
             "publisher": {
               "@type": "Organization",

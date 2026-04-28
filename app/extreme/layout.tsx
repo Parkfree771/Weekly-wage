@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { SITE_URL } from '@/lib/site-config'
 
 export const metadata: Metadata = {
   title: '익스트림 레이드 보상 정리 - 1막·2막 골드·토큰·최초 클리어 | 로아로골',
@@ -10,13 +11,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: '로아로골 | 익스트림 레이드 보상 정리',
     description: '노말·하드·나이트메어 난이도별 골드·토큰·최초 클리어 보상을 한눈에.',
-    url: 'https://lostarkweeklygold.kr/extreme',
+    url: '/extreme',
     siteName: '로아로골',
     locale: 'ko_KR',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://lostarkweeklygold.kr/extreme',
+    canonical: '/extreme',
   },
 }
 
@@ -25,11 +26,11 @@ const jsonLd = {
   '@type': 'WebPage',
   name: '익스트림 레이드 보상 정리',
   description: '로스트아크 익스트림 레이드 난이도별 보상 정리. 노말·하드·나이트메어 골드, 토큰, 최초 클리어 보상.',
-  url: 'https://lostarkweeklygold.kr/extreme',
+  url: `${SITE_URL}/extreme`,
   isPartOf: {
     '@type': 'WebSite',
     name: '로아로골',
-    url: 'https://lostarkweeklygold.kr',
+    url: SITE_URL,
   },
   mainEntity: {
     '@type': 'FAQPage',
