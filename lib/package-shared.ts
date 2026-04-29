@@ -527,6 +527,7 @@ export const DYNAMIC_TICKET_IDS = new Set([
   'hell-legendary-ticket',
   'hell-heroic-ticket',
   'naraka-legendary-ticket',
+  'relic-core',
 ]);
 
 export function formatNumber(n: number): string {
@@ -540,6 +541,27 @@ export function getItemUnitPrice(itemId: string, prices: Record<string, number>)
   const raw = prices[itemId] || 0;
   const bundle = PRICE_BUNDLE_SIZE[itemId] || 1;
   return raw / bundle;
+}
+
+// 은총의 파편 1개 가치 = 재련 재료 상자 구성 가치 합 ÷ 60 (지평의 성당 페이지와 동일)
+const REFINE_BOX_COMPONENTS: { itemId: string; amount: number }[] = [
+  { itemId: '66102007', amount: 2000 },  // 운명의 파괴석 결정
+  { itemId: '66102107', amount: 4000 },  // 운명의 수호석 결정
+  { itemId: '66110226', amount: 60 },    // 위대한 운명의 돌파석
+  { itemId: '66130143', amount: 22500 }, // 운명의 파편
+];
+const REFINE_BOX_GRACE_COST = 60;
+
+export function getGraceUnitPrice(prices: Record<string, number>): number {
+  return REFINE_BOX_COMPONENTS.reduce(
+    (sum, c) => sum + getItemUnitPrice(c.itemId, prices) * c.amount,
+    0,
+  ) / REFINE_BOX_GRACE_COST;
+}
+
+// 유물 코어 선택 상자 가격 = 은총 100개 환산 + 골드 50,000
+export function getRelicCoreSelectPrice(prices: Record<string, number>): number {
+  return Math.round(getGraceUnitPrice(prices) * 100) + 50000;
 }
 
 export function getUnitPrice(
@@ -564,6 +586,8 @@ export function getUnitPrice(
         return calcTicketAverage('hell', 6, prices, bcRate);
       if (template.id === 'naraka-legendary-ticket')
         return calcTicketAverage('narak', 2, prices, bcRate);
+      if (template.id === 'relic-core')
+        return getRelicCoreSelectPrice(prices);
       return template.fixedGold || 0;
     }
     case 'crystal':
