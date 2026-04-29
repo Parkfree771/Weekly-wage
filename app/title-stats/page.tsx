@@ -9,6 +9,7 @@ import {
   ResponsiveContainer, Line, ComposedChart, ReferenceLine,
 } from 'recharts';
 import styles from './title-stats.module.css';
+import { SITE_URL } from '@/lib/site-config';
 import {
   registerExtremeParty, registerExtremeIndividual,
   getChartData, getSummary, getClassStats, getHallOfFame, getRosterLocks,
@@ -21,6 +22,51 @@ const EvilEye = dynamic(() => import('@/components/EvilEye'), {
   ssr: false,
   loading: () => <div className={styles.eyeFallback} />,
 });
+
+// ─── JSON-LD 구조화 데이터 (페이지 단위로만 출력해야 자식 라우트에 상속되지 않음) ───
+const webPageJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: '홍염의 군주 칭호 전투력 통계 & 명예의 전당',
+  description: '로스트아크 익스트림 1막 전설 칭호 "홍염의 군주" 보유자의 전투력·레벨·직업 실시간 통계와 가장 먼저 1막을 각인한 5공대 40명의 명예의 전당.',
+  url: `${SITE_URL}/title-stats`,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: '로아로골',
+    url: SITE_URL,
+  },
+};
+
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: '홍염의 군주 칭호는 어떻게 획득하나요?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '익스트림 레이드 1막 나이트메어 난이도(레벨 1770) 최초 클리어 시 전설 칭호 "홍염의 군주(Lord of Crimson Flame)"를 획득합니다. 1막은 2026년 4월 22일부터 5월 19일까지 4주간 진행됩니다.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '홍염의 군주 명예의 전당 등록 방식은?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '"홍염의 군주" 칭호를 착용한 상태에서 공대 단위(8인) 또는 개인으로 등록할 수 있습니다. 5공대 40명이 채워질 때까지 공대 등록이 우선이며, 이후에는 개인 등록으로 자동 전환됩니다. 한 원정대(계정)당 한 캐릭터만 등록 가능합니다.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '홍염의 군주 통계는 어떤 데이터를 제공하나요?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '"홍염의 군주" 등록자의 평균 전투력·아이템 레벨 추이를 날짜별로 보여주며, 직업별 평균 전투력과 딜러/서포터 비율을 실시간으로 제공합니다. 등록자 전체 명단은 등록순/전투력순/레벨순 정렬과 딜러·서포터 필터로 확인할 수 있습니다.',
+      },
+    },
+  ],
+};
 
 // ─── 레이드 정의 ───
 type RaidKey = 'fire' | 'ice';
@@ -818,6 +864,15 @@ export default function TitleStatsPage() {
   );
 
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
     <div className={styles.page}>
       {/* ═══════════════════════ 시상대 섹션: 히어로 + 탭 + HOF (한몸) ═══════════════════════ */}
       <div className={styles.stageSection}>
@@ -1243,5 +1298,6 @@ export default function TitleStatsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
