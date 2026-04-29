@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
 }
 
-const jsonLd = {
+const webPageJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
   name: '익스트림 레이드 보상 정리',
@@ -32,35 +32,37 @@ const jsonLd = {
     name: '로아로골',
     url: SITE_URL,
   },
-  mainEntity: {
-    '@type': 'FAQPage',
-    mainEntity: [
-      {
-        '@type': 'Question',
-        name: '익스트림 레이드 보상은?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: '노말(1720) 20,000G·토큰 150개, 하드(1750) 45,000G·토큰 200개, 나이트메어(1770) 45,000G·토큰 200개. 최초 클리어 시 전설 카드팩, 영웅 젬, 젬 가공 초기화권, 불과 얼음의 주화 100개를 획득합니다.',
-        },
+}
+
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: '익스트림 레이드 난이도별 골드와 토큰 보상은?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '노말(1720) 20,000G·토큰 150개, 하드(1750) 45,000G·토큰 200개, 나이트메어(1770) 45,000G·토큰 200개를 획득합니다. 토큰은 매주 한 번 보상으로 지급되며, 최초 클리어 1회 한정으로 전설 카드팩·영웅 젬·젬 가공 초기화권·불과 얼음의 주화 100개를 추가로 받습니다.',
       },
-      {
-        '@type': 'Question',
-        name: '익스트림 레이드 칭호는?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: '나이트메어 최초 클리어 시 전설 칭호를 획득합니다. 1막: 홍염의 군주, 2막: 혹한의 군주.',
-        },
+    },
+    {
+      '@type': 'Question',
+      name: '익스트림 토큰(불과 얼음의 주화)으로 무엇을 살 수 있나요?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '토큰 상점에서는 유물 전투 각인서 12종, 영웅 젬 6종(선택/랜덤), 젬 가공 초기화권, 어빌리티 스톤, 보석류, 정제 재료 등을 구매할 수 있습니다. 페이지 내 효율 계산기로 항목별 순골드 환산값을 비교해 어떤 항목이 가장 이득인지 확인할 수 있습니다.',
       },
-      {
-        '@type': 'Question',
-        name: '익스트림 레이드 기간은?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: '2026년 4월 22일부터 6월 16일까지 총 8주간 진행. 1막(4주) + 2막(4주) 구성입니다.',
-        },
+    },
+    {
+      '@type': 'Question',
+      name: '익스트림 1막과 2막 일정은 어떻게 되나요?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '총 8주간 진행되며 1막은 2026년 4월 22일~5월 19일(4주), 2막은 5월 20일~6월 16일(4주) 구성입니다. 1막은 "홍염의 군주", 2막은 "혹한의 군주" 전설 칭호를 나이트메어 최초 클리어 시 획득합니다.',
       },
-    ],
-  },
+    },
+  ],
 }
 
 export default function ExtremeLayout({
@@ -72,7 +74,11 @@ export default function ExtremeLayout({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       {children}
     </>
