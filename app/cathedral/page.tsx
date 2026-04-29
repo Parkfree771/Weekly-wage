@@ -528,7 +528,7 @@ export default function CathedralPage() {
                 marginTop: 0,
                 marginBottom: '0.5rem'
               }}>
-                은총의 파편 계산
+                지평의 성당 계산
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 지평의 성당 클리어 보상과 은총의 파편 교환 상점

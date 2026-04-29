@@ -92,6 +92,19 @@ const SeeMoreCalculator: React.FC = () => {
     return boxValue / 60;
   }, [unitPrices]);
 
+  // 고통의 가시 1개 가치 = 고통의 재련 재료 상자 기댓값 ÷ 5
+  // (운파 6000 / 위돌 3 / 파괴석 결정 100 / 수호석 결정 300, 25%×4)
+  const thornUnitPrice = useMemo(() => {
+    const refineRandomBox = [
+      { itemId: 66130143, amount: 6000, probability: 0.25 },
+      { itemId: 66110226, amount: 3,    probability: 0.25 },
+      { itemId: 66102007, amount: 100,  probability: 0.25 },
+      { itemId: 66102107, amount: 300,  probability: 0.25 },
+    ];
+    const expected = refineRandomBox.reduce((sum, c) => sum + (unitPrices[c.itemId] || 0) * c.amount * c.probability, 0);
+    return expected / 5;
+  }, [unitPrices]);
+
   // 가격 데이터를 기반으로 수익 계산 (메모이제이션)
   const profitData = useMemo(() => {
     if (Object.keys(unitPrices).length === 0) {
@@ -112,8 +125,9 @@ const SeeMoreCalculator: React.FC = () => {
       newProfitData[raidName] = rewards.map(reward => {
         const materialsWithPrices = reward.materials.map(material => {
           const isGrace = material.itemName === '은총의 파편';
-          const unitPrice = isGrace ? graceUnitPrice : (unitPrices[material.itemId] || 0);
-          const totalPrice = (material.itemId === 0 && !isGrace) ? 0 : unitPrice * material.amount;
+          const isThorn = material.itemName === '고통의 가시';
+          const unitPrice = isGrace ? graceUnitPrice : isThorn ? thornUnitPrice : (unitPrices[material.itemId] || 0);
+          const totalPrice = (material.itemId === 0 && !isGrace && !isThorn) ? 0 : unitPrice * material.amount;
 
           return {
             ...material,
@@ -140,7 +154,7 @@ const SeeMoreCalculator: React.FC = () => {
     });
 
     return newProfitData;
-  }, [unitPrices, graceUnitPrice]);
+  }, [unitPrices, graceUnitPrice, thornUnitPrice]);
 
   // 재료 체크 상태 초기화 (레이드 선택 시 또는 profitData 변경 시)
   useEffect(() => {
@@ -337,10 +351,10 @@ const SeeMoreCalculator: React.FC = () => {
                           {material.amount === 0 ? '?' : material.amount.toLocaleString()}
                         </td>
                         <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellPrice}`}>
-                          {material.itemId === 0 && material.itemName !== '은총의 파편' ? '-' : (material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4))}
+                          {material.itemId === 0 && material.itemName !== '은총의 파편' && material.itemName !== '고통의 가시' ? '-' : (material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4))}
                         </td>
                         <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellTotal}`}>
-                          {material.itemId === 0 && material.itemName !== '은총의 파편' ? '-' : Math.round(material.totalPrice).toLocaleString()}
+                          {material.itemId === 0 && material.itemName !== '은총의 파편' && material.itemName !== '고통의 가시' ? '-' : Math.round(material.totalPrice).toLocaleString()}
                         </td>
                       </tr>
                     );

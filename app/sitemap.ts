@@ -9,6 +9,7 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/package',            changeFrequency: 'daily',   priority: 0.8 },
   { path: '/bracelet',           changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/cathedral',          changeFrequency: 'weekly',  priority: 0.7 },
+  { path: '/cerka',              changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/extreme',            changeFrequency: 'weekly',  priority: 0.8 },
   { path: '/title-stats',        changeFrequency: 'daily',   priority: 0.8 },
   { path: '/title-stats/frost',  changeFrequency: 'daily',   priority: 0.8 },

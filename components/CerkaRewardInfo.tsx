@@ -238,6 +238,19 @@ const CerkaRewardInfo: React.FC = () => {
     return boxValue / 60;
   }, [unitPrices]);
 
+  // 고통의 가시 1개 가치 = 고통의 재련 재료 상자 기댓값 ÷ 5
+  // (운파 6000 / 위돌 3 / 파괴석 결정 100 / 수호석 결정 300, 25%×4)
+  const thornUnitPrice = useMemo(() => {
+    const refineRandomBox = [
+      { itemId: 66130143, amount: 6000, probability: 0.25 },
+      { itemId: 66110226, amount: 3,    probability: 0.25 },
+      { itemId: 66102007, amount: 100,  probability: 0.25 },
+      { itemId: 66102107, amount: 300,  probability: 0.25 },
+    ];
+    const expected = refineRandomBox.reduce((sum, c) => sum + (unitPrices[c.itemId] || 0) * c.amount * c.probability, 0);
+    return expected / 5;
+  }, [unitPrices]);
+
   // 가격 데이터를 기반으로 보상 계산 (메모이제이션)
   const rewardData = useMemo(() => {
     if (Object.keys(unitPrices).length === 0) {
@@ -264,8 +277,9 @@ const CerkaRewardInfo: React.FC = () => {
         const basicGate = basicRewardData?.find(r => r.gate === gateInfo.gate);
         const basicMaterials: MaterialWithPrice[] = basicGate?.materials.map(mat => {
           const isGrace = mat.itemName === '은총의 파편';
-          const unitPrice = isGrace ? graceUnitPrice : (unitPrices[mat.itemId] || 0);
-          const totalPrice = (mat.itemId === 0 && !isGrace) ? 0 : unitPrice * mat.amount;
+          const isThorn = mat.itemName === '고통의 가시';
+          const unitPrice = isGrace ? graceUnitPrice : isThorn ? thornUnitPrice : (unitPrices[mat.itemId] || 0);
+          const totalPrice = (mat.itemId === 0 && !isGrace && !isThorn) ? 0 : unitPrice * mat.amount;
           return {
             itemId: mat.itemId,
             itemName: mat.itemName,
@@ -279,8 +293,9 @@ const CerkaRewardInfo: React.FC = () => {
         const moreGate = moreRewardData.find(r => r.gate === gateInfo.gate);
         const moreMaterials: MaterialWithPrice[] = moreGate?.materials.map(mat => {
           const isGrace = mat.itemName === '은총의 파편';
-          const unitPrice = isGrace ? graceUnitPrice : (unitPrices[mat.itemId] || 0);
-          const totalPrice = (mat.itemId === 0 && !isGrace) ? 0 : unitPrice * mat.amount;
+          const isThorn = mat.itemName === '고통의 가시';
+          const unitPrice = isGrace ? graceUnitPrice : isThorn ? thornUnitPrice : (unitPrices[mat.itemId] || 0);
+          const totalPrice = (mat.itemId === 0 && !isGrace && !isThorn) ? 0 : unitPrice * mat.amount;
           return {
             itemId: mat.itemId,
             itemName: mat.itemName,
@@ -324,7 +339,7 @@ const CerkaRewardInfo: React.FC = () => {
     });
 
     return result;
-  }, [unitPrices, graceUnitPrice]);
+  }, [unitPrices, graceUnitPrice, thornUnitPrice]);
 
   // 체크된 재료만 계산한 관문별 기본 재료 가치
   const getCheckedBasicMaterialValue = (raidName: string, gate: GateData): number => {
@@ -493,11 +508,11 @@ const CerkaRewardInfo: React.FC = () => {
                           </td>
                           <td>{mat.amount > 0 ? mat.amount.toLocaleString() : '-'}</td>
                           <td>
-                            {mat.itemId === 0 && mat.itemName !== '은총의 파편' ? '-' :
+                            {mat.itemId === 0 && mat.itemName !== '은총의 파편' && mat.itemName !== '고통의 가시' ? '-' :
                               (mat.unitPrice >= 1 ? mat.unitPrice.toFixed(2) : mat.unitPrice.toFixed(4))}
                           </td>
                           <td>
-                            {mat.itemId === 0 && mat.itemName !== '은총의 파편' ? '-' : mat.totalPrice.toLocaleString()}
+                            {mat.itemId === 0 && mat.itemName !== '은총의 파편' && mat.itemName !== '고통의 가시' ? '-' : mat.totalPrice.toLocaleString()}
                           </td>
                         </tr>
                       );
@@ -580,11 +595,11 @@ const CerkaRewardInfo: React.FC = () => {
                                 </td>
                                 <td>{mat.amount > 0 ? mat.amount.toLocaleString() : '-'}</td>
                                 <td>
-                                  {mat.itemId === 0 && mat.itemName !== '은총의 파편' ? '-' :
+                                  {mat.itemId === 0 && mat.itemName !== '은총의 파편' && mat.itemName !== '고통의 가시' ? '-' :
                                     (mat.unitPrice >= 1 ? mat.unitPrice.toFixed(2) : mat.unitPrice.toFixed(4))}
                                 </td>
                                 <td>
-                                  {mat.itemId === 0 && mat.itemName !== '은총의 파편' ? '-' : mat.totalPrice.toLocaleString()}
+                                  {mat.itemId === 0 && mat.itemName !== '은총의 파편' && mat.itemName !== '고통의 가시' ? '-' : mat.totalPrice.toLocaleString()}
                                 </td>
                               </tr>
                             );

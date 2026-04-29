@@ -31,7 +31,8 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/life-master', label: '생활 제작 계산' },
       { href: '/package', label: '패키지 효율 계산' },
       { href: '/hell-reward', label: '지옥 보상 계산' },
-      { href: '/cathedral', label: '은총의 파편 계산' },
+      { href: '/cathedral', label: '지평의 성당 계산' },
+      { href: '/cerka', label: '세르카 계산' },
     ],
   },
   {
@@ -56,7 +57,8 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/life-master', label: '생활 제작 계산' },
   { href: '/package', label: '패키지 효율 계산' },
   { href: '/hell-reward', label: '지옥 보상 계산' },
-  { href: '/cathedral', label: '은총의 파편 계산' },
+  { href: '/cathedral', label: '지평의 성당 계산' },
+  { href: '/cerka', label: '세르카 계산' },
   { href: '/refining', label: '재련 시뮬' },
   { href: '/bracelet', label: '팔찌 시뮬' },
   { href: '/title-stats', label: '홍염의 군주', badge: 'NEW' },
@@ -91,6 +93,7 @@ export default function Navbar() {
                       href === '/bracelet' ? 'nav-bracelet' :
                       href === '/package' ? 'nav-package' :
                       href === '/cathedral' ? 'nav-weekly' :
+                      href === '/cerka' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
                       href === '/title-stats' ? 'nav-extreme' :
                       href === '/title-stats/frost' ? 'nav-frost' : 'nav-weekly';
