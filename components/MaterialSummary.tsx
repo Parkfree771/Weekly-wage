@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { Row, Col, Spinner } from 'react-bootstrap';
 import { raids } from '@/data/raids';
+import { BOUND_GOLD_FILTER, BOUND_GOLD_TEXT } from './RaidCalculator';
 import { raidClearRewards } from '@/data/raidClearRewards';
 import { raidRewards, MATERIAL_IDS } from '@/data/raidRewards';
 import { usePriceData } from '@/contexts/PriceContext';
@@ -288,8 +289,8 @@ export default function MaterialSummary({ selectedCharacters, gateSelection, cha
                       <Image src="/gold.webp" alt="일반 골드" width={12} height={12} style={{ borderRadius: '2px' }} />
                       {data.netFree.toLocaleString()}
                     </span>
-                    <span className={styles.charTotalGold} title="귀속 골드 (더보기 차감 후)" style={{ color: '#a78bfa' }}>
-                      <Image src="/gold.webp" alt="귀속 골드" width={12} height={12} style={{ borderRadius: '2px', filter: 'hue-rotate(220deg) saturate(0.85)' }} />
+                    <span className={styles.charTotalGold} title="귀속 골드 (더보기 차감 후)" style={{ color: BOUND_GOLD_TEXT }}>
+                      <Image src="/gold.webp" alt="귀속 골드" width={12} height={12} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
                       {data.netBound.toLocaleString()}
                     </span>
                     <span className={styles.charTotalOp}>+</span>
@@ -314,8 +315,8 @@ export default function MaterialSummary({ selectedCharacters, gateSelection, cha
             <span className={styles.grandTotalLabel}>일반</span>
             <span className={styles.grandTotalValue}>{grandTotals.totalNetFree.toLocaleString()}</span>
           </span>
-          <span className={styles.grandTotalItem} style={{ color: '#a78bfa' }}>
-            <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={16} height={16} style={{ borderRadius: '3px', filter: 'hue-rotate(220deg) saturate(0.85)' }} />
+          <span className={styles.grandTotalItem} style={{ color: BOUND_GOLD_TEXT }}>
+            <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={16} height={16} style={{ borderRadius: '3px', filter: BOUND_GOLD_FILTER }} />
             <span className={styles.grandTotalLabel}>귀속</span>
             <span className={styles.grandTotalValue}>{grandTotals.totalNetBound.toLocaleString()}</span>
           </span>

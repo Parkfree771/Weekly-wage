@@ -39,6 +39,30 @@ type SavedSettings = {
 // 코어를 주는 레이드 그룹
 const CORE_RAID_GROUPS = ['성당', '세르카', '종막', '4막'];
 
+// 난이도 배지. 색상은 weekly-gold.module.css 에 정의 (cerka-character 의 강제 흰글씨 룰을
+// 이기려면 !important 가 필요해서 inline style 로는 못 박음). 여기는 className 매핑만.
+type DifficultyType = '나메' | '하드' | '노말';
+const DIFFICULTY_CLASS: Record<DifficultyType, string> = {
+  '나메': 'badge-difficulty-nightmare',
+  '하드': 'badge-difficulty-hard',
+  '노말': 'badge-difficulty-normal',
+};
+
+const getDifficultyType = (rawDiff: string, groupName: string): DifficultyType | null => {
+  if (groupName === '성당') {
+    if (rawDiff === '3단계') return '나메';
+    if (rawDiff === '2단계') return '하드';
+    if (rawDiff === '1단계') return '노말';
+  }
+  if (rawDiff === '나메' || rawDiff === '하드' || rawDiff === '노말') return rawDiff;
+  return null; // 서막·베히모스 처럼 단일 난이도면 배지 없음
+};
+
+// 귀속 골드 시각 구분: 배경은 일반 골드와 같은 초록(bg-success) 사용,
+// 골드 이미지에 hue-rotate 필터를 걸어서만 색을 다르게 해 구분.
+export const BOUND_GOLD_FILTER = 'hue-rotate(280deg) saturate(1.0)';
+export const BOUND_GOLD_TEXT = '#e879f9'; // 헤더/총합 텍스트 톤 (fuchsia-400)
+
 // 설정 저장 버튼 (저장 완료 피드백 포함)
 function SaveButton({ isMobile, onSave }: { isMobile?: boolean; onSave: () => boolean }) {
   const [saved, setSaved] = useState(false);
@@ -633,6 +657,21 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
     }
   }, [gateSelection, calculatedData.characterGold, onGateSelectionChange]);
 
+  // 그룹에서 캐릭터가 선택한 (가장 높은) 난이도 추출. 단일 난이도(서막/베히모스) 면 null.
+  const getSelectedDifficulty = useCallback((characterName: string, groupName: string): { rawDiff: string; type: DifficultyType } | null => {
+    const charSel = gateSelection[characterName];
+    if (!charSel) return null;
+    for (const raid of (groupedRaids[groupName] || [])) {
+      const sel = charSel[raid.name];
+      if (sel && Object.values(sel).some(v => v !== 'none')) {
+        const rawDiff = raid.name.substring(groupName.length).trim();
+        const type = getDifficultyType(rawDiff, groupName);
+        return type ? { rawDiff, type } : null;
+      }
+    }
+    return null;
+  }, [gateSelection, groupedRaids]);
+
   const calculateRaidGroupGold = useCallback((characterName: string, groupName: string) => {
     return calculatedData.raidGroupGold[characterName]?.[groupName] || 0;
   }, [calculatedData]);
@@ -842,11 +881,11 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                       }}>
                         {calculateCharacterFree(character.characterName).toLocaleString()}
                       </span>
-                      <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={isMobile ? 14 : 18} height={isMobile ? 14 : 18} style={{ borderRadius: '3px', filter: 'hue-rotate(220deg) saturate(0.85)', marginLeft: '4px' }} />
+                      <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={isMobile ? 14 : 18} height={isMobile ? 14 : 18} style={{ borderRadius: '3px', filter: BOUND_GOLD_FILTER, marginLeft: '4px' }} />
                       <span style={{
                         fontSize: isMobile ? '0.65rem' : '0.85rem',
                         fontWeight: 700,
-                        color: '#a78bfa'
+                        color: BOUND_GOLD_TEXT
                       }}>
                         {calculateCharacterBound(character.characterName).toLocaleString()}
                       </span>
@@ -881,6 +920,24 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                               />
                             )}
                             <span style={{ fontWeight: 600 }}>{groupName}</span>
+                            {(() => {
+                              const diff = getSelectedDifficulty(character.characterName, groupName);
+                              if (!diff) return null;
+                              const cls = DIFFICULTY_CLASS[diff.type];
+                              // <Badge> 는 bg prop 없으면 bg-primary(!important) 가 붙어 파랗게 나오므로 plain span 으로.
+                              // 색상은 weekly-gold.module.css 의 cls 매칭 룰에서 결정.
+                              return (
+                                <span className={`ms-1 ${cls}`} style={{
+                                  display: 'inline-block',
+                                  padding: isMobile ? '0.18em 0.45em' : '0.25em 0.55em',
+                                  fontSize: isMobile ? '0.55rem' : '0.7rem',
+                                  lineHeight: 1,
+                                  borderRadius: '0.375rem',
+                                }}>
+                                  {diff.rawDiff}
+                                </span>
+                              );
+                            })()}
                             {excluded ? (
                               <>
                                 <Badge className="ms-1 badge-gold-excluded" style={{
@@ -904,7 +961,12 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                     }}>
                                       <Image src="/gold.webp" alt="일반" title="일반 골드" width={isMobile ? 9 : 11} height={isMobile ? 9 : 11} style={{ borderRadius: '2px' }} />
                                       {calculateRaidGroupFree(character.characterName, groupName).toLocaleString()}
-                                      <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 9 : 11} height={isMobile ? 9 : 11} style={{ borderRadius: '2px', filter: 'hue-rotate(220deg) saturate(0.85)', marginLeft: '2px' }} />
+                                    </Badge>
+                                    <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{
+                                      fontSize: isMobile ? '0.55rem' : '0.68rem',
+                                      fontWeight: 700,
+                                    }}>
+                                      <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 9 : 11} height={isMobile ? 9 : 11} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
                                       {calculateRaidGroupBound(character.characterName, groupName).toLocaleString()}
                                     </Badge>
                                   </>
@@ -915,7 +977,9 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                 <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
                                   <Image src="/gold.webp" alt="일반" title="일반 골드" width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} style={{ borderRadius: '2px' }} />
                                   {calculateRaidGroupFree(character.characterName, groupName).toLocaleString()}
-                                  <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} style={{ borderRadius: '2px', filter: 'hue-rotate(220deg) saturate(0.85)', marginLeft: '2px' }} />
+                                </Badge>
+                                <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
+                                  <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
                                   {calculateRaidGroupBound(character.characterName, groupName).toLocaleString()}
                                 </Badge>
                                 {hasMoreSelected(character.characterName, groupName) && (
@@ -1208,8 +1272,8 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                 <Image src="/gold.webp" alt="일반 골드" title="일반 골드" width={isMobile ? 22 : 30} height={isMobile ? 22 : 30} style={{ borderRadius: '5px' }} />
                 <span>일반 {calculateTotalFree().toLocaleString()}</span>
               </span>
-              <span className="d-inline-flex align-items-center gap-1" style={{ color: '#a78bfa' }}>
-                <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={isMobile ? 22 : 30} height={isMobile ? 22 : 30} style={{ borderRadius: '5px', filter: 'hue-rotate(220deg) saturate(0.85)' }} />
+              <span className="d-inline-flex align-items-center gap-1" style={{ color: BOUND_GOLD_TEXT }}>
+                <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={isMobile ? 22 : 30} height={isMobile ? 22 : 30} style={{ borderRadius: '5px', filter: BOUND_GOLD_FILTER }} />
                 <span>귀속 {calculateTotalBound().toLocaleString()}</span>
               </span>
               <span style={{ opacity: 0.8, fontSize: isMobile ? '0.85rem' : '1rem' }}>

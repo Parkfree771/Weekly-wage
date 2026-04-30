@@ -7,7 +7,6 @@ import { usePathname } from 'next/navigation';
 import { useTheme } from './ThemeProvider';
 import { Container, Navbar as BSNavbar, Nav, Offcanvas } from 'react-bootstrap';
 import LoginButton from './auth/LoginButton';
-import { useAuth } from '@/contexts/AuthContext';
 
 const FEEDBACK_URL = 'https://forms.gle/n9XKQJmheLhZcSf69';
 
@@ -64,7 +63,6 @@ const NAV_GROUPS: NavGroup[] = [
 export default function Navbar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -230,6 +228,12 @@ export default function Navbar() {
 
         {/* 데스크톱 테마 토글 + 홈버튼 + 로그인 */}
         <div className="d-none d-lg-flex align-items-center gap-2">
+          <Link
+            href="/mypage"
+            className="navbar-feedback-btn"
+          >
+            마이페이지
+          </Link>
           <a
             href={FEEDBACK_URL}
             target="_blank"
@@ -315,15 +319,13 @@ export default function Navbar() {
             </Nav>
             <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
             <Nav className="flex-column gap-2">
-              {user && (
-                <Link
-                  href="/mypage"
-                  className={`navbar-offcanvas-link ${isActive('/mypage') ? 'active' : ''}`}
-                  onClick={handleClose}
-                >
-                  마이페이지
-                </Link>
-              )}
+              <Link
+                href="/mypage"
+                className={`navbar-offcanvas-link ${isActive('/mypage') ? 'active' : ''}`}
+                onClick={handleClose}
+              >
+                마이페이지
+              </Link>
               <a
                 href={FEEDBACK_URL}
                 target="_blank"

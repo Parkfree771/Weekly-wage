@@ -231,6 +231,30 @@
   text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
 }
 
+/* 난이도 배지 — cerka-character 의 .badge / span 강제 흰글씨 룰을 못 이겨서 색이 안 먹히므로
+   여기서 명시적 specificity + !important 로 색상 정의. RaidCalculator 의 DifficultyType 과 매칭.
+   배경 있으니 글씨는 모두 흰색으로 통일, 어두운 그림자로 가독성 확보. */
+.pageWrapper :global(.cerka-character .badge-difficulty-nightmare) {
+  background-color: #7e22ce !important;       /* purple-700 보라 */
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+  font-weight: 700 !important;
+}
+
+.pageWrapper :global(.cerka-character .badge-difficulty-hard) {
+  background-color: var(--color-accent) !important;  /* 사이트 메인 주황 #e8722a */
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+  font-weight: 700 !important;
+}
+
+.pageWrapper :global(.cerka-character .badge-difficulty-normal) {
+  background-color: #eab308 !important;        /* yellow-500 노랑 */
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6) !important;  /* 노랑+흰 가독성 보완 */
+  font-weight: 700 !important;
+}
+
 /* ==========================================================================
    "다른 레이드 보기" 버튼 색상
    ========================================================================== */
