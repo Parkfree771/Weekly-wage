@@ -1,6 +1,9 @@
 import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
 
+// 매 요청마다 동적 SSR. 시간 의존 렌더(getCurrentGameDayIdx 등) 의 하이드레이션 미스매치 방지.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: '마이페이지 - 주간 레이드 체크리스트 & 골드 계산',
   description:

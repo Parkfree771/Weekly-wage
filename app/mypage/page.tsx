@@ -346,11 +346,12 @@ export default function MyPage() {
   // 원정대 탭 (1, 2, 3)
   const [activeExpedition, setActiveExpedition] = useState<1 | 2 | 3>(1);
 
-  // 상태
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [weeklyChecklist, setWeeklyChecklist] = useState<WeeklyChecklist>({});
-  const [weeklyGoldHistory, setWeeklyGoldHistory] = useState<WeeklyGoldRecord[]>([]);
-  const [commonContent, setCommonContent] = useState<CommonContentState>({ date: '', checks: {} });
+  // 상태 - 초기값을 DEMO 로 두어 SSR HTML 에 본문 콘텐츠가 박히도록 함 (SEO).
+  // 로그인 사용자는 onAuthStateChanged 후 loadExpeditionData 가 실제 데이터로 덮어씀.
+  const [characters, setCharacters] = useState<Character[]>(DEMO_CHARACTERS);
+  const [weeklyChecklist, setWeeklyChecklist] = useState<WeeklyChecklist>(DEMO_WEEKLY_CHECKLIST);
+  const [weeklyGoldHistory, setWeeklyGoldHistory] = useState<WeeklyGoldRecord[]>(DEMO_GOLD_HISTORY);
+  const [commonContent, setCommonContent] = useState<CommonContentState>(DEMO_COMMON_CONTENT);
 
   // 데모 로그인 유도 모달
   const [demoLoginPrompt, setDemoLoginPrompt] = useState(false);
@@ -1428,8 +1429,9 @@ export default function MyPage() {
     return gates.length > 0 && gates.every(v => v);
   };
 
-  // 로딩 중
-  if (loading) {
+  // 로딩 중 - 로그인 사용자 데이터 로드 중일 때만 스피너.
+  // SSR / 비로그인 시점에는 데모 콘텐츠를 그대로 노출하여 SEO 본문 확보.
+  if (loading && user) {
     return (
       <div className={styles.pageWrapper}>
         <Container className="py-5 text-center">
