@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { Row, Col, Spinner } from 'react-bootstrap';
 import { raids } from '@/data/raids';
-import { BOUND_GOLD_FILTER, BOUND_GOLD_TEXT } from './RaidCalculator';
+import { BOUND_GOLD_FILTER, BOUND_GOLD_TEXT, type CharacterGoldCalc } from './RaidCalculator';
 import { raidClearRewards } from '@/data/raidClearRewards';
 import { raidRewards, MATERIAL_IDS } from '@/data/raidRewards';
 import { usePriceData } from '@/contexts/PriceContext';
@@ -26,7 +26,7 @@ type GateSelection = {
 type MaterialSummaryProps = {
   selectedCharacters: Character[];
   gateSelection: GateSelection;
-  characterGold: { [char: string]: number };
+  characterCalc: { [char: string]: CharacterGoldCalc };
 };
 
 type AggregatedMaterial = {
@@ -61,20 +61,15 @@ const MATERIAL_ORDER = [
   MATERIAL_IDS.FATE_FRAGMENT,
 ];
 
-export default function MaterialSummary({ selectedCharacters, gateSelection, characterGold }: MaterialSummaryProps) {
+export default function MaterialSummary({ selectedCharacters, gateSelection, characterCalc }: MaterialSummaryProps) {
   const { unitPrices, loading } = usePriceData();
 
-  // 캐릭터별 재료 합산 계산
+  // 캐릭터별 재료 합산 (골드 값은 RaidCalculator 계산 결과를 그대로 사용)
   const characterMaterials = useMemo(() => {
     const result: {
       [charName: string]: {
         materials: AggregatedMaterial[];
         totalMaterialValue: number;
-        rawGold: number;
-        rawFree: number;
-        rawBound: number;
-        moreCost: number;
-        netGold: number;
         netFree: number;
         netBound: number;
         grandTotal: number;
@@ -88,9 +83,6 @@ export default function MaterialSummary({ selectedCharacters, gateSelection, cha
       if (!charSelection) continue;
 
       const materialMap: { [itemId: number]: { itemName: string; amount: number; hasMore: boolean } } = {};
-      let rawGold = 0;
-      let rawBound = 0;
-      let moreCost = 0;
       let hasMore = false;
 
       for (const raidName in charSelection) {
@@ -99,20 +91,6 @@ export default function MaterialSummary({ selectedCharacters, gateSelection, cha
           if (selection === 'none') continue;
 
           const gateNum = parseInt(gate);
-
-          // 골드 계산: 원래 클리어 골드와 더보기 비용 분리
-          const raid = raids.find(r => r.name === raidName);
-          if (raid) {
-            const gateInfo = raid.gates.find(g => g.gate === gateNum);
-            if (gateInfo) {
-              rawGold += gateInfo.gold;
-              rawBound += gateInfo.boundGold;
-              if (selection === 'withoutMore') {
-                moreCost += gateInfo.moreGold;
-                hasMore = true;
-              }
-            }
-          }
 
           // 1. 클리어 보상 (항상 포함)
           const clearReward = raidClearRewards.find(
@@ -130,6 +108,7 @@ export default function MaterialSummary({ selectedCharacters, gateSelection, cha
 
           // 2. 더보기 보상 (withoutMore 선택 시만)
           if (selection === 'withoutMore') {
+            hasMore = true;
             const moreReward = raidRewards.find(
               r => r.raidName === raidName && r.gate === gateNum
             );
@@ -163,21 +142,15 @@ export default function MaterialSummary({ selectedCharacters, gateSelection, cha
       }
       totalMaterialValue = Math.round(totalMaterialValue);
 
-      // 귀속 우선 차감: bound 부터 깎고 부족하면 free 에서.
-      const rawFree = rawGold - rawBound;
-      const boundDeduct = Math.min(rawBound, moreCost);
-      const netBound = rawBound - boundDeduct;
-      const netFree = rawFree - (moreCost - boundDeduct);
+      // 골드는 RaidCalculator 의 top-3 한정 계산값을 그대로 사용
+      const calc = characterCalc[charName];
+      const netFree = calc?.free ?? 0;
+      const netBound = calc?.bound ?? 0;
       const netGold = netFree + netBound;
 
       result[charName] = {
         materials,
         totalMaterialValue,
-        rawGold,
-        rawFree,
-        rawBound,
-        moreCost,
-        netGold,
         netFree,
         netBound,
         grandTotal: netGold + totalMaterialValue,
@@ -186,32 +159,21 @@ export default function MaterialSummary({ selectedCharacters, gateSelection, cha
     }
 
     return result;
-  }, [selectedCharacters, gateSelection, characterGold, unitPrices]);
+  }, [selectedCharacters, gateSelection, characterCalc, unitPrices]);
 
   // 전체 합산
   const grandTotals = useMemo(() => {
-    let totalRawGold = 0;
-    let totalRawBound = 0;
-    let totalMoreCost = 0;
     let totalMaterial = 0;
     let totalNetFree = 0;
     let totalNetBound = 0;
     for (const charName in characterMaterials) {
       const c = characterMaterials[charName];
-      totalRawGold += c.rawGold;
-      totalRawBound += c.rawBound;
-      totalMoreCost += c.moreCost;
       totalMaterial += c.totalMaterialValue;
       totalNetFree += c.netFree;
       totalNetBound += c.netBound;
     }
-    const totalRawFree = totalRawGold - totalRawBound;
     const totalNetGold = totalNetFree + totalNetBound;
     return {
-      totalRawGold,
-      totalRawFree,
-      totalRawBound,
-      totalMoreCost,
       totalNetFree,
       totalNetBound,
       totalNetGold,

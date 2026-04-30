@@ -8,6 +8,7 @@ import { Container, Row, Col, Card } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
+import type { CharacterGoldCalc } from '@/components/RaidCalculator';
 import styles from './weekly-gold.module.css';
 
 const STORAGE_KEY = 'weekly-gold-settings';
@@ -57,16 +58,16 @@ export default function WeeklyGoldPage() {
   const [searched, setSearched] = useState(false);
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
   const [gateSelection, setGateSelection] = useState<{[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}>({});
-  const [characterGold, setCharacterGold] = useState<{[char: string]: number}>({});
+  const [characterCalc, setCharacterCalc] = useState<{[char: string]: CharacterGoldCalc}>({});
   const [autoSearchName, setAutoSearchName] = useState<string | undefined>(undefined);
   const [searchedName, setSearchedName] = useState<string>('');
   const saveFnRef = useRef<(() => boolean) | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleGateSelectionChange = useCallback((gs: {[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}, cg: {[char: string]: number}) => {
+  const handleGateSelectionChange = useCallback((gs: {[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}, cc: {[char: string]: CharacterGoldCalc}) => {
     setGateSelection(gs);
-    setCharacterGold(cg);
+    setCharacterCalc(cc);
   }, []);
 
   // 모바일 감지
@@ -237,7 +238,7 @@ export default function WeeklyGoldPage() {
                       <MaterialSummary
                         selectedCharacters={selectedCharacters}
                         gateSelection={gateSelection}
-                        characterGold={characterGold}
+                        characterCalc={characterCalc}
                       />
                     </Card.Body>
                   </Card>

@@ -10,9 +10,15 @@ type Character = {
   itemLevel: number;
 };
 
+export type CharacterGoldCalc = {
+  total: number;
+  free: number;
+  bound: number;
+};
+
 type RaidCalculatorProps = {
   selectedCharacters: Character[];
-  onGateSelectionChange?: (gateSelection: GateSelection, characterGold: { [char: string]: number }) => void;
+  onGateSelectionChange?: (gateSelection: GateSelection, characterCalc: { [char: string]: CharacterGoldCalc }) => void;
   onSaveReady?: (saveFn: () => boolean) => void;
   searchName?: string;
 };
@@ -647,15 +653,23 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
     };
   }, [gateSelection, groupedRaids, corePerGate]);
 
-  // 부모에게 gateSelection/characterGold 전달
-  const prevGoldRef = useRef('');
+  // 부모에게 gateSelection/characterCalc 전달 (top-3 골드 한정 계산값을 그대로 전달)
+  const prevCalcRef = useRef('');
   useEffect(() => {
-    const serialized = JSON.stringify(calculatedData.characterGold);
-    if (serialized !== prevGoldRef.current) {
-      prevGoldRef.current = serialized;
-      onGateSelectionChange?.(gateSelection, calculatedData.characterGold);
+    const characterCalc: { [char: string]: CharacterGoldCalc } = {};
+    for (const char in calculatedData.characterGold) {
+      characterCalc[char] = {
+        total: calculatedData.characterGold[char] || 0,
+        free: calculatedData.characterFree[char] || 0,
+        bound: calculatedData.characterBound[char] || 0,
+      };
     }
-  }, [gateSelection, calculatedData.characterGold, onGateSelectionChange]);
+    const serialized = JSON.stringify(characterCalc);
+    if (serialized !== prevCalcRef.current) {
+      prevCalcRef.current = serialized;
+      onGateSelectionChange?.(gateSelection, characterCalc);
+    }
+  }, [gateSelection, calculatedData.characterGold, calculatedData.characterFree, calculatedData.characterBound, onGateSelectionChange]);
 
   // 그룹에서 캐릭터가 선택한 (가장 높은) 난이도 추출. 단일 난이도(서막/베히모스) 면 null.
   const getSelectedDifficulty = useCallback((characterName: string, groupName: string): { rawDiff: string; type: DifficultyType } | null => {
