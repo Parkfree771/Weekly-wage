@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useTheme } from './ThemeProvider';
 import { Container, Navbar as BSNavbar, Nav, Offcanvas } from 'react-bootstrap';
 import LoginButton from './auth/LoginButton';
+import { useAuth } from '@/contexts/AuthContext';
 
 const FEEDBACK_URL = 'https://forms.gle/n9XKQJmheLhZcSf69';
 
@@ -31,44 +32,39 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/life-master', label: '생활 제작 계산' },
       { href: '/package', label: '패키지 효율 계산' },
       { href: '/hell-reward', label: '지옥 보상 계산' },
-      { href: '/cathedral', label: '지평의 성당 계산' },
-      { href: '/cerka', label: '세르카 계산' },
     ],
   },
   {
-    label: '시뮬레이터',
+    label: '레이드 계산',
+    colorClass: 'nav-hell',
+    items: [
+      { href: '/cathedral', label: '지평의 성당 계산' },
+      { href: '/cerka', label: '세르카 계산' },
+      { href: '/extreme', label: '익스트림', badge: 'NEW' },
+    ],
+  },
+  {
+    label: '시뮬',
     colorClass: 'nav-refining',
     items: [
       { href: '/refining', label: '재련 시뮬' },
       { href: '/bracelet', label: '팔찌 시뮬' },
     ],
   },
-];
-
-const NAV_STANDALONE: NavItem[] = [
-  { href: '/title-stats', label: '홍염의 군주', badge: 'NEW' },
-  { href: '/title-stats/frost', label: '혹한의 군주' },
-  { href: '/extreme', label: '익스트림', badge: 'NEW' },
-];
-
-// 모바일 오프캔버스용 전체 목록
-const ALL_NAV_ITEMS: NavItem[] = [
-  { href: '/weekly-gold', label: '주간 골드 계산' },
-  { href: '/life-master', label: '생활 제작 계산' },
-  { href: '/package', label: '패키지 효율 계산' },
-  { href: '/hell-reward', label: '지옥 보상 계산' },
-  { href: '/cathedral', label: '지평의 성당 계산' },
-  { href: '/cerka', label: '세르카 계산' },
-  { href: '/refining', label: '재련 시뮬' },
-  { href: '/bracelet', label: '팔찌 시뮬' },
-  { href: '/title-stats', label: '홍염의 군주', badge: 'NEW' },
-  { href: '/title-stats/frost', label: '혹한의 군주' },
-  { href: '/extreme', label: '익스트림', badge: 'NEW' },
+  {
+    label: '칭호 통계',
+    colorClass: 'nav-extreme',
+    items: [
+      { href: '/title-stats', label: '홍염의 군주', badge: 'NEW' },
+      { href: '/title-stats/frost', label: '혹한의 군주' },
+    ],
+  },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -84,6 +80,10 @@ export default function Navbar() {
 
   const isGroupActive = (group: NavGroup) => {
     return group.items.some(item => isActive(item.href));
+  };
+
+  const hasGroupNew = (group: NavGroup) => {
+    return group.items.some(item => item.badge === 'NEW');
   };
 
   const getNavClass = (href: string) => {
@@ -162,6 +162,7 @@ export default function Navbar() {
                   style={{ cursor: 'pointer' }}
                 >
                   {group.label}
+                  {hasGroupNew(group) && <span className="nav-badge-new">NEW</span>}
                   <svg width="10" height="10" viewBox="0 0 10 10" style={{ marginLeft: '4px', opacity: 0.6 }}>
                     <path d="M2 4L5 7L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -186,17 +187,6 @@ export default function Navbar() {
               </div>
             ))}
 
-            {/* 독립 메뉴 */}
-            {NAV_STANDALONE.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`navbar-nav-link ${getNavClass(item.href)}`}
-              >
-                {item.label}
-                {item.badge && <span className="nav-badge-new">{item.badge}</span>}
-              </Link>
-            ))}
           </Nav>
         </div>
 
@@ -300,48 +290,40 @@ export default function Navbar() {
           </Offcanvas.Header>
           <Offcanvas.Body className="navbar-offcanvas-body">
             <Nav className="flex-column gap-2">
-              {/* 골드 계산 그룹 */}
-              <div className="navbar-offcanvas-group-label">골드 계산</div>
-              {NAV_GROUPS[0].items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`navbar-offcanvas-link ${getNavClass(item.href)}`}
-                  onClick={handleClose}
-                >
-                  {item.label}
-                </Link>
-              ))}
-
-              {/* 시뮬레이터 그룹 */}
-              <div className="navbar-offcanvas-group-label" style={{ marginTop: '8px' }}>시뮬레이터</div>
-              {NAV_GROUPS[1].items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`navbar-offcanvas-link ${getNavClass(item.href)}`}
-                  onClick={handleClose}
-                >
-                  {item.label}
-                </Link>
-              ))}
-
-              {/* 기타 메뉴 */}
-              <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
-              {NAV_STANDALONE.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`navbar-offcanvas-link ${getNavClass(item.href)}`}
-                  onClick={handleClose}
-                >
-                  {item.label}
-                  {item.badge && <span className="nav-badge-new">{item.badge}</span>}
-                </Link>
+              {NAV_GROUPS.map((group, idx) => (
+                <div key={group.label}>
+                  <div
+                    className="navbar-offcanvas-group-label"
+                    style={idx > 0 ? { marginTop: '8px' } : undefined}
+                  >
+                    {group.label}
+                    {hasGroupNew(group) && <span className="nav-badge-new">NEW</span>}
+                  </div>
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`navbar-offcanvas-link ${getNavClass(item.href)}`}
+                      onClick={handleClose}
+                    >
+                      {item.label}
+                      {item.badge && <span className="nav-badge-new">{item.badge}</span>}
+                    </Link>
+                  ))}
+                </div>
               ))}
             </Nav>
             <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
             <Nav className="flex-column gap-2">
+              {user && (
+                <Link
+                  href="/mypage"
+                  className={`navbar-offcanvas-link ${isActive('/mypage') ? 'active' : ''}`}
+                  onClick={handleClose}
+                >
+                  마이페이지
+                </Link>
+              )}
               <a
                 href={FEEDBACK_URL}
                 target="_blank"
