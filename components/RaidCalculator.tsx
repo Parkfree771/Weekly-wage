@@ -467,25 +467,34 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
     const characterGold: { [char: string]: number } = {};
     const raidGroupCores: { [char: string]: { [group: string]: number } } = {};
     const characterCores: { [char: string]: number } = {};
+    const raidGroupFree: { [char: string]: { [group: string]: number } } = {};
+    const raidGroupBound: { [char: string]: { [group: string]: number } } = {};
+    const characterFree: { [char: string]: number } = {};
+    const characterBound: { [char: string]: number } = {};
     const moreSelected: { [char: string]: { [group: string]: boolean } } = {};
     const checkedGroups: { [char: string]: string[] } = {};
     const goldExcludedGroups: { [char: string]: string[] } = {}; // 골드 미수령 그룹
     let totalGold = 0;
+    let totalFree = 0;
+    let totalBound = 0;
     let hasAnyMore = false;
 
     for (const characterName in gateSelection) {
       raidGroupGold[characterName] = {};
+      raidGroupFree[characterName] = {};
+      raidGroupBound[characterName] = {};
       raidGroupCores[characterName] = {};
       moreSelected[characterName] = {};
       checkedGroups[characterName] = [];
       goldExcludedGroups[characterName] = [];
       let charCores = 0;
 
-      // 1단계: 그룹별 baseGold, moreCost, cores 계산
-      const groupCalc: { [group: string]: { baseGold: number; moreCost: number; cores: number; hasMore: boolean; hasChecked: boolean } } = {};
+      // 1단계: 그룹별 baseGold(총), baseBound(귀속), moreCost, cores 계산
+      const groupCalc: { [group: string]: { baseGold: number; baseBound: number; moreCost: number; cores: number; hasMore: boolean; hasChecked: boolean } } = {};
 
       for (const groupName in groupedRaids) {
         let baseGold = 0;
+        let baseBound = 0;
         let moreCost = 0;
         let groupCores = 0;
         let groupHasMore = false;
@@ -502,6 +511,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                   const gateInfo = raid.gates.find(g => g.gate === parseInt(gate));
                   if (gateInfo) {
                     baseGold += gateInfo.gold;
+                    baseBound += gateInfo.boundGold;
                     if (selection === 'withoutMore') {
                       moreCost += gateInfo.moreGold;
                       groupHasMore = true;
@@ -523,7 +533,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
           }
         }
 
-        groupCalc[groupName] = { baseGold, moreCost, cores: groupCores, hasMore: groupHasMore, hasChecked: groupHasChecked };
+        groupCalc[groupName] = { baseGold, baseBound, moreCost, cores: groupCores, hasMore: groupHasMore, hasChecked: groupHasChecked };
 
         if (groupHasChecked) {
           checkedGroups[characterName].push(groupName);
@@ -536,26 +546,43 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
 
       characterCores[characterName] = charCores;
 
-      // 2단계: 체크된 그룹 중 상위 3개만 골드 지급 (4개 이상일 때)
+      // 2단계: 체크된 그룹 중 상위 3개만 골드 지급 (4개 이상일 때).
+      // 더보기 비용은 귀속 골드에서 우선 차감하고 부족하면 일반 골드에서 차감.
       const checked = checkedGroups[characterName];
-
-      // 체크된 그룹을 baseGold 내림차순 정렬
       const sorted = [...checked].sort((a, b) => groupCalc[b].baseGold - groupCalc[a].baseGold);
 
       let charGold = 0;
+      let charFree = 0;
+      let charBound = 0;
       for (let i = 0; i < sorted.length; i++) {
         const g = sorted[i];
         const calc = groupCalc[g];
         if (i < 3) {
-          // 상위 3개: 골드 수령
-          const gold = calc.baseGold - calc.moreCost;
-          raidGroupGold[characterName][g] = gold;
-          charGold += gold;
+          // 상위 3개: 골드 수령. 귀속 우선 차감.
+          const baseFreeGold = calc.baseGold - calc.baseBound;
+          const boundDeduct = Math.min(calc.baseBound, calc.moreCost);
+          const groupBound = calc.baseBound - boundDeduct;
+          const groupFree = baseFreeGold - (calc.moreCost - boundDeduct);
+          const groupTotal = groupFree + groupBound; // = calc.baseGold - calc.moreCost
+
+          raidGroupGold[characterName][g] = groupTotal;
+          raidGroupFree[characterName][g] = groupFree;
+          raidGroupBound[characterName][g] = groupBound;
+          charGold += groupTotal;
+          charFree += groupFree;
+          charBound += groupBound;
         } else {
-          // 4번째+: 골드 미수령, 더보기 비용만 차감
-          const gold = -calc.moreCost;
-          raidGroupGold[characterName][g] = gold;
-          charGold += gold;
+          // 4번째+: 골드 미수령. 더보기 비용만 차감 (귀속 우선; 미수령이라 base 가 0 이라 결국 일반에서).
+          const groupFree = -calc.moreCost;
+          const groupBound = 0;
+          const groupTotal = groupFree + groupBound;
+
+          raidGroupGold[characterName][g] = groupTotal;
+          raidGroupFree[characterName][g] = groupFree;
+          raidGroupBound[characterName][g] = groupBound;
+          charGold += groupTotal;
+          charFree += groupFree;
+          charBound += groupBound;
           goldExcludedGroups[characterName].push(g);
         }
       }
@@ -564,22 +591,34 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
       for (const g in groupCalc) {
         if (!checked.includes(g)) {
           raidGroupGold[characterName][g] = 0;
+          raidGroupFree[characterName][g] = 0;
+          raidGroupBound[characterName][g] = 0;
         }
       }
 
       characterGold[characterName] = charGold;
+      characterFree[characterName] = charFree;
+      characterBound[characterName] = charBound;
       totalGold += charGold;
+      totalFree += charFree;
+      totalBound += charBound;
     }
 
     return {
       raidGroupGold,
+      raidGroupFree,
+      raidGroupBound,
       characterGold,
+      characterFree,
+      characterBound,
       raidGroupCores,
       characterCores,
       moreSelected,
       checkedGroups,
       goldExcludedGroups,
       totalGold,
+      totalFree,
+      totalBound,
       hasAnyMore
     };
   }, [gateSelection, groupedRaids, corePerGate]);
@@ -598,12 +637,36 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
     return calculatedData.raidGroupGold[characterName]?.[groupName] || 0;
   }, [calculatedData]);
 
+  const calculateRaidGroupFree = useCallback((characterName: string, groupName: string) => {
+    return calculatedData.raidGroupFree[characterName]?.[groupName] || 0;
+  }, [calculatedData]);
+
+  const calculateRaidGroupBound = useCallback((characterName: string, groupName: string) => {
+    return calculatedData.raidGroupBound[characterName]?.[groupName] || 0;
+  }, [calculatedData]);
+
   const calculateCharacterGold = useCallback((characterName: string) => {
     return calculatedData.characterGold[characterName] || 0;
   }, [calculatedData]);
 
+  const calculateCharacterFree = useCallback((characterName: string) => {
+    return calculatedData.characterFree[characterName] || 0;
+  }, [calculatedData]);
+
+  const calculateCharacterBound = useCallback((characterName: string) => {
+    return calculatedData.characterBound[characterName] || 0;
+  }, [calculatedData]);
+
   const calculateTotalGold = useCallback(() => {
     return calculatedData.totalGold;
+  }, [calculatedData]);
+
+  const calculateTotalFree = useCallback(() => {
+    return calculatedData.totalFree;
+  }, [calculatedData]);
+
+  const calculateTotalBound = useCallback(() => {
+    return calculatedData.totalBound;
   }, [calculatedData]);
 
   const hasMoreSelected = useCallback((characterName: string, groupName: string) => {
@@ -772,12 +835,20 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                       borderRadius: '6px',
                       whiteSpace: 'nowrap'
                     }}>
-                      <Image src="/gold.webp" alt="골드" width={isMobile ? 14 : 18} height={isMobile ? 14 : 18} style={{ borderRadius: '3px' }} />
+                      <Image src="/gold.webp" alt="일반 골드" title="일반 골드" width={isMobile ? 14 : 18} height={isMobile ? 14 : 18} style={{ borderRadius: '3px' }} />
                       <span style={{
                         fontSize: isMobile ? '0.65rem' : '0.85rem',
                         fontWeight: 700
                       }}>
-                        {calculateCharacterGold(character.characterName).toLocaleString()}
+                        {calculateCharacterFree(character.characterName).toLocaleString()}
+                      </span>
+                      <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={isMobile ? 14 : 18} height={isMobile ? 14 : 18} style={{ borderRadius: '3px', filter: 'hue-rotate(220deg) saturate(0.85)', marginLeft: '4px' }} />
+                      <span style={{
+                        fontSize: isMobile ? '0.65rem' : '0.85rem',
+                        fontWeight: 700,
+                        color: '#a78bfa'
+                      }}>
+                        {calculateCharacterBound(character.characterName).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -824,22 +895,28 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                 {hasMoreSelected(character.characterName, groupName) && (
                                   <>
                                     <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.68rem' }}>더보기</Badge>
-                                    <Badge className="ms-1 badge-more-cost" style={{
+                                    <Badge className="ms-1 badge-more-cost d-inline-flex align-items-center gap-1" style={{
                                       fontSize: isMobile ? '0.55rem' : '0.68rem',
                                       backgroundColor: '#3b82f6',
                                       color: '#fff',
                                       fontWeight: 700,
                                       textShadow: hasBackground ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
                                     }}>
-                                      {calculateRaidGroupGold(character.characterName, groupName).toLocaleString()} G
+                                      <Image src="/gold.webp" alt="일반" title="일반 골드" width={isMobile ? 9 : 11} height={isMobile ? 9 : 11} style={{ borderRadius: '2px' }} />
+                                      {calculateRaidGroupFree(character.characterName, groupName).toLocaleString()}
+                                      <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 9 : 11} height={isMobile ? 9 : 11} style={{ borderRadius: '2px', filter: 'hue-rotate(220deg) saturate(0.85)', marginLeft: '2px' }} />
+                                      {calculateRaidGroupBound(character.characterName, groupName).toLocaleString()}
                                     </Badge>
                                   </>
                                 )}
                               </>
                             ) : (
                               <>
-                                <Badge bg="success" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
-                                  {calculateRaidGroupGold(character.characterName, groupName).toLocaleString()} G
+                                <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
+                                  <Image src="/gold.webp" alt="일반" title="일반 골드" width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} style={{ borderRadius: '2px' }} />
+                                  {calculateRaidGroupFree(character.characterName, groupName).toLocaleString()}
+                                  <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} style={{ borderRadius: '2px', filter: 'hue-rotate(220deg) saturate(0.85)', marginLeft: '2px' }} />
+                                  {calculateRaidGroupBound(character.characterName, groupName).toLocaleString()}
                                 </Badge>
                                 {hasMoreSelected(character.characterName, groupName) && (
                                   <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.68rem' }}>더보기</Badge>
@@ -1124,13 +1201,22 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
       </Row>
       <Card className="mt-2 total-gold-card">
         <Card.Body style={{ padding: isMobile ? '0.75rem' : '1.3rem' }}>
-          <div className="d-flex align-items-center justify-content-between">
-            <div style={{ flex: 1 }} />
-            <div className="d-flex align-items-center justify-content-center gap-2" style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: isMobile ? '1.15rem' : '1.4rem' }}>
-              <Image src="/gold.webp" alt="골드" width={isMobile ? 28 : 36} height={isMobile ? 28 : 36} style={{ borderRadius: '5px' }} />
-              총 골드: {calculateTotalGold().toLocaleString()} G
+          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div style={{ flex: 1, minWidth: 0 }} />
+            <div className="d-flex align-items-center justify-content-center flex-wrap gap-2 gap-md-3" style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: isMobile ? '0.95rem' : '1.25rem' }}>
+              <span className="d-inline-flex align-items-center gap-1">
+                <Image src="/gold.webp" alt="일반 골드" title="일반 골드" width={isMobile ? 22 : 30} height={isMobile ? 22 : 30} style={{ borderRadius: '5px' }} />
+                <span>일반 {calculateTotalFree().toLocaleString()}</span>
+              </span>
+              <span className="d-inline-flex align-items-center gap-1" style={{ color: '#a78bfa' }}>
+                <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={isMobile ? 22 : 30} height={isMobile ? 22 : 30} style={{ borderRadius: '5px', filter: 'hue-rotate(220deg) saturate(0.85)' }} />
+                <span>귀속 {calculateTotalBound().toLocaleString()}</span>
+              </span>
+              <span style={{ opacity: 0.8, fontSize: isMobile ? '0.85rem' : '1rem' }}>
+                = 총 {calculateTotalGold().toLocaleString()} G
+              </span>
             </div>
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', minWidth: 0 }}>
               <SaveButton isMobile={isMobile} onSave={saveSettings} />
             </div>
           </div>
