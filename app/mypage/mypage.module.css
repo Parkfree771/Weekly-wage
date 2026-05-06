@@ -16,7 +16,7 @@
 
 /* 컨테이너 */
 .container {
-  max-width: 1400px;
+  max-width: 1500px;
   margin: 0 auto;
   padding: 80px 16px 40px;
 }
@@ -236,6 +236,23 @@
   font-variant-numeric: tabular-nums;
 }
 
+.totalGoldBadge .goldSplit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border-color);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.totalGoldBadge .goldSplitItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
 /* 카드 공통 스타일 */
 .pageWrapper :global(.card) {
   background-color: var(--card-bg);
@@ -301,8 +318,8 @@
 /* 오른쪽 일일 컨텐츠 상자 (데스크톱) */
 .dailySideBox {
   flex: 1.2;
-  min-width: 340px;
-  max-width: 440px;
+  min-width: 360px;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -506,7 +523,7 @@
   font-size: 12.5px;
   font-weight: 700;
   color: var(--text-secondary);
-  min-width: 44px;
+  min-width: 38px;
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -514,8 +531,10 @@
 .sideMaterialItems {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 3px;
   align-items: center;
+  flex: 1;
+  min-width: 0;
 }
 
 .sideMaterialItem {

@@ -61,6 +61,7 @@ export type CharacterWeeklyState = {
   raidMoreGoldExclude?: RaidMoreGoldExclude; // 레이드별 더보기 비용 제외 설정
   raidGoldReceive?: RaidGoldReceive; // 레이드별 골드 수령 설정
   sandOfTimeLevel?: number; // 할의 모래시계 보상강화 레벨 (0~5, 기본 0=미설정)
+  raidDifficultyOverride?: { [groupName: string]: string }; // 사용자가 톱니바퀴로 수동 선택한 난이도 (그룹명 → raid 풀네임)
 };
 
 // 전체 주간 체크리스트

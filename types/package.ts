@@ -72,6 +72,7 @@ export type PackageComment = {
   authorNickname: string;
   authorPhotoURL: string | null;
   content: string;
+  parentId: string | null; // null = 일반 댓글, 있으면 해당 댓글에 대한 답글
   createdAt: Timestamp | any;
   updatedAt: Timestamp | any;
 };

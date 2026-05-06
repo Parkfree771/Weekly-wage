@@ -7,8 +7,8 @@ import NextImage from 'next/image';
 import { memo } from 'react';
 
 // 작은 정적 아이콘용 (재화 아이콘 등 - 최적화 API 호출 생략)
-const StaticIcon = memo(function StaticIcon({ src, alt, width, height, className }: { src: string; alt: string; width: number; height: number; className?: string }) {
-  return <NextImage src={src} alt={alt} width={width} height={height} className={className} unoptimized loading="lazy" />;
+const StaticIcon = memo(function StaticIcon({ src, alt, width, height, className, style }: { src: string; alt: string; width: number; height: number; className?: string; style?: React.CSSProperties }) {
+  return <NextImage src={src} alt={alt} width={width} height={height} className={className} style={style} unoptimized loading="lazy" />;
 });
 
 // fill 모드 카드 이미지용 (레이드/가토/균열 카드 배경)
@@ -28,6 +28,45 @@ import { DEMO_CHARACTERS, DEMO_WEEKLY_CHECKLIST, DEMO_GOLD_HISTORY, DEMO_COMMON_
 
 // raids 배열을 Map으로 변환 (O(1) 조회용)
 const raidMap = new Map(raids.map(r => [r.name, r]));
+
+// 귀속 골드 시각 구분: gold.webp 이미지에 hue-rotate 필터 적용
+const BOUND_GOLD_FILTER = 'hue-rotate(280deg) saturate(1.0)';
+const BOUND_GOLD_TEXT = '#e879f9'; // fuchsia-400
+
+// 캐릭터별 골드 split 계산: 더보기 비용은 귀속 골드에서 우선 차감 후 일반 골드에서 차감
+function calcCharRaidGoldSplit(
+  state: { raids: Record<string, boolean[]>; raidGoldReceive?: Record<string, boolean>; raidMoreGoldExclude?: Record<string, boolean> },
+): { total: number; free: number; bound: number } {
+  let total = 0;
+  let bound = 0;
+  Object.entries(state.raids).forEach(([raidName, gates]) => {
+    const raid = raidMap.get(raidName);
+    if (!raid) return;
+    const receiveGold = state.raidGoldReceive?.[raidName] !== false;
+    const buyMore = state.raidMoreGoldExclude?.[raidName] === true;
+    let raidGold = 0;
+    let raidBound = 0;
+    let raidMoreCost = 0;
+    gates.forEach((checked, i) => {
+      if (!checked || !raid.gates[i]) return;
+      if (receiveGold) {
+        raidGold += raid.gates[i].gold;
+        raidBound += raid.gates[i].boundGold;
+      }
+      if (buyMore) {
+        raidMoreCost += raid.gates[i].moreGold;
+      }
+    });
+    const baseFree = raidGold - raidBound;
+    const boundDeduct = Math.min(raidBound, raidMoreCost);
+    const finalBound = raidBound - boundDeduct;
+    const finalFree = baseFree - (raidMoreCost - boundDeduct);
+    total += finalFree + finalBound;
+    bound += finalBound;
+  });
+  return { total, free: total - bound, bound };
+}
+
 import { raidRewards, MATERIAL_IDS } from '@/data/raidRewards';
 import {
   Character,
@@ -1224,12 +1263,17 @@ export default function MyPage() {
         delete newMoreGoldExclude[oldRaidName];
       }
 
+      // 수동 선택 저장 (체크 없이 갱신해도 보존되도록)
+      const groupName = getRaidGroupName(newRaidName);
+      const newOverride = { ...(charState.raidDifficultyOverride || {}), [groupName]: newRaidName };
+
       return {
         ...prev,
         [charName]: {
           ...charState,
           raids: newRaids,
           raidMoreGoldExclude: newMoreGoldExclude,
+          raidDifficultyOverride: newOverride,
         },
       };
     });
@@ -1368,36 +1412,21 @@ export default function MyPage() {
   const chaosGateLevelTier = maxCharLevel >= 1750 ? '1750' : '1730';
 
   // 총 골드 계산 (useMemo로 값 캐싱 — 매 렌더마다 재계산 방지)
-  const totalGold = useMemo(() => {
+  const totalGoldSplit = useMemo(() => {
     let total = 0;
+    let bound = 0;
 
     characters.forEach(char => {
       const state = weeklyChecklist[char.name];
       if (!state) return;
-
-      Object.entries(state.raids).forEach(([raidName, gates]) => {
-        const raid = raidMap.get(raidName);
-        if (raid) {
-          const receiveGold = state.raidGoldReceive?.[raidName] !== false;
-          const buyMore = state.raidMoreGoldExclude?.[raidName] === true;
-
-          gates.forEach((checked, i) => {
-            if (checked && raid.gates[i]) {
-              if (receiveGold) {
-                total += raid.gates[i].gold;
-              }
-              if (buyMore) {
-                total -= raid.gates[i].moreGold;
-              }
-            }
-          });
-        }
-      });
-
+      const { total: charTotal, bound: charBound } = calcCharRaidGoldSplit(state);
+      total += charTotal;
+      bound += charBound;
+      // 추가 골드는 일반 골드(원하는 곳에 자유롭게 사용)
       total += state.additionalGold || 0;
     });
 
-    // 공통 컨텐츠 골드 (복주머니, 카오스게이트 등)
+    // 공통 컨텐츠 골드 (복주머니, 카오스게이트 등) — 일반 골드
     Object.entries(commonContent.checks).forEach(([key, checked]) => {
       if (!checked) return;
       const contentName = key.split('-').slice(1).join('-');
@@ -1405,8 +1434,10 @@ export default function MyPage() {
       if (content?.gold) total += content.gold;
     });
 
-    return total;
+    return { total, free: total - bound, bound };
   }, [characters, weeklyChecklist, commonContent, COMMON_CONTENTS]);
+
+  const totalGold = totalGoldSplit.total;
 
   // 주간 재화 합산 데이터 (레이드 + 카던 + 가토)
   // itemId → 이미지/이름 직접 매핑 (카던 짧은 이름 문제 방지)
@@ -1553,6 +1584,18 @@ export default function MyPage() {
             <div className={styles.totalGoldBadge}>
               <span className={styles.goldLabel}>이번 주 예상</span>
               <span className={styles.goldAmount}>{totalGold.toLocaleString()}G</span>
+              {totalGoldSplit.bound > 0 && (
+                <span className={styles.goldSplit}>
+                  <span className={styles.goldSplitItem} title="일반 골드">
+                    <Image src="/gold.webp" alt="일반" width={12} height={12} style={{ borderRadius: '2px' }} />
+                    <span>{totalGoldSplit.free.toLocaleString()}</span>
+                  </span>
+                  <span className={styles.goldSplitItem} title="귀속 골드" style={{ color: BOUND_GOLD_TEXT }}>
+                    <Image src="/gold.webp" alt="귀속" width={12} height={12} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
+                    <span>{totalGoldSplit.bound.toLocaleString()}</span>
+                  </span>
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -1605,29 +1648,24 @@ export default function MyPage() {
             const charState = weeklyChecklist[char.name] || createEmptyWeeklyState(char.itemLevel);
             const top3Raids = getTop3RaidGroups(char.itemLevel);
 
-            // 캐릭터별 골드 계산
-            let charGold = 0;
-            Object.entries(charState.raids).forEach(([raidName, gates]) => {
-              const raid = raidMap.get(raidName);
-              if (raid) {
-                const receiveGold = charState.raidGoldReceive?.[raidName] !== false;
-                const buyMore = charState.raidMoreGoldExclude?.[raidName] === true;
-                gates.forEach((checked, i) => {
-                  if (checked && raid.gates[i]) {
-                    if (receiveGold) charGold += raid.gates[i].gold;
-                    if (buyMore) charGold -= raid.gates[i].moreGold;
-                  }
-                });
-              }
-            });
+            // 캐릭터별 골드 계산 (일반/귀속 분리)
+            const raidSplit = calcCharRaidGoldSplit(charState);
+            let charGold = raidSplit.total;
+            let charFree = raidSplit.free;
+            const charBound = raidSplit.bound;
+            // 추가 골드 — 일반 골드
             charGold += charState.additionalGold || 0;
-            // 대표 캐릭터: 공통 컨텐츠 골드 포함
+            charFree += charState.additionalGold || 0;
+            // 대표 캐릭터: 공통 컨텐츠 골드 포함 (일반 골드)
             if (char.name === representativeChar) {
               Object.entries(commonContent.checks).forEach(([key, checked]) => {
                 if (!checked) return;
                 const contentName = key.split('-').slice(1).join('-');
                 const content = COMMON_CONTENTS.find(c => c.name === contentName);
-                if (content?.gold) charGold += content.gold;
+                if (content?.gold) {
+                  charGold += content.gold;
+                  charFree += content.gold;
+                }
               });
             }
 
@@ -1737,15 +1775,20 @@ export default function MyPage() {
                       const visibleRaids: { raid: typeof raids[0] | null; groupName: string }[] = [];
 
                       // 현재 보여줄 레이드 계산
+                      // 우선순위: 1) 체크된 난이도 보존  2) 사용자 수동 선택(톱니바퀴) 3) 가장 높은 난이도
                       for (let i = 0; i < raidCount; i++) {
                         const groupIdx = startIdx + i;
                         if (groupIdx < allRaidGroups.length) {
                           const groupName = allRaidGroups[groupIdx];
                           const difficulties = getAvailableDifficulties(groupName, char.itemLevel);
-                          // 체크된 난이도 또는 가장 높은 난이도
-                          const selectedRaid = difficulties.find(d =>
-                            charState.raids[d.name] && charState.raids[d.name].length > 0
-                          ) || difficulties[0];
+                          const checkedRaid = difficulties.find(d =>
+                            charState.raids[d.name]?.some(v => v),
+                          );
+                          const overrideName = charState.raidDifficultyOverride?.[groupName];
+                          const overrideRaid = overrideName
+                            ? difficulties.find(d => d.name === overrideName)
+                            : null;
+                          const selectedRaid = checkedRaid || overrideRaid || difficulties[0];
                           visibleRaids.push({ raid: selectedRaid || null, groupName });
                         } else {
                           visibleRaids.push({ raid: null, groupName: '' });
@@ -2037,14 +2080,16 @@ export default function MyPage() {
                     // 카던/가토 수급량
                     const hasDailyMats = hasChaos || hasGuardian;
 
-                    // 레이드별 재료 계산
-                    const raidMats: { raidName: string; groupName: string; gold: number; materials: { itemId: number; name: string; image: string; amount: number }[] }[] = [];
+                    // 레이드별 재료 계산 (골드는 일반/귀속 분리)
+                    const raidMats: { raidName: string; groupName: string; goldFree: number; goldBound: number; materials: { itemId: number; name: string; image: string; amount: number }[] }[] = [];
                     Object.entries(charState.raids).forEach(([raidName, gates]) => {
                       if (!gates.some(v => v)) return;
                       const amountMap: Record<number, number> = {};
                       const buyMore = charState.raidMoreGoldExclude?.[raidName] === true;
                       const receiveGold = charState.raidGoldReceive?.[raidName] !== false;
-                      let raidGoldAmount = 0;
+                      let raidGoldSum = 0;
+                      let raidBoundSum = 0;
+                      let raidMoreCost = 0;
 
                       gates.forEach((checked, i) => {
                         if (!checked) return;
@@ -2052,10 +2097,11 @@ export default function MyPage() {
                         const raid = raidMap.get(raidName);
                         if (raid?.gates[i]) {
                           if (receiveGold) {
-                            raidGoldAmount += raid.gates[i].gold;
+                            raidGoldSum += raid.gates[i].gold;
+                            raidBoundSum += raid.gates[i].boundGold;
                           }
                           if (buyMore) {
-                            raidGoldAmount -= raid.gates[i].moreGold;
+                            raidMoreCost += raid.gates[i].moreGold;
                           }
                         }
                         const clearReward = raidClearRewards.find(r => r.raidName === raidName && r.gate === gateNum);
@@ -2076,6 +2122,12 @@ export default function MyPage() {
                         }
                       });
 
+                      // 더보기 비용은 귀속 골드에서 우선 차감 후 일반 골드에서 차감
+                      const baseFree = raidGoldSum - raidBoundSum;
+                      const boundDeduct = Math.min(raidBoundSum, raidMoreCost);
+                      const goldBound = raidBoundSum - boundDeduct;
+                      const goldFree = baseFree - (raidMoreCost - boundDeduct);
+
                       const mats = Object.entries(amountMap)
                         .filter(([, amt]) => amt > 0)
                         .map(([id, amt]) => {
@@ -2089,11 +2141,12 @@ export default function MyPage() {
                           };
                         });
 
-                      if (mats.length > 0 || raidGoldAmount > 0) {
+                      if (mats.length > 0 || goldFree !== 0 || goldBound !== 0) {
                         raidMats.push({
                           raidName,
                           groupName: getRaidGroupName(raidName),
-                          gold: raidGoldAmount,
+                          goldFree,
+                          goldBound,
                           materials: mats,
                         });
                       }
@@ -2173,7 +2226,7 @@ export default function MyPage() {
                             </div>
                           );
                         })()}
-                        {raidMats.map(({ raidName: rn, groupName: gn, gold: rGold, materials: mats }) => (
+                        {raidMats.map(({ raidName: rn, groupName: gn, goldFree: rFree, goldBound: rBound, materials: mats }) => (
                           <div key={rn} className={styles.sideMaterialRow}>
                             <span className={styles.sideMaterialLabel}>{raidGroupShortNames[gn] || gn}</span>
                             <div className={styles.sideMaterialItems}>
@@ -2184,10 +2237,16 @@ export default function MyPage() {
                                   <span className={styles.sideMatAmount}>{mat.amount.toLocaleString()}</span>
                                 </div>
                               ))}
-                              {rGold !== 0 && (
-                                <div className={styles.sideMaterialItem}>
-                                  <StaticIcon src="/gold.webp" alt="골드" width={16} height={16} className={styles.matIcon2} />
-                                  <span className={rGold > 0 ? styles.sideMatGold : styles.sideMatGoldNeg}>{rGold.toLocaleString()}</span>
+                              {rFree !== 0 && (
+                                <div className={styles.sideMaterialItem} title="일반 골드">
+                                  <StaticIcon src="/gold.webp" alt="일반 골드" width={16} height={16} className={styles.matIcon2} />
+                                  <span className={rFree > 0 ? styles.sideMatGold : styles.sideMatGoldNeg}>{rFree.toLocaleString()}</span>
+                                </div>
+                              )}
+                              {rBound !== 0 && (
+                                <div className={styles.sideMaterialItem} title="귀속 골드">
+                                  <StaticIcon src="/gold.webp" alt="귀속 골드" width={16} height={16} className={styles.matIcon2} style={{ filter: BOUND_GOLD_FILTER }} />
+                                  <span className={rBound > 0 ? styles.sideMatGold : styles.sideMatGoldNeg} style={{ color: BOUND_GOLD_TEXT }}>{rBound.toLocaleString()}</span>
                                 </div>
                               )}
                             </div>
@@ -2256,6 +2315,23 @@ export default function MyPage() {
                       <span className={styles.sideGoldLabel}>총 획득</span>
                       <span className={styles.sideGoldTotal}>{charGold.toLocaleString()}G</span>
                     </div>
+                    {charGold > 0 && (
+                      <div className={styles.sideGoldRow}>
+                        <span className={styles.sideGoldLabel} style={{ fontSize: '0.7rem', opacity: 0.85 }}>
+                          일반/귀속
+                        </span>
+                        <span className={styles.sideGoldValue} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15rem' }}>
+                            <Image src="/gold.webp" alt="일반" width={10} height={10} style={{ borderRadius: '2px' }} />
+                            {charFree.toLocaleString()}
+                          </span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15rem', color: BOUND_GOLD_TEXT }}>
+                            <Image src="/gold.webp" alt="귀속" width={10} height={10} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
+                            {charBound.toLocaleString()}
+                          </span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

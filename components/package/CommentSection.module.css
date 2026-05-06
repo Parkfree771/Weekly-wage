@@ -270,6 +270,83 @@
   cursor: not-allowed;
 }
 
+/* ─── 답글 ─── */
+.replyToolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.replyBtn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.replyBtn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.replyForm {
+  margin-top: 0.6rem;
+  padding: 0.75rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.replyTextarea {
+  width: 100%;
+  min-height: 60px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.6rem;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.replyTextarea:focus {
+  border-color: var(--color-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+}
+
+.replyTextarea::placeholder {
+  color: var(--text-muted);
+}
+
+.replyList {
+  margin-top: 0.75rem;
+  padding-left: 1.25rem;
+  border-left: 2px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.replyCard {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.replyCard .authorName {
+  font-size: 0.82rem;
+}
+
+.replyCard .content {
+  font-size: 0.86rem;
+}
+
 /* ─── 빈/로딩 상태 ─── */
 .empty {
   text-align: center;
@@ -321,5 +398,17 @@
 
   .content {
     font-size: 0.85rem;
+  }
+
+  .replyList {
+    padding-left: 0.75rem;
+  }
+
+  .replyCard {
+    padding: 0.6rem;
+  }
+
+  .replyForm {
+    padding: 0.6rem;
   }
 }
