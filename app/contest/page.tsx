@@ -12,7 +12,7 @@ import {
 import {
   fetchIllustLikeCounts,
   fetchUserLikedIllusts,
-} from '@/lib/contest-supabase';
+} from '@/lib/contest-service';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
 import HeroSection from './components/HeroSection';
@@ -32,6 +32,11 @@ export default function ContestPage() {
 
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [likedSet, setLikedSet] = useState<Set<string>>(new Set());
+  const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
+
+  const handleToggleExpand = useCallback((slug: string) => {
+    setExpandedSlug((prev) => (prev === slug ? null : slug));
+  }, []);
 
   const loadCounts = useCallback(
     async (force = false) => {
@@ -52,13 +57,14 @@ export default function ContestPage() {
         return;
       }
       try {
-        const liked = await fetchUserLikedIllusts(user.uid, force);
+        const slugs = realIllustrations.map((i) => i.slug);
+        const liked = await fetchUserLikedIllusts(user.uid, slugs, force);
         setLikedSet(liked);
       } catch (err) {
         console.error('사용자 좋아요 상태 로딩 실패:', err);
       }
     },
-    [user],
+    [user, realIllustrations],
   );
 
   // 초기 로딩 + user 변경 시
@@ -142,6 +148,8 @@ export default function ContestPage() {
                     right={right}
                     likeCounts={likeCounts}
                     likedSet={likedSet}
+                    expandedSlug={expandedSlug}
+                    onToggleExpand={handleToggleExpand}
                     onLikeChange={handleLikeChange}
                   />
                 );
@@ -157,9 +165,14 @@ export default function ContestPage() {
             rel="noopener noreferrer"
             className={styles.ctaPrimary}
           >
-            공식 이벤트 페이지
+            로스트아크 공식 이벤트 페이지로 이동 →
           </a>
         </div>
+
+        <p className={styles.copyrightDisclaimer}>
+          ※ 본 페이지의 일러스트는 <strong>SMILEGATE · 로스트아크</strong> 공식 이미지를 AI로 재가공한 비공식 팬 메이드입니다.
+          모든 원본 권리는 스마일게이트(주)에 있습니다.
+        </p>
       </div>
     </div>
   );

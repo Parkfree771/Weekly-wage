@@ -10,7 +10,7 @@
 ## 0. 현재 어디까지 와 있나 (TL;DR)
 
 - 콘테스트 페이지 `/contest` UI 100% 구현 완료
-- 좋아요 / 조회수는 **Supabase 로 이전 코드 작성 완료** (실제 동작은 콘솔 작업 후)
+- 좋아요는 **Supabase 로 이전 코드 작성 완료** (실제 동작은 콘솔 작업 후)
 - 무기 댓글 / 무기 메타 / 이미지 업로드는 Firestore + Firebase Storage 그대로
 - 12장 일러스트에 워터마크 + 클릭 시 풀스크린 라이트박스 적용
 - 빌드 통과 ✅
@@ -39,13 +39,14 @@
 - `IllustrationLightbox.tsx` — 풀스크린 크게보기 모달 (워터마크 유지)
 - `WeaponGalleryModal.tsx` — 무기 갤러리 모달 (마손리 갤러리 + 업로드 폼 + 정렬)
 - `WeaponDetailModal.tsx` — 무기 상세 모달 (좌 이미지 + 우 메타·좋아요·댓글)
+
 - `WeaponCommentSection.tsx` — 무기별 댓글 (대댓글 1단계, 300자)
 
 ### 1-3. 데이터 / 서비스
 - `data/contest-data.ts` — 12장 일러스트 + 6 매치업 메타데이터 (하드코딩, 매치업 확정)
 - `types/contest.ts` — `ContestIllustration`, `ContestMatchup`, `ContestWeapon`, `ContestWeaponComment`
 - `lib/contest-service.ts` — Firestore 무기 메타·댓글·Storage 업로드만 담당 (좋아요는 제거됨)
-- `lib/contest-supabase.ts` — 좋아요/조회수 Supabase 클라이언트 + sessionStorage 캐시
+- `lib/contest-supabase.ts` — 좋아요 Supabase 클라이언트 + sessionStorage 캐시
 - `hooks/usePageVisibility.ts` — 다른 탭 복귀 감지 → 캐시 강제 갱신
 
 ### 1-4. 이미지 / 자산
@@ -68,15 +69,15 @@
 ## 2. 사용자가 콘솔에서 해야 할 일 ⚠ 필수
 
 ### 2-1. Supabase 콘솔
-> 이 작업이 끝나야 좋아요·조회수가 실제로 동작합니다.
+> 이 작업이 끝나야 좋아요가 실제로 동작합니다.
 
 1. **Authentication → Sign In Providers → Third-Party Auth → Add → Firebase**
    - Firebase Project ID 입력 → Save
 2. **SQL Editor → New query**
    - `docs/contest-supabase-setup.md` 의 SQL 블록 전체 복붙 → Run
-   - 6개 테이블 + 3개 트리거 + RLS 정책 자동 생성
+   - 4개 테이블 + 2개 트리거 + RLS 정책 자동 생성
 3. **검증**
-   - Table Editor 에서 `contest_illust_likes`, `contest_illust_like_counts`, `contest_weapon_likes`, `contest_weapon_like_counts`, `contest_weapon_views`, `contest_weapon_view_counts` 6개 보이는지
+   - Table Editor 에서 `contest_illust_likes`, `contest_illust_like_counts`, `contest_weapon_likes`, `contest_weapon_like_counts` 4개 보이는지
    - 각 테이블 우측 RLS enabled 표시 확인
 
 ### 2-2. Firebase 콘솔
@@ -104,14 +105,9 @@ NEXT_PUBLIC_FIREBASE_*=...  (기존)
 | 항목 | 동작 | 비고 |
 |---|---|---|
 | 좋아요 | 로그인 필수 (Firebase Auth) | RLS 이중 차단 |
-| 조회수 | **비로그인도 카운트** (의도) | 1시간 dedup, anon UUID localStorage |
 | 무기 업로드 | 로그인 필수, 자동 WebP 변환 | 입력 3MB / 결과 1MB 한도 |
 | 무기 댓글 | 로그인 필수, 본인만 수정·삭제 | 300자, 대댓글 1단계 |
 | 캐시 | sessionStorage 5분 + visibilitychange 갱신 | 본인 액션은 옵티미스틱 즉시 |
-
-### 잔여 리스크 (수용된 것)
-- 비로그인 조회수 어뷰징 가능 (정확도 핵심 아님)
-- Firestore `getWeaponCount` 12회 read는 캐시 미적용 (한도 빠듯, 후속 개선 권장)
 
 ---
 
@@ -122,11 +118,11 @@ app/contest/
   page.tsx              ← 메인 페이지 (좋아요 카운트 로딩, visibility hook)
   components/
     IllustrationCard    ← 좋아요 토글, 무기 모달 트리거, 라이트박스 트리거
-    WeaponGalleryModal  ← 무기 목록·업로드·정렬 (좋아요/조회수 Supabase 통합)
+    WeaponGalleryModal  ← 무기 목록·업로드·정렬 (좋아요 Supabase 통합)
     WeaponDetailModal   ← 무기 상세 (좌 이미지·우 댓글)
 lib/
-  contest-supabase.ts   ← 좋아요/조회수 + 캐시 매니저 (핵심)
-  contest-service.ts    ← Firestore 무기 메타·댓글·Storage
+  contest-supabase.ts   ← 좋아요 + 캐시 매니저 (핵심)
+  contest-service.ts    ← Firestore 무기 메타·댓글·Storage (무기 갯수 카운트는 더 이상 사용 안 함)
 data/contest-data.ts    ← 12 일러스트 + 6 매치업 (이름/컨셉 수정 시 여기)
 docs/                   ← 모든 운영 문서
 ```
@@ -136,11 +132,11 @@ docs/                   ← 모든 운영 문서
 ## 5. 후속 작업 (TODO — 다음 환경에서 이어서)
 
 ### 우선순위 높음
-- [ ] **사용자 콘솔 작업 후 실제 좋아요·조회수 동작 검증** (브라우저에서 토글 + Supabase Table Editor 에서 데이터 확인)
+- [ ] **사용자 콘솔 작업 후 실제 좋아요 동작 검증** (브라우저에서 토글 + Supabase Table Editor 에서 데이터 확인)
 - [ ] **Firebase JWT → Supabase 연결 후 RLS 정책 실제 작동 검증** (비로그인이 좋아요 시도 → 거부 받는지)
 
 ### 우선순위 중간 (성능)
-- [ ] `getWeaponCount` 12회 read 를 sessionStorage 캐시화 (또는 `contestStats/summary` 단일 도큐로 통합)
+- [x] ~~`getWeaponCount` 12회 read 캐시화~~ → 무기 갯수 표시 자체를 제거 (2026-05-07)
 - [ ] Firebase 콘솔 사용량 알림 80% 활성화
 - [ ] Supabase egress 80% 알림 활성화
 

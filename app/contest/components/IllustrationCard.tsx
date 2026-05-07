@@ -5,15 +5,15 @@ import { useEffect, useState } from 'react';
 import styles from '../contest.module.css';
 import type { ContestIllustration } from '@/types/contest';
 import { useAuth } from '@/contexts/AuthContext';
-import { toggleIllustLike } from '@/lib/contest-supabase';
-import { getWeaponCount } from '@/lib/contest-service';
-import WeaponGalleryModal from './WeaponGalleryModal';
+import { toggleIllustLike } from '@/lib/contest-service';
 import IllustrationLightbox from './IllustrationLightbox';
 
 type Props = {
   illustration: ContestIllustration;
   initialLikeCount: number;
   initialLiked: boolean;
+  isExpanded: boolean;
+  onToggleExpand: (slug: string) => void;
   onLikeChange?: (slug: string, liked: boolean, newCount: number) => void;
 };
 
@@ -21,35 +21,22 @@ export default function IllustrationCard({
   illustration,
   initialLikeCount,
   initialLiked,
+  isExpanded,
+  onToggleExpand,
   onLikeChange,
 }: Props) {
   const { user } = useAuth();
   const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [liked, setLiked] = useState(initialLiked);
   const [busy, setBusy] = useState(false);
-  const [weaponCount, setWeaponCount] = useState<number>(0);
-  const [showWeapons, setShowWeapons] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
 
-  // 부모에서 새 카운트 내려오면 sync (visibilitychange 등으로 갱신될 때)
   useEffect(() => {
     setLikeCount(initialLikeCount);
   }, [initialLikeCount]);
   useEffect(() => {
     setLiked(initialLiked);
   }, [initialLiked]);
-
-  useEffect(() => {
-    if (illustration.comingSoon) return;
-    (async () => {
-      try {
-        const c = await getWeaponCount(illustration.slug);
-        setWeaponCount(c);
-      } catch (err) {
-        console.error('무기 카운트 조회 실패:', err);
-      }
-    })();
-  }, [illustration.slug, illustration.comingSoon]);
 
   if (illustration.comingSoon) {
     return (
@@ -67,7 +54,6 @@ export default function IllustrationCard({
     }
     if (busy) return;
 
-    // 옵티미스틱 — UI 즉시 반영
     const prevLiked = liked;
     const prevCount = likeCount;
     const optimisticLiked = !prevLiked;
@@ -79,7 +65,6 @@ export default function IllustrationCard({
     setBusy(true);
     try {
       const nowLiked = await toggleIllustLike(illustration.slug, user.uid, prevLiked);
-      // 서버 결과와 옵티미스틱 일치 여부 확인 (보정)
       if (nowLiked !== optimisticLiked) {
         const correctedCount = nowLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
         setLiked(nowLiked);
@@ -87,7 +72,6 @@ export default function IllustrationCard({
         onLikeChange?.(illustration.slug, nowLiked, correctedCount);
       }
     } catch (err) {
-      // 롤백
       console.error('좋아요 실패:', err);
       setLiked(prevLiked);
       setLikeCount(prevCount);
@@ -114,7 +98,7 @@ export default function IllustrationCard({
             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 45vw, 660px"
             priority={false}
           />
-          <span className={styles.illustWatermark}>© SMILEGATE RPG</span>
+          <span className={styles.illustWatermark}>© SMILEGATE · 로스트아크 — AI 재가공</span>
         </button>
         <div className={styles.illustActions}>
           <button
@@ -131,23 +115,17 @@ export default function IllustrationCard({
           </button>
           <button
             type="button"
-            className={styles.weaponButton}
-            onClick={() => setShowWeapons(true)}
+            className={`${styles.weaponButton} ${isExpanded ? styles.weaponButtonActive : ''}`}
+            onClick={() => onToggleExpand(illustration.slug)}
+            aria-expanded={isExpanded}
           >
-            <span>어울리는 무기 아바타</span>
-            <span className={styles.weaponBadge}>{weaponCount}</span>
+            <span>{isExpanded ? '닫기' : '어울리는 무기 아바타'}</span>
+            <span className={styles.weaponButtonChevron} aria-hidden>
+              {isExpanded ? '▴' : '▾'}
+            </span>
           </button>
         </div>
       </div>
-
-      {showWeapons && (
-        <WeaponGalleryModal
-          illustrationSlug={illustration.slug}
-          illustrationImageSrc={illustration.imageSrc}
-          onClose={() => setShowWeapons(false)}
-          onCountChange={(delta) => setWeaponCount((c) => Math.max(0, c + delta))}
-        />
-      )}
 
       {showLightbox && (
         <IllustrationLightbox

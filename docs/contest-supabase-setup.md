@@ -1,4 +1,4 @@
-# 콘테스트 좋아요/조회수 Supabase 셋업 가이드
+# 콘테스트 좋아요 Supabase 셋업 가이드
 
 이 문서는 Supabase 콘솔에서 직접 해야 할 작업입니다. 순서대로 따라하세요.
 
@@ -29,7 +29,7 @@ Supabase 대시보드 → 좌측 **SQL Editor** → **New query** → 아래 전
 
 ```sql
 -- ============================================
--- 콘테스트 좋아요 + 조회수 테이블 + 트리거 + RLS
+-- 콘테스트 좋아요 테이블 + 트리거 + RLS
 -- ============================================
 
 -- ── 1. 일러스트 좋아요 (slug + uid 한 쌍 = 1 좋아요) ──
@@ -65,25 +65,8 @@ create table if not exists contest_weapon_like_counts (
   like_count bigint not null default 0
 );
 
--- ── 3. 무기 조회수 (1시간 dedup) ──
--- viewer_key 형식:
---   로그인 사용자: {firebase_uid}_{YYYY-MM-DD-HH}
---   비로그인 사용자: anon_{localStorage_uuid}_{YYYY-MM-DD-HH}
-create table if not exists contest_weapon_views (
-  weapon_id text not null,
-  viewer_key text not null,
-  viewed_at timestamptz not null default now(),
-  primary key (weapon_id, viewer_key)
-);
-create index if not exists idx_weapon_views_weapon on contest_weapon_views (weapon_id);
-
-create table if not exists contest_weapon_view_counts (
-  weapon_id text primary key,
-  view_count bigint not null default 0
-);
-
 -- ============================================
--- 트리거: 좋아요/조회 INSERT/DELETE 시 카운트 자동 갱신
+-- 트리거: 좋아요 INSERT/DELETE 시 카운트 자동 갱신
 -- ============================================
 
 -- 일러스트 좋아요 카운트
@@ -130,22 +113,6 @@ create trigger trg_weapon_like_count
   after insert or delete on contest_weapon_likes
   for each row execute function _update_weapon_like_count();
 
--- 무기 조회수 카운트 (INSERT 성공한 경우만 증가, ON CONFLICT는 트리거 안 탐)
-create or replace function _update_weapon_view_count() returns trigger
-language plpgsql security definer as $$
-begin
-  insert into contest_weapon_view_counts (weapon_id, view_count)
-  values (new.weapon_id, 1)
-  on conflict (weapon_id) do update set view_count = contest_weapon_view_counts.view_count + 1;
-  return null;
-end;
-$$;
-
-drop trigger if exists trg_weapon_view_count on contest_weapon_views;
-create trigger trg_weapon_view_count
-  after insert on contest_weapon_views
-  for each row execute function _update_weapon_view_count();
-
 -- ============================================
 -- RLS (Row Level Security) — 비로그인 차단 + 본인 데이터만 쓰기
 -- ============================================
@@ -154,25 +121,20 @@ alter table contest_illust_likes enable row level security;
 alter table contest_illust_like_counts enable row level security;
 alter table contest_weapon_likes enable row level security;
 alter table contest_weapon_like_counts enable row level security;
-alter table contest_weapon_views enable row level security;
-alter table contest_weapon_view_counts enable row level security;
 
 -- 정책 재실행 안전화 (이미 있는 정책 삭제 후 재생성)
 drop policy if exists "anyone read" on contest_illust_like_counts;
 drop policy if exists "anyone read" on contest_weapon_like_counts;
-drop policy if exists "anyone read" on contest_weapon_view_counts;
 drop policy if exists "self select" on contest_illust_likes;
 drop policy if exists "self insert" on contest_illust_likes;
 drop policy if exists "self delete" on contest_illust_likes;
 drop policy if exists "self select" on contest_weapon_likes;
 drop policy if exists "self insert" on contest_weapon_likes;
 drop policy if exists "self delete" on contest_weapon_likes;
-drop policy if exists "view insert" on contest_weapon_views;
 
 -- 카운트 테이블: 누구나 read
 create policy "anyone read" on contest_illust_like_counts for select using (true);
 create policy "anyone read" on contest_weapon_like_counts for select using (true);
-create policy "anyone read" on contest_weapon_view_counts for select using (true);
 
 -- 일러스트 좋아요: 로그인 + 본인 uid 만
 create policy "self select" on contest_illust_likes for select
@@ -189,30 +151,12 @@ create policy "self insert" on contest_weapon_likes for insert
   with check (uid = (select auth.jwt() ->> 'sub'));
 create policy "self delete" on contest_weapon_likes for delete
   using (uid = (select auth.jwt() ->> 'sub'));
-
--- 무기 조회: 로그인은 본인 uid 시작, 비로그인은 anon_ 시작 viewer_key 허용
--- (비로그인 정책은 anon role 에 적용됨)
-create policy "view insert" on contest_weapon_views for insert
-  with check (
-    (
-      -- 로그인 사용자: viewer_key 가 본인 uid 로 시작
-      (auth.jwt() ->> 'sub') is not null
-      and viewer_key like (auth.jwt() ->> 'sub') || '_%'
-    )
-    or
-    (
-      -- 비로그인 사용자: viewer_key 가 'anon_' 으로 시작
-      (auth.jwt() ->> 'sub') is null
-      and viewer_key like 'anon_%'
-    )
-  );
 ```
 
 ### 검증
-SQL 실행 후 좌측 **Table Editor** 들어가면 6개 테이블 보여야 합니다:
+SQL 실행 후 좌측 **Table Editor** 들어가면 4개 테이블 보여야 합니다:
 - `contest_illust_likes` / `contest_illust_like_counts`
 - `contest_weapon_likes` / `contest_weapon_like_counts`
-- `contest_weapon_views` / `contest_weapon_view_counts`
 
 각 테이블 우측 `RLS enabled` 체크 표시 확인.
 
@@ -220,7 +164,7 @@ SQL 실행 후 좌측 **Table Editor** 들어가면 6개 테이블 보여야 합
 
 ## 3. 작업 끝 — 알려주세요
 
-위 두 단계 다 끝나면 알려주세요. 그러면 클라이언트 코드를 Supabase 호출로 교체하고, Firestore의 좋아요/카운트 데이터는 정리(폐기)하겠습니다.
+위 두 단계 다 끝나면 알려주세요. 그러면 클라이언트가 Supabase 좋아요 호출을 정상 동작시킵니다.
 
 ---
 
@@ -231,8 +175,6 @@ SQL 실행 후 좌측 **Table Editor** 들어가면 6개 테이블 보여야 합
 일러스트 본인 좋아요 → contest_illust_likes WHERE uid = 본인
 무기 좋아요 카운트   → contest_weapon_like_counts.like_count
 무기 본인 좋아요    → contest_weapon_likes WHERE uid = 본인
-무기 조회수        → contest_weapon_view_counts.view_count
-무기 조회 dedup    → contest_weapon_views (1시간 단위 viewer_key)
 ```
 
 진입 시 호출:
@@ -242,6 +184,3 @@ SQL 실행 후 좌측 **Table Editor** 들어가면 6개 테이블 보여야 합
 
 좋아요 토글:
 - INSERT 또는 DELETE 1번 → 트리거가 카운트 자동 갱신
-
-조회수:
-- INSERT 1번 (ON CONFLICT DO NOTHING) → 새 row면 트리거가 카운트 +1, 기존 row면 무시

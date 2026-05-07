@@ -16,10 +16,7 @@ export default function HeroSection() {
           rel="noopener noreferrer"
           className={styles.ctaPrimary}
         >
-          공식 이벤트 페이지
-        </a>
-        <a href="#section-A" className={styles.ctaSecondary}>
-          후보 보러가기
+          로스트아크 공식 이벤트 페이지로 이동 →
         </a>
       </div>
     </header>

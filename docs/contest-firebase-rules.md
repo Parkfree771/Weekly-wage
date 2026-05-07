@@ -20,14 +20,11 @@ service cloud.firestore {
 
     // ───────────────────────────────────────
     // 콘테스트 무기 아바타 (메타·이미지·댓글만 Firestore)
-    // 좋아요/조회수는 Supabase 로 이전됨
+    // 좋아요는 Supabase 로 이전됨
     // ───────────────────────────────────────
     match /contestWeapons/{slug} {
-      allow read: if true;
-      allow create: if isSignedIn();
-      // count(무기 총수) 필드만 increment 허용
-      allow update: if isSignedIn()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count']);
+      // 부모 도큐는 사용하지 않음 (subcollection만 사용)
+      allow read, write: if false;
 
       match /items/{weaponId} {
         allow read: if true;
@@ -97,15 +94,23 @@ service firebase.storage {
 
 ## 4. 검증 체크리스트
 
-설정 후 콘솔에서 다음을 직접 시도해 막히는지 확인하세요:
+설정 후 콘솔에서 다음을 직접 시도해 막히는지 확인하세요.
+
+### Firebase 규칙 (Firestore + Storage)
+| 시나리오 | 기대 결과 |
+|---|---|
+| 비로그인 상태로 댓글 작성 | 거부 (Firestore) |
+| 비로그인 상태로 무기 업로드 | 거부 (Storage + Firestore) |
+| 다른 사람 댓글 수정/삭제 | 거부 (Firestore) |
+| 다른 사람 무기 삭제 | 거부 (Firestore + Storage) |
+| 1MB 초과 파일 업로드 | 거부 (Storage) |
+| 본인 글 수정/삭제 | 허용 |
+
+### Supabase RLS (좋아요)
+좋아요는 Firebase 규칙 영역이 아닙니다. Supabase 콘솔의 Authentication → Policies 에서 확인하거나 브라우저 콘솔에서 직접 시도:
 
 | 시나리오 | 기대 결과 |
 |---|---|
-| 비로그인 상태로 좋아요 토글 | 거부 (Firestore 규칙) |
-| 비로그인 상태로 댓글 작성 | 거부 |
-| 비로그인 상태로 무기 업로드 | 거부 (Storage + Firestore) |
-| 다른 사람 댓글 수정/삭제 | 거부 |
-| 다른 사람 무기 삭제 | 거부 |
-| 6MB 초과 파일 업로드 | 거부 (Storage) |
-| 본인 글 수정/삭제 | 허용 |
-| 좋아요/조회수 카운트 증감 | 허용 |
+| 비로그인 상태로 좋아요 INSERT | 거부 (RLS "self insert") |
+| 다른 uid 로 위조한 좋아요 INSERT | 거부 (RLS) |
+| 카운트 테이블 SELECT | 누구나 허용 |

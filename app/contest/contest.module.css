@@ -729,11 +729,30 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 14px 20px;
+  gap: 8px;
+  padding: 12px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.3);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+@media (min-width: 720px) {
+  .modalActionBar { gap: 12px; padding: 14px 20px; }
+}
+
+/* 모바일: 액션바 자식 사이즈를 작게 — 한 줄에 등록/정렬/X 모두 들어가도록 */
+@media (max-width: 719px) {
+  .modalActionBar .modalUploadBtn {
+    height: 32px; padding: 0 10px; font-size: 12px;
+  }
+  .modalActionBar .sortBtn,
+  .modalActionBar .sortBtnActive {
+    height: 28px; padding: 0 8px; font-size: 11px;
+  }
+  .modalActionBar .sortToggle { padding: 2px; }
+  .modalActionBar .inlineCloseBtn {
+    width: 30px; height: 30px; font-size: 12px;
+  }
+  .modalActionBar .modalActionRight { gap: 6px; }
 }
 
 .modalActionLeft {
@@ -937,12 +956,10 @@
 
 /* ── 마손리 갤러리 (CSS columns로 자연 비율 보존) ── */
 .weaponGallery {
-  column-count: 2;
-  column-gap: 12px;
+  column-count: 1;
+  column-gap: 18px;
 }
-@media (min-width: 640px)  { .weaponGallery { column-count: 3; } }
-@media (min-width: 960px)  { .weaponGallery { column-count: 4; } }
-@media (min-width: 1280px) { .weaponGallery { column-count: 5; } }
+@media (min-width: 720px) { .weaponGallery { column-count: 2; } }
 
 .weaponItem {
   position: relative;
@@ -957,8 +974,20 @@
 
 .weaponImageWrap {
   position: relative;
-  cursor: zoom-in;
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
   background: #060810;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: zoom-in;
+}
+.weaponImageWrap:focus-visible {
+  outline: 2px solid rgba(196, 181, 253, 0.6);
+  outline-offset: 2px;
 }
 .weaponImageWrap img {
   display: block;
@@ -1476,4 +1505,174 @@
   background: rgba(15, 18, 32, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(8px);
+}
+
+/* ─────────────────────────────────────────────
+   추가 클래스 — 인라인 패널 / 댓글 토글 / disclaimer
+   (시네마틱 톤에 맞춰 추가)
+   ───────────────────────────────────────────── */
+
+.weaponButtonActive {
+  background: rgba(99, 102, 241, 0.28);
+  border-color: rgba(196, 181, 253, 0.7);
+  color: #f5f3ff;
+}
+.weaponButtonChevron {
+  font-size: 11px;
+  line-height: 1;
+  color: inherit;
+}
+
+/* 인라인 무기 갤러리 패널 (모달 대체) */
+.inlinePanel {
+  position: relative;
+  margin: 0 16px 16px;
+  padding: 18px 16px 28px;
+  background: linear-gradient(180deg, rgba(8, 10, 22, 0.85), rgba(11, 14, 26, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  animation: inlinePanelOpen 240ms ease-out;
+}
+@media (min-width: 720px) {
+  .inlinePanel {
+    margin: 0 28px 24px;
+    padding: 22px 24px 36px;
+  }
+}
+@keyframes inlinePanelOpen {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modalActionRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.inlineCloseBtn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+@media (min-width: 720px) {
+  .inlineCloseBtn { width: 36px; height: 36px; font-size: 15px; }
+}
+.inlineCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.inlineGalleryBody {
+  margin-top: 18px;
+}
+
+/* 무기 카드 댓글 토글 */
+.commentToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #d4d4ec;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.commentToggleBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.commentToggleBtnActive {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(196, 181, 253, 0.5);
+  color: #ede9fe;
+}
+
+.cardCommentsWrap {
+  padding: 14px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* 페이지 하단 저작권 disclaimer */
+.copyrightDisclaimer {
+  max-width: 720px;
+  margin: 24px auto 32px;
+  padding: 14px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: #e6e9f2;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  text-align: center;
+}
+.copyrightDisclaimer strong {
+  color: #fcd34d;
+  font-weight: 800;
+}
+@media (min-width: 720px) {
+  .copyrightDisclaimer {
+    font-size: 13.5px;
+    padding: 16px 22px;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   페이지네이션 (인라인 패널 안)
+   ───────────────────────────────────────────── */
+.paginationBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.paginationBtn {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #d4d4ec;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.paginationBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(196, 181, 253, 0.5);
+  color: #fff;
+}
+.paginationBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.paginationLabel {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #c4b5fd;
+  font-variant-numeric: tabular-nums;
 }
