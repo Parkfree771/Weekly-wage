@@ -10,6 +10,9 @@
   overflow: hidden;
   padding-bottom: 140px;
   isolation: isolate;
+  /* 모바일에서 스크롤 시 주소창 토글로 100vh가 변해도
+     배경 레이아웃이 흔들리지 않도록 페인트 컨테이너로 묶는다 */
+  contain: paint;
 }
 
 /* ─────────────────────────────────────────────
@@ -18,6 +21,9 @@
 .auroraWrap {
   position: fixed;
   inset: 0;
+  /* 모바일 주소창 토글 시 100vh 변동에 영향받지 않도록 lvh(largest viewport)
+     기준의 최대 높이를 명시. 미지원 브라우저는 inset:0으로 폴백. */
+  height: 100lvh;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
@@ -118,9 +124,9 @@
     linear-gradient(180deg, rgba(0,0,0,0.25) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.4) 100%);
 }
 
-/* 파티클 캔버스 */
+/* 파티클 캔버스 — 모바일 주소창 토글로도 흔들리지 않도록 lvh 사용 */
 .particleCanvas {
-  position: fixed; inset: 0; width: 100%; height: 100%;
+  position: fixed; inset: 0; width: 100%; height: 100lvh;
   pointer-events: none; z-index: 1;
 }
 
@@ -286,6 +292,17 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* 모바일은 backdrop-filter가 스크롤 페인트 비용을 크게 키우므로
+   불투명 배경으로 대체해 버벅임을 제거한다 */
+@media (max-width: 768px) {
+  .matchupRow {
+    background: #0f1220;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
 }
 
 .matchupInner { position: relative; }
@@ -1675,4 +1692,34 @@
   font-weight: 700;
   color: #c4b5fd;
   font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────────────────────────
+   모바일 성능 최적화
+   - 오로라 블롭 애니메이션은 큰 blur(120px)와 함께라 모바일에서 매우 무거움
+   - SVG fractal noise는 매 페인트마다 비싸므로 모바일에서 제거
+   - 배경 블롭 수 감소
+   ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .auroraBlob1,
+  .auroraBlob2,
+  .auroraBlob3,
+  .auroraBlob4,
+  .auroraBlob5 { animation: none; filter: blur(80px); }
+  .auroraBlob4,
+  .auroraBlob5,
+  .bokehCyan { display: none; }
+  .noiseSvg { display: none; }
+  /* 모바일은 fixed 배경이 매번 합성되므로 블러 강도 낮춰 페인트 비용 절감 */
+  .auroraBlob { will-change: auto; }
+  .officialCard { backdrop-filter: none; }
+}
+
+/* 사용자가 모션 줄이기를 켰으면 모든 배경 애니메이션 정지 */
+@media (prefers-reduced-motion: reduce) {
+  .auroraBlob1,
+  .auroraBlob2,
+  .auroraBlob3,
+  .auroraBlob4,
+  .auroraBlob5 { animation: none; }
 }

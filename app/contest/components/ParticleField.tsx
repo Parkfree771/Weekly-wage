@@ -44,7 +44,10 @@ export default function ParticleField({ className, density = 70 }: Props) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    // 모바일은 DPR 1로 강제 + 파티클 수 절반 (성능/스크롤 안정)
+    const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+    const densityScale = isMobile ? 0.45 : 1;
     let w = 0, h = 0;
     let bokehs: Bokeh[] = [];
     let stars: Star[] = [];
@@ -88,17 +91,37 @@ export default function ParticleField({ className, density = 70 }: Props) {
       };
     };
 
-    const resize = () => {
-      w = window.innerWidth;
-      h = window.innerHeight;
+    // 캔버스 크기/파티클 시드 — 모바일은 처음 마운트 때 한 번만, 그 이후엔
+    // 주소창 토글로 innerHeight가 어떻게 변하든 절대 다시 안 만진다.
+    // 데스크톱은 실제 창 리사이즈가 의미 있으니 호출될 수 있다.
+    const setup = () => {
+      const newW = window.innerWidth;
+      // 모바일은 주소창 영향 없는 안정값(screen.height) 사용 →
+      // 스크롤로 innerHeight가 바뀌어도 캔버스 픽셀버퍼는 일정.
+      const stableH = isMobile
+        ? Math.max(
+            window.innerHeight,
+            window.screen?.height || 0,
+            window.outerHeight || 0,
+          )
+        : window.innerHeight;
+
+      // 동일 크기면 아무것도 안 한다 (canvas.width 재설정도 컨텍스트 리셋이라 회피)
+      if (newW === w && stableH === h) return;
+
+      w = newW;
+      h = stableH;
       canvas.width = Math.floor(w * dpr);
       canvas.height = Math.floor(h * dpr);
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const bokehCount = Math.max(8, Math.floor((w * h) / 90000));
-      const starCount = Math.max(40, Math.floor((w * h) / 12000) * (density / 70));
+      const bokehCount = Math.max(6, Math.floor((w * h) / (isMobile ? 160000 : 90000)));
+      const starCount = Math.max(
+        isMobile ? 20 : 40,
+        Math.floor((w * h) / 12000) * (density / 70) * densityScale,
+      );
       bokehs = Array.from({ length: bokehCount }, spawnBokeh);
       stars = Array.from({ length: starCount }, spawnStar);
     };
@@ -200,14 +223,31 @@ export default function ParticleField({ className, density = 70 }: Props) {
       rafRef.current = requestAnimationFrame(tick);
     };
 
-    resize();
+    setup();
     rafRef.current = requestAnimationFrame(tick);
 
-    const onResize = () => resize();
-    window.addEventListener('resize', onResize);
+    // 모바일: resize 이벤트는 주소창 토글로 매 스크롤마다 발생하므로 듣지 않는다.
+    //         폰을 회전했을 때만 캔버스 재구성 (orientationchange).
+    // 데스크톱: 실제 창 리사이즈 처리 (디바운스).
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    const onResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(setup, 150);
+    };
+    const onOrient = () => {
+      // 회전 직후엔 크기가 일시적으로 부정확할 수 있어 살짝 지연
+      setTimeout(setup, 250);
+    };
+
+    if (!isMobile) {
+      window.addEventListener('resize', onResize);
+    }
+    window.addEventListener('orientationchange', onOrient);
 
     return () => {
-      window.removeEventListener('resize', onResize);
+      if (!isMobile) window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onOrient);
+      if (resizeTimer) clearTimeout(resizeTimer);
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
   }, [density]);
