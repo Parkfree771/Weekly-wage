@@ -58,6 +58,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/title-stats/frost', label: '혹한의 군주' },
     ],
   },
+  {
+    label: '이벤트',
+    colorClass: 'nav-contest',
+    items: [
+      { href: '/contest', label: '아바타 디자인 콘테스트', badge: 'NEW' },
+    ],
+  },
 ];
 
 export default function Navbar() {
@@ -94,7 +101,8 @@ export default function Navbar() {
                       href === '/cerka' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
                       href === '/title-stats' ? 'nav-extreme' :
-                      href === '/title-stats/frost' ? 'nav-frost' : 'nav-weekly';
+                      href === '/title-stats/frost' ? 'nav-frost' :
+                      href === '/contest' ? 'nav-contest' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
   };
