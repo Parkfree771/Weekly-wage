@@ -39,7 +39,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/cathedral', label: '지평의 성당 계산' },
       { href: '/cerka', label: '세르카 계산' },
-      { href: '/extreme', label: '익스트림', badge: 'NEW' },
+      { href: '/extreme', label: '익스트림' },
     ],
   },
   {
@@ -54,9 +54,24 @@ const NAV_GROUPS: NavGroup[] = [
     label: '칭호 통계',
     colorClass: 'nav-extreme',
     items: [
-      { href: '/title-stats', label: '홍염의 군주', badge: 'NEW' },
+      { href: '/title-stats', label: '홍염의 군주' },
       { href: '/title-stats/frost', label: '혹한의 군주' },
     ],
+  },
+];
+
+// 단독 메뉴 (드롭다운 없이 최상단에 바로 노출)
+const SINGLE_NAV_ITEMS: Array<{
+  href: string;
+  label: string;
+  colorClass: string;
+  badge?: 'NEW';
+}> = [
+  {
+    href: '/contest',
+    label: '아바타 콘테스트',
+    colorClass: 'nav-contest',
+    badge: 'NEW',
   },
 ];
 
@@ -94,7 +109,8 @@ export default function Navbar() {
                       href === '/cerka' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
                       href === '/title-stats' ? 'nav-extreme' :
-                      href === '/title-stats/frost' ? 'nav-frost' : 'nav-weekly';
+                      href === '/title-stats/frost' ? 'nav-frost' :
+                      href === '/contest' ? 'nav-contest' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
   };
@@ -185,6 +201,17 @@ export default function Navbar() {
               </div>
             ))}
 
+            {/* 단독 메뉴 (드롭다운 없음) */}
+            {SINGLE_NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`navbar-nav-link ${item.colorClass} ${isActive(item.href) ? 'active' : ''}`}
+              >
+                {item.label}
+                {item.badge && <span className="nav-badge-contest">{item.badge}</span>}
+              </Link>
+            ))}
           </Nav>
         </div>
 
@@ -315,6 +342,18 @@ export default function Navbar() {
                     </Link>
                   ))}
                 </div>
+              ))}
+              {SINGLE_NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`navbar-offcanvas-link ${item.colorClass} ${isActive(item.href) ? 'active' : ''}`}
+                  style={{ marginTop: '8px' }}
+                  onClick={handleClose}
+                >
+                  {item.label}
+                  {item.badge && <span className="nav-badge-contest">{item.badge}</span>}
+                </Link>
               ))}
             </Nav>
             <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
