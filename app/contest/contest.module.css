@@ -10,9 +10,8 @@
   overflow: hidden;
   padding-bottom: 140px;
   isolation: isolate;
-  /* 모바일에서 스크롤 시 주소창 토글로 100vh가 변해도
-     배경 레이아웃이 흔들리지 않도록 페인트 컨테이너로 묶는다 */
-  contain: paint;
+  /* contain: paint는 fixed 자식의 기준을 viewport에서 .shell로 바꿔버려
+     스크롤 시 배경이 따라 올라가는 버그가 생기므로 사용하지 않는다 */
 }
 
 /* ─────────────────────────────────────────────
