@@ -87,7 +87,7 @@ const DISPLAY_NAMES_1700: Record<string, string> = {
 const REWARD_IMAGES_1700: Record<string, string> = {
   '파괴석/수호석': '/vkrhltjrtnghtjr.webp',
   '돌파석': '/destiny-breakthrough-stone5.webp',
-  '융화재료': '/abidos-fusion5.webp',
+  '융화재료': '/abidos-fusion5.webp?v=4',
 };
 
 const TIER_LABELS = ['0~9', '10~19', '20~29', '30~39', '40~49', '50~59', '60~69', '70~79', '80~89', '90~99', '100'];

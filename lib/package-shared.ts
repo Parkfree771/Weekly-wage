@@ -147,7 +147,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   },
   {
     id: 'abidos-fusion',
-    icon: '/abidos-fusion5.webp?v=3',
+    icon: '/abidos-fusion5.webp?v=4',
     name: '아비도스 융화 재료',
     type: 'simple',
     itemId: '6861012',

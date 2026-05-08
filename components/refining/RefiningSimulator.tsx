@@ -915,7 +915,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                                     <span>{(materialCost as any).돌파석?.toLocaleString()}</span>
                                   </div>
                                   <div className={styles.singleCostItem}>
-                                    <Image src="/abidos-fusion5.webp?v=3" alt="아비도스" width={32} height={32} />
+                                    <Image src="/abidos-fusion5.webp?v=4" alt="아비도스" width={32} height={32} />
                                     <span>{(materialCost as any).아비도스?.toLocaleString()}</span>
                                   </div>
                                 </>
@@ -1212,7 +1212,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                           {accumulatedCost.아비도스 > 0 && (
                             <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('아비도스')}>
                               <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['아비도스']} onChange={() => toggleGoldInclude('아비도스')} onClick={(e) => e.stopPropagation()} />
-                              <Image src="/abidos-fusion5.webp?v=3" alt="아비도스" width={28} height={28} />
+                              <Image src="/abidos-fusion5.webp?v=4" alt="아비도스" width={28} height={28} />
                               <span className={styles.materialName}>아비도스</span>
                               <span className={styles.materialAmount}>{accumulatedCost.아비도스.toLocaleString()}</span>
                               <span className={`${styles.materialGold} ${!goldIncludeMap['아비도스'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('아비도스', accumulatedCost.아비도스).toLocaleString()}G</span>

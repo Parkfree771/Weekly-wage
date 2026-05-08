@@ -28,7 +28,7 @@ const CRAFTING_INFO = {
   normal: {
     id: ABIDOS_FUSION_ID,
     name: '아비도스 융화 재료',
-    icon: '/abidos-fusion.webp?v=3',
+    icon: '/abidos-fusion.webp?v=4',
     materials: {
       abidos: 33,
       soft: 45,

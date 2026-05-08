@@ -217,9 +217,9 @@ const SHOP_ITEMS: ShopItem[] = [
   {
     id: 13, name: '아비도스 융화재료 상자', qty: 1,
     components: [
-      { icon: '/abidos-fusion5.webp', name: '아비도스 융화 재료', count: 100, hasBg: true, itemId: '6861012' },
+      { icon: '/abidos-fusion5.webp?v=4', name: '아비도스 융화 재료', count: 100, hasBg: true, itemId: '6861012' },
     ],
-    requiredLevel: 1720, image: '/abidos-fusion5.webp', theme: 'abidos', hasBg: true,
+    requiredLevel: 1720, image: '/abidos-fusion5.webp?v=4', theme: 'abidos', hasBg: true,
     costs: [{ name: '토큰', amount: 20 }],
     limit: { kind: 'weekly', count: 1 },
   },

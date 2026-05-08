@@ -64,6 +64,13 @@ export const REFINE_ADDITIONAL_SUBCATEGORIES: Record<RefineAdditionalSubCategory
 export const TRACKED_ITEMS: TrackedItem[] = [
   // === 0. 재련 재료 (계승) ===
   {
+    id: '66150010',
+    name: '에스더의 기운',
+    type: 'market',
+    icon: '/dptmej.webp',
+    iconBorderColor: '#4F63D2' // 블루 (재련 재료)
+  },
+  {
     id: '6861013',
     name: '상급 아비도스 융화 재료',
     type: 'market',
@@ -97,7 +104,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     id: '6861012',
     name: '아비도스 융화 재료',
     type: 'market',
-    icon: '/abidos-fusion.webp?v=3',
+    icon: '/abidos-fusion.webp?v=4',
     iconBorderColor: '#4F63D2' // 블루
   },
   {
@@ -847,7 +854,7 @@ export function getItemsBySubCategory(subCategory: RefineAdditionalSubCategory):
 // 카테고리별 아이템 필터 함수
 export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
-    refine: ['66102007', '66102107', '66110226', '6861013', '6861012', '66102006', '66102106', '66110225', '6861011', '66130143', '66130133'],
+    refine: ['66150010', '66102007', '66102107', '66110226', '6861013', '6861012', '66102006', '66102106', '66110225', '6861011', '66130143', '66130133'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
     refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
@@ -868,7 +875,7 @@ export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
 // 아이템 ID로 아이템과 카테고리 찾기
 export function findItemById(itemId: string): { item: TrackedItem; category: ItemCategory; subCategory?: RefineAdditionalSubCategory } | null {
   const categoryMap: Record<ItemCategory, string[]> = {
-    refine: ['66102007', '66102107', '66110226', '6861013', '6861012', '66102006', '66102106', '66110225', '6861011', '66130143', '66130133'],
+    refine: ['66150010', '66102007', '66102107', '66110226', '6861013', '6861012', '66102006', '66102106', '66110225', '6861011', '66130143', '66130133'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
     refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],

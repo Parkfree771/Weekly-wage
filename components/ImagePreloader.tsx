@@ -60,7 +60,7 @@ const PRELOAD_IMAGES = [
   '/destiny-guardian-stone2.webp?v=3',
   '/destiny-breakthrough-stone2.webp?v=3',
   '/destiny-shard-bag-large.webp',
-  '/abidos-fusion5.webp?v=3',
+  '/abidos-fusion5.webp?v=4',
   '/breath-glacier5.webp',
 
   // 생명의 거장 재료
