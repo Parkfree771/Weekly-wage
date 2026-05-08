@@ -59,6 +59,17 @@ const EVENTS: EventInfo[] = [
   { date: '2026-03-18', label: '성당' },
 ];
 
+// 카테고리별 이벤트 점 색상 (PriceComparisonStats 통계바 우측 보색과 일치)
+const EVENT_DOT_COLOR_BY_CATEGORY: Record<string, string> = {
+  '재련 재료': '#f97316',
+  '젬': '#eab308',
+  '재련 추가 재료': '#e11d48',
+  '유물 각인서': '#14b8a6',
+  '악세': '#f97316',
+  '팔찌': '#f97316',
+  '보석': '#14b8a6',
+};
+
 type CategoryStyle = {
   label: string;
   color: string;
@@ -210,11 +221,9 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       // 수요일: 기본 빨간색, 유물각인서=파란색
       const isSpecialEvent = !!event;
       const catLabel = categoryStyle?.label;
-      const eventColor = isSpecialEvent
-        ? '#f97316'
-        : (dayOfWeek === 3
-          ? (catLabel === '유물 각인서' ? '#3b82f6' : '#ef4444')
-          : undefined);
+      const eventColor = (isSpecialEvent || dayOfWeek === 3)
+        ? (catLabel ? (EVENT_DOT_COLOR_BY_CATEGORY[catLabel] || '#f97316') : '#f97316')
+        : undefined;
 
       // 비교 가격 가져오기 (날짜 매칭)
       const comparisonPrice = comparisonPriceMap.get(dateString);
@@ -309,7 +318,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     }
     // 10만~100만 골드
     else if (stats.max >= 100000) {
-      if (priceRange >= 50000) tickUnit = 20000;
+      if (priceRange >= 100000) tickUnit = 50000;
+      else if (priceRange >= 50000) tickUnit = 20000;
       else if (priceRange >= 20000) tickUnit = 10000;
       else if (priceRange >= 10000) tickUnit = 5000;
       else tickUnit = 2000;
@@ -743,14 +753,22 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     let currentDate = new Date(today);
 
     while (currentDate >= firstDate) {
-      const dateKey = `${currentDate.getMonth() + 1}/${currentDate.getDate()}`;
+      const targetTime = currentDate.getTime();
 
-      // 해당 날짜에 데이터가 있는지 확인
-      const hasData = chartData.some(d => d.날짜 === dateKey);
+      // 후보 시점에 가장 가까운 chartData 날짜 찾기 (다운샘플링으로 정확한 날짜가 없어도 근사 매칭)
+      let closestDateKey: string | null = null;
+      let minDiff = Infinity;
+      for (const d of chartData) {
+        const diff = Math.abs(d.fullDate.getTime() - targetTime);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestDateKey = d.날짜;
+        }
+      }
 
-      if (hasData && !tickSet.has(dateKey)) {
-        ticks.push(dateKey);
-        tickSet.add(dateKey);
+      if (closestDateKey && !tickSet.has(closestDateKey)) {
+        ticks.push(closestDateKey);
+        tickSet.add(closestDateKey);
       }
 
       // 간격만큼 날짜 빼기
