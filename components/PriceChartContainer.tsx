@@ -95,7 +95,7 @@ type PriceEntry = {
   date?: string;
 };
 
-type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
+type PeriodOption = '7d' | '1m' | '2m' | '3m' | '6m' | '1y' | 'all';
 
 // Provider를 별도로 export - 실제 데이터를 관리
 export function PriceChartProvider({ children, dashboard }: { children: ReactNode; dashboard?: ReactNode }) {
@@ -301,6 +301,9 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
       case '1m':
         cutoff.setMonth(now.getMonth() - 1);
         break;
+      case '2m':
+        cutoff.setMonth(now.getMonth() - 2);
+        break;
       case '3m':
         cutoff.setMonth(now.getMonth() - 3);
         break;
@@ -473,12 +476,13 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
         {/* 데스크톱: 사이드바 레이아웃 */}
         <div className="d-none d-lg-block">
           <div style={{ display: 'flex', gap: '20px' }}>
-            {/* 왼쪽 사이드바 - 카테고리 + 기간선택 + 보기모드 */}
+            {/* 왼쪽 사이드바 - 카테고리 + 기간선택 + 보기모드 (차트 카드 높이에 맞춰 자동 분배) */}
             <div style={{
               width: '170px',
               flexShrink: 0,
               display: 'flex',
               flexDirection: 'column',
+              justifyContent: 'space-between',
               gap: '12px',
             }}>
               {/* 카테고리 상자 */}
@@ -594,10 +598,11 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                   gridTemplateColumns: 'repeat(2, 1fr)',
                   gap: '6px',
                 }}>
-                  {(['7d', '1m', '3m', 'all'] as PeriodOption[]).map((period) => {
+                  {(['1m', '2m', '3m', 'all'] as PeriodOption[]).map((period) => {
                     const periodLabels: Record<PeriodOption, string> = {
                       '7d': '7일',
                       '1m': '1개월',
+                      '2m': '2개월',
                       '3m': '3개월',
                       '6m': '6개월',
                       '1y': '1년',

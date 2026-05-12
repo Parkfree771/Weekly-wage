@@ -35,7 +35,7 @@ type MiniPriceChartProps = {
   onRemove?: () => void;
 };
 
-type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
+type PeriodOption = '7d' | '1m' | '2m' | '3m' | '6m' | '1y' | 'all';
 
 function MiniPriceChartInner({ item, categoryStyle, isSelected, onClick, slotIndex, isMobile = false, period, onRemove }: MiniPriceChartProps) {
   const { theme } = useTheme();
@@ -115,6 +115,7 @@ function MiniPriceChartInner({ item, categoryStyle, isSelected, onClick, slotInd
     switch (selectedPeriod) {
       case '7d': cutoff.setDate(now.getDate() - 7); break;
       case '1m': cutoff.setMonth(now.getMonth() - 1); break;
+      case '2m': cutoff.setMonth(now.getMonth() - 2); break;
       case '3m': cutoff.setMonth(now.getMonth() - 3); break;
       case '6m': cutoff.setMonth(now.getMonth() - 6); break;
       case '1y': cutoff.setFullYear(now.getFullYear() - 1); break;

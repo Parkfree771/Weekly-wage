@@ -106,6 +106,28 @@ export const metadata: Metadata = {
   },
 };
 
+// 가격 데이터 preload 인라인 스크립트
+// JS 번들 다운로드와 병렬로 archive.json + history API + latest API를 받기 시작
+// 캐시 키 계산은 lib/price-history-client.ts의 getHistoryCacheKey / getLatestCacheKey와 일치해야 함
+const PRICE_DATA_PRELOAD_SCRIPT = `(function(){try{
+var now=new Date();
+var kst=new Date(now.getTime()+9*60*60*1000);
+var y=kst.getUTCFullYear();
+var m=String(kst.getUTCMonth()+1).padStart(2,'0');
+var d=String(kst.getUTCDate()).padStart(2,'0');
+var date=y+'-'+m+'-'+d;
+var h=kst.getUTCHours();
+var mi=kst.getUTCMinutes();
+var slot=String(Math.floor(mi/10)*10).padStart(2,'0');
+var hh=String(h).padStart(2,'0');
+var inUpdate=(h===0)||(h===1&&mi<=30);
+var historyKey=inUpdate?(date+'-'+hh+'-'+slot):date;
+var latestKey=date+'-'+hh+'-'+slot;
+function add(href){var l=document.createElement('link');l.rel='preload';l.href=href;l.as='fetch';l.crossOrigin='anonymous';document.head.appendChild(l);}
+add('/api/price-data/history?k='+historyKey);
+add('/api/price-data/latest?k='+latestKey);
+}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -113,6 +135,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
+      <head>
+        {/* 정적 archive.json은 URL이 안정적이라 일반 preload 태그로 처리 */}
+        <link rel="preload" href="/data/history_archive.json" as="fetch" crossOrigin="anonymous" />
+        {/* 동적 캐시 키가 필요한 API는 클라이언트에서 키 계산 후 주입 */}
+        <script dangerouslySetInnerHTML={{ __html: PRICE_DATA_PRELOAD_SCRIPT }} />
+      </head>
       <body className={`${notoSansKr.className} ${jetbrainsMono.variable}`}>
         <ThemeProvider>
           <ConsoleFilter />

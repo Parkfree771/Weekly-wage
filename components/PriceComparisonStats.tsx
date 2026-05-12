@@ -9,7 +9,7 @@ type PriceEntry = {
   date?: string;
 };
 
-export type PeriodOption = '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
+export type PeriodOption = '7d' | '1m' | '2m' | '3m' | '6m' | '1y' | 'all';
 
 // 비교 차트 데이터 타입 (계승 재료 ↔ 일반 재료)
 type ComparisonData = {

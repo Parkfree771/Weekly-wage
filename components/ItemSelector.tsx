@@ -109,6 +109,7 @@ export default function ItemSelector({
   const periodLabels: Record<PeriodOption, string> = {
     '7d': '7일',
     '1m': '1개월',
+    '2m': '2개월',
     '3m': '3개월',
     '6m': '6개월',
     '1y': '1년',
@@ -450,7 +451,7 @@ export default function ItemSelector({
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {/* 기간 선택 버튼 - 모바일 */}
             <div style={{ display: 'flex', gap: '2px' }}>
-              {(['7d', '1m', '3m', 'all'] as PeriodOption[]).map((period) => {
+              {(['1m', '2m', '3m', 'all'] as PeriodOption[]).map((period) => {
                 const isSelected = selectedPeriod === period;
                 const categoryStyle = CATEGORY_STYLES[bottomSheetCategory];
                 return (
