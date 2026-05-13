@@ -8,12 +8,10 @@
   position: relative;
 }
 
-/* ───────── 시상대: 적동 그라디언트 → 청 ───────── */
+/* ───────── 시상대 전체(EvilEye + 명예의 전당)에 2akrw.webp 풀 배경 ─────────
+   한 장의 이미지로 stage 위·아래 모두 자연스럽게 채움. 다크 오버레이 없음 — 원본 그대로. */
 .frostPage [class*="stageSection"] {
-  background:
-    radial-gradient(ellipse 60% 45% at 50% 0%, rgba(74, 168, 216, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(74, 168, 216, 0.20) 0%, transparent 70%),
-    linear-gradient(180deg, #000 0%, #030814 18%, #061425 50%, #0a1f33 85%, #0d2540 100%) !important;
+  background: url('/2akrw.webp') center / cover no-repeat !important;
 }
 
 .frostPage [class*="stageSection"]::after {
@@ -21,14 +19,38 @@
     radial-gradient(ellipse 70% 100% at 50% 100%, rgba(116, 178, 224, 0.16) 0%, transparent 80%) !important;
 }
 
-/* EvilEye 히어로 — 적동 → 청 */
+/* EvilEye 히어로 — 자체 배경 제거, stage 이미지가 그대로 비치게 */
 .frostPage [class*="eyeHero"] {
-  background: radial-gradient(ellipse at 50% 60%, #061425 0%, #03080f 70%, #000 100%) !important;
+  background: transparent !important;
 }
 
+/* 히어로 하단 페이드도 제거 — 이미지가 끊김없이 hofSection으로 이어지게 */
 .frostPage [class*="eyeHero"]::after {
-  background: linear-gradient(to bottom, transparent 0%, #030814 60%, #061425 100%) !important;
+  background: transparent !important;
 }
+
+/* 히어로 상·하단 다크 그라데이션도 제거 — 검정 베일이 EvilEye 영역을 덮던 원인 */
+.frostPage [class*="eyeHero"]::before {
+  background: transparent !important;
+}
+
+/* EvilEye 캔버스: 검정 배경을 screen 블렌드로 투명화 → 빛나는 눈만 이미지 위에 합성
+   + 배경 이미지의 나무 머리 빛 위치로 살짝 아래로 이동 */
+.frostPage [class*="eyeCanvas"] {
+  mix-blend-mode: screen;
+  transform: translateY(4%);
+}
+
+/* 명예의 전당 섹션: 별도 박스/배경 제거 — stage 이미지가 그대로 비치게 */
+.frostPage [class*="hofSection"] {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 clamp(0.5rem, 1vw, 1.25rem) !important;
+  overflow: visible !important;
+}
+
 
 /* 메인 타이틀 */
 .frostPage [class*="eyeTitle"] {

@@ -822,19 +822,19 @@ export default function FrostTitleStatsPage() {
         {/* 시상대 전체를 덮는 눈송이 캔버스 — eyeHero ~ HOF 까지 */}
         <SnowField density={130} zIndex={4} color={{ r: 165, g: 200, b: 235 }} />
 
-        {/* 히어로: EvilEye */}
+        {/* 히어로: EvilEye — 배경 이미지(2akrw.webp) 위에 screen 블렌드로 합성 */}
         <div className={styles.eyeHero} aria-label={selectedRaid.titleName}>
           <div className={styles.eyeCanvas}>
             <EvilEye
-              eyeColor={selectedRaid.eyeColor}
-              intensity={1.55}
-              pupilSize={0.6}
-              irisWidth={0.25}
-              glowIntensity={0.85}
-              scale={0.75}
+              eyeColor="#67C7EE"
+              intensity={0.95}
+              pupilSize={0.55}
+              irisWidth={0.22}
+              glowIntensity={0.55}
+              scale={0.55}
               noiseScale={1.0}
               pupilFollow={1.0}
-              flameSpeed={isIce ? 1.0 : 1.0}
+              flameSpeed={1.0}
               backgroundColor="#000000"
             />
           </div>
