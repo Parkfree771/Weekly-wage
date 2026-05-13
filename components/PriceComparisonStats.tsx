@@ -33,6 +33,8 @@ type PriceContextType = {
   selectItemById: (itemId: string) => void;  // 아이템 ID로 선택
   categoryColor: string;  // 카테고리 색상
   openChartSettings: () => void;  // 차트 설정 모달 열기
+  showEventDots: boolean;  // 차트 이벤트/수요일 점 표시 여부
+  toggleEventDots: () => void;  // 이벤트 점 표시 토글
 };
 
 export const PriceContext = createContext<PriceContextType>({
@@ -48,6 +50,8 @@ export const PriceContext = createContext<PriceContextType>({
   selectItemById: () => {},
   categoryColor: '#10b981',
   openChartSettings: () => {},
+  showEventDots: true,
+  toggleEventDots: () => {},
 });
 
 // 그리드 아이콘 SVG 컴포넌트

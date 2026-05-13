@@ -91,7 +91,7 @@ type PeriodOption = '7d' | '1m' | '2m' | '3m' | '6m' | '1y' | 'all';
 
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle, hidePeriodButtons = false }: CompactPriceChartProps) {
   const { theme } = useTheme();
-  const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData, activeReferenceLines } = useContext(PriceContext);
+  const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots } = useContext(PriceContext);
 
   // 모바일 감지 및 마운트 상태
   const [isMobile, setIsMobile] = useState(false);
@@ -629,6 +629,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const CustomDot = (props: CustomDotProps) => {
     const { cx, cy, payload } = props;
     if (!payload || cx === undefined || cy === undefined) return null;
+    // 이벤트 점 토글 OFF: 선만 표시
+    if (!showEventDots) return null;
     const isSpecialEvent = !!payload.eventLabel;
     const isWednesday = !isSpecialEvent && payload.isWednesday;
     const eventColor = payload.eventColor || '#ef4444';
@@ -662,6 +664,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const CustomDotMobile = (props: CustomDotProps) => {
     const { cx, cy, payload } = props;
     if (!payload || cx === undefined || cy === undefined) return null;
+    // 이벤트 점 토글 OFF: 선만 표시
+    if (!showEventDots) return null;
     const isSpecialEvent = !!payload.eventLabel;
     const isWednesday = !isSpecialEvent && payload.isWednesday;
     const eventColor = payload.eventColor || '#ef4444';
@@ -836,6 +840,38 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   </>
                 )}
               </div>
+              {/* 이벤트 점 토글 (카테고리 색상 점) */}
+              {(() => {
+                const dotColor = (categoryStyle?.label && EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#f97316';
+                return (
+                  <button
+                    onClick={toggleEventDots}
+                    title={showEventDots ? '이벤트/수요일 점 숨기기' : '이벤트/수요일 점 표시'}
+                    aria-pressed={showEventDots}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: '14px',
+                        height: '14px',
+                        borderRadius: '50%',
+                        backgroundColor: showEventDots ? dotColor : 'transparent',
+                        border: `2px solid ${dotColor}`,
+                        boxShadow: showEventDots ? `0 0 0 2px var(--card-bg)` : 'none',
+                      }}
+                    />
+                  </button>
+                );
+              })()}
               {/* 가격선 설정 톱니바퀴 */}
               <div style={{ position: 'relative' }}>
               <button
@@ -1124,6 +1160,38 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   </>
                 )}
               </div>
+              {/* 모바일 이벤트 점 토글 (카테고리 색상 점) */}
+              {(() => {
+                const dotColor = (categoryStyle?.label && EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#f97316';
+                return (
+                  <button
+                    onClick={toggleEventDots}
+                    title={showEventDots ? '이벤트/수요일 점 숨기기' : '이벤트/수요일 점 표시'}
+                    aria-pressed={showEventDots}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: showEventDots ? dotColor : 'transparent',
+                        border: `2px solid ${dotColor}`,
+                        boxShadow: showEventDots ? `0 0 0 2px var(--card-bg)` : 'none',
+                      }}
+                    />
+                  </button>
+                );
+              })()}
               {/* 모바일 가격선 설정 톱니바퀴 */}
               <div style={{ position: 'relative' }}>
               <button
