@@ -822,7 +822,7 @@ export default function FrostTitleStatsPage() {
         {/* 시상대 전체를 덮는 눈송이 캔버스 — eyeHero ~ HOF 까지 */}
         <SnowField density={130} zIndex={4} color={{ r: 165, g: 200, b: 235 }} />
 
-        {/* 히어로: EvilEye — 배경 이미지(2akrw.webp) 위에 screen 블렌드로 합성 */}
+        {/* 히어로: EvilEye — 배경 이미지(frost-bg-desktop/mobile.webp) 위에 screen 블렌드로 합성 */}
         <div className={styles.eyeHero} aria-label={selectedRaid.titleName}>
           <div className={styles.eyeCanvas}>
             <EvilEye
@@ -850,7 +850,7 @@ export default function FrostTitleStatsPage() {
             <div className={styles.hofKicker}>Hall of Flame</div>
             <h2 className={styles.hofTitle}>명예의 전당</h2>
             <div className={styles.hofSubtitle}>
-              <RaidTag /> 칭호를 각인한 {PARTY_SIZE * TOTAL_PARTIES}명
+              <RaidTag />
             </div>
           </div>
 

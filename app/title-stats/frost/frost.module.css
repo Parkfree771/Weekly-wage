@@ -8,10 +8,17 @@
   position: relative;
 }
 
-/* ───────── 시상대 전체(EvilEye + 명예의 전당)에 2akrw.webp 풀 배경 ─────────
+/* ───────── 시상대 전체(EvilEye + 명예의 전당)에 풀 배경 ─────────
    한 장의 이미지로 stage 위·아래 모두 자연스럽게 채움. 다크 오버레이 없음 — 원본 그대로. */
 .frostPage [class*="stageSection"] {
-  background: url('/2akrw.webp') center / cover no-repeat !important;
+  background: url('/frost-bg-desktop.webp') center / cover no-repeat !important;
+}
+
+/* 모바일: 세로 비율(9:16)에 맞춘 별도 이미지 */
+@media (max-width: 768px) {
+  .frostPage [class*="stageSection"] {
+    background: url('/frost-bg-mobile.webp') center / cover no-repeat !important;
+  }
 }
 
 .frostPage [class*="stageSection"]::after {
@@ -52,42 +59,54 @@
 }
 
 
-/* 메인 타이틀 */
+/* 메인 타이틀 — 밝은 배경 위에서도 또렷하게 (새하얀 + 강한 다크 섀도) */
 .frostPage [class*="eyeTitle"] {
-  color: #cce6fb !important;
+  color: #ffffff !important;
   text-shadow:
-    0 0 18px rgba(74, 168, 216, 0.6),
-    0 0 36px rgba(74, 168, 216, 0.35),
-    0 4px 14px rgba(0, 0, 0, 0.85) !important;
+    0 2px 8px rgba(0, 0, 0, 0.95),
+    0 4px 18px rgba(0, 0, 0, 0.85),
+    0 0 28px rgba(0, 0, 0, 0.6),
+    0 0 42px rgba(74, 168, 216, 0.45) !important;
 }
 
 .frostPage [class*="eyeSubtitle"] {
-  color: #6fa9d4 !important;
+  color: #f0f7ff !important;
+  text-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.95),
+    0 2px 10px rgba(0, 0, 0, 0.8) !important;
 }
 
 /* 명전 헤더 */
-.frostPage [class*="hofKicker"] { color: #88baea !important; }
-
-.frostPage [class*="hofTitle"] {
-  color: #e6f3ff !important;
-  text-shadow: 0 0 24px rgba(74, 168, 216, 0.35);
+.frostPage [class*="hofKicker"] {
+  color: #ffffff !important;
+  text-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.95),
+    0 2px 10px rgba(0, 0, 0, 0.75) !important;
 }
 
-/* 공대 이름 — 적동 색감 → 청 */
-.frostPage [class*="partyNameText"] {
-  color: #cce6fb !important;
+.frostPage [class*="hofTitle"] {
+  color: #ffffff !important;
   text-shadow:
-    0 0 24px rgba(74, 168, 216, 0.55),
-    0 0 48px rgba(74, 168, 216, 0.25),
-    0 4px 12px rgba(0, 0, 0, 0.85) !important;
+    0 2px 8px rgba(0, 0, 0, 0.95),
+    0 4px 18px rgba(0, 0, 0, 0.8),
+    0 0 28px rgba(74, 168, 216, 0.35) !important;
+}
+
+/* 공대 이름 — 새하얀 + 강한 다크 섀도 */
+.frostPage [class*="partyNameText"] {
+  color: #ffffff !important;
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.95),
+    0 4px 16px rgba(0, 0, 0, 0.85),
+    0 0 28px rgba(74, 168, 216, 0.5) !important;
 }
 
 .frostPage [class*="partyRowGold"] [class*="partyNameText"] {
-  color: #f0f7ff !important;
+  color: #ffffff !important;
   text-shadow:
-    0 0 30px rgba(168, 210, 240, 0.7),
-    0 0 60px rgba(116, 178, 224, 0.4),
-    0 4px 12px rgba(0, 0, 0, 0.85) !important;
+    0 2px 8px rgba(0, 0, 0, 0.95),
+    0 4px 18px rgba(0, 0, 0, 0.9),
+    0 0 32px rgba(168, 210, 240, 0.55) !important;
 }
 
 /* 명전 카드 적동 테두리 → 청 */
@@ -150,8 +169,8 @@
   box-shadow: 0 2px 5px rgba(59, 80, 181, 0.3) !important;
 }
 
-/* RaidTag */
-.frostPage [class*="raidTagName"] { color: #3b50b5 !important; }
+/* RaidTag — 칭호명은 전설 등급 주황 (혹한의 군주도 주황 칭호) */
+.frostPage [class*="raidTagName"] { color: #b35d1a !important; }
 
 /* 인풋 focus */
 .frostPage [class*="searchInput"]:focus,
@@ -203,8 +222,8 @@
 .frostPage [class*="slotOk"] [class*="slotNumber"] { color: #3b50b5 !important; }
 .frostPage [class*="slotStatPower"] { color: #3b50b5 !important; }
 
-/* 칭호 매치 (혹한의 군주) */
-.frostPage [class*="titleMatchIce"] { color: #6fa9d4 !important; }
+/* 칭호 매치 (혹한의 군주) — 전설 등급 주황 (홍염과 동일 색) */
+.frostPage [class*="titleMatchIce"] { color: #b35d1a !important; }
 
 /* 직업별 통계 카드 — 회색/적동 톤 제거 + 인디고 테두리 + 미세 입체감 */
 .frostPage [class*="classCard"] {
