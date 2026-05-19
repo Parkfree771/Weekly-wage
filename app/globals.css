@@ -906,44 +906,6 @@ html, body {
   box-shadow: 0 1px 4px rgba(220, 53, 69, 0.4);
 }
 
-/* Nav New Badge - Contest 페이지 색감 (보라 메인 + 골드 포인트 + 흐르는 셔머) */
-@keyframes navBadgeContestFlow {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.nav-badge-contest {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 3px 10px;
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.4;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-  background: linear-gradient(
-    120deg,
-    #7c3aed 0%,
-    #a78bfa 22%,
-    #c4b5fd 38%,
-    #fbbf24 50%,
-    #c4b5fd 62%,
-    #a78bfa 78%,
-    #7c3aed 100%
-  );
-  background-size: 220% 100%;
-  animation: navBadgeContestFlow 3.5s ease-in-out infinite;
-  border-radius: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  vertical-align: middle;
-  box-shadow:
-    0 0 0 1px rgba(196, 181, 253, 0.35),
-    0 2px 10px rgba(139, 92, 246, 0.5),
-    0 1px 3px rgba(251, 191, 36, 0.25);
-}
-
 /* Nav Dropdown */
 .nav-dropdown-wrapper {
   position: relative;

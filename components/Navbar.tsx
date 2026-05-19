@@ -55,7 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-extreme',
     items: [
       { href: '/title-stats', label: '홍염의 군주' },
-      { href: '/title-stats/frost', label: '혹한의 군주' },
+      { href: '/title-stats/frost', label: '혹한의 군주', badge: 'NEW' },
     ],
   },
 ];
@@ -65,13 +65,12 @@ const SINGLE_NAV_ITEMS: Array<{
   href: string;
   label: string;
   colorClass: string;
-  badge?: 'NEW';
+  badge?: string;
 }> = [
   {
     href: '/contest',
     label: '아바타 콘테스트',
     colorClass: 'nav-contest',
-    badge: 'NEW',
   },
 ];
 
@@ -209,7 +208,7 @@ export default function Navbar() {
                 className={`navbar-nav-link ${item.colorClass} ${isActive(item.href) ? 'active' : ''}`}
               >
                 {item.label}
-                {item.badge && <span className="nav-badge-contest">{item.badge}</span>}
+                {item.badge && <span className="nav-badge-new">{item.badge}</span>}
               </Link>
             ))}
           </Nav>
@@ -352,7 +351,7 @@ export default function Navbar() {
                   onClick={handleClose}
                 >
                   {item.label}
-                  {item.badge && <span className="nav-badge-contest">{item.badge}</span>}
+                  {item.badge && <span className="nav-badge-new">{item.badge}</span>}
                 </Link>
               ))}
             </Nav>
