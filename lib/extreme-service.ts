@@ -86,10 +86,10 @@ export interface ClassStat {
 
 // ============================================================
 // Phase-aware 캐시
-// - 공대 페이즈 (HOF < 80): 실시간 중요, 짧은 TTL 또는 캐시 X
-// - 개인 페이즈 (HOF >= 80): 변동 적음, 긴 TTL로 egress 절약
+// - 공대 페이즈 (HOF < 40): 실시간 중요, 짧은 TTL 또는 캐시 X
+// - 개인 페이즈 (HOF >= 40): 변동 적음, 긴 TTL로 egress 절약
 // ============================================================
-const HOF_FULL_THRESHOLD = 80;
+const HOF_FULL_THRESHOLD = 40;
 
 // 공대 페이즈 TTL
 const TTL_PARTY_STATS = 60 * 1000;       // 차트/요약/직업별 1분
@@ -139,7 +139,7 @@ function translateRpcError(err: { code?: string; message?: string; details?: str
 
   // 커스텀 RAISE EXCEPTION 식별자
   if (err.message?.includes('EXT_EMPTY_PARTY_NAME')) return '공대 이름을 입력해주세요.';
-  if (err.message?.includes('EXT_HOF_FULL')) return '명예의 전당이 이미 10공대로 가득 찼습니다.';
+  if (err.message?.includes('EXT_HOF_FULL')) return '명예의 전당이 이미 5공대로 가득 찼습니다.';
   if (err.message?.includes('EXT_MUST_BE_8')) return '공대는 반드시 8명이어야 합니다.';
   if (err.message?.includes('EXT_PARTY_PHASE_ONLY')) return '아직 공대 등록 단계입니다. 시상대가 모두 채워진 후 개인 등록이 열립니다.';
 
@@ -192,7 +192,7 @@ export async function registerExtremeParty(
 }
 
 // ============================================================
-// 개인 등록 RPC (HOF 80석 완료 후에만 서버에서 허용)
+// 개인 등록 RPC (HOF 40석 완료 후에만 서버에서 허용)
 // ============================================================
 export async function registerExtremeIndividual(
   input: IndividualInput
@@ -224,7 +224,7 @@ export async function registerExtremeIndividual(
 // ============================================================
 // 혹한의 군주 — 개인 등록 RPC (character_image 저장 버전)
 //
-// 홍염은 명전 80명에만 이미지 노출 → register_extreme_individual 은 image=NULL.
+// 홍염은 명전 40명에만 이미지 노출 → register_extreme_individual 은 image=NULL.
 // 혹한은 모든 등록자가 카드 명단에 노출 → 신규 RPC 호출하여 image 저장.
 // 홍염용 registerExtremeIndividual 은 변경 0 (격리).
 // ============================================================
@@ -478,7 +478,7 @@ export async function getHallOfFame(title: string): Promise<HallOfFameEntry[]> {
       .eq('title', title)
       .not('party_id', 'is', null)
       .order('created_at', { ascending: true })
-      .limit(80);
+      .limit(40);
 
     if (error || !data) {
       console.error('Error fetching hall of fame:', error);
