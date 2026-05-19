@@ -41,6 +41,11 @@
   background: transparent !important;
 }
 
+/* EvilEye 로딩 fallback — 홍염 오렌지 radial 톤 제거. stage 배경 이미지가 그대로 비치게 */
+.frostPage [class*="eyeFallback"] {
+  background: transparent !important;
+}
+
 /* EvilEye 캔버스: 검정 배경을 screen 블렌드로 투명화 → 빛나는 눈만 이미지 위에 합성
    + 배경 이미지의 나무 머리 빛 위치로 살짝 아래로 이동 */
 .frostPage [class*="eyeCanvas"] {
@@ -135,6 +140,14 @@
 .frostPage [class*="fameTitleBarDivider"] { background: rgba(116, 178, 224, 0.4) !important; }
 .frostPage [class*="partyRowGold"] [class*="fameTitleBarDivider"] { background: rgba(168, 210, 240, 0.6) !important; }
 
+/* 혹한 페이지: 칭호 로고 오렌지 글로우 제거 + 살짝 크게 */
+.frostPage [class*="fameTitleBarLogo"] {
+  width: 18px !important;
+  height: 18px !important;
+  filter: none !important;
+}
+
+
 /* ───────── 핵심 색감 매핑 (적동 → 청) ───────── */
 
 /* 섹션 헤더 */
@@ -226,7 +239,9 @@
 .frostPage [class*="titleMatchIce"] { color: #b35d1a !important; }
 
 /* 직업별 통계 카드 — 회색/적동 톤 제거 + 인디고 테두리 + 미세 입체감 */
-.frostPage [class*="classCard"] {
+/* [class*="classCard"] 는 substring 매치라 자식(classCardName/Body/Stat/RoleTag/StatRow/TopRow)
+   까지 잡혀 텍스트마다 박스가 그려짐 → :not() 체인으로 sub-class 제외 */
+.frostPage [class*="classCard"]:not([class*="classCardName"]):not([class*="classCardBody"]):not([class*="classCardRoleTag"]):not([class*="classCardStat"]):not([class*="classCardTopRow"]) {
   background: var(--card-bg) !important;
   border: 1px solid rgba(59, 80, 181, 0.28) !important;
   border-radius: 10px !important;
@@ -236,7 +251,7 @@
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s !important;
 }
 
-.frostPage [class*="classCard"]:hover {
+.frostPage [class*="classCard"]:not([class*="classCardName"]):not([class*="classCardBody"]):not([class*="classCardRoleTag"]):not([class*="classCardStat"]):not([class*="classCardTopRow"]):hover {
   transform: translate(-1px, -1px) !important;
   border-color: rgba(59, 80, 181, 0.55) !important;
   box-shadow:
@@ -244,21 +259,21 @@
     3px 3px 0 0 rgba(59, 80, 181, 0.14) !important;
 }
 
-/* 상위 3개 (classCardTop) — 적동 그라디언트 → 인디고 강조 */
-.frostPage [class*="classCardTop"] {
+/* 상위 3개 (classCardTop) — 적동 그라디언트 → 인디고 강조. classCardTopRow 는 제외 */
+.frostPage [class*="classCardTop"]:not([class*="classCardTopRow"]) {
   border-color: rgba(59, 80, 181, 0.6) !important;
   background:
     linear-gradient(135deg, rgba(59, 80, 181, 0.12) 0%, transparent 55%),
     var(--card-bg) !important;
 }
 
-:global([data-theme="dark"]) .frostPage [class*="classCard"] {
+:global([data-theme="dark"]) .frostPage [class*="classCard"]:not([class*="classCardName"]):not([class*="classCardBody"]):not([class*="classCardRoleTag"]):not([class*="classCardStat"]):not([class*="classCardTopRow"]) {
   box-shadow:
     1px 1px 0 0 rgba(107, 126, 214, 0.22),
     2px 2px 0 0 rgba(107, 126, 214, 0.11) !important;
 }
 
-:global([data-theme="dark"]) .frostPage [class*="classCard"]:hover {
+:global([data-theme="dark"]) .frostPage [class*="classCard"]:not([class*="classCardName"]):not([class*="classCardBody"]):not([class*="classCardRoleTag"]):not([class*="classCardStat"]):not([class*="classCardTopRow"]):hover {
   box-shadow:
     2px 2px 0 0 rgba(107, 126, 214, 0.32),
     3px 3px 0 0 rgba(107, 126, 214, 0.16) !important;
@@ -346,7 +361,7 @@
 
 .huntersGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
   margin-top: 8px;
 }
@@ -509,9 +524,9 @@
   background: var(--card-body-bg-blue, var(--bg-secondary));
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .huntersGrid {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
   }
   .huntersName { font-size: 12px; }

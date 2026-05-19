@@ -943,7 +943,17 @@ export default function FrostTitleStatsPage() {
                             <span className={styles.fameTitleBarDivider} />
                             <span className={styles.fameTitleBarClass}>{entry.characterClass}</span>
                           </div>
-                          <div className={styles.fameName}>{entry.characterName}</div>
+                          <div
+                            className={styles.fameName}
+                            style={{
+                              fontSize:
+                                entry.characterName.length >= 8 ? '0.78rem'
+                                : entry.characterName.length >= 6 ? '0.88rem'
+                                : undefined,
+                            }}
+                          >
+                            {entry.characterName}
+                          </div>
                           <div className={styles.fameLevel}>
                             Lv.{entry.itemLevel.toFixed(2)}
                           </div>
