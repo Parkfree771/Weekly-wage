@@ -60,20 +60,6 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-// 단독 메뉴 (드롭다운 없이 최상단에 바로 노출)
-const SINGLE_NAV_ITEMS: Array<{
-  href: string;
-  label: string;
-  colorClass: string;
-  badge?: string;
-}> = [
-  {
-    href: '/contest',
-    label: '아바타 콘테스트',
-    colorClass: 'nav-contest',
-  },
-];
-
 export default function Navbar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
@@ -108,8 +94,7 @@ export default function Navbar() {
                       href === '/cerka' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
                       href === '/title-stats' ? 'nav-extreme' :
-                      href === '/title-stats/frost' ? 'nav-frost' :
-                      href === '/contest' ? 'nav-contest' : 'nav-weekly';
+                      href === '/title-stats/frost' ? 'nav-frost' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
   };
@@ -198,18 +183,6 @@ export default function Navbar() {
                   ))}
                 </div>
               </div>
-            ))}
-
-            {/* 단독 메뉴 (드롭다운 없음) */}
-            {SINGLE_NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`navbar-nav-link ${item.colorClass} ${isActive(item.href) ? 'active' : ''}`}
-              >
-                {item.label}
-                {item.badge && <span className="nav-badge-new">{item.badge}</span>}
-              </Link>
             ))}
           </Nav>
         </div>
@@ -341,18 +314,6 @@ export default function Navbar() {
                     </Link>
                   ))}
                 </div>
-              ))}
-              {SINGLE_NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`navbar-offcanvas-link ${item.colorClass} ${isActive(item.href) ? 'active' : ''}`}
-                  style={{ marginTop: '8px' }}
-                  onClick={handleClose}
-                >
-                  {item.label}
-                  {item.badge && <span className="nav-badge-new">{item.badge}</span>}
-                </Link>
               ))}
             </Nav>
             <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
