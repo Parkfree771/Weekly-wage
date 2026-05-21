@@ -382,7 +382,7 @@ export default function ExtremePage() {
       return Math.round(getGemRandomAverage() * item.qty);
     }
     if (item.theme === 'hell') {
-      const perTicket = calcTicketAverage('hell', HELL_TICKET_TIER, latestPrices, HELL_TICKET_BC_RATE, '1730');
+      const perTicket = calcTicketAverage('hell', HELL_TICKET_TIER, latestPrices, HELL_TICKET_BC_RATE);
       return Math.round(perTicket * item.qty);
     }
     if (item.components && item.components.length > 0) {
@@ -963,7 +963,7 @@ export default function ExtremePage() {
 
                               {/* 지옥 열쇠 기댓값 */}
                               {selectedShopData.theme === 'hell' && (() => {
-                                const perTicket = priceLoading ? 0 : calcTicketAverage('hell', HELL_TICKET_TIER, latestPrices, HELL_TICKET_BC_RATE, '1730');
+                                const perTicket = priceLoading ? 0 : calcTicketAverage('hell', HELL_TICKET_TIER, latestPrices, HELL_TICKET_BC_RATE);
                                 const total = Math.round(perTicket * selectedShopData.qty);
                                 return (
                                   <div className={styles.shopDetailSection} style={{ minHeight: 'auto' }}>

@@ -2,37 +2,34 @@
    지옥 보상 계산기 페이지
    ======================================== */
 
-/* 레벨 선택 (1700/1730) */
-.levelTabs {
+/* 시즌3 / 1750 콘텐츠 표기 배지 */
+.versionBadge {
   display: flex;
   justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
-.levelTab {
-  padding: 0.7rem 2.8rem;
-  border-radius: 24px;
-  border: 2.5px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-muted);
-  font-size: 1.05rem;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-sm);
-}
-
-.levelTab:hover {
-  border-color: #6366f1;
-  color: var(--text-primary);
-}
-
-.levelTabActive {
+.versionBadgePill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.5rem 1.5rem;
+  border-radius: 999px;
   background: #6366f1;
   color: #fff;
-  border-color: #6366f1;
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.versionBadgeNum {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.versionBadgeLabel {
+  font-size: 0.82rem;
+  font-weight: 700;
+  opacity: 0.9;
 }
 
 /* 모드 선택 (지옥/나락) */
@@ -413,6 +410,12 @@
 .rewardImgSmall .rewardImg {
   width: 44px !important;
   height: 44px !important;
+}
+
+/* 배경 없는 이미지 — 칸을 꽉 채워 크게 표시 */
+.rewardImgLarge .rewardImg {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* 정보 */

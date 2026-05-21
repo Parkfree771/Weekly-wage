@@ -1,90 +1,46 @@
-// 지옥/나락 보상 계산 공유 라이브러리
+// 지옥/나락 보상 계산 공유 라이브러리 (시즌3 · 1750)
 
-// ─── 1730 데이터 ───
+// ─── 보상 테이블 (단계 0~10) ───
 
-// 지옥 상자 보상 (단계별)
+// 지옥 상자 보상
 export const HELL_BOX_REWARDS_DATA: Record<string, string[]> = {
-  '파괴석/수호석': ['500/1,500', '600/1,800', '900/2,700', '1,200/3,600', '1,600/4,800', '2,200/6,600', '3,000/9,000', '4,500/13,500', '6,500/19,500', '9,000/27,000', '15,000/45,000'],
-  '돌파석': ['25', '36', '48', '64', '90', '130', '190', '250', '350', '500', '850'],
-  '융화재료': ['60', '90', '125', '150', '225', '300', '450', '600', '850', '1,200', '2,000'],
-  '재련 보조': ['10/30', '15/45', '20/60', '25/75', '36/108', '48/144', '72/216', '96/288', '132/396', '192/576', '320/960'],
-  '귀속골드': ['4,500', '7,200', '9,500', '12,000', '16,000', '22,000', '32,000', '45,000', '65,000', '95,000', '130,000'],
-  '어빌리티스톤 키트': ['8', '10', '15', '20', '25', '30', '45', '60', '80', '120', '200'],
-  '팔찌': ['고대 x3', '고대 x5', '고대 x7', '고대 x10', '고대 x15', '고대 x20', '고대 x25', '고대 x35', '고대 x50', '고대 x70', '고대 x120'],
-  '특수재련': ['24', '40', '56', '70', '96', '130', '180', '260', '360', '500', '850'],
+  '어빌리티스톤': ['9', '12', '18', '25', '33', '45', '60', '80', '110', '150', '220'],
+  '팔찌': ['4', '6', '8', '12', '18', '24', '30', '42', '60', '90', '150'],
+  '젬 선택 상자': ['3(희귀)', '6(희귀)', '8(희귀)', '12(희귀)', '1(영웅)', '2(영웅)', '3(영웅)', '4(영웅)', '5(영웅)', '6(영웅)', '7(영웅)'],
+  '용숨/빙숨': ['12/36', '18/54', '24/72', '30/90', '40/120', '60/180', '90/270', '130/390', '180/540', '260/780', '380/1,140'],
+  '특수재련': ['28', '45', '62', '84', '115', '155', '220', '310', '430', '600', '1,000'],
+  '상급아비도스': ['75', '110', '150', '200', '270', '360', '540', '720', '1,000', '1,440', '2,400'],
+  '파괴석/수호석': ['600/1,800', '750/2,250', '1,100/3,300', '1,500/4,500', '2,000/6,000', '2,700/8,100', '3,600/10,800', '5,400/16,200', '7,800/23,400', '10,800/32,400', '18,000/54,000'],
+  '정련된 운명/혼돈의 돌': ['9/7', '13/10', '18/15', '24/20', '33/27', '45/36', '72/54', '90/72', '120/100', '180/144', '300/250'],
+  '귀속골드': ['5,500', '8,200', '11,000', '14,400', '19,200', '26,400', '38,400', '54,000', '78,000', '114,000', '156,000'],
+  '돌파석': ['30', '42', '56', '76', '108', '160', '230', '320', '450', '650', '1,000'],
   '천상 도전권': ['-', '-', '-', '-', '-', '2', '4', '7', '10', '15', '20'],
-  '젬선택': ['희귀 x3', '희귀 x5', '희귀 x7', '영웅 x1', '영웅 x1, 희귀 질서 x1, 희귀 혼돈 x1', '영웅 x1, 희귀 질서 x2, 희귀 혼돈 x2', '영웅 x2', '영웅 x2, 희귀 질서 x2, 희귀 혼돈 x2', '영웅 x3', '영웅 x4', '영웅 x5'],
-  '운명의 돌': ['7', '12', '15', '18', '27', '36', '54', '72', '100', '150', '240'],
 };
 
-// 나락 상자 보상 (단계별)
+// 나락 상자 보상
 export const NARAK_BOX_REWARDS_DATA: Record<string, string[]> = {
-  '재련보조': ['50/150', '75/225', '100/300', '125/375', '180/540', '240/720', '360/1,080', '480/1,440', '660/1,980', '960/2,880', '1,600/4,800'],
-  '귀속골드': ['22,500', '36,000', '47,500', '60,000', '80,000', '110,000', '160,000', '225,000', '325,000', '475,000', '650,000'],
-  '어빌리티스톤 키트': ['40', '50', '75', '100', '125', '150', '225', '300', '400', '600', '1,000'],
-  '팔찌': ['고대 x15', '고대 x25', '고대 x35', '고대 x50', '고대 x75', '고대 x100', '고대 x125', '고대 x175', '고대 x250', '고대 x350', '고대 x600'],
-  '귀속 각인서 랜덤': ['2', '4', '6', '8', '10', '12', '18', '24', '36', '48', '80'],
-  '귀속 보석': ['-', '-', '-', '-', '-', '-', '-', '-', '3', '4', '5'],
-  '젬선택': ['희귀 x15', '희귀 x25', '희귀 x35', '영웅 x5', '영웅 x5, 희귀 질서 x5, 희귀 혼돈 x5', '영웅 x5, 희귀 질서 x10, 희귀 혼돈 x10', '영웅 x10', '영웅 x10, 희귀 질서 x10, 희귀 혼돈 x10', '영웅 x15', '영웅 x20', '영웅 x25'],
-  '운명의 돌': ['35', '60', '75', '90', '135', '180', '270', '360', '500', '750', '1,200'],
+  '어빌리티스톤': ['45', '60', '90', '125', '165', '225', '300', '400', '550', '750', '1,100'],
+  '팔찌': ['20', '30', '40', '60', '90', '120', '150', '210', '300', '450', '750'],
+  '젬 선택 상자': ['15(희귀)', '30(희귀)', '40(희귀)', '60(희귀)', '5(영웅)', '10(영웅)', '15(영웅)', '20(영웅)', '25(영웅)', '30(영웅)', '35(영웅)'],
+  '용숨/빙숨': ['60/180', '90/270', '120/360', '150/450', '200/600', '300/900', '450/1,350', '650/1,950', '900/2,700', '1,300/3,900', '1,900/5,700'],
+  '귀속 각인서 랜덤 상자': ['3', '5', '7', '10', '13', '16', '24', '32', '48', '65', '100'],
+  '정련된 운명/혼돈의 돌': ['45/35', '65/50', '90/75', '120/100', '165/135', '225/180', '360/270', '450/360', '600/500', '900/720', '1,500/1,250'],
+  '귀속골드': ['27,500', '41,000', '55,000', '72,000', '96,000', '132,000', '192,000', '270,000', '390,000', '570,000', '780,000'],
+  '귀속 보석': ['-', '-', '-', '-', '-', '-', '-', '-', '4', '5', '6'],
+  '전설카드팩': ['-', '-', '-', '-', '-', '1', '2', '3', '4', '5', '7'],
 };
 
-// ─── 1700 데이터 ───
+// ─── 시세 연동 아이템 매핑 ───
+type PriceItemMapping = Record<string, { id: string; bundle: number; id2?: string; bundle2?: number }>;
 
-// 1700 지옥 상자 보상 (단계별)
-export const HELL_BOX_REWARDS_DATA_1700: Record<string, string[]> = {
-  '파괴석/수호석': ['1,800/5,400', '2,500/7,500', '3,500/10,500', '4,200/12,600', '6,400/19,200', '8,500/25,500', '12,000/36,000', '18,000/54,000', '24,000/72,000', '35,000/105,000', '56,000/168,000'],
-  '돌파석': ['70', '100', '140', '180', '270', '360', '540', '700', '950', '1,500', '2,400'],
-  '융화재료': ['60', '90', '125', '150', '225', '300', '450', '600', '850', '1,200', '2,000'],
-  '재련 보조': ['8/24', '12/36', '15/45', '20/60', '30/90', '40/120', '60/180', '75/225', '105/315', '155/465', '256/768'],
-  '귀속골드': ['3,500', '5,500', '7,500', '9,000', '13,500', '18,000', '27,000', '36,000', '50,000', '72,000', '108,000'],
-  '어빌리티스톤 키트': ['6', '8', '10', '12', '18', '24', '36', '48', '60', '90', '150'],
-  '팔찌': ['고대 x2', '고대 x3', '고대 x5', '고대 x7', '고대 x9', '고대 x12', '고대 x18', '고대 x25', '고대 x35', '고대 x50', '고대 x80'],
-  '특수재련': ['60', '90', '130', '160', '200', '320', '450', '650', '850', '1,250', '2,100'],
-  '천상 도전권': ['-', '-', '-', '-', '-', '2', '4', '7', '10', '15', '20'],
-  '젬랜덤': ['희귀~영웅 x1', '희귀~영웅 x2', '희귀~영웅 x3', '희귀~영웅 x4', '희귀~영웅 x5', '희귀~영웅 x6', '희귀~영웅 x7', '희귀~영웅 x8', '희귀~영웅 x9', '희귀~영웅 x10', '희귀~영웅 x11'],
-  '운명의 돌': ['6', '9', '12', '15', '20', '30', '45', '60', '80', '120', '200'],
-};
-
-// 1700 나락 상자 보상 (단계별)
-export const NARAK_BOX_REWARDS_DATA_1700: Record<string, string[]> = {
-  '재련보조': ['40/120', '60/180', '75/225', '100/300', '150/450', '200/600', '300/900', '375/1,125', '525/1,575', '775/2,325', '1,280/3,840'],
-  '귀속골드': ['17,500', '27,500', '37,500', '45,000', '67,500', '90,000', '135,000', '180,000', '250,000', '360,000', '540,000'],
-  '어빌리티스톤 키트': ['30', '40', '50', '60', '90', '120', '180', '240', '300', '450', '750'],
-  '팔찌': ['고대 x10', '고대 x15', '고대 x25', '고대 x35', '고대 x45', '고대 x60', '고대 x90', '고대 x125', '고대 x175', '고대 x250', '고대 x400'],
-  '귀속 각인서 랜덤': ['2', '3', '4', '6', '8', '10', '15', '20', '25', '36', '60'],
-  '귀속 보석': ['-', '-', '-', '-', '-', '-', '-', '-', '2', '3', '4'],
-  '젬랜덤': ['희귀~영웅 x5', '희귀~영웅 x10', '희귀~영웅 x15', '희귀~영웅 x20', '희귀~영웅 x25', '희귀~영웅 x30', '희귀~영웅 x35', '희귀~영웅 x40', '희귀~영웅 x45', '희귀~영웅 x50', '희귀~영웅 x55'],
-  '운명의 돌': ['30', '45', '60', '75', '100', '150', '225', '300', '400', '600', '1,000'],
-};
-
-// JSON 시세 아이템 매핑
-type PriceItemMapping = Record<string, { id: string; bundle: number; fallbackId?: string; fallbackBundle?: number; id2?: string; bundle2?: number; fallbackId2?: string; fallbackBundle2?: number }>;
-
-// 1730: 계승 재료 (fallback은 일반 재료 × 5 환산)
 export const PRICE_ITEM_MAP: PriceItemMapping = {
-  '파괴석/수호석': { id: '66102007', bundle: 100, fallbackId: '66102006', fallbackBundle: 100, id2: '66102107', bundle2: 100, fallbackId2: '66102106', fallbackBundle2: 100 },
-  '돌파석': { id: '66110226', bundle: 1, fallbackId: '66110225', fallbackBundle: 1 },
-  '융화재료': { id: '6861013', bundle: 1, fallbackId: '6861012', fallbackBundle: 1 },
-  '재련 보조': { id: '66111131', bundle: 1, id2: '66111132', bundle2: 1 },
-  '재련보조': { id: '66111131', bundle: 1, id2: '66111132', bundle2: 1 },
+  '파괴석/수호석': { id: '66102007', bundle: 100, id2: '66102107', bundle2: 100 }, // 파괴석 결정 / 수호석 결정
+  '돌파석': { id: '66110226', bundle: 1 },         // 위대한 운명의 돌파석
+  '상급아비도스': { id: '6861013', bundle: 1 },     // 상급 아비도스 융화 재료
+  '용숨/빙숨': { id: '66111131', bundle: 1, id2: '66111132', bundle2: 1 }, // 용암의 숨결 / 빙하의 숨결
 };
 
-// 1700: 운명의 재료 (직접 연결)
-export const PRICE_ITEM_MAP_1700: PriceItemMapping = {
-  '파괴석/수호석': { id: '66102006', bundle: 100, id2: '66102106', bundle2: 100 },
-  '돌파석': { id: '66110225', bundle: 1 },
-  '융화재료': { id: '6861012', bundle: 1 },
-  '재련 보조': { id: '66111131', bundle: 1, id2: '66111132', bundle2: 1 },
-  '재련보조': { id: '66111131', bundle: 1, id2: '66111132', bundle2: 1 },
-};
-
-// 레벨에 맞는 가격 매핑 반환
-export function getPriceItemMap(level: '1700' | '1730' = '1730'): PriceItemMapping {
-  return level === '1700' ? PRICE_ITEM_MAP_1700 : PRICE_ITEM_MAP;
-}
-
-// 영웅 젬 아이템 IDs
+// 영웅 젬 아이템 IDs (질서 3종 + 혼돈 3종)
 export const HERO_GEM_IDS = ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'];
 
 // 각인서 관련 상수
@@ -92,7 +48,7 @@ export const ENGRAVING_IDS = ['65203905', '65200505', '65203305', '65201005', '6
 export const NON_TRACKED_ENGRAVING_SUM = 33080;
 export const TOTAL_ENGRAVINGS = 43;
 
-// 일반 재련 비용 - 계승 무기 20→21 기준 (참조 15회분)
+// 일반 재련 비용 - 계승 무기 20→21 기준 (참조 15회분) — 특수재련 단가 산출용
 export const NORMAL_REFINING_MATS = {
   파괴석결정: 53550,
   위대한돌파석: 555,
@@ -102,48 +58,25 @@ export const NORMAL_REFINING_MATS = {
   골드: 127500,
 };
 
-// 일반 재련 비용 - 업화 무기 20→21 기준 (참조 15회분)
-export const NORMAL_REFINING_MATS_1700 = {
-  파괴석: 48000,       // 3200 × 15
-  돌파석: 720,          // 48 × 15
-  아비도스: 525,        // 35 × 15
-  운명의파편: 256500,   // 17100 × 15
-  용암의숨결: 375,      // 25 × 15
-  골드: 62400,          // 4160 × 15
-};
-
 // 특수재련 확률 및 소모
 export const SPECIAL_REFINING_RATE = 0.015; // 1.5%
 export const SPECIAL_REFINING_PER_ATTEMPT = 50;
 
-export const RARE_GEM_PRICE = 2000;
-
-// 젬랜덤 확률 (영웅 10%, 희귀 90%)
-export const RANDOM_GEM_HERO_PROBS: { id: string; prob: number }[] = [
-  { id: '67400003', prob: 0.03 },   // 질서 안정
-  { id: '67400103', prob: 0.015 },  // 질서 견고
-  { id: '67400203', prob: 0.005 },  // 질서 불변
-  { id: '67410303', prob: 0.03 },   // 혼돈 침식
-  { id: '67410403', prob: 0.015 },  // 혼돈 왜곡
-  { id: '67410503', prob: 0.005 },  // 혼돈 붕괴
-];
-export const RANDOM_GEM_RARE_PROB = 0.9;
-
-// 젬랜덤 1개당 기댓값
-export function calcRandomGemExpectedValue(prices: Record<string, number>): number {
-  let heroExpected = 0;
-  for (const { id, prob } of RANDOM_GEM_HERO_PROBS) {
-    heroExpected += (prices[id] || 0) * prob;
-  }
-  return Math.floor(heroExpected + RANDOM_GEM_RARE_PROB * RARE_GEM_PRICE);
-}
+// 고정 단가
+export const RARE_GEM_PRICE = 2000;             // 희귀 젬 1개
+export const FATE_STONE_PRICE = 900;            // 정련된 운명의 돌 1개
+export const CHAOS_STONE_WEAPON_PRICE = 800;    // 정련된 혼돈의 돌(무기) 1개
+export const CHAOS_STONE_ARMOR_PRICE = 300;     // 정련된 혼돈의 돌(방어구) 1개
+export const LEGENDARY_CARD_PACK_PRICE = 8000;  // 전설 카드팩 1개
+export const CELESTIAL_TICKET_PRICE = 3000;     // 천상 도전권 1개
 
 // 팔찌 상수
 export const BRACELET_USEFUL_PROB = 0.002188;
 export const BRACELET_USEFUL_PRICE = 20000;
 export const BRACELET_PEON = 20;
 
-// 보상 문자열 파싱
+// ─── 파싱 유틸 ───
+
 export function parseRewardValue(str: string): number {
   if (!str || str === '-') return 0;
   return Number(str.replace(/,/g, ''));
@@ -154,98 +87,51 @@ export function parseDualValue(str: string): [number, number] {
   return [parseRewardValue(parts[0]), parseRewardValue(parts[1])];
 }
 
-// 젬 수량 파싱
-export function parseGemCount(str: string): { hero: number; rare: number } {
-  if (!str || str === '-') return { hero: 0, rare: 0 };
-  let hero = 0;
-  let rare = 0;
-  const parts = str.split(',').map(s => s.trim());
-  for (const part of parts) {
-    const match = part.match(/x\s*(\d+)/);
-    const count = match ? parseInt(match[1]) : 0;
-    if (part.startsWith('영웅')) hero += count;
-    else if (part.startsWith('희귀')) rare += count;
-  }
-  return { hero, rare };
+// 젬 선택 상자 파싱 ("3(희귀)" / "1(영웅)")
+export function parseGemSelectBox(str: string): { count: number; rarity: 'rare' | 'hero' } | null {
+  if (!str || str === '-') return null;
+  const m = str.match(/(\d[\d,]*)\s*\(\s*(희귀|영웅)\s*\)/);
+  if (!m) return null;
+  return { count: parseRewardValue(m[1]), rarity: m[2] === '영웅' ? 'hero' : 'rare' };
 }
 
-// 랜덤 젬 수량 파싱 ("희귀~영웅 xN")
-export function parseRandomGemCount(str: string): number {
-  if (!str || str === '-') return 0;
-  const match = str.match(/x\s*(\d+)/);
-  return match ? parseInt(match[1]) : 0;
-}
+// ─── 가격 계산 ───
 
-// 레벨+모드에 맞는 보상 데이터 선택
-export function getRewardDataByLevel(
-  mode: 'hell' | 'narak',
-  level: '1700' | '1730' = '1730'
-): Record<string, string[]> {
-  if (level === '1700') {
-    return mode === 'hell' ? HELL_BOX_REWARDS_DATA_1700 : NARAK_BOX_REWARDS_DATA_1700;
-  }
+export function getRewardData(mode: 'hell' | 'narak'): Record<string, string[]> {
   return mode === 'hell' ? HELL_BOX_REWARDS_DATA : NARAK_BOX_REWARDS_DATA;
 }
 
-// 단가 계산 (fallback: 하위 재료 × 5 환산)
-export function getUnitPrice(id: string, bundle: number, prices: Record<string, number>, fallbackId?: string, fallbackBundle?: number): number {
-  let price = (prices[id] || 0) / bundle;
-  if (price === 0 && fallbackId && fallbackBundle) {
-    price = ((prices[fallbackId] || 0) / fallbackBundle) * 5;
-  }
-  return price;
+// 단가 (1묶음 = bundle개)
+export function getUnitPrice(id: string, bundle: number, prices: Record<string, number>): number {
+  return (prices[id] || 0) / bundle;
 }
 
-// 특수재련 1개당 가격 계산 (일반재련 비용 기반)
-// 산출: 일반재련 총 비용 ÷ (중앙값 시행횟수 × 50개)
-export function calcSpecialRefiningUnitCost(prices: Record<string, number>, level: '1700' | '1730' = '1730'): number {
-  let normalCost: number;
+// 특수재련 1개당 가격 — 일반재련(계승 무기 20→21) 총비용 ÷ (중앙값 시행 × 50개)
+export function calcSpecialRefiningUnitCost(prices: Record<string, number>): number {
+  const 파괴석단가 = getUnitPrice('66102007', 100, prices);
+  const 돌파석단가 = getUnitPrice('66110226', 1, prices);
+  const 상비도스단가 = getUnitPrice('6861013', 1, prices);
+  const 파편단가 = (prices['66130143'] || 0) / 3000;
+  const 용암단가 = getUnitPrice('66111131', 1, prices);
 
-  if (level === '1700') {
-    // 업화 무기 20→21 기준 (운명의 재료)
-    const 파괴석단가 = getUnitPrice('66102006', 100, prices);
-    const 돌파석단가 = getUnitPrice('66110225', 1, prices);
-    const 아비도스단가 = getUnitPrice('6861012', 1, prices);
-    const 파편단가 = (prices['66130143'] || 0) / 3000;
-    const 용암단가 = getUnitPrice('66111131', 1, prices);
-
-    normalCost =
-      NORMAL_REFINING_MATS_1700.파괴석 * 파괴석단가 +
-      NORMAL_REFINING_MATS_1700.돌파석 * 돌파석단가 +
-      NORMAL_REFINING_MATS_1700.아비도스 * 아비도스단가 +
-      NORMAL_REFINING_MATS_1700.운명의파편 * 파편단가 +
-      NORMAL_REFINING_MATS_1700.용암의숨결 * 용암단가 +
-      NORMAL_REFINING_MATS_1700.골드;
-  } else {
-    // 계승 무기 20→21 기준 (세르카)
-    const 파괴석단가 = getUnitPrice('66102007', 100, prices, '66102006', 100);
-    const 돌파석단가 = getUnitPrice('66110226', 1, prices, '66110225', 1);
-    const 상비도스단가 = getUnitPrice('6861013', 1, prices, '6861012', 1);
-    const 파편단가 = (prices['66130143'] || 0) / 3000;
-    const 용암단가 = getUnitPrice('66111131', 1, prices);
-
-    normalCost =
-      NORMAL_REFINING_MATS.파괴석결정 * 파괴석단가 +
-      NORMAL_REFINING_MATS.위대한돌파석 * 돌파석단가 +
-      NORMAL_REFINING_MATS.상비도스 * 상비도스단가 +
-      NORMAL_REFINING_MATS.운명의파편 * 파편단가 +
-      NORMAL_REFINING_MATS.용암의숨결 * 용암단가 +
-      NORMAL_REFINING_MATS.골드;
-  }
+  const normalCost =
+    NORMAL_REFINING_MATS.파괴석결정 * 파괴석단가 +
+    NORMAL_REFINING_MATS.위대한돌파석 * 돌파석단가 +
+    NORMAL_REFINING_MATS.상비도스 * 상비도스단가 +
+    NORMAL_REFINING_MATS.운명의파편 * 파편단가 +
+    NORMAL_REFINING_MATS.용암의숨결 * 용암단가 +
+    NORMAL_REFINING_MATS.골드;
 
   // 기하분포 중앙값: ceil(ln(0.5) / ln(1 - p))
   const medianAttempts = Math.ceil(Math.log(0.5) / Math.log(1 - SPECIAL_REFINING_RATE));
   const totalItems = medianAttempts * SPECIAL_REFINING_PER_ATTEMPT;
-
   return totalItems > 0 ? Math.floor(normalCost / totalItems) : 0;
 }
 
 // 각인서 1개당 기댓값
 export function calcEngravingExpectedValue(prices: Record<string, number>): number {
   let trackedSum = 0;
-  for (const id of ENGRAVING_IDS) {
-    trackedSum += prices[id] || 0;
-  }
+  for (const id of ENGRAVING_IDS) trackedSum += prices[id] || 0;
   return Math.floor((trackedSum + NON_TRACKED_ENGRAVING_SUM) / TOTAL_ENGRAVINGS);
 }
 
@@ -258,97 +144,110 @@ export function getHeroGemMaxPrice(prices: Record<string, number>): number {
   return maxPrice;
 }
 
-// 상자 보상 골드 가치 계산
+// 상자 보상 골드 가치
 export function calcBoxRewardGold(
   rewardName: string,
   tier: number,
   prices: Record<string, number>,
   mode: 'hell' | 'narak',
   peonGoldValue: number,
-  specialRefiningCost: number,
-  level: '1700' | '1730' = '1730'
+  specialRefiningCost: number
 ): number | null {
-  const data = getRewardDataByLevel(mode, level);
+  const data = getRewardData(mode);
   const rawVal = data[rewardName]?.[tier];
   if (!rawVal || rawVal === '-') return 0;
 
+  // 직접 지급 / 고정가
   if (rewardName === '귀속골드') return parseRewardValue(rawVal);
-  if (rewardName === '운명의 돌') return Math.floor(parseRewardValue(rawVal) * 900);
-  if (rewardName === '천상 도전권') return Math.floor(parseRewardValue(rawVal) * 3000);
+  if (rewardName === '천상 도전권') return Math.floor(parseRewardValue(rawVal) * CELESTIAL_TICKET_PRICE);
+  if (rewardName === '전설카드팩') return Math.floor(parseRewardValue(rawVal) * LEGENDARY_CARD_PACK_PRICE);
 
+  // 정련된 운명/혼돈의 돌 — 선택상자(택1): 더 비싼 쪽, 고정가
+  // 혼돈 선택 시 같은 개수로 무기·방어구 혼돈의 돌을 둘 다 지급 → 혼돈 단위가 = 무기 + 방어구
+  if (rewardName === '정련된 운명/혼돈의 돌') {
+    const [fate, chaos] = parseDualValue(rawVal);
+    const fateValue = fate * FATE_STONE_PRICE;
+    const chaosValue = chaos * (CHAOS_STONE_WEAPON_PRICE + CHAOS_STONE_ARMOR_PRICE);
+    return Math.floor(Math.max(fateValue, chaosValue));
+  }
+
+  // 팔찌 — 고대 N개 × 유효확률 × (유효품 시세 + 페온 가치)
   if (rewardName === '팔찌') {
-    const match = rawVal.match(/x\s*(\d+)/);
-    if (!match) return 0;
-    const qty = parseInt(match[1]);
+    const qty = parseRewardValue(rawVal);
     return Math.floor(qty * BRACELET_USEFUL_PROB * (BRACELET_USEFUL_PRICE + BRACELET_PEON * peonGoldValue));
   }
 
-  if (rewardName === '어빌리티스톤 키트') return Math.floor(parseRewardValue(rawVal) * 9 * peonGoldValue);
+  // 어빌리티스톤 — N개 × 9페온
+  if (rewardName === '어빌리티스톤') return Math.floor(parseRewardValue(rawVal) * 9 * peonGoldValue);
+
+  // 특수재련
   if (rewardName === '특수재련') return Math.floor(parseRewardValue(rawVal) * specialRefiningCost);
 
-  if (rewardName === '젬선택') {
-    const { hero, rare } = parseGemCount(rawVal);
-    return Math.floor(hero * getHeroGemMaxPrice(prices) + rare * RARE_GEM_PRICE);
+  // 젬 선택 상자 — 영웅: 최고가 시세 / 희귀: 고정가
+  if (rewardName === '젬 선택 상자') {
+    const gem = parseGemSelectBox(rawVal);
+    if (!gem) return 0;
+    const unit = gem.rarity === 'hero' ? getHeroGemMaxPrice(prices) : RARE_GEM_PRICE;
+    return Math.floor(gem.count * unit);
   }
 
-  if (rewardName === '젬랜덤') {
-    const count = parseRandomGemCount(rawVal);
-    return Math.floor(count * calcRandomGemExpectedValue(prices));
-  }
-
+  // 귀속 보석 — 8레벨 겁화 보석 시세
   if (rewardName === '귀속 보석') {
     const count = parseRewardValue(rawVal);
-    const gemPrice = Math.round(prices['auction_gem_fear_8'] || 0);
-    return Math.floor(count * gemPrice);
+    return Math.floor(count * Math.round(prices['auction_gem_fear_8'] || 0));
   }
 
-  if (rewardName === '귀속 각인서 랜덤') {
-    const count = parseRewardValue(rawVal);
-    return Math.floor(count * calcEngravingExpectedValue(prices));
+  // 귀속 각인서 랜덤 상자
+  if (rewardName === '귀속 각인서 랜덤 상자') {
+    return Math.floor(parseRewardValue(rawVal) * calcEngravingExpectedValue(prices));
   }
 
-  const priceMap = getPriceItemMap(level);
-  const mapping = priceMap[rewardName];
+  // 파괴석 결정 / 수호석 결정 — 선택상자(택1): 더 비싼 쪽
+  if (rewardName === '파괴석/수호석') {
+    const [v1, v2] = parseDualValue(rawVal);
+    const m = PRICE_ITEM_MAP[rewardName];
+    const unit1 = getUnitPrice(m.id, m.bundle, prices);
+    const unit2 = m.id2 && m.bundle2 ? getUnitPrice(m.id2, m.bundle2, prices) : 0;
+    return Math.floor(Math.max(v1 * unit1, v2 * unit2));
+  }
+
+  // 용숨/빙숨 — 둘 다 지급(합산)
+  if (rewardName === '용숨/빙숨') {
+    const [v1, v2] = parseDualValue(rawVal);
+    const m = PRICE_ITEM_MAP[rewardName];
+    const unit1 = getUnitPrice(m.id, m.bundle, prices);
+    const unit2 = m.id2 && m.bundle2 ? getUnitPrice(m.id2, m.bundle2, prices) : 0;
+    return Math.floor(v1 * unit1 + v2 * unit2);
+  }
+
+  // 단일 시세 아이템 (상급아비도스, 돌파석)
+  const mapping = PRICE_ITEM_MAP[rewardName];
   if (!mapping) return null;
-
-  if (mapping.id2 && mapping.bundle2 !== undefined) {
-    const [qty1, qty2] = parseDualValue(rawVal);
-    const unitPrice1 = getUnitPrice(mapping.id, mapping.bundle, prices, mapping.fallbackId, mapping.fallbackBundle);
-    const unitPrice2 = getUnitPrice(mapping.id2, mapping.bundle2, prices, mapping.fallbackId2, mapping.fallbackBundle2);
-    return Math.floor(qty1 * unitPrice1 + qty2 * unitPrice2);
-  }
-
-  const qty = parseRewardValue(rawVal);
-  const unitPrice = getUnitPrice(mapping.id, mapping.bundle, prices, mapping.fallbackId, mapping.fallbackBundle);
-  return Math.floor(qty * unitPrice);
+  return Math.floor(parseRewardValue(rawVal) * getUnitPrice(mapping.id, mapping.bundle, prices));
 }
 
-// 티켓 평균 골드 가치 계산
+// 티켓(열쇠) 평균 골드 가치
 export function calcTicketAverage(
   mode: 'hell' | 'narak',
   tier: number,
   prices: Record<string, number>,
   bcRate: number,
-  level: '1700' | '1730' = '1730',
   excludeAbilityStone: boolean = true
 ): number {
   const peonGoldValue = 8.5 * (bcRate / 100);
   const specialRefiningCost = calcSpecialRefiningUnitCost(prices);
-
-  const data = getRewardDataByLevel(mode, level);
-  const rewardNames = Object.keys(data);
+  const data = getRewardData(mode);
 
   let sum = 0;
   let count = 0;
-  for (const name of rewardNames) {
-    if (excludeAbilityStone && name === '어빌리티스톤 키트') continue;
+  for (const name of Object.keys(data)) {
+    if (excludeAbilityStone && name === '어빌리티스톤') continue;
     const rawVal = data[name]?.[tier];
     if (!rawVal || rawVal === '-') continue;
-    const val = calcBoxRewardGold(name, tier, prices, mode, peonGoldValue, specialRefiningCost, level);
+    const val = calcBoxRewardGold(name, tier, prices, mode, peonGoldValue, specialRefiningCost);
     if (val === null) continue;
     sum += val;
     count++;
   }
-
   return count > 0 ? Math.floor(sum / count) : 0;
 }
