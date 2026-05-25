@@ -50,6 +50,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/bracelet', label: '팔찌 시뮬' },
     ],
   },
+  {
+    label: '조회',
+    colorClass: 'nav-character',
+    items: [
+      { href: '/character', label: '캐릭터 조회' },
+    ],
+  },
 ];
 
 export default function Navbar() {
@@ -83,7 +90,8 @@ export default function Navbar() {
                       href === '/package' ? 'nav-package' :
                       href === '/cathedral' ? 'nav-weekly' :
                       href === '/cerka' ? 'nav-weekly' :
-                      href === '/extreme' ? 'nav-extreme' : 'nav-weekly';
+                      href === '/extreme' ? 'nav-extreme' :
+                      href === '/character' ? 'nav-character' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
   };
