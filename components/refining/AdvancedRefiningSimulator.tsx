@@ -29,27 +29,8 @@ import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import {
   type Equipment as EquipmentType,
 } from '../../lib/equipmentParser';
-import { saveAdvancedRefiningResult, AdvancedRefiningResult } from '../../lib/supabase';
 
 type Equipment = EquipmentType;
-
-// 10단계별 통계 추적용 인터페이스
-interface StageStats {
-  startLevel: number;
-  totalTurns: number;
-  successCount: number;
-  greatCount: number;
-  superCount: number;
-  bonusTurns: number;
-  ancestorCards: Record<string, number>;
-  materials: AccumulatedCost;
-  auxiliaryPattern: {
-    none: number;
-    breath: number;
-    book: number;
-    both: number;
-  };
-}
 
 interface AdvancedRefiningSimulatorProps {
   onSearchComplete?: (searched: boolean) => void;
@@ -143,25 +124,6 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, equipments
   // 시작 레벨 저장 (강화 단계 표시용)
   const [startLevel, setStartLevel] = useState<number>(0);
 
-  // 10단계별 통계 추적 (ref로 변경하여 React Strict Mode 중복 방지)
-  const stageStatsRef = useRef<StageStats>({
-    startLevel: 0,
-    totalTurns: 0,
-    successCount: 0,
-    greatCount: 0,
-    superCount: 0,
-    bonusTurns: 0,
-    ancestorCards: {},
-    materials: {
-      수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0,
-      빙하: 0, 용암: 0, 실링: 0,
-      야금술1단: 0, 야금술2단: 0, 야금술3단: 0, 야금술4단: 0,
-      재봉술1단: 0, 재봉술2단: 0, 재봉술3단: 0, 재봉술4단: 0,
-    },
-    auxiliaryPattern: { none: 0, breath: 0, book: 0, both: 0 },
-  });
-  // 저장 중복 방지용 Set (장비명-시작레벨-도착레벨 조합으로 추적)
-  const savedMilestonesRef = useRef<Set<string>>(new Set());
   // 재련 처리 중복 방지 (React Strict Mode 대응)
   const processingRef = useRef(false);
 
@@ -255,9 +217,6 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, equipments
     setAttemptHistory([]);
     // 아이템 레벨 설정 (장비의 현재 아이템 레벨)
     setBaseItemLevel(equipment.itemLevel || 0);
-    // 10단계 통계 초기화 (현재 레벨의 10단계 시작점으로)
-    const milestoneStart = Math.floor(equipStartLevel / 10) * 10;
-    resetStageStats(milestoneStart);
   };
 
   const resetSimulation = () => {
@@ -286,84 +245,6 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, equipments
     setTotalAttempts(0);
     setItemLevelIncrease(0);
     setEnhancedLevels({}); // 모든 장비의 강화 진행 상태 초기화
-    // 10단계 통계도 초기화
-    const milestoneStart = Math.floor(equipStartLevel / 10) * 10;
-    resetStageStats(milestoneStart);
-    // 저장 기록 초기화 (새 시뮬레이션이므로)
-    savedMilestonesRef.current.clear();
-  };
-
-  // 10단계 통계 초기화
-  const resetStageStats = (startLv: number) => {
-    stageStatsRef.current = {
-      startLevel: startLv,
-      totalTurns: 0,
-      successCount: 0,
-      greatCount: 0,
-      superCount: 0,
-      bonusTurns: 0,
-      ancestorCards: {},
-      materials: {
-        수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0,
-        빙하: 0, 용암: 0, 실링: 0,
-        야금술1단: 0, 야금술2단: 0, 야금술3단: 0, 야금술4단: 0,
-        재봉술1단: 0, 재봉술2단: 0, 재봉술3단: 0, 재봉술4단: 0,
-      },
-      auxiliaryPattern: { none: 0, breath: 0, book: 0, both: 0 },
-    };
-  };
-
-  // 10단계 완료 시 저장
-  const saveStageCompletion = (toLevel: number, stats: StageStats) => {
-    if (!selectedEquipment) {
-      console.error('[상급재련 통계] selectedEquipment가 없습니다!');
-      return;
-    }
-
-    const isWeapon = selectedEquipment.type === 'weapon';
-    const equipmentName = isWeapon ? '업화 무기' : '업화 방어구';
-
-    const result: AdvancedRefiningResult = {
-      equipment_type: isWeapon ? 'weapon' : 'armor',
-      equipment_name: equipmentName,
-      from_level: stats.startLevel,
-      to_level: toLevel,
-      total_turns: stats.totalTurns,
-      success_count: stats.successCount,
-      great_success_count: stats.greatCount,
-      super_success_count: stats.superCount,
-      bonus_turns: stats.bonusTurns,
-      ancestor_cards: stats.ancestorCards,
-      gold: stats.materials.골드,
-      fate_fragment: stats.materials.운명파편,
-      breakthrough_stone: stats.materials.돌파석,
-      abidos: stats.materials.아비도스,
-      auxiliary_pattern: stats.auxiliaryPattern,
-    };
-
-    // 무기/방어구에 따라 재료 다르게 저장
-    if (isWeapon) {
-      result.destruction_stone = stats.materials.파괴석;
-      result.lava_breath = stats.materials.용암;
-      // 책은 단계에 따라 다름 (from_level 기준)
-      if (stats.startLevel < 10) result.book_1 = stats.materials.야금술1단;
-      else if (stats.startLevel < 20) result.book_2 = stats.materials.야금술2단;
-      else if (stats.startLevel < 30) result.book_3 = stats.materials.야금술3단;
-      else result.book_4 = stats.materials.야금술4단;
-    } else {
-      result.guardian_stone = stats.materials.수호석;
-      result.glacier_breath = stats.materials.빙하;
-      // 책은 단계에 따라 다름
-      if (stats.startLevel < 10) result.book_1 = stats.materials.재봉술1단;
-      else if (stats.startLevel < 20) result.book_2 = stats.materials.재봉술2단;
-      else if (stats.startLevel < 30) result.book_3 = stats.materials.재봉술3단;
-      else result.book_4 = stats.materials.재봉술4단;
-    }
-
-    // 비동기로 저장
-    saveAdvancedRefiningResult(result).catch(err => {
-      console.error('Failed to save advanced refining result:', err);
-    });
   };
 
   // 현재 재료 조합
@@ -568,63 +449,8 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, equipments
       }
     }
 
-    // 10단계별 통계 업데이트 (ref 사용으로 React Strict Mode 중복 방지)
-    const prevLevel = currentLevel;
-    const stageKey = getStageKey(currentLevel);
-    const isWeapon = selectedEquipment.type === 'weapon';
-
-    const stats = stageStatsRef.current;
-    stats.totalTurns++;
-
-    // 성공 등급 카운트
-    if (resultGrade === 'success') stats.successCount++;
-    else if (resultGrade === 'great') stats.greatCount++;
-    else if (resultGrade === 'super') stats.superCount++;
-
-    // 선조턴 카운트
-    if (thisTurnIsBonusTurn) {
-      stats.bonusTurns++;
-      // 선조 카드 등장 기록
-      if (resultCard) {
-        stats.ancestorCards[resultCard] = (stats.ancestorCards[resultCard] || 0) + 1;
-      }
-    }
-
-    // 보조재료 사용 패턴 (무료턴 아닐 때만)
-    if (!isFree) {
-      stats.auxiliaryPattern[currentMaterialCombo]++;
-
-      // 재료 사용량 누적
-      if (isWeapon) {
-        const materials = WEAPON_MATERIALS[stageKey];
-        stats.materials.파괴석 += materials.파괴석;
-        stats.materials.돌파석 += materials.돌파석;
-        stats.materials.아비도스 += materials.아비도스;
-        stats.materials.운명파편 += materials.운명파편;
-        stats.materials.골드 += materials.골드;
-        stats.materials.실링 += materials.실링;
-        if (useBreath) stats.materials.용암 += materials.용암;
-        if (useBook && materials.책) {
-          const bookKey = materials.책 as keyof AccumulatedCost;
-          stats.materials[bookKey] += 1;
-        }
-      } else {
-        const materials = ARMOR_MATERIALS[stageKey];
-        stats.materials.수호석 += materials.수호석;
-        stats.materials.돌파석 += materials.돌파석;
-        stats.materials.아비도스 += materials.아비도스;
-        stats.materials.운명파편 += materials.운명파편;
-        stats.materials.골드 += materials.골드;
-        stats.materials.실링 += materials.실링;
-        if (useBreath) stats.materials.빙하 += materials.빙하;
-        if (useBook && materials.책) {
-          const bookKey = materials.책 as keyof AccumulatedCost;
-          stats.materials[bookKey] += 1;
-        }
-      }
-    }
-
     // 경험치 적용 및 레벨업
+    const prevLevel = currentLevel;
     let newExp = currentExp + earnedExp;
     let newLevel = currentLevel;
     let levelsGained = 0;
@@ -645,57 +471,13 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, equipments
       newExp = 0;
     }
 
-    // 10단계 완료 체크 및 저장
+    // 10단계 경계 넘으면 선조의 가호 초기화
     const prevMilestone = Math.floor(prevLevel / 10) * 10;
     const newMilestone = Math.floor(newLevel / 10) * 10;
-
-    // 10단계 경계를 넘었을 때 (0→10, 10→20, 20→30, 30→40)
-    if (newMilestone > prevMilestone) {
-      // 중복 저장 방지: 장비명-시작레벨-도착레벨 조합으로 체크
-      const saveKey = `${selectedEquipment.name}-${stats.startLevel}-${newMilestone}`;
-
-      if (!savedMilestonesRef.current.has(saveKey)) {
-        // 저장 전에 키 등록 (중복 방지)
-        savedMilestonesRef.current.add(saveKey);
-
-        // 현재 stats를 복사하여 저장
-        const statsToSave: StageStats = {
-          startLevel: stats.startLevel,
-          totalTurns: stats.totalTurns,
-          successCount: stats.successCount,
-          greatCount: stats.greatCount,
-          superCount: stats.superCount,
-          bonusTurns: stats.bonusTurns,
-          ancestorCards: { ...stats.ancestorCards },
-          materials: { ...stats.materials },
-          auxiliaryPattern: { ...stats.auxiliaryPattern },
-        };
-        saveStageCompletion(newMilestone, statsToSave);
-
-        // 40 미만이면 다음 구간 시작을 위해 초기화
-        if (newMilestone < 40) {
-          stageStatsRef.current = {
-            startLevel: newMilestone,
-            totalTurns: 0,
-            successCount: 0,
-            greatCount: 0,
-            superCount: 0,
-            bonusTurns: 0,
-            ancestorCards: {},
-            materials: {
-              수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0,
-              빙하: 0, 용암: 0, 실링: 0,
-              야금술1단: 0, 야금술2단: 0, 야금술3단: 0, 야금술4단: 0,
-              재봉술1단: 0, 재봉술2단: 0, 재봉술3단: 0, 재봉술4단: 0,
-            },
-            auxiliaryPattern: { none: 0, breath: 0, book: 0, both: 0 },
-          };
-          // 선조의 가호도 초기화
-          setGahoCount(0);
-          setIsBonusTurn(false);
-          setIsEnhancedBonus(false);
-        }
-      }
+    if (newMilestone > prevMilestone && newMilestone < 40) {
+      setGahoCount(0);
+      setIsBonusTurn(false);
+      setIsEnhancedBonus(false);
     }
 
     // 레벨업 시 아이템 레벨 증가 (상급재련 1단계당 0.3125)

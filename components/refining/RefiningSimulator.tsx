@@ -21,7 +21,6 @@ import { MATERIAL_BUNDLE_SIZES, MATERIAL_IDS } from '../../data/raidRewards';
 import {
   type Equipment as EquipmentType,
 } from '../../lib/equipmentParser';
-import { saveRefiningResult, RefiningResult } from '../../lib/supabase';
 import dynamic from 'next/dynamic';
 const RefiningStats = dynamic(() => import('./RefiningStats'), { ssr: false });
 
@@ -507,51 +506,6 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
 
     if (success) {
       const newLevel = currentLevel + 1;
-
-      // Supabase에 결과 저장
-      // 장비 이름은 통계를 위해 통일 (계승 전: 업화, 계승 후: 전율)
-      const equipmentName = isSuccessionMode
-        ? (selectedEquipment.type === 'weapon' ? '전율 무기' : '전율 방어구')
-        : (selectedEquipment.type === 'weapon' ? '업화 무기' : '업화 방어구');
-
-      const refiningResult: RefiningResult = {
-        equipment_type: selectedEquipment.type === 'weapon' ? 'weapon' : 'armor',
-        equipment_name: equipmentName,
-        is_succession: isSuccessionMode,
-        from_level: currentLevel,
-        to_level: newLevel,
-        attempts: newLevelAttempts,
-        use_breath: usedBreathThisLevel || useBreath,
-        fate_fragment: newLevelCost.운명파편 || undefined,
-        gold: newLevelCost.골드 || undefined,
-      };
-
-      // 계승 여부에 따라 재료 추가
-      if (isSuccessionMode) {
-        refiningResult.destruction_crystal = newLevelCost.파괴석결정 || undefined;
-        refiningResult.guardian_crystal = newLevelCost.수호석결정 || undefined;
-        refiningResult.great_breakthrough = newLevelCost.위대한돌파석 || undefined;
-        refiningResult.advanced_abidos = newLevelCost.상급아비도스 || undefined;
-        refiningResult.shilling = newLevelCost.실링 || undefined;
-      } else {
-        refiningResult.destruction_stone = newLevelCost.파괴석 || undefined;
-        refiningResult.guardian_stone = newLevelCost.수호석 || undefined;
-        refiningResult.breakthrough_stone = newLevelCost.돌파석 || undefined;
-        refiningResult.abidos = newLevelCost.아비도스 || undefined;
-      }
-
-      // 숨결 사용량 및 횟수 추가
-      if (newLevelCost.용암 > 0) refiningResult.lava_breath = newLevelCost.용암;
-      if (newLevelCost.빙하 > 0) refiningResult.glacier_breath = newLevelCost.빙하;
-      if (newBreathCount > 0) refiningResult.breath_count = newBreathCount;
-
-      // 성공 시점 장인의 기운 저장 (%) - 소수점 셋째자리에서 버림
-      refiningResult.final_jangin = Math.floor(jangin * 10000) / 100;
-
-      // 비동기로 저장 (실패해도 시뮬레이션은 계속)
-      saveRefiningResult(refiningResult).catch(err => {
-        console.error('Failed to save refining result:', err);
-      });
 
       // 레벨별 추적 초기화
       setLevelAttempts(0);
