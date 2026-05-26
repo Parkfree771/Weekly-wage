@@ -110,31 +110,83 @@
 
 /* === Profile (Left) === */
 .profileCol {
-  position: sticky;
-  top: 70px;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  /* 뷰포트보다 길어지면 사이드바 내부에서 스크롤, 페이지 스크롤 시에도 항상 보이게 */
-  max-height: calc(100vh - 90px);
-  overflow-y: auto;
-  /* 스크롤바 디자인: 얇고 은은하게 */
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
-  padding-right: 4px;
 }
 
-.profileCol::-webkit-scrollbar {
-  width: 6px;
+/* === Sibling row (원정대) === */
+.siblingRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.08s ease;
 }
-
-.profileCol::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
+.siblingRow:hover {
+  background: var(--input-bg);
 }
-
-.profileCol::-webkit-scrollbar-track {
-  background: transparent;
+.siblingRow:active {
+  transform: scale(0.985);
+}
+.siblingRowCurrent {
+  position: relative;
+  padding-left: 12px;
+  background: linear-gradient(90deg, rgba(59, 80, 181, 0.14) 0%, rgba(59, 80, 181, 0.02) 100%);
+  cursor: default;
+}
+.siblingRowCurrent:hover {
+  background: linear-gradient(90deg, rgba(59, 80, 181, 0.14) 0%, rgba(59, 80, 181, 0.02) 100%);
+  transform: none;
+}
+.siblingRowCurrent::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--color-primary);
+  box-shadow: 0 0 6px rgba(59, 80, 181, 0.55);
+}
+.siblingBody {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.siblingName {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+.siblingNameCurrent {
+  color: var(--color-primary);
+}
+.siblingClass {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  line-height: 1.2;
+}
+.siblingItemLv {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.siblingItemLvCurrent {
+  color: var(--color-primary);
 }
 
 /* === Delta Card (sidebar) === */
@@ -1210,7 +1262,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 6.8rem;
+  gap: 9rem;
 }
 
 .gemDmCenter {

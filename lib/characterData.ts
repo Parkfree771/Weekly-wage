@@ -20,6 +20,7 @@ export type CombatProfile = {
   title?: string;
   expeditionLevel?: number;
   characterLevel?: number;
+  emblems?: string[];   // 휘장 이미지 URL 배열 (Decorations.Emblems)
 };
 
 export type EquipmentItem = {
@@ -79,6 +80,13 @@ export type EngravingInfo = {
   icon?: string;
 };
 
+export type TripodInfo = {
+  name: string;       // 트라이포드 이름 (HTML 제거)
+  desc: string;       // 효과 설명 (HTML 제거)
+  icon?: string;      // 트라이포드 아이콘 URL
+  lock: boolean;      // 잠금 여부
+};
+
 export type GemInfo = {
   tier: number;
   level: number;
@@ -86,6 +94,7 @@ export type GemInfo = {
   skillName: string;
   skillIcon?: string;    // 보석이 장착된 스킬의 아이콘
   icon?: string;
+  tripods?: TripodInfo[]; // 트라이포드 (1~3티어 순)
 };
 
 export type CardInfo = {
@@ -192,6 +201,14 @@ export type ArkGridInfo = {
   effects: ArkGridEffect[];
 };
 
+export type SiblingCharacter = {
+  serverName: string;
+  characterName: string;
+  characterLevel: number;
+  className: string;
+  itemLevel: number;
+};
+
 export type CharacterData = {
   profile: CombatProfile;
   // 표시용 원본 데이터
@@ -210,6 +227,8 @@ export type CharacterData = {
   combatStats: CombatStats;
   // 아크 그리드
   arkGrid: ArkGridInfo | null;
+  // 원정대 형제 캐릭터
+  siblings: SiblingCharacter[];
 };
 
 // ============================
@@ -296,6 +315,9 @@ export function parseProfile(profileData: any): CombatProfile | null {
     title: profileData.Title ? profileData.Title.replace(/<[^>]*>/g, '').trim() || undefined : undefined,
     expeditionLevel: profileData.ExpeditionLevel || undefined,
     characterLevel: profileData.CharacterLevel || undefined,
+    emblems: Array.isArray(profileData.Decorations?.Emblems) && profileData.Decorations.Emblems.length > 0
+      ? profileData.Decorations.Emblems
+      : undefined,
   };
 }
 
@@ -989,12 +1011,47 @@ export function parseGems(gemsData: any): GemInfo[] {
     return { name: '' };
   };
 
+  // 트라이포드 추출: skillEffect.Tooltip → Element_006 (type: TripodSkillCustom)
+  const extractTripods = (gem: any): TripodInfo[] => {
+    // eslint-disable-next-line eqeqeq
+    const eff = skillEffects.find(e => e && e.GemSlot == gem.Slot);
+    if (!eff?.Tooltip) return [];
+    try {
+      const tt = typeof eff.Tooltip === 'string' ? JSON.parse(eff.Tooltip) : eff.Tooltip;
+      let block: any = null;
+      for (const k in tt) {
+        if (tt[k]?.type === 'TripodSkillCustom') {
+          block = tt[k].value;
+          break;
+        }
+      }
+      if (!block) return [];
+      const tripods: TripodInfo[] = [];
+      for (const ek of Object.keys(block).sort()) {
+        const t = block[ek];
+        if (!t) continue;
+        const tName = String(t.name || '').replace(/<[^>]*>/g, '').trim();
+        const tDesc = String(t.desc || '').replace(/<[^>]*>/g, '').trim();
+        if (tName) tripods.push({
+          name: tName,
+          desc: tDesc,
+          icon: t.slotData?.iconPath || undefined,
+          lock: Boolean(t.lock),
+        });
+      }
+      return tripods;
+    } catch {
+      return [];
+    }
+  };
+
   for (const gem of gemsData.Gems) {
     const name = gem.Name || '';
     const levelMatch = name.match(/(\d+)레벨/);
     const level = levelMatch ? parseInt(levelMatch[1], 10) : 0;
 
     const skill = resolveSkill(gem);
+    const tripods = extractTripods(gem);
 
     // 겁화/작열은 이름 그대로, 광휘는 효과 설명으로 겁화(딜) / 작열(쿨감) 판별
     let type = '';
@@ -1019,6 +1076,7 @@ export function parseGems(gemsData: any): GemInfo[] {
       skillName: skill.name,
       skillIcon: skill.icon,
       icon: gem.Icon,
+      tripods: tripods.length > 0 ? tripods : undefined,
     });
   }
 
@@ -1538,6 +1596,23 @@ export function parseArkGrid(arkgridData: any): ArkGridInfo | null {
   return { cores, effects };
 }
 
+// 원정대 캐릭터 목록 파싱
+export function parseSiblings(siblingsData: any): SiblingCharacter[] {
+  if (!Array.isArray(siblingsData)) return [];
+  const result: SiblingCharacter[] = [];
+  for (const s of siblingsData) {
+    if (!s?.CharacterName) continue;
+    result.push({
+      serverName: s.ServerName || '',
+      characterName: s.CharacterName,
+      characterLevel: s.CharacterLevel || 0,
+      className: s.CharacterClassName || '',
+      itemLevel: parseFloat((s.ItemAvgLevel || '0').replace(/,/g, '')),
+    });
+  }
+  return result;
+}
+
 // ============================
 // 종합 파서
 // ============================
@@ -1560,5 +1635,6 @@ export function parseCharacterData(apiResponse: any): CharacterData | null {
     bracelet: parseBraceletEffects(apiResponse.equipment),
     combatStats: parseCombatStats(apiResponse.profile),
     arkGrid: parseArkGrid(apiResponse.arkgrid),
+    siblings: parseSiblings(apiResponse.siblings),
   };
 }

@@ -77,20 +77,23 @@ export default function CharacterPage() {
     }
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!characterName.trim()) {
+  const performSearch = async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
       setError('캐릭터명을 입력해주세요.');
       return;
     }
 
+    setCharacterName(trimmed);
     setIsLoading(true);
     setError(null);
     setCombatData(null);
+    setShowSuggestions(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
       const response = await fetch(
-        `/api/lostark/character?characterName=${encodeURIComponent(characterName.trim())}`
+        `/api/lostark/character?characterName=${encodeURIComponent(trimmed)}`
       );
 
       if (!response.ok) {
@@ -111,13 +114,17 @@ export default function CharacterPage() {
       }
 
       setCombatData(parsed);
-      addToHistory(characterName.trim());
-      setShowSuggestions(false);
+      addToHistory(trimmed);
     } catch (err: any) {
       setError(err.message || '예상치 못한 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    performSearch(characterName);
   };
 
   return (
@@ -269,7 +276,7 @@ export default function CharacterPage() {
 
       {/* 결과 */}
       {combatData && !isLoading && (
-        <CharacterDashboard data={combatData} />
+        <CharacterDashboard data={combatData} onCharacterSelect={performSearch} />
       )}
 
       {/* 빈 상태 */}

@@ -33,6 +33,7 @@ export async function GET(request: Request) {
       cardsRes,
       arkpassiveRes,
       arkgridRes,
+      siblingsRes,
     ] = await Promise.all([
       fetch(`${armoryBase}/profiles`, options),
       fetch(`${armoryBase}/equipment`, options),
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
       fetch(`${armoryBase}/cards`, options),
       fetch(`${armoryBase}/arkpassive`, options),
       fetch(`${armoryBase}/arkgrid`, options),
+      fetch(`${baseUrl}/characters/${encodedName}/siblings`, options),
     ]);
 
     // 프로필은 필수
@@ -60,6 +62,7 @@ export async function GET(request: Request) {
     const cards = cardsRes.ok ? await cardsRes.json() : null;
     const arkpassive = arkpassiveRes.ok ? await arkpassiveRes.json() : null;
     const arkgrid = arkgridRes.ok ? await arkgridRes.json() : null;
+    const siblings = siblingsRes.ok ? await siblingsRes.json() : null;
 
     return NextResponse.json({
       profile,
@@ -69,6 +72,7 @@ export async function GET(request: Request) {
       cards,
       arkpassive,
       arkgrid,
+      siblings,
     });
   } catch (error: any) {
     return NextResponse.json(

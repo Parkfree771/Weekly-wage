@@ -1,11 +1,15 @@
 'use client';
 
-import { useCallback } from 'react';
-import type { CharacterData, EngravingInfo, GemInfo } from '@/lib/characterData';
+import { useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
+import type { CharacterData, EngravingInfo, GemInfo, SiblingCharacter } from '@/lib/characterData';
 import { getGradeColor } from '@/lib/characterData';
 import styles from '@/app/character/character.module.css';
 
-type Props = { data: CharacterData };
+type Props = {
+  data: CharacterData;
+  onCharacterSelect?: (name: string) => void;
+};
 
 function getQualityColor(q: number): string {
   if (q >= 100) return '#ff9800';
@@ -81,8 +85,20 @@ function BraceletEffectLine({ text, grade }: { text: string; grade?: string }) {
 }
 
 /* ═══════════════════════════════════════ */
-export default function CharacterDashboard({ data }: Props) {
+export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
   const { profile, combatStats } = data;
+
+  // 보석 hover 툴팁
+  const [hoveredGem, setHoveredGem] = useState<{ gem: GemInfo; x: number; y: number } | null>(null);
+
+  // 원정대 펼치기
+  const [siblingsExpanded, setSiblingsExpanded] = useState(false);
+
+  const handleGemEnter = (e: React.MouseEvent<HTMLDivElement>, gem: GemInfo) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setHoveredGem({ gem, x: r.left + r.width / 2, y: r.top });
+  };
+  const handleGemLeave = () => setHoveredGem(null);
 
   // 힘/민/지 중 해당 캐릭의 주 스탯만 표시하도록 필터
   const filterStatsByMain = useCallback((stats: string[]) => {
@@ -95,7 +111,61 @@ export default function CharacterDashboard({ data }: Props) {
   const braceletKeywords = data.braceletItem?.keywords || [];
 
   const gems = data.gems;
-  const gemSlots: (GemInfo | null)[] = Array.from({ length: 11 }, (_, i) => gems[i] || null);
+
+  // 같은 스킬 보석이 시각적으로 인접한 슬롯에 들어가도록 배치
+  // 다이아몬드 슬롯: 상단 4(0~3, 페어 [0,1]/[2,3]) + 중앙 3(4~6) + 하단 4(7~10, 페어 [7,8]/[9,10])
+  const gemSlots: (GemInfo | null)[] = (() => {
+    const typeOrder: Record<string, number> = { '겁화': 0, '멸화': 0, '작열': 1, '홍염': 1 };
+
+    // 스킬별 그룹핑
+    const groupsMap = new Map<string, GemInfo[]>();
+    gems.forEach((g, i) => {
+      const key = g.skillName || `__lone_${i}__`;
+      if (!groupsMap.has(key)) groupsMap.set(key, []);
+      groupsMap.get(key)!.push(g);
+    });
+    // 각 그룹 내부: 공격형(겁화/멸화) → 쿨감형(작열/홍염)
+    groupsMap.forEach((list) =>
+      list.sort((a, b) => (typeOrder[a.type] ?? 99) - (typeOrder[b.type] ?? 99)),
+    );
+
+    const groups = Array.from(groupsMap.values());
+    const pairs = groups.filter((g) => g.length === 2);
+    const others = groups.filter((g) => g.length !== 2);
+    // 페어는 총 레벨 내림차순 (높은 레벨 페어가 위쪽으로)
+    pairs.sort((a, b) => b[0].level + b[1].level - (a[0].level + a[1].level));
+
+    const result: (GemInfo | null)[] = Array(11).fill(null);
+    const pairSlotPairs: [number, number][] = [[0, 1], [2, 3], [7, 8], [9, 10]];
+    let pairIdx = 0;
+
+    // 페어 우선: 4개 페어 슬롯에 채움
+    while (pairIdx < pairSlotPairs.length && pairs.length > 0) {
+      const pair = pairs.shift()!;
+      const [s1, s2] = pairSlotPairs[pairIdx++];
+      result[s1] = pair[0];
+      result[s2] = pair[1];
+    }
+
+    // 남은 보석 (페어 오버플로우 + 단일/3+): 중앙 3슬롯 우선 충전 (스킬 단위로 인접 유지)
+    const remaining: GemInfo[] = [];
+    pairs.forEach((p) => remaining.push(...p));
+    others.forEach((o) => remaining.push(...o));
+
+    const midSlots = [4, 5, 6];
+    let midIdx = 0;
+    while (midIdx < midSlots.length && remaining.length > 0) {
+      result[midSlots[midIdx++]] = remaining.shift()!;
+    }
+    // 그래도 남으면 비어있는 페어 슬롯에 채움
+    while (remaining.length > 0 && pairIdx < pairSlotPairs.length) {
+      const [s1, s2] = pairSlotPairs[pairIdx++];
+      if (remaining.length > 0) result[s1] = remaining.shift()!;
+      if (remaining.length > 0) result[s2] = remaining.shift()!;
+    }
+
+    return result;
+  })();
 
   const engSlots: (EngravingInfo | null)[] = [];
   for (let i = 0; i < 5; i++) engSlots.push(data.engravings[i] || null);
@@ -105,7 +175,13 @@ export default function CharacterDashboard({ data }: Props) {
     const isAtk = gem.type === '멸화' || gem.type === '겁화';
     const gc = isAtk ? '#ef4444' : '#3b82f6';
     return (
-      <div key={idx} className={styles.gemCell} style={{ width: 120, gap: '0.35rem' }}>
+      <div
+        key={idx}
+        className={styles.gemCell}
+        style={{ width: 120, gap: '0.35rem' }}
+        onMouseEnter={(e) => handleGemEnter(e, gem)}
+        onMouseLeave={handleGemLeave}
+      >
         <div className={styles.gemCellIconWrap} style={{ boxShadow: `0 2px 8px ${gc}30` }}>
           {gem.icon && <img src={gem.icon} alt={gem.type} className={styles.gemCellImg} style={{ borderColor: gc }} />}
           <span className={styles.gemCellLv} style={{ background: gc }}>{gem.level}</span>
@@ -162,85 +238,33 @@ export default function CharacterDashboard({ data }: Props) {
               ) : (
                 <div className={styles.profileImgEmpty}>?</div>
               )}
-              {profile.title?.includes('심연의 군주') && (
-                <img
-                  src="/cldgh/tladus.webp"
-                  alt="심연의 군주"
+              {profile.emblems && profile.emblems.length > 0 && (
+                <div
                   style={{
                     position: 'absolute',
-                    bottom: '2%',
+                    top: '2%',
                     left: '2%',
-                    width: 56,
-                    height: 'auto',
-                    pointerEvents: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4,
                     zIndex: 2,
-                    filter: 'drop-shadow(0 1px 4px rgba(232, 114, 42, 0.6))',
-                  }}
-                />
-              )}
-              {profile.title?.includes('혹한의 군주') && (
-                <img
-                  src="/cldgh/ghrgks.webp"
-                  alt="혹한의 군주"
-                  style={{
-                    position: 'absolute',
-                    bottom: '2%',
-                    left: '2%',
-                    width: 56,
-                    height: 'auto',
                     pointerEvents: 'none',
-                    zIndex: 2,
-                    filter: 'drop-shadow(0 1px 4px rgba(59, 130, 246, 0.6))',
                   }}
-                />
-              )}
-              {profile.title?.includes('홍염의 군주') && (
-                <img
-                  src="/cldgh/ghddua.webp"
-                  alt="홍염의 군주"
-                  style={{
-                    position: 'absolute',
-                    bottom: '2%',
-                    left: '2%',
-                    width: 56,
-                    height: 'auto',
-                    pointerEvents: 'none',
-                    zIndex: 2,
-                    filter: 'drop-shadow(0 1px 4px rgba(239, 68, 68, 0.6))',
-                  }}
-                />
-              )}
-              {profile.title?.includes('돌로리스') && (
-                <img
-                  src="/cldgh/ehffh.webp"
-                  alt="돌로리스"
-                  style={{
-                    position: 'absolute',
-                    bottom: '2%',
-                    left: '2%',
-                    width: 56,
-                    height: 'auto',
-                    pointerEvents: 'none',
-                    zIndex: 2,
-                    filter: 'brightness(1.5) saturate(1.4) drop-shadow(0 0 6px rgba(192, 132, 252, 0.9)) drop-shadow(0 0 12px rgba(168, 85, 247, 0.5))',
-                  }}
-                />
-              )}
-              {profile.title?.includes('에스더의 후계자') && (
-                <img
-                  src="/cldgh/dptmej.webp"
-                  alt="에스더의 후계자"
-                  style={{
-                    position: 'absolute',
-                    bottom: '2%',
-                    left: '2%',
-                    width: 56,
-                    height: 'auto',
-                    pointerEvents: 'none',
-                    zIndex: 2,
-                    filter: 'drop-shadow(0 0 6px rgba(45, 212, 191, 0.8)) drop-shadow(0 0 12px rgba(34, 211, 238, 0.5))',
-                  }}
-                />
+                >
+                  {profile.emblems.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt="휘장"
+                      style={{
+                        width: 40,
+                        height: 40,
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0 1px 4px rgba(0, 0, 0, 0.5))',
+                      }}
+                    />
+                  ))}
+                </div>
               )}
             </div>
             <div className={styles.profileBody}>
@@ -459,6 +483,7 @@ export default function CharacterDashboard({ data }: Props) {
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 gap: 3,
+                                minWidth: 0,
                               }}
                             >
                               <div
@@ -511,7 +536,7 @@ export default function CharacterDashboard({ data }: Props) {
                                   whiteSpace: 'nowrap',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
-                                  maxWidth: '100%',
+                                  width: '100%',
                                   marginTop: 4,
                                 }}
                                 title={core.name.replace(/.*코어\s*:\s*/, '')}
@@ -579,6 +604,98 @@ export default function CharacterDashboard({ data }: Props) {
               </div>
             </section>
           )}
+
+          {/* ══ 원정대 형제 캐릭터 ══ */}
+          {data.siblings && data.siblings.length > 0 && (() => {
+            const sorted = [...data.siblings].sort((a, b) => b.itemLevel - a.itemLevel);
+            const visible = siblingsExpanded ? sorted : sorted.slice(0, 10);
+            const hidden = sorted.length - 10;
+            const byServer = new Map<string, SiblingCharacter[]>();
+            for (const s of visible) {
+              if (!byServer.has(s.serverName)) byServer.set(s.serverName, []);
+              byServer.get(s.serverName)!.push(s);
+            }
+            return (
+              <section className={styles.card}>
+                <div className={styles.cardHead}>
+                  <h3 className={styles.cardTitle}>원정대</h3>
+                  <span className={styles.badge}>{sorted.length}캐릭</span>
+                </div>
+                <div className={styles.cardBody} style={{ padding: '0.6rem 0.7rem 0.75rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+                    {Array.from(byServer.entries()).map(([server, list]) => (
+                      <div key={server}>
+                        <div
+                          style={{
+                            fontSize: '0.62rem',
+                            fontWeight: 800,
+                            color: 'var(--text-muted)',
+                            letterSpacing: '0.1em',
+                            textTransform: 'uppercase',
+                            padding: '0 2px 5px',
+                            borderBottom: '1px solid var(--border-color)',
+                            marginBottom: 5,
+                          }}
+                        >
+                          {server}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {list.map((s) => {
+                            const isCurrent = s.characterName === profile.characterName;
+                            return (
+                              <div
+                                key={s.characterName}
+                                role={isCurrent ? undefined : 'button'}
+                                tabIndex={isCurrent ? undefined : 0}
+                                className={`${styles.siblingRow} ${isCurrent ? styles.siblingRowCurrent : ''}`}
+                                onClick={isCurrent ? undefined : () => onCharacterSelect?.(s.characterName)}
+                                onKeyDown={isCurrent ? undefined : (e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    onCharacterSelect?.(s.characterName);
+                                  }
+                                }}
+                              >
+                                <div className={styles.siblingBody}>
+                                  <span className={`${styles.siblingName} ${isCurrent ? styles.siblingNameCurrent : ''}`}>
+                                    {s.characterName}
+                                  </span>
+                                  <span className={styles.siblingClass}>{s.className}</span>
+                                </div>
+                                <span className={`${styles.siblingItemLv} ${isCurrent ? styles.siblingItemLvCurrent : ''}`}>
+                                  {s.itemLevel.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {hidden > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSiblingsExpanded((x) => !x)}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.7rem',
+                        padding: '0.45rem',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        color: 'var(--text-secondary)',
+                        background: 'var(--input-bg)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {siblingsExpanded ? '접기 ▲' : `더 보기 ${hidden}개 ▼`}
+                    </button>
+                  )}
+                </div>
+              </section>
+            );
+          })()}
         </aside>
 
         <div className={styles.specCol}>
@@ -840,12 +957,12 @@ export default function CharacterDashboard({ data }: Props) {
               <div className={styles.cardHead}><h3 className={styles.cardTitle}>보석</h3><span className={styles.badge}>{gems.length}개</span></div>
               <div className={styles.cardBody}>
                 <div className={styles.gemDiamond}>
-                  <div className={styles.gemDmRow} style={{ gap: '3rem' }}>
+                  <div className={styles.gemDmRow}>
                     <div className={styles.gemPair}>{[0, 1].map(i => renderGemCell(gemSlots[i], i))}</div>
                     <div className={styles.gemPair}>{[2, 3].map(i => renderGemCell(gemSlots[i], i))}</div>
                   </div>
                   <div className={styles.gemDmCenter}>{[4, 5, 6].map(i => renderGemCell(gemSlots[i], i))}</div>
-                  <div className={styles.gemDmRow} style={{ gap: '3rem' }}>
+                  <div className={styles.gemDmRow}>
                     <div className={styles.gemPair}>{[7, 8].map(i => renderGemCell(gemSlots[i], i))}</div>
                     <div className={styles.gemPair}>{[9, 10].map(i => renderGemCell(gemSlots[i], i))}</div>
                   </div>
@@ -856,6 +973,73 @@ export default function CharacterDashboard({ data }: Props) {
 
         </div>
       </div>
+
+      {hoveredGem && typeof document !== 'undefined' && createPortal(
+        (() => {
+          const { gem, x, y } = hoveredGem;
+          const isAtk = gem.type === '멸화' || gem.type === '겁화';
+          const gc = isAtk ? '#ef4444' : '#3b82f6';
+          return (
+            <div
+              style={{
+                position: 'fixed',
+                left: x,
+                top: y - 14,
+                transform: 'translate(-50%, -100%)',
+                zIndex: 9999,
+                pointerEvents: 'none',
+                width: 400,
+                maxWidth: 'calc(100vw - 24px)',
+                background: 'var(--card-bg, #1a1a1f)',
+                border: `1.5px solid ${gc}`,
+                borderRadius: 12,
+                boxShadow: '0 10px 32px rgba(0,0,0,0.5)',
+                padding: '1rem 1.1rem 1.05rem',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {/* 헤더: 보석 + 스킬 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 12, borderBottom: '1px solid var(--border-color)' }}>
+                {gem.icon && (
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <img src={gem.icon} alt={gem.type} style={{ width: 56, height: 56, borderRadius: 8, border: `2px solid ${gc}`, objectFit: 'cover' }} />
+                    <span style={{ position: 'absolute', bottom: -5, right: -5, fontSize: '0.7rem', fontWeight: 800, color: '#fff', background: gc, padding: '1px 6px', borderRadius: 5, lineHeight: '14px' }}>{gem.level}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {gem.skillIcon && <img src={gem.skillIcon} alt="" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />}
+                    <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gem.skillName || '-'}</span>
+                  </div>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: gc }}>{gem.type} {gem.level}레벨</span>
+                </div>
+              </div>
+
+              {/* 트라이포드 */}
+              {gem.tripods && gem.tripods.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
+                  {gem.tripods.map((t, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        {t.icon && <img src={t.icon} alt="" style={{ width: 44, height: 44, borderRadius: 6, objectFit: 'cover', opacity: t.lock ? 0.55 : 1, border: '1px solid var(--border-color)' }} />}
+                        <span style={{ position: 'absolute', top: -5, left: -5, fontSize: '0.62rem', fontWeight: 800, color: '#fff', background: '#6b7280', padding: '1px 5px', borderRadius: 5, lineHeight: '12px' }}>{i + 1}</span>
+                        {t.lock && <span style={{ position: 'absolute', bottom: -4, right: -4, fontSize: '0.6rem', background: '#374151', color: '#fff', padding: '0 4px', borderRadius: 4 }}>🔒</span>}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#fbbf24' }}>{t.name}</span>
+                        <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>{t.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ marginTop: 12, fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>트라이포드 정보 없음</div>
+              )}
+            </div>
+          );
+        })(),
+        document.body,
+      )}
     </div>
   );
 }
