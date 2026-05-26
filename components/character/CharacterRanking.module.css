@@ -1,0 +1,267 @@
+.section {
+  max-width: 980px;
+  margin: 0 auto 2rem;
+  padding: 1rem 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: clamp(1rem, 2.5vw, 1.15rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.classSelect {
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.sortGroup {
+  display: inline-flex;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--card-bg);
+}
+
+.sortButton {
+  padding: 0.4rem 0.85rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sortButton.active {
+  background-color: var(--color-accent);
+  color: white;
+}
+
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: 30px 48px minmax(130px, 180px) 1fr auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0.95rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.card:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.1);
+}
+
+.rank {
+  font-size: 1.2rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.rank.rank1 { color: #f59e0b; }
+.rank.rank2 { color: #94a3b8; }
+.rank.rank3 { color: #d97706; }
+
+.charImage {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: var(--card-body-bg-stone, rgba(0,0,0,0.05));
+  border: 2px solid var(--border-color);
+}
+
+.charImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.charInfo {
+  min-width: 0;
+}
+
+.charName {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.charSub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.subDot {
+  color: var(--text-muted);
+}
+
+/* 코어 6개 가로 (질서 그룹 + 혼돈 그룹) */
+.coresRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.coreGroup {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.coreGroup + .coreGroup {
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--border-color);
+}
+
+.coreBadge {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.coreBadge img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+/* 전투력/아이템레벨 */
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  text-align: right;
+  min-width: 140px;
+}
+
+.statLine {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.statLabel {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.statValue {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.statValueActive {
+  color: var(--color-accent);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  background-color: var(--card-bg);
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 1rem;
+}
+
+@media (max-width: 900px) {
+  .card {
+    grid-template-columns: 30px 48px 1fr;
+    gap: 0.6rem;
+    padding: 0.7rem 0.8rem;
+  }
+  .coresRow {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.55rem;
+    margin-top: 0.2rem;
+    justify-content: center;
+  }
+  .stats {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.5rem;
+    margin-top: 0.2rem;
+    text-align: left;
+    flex-direction: row;
+    justify-content: space-between;
+    min-width: 0;
+  }
+  .statLine {
+    justify-content: flex-start;
+  }
+  .charImage { width: 48px; height: 48px; }
+  .coreBadge { width: 38px; height: 38px; }
+  .coreBadge img { width: 28px; height: 28px; }
+}
+
+@media (max-width: 640px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .controls {
+    justify-content: space-between;
+  }
+}

@@ -1,18 +1,44 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Container } from 'react-bootstrap';
 import { Form, Button } from 'react-bootstrap';
 import { useSearchHistory } from '@/lib/useSearchHistory';
 import { parseCharacterData, type CharacterData } from '@/lib/characterData';
 import CharacterDashboard from '@/components/character/CharacterDashboard';
+import CharacterRanking from '@/components/character/CharacterRanking';
 import styles from './character.module.css';
 
+type FetchMeta = { fromCache: boolean; fetchedAt: string };
+
+function formatFetchedAt(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
+
 export default function CharacterPage() {
+  return (
+    <Suspense fallback={null}>
+      <CharacterPageInner />
+    </Suspense>
+  );
+}
+
+function CharacterPageInner() {
   const [characterName, setCharacterName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [combatData, setCombatData] = useState<CharacterData | null>(null);
+  const [meta, setMeta] = useState<FetchMeta | null>(null);
+  const [rankingReloadKey, setRankingReloadKey] = useState(0);
 
   // 자동완성
   const { history, addToHistory, getSuggestions } = useSearchHistory();
@@ -21,6 +47,29 @@ export default function CharacterPage() {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  const router = useRouter();
+
+  // 페이지 제목 클릭 → 첫 화면(검색 폼 + 랭킹)으로 리셋
+  const resetToHome = () => {
+    setCombatData(null);
+    setMeta(null);
+    setError(null);
+    setCharacterName('');
+    setShowSuggestions(false);
+    router.push('/character');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // URL ?name=XXX 자동 검색 (랭킹 카드 → 상세 이동용)
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const nameParam = searchParams?.get('name');
+    if (nameParam && nameParam.trim()) {
+      performSearch(nameParam.trim());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -77,7 +126,7 @@ export default function CharacterPage() {
     }
   };
 
-  const performSearch = async (name: string) => {
+  const performSearch = async (name: string, forceRefresh = false) => {
     const trimmed = name.trim();
     if (!trimmed) {
       setError('캐릭터명을 입력해주세요.');
@@ -85,16 +134,20 @@ export default function CharacterPage() {
     }
 
     setCharacterName(trimmed);
-    setIsLoading(true);
+    if (forceRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+      setCombatData(null);
+      setMeta(null);
+    }
     setError(null);
-    setCombatData(null);
     setShowSuggestions(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!forceRefresh) window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
-      const response = await fetch(
-        `/api/lostark/character?characterName=${encodeURIComponent(trimmed)}`
-      );
+      const url = `/api/lostark/character?characterName=${encodeURIComponent(trimmed)}${forceRefresh ? '&refresh=1' : ''}`;
+      const response = await fetch(url);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -114,11 +167,17 @@ export default function CharacterPage() {
       }
 
       setCombatData(parsed);
+      setMeta(apiData?._meta ?? null);
       addToHistory(trimmed);
+      // 새 데이터 저장 후 랭킹 갱신
+      if (!apiData?._meta?.fromCache) {
+        setRankingReloadKey(k => k + 1);
+      }
     } catch (err: any) {
       setError(err.message || '예상치 못한 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -130,7 +189,17 @@ export default function CharacterPage() {
   return (
     <Container fluid className={styles.pageContainer}>
       <div className="text-center mb-4">
-        <h1 className={styles.pageTitle}>캐릭터 조회</h1>
+        <h1
+          className={styles.pageTitle}
+          onClick={resetToHome}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resetToHome(); } }}
+          style={{ cursor: 'pointer', display: 'inline-block' }}
+          title="첫 화면으로"
+        >
+          캐릭터 조회
+        </h1>
         <p className={styles.pageSubtitle}>
           캐릭터명을 입력해 아이템레벨·전투력·장비·각인·아크패시브 정보를 한 번에 확인하세요
         </p>
@@ -266,6 +335,14 @@ export default function CharacterPage() {
         )}
       </Form>
 
+      {/* 랭킹 (검색 결과 없을 때만 노출) */}
+      {!combatData && !isLoading && (
+        <CharacterRanking
+          onSelect={(name) => performSearch(name)}
+          reloadKey={rankingReloadKey}
+        />
+      )}
+
       {/* 로딩 */}
       {isLoading && (
         <div className={styles.loadingContainer}>
@@ -276,7 +353,40 @@ export default function CharacterPage() {
 
       {/* 결과 */}
       {combatData && !isLoading && (
-        <CharacterDashboard data={combatData} onCharacterSelect={performSearch} />
+        <>
+          {meta && (
+            <div className="d-flex justify-content-center align-items-center gap-2 mb-3 flex-wrap">
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                마지막 갱신: {formatFetchedAt(meta.fetchedAt)}
+                {meta.fromCache && (
+                  <span className="badge ms-2" style={{ backgroundColor: 'var(--badge-bg, #6b7280)', color: 'white' }}>
+                    캐시
+                  </span>
+                )}
+              </span>
+              <Button
+                size="sm"
+                variant="outline-primary"
+                onClick={() => performSearch(combatData.profile.characterName, true)}
+                disabled={isRefreshing}
+                style={{ borderRadius: '8px', fontWeight: 600 }}
+              >
+                {isRefreshing ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" />
+                    갱신 중...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-arrow-clockwise me-1" />
+                    갱신하기
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+          <CharacterDashboard data={combatData} onCharacterSelect={(name) => performSearch(name)} />
+        </>
       )}
 
       {/* 빈 상태 */}
