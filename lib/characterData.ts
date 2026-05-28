@@ -229,6 +229,8 @@ export type CharacterData = {
   arkGrid: ArkGridInfo | null;
   // 원정대 형제 캐릭터
   siblings: SiblingCharacter[];
+  // 누적 칭호 history (DB에 기록된 매칭 칭호들, 최신 추가 순서대로)
+  titlesHistory: { title: string; firstSeenAt: string }[];
 };
 
 // ============================
@@ -1636,5 +1638,8 @@ export function parseCharacterData(apiResponse: any): CharacterData | null {
     combatStats: parseCombatStats(apiResponse.profile),
     arkGrid: parseArkGrid(apiResponse.arkgrid),
     siblings: parseSiblings(apiResponse.siblings),
+    titlesHistory: Array.isArray(apiResponse?._meta?.titlesHistory)
+      ? apiResponse._meta.titlesHistory
+      : [],
   };
 }

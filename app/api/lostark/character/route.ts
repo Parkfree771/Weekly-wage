@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getCharacterFromDb, upsertCharacter } from '@/lib/character-cache';
+import { getCharacterFromDb, upsertCharacter, getTitlesHistory } from '@/lib/character-cache';
 
 async function fetchFromLostark(characterName: string): Promise<any> {
   const apiKey = process.env.LOSTARK_API_KEY;
@@ -91,7 +91,11 @@ export async function GET(request: Request) {
       if (cached && cached.data) {
         return NextResponse.json({
           ...cached.data,
-          _meta: { fromCache: true, fetchedAt: cached.fetchedAt },
+          _meta: {
+            fromCache: true,
+            fetchedAt: cached.fetchedAt,
+            titlesHistory: cached.titlesHistory,
+          },
         });
       }
     }
@@ -102,8 +106,10 @@ export async function GET(request: Request) {
     // 3) DB upsert (인덱스 컬럼 + raw)
     // 캐릭터명은 API가 돌려준 정식 표기 사용
     const canonicalName = apiData.profile?.CharacterName || characterName;
+    let titlesHistory: any[] = [];
     try {
       await upsertCharacter(canonicalName, apiData);
+      titlesHistory = await getTitlesHistory(canonicalName);
     } catch (dbErr) {
       // eslint-disable-next-line no-console
       console.error('[character-api] DB upsert 실패:', dbErr);
@@ -112,7 +118,11 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       ...apiData,
-      _meta: { fromCache: false, fetchedAt: new Date().toISOString() },
+      _meta: {
+        fromCache: false,
+        fetchedAt: new Date().toISOString(),
+        titlesHistory,
+      },
     });
   } catch (error: any) {
     if (error instanceof Response) {

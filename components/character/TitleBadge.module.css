@@ -1,0 +1,143 @@
+/* 칭호: 아이콘 + 텍스트 한 줄 (랭킹·대시보드 공통) */
+.titleWrap {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  max-width: 100%;
+}
+
+.titleIcon {
+  height: 1.8em;
+  width: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  margin-right: -0.1em;
+}
+
+.titleBadge {
+  display: inline-block;
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  line-height: 1.2;
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.5);
+  paint-order: stroke fill;
+}
+
+.titleBadgeDefault {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  -webkit-text-stroke: 0;
+}
+
+/* 일반 매칭 칭호 — 단색 매트 */
+.titleColorDolores  { color: #ea580c !important; }
+.titleColorAbyss    { color: #ea580c !important; }
+.titleColorFrost    { color: #2563eb !important; }
+.titleColorEclipse  { color: #d97706 !important; }
+.titleColorFlame    { color: #f59e0b !important; }
+
+/* ─────────────────────────────────────────────────────────
+   0.01% 희귀 칭호 (카제로스 · 카멘 · 에스더) — 메탈 샤인 한방향 흐름
+   ───────────────────────────────────────────────────────── */
+.titleColorKazeroth,
+.titleColorKamen,
+.titleColorEsther {
+  position: relative;
+  color: transparent !important;
+  -webkit-text-stroke: 0 !important;
+}
+
+.titleColorKazeroth::before,
+.titleColorKamen::before,
+.titleColorEsther::before,
+.titleColorKazeroth::after,
+.titleColorKamen::after,
+.titleColorEsther::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  white-space: nowrap;
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+.titleColorKazeroth::before {
+  color: #4c1d95;
+  text-shadow:
+    1px 1px 0 #2e1065,
+    2px 2px 0 rgba(46, 16, 101, 0.45);
+  z-index: 0;
+}
+.titleColorKamen::before {
+  color: #7f1d1d;
+  text-shadow:
+    1px 1px 0 #450a0a,
+    2px 2px 0 rgba(69, 10, 10, 0.45);
+  z-index: 0;
+}
+.titleColorEsther::before {
+  color: #115e59;
+  text-shadow:
+    1px 1px 0 #0f3a36,
+    2px 2px 0 rgba(15, 58, 54, 0.45);
+  z-index: 0;
+}
+
+.titleColorKazeroth::after,
+.titleColorKamen::after,
+.titleColorEsther::after {
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: titleShine 12s linear infinite;
+  z-index: 1;
+  will-change: background-position;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.titleColorKazeroth::after {
+  background-image: linear-gradient(
+    110deg,
+    #6b21a8 0%, #9333ea 25%, #d8b4fe 50%, #9333ea 75%, #6b21a8 100%
+  );
+}
+
+.titleColorKamen::after {
+  background-image: linear-gradient(
+    110deg,
+    #991b1b 0%, #dc2626 25%, #fca5a5 50%, #dc2626 75%, #991b1b 100%
+  );
+}
+
+.titleColorEsther::after {
+  background-image: linear-gradient(
+    110deg,
+    #0f766e 0%, #14b8a6 25%, #99f6e4 50%, #14b8a6 75%, #0f766e 100%
+  );
+}
+
+@keyframes titleShine {
+  0%   { background-position: 0% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titleColorKazeroth::after,
+  .titleColorKamen::after,
+  .titleColorEsther::after {
+    animation: none;
+  }
+}

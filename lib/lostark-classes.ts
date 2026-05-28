@@ -4,7 +4,7 @@
 export const LOSTARK_CLASS_GROUPS: { group: string; classes: string[] }[] = [
   {
     group: '전사',
-    classes: ['버서커', '디스트로이어', '워로드', '홀리나이트', '슬레이어'],
+    classes: ['버서커', '디스트로이어', '워로드', '홀리나이트', '슬레이어', '가디언나이트'],
   },
   {
     group: '무도가',

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import type { CharacterData, EngravingInfo, GemInfo, SiblingCharacter } from '@/lib/characterData';
 import { getGradeColor } from '@/lib/characterData';
 import styles from '@/app/character/character.module.css';
+import TitleBadge from './TitleBadge';
 
 type Props = {
   data: CharacterData;
@@ -19,19 +20,19 @@ function getQualityColor(q: number): string {
   return '#9e9e9e';
 }
 
-// 아크그리드 코어 등급별 배경 그라데이션 (이미지 참고: 고대=베이지, 유물=어두운→오렌지)
+// 아크그리드 코어 등급별 배경 (로아 등급 색 기준, 같은 색조 안에서 dark→light)
 function getCoreGradeGradient(grade: string): string {
   switch (grade) {
     case '고대':
-      return 'linear-gradient(180deg, #f4e6c1 0%, #c19a5c 100%)';
+      return 'linear-gradient(180deg, #f5e8c8 0%, #c19a5c 100%)'; // 베이지
     case '유물':
-      return 'linear-gradient(180deg, #1a0c03 0%, #d97706 100%)';
+      return 'linear-gradient(180deg, #7c2d12 0%, #d97706 100%)'; // 어두운 주황
     case '전설':
-      return 'linear-gradient(180deg, #2a2102 0%, #facc15 100%)';
+      return 'linear-gradient(180deg, #713f12 0%, #ca8a04 100%)'; // 어두운 노랑
     case '영웅':
-      return 'linear-gradient(180deg, #2a0f3a 0%, #a855f7 100%)';
+      return 'linear-gradient(180deg, #4c1d95 0%, #a855f7 100%)'; // 보라
     case '희귀':
-      return 'linear-gradient(180deg, #0f1f3a 0%, #3b82f6 100%)';
+      return 'linear-gradient(180deg, #1e3a8a 0%, #3b82f6 100%)'; // 파랑
     default:
       return 'var(--card-body-bg-stone)';
   }
@@ -269,16 +270,8 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
             </div>
             <div className={styles.profileBody}>
               {profile.title && (
-                <div
-                  style={{
-                    fontSize: '0.72rem',
-                    color: 'var(--color-accent)',
-                    fontWeight: 700,
-                    marginBottom: 2,
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  {profile.title}
+                <div style={{ marginBottom: 4 }}>
+                  <TitleBadge title={profile.title} />
                 </div>
               )}
               <h2 className={styles.profileName} style={{ marginBottom: 4 }}>
@@ -448,14 +441,46 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
             </div>
           </div>
 
+          {/* ══ 누적 칭호 (사이드바 폭) ══ */}
+          {data.titlesHistory && data.titlesHistory.length > 0 && (
+            <section className={styles.card}>
+              <div className={styles.cardHead}>
+                <h3 className={styles.cardTitle}>획득 칭호</h3>
+                <span className={styles.badge}>{data.titlesHistory.length}</span>
+              </div>
+              <div
+                className={styles.cardBody}
+                style={{
+                  padding: '0.85rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.6rem',
+                }}
+              >
+                {data.titlesHistory.map((t, i) => (
+                  <div
+                    key={`${t.title}-${i}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      minHeight: '2.1em',
+                    }}
+                  >
+                    <TitleBadge title={t.title} fontSize="0.95rem" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* ══ 아크 그리드 (사이드바 폭) ══ */}
           {data.arkGrid && data.arkGrid.cores.length > 0 && (
-            <section className={styles.card}>
+            <section className={styles.card} style={{ overflow: 'visible' }}>
               <div className={styles.cardHead}>
                 <h3 className={styles.cardTitle}>아크 그리드</h3>
                 <span className={styles.badge}>{data.arkGrid.cores.length}코어</span>
               </div>
-              <div className={styles.cardBody} style={{ padding: '0.85rem' }}>
+              <div className={styles.cardBody} style={{ padding: '0.85rem', overflow: 'visible' }}>
                 {/* 질서 1줄 / 혼돈 1줄 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   {(['질서', '혼돈'] as const).map(factionKey => {
@@ -464,6 +489,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                     return (
                       <div
                         key={factionKey}
+                        className={styles.coreFactionRow}
                         style={{
                           display: 'grid',
                           gridTemplateColumns: `repeat(${factionCores.length}, 1fr)`,
@@ -475,9 +501,11 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                           const faction = getFactionColor(core.name);
                           const bgGradient = getCoreGradeGradient(core.grade);
                           const isLightBg = core.grade === '고대';
+                          const cleanCoreName = core.name.replace(/.*코어\s*:\s*/, '');
                           return (
                             <div
                               key={i}
+                              className={styles.coreWrapper}
                               style={{
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -539,9 +567,9 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                                   width: '100%',
                                   marginTop: 4,
                                 }}
-                                title={core.name.replace(/.*코어\s*:\s*/, '')}
+                                title={cleanCoreName}
                               >
-                                {core.name.replace(/.*코어\s*:\s*/, '')}
+                                {cleanCoreName}
                               </div>
                               {core.grade && (
                                 <div
@@ -561,6 +589,52 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                                 </div>
                               )}
                               <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#10b981' }}>{core.point}P</div>
+
+                              {/* Hover 툴팁 — 풀네임 + 등급/포인트 + 장착 젬 리스트 */}
+                              <div className={styles.coreTooltip}>
+                                <div className={styles.coreTooltipHead}>
+                                  <img
+                                    src={core.icon}
+                                    alt={core.name}
+                                    className={styles.coreTooltipIcon}
+                                    style={{ background: bgGradient }}
+                                  />
+                                  <div style={{ minWidth: 0 }}>
+                                    <div className={styles.coreTooltipName}>{cleanCoreName}</div>
+                                    <div className={styles.coreTooltipSub}>
+                                      {core.grade && <span>{core.grade} · </span>}
+                                      <span style={{ color: '#10b981', fontWeight: 800 }}>{core.point}P</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {core.gems && core.gems.length > 0 ? (
+                                  <div className={styles.coreTooltipGemList}>
+                                    {core.gems.map((gem, gi) => (
+                                      <div key={gi} className={styles.coreTooltipGemRow}>
+                                        <img
+                                          src={gem.icon}
+                                          alt={gem.name}
+                                          className={styles.coreTooltipGemIcon}
+                                        />
+                                        <div className={styles.coreTooltipGemBody}>
+                                          <div className={styles.coreTooltipGemName}>
+                                            {gem.grade && <span style={{ color: getGradeColor(gem.grade), marginRight: 4 }}>{gem.grade}</span>}
+                                            {gem.name}
+                                          </div>
+                                          {gem.effects && gem.effects.length > 0 && (
+                                            <div className={styles.coreTooltipGemEffect}>
+                                              {gem.effects.join(' · ')}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className={styles.coreTooltipEmpty}>장착된 젬 없음</div>
+                                )}
+                              </div>
                             </div>
                           );
                         })}

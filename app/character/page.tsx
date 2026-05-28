@@ -31,6 +31,8 @@ export default function CharacterPage() {
   );
 }
 
+const REFRESH_COOLDOWN_MS = 30_000;
+
 function CharacterPageInner() {
   const [characterName, setCharacterName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +41,8 @@ function CharacterPageInner() {
   const [combatData, setCombatData] = useState<CharacterData | null>(null);
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const [rankingReloadKey, setRankingReloadKey] = useState(0);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [nowTs, setNowTs] = useState(() => Date.now());
 
   // 자동완성
   const { history, addToHistory, getSuggestions } = useSearchHistory();
@@ -70,6 +74,14 @@ function CharacterPageInner() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // 쿨다운 초 카운트 (활성 시에만 tick)
+  useEffect(() => {
+    if (cooldownUntil <= 0) return;
+    if (Date.now() >= cooldownUntil) return;
+    const id = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [cooldownUntil]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -133,9 +145,15 @@ function CharacterPageInner() {
       return;
     }
 
+    if (forceRefresh && Date.now() < cooldownUntil) {
+      return;
+    }
+
     setCharacterName(trimmed);
     if (forceRefresh) {
       setIsRefreshing(true);
+      setCooldownUntil(Date.now() + REFRESH_COOLDOWN_MS);
+      setNowTs(Date.now());
     } else {
       setIsLoading(true);
       setCombatData(null);
@@ -183,7 +201,13 @@ function CharacterPageInner() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    performSearch(characterName);
+    const trimmed = characterName.trim();
+    if (!trimmed) {
+      setError('캐릭터명을 입력해주세요.');
+      return;
+    }
+    // URL 푸시 → history 쌓임 → useEffect가 ?name 보고 자동 검색
+    router.push(`/character?name=${encodeURIComponent(trimmed)}`);
   };
 
   return (
@@ -210,7 +234,7 @@ function CharacterPageInner() {
         <div className="d-flex justify-content-center">
           <div className="mb-3" style={{ maxWidth: '700px', width: '100%' }}>
             <div className="d-flex gap-2">
-              <div style={{ position: 'relative', flex: 1 }}>
+              <div style={{ position: 'relative', flex: '1 1 0', minWidth: 0 }}>
                 <Form.Control
                   ref={inputRef}
                   placeholder="캐릭터명을 입력하세요"
@@ -300,8 +324,9 @@ function CharacterPageInner() {
                 disabled={isLoading || !characterName.trim()}
                 className="character-search-button"
                 style={{
-                  backgroundColor: 'var(--color-accent)',
-                  padding: 'clamp(0.7rem, 2vw, 0.85rem) clamp(1.5rem, 3vw, 2rem)',
+                  backgroundColor: 'var(--color-primary)',
+                  borderColor: 'var(--color-primary)',
+                  padding: 'clamp(0.7rem, 2vw, 0.85rem) clamp(0.9rem, 3vw, 2rem)',
                   borderRadius: '12px',
                   fontSize: 'clamp(0.9rem, 2vw, 1rem)',
                   fontWeight: '700',
@@ -311,6 +336,7 @@ function CharacterPageInner() {
                   whiteSpace: 'nowrap',
                   color: 'white',
                   opacity: 1,
+                  flexShrink: 0,
                 }}
               >
                 {isLoading ? (
@@ -338,7 +364,7 @@ function CharacterPageInner() {
       {/* 랭킹 (검색 결과 없을 때만 노출) */}
       {!combatData && !isLoading && (
         <CharacterRanking
-          onSelect={(name) => performSearch(name)}
+          onSelect={(name) => router.push(`/character?name=${encodeURIComponent(name)}`)}
           reloadKey={rankingReloadKey}
         />
       )}
@@ -355,50 +381,86 @@ function CharacterPageInner() {
       {combatData && !isLoading && (
         <>
           {meta && (
-            <div className="d-flex justify-content-center align-items-center gap-2 mb-3 flex-wrap">
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                마지막 갱신: {formatFetchedAt(meta.fetchedAt)}
-                {meta.fromCache && (
-                  <span className="badge ms-2" style={{ backgroundColor: 'var(--badge-bg, #6b7280)', color: 'white' }}>
-                    캐시
-                  </span>
-                )}
-              </span>
-              <Button
-                size="sm"
-                variant="outline-primary"
-                onClick={() => performSearch(combatData.profile.characterName, true)}
-                disabled={isRefreshing}
-                style={{ borderRadius: '8px', fontWeight: 600 }}
+            <div className="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+              <button
+                type="button"
+                onClick={resetToHome}
+                aria-label="뒤로가기"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  padding: '0.4rem 0.9rem',
+                  fontSize: '0.9rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--color-primary)';
+                  e.currentTarget.style.borderColor = 'var(--color-primary)';
+                  e.currentTarget.style.color = '#fff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }}
               >
-                {isRefreshing ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" />
-                    갱신 중...
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-arrow-clockwise me-1" />
-                    갱신하기
-                  </>
-                )}
-              </Button>
+                <span style={{ fontSize: '1.1rem', lineHeight: 1, fontWeight: 700 }}>←</span>
+                <span>뒤로가기</span>
+              </button>
+
+              <div className="d-flex align-items-center gap-2 flex-wrap">
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  마지막 갱신: {formatFetchedAt(meta.fetchedAt)}
+                  {meta.fromCache && (
+                    <span className="badge ms-2" style={{ backgroundColor: 'var(--badge-bg, #6b7280)', color: 'white' }}>
+                      캐시
+                    </span>
+                  )}
+                </span>
+                {(() => {
+                  const remainingMs = Math.max(0, cooldownUntil - nowTs);
+                  const isCoolingDown = !isRefreshing && remainingMs > 0;
+                  const secondsLeft = Math.ceil(remainingMs / 1000);
+                  return (
+                    <Button
+                      size="sm"
+                      variant="outline-primary"
+                      onClick={() => performSearch(combatData.profile.characterName, true)}
+                      disabled={isRefreshing || isCoolingDown}
+                      title={isCoolingDown ? `${secondsLeft}초 후 다시 갱신할 수 있습니다` : undefined}
+                      style={{ borderRadius: '8px', fontWeight: 600 }}
+                    >
+                    {isRefreshing ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" />
+                        갱신 중...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-arrow-clockwise me-1" />
+                        갱신하기
+                      </>
+                    )}
+                    </Button>
+                  );
+                })()}
+              </div>
             </div>
           )}
-          <CharacterDashboard data={combatData} onCharacterSelect={(name) => performSearch(name)} />
+          <CharacterDashboard
+            data={combatData}
+            onCharacterSelect={(name) => performSearch(name)}
+          />
         </>
       )}
 
-      {/* 빈 상태 */}
-      {!combatData && !isLoading && !error && (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyStateIcon}>&#9876;</div>
-          <div className={styles.emptyStateText}>캐릭터명을 검색해 정보를 조회해보세요</div>
-          <div className={styles.emptyStateSubtext}>
-            아이템레벨·전투력·장비·각인·아크패시브를 한 번에 확인할 수 있습니다
-          </div>
-        </div>
-      )}
     </Container>
   );
 }

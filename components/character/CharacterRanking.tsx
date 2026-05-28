@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { LOSTARK_CLASS_GROUPS } from '@/lib/lostark-classes';
 import styles from './CharacterRanking.module.css';
+import TitleBadge from './TitleBadge';
 
 type Core = {
   name: string;
@@ -19,6 +20,7 @@ type RankingEntry = {
   characterImage: string | null;
   serverName: string | null;
   cores: Core[];
+  equippedTitle: string | null;
   fetchedAt: string;
 };
 
@@ -31,19 +33,19 @@ function formatNumber(n: number, fractionDigits = 2): string {
   });
 }
 
-// CharacterDashboard와 동일한 등급 배경
+// CharacterDashboard와 동일한 등급 배경 (로아 등급 색, 같은 색조 dark→light)
 function getCoreGradeGradient(grade: string | null): string {
   switch (grade) {
     case '고대':
-      return 'linear-gradient(180deg, #f4e6c1 0%, #c19a5c 100%)';
+      return 'linear-gradient(180deg, #f5e8c8 0%, #c19a5c 100%)'; // 베이지
     case '유물':
-      return 'linear-gradient(180deg, #1a0c03 0%, #d97706 100%)';
+      return 'linear-gradient(180deg, #7c2d12 0%, #d97706 100%)'; // 어두운 주황
     case '전설':
-      return 'linear-gradient(180deg, #2a2102 0%, #facc15 100%)';
+      return 'linear-gradient(180deg, #713f12 0%, #ca8a04 100%)'; // 어두운 노랑
     case '영웅':
-      return 'linear-gradient(180deg, #2a0f3a 0%, #a855f7 100%)';
+      return 'linear-gradient(180deg, #4c1d95 0%, #a855f7 100%)'; // 보라
     case '희귀':
-      return 'linear-gradient(180deg, #0f1f3a 0%, #3b82f6 100%)';
+      return 'linear-gradient(180deg, #1e3a8a 0%, #3b82f6 100%)'; // 파랑
     default:
       return 'var(--card-body-bg-stone, rgba(0,0,0,0.05))';
   }
@@ -55,27 +57,49 @@ function getFactionColor(coreName: string): string {
   return 'var(--border-color)';
 }
 
+
 interface Props {
   onSelect: (name: string) => void;
   reloadKey?: number;
 }
 
+const PAGE_STEP = 10;
+
+// 칭호 필터 옵션 (label = UI 표시, value = SQL ILIKE 매칭용)
+const TITLE_FILTER_OPTIONS: { label: string; value: string }[] = [
+  { label: '혹한의 군주',     value: '혹한의 군주' },
+  { label: '홍염의 군주',     value: '홍염의 군주' },
+  { label: '심연의 군주',     value: '심연의 군주' },
+  { label: '돌로리스',       value: '돌로리스' },
+  { label: '이클립스',       value: '이클립스' },
+  { label: '에스더의 결속자', value: '에스더의 결속자' },
+  { label: '에스더의 후계자', value: '에스더의 후계자' },
+  { label: '카멘 시리즈',    value: '카멘' },
+  { label: '카제로스 시리즈', value: '카제로스' },
+];
+
 export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
   const [entries, setEntries] = useState<RankingEntry[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('');
+  const [selectedTitle, setSelectedTitle] = useState<string>('');
   const [sortBy, setSortBy] = useState<SortBy>('combat_power');
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
     setError(null);
+    setEntries([]);
+    setHasMore(false);
 
     const params = new URLSearchParams();
-    params.set('limit', '10');
+    params.set('limit', String(PAGE_STEP));
     params.set('sort', sortBy);
     if (selectedClass) params.set('class', selectedClass);
+    if (selectedTitle) params.set('title', selectedTitle);
 
     fetch(`/api/character/ranking?${params.toString()}`)
       .then(async (r) => {
@@ -84,7 +108,9 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
       })
       .then((data) => {
         if (cancelled) return;
-        setEntries(data.entries || []);
+        const list: RankingEntry[] = data.entries || [];
+        setEntries(list);
+        setHasMore(list.length >= PAGE_STEP);
       })
       .catch((e) => {
         if (cancelled) return;
@@ -95,12 +121,36 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
       });
 
     return () => { cancelled = true; };
-  }, [selectedClass, sortBy, reloadKey]);
+  }, [selectedClass, selectedTitle, sortBy, reloadKey]);
+
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    try {
+      const params = new URLSearchParams();
+      params.set('limit', String(PAGE_STEP));
+      params.set('offset', String(entries.length));
+      params.set('sort', sortBy);
+      if (selectedClass) params.set('class', selectedClass);
+      if (selectedTitle) params.set('title', selectedTitle);
+
+      const r = await fetch(`/api/character/ranking?${params.toString()}`);
+      if (!r.ok) throw new Error('랭킹을 불러올 수 없습니다.');
+      const data = await r.json();
+      const list: RankingEntry[] = data.entries || [];
+      setEntries(prev => [...prev, ...list]);
+      setHasMore(list.length >= PAGE_STEP);
+    } catch (e: any) {
+      setError(e.message || '오류');
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   return (
     <section className={styles.section}>
       <div className={styles.header}>
-        <h2 className={styles.title}>캐릭터 랭킹 TOP10</h2>
+        <h2 className={styles.title}>캐릭터 랭킹</h2>
         <div className={styles.controls}>
           <select
             className={styles.classSelect}
@@ -115,6 +165,18 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
                   <option key={c} value={c}>{c}</option>
                 ))}
               </optgroup>
+            ))}
+          </select>
+
+          <select
+            className={styles.classSelect}
+            value={selectedTitle}
+            onChange={(e) => setSelectedTitle(e.target.value)}
+            aria-label="칭호 필터"
+          >
+            <option value="">전체 칭호</option>
+            {TITLE_FILTER_OPTIONS.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
 
@@ -156,6 +218,7 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
       )}
 
       {!isLoading && !error && entries.length > 0 && (
+        <>
         <div className={styles.cardList}>
           {entries.map((e, idx) => {
             const rank = idx + 1;
@@ -178,10 +241,27 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
                 </div>
                 <div className={styles.charInfo}>
                   <div className={styles.charName}>{e.characterName}</div>
-                  <div className={styles.charSub}>
-                    {e.className}
-                    {e.serverName && <span className={styles.subDot}> · {e.serverName}</span>}
+                  {e.equippedTitle && <TitleBadge title={e.equippedTitle} />}
+                </div>
+
+                <div className={styles.stats}>
+                  <div className={styles.statLine}>
+                    <span className={styles.statLabel}>전투력:</span>
+                    <span className={`${styles.statValue} ${styles.statValueCombat} ${sortBy === 'combat_power' ? styles.statValueActive : ''}`}>
+                      {formatNumber(e.combatPower, 2)}
+                    </span>
                   </div>
+                  <div className={styles.statLine}>
+                    <span className={styles.statLabel}>아이템레벨:</span>
+                    <span className={`${styles.statValue} ${styles.statValueItem} ${sortBy === 'item_level' ? styles.statValueActive : ''}`}>
+                      {formatNumber(e.itemLevel, 2)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={styles.meta}>
+                  <div className={styles.metaLine}>{e.serverName || '-'}</div>
+                  <div className={styles.metaLine}>{e.className}</div>
                 </div>
 
                 <div className={styles.coresRow}>
@@ -200,25 +280,30 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
                     </div>
                   )}
                 </div>
-
-                <div className={styles.stats}>
-                  <div className={styles.statLine}>
-                    <span className={styles.statLabel}>전투력:</span>
-                    <span className={`${styles.statValue} ${sortBy === 'combat_power' ? styles.statValueActive : ''}`}>
-                      {formatNumber(e.combatPower, 2)}
-                    </span>
-                  </div>
-                  <div className={styles.statLine}>
-                    <span className={styles.statLabel}>아이템레벨:</span>
-                    <span className={`${styles.statValue} ${sortBy === 'item_level' ? styles.statValueActive : ''}`}>
-                      {formatNumber(e.itemLevel, 2)}
-                    </span>
-                  </div>
-                </div>
               </button>
             );
           })}
         </div>
+        {hasMore && (
+          <div className={styles.loadMoreContainer}>
+            <button
+              type="button"
+              className={styles.loadMoreButton}
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+            >
+              {isLoadingMore ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                  불러오는 중...
+                </>
+              ) : (
+                '더보기'
+              )}
+            </button>
+          </div>
+        )}
+        </>
       )}
     </section>
   );
