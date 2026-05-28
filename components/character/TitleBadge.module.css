@@ -17,6 +17,13 @@
   margin-right: -0.1em;
 }
 
+/* 심연의 군주 / 카제로스 / 돌로리스: 아이콘만 살짝 축소 */
+.titleIcon[src*="abyss"],
+.titleIcon[src*="kazeroth"],
+.titleIcon[src*="dolores"] {
+  height: 1.45em;
+}
+
 .titleBadge {
   display: inline-block;
   font-size: 0.88rem;

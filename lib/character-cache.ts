@@ -1,4 +1,5 @@
 import { sql } from './neon';
+import type { CharacterData } from './characterData';
 
 export type CoreData = {
   name: string;
@@ -38,39 +39,31 @@ export function isAccumulatedTitle(cleanTitle: string): boolean {
   return ACCUMULATED_TITLES_CONTAINS.some(k => cleanTitle.includes(k));
 }
 
-// 인덱스 컬럼 추출용 헬퍼
-function extractIndexFields(apiData: any) {
-  const profile = apiData?.profile;
-  const combatPower = parseFloat((profile?.CombatPower || '0').toString().replace(/,/g, ''));
-  const itemLevel = parseFloat((profile?.ItemAvgLevel || '0').toString().replace(/,/g, ''));
-
-  // 코어 6개 (질서 3 + 혼돈 3)
-  const slots = Array.isArray(apiData?.arkgrid?.Slots) ? apiData.arkgrid.Slots : [];
-  const cores: CoreData[] = slots.map((s: any) => ({
-    name: s?.Name || '',
-    icon: s?.Icon || null,
-    grade: s?.Grade || null,
-    point: typeof s?.Point === 'number' ? s.Point : 0,
+// 인덱스 컬럼 추출 (파싱 결과 CharacterData 기반)
+function extractIndexFields(parsed: CharacterData) {
+  const p = parsed.profile;
+  const cores: CoreData[] = (parsed.arkGrid?.cores || []).map(c => ({
+    name: c.name || '',
+    icon: c.icon || null,
+    grade: c.grade || null,
+    point: typeof c.point === 'number' ? c.point : 0,
   }));
 
   // 호환용 단일 코어 컬럼은 그대로 유지 (기존 컬럼)
   const mainCoreIcon: string | null = cores[0]?.icon || null;
   const mainCoreGrade: string | null = cores[0]?.grade || null;
 
-  // 칭호 정규화 (현재 장착)
-  const equippedTitle = normalizeTitle(profile?.Title) || null;
-
   return {
-    className: profile?.CharacterClassName || '',
-    combatPower: isFinite(combatPower) ? combatPower : 0,
-    itemLevel: isFinite(itemLevel) ? itemLevel : 0,
-    characterImage: profile?.CharacterImage || null,
-    serverName: profile?.ServerName || null,
-    guildName: profile?.GuildName || null,
+    className: p.className || '',
+    combatPower: isFinite(p.combatPower) ? p.combatPower : 0,
+    itemLevel: isFinite(p.itemLevel) ? p.itemLevel : 0,
+    characterImage: p.characterImage || null,
+    serverName: p.serverName || null,
+    guildName: p.guildName || null,
     mainCoreIcon,
     mainCoreGrade,
     cores,
-    equippedTitle,
+    equippedTitle: p.title || null,
   };
 }
 
@@ -105,8 +98,13 @@ export async function getTitlesHistory(characterName: string): Promise<TitleHist
   return Array.isArray(rows[0].titles_history) ? rows[0].titles_history : [];
 }
 
-export async function upsertCharacter(characterName: string, apiData: any): Promise<void> {
-  const f = extractIndexFields(apiData);
+/**
+ * 파싱된 CharacterData를 그대로 data 컬럼에 저장.
+ * 기존: 로아 API 원본 raw → 클라가 매번 parseCharacterData
+ * 변경: 서버에서 한 번 parse → 결과만 저장 (스토리지 70~80% 절약)
+ */
+export async function upsertCharacter(characterName: string, parsed: CharacterData): Promise<void> {
+  const f = extractIndexFields(parsed);
 
   // 기존 history 읽어서 매칭 칭호일 때만 누적 (중복 제거)
   let nextHistory: TitleHistoryEntry[] = [];
@@ -122,6 +120,9 @@ export async function upsertCharacter(characterName: string, apiData: any): Prom
     }
   }
 
+  // titlesHistory 필드는 다른 컬럼으로 별도 관리되므로 data에서 제외
+  const { titlesHistory: _t, ...dataToStore } = parsed;
+
   await sql`
     INSERT INTO characters (
       character_name, class_name, combat_power, item_level,
@@ -135,7 +136,7 @@ export async function upsertCharacter(characterName: string, apiData: any): Prom
       ${f.characterImage}, ${f.serverName}, ${f.guildName},
       ${f.mainCoreIcon}, ${f.mainCoreGrade}, ${JSON.stringify(f.cores)}::jsonb,
       ${f.equippedTitle}, ${JSON.stringify(nextHistory)}::jsonb,
-      ${JSON.stringify(apiData)}::jsonb, NOW(), NOW()
+      ${JSON.stringify(dataToStore)}::jsonb, NOW(), NOW()
     )
     ON CONFLICT (character_name) DO UPDATE SET
       class_name      = EXCLUDED.class_name,
@@ -153,6 +154,13 @@ export async function upsertCharacter(characterName: string, apiData: any): Prom
       fetched_at      = NOW(),
       updated_at      = NOW()
   `;
+}
+
+/** 저장된 data가 파싱 결과 형식인지 검사 (구 raw 캐시 자동 무효화용) */
+export function isParsedCacheShape(data: any): boolean {
+  // 파싱 결과: profile.characterName (camelCase) 존재
+  // 구 raw:   profile.CharacterName (PascalCase)
+  return !!(data && data.profile && typeof data.profile.characterName === 'string');
 }
 
 export type RankingSortBy = 'combat_power' | 'item_level';

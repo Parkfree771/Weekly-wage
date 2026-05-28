@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { CharacterData, EngravingInfo, GemInfo, SiblingCharacter } from '@/lib/characterData';
 import { getGradeColor } from '@/lib/characterData';
@@ -94,6 +94,15 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
 
   // 원정대 펼치기
   const [siblingsExpanded, setSiblingsExpanded] = useState(false);
+
+  // 모바일 여부 (원정대 기본 접힘 등에 사용)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   const handleGemEnter = (e: React.MouseEvent<HTMLDivElement>, gem: GemInfo) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -269,6 +278,8 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
               )}
             </div>
             <div className={styles.profileBody}>
+              <div className={styles.profileTopRow}>
+                <div className={styles.profileTopInfo}>
               {profile.title && (
                 <div style={{ marginBottom: 4 }}>
                   <TitleBadge title={profile.title} />
@@ -277,77 +288,54 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
               <h2 className={styles.profileName} style={{ marginBottom: 4 }}>
                 {profile.characterName}
               </h2>
-              {/* 부속 정보 inline: 직업 · 서버 · 길드 */}
-              <div
-                style={{
-                  fontSize: '0.78rem',
-                  color: 'var(--text-muted)',
-                  fontWeight: 600,
-                  marginBottom: '0.9rem',
-                  lineHeight: 1.4,
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '0.35rem',
-                  alignItems: 'center',
-                }}
-              >
-                <span style={{ color: 'var(--text-secondary)' }}>{profile.className}</span>
+              {/* 부속 정보: 데스크탑은 직업·서버·길드 inline, 모바일은 각 줄 */}
+              <div className={styles.profileMetaInline}>
+                <span className={styles.profileMetaClass}>{profile.className}</span>
                 {profile.serverName && (
                   <>
-                    <span style={{ opacity: 0.4 }}>·</span>
+                    <span className={styles.profileMetaDot}>·</span>
                     <span>{profile.serverName}</span>
                   </>
                 )}
                 {profile.guildName && (
                   <>
-                    <span style={{ opacity: 0.4 }}>·</span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
-                      {profile.guildName}
-                    </span>
+                    <span className={styles.profileMetaDot}>·</span>
+                    <span className={styles.profileMetaGuild}>{profile.guildName}</span>
                   </>
                 )}
               </div>
-
-              {/* 메인 스탯: 아이템 레벨 + 전투력 (메인 페이지 입체 그림자 스타일) */}
+              {/* 원정대 레벨 (직업 라인 바로 아래) */}
               <div
+                className={styles.profileExpeditionLine}
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '0.6rem',
-                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: '0.35rem',
+                  fontSize: '0.78rem',
+                  marginBottom: '0.9rem',
+                  lineHeight: 1.3,
                 }}
               >
+                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>원정대</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Lv. {profile.expeditionLevel || '-'}</span>
+              </div>
+                </div>
+
+              {/* 메인 스탯: 아이템 레벨 + 전투력 (메인 페이지 입체 그림자 스타일) */}
+              <div className={styles.profileMainStats}>
                 <div
+                  className={styles.profileMainStatCard}
                   style={{
-                    position: 'relative',
-                    padding: '0.55rem 0.7rem 0.65rem',
                     background: 'linear-gradient(135deg, rgba(59, 80, 181, 0.14) 0%, rgba(90, 111, 214, 0.04) 60%, transparent 100%)',
                     border: '2px solid rgba(59, 80, 181, 0.35)',
-                    borderRadius: 10,
-                    overflow: 'hidden',
                     boxShadow:
                       '2px 2px 0 0 rgba(59, 80, 181, 0.3), 4px 4px 0 0 rgba(59, 80, 181, 0.18), 6px 6px 0 0 rgba(59, 80, 181, 0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
                   }}
                 >
+                  <div className={styles.profileMainStatLabel}>아이템 레벨</div>
                   <div
+                    className={styles.profileMainStatValue}
                     style={{
-                      fontSize: '0.62rem',
-                      color: 'var(--text-muted)',
-                      fontWeight: 800,
-                      marginBottom: 3,
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    아이템 레벨
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '1.25rem',
-                      fontWeight: 900,
-                      lineHeight: 1,
-                      letterSpacing: '-0.02em',
-                      fontVariantNumeric: 'tabular-nums',
                       background: 'linear-gradient(135deg, #3b50b5 0%, #5a6fd6 100%)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
@@ -359,36 +347,18 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                 </div>
 
                 <div
+                  className={styles.profileMainStatCard}
                   style={{
-                    position: 'relative',
-                    padding: '0.55rem 0.7rem 0.65rem',
                     background: 'linear-gradient(135deg, rgba(232, 114, 42, 0.16) 0%, rgba(245, 158, 11, 0.04) 60%, transparent 100%)',
                     border: '2px solid rgba(232, 114, 42, 0.4)',
-                    borderRadius: 10,
-                    overflow: 'hidden',
                     boxShadow:
                       '2px 2px 0 0 rgba(232, 114, 42, 0.32), 4px 4px 0 0 rgba(232, 114, 42, 0.18), 6px 6px 0 0 rgba(232, 114, 42, 0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
                   }}
                 >
+                  <div className={styles.profileMainStatLabel}>전투력</div>
                   <div
+                    className={styles.profileMainStatValue}
                     style={{
-                      fontSize: '0.62rem',
-                      color: 'var(--text-muted)',
-                      fontWeight: 800,
-                      marginBottom: 3,
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    전투력
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '1.25rem',
-                      fontWeight: 900,
-                      lineHeight: 1,
-                      letterSpacing: '-0.02em',
-                      fontVariantNumeric: 'tabular-nums',
                       background: 'linear-gradient(135deg, #e8722a 0%, #f59e0b 100%)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
@@ -399,8 +369,9 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                   </div>
                 </div>
               </div>
+              </div>
 
-              {/* 보조 스탯: 원정대 + 전투 특성 6종 */}
+              {/* 보조 스탯: 전투 특성 6종 (원정대는 위 직업 라인 아래로 이동) */}
               <div
                 style={{
                   display: 'grid',
@@ -409,10 +380,6 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                   fontSize: '0.75rem',
                 }}
               >
-                <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>원정대</span>
-                  <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Lv. {profile.expeditionLevel || '-'}</span>
-                </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>치명</span>
                   <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{combatStats.crit}</span>
@@ -590,9 +557,9 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                               )}
                               <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#10b981' }}>{core.point}P</div>
 
-                              {/* Hover 툴팁 — 풀네임 + 등급/포인트 + 장착 젬 리스트 */}
+                              {/* Hover 툴팁 — 코어 풀네임 + 등급 + 포인트 */}
                               <div className={styles.coreTooltip}>
-                                <div className={styles.coreTooltipHead}>
+                                <div className={styles.coreTooltipHead} style={{ marginBottom: 0, paddingBottom: 0, borderBottom: 'none' }}>
                                   <img
                                     src={core.icon}
                                     alt={core.name}
@@ -607,33 +574,6 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                                     </div>
                                   </div>
                                 </div>
-
-                                {core.gems && core.gems.length > 0 ? (
-                                  <div className={styles.coreTooltipGemList}>
-                                    {core.gems.map((gem, gi) => (
-                                      <div key={gi} className={styles.coreTooltipGemRow}>
-                                        <img
-                                          src={gem.icon}
-                                          alt={gem.name}
-                                          className={styles.coreTooltipGemIcon}
-                                        />
-                                        <div className={styles.coreTooltipGemBody}>
-                                          <div className={styles.coreTooltipGemName}>
-                                            {gem.grade && <span style={{ color: getGradeColor(gem.grade), marginRight: 4 }}>{gem.grade}</span>}
-                                            {gem.name}
-                                          </div>
-                                          {gem.effects && gem.effects.length > 0 && (
-                                            <div className={styles.coreTooltipGemEffect}>
-                                              {gem.effects.join(' · ')}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div className={styles.coreTooltipEmpty}>장착된 젬 없음</div>
-                                )}
                               </div>
                             </div>
                           );
@@ -682,8 +622,9 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
           {/* ══ 원정대 형제 캐릭터 ══ */}
           {data.siblings && data.siblings.length > 0 && (() => {
             const sorted = [...data.siblings].sort((a, b) => b.itemLevel - a.itemLevel);
-            const visible = siblingsExpanded ? sorted : sorted.slice(0, 10);
-            const hidden = sorted.length - 10;
+            const collapsedCount = isMobile ? 0 : 10;
+            const visible = siblingsExpanded ? sorted : sorted.slice(0, collapsedCount);
+            const hidden = sorted.length - visible.length;
             const byServer = new Map<string, SiblingCharacter[]>();
             for (const s of visible) {
               if (!byServer.has(s.serverName)) byServer.set(s.serverName, []);
@@ -746,7 +687,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                       </div>
                     ))}
                   </div>
-                  {hidden > 0 && (
+                  {(hidden > 0 || siblingsExpanded) && (
                     <button
                       type="button"
                       onClick={() => setSiblingsExpanded((x) => !x)}
@@ -778,7 +719,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
             <div className={styles.cardHead}><h3 className={styles.cardTitle}>장비 / 악세서리</h3></div>
             <div className={styles.cardBody}>
               <div className={styles.equipAccGrid}>
-                <div className={styles.leftCol}>
+                <div className={styles.equipBlock}>
                   <div className={styles.colLabel}>장비</div>
                   {data.equipmentItems.map((eq, i) => {
                     const enhLv = eq.enhanceLevel;
@@ -811,94 +752,11 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                     );
                   })}
 
-                  {/* 각인 + 어빌리티 스톤 원형 */}
-                  {(engSlots.some(e => e) || data.abilityStone) && (
-                    <>
-                      <div className={styles.subDivider}><span>각인 / 스톤</span></div>
-                      <div className={styles.engCircleWrap}>
-                        <div className={styles.engCircleBg}>
-                          <svg viewBox="0 0 280 280" className={styles.engCircleSvg}>
-                            {(() => {
-                              const c = 140;
-                              const pent = (r: number) => Array.from({ length: 5 }, (_, i) => {
-                                const rad = ((i / 5) * 360 - 90) * Math.PI / 180;
-                                return `${c + r * Math.cos(rad)},${c + r * Math.sin(rad)}`;
-                              }).join(' ');
-                              return (
-                                <>
-                                  <polygon points={pent(58)} fill="var(--card-body-bg-stone)" stroke="var(--border-color)" strokeWidth="1" strokeLinejoin="round" />
-                                  <polygon points={pent(90)} fill="none" stroke="var(--border-color)" strokeWidth="1" strokeLinejoin="round" opacity="0.5" />
-                                </>
-                              );
-                            })()}
-
-                            {/* 연결선: 스톤 → 각 꼭짓점 */}
-                            {engSlots.map((eng, i) => {
-                              if (!eng) return null;
-                              const angle = (i / 5) * 360 - 90;
-                              const rad = (angle * Math.PI) / 180;
-                              const stoneEng = data.abilityStone?.engravings.find(se => se.name === eng.name);
-                              return (
-                                <line key={`line-${i}`}
-                                  x1={140 + 18 * Math.cos(rad)} y1={140 + 18 * Math.sin(rad)}
-                                  x2={140 + 90 * Math.cos(rad)} y2={140 + 90 * Math.sin(rad)}
-                                  stroke={stoneEng ? '#38bdf8' : 'var(--border-color)'}
-                                  strokeWidth={stoneEng ? '1.5' : '1'}
-                                  opacity={stoneEng ? '0.7' : '0.25'}
-                                />
-                              );
-                            })}
-
-                            {/* 중앙 스톤 원 */}
-                            {data.abilityStone && (
-                              <circle cx="140" cy="140" r="18" fill="var(--card-bg)" stroke={getGradeColor(data.abilityStone.grade)} strokeWidth="2" />
-                            )}
-                          </svg>
-
-                          {/* 중앙: 스톤 아이콘 */}
-                          {data.abilityStone?.icon && (
-                            <div className={styles.engCircleCenter}>
-                              <img src={data.abilityStone.icon} alt="스톤" className={styles.engStoneIcon} style={{ borderColor: getGradeColor(data.abilityStone.grade) }} />
-                            </div>
-                          )}
-
-                          {/* 각인 이름 + 다이아몬드(고정) + 스톤Lv(고정) */}
-                          {engSlots.map((eng, i) => {
-                            if (!eng) return null;
-                            const currentLv = eng.level;
-                            const angle = (i / 5) * 360 - 90;
-                            const rad = (angle * Math.PI) / 180;
-                            const stoneEng = data.abilityStone?.engravings.find(se => se.name === eng.name);
-                            const stoneLv = eng.abilityStoneLevel ?? 0;
-                            return (
-                              <div key={i} className={styles.engCircleControls} style={{ '--eng-x': `${50 + 39 * Math.cos(rad)}%`, '--eng-y': `${50 + 39 * Math.sin(rad)}%` } as React.CSSProperties}>
-                                <span className={styles.engCircleName}>{eng.name}</span>
-                                <div className={styles.engCircleDiamonds}>
-                                  {[1, 2, 3, 4].map(lv => (
-                                    <span key={lv} className={styles.engDiamond}
-                                      style={{ color: lv <= currentLv ? '#f43c06' : '#4b5563', cursor: 'default' }}
-                                    >◆</span>
-                                  ))}
-                                </div>
-                                {stoneEng && (
-                                  <div className={styles.engStoneLvStepper}>
-                                    <span className={styles.engStoneLvVal}>Lv.{stoneLv}</span>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                      </div>
-                    </>
-                  )}
                 </div>
 
                 <div className={styles.colDivider} />
 
-                {/* ── 오른쪽: 악세 + 팔찌 ── */}
-                <div className={styles.rightCol}>
+                <div className={styles.accBlock}>
                   <div className={styles.colLabel}>악세서리</div>
                   {data.accessoryItems.map((acc, i) => (
                     <div key={i} className={styles.itemRow}>
@@ -919,10 +777,12 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                       </div>
                     </div>
                   ))}
+                </div>
 
-                  {/* 팔찌 */}
-                  {data.braceletItem && <div className={styles.subDivider}><span>팔찌</span></div>}
-                  {data.braceletItem && (
+                {/* ══ 팔찌 (모바일: 풀폭 단독 칸 / 데스크탑: 악세 아래) ══ */}
+                {data.braceletItem && (
+                  <div className={styles.braceletSection}>
+                    <div className={styles.subDivider}><span>팔찌</span></div>
                     <div className={styles.braceletBlock}>
                       {data.braceletItem.icon && <img src={data.braceletItem.icon} alt="팔찌" className={styles.itemIcon} style={{ borderColor: getGradeColor(data.braceletItem.grade) }} />}
                       <div className={styles.itemBody}>
@@ -942,8 +802,90 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {/* ══ 각인 + 어빌리티 스톤 원형 (모바일: 팔찌 아래 풀폭 / 데스크탑: 장비 아래) ══ */}
+                {(engSlots.some(e => e) || data.abilityStone) && (
+                  <div className={styles.engSection}>
+                    <div className={styles.subDivider}><span>각인 / 스톤</span></div>
+                    <div className={styles.engCircleWrap}>
+                      <div className={styles.engCircleBg}>
+                        <svg viewBox="0 0 280 280" className={styles.engCircleSvg}>
+                          {(() => {
+                            const c = 140;
+                            const pent = (r: number) => Array.from({ length: 5 }, (_, i) => {
+                              const rad = ((i / 5) * 360 - 90) * Math.PI / 180;
+                              return `${c + r * Math.cos(rad)},${c + r * Math.sin(rad)}`;
+                            }).join(' ');
+                            return (
+                              <>
+                                <polygon points={pent(58)} fill="var(--card-body-bg-stone)" stroke="var(--border-color)" strokeWidth="1" strokeLinejoin="round" />
+                                <polygon points={pent(90)} fill="none" stroke="var(--border-color)" strokeWidth="1" strokeLinejoin="round" opacity="0.5" />
+                              </>
+                            );
+                          })()}
+
+                          {/* 연결선: 스톤 → 각 꼭짓점 */}
+                          {engSlots.map((eng, i) => {
+                            if (!eng) return null;
+                            const angle = (i / 5) * 360 - 90;
+                            const rad = (angle * Math.PI) / 180;
+                            const stoneEng = data.abilityStone?.engravings.find(se => se.name === eng.name);
+                            return (
+                              <line key={`line-${i}`}
+                                x1={140 + 18 * Math.cos(rad)} y1={140 + 18 * Math.sin(rad)}
+                                x2={140 + 90 * Math.cos(rad)} y2={140 + 90 * Math.sin(rad)}
+                                stroke={stoneEng ? '#38bdf8' : 'var(--border-color)'}
+                                strokeWidth={stoneEng ? '1.5' : '1'}
+                                opacity={stoneEng ? '0.7' : '0.25'}
+                              />
+                            );
+                          })}
+
+                          {/* 중앙 스톤 원 */}
+                          {data.abilityStone && (
+                            <circle cx="140" cy="140" r="18" fill="var(--card-bg)" stroke={getGradeColor(data.abilityStone.grade)} strokeWidth="2" />
+                          )}
+                        </svg>
+
+                        {/* 중앙: 스톤 아이콘 */}
+                        {data.abilityStone?.icon && (
+                          <div className={styles.engCircleCenter}>
+                            <img src={data.abilityStone.icon} alt="스톤" className={styles.engStoneIcon} style={{ borderColor: getGradeColor(data.abilityStone.grade) }} />
+                          </div>
+                        )}
+
+                        {/* 각인 이름 + 다이아몬드(고정) + 스톤Lv(고정) */}
+                        {engSlots.map((eng, i) => {
+                          if (!eng) return null;
+                          const currentLv = eng.level;
+                          const angle = (i / 5) * 360 - 90;
+                          const rad = (angle * Math.PI) / 180;
+                          const stoneEng = data.abilityStone?.engravings.find(se => se.name === eng.name);
+                          const stoneLv = eng.abilityStoneLevel ?? 0;
+                          return (
+                            <div key={i} className={styles.engCircleControls} style={{ '--eng-x': `${50 + 39 * Math.cos(rad)}%`, '--eng-y': `${50 + 39 * Math.sin(rad)}%` } as React.CSSProperties}>
+                              <span className={styles.engCircleName}>{eng.name}</span>
+                              <div className={styles.engCircleDiamonds}>
+                                {[1, 2, 3, 4].map(lv => (
+                                  <span key={lv} className={styles.engDiamond}
+                                    style={{ color: lv <= currentLv ? '#f43c06' : '#4b5563', cursor: 'default' }}
+                                  >◆</span>
+                                ))}
+                              </div>
+                              {stoneEng && (
+                                <div className={styles.engStoneLvStepper}>
+                                  <span className={styles.engStoneLvVal}>Lv.{stoneLv}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -1089,20 +1031,14 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                 </div>
               </div>
 
-              {/* 트라이포드 */}
+              {/* 트라이포드 — 선택한 이름만 표시 */}
               {gem.tripods && gem.tripods.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
                   {gem.tripods.map((t, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <div style={{ position: 'relative', flexShrink: 0 }}>
-                        {t.icon && <img src={t.icon} alt="" style={{ width: 44, height: 44, borderRadius: 6, objectFit: 'cover', opacity: t.lock ? 0.55 : 1, border: '1px solid var(--border-color)' }} />}
-                        <span style={{ position: 'absolute', top: -5, left: -5, fontSize: '0.62rem', fontWeight: 800, color: '#fff', background: '#6b7280', padding: '1px 5px', borderRadius: 5, lineHeight: '12px' }}>{i + 1}</span>
-                        {t.lock && <span style={{ position: 'absolute', bottom: -4, right: -4, fontSize: '0.6rem', background: '#374151', color: '#fff', padding: '0 4px', borderRadius: 4 }}>🔒</span>}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#fbbf24' }}>{t.name}</span>
-                        <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>{t.desc}</span>
-                      </div>
+                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#fff', background: '#6b7280', padding: '1px 5px', borderRadius: 4, flexShrink: 0 }}>{i + 1}</span>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: t.lock ? 'var(--text-muted)' : '#fbbf24' }}>{t.name}</span>
+                      {t.lock && <span style={{ fontSize: '0.6rem', background: '#374151', color: '#fff', padding: '0 4px', borderRadius: 4 }}>🔒</span>}
                     </div>
                   ))}
                 </div>

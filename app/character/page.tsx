@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Container } from 'react-bootstrap';
 import { Form, Button } from 'react-bootstrap';
 import { useSearchHistory } from '@/lib/useSearchHistory';
-import { parseCharacterData, type CharacterData } from '@/lib/characterData';
+import type { CharacterData } from '@/lib/characterData';
 import CharacterDashboard from '@/components/character/CharacterDashboard';
 import CharacterRanking from '@/components/character/CharacterRanking';
 import styles from './character.module.css';
@@ -178,17 +178,25 @@ function CharacterPageInner() {
       }
 
       const apiData = await response.json();
-      const parsed = parseCharacterData(apiData);
+      // 서버에서 이미 parseCharacterData 결과로 반환되므로 그대로 사용
+      // titlesHistory는 _meta에서 합쳐 넣음 (data 컬럼에는 분리 저장)
+      const meta = apiData?._meta ?? null;
+      const parsed: CharacterData = {
+        ...apiData,
+        titlesHistory: Array.isArray(meta?.titlesHistory) ? meta.titlesHistory : (apiData.titlesHistory || []),
+      };
+      // _meta는 CharacterData에 속하지 않으므로 제거
+      delete (parsed as any)._meta;
 
-      if (!parsed) {
+      if (!parsed.profile || !parsed.profile.characterName) {
         throw new Error('데이터를 파싱할 수 없습니다.');
       }
 
       setCombatData(parsed);
-      setMeta(apiData?._meta ?? null);
+      setMeta(meta);
       addToHistory(trimmed);
       // 새 데이터 저장 후 랭킹 갱신
-      if (!apiData?._meta?.fromCache) {
+      if (!meta?.fromCache) {
         setRankingReloadKey(k => k + 1);
       }
     } catch (err: any) {

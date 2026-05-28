@@ -82,8 +82,6 @@ export type EngravingInfo = {
 
 export type TripodInfo = {
   name: string;       // 트라이포드 이름 (HTML 제거)
-  desc: string;       // 효과 설명 (HTML 제거)
-  icon?: string;      // 트라이포드 아이콘 URL
   lock: boolean;      // 잠금 여부
 };
 
@@ -168,26 +166,12 @@ export type CombatStats = {
   expertise: number;
 };
 
-// 아크 그리드
-export type ArkGridGem = {
-  icon: string;
-  grade: string;
-  name: string;
-  point: number;
-  orderPoint: number;   // 질서 포인트
-  chaosPoint: number;   // 혼돈 포인트
-  effects: string[];    // "추가 피해 +0.40%" 등
-  _debug?: string;      // 디버그용 raw tooltip (임시)
-};
-
+// 아크 그리드 — 코어 6개 + 합산 효과만 (UI hover에서 젬 정보 미사용 → 미저장)
 export type ArkGridCore = {
   name: string;
   icon: string;
   grade: string;
   point: number;       // 현재 포인트
-  coreType: string;    // "질서 - 해" 등
-  willpower: number;   // 의지력
-  gems: ArkGridGem[];
 };
 
 export type ArkGridEffect = {
@@ -1033,11 +1017,8 @@ export function parseGems(gemsData: any): GemInfo[] {
         const t = block[ek];
         if (!t) continue;
         const tName = String(t.name || '').replace(/<[^>]*>/g, '').trim();
-        const tDesc = String(t.desc || '').replace(/<[^>]*>/g, '').trim();
         if (tName) tripods.push({
           name: tName,
-          desc: tDesc,
-          icon: t.slotData?.iconPath || undefined,
           lock: Boolean(t.lock),
         });
       }
@@ -1439,151 +1420,18 @@ export function parseBraceletEffects(equipmentData: any[]): BraceletEffect[] {
   return result;
 }
 
-// 아크 그리드 파싱
+// 아크 그리드 파싱 — 코어 6개 기본 정보 + 합산 효과만
+// (코어 hover 툴팁에서 젬 정보 노출하지 않으므로 슬롯 Tooltip/Gems 파싱 생략)
 export function parseArkGrid(arkgridData: any): ArkGridInfo | null {
   if (!arkgridData?.Slots || !Array.isArray(arkgridData.Slots)) return null;
 
-  const cores: ArkGridCore[] = [];
+  const cores: ArkGridCore[] = arkgridData.Slots.map((slot: any) => ({
+    name: slot?.Name || '',
+    icon: slot?.Icon || '',
+    grade: slot?.Grade || '',
+    point: typeof slot?.Point === 'number' ? slot.Point : 0,
+  }));
 
-  for (const slot of arkgridData.Slots) {
-    let coreType = '';
-    let willpower = 0;
-
-    try {
-      const tooltip = JSON.parse(slot.Tooltip);
-      // 코어 타입 (Element_003 or 004 → "질서 - 해")
-      for (const key in tooltip) {
-        const el = tooltip[key];
-        if (el?.type === 'ItemPartBox') {
-          const val = JSON.stringify(el.value);
-          const cleaned = val.replace(/<[^>]*>/g, '');
-          if (cleaned.includes('코어 타입')) {
-            const m = cleaned.match(/Element_001["\s:]*([^"]+)/);
-            if (m) coreType = m[1].trim();
-          }
-          if (cleaned.includes('의지력')) {
-            const m = cleaned.match(/(\d+)\s*포인트/);
-            if (m) willpower = parseInt(m[1], 10);
-          }
-        }
-      }
-    } catch { /* */ }
-
-    // 젬 파싱
-    const gems: ArkGridGem[] = [];
-    if (slot.Gems && Array.isArray(slot.Gems)) {
-      for (const gem of slot.Gems) {
-        let gemName = '';
-        let gemPoint = 0;
-        let orderPoint = 0;
-        let chaosPoint = 0;
-        const effects: string[] = [];
-
-        let debugTooltip = '';
-        try {
-          const gtt = JSON.parse(gem.Tooltip);
-          // 디버그: 전체 tooltip 텍스트 (HTML 제거)
-          debugTooltip = JSON.stringify(gtt).replace(/<[^>]*>/g, '').substring(0, 500);
-
-          // 이름
-          const nameEl = gtt.Element_000;
-          if (nameEl?.value) {
-            gemName = nameEl.value.replace(/<[^>]*>/g, '').trim();
-          }
-
-          // 모든 Element 순회 (ItemPartBox 외 타입도 포함)
-          for (const k in gtt) {
-            const el = gtt[k];
-            if (!el) continue;
-            const val = JSON.stringify(el.value || el);
-            const cleaned = val.replace(/<[^>]*>/g, '');
-
-            // 젬 포인트 (ItemPartBox)
-            if (cleaned.includes('젬 포인트')) {
-              const m = cleaned.match(/젬 포인트\s*[:：]\s*(\d+)/);
-              if (m) gemPoint = parseInt(m[1], 10);
-            }
-
-            // 젬 효과 - 모든 효과 라인 캡처
-            if (cleaned.includes('젬 효과') && effects.length === 0) {
-              // 1차: <br> 기반 분할 (HTML 원본에서)
-              const html = val.replace(/\\r\\n/g, '').replace(/\\n/g, '');
-              const brParts = html.split(/<br\s*\/?>/i);
-              for (const part of brParts) {
-                const c = part.replace(/<[^>]*>/g, '').replace(/[{}"\\[\]]/g, '').trim();
-                // 숫자가 있고 헤더가 아닌 모든 라인
-                if (c.length > 1 && /\d/.test(c) &&
-                  !c.includes('젬 효과') && !c.includes('의지력') &&
-                  !c.includes('젬 포인트') && !c.includes('Element_')) {
-                  if (!effects.includes(c)) effects.push(c);
-                }
-              }
-              // 2차 fallback: \n 기반 분할
-              if (effects.length === 0) {
-                const lines = cleaned.split(/\\n|\\r|\n|,/);
-                for (const line of lines) {
-                  const c = line.replace(/[{}"\\[\]]/g, '').trim();
-                  if (c.length > 1 && /\d/.test(c) &&
-                    !c.includes('젬 효과') && !c.includes('의지력') &&
-                    !c.includes('젬 포인트') && !c.includes('Element_')) {
-                    if (!effects.includes(c)) effects.push(c);
-                  }
-                }
-              }
-            }
-          }
-
-          // 효과에서 질서/혼돈 포인트 추출
-          for (const eff of effects) {
-            if (orderPoint === 0 && eff.includes('질서')) {
-              const m = eff.match(/질서\s*(\d+)/);
-              if (m) orderPoint = parseInt(m[1], 10);
-            }
-            if (chaosPoint === 0 && eff.includes('혼돈')) {
-              const m = eff.match(/혼돈\s*(\d+)/);
-              if (m) chaosPoint = parseInt(m[1], 10);
-            }
-          }
-
-          // 전체 tooltip broad search fallback
-          if (orderPoint === 0 || chaosPoint === 0) {
-            const fullText = JSON.stringify(gtt).replace(/<[^>]*>/g, '');
-            if (orderPoint === 0) {
-              const om = fullText.match(/질서\s*[:：]?\s*(\d+)/);
-              if (om) orderPoint = parseInt(om[1], 10);
-            }
-            if (chaosPoint === 0) {
-              const cm = fullText.match(/혼돈\s*[:：]?\s*(\d+)/);
-              if (cm) chaosPoint = parseInt(cm[1], 10);
-            }
-          }
-        } catch { /* */ }
-
-        gems.push({
-          icon: gem.Icon || '',
-          grade: gem.Grade || '',
-          name: gemName,
-          point: gemPoint,
-          orderPoint,
-          chaosPoint,
-          effects,
-          _debug: debugTooltip,
-        });
-      }
-    }
-
-    cores.push({
-      name: slot.Name || '',
-      icon: slot.Icon || '',
-      grade: slot.Grade || '',
-      point: slot.Point || 0,
-      coreType,
-      willpower,
-      gems,
-    });
-  }
-
-  // 효과 합산
   const effects: ArkGridEffect[] = [];
   if (arkgridData.Effects && Array.isArray(arkgridData.Effects)) {
     for (const eff of arkgridData.Effects) {

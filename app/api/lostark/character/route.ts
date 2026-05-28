@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getCharacterFromDb, upsertCharacter, getTitlesHistory } from '@/lib/character-cache';
+import { getCharacterFromDb, upsertCharacter, getTitlesHistory, isParsedCacheShape } from '@/lib/character-cache';
+import { parseCharacterData } from '@/lib/characterData';
 
 async function fetchFromLostark(characterName: string): Promise<any> {
   const apiKey = process.env.LOSTARK_API_KEY;
@@ -85,10 +86,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1) refresh가 아니라면 DB 우선 조회
+    // 1) refresh가 아니라면 DB 우선 조회 (파싱 결과 형식만 캐시 인정)
     if (!refresh) {
       const cached = await getCharacterFromDb(characterName);
-      if (cached && cached.data) {
+      if (cached && cached.data && isParsedCacheShape(cached.data)) {
         return NextResponse.json({
           ...cached.data,
           _meta: {
@@ -98,17 +99,25 @@ export async function GET(request: Request) {
           },
         });
       }
+      // 구 raw 캐시는 무시하고 fetch 흘려보냄 (다음 단계에서 파싱 결과로 덮어씀)
     }
 
-    // 2) miss 또는 refresh → API 호출
+    // 2) miss / refresh / 구 raw 캐시 → 로아 API 호출 후 서버 파싱
     const apiData = await fetchFromLostark(characterName);
+    const parsed = parseCharacterData(apiData);
+    if (!parsed) {
+      throw new Response(
+        JSON.stringify({ message: '캐릭터 데이터를 파싱할 수 없습니다.' }),
+        { status: 500 }
+      );
+    }
 
-    // 3) DB upsert (인덱스 컬럼 + raw)
-    // 캐릭터명은 API가 돌려준 정식 표기 사용
-    const canonicalName = apiData.profile?.CharacterName || characterName;
+    // 3) DB upsert (인덱스 컬럼 + 파싱 결과)
+    // 캐릭터명은 파싱된 정식 표기 사용
+    const canonicalName = parsed.profile.characterName || characterName;
     let titlesHistory: any[] = [];
     try {
-      await upsertCharacter(canonicalName, apiData);
+      await upsertCharacter(canonicalName, parsed);
       titlesHistory = await getTitlesHistory(canonicalName);
     } catch (dbErr) {
       // eslint-disable-next-line no-console
@@ -117,7 +126,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      ...apiData,
+      ...parsed,
       _meta: {
         fromCache: false,
         fetchedAt: new Date().toISOString(),
