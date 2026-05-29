@@ -72,19 +72,19 @@ function getLatestCacheKey(): string {
 
 /**
  * history.json 캐시 키 생성
- * - 00:00~01:30: 10분 단위 (크론 실행 + GitHub Actions 지연 대비)
+ * - 00:00~02:00: 10분 단위 (크론 실행 + GitHub Actions 지연 대비, 임시 확장)
  * - 그 외: 하루 종일 같은 키 (날짜만)
  */
 function getHistoryCacheKey(): string {
   const { date, hour, minute } = getKSTInfo();
 
-  // 00:00~01:30 범위 체크
+  // 00:00~02:00 범위 체크 (날짜-키 잠금을 02시로 늦춰 cron 지연분 흡수)
   const isUpdateWindow =
     (hour === 0) ||
-    (hour === 1 && minute <= 30);
+    (hour === 1);
 
   if (isUpdateWindow) {
-    // 00:00~01:30: 10분 단위
+    // 00:00~02:00: 10분 단위
     const slot = Math.floor(minute / 10) * 10;
     return `${date}-${String(hour).padStart(2, '0')}-${String(slot).padStart(2, '0')}`;
   } else {
