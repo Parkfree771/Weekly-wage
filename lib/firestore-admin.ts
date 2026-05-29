@@ -19,8 +19,10 @@ type LatestPricesJson = {
 } & {
   _raw?: Record<string, number[]>;  // 경매장 아이템 누적 가격
   _meta?: {
-    date: string;      // 현재 데이터 날짜 (YYYY-MM-DD)
-    updatedAt: string; // 마지막 업데이트 시간 (ISO)
+    date: string;              // 현재 데이터 날짜 (YYYY-MM-DD)
+    updatedAt: string;         // 마지막 업데이트 시간 (ISO)
+    lastRolloverDate?: string; // 마지막으로 history 커밋 완료된 롤오버 날짜 (전날 키)
+                               // ※ history 저장 성공 후에만 영구화되므로 "그 날짜 데이터가 history에 있다"는 신뢰 가능한 표식
   };
 };
 
@@ -318,6 +320,15 @@ export async function finalizeYesterdayData(useToday: boolean = false): Promise<
     console.log(`[finalizeYesterdayData] ${useToday ? '당일' : '전날'} 데이터 확정 시작: ${targetKey}`);
 
     const latestData = await readLatestPrices();
+
+    // 이 날짜 롤오버가 이미 완료됐으면 건너뜀 (00시·01시 재실행 중복/오기입 방지)
+    // 00시 성공 후 01시 재실행 시, _raw는 이미 오늘 데이터로 리셋돼 있어
+    // 그대로 finalize하면 "오늘 평균을 어제치로" 잘못 저장할 위험이 있는데 이 가드가 차단한다.
+    if (!useToday && latestData._meta?.lastRolloverDate === targetKey) {
+      console.log(`[finalizeYesterdayData] ${targetKey} 이미 롤오버 완료 → 건너뜀`);
+      return;
+    }
+
     const history = await readHistoryAll();
 
     // _raw에서 경매장 아이템 평균 계산 후 history에 추가
@@ -380,17 +391,19 @@ export async function appendYesterdayToHistory(): Promise<void> {
       return;
     }
 
-    // _raw 초기화 및 날짜 변경
+    // _raw 초기화 및 날짜 변경 + 롤오버 완료 표식 기록
+    // (이 _meta는 generateAndUploadPriceJson에서 history 커밋 성공 후에만 영구화됨)
     latestData._raw = {};
     latestData._meta = {
       date: todayKey,
       updatedAt: new Date().toISOString(),
+      lastRolloverDate: yesterdayKey,
     };
 
     // 캐시 업데이트
     latestPricesCache = latestData;
 
-    console.log(`[appendYesterdayToHistory] 완료: _raw 초기화, 날짜 변경 ${yesterdayKey} → ${todayKey}`);
+    console.log(`[appendYesterdayToHistory] 완료: _raw 초기화, 날짜 변경 ${yesterdayKey} → ${todayKey}, 롤오버표식=${yesterdayKey}`);
   } catch (error) {
     console.error('[appendYesterdayToHistory] 실패:', error);
   }
@@ -404,7 +417,20 @@ export async function generateAndUploadPriceJson(): Promise<void> {
   try {
     console.log('[generateAndUploadPriceJson] 캐시 데이터 저장 시작...');
 
-    // latest_prices.json 저장
+    // ⚠️ 저장 순서 중요: history_all.json을 먼저 커밋한 뒤에 latest_prices.json을 쓴다.
+    // 00시 날짜 변경 시 appendYesterdayToHistory()가 latest의 _raw를 리셋하는데,
+    // latest를 먼저 쓰면 "리셋만 영구화되고 history(어제치)는 함수 강제종료로 유실"되어
+    // 경매장 어제 평균이 비가역적으로 사라진다.
+    // history를 먼저 쓰면, 중간에 잘려도 _raw 리셋이 영구화되지 않아 다음 실행이 안전하게 재시도한다.
+    // (history 저장이 실패하면 아래 latest 저장은 실행되지 않음 → _raw 보존)
+
+    // 1) history_all.json 먼저 저장 (변경된 경우에만)
+    if (historyCache !== null) {
+      await writeHistoryAll(historyCache);
+      console.log(`[generateAndUploadPriceJson] history_all.json 저장 완료`);
+    }
+
+    // 2) history 커밋 성공 후에만 latest_prices.json(=_raw 리셋본) 저장
     if (latestPricesCache !== null) {
       await writeLatestPrices(latestPricesCache);
 
@@ -412,12 +438,6 @@ export async function generateAndUploadPriceJson(): Promise<void> {
       const rawCount = Object.keys(latestPricesCache._raw || {}).length;
 
       console.log(`[generateAndUploadPriceJson] latest_prices.json 저장 완료: ${itemCount}개 아이템, ${rawCount}개 경매장 _raw`);
-    }
-
-    // history_all.json 저장 (변경된 경우에만)
-    if (historyCache !== null) {
-      await writeHistoryAll(historyCache);
-      console.log(`[generateAndUploadPriceJson] history_all.json 저장 완료`);
     }
 
     // 캐시 초기화 (다음 크론을 위해)
