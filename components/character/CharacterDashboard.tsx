@@ -20,6 +20,29 @@ function getQualityColor(q: number): string {
   return '#9e9e9e';
 }
 
+// 고대 악세 기본 힘/민/지 구간 — 연마 3단계 기준 [최소, 최대]
+// (대부분 유저가 3단계라 연마단계 무시하고 이 구간을 3등분해 상/중/하 판정)
+const ACC_STAT_RANGE: Record<string, [number, number]> = {
+  '반지':   [10962, 12897],
+  '귀걸이': [11806, 13889],
+  '목걸이': [15178, 17857],
+};
+
+// 힘/민/지 값 → 해당 부위 3단계 구간을 3등분해 상/중/하 (고대 전용)
+function accStatGrade(type: string, grade: string, value: number): string {
+  if (grade !== '고대') return '';
+  const slot = type.includes('목걸이') ? '목걸이' : type.includes('귀걸이') ? '귀걸이' : type.includes('반지') ? '반지' : '';
+  const row = ACC_STAT_RANGE[slot];
+  if (!row) return '';
+  const [min, max] = row;
+  if (value <= min) return '하';
+  if (value >= max) return '상';
+  const third = (max - min) / 3;
+  if (value < min + third) return '하';
+  if (value < min + 2 * third) return '중';
+  return '상';
+}
+
 // 아크그리드 코어 등급별 배경 (로아 등급 색 기준, 같은 색조 안에서 dark→light)
 function getCoreGradeGradient(grade: string): string {
   switch (grade) {
@@ -53,34 +76,45 @@ function gradeColor(grade: string): string {
   return 'var(--text-secondary)';
 }
 
+// 상/중/하 등급 배지 (둥근 네모, 등급 색 채움)
+// 등급이 없으면 같은 크기의 빈 자리로 렌더 → 배지 없는 줄도 텍스트 정렬 유지
+function GradeBadge({ grade }: { grade?: string }) {
+  const valid = grade === '상' || grade === '중' || grade === '하';
+  return (
+    <span
+      className={styles.gradeBadge}
+      style={valid ? { background: gradeColor(grade as string) } : { visibility: 'hidden' }}
+      aria-hidden={!valid}
+    >
+      {valid ? grade : ''}
+    </span>
+  );
+}
+
 function GrindingEffect({ text, grade }: { text: string; grade: string }) {
   const m = text.match(/^(.+?)\s*([\+\-]?\s*[\d,]+\.?\d*\s*%?)$/);
   if (m) {
     return (
       <span className={styles.effectLine}>
+        <GradeBadge grade={grade} />
         <span className={styles.effectLabel}>{m[1]} </span>
         <span className={styles.effectVal} style={{ color: gradeColor(grade) }}>{m[2]}</span>
       </span>
     );
   }
-  return <span className={styles.effectLine}>{text}</span>;
+  return <span className={styles.effectLine}><GradeBadge grade={grade} />{text}</span>;
 }
 
 function BraceletEffectLine({ text, grade }: { text: string; grade?: string }) {
   if (!grade) return <span className={styles.braceletEffText}>{text}</span>;
-  const sentences = text.split(/(?<=다\.)\s+/);
+  // 한 효과는 (여러 문장이라도) 하나의 단락으로 이어서 표시, 수치만 강조
   return (
     <span className={styles.braceletEffText}>
-      {sentences.map((sentence, si) => (
-        <span key={si}>
-          {si > 0 && <br />}
-          {sentence.split(/([\d,]+\.?\d*\s*%?)/g).map((part, i) =>
-            /^[\d,]+\.?\d*\s*%?$/.test(part)
-              ? <span key={i} style={{ color: gradeColor(grade), fontWeight: 800 }}>{part}</span>
-              : part
-          )}
-        </span>
-      ))}
+      {text.split(/([\d,]+\.?\d*\s*%?)/g).map((part, i) =>
+        /^[\d,]+\.?\d*\s*%?$/.test(part)
+          ? <span key={i} style={{ color: gradeColor(grade), fontWeight: 800 }}>{part}</span>
+          : part
+      )}
     </span>
   );
 }
@@ -451,7 +485,11 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                 {/* 질서 1줄 / 혼돈 1줄 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   {(['질서', '혼돈'] as const).map(factionKey => {
-                    const factionCores = data.arkGrid!.cores.filter(c => c.name.includes(factionKey));
+                    // 착용 순서 무시 — 항상 해·달·별 순으로 표시 (구 캐시 데이터까지 보장)
+                    const celestialOrder = (n: string) => n.includes('해') ? 0 : n.includes('달') ? 1 : n.includes('별') ? 2 : 3;
+                    const factionCores = data.arkGrid!.cores
+                      .filter(c => c.name.includes(factionKey))
+                      .sort((a, b) => celestialOrder(a.name) - celestialOrder(b.name));
                     if (factionCores.length === 0) return null;
                     return (
                       <div
@@ -752,6 +790,24 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                     );
                   })}
 
+                  {/* ══ 보주 (장갑 아래) ══ */}
+                  {data.orb && data.orb.icon && (
+                    <div className={styles.itemRow}>
+                      <img src={data.orb.icon} alt="보주" className={styles.itemIcon} style={{ borderColor: getGradeColor(data.orb.grade) }} />
+                      <div className={styles.itemBody}>
+                        <div className={styles.itemNameRow}>
+                          <span className={`${styles.enhBadge} ${styles.enhBadgeArmor}`}>보주</span>
+                          <span className={styles.itemName} style={{ color: getGradeColor(data.orb.grade) }}>{data.orb.name}</span>
+                        </div>
+                        {data.orb.paradisePower > 0 && (
+                          <div className={styles.statLine}>
+                            {data.orb.season > 0 ? `시즌${data.orb.season} ` : ''}최대 낙원력 : {data.orb.paradisePower.toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
 
                 <div className={styles.colDivider} />
@@ -767,7 +823,18 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                           {acc.quality > 0 && <span className={styles.qualBadge} style={{ color: getQualityColor(acc.quality) }}>{acc.quality}</span>}
                         </div>
                         <div className={styles.effectsCol}>
-                          {filterStatsByMain(acc.stats).map((s, j) => <div key={`s${j}`} className={styles.statLine}>{s}</div>)}
+                          {filterStatsByMain(acc.stats).map((s, j) => {
+                            // 힘/민/지 줄이면 실제 값으로 구간 3등분 상/중/하 판정
+                            const sm = s.match(/^(?:힘|민첩|지능)\s*\+?\s*([\d,]+)/);
+                            const statGrade = sm
+                              ? accStatGrade(acc.type, acc.grade, parseInt(sm[1].replace(/,/g, ''), 10))
+                              : '';
+                            return (
+                              <div key={`s${j}`} className={styles.statLine}>
+                                <GrindingEffect text={s} grade={statGrade} />
+                              </div>
+                            );
+                          })}
                           {acc.grindingEffects.map((eff, j) => (
                             <div key={`g${j}`} className={styles.statLine}>
                               <GrindingEffect text={eff.text} grade={eff.grade} />
@@ -797,7 +864,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                         <div className={styles.effectsCol}>
                           {filterStatsByMain(data.braceletItem.stats).map((s, j) => <div key={`s${j}`} className={styles.statLine}>{s}</div>)}
                           {data.bracelet.map((eff, i) => (
-                            <div key={`b${i}`} className={styles.statLine}><BraceletEffectLine text={eff.name} grade={eff.grade} /></div>
+                            <div key={`b${i}`} className={styles.braceletEffItem}><GradeBadge grade={eff.grade} /><BraceletEffectLine text={eff.name} grade={eff.grade} /></div>
                           ))}
                         </div>
                       </div>

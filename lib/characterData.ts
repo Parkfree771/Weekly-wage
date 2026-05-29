@@ -185,6 +185,15 @@ export type ArkGridInfo = {
   effects: ArkGridEffect[];
 };
 
+// 보주 — 아이콘 + 이름 + 최신 시즌 최대 낙원력
+export type OrbInfo = {
+  name: string;
+  icon: string;
+  grade: string;
+  season: number;          // 최신 시즌 번호 (3 > 2 > 1)
+  paradisePower: number;   // 해당 시즌 달성 최대 낙원력
+};
+
 export type SiblingCharacter = {
   serverName: string;
   characterName: string;
@@ -211,6 +220,8 @@ export type CharacterData = {
   combatStats: CombatStats;
   // 아크 그리드
   arkGrid: ArkGridInfo | null;
+  // 보주 (낙원)
+  orb: OrbInfo | null;
   // 원정대 형제 캐릭터
   siblings: SiblingCharacter[];
   // 누적 칭호 history (DB에 기록된 매칭 칭호들, 최신 추가 순서대로)
@@ -606,13 +617,16 @@ export function parseAccessoryItems(equipmentData: any[]): AccessoryItem[] {
       // 파싱 실패
     }
 
-    // 연마 효과 이름 기반 중복 제거 (같은 효과명이면 먼저 파싱된 것만 유지)
+    // 연마 효과 중복 제거 (다중 파싱으로 인한 완전 동일 항목만 제거)
+    // ※ "공격력 +390"(고정)과 "공격력 +1.55%"(%)는 서로 다른 옵션이므로
+    //   효과명 + %/고정 구분을 키로 사용해 둘 다 보존
     const seenNames = new Set<string>();
     const uniqueGrinding: typeof grindingEffects = [];
     for (const eff of grindingEffects) {
-      const name = eff.text.replace(/[\s+\-]?\d[\d.]*%?$/, '').trim();
-      if (!seenNames.has(name)) {
-        seenNames.add(name);
+      const baseName = eff.text.replace(/[\s+\-]?\d[\d.]*%?$/, '').trim();
+      const key = baseName + (/%\s*$/.test(eff.text) ? '%' : '+');
+      if (!seenNames.has(key)) {
+        seenNames.add(key);
         uniqueGrinding.push(eff);
       }
     }
@@ -1432,6 +1446,14 @@ export function parseArkGrid(arkgridData: any): ArkGridInfo | null {
     point: typeof slot?.Point === 'number' ? slot.Point : 0,
   }));
 
+  // 착용 순서 무시 — 항상 질서(해·달·별) → 혼돈(해·달·별) 순으로 고정 정렬
+  const coreOrder = (name: string): number => {
+    const faction = name.includes('질서') ? 0 : name.includes('혼돈') ? 1 : 2;
+    const celestial = name.includes('해') ? 0 : name.includes('달') ? 1 : name.includes('별') ? 2 : 3;
+    return faction * 10 + celestial;
+  };
+  cores.sort((a, b) => coreOrder(a.name) - coreOrder(b.name));
+
   const effects: ArkGridEffect[] = [];
   if (arkgridData.Effects && Array.isArray(arkgridData.Effects)) {
     for (const eff of arkgridData.Effects) {
@@ -1444,6 +1466,41 @@ export function parseArkGrid(arkgridData: any): ArkGridInfo | null {
   }
 
   return { cores, effects };
+}
+
+// 보주 파싱 — 아이콘 + 이름 + 최신 시즌 최대 낙원력
+// 툴팁 특수효과 텍스트에 "시즌N 달성 최대 낙원력 : 숫자" 형식으로 존재
+export function parseOrb(equipmentData: any[]): OrbInfo | null {
+  if (!equipmentData || !Array.isArray(equipmentData)) return null;
+
+  const orb = equipmentData.find((item: any) => item.Type === '보주');
+  if (!orb) return null;
+
+  let season = 0;
+  let paradisePower = 0;
+
+  try {
+    const tooltip = JSON.parse(orb.Tooltip);
+    const cleaned = JSON.stringify(tooltip).replace(/<[^>]*>/g, '');
+    // "시즌1 달성 최대 낙원력 : 12220861" → 여러 시즌 중 가장 높은 시즌 채택
+    const re = /시즌\s*(\d+)[^:]*낙원력\s*:\s*([\d,]+)/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(cleaned)) !== null) {
+      const s = parseInt(m[1], 10);
+      if (s >= season) {
+        season = s;
+        paradisePower = parseInt(m[2].replace(/,/g, ''), 10);
+      }
+    }
+  } catch { /* */ }
+
+  return {
+    name: orb.Name || '',
+    icon: orb.Icon || '',
+    grade: orb.Grade || '',
+    season,
+    paradisePower,
+  };
 }
 
 // 원정대 캐릭터 목록 파싱
@@ -1463,12 +1520,48 @@ export function parseSiblings(siblingsData: any): SiblingCharacter[] {
   return result;
 }
 
+// 주 스탯 판별 — 프로필 Stats엔 힘/민/지가 없으므로 방어구 기본 효과에서 추출
+// (방어구 기본 효과는 직업 주스탯 하나만 부여: 호크아이=민첩, 슬레이어=힘, 바드=지능 …)
+export function detectMainStat(equipmentData: any[]): '힘' | '민첩' | '지능' | null {
+  if (!Array.isArray(equipmentData)) return null;
+  const armorTypes = ['투구', '상의', '하의', '장갑', '어깨'];
+  const sums: Record<'힘' | '민첩' | '지능', number> = { 힘: 0, 민첩: 0, 지능: 0 };
+
+  for (const item of equipmentData) {
+    if (!armorTypes.includes(item.Type)) continue;
+    try {
+      const tooltip = JSON.parse(item.Tooltip);
+      for (const key in tooltip) {
+        const el = tooltip[key];
+        if (el?.type !== 'ItemPartBox') continue;
+        if (!el?.value?.Element_000?.includes?.('기본 효과')) continue;
+        const txt = String(el.value.Element_001 || '').replace(/<[^>]*>/g, '');
+        for (const stat of ['힘', '민첩', '지능'] as const) {
+          const m = txt.match(new RegExp(`${stat}\\s*\\+([\\d,]+)`));
+          if (m) sums[stat] += parseInt(m[1].replace(/,/g, ''), 10);
+        }
+      }
+    } catch { /* */ }
+  }
+
+  let best: '힘' | '민첩' | '지능' | null = null;
+  let max = 0;
+  for (const stat of ['힘', '민첩', '지능'] as const) {
+    if (sums[stat] > max) { max = sums[stat]; best = stat; }
+  }
+  return best;
+}
+
 // ============================
 // 종합 파서
 // ============================
 export function parseCharacterData(apiResponse: any): CharacterData | null {
   const profile = parseProfile(apiResponse.profile);
   if (!profile) return null;
+
+  // 주 스탯은 방어구 기본 효과 기준으로 보정 (프로필 Stats엔 힘/민/지 없음)
+  const mainStat = detectMainStat(apiResponse.equipment);
+  if (mainStat) profile.mainStatType = mainStat;
 
   return {
     profile,
@@ -1485,6 +1578,7 @@ export function parseCharacterData(apiResponse: any): CharacterData | null {
     bracelet: parseBraceletEffects(apiResponse.equipment),
     combatStats: parseCombatStats(apiResponse.profile),
     arkGrid: parseArkGrid(apiResponse.arkgrid),
+    orb: parseOrb(apiResponse.equipment),
     siblings: parseSiblings(apiResponse.siblings),
     titlesHistory: Array.isArray(apiResponse?._meta?.titlesHistory)
       ? apiResponse._meta.titlesHistory

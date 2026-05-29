@@ -818,9 +818,21 @@
   font-weight: 800;
 }
 
+/* 상/중/하 등급 배지 (둥근 네모, 등급 색 채움) */
 .gradeBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 5px;
+  font-size: 0.62rem;
   font-weight: 800;
-  font-size: 0.66rem;
+  line-height: 1;
+  color: #fff;
+  margin-right: 0.35rem;
+  vertical-align: middle;
 }
 
 /* 팔찌 효과 텍스트 (inline flow, flex 아님) */
@@ -830,6 +842,13 @@
   line-height: 1.55;
   color: var(--text-secondary);
   display: inline;
+}
+
+/* 팔찌 효과 1개 = 한 단락. 효과끼리 또렷한 구분선으로 분리 */
+.braceletEffItem {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--text-muted);
 }
 
 /* 팔찌 고유효과 키워드 (가로) */
