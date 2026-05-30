@@ -8,7 +8,7 @@
  */
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
-  'https://lostarkweeklygold.kr';
+  'https://loalogol.kr';
 
 /** 도메인 마이그레이션 안내용 — 구도메인. 마이그레이션 끝나면 제거 가능. */
 export const LEGACY_SITE_HOST = 'lostarkweeklygold.kr';

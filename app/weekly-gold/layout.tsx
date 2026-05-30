@@ -4,7 +4,7 @@ import { SITE_URL } from '@/lib/site-config'
 // layout.tsx
 
 export const metadata: Metadata = {
-  title: '주간 골드 계산기 - 더보기 효율, 레이드 보상',
+  title: '주간골드 계산기',
 
   description: '로아로골 주간 골드 계산기! 로아 더보기 효율, 로아 레이드 보상을 실시간 거래소 가격으로 계산하세요. 로아 지평의 성당, 로아 세르카, 로아 카제로스 레이드 골드 수익과 더보기 손익을 한눈에.',
 

@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-config'
 
 export const metadata: Metadata = {
-  title: '익스트림 레이드 보상 정리 - 1막·2막 골드·토큰·최초 클리어 | 로아로골',
+  title: '익스트림 보상',
 
   description: '로스트아크 익스트림 레이드 보상 완전 정리. 노말(1720)·하드(1750)·나이트메어(1770) 난이도별 골드, 토큰(xhzms), 최초 클리어 전설 카드팩·영웅 젬·젬 가공 초기화권 획득량. 1막 홍염의 군주, 2막 혹한의 군주 일정과 입장 조건을 한눈에 확인하세요.',
 

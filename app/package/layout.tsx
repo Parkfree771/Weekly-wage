@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
 
 export const metadata: Metadata = {
-  title: '로아 패키지 효율 계산기 - PC방 효율 비교 | 로스트아크 캐시샵',
+  title: '패키지 효율 계산기',
   description:
     '로스트아크 캐시샵 패키지 효율을 계산하고 비교하세요. PC방 패키지 효율, 로열 크리스탈 대비 골드 가치를 실시간 시세로 한눈에 확인할 수 있습니다.',
   keywords:

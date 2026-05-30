@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-config'
 
 export const metadata: Metadata = {
-  title: '세르카 클리어 보상 & 고통의 가시 교환 상점 - 교환 효율 계산',
+  title: '세르카 보상',
 
   description: '로아로골 세르카 보상 정리! 로아 세르카 노말/하드/나메 클리어 보상, 더보기 손익, 고통의 가시 교환 상점 목록과 교환 효율을 실시간 시세로 확인하세요. 야금술/재봉술 업화, 고통의 재련 재료 상자, 보조 재료 주머니, 영웅~고급 젬 랜덤 상자까지 한눈에.',
 
