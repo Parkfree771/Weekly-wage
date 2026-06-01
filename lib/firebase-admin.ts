@@ -2,10 +2,12 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getStorage, Storage } from 'firebase-admin/storage';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { getAuth, Auth } from 'firebase-admin/auth';
 
 let adminApp: App;
 let adminStorage: Storage;
 let adminFirestore: Firestore;
+let adminAuth: Auth;
 
 /**
  * Firebase Admin SDK 초기화
@@ -66,4 +68,29 @@ export function getAdminFirestore(): Firestore {
     adminFirestore = getFirestore(app);
   }
   return adminFirestore;
+}
+
+/**
+ * Admin Auth 인스턴스 가져오기 (ID 토큰 검증용)
+ */
+export function getAdminAuth(): Auth {
+  if (!adminAuth) {
+    adminAuth = getAuth(getAdminApp());
+  }
+  return adminAuth;
+}
+
+/**
+ * Authorization: Bearer <idToken> 헤더에서 uid 추출. 실패 시 null.
+ */
+export async function verifyBearerUid(req: Request): Promise<string | null> {
+  const header = req.headers.get('authorization') || '';
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  if (!match) return null;
+  try {
+    const decoded = await getAdminAuth().verifyIdToken(match[1]);
+    return decoded.uid;
+  } catch {
+    return null;
+  }
 }

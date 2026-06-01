@@ -57,6 +57,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/character', label: '캐릭터 조회' },
     ],
   },
+  {
+    label: '커뮤니티',
+    colorClass: 'nav-character',
+    items: [
+      { href: '/tier', label: '직업 티어표', badge: 'NEW' },
+    ],
+  },
 ];
 
 export default function Navbar() {
