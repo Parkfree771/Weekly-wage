@@ -17,11 +17,17 @@
   margin-right: -0.1em;
 }
 
-/* 심연의 군주 / 카제로스 / 돌로리스: 아이콘만 살짝 축소 */
+/* 심연의 군주 / 카제로스 / 돌로리스 / 이클립스: 아이콘만 살짝 축소 */
 .titleIcon[src*="abyss"],
 .titleIcon[src*="kazeroth"],
-.titleIcon[src*="dolores"] {
+.titleIcon[src*="dolores"],
+.titleIcon[src*="eclipse"] {
   height: 1.45em;
+}
+
+/* 카멘: 광채가 프레임 끝까지 차서 더 커 보임 → 이클립스와 시각적 크기 맞추려 추가 축소 */
+.titleIcon[src*="kamen"] {
+  height: 1.25em;
 }
 
 .titleBadge {

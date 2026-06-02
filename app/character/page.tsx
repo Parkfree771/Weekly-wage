@@ -51,6 +51,10 @@ function CharacterPageInner() {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  // 랭킹 → 캐릭터 이동 시 랭킹 스크롤 위치 저장 (뒤로가기 복원용)
+  const rankingScrollRef = useRef(0);
+  // 세션 내 조회한 캐릭터 캐시 (뒤로가기·재방문 시 재요청·로딩 플래시 없이 즉시 표시)
+  const charCacheRef = useRef<Map<string, { data: CharacterData; meta: FetchMeta | null }>>(new Map());
 
   const router = useRouter();
 
@@ -61,19 +65,58 @@ function CharacterPageInner() {
     setError(null);
     setCharacterName('');
     setShowSuggestions(false);
-    router.push('/character');
+    rankingScrollRef.current = 0; // 첫 화면은 맨 위 — 스크롤 복원 비활성
+    router.push('/character', { scroll: false });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // URL ?name=XXX 자동 검색 (랭킹 카드 → 상세 이동용)
+  // URL ?name= 을 화면의 단일 진실 소스로 사용.
+  // name 있으면 해당 캐릭터 표시, 없으면(뒤로가기로 /character 복귀 등) 결과 정리 → 랭킹 화면.
   const searchParams = useSearchParams();
   useEffect(() => {
-    const nameParam = searchParams?.get('name');
-    if (nameParam && nameParam.trim()) {
-      performSearch(nameParam.trim());
+    const nameParam = searchParams?.get('name')?.trim();
+    if (nameParam) {
+      const cached = charCacheRef.current.get(nameParam);
+      if (cached) {
+        // 이미 조회한 캐릭터 → 재요청·로딩 플래시 없이 즉시 표시
+        setCharacterName(nameParam);
+        setCombatData(cached.data);
+        setMeta(cached.meta);
+        setError(null);
+        setIsLoading(false);
+        window.scrollTo(0, 0);
+      } else {
+        performSearch(nameParam);
+      }
+    } else {
+      setCombatData(null);
+      setMeta(null);
+      setError(null);
+      setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // 랭킹 화면으로 복귀 시 직전 스크롤 위치 복원 (제스처 뒤로가기 대응).
+  // display:none→block 레이아웃 지연·Next 자동 스크롤(top)에 밀리지 않도록
+  // 여러 프레임에 걸쳐 목표 위치를 재확정한다.
+  useEffect(() => {
+    const showRanking = !combatData && !isLoading;
+    const y = rankingScrollRef.current;
+    if (!showRanking || y <= 0) return;
+    let raf = 0;
+    let tries = 0;
+    let hits = 0;
+    const restore = () => {
+      window.scrollTo(0, y);
+      tries += 1;
+      hits = Math.abs(window.scrollY - y) <= 1 ? hits + 1 : 0;
+      // 목표 위치에 2프레임 연속 안착하면 종료, 아니면 최대 15프레임까지 재시도
+      if (hits < 2 && tries < 15) raf = requestAnimationFrame(restore);
+    };
+    raf = requestAnimationFrame(restore);
+    return () => cancelAnimationFrame(raf);
+  }, [combatData, isLoading]);
 
   // 쿨다운 초 카운트 (활성 시에만 tick)
   useEffect(() => {
@@ -194,6 +237,7 @@ function CharacterPageInner() {
 
       setCombatData(parsed);
       setMeta(meta);
+      charCacheRef.current.set(trimmed, { data: parsed, meta }); // 세션 캐시 저장 (뒤로가기 즉시표시)
       addToHistory(trimmed);
       // 새 데이터 저장 후 랭킹 갱신
       if (!meta?.fromCache) {
@@ -215,7 +259,7 @@ function CharacterPageInner() {
       return;
     }
     // URL 푸시 → history 쌓임 → useEffect가 ?name 보고 자동 검색
-    router.push(`/character?name=${encodeURIComponent(trimmed)}`);
+    router.push(`/character?name=${encodeURIComponent(trimmed)}`, { scroll: false });
   };
 
   return (
@@ -369,13 +413,16 @@ function CharacterPageInner() {
         )}
       </Form>
 
-      {/* 랭킹 (검색 결과 없을 때만 노출) */}
-      {!combatData && !isLoading && (
+      {/* 랭킹: 항상 마운트하고 결과/로딩 시 숨김 → 목록·스크롤 상태 유지 (뒤로가기 복원) */}
+      <div style={{ display: !combatData && !isLoading ? 'block' : 'none' }}>
         <CharacterRanking
-          onSelect={(name) => router.push(`/character?name=${encodeURIComponent(name)}`)}
+          onSelect={(name) => {
+            rankingScrollRef.current = window.scrollY; // 뒤로가기 시 복원할 위치 저장
+            router.push(`/character?name=${encodeURIComponent(name)}`, { scroll: false });
+          }}
           reloadKey={rankingReloadKey}
         />
-      )}
+      </div>
 
       {/* 로딩 */}
       {isLoading && (
@@ -464,7 +511,7 @@ function CharacterPageInner() {
           )}
           <CharacterDashboard
             data={combatData}
-            onCharacterSelect={(name) => performSearch(name)}
+            onCharacterSelect={(name) => router.push(`/character?name=${encodeURIComponent(name)}`, { scroll: false })}
           />
         </>
       )}
