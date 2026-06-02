@@ -20,6 +20,8 @@ type NavGroup = {
   label: string;
   items: NavItem[];
   colorClass: string; // 드롭다운 트리거 색상
+  href?: string;      // 있으면 드롭다운 대신 직접 링크로 렌더
+  badge?: string;     // 직접 링크용 배지
 };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -54,15 +56,15 @@ const NAV_GROUPS: NavGroup[] = [
     label: '조회',
     colorClass: 'nav-character',
     items: [
-      { href: '/character', label: '캐릭터 조회' },
+      { href: '/character', label: '캐릭터 조회', badge: 'NEW' },
     ],
   },
   {
-    label: '커뮤니티',
+    label: '직업 티어표',
     colorClass: 'nav-character',
-    items: [
-      { href: '/tier', label: '직업 티어표', badge: 'NEW' },
-    ],
+    href: '/tier',
+    badge: 'NEW',
+    items: [],
   },
 ];
 
@@ -149,8 +151,18 @@ export default function Navbar() {
 
           {/* 데스크톱 메뉴 */}
           <Nav className="d-none d-lg-flex align-items-center gap-2 ms-4">
-            {/* 드롭다운 그룹 */}
+            {/* 드롭다운 그룹 + 직접 링크(href 있는 그룹) */}
             {NAV_GROUPS.map((group) => (
+              group.href ? (
+                <Link
+                  key={group.label}
+                  href={group.href}
+                  className={`navbar-nav-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''}`}
+                >
+                  {group.label}
+                  {group.badge && <span className="nav-badge-new">{group.badge}</span>}
+                </Link>
+              ) : (
               <div
                 key={group.label}
                 className="nav-dropdown-wrapper"
@@ -187,6 +199,7 @@ export default function Navbar() {
                   ))}
                 </div>
               </div>
+              )
             ))}
           </Nav>
         </div>
@@ -298,6 +311,18 @@ export default function Navbar() {
           <Offcanvas.Body className="navbar-offcanvas-body">
             <Nav className="flex-column gap-2">
               {NAV_GROUPS.map((group, idx) => (
+                group.href ? (
+                  <Link
+                    key={group.label}
+                    href={group.href}
+                    className={`navbar-offcanvas-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''}`}
+                    onClick={handleClose}
+                    style={idx > 0 ? { marginTop: '8px' } : undefined}
+                  >
+                    {group.label}
+                    {group.badge && <span className="nav-badge-new">{group.badge}</span>}
+                  </Link>
+                ) : (
                 <div key={group.label}>
                   <div
                     className="navbar-offcanvas-group-label"
@@ -318,6 +343,7 @@ export default function Navbar() {
                     </Link>
                   ))}
                 </div>
+                )
               ))}
             </Nav>
             <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
