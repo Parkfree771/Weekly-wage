@@ -18,14 +18,9 @@ export async function GET(request: Request) {
 
   try {
     const entries = await listRanking({ className, titleQuery, ancientCount, specId, sortBy, sortDir, limit, offset });
-    const res = NextResponse.json({ entries });
-    // 랭킹 목록은 5분간 CDN 엣지 캐시 (DB·함수 호출 절감).
-    // 만료 후에도 stale 즉시 응답 + 백그라운드 갱신(SWR) → 조회 지연/실패 없음.
-    // 브라우저는 자체 캐시 안 함(max-age=0)이라 항상 엣지에 재검증.
-    // 갱신하기로 인한 즉시 무효화는 하지 않음 → 랭킹 반영은 최대 5분 지연(상세 조회·DB 쓰기는 즉시).
-    res.headers.set('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
-    res.headers.set('Netlify-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
-    return res;
+    // CDN 캐시 미적용: Netlify 엣지가 offset/필터 쿼리로 캐시키를 구분하지 않아(Netlify-Vary)
+    // 모든 페이지가 1~30위로 캐시 적중 → 페이지네이션이 깨짐. 캐시는 끄고 매 요청 신선 조회.
+    return NextResponse.json({ entries });
   } catch (err: any) {
     // eslint-disable-next-line no-console
     console.error('[ranking-api] error:', err);

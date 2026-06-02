@@ -249,10 +249,11 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
   }
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   // sortDir은 'ASC'|'DESC' 리터럴만 (사용자 문자열 아님 → 인터폴레이션 안전)
+  // character_name(고유 PK)을 마지막 정렬키로 → 동점에서도 페이지 경계가 결정적(중복·누락 방지)
   const orderClause =
     sortBy === 'item_level'
-      ? `ORDER BY item_level ${sortDir}, combat_power ${sortDir}`
-      : `ORDER BY combat_power ${sortDir}, item_level ${sortDir}`;
+      ? `ORDER BY item_level ${sortDir}, combat_power ${sortDir}, character_name ASC`
+      : `ORDER BY combat_power ${sortDir}, item_level ${sortDir}, character_name ASC`;
   params.push(limit);
   const limitIdx = params.length;
   params.push(offset);
