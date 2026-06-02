@@ -18,9 +18,14 @@ export async function GET(request: Request) {
 
   try {
     const entries = await listRanking({ className, titleQuery, ancientCount, specId, sortBy, sortDir, limit, offset });
-    // CDN 캐시 미적용: Netlify 엣지가 offset/필터 쿼리로 캐시키를 구분하지 않아(Netlify-Vary)
-    // 모든 페이지가 1~30위로 캐시 적중 → 페이지네이션이 깨짐. 캐시는 끄고 매 요청 신선 조회.
-    return NextResponse.json({ entries });
+    const res = NextResponse.json({ entries });
+    // Netlify-Vary: query → 쿼리 문자열(offset·필터·정렬)별로 캐시 키 분리.
+    // 이게 없으면 모든 페이지가 한 캐시로 뭉개져 1~30위만 반복됨(페이지네이션 깨짐).
+    res.headers.set('Netlify-Vary', 'query');
+    // 같은 페이지 반복 요청은 5분 엣지 캐시 적중 → DB·함수 호출 절감. 만료 후 SWR로 지연 0.
+    res.headers.set('Netlify-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    res.headers.set('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+    return res;
   } catch (err: any) {
     // eslint-disable-next-line no-console
     console.error('[ranking-api] error:', err);
