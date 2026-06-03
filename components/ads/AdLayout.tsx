@@ -65,9 +65,9 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
     : {};
 
   return (
-    <div className="ad-layout" style={layoutStyle}>
+    <div className="content-shell" style={layoutStyle}>
       {showSideAds && <AdSidebar position="left" topOffset={adTop} />}
-      <main className="ad-layout-main" style={{ minHeight: 'calc(100vh - 200px)' }}>
+      <main className="content-shell-main" style={{ minHeight: 'calc(100vh - 200px)' }}>
         {children}
       </main>
       {showSideAds && <AdSidebar position="right" topOffset={adTop} />}

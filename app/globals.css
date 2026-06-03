@@ -1181,31 +1181,32 @@ html, body {
    좌우 대칭 사이드바 광고 레이아웃
    ========================================================================== */
 
-.ad-layout {
+/* 클래스명에 'ad'를 넣지 않음 — AdGuard/uBlock 등이 .ad-sidebar 류를 광고로 오인해 숨김 */
+.content-shell {
   display: flex;
   justify-content: center;
   margin: 0 auto;
 }
 
-.ad-layout-main {
+.content-shell-main {
   flex: 1;
   min-width: 0;
 }
 
-.ad-sidebar {
+.side-rail {
   width: 220px;
   flex-shrink: 0;
 }
 
-.ad-sidebar-left {
+.side-rail-left {
   margin-right: 8px;
 }
 
-.ad-sidebar-right {
+.side-rail-right {
   margin-left: 8px;
 }
 
-.ad-sidebar-sticky {
+.side-rail-sticky {
   position: sticky;
   top: 56px;
 }

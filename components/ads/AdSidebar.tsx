@@ -10,10 +10,10 @@ interface AdSidebarProps {
 export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) {
   return (
     <aside
-      className={`ad-sidebar ad-sidebar-${position}`}
+      className={`side-rail side-rail-${position}`}
       style={{ paddingTop: `${topOffset}px` }}
     >
-      <div className="ad-sidebar-sticky">
+      <div className="side-rail-sticky">
         <LoaOnBanner />
       </div>
     </aside>
