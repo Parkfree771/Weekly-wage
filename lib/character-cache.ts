@@ -1,6 +1,30 @@
 import { sql } from './neon';
 import type { CharacterData } from './characterData';
-import { resolveSpecIcon, specFilterFor } from './class-spec-icon';
+import { resolveSpecIcon, specFilterFor, SUPPORT_SPEC_RULES } from './class-spec-icon';
+
+// 칭호 필터 최소 아이템레벨. 칭호는 한 번 획득하면 저렙 부캐도 달 수 있어
+// 통계가 오염되므로, 아래 칭호로 필터할 때만 이 레벨 이상으로 집계한다.
+const TITLE_MIN_ITEM_LEVEL = 1770;
+const TITLES_REQUIRE_MIN_LEVEL = new Set<string>(['혹한의 군주', '홍염의 군주']);
+
+// arkPassive 깨달음 효과 배열 (없거나 비배열이면 빈 배열) — 스펙/역할 판별 공용
+const ENL_ARR = `jsonb_array_elements(
+  CASE WHEN jsonb_typeof(data->'arkPassive'->'effects') = 'array'
+       THEN data->'arkPassive'->'effects' ELSE '[]'::jsonb END)`;
+
+// 서포터(역할) 판별 SQL. params에 className/sig 패턴을 push하고 boolean 표현식을 반환.
+// 서포터 = 4직업 각각의 시그니처 깨달음 노드를 가진 캐릭터. 딜러 = NOT 서포터.
+function supportRoleExpr(params: any[]): string {
+  const parts = SUPPORT_SPEC_RULES.map(r => {
+    params.push(r.className);
+    const ci = params.length;
+    params.push(`%${r.sig}%`);
+    const si = params.length;
+    return `(class_name = $${ci} AND EXISTS (SELECT 1 FROM ${ENL_ARR} AS ee
+       WHERE ee->>'category' = '깨달음' AND ee->>'name' LIKE $${si}))`;
+  });
+  return `(${parts.join(' OR ')})`;
+}
 
 export type CoreData = {
   name: string;
@@ -190,6 +214,8 @@ export interface ListRankingOptions {
   ancientCount?: number;
   /** 스펙 필터 — 스펙 id(예: "디트 분망"). 해당 직업 + 깨달음 시그니처로 판별된 캐릭터만 */
   specId?: string;
+  /** 역할 필터 — 'support'(바드/발키리/홀나/도화가 서포터 스펙) | 'dealer'(그 외 전부) */
+  role?: 'dealer' | 'support';
   sortBy?: RankingSortBy;
   /** 정렬 방향. 기본 desc(내림차순) */
   sortDir?: 'asc' | 'desc';
@@ -219,7 +245,10 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
   }
   if (titlePattern) {
     params.push(titlePattern);
-    conditions.push(`equipped_title ILIKE $${params.length}`);
+    // 혹한/홍염의 군주만 부캐 오염 방지를 위해 아이템레벨 floor (1770은 상수 → 인터폴레이션 안전)
+    const titleFloor = titleQuery && TITLES_REQUIRE_MIN_LEVEL.has(titleQuery)
+      ? ` AND item_level >= ${TITLE_MIN_ITEM_LEVEL}` : '';
+    conditions.push(`equipped_title ILIKE $${params.length}${titleFloor}`);
   }
   if (ancientCount !== null) {
     params.push(ancientCount);
@@ -246,6 +275,12 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
       const enlExists = `EXISTS (SELECT 1 FROM ${enlArr} AS ee WHERE ee->>'category' = '깨달음')`;
       conditions.push(`${enlExists} AND NOT ${sigExists}`);
     }
+  }
+  // 역할 필터 (딜러/서포터)
+  if (opts.role === 'support') {
+    conditions.push(supportRoleExpr(params));
+  } else if (opts.role === 'dealer') {
+    conditions.push(`NOT ${supportRoleExpr(params)}`);
   }
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   // sortDir은 'ASC'|'DESC' 리터럴만 (사용자 문자열 아님 → 인터폴레이션 안전)
@@ -297,4 +332,110 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
       specIcon: spec?.icon ?? null,
     };
   });
+}
+
+export interface RankingStats {
+  /** 전체 등록 캐릭터 수 */
+  total: number;
+  /** 현재 필터 조합에 모두 매칭되는 수 */
+  matched: number;
+  /** 매칭 집합의 평균 전투력 */
+  avgCombatPower: number;
+  /** 매칭 집합의 평균 아이템레벨 */
+  avgItemLevel: number;
+  /** 활성 필터 각각을 단독 적용했을 때의 수 (활성 필터만 키 존재) */
+  breakdown: { spec?: number; title?: number; ancient?: number; role?: number };
+}
+
+/**
+ * 필터 조합의 비율 통계.
+ * listRanking과 동일한 조건식을 FILTER 절로 재사용해 단일 쿼리로 계산한다.
+ * → DB 1회 읽기 + 정수 몇 개만 반환(egress ~0). API에서 5분 CDN 캐시로 반복 호출도 차단.
+ */
+export async function getRankingStats(opts: ListRankingOptions = {}): Promise<RankingStats> {
+  const className = opts.className?.trim() || null;
+  const titleQuery = opts.titleQuery?.trim() || null;
+  const titlePattern = titleQuery ? `%${titleQuery}%` : null;
+  const ancientCount =
+    typeof opts.ancientCount === 'number' && opts.ancientCount >= 0 && opts.ancientCount <= 6
+      ? Math.floor(opts.ancientCount)
+      : null;
+
+  // 각 필터를 독립 boolean 표현식으로 만들어 matched(AND 결합)와 단독 FILTER에 모두 재사용
+  const params: any[] = [];
+  const frags: { key: 'spec' | 'title' | 'ancient' | 'class' | 'role'; expr: string }[] = [];
+
+  if (className) {
+    params.push(className);
+    frags.push({ key: 'class', expr: `class_name = $${params.length}` });
+  }
+  if (titlePattern) {
+    params.push(titlePattern);
+    const titleFloor = titleQuery && TITLES_REQUIRE_MIN_LEVEL.has(titleQuery)
+      ? ` AND item_level >= ${TITLE_MIN_ITEM_LEVEL}` : '';
+    frags.push({ key: 'title', expr: `equipped_title ILIKE $${params.length}${titleFloor}` });
+  }
+  if (ancientCount !== null) {
+    params.push(ancientCount);
+    frags.push({
+      key: 'ancient',
+      expr: `(SELECT count(*) FROM jsonb_array_elements(cores) AS e WHERE e->>'grade' = '고대') = $${params.length}`,
+    });
+  }
+  const specFilter = specFilterFor(opts.specId);
+  if (specFilter) {
+    params.push(specFilter.className);
+    const ci = params.length;
+    params.push(`%${specFilter.sig}%`);
+    const si = params.length;
+    const enlArr = `jsonb_array_elements(
+         CASE WHEN jsonb_typeof(data->'arkPassive'->'effects') = 'array'
+              THEN data->'arkPassive'->'effects' ELSE '[]'::jsonb END)`;
+    const sigExists = `EXISTS (SELECT 1 FROM ${enlArr} AS ee
+       WHERE ee->>'category' = '깨달음' AND ee->>'name' LIKE $${si})`;
+    let expr: string;
+    if (specFilter.requireSig) {
+      expr = `class_name = $${ci} AND ${sigExists}`;
+    } else {
+      const enlExists = `EXISTS (SELECT 1 FROM ${enlArr} AS ee WHERE ee->>'category' = '깨달음')`;
+      expr = `class_name = $${ci} AND ${enlExists} AND NOT ${sigExists}`;
+    }
+    frags.push({ key: 'spec', expr });
+  }
+  if (opts.role === 'support' || opts.role === 'dealer') {
+    const expr = opts.role === 'support' ? supportRoleExpr(params) : `NOT ${supportRoleExpr(params)}`;
+    frags.push({ key: 'role', expr });
+  }
+
+  const matchedExpr = frags.length ? frags.map(f => `(${f.expr})`).join(' AND ') : 'TRUE';
+
+  const selects: string[] = [
+    `count(*) AS total`,
+    `count(*) FILTER (WHERE ${matchedExpr}) AS matched`,
+    `COALESCE(round(avg(combat_power) FILTER (WHERE ${matchedExpr}), 2), 0) AS avg_cp`,
+    `COALESCE(round(avg(item_level) FILTER (WHERE ${matchedExpr}), 2), 0) AS avg_il`,
+  ];
+  // 단독 비율(breakdown) — class는 spec에 포함되므로 별도 노출 안 함
+  for (const f of frags) {
+    if (f.key === 'class') continue;
+    selects.push(`count(*) FILTER (WHERE ${f.expr}) AS ${f.key}_only`);
+  }
+
+  const rows = (await sql.query(`SELECT ${selects.join(', ')} FROM characters`, params)) as any[];
+  const r = rows[0] || {};
+  const num = (v: any) => (v == null ? 0 : Number(v));
+
+  const breakdown: RankingStats['breakdown'] = {};
+  if (frags.some(f => f.key === 'spec')) breakdown.spec = num(r.spec_only);
+  if (frags.some(f => f.key === 'title')) breakdown.title = num(r.title_only);
+  if (frags.some(f => f.key === 'ancient')) breakdown.ancient = num(r.ancient_only);
+  if (frags.some(f => f.key === 'role')) breakdown.role = num(r.role_only);
+
+  return {
+    total: num(r.total),
+    matched: num(r.matched),
+    avgCombatPower: num(r.avg_cp),
+    avgItemLevel: num(r.avg_il),
+    breakdown,
+  };
 }

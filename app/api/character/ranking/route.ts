@@ -15,9 +15,11 @@ export async function GET(request: Request) {
       ? parseInt(ancientRaw, 10)
       : undefined;
   const specId = searchParams.get('spec') || undefined;
+  const roleRaw = searchParams.get('role');
+  const role = roleRaw === 'support' || roleRaw === 'dealer' ? roleRaw : undefined;
 
   try {
-    const entries = await listRanking({ className, titleQuery, ancientCount, specId, sortBy, sortDir, limit, offset });
+    const entries = await listRanking({ className, titleQuery, ancientCount, specId, role, sortBy, sortDir, limit, offset });
     const res = NextResponse.json({ entries });
     // Netlify-Vary: query → 쿼리 문자열(offset·필터·정렬)별로 캐시 키 분리.
     // 이게 없으면 모든 페이지가 한 캐시로 뭉개져 1~30위만 반복됨(페이지네이션 깨짐).

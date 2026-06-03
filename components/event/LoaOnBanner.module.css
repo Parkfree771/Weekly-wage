@@ -1,0 +1,88 @@
+/* 로아온 섬머 2026 세로 사이드 배너 (양쪽 레일용) */
+
+.card {
+  display: block;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+/* 이미지 — 어떤 효과/오버레이도 없이 원본 그대로 */
+.img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 날짜 + 타이머 — 이미지 밖, 아래 푸터 */
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.7rem 0.5rem 0.75rem;
+  background: linear-gradient(135deg, #13294f 0%, #1d4f8c 100%);
+}
+
+.date {
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #e3edff;
+}
+
+.timer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.seg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.segNum {
+  font-family: var(--font-mono), monospace;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.segLabel {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #9fc1ff;
+}
+
+.colon {
+  font-family: var(--font-mono), monospace;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.live {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.liveDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff3b3b;
+  box-shadow: 0 0 9px rgba(255, 59, 59, 0.9);
+}

@@ -815,7 +815,9 @@ html {
 }
 
 html, body {
-  overflow-x: hidden;
+  /* clip: 가로 넘침은 자르되 스크롤 컨테이너를 만들지 않음 →
+     자손의 position: sticky(광고 사이드바 등)가 정상 동작. hidden은 sticky를 깨뜨림. */
+  overflow-x: clip;
   max-width: 100vw;
 }
 
@@ -1191,7 +1193,7 @@ html, body {
 }
 
 .ad-sidebar {
-  width: 160px;
+  width: 220px;
   flex-shrink: 0;
 }
 

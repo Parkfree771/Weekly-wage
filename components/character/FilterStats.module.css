@@ -1,0 +1,320 @@
+.panel {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  box-shadow: 0 8px 26px rgba(20, 40, 90, 0.08);
+  padding: 1.15rem 1.15rem 1.3rem;
+  overflow: hidden;
+}
+
+/* 헤더 */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.headDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #7c3aed);
+  flex-shrink: 0;
+}
+
+.headTitle {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.headSub {
+  margin-left: auto;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-muted, #99a);
+}
+
+/* 적용된 필터 칩 목록 (도넛 위) */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+  border: 1px solid var(--border-color);
+}
+
+.chipSpec {
+  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.05));
+  color: var(--text-primary);
+}
+
+.chipSpecIcon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.05));
+}
+
+.chipRole {
+  background: rgba(16, 185, 129, 0.14);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.chipAncient {
+  background: rgba(217, 119, 6, 0.14);
+  color: #d97706;
+  border-color: rgba(217, 119, 6, 0.35);
+}
+
+.chipAll {
+  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.05));
+  color: var(--text-muted, #99a);
+}
+
+/* 원형 게이지 (칩 아래로 살짝 내림) */
+.gaugeWrap {
+  position: relative;
+  width: 172px;
+  height: 172px;
+  margin: 1rem auto 0.2rem;
+}
+
+.gauge {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.gTrack {
+  fill: none;
+  stroke: var(--card-body-bg-stone, rgba(0, 0, 0, 0.08));
+  stroke-width: 11;
+}
+
+.gArc {
+  fill: none;
+  stroke-width: 11;
+  stroke-linecap: round;
+}
+
+.gaugeCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.gaugePct {
+  display: flex;
+  align-items: baseline;
+  font-family: var(--font-mono), monospace;
+  font-size: 2.55rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.gaugeUnit {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-left: 2px;
+  color: #7c3aed;
+}
+
+.gaugeLabel {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted, #99a);
+}
+
+/* 매칭 수 pill */
+.countPill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0.5rem auto 0;
+  width: fit-content;
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(124, 58, 237, 0.12) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.countPill strong {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.countSlash {
+  color: var(--text-muted, #aab);
+}
+
+.note {
+  margin: 0.5rem auto 0;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #d97706;
+}
+
+/* 평균 전투력 · 아이템레벨 */
+.avgRow {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.avgBox {
+  flex: 1;
+  min-width: 0;
+  padding: 0.7rem 0.5rem;
+  border-radius: 12px;
+  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.04));
+  border: 1px solid var(--border-color);
+  border-top: 3px solid var(--border-color);
+  text-align: center;
+}
+
+.avgCp { border-top-color: #3b82f6; }
+.avgIl { border-top-color: #d97706; }
+
+.avgLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted, #99a);
+  margin-bottom: 0.25rem;
+}
+
+.avgValue {
+  font-family: var(--font-mono), monospace;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+/* 필터별 단독 비율 */
+.filters {
+  margin-top: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.filtersLabel {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: var(--text-muted, #99a);
+}
+
+.fRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 0.5rem;
+}
+
+.fTop {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.fTag {
+  flex-shrink: 0;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.tag_role { background: #10b981; }
+.tag_spec { background: #3b82f6; }
+.tag_title { background: #7c3aed; }
+.tag_ancient { background: #d97706; }
+
+.fName {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fPct {
+  flex-shrink: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.fBar {
+  grid-column: 1 / -1;
+  height: 8px;
+  border-radius: 5px;
+  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.07));
+  overflow: hidden;
+}
+
+.fBarFill {
+  height: 100%;
+  border-radius: 5px;
+  min-width: 2px;
+}
+
+.fill_role { background: linear-gradient(90deg, #10b981, #34d399); }
+.fill_spec { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.fill_title { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+.fill_ancient { background: linear-gradient(90deg, #d97706, #fbbf24); }
+
+.fCount {
+  grid-column: 1 / -1;
+  margin-top: -0.15rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted, #99a);
+  text-align: right;
+}
+
+.hint {
+  margin-top: 1.1rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.04));
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--text-muted, #99a);
+  text-align: center;
+}

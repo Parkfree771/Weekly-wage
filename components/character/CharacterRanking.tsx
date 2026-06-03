@@ -5,6 +5,7 @@ import { TIER_ENTRIES } from '@/lib/tier-entries.generated';
 import styles from './CharacterRanking.module.css';
 import TitleBadge from './TitleBadge';
 import FilterSelect, { type FilterGroup } from './FilterSelect';
+import FilterStats from './FilterStats';
 
 // 스펙 필터 옵션: 58개 매핑을 직업군(group)별로 묶음 (TIER_ENTRIES는 group→name 정렬됨)
 const SPEC_GROUP_ORDER = ['전사', '무도가', '헌터', '마법사', '암살자', '스페셜리스트', '기타'];
@@ -120,18 +121,20 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
   const [selectedSpec, setSelectedSpec] = useState<string>('');
   const [selectedTitle, setSelectedTitle] = useState<string>('');
   const [selectedAncient, setSelectedAncient] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<string>('');
   const [sort, setSort] = useState<SortState>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasActiveFilter = !!(selectedSpec || selectedTitle || selectedAncient || sort);
+  const hasActiveFilter = !!(selectedSpec || selectedTitle || selectedAncient || selectedRole || sort);
 
   const resetFilters = () => {
     setSelectedSpec('');
     setSelectedTitle('');
     setSelectedAncient('');
+    setSelectedRole('');
     setSort(null);
   };
 
@@ -151,6 +154,7 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
     if (selectedSpec) p.set('spec', selectedSpec);
     if (selectedTitle) p.set('title', selectedTitle);
     if (selectedAncient) p.set('ancient', selectedAncient);
+    if (selectedRole) p.set('role', selectedRole);
     if (extra) for (const [k, v] of Object.entries(extra)) p.set(k, v);
     return p;
   };
@@ -184,7 +188,7 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSpec, selectedTitle, selectedAncient, sort]);
+  }, [selectedSpec, selectedTitle, selectedAncient, selectedRole, sort]);
 
   // reloadKey 변경(새 캐릭터 저장 등) → 데이터만 갱신하고 "더보기로 펼친 개수"는 유지.
   // 첫 10개로 리셋하지 않음 → 캐릭터 보고 뒤로가기해도 보던 목록 그대로.
@@ -249,7 +253,16 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
     return () => io.disconnect();
   }, [hasMore, isLoading]);
 
+  // 통계 사이드바 breakdown·칩용 라벨
+  const specEntry = selectedSpec ? TIER_ENTRIES.find(e => e.id === selectedSpec) : undefined;
+  const specLabel = selectedSpec ? (specEntry?.name ?? selectedSpec) : undefined;
+  const specIcon = specEntry?.icon;
+  const titleLabel = selectedTitle ? (TITLE_FILTER_OPTIONS.find(t => t.value === selectedTitle)?.label ?? selectedTitle) : undefined;
+  const ancientLabel = selectedAncient ? `${selectedAncient}고대` : undefined;
+  const roleLabel = selectedRole === 'support' ? '서포터' : selectedRole === 'dealer' ? '딜러' : undefined;
+
   return (
+    <div className={styles.layout}>
     <section className={styles.section}>
       <div className={styles.header}>
         <h2 className={styles.title}>캐릭터 랭킹</h2>
@@ -281,6 +294,17 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
             {[6, 5, 4, 3, 2, 1, 0].map((n) => (
               <option key={n} value={String(n)}>{n}고대</option>
             ))}
+          </select>
+
+          <select
+            className={styles.classSelect}
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+            aria-label="역할 필터"
+          >
+            <option value="">전체 역할</option>
+            <option value="dealer">딜러</option>
+            <option value="support">서포터</option>
           </select>
 
           <div className={styles.sortGroup} role="group" aria-label="정렬 기준">
@@ -429,6 +453,17 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
         </>
       )}
     </section>
+
+      <aside className={styles.statsAside}>
+        <FilterStats
+          spec={selectedSpec}
+          title={selectedTitle}
+          ancient={selectedAncient}
+          role={selectedRole}
+          labels={{ spec: specLabel, specIcon, title: titleLabel, ancient: ancientLabel, role: roleLabel }}
+        />
+      </aside>
+    </div>
   );
 }
 

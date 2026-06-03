@@ -52,6 +52,12 @@ const SPEC_RULES: Record<string, SpecRule> = {
   '환수사':       { sig: '야성',            withId: '환수 야성',      elseId: '환수 각성' },
 };
 
+// 서포터 스펙 4종(전부 시그니처 보유 스펙). 딜러/서포터 역할 필터용.
+// 바드 절구 / 발키리 해방자 / 홀나 축오 / 도화가 만개
+const SUPPORT_CLASSES = ['바드', '발키리', '홀리나이트', '도화가'] as const;
+export const SUPPORT_SPEC_RULES: { className: string; sig: string }[] =
+  SUPPORT_CLASSES.map(c => ({ className: c, sig: SPEC_RULES[c].sig }));
+
 const ICON_BY_ID = new Map(TIER_ENTRIES.map(e => [e.id, e]));
 
 export type SpecIcon = { id: string; name: string; icon: string };
