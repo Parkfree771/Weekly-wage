@@ -8,12 +8,16 @@ import ClassIcon from '@/components/tier/ClassIcon';
 import {
   MATCHUP_SCALE,
   TIER_CLASSES,
-  TIER_GROUPS,
+  SUPPORT_ENTRIES,
+  tierGroupsForRole,
   type MatchupValue,
 } from '@/lib/tier-data';
 import styles from './page.module.css';
 
 type Ratings = Record<string, MatchupValue>;
+
+// 매치업(이김/짐)은 딜러끼리만. 서포터는 사이드바에서 선호 체크(중복 가능).
+const DEALER_GROUPS = tierGroupsForRole('dealer');
 
 // 1~2 이김(초록) / 3 비슷(회색) / 4~5 짐(빨강)
 function segColor(value: number) {
@@ -35,6 +39,9 @@ export default function TierVotePage() {
   const [submitted, setSubmitted] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // 선호 서포터 체크 (중복 가능). 매치업과 함께 제출 — 누구나 선택.
+  const [supportPicks, setSupportPicks] = useState<string[]>([]);
 
   const byId = useMemo(
     () => Object.fromEntries(TIER_CLASSES.map((e) => [e.id, e])),
@@ -66,6 +73,34 @@ export default function TierVotePage() {
     };
   }, [user, selectedId]);
 
+  // 선호 서포터: 로그인 시 기존 선택 1회 로드 (매치업과 독립)
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch('/api/tier/support', {
+          headers: { authorization: `Bearer ${token}` },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!cancelled && res.ok)
+          setSupportPicks((data.supports as string[]) ?? []);
+      } catch {
+        /* 빈 상태 유지 */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const toggleSupport = (id: string) => {
+    setSupportPicks((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
   const setRating = (id: string, value: MatchupValue) => {
     setRatings((prev) => {
       if (prev[id] === value) {
@@ -82,15 +117,24 @@ export default function TierVotePage() {
     setSaving(true);
     try {
       const token = await user.getIdToken();
-      const res = await fetch('/api/tier/vote', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ voterClass: selectedId, ratings }),
-      });
-      if (!res.ok) throw new Error();
+      const headers = {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
+      };
+      // 딜러 매치업 + 선호 서포터 체크를 함께 저장
+      const [voteRes, supRes] = await Promise.all([
+        fetch('/api/tier/vote', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ voterClass: selectedId, ratings }),
+        }),
+        fetch('/api/tier/support', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ supports: supportPicks, voterClass: selectedId }),
+        }),
+      ]);
+      if (!voteRes.ok || !supRes.ok) throw new Error();
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch {
@@ -112,6 +156,32 @@ export default function TierVotePage() {
   };
 
   const ratedCount = Object.keys(ratings).length;
+
+  // 선호 서포터 체크 (사이드바, 제출 위). 4개 아이콘 토글 — 중복 선택 가능.
+  const supportSidebar = (
+    <div className={styles.supportPick}>
+      <div className={styles.supportPickHead}>선호 서포터 · 중복 선택 가능</div>
+      <div className={styles.supportPickGrid}>
+        {SUPPORT_ENTRIES.map((e) => {
+          const on = supportPicks.includes(e.id);
+          return (
+            <button
+              key={e.id}
+              type="button"
+              className={`${styles.supportPickItem} ${
+                on ? styles.supportPickOn : ''
+              }`}
+              onClick={() => toggleSupport(e.id)}
+              title={e.name}
+            >
+              <ClassIcon name={e.name} src={e.icon} size={44} />
+              <span className={styles.supportPickName}>{e.name}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   // ── 0. 인증 로딩 ──
   if (loading) {
@@ -191,18 +261,19 @@ export default function TierVotePage() {
     );
   }
 
-  // ── 2. 직업 선택 ──
+  // ── 2. 직업 선택 + 서포터 선호 순위 ──
   if (!selected) {
     return (
       <Container fluid style={{ maxWidth: 1200 }}>
         <div className={styles.wrap} style={{ maxWidth: 1100 }}>
           <h1 className={styles.title}>직업 티어 투표</h1>
           <p className={styles.subtitle}>
-            투표할 내 주력 직업(각인)을 골라주세요. 직업당 한 번 평가할 수
+            매치업 평가할 내 주력 딜러(각인)를 골라주세요. 딜러당 한 번 평가할
+            수 있어요. 직업을 고르면 다음 화면에서 선호 서포터도 함께 체크할 수
             있어요.
           </p>
           <div className={styles.picker}>
-            {TIER_GROUPS.map((g) => (
+            {DEALER_GROUPS.map((g) => (
               <div key={g.group} className={styles.pickerGroup}>
                 <div className={styles.pickerGroupLabel}>{g.group}</div>
                 <div className={styles.pickerGrid}>
@@ -237,9 +308,9 @@ export default function TierVotePage() {
         </div>
 
         <div className={styles.layout}>
-          {/* 왼쪽: 직업 카드 그리드 */}
+          {/* 왼쪽: 직업 카드 그리드 (딜러 매치업) */}
           <div>
-            {TIER_GROUPS.map((g) => {
+            {DEALER_GROUPS.map((g) => {
               const entries = g.entries.filter((e) => e.id !== selectedId);
               if (entries.length === 0) return null;
               return (
@@ -325,14 +396,18 @@ export default function TierVotePage() {
               })}
             </div>
 
+            {/* 선호 서포터 체크 (제출 위) */}
+            {supportSidebar}
+
             <div className={styles.sideSubmit}>
               <span className={styles.sideProgress}>
-                <strong>{ratedCount}</strong>개 평가
+                <strong>{ratedCount}</strong>개 평가 · 서포터{' '}
+                <strong>{supportPicks.length}</strong>
               </span>
               <button
                 className={styles.primaryBtn}
                 onClick={handleSubmit}
-                disabled={ratedCount === 0 || saving}
+                disabled={(ratedCount === 0 && supportPicks.length === 0) || saving}
               >
                 {saving ? '제출 중…' : '제출'}
               </button>

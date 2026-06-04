@@ -271,6 +271,59 @@
   color: #fff;
 }
 
+/* ── 선호 서포터 체크 (사이드바, 제출 위) ── */
+.supportPick {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 0.75rem 0.8rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.supportPickHead {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.6rem;
+}
+
+.supportPickGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.45rem;
+}
+
+.supportPickItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.3rem;
+  border: 2px solid var(--border-color);
+  border-radius: 11px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.supportPickItem:hover {
+  border-color: var(--color-primary);
+}
+
+.supportPickOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.supportPickName {
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  word-break: keep-all;
+  text-align: center;
+}
+
 /* ── 사이드바 (오른쪽, 고정) ── */
 .sidebar {
   position: sticky;

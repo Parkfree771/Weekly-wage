@@ -27,11 +27,56 @@ export const MATCHUP_SCALE = [
 
 export type MatchupValue = 1 | 2 | 3 | 4 | 5;
 
-export const CURRENT_SEASON = {
-  id: 'S1',
-  label: '시즌 1',
-  basis: '1710 밸런스 패치 기준',
+export type Season = { id: string; label: string; basis: string };
+
+// 시즌 = 밸런스 패치 날짜 기준. 최신이 배열 맨 앞. 새 패치 나오면 위에 추가.
+export const SEASONS: Season[] = [
+  {
+    id: '2026-05-17',
+    label: '2026.05.17 패치',
+    basis: '2026.05.17 클래스 밸런스 패치 기준',
+  },
+];
+
+export const CURRENT_SEASON: Season = SEASONS[0];
+
+// 서포터 직업각인 스펙. 딜러와 1:1 딜 비교가 무의미하므로 티어표를 분리한다.
+// (바드=절실한 구원, 도화가=만개, 홀나=축복, 발키리=해방자 → 전부 서포터)
+// 나머지는 전부 딜러. (도화가 회귀는 딜러)
+export const SUPPORT_IDS = new Set<string>([
+  '바드 절구',
+  '도화가 만개',
+  '홀나 축오',
+  '발키리 해방자',
+]);
+
+export type TierRole = 'dealer' | 'support';
+
+export function roleOf(id: string): TierRole {
+  return SUPPORT_IDS.has(id) ? 'support' : 'dealer';
+}
+
+// 서포터 4종 (선호 순위 투표용 평탄 목록)
+export const SUPPORT_ENTRIES: TierEntry[] = TIER_ENTRIES.filter(
+  (e) => SUPPORT_IDS.has(e.id)
+);
+
+export const ROLE_LABEL: Record<TierRole, string> = {
+  dealer: '딜러',
+  support: '서포터',
 };
+
+// 역할별 그룹 묶음 (투표 화면에서 같은 역할끼리만 평가하도록)
+export function tierGroupsForRole(
+  role: TierRole
+): { group: string; entries: TierEntry[] }[] {
+  return GROUP_ORDER.map((group) => ({
+    group,
+    entries: TIER_ENTRIES.filter(
+      (e) => e.group === group && roleOf(e.id) === role
+    ),
+  })).filter((g) => g.entries.length > 0);
+}
 
 // 초기 세팅(SEED) placeholder: id 해시로 -1.8~1.8 균등 분포. 그룹과 무관하게 섞이게.
 // 실제 투표가 쌓이면 이 prior에서 크라우드 평균으로 수렴.
@@ -112,7 +157,9 @@ export function score100Color(n: number): string {
 }
 
 // 표본 부족 기준 (투표 수). 미만이면 티어 미배정 → '표본 부족' 칸.
-export const MIN_VOTES = 10;
+// 0 = 제한 해제(모든 직업 티어 배치). 표본이 쌓이면 다시 올릴 것.
+export const MIN_VOTES = 0;
+export const SUPPORT_MIN_VOTES = 0;
 
 // MOCK 투표 수 (placeholder). Neon 붙으면 실제 집계 수로 교체.
 export function mockVotes(id: string): number {

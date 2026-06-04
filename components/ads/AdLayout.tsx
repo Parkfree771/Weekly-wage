@@ -37,8 +37,10 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   const { contentWidth, adTop } = getPageConfig(pathname);
   const [showSideAds, setShowSideAds] = useState(false);
 
-  // 캐릭터 조회 페이지는 광고 레일 비활성 (오른쪽에 필터 통계 사이드바를 자체 배치)
-  const adsDisabled = pathname === '/character';
+  // 광고 레일 비활성 페이지
+  // - /character: 오른쪽에 필터 통계 사이드바를 자체 배치
+  // - /tier/vote: 직업 선택·투표 화면이 자체 사이드바를 써서 레일과 충돌
+  const adsDisabled = pathname === '/character' || pathname === '/tier/vote';
 
   useEffect(() => {
     if (adsDisabled) {
