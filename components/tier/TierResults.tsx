@@ -202,12 +202,13 @@ export default function TierResults({ stats }: { stats: TierStats | null }) {
                   </div>
                 </div>
                 <p className={styles.modalSub} style={{ marginTop: '0.7rem' }}>
-                  전체 참여 {supportVoterTotal}명 중 {detail.votes}명이 이
-                  서포터를 선호로 선택했어요
+                  전체 {supportVoterTotal}표 중 {detail.votes}표가 이 서포터를
+                  선호 순위에 넣었어요
                   {supportVoterTotal > 0 &&
                     ` (${Math.round((detail.votes / supportVoterTotal) * 100)}%)`}
-                  . 선호 지수는 가장 많이 선택된 서포터를 100으로 둔 상대
-                  점수예요.
+                  . 한 표는 (계정 × 평가 직업) 기준이라, 한 사람도 직업별로 각각
+                  한 표예요. 선호 지수는 순위 가중(1위일수록 높음) 점수를 최고값
+                  100 기준으로 환산한 값이에요.
                 </p>
 
                 {(() => {

@@ -49,21 +49,33 @@ export default function TierVotePage() {
   );
   const selected = selectedId ? byId[selectedId] : null;
 
-  // 직업 선택 시 내가 매긴 기존 평가 불러오기 (Neon)
+  // 직업 선택 시: 그 직업으로 매긴 매치업 + 그 직업의 선호 서포터를 함께 불러온다.
+  // 직업마다 선호가 다르므로 직업을 바꾸면 서포터 선택도 초기화 후 해당 직업 것으로 갱신.
   useEffect(() => {
     if (!user || !selectedId) return;
     let cancelled = false;
     setSubmitted(false);
     setRatings({});
+    setSupportPicks([]);
     (async () => {
       try {
         const token = await user.getIdToken();
-        const res = await fetch(
-          `/api/tier/my-votes?voterClass=${encodeURIComponent(selectedId)}`,
-          { headers: { authorization: `Bearer ${token}` } }
-        );
-        const data = await res.json().catch(() => ({}));
-        if (!cancelled && res.ok) setRatings((data.votes as Ratings) ?? {});
+        const headers = { authorization: `Bearer ${token}` };
+        const [voteRes, supRes] = await Promise.all([
+          fetch(
+            `/api/tier/my-votes?voterClass=${encodeURIComponent(selectedId)}`,
+            { headers }
+          ),
+          fetch(
+            `/api/tier/support?voterClass=${encodeURIComponent(selectedId)}`,
+            { headers }
+          ),
+        ]);
+        const voteData = await voteRes.json().catch(() => ({}));
+        const supData = await supRes.json().catch(() => ({}));
+        if (cancelled) return;
+        if (voteRes.ok) setRatings((voteData.votes as Ratings) ?? {});
+        if (supRes.ok) setSupportPicks((supData.supports as string[]) ?? []);
       } catch {
         /* 빈 상태 유지 */
       }
@@ -72,28 +84,6 @@ export default function TierVotePage() {
       cancelled = true;
     };
   }, [user, selectedId]);
-
-  // 선호 서포터: 로그인 시 기존 선택 1회 로드 (매치업과 독립)
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const token = await user.getIdToken();
-        const res = await fetch('/api/tier/support', {
-          headers: { authorization: `Bearer ${token}` },
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!cancelled && res.ok)
-          setSupportPicks((data.supports as string[]) ?? []);
-      } catch {
-        /* 빈 상태 유지 */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
 
   const toggleSupport = (id: string) => {
     setSupportPicks((prev) =>
@@ -157,13 +147,14 @@ export default function TierVotePage() {
 
   const ratedCount = Object.keys(ratings).length;
 
-  // 선호 서포터 체크 (사이드바, 제출 위). 4개 아이콘 토글 — 중복 선택 가능.
+  // 선호 서포터 (사이드바, 제출 위). 좋은 순서대로 눌러 선호 순위를 매긴다.
   const supportSidebar = (
     <div className={styles.supportPick}>
-      <div className={styles.supportPickHead}>선호 서포터 · 중복 선택 가능</div>
+      <div className={styles.supportPickHead}>선호 서포터 · 좋은 순서대로 선택</div>
       <div className={styles.supportPickGrid}>
         {SUPPORT_ENTRIES.map((e) => {
-          const on = supportPicks.includes(e.id);
+          const rank = supportPicks.indexOf(e.id); // -1 = 미선택
+          const on = rank >= 0;
           return (
             <button
               key={e.id}
@@ -174,6 +165,9 @@ export default function TierVotePage() {
               onClick={() => toggleSupport(e.id)}
               title={e.name}
             >
+              {on && (
+                <span className={styles.supportRankBadge}>{rank + 1}</span>
+              )}
               <ClassIcon name={e.name} src={e.icon} size={44} />
               <span className={styles.supportPickName}>{e.name}</span>
             </button>

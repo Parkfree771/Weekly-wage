@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { verifyBearerUid } from '@/lib/firebase-admin';
-import { saveSupportPicks, getMySupportPicks } from '@/lib/tier-server';
+import {
+  saveSupportPicks,
+  getMySupportPicks,
+  invalidateTierStats,
+} from '@/lib/tier-server';
 import { CURRENT_SEASON } from '@/lib/tier-data';
+import { purgeTierStatsCdn } from '@/lib/purge-cdn';
 
 // 내가 선택한 서포터 목록 (재진입 시 프리필). 개인 데이터라 캐시 안 함.
 export async function GET(request: Request) {
@@ -12,9 +17,10 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const season = searchParams.get('season') || CURRENT_SEASON.id;
+  const voterClass = searchParams.get('voterClass');
 
   try {
-    const supports = await getMySupportPicks(season, uid);
+    const supports = await getMySupportPicks(season, uid, voterClass);
     return new NextResponse(JSON.stringify({ supports }), {
       status: 200,
       headers: {
@@ -50,12 +56,16 @@ export async function POST(request: Request) {
   }
 
   try {
+    const s = season || CURRENT_SEASON.id;
     const count = await saveSupportPicks(
-      season || CURRENT_SEASON.id,
+      s,
       uid,
       typeof voterClass === 'string' ? voterClass : null,
       supports as string[]
     );
+    // 집계 캐시 즉시 무효화 (DB 스냅샷 + 해당 페이지 CDN 태그만)
+    await invalidateTierStats(s);
+    await purgeTierStatsCdn();
     return NextResponse.json({ ok: true, count });
   } catch (e: any) {
     return NextResponse.json(

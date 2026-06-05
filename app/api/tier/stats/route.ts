@@ -12,7 +12,9 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         'content-type': 'application/json',
-        'cache-control': 'public, s-maxage=1800, stale-while-revalidate=600',
+        // 투표 시 태그 퍼지로 즉시 무효화. s-maxage는 퍼지 실패 대비 백스톱(최대 5분).
+        'cache-control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Netlify-Cache-Tag': 'tier-stats',
       },
     });
   } catch (e) {

@@ -129,25 +129,38 @@ async function computePayload(season: string): Promise<TierStats> {
     });
   });
 
-  // ── 서포터: 선호 체크(중복 허용 = 승인투표) 인원으로 순위·티어 ──
+  // ── 서포터: 선호순위(Borda) 점수로 순위·티어 ──
+  // 한 표 = (uid, 평가 직업) 단위. 같은 계정도 직업별로 각각 한 표를 던진다
+  // (직업마다 선호 서포터가 다르므로). rank 1위=N-1점 … 꼴찌=0점 (N=서포터 수).
+  const N_SUP = SUPPORT_IDS.size;
   const supRows = (await sql`
-    SELECT support_class, count(*)::int AS cnt
+    SELECT support_class, rank, count(*)::int AS cnt
     FROM support_votes
     WHERE season = ${season}
-    GROUP BY support_class
-  `) as { support_class: string; cnt: number }[];
-  const supVoterRows = (await sql`
-    SELECT count(DISTINCT uid)::int AS n FROM support_votes WHERE season = ${season}
+    GROUP BY support_class, rank
+  `) as { support_class: string; rank: number; cnt: number }[];
+  // 전체 표 수 = 서로 다른 (uid, voter_class) 조합 수
+  const supBallotRows = (await sql`
+    SELECT count(*)::int AS n FROM (
+      SELECT 1 FROM support_votes WHERE season = ${season} GROUP BY uid, voter_class
+    ) t
   `) as { n: number }[];
-  const supportVoterTotal = supVoterRows[0]?.n ?? 0;
+  const supportVoterTotal = supBallotRows[0]?.n ?? 0;
 
-  const supApprovals = new Map<string, number>();
+  // Borda 점수 합 + 이 서포터를 순위에 넣은 표 수
+  const supPoints = new Map<string, number>();
+  const supBallots = new Map<string, number>();
   for (const r of supRows) {
-    supApprovals.set(r.support_class, r.cnt);
+    const pts = Math.max(0, N_SUP - r.rank); // rank1 → N-1 … rankN → 0
+    supPoints.set(r.support_class, (supPoints.get(r.support_class) ?? 0) + pts * r.cnt);
+    supBallots.set(
+      r.support_class,
+      (supBallots.get(r.support_class) ?? 0) + r.cnt
+    );
     voteTotal += r.cnt;
   }
 
-  // 모달용: 이 서포터를 선택한 사람들의 주력 딜러 분포
+  // 모달용: 이 서포터를 선호 순위에 넣은 표의 직업 분포 (표 단위)
   const pickerRows = (await sql`
     SELECT support_class, voter_class, count(*)::int AS cnt
     FROM support_votes
@@ -159,24 +172,33 @@ async function computePayload(season: string): Promise<TierStats> {
     (supportPickers[r.support_class] ||= {})[r.voter_class] = r.cnt;
   }
 
-  // 서포터 점수는 딜러의 매치업 점수와 체계가 다르다.
-  // 선호 지수 = 가장 많이 선택된 서포터를 100으로 둔 상대 점수(서포터끼리 비교).
-  // (절대 선택 비율은 모달에서 supportVoterTotal로 별도 표시)
-  const maxApproval = Math.max(1, ...supRows.map((r) => r.cnt));
+  // 선호 지수 = 최고 Borda 점수를 100으로 둔 상대 점수(서포터끼리 비교).
+  const maxPts = Math.max(1, ...Array.from(supPoints.values()));
   const supports = TIER_CLASSES.filter((c) => roleOf(c.id) === 'support').map(
     (c) => {
-      const cnt = supApprovals.get(c.id) ?? 0;
-      const score100 = Math.round((cnt / maxApproval) * 100);
-      return { cls: c, votes: cnt, score100 };
+      const pts = supPoints.get(c.id) ?? 0;
+      const ballots = supBallots.get(c.id) ?? 0;
+      const score100 = Math.round((pts / maxPts) * 100);
+      return { cls: c, votes: ballots, score100 };
     }
   );
   const supSufficient = supports
     .filter((x) => x.votes >= SUPPORT_MIN_VOTES)
-    .sort((a, b) => b.votes - a.votes); // 선택 인원 많을수록 상위
+    .sort((a, b) => b.score100 - a.score100); // 선호 지수 높을수록 상위
   const supInsufficient = supports
     .filter((x) => x.votes < SUPPORT_MIN_VOTES)
     .sort((a, b) => a.cls.name.localeCompare(b.cls.name, 'ko'));
+  // 티어는 점수 기준 — 같은 점수면 같은 티어 (서폿 4개가 다 100점이면 전부 1티어).
+  // 점수가 다를 때만 순위 분포로 갈린다.
+  let supPrevScore: number | null = null;
+  let supPrevTier = 0;
   supSufficient.forEach((x, i) => {
+    const tier =
+      supPrevScore !== null && x.score100 === supPrevScore
+        ? supPrevTier
+        : rankToTier(i, supSufficient.length);
+    supPrevScore = x.score100;
+    supPrevTier = tier;
     classes.push({
       id: x.cls.id,
       name: x.cls.name,
@@ -184,7 +206,7 @@ async function computePayload(season: string): Promise<TierStats> {
       icon: x.cls.icon,
       role: 'support',
       score100: x.score100,
-      tier: rankToTier(i, supSufficient.length),
+      tier,
       votes: x.votes,
     });
   });
@@ -235,6 +257,14 @@ export async function getTierStats(
           computed_at = now()
   `;
   return payload;
+}
+
+// 투표 저장 직후 집계 스냅샷 캐시 무효화 → 다음 조회 때 즉시 재계산.
+// (CDN 캐시는 라우트에서 purgeCache 태그로 별도 무효화)
+export async function invalidateTierStats(
+  season: string = CURRENT_SEASON.id
+): Promise<void> {
+  await sql`DELETE FROM tier_stats_cache WHERE season = ${season}`;
 }
 
 // 한 직업 기준 투표 저장 (기존 것 교체). ratings: { 상대직업id: 1~5 }
@@ -291,30 +321,39 @@ export async function saveSupportPicks(
   voterClass: string | null,
   ids: string[]
 ): Promise<number> {
-  const valid = Array.from(new Set(ids)).filter((id) => SUPPORT_IDS.has(id));
+  // ids는 선호 순서대로 들어온다(0번이 1순위). rank = 배열 위치 + 1.
+  const valid = Array.from(new Set(ids))
+    .filter((id) => SUPPORT_IDS.has(id))
+    .slice(0, SUPPORT_IDS.size);
   const vc = voterClass && VALID_IDS.has(voterClass) ? voterClass : null;
 
+  // 직업(voter_class)별로 따로 저장 — 직업마다 선호 서포터가 다르므로.
+  // 다른 직업으로 투표해도 이 직업의 선택만 교체되고 나머지는 유지된다.
   const queries: ReturnType<typeof sql>[] = [
-    sql`DELETE FROM support_votes WHERE season = ${season} AND uid = ${uid}`,
+    sql`DELETE FROM support_votes WHERE season = ${season} AND uid = ${uid} AND voter_class IS NOT DISTINCT FROM ${vc}`,
   ];
-  for (const id of valid) {
+  valid.forEach((id, i) => {
     queries.push(
       sql`INSERT INTO support_votes (season, uid, support_class, rank, voter_class)
-          VALUES (${season}, ${uid}, ${id}, 1, ${vc})`
+          VALUES (${season}, ${uid}, ${id}, ${i + 1}, ${vc})`
     );
-  }
+  });
   await sql.transaction(queries);
   return valid.length;
 }
 
-// 사용자가 선택한 서포터 목록 불러오기
+// 사용자가 특정 직업으로 선택한 서포터 목록 불러오기 (직업별 프리필).
+// voterClass 없으면(직업 미선택) 빈 목록.
 export async function getMySupportPicks(
   season: string,
-  uid: string
+  uid: string,
+  voterClass: string | null = null
 ): Promise<string[]> {
+  const vc = voterClass && VALID_IDS.has(voterClass) ? voterClass : null;
   const rows = (await sql`
     SELECT support_class FROM support_votes
-    WHERE season = ${season} AND uid = ${uid}
+    WHERE season = ${season} AND uid = ${uid} AND voter_class IS NOT DISTINCT FROM ${vc}
+    ORDER BY rank
   `) as { support_class: string }[];
   return rows.map((r) => r.support_class);
 }

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { verifyBearerUid } from '@/lib/firebase-admin';
-import { saveVotes } from '@/lib/tier-server';
+import { saveVotes, invalidateTierStats } from '@/lib/tier-server';
 import { CURRENT_SEASON } from '@/lib/tier-data';
+import { purgeTierStatsCdn } from '@/lib/purge-cdn';
 
 // 투표 저장 (로그인 필요). 이번 시즌은 캐릭터 인증 없이 로그인만으로 가능.
 export async function POST(request: Request) {
@@ -23,12 +24,16 @@ export async function POST(request: Request) {
   }
 
   try {
+    const s = season || CURRENT_SEASON.id;
     const count = await saveVotes(
-      season || CURRENT_SEASON.id,
+      s,
       uid,
       voterClass,
       ratings as Record<string, number>
     );
+    // 집계 캐시 즉시 무효화 (DB 스냅샷 + 해당 페이지 CDN 태그만)
+    await invalidateTierStats(s);
+    await purgeTierStatsCdn();
     return NextResponse.json({ ok: true, count });
   } catch (e: any) {
     return NextResponse.json(
