@@ -14,6 +14,21 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 8000
   }
 }
 
+// 동시성 제한 배치 실행 — fetch(읽기 전용)만 병렬화. 캐시 변경은 호출부에서 순차 처리해 경합 방지.
+async function inBatches<T, R>(items: T[], size: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = [];
+  for (let i = 0; i < items.length; i += size) {
+    out.push(...await Promise.all(items.slice(i, i + size).map(fn)));
+  }
+  return out;
+}
+
+// fetchItem 결과 타입
+type FetchedItem =
+  | { item: typeof TRACKED_ITEMS[number]; ok: false; error: string }
+  | { item: typeof TRACKED_ITEMS[number]; ok: true; kind: 'market'; todayAvg: number; yesterdayStat: { price: number; date: string } | null }
+  | { item: typeof TRACKED_ITEMS[number]; ok: true; kind: 'auction'; currentPrice: number };
+
 // 자동 가격 수집 엔드포인트 (GitHub Actions용)
 export async function GET(request: Request) {
   // 프로덕션에서만 인증 확인
@@ -135,206 +150,95 @@ export async function GET(request: Request) {
     }
   }
 
-  // 각 아이템의 가격 수집
-  for (const item of itemsToProcess) {
+  // ── Phase 1: 외부 API 동시 조회 (배치 6, 읽기 전용 — 캐시 변경 없음) ──
+  // 직렬 300ms 딜레이 + 직렬 fetch가 함수 타임아웃의 주원인이었음.
+  // fetch만 병렬화하고 캐시 변경(Phase 2)은 순차로 처리해 경합을 막는다.
+  const fetched: FetchedItem[] = await inBatches(itemsToProcess, 6, async (item): Promise<FetchedItem> => {
     try {
       if (item.type === 'market') {
-        // 거래소 아이템
-        console.log(`[Market] Fetching ${item.name} (${item.id})...`);
-
         const response = await fetchWithTimeout(
           `https://developer-lostark.game.onstove.com/markets/items/${item.id}`,
-          {
-            headers: {
-              accept: 'application/json',
-              authorization: `Bearer ${apiKey}`,
-            },
-          }
+          { headers: { accept: 'application/json', authorization: `Bearer ${apiKey}` } }
         );
-
-        if (!response.ok) {
-          errors.push({ itemId: item.id, itemName: item.name, error: `API 오류: ${response.status}` });
-          continue;
-        }
-
+        if (!response.ok) return { item, ok: false, error: `API 오류: ${response.status}` };
         const data = await response.json();
-
         if (!data || !Array.isArray(data) || data.length === 0) {
-          errors.push({ itemId: item.id, itemName: item.name, error: '아이템 정보를 찾을 수 없음' });
-          continue;
+          return { item, ok: false, error: '아이템 정보를 찾을 수 없음' };
         }
-
         // 거래 가능한 버전 찾기
-        let itemData = null;
+        let itemData: any = null;
         for (const variant of data) {
           if (variant.Stats && variant.Stats.length > 0 && variant.Stats[0].AvgPrice > 0) {
             itemData = variant;
             break;
           }
         }
+        if (!itemData) return { item, ok: false, error: '거래 가능한 아이템 버전 없음' };
 
-        if (!itemData) {
-          errors.push({ itemId: item.id, itemName: item.name, error: '거래 가능한 아이템 버전 없음' });
-          continue;
-        }
-
-        console.log(`[Market] ${item.name} - Stats 배열 개수: ${itemData.Stats?.length || 0}`);
-
-        // === 거래소 전날 평균가 저장: 매일 00시 ===
-        if (shouldSaveMarketYesterday) {
-          // Stats[1]은 어제 데이터 (이미 확정된 평균가)
-          if (itemData.Stats && itemData.Stats.length > 1) {
-            const yesterdayStat = itemData.Stats[1];
-            const yesterdayPrice = yesterdayStat.AvgPrice || 0;
-
-            if (yesterdayPrice > 0 && yesterdayStat.Date) {
-              await saveHistoricalPrice(item.id, yesterdayPrice, yesterdayStat.Date, item.name);
-              historyChanged = true;
-              console.log(`[Market] ${item.name} - 전날 평균가 저장 (00시): ${yesterdayStat.Date} = ${yesterdayPrice}G`);
-
-              results.push({
-                itemId: item.id,
-                itemName: item.name,
-                type: item.type,
-                date: yesterdayStat.Date,
-                price: yesterdayPrice,
-                timestamp: new Date().toISOString(),
-                dataType: 'market_yesterday_avg'
-              });
-            }
-          }
-        }
-
-        // === 1시간마다: 오늘 평균가를 latest_prices.json에 저장 ===
-        const todayAvgPrice = itemData.Stats?.[0]?.AvgPrice || 0;
-
-        if (todayAvgPrice > 0) {
-          await updateMarketTodayPrice(item.id, todayAvgPrice, item.name);
-          console.log(`[Market] ${item.name} - 오늘 평균가: ${todayAvgPrice}G`);
-
-          results.push({
-            itemId: item.id,
-            itemName: item.name,
-            type: item.type,
-            price: todayAvgPrice,
-            timestamp: new Date().toISOString(),
-            dataType: 'market_today_avg'
-          });
-        } else {
-          errors.push({ itemId: item.id, itemName: item.name, error: '오늘 평균가 없음' });
-        }
-
-      } else if (item.type === 'auction') {
-        // 경매장 아이템
-        // 1시간마다: 현재 최저가를 latest_prices.json의 _rawByDate[오늘] 버킷에 누적
-        // 날짜가 바뀌면 rolloverAuctionDays()가 과거 버킷을 평균내어 history에 확정
-
-        // 필터 옵션 적용 (있으면)
+        const todayAvg = itemData.Stats?.[0]?.AvgPrice || 0;
+        const ys = itemData.Stats && itemData.Stats.length > 1 ? itemData.Stats[1] : null;
+        const yesterdayStat = ys && ys.AvgPrice > 0 && ys.Date ? { price: ys.AvgPrice as number, date: ys.Date as string } : null;
+        return { item, ok: true, kind: 'market', todayAvg, yesterdayStat };
+      } else {
         const requestBody: any = {
           ItemName: item.searchName || '',
           CategoryCode: item.categoryCode || null,
           PageNo: 0,
           SortCondition: 'ASC',
           Sort: 'BUY_PRICE',
-          ...item.filters // filters가 있으면 병합 (ItemUpgradeLevel, EtcOptions 포함)
+          ...item.filters // ItemUpgradeLevel, EtcOptions 포함
         };
-
-        // API에서 직접 필터링하므로 1페이지만 조회
-        const pagesToFetch = 1;
-
-        console.log(`[Auction] ${item.name} 검색 조건:`, JSON.stringify(requestBody));
-
-        // 여러 페이지 조회 (옵션 필터가 있는 경우)
-        let allItems: any[] = [];
-        for (let page = 0; page < pagesToFetch; page++) {
-          const pageRequestBody = { ...requestBody, PageNo: page };
-
-          const response = await fetchWithTimeout(
-            'https://developer-lostark.game.onstove.com/auctions/items',
-            {
-              method: 'POST',
-              headers: {
-                accept: 'application/json',
-                authorization: `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(pageRequestBody)
-            }
-          );
-
-          if (!response.ok) {
-            if (page === 0) {
-              errors.push({ itemId: item.id, error: `경매장 API 오류: ${response.status}` });
-            }
-            break;
+        const response = await fetchWithTimeout(
+          'https://developer-lostark.game.onstove.com/auctions/items',
+          {
+            method: 'POST',
+            headers: { accept: 'application/json', authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
           }
-
-          const auctionData = await response.json();
-          const pageItems = auctionData?.Items || [];
-
-          if (pageItems.length === 0) break; // 더 이상 아이템 없으면 중단
-
-          allItems = allItems.concat(pageItems);
-
-          // API 요청 사이 딜레이
-          if (page < pagesToFetch - 1) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-        }
-
-        if (allItems.length === 0 && pagesToFetch > 0) {
-          errors.push({ itemId: item.id, error: '경매장에 아이템 없음' });
-          continue;
-        }
-
-        console.log(`[Auction] ${item.name} - 총 ${allItems.length}개 아이템 조회됨`);
-
-        // EtcOptions로 API에서 이미 필터링되었으므로 클라이언트 필터링 불필요
-        const items = allItems;
-
-        if (items.length > 0) {
-          const lowestPriceItem = items[0];
-          const auctionInfo = lowestPriceItem.AuctionInfo;
-
-          console.log(`[Auction] ${item.name} AuctionInfo:`, JSON.stringify({
-            Name: lowestPriceItem.Name,
-            BuyPrice: auctionInfo.BuyPrice,
-            BidStartPrice: auctionInfo.BidStartPrice,
-            BidPrice: auctionInfo.BidPrice,
-            EndDate: auctionInfo.EndDate,
-            TradeAllowCount: auctionInfo.TradeAllowCount,
-            Options: lowestPriceItem.Options
-          }, null, 2));
-
-          const currentPrice = auctionInfo.BuyPrice || auctionInfo.BidStartPrice || 0;
-
-          if (currentPrice > 0) {
-            // 오늘 데이터에 추가 (latest_prices.json의 _raw)
-            // 00:10 가격은 오늘의 첫 데이터로만 사용 (전날 데이터는 00:10 전에 이미 확정됨)
-            await addTodayTempPrice(item.id, currentPrice, item.name);
-
-            results.push({
-              itemId: item.id,
-              itemName: item.name,
-              type: item.type,
-              price: currentPrice,
-              timestamp: new Date().toISOString(),
-              dataType: 'auction_current_price'
-            });
-          } else {
-            errors.push({ itemId: item.id, error: '유효한 가격 정보 없음' });
-          }
-        } else {
-          errors.push({ itemId: item.id, error: '경매장에 아이템 없음 (필터 조건 미충족)' });
-        }
+        );
+        if (!response.ok) return { item, ok: false, error: `경매장 API 오류: ${response.status}` };
+        const auctionData = await response.json();
+        const auctionItems = auctionData?.Items || [];
+        if (auctionItems.length === 0) return { item, ok: false, error: '경매장에 아이템 없음' };
+        // EtcOptions로 API에서 이미 필터링됨 → 최저가 1건
+        const auctionInfo = auctionItems[0].AuctionInfo;
+        const currentPrice = auctionInfo.BuyPrice || auctionInfo.BidStartPrice || 0;
+        if (currentPrice <= 0) return { item, ok: false, error: '유효한 가격 정보 없음' };
+        return { item, ok: true, kind: 'auction', currentPrice };
       }
-
-      // 직렬 300ms 딜레이 제거 — 누적 지연이 Netlify 함수 타임아웃의 주원인이었음.
-      // LostArk API 분당 한도(~100) 대비 회차당 최대 22건이라 딜레이 없이도 안전.
-
     } catch (error: any) {
-      console.error(`아이템 ${item.id} 수집 오류:`, error.message);
-      errors.push({ itemId: item.id, error: error.message });
+      return { item, ok: false, error: error.message };
+    }
+  });
+
+  // ── Phase 2: 캐시 변경 순차 적용 (단일 스레드 순차 → 경합 없음) ──
+  for (const f of fetched) {
+    if (!f.ok) {
+      errors.push({ itemId: f.item.id, itemName: f.item.name, error: f.error });
+      continue;
+    }
+    try {
+      if (f.kind === 'market') {
+        // 00시: 어제 확정 평균가(Stats[1]) → history
+        if (shouldSaveMarketYesterday && f.yesterdayStat) {
+          await saveHistoricalPrice(f.item.id, f.yesterdayStat.price, f.yesterdayStat.date, f.item.name);
+          historyChanged = true;
+          results.push({ itemId: f.item.id, itemName: f.item.name, type: 'market', date: f.yesterdayStat.date, price: f.yesterdayStat.price, timestamp: new Date().toISOString(), dataType: 'market_yesterday_avg' });
+        }
+        // 매시간: 오늘 평균가(Stats[0]) → latest
+        if (f.todayAvg > 0) {
+          await updateMarketTodayPrice(f.item.id, f.todayAvg, f.item.name);
+          results.push({ itemId: f.item.id, itemName: f.item.name, type: 'market', price: f.todayAvg, timestamp: new Date().toISOString(), dataType: 'market_today_avg' });
+        } else {
+          errors.push({ itemId: f.item.id, itemName: f.item.name, error: '오늘 평균가 없음' });
+        }
+      } else {
+        // 경매장: 현재 최저가 → _rawByDate[오늘] 누적
+        await addTodayTempPrice(f.item.id, f.currentPrice, f.item.name);
+        results.push({ itemId: f.item.id, itemName: f.item.name, type: 'auction', price: f.currentPrice, timestamp: new Date().toISOString(), dataType: 'auction_current_price' });
+      }
+    } catch (error: any) {
+      errors.push({ itemId: f.item.id, error: error.message });
     }
   }
 
