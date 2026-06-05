@@ -8,11 +8,14 @@ on:
     - cron: '15 * * * *'
     # 거래소 - 재련 추가 재료 + 각인서: 매시 20분 (UTC 기준)
     - cron: '20 * * * *'
+    # 자동 복구(self-heal): 매일 02:30 KST = 17:30 UTC (정시 혼잡 회피)
+    # 수집 누락을 멱등 백필 — 트리거가 드롭돼도 다음날 또 돌아 결국 메워짐
+    - cron: '30 17 * * *'
   # 수동 실행도 가능
   workflow_dispatch:
     inputs:
       category:
-        description: 'Category to collect (refine,gem / refine_additional,engraving / accessory,bracelet,jewel / all)'
+        description: 'Category to collect (refine,gem / refine_additional,engraving / accessory,bracelet,jewel / all / heal)'
         required: false
         default: 'all'
       force_append_history:
@@ -81,6 +84,29 @@ jobs:
           curl -X GET "${{ secrets.SITE_URL }}/api/cron/collect-prices?category=refine,gem" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json"
+
+  heal-prices:
+    # 매일 02:30 KST: 수집 누락 자동 복구 (멱등 self-heal)
+    if: github.event.schedule == '30 17 * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.category == 'heal')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Heal missing prices (auction rollover + market backfill)
+        run: |
+          response=$(curl -f -s -w "\n%{http_code}" --max-time 180 \
+            -X GET "${{ secrets.SITE_URL }}/api/cron/heal-prices" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" -ge 400 ]; then
+            echo "Heal request failed with status $http_code"
+            exit 1
+          fi
 
   collect-market-additional-engraving:
     # 20분: 거래소 - 재련 추가 재료 + 각인서 (22개)

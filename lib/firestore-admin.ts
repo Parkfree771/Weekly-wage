@@ -17,7 +17,13 @@ export type PriceEntry = {
 type LatestPricesJson = {
   [itemId: string]: number;
 } & {
-  _raw?: Record<string, number[]>;  // 경매장 아이템 누적 가격
+  // ⚠️ 구형(legacy) 단일 버킷 — "현재 하루"라는 암묵적 의미. 하위호환 읽기에서만 사용하고
+  //    normalizeRawByDate()가 _rawByDate 로 흡수한 뒤 제거한다. 신규 코드는 _rawByDate 만 쓴다.
+  _raw?: Record<string, number[]>;
+  // 신규: 경매장 아이템 누적 가격을 "날짜별"로 분리 보관 → 날짜 변경 시점의 오염/유실 방지
+  // 구조: { 'YYYY-MM-DD': { [itemId]: number[] } }
+  // 즉시 지우지 않고 finalize(history 확정) 후 N일 지난 버킷만 prune 한다.
+  _rawByDate?: Record<string, Record<string, number[]>>;
   _meta?: {
     date: string;              // 현재 데이터 날짜 (YYYY-MM-DD)
     updatedAt: string;         // 마지막 업데이트 시간 (ISO)
@@ -25,6 +31,9 @@ type LatestPricesJson = {
                                // ※ history 저장 성공 후에만 영구화되므로 "그 날짜 데이터가 history에 있다"는 신뢰 가능한 표식
   };
 };
+
+// _rawByDate 에서 finalize 후 보존할 일수 (이 일수보다 오래되고 history에 확정된 버킷만 prune)
+const RAW_RETENTION_DAYS = 3;
 
 // history_all.json 구조
 type HistoryAllJson = Record<string, Array<{ date: string; price: number }>>;
@@ -55,6 +64,62 @@ export function formatDateKey(date: Date): string {
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const day = String(date.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * YYYY-MM-DD 키에서 N일 뺀 키 반환 (UTC 기준 단순 계산)
+ */
+function dateKeyMinusDays(dateKey: string, days: number): string {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - days);
+  return formatDateKey(dt);
+}
+
+/**
+ * 구형 _raw(단일 버킷)를 _rawByDate(날짜별 버킷)로 흡수하고 _raw를 제거한다.
+ * - 멱등: 여러 번 호출해도 안전. _rawByDate를 단일 진실로 만든다.
+ * - 구형 _raw는 "현재 데이터 날짜"(_meta.date) 버킷에 속한 것으로 본다.
+ * - 같은 itemId가 이미 _rawByDate에 있으면 덮어쓰지 않는다(이미 마이그레이션됨).
+ */
+function normalizeRawByDate(data: LatestPricesJson): void {
+  if (!data._rawByDate) data._rawByDate = {};
+
+  if (data._raw && Object.keys(data._raw).length > 0) {
+    const bucketKey = data._meta?.date || formatDateKey(getLostArkDate());
+    const bucket = data._rawByDate[bucketKey] || (data._rawByDate[bucketKey] = {});
+    for (const [itemId, prices] of Object.entries(data._raw)) {
+      if (!Array.isArray(prices) || prices.length === 0) continue;
+      // 이미 같은 날짜 버킷에 데이터가 있으면(=이미 흡수됨) 건드리지 않음
+      if (!bucket[itemId] || bucket[itemId].length === 0) {
+        bucket[itemId] = [...prices];
+      }
+    }
+  }
+
+  // 구형 _raw 제거 — 이후로는 _rawByDate만 사용
+  if (data._raw) delete data._raw;
+}
+
+/**
+ * history에 확정됐고 RAW_RETENTION_DAYS 보다 오래된 _rawByDate 버킷을 제거.
+ * - finalize가 과거 버킷을 history에 멱등 커밋하므로, 보존기간이 지난 버킷은 이미 확정 상태.
+ * - 안전상 history에 실제로 존재하는 버킷만 삭제(없으면 보존하여 다음 heal이 처리).
+ */
+function pruneRawByDate(data: LatestPricesJson, history: HistoryAllJson, todayKey: string): void {
+  if (!data._rawByDate) return;
+  const cutoff = dateKeyMinusDays(todayKey, RAW_RETENTION_DAYS);
+  for (const dateKey of Object.keys(data._rawByDate)) {
+    if (dateKey >= cutoff) continue; // 보존기간 내 → 유지
+    const bucket = data._rawByDate[dateKey];
+    const allCommitted = Object.keys(bucket).every(itemId =>
+      (history[itemId] || []).some(e => e.date === dateKey)
+    );
+    if (allCommitted) {
+      delete data._rawByDate[dateKey];
+      console.log(`[pruneRawByDate] ${dateKey} 버킷 제거 (history 확정 + ${RAW_RETENTION_DAYS}일 경과)`);
+    }
+  }
 }
 
 /**
@@ -219,33 +284,23 @@ export async function addTodayTempPrice(
     const todayKey = formatDateKey(getLostArkDate());
     const data = await readLatestPrices();
 
-    // _raw 초기화
-    if (!data._raw) {
-      data._raw = {};
-    }
+    // 구형 _raw 흡수 + _rawByDate 보장 (멱등)
+    normalizeRawByDate(data);
 
-    // 날짜 변경 감지 - 경고만 출력 (실제 초기화는 appendYesterdayToHistory()에서 처리)
-    // 00시에 경매장 크론이 먼저 실행되어 appendYesterdayToHistory()를 호출하므로
-    // 정상적인 경우 여기서 날짜 불일치가 발생하면 안 됨
-    if (data._meta?.date && data._meta.date !== todayKey) {
-      console.warn(`[addTodayTempPrice] 경고: 날짜 불일치 감지 - 현재: ${data._meta.date}, 오늘: ${todayKey}`);
-      console.warn(`[addTodayTempPrice] appendYesterdayToHistory()가 먼저 실행되어야 합니다!`);
-      // _raw를 초기화하지 않음 - 데이터 손실 방지
-    }
+    // 항상 "오늘" 버킷에 push → 날짜가 바뀌어도 어제 버킷과 절대 섞이지 않음.
+    // (00시 finalize가 드롭/지연돼도 어제 버킷은 그대로 보존, 오늘 건 오늘 버킷으로만 적재)
+    const bucket = data._rawByDate![todayKey] || (data._rawByDate![todayKey] = {});
+    if (!bucket[itemId]) bucket[itemId] = [];
+    bucket[itemId].push(price);
 
-    // 가격 배열에 추가
-    if (!data._raw[itemId]) {
-      data._raw[itemId] = [];
-    }
-    data._raw[itemId].push(price);
-
-    // 평균가 계산 및 저장
-    const prices = data._raw[itemId];
+    // 평균가 계산 및 저장 (오늘 버킷 기준)
+    const prices = bucket[itemId];
     const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
     data[itemId] = avgPrice;
 
-    // 메타 정보 업데이트
+    // 메타 정보 업데이트 (lastRolloverDate 보존)
     data._meta = {
+      ...(data._meta || {}),
       date: todayKey,
       updatedAt: new Date().toISOString(),
     };
@@ -253,7 +308,7 @@ export async function addTodayTempPrice(
     // 캐시 업데이트 (저장은 나중에)
     latestPricesCache = data;
 
-    console.log(`[Auction] ${itemName || itemId} - 가격 추가: ${price}G (총 ${prices.length}개, 평균 ${avgPrice.toFixed(0)}G)`);
+    console.log(`[Auction] ${itemName || itemId} - 가격 추가: ${price}G (총 ${prices.length}개, 평균 ${avgPrice.toFixed(0)}G) [${todayKey}]`);
   } catch (error) {
     console.error('당일 임시 가격 저장 오류:', error);
     throw error;
@@ -300,110 +355,76 @@ export async function saveHistoricalPrice(
 }
 
 /**
- * 00시에 전날 경매장 데이터를 평균내서 history에 추가
- * @param useToday - true면 당일 데이터 확정, false면 전날 데이터 확정
+ * 경매장 롤오버 (타이밍 독립 · 멱등)
+ * - _rawByDate 에서 "오늘보다 과거"인 모든 버킷을 history에 확정(없는 날짜만 추가).
+ * - 00시에 안 돌아도, 02·03시 등 아무 때나 호출되면 밀린 과거 버킷을 그때 메운다.
+ * - 확정 후 보존기간 지난 버킷을 prune.
+ * - 반환: 이번 호출에서 새로 확정한 (아이템×일) 건수
+ *
+ * @param includeToday - true면 오늘 버킷도 확정(관리자 강제용). 기본 false.
  */
-export async function finalizeYesterdayData(useToday: boolean = false): Promise<void> {
-  try {
-    const lostArkToday = getLostArkDate();
+export async function rolloverAuctionDays(includeToday: boolean = false): Promise<number> {
+  const todayKey = formatDateKey(getLostArkDate());
 
-    // 확정할 날짜 계산
-    let targetDate: Date;
-    if (useToday) {
-      targetDate = lostArkToday;
-    } else {
-      targetDate = new Date(lostArkToday);
-      targetDate.setDate(targetDate.getDate() - 1);
-    }
-    const targetKey = formatDateKey(targetDate);
+  const latestData = await readLatestPrices();
+  normalizeRawByDate(latestData);
 
-    console.log(`[finalizeYesterdayData] ${useToday ? '당일' : '전날'} 데이터 확정 시작: ${targetKey}`);
+  const history = await readHistoryAll();
+  const byDate = latestData._rawByDate!;
 
-    const latestData = await readLatestPrices();
+  let committed = 0;
+  let lastFinalizedDate: string | undefined;
 
-    // 이 날짜 롤오버가 이미 완료됐으면 건너뜀 (00시·01시 재실행 중복/오기입 방지)
-    // 00시 성공 후 01시 재실행 시, _raw는 이미 오늘 데이터로 리셋돼 있어
-    // 그대로 finalize하면 "오늘 평균을 어제치로" 잘못 저장할 위험이 있는데 이 가드가 차단한다.
-    if (!useToday && latestData._meta?.lastRolloverDate === targetKey) {
-      console.log(`[finalizeYesterdayData] ${targetKey} 이미 롤오버 완료 → 건너뜀`);
-      return;
-    }
+  // 날짜 오름차순으로 처리
+  for (const dateKey of Object.keys(byDate).sort()) {
+    // 오늘 버킷은 기본적으로 진행 중이므로 건너뜀 (includeToday면 포함)
+    if (dateKey > todayKey) continue;
+    if (dateKey === todayKey && !includeToday) continue;
 
-    const history = await readHistoryAll();
+    const bucket = byDate[dateKey];
+    for (const [itemId, prices] of Object.entries(bucket)) {
+      if (!prices || prices.length === 0) continue;
+      const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
 
-    // _raw에서 경매장 아이템 평균 계산 후 history에 추가
-    const raw = latestData._raw || {};
-    let count = 0;
-
-    for (const [itemId, prices] of Object.entries(raw)) {
-      if (prices && prices.length > 0) {
-        const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-
-        // history에 추가
-        if (!history[itemId]) {
-          history[itemId] = [];
-        }
-
-        // 중복 확인
-        const exists = history[itemId].some(entry => entry.date === targetKey);
-        if (!exists) {
-          history[itemId].push({ date: targetKey, price: avgPrice });
-          history[itemId].sort((a, b) => a.date.localeCompare(b.date));
-          console.log(`  확정: ${itemId} - ${prices.length}개 평균 = ${avgPrice.toFixed(0)}G`);
-          count++;
-        }
+      if (!history[itemId]) history[itemId] = [];
+      const exists = history[itemId].some(e => e.date === dateKey);
+      if (!exists) {
+        history[itemId].push({ date: dateKey, price: avgPrice });
+        history[itemId].sort((a, b) => a.date.localeCompare(b.date));
+        console.log(`  [rollover] 확정: ${itemId} ${dateKey} - ${prices.length}개 평균 = ${avgPrice.toFixed(0)}G`);
+        committed++;
       }
     }
-
-    // 캐시 업데이트
-    historyCache = history;
-
-    console.log(`[finalizeYesterdayData] 완료: ${count}개 경매장 아이템 데이터 확정`);
-  } catch (error) {
-    console.error('전날 데이터 확정 오류:', error);
-    throw error;
+    if (dateKey < todayKey) lastFinalizedDate = dateKey;
   }
+
+  // 캐시 반영 (저장은 generateAndUploadPriceJson에서 history 먼저 → latest 순)
+  historyCache = history;
+
+  // 메타: 날짜를 오늘로 진행 + 마지막 확정 과거날짜 표식 (history 커밋 성공 후에만 영구화됨)
+  latestData._meta = {
+    ...(latestData._meta || {}),
+    date: todayKey,
+    updatedAt: new Date().toISOString(),
+    ...(lastFinalizedDate ? { lastRolloverDate: lastFinalizedDate } : {}),
+  };
+
+  // 확정된 과거 버킷 중 보존기간 지난 것 정리
+  pruneRawByDate(latestData, history, todayKey);
+
+  latestPricesCache = latestData;
+
+  console.log(`[rolloverAuctionDays] 완료: ${committed}건 확정 (today=${todayKey}, includeToday=${includeToday})`);
+  return committed;
 }
 
 /**
- * 어제 확정 데이터를 history_all.json에 추가 + _raw 초기화
- * 매일 00시에 실행
+ * (하위호환) append-history 수동 엔드포인트에서 사용 — 새 멱등 롤오버에 위임.
+ * 기존엔 _raw 초기화 + 날짜 진행만 했으나, 이제 롤오버가 finalize까지 멱등 수행.
  */
 export async function appendYesterdayToHistory(): Promise<void> {
   try {
-    console.log('[appendYesterdayToHistory] 시작...');
-
-    const lostArkToday = getLostArkDate();
-    const todayKey = formatDateKey(lostArkToday);
-
-    // 전날 날짜
-    const yesterday = new Date(lostArkToday);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayKey = formatDateKey(yesterday);
-
-    console.log(`[appendYesterdayToHistory] 어제: ${yesterdayKey}, 오늘: ${todayKey}`);
-
-    const latestData = await readLatestPrices();
-
-    // 현재 데이터가 어제 날짜인지 확인
-    if (latestData._meta?.date !== yesterdayKey) {
-      console.log(`[appendYesterdayToHistory] 이미 처리됨 또는 날짜 불일치: ${latestData._meta?.date}`);
-      return;
-    }
-
-    // _raw 초기화 및 날짜 변경 + 롤오버 완료 표식 기록
-    // (이 _meta는 generateAndUploadPriceJson에서 history 커밋 성공 후에만 영구화됨)
-    latestData._raw = {};
-    latestData._meta = {
-      date: todayKey,
-      updatedAt: new Date().toISOString(),
-      lastRolloverDate: yesterdayKey,
-    };
-
-    // 캐시 업데이트
-    latestPricesCache = latestData;
-
-    console.log(`[appendYesterdayToHistory] 완료: _raw 초기화, 날짜 변경 ${yesterdayKey} → ${todayKey}, 롤오버표식=${yesterdayKey}`);
+    await rolloverAuctionDays(false);
   } catch (error) {
     console.error('[appendYesterdayToHistory] 실패:', error);
   }
@@ -418,11 +439,11 @@ export async function generateAndUploadPriceJson(): Promise<void> {
     console.log('[generateAndUploadPriceJson] 캐시 데이터 저장 시작...');
 
     // ⚠️ 저장 순서 중요: history_all.json을 먼저 커밋한 뒤에 latest_prices.json을 쓴다.
-    // 00시 날짜 변경 시 appendYesterdayToHistory()가 latest의 _raw를 리셋하는데,
-    // latest를 먼저 쓰면 "리셋만 영구화되고 history(어제치)는 함수 강제종료로 유실"되어
-    // 경매장 어제 평균이 비가역적으로 사라진다.
-    // history를 먼저 쓰면, 중간에 잘려도 _raw 리셋이 영구화되지 않아 다음 실행이 안전하게 재시도한다.
-    // (history 저장이 실패하면 아래 latest 저장은 실행되지 않음 → _raw 보존)
+    // 롤오버(rolloverAuctionDays)가 _rawByDate 과거 버킷을 history에 확정한 뒤 prune(삭제)하는데,
+    // latest를 먼저 쓰면 "prune(버킷 삭제)만 영구화되고 history(확정분)는 함수 강제종료로 유실"되어
+    // 경매장 과거 평균이 비가역적으로 사라진다.
+    // history를 먼저 쓰면, 중간에 잘려도 prune이 영구화되지 않아 다음 실행이 안전하게 재시도한다.
+    // (history 저장이 실패하면 아래 latest 저장은 실행되지 않음 → _rawByDate 버킷 보존)
 
     // 1) history_all.json 먼저 저장 (변경된 경우에만)
     if (historyCache !== null) {
@@ -435,9 +456,11 @@ export async function generateAndUploadPriceJson(): Promise<void> {
       await writeLatestPrices(latestPricesCache);
 
       const itemCount = Object.keys(latestPricesCache).filter(k => !k.startsWith('_')).length;
-      const rawCount = Object.keys(latestPricesCache._raw || {}).length;
+      const byDate = latestPricesCache._rawByDate || {};
+      const rawDays = Object.keys(byDate).length;
+      const rawTodayCount = Object.keys(byDate[latestPricesCache._meta?.date || ''] || {}).length;
 
-      console.log(`[generateAndUploadPriceJson] latest_prices.json 저장 완료: ${itemCount}개 아이템, ${rawCount}개 경매장 _raw`);
+      console.log(`[generateAndUploadPriceJson] latest_prices.json 저장 완료: ${itemCount}개 아이템, _rawByDate ${rawDays}일치(오늘 ${rawTodayCount}개 아이템)`);
     }
 
     // 캐시 초기화 (다음 크론을 위해)
@@ -450,6 +473,14 @@ export async function generateAndUploadPriceJson(): Promise<void> {
     console.error('[generateAndUploadPriceJson] 저장 실패:', error);
     throw error;
   }
+}
+
+/**
+ * history_all.json 스냅샷 읽기 (heal/진단용 읽기 전용)
+ * - 누락 날짜 판별 등에 사용. 반환값을 수정하면 캐시도 바뀌니 읽기 전용으로만 사용할 것.
+ */
+export async function readHistorySnapshot(): Promise<HistoryAllJson> {
+  return readHistoryAll();
 }
 
 /**

@@ -2,17 +2,8 @@ import { NextResponse } from 'next/server';
 import { getAdminStorage } from '@/lib/firebase-admin';
 
 /**
- * 한국 시간(KST) 기준 00시대인지 확인
- */
-function isMidnightHourKST(): boolean {
-  const now = new Date();
-  const kstHour = (now.getUTCHours() + 9) % 24;
-  return kstHour === 0;
-}
-
-/**
  * history_all.json 반환
- * - CDN 캐시: 00시~02시에는 10분, 그 외에는 다음 00시까지
+ * - CDN: durable 캐시 + price-history 태그. 데이터 변경 시 태그 퍼지로 즉시 갱신.
  * - 서버리스라서 서버 메모리 캐시 없음
  */
 export async function GET() {
@@ -29,31 +20,13 @@ export async function GET() {
     const [contents] = await file.download();
     const historyData = JSON.parse(contents.toString());
 
-    // 00:00~02:00에는 10분 캐시, 그 외에는 다음 00시까지만 캐시
-    let cacheControl: string;
-    const now = new Date();
-    const kstHour = (now.getUTCHours() + 9) % 24;
-    const kstMinute = now.getUTCMinutes();
-
-    // 00:00~02:00 범위 체크 (크론 실행 + GitHub Actions 지연 대비, 임시 확장)
-    const isUpdateWindow =
-      (kstHour === 0) ||
-      (kstHour === 1);
-
-    if (isUpdateWindow) {
-      // 00:00~02:00: 10분 캐시
-      cacheControl = 'public, s-maxage=600, stale-while-revalidate=60';
-    } else {
-      // 그 외: 다음 00시까지 남은 시간만큼 캐시 (분 단위 계산)
-      const minutesUntilMidnight = (23 - kstHour) * 60 + (60 - kstMinute);
-      const secondsUntilMidnight = minutesUntilMidnight * 60;
-      cacheControl = `public, s-maxage=${secondsUntilMidnight}, stale-while-revalidate=600`;
-    }
-
+    // 이벤트 구동 캐시: history 가 바뀔 때(00시 롤오버/거래소 어제확정/heal/복구) price-history 태그를 퍼지.
+    // 시간대별 동적 TTL은 제거 — 신선도는 퍼지가 담당하고, s-maxage 는 퍼지 누락 시 백스톱(1시간).
     return NextResponse.json(historyData, {
       headers: {
-        'Cache-Control': cacheControl,
-        'Netlify-Vary': 'query=k',  // 쿼리 파라미터 k를 캐시 키에 포함
+        'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=3600, stale-while-revalidate=600',
+        'Netlify-Cache-Tag': 'price-history',
+        'Cache-Control': 'public, max-age=0, must-revalidate', // 브라우저는 매번 CDN에 재검증
       },
     });
 

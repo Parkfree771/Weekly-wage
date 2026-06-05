@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
-import { addTodayTempPrice, finalizeYesterdayData, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson, appendYesterdayToHistory } from '@/lib/firestore-admin';
+import { addTodayTempPrice, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson, rolloverAuctionDays } from '@/lib/firestore-admin';
 import { TRACKED_ITEMS, getItemsByCategory, ItemCategory } from '@/lib/items-to-track';
+import { purgePriceCache, PRICE_CACHE_TAG } from '@/lib/cache-purge';
+
+// 한 건의 외부 API 호출이 멈춰도 전체 수집이 타임아웃되지 않도록 fetch 타임아웃 래퍼
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // 자동 가격 수집 엔드포인트 (GitHub Actions용)
 export async function GET(request: Request) {
@@ -31,6 +43,8 @@ export async function GET(request: Request) {
 
   const results = [];
   const errors = [];
+  // history_all.json 이 이 회차에서 실제로 바뀌었는지 추적 → 바뀐 경우에만 price-history 태그 퍼지
+  let historyChanged = false;
 
   // 한국 시간(KST) 기준으로 시간 확인
   const now = new Date();
@@ -74,11 +88,11 @@ export async function GET(request: Request) {
   const shouldSaveMarketYesterday = isAt0AM;
 
   // === 경매장 전날 데이터 확정 타이밍 ===
-  // - 매일 오전 0시~1시대에 전날 수집 데이터 평균 계산하여 확정
-  // - GitHub Actions 지연 대비 00:00~01:59로 확장
-  // - 경매장 크론(accessory, jewel)에서만 실행, 거래소 크론에서는 실행 안함
+  // - 롤오버는 이제 "타이밍 독립 · 멱등": 경매장 크론이 돌 때마다 호출해도
+  //   과거 미확정 버킷이 있을 때만 확정하고, 없으면 no-op.
+  // - 따라서 00시 회차가 드롭/타임아웃돼도 다음 회차(01·02·03시…)가 자동으로 메운다.
   const isAuctionCron = categoryFilter?.includes('accessory') || categoryFilter?.includes('jewel') || typeFilter === 'auction';
-  const shouldFinalizeAuctionYesterday = isAt0AM && isAuctionCron;
+  const shouldRolloverAuction = isAuctionCron; // 매 경매장 회차마다 멱등 실행
 
   // ========================================================================
 
@@ -101,30 +115,23 @@ export async function GET(request: Request) {
   console.log(`[Collect Prices] 처리할 아이템: ${itemsToProcess.length}개 (타입: ${typeFilter || '전체'}, 카테고리: ${categoryFilter || '전체'})`);
 
   // ========================================================================
-  // 00시 경매장 크론 (00:10): 데이터 수집 전에 전날 데이터 처리 (순서 중요!)
-  // - 경매장 크론이 거래소 크론보다 먼저 실행되어야 함 (10분 → 15분 → 20분)
-  // 1. finalizeYesterdayData(): _raw에 누적된 전날 데이터 평균 계산 → history에 저장
-  // 2. appendYesterdayToHistory(): _raw 초기화, _meta.date를 오늘로 변경
-  // 3. 그 다음 데이터 수집 시작
+  // 경매장 롤오버 (데이터 수집 전에 실행 — 순서 중요!)
+  // - 경매장 크론이 거래소 크론보다 먼저 실행됨 (10분 → 15분 → 20분)
+  // - rolloverAuctionDays(): _rawByDate 의 "과거" 버킷을 history에 멱등 확정 + 보존기간 지난 버킷 prune
+  // - 타이밍 독립 · 멱등: 매 회차 호출해도 과거 미확정 버킷이 있을 때만 동작
+  //   → 00시 회차가 빠져도 01·02·03시 회차가 자동으로 메운다 (오늘 버킷은 건드리지 않음)
   // ========================================================================
-  if (shouldFinalizeAuctionYesterday) {
+  if (shouldRolloverAuction) {
     try {
-      // 경매장 아이템의 전날 임시 데이터를 평균내서 확정
-      await finalizeYesterdayData(false);
-      results.push({ message: '전날 데이터 확정 완료 (경매장 아이템 평균 계산)' });
-      console.log(`[00시대] 경매장 전날 데이터 확정 완료`);
+      const committed = await rolloverAuctionDays(false);
+      if (committed > 0) {
+        historyChanged = true;
+        results.push({ message: `경매장 롤오버 완료: ${committed}건 확정` });
+        console.log(`[롤오버] 경매장 과거 버킷 ${committed}건 확정`);
+      }
     } catch (error: any) {
-      errors.push({ message: '전날 데이터 확정 실패', error: error.message });
-      console.error(`[00시대] 경매장 전날 데이터 확정 실패:`, error);
-    }
-
-    try {
-      console.log('[Cron] 히스토리 JSON 업데이트 및 _raw 초기화 시작...');
-      await appendYesterdayToHistory();
-      results.push({ message: '히스토리 JSON 업데이트 및 _raw 초기화 완료' });
-    } catch (error: any) {
-      console.error('[Cron] 히스토리 JSON 업데이트 실패:', error);
-      errors.push({ message: '히스토리 JSON 업데이트 실패', error: error.message });
+      errors.push({ message: '경매장 롤오버 실패', error: error.message });
+      console.error(`[롤오버] 경매장 롤오버 실패:`, error);
     }
   }
 
@@ -135,7 +142,7 @@ export async function GET(request: Request) {
         // 거래소 아이템
         console.log(`[Market] Fetching ${item.name} (${item.id})...`);
 
-        const response = await fetch(
+        const response = await fetchWithTimeout(
           `https://developer-lostark.game.onstove.com/markets/items/${item.id}`,
           {
             headers: {
@@ -182,6 +189,7 @@ export async function GET(request: Request) {
 
             if (yesterdayPrice > 0 && yesterdayStat.Date) {
               await saveHistoricalPrice(item.id, yesterdayPrice, yesterdayStat.Date, item.name);
+              historyChanged = true;
               console.log(`[Market] ${item.name} - 전날 평균가 저장 (00시): ${yesterdayStat.Date} = ${yesterdayPrice}G`);
 
               results.push({
@@ -218,8 +226,8 @@ export async function GET(request: Request) {
 
       } else if (item.type === 'auction') {
         // 경매장 아이템
-        // 1시간마다: 현재 최저가를 latest_prices.json의 _raw에 누적
-        // 00시가 되면 finalizeYesterdayData()에서 전날 데이터를 평균 계산
+        // 1시간마다: 현재 최저가를 latest_prices.json의 _rawByDate[오늘] 버킷에 누적
+        // 날짜가 바뀌면 rolloverAuctionDays()가 과거 버킷을 평균내어 history에 확정
 
         // 필터 옵션 적용 (있으면)
         const requestBody: any = {
@@ -241,7 +249,7 @@ export async function GET(request: Request) {
         for (let page = 0; page < pagesToFetch; page++) {
           const pageRequestBody = { ...requestBody, PageNo: page };
 
-          const response = await fetch(
+          const response = await fetchWithTimeout(
             'https://developer-lostark.game.onstove.com/auctions/items',
             {
               method: 'POST',
@@ -321,8 +329,8 @@ export async function GET(request: Request) {
         }
       }
 
-      // API 요청 사이에 짧은 딜레이 (rate limit 방지)
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // 직렬 300ms 딜레이 제거 — 누적 지연이 Netlify 함수 타임아웃의 주원인이었음.
+      // LostArk API 분당 한도(~100) 대비 회차당 최대 22건이라 딜레이 없이도 안전.
 
     } catch (error: any) {
       console.error(`아이템 ${item.id} 수집 오류:`, error.message);
@@ -335,14 +343,28 @@ export async function GET(request: Request) {
   // ========================================================================
   // 모든 데이터 수집이 완료된 후 latest_prices.json 생성
   // 주의: 모든 아이템 저장이 완료된 후에 실행됨 (await Promise.all 보장됨)
+  let uploaded = false;
   try {
     console.log('[Cron] JSON 파일 생성 시작...');
     await generateAndUploadPriceJson();
+    uploaded = true;
     results.push({ message: 'JSON 파일 생성 및 업로드 완료' });
   } catch (error: any) {
     console.error('[Cron] JSON 생성 실패:', error);
     errors.push({ message: 'JSON 생성 실패', error: error.message });
     // JSON 생성 실패해도 크론 작업은 성공으로 간주
+  }
+
+  // ========================================================================
+  // 가격이 들어온 직후 CDN 캐시 퍼지 (업로드 성공 시에만)
+  // - latest 는 매 회차 갱신되므로 항상 퍼지
+  // - history 는 이 회차에서 실제 바뀐 경우(롤오버/거래소 어제확정)에만 퍼지
+  // ========================================================================
+  if (uploaded) {
+    await purgePriceCache([
+      PRICE_CACHE_TAG.latest,
+      ...(historyChanged ? [PRICE_CACHE_TAG.history] : []),
+    ]);
   }
 
   return NextResponse.json({

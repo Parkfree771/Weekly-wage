@@ -1,5 +1,7 @@
 // 클라이언트에서 Next.js API를 통해 가격 히스토리 조회
-// URL 쿼리 파라미터로 CDN 캐시 제어
+// CDN 캐시는 서버 라우트의 durable 캐시 + cache-tag 퍼지로 제어(이벤트 구동).
+// 여기의 슬롯키(getLatestCacheKey/getHistoryCacheKey)는 "클라이언트 메모리 캐시"의
+// 재요청 주기만 결정한다(= 같은 슬롯이면 메모리 캐시 사용, 바뀌면 CDN에 재요청).
 // 아카이브(정적) + 최근(API) 병합 구조
 
 type PriceEntry = {
@@ -51,13 +53,6 @@ function getKSTInfo(): { date: string; hour: number; minute: number } {
     hour: kstDate.getUTCHours(),
     minute: kstDate.getUTCMinutes()
   };
-}
-
-/**
- * 한국 시간(KST) 기준 00시~01시인지 확인
- */
-function isMidnightHour(): boolean {
-  return getKSTInfo().hour === 0;
 }
 
 /**
@@ -191,7 +186,7 @@ export async function fetchPriceData(): Promise<{ history: HistoryData; latest: 
         promises.push(loadArchive());
         promiseMap.push('archive');
 
-        promises.push(fetchWithTimeout(`/api/price-data/history?k=${historyCacheKey}`).then(res => {
+        promises.push(fetchWithTimeout('/api/price-data/history').then(res => {
           if (!res.ok) throw new Error('Failed to fetch history');
           return res.json();
         }));
@@ -199,7 +194,7 @@ export async function fetchPriceData(): Promise<{ history: HistoryData; latest: 
       }
 
       if (needLatest) {
-        promises.push(fetchWithTimeout(`/api/price-data/latest?k=${latestCacheKey}`).then(res => {
+        promises.push(fetchWithTimeout('/api/price-data/latest').then(res => {
           if (!res.ok) throw new Error('Failed to fetch latest');
           return res.json();
         }));
@@ -355,7 +350,7 @@ export async function fetchLatestPrices(): Promise<LatestPrices> {
     return cachedLatest;
   }
 
-  const res = await fetchWithTimeout(`/api/price-data/latest?k=${latestCacheKey}`);
+  const res = await fetchWithTimeout('/api/price-data/latest');
   if (!res.ok) throw new Error('Failed to fetch latest prices');
   cachedLatest = await res.json();
   lastLatestCacheKey = latestCacheKey;

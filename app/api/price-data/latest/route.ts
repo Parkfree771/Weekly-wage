@@ -29,11 +29,13 @@ export async function GET() {
       }
     }
 
-    // CDN 10분 캐시 (클라이언트가 URL 쿼리로 갱신 주기 제어)
+    // 이벤트 구동 캐시: 가격이 들어올 때(크론/heal/복구) price-latest 태그를 퍼지 → 즉시 갱신.
+    // 평소엔 durable 캐시가 100% 히트로 오리진 보호. s-maxage 는 퍼지를 놓쳤을 때의 백스톱(1시간).
     return NextResponse.json(latestPrices, {
       headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=60',
-        'Netlify-Vary': 'query=k',  // 쿼리 파라미터 k를 캐시 키에 포함
+        'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=3600, stale-while-revalidate=600',
+        'Netlify-Cache-Tag': 'price-latest',
+        'Cache-Control': 'public, max-age=0, must-revalidate', // 브라우저는 매번 CDN에 재검증
       },
     });
 

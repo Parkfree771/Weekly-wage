@@ -67,8 +67,10 @@ export async function GET(request: Request) {
     const auctionItems = TRACKED_ITEMS.filter(item => item.type === 'auction');
     console.log(`[fix-auction] 경매장 아이템 ${auctionItems.length}개 처리...`);
 
-    // 4. _raw 데이터 평균 계산 후 history에 저장
-    const raw = latestData._raw || {};
+    // 4. 누적 데이터 평균 계산 후 history에 저장 (신형 _rawByDate[historyDate] 우선, 구형 _raw 폴백)
+    const raw: Record<string, number[]> =
+      latestData._rawByDate?.[historyDate] ||
+      (latestData._meta?.date === historyDate ? (latestData._raw || {}) : {});
     const historySaved: any[] = [];
 
     for (const [itemId, prices] of Object.entries(raw) as [string, number[]][]) {
@@ -111,8 +113,10 @@ export async function GET(request: Request) {
       items: historySaved,
     });
 
-    // 5. 새로운 _raw 초기화
-    latestData._raw = {};
+    // 5. 새 날(todayDate) 버킷 초기화 (신형 포맷). 구형 _raw 는 제거.
+    if (!latestData._rawByDate) latestData._rawByDate = {};
+    latestData._rawByDate[todayDate] = {};
+    delete latestData._raw;
 
     // 6. 경매장 API 호출해서 현재 가격 가져오기
     console.log('[fix-auction] 경매장 API 호출 시작...');
@@ -156,8 +160,8 @@ export async function GET(request: Request) {
           const currentPrice = auctionInfo.BuyPrice || auctionInfo.BidStartPrice || 0;
 
           if (currentPrice > 0) {
-            // _raw에 첫 가격으로 추가
-            latestData._raw[item.id] = [currentPrice];
+            // 오늘(todayDate) 버킷에 첫 가격으로 추가
+            latestData._rawByDate[todayDate][item.id] = [currentPrice];
             // 평균가도 업데이트
             latestData[item.id] = currentPrice;
 
