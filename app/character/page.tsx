@@ -41,7 +41,7 @@ function CharacterPageInner() {
   const [combatData, setCombatData] = useState<CharacterData | null>(null);
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const [rankingReloadKey, setRankingReloadKey] = useState(0);
-  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [cooldownMap, setCooldownMap] = useState<Record<string, number>>({}); // 캐릭터명별 갱신 쿨다운 만료 시각
   const [nowTs, setNowTs] = useState(() => Date.now());
 
   // 자동완성
@@ -118,13 +118,13 @@ function CharacterPageInner() {
     return () => cancelAnimationFrame(raf);
   }, [combatData, isLoading]);
 
-  // 쿨다운 초 카운트 (활성 시에만 tick)
+  // 쿨다운 초 카운트 (활성 쿨다운이 하나라도 있을 때만 tick)
   useEffect(() => {
-    if (cooldownUntil <= 0) return;
-    if (Date.now() >= cooldownUntil) return;
+    const anyActive = Object.values(cooldownMap).some((ts) => Date.now() < ts);
+    if (!anyActive) return;
     const id = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [cooldownUntil]);
+  }, [cooldownMap]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -188,14 +188,14 @@ function CharacterPageInner() {
       return;
     }
 
-    if (forceRefresh && Date.now() < cooldownUntil) {
+    if (forceRefresh && Date.now() < (cooldownMap[trimmed] || 0)) {
       return;
     }
 
     setCharacterName(trimmed);
     if (forceRefresh) {
       setIsRefreshing(true);
-      setCooldownUntil(Date.now() + REFRESH_COOLDOWN_MS);
+      setCooldownMap((prev) => ({ ...prev, [trimmed]: Date.now() + REFRESH_COOLDOWN_MS }));
       setNowTs(Date.now());
     } else {
       setIsLoading(true);
@@ -480,7 +480,8 @@ function CharacterPageInner() {
                   )}
                 </span>
                 {(() => {
-                  const remainingMs = Math.max(0, cooldownUntil - nowTs);
+                  const cdName = combatData.profile.characterName.trim();
+                  const remainingMs = Math.max(0, (cooldownMap[cdName] || 0) - nowTs);
                   const isCoolingDown = !isRefreshing && remainingMs > 0;
                   const secondsLeft = Math.ceil(remainingMs / 1000);
                   return (

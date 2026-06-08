@@ -58,12 +58,16 @@ const CHART_CONFIG_KEY = 'chartConfig';
 // 차트 설정 타입
 type ChartConfig = {
   defaultItem: string | null;  // 기본 모드에서 처음 표시할 아이템 ID
-  showEventDots: boolean;       // 차트에 이벤트/수요일 점 표시 여부
+  showEventDots: boolean;       // 차트에 특별 이벤트 점 표시 여부
+  showWednesdayDots: boolean;   // 차트에 수요일 점 표시 여부
+  showRegularDots: boolean;     // 차트에 일반 날짜 점 표시 여부
 };
 
 const getDefaultChartConfig = (): ChartConfig => ({
   defaultItem: null,
   showEventDots: true,
+  showWednesdayDots: true,
+  showRegularDots: true,
 });
 
 const loadChartConfig = (): ChartConfig => {
@@ -75,6 +79,8 @@ const loadChartConfig = (): ChartConfig => {
       return {
         defaultItem: parsed.defaultItem || null,
         showEventDots: parsed.showEventDots !== false,
+        showWednesdayDots: parsed.showWednesdayDots !== false,
+        showRegularDots: parsed.showRegularDots !== false,
       };
     }
   } catch (e) {
@@ -469,10 +475,28 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     setTempChartConfig(getDefaultChartConfig());
   };
 
-  // 이벤트 점 표시 토글 (즉시 저장)
+  // 특별 이벤트 점 표시 토글 (즉시 저장)
   const toggleEventDots = useCallback(() => {
     setChartConfig(prev => {
       const next = { ...prev, showEventDots: !prev.showEventDots };
+      saveChartConfig(next);
+      return next;
+    });
+  }, []);
+
+  // 수요일 점 표시 토글 (즉시 저장)
+  const toggleWednesdayDots = useCallback(() => {
+    setChartConfig(prev => {
+      const next = { ...prev, showWednesdayDots: !prev.showWednesdayDots };
+      saveChartConfig(next);
+      return next;
+    });
+  }, []);
+
+  // 일반 날짜 점 표시 토글 (즉시 저장)
+  const toggleRegularDots = useCallback(() => {
+    setChartConfig(prev => {
+      const next = { ...prev, showRegularDots: !prev.showRegularDots };
       saveChartConfig(next);
       return next;
     });
@@ -482,7 +506,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   const categoryStyle = CATEGORY_STYLES[selectedCategory];
 
   return (
-    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod, comparisonData, isGridView, onToggleGridView: handleToggleGridView, activeReferenceLines, toggleReferenceLine, selectItemById, categoryColor: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor, openChartSettings, showEventDots: chartConfig.showEventDots, toggleEventDots }}>
+    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod, comparisonData, isGridView, onToggleGridView: handleToggleGridView, activeReferenceLines, toggleReferenceLine, selectItemById, categoryColor: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor, openChartSettings, showEventDots: chartConfig.showEventDots, toggleEventDots, showWednesdayDots: chartConfig.showWednesdayDots, toggleWednesdayDots, showRegularDots: chartConfig.showRegularDots, toggleRegularDots }}>
       {dashboard}
       <div className="price-chart-container">
         {/* 데스크톱: 사이드바 레이아웃 */}

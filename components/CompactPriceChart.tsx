@@ -57,9 +57,12 @@ const EVENTS: EventInfo[] = [
   { date: '2025-12-10', label: '윈터' },
   { date: '2026-01-07', label: '세르카' },
   { date: '2026-03-18', label: '성당' },
+  { date: '2026-04-22', label: '익스 1막' },
+  { date: '2026-05-20', label: '익스 2막' },
+  { date: '2026-06-20', label: '로아온 썸머' },
 ];
 
-// 카테고리별 이벤트 점 색상 (PriceComparisonStats 통계바 우측 보색과 일치)
+// 수요일 점 색상 (PriceComparisonStats 통계바 우측 보색과 일치)
 const EVENT_DOT_COLOR_BY_CATEGORY: Record<string, string> = {
   '재련 재료': '#f97316',
   '젬': '#eab308',
@@ -68,6 +71,18 @@ const EVENT_DOT_COLOR_BY_CATEGORY: Record<string, string> = {
   '악세': '#f97316',
   '팔찌': '#f97316',
   '보석': '#14b8a6',
+};
+
+// 특별 이벤트 점 색상 — 카테고리 선 색·수요일 보색과 모두 구분되는 제3의 강조색
+// (색상환에서 인접 두 색과 떨어진 위치 + 라이트/다크 모두 가시성 확보)
+const SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY: Record<string, string> = {
+  '재련 재료': '#ec4899',      // 핑크 (선=파랑, 보색=주황)
+  '젬': '#06b6d4',            // 사이언 (선=보라, 보색=골드)
+  '재련 추가 재료': '#8b5cf6', // 바이올렛 (선=초록, 보색=로즈)
+  '유물 각인서': '#a855f7',   // 퍼플 (선=빨강, 보색=청록)
+  '악세': '#f43f5e',          // 로즈 (선=청록, 보색=주황)
+  '팔찌': '#f43f5e',          // 로즈 (선=청록, 보색=주황 / 악세와 동일 정체성)
+  '보석': '#f59e0b',          // 앰버 (선=핑크, 보색=청록)
 };
 
 type CategoryStyle = {
@@ -91,7 +106,7 @@ type PeriodOption = '7d' | '1m' | '2m' | '3m' | '6m' | '1y' | 'all';
 
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle, hidePeriodButtons = false }: CompactPriceChartProps) {
   const { theme } = useTheme();
-  const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots } = useContext(PriceContext);
+  const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots, showWednesdayDots, toggleWednesdayDots, showRegularDots, toggleRegularDots } = useContext(PriceContext);
 
   // 모바일 감지 및 마운트 상태
   const [isMobile, setIsMobile] = useState(false);
@@ -216,14 +231,15 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       // 이벤트 찾기
       const event = EVENTS.find(e => e.date === dateString);
       const eventLabel = event?.label;
-      // 이벤트 점 색상 (60-30-10 법칙)
-      // 특별이벤트(10% 강조): 주황으로 전 카테고리 통일
-      // 수요일: 기본 빨간색, 유물각인서=파란색
+      // 이벤트 점 색상 — 3색 체계
+      // 차트 선=카테고리색 / 수요일=보색 / 특별이벤트=제3의 강조색
       const isSpecialEvent = !!event;
       const catLabel = categoryStyle?.label;
-      const eventColor = (isSpecialEvent || dayOfWeek === 3)
-        ? (catLabel ? (EVENT_DOT_COLOR_BY_CATEGORY[catLabel] || '#f97316') : '#f97316')
-        : undefined;
+      const eventColor = isSpecialEvent
+        ? (catLabel ? (SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY[catLabel] || '#ec4899') : '#ec4899')
+        : dayOfWeek === 3
+          ? (catLabel ? (EVENT_DOT_COLOR_BY_CATEGORY[catLabel] || '#f97316') : '#f97316')
+          : undefined;
 
       // 비교 가격 가져오기 (날짜 매칭)
       const comparisonPrice = comparisonPriceMap.get(dateString);
@@ -623,21 +639,18 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   // 1M, 2M: 모든 데이터 점 표시 (수요일/이벤트 강조)
   // 3M, 6M, 1Y, ALL: 수요일 + 특별 이벤트만
   const showAllDots = selectedPeriod === '1m' || selectedPeriod === '2m';
-  const showWednesdayDots = true;
 
   // 커스텀 점 렌더러 (이벤트 라벨 포함)
   const CustomDot = (props: CustomDotProps) => {
     const { cx, cy, payload } = props;
     if (!payload || cx === undefined || cy === undefined) return null;
-    // 이벤트 점 토글 OFF: 선만 표시
-    if (!showEventDots) return null;
     const isSpecialEvent = !!payload.eventLabel;
     const isWednesday = !isSpecialEvent && payload.isWednesday;
     const eventColor = payload.eventColor || '#ef4444';
 
-    // 일반 점
+    // 일반 날짜 점 (1m/2m 일자별 점 — 독립 토글)
     if (!isSpecialEvent && !isWednesday) {
-      if (!showAllDots) return null;
+      if (!showAllDots || !showRegularDots) return null;
       return <circle cx={cx} cy={cy} r={6} fill={chartColor} strokeWidth={3} stroke="var(--card-bg)" />;
     }
 
@@ -647,7 +660,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       return <circle cx={cx} cy={cy} r={6} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />;
     }
 
-    // 특별 이벤트 점 (항상 표시)
+    // 특별 이벤트 점
+    if (!showEventDots) return null;
     return (
       <g>
         <circle cx={cx} cy={cy} r={7} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />
@@ -664,14 +678,12 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const CustomDotMobile = (props: CustomDotProps) => {
     const { cx, cy, payload } = props;
     if (!payload || cx === undefined || cy === undefined) return null;
-    // 이벤트 점 토글 OFF: 선만 표시
-    if (!showEventDots) return null;
     const isSpecialEvent = !!payload.eventLabel;
     const isWednesday = !isSpecialEvent && payload.isWednesday;
     const eventColor = payload.eventColor || '#ef4444';
 
     if (!isSpecialEvent && !isWednesday) {
-      if (!showAllDots) return null;
+      if (!showAllDots || !showRegularDots) return null;
       return <circle cx={cx} cy={cy} r={3} fill={chartColor} strokeWidth={2} stroke="var(--card-bg)" />;
     }
 
@@ -680,7 +692,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       return <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />;
     }
 
-    // 특별 이벤트 (항상 표시)
+    // 특별 이벤트
+    if (!showEventDots) return null;
     return <circle cx={cx} cy={cy} r={4} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />;
   };
 
@@ -840,36 +853,61 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   </>
                 )}
               </div>
-              {/* 이벤트 점 토글 (카테고리 색상 점) */}
+              {/* 점 토글 (수요일 / 특별 이벤트 독립) */}
               {(() => {
-                const dotColor = (categoryStyle?.label && EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#f97316';
+                const wedColor = (categoryStyle?.label && EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#f97316';
+                const eventColor = (categoryStyle?.label && SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#ec4899';
+                const dotBtnStyle = {
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                } as const;
                 return (
-                  <button
-                    onClick={toggleEventDots}
-                    title={showEventDots ? '이벤트/수요일 점 숨기기' : '이벤트/수요일 점 표시'}
-                    aria-pressed={showEventDots}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '4px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        width: '14px',
-                        height: '14px',
-                        borderRadius: '50%',
-                        backgroundColor: showEventDots ? dotColor : 'transparent',
-                        border: `2px solid ${dotColor}`,
+                  <>
+                    <button
+                      onClick={toggleRegularDots}
+                      title={showRegularDots ? '일반 날짜 점 숨기기' : '일반 날짜 점 표시'}
+                      aria-pressed={showRegularDots}
+                      style={dotBtnStyle}
+                    >
+                      <span style={{
+                        display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%',
+                        backgroundColor: showRegularDots ? chartColor : 'transparent',
+                        border: `2px solid ${chartColor}`,
+                        boxShadow: showRegularDots ? `0 0 0 2px var(--card-bg)` : 'none',
+                      }} />
+                    </button>
+                    <button
+                      onClick={toggleWednesdayDots}
+                      title={showWednesdayDots ? '수요일 점 숨기기' : '수요일 점 표시'}
+                      aria-pressed={showWednesdayDots}
+                      style={dotBtnStyle}
+                    >
+                      <span style={{
+                        display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%',
+                        backgroundColor: showWednesdayDots ? wedColor : 'transparent',
+                        border: `2px solid ${wedColor}`,
+                        boxShadow: showWednesdayDots ? `0 0 0 2px var(--card-bg)` : 'none',
+                      }} />
+                    </button>
+                    <button
+                      onClick={toggleEventDots}
+                      title={showEventDots ? '특별 이벤트 점 숨기기' : '특별 이벤트 점 표시'}
+                      aria-pressed={showEventDots}
+                      style={dotBtnStyle}
+                    >
+                      <span style={{
+                        display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%',
+                        backgroundColor: showEventDots ? eventColor : 'transparent',
+                        border: `2px solid ${eventColor}`,
                         boxShadow: showEventDots ? `0 0 0 2px var(--card-bg)` : 'none',
-                      }}
-                    />
-                  </button>
+                      }} />
+                    </button>
+                  </>
                 );
               })()}
               {/* 가격선 설정 톱니바퀴 */}
@@ -1160,36 +1198,61 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   </>
                 )}
               </div>
-              {/* 모바일 이벤트 점 토글 (카테고리 색상 점) */}
+              {/* 모바일 점 토글 (수요일 / 특별 이벤트 독립) */}
               {(() => {
-                const dotColor = (categoryStyle?.label && EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#f97316';
+                const wedColor = (categoryStyle?.label && EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#f97316';
+                const eventColor = (categoryStyle?.label && SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#ec4899';
+                const dotBtnStyle = {
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                } as const;
                 return (
-                  <button
-                    onClick={toggleEventDots}
-                    title={showEventDots ? '이벤트/수요일 점 숨기기' : '이벤트/수요일 점 표시'}
-                    aria-pressed={showEventDots}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '4px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        width: '12px',
-                        height: '12px',
-                        borderRadius: '50%',
-                        backgroundColor: showEventDots ? dotColor : 'transparent',
-                        border: `2px solid ${dotColor}`,
+                  <>
+                    <button
+                      onClick={toggleRegularDots}
+                      title={showRegularDots ? '일반 날짜 점 숨기기' : '일반 날짜 점 표시'}
+                      aria-pressed={showRegularDots}
+                      style={dotBtnStyle}
+                    >
+                      <span style={{
+                        display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%',
+                        backgroundColor: showRegularDots ? chartColor : 'transparent',
+                        border: `2px solid ${chartColor}`,
+                        boxShadow: showRegularDots ? `0 0 0 2px var(--card-bg)` : 'none',
+                      }} />
+                    </button>
+                    <button
+                      onClick={toggleWednesdayDots}
+                      title={showWednesdayDots ? '수요일 점 숨기기' : '수요일 점 표시'}
+                      aria-pressed={showWednesdayDots}
+                      style={dotBtnStyle}
+                    >
+                      <span style={{
+                        display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%',
+                        backgroundColor: showWednesdayDots ? wedColor : 'transparent',
+                        border: `2px solid ${wedColor}`,
+                        boxShadow: showWednesdayDots ? `0 0 0 2px var(--card-bg)` : 'none',
+                      }} />
+                    </button>
+                    <button
+                      onClick={toggleEventDots}
+                      title={showEventDots ? '특별 이벤트 점 숨기기' : '특별 이벤트 점 표시'}
+                      aria-pressed={showEventDots}
+                      style={dotBtnStyle}
+                    >
+                      <span style={{
+                        display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%',
+                        backgroundColor: showEventDots ? eventColor : 'transparent',
+                        border: `2px solid ${eventColor}`,
                         boxShadow: showEventDots ? `0 0 0 2px var(--card-bg)` : 'none',
-                      }}
-                    />
-                  </button>
+                      }} />
+                    </button>
+                  </>
                 );
               })()}
               {/* 모바일 가격선 설정 톱니바퀴 */}
