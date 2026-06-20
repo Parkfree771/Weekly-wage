@@ -33,6 +33,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/life-master', label: '생활 제작 계산' },
       { href: '/package', label: '패키지 효율 계산' },
       { href: '/hell-reward', label: '지옥 보상 계산' },
+      { href: '/arkpass', label: '아크패스 효율', badge: 'NEW' },
     ],
   },
   {
@@ -97,6 +98,7 @@ export default function Navbar() {
                       href === '/hell-reward' ? 'nav-hell' :
                       href === '/bracelet' ? 'nav-bracelet' :
                       href === '/package' ? 'nav-package' :
+                      href === '/arkpass' ? 'nav-package' :
                       href === '/cathedral' ? 'nav-weekly' :
                       href === '/cerka' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :

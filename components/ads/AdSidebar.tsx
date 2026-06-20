@@ -1,6 +1,6 @@
 'use client';
 
-import LoaOnBanner from '@/components/event/LoaOnBanner';
+import ArkPassBanner from '@/components/event/ArkPassBanner';
 
 interface AdSidebarProps {
   position: 'left' | 'right';
@@ -14,7 +14,7 @@ export default function AdSidebar({ position, topOffset = 80 }: AdSidebarProps) 
       style={{ paddingTop: `${topOffset}px` }}
     >
       <div className="side-rail-sticky">
-        <LoaOnBanner />
+        <ArkPassBanner />
       </div>
     </aside>
   );

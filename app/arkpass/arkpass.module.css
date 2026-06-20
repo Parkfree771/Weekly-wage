@@ -1,0 +1,888 @@
+/* ========================================
+   아크패스 효율 페이지
+   브랜드 컬러만 사용 (slate / primary / accent)
+   ======================================== */
+
+.layout {
+  display: flex;
+  gap: 1.25rem;
+  /* stretch(기본값) 유지 → 사이드바 컬럼이 본문 높이만큼 늘어나야
+     내부 sticky 가 스크롤을 따라 내려옴 (flex-start 면 높이가 짧아 안 따라옴) */
+  align-items: stretch;
+  /* 티어 컬러 — 파일럿/승무원 테마 (네이비 · 슬레이트 · 골드) */
+  --ap-primary: var(--color-primary);          /* 프리미엄: 브랜드 네이비 */
+  --ap-primary-light: var(--color-primary-light);
+  --ap-super: #b08d3c;                          /* 슈퍼: 항공 골드(견장) */
+  --ap-super-light: rgba(176, 141, 60, 0.12);
+  --ap-slate: #64748b;                          /* 무료: 슬레이트 */
+  --ap-slate-light: rgba(100, 116, 139, 0.1);
+  --ap-gold: #c08a16;                           /* 골드 값 */
+  --ap-line: #c2c8d6;                           /* 구분선 (진하게) */
+}
+
+[data-theme="dark"] .layout {
+  --ap-super: #d4af5f;
+  --ap-super-light: rgba(212, 175, 95, 0.14);
+  --ap-slate: #94a3b8;
+  --ap-slate-light: rgba(148, 163, 184, 0.12);
+  --ap-gold: #e6b94a;
+  --ap-line: rgba(255, 255, 255, 0.16);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+}
+
+.intro {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  margin: 0 0 0.9rem;
+}
+
+/* ===== 히어로 배너 (시즌 아바타) — 원본 그대로 ===== */
+.hero {
+  position: relative;
+  width: fit-content;
+  max-width: min(100%, 580px); /* 원본 비율 유지하며 적당히 축소 */
+  margin: 0 auto 1.25rem;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1.5px solid var(--ap-line);
+}
+
+.heroImg {
+  display: block;
+  width: 100%;
+  height: auto; /* 원본 비율 유지, 크롭 없음 */
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.2rem;
+  padding: 1rem 1.25rem;
+  /* 이미지는 그대로 두고, 글자 가독성을 위해 하단에만 살짝 */
+  background: linear-gradient(
+    to top,
+    rgba(10, 14, 24, 0.62) 0%,
+    rgba(10, 14, 24, 0.28) 16%,
+    rgba(10, 14, 24, 0) 34%
+  );
+}
+
+.heroTag {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--ap-super);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.heroSeason {
+  font-size: clamp(1.4rem, 3.4vw, 2.1rem);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+}
+
+.heroSub {
+  font-size: clamp(0.72rem, 1.6vw, 0.86rem);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 60%;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 560px) {
+  .heroSub {
+    max-width: 100%;
+  }
+}
+
+/* ===== 티어 토글 ===== */
+.tierToggle {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+
+.tierBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 0.85rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.tierBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--tier-c, var(--ap-primary));
+}
+
+.tierBtnDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tier-c);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px var(--tier-cl);
+}
+
+.tierBtnText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.tierBtnLabel {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.tierBtnSub {
+  font-size: 0.66rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.tier_free { --tier-c: var(--ap-slate); --tier-cl: var(--ap-slate-light); }
+.tier_premium { --tier-c: var(--ap-primary); --tier-cl: var(--ap-primary-light); }
+.tier_super { --tier-c: var(--ap-super); --tier-cl: var(--ap-super-light); }
+
+.tierBtnActive {
+  color: var(--text-primary);
+  border-color: var(--tier-c);
+  background: var(--tier-cl);
+  box-shadow: inset 0 0 0 1px var(--tier-c), var(--shadow-sm);
+}
+
+/* ===== 행 (4열 그리드) — 하나의 큰 박스, 행/열을 선으로 분리 ===== */
+.row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 2.3fr) minmax(0, 1.05fr) minmax(0, 1.05fr);
+  gap: 0.6rem;
+  align-items: stretch;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1.5px solid var(--ap-line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.row {
+  padding: 0.6rem 0.55rem;
+  border-bottom: 1.5px solid var(--ap-line);
+  transition: background-color 0.15s ease;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:hover {
+  background: var(--ap-slate-light);
+}
+
+.colLevel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== 레벨 뱃지 ===== */
+.levelBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 52px;
+  border-radius: 11px;
+  background: var(--ap-primary-light);
+  border: 1.5px solid rgba(59, 80, 181, 0.25);
+  color: var(--ap-primary);
+}
+
+[data-theme="dark"] .levelBadge {
+  border-color: rgba(107, 126, 214, 0.35);
+}
+
+.levelLv {
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+  line-height: 1;
+}
+
+.levelNum {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+/* Special(5단위) 레벨 — 골드 테마 */
+.levelSpecial {
+  background: var(--ap-super-light);
+  border-color: rgba(176, 141, 60, 0.45);
+  color: var(--ap-super);
+}
+
+.levelSpecial .levelLv {
+  font-size: 0.46rem;
+  letter-spacing: 0.04em;
+}
+
+.rowSpecial {
+  background: var(--ap-super-light);
+}
+
+.rowSpecial:hover {
+  background: var(--ap-super-light);
+}
+
+/* ===== 보상 섹션 — 선(divider)으로만 구분, 배경 채색 없음 ===== */
+.section {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.15rem 0 0.15rem 0.65rem;
+  border-left: 1.5px solid var(--ap-line);
+}
+
+.dimmed {
+  opacity: 0.38;
+}
+
+/* 섹션 라벨 — 각 행에 컬럼 구분 라벨(헤더 줄 대체) */
+.secLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  margin-bottom: 0.4rem;
+  opacity: 0.85;
+}
+
+.secLabel[data-k="achieve"] { color: var(--ap-slate); }
+.secLabel[data-k="premium"] { color: var(--ap-primary); }
+.secLabel[data-k="super"] { color: var(--ap-super); }
+
+.secPick {
+  font-size: 0.6rem;
+  color: #fff;
+  background: var(--ap-slate);
+  padding: 0.08rem 0.35rem;
+  border-radius: 5px;
+}
+
+/* ===== 달성 보상 옵션 (좌우 배치 + VS) ===== */
+.optRow {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+  height: 100%;
+}
+
+.optRowSingle {
+  justify-content: center;
+}
+
+.optTile {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0.35rem;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.optTile:hover {
+  border-color: rgba(59, 80, 181, 0.35);
+}
+
+.optSelected {
+  border-color: var(--ap-primary);
+  box-shadow: 0 2px 8px rgba(59, 80, 181, 0.18);
+}
+
+.optSingle {
+  flex: 0 1 auto;
+  min-width: 110px;
+  cursor: default;
+}
+
+.optSingle:hover {
+  border-color: transparent;
+}
+
+/* 선택 체크 */
+.check {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 2px solid var(--text-disabled);
+  background: var(--card-bg);
+  transition: all 0.15s ease;
+}
+
+.checkOn {
+  border-color: var(--ap-primary);
+  background: var(--ap-primary);
+}
+
+.checkOn::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.vs {
+  align-self: center;
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 900;
+  color: var(--text-muted);
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: 999px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+}
+
+/* ===== 프리미엄/슈퍼 타일 래퍼 ===== */
+.tileWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty {
+  color: var(--text-disabled);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* ===== 보상 타일 ===== */
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+}
+
+.tileImg {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .tileImg {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cat_crystal { background: rgba(59, 130, 246, 0.12); }
+.cat_avatar { background: var(--ap-super-light); }
+.cat_gold { background: rgba(212, 146, 15, 0.12); }
+
+.tileImg img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+/* 아바타 — 와이드 이미지로 크게 노출 */
+.tileAvatar {
+  width: 100%;
+}
+
+.tileImgWide {
+  width: 100%;
+  height: 72px;
+  border-radius: 10px;
+  border: 1.5px solid var(--ap-super);
+}
+
+.tileImgWide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 12%;
+}
+
+.tileEmoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.tileQty {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.72);
+  padding: 0 0.22rem;
+  border-radius: 5px;
+  line-height: 1.35;
+}
+
+.tileName {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: keep-all;
+}
+
+.tileGold {
+  display: flex;
+  align-items: center;
+  gap: 0.18rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--ap-gold);
+}
+
+.tileGold img {
+  width: 13px;
+  height: 13px;
+}
+
+.tileCat {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: var(--ap-super);
+  background: var(--ap-super-light);
+  padding: 0.08rem 0.4rem;
+  border-radius: 6px;
+}
+
+/* ===== 안내 ===== */
+.fillNote {
+  margin-top: 1rem;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.fillNote code,
+.warnNote code {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.92em;
+  background: var(--ap-primary-light);
+  color: var(--ap-primary);
+  padding: 0.05rem 0.3rem;
+  border-radius: 5px;
+}
+
+/* ========================================
+   사이드바 (스크롤 따라옴)
+   ======================================== */
+.sidebar {
+  width: 296px;
+  flex-shrink: 0;
+}
+
+.sideInner {
+  position: sticky;
+  top: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+/* 효율 카드 */
+.effCard {
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  box-shadow: var(--shadow-md);
+  border-top: 3px solid var(--ec-c, var(--ap-primary));
+}
+
+.effCard_free { --ec-c: var(--ap-slate); }
+.effCard_premium { --ec-c: var(--ap-primary); }
+.effCard_super { --ec-c: var(--ap-super); }
+
+.effTierName {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--ec-c, var(--ap-primary));
+  margin-bottom: 0.35rem;
+}
+
+.effValueRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.effValue {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--ap-gold);
+  line-height: 1;
+}
+
+.effUnit {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ap-gold);
+  opacity: 0.7;
+}
+
+.effSubLabel {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.effDivider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 0.75rem 0;
+}
+
+.effLine {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 0.15rem 0;
+}
+
+.effLineVal {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pos { color: var(--profit-color, #16a34a) !important; }
+.neg { color: var(--loss-color, #ef4444) !important; }
+
+.effPctBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background: var(--ap-primary-light);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.effPct {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+/* 공통 패널 */
+.panel {
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.panelHead {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.6rem;
+}
+
+.breakRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-size: 0.8rem;
+}
+
+.breakDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.breakDot[data-k="free"] { background: var(--ap-slate); }
+.breakDot[data-k="premium"] { background: var(--ap-primary); }
+.breakDot[data-k="super"] { background: var(--ap-super); }
+
+.breakName {
+  flex: 1;
+  color: var(--text-secondary);
+}
+
+.breakVal {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* 비교 행 */
+.compareRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.compareRow:last-of-type {
+  border-bottom: none;
+}
+
+.compareName {
+  flex: 1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.compareNums {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+}
+
+.compareGain { color: var(--profit-color, #16a34a); font-weight: 700; }
+.compareSlash { color: var(--text-disabled); }
+.compareCost { color: var(--text-muted); }
+
+.compareEff {
+  font-size: 0.95rem;
+  font-weight: 800;
+  min-width: 46px;
+  text-align: right;
+}
+
+.compareHint {
+  margin-top: 0.5rem;
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* 입력 */
+.inputRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.inputWrap input {
+  width: 90px;
+  padding: 0.3rem 0.45rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: right;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.inputWrap input:focus {
+  border-color: var(--ap-primary);
+}
+
+.inputWrap i {
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.exchangeNote {
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.tempNotice {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background: var(--ap-super-light);
+  border: 1px solid rgba(176, 141, 60, 0.35);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+}
+
+.tempNotice strong {
+  color: var(--ap-super);
+  font-weight: 800;
+}
+
+.warnNote {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  background: var(--ap-super-light);
+  border: 1px solid rgba(176, 141, 60, 0.3);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+}
+
+/* ========================================
+   반응형
+   ======================================== */
+@media (max-width: 992px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    order: -1;
+  }
+
+  .sideInner {
+    position: static;
+  }
+}
+
+/* 표 → 카드 전환 */
+@media (max-width: 720px) {
+  .row {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 0.7rem;
+  }
+
+  .colLevel {
+    justify-content: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  /* 세로 구분선 → 가로 구분선 */
+  .section {
+    border-left: none;
+    border-top: 1.5px solid var(--ap-line);
+    padding: 0.7rem 0 0.2rem;
+    display: block;
+  }
+
+  .levelBadge {
+    flex-direction: row;
+    gap: 0.35rem;
+    width: auto;
+    height: auto;
+    padding: 0.25rem 0.7rem;
+  }
+
+  .levelNum {
+    font-size: 1.05rem;
+  }
+
+  .secLabel {
+    display: flex;
+  }
+
+  .dimmed {
+    display: none;
+  }
+
+  .optTile,
+  .tile {
+    min-width: 0;
+  }
+
+  .tileName {
+    -webkit-line-clamp: 3;
+  }
+}
+
+@media (max-width: 420px) {
+  .tierBtn {
+    padding: 0.6rem 0.5rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.25rem;
+  }
+
+  .tierBtnText {
+    align-items: center;
+  }
+
+  .tierBtnSub {
+    display: none;
+  }
+}

@@ -1,0 +1,71 @@
+/* 아크패스 「창공의 안내자」 세로 사이드 배너 (양쪽 레일용) */
+
+.card {
+  display: block;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.35);
+}
+
+/* 이미지 — 오버레이 없이 원본 그대로 */
+.img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 시즌명 + CTA — 이미지 아래 푸터 */
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.75rem 0.5rem 0.85rem;
+  background: linear-gradient(135deg, #13294f 0%, #1d3a6b 100%);
+}
+
+.tag {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #e2b24a;
+}
+
+.title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #ffffff;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e2b24a 0%, #c8922a 100%);
+  color: #1a1505;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.arrow {
+  font-weight: 900;
+  transition: transform 0.15s ease;
+}
+
+.card:hover .arrow {
+  transform: translateX(2px);
+}
