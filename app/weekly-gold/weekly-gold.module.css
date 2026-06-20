@@ -218,41 +218,59 @@
   text-shadow: none !important;
 }
 
-/* 골드 미수령 배지 색상 보존 (cerka 흰색 override 방지) */
-.pageWrapper :global(.cerka-character .badge-gold-excluded) {
-  background-color: var(--color-info) !important;
-  color: #fff !important;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+/* 레이드 그룹 행 사이 세로 여백 — 카드가 가로로 납작해 보이지 않도록 세로로 살짝 늘림 */
+.pageWrapper :global(.theme-accordion > .raid-group-accordion) {
+  margin-bottom: 0.55rem;
+}
+.pageWrapper :global(.theme-accordion > .raid-group-accordion:last-child) {
+  margin-bottom: 0;
 }
 
-.pageWrapper :global(.cerka-character .badge-more-cost) {
+/* ============================================================
+   레이드 행(아코디언 헤더) 배지 색상 — 배경 이미지(cerka) 유무와 무관하게 일관 적용.
+   globals 의 ".accordion-button span { color: 다크 !important }" (specificity 0,2,1) 가
+   헤더 안 모든 span(=배지 포함)을 다크로 강제하므로, ".accordion-button" 접두어로
+   specificity (0,3,0) 을 확보해 이를 이긴다. (배경 없는 카드에서 배지 글씨·색 깨짐 수정)
+   ※ 과거엔 .cerka-character 안에서만 정의돼 배경 있는 카드에서만 동작했음 → 전 카드로 통합.
+   ============================================================ */
+
+/* 골드 미수령 / 더보기 비용 — 파란 배경 + 흰 글씨 */
+.pageWrapper :global(.accordion-button .badge-gold-excluded),
+.pageWrapper :global(.accordion-button .badge-more-cost) {
   background-color: var(--color-info) !important;
   color: #fff !important;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
 }
 
-/* 난이도 배지 — cerka-character 의 .badge / span 강제 흰글씨 룰을 못 이겨서 색이 안 먹히므로
-   여기서 명시적 specificity + !important 로 색상 정의. RaidCalculator 의 DifficultyType 과 매칭.
-   배경 있으니 글씨는 모두 흰색으로 통일, 어두운 그림자로 가독성 확보. */
-.pageWrapper :global(.cerka-character .badge-difficulty-nightmare) {
+/* 난이도 배지 — 단계별 색 + 흰 글씨 */
+.pageWrapper :global(.accordion-button .badge-difficulty-nightmare) {
   background-color: #7e22ce !important;       /* purple-700 보라 */
-  color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+  color: #fff !important;
   font-weight: 700 !important;
 }
-
-.pageWrapper :global(.cerka-character .badge-difficulty-hard) {
+.pageWrapper :global(.accordion-button .badge-difficulty-hard) {
   background-color: var(--color-accent) !important;  /* 사이트 메인 주황 #e8722a */
-  color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+.pageWrapper :global(.accordion-button .badge-difficulty-normal) {
+  background-color: #eab308 !important;        /* yellow-500 노랑 */
+  color: #fff !important;
   font-weight: 700 !important;
 }
 
-.pageWrapper :global(.cerka-character .badge-difficulty-normal) {
-  background-color: #eab308 !important;        /* yellow-500 노랑 */
-  color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.6) !important;  /* 노랑+흰 가독성 보완 */
-  font-weight: 700 !important;
+/* 부트스트랩 색상 배지(클골/귀속=success, 더보기=danger, 레벨=secondary)도
+   헤더 다크강제룰을 이기도록 흰 글씨 재확인 */
+.pageWrapper :global(.accordion-button .badge.bg-success),
+.pageWrapper :global(.accordion-button .badge.bg-danger),
+.pageWrapper :global(.accordion-button .badge.bg-secondary) {
+  color: #fff !important;
+}
+
+/* 배경 이미지(cerka) 카드에선 글자 그림자로 가독성 보강 */
+.pageWrapper :global(.cerka-character .accordion-button .badge-gold-excluded),
+.pageWrapper :global(.cerka-character .accordion-button .badge-more-cost),
+.pageWrapper :global(.cerka-character .accordion-button [class*="badge-difficulty"]) {
+  text-shadow: 0 1px 2px rgba(0,0,0,0.55) !important;
 }
 
 /* ==========================================================================

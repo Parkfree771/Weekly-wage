@@ -43,7 +43,7 @@ type SavedSettings = {
 };
 
 // 코어를 주는 레이드 그룹
-const CORE_RAID_GROUPS = ['성당', '세르카', '종막', '4막'];
+const CORE_RAID_GROUPS = ['벨가르딘', '성당', '세르카', '종막', '4막'];
 
 // 난이도 배지. 색상은 weekly-gold.module.css 에 정의 (cerka-character 의 강제 흰글씨 룰을
 // 이기려면 !important 가 필요해서 inline style 로는 못 박음). 여기는 className 매핑만.
@@ -145,6 +145,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
 
   // 레이드 그룹명과 이미지 파일명 매핑
   const raidImages: { [key: string]: string } = {
+    '벨가르딘': '/belgardin2.webp',
     '성당': '/wlvuddmltjdekd1.webp',
     '세르카': '/cerka2.webp',
     '종막': '/abrelshud.webp',
@@ -158,6 +159,9 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
 
   // 레이드별 관문당 코어 획득량 (더보기 안 할 때 기준)
   const corePerGate: { [key: string]: number } = {
+    '벨가르딘 나메': 4,
+    '벨가르딘 하드': 3,
+    '벨가르딘 노말': 3,
     '성당 3단계': 3,
     '성당 2단계': 2,
     '성당 1단계': 2,
@@ -810,8 +814,9 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
           const checkedGroups = getCheckedRaidGroups(character.characterName);
           const uncheckedGroups = Object.keys(groupedRaids).filter(g => !checkedGroups.includes(g));
           const showAll = showAllRaids[character.characterName] || false;
-          const hasBackground = character.itemLevel >= 1700;
-          const bgImage = character.itemLevel >= 1750 ? '/wlvuddmltjdekd2.webp' : character.itemLevel >= 1700 ? '/wlvuddmltjdekd1.webp' : null;
+          const hasBackground = character.itemLevel >= 1750;
+          // 1750+ 캐릭터 카드 배경: 벨가르딘 (상반신 컷)
+          const bgImage = character.itemLevel >= 1750 ? '/belgardin2.webp' : null;
 
           return (
             <Col lg={4} md={6} sm={12} key={character.characterName} className="mb-3 mb-md-4">
@@ -832,7 +837,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                 <Card.Header
                   className="character-raid-header"
                   style={{
-                    padding: isMobile ? '0.5rem 0.75rem' : '0.9rem 1.2rem',
+                    padding: isMobile ? '0.6rem 0.75rem' : '1.1rem 1.2rem',
                     position: 'relative',
                     zIndex: 1
                   }}
@@ -841,7 +846,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                   <div className="d-flex align-items-center justify-content-between" style={{ gap: isMobile ? '0.4rem' : '0.5rem', flexWrap: 'nowrap' }}>
                     <div className="d-flex align-items-center gap-1" style={{ minWidth: 0, flex: '1 1 auto' }}>
                       <span style={{
-                        fontSize: isMobile ? '0.85rem' : '1.1rem',
+                        fontSize: isMobile ? '0.95rem' : '1.25rem',
                         fontWeight: 600,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -852,8 +857,8 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                       <Badge
                         className="character-level-badge"
                         style={{
-                          fontSize: isMobile ? '0.6rem' : '0.78rem',
-                          padding: '0.25em 0.5em',
+                          fontSize: isMobile ? '0.68rem' : '0.88rem',
+                          padding: '0.3em 0.55em',
                           fontWeight: 500,
                           flexShrink: 0,
                           whiteSpace: 'nowrap'
@@ -869,12 +874,12 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                   </div>
 
                   {/* 2줄: 코어 + 골드 오른쪽 정렬 */}
-                  <div className="d-flex align-items-center justify-content-end gap-2" style={{ marginTop: '0.35rem' }}>
+                  <div className="d-flex align-items-center justify-content-end gap-2" style={{ marginTop: '0.55rem' }}>
                     {calculateCharacterCores(character.characterName) > 0 && (
                       <div className="d-flex align-items-center gap-1" style={{ whiteSpace: 'nowrap' }}>
-                        <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 20 : 26} height={isMobile ? 20 : 26} style={{ borderRadius: '3px' }} />
+                        <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 24 : 31} height={isMobile ? 24 : 31} style={{ borderRadius: '3px' }} />
                         <span style={{
-                          fontSize: isMobile ? '0.8rem' : '1rem',
+                          fontSize: isMobile ? '0.92rem' : '1.18rem',
                           fontWeight: 700,
                           color: 'var(--text-primary)'
                         }}>
@@ -888,16 +893,16 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                       borderRadius: '6px',
                       whiteSpace: 'nowrap'
                     }}>
-                      <Image src="/gold.webp" alt="일반 골드" title="일반 골드" width={isMobile ? 14 : 18} height={isMobile ? 14 : 18} style={{ borderRadius: '3px' }} />
+                      <Image src="/gold.webp" alt="일반 골드" title="일반 골드" width={isMobile ? 15 : 20} height={isMobile ? 15 : 20} style={{ borderRadius: '3px' }} />
                       <span style={{
-                        fontSize: isMobile ? '0.65rem' : '0.85rem',
+                        fontSize: isMobile ? '0.78rem' : '1rem',
                         fontWeight: 700
                       }}>
                         {calculateCharacterFree(character.characterName).toLocaleString()}
                       </span>
-                      <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={isMobile ? 14 : 18} height={isMobile ? 14 : 18} style={{ borderRadius: '3px', filter: BOUND_GOLD_FILTER, marginLeft: '4px' }} />
+                      <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={isMobile ? 15 : 20} height={isMobile ? 15 : 20} style={{ borderRadius: '3px', filter: BOUND_GOLD_FILTER, marginLeft: '4px' }} />
                       <span style={{
-                        fontSize: isMobile ? '0.65rem' : '0.85rem',
+                        fontSize: isMobile ? '0.78rem' : '1rem',
                         fontWeight: 700,
                         color: BOUND_GOLD_TEXT
                       }}>
@@ -906,14 +911,14 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                     </div>
                   </div>
                 </Card.Header>
-                <Card.Body style={{ padding: isMobile ? '0.3rem' : '0.75rem 0.75rem 0.5rem', position: 'relative', zIndex: 1 }}>
+                <Card.Body style={{ padding: isMobile ? '0.4rem' : '1rem 1rem 0.85rem', position: 'relative', zIndex: 1 }}>
                   <Accordion flush className="theme-accordion">
                     {/* 체크된 레이드 그룹들 */}
                     {checkedGroups.map(groupName => {
                       const excluded = isGoldExcluded(character.characterName, groupName);
                       return (
                       <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
-                        <Accordion.Header style={{ fontSize: isMobile ? '0.9rem' : '1.12rem', padding: isMobile ? '0.35rem' : '0.5rem' }}>
+                        <Accordion.Header style={{ fontSize: isMobile ? '1.0rem' : '1.3rem', padding: isMobile ? '0.45rem' : '0.7rem' }}>
                           <div className="d-flex align-items-center w-100">
                             {raidImages[groupName] && (
                               <Image
@@ -944,7 +949,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                 <span className={`ms-1 ${cls}`} style={{
                                   display: 'inline-block',
                                   padding: isMobile ? '0.18em 0.45em' : '0.25em 0.55em',
-                                  fontSize: isMobile ? '0.55rem' : '0.7rem',
+                                  fontSize: isMobile ? '0.62rem' : '0.82rem',
                                   lineHeight: 1,
                                   borderRadius: '0.375rem',
                                 }}>
@@ -954,30 +959,30 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                             })()}
                             {excluded ? (
                               <>
-                                <Badge className="ms-1 badge-gold-excluded" style={{
-                                  fontSize: isMobile ? '0.55rem' : '0.68rem',
+                                <span className="ms-1 badge badge-gold-excluded" style={{
+                                  fontSize: isMobile ? '0.62rem' : '0.82rem',
                                   backgroundColor: '#3b82f6',
                                   color: '#fff',
                                   fontWeight: 600,
                                   textShadow: hasBackground ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
                                 }}>
                                   골드 미수령
-                                </Badge>
+                                </span>
                                 {hasMoreSelected(character.characterName, groupName) && (
                                   <>
-                                    <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.68rem' }}>더보기</Badge>
-                                    <Badge className="ms-1 badge-more-cost d-inline-flex align-items-center gap-1" style={{
-                                      fontSize: isMobile ? '0.55rem' : '0.68rem',
+                                    <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.6rem' : '0.8rem' }}>더보기</Badge>
+                                    <span className="ms-1 badge badge-more-cost d-inline-flex align-items-center gap-1" style={{
+                                      fontSize: isMobile ? '0.62rem' : '0.82rem',
                                       backgroundColor: '#3b82f6',
                                       color: '#fff',
                                       fontWeight: 700,
                                       textShadow: hasBackground ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
                                     }}>
-                                      <Image src="/gold.webp" alt="일반" title="일반 골드" width={isMobile ? 9 : 11} height={isMobile ? 9 : 11} style={{ borderRadius: '2px' }} />
+                                      <Image src="/gold.webp" alt="일반" title="일반 골드" width={isMobile ? 11 : 13} height={isMobile ? 11 : 13} style={{ borderRadius: '2px' }} />
                                       {calculateRaidGroupFree(character.characterName, groupName).toLocaleString()}
-                                    </Badge>
+                                    </span>
                                     <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{
-                                      fontSize: isMobile ? '0.55rem' : '0.68rem',
+                                      fontSize: isMobile ? '0.6rem' : '0.8rem',
                                       fontWeight: 700,
                                     }}>
                                       <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 9 : 11} height={isMobile ? 9 : 11} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
@@ -988,23 +993,23 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                               </>
                             ) : (
                               <>
-                                <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
+                                <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.6rem' : '0.82rem' }}>
                                   <Image src="/gold.webp" alt="일반" title="일반 골드" width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} style={{ borderRadius: '2px' }} />
                                   {calculateRaidGroupFree(character.characterName, groupName).toLocaleString()}
                                 </Badge>
-                                <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
+                                <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.6rem' : '0.82rem' }}>
                                   <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
                                   {calculateRaidGroupBound(character.characterName, groupName).toLocaleString()}
                                 </Badge>
                                 {hasMoreSelected(character.characterName, groupName) && (
-                                  <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.68rem' }}>더보기</Badge>
+                                  <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.6rem' : '0.8rem' }}>더보기</Badge>
                                 )}
                               </>
                             )}
                             {(CORE_RAID_GROUPS.includes(groupName)) && (
                               <span className="ms-1 d-inline-flex align-items-center">
-                                <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 20 : 26} height={isMobile ? 20 : 26} style={{ borderRadius: '3px' }} />
-                                <span style={{ marginLeft: '3px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.75rem' : '0.88rem' }}>
+                                <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 24 : 31} height={isMobile ? 24 : 31} style={{ borderRadius: '3px' }} />
+                                <span style={{ marginLeft: '3px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.85rem' : '1.05rem' }}>
                                   x{calculateRaidGroupCores(character.characterName, groupName)}
                                 </span>
                               </span>
@@ -1017,9 +1022,9 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                               const isSelected = hasAnyGateSelected(character.characterName, raid.name);
                               return (
                               <Accordion.Item eventKey={raid.name} key={raid.name} className="raid-difficulty-accordion">
-                                <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.4rem' : '0.6rem' }}>
+                                <Accordion.Header style={{ fontSize: isMobile ? '0.85rem' : '1.15rem', padding: isMobile ? '0.45rem' : '0.7rem' }}>
                                   <span style={{ fontWeight: isSelected ? 600 : 400 }}>{raid.name}</span>
-                                  <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.68rem' }}>
+                                  <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.76rem' }}>
                                     {raid.level}
                                   </Badge>
                                   {isSelected && (
@@ -1027,7 +1032,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                   )}
                                 </Accordion.Header>
                                 <Accordion.Body style={{ padding: isMobile ? '0.25rem' : '0.9rem' }}>
-                                  <Table bordered responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.65rem' : '0.9rem', tableLayout: 'fixed' }}>
+                                  <Table bordered responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.72rem' : '1.0rem', tableLayout: 'fixed' }}>
                                     <thead>
                                       <tr>
                                         <th style={{ padding: isMobile ? '0.2rem' : '0.6rem', width: isMobile ? '18%' : '20%', whiteSpace: 'nowrap' }}>관문</th>
@@ -1147,7 +1152,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                           <div>
                             {uncheckedGroups.map(groupName => (
                               <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
-                                <Accordion.Header style={{ fontSize: isMobile ? '0.9rem' : '1.12rem', padding: isMobile ? '0.35rem' : '0.5rem' }}>
+                                <Accordion.Header style={{ fontSize: isMobile ? '1.0rem' : '1.3rem', padding: isMobile ? '0.45rem' : '0.7rem' }}>
                                   <div className="d-flex align-items-center w-100">
                                     {raidImages[groupName] && (
                                       <Image
@@ -1169,13 +1174,13 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                       />
                                     )}
                                     <span style={{ fontWeight: 600, opacity: 0.7 }}>{groupName}</span>
-                                    <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.73rem' }}>
+                                    <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.6rem' : '0.82rem' }}>
                                       0 G
                                     </Badge>
                                     {(CORE_RAID_GROUPS.includes(groupName)) && (
                                       <span className="ms-1 d-inline-flex align-items-center" style={{ opacity: 0.7 }}>
-                                        <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 20 : 26} height={isMobile ? 20 : 26} style={{ borderRadius: '3px' }} />
-                                        <span style={{ marginLeft: '3px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.75rem' : '0.88rem' }}>
+                                        <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 24 : 31} height={isMobile ? 24 : 31} style={{ borderRadius: '3px' }} />
+                                        <span style={{ marginLeft: '3px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.85rem' : '1.05rem' }}>
                                           x{calculateRaidGroupCores(character.characterName, groupName)}
                                         </span>
                                       </span>
@@ -1188,9 +1193,9 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                       const isSelected = hasAnyGateSelected(character.characterName, raid.name);
                                       return (
                                       <Accordion.Item eventKey={raid.name} key={raid.name} className="raid-difficulty-accordion">
-                                        <Accordion.Header style={{ fontSize: isMobile ? '0.8rem' : '1rem', padding: isMobile ? '0.4rem' : '0.6rem' }}>
+                                        <Accordion.Header style={{ fontSize: isMobile ? '0.85rem' : '1.15rem', padding: isMobile ? '0.45rem' : '0.7rem' }}>
                                           <span style={{ fontWeight: isSelected ? 600 : 400 }}>{raid.name}</span>
-                                          <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.68rem' }}>
+                                          <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.76rem' }}>
                                             {raid.level}
                                           </Badge>
                                           {isSelected && (
@@ -1198,7 +1203,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                           )}
                                         </Accordion.Header>
                                         <Accordion.Body style={{ padding: isMobile ? '0.25rem' : '0.9rem' }}>
-                                          <Table striped bordered hover responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.65rem' : '0.9rem', tableLayout: 'fixed' }}>
+                                          <Table striped bordered hover responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.72rem' : '1.0rem', tableLayout: 'fixed' }}>
                                             <thead>
                                               <tr>
                                                 <th style={{ padding: isMobile ? '0.2rem' : '0.6rem', width: isMobile ? '18%' : '20%', whiteSpace: 'nowrap' }}>관문</th>

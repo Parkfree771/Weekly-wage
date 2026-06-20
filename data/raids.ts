@@ -2,6 +2,33 @@
 // 일반 골드 = gold - boundGold. 더보기 비용(moreGold) 은 귀속에서 우선 차감하고 부족하면 일반에서 차감.
 export const raids = [
   {
+    name: '벨가르딘 나메',
+    level: 1780,
+    image: '/belgardin2.webp',
+    gates: [
+      { gate: 1, gold: 30000, boundGold: 0, moreGold: 9600 },
+      { gate: 2, gold: 45000, boundGold: 0, moreGold: 14400 },
+    ],
+  },
+  {
+    name: '벨가르딘 하드',
+    level: 1770,
+    image: '/belgardin2.webp',
+    gates: [
+      { gate: 1, gold: 25000, boundGold: 0, moreGold: 8000 },
+      { gate: 2, gold: 37000, boundGold: 0, moreGold: 11840 },
+    ],
+  },
+  {
+    name: '벨가르딘 노말',
+    level: 1750,
+    image: '/belgardin2.webp',
+    gates: [
+      { gate: 1, gold: 20000, boundGold: 0, moreGold: 6400 },
+      { gate: 2, gold: 30000, boundGold: 0, moreGold: 9600 },
+    ],
+  },
+  {
     name: '성당 3단계',
     level: 1750,
     image: '/wlvuddmltjdekd1.webp',
