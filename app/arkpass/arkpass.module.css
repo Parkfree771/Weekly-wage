@@ -525,8 +525,7 @@
   text-align: center;
 }
 
-.fillNote code,
-.warnNote code {
+.fillNote code {
   font-family: var(--font-mono), monospace;
   font-size: 0.92em;
   background: var(--ap-primary-light);
@@ -572,69 +571,42 @@
   margin-bottom: 0.35rem;
 }
 
-.effValueRow {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.effValue {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--ap-gold);
-  line-height: 1;
-}
-
-.effUnit {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--ap-gold);
-  opacity: 0.7;
-}
-
-.effSubLabel {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  margin-top: 0.2rem;
-}
-
-.effDivider {
-  height: 1px;
-  background: var(--border-color);
-  margin: 0.75rem 0;
-}
-
-.effLine {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  padding: 0.15rem 0;
-}
-
-.effLineVal {
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
 .pos { color: var(--profit-color, #16a34a) !important; }
 .neg { color: var(--loss-color, #ef4444) !important; }
 
-.effPctBox {
+/* 큰 효율 (G/원) */
+.effMain {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.6rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 10px;
-  background: var(--ap-primary-light);
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--text-secondary);
+  align-items: baseline;
+  gap: 0.3rem;
+  margin: 0.1rem 0 0.5rem;
 }
 
-.effPct {
-  font-size: 1.3rem;
+.effBig {
+  font-size: 2.3rem;
+  font-weight: 800;
+  color: var(--ap-gold);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.effBigUnit {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--ap-gold);
+  opacity: 0.75;
+}
+
+.effMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.effMeta b {
+  color: var(--text-primary);
   font-weight: 800;
 }
 
@@ -683,122 +655,174 @@
   color: var(--text-primary);
 }
 
-/* 비교 행 */
-.compareRow {
-  display: flex;
+/* 티어 비교 표 */
+.cmpHead,
+.cmpRow {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 0.9fr 0.7fr;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0;
-  border-bottom: 1px solid var(--border-color);
+  gap: 0.3rem;
 }
 
-.compareRow:last-of-type {
-  border-bottom: none;
-}
-
-.compareName {
-  flex: 1;
-  font-size: 0.78rem;
+.cmpHead {
+  padding: 0 0.2rem 0.4rem;
+  font-size: 0.64rem;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
-.compareNums {
-  display: flex;
-  align-items: baseline;
-  gap: 0.2rem;
-  font-size: 0.7rem;
-}
-
-.compareGain { color: var(--profit-color, #16a34a); font-weight: 700; }
-.compareSlash { color: var(--text-disabled); }
-.compareCost { color: var(--text-muted); }
-
-.compareEff {
-  font-size: 0.95rem;
-  font-weight: 800;
-  min-width: 46px;
+.cmpHead span:not(:first-child),
+.cmpRow span:not(.cmpName) {
   text-align: right;
 }
 
-.compareHint {
-  margin-top: 0.5rem;
+.cmpRow {
+  width: 100%;
+  padding: 0.45rem 0.3rem;
+  border: none;
+  border-top: 1px solid var(--border-color);
+  background: transparent;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.cmpRow:hover {
+  background: var(--ap-slate-light);
+}
+
+.cmpRowActive {
+  background: var(--ap-primary-light);
+  box-shadow: inset 0 0 0 1.5px var(--ap-primary);
+}
+
+.cmpName {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.cmpDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cmpDot[data-k="free"] { background: var(--ap-slate); }
+.cmpDot[data-k="premium"] { background: var(--ap-primary); }
+.cmpDot[data-k="super"] { background: var(--ap-super); }
+
+.cmpVal {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--ap-gold);
+}
+
+.cmpPrice {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.cmpEff {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.cmpFoot {
+  margin-top: 0.55rem;
   font-size: 0.66rem;
   color: var(--text-muted);
   line-height: 1.4;
 }
 
-/* 입력 */
-.inputRow {
+/* 환율 입력 (패키지 효율과 동일 방식) */
+.rateBox {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  font-weight: 600;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.02));
 }
 
-.inputWrap {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
+.rateIcon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
 }
 
-.inputWrap input {
-  width: 90px;
+.rateFixed {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.rateSep {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.rateInput {
+  width: 74px;
   padding: 0.3rem 0.45rem;
   border: 1.5px solid var(--border-color);
   border-radius: 8px;
   background: var(--input-bg);
   color: var(--text-primary);
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.9rem;
+  font-weight: 800;
   text-align: right;
   outline: none;
   transition: border-color 0.15s ease;
 }
 
-.inputWrap input:focus {
+.rateInput:focus {
   border-color: var(--ap-primary);
 }
 
-.inputWrap i {
-  font-style: normal;
-  font-size: 0.72rem;
+.rateUnit {
+  font-size: 0.8rem;
+  font-weight: 800;
   color: var(--text-muted);
-  font-weight: 700;
 }
 
 .exchangeNote {
   font-size: 0.66rem;
   color: var(--text-muted);
-  margin-top: 0.1rem;
+  margin-top: 0.45rem;
+  text-align: center;
 }
 
+/* 임시 데이터 — 눈에 띄게 (빨강) */
 .tempNotice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
   font-size: 0.72rem;
-  line-height: 1.5;
+  line-height: 1.45;
   color: var(--text-secondary);
-  background: var(--ap-super-light);
-  border: 1px solid rgba(176, 141, 60, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.32);
   border-radius: 10px;
-  padding: 0.6rem 0.75rem;
+  padding: 0.65rem 0.8rem;
 }
 
 .tempNotice strong {
-  color: var(--ap-super);
+  color: #dc2626;
   font-weight: 800;
+  font-size: 0.84rem;
 }
 
-.warnNote {
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  background: var(--ap-super-light);
-  border: 1px solid rgba(176, 141, 60, 0.3);
-  border-radius: 10px;
-  padding: 0.6rem 0.75rem;
+[data-theme="dark"] .tempNotice strong {
+  color: #f87171;
 }
 
 /* ========================================

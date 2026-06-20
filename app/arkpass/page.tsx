@@ -32,11 +32,7 @@ export default function ArkPassPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/arkpass-avatar.webp" alt="창공의 안내자 아크패스 아바타" className={styles.heroImg} />
           <div className={styles.heroOverlay}>
-            <span className={styles.heroTag}>아크패스 시즌</span>
             <span className={styles.heroSeason}>창공의 안내자</span>
-            <span className={styles.heroSub}>
-              달성 · 프리미엄 · 슈퍼 프리미엄 보상을 레벨별로 정리하고 현금 대비 골드 효율을 계산합니다
-            </span>
           </div>
         </div>
 

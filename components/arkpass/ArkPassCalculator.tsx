@@ -1,7 +1,6 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import NextImage from 'next/image';
 import styles from '@/app/arkpass/arkpass.module.css';
 import { fetchPriceData } from '@/lib/price-history-client';
 import { ARKPASS_LEVELS, ARKPASS_PRICE, type Reward } from '@/data/arkpass';
@@ -10,7 +9,6 @@ import {
   calcTotals,
   selectedAchievement,
   tierValue,
-  wonToGold,
   type PassTier,
   type PriceCtx,
 } from '@/lib/arkpass-calc';
@@ -40,15 +38,15 @@ const TIER_META: { key: PassTier; label: string; sub: string }[] = [
   { key: 'super', label: '슈퍼 프리미엄', sub: '전체 보상' },
 ];
 
-const PEON_FIXED_WON_PER_100BLUE = 2750; // 100블루크리스탈 = 2750원(왕실)
-
 export default function ArkPassCalculator() {
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [tier, setTier] = useState<PassTier>('premium');
   const [choices, setChoices] = useState<Record<number, number>>({});
   const [exchangeRate, setExchangeRate] = useState<number>(18000); // 100블크 = N골드
-  const [premiumPrice, setPremiumPrice] = useState<number>(ARKPASS_PRICE.premium);
-  const [superPrice, setSuperPrice] = useState<number>(ARKPASS_PRICE.superPremium);
+
+  // 패스 가격(원) — data/arkpass.ts 에 직접 입력
+  const premiumPrice = ARKPASS_PRICE.premium;
+  const superPrice = ARKPASS_PRICE.superPremium;
 
   useEffect(() => {
     fetchPriceData()
@@ -67,23 +65,24 @@ export default function ArkPassCalculator() {
   const premiumValue = tierValue(totals, 'premium');
   const superValue = tierValue(totals, 'super');
 
-  const premiumCostGold = wonToGold(premiumPrice, exchangeRate, PEON_FIXED_WON_PER_100BLUE);
-  const superCostGold = wonToGold(superPrice, exchangeRate, PEON_FIXED_WON_PER_100BLUE);
-  const upgradeCostGold = wonToGold(
-    Math.max(0, superPrice - premiumPrice),
-    exchangeRate,
-    PEON_FIXED_WON_PER_100BLUE
-  );
-
-  const premiumExtra = totals.premium;
-  const superExtra = totals.superPremium;
-
-  function efficiency(value: number, cost: number): number | null {
-    if (cost <= 0) return null;
-    return Math.round((value / cost) * 100);
+  // 효율 = 보상 골드 가치 ÷ 가격(원) → 원당 골드 (G/원). 높을수록 이득
+  function goldPerWon(value: number, won: number): number | null {
+    if (won <= 0) return null;
+    return value / won;
   }
 
-  const hasAnyValue = freeValue + premiumValue + superValue > 0;
+  // 티어 비교 행 데이터
+  const tierRows: {
+    key: PassTier;
+    label: string;
+    value: number;
+    price: number;
+    eff: number | null;
+  }[] = [
+    { key: 'free', label: '무료', value: freeValue, price: 0, eff: null },
+    { key: 'premium', label: '프리미엄', value: premiumValue, price: premiumPrice, eff: goldPerWon(premiumValue, premiumPrice) },
+    { key: 'super', label: '슈퍼 프리미엄', value: superValue, price: superPrice, eff: goldPerWon(superValue, superPrice) },
+  ];
 
   function pickAchievement(level: number, idx: number) {
     setChoices((prev) => {
@@ -97,10 +96,7 @@ export default function ArkPassCalculator() {
     });
   }
 
-  const tierTotalValue = tier === 'free' ? freeValue : tier === 'premium' ? premiumValue : superValue;
-  const tierCostGold = tier === 'free' ? 0 : tier === 'premium' ? premiumCostGold : superCostGold;
-  const tierEff = efficiency(tierTotalValue, tierCostGold);
-  const tierNet = tierTotalValue - tierCostGold;
+  const selectedRow = tierRows.find((r) => r.key === tier)!;
 
   return (
     <div className={styles.layout}>
@@ -202,137 +198,97 @@ export default function ArkPassCalculator() {
       {/* ===== 사이드바: 효율 요약 (스크롤 따라옴) ===== */}
       <aside className={styles.sidebar}>
         <div className={styles.sideInner}>
-          {/* 임시 데이터 안내 — 항상 표시 */}
+          {/* 임시 데이터 — 확실하게 명시 */}
           <div className={styles.tempNotice}>
-            <strong>임시 데이터</strong> · 지난 시즌 표 기준이라 실제와 다를 수 있습니다. 일부 상자류는 가치 미산정 상태입니다.
+            <strong>※ 이 데이터는 임시입니다</strong>
+            <span>지난 시즌 표 기반으로, 정식 데이터로 교체 예정입니다. 실제 보상·가격과 다릅니다.</span>
           </div>
 
-          {/* 선택 티어 효율 */}
+          {/* 선택 티어 — 큰 효율 (G/원) */}
           <div className={`${styles.effCard} ${styles[`effCard_${tier}`]}`}>
-            <div className={styles.effTierName}>
-              {TIER_META.find((t) => t.key === tier)?.label} 효율
+            <div className={styles.effTierName}>{selectedRow.label}</div>
+            <div className={styles.effMain}>
+              <span className={styles.effBig}>
+                {selectedRow.eff != null ? selectedRow.eff.toFixed(1) : '—'}
+              </span>
+              <span className={styles.effBigUnit}>G / 원</span>
             </div>
-            <div className={styles.effValueRow}>
-              <NextImage src="/gold.webp" alt="" width={26} height={26} />
-              <span className={styles.effValue}>{tierTotalValue.toLocaleString()}</span>
-              <span className={styles.effUnit}>G</span>
+            <div className={styles.effMeta}>
+              <span>보상 가치 <b>{selectedRow.value.toLocaleString()} G</b></span>
+              <span>가격 <b>{selectedRow.price > 0 ? `${selectedRow.price.toLocaleString()}원` : '무료'}</b></span>
             </div>
-            <div className={styles.effSubLabel}>총 획득 골드 가치</div>
-
-            {tier !== 'free' && (
-              <>
-                <div className={styles.effDivider} />
-                <div className={styles.effLine}>
-                  <span>현금 환산 비용</span>
-                  <span className={styles.effLineVal}>{tierCostGold.toLocaleString()} G</span>
-                </div>
-                <div className={styles.effLine}>
-                  <span>순이득</span>
-                  <span className={`${styles.effLineVal} ${tierNet >= 0 ? styles.pos : styles.neg}`}>
-                    {tierNet >= 0 ? '+' : ''}{tierNet.toLocaleString()} G
-                  </span>
-                </div>
-                <div className={styles.effPctBox}>
-                  <span>효율</span>
-                  <span className={`${styles.effPct} ${tierEff != null && tierEff >= 100 ? styles.pos : styles.neg}`}>
-                    {tierEff != null ? `${tierEff}%` : '—'}
-                  </span>
-                </div>
-              </>
-            )}
           </div>
 
-          {/* 가치 분해 */}
+          {/* 티어별 효율 비교 (클릭으로 선택) */}
+          <div className={styles.panel}>
+            <div className={styles.panelHead}>티어별 효율 비교</div>
+            <div className={styles.cmpHead}>
+              <span>티어</span>
+              <span>보상 가치</span>
+              <span>가격</span>
+              <span>효율</span>
+            </div>
+            {tierRows.map((row) => (
+              <button
+                key={row.key}
+                type="button"
+                className={`${styles.cmpRow} ${tier === row.key ? styles.cmpRowActive : ''}`}
+                onClick={() => setTier(row.key)}
+              >
+                <span className={styles.cmpName}>
+                  <i className={styles.cmpDot} data-k={row.key} />
+                  {row.label}
+                </span>
+                <span className={styles.cmpVal}>{row.value.toLocaleString()}</span>
+                <span className={styles.cmpPrice}>{row.price > 0 ? row.price.toLocaleString() : '무료'}</span>
+                <span className={styles.cmpEff}>{row.eff != null ? row.eff.toFixed(1) : '—'}</span>
+              </button>
+            ))}
+            <div className={styles.cmpFoot}>효율 = 보상 골드 가치 ÷ 가격(원) · 높을수록 이득</div>
+          </div>
+
+          {/* 보상 가치 분해 */}
           <div className={styles.panel}>
             <div className={styles.panelHead}>보상 가치 분해</div>
             <div className={styles.breakRow}>
               <span className={styles.breakDot} data-k="free" />
-              <span className={styles.breakName}>달성 보상</span>
+              <span className={styles.breakName}>아크패스(달성)</span>
               <span className={styles.breakVal}>{totals.achievement.toLocaleString()} G</span>
             </div>
             <div className={styles.breakRow}>
               <span className={styles.breakDot} data-k="premium" />
               <span className={styles.breakName}>프리미엄 추가</span>
-              <span className={styles.breakVal}>+{premiumExtra.toLocaleString()} G</span>
+              <span className={styles.breakVal}>+{totals.premium.toLocaleString()} G</span>
             </div>
             <div className={styles.breakRow}>
               <span className={styles.breakDot} data-k="super" />
               <span className={styles.breakName}>슈퍼 프리미엄 추가</span>
-              <span className={styles.breakVal}>+{superExtra.toLocaleString()} G</span>
+              <span className={styles.breakVal}>+{totals.superPremium.toLocaleString()} G</span>
             </div>
           </div>
 
-          {/* 티어 비교 */}
+          {/* 환율 입력 (패키지 효율과 동일한 방식) */}
           <div className={styles.panel}>
-            <div className={styles.panelHead}>구매 효율 비교</div>
-            <CompareRow
-              name="프리미엄"
-              value={premiumExtra}
-              cost={premiumCostGold}
-              eff={efficiency(premiumExtra, premiumCostGold)}
-            />
-            <CompareRow
-              name="슈퍼 업그레이드"
-              value={superExtra}
-              cost={upgradeCostGold}
-              eff={efficiency(superExtra, upgradeCostGold)}
-            />
-            <div className={styles.compareHint}>
-              구매로 추가로 얻는 가치 ÷ 환산 비용 기준
+            <div className={styles.panelHead}>블루 크리스탈 시세</div>
+            <div className={styles.rateBox}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/blue.webp" alt="" className={styles.rateIcon} />
+              <span className={styles.rateFixed}>100</span>
+              <span className={styles.rateSep}>=</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/gold.webp" alt="" className={styles.rateIcon} />
+              <input
+                type="number"
+                className={styles.rateInput}
+                value={exchangeRate || ''}
+                onChange={(e) => setExchangeRate(Number(e.target.value) || 0)}
+                placeholder="18000"
+                min={0}
+              />
+              <span className={styles.rateUnit}>G</span>
             </div>
+            <div className={styles.exchangeNote}>페온·도약·물약 등 크리스탈 보상 환산에 사용</div>
           </div>
-
-          {/* 입력: 가격 / 환율 */}
-          <div className={styles.panel}>
-            <div className={styles.panelHead}>설정</div>
-
-            <label className={styles.inputRow}>
-              <span>프리미엄 가격</span>
-              <span className={styles.inputWrap}>
-                <input
-                  type="number"
-                  value={premiumPrice || ''}
-                  onChange={(e) => setPremiumPrice(Number(e.target.value) || 0)}
-                  min={0}
-                />
-                <i>원</i>
-              </span>
-            </label>
-
-            <label className={styles.inputRow}>
-              <span>슈퍼 가격</span>
-              <span className={styles.inputWrap}>
-                <input
-                  type="number"
-                  value={superPrice || ''}
-                  onChange={(e) => setSuperPrice(Number(e.target.value) || 0)}
-                  min={0}
-                />
-                <i>원</i>
-              </span>
-            </label>
-
-            <label className={styles.inputRow}>
-              <span>100블크 =</span>
-              <span className={styles.inputWrap}>
-                <input
-                  type="number"
-                  value={exchangeRate || ''}
-                  onChange={(e) => setExchangeRate(Number(e.target.value) || 0)}
-                  min={0}
-                />
-                <i>G</i>
-              </span>
-            </label>
-            <div className={styles.exchangeNote}>왕실 2,750원 = 100블루크리스탈 기준 환산</div>
-          </div>
-
-          {!hasAnyValue && (
-            <div className={styles.warnNote}>
-              아직 보상 골드 가치가 입력되지 않았습니다. <code>data/arkpass.ts</code> 의
-              <code> gold</code> / <code>priceKey</code> 값을 채우면 효율이 계산됩니다.
-            </div>
-          )}
         </div>
       </aside>
     </div>
@@ -380,32 +336,5 @@ function RewardTile({
         <span className={styles.tileCat}>{catLabel || '가치 미산정'}</span>
       )}
     </span>
-  );
-}
-
-// ── 사이드바 비교 행 ─────────────────────────────
-function CompareRow({
-  name,
-  value,
-  cost,
-  eff,
-}: {
-  name: string;
-  value: number;
-  cost: number;
-  eff: number | null;
-}) {
-  return (
-    <div className={styles.compareRow}>
-      <span className={styles.compareName}>{name}</span>
-      <span className={styles.compareNums}>
-        <span className={styles.compareGain}>+{value.toLocaleString()}</span>
-        <span className={styles.compareSlash}>/</span>
-        <span className={styles.compareCost}>{cost.toLocaleString()}G</span>
-      </span>
-      <span className={`${styles.compareEff} ${eff != null && eff >= 100 ? styles.pos : styles.neg}`}>
-        {eff != null ? `${eff}%` : '—'}
-      </span>
-    </div>
   );
 }
