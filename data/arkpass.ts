@@ -55,8 +55,8 @@ export interface PassLevel {
 // 패스 가격 (현금, 원)
 // ------------------------------------------------------------
 export const ARKPASS_PRICE = {
-  premium: 19900,
-  superPremium: 39900,
+  premium: 19000,
+  superPremium: 49500,
 };
 
 // ------------------------------------------------------------

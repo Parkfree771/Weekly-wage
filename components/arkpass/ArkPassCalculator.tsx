@@ -42,7 +42,11 @@ export default function ArkPassCalculator() {
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [tier, setTier] = useState<PassTier>('premium');
   const [choices, setChoices] = useState<Record<number, number>>({});
-  const [exchangeRate, setExchangeRate] = useState<number>(18000); // 100블크 = N골드
+  // 환율: 100골드 = N원 (패키지 효율 계산과 동일)
+  const [wonPer100Gold, setWonPer100Gold] = useState<number>(15);
+
+  // 100블루크리스탈 = 2750원(왕실) 기준 → 블루크리스탈 골드 환산율(100블크 = N골드)
+  const exchangeRate = wonPer100Gold > 0 ? Math.round((2750 / wonPer100Gold) * 100) : 0;
 
   // 패스 가격(원) — data/arkpass.ts 에 직접 입력
   const premiumPrice = ARKPASS_PRICE.premium;
@@ -65,10 +69,15 @@ export default function ArkPassCalculator() {
   const premiumValue = tierValue(totals, 'premium');
   const superValue = tierValue(totals, 'super');
 
-  // 효율 = 보상 골드 가치 ÷ 가격(원) → 원당 골드 (G/원). 높을수록 이득
-  function goldPerWon(value: number, won: number): number | null {
-    if (won <= 0) return null;
-    return value / won;
+  // 패키지 효율과 동일한 이득률(%) 계산
+  // goldPerWon = 1원당 골드, 가격(원)을 골드로 환산해 보상 골드와 비교
+  const goldPerWon = wonPer100Gold > 0 ? 100 / wonPer100Gold : 0;
+
+  function benefitPct(value: number, won: number): number | null {
+    if (won <= 0 || goldPerWon <= 0) return null;
+    const cashGold = won * goldPerWon; // 그 가격으로 살 수 있는 골드
+    if (cashGold <= 0) return null;
+    return ((value - cashGold) / cashGold) * 100;
   }
 
   // 티어 비교 행 데이터
@@ -77,11 +86,11 @@ export default function ArkPassCalculator() {
     label: string;
     value: number;
     price: number;
-    eff: number | null;
+    benefit: number | null;
   }[] = [
-    { key: 'free', label: '무료', value: freeValue, price: 0, eff: null },
-    { key: 'premium', label: '프리미엄', value: premiumValue, price: premiumPrice, eff: goldPerWon(premiumValue, premiumPrice) },
-    { key: 'super', label: '슈퍼 프리미엄', value: superValue, price: superPrice, eff: goldPerWon(superValue, superPrice) },
+    { key: 'free', label: '무료', value: freeValue, price: 0, benefit: null },
+    { key: 'premium', label: '프리미엄', value: premiumValue, price: premiumPrice, benefit: benefitPct(premiumValue, premiumPrice) },
+    { key: 'super', label: '슈퍼 프리미엄', value: superValue, price: superPrice, benefit: benefitPct(superValue, superPrice) },
   ];
 
   function pickAchievement(level: number, idx: number) {
@@ -112,11 +121,8 @@ export default function ArkPassCalculator() {
               className={`${styles.tierBtn} ${styles[`tier_${t.key}`]} ${tier === t.key ? styles.tierBtnActive : ''}`}
               onClick={() => setTier(t.key)}
             >
-              <span className={styles.tierBtnDot} />
-              <span className={styles.tierBtnText}>
-                <span className={styles.tierBtnLabel}>{t.label}</span>
-                <span className={styles.tierBtnSub}>{t.sub}</span>
-              </span>
+              <span className={styles.tierBtnLabel}>{t.label}</span>
+              <span className={styles.tierBtnSub}>{t.sub}</span>
             </button>
           ))}
         </div>
@@ -204,18 +210,26 @@ export default function ArkPassCalculator() {
             <span>지난 시즌 표 기반으로, 정식 데이터로 교체 예정입니다. 실제 보상·가격과 다릅니다.</span>
           </div>
 
-          {/* 선택 티어 — 큰 효율 (G/원) */}
+          {/* 선택 티어 — 보상 가치(골드)를 메인, 효율은 보조 (패키지 효율과 동일) */}
           <div className={`${styles.effCard} ${styles[`effCard_${tier}`]}`}>
             <div className={styles.effTierName}>{selectedRow.label}</div>
             <div className={styles.effMain}>
-              <span className={styles.effBig}>
-                {selectedRow.eff != null ? selectedRow.eff.toFixed(1) : '—'}
-              </span>
-              <span className={styles.effBigUnit}>G / 원</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/gold.webp" alt="" className={styles.effGoldIcon} />
+              <span className={styles.effBig}>{selectedRow.value.toLocaleString()}</span>
+              <span className={styles.effBigUnit}>G</span>
             </div>
+            <div className={styles.effSubLabel}>총 보상 골드 가치</div>
             <div className={styles.effMeta}>
-              <span>보상 가치 <b>{selectedRow.value.toLocaleString()} G</b></span>
               <span>가격 <b>{selectedRow.price > 0 ? `${selectedRow.price.toLocaleString()}원` : '무료'}</b></span>
+              <span>
+                이득률{' '}
+                <b className={selectedRow.benefit != null ? (selectedRow.benefit >= 0 ? styles.pos : styles.neg) : ''}>
+                  {selectedRow.benefit != null
+                    ? `${selectedRow.benefit >= 0 ? '+' : ''}${selectedRow.benefit.toFixed(1)}%`
+                    : '—'}
+                </b>
+              </span>
             </div>
           </div>
 
@@ -226,7 +240,7 @@ export default function ArkPassCalculator() {
               <span>티어</span>
               <span>보상 가치</span>
               <span>가격</span>
-              <span>효율</span>
+              <span>이득률</span>
             </div>
             {tierRows.map((row) => (
               <button
@@ -239,12 +253,20 @@ export default function ArkPassCalculator() {
                   <i className={styles.cmpDot} data-k={row.key} />
                   {row.label}
                 </span>
-                <span className={styles.cmpVal}>{row.value.toLocaleString()}</span>
-                <span className={styles.cmpPrice}>{row.price > 0 ? row.price.toLocaleString() : '무료'}</span>
-                <span className={styles.cmpEff}>{row.eff != null ? row.eff.toFixed(1) : '—'}</span>
+                <span className={styles.cmpVal}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/gold.webp" alt="" className={styles.cmpGoldIcon} />
+                  {row.value.toLocaleString()}
+                </span>
+                <span className={styles.cmpPrice}>{row.price > 0 ? `${row.price.toLocaleString()}원` : '무료'}</span>
+                <span className={`${styles.cmpEff} ${row.benefit != null ? (row.benefit >= 0 ? styles.pos : styles.neg) : ''}`}>
+                  {row.benefit != null ? `${row.benefit >= 0 ? '+' : ''}${row.benefit.toFixed(0)}%` : '—'}
+                </span>
               </button>
             ))}
-            <div className={styles.cmpFoot}>효율 = 보상 골드 가치 ÷ 가격(원) · 높을수록 이득</div>
+            <div className={styles.cmpFoot}>
+              이득률 = (보상 골드 − 가격의 골드 환산) ÷ 가격의 골드 환산 · 패키지 효율과 동일
+            </div>
           </div>
 
           {/* 보상 가치 분해 */}
@@ -267,27 +289,27 @@ export default function ArkPassCalculator() {
             </div>
           </div>
 
-          {/* 환율 입력 (패키지 효율과 동일한 방식) */}
+          {/* 환율 입력 (패키지 효율과 동일: 100골드 = N원) */}
           <div className={styles.panel}>
-            <div className={styles.panelHead}>블루 크리스탈 시세</div>
+            <div className={styles.panelHead}>환율</div>
             <div className={styles.rateBox}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/blue.webp" alt="" className={styles.rateIcon} />
-              <span className={styles.rateFixed}>100</span>
-              <span className={styles.rateSep}>=</span>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/gold.webp" alt="" className={styles.rateIcon} />
+              <span className={styles.rateFixed}>100</span>
+              <span className={styles.rateSep}>:</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/royal.webp" alt="" className={styles.rateIcon} />
               <input
                 type="number"
                 className={styles.rateInput}
-                value={exchangeRate || ''}
-                onChange={(e) => setExchangeRate(Number(e.target.value) || 0)}
-                placeholder="18000"
+                value={wonPer100Gold || ''}
+                onChange={(e) => setWonPer100Gold(Number(e.target.value) || 0)}
+                placeholder="15"
                 min={0}
               />
-              <span className={styles.rateUnit}>G</span>
+              <span className={styles.rateUnit}>원</span>
             </div>
-            <div className={styles.exchangeNote}>페온·도약·물약 등 크리스탈 보상 환산에 사용</div>
+            <div className={styles.exchangeNote}>100골드 = {wonPer100Gold || 0}원 기준 · 페온·도약·물약 등 크리스탈 보상 환산에 사용</div>
           </div>
         </div>
       </aside>
