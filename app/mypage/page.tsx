@@ -260,10 +260,10 @@ const CHAOS_DAILY_REWARDS: { minLevel: number; materials: { image: string; alt: 
   {
     minLevel: 1750,
     materials: [
-      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 435.8 },
-      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1110.9 },
-      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 20 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 56853.8 },
+      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 438.8 },
+      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1177.5 },
+      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 18.8 },
+      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 54412.6 },
     ],
   },
   {
