@@ -1,6 +1,6 @@
 // 각 게이트의 gold 는 총 골드 (= 일반 + 귀속). boundGold 는 그중 귀속 비중.
 // 일반 골드 = gold - boundGold. 더보기 비용(moreGold) 은 귀속에서 우선 차감하고 부족하면 일반에서 차감.
-export const raids = [
+const ALL_RAIDS = [
   {
     name: '벨가르딘 나메',
     level: 1780,
@@ -78,8 +78,8 @@ export const raids = [
     level: 1710,
     image: '/cerka.webp',
     gates: [
-      { gate: 1, gold: 14000, boundGold: 7000, moreGold: 4480 },
-      { gate: 2, gold: 21000, boundGold: 10500, moreGold: 6720 },
+      { gate: 1, gold: 12800, boundGold: 6400, moreGold: 4480 },
+      { gate: 2, gold: 19200, boundGold: 9600, moreGold: 6720 },
     ],
   },
   {
@@ -87,8 +87,8 @@ export const raids = [
     level: 1730,
     image: '/abrelshud.webp',
     gates: [
-      { gate: 1, gold: 17000, boundGold: 0, moreGold: 5440 },
-      { gate: 2, gold: 35000, boundGold: 0, moreGold: 11200 },
+      { gate: 1, gold: 15692, boundGold: 0, moreGold: 5440 },
+      { gate: 2, gold: 32308, boundGold: 0, moreGold: 11200 },
     ],
   },
   {
@@ -96,8 +96,8 @@ export const raids = [
     level: 1710,
     image: '/abrelshud.webp',
     gates: [
-      { gate: 1, gold: 14000, boundGold: 7000, moreGold: 4480 },
-      { gate: 2, gold: 26000, boundGold: 13000, moreGold: 8320 },
+      { gate: 1, gold: 11200, boundGold: 5600, moreGold: 4480 },
+      { gate: 2, gold: 20800, boundGold: 10400, moreGold: 8320 },
     ],
   },
   {
@@ -105,8 +105,8 @@ export const raids = [
     level: 1720,
     image: '/illiakan.webp',
     gates: [
-      { gate: 1, gold: 15000, boundGold: 0, moreGold: 4800 },
-      { gate: 2, gold: 27000, boundGold: 0, moreGold: 8640 },
+      { gate: 1, gold: 13571, boundGold: 0, moreGold: 4800 },
+      { gate: 2, gold: 24429, boundGold: 0, moreGold: 8640 },
     ],
   },
   {
@@ -114,8 +114,8 @@ export const raids = [
     level: 1700,
     image: '/illiakan.webp',
     gates: [
-      { gate: 1, gold: 12500, boundGold: 6250, moreGold: 4000 },
-      { gate: 2, gold: 20500, boundGold: 10250, moreGold: 6500 },
+      { gate: 1, gold: 10228, boundGold: 5114, moreGold: 4000 },
+      { gate: 2, gold: 16772, boundGold: 8386, moreGold: 6500 },
     ],
   },
   {
@@ -193,3 +193,13 @@ export const raids = [
     ],
   },
 ];
+
+// 비활성화 레이드 (데이터·이미지는 유지, 표시만 끔).
+// 벨가르딘: 2026-08 출시 예정 — 출시 시 이 목록을 비우면 즉시 재활성화.
+const DISABLED_RAID_NAMES = new Set<string>([
+  '벨가르딘 나메',
+  '벨가르딘 하드',
+  '벨가르딘 노말',
+]);
+
+export const raids = ALL_RAIDS.filter((r) => !DISABLED_RAID_NAMES.has(r.name));
