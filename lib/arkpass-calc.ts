@@ -13,6 +13,17 @@ export function rewardGold(
   prices: Record<string, number>,
   ctx: PriceCtx = {}
 ): number | null {
+  // 0) 선택 상자: 옵션 중 가치 최댓값 × 상자 수(qty)
+  if (reward.choices && reward.choices.length > 0) {
+    let best: number | null = null;
+    for (const opt of reward.choices) {
+      const v = rewardGold(opt, prices, ctx);
+      if (v != null && (best == null || v > best)) best = v;
+    }
+    if (best == null) return null;
+    const boxes = reward.qty > 0 ? reward.qty : 1;
+    return Math.round(best * boxes);
+  }
   // 1) 고정 골드 가치
   if (typeof reward.gold === 'number') {
     return Math.round(reward.gold * reward.qty);

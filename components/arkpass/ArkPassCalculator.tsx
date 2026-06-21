@@ -330,6 +330,45 @@ function RewardTile({
   const gold = rewardGold(reward, prices, ctx);
   const catLabel = reward.category ? CATEGORY_LABEL[reward.category] : undefined;
   const isAvatar = reward.category === 'avatar';
+
+  // 선택 상자: 옵션 이미지들을 나란히 + 택1 배지
+  if (reward.choices && reward.choices.length > 0) {
+    return (
+      <span className={styles.tile}>
+        <span className={styles.tileChoiceRow}>
+          {reward.choices.map((opt, i) => (
+            <Fragment key={i}>
+              {i > 0 && <span className={styles.tileChoiceSep}>/</span>}
+              <span className={styles.tileImg}>
+                {opt.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={opt.image} alt="" />
+                ) : (
+                  <span className={styles.tileEmoji}>{CATEGORY_ICON[opt.category || 'etc']}</span>
+                )}
+                {opt.qty > 1 && <span className={styles.tileQty}>×{opt.qty.toLocaleString()}</span>}
+              </span>
+            </Fragment>
+          ))}
+        </span>
+        <span className={styles.tileName}>
+          {reward.name}
+          {reward.qty > 1 ? ` ×${reward.qty}` : ''}
+          <span className={styles.choiceBadge}>택1</span>
+        </span>
+        {gold != null ? (
+          <span className={styles.tileGold}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/gold.webp" alt="" />
+            {gold.toLocaleString()}
+          </span>
+        ) : (
+          <span className={styles.tileCat}>{catLabel || '가치 미산정'}</span>
+        )}
+      </span>
+    );
+  }
+
   return (
     <span className={`${styles.tile} ${isAvatar ? styles.tileAvatar : ''}`}>
       <span

@@ -37,6 +37,9 @@ export interface Reward {
   crystalCost?: number;
   /** 아바타 이미지에서 보여줄 세로 위치(object-position Y) */
   cropY?: string;
+  /** 선택 상자: 옵션 중 택1 (효율은 가치 최댓값 옵션 × qty(상자 수) 기준).
+   *  각 옵션은 자체 qty/priceKey/gold 를 가진 Reward. */
+  choices?: Reward[];
 }
 
 export interface PassLevel {
@@ -63,6 +66,14 @@ export const ARKPASS_PRICE = {
 // 가격 상수 (패키지 등록 페이지 lib/package-shared.ts 기준)
 // ------------------------------------------------------------
 const HERO_GEM_KEY = '67400103';   // 영웅 젬(대표가)
+// 상자 → 실제 지급 아이템 시세 키 (latest_prices.json, 전부 개당/주머니당 단가 = bundle 1)
+const SHARD_BAG_KEY = '66130143';        // 파편 상자 → 운명의 파편 주머니(대)
+const GREAT_LEAP_STONE_KEY = '66110226'; // 위대한 운명의 돌파석
+const LEAP_STONE_KEY = '66110225';       // 운명의 돌파석
+const ADV_ABIDOS_KEY = '6861013';        // 상급 아비도스 융화 재료
+const ABIDOS_KEY = '6861012';            // 아비도스 융화 재료
+const LAVA_BREATH_KEY = '66111131';      // 용암의 숨결
+const GLACIER_BREATH_KEY = '66111132';   // 빙하의 숨결
 const LEGEND_CARDPACK_GOLD = 8000; // 전설 카드팩
 const CHAOS_WEAPON_GOLD = 800;     // 정련된 혼돈의 돌(무기)
 const CHAOS_ARMOR_GOLD = 300;      // 정련된 혼돈의 돌(방어구)
@@ -81,12 +92,38 @@ const r = (name: string, image: string, qty: number, extra: Partial<Reward> = {}
 
 // 프리미엄/택2 공용 상자 (전시즌 "유랑자의" 접두어 제거)
 const battleBox = (q: number) => r('배틀 아이템 선택 상자', '/battle-item-box.webp', q, { category: 'etc', gold: 82 });
-const shardBox = (q: number) => r('파편 상자', '/destiny-shard-bag-large.webp', q, { category: 'material' });
-const leapBox = (q: number) => r('돌파석 상자', '/destiny-breakthrough-stone2.webp', q, { category: 'material' });
-const fusionBox = (q: number) => r('융화 재료 상자', '/abidos-fusion2.webp', q, { category: 'material' });
-const supportBox = (q: number) => r('보조 재료 선택 상자', '/material-select-box.webp', q, { category: 'material' });
+const shardBox = (q: number) => r('파편 상자', '/destiny-shard-bag-large5.webp', q, { category: 'material', priceKey: SHARD_BAG_KEY });
+
+// 선택 상자 옵션 헬퍼 (각 옵션 = 자체 수량/시세키를 가진 Reward)
+const optn = (name: string, image: string, qty: number, priceKey: string): Reward =>
+  ({ name, image, qty, category: 'material', priceKey });
+
+// ── 선택 상자 (택1) ──────────────────────────────────────────
+// ⚠️ 옵션 "수량"은 임시값(수요일 패치 확정 시 교체). 아이템ID·이미지는 확정.
+//    qty 인자 = 상자 수. 효율 = 가치 높은 옵션 × 상자 수.
+const leapBox = (q: number) => r('돌파석 선택 상자', '/material-select-box.webp', q, {
+  category: 'material',
+  choices: [
+    optn('위대한 운명의 돌파석', '/top-destiny-breakthrough-stone5.webp', 6, GREAT_LEAP_STONE_KEY),
+    optn('운명의 돌파석', '/destiny-breakthrough-stone5.webp', 18, LEAP_STONE_KEY),
+  ],
+});
+const fusionBox = (q: number) => r('융화 재료 선택 상자', '/material-select-box.webp', q, {
+  category: 'material',
+  choices: [
+    optn('상급 아비도스 융화 재료', '/top-abidos-fusion5.webp', 20, ADV_ABIDOS_KEY),
+    optn('아비도스 융화 재료', '/abidos-fusion5.webp', 60, ABIDOS_KEY),
+  ],
+});
+const supportBox = (q: number) => r('보조 재료 선택 상자', '/material-select-box.webp', q, {
+  category: 'material',
+  choices: [
+    optn('용암의 숨결', '/breath-lava5.webp', 50, LAVA_BREATH_KEY),
+    optn('빙하의 숨결', '/breath-glacier5.webp', 50, GLACIER_BREATH_KEY),
+  ],
+});
 const gemReset = (q: number) => r('젬 가공 초기화권', '/gem-reset-ticket.webp', q, { category: 'gem', crystalCost: BC_GEM_RESET });
-const braceletReconvert = (q: number) => r('팔찌 효과 재변환권 상자', '', q, { category: 'etc', gold: 50 });
+const braceletReconvert = (q: number) => r('팔찌 효과 재변환권 상자', '/vkfwlwoqusghksrnjs.webp', q, { category: 'etc', gold: 50 });
 const peon = (q: number) => r('페온', '/pheon.webp', q, { category: 'peon', crystalCost: BC_PEON });
 const platinum = (q: number) => r('고대의 백금화', '/shilling.webp', q, { category: 'etc', gold: 0 });
 const chaosWeapon = (q: number) => r('정련된 혼돈의 돌 상자 (무기)', '/weapon-quality.webp', q, { category: 'material', gold: CHAOS_WEAPON_GOLD });

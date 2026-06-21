@@ -532,6 +532,44 @@
   border-radius: 6px;
 }
 
+/* ===== 선택 상자 (택1) ===== */
+.tileChoiceRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+}
+
+.tileChoiceRow .tileImg {
+  width: 56px;
+  height: 56px;
+}
+
+.tileChoiceRow .tileImg img {
+  width: 46px;
+  height: 46px;
+}
+
+.tileChoiceSep {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.choiceBadge {
+  display: inline-block;
+  margin-left: 5px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--ap-super);
+  padding: 0.04rem 0.32rem;
+  border-radius: 6px;
+  vertical-align: middle;
+}
+
 /* ===== 안내 ===== */
 .fillNote {
   margin-top: 1rem;
