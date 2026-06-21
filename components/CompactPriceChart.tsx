@@ -313,10 +313,22 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     };
   }, [filteredHistory]);
 
+  // 비교가격(회색선) 범위 — Y축이 비교선까지 감싸도록 (없으면 null)
+  const comparisonRange = useMemo(() => {
+    const vals = chartData
+      .map((d) => d.비교가격)
+      .filter((v): v is number => typeof v === 'number' && isFinite(v));
+    if (vals.length === 0) return null;
+    return { min: Math.min(...vals), max: Math.max(...vals) };
+  }, [chartData]);
+
   const yAxisConfig = useMemo(() => {
     if (!stats) return { domain: ['auto', 'auto'], ticks: [], avgValue: null };
 
-    const priceRange = stats.max - stats.min;
+    // 메인 가격 + 비교가격을 모두 포함하는 실제 표시 범위
+    const dataMin = comparisonRange ? Math.min(stats.min, comparisonRange.min) : stats.min;
+    const dataMax = comparisonRange ? Math.max(stats.max, comparisonRange.max) : stats.max;
+    const priceRange = dataMax - dataMin;
     const avgPrice = stats.avg;
 
     // 목표 틱 개수 (5-7개 정도로 제한)
@@ -326,14 +338,14 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     let tickUnit = 1;
 
     // 100만 골드 이상
-    if (stats.max >= 1000000) {
+    if (dataMax >= 1000000) {
       if (priceRange >= 500000) tickUnit = 200000;
       else if (priceRange >= 200000) tickUnit = 100000;
       else if (priceRange >= 100000) tickUnit = 50000;
       else tickUnit = 20000;
     }
     // 10만~100만 골드
-    else if (stats.max >= 100000) {
+    else if (dataMax >= 100000) {
       if (priceRange >= 100000) tickUnit = 50000;
       else if (priceRange >= 50000) tickUnit = 20000;
       else if (priceRange >= 20000) tickUnit = 10000;
@@ -341,21 +353,21 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       else tickUnit = 2000;
     }
     // 1만~10만 골드
-    else if (stats.max >= 10000) {
+    else if (dataMax >= 10000) {
       if (priceRange >= 10000) tickUnit = 5000;
       else if (priceRange >= 5000) tickUnit = 2000;
       else if (priceRange >= 2000) tickUnit = 1000;
       else tickUnit = 500;
     }
     // 1000~1만 골드
-    else if (stats.max >= 1000) {
+    else if (dataMax >= 1000) {
       if (priceRange >= 2000) tickUnit = 1000;
       else if (priceRange >= 1000) tickUnit = 500;
       else if (priceRange >= 500) tickUnit = 200;
       else tickUnit = 100;
     }
     // 100~1000 골드
-    else if (stats.max >= 100) {
+    else if (dataMax >= 100) {
       if (priceRange >= 200) tickUnit = 100;
       else if (priceRange >= 100) tickUnit = 50;
       else if (priceRange >= 50) tickUnit = 20;
@@ -378,13 +390,13 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     // 데이터 범위에 약간의 패딩 추가
     const paddingRatio = 0.15; // 15% 패딩으로 상단 여유 확보
     const padding = Math.max(priceRange * paddingRatio, tickUnit * 1.5);
-    const minWithPadding = stats.min - padding;
-    const maxWithPadding = stats.max + padding;
+    const minWithPadding = dataMin - padding;
+    const maxWithPadding = dataMax + padding;
 
     // 평균가(정확한 값)을 기준으로 위아래로 틱 생성
     const ticks = [centerTick];
 
-    if (stats.max < 100) {
+    if (dataMax < 100) {
       // 100 미만: 부동소수점 오차 방지
       const centerTickScaled = Math.round(centerTick * 100); // 소수점 2자리까지 정확히
       const minScaled = Math.round(minWithPadding * 100);
@@ -485,7 +497,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       ticks,
       avgValue: centerTick // 정확한 평균가 (틱으로 표시됨)
     };
-  }, [stats]);
+  }, [stats, comparisonRange]);
 
   const changeRate = useMemo(() => {
     if (chartData.length < 2) return 0;
