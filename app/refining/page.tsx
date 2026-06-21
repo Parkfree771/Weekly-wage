@@ -32,7 +32,7 @@ const getTodayPriceDate = () => {
 type RefiningMode = 'average' | 'normal' | 'advanced';
 
 export default function RefiningPage() {
-  const [mode, setMode] = useState<RefiningMode>('normal');
+  const [mode, setMode] = useState<RefiningMode>('average');
 
   // === 공유 검색 상태 ===
   const [characterName, setCharacterName] = useState('');
@@ -265,6 +265,13 @@ export default function RefiningPage() {
             {/* 모드 선택 탭 */}
             {ModeSelector}
 
+            {/* 상급재련 완화 패치 배지 (탭 버튼 바로 아래) */}
+            {(mode === 'average' || mode === 'advanced') && (
+              <div className={styles.patchBadgeRow}>
+                <span className={styles.patchBadge}>2026.06.24 상급재련 완화 적용</span>
+              </div>
+            )}
+
             {/* 컨텐츠 영역 */}
             <div className={styles.contentArea}>
               {mode === 'average' && (
@@ -297,8 +304,8 @@ export default function RefiningPage() {
               <AdBanner slot="8616653628" />
             </div>
 
-            {/* 통계 - 실제 시뮬(일반/상급)일 때만 표시 */}
-            {(mode === 'normal' || mode === 'advanced') && (
+            {/* 통계 - 일반 실제 시뮬일 때만 표시 (상급 재련 탭에서는 숨김) */}
+            {mode === 'normal' && (
               <RefiningStats />
             )}
           </Col>

@@ -9,10 +9,13 @@
 export const EXP_PER_LEVEL = 100;        // 각 단계당 필요 경험치
 export const EXP_PER_STAGE = 1000;       // 각 구간당 필요 경험치 (10단계)
 
-// 턴 비율
-export const NORMAL_TURN_RATIO = 0.83894;  // 일반턴 비율
-export const BONUS_TURN_RATIO = 0.16106;   // 선조턴 비율
-export const TURNS_FOR_BONUS = 6;          // 선조의 가호 충전에 필요한 일반턴 수
+// 턴 비율 (유료 시도 중 일반턴/선조턴 비율) — 가호 2칸/턴 기준, 시뮬레이션 산출
+// 풀별로 다름: 21-40은 쿠훔바르·나베르 재충전으로 선조턴 비중이 더 높음.
+// scripts/sim-advanced-refining.mjs (각 조합 100만 회)로 재생성.
+export const TURN_RATIO_1_20 = { normal: 0.73537, bonus: 0.26463 };
+export const TURN_RATIO_21_40 = { normal: 0.68271, bonus: 0.31729 };
+export const TURNS_FOR_BONUS = 6;          // 선조의 가호 게이지 최대치
+export const GAHO_CHARGE_PER_TURN = 2;     // 일반턴 1회당 충전되는 가호 기운 (3회 → 가호)
 
 // ============================================
 // 2. 성공 등급과 경험치
@@ -308,43 +311,45 @@ export function calculateEnhancedBonusTurnExp(
 // ============================================
 
 // 1~10단계, 11~20단계용 (숨결 + 책 조합 가능)
+// 가호 2칸/턴(3턴→선조) 기준 시뮬 재생성. 값 = 구간 완료까지 평균 유료(재료소모) 시도 수.
 export const AVERAGE_TRIES_1_20: Record<string, number> = {
-  'none_none': 59.3,
-  'none_breath': 52.4,
-  'none_book': 49.5,
-  'none_both': 44.6,
-  'breath_none': 45.7,
-  'breath_breath': 41.5,
-  'breath_book': 39.7,
-  'breath_both': 36.4,
-  'book_none': 41.0,
-  'book_breath': 37.6,
-  'book_book': 36.1,
-  'book_both': 33.4,
-  'both_none': 34.0,
-  'both_breath': 31.6,
-  'both_book': 30.5,
-  'both_both': 28.6,
+  'none_none': 48.5,
+  'none_breath': 41.6,
+  'none_book': 38.8,
+  'none_both': 34.3,
+  'breath_none': 39.4,
+  'breath_breath': 34.8,
+  'breath_book': 32.8,
+  'breath_both': 29.5,
+  'book_none': 36.0,
+  'book_breath': 32.1,
+  'book_book': 30.4,
+  'book_both': 27.6,
+  'both_none': 30.7,
+  'both_breath': 27.8,
+  'both_book': 26.6,
+  'both_both': 24.4,
 };
 
 // 21~30단계, 31~40단계용 (숨결 + 책 조합 가능)
+// 가호 2칸/턴(3턴→선조) 기준 시뮬 재생성. 값 = 구간 완료까지 평균 유료(재료소모) 시도 수.
 export const AVERAGE_TRIES_21_40: Record<string, number> = {
-  'none_none': 54.8,
-  'none_breath': 48.2,
-  'none_book': 45.6,
-  'none_both': 41.0,
-  'breath_none': 43.1,
-  'breath_breath': 39.2,
-  'breath_book': 37.5,
-  'breath_both': 34.2,
-  'book_none': 37.8,
-  'book_breath': 34.9,
-  'book_book': 33.5,
-  'book_both': 30.8,
-  'both_none': 31.4,
-  'both_breath': 29.3,
-  'both_book': 28.2,
-  'both_both': 26.5,
+  'none_none': 41.3,
+  'none_breath': 36.3,
+  'none_book': 34.3,
+  'none_both': 30.8,
+  'breath_none': 35.0,
+  'breath_breath': 31.4,
+  'breath_book': 29.8,
+  'breath_both': 27.2,
+  'book_none': 32.5,
+  'book_breath': 29.4,
+  'book_book': 28.0,
+  'book_both': 25.7,
+  'both_none': 28.4,
+  'both_breath': 26.0,
+  'both_book': 25.0,
+  'both_both': 23.1,
 };
 
 // ============================================
@@ -545,6 +550,9 @@ export function calculateAdvancedRefiningMaterials(
 
     const stageMaterials = isArmor ? T4_ARMOR_MATERIALS[stageInfo.key] : T4_WEAPON_MATERIALS[stageInfo.key];
 
+    // 숨결·책을 일반턴/선조턴에 나눌 때 쓰는 비율 (풀별로 다름)
+    const turnRatio = stageInfo.stage <= 2 ? TURN_RATIO_1_20 : TURN_RATIO_21_40;
+
     for (const [material, amount] of Object.entries(stageMaterials)) {
       if (material === '빙하' || material === '용암' || material.includes('재봉술') || material.includes('야금술')) {
         continue;
@@ -555,8 +563,8 @@ export function calculateAdvancedRefiningMaterials(
     const breathKey = isArmor ? '빙하' : '용암';
     const breathAmount = (stageMaterials as any)[breathKey] || 0;
     if (breathAmount > 0) {
-      const normalBreathRate = options.useNormalBreath ? 0.83894 : 0;
-      const bonusBreathRate = options.useBonusBreath ? 0.16106 : 0;
+      const normalBreathRate = options.useNormalBreath ? turnRatio.normal : 0;
+      const bonusBreathRate = options.useBonusBreath ? turnRatio.bonus : 0;
       const totalBreathRate = normalBreathRate + bonusBreathRate;
       materials[breathKey] = (materials[breathKey] || 0) + breathAmount * actualTries * totalBreathRate;
     }
@@ -586,8 +594,8 @@ export function calculateAdvancedRefiningMaterials(
     if (bookKey) {
       const bookAmount = (stageMaterials as any)[bookKey] || 0;
       if (bookAmount > 0) {
-        const normalBookRate = useNormalBook ? 0.83894 : 0;
-        const bonusBookRate = useBonusBook ? 0.16106 : 0;
+        const normalBookRate = useNormalBook ? turnRatio.normal : 0;
+        const bonusBookRate = useBonusBook ? turnRatio.bonus : 0;
         const totalBookRate = normalBookRate + bonusBookRate;
         materials[bookKey] = (materials[bookKey] || 0) + bookAmount * actualTries * totalBookRate;
       }

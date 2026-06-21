@@ -7,6 +7,7 @@ import styles from './RefiningSimulator.module.css';
 import {
   EXP_PER_LEVEL,
   TURNS_FOR_BONUS,
+  GAHO_CHARGE_PER_TURN,
   SUCCESS_RATES,
   ANCESTOR_CARDS_1_20,
   ANCESTOR_CARDS_21_40,
@@ -440,7 +441,8 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, equipments
       resultGrade = rollSuccessGrade(combo);
       earnedExp = calculateNormalTurnExp(resultGrade);
 
-      const newGahoCount = gahoCount + 1;
+      // 일반턴 1회당 가호 기운 2칸 충전 (재료는 1회분, 3회면 가호 발동)
+      const newGahoCount = gahoCount + GAHO_CHARGE_PER_TURN;
       if (newGahoCount >= TURNS_FOR_BONUS) {
         setGahoCount(TURNS_FOR_BONUS);
         setIsBonusTurn(true);
