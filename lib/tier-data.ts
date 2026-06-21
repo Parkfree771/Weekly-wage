@@ -27,10 +27,17 @@ export const MATCHUP_SCALE = [
 
 export type MatchupValue = 1 | 2 | 3 | 4 | 5;
 
-export type Season = { id: string; label: string; basis: string };
+// compareTo: 직전 시즌 id. 지정하면 그 시즌 대비 티어가 오른 직업에 '상승' 표식.
+export type Season = { id: string; label: string; basis: string; compareTo?: string };
 
 // 시즌 = 밸런스 패치 날짜 기준. 최신이 배열 맨 앞. 새 패치 나오면 위에 추가.
 export const SEASONS: Season[] = [
+  {
+    id: '2026-06-24',
+    label: '2026.06.24 패치',
+    basis: '2026.06.24 클래스 밸런스 패치 기준',
+    compareTo: '2026-05-17',
+  },
   {
     id: '2026-05-17',
     label: '2026.05.17 패치',
@@ -157,9 +164,10 @@ export function score100Color(n: number): string {
 }
 
 // 표본 부족 기준 (투표 수). 미만이면 티어 미배정 → '표본 부족' 칸.
-// 0 = 제한 해제(모든 직업 티어 배치). 표본이 쌓이면 다시 올릴 것.
-export const MIN_VOTES = 0;
-export const SUPPORT_MIN_VOTES = 0;
+// 1 = 투표 1표 이상부터 티어 배치. 0표 직업은 티어 칸이 아닌 '표본 부족'으로 빠진다
+// (투표 없는 시즌이면 티어 1~5는 비고 전부 표본 부족).
+export const MIN_VOTES = 1;
+export const SUPPORT_MIN_VOTES = 1;
 
 // MOCK 투표 수 (placeholder). Neon 붙으면 실제 집계 수로 교체.
 export function mockVotes(id: string): number {

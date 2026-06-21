@@ -33,6 +33,10 @@ export default function TierResults({ stats }: { stats: TierStats | null }) {
   const [data, setData] = useState<TierStats | null>(stats);
   const [loadingSeason, setLoadingSeason] = useState(false);
 
+  // 직전 시즌(05.17) 티어맵: 표시 시즌 대비 '상승' 판정용. { 직업id: 티어 }
+  const compareTo = SEASONS.find((s) => s.id === season)?.compareTo;
+  const [prevTiers, setPrevTiers] = useState<Record<string, number>>({});
+
   useEffect(() => {
     if (data && data.season === season) return; // 이미 보유한 시즌
     let cancelled = false;
@@ -51,6 +55,29 @@ export default function TierResults({ stats }: { stats: TierStats | null }) {
     };
   }, [season, data]);
 
+  // 직전 시즌 스냅샷 로드 (비교 대상 시즌이 있을 때만)
+  useEffect(() => {
+    if (!compareTo) {
+      setPrevTiers({});
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/tier/stats?season=${encodeURIComponent(compareTo)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: TierStats | null) => {
+        if (cancelled || !d) return;
+        const map: Record<string, number> = {};
+        d.classes.forEach((c) => {
+          map[c.id] = c.tier;
+        });
+        setPrevTiers(map);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [compareTo]);
+
   const openDetail = (cls: StatsClass) => {
     setDetail(cls);
     setOpenLevel(null);
@@ -65,9 +92,21 @@ export default function TierResults({ stats }: { stats: TierStats | null }) {
       .filter((r) => r.tier === tier)
       .sort((a, b) => (a.role === b.role ? 0 : a.role === 'dealer' ? -1 : 1));
 
+  // 직전 시즌 대비 티어 상승 여부 (티어 숫자가 작아지면 상승). 둘 다 배정된 경우만.
+  const isRisen = (r: StatsClass) => {
+    if (!compareTo) return false;
+    const prev = prevTiers[r.id];
+    return !!prev && r.tier > 0 && r.tier < prev;
+  };
+
   const renderTile = (r: StatsClass, withScore = true) => (
     <button key={r.id} className={styles.tile} onClick={() => openDetail(r)}>
       {r.role === 'support' && <span className={styles.roleBadge}>폿</span>}
+      {isRisen(r) && (
+        <span className={styles.riseBadge} title="직전 시즌 대비 티어 상승">
+          ▲ 상승
+        </span>
+      )}
       <ClassIcon name={r.name} src={r.icon} size={72} />
       <span className={styles.tileName}>{r.name}</span>
       {withScore && (
@@ -127,7 +166,7 @@ export default function TierResults({ stats }: { stats: TierStats | null }) {
 
         {tiers.map((tier) => {
           const rows = tierRows(tier);
-          if (rows.length === 0) return null;
+          // 1~5 티어 칸은 항상 노출(투표 유도). 표본 없으면 빈 칸으로 둔다.
           return (
             <div key={tier} className={styles.tierRow}>
               <div
@@ -138,7 +177,11 @@ export default function TierResults({ stats }: { stats: TierStats | null }) {
                 <span className={styles.tierLabelEng}>TIER</span>
               </div>
               <div className={styles.tierTiles}>
-                {rows.map((r) => renderTile(r))}
+                {rows.length > 0 ? (
+                  rows.map((r) => renderTile(r))
+                ) : (
+                  <span className={styles.emptyTier}>아직 투표가 없어요</span>
+                )}
               </div>
             </div>
           );
