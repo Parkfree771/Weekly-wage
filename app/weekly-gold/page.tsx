@@ -38,16 +38,6 @@ const SeeMoreCalculator = dynamic(() => import('@/components/SeeMoreCalculator')
   )
 });
 
-const CerkaRewardInfo = dynamic(() => import('@/components/CerkaRewardInfo'), {
-  loading: () => (
-    <div className="text-center py-5" style={{ minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="spinner-border text-primary" role="status">
-        <span className="visually-hidden">로딩중...</span>
-      </div>
-    </div>
-  )
-});
-
 type Character = {
   characterName: string;
   itemLevel: number;
@@ -135,7 +125,7 @@ export default function WeeklyGoldPage() {
                   marginBottom: '0.5rem'
                 }}
               >
-                주간 골드 계산
+                주간 골드
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 원정대 주간 골드 수익과 더보기 보상 손익을 계산해보세요
@@ -211,71 +201,6 @@ export default function WeeklyGoldPage() {
                   </Card>
                 </div>
               )}
-
-              {/* 캐릭터별 획득 재료 및 골드 가치 */}
-              {searched && selectedCharacters.length > 0 && Object.keys(gateSelection).length > 0 && (
-                <div style={{ marginTop: 'clamp(1.5rem, 3vw, 2rem)' }}>
-                  <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
-                    <Card.Header
-                      className="py-2 border-0"
-                      style={{
-                        background: 'var(--card-header-bg)',
-                        borderBottom: '1px solid var(--border-color)'
-                      }}
-                    >
-                      <div className="text-center">
-                        <h3 className="mb-0" style={{
-                          fontWeight: 600,
-                          fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                          color: 'var(--text-primary)',
-                          letterSpacing: '-0.025em'
-                        }}>
-                          캐릭터별 획득 재료 및 골드 가치
-                        </h3>
-                      </div>
-                    </Card.Header>
-                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-blue)'}}>
-                      <MaterialSummary
-                        selectedCharacters={selectedCharacters}
-                        gateSelection={gateSelection}
-                        characterCalc={characterCalc}
-                      />
-                    </Card.Body>
-                  </Card>
-                </div>
-              )}
-
-              {/* 성당 보상 정보 */}
-              <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)', maxWidth: '1100px', margin: '0 auto' }}>
-                <Row className="justify-content-center">
-                  <Col xl={12} lg={12} md={12}>
-                    <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
-                      <Card.Header
-                        className="text-center py-2 border-0"
-                        style={{
-                          background: 'linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 50%, var(--color-accent) 100%)',
-                          borderBottom: '1px solid var(--border-color)'
-                        }}
-                      >
-                        <h3
-                          className="mb-0"
-                          style={{
-                            fontWeight: '600',
-                            fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                            color: '#ffffff',
-                            letterSpacing: '-0.025em'
-                          }}
-                        >
-                          클리어 보상 정보
-                        </h3>
-                      </Card.Header>
-                      <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
-                        <CerkaRewardInfo />
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                </Row>
-              </div>
 
               {/* 모바일 익스트림 홍보 + 광고 */}
               <div className="d-block d-lg-none my-3">

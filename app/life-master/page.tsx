@@ -20,7 +20,7 @@ export default function LifeMasterPage() {
                   marginBottom: '0.5rem'
                 }}
               >
-                생활 제작 계산기
+                생활 제작
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 아비도스 융화재료 제작 손익 계산

@@ -22,7 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { registerCharacter, saveWeeklyChecklist, refreshCharacter, updateCharacterImages } from '@/lib/user-service';
 import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service';
 import NicknameModal from '@/components/auth/NicknameModal';
-import { raids } from '@/data/raids';
+import { raids, upcomingRaids } from '@/data/raids';
 import { raidClearRewards } from '@/data/raidClearRewards';
 import { DEMO_CHARACTERS, DEMO_WEEKLY_CHECKLIST, DEMO_GOLD_HISTORY, DEMO_COMMON_CONTENT, DEMO_MAIN_CHARACTER } from '@/data/demoMypage';
 
@@ -113,6 +113,15 @@ function getAllRaidGroups(itemLevel: number) {
 
   return groups;
 }
+
+// 출시 예정(비활성) 레이드 그룹 — 레이드 목록에 비활성 카드로만 노출 (골드/코어 계산 제외)
+const UPCOMING_RAID_GROUPS = Array.from(
+  upcomingRaids.reduce((m, r) => {
+    const g = getRaidGroupName(r.name);
+    if (!m.has(g)) m.set(g, { label: r.releaseLabel, image: r.image });
+    return m;
+  }, new Map<string, { label: string; image: string }>())
+).map(([group, info]) => ({ group, label: info.label, image: info.image }));
 
 // 원정대 공통 컨텐츠 레벨별 정의
 type CommonContentDef = { name: string; shortName: string; image: string; color: string; days: number[]; gold: number; level: number };
@@ -1671,7 +1680,10 @@ export default function MyPage() {
 
             // 체크된 레이드 목록
             const checkedRaids = getCheckedRaids(char.name);
-            const allRaidGroups = getAllRaidGroups(char.itemLevel);
+            const allRaidGroups = [
+              ...getAllRaidGroups(char.itemLevel),
+              ...UPCOMING_RAID_GROUPS.map(u => u.group),
+            ];
 
             // 재화 데이터
             const chaosReward = getChaosDailyReward(char.itemLevel);
@@ -1772,7 +1784,7 @@ export default function MyPage() {
                     {(() => {
                       const startIdx = raidScrollIndex[char.name] || 0;
                       const raidCount = isDesktop ? 4 : 3;
-                      const visibleRaids: { raid: typeof raids[0] | null; groupName: string }[] = [];
+                      const visibleRaids: { raid: typeof raids[0] | null; groupName: string; upcoming?: { label: string; image: string } }[] = [];
 
                       // 현재 보여줄 레이드 계산
                       // 우선순위: 1) 체크된 난이도 보존  2) 사용자 수동 선택(톱니바퀴) 3) 가장 높은 난이도
@@ -1780,6 +1792,11 @@ export default function MyPage() {
                         const groupIdx = startIdx + i;
                         if (groupIdx < allRaidGroups.length) {
                           const groupName = allRaidGroups[groupIdx];
+                          const upcomingInfo = UPCOMING_RAID_GROUPS.find(u => u.group === groupName);
+                          if (upcomingInfo) {
+                            visibleRaids.push({ raid: null, groupName, upcoming: { label: upcomingInfo.label, image: upcomingInfo.image } });
+                            continue;
+                          }
                           const difficulties = getAvailableDifficulties(groupName, char.itemLevel);
                           const checkedRaid = difficulties.find(d =>
                             charState.raids[d.name]?.some(v => v),
@@ -1814,7 +1831,19 @@ export default function MyPage() {
                           )}
 
                           <div className={styles.itemRow}>
-                            {visibleRaids.map(({ raid, groupName }, idx) => {
+                            {visibleRaids.map(({ raid, groupName, upcoming }, idx) => {
+                              if (upcoming) {
+                                return (
+                                  <div key={`upcoming-${groupName}`} className={styles.raidCard} style={{ opacity: 0.55, cursor: 'not-allowed' }}>
+                                    <CardBgImage src={upcoming.image} alt={groupName} className={styles.raidImage} />
+                                    <div className={styles.raidOverlay} />
+                                    <div className={styles.raidInfo}>
+                                      <span className={styles.raidName}>{groupName}</span>
+                                      <span className={styles.raidDifficulty}>{upcoming.label}</span>
+                                    </div>
+                                  </div>
+                                );
+                              }
                               if (!raid) {
                                 return (
                                   <div key={`empty-${idx}`} className={`${styles.raidCard} ${styles.raidEmpty}`}>

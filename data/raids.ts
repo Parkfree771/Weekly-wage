@@ -194,12 +194,27 @@ const ALL_RAIDS = [
   },
 ];
 
-// 비활성화 레이드 (데이터·이미지는 유지, 표시만 끔).
-// 벨가르딘: 2026-08 출시 예정 — 출시 시 이 목록을 비우면 즉시 재활성화.
+// 비활성화 레이드 (데이터·이미지는 유지, 계산에서만 제외).
+// 벨가르딘: 2026-08-05 출시 예정 — 출시 시 이 목록을 비우면 즉시 재활성화.
 const DISABLED_RAID_NAMES = new Set<string>([
   '벨가르딘 나메',
   '벨가르딘 하드',
   '벨가르딘 노말',
 ]);
 
+// 출시 예정(비활성) 레이드 그룹별 안내 문구
+const RAID_RELEASE_LABELS: Record<string, string> = {
+  '벨가르딘': '8월 5일 출시 예정',
+};
+
+// 계산에 사용하는 활성 레이드만
 export const raids = ALL_RAIDS.filter((r) => !DISABLED_RAID_NAMES.has(r.name));
+
+// 비활성(출시 예정) 레이드 — 골드/코어 계산에는 절대 포함하지 않고, UI에 '출시 예정'으로만 노출.
+export type UpcomingRaid = (typeof ALL_RAIDS)[number] & { releaseLabel: string };
+export const upcomingRaids: UpcomingRaid[] = ALL_RAIDS
+  .filter((r) => DISABLED_RAID_NAMES.has(r.name))
+  .map((r) => {
+    const group = r.name.split(' ').slice(0, -1).join(' ') || r.name;
+    return { ...r, releaseLabel: RAID_RELEASE_LABELS[group] || '출시 예정' };
+  });

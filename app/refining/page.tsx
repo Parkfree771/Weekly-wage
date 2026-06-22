@@ -193,7 +193,7 @@ export default function RefiningPage() {
                   marginBottom: '0.5rem'
                 }}
               >
-                T4 재련 비용 계산
+                T4 재련 비용
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 목표 레벨까지 필요한 재료와 골드를 계산해보세요

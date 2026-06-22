@@ -12,7 +12,7 @@ const ArkPassCalculator = dynamic(
 export default function ArkPassPage() {
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
-      <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1960px', margin: '0 auto', padding: '0 1rem' }}>
+      <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 1rem' }}>
         {/* 타이틀 */}
         <div className="text-center" style={{ marginBottom: '0.85rem' }}>
           <h1

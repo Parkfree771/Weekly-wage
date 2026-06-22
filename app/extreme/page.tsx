@@ -515,7 +515,7 @@ export default function ExtremePage() {
 
             {/* 타이틀 */}
             <div className="text-center mb-3">
-              <h1 className={styles.pageTitle}>익스트림 <span className={styles.newBadge}>NEW</span></h1>
+              <h1 className={styles.pageTitle}>익스트림</h1>
               <p className={styles.pageSubtitle}>
                 {formatFullDate(EVENT_START)} ~ {formatFullDate(eventEnd)} | 총 {TOTAL_WEEKS}주
               </p>

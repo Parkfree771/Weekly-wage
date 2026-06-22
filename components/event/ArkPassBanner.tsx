@@ -7,7 +7,7 @@ import styles from './ArkPassBanner.module.css';
  * 아크패스 「창공의 안내자」 세로 사이드 배너 (AdSidebar 레일 안에서 렌더).
  * 로아온 종료 후 사이드 레일을 아크패스 효율 바로가기로 교체.
  * - 배너 전체가 /arkpass 링크
- * - 이미지 위 오버레이 없이 원본 그대로, 아래 푸터에 시즌명 + CTA
+ * - 이미지를 세로 배너로 크롭하고 그 위에 쉐이드를 올려 텍스트를 얹음
  */
 export default function ArkPassBanner() {
   return (
@@ -20,6 +20,7 @@ export default function ArkPassBanner() {
         loading="lazy"
         decoding="async"
       />
+      <div className={styles.shade} />
 
       <div className={styles.footer}>
         <div className={styles.tag}>아크패스 시즌</div>

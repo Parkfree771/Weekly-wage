@@ -13,20 +13,6 @@ import {
   type PriceCtx,
 } from '@/lib/arkpass-calc';
 
-// 분류별 대체 아이콘(이미지 없을 때)
-const CATEGORY_ICON: Record<string, string> = {
-  gold: '🪙',
-  material: '📦',
-  card: '🃏',
-  gem: '💎',
-  crystal: '🔷',
-  peon: '🪶',
-  avatar: '👕',
-  wallpaper: '🖼️',
-  pet: '🐾',
-  etc: '🎁',
-};
-
 const CATEGORY_LABEL: Record<string, string> = {
   avatar: '아바타',
   wallpaper: '벽지',
@@ -106,13 +92,14 @@ export default function ArkPassCalculator() {
   }
 
   const selectedRow = tierRows.find((r) => r.key === tier)!;
+  // 패스 가격(원)을 환율로 골드 환산 → 보상 골드와 직접 비교
+  const selPriceGold = selectedRow.price > 0 && goldPerWon > 0 ? Math.round(selectedRow.price * goldPerWon) : 0;
+  const selDiff = selectedRow.value - selPriceGold;
 
   return (
     <div className={styles.layout}>
       {/* ===== 메인: 보상표 ===== */}
       <div className={styles.main}>
-        <p className={styles.intro}>패스 레벨을 달성하면 다양한 보상을 획득할 수 있습니다.</p>
-
         {/* 티어 토글 */}
         <div className={styles.tierToggle}>
           {TIER_META.map((t) => (
@@ -204,15 +191,20 @@ export default function ArkPassCalculator() {
       {/* ===== 사이드바: 효율 요약 (스크롤 따라옴) ===== */}
       <aside className={styles.sidebar}>
         <div className={styles.sideInner}>
-          {/* 임시 데이터 — 확실하게 명시 */}
-          <div className={styles.tempNotice}>
-            <strong>※ 이 데이터는 임시입니다</strong>
-            <span>지난 시즌 표 기반으로, 정식 데이터로 교체 예정입니다. 실제 보상·가격과 다릅니다.</span>
-          </div>
-
-          {/* 선택 티어 — 보상 가치(골드)를 메인, 효율은 보조 (패키지 효율과 동일) */}
+          {/* 선택 티어 효율 — 티어 탭 + 결과 */}
           <div className={`${styles.effCard} ${styles[`effCard_${tier}`]}`}>
-            <div className={styles.effTierName}>{selectedRow.label}</div>
+            <div className={styles.effTabs}>
+              {TIER_META.map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  className={`${styles.effTab} ${styles[`tier_${t.key}`]} ${tier === t.key ? styles.effTabActive : ''}`}
+                  onClick={() => setTier(t.key)}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
             <div className={styles.effMain}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/gold.webp" alt="" className={styles.effGoldIcon} />
@@ -220,16 +212,48 @@ export default function ArkPassCalculator() {
               <span className={styles.effBigUnit}>G</span>
             </div>
             <div className={styles.effSubLabel}>총 보상 골드 가치</div>
-            <div className={styles.effMeta}>
-              <span>가격 <b>{selectedRow.price > 0 ? `${selectedRow.price.toLocaleString()}원` : '무료'}</b></span>
-              <span>
-                이득률{' '}
-                <b className={selectedRow.benefit != null ? (selectedRow.benefit >= 0 ? styles.pos : styles.neg) : ''}>
+            <div className={styles.effCompare}>
+              <div className={styles.effCmpRow}>
+                <span className={styles.effCmpKey}>패스 가격</span>
+                <span className={styles.effCmpVal}>{selectedRow.price > 0 ? `${selectedRow.price.toLocaleString()}원` : '무료'}</span>
+              </div>
+              {selectedRow.price > 0 && (
+                <div className={styles.effCmpRow}>
+                  <span className={styles.effCmpKey}>골드로 환산</span>
+                  <span className={styles.effCmpVal}>≈ {selPriceGold.toLocaleString()} G</span>
+                </div>
+              )}
+              <div className={`${styles.effCmpRow} ${styles.effCmpResult}`}>
+                <span className={styles.effCmpKey}>이득률</span>
+                <span className={selectedRow.benefit != null ? (selectedRow.benefit >= 0 ? styles.pos : styles.neg) : styles.effCmpVal}>
                   {selectedRow.benefit != null
                     ? `${selectedRow.benefit >= 0 ? '+' : ''}${selectedRow.benefit.toFixed(1)}%`
                     : '—'}
-                </b>
-              </span>
+                  {selectedRow.price > 0 && selectedRow.benefit != null && (
+                    <small>{' '}({selDiff >= 0 ? '+' : ''}{selDiff.toLocaleString()}G)</small>
+                  )}
+                </span>
+              </div>
+            </div>
+            {/* 환율 입력칸 — 효율 카드에 합침 (라벨 없이 입력칸만) */}
+            <div className={styles.effRate}>
+              <div className={styles.rateBox}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/gold.webp" alt="" className={styles.rateIcon} />
+                <span className={styles.rateFixed}>100</span>
+                <span className={styles.rateSep}>:</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/royal.webp" alt="" className={styles.rateIcon} />
+                <input
+                  type="number"
+                  className={styles.rateInput}
+                  value={wonPer100Gold || ''}
+                  onChange={(e) => setWonPer100Gold(Number(e.target.value) || 0)}
+                  placeholder="15"
+                  min={0}
+                />
+                <span className={styles.rateUnit}>원</span>
+              </div>
             </div>
           </div>
 
@@ -251,7 +275,7 @@ export default function ArkPassCalculator() {
               >
                 <span className={styles.cmpName}>
                   <i className={styles.cmpDot} data-k={row.key} />
-                  {row.label}
+                  {row.key === 'super' ? '슈퍼' : row.label}
                 </span>
                 <span className={styles.cmpVal}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -289,27 +313,10 @@ export default function ArkPassCalculator() {
             </div>
           </div>
 
-          {/* 환율 입력 (패키지 효율과 동일: 100골드 = N원) */}
-          <div className={styles.panel}>
-            <div className={styles.panelHead}>환율</div>
-            <div className={styles.rateBox}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/gold.webp" alt="" className={styles.rateIcon} />
-              <span className={styles.rateFixed}>100</span>
-              <span className={styles.rateSep}>:</span>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/royal.webp" alt="" className={styles.rateIcon} />
-              <input
-                type="number"
-                className={styles.rateInput}
-                value={wonPer100Gold || ''}
-                onChange={(e) => setWonPer100Gold(Number(e.target.value) || 0)}
-                placeholder="15"
-                min={0}
-              />
-              <span className={styles.rateUnit}>원</span>
-            </div>
-            <div className={styles.exchangeNote}>100골드 = {wonPer100Gold || 0}원 기준 · 페온·도약·물약 등 크리스탈 보상 환산에 사용</div>
+          {/* 임시 데이터 안내 (하단) */}
+          <div className={styles.tempNotice}>
+            <strong>※ 이 데이터는 임시입니다</strong>
+            <span>지난 시즌 표 기반으로, 정식 데이터로 교체 예정입니다. 실제 보상·가격과 다릅니다.</span>
           </div>
         </div>
       </aside>
@@ -344,7 +351,7 @@ function RewardTile({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={opt.image} alt="" />
                 ) : (
-                  <span className={styles.tileEmoji}>{CATEGORY_ICON[opt.category || 'etc']}</span>
+                  <span className={styles.tilePlaceholder} />
                 )}
                 {opt.qty > 1 && <span className={styles.tileQty}>×{opt.qty.toLocaleString()}</span>}
               </span>
@@ -382,7 +389,7 @@ function RewardTile({
             style={reward.cropY ? { objectFit: 'cover', objectPosition: `center ${reward.cropY}` } : undefined}
           />
         ) : (
-          <span className={styles.tileEmoji}>{CATEGORY_ICON[reward.category || 'etc']}</span>
+          <span className={styles.tilePlaceholder} />
         )}
         {reward.qty > 1 && <span className={styles.tileQty}>×{reward.qty.toLocaleString()}</span>}
       </span>

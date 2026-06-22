@@ -95,7 +95,7 @@ export default function PackageGalleryPage() {
     <Container fluid style={{ maxWidth: '1400px' }}>
       <div className={styles.pageWrapper}>
         <div className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>패키지 효율 계산기</h1>
+          <h1 className={styles.pageTitle}>패키지 효율</h1>
           <p className={styles.pageSubtitle}>
             캐시샵 패키지의 효율을 계산하고 비교하세요
           </p>

@@ -266,6 +266,12 @@
   color: #fff !important;
 }
 
+/* 레이드 이름 배지 — 어두운 배경 + 흰 글씨 (globals 의 span 다크강제룰 이김) */
+.pageWrapper :global(.accordion-button .badge-raid-name) {
+  background-color: rgba(0, 0, 0, 0.55) !important;
+  color: #fff !important;
+}
+
 /* 배경 이미지(cerka) 카드에선 글자 그림자로 가독성 보강 */
 .pageWrapper :global(.cerka-character .accordion-button .badge-gold-excluded),
 .pageWrapper :global(.cerka-character .accordion-button .badge-more-cost),
@@ -362,4 +368,117 @@
 .pageWrapper :global(div[class*="selectedRaidCard"] h5) {
   color: var(--text-primary) !important;
   background-color: var(--card-header-bg) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   레이드 계산기 전용 스타일 (구 app/globals.css 에서 이전).
+   RaidCalculator 는 weekly-gold 페이지에서만 렌더되므로 여기서 관리한다.
+   ※ ".accordion-button span" 다크강제룰의 specificity 를 그대로 유지해야
+      위쪽 배지 흰글씨 규칙(.accordion-button .badge-xxx)이 안 깨지므로,
+      .pageWrapper 접두어 없이 :global 로 둔다. (접두어 = specificity 상승 = 충돌)
+   ───────────────────────────────────────────────────────────── */
+
+/* Table */
+:global(.raid-table) {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+:global(.raid-table thead) {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+:global(.raid-table tbody) {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+:global(.raid-table th),
+:global(.raid-table td) {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+:global(.raid-table tbody tr:hover td) {
+  background-color: var(--card-body-bg-blue) !important;
+}
+:global(.raid-table.table-striped tbody tr:nth-of-type(odd) > *) {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+:global(.raid-table.table-striped tbody tr:nth-of-type(even) > *) {
+  background-color: var(--card-body-bg-blue) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Accordion */
+:global(.theme-accordion .accordion-item) {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+}
+:global(.theme-accordion .accordion-button) {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+:global(.theme-accordion .accordion-button:not(.collapsed)) {
+  background-color: var(--card-body-bg-blue) !important;
+  color: var(--text-primary) !important;
+}
+:global(.theme-accordion .accordion-button:focus) {
+  box-shadow: none !important;
+  border-color: var(--border-color) !important;
+}
+:global(.theme-accordion .accordion-button::after) {
+  filter: invert(var(--accordion-icon-invert, 0));
+}
+:global(.theme-accordion .accordion-button span),
+:global(.theme-accordion .accordion-button div) {
+  color: var(--text-primary) !important;
+}
+:global(.theme-accordion .accordion-body) {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+:global(.raid-group-accordion),
+:global(.raid-difficulty-accordion) {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+}
+:global(.raid-group-accordion .accordion-header),
+:global(.raid-difficulty-accordion .accordion-header) {
+  background-color: var(--card-bg) !important;
+}
+:global(.raid-group-accordion .accordion-button),
+:global(.raid-difficulty-accordion .accordion-button) {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+:global(.raid-group-accordion .accordion-button:not(.collapsed)),
+:global(.raid-difficulty-accordion .accordion-button:not(.collapsed)) {
+  background-color: var(--card-body-bg-blue) !important;
+  color: var(--text-primary) !important;
+}
+:global(.raid-group-accordion .accordion-button span),
+:global(.raid-group-accordion .accordion-button div),
+:global(.raid-difficulty-accordion .accordion-button span),
+:global(.raid-difficulty-accordion .accordion-button div) {
+  color: var(--text-primary) !important;
+}
+:global(.raid-group-accordion .accordion-button::after),
+:global(.raid-difficulty-accordion .accordion-button::after) {
+  filter: invert(var(--accordion-icon-invert, 0));
+}
+:global(.raid-group-accordion .accordion-body),
+:global(.raid-difficulty-accordion .accordion-body) {
+  background-color: var(--card-bg) !important;
+}
+
+/* Card */
+:global(.character-raid-card) {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+:global(.character-raid-header) {
+  background-color: var(--card-header-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
 }

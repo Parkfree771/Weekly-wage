@@ -5,54 +5,23 @@
 
 .layout {
   display: flex;
-  gap: 1.25rem;
-  /* stretch(기본값) 유지 → 사이드바 컬럼이 본문 높이만큼 늘어나야
-     내부 sticky 가 스크롤을 따라 내려옴 */
+  gap: 1.5rem;
+  /* stretch: 사이드바가 본문 높이만큼 늘어나야 내부 sticky 가 스크롤을 따라 내려옴 */
   align-items: stretch;
 }
 
-/* 테마 컬러 — 창공의 안내자(흑·백·금) : 검정 메인 + 골드 포인트 */
+/* 테마 컬러 — 사이트 표준 팔레트(브랜드 블루 + 액센트 오렌지)에 매핑.
+   다크 대응은 사이트 토큰이 자동 처리하므로 별도 오버라이드 불필요. */
 .layout,
 .hero {
-  --ap-primary: #18181b;                /* 메인: 검정 */
-  --ap-primary-light: rgba(0, 0, 0, 0.06);
-  --ap-super: #f97316;                  /* 슈퍼: 선명한 주황 */
-  --ap-super-light: rgba(249, 115, 22, 0.14);
-  --ap-slate: #3f3f46;                  /* 무료: 짙은 회색 */
-  --ap-slate-light: rgba(0, 0, 0, 0.05);
-  --ap-gold: #f59e0b;                   /* 골드 값(텍스트) — 밝은 앰버 */
-  --ap-line: #1c1c20;                   /* 구분선 — 검정(또렷하게) */
-}
-
-[data-theme="dark"] .layout,
-[data-theme="dark"] .hero {
-  --ap-primary: #f4f4f5;                /* 다크: 흰색 */
-  --ap-primary-light: rgba(255, 255, 255, 0.1);
-  --ap-super: #fb923c;                  /* 슈퍼: 밝은 주황 */
-  --ap-super-light: rgba(251, 146, 60, 0.18);
-  --ap-slate: #c9ccd3;
-  --ap-slate-light: rgba(255, 255, 255, 0.07);
-  --ap-gold: #fbbf24;                   /* 골드 값 — 밝은 노랑 */
-  --ap-line: rgba(255, 255, 255, 0.55);
-}
-
-/* 넓은 화면: 표를 "사이드바 없다고 가정"하고 페이지 정중앙에 배치,
-   효율 사이드바는 우측 레일(광고 자리)로 빼서 표를 밀지 않게 함.
-   좌우 320px 레일이 대칭이라 가운데 표가 정확히 중앙 정렬됨. */
-@media (min-width: 1500px) {
-  .layout {
-    display: grid;
-    grid-template-columns: 400px minmax(0, 1fr) 400px;
-    column-gap: 1.75rem;
-    align-items: stretch;
-  }
-  .main {
-    grid-column: 2;
-  }
-  .sidebar {
-    grid-column: 3;
-    width: 100%;
-  }
+  --ap-primary: var(--color-primary);            /* 프리미엄/메인 강조 = 브랜드 블루 */
+  --ap-primary-light: var(--color-primary-light);
+  --ap-super: var(--color-accent);               /* 슈퍼 프리미엄 = 액센트 오렌지 */
+  --ap-super-light: var(--color-accent-light);
+  --ap-slate: var(--text-secondary);             /* 무료 = 중립 텍스트 */
+  --ap-slate-light: var(--card-body-bg-stone);
+  --ap-gold: var(--color-gold);                  /* 골드 값 */
+  --ap-line: var(--border-color);
 }
 
 .main {
@@ -69,61 +38,66 @@
 }
 
 /* ===== 히어로 배너 (시즌 아바타) — 원본 그대로 ===== */
+/* ===== 히어로 — 이미지 배너 + 쉐이드 ===== */
 .hero {
   position: relative;
-  width: fit-content;
-  max-width: min(100%, 580px); /* 원본 비율 유지하며 적당히 축소 */
-  margin: 0 auto 1.25rem;
+  width: 100%;
+  max-width: 760px;
+  height: clamp(150px, 26vw, 215px);
+  margin: 0 auto 1.4rem;
   border-radius: 16px;
   overflow: hidden;
-  border: 1.5px solid var(--ap-line);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
 }
 
+/* 이미지를 배너 높이에 맞춰 세로로 크롭 (인물이 보이도록 position 조정) */
 .heroImg {
-  display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto; /* 원본 비율 유지, 크롭 없음 */
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
 }
 
+/* 글자 가독성용 쉐이드 (하단 + 좌측) */
 .heroOverlay {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  gap: 0.2rem;
-  padding: 1rem 1.25rem;
-  /* 이미지는 그대로 두고, 글자 가독성을 위해 하단에만 살짝 */
-  background: linear-gradient(
-    to top,
-    rgba(10, 14, 24, 0.62) 0%,
-    rgba(10, 14, 24, 0.28) 16%,
-    rgba(10, 14, 24, 0) 34%
-  );
+  gap: 0.3rem;
+  padding: 1.15rem 1.4rem;
+  background:
+    linear-gradient(to top, rgba(8, 10, 16, 0.84) 0%, rgba(8, 10, 16, 0.4) 38%, rgba(8, 10, 16, 0) 68%),
+    linear-gradient(to right, rgba(8, 10, 16, 0.6) 0%, rgba(8, 10, 16, 0) 55%);
 }
 
 .heroTag {
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  color: var(--ap-super);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #f0c674;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
 .heroSeason {
-  font-size: clamp(1.4rem, 3.4vw, 2.1rem);
+  font-size: clamp(1.5rem, 3.8vw, 2.2rem);
   font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
   color: #fff;
-  line-height: 1.1;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
 }
 
 .heroSub {
-  font-size: clamp(0.72rem, 1.6vw, 0.86rem);
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
-  max-width: 60%;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  font-size: clamp(0.74rem, 1.6vw, 0.88rem);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.7);
 }
 
 @media (max-width: 560px) {
@@ -479,9 +453,13 @@
   object-position: center 12%;
 }
 
-.tileEmoji {
-  font-size: 2.1rem;
-  line-height: 1;
+/* 이미지 없을 때 중립 플레이스홀더 (이모지 대체) */
+.tilePlaceholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  background: var(--ap-line);
+  opacity: 0.5;
 }
 
 .tileQty {
@@ -591,7 +569,7 @@
    사이드바 (스크롤 따라옴)
    ======================================== */
 .sidebar {
-  width: 400px;
+  width: 372px;
   flex-shrink: 0;
 }
 
@@ -616,6 +594,43 @@
 .effCard_free { --ec-c: var(--ap-slate); }
 .effCard_premium { --ec-c: var(--ap-primary); }
 .effCard_super { --ec-c: var(--ap-super); }
+
+/* 효율 카드 상단 티어 탭 */
+.effTabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.95rem;
+}
+
+.effTab {
+  flex: 1;
+  padding: 0.42rem 0.3rem;
+  border: 1.5px solid var(--ap-line);
+  border-radius: 9px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.effTab:hover {
+  color: var(--text-primary);
+  border-color: var(--tier-c, var(--ap-primary));
+}
+
+.effTabActive {
+  color: #fff;
+  background: var(--tier-c, var(--ap-primary));
+  border-color: var(--tier-c, var(--ap-primary));
+}
+
+[data-theme="dark"] .effTabActive {
+  color: #16181d;
+}
 
 .effTierName {
   font-size: 1rem;
@@ -664,19 +679,53 @@
   margin-bottom: 0.7rem;
 }
 
-.effMeta {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
+/* 가격 → 골드 환산 → 이득률 비교 (한눈에 정리) */
+.effCompare {
+  margin-top: 0.7rem;
   padding-top: 0.7rem;
   border-top: 1px solid var(--ap-line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
+.effCmpRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
   font-size: 0.9rem;
   color: var(--text-muted);
 }
 
-.effMeta b {
-  color: var(--text-primary);
+.effCmpKey {
+  font-weight: 600;
+}
+
+.effCmpVal {
   font-weight: 800;
+  color: var(--text-primary);
+}
+
+.effCmpResult {
+  margin-top: 0.2rem;
+  padding-top: 0.45rem;
+  border-top: 1px dashed var(--ap-line);
+  font-size: 1.02rem;
+}
+
+.effCmpResult .effCmpKey {
+  color: var(--text-secondary);
+  font-weight: 800;
+}
+
+.effCmpResult span:last-child {
+  font-weight: 800;
+}
+
+.effCmpResult small {
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 /* 공통 패널 */
@@ -728,9 +777,9 @@
 .cmpHead,
 .cmpRow {
   display: grid;
-  grid-template-columns: 1.55fr 1fr 0.85fr 0.65fr;
+  grid-template-columns: 1.15fr 1.1fr 0.85fr 0.6fr;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
 }
 
 .cmpHead {
@@ -767,8 +816,8 @@
 .cmpName {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.96rem;
+  gap: 0.35rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: var(--text-primary);
   white-space: nowrap;
@@ -790,9 +839,10 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.22rem;
-  font-size: 0.96rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--ap-gold);
+  white-space: nowrap;
 }
 
 .cmpGoldIcon {
@@ -808,9 +858,10 @@
 }
 
 .cmpEff {
-  font-size: 1.18rem;
+  font-size: 1rem;
   font-weight: 800;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .cmpFoot {
@@ -820,44 +871,53 @@
   line-height: 1.45;
 }
 
-/* 환율 입력 (패키지 효율과 동일 방식) */
-.rateBox {
+/* 환율 입력칸 — 효율 카드 하단에 합쳐 표시 (라벨 없이) */
+.effRate {
   display: flex;
+  justify-content: center;
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--ap-line);
+}
+
+/* 환율 입력 (패키지 효율과 동일 방식) — 컴팩트 */
+.rateBox {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.7rem;
-  border: 1.5px solid var(--ap-line);
-  border-radius: 12px;
+  gap: 0.35rem;
+  padding: 0.32rem 0.5rem;
+  border: 1px solid var(--ap-line);
+  border-radius: 9px;
   background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.02));
 }
 
 .rateIcon {
-  width: 26px;
-  height: 26px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
 }
 
 .rateFixed {
-  font-size: 1.05rem;
+  font-size: 0.86rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .rateSep {
-  font-size: 1rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-muted);
 }
 
 .rateInput {
-  width: 88px;
-  padding: 0.4rem 0.55rem;
-  border: 1.5px solid var(--ap-line);
-  border-radius: 8px;
+  width: 56px;
+  padding: 0.22rem 0.4rem;
+  border: 1px solid var(--ap-line);
+  border-radius: 7px;
   background: var(--input-bg);
   color: var(--text-primary);
-  font-size: 1.05rem;
+  font-size: 0.86rem;
   font-weight: 800;
   text-align: right;
   outline: none;
@@ -869,17 +929,17 @@
 }
 
 .rateUnit {
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   font-weight: 800;
   color: var(--text-muted);
 }
 
 .exchangeNote {
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
-  margin-top: 0.55rem;
+  margin-top: 0.4rem;
   text-align: center;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 /* 임시 데이터 — 눈에 띄게 (빨강) */
@@ -910,7 +970,8 @@
    반응형
    ======================================== */
 /* 그리드(중앙정렬) 미적용 폭에서는 사이드바를 위로 쌓아 크게 노출 */
-@media (max-width: 1499px) {
+/* 좁은 화면: 세로로 쌓고 사이드바를 위로(효율 결과·환율 먼저). sticky 해제 */
+@media (max-width: 1024px) {
   .layout {
     flex-direction: column;
   }

@@ -405,7 +405,7 @@ export default function CerkaPage() {
                 marginTop: 0,
                 marginBottom: '0.5rem'
               }}>
-                세르카 계산
+                세르카
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 세르카 클리어 보상과 고통의 가시 교환 효율

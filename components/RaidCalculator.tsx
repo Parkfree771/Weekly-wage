@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, Table, Form, Badge, Accordion, Row, Col, Button, Collapse } from 'react-bootstrap';
 import Image from 'next/image';
-import { raids } from '@/data/raids';
+import { raids, upcomingRaids } from '@/data/raids';
 
 type Character = {
   characterName: string;
@@ -116,6 +116,31 @@ const getRaidGroupName = (raidName: string): string => {
   return parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0];
 };
 
+// 출시 예정(비활성) 레이드 그룹 — '다른 레이드 보기'에 비활성 행으로만 노출 (계산 제외).
+// 그룹 + 난이도 목록(나메/하드/노말)을 함께 담아 3개 난이도를 표시.
+type UpcomingGroup = { group: string; releaseLabel: string; difficulties: { name: string; level: number }[] };
+const UPCOMING_GROUPS: UpcomingGroup[] = Array.from(
+  upcomingRaids.reduce((m, r) => {
+    const g = getRaidGroupName(r.name);
+    const diff = r.name.slice(g.length).trim() || '기본';
+    const entry = m.get(g) || { releaseLabel: r.releaseLabel, difficulties: [] as { name: string; level: number }[] };
+    entry.difficulties.push({ name: diff, level: r.level });
+    m.set(g, entry);
+    return m;
+  }, new Map<string, { releaseLabel: string; difficulties: { name: string; level: number }[] }>())
+).map(([group, info]) => ({ group, releaseLabel: info.releaseLabel, difficulties: info.difficulties }));
+
+// 그룹별 최고 난이도(레벨) 레이드를 총 클리어 골드 내림차순으로 반환
+const getGroupBestRaidsByGold = (availableRaids: any[]): any[] => {
+  const groupBest: { [group: string]: any } = {};
+  for (const raid of availableRaids) {
+    const g = getRaidGroupName(raid.name);
+    if (!groupBest[g] || raid.level > groupBest[g].level) groupBest[g] = raid;
+  }
+  const totalGold = (r: any) => r.gates.reduce((s: number, x: any) => s + x.gold, 0);
+  return Object.values(groupBest).sort((a, b) => totalGold(b) - totalGold(a));
+};
+
 // Deep clone 대체 유틸리티: 필요한 부분만 얕은 복사
 const updateGateSelection = (
   prev: GateSelection,
@@ -207,82 +232,33 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
       });
     });
 
-    // 캐릭터 레벨에 맞는 레이드 (레벨 내림차순)
-    const availableRaids = raids
-      .filter(raid => character.itemLevel >= raid.level)
-      .sort((a, b) => b.level - a.level);
+    // 캐릭터 레벨에 맞는 레이드 → 그룹별 최고 난이도를 골드 내림차순으로
+    const availableRaids = raids.filter(raid => character.itemLevel >= raid.level);
+    const sortedByGold = getGroupBestRaidsByGold(availableRaids);
 
     if (mode === 'goldOptimize') {
-      // 골드 최적화: 골드 높은 3개 + 코어 레이드 4번째
-      // 1) 그룹별 최고 난이도 레이드의 총 골드 계산
-      const groupBestRaid: { [group: string]: { raid: any; totalGold: number } } = {};
-      for (const raid of availableRaids) {
-        const groupName = getRaidGroupName(raid.name);
-        if (!groupBestRaid[groupName]) {
-          const totalGold = raid.gates.reduce((sum: number, g: any) => sum + g.gold, 0);
-          groupBestRaid[groupName] = { raid, totalGold };
-        }
-      }
-
-      // 2) 골드 순 정렬
-      const sortedGroups = Object.entries(groupBestRaid)
-        .sort((a, b) => b[1].totalGold - a[1].totalGold);
-
-      // 3) 상위 3개 withMore (클골)
-      const selectedGroupNames: string[] = [];
-      for (const [groupName, { raid }] of sortedGroups) {
-        if (selectedGroupNames.length >= 3) break;
-        selectedGroupNames.push(groupName);
+      // 골드 최적화: 기본과 동일하게 골드 상위 3개 선택, 단 더보기는 전부 OFF (클골만)
+      for (const raid of sortedByGold.slice(0, 3)) {
         for (const gate of raid.gates) {
           result[raid.name][gate.gate] = 'withMore';
         }
       }
-
-      // 4) 코어 레이드 중 아직 선택 안 된 것 1개 추가 (withMore = 골드 0이지만 코어 획득, 더보기 비용 없음)
-      for (const [groupName, { raid }] of sortedGroups) {
-        if (selectedGroupNames.includes(groupName)) continue;
-        if (CORE_RAID_GROUPS.includes(groupName)) {
-          selectedGroupNames.push(groupName);
-          for (const gate of raid.gates) {
-            result[raid.name][gate.gate] = 'withMore';
-          }
-          break;
-        }
-      }
     } else if (mode === 'coreOptimize') {
-      // 코어 최적화: 코어 레이드 4개 전부 더보기
-      const selectedGroupNames: string[] = [];
-
-      // 1) 코어 레이드 우선 선택 (더보기)
-      for (const raid of availableRaids) {
+      // 코어 최적화: 코어 주는 레이드는 전부 더보기 ON, 골드 받는 레이드는 기본과 동일(골드 상위 3개)
+      // 1) 코어 레이드 전부 더보기 ON (4번째+는 골드 미수령이라 더보기 비용만큼 마이너스)
+      for (const raid of sortedByGold) {
         const groupName = getRaidGroupName(raid.name);
-        if (selectedGroupNames.includes(groupName)) continue;
         if (!CORE_RAID_GROUPS.includes(groupName)) continue;
-        selectedGroupNames.push(groupName);
         for (const gate of raid.gates) {
           result[raid.name][gate.gate] = 'withoutMore';
         }
       }
-
-      // 2) 코어 레이드가 3개 미만이면 골드 높은 순으로 채우기
-      if (selectedGroupNames.length < 3) {
-        const remaining = availableRaids.filter(r => !selectedGroupNames.includes(getRaidGroupName(r.name)));
-        const groupBest: { [g: string]: any } = {};
-        for (const raid of remaining) {
-          const g = getRaidGroupName(raid.name);
-          if (!groupBest[g]) groupBest[g] = raid;
-        }
-        const sorted = Object.entries(groupBest).sort((a, b) => {
-          const goldA = (a[1] as any).gates.reduce((s: number, g: any) => s + g.gold, 0);
-          const goldB = (b[1] as any).gates.reduce((s: number, g: any) => s + g.gold, 0);
-          return goldB - goldA;
-        });
-        for (const [groupName, raid] of sorted) {
-          if (selectedGroupNames.length >= 3) break;
-          selectedGroupNames.push(groupName);
-          for (const gate of (raid as any).gates) {
-            result[(raid as any).name][gate.gate] = 'withMore';
-          }
+      // 2) 골드 상위 3개 중 아직 미선택(비코어) 그룹 추가 — 골드 받는 레이드를 기본과 동일하게 유지 (더보기 OFF)
+      for (const raid of sortedByGold.slice(0, 3)) {
+        const groupName = getRaidGroupName(raid.name);
+        if (CORE_RAID_GROUPS.includes(groupName)) continue;
+        for (const gate of raid.gates) {
+          result[raid.name][gate.gate] = 'withMore';
         }
       }
     }
@@ -302,19 +278,13 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
       });
     });
 
-    // 캐릭터 레벨에 맞는 레이드 (레벨 내림차순 → 그룹별 최고 난이도)
-    const availableRaids = raids
-      .filter(raid => character.itemLevel >= raid.level)
-      .sort((a, b) => b.level - a.level);
+    // 캐릭터 레벨에 맞는 레이드
+    const availableRaids = raids.filter(raid => character.itemLevel >= raid.level);
 
-    // 상위 3개 그룹 선택
-    const selectedGroupNames: string[] = [];
-    for (const raid of availableRaids) {
+    // 그룹별 최고 난이도 레이드를 골드 많이 주는 순으로 상위 3개 선택
+    // (코어 레이드면 더보기 ON, 비코어면 클골만)
+    for (const raid of getGroupBestRaidsByGold(availableRaids).slice(0, 3)) {
       const groupName = getRaidGroupName(raid.name);
-      if (selectedGroupNames.includes(groupName)) continue;
-      if (selectedGroupNames.length >= 3) break;
-
-      selectedGroupNames.push(groupName);
       const selection = CORE_RAID_GROUPS.includes(groupName) ? 'withoutMore' : 'withMore';
       for (const gate of raid.gates) {
         result[raid.name][gate.gate] = selection;
@@ -606,9 +576,9 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
           charFree += groupFree;
           charBound += groupBound;
         } else {
-          // 4번째+: 골드 미수령. 더보기 비용만 차감 (귀속 우선; 미수령이라 base 가 0 이라 결국 일반에서).
-          const groupFree = -calc.moreCost;
-          const groupBound = 0;
+          // 4번째+: 골드 미수령. 더보기 비용은 귀속 골드 마이너스로 차감.
+          const groupFree = 0;
+          const groupBound = -calc.moreCost;
           const groupTotal = groupFree + groupBound;
 
           raidGroupGold[characterName][g] = groupTotal;
@@ -908,6 +878,14 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                       }}>
                         {calculateCharacterBound(character.characterName).toLocaleString()}
                       </span>
+                      <span style={{ margin: isMobile ? '0 1px' : '0 3px', fontSize: isMobile ? '0.78rem' : '1rem', fontWeight: 700, opacity: 0.6 }}>=</span>
+                      <span style={{
+                        fontSize: isMobile ? '0.85rem' : '1.08rem',
+                        fontWeight: 800,
+                        color: calculateCharacterGold(character.characterName) < 0 ? '#c0392b' : 'var(--text-primary)'
+                      }}>
+                        {calculateCharacterGold(character.characterName).toLocaleString()}
+                      </span>
                     </div>
                   </div>
                 </Card.Header>
@@ -918,7 +896,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                       const excluded = isGoldExcluded(character.characterName, groupName);
                       return (
                       <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
-                        <Accordion.Header style={{ fontSize: isMobile ? '1.0rem' : '1.3rem', padding: isMobile ? '0.45rem' : '0.7rem' }}>
+                        <Accordion.Header style={{ fontSize: isMobile ? '1.05rem' : '1.35rem', padding: isMobile ? '0.28rem 0.5rem' : '0.4rem 0.75rem' }}>
                           <div className="d-flex align-items-center w-100">
                             {raidImages[groupName] && (
                               <Image
@@ -931,85 +909,84 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                   marginLeft: isMobile ? '-1rem' : '-1.25rem',
                                   marginRight: '0.5rem',
                                   borderRadius: '4px',
-                                  width: isMobile ? '38px' : '48px',
-                                  height: isMobile ? '38px' : '48px',
+                                  width: isMobile ? '42px' : '54px',
+                                  height: isMobile ? '42px' : '54px',
                                   objectFit: 'cover',
                                   flexShrink: 0
                                 }}
                               />
                             )}
-                            <span style={{ fontWeight: 600 }}>{groupName}</span>
-                            {(() => {
-                              const diff = getSelectedDifficulty(character.characterName, groupName);
-                              if (!diff) return null;
-                              const cls = DIFFICULTY_CLASS[diff.type];
-                              // <Badge> 는 bg prop 없으면 bg-primary(!important) 가 붙어 파랗게 나오므로 plain span 으로.
-                              // 색상은 weekly-gold.module.css 의 cls 매칭 룰에서 결정.
-                              return (
-                                <span className={`ms-1 ${cls}`} style={{
-                                  display: 'inline-block',
-                                  padding: isMobile ? '0.18em 0.45em' : '0.25em 0.55em',
-                                  fontSize: isMobile ? '0.62rem' : '0.82rem',
-                                  lineHeight: 1,
-                                  borderRadius: '0.375rem',
-                                }}>
-                                  {diff.rawDiff}
-                                </span>
-                              );
-                            })()}
-                            {excluded ? (
-                              <>
-                                <span className="ms-1 badge badge-gold-excluded" style={{
-                                  fontSize: isMobile ? '0.62rem' : '0.82rem',
-                                  backgroundColor: '#3b82f6',
-                                  color: '#fff',
-                                  fontWeight: 600,
-                                  textShadow: hasBackground ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
-                                }}>
-                                  골드 미수령
-                                </span>
-                                {hasMoreSelected(character.characterName, groupName) && (
-                                  <>
-                                    <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.6rem' : '0.8rem' }}>더보기</Badge>
-                                    <span className="ms-1 badge badge-more-cost d-inline-flex align-items-center gap-1" style={{
-                                      fontSize: isMobile ? '0.62rem' : '0.82rem',
-                                      backgroundColor: '#3b82f6',
-                                      color: '#fff',
-                                      fontWeight: 700,
-                                      textShadow: hasBackground ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
+                            {/* 이름(1줄) + 난이도 배지(2줄) */}
+                            <div className="d-flex flex-column" style={{ minWidth: 0 }}>
+                              <span className="badge-raid-name" style={{
+                                display: 'inline-block',
+                                alignSelf: 'flex-start',
+                                padding: isMobile ? '0.24em 0.55em' : '0.3em 0.65em',
+                                fontWeight: 700,
+                                fontSize: isMobile ? '0.78rem' : '1.0rem',
+                                borderRadius: '0.375rem',
+                                whiteSpace: 'nowrap',
+                                lineHeight: 1.2,
+                              }}>{groupName}</span>
+                              <div className="d-flex align-items-center" style={{ marginTop: '2px' }}>
+                                {(() => {
+                                  const diff = getSelectedDifficulty(character.characterName, groupName);
+                                  if (!diff) return null;
+                                  const cls = DIFFICULTY_CLASS[diff.type];
+                                  // <Badge> 는 bg prop 없으면 bg-primary(!important) 가 붙어 파랗게 나오므로 plain span 으로.
+                                  // 색상은 weekly-gold.module.css 의 cls 매칭 룰에서 결정.
+                                  return (
+                                    <span className={cls} style={{
+                                      display: 'inline-block',
+                                      padding: isMobile ? '0.2em 0.5em' : '0.27em 0.6em',
+                                      fontSize: isMobile ? '0.68rem' : '0.88rem',
+                                      lineHeight: 1,
+                                      borderRadius: '0.375rem',
                                     }}>
-                                      <Image src="/gold.webp" alt="일반" title="일반 골드" width={isMobile ? 11 : 13} height={isMobile ? 11 : 13} style={{ borderRadius: '2px' }} />
-                                      {calculateRaidGroupFree(character.characterName, groupName).toLocaleString()}
+                                      {diff.rawDiff}
                                     </span>
-                                    <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{
-                                      fontSize: isMobile ? '0.6rem' : '0.8rem',
-                                      fontWeight: 700,
-                                    }}>
-                                      <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 9 : 11} height={isMobile ? 9 : 11} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
-                                      {calculateRaidGroupBound(character.characterName, groupName).toLocaleString()}
-                                    </Badge>
-                                  </>
-                                )}
-                              </>
-                            ) : (
-                              <>
-                                <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.6rem' : '0.82rem' }}>
-                                  <Image src="/gold.webp" alt="일반" title="일반 골드" width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} style={{ borderRadius: '2px' }} />
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                            {/* 일반 골드(1줄) + 귀속 골드(2줄) */}
+                            {(!excluded || hasMoreSelected(character.characterName, groupName)) && (
+                              <div className="d-flex flex-column ms-2" style={{ gap: '3px' }}>
+                                <Badge bg="success" className="d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.66rem' : '0.88rem' }}>
+                                  <Image src="/gold.webp" alt="일반" title="일반 골드" width={isMobile ? 11 : 14} height={isMobile ? 11 : 14} style={{ borderRadius: '2px' }} />
                                   {calculateRaidGroupFree(character.characterName, groupName).toLocaleString()}
                                 </Badge>
-                                <Badge bg="success" className="ms-1 d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.6rem' : '0.82rem' }}>
-                                  <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
+                                <Badge bg="success" className="d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.66rem' : '0.88rem' }}>
+                                  <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 11 : 14} height={isMobile ? 11 : 14} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
                                   {calculateRaidGroupBound(character.characterName, groupName).toLocaleString()}
                                 </Badge>
-                                {hasMoreSelected(character.characterName, groupName) && (
-                                  <Badge bg="danger" className="ms-1" style={{ fontSize: isMobile ? '0.6rem' : '0.8rem' }}>더보기</Badge>
-                                )}
-                              </>
+                              </div>
                             )}
+                            {/* 더보기 (1줄) + 골드 미수령 (더보기 아래) */}
+                            {(hasMoreSelected(character.characterName, groupName) || excluded) && (
+                              <div className="d-flex flex-column ms-2" style={{ gap: '3px' }}>
+                                {hasMoreSelected(character.characterName, groupName) && (
+                                  <Badge bg="danger" style={{ fontSize: isMobile ? '0.66rem' : '0.88rem', alignSelf: 'flex-start' }}>더보기</Badge>
+                                )}
+                                {excluded && (
+                                  <span className="badge badge-gold-excluded" style={{
+                                    alignSelf: 'flex-start',
+                                    fontSize: isMobile ? '0.66rem' : '0.88rem',
+                                    backgroundColor: '#3b82f6',
+                                    color: '#fff',
+                                    fontWeight: 600,
+                                    textShadow: hasBackground ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
+                                  }}>
+                                    골드 미수령
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {/* 코어 (1줄) */}
                             {(CORE_RAID_GROUPS.includes(groupName)) && (
-                              <span className="ms-1 d-inline-flex align-items-center">
-                                <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 24 : 31} height={isMobile ? 24 : 31} style={{ borderRadius: '3px' }} />
-                                <span style={{ marginLeft: '3px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.85rem' : '1.05rem' }}>
+                              <span className="ms-2 d-inline-flex align-items-center">
+                                <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 28 : 36} height={isMobile ? 28 : 36} style={{ borderRadius: '3px' }} />
+                                <span style={{ marginLeft: '4px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.92rem' : '1.15rem' }}>
                                   x{calculateRaidGroupCores(character.characterName, groupName)}
                                 </span>
                               </span>
@@ -1152,7 +1129,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                           <div>
                             {uncheckedGroups.map(groupName => (
                               <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
-                                <Accordion.Header style={{ fontSize: isMobile ? '1.0rem' : '1.3rem', padding: isMobile ? '0.45rem' : '0.7rem' }}>
+                                <Accordion.Header style={{ fontSize: isMobile ? '1.05rem' : '1.35rem', padding: isMobile ? '0.28rem 0.5rem' : '0.4rem 0.75rem' }}>
                                   <div className="d-flex align-items-center w-100">
                                     {raidImages[groupName] && (
                                       <Image
@@ -1270,6 +1247,58 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                   </Accordion>
                                 </Accordion.Body>
                               </Accordion.Item>
+                            ))}
+
+                            {/* 출시 예정(비활성) 레이드 — 표시만, 선택/계산 불가 (난이도 3개 노출) */}
+                            {UPCOMING_GROUPS.map(u => (
+                              <div
+                                key={`upcoming-${u.group}`}
+                                style={{ opacity: 0.6, padding: isMobile ? '0.5rem' : '0.7rem 0.75rem', cursor: 'not-allowed' }}
+                              >
+                                <div className="d-flex align-items-center w-100">
+                                  {raidImages[u.group] && (
+                                    <Image
+                                      src={raidImages[u.group]}
+                                      alt={u.group}
+                                      width={100}
+                                      height={100}
+                                      quality={100}
+                                      style={{
+                                        marginLeft: isMobile ? '-1rem' : '-1.25rem',
+                                        marginRight: '0.5rem',
+                                        borderRadius: '4px',
+                                        filter: 'grayscale(0.5)',
+                                        width: isMobile ? '38px' : '48px',
+                                        height: isMobile ? '38px' : '48px',
+                                        objectFit: 'cover',
+                                        flexShrink: 0,
+                                      }}
+                                    />
+                                  )}
+                                  <span style={{ fontWeight: 600 }}>{u.group}</span>
+                                  <Badge bg="secondary" className="ms-2" style={{ fontSize: isMobile ? '0.62rem' : '0.82rem' }}>
+                                    {u.releaseLabel}
+                                  </Badge>
+                                </div>
+                                <div className="d-flex flex-wrap gap-1 mt-2" style={{ paddingLeft: isMobile ? '1.6rem' : '2.4rem' }}>
+                                  {u.difficulties.map(d => (
+                                    <span
+                                      key={d.name}
+                                      style={{
+                                        fontSize: isMobile ? '0.6rem' : '0.74rem',
+                                        fontWeight: 600,
+                                        padding: '0.12rem 0.45rem',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '6px',
+                                        color: 'var(--text-secondary)',
+                                        whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      {d.name} Lv.{d.level}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
                             ))}
                           </div>
                         </Collapse>

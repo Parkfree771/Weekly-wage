@@ -29,20 +29,22 @@ const NAV_GROUPS: NavGroup[] = [
     label: '골드 계산',
     colorClass: 'nav-weekly',
     items: [
-      { href: '/weekly-gold', label: '주간 골드 계산' },
-      { href: '/life-master', label: '생활 제작 계산' },
-      { href: '/package', label: '패키지 효율 계산' },
-      { href: '/hell-reward', label: '지옥 보상 계산' },
+      { href: '/life-master', label: '생활 제작' },
+      { href: '/package', label: '패키지 효율' },
+      { href: '/hell-reward', label: '지옥 보상' },
       { href: '/arkpass', label: '아크패스 효율', badge: 'NEW' },
     ],
   },
   {
-    label: '레이드 계산',
+    label: '숙제 계산',
     colorClass: 'nav-hell',
     items: [
-      { href: '/cathedral', label: '지평의 성당 계산' },
-      { href: '/cerka', label: '세르카 계산' },
+      { href: '/weekly-gold', label: '주간 레이드' },
+      { href: '/homework', label: '일일/주간 숙제', badge: 'NEW' },
+      { href: '/cathedral', label: '지평의 성당' },
+      { href: '/cerka', label: '세르카' },
       { href: '/extreme', label: '익스트림' },
+      { href: '/belgardin', label: '벨가르딘', badge: 'NEW' },
     ],
   },
   {
@@ -57,15 +59,9 @@ const NAV_GROUPS: NavGroup[] = [
     label: '조회',
     colorClass: 'nav-character',
     items: [
-      { href: '/character', label: '캐릭터 조회', badge: 'NEW' },
+      { href: '/character', label: '캐릭터 조회' },
+      { href: '/tier', label: '직업 티어표' },
     ],
-  },
-  {
-    label: '직업 티어표',
-    colorClass: 'nav-character',
-    href: '/tier',
-    badge: 'NEW',
-    items: [],
   },
 ];
 
@@ -102,7 +98,8 @@ export default function Navbar() {
                       href === '/cathedral' ? 'nav-weekly' :
                       href === '/cerka' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
-                      href === '/character' ? 'nav-character' : 'nav-weekly';
+                      href === '/character' ? 'nav-character' :
+                      href === '/tier' ? 'nav-character' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
   };
