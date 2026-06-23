@@ -76,7 +76,11 @@ export default function PackageRegisterPage() {
     itemCounterRef.current += 1;
     const newItem: AddedItem = { id: `${templateId}_${itemCounterRef.current}`, templateId, quantity: 1 };
     if (template.type === 'choice' && template.choices?.length) {
-      newItem.selectedChoiceId = template.choices[0].itemId;
+      // 시세상 가장 비싼 선택지를 기본 선택
+      const best = template.choices.reduce((max, c) =>
+        getItemUnitPrice(c.itemId, latestPrices) > getItemUnitPrice(max.itemId, latestPrices) ? c : max,
+        template.choices[0]);
+      newItem.selectedChoiceId = best.itemId;
     }
     if (template.type === 'gold') {
       newItem.goldAmount = 0;

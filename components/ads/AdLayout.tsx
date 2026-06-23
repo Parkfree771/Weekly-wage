@@ -44,8 +44,10 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   // - /character: 오른쪽에 필터 통계 사이드바를 자체 배치
   // - /tier/vote: 직업 선택·투표 화면이 자체 사이드바를 써서 레일과 충돌
   // - /arkpass: 자체 효율 사이드바가 있어 레일과 충돌 + 같은 페이지 배너 중복
+  // - /package/register, /package/edit: 등록·수정 작업 화면이라 배너 비노출
   const adsDisabled =
-    pathname === '/character' || pathname === '/tier/vote' || pathname === '/arkpass';
+    pathname === '/character' || pathname === '/tier/vote' || pathname === '/arkpass' ||
+    pathname === '/package/register' || pathname.startsWith('/package/edit');
 
   useEffect(() => {
     // 좌우 사이드 레일 전체 비활성화 스위치 (재활용용)

@@ -64,9 +64,8 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     id: 'crystal-choice',
     icon: '/vkrhltngh.webp',
     name: '파괴/수호 결정 선택',
-    type: 'choice',
-    boxItem: true,
-    choices: [
+    type: 'bundle',
+    bundleContents: [
       { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/top-destiny-destruction-stone5.webp' },
       { itemId: '66102107', name: '운명의 수호석 결정', icon: '/top-destiny-guardian-stone5.webp' },
     ],
@@ -248,6 +247,20 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
       { itemId: '67410503', probability: 0.05 },   // 붕괴 5%
     ],
   },
+  {
+    id: 'gem-fear-8',
+    icon: '/gem-radiance-8.png',
+    name: '8레벨 광휘의 보석 (귀속)',
+    type: 'simple',
+    itemId: 'auction_gem_fear_8',
+  },
+  {
+    id: 'gem-radiance-7',
+    icon: '/gem-radiance-7.png',
+    name: '7레벨 광휘의 보석 (귀속)',
+    type: 'fixed',
+    fixedGold: 20000,
+  },
   // ── 유각 ──
   {
     id: 'engraving-choice',
@@ -348,6 +361,13 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     name: '베아트리스의 축복 (15일)',
     type: 'crystal',
     crystalPerUnit: 180, // 4950원 = 9900/2, 4950/27.5 = 180 BC 환산
+  },
+  {
+    id: 'azena-blessing',
+    icon: '/azena-blessing.png',
+    name: '아제나의 축복 (28일)',
+    type: 'crystal',
+    crystalPerUnit: 280, // 7700원 / 27.5 = 280 BC 환산
   },
   {
     id: 'pet-function',
@@ -485,10 +505,11 @@ export const ICON_SIZE_CATALOG: Record<string, number> = {
   'cardpack-legendary': 65, 'cardpack-rare': 65, 'cardpack-all': 65,
   'ninav-blessing': 65, 'engraving-choice': 65,
   'destruction-stone': 65, 'guardian-stone': 65,
-  'destruction-crystal': 65, 'guardian-crystal': 65, 'crystal-choice': 65,
+  'destruction-crystal': 65, 'guardian-crystal': 65, 'crystal-choice': 65, 'crystal-bundle': 65,
   'great-breakthrough': 65, 'breakthrough-stone': 65,
   'lava-breath': 65, 'glacier-breath': 65, 'breath-choice': 65,
   'superior-abidos': 65, 'abidos-fusion': 65,
+  'gem-fear-8': 65, 'gem-radiance-7': 65, 'azena-blessing': 65,
 };
 export const ICON_SIZE_BOX: Record<string, number> = {};
 
