@@ -852,6 +852,80 @@ html, body {
   padding: 4px 12px;
 }
 
+/* 모바일 오프캔버스 아코디언 (카테고리 버튼 → 펼침) */
+.navbar-offcanvas-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar-offcanvas-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.navbar-offcanvas-trigger:hover {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.navbar-offcanvas-trigger.active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.navbar-offcanvas-trigger-label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.navbar-offcanvas-chevron {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+
+.navbar-offcanvas-chevron.open {
+  transform: rotate(180deg);
+}
+
+.navbar-offcanvas-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0 4px 12px;
+  padding-left: 8px;
+  border-left: 2px solid var(--border-color);
+  animation: offcanvasSubmenu 0.18s ease;
+}
+
+.navbar-offcanvas-subitem {
+  padding: 11px 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+@keyframes offcanvasSubmenu {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Theme Toggle Button */
 .navbar-theme-toggle {
   display: flex;

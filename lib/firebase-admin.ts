@@ -94,3 +94,33 @@ export async function verifyBearerUid(req: Request): Promise<string | null> {
     return null;
   }
 }
+
+/**
+ * 관리자 이메일 목록 (env ADMIN_EMAILS=쉼표구분, 기본값은 운영 관리자 계정).
+ * inquiry-service의 ADMIN_EMAIL과 동일 값이어야 함.
+ */
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'dbfh1498@gmail.com')
+  .split(',')
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
+/**
+ * Authorization: Bearer <idToken> 검증 후, 토큰의 이메일이 관리자 목록에 있는지 확인.
+ * 관리자가 아니거나 토큰이 잘못되면 false.
+ */
+export async function verifyBearerAdmin(req: Request): Promise<boolean> {
+  const header = req.headers.get('authorization') || '';
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+  try {
+    const decoded = await getAdminAuth().verifyIdToken(match[1]);
+    const email = (decoded.email || '').toLowerCase();
+    return (
+      !!email &&
+      decoded.email_verified !== false &&
+      ADMIN_EMAILS.includes(email)
+    );
+  } catch {
+    return false;
+  }
+}

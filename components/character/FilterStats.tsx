@@ -19,6 +19,8 @@ interface Props {
   role: string;
   /** 활성 필터의 사람이 읽는 라벨 */
   labels: { spec?: string; specIcon?: string; title?: string; ancient?: string; role?: string };
+  /** 'sidebar'(기본, 세로 패널) | 'mobile'(가로 압축 — 상단 고정용) */
+  variant?: 'sidebar' | 'mobile';
 }
 
 const RADIUS = 52;
@@ -37,7 +39,7 @@ function fmtNum(n: number, frac = 2): string {
   return n.toLocaleString('ko-KR', { minimumFractionDigits: frac, maximumFractionDigits: frac });
 }
 
-export default function FilterStats({ spec, title, ancient, role, labels }: Props) {
+export default function FilterStats({ spec, title, ancient, role, labels, variant = 'sidebar' }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -75,6 +77,67 @@ export default function FilterStats({ spec, title, ancient, role, labels }: Prop
   }
 
   const tagText: Record<string, string> = { role: '역할', spec: '직업', title: '칭호', ancient: '고대' };
+
+  // 활성 필터 칩 (sidebar·mobile 공용)
+  const chipNodes = hasFilter ? (
+    <>
+      {role && <span className={`${styles.chip} ${styles.chipRole}`}>{labels.role || (role === 'support' ? '서포터' : '딜러')}</span>}
+      {spec && (
+        <span className={`${styles.chip} ${styles.chipSpec}`}>
+          {labels.specIcon && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={labels.specIcon} alt="" className={styles.chipSpecIcon} />
+          )}
+          {labels.spec}
+        </span>
+      )}
+      {title && <TitleBadge title={labels.title} fontSize="0.74rem" />}
+      {ancient && <span className={`${styles.chip} ${styles.chipAncient}`}>{labels.ancient}</span>}
+    </>
+  ) : (
+    <span className={`${styles.chip} ${styles.chipAll}`}>전체 캐릭터</span>
+  );
+
+  // ── 모바일 가로형 (필터 버튼 밑 상단 고정용) ──
+  if (variant === 'mobile') {
+    return (
+      <div className={styles.mPanel}>
+        <div className={styles.mRow}>
+          <div className={styles.mPctBlock}>
+            <span className={styles.mPct}>
+              {ready ? fmtPct(matched, total) : '–'}
+              <i className={styles.mPctUnit}>%</i>
+            </span>
+            <span className={styles.mPctLabel}>{hasFilter ? '선택 조합' : '전체'}</span>
+          </div>
+          <div className={styles.mInfo}>
+            <div className={styles.mChips}>{chipNodes}</div>
+            <div className={styles.mNums}>
+              <span className={styles.mCount}>
+                <strong>{matched.toLocaleString('ko-KR')}</strong>
+                <span className={styles.countSlash}>/</span>
+                {total.toLocaleString('ko-KR')}명
+              </span>
+              <span className={styles.mAvg}>
+                <i>전투력</i>
+                {ready ? fmtNum(stats!.avgCombatPower) : '–'}
+              </span>
+              <span className={styles.mAvg}>
+                <i>아이템</i>
+                {ready ? fmtNum(stats!.avgItemLevel) : '–'}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className={styles.mBarTrack}>
+          <div className={styles.mBarFill} style={{ width: `${pctNum}%` }} />
+        </div>
+        {(title === '혹한의 군주' || title === '홍염의 군주') && (
+          <div className={styles.note}>이 칭호는 아이템레벨 1770+ 기준 집계</div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={styles.panel}>

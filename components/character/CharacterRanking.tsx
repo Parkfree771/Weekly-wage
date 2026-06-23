@@ -127,6 +127,16 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 모바일(≤900px)에서는 필터 비율을 상단 고정 가로형으로, 그 외엔 우측 세로 패널로 렌더
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   const hasActiveFilter = !!(selectedSpec || selectedTitle || selectedAncient || selectedRole || sort);
 
@@ -264,8 +274,19 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
   return (
     <div className={styles.layout}>
     <section className={styles.section}>
+      <div className={styles.mobileTop}>
       <div className={styles.header}>
-        <h2 className={styles.title}>캐릭터 랭킹</h2>
+        <div className={styles.titleRow}>
+          <h2 className={styles.title}>캐릭터 랭킹</h2>
+          <button
+            type="button"
+            className={styles.resetBadge}
+            onClick={resetFilters}
+            disabled={!hasActiveFilter}
+          >
+            초기화
+          </button>
+        </div>
         <div className={styles.controls}>
           <FilterSelect
             value={selectedSpec}
@@ -326,15 +347,21 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
             </button>
           </div>
 
-          <button
-            type="button"
-            className={styles.resetButton}
-            onClick={resetFilters}
-            disabled={!hasActiveFilter}
-          >
-            초기화
-          </button>
         </div>
+      </div>
+
+      {isMobile && (
+        <div className={styles.mobileStats}>
+          <FilterStats
+            spec={selectedSpec}
+            title={selectedTitle}
+            ancient={selectedAncient}
+            role={selectedRole}
+            variant="mobile"
+            labels={{ spec: specLabel, specIcon, title: titleLabel, ancient: ancientLabel, role: roleLabel }}
+          />
+        </div>
+      )}
       </div>
 
       {isLoading && (
@@ -454,15 +481,17 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
       )}
     </section>
 
-      <aside className={styles.statsAside}>
-        <FilterStats
-          spec={selectedSpec}
-          title={selectedTitle}
-          ancient={selectedAncient}
-          role={selectedRole}
-          labels={{ spec: specLabel, specIcon, title: titleLabel, ancient: ancientLabel, role: roleLabel }}
-        />
-      </aside>
+      {!isMobile && (
+        <aside className={styles.statsAside}>
+          <FilterStats
+            spec={selectedSpec}
+            title={selectedTitle}
+            ancient={selectedAncient}
+            role={selectedRole}
+            labels={{ spec: specLabel, specIcon, title: titleLabel, ancient: ancientLabel, role: roleLabel }}
+          />
+        </aside>
+      )}
     </div>
   );
 }

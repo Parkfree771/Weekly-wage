@@ -8,8 +8,6 @@ import { useTheme } from './ThemeProvider';
 import { Container, Navbar as BSNavbar, Nav, Offcanvas } from 'react-bootstrap';
 import LoginButton from './auth/LoginButton';
 
-const FEEDBACK_URL = 'https://forms.gle/n9XKQJmheLhZcSf69';
-
 type NavItem = {
   href: string;
   label: string;
@@ -70,9 +68,13 @@ export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
   const dropdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleClose = () => setShowOffcanvas(false);
+  const handleClose = () => {
+    setShowOffcanvas(false);
+    setOpenMobileGroup(null);
+  };
   const handleShow = () => setShowOffcanvas(true);
 
   const isActive = (href: string) => {
@@ -249,14 +251,6 @@ export default function Navbar() {
           >
             마이페이지
           </Link>
-          <a
-            href={FEEDBACK_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="navbar-feedback-btn"
-          >
-            문의하기
-          </a>
           <Link
             href="/"
             className="navbar-theme-toggle"
@@ -309,38 +303,65 @@ export default function Navbar() {
           </Offcanvas.Header>
           <Offcanvas.Body className="navbar-offcanvas-body">
             <Nav className="flex-column gap-2">
-              {NAV_GROUPS.map((group, idx) => (
+              {NAV_GROUPS.map((group) => (
                 group.href ? (
                   <Link
                     key={group.label}
                     href={group.href}
                     className={`navbar-offcanvas-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''}`}
                     onClick={handleClose}
-                    style={idx > 0 ? { marginTop: '8px' } : undefined}
                   >
                     {group.label}
                     {group.badge && <span className="nav-badge-new">{group.badge}</span>}
                   </Link>
                 ) : (
-                <div key={group.label}>
-                  <div
-                    className="navbar-offcanvas-group-label"
-                    style={idx > 0 ? { marginTop: '8px' } : undefined}
+                <div key={group.label} className="navbar-offcanvas-group">
+                  <button
+                    type="button"
+                    className={`navbar-offcanvas-trigger ${isGroupActive(group) ? 'active' : ''}`}
+                    onClick={() =>
+                      setOpenMobileGroup(
+                        openMobileGroup === group.label ? null : group.label,
+                      )
+                    }
+                    aria-expanded={openMobileGroup === group.label}
                   >
-                    {group.label}
-                    {hasGroupNew(group) && <span className="nav-badge-new">NEW</span>}
-                  </div>
-                  {group.items.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`navbar-offcanvas-link ${getNavClass(item.href)}`}
-                      onClick={handleClose}
+                    <span className="navbar-offcanvas-trigger-label">
+                      {group.label}
+                      {hasGroupNew(group) && <span className="nav-badge-new">NEW</span>}
+                    </span>
+                    <svg
+                      className={`navbar-offcanvas-chevron ${openMobileGroup === group.label ? 'open' : ''}`}
+                      width="14"
+                      height="14"
+                      viewBox="0 0 10 10"
+                      aria-hidden
                     >
-                      {item.label}
-                      {item.badge && <span className="nav-badge-new">{item.badge}</span>}
-                    </Link>
-                  ))}
+                      <path
+                        d="M2 4L5 7L8 4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                  {openMobileGroup === group.label && (
+                    <div className="navbar-offcanvas-submenu">
+                      {group.items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={`navbar-offcanvas-link navbar-offcanvas-subitem ${getNavClass(item.href)}`}
+                          onClick={handleClose}
+                        >
+                          {item.label}
+                          {item.badge && <span className="nav-badge-new">{item.badge}</span>}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 )
               ))}
@@ -354,15 +375,6 @@ export default function Navbar() {
               >
                 마이페이지
               </Link>
-              <a
-                href={FEEDBACK_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="navbar-offcanvas-link nav-weekly"
-                onClick={handleClose}
-              >
-                문의하기
-              </a>
             </Nav>
             <hr className="my-3" />
             <div className="d-flex justify-content-center">

@@ -318,3 +318,106 @@
   color: var(--text-muted, #99a);
   text-align: center;
 }
+
+/* ── 모바일 가로형 (상단 고정 툴바용) ── */
+.mPanel {
+  width: 100%;
+}
+
+.mRow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.mPctBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 58px;
+}
+
+.mPct {
+  display: flex;
+  align-items: baseline;
+  font-family: var(--font-mono), monospace;
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.mPctUnit {
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-style: normal;
+  margin-left: 1px;
+  color: #7c3aed;
+}
+
+.mPctLabel {
+  margin-top: 3px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: var(--text-muted, #99a);
+}
+
+.mInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.mChips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.mNums {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.mCount strong {
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.mAvg {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.mAvg i {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.68rem;
+  color: var(--text-muted, #99a);
+  margin-right: 3px;
+}
+
+.mBarTrack {
+  margin-top: 0.6rem;
+  height: 7px;
+  border-radius: 5px;
+  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.08));
+  overflow: hidden;
+}
+
+.mBarFill {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #3b82f6, #7c3aed);
+  transition: width 0.4s ease;
+  min-width: 2px;
+}

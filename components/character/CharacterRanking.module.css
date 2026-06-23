@@ -38,6 +38,16 @@
   }
 }
 
+/* 데스크톱/태블릿: 래퍼는 레이아웃에 영향 없음(헤더를 그대로 노출) */
+.mobileTop {
+  display: contents;
+}
+.mobileStats {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-color);
+}
+
 .section {
   /* 랭킹 목록은 항상 1028px 유지 — 사이드바가 생겨도 밀리거나 줄지 않음 */
   grid-column: 2;
@@ -49,11 +59,17 @@
 
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.75rem;
   margin-bottom: 1rem;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .title {
@@ -61,6 +77,34 @@
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+}
+
+/* '캐릭터 랭킹' 줄 오른쪽 초기화 배지 */
+.resetBadge {
+  flex-shrink: 0;
+  padding: 0.28rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #ef4444;
+  background-color: #ef4444;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.resetBadge:hover:not(:disabled) {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+/* 활성 필터 없을 땐 비활성(회색) */
+.resetBadge:disabled {
+  cursor: not-allowed;
+  border-color: var(--border-color);
+  background-color: transparent;
+  color: var(--text-muted, #999);
 }
 
 .controls {
@@ -419,6 +463,23 @@
                  | [코어 6개]     [직업·서버]
    ═══════════════════════════════════════ */
 @media (max-width: 900px) {
+  /* 필터 버튼 + 필터비율(가로형)을 한 덩어리로 상단 고정 */
+  .mobileTop {
+    display: block;
+    position: sticky;
+    top: 48px; /* 모바일 네비바 높이 */
+    z-index: 30;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 0.65rem 0.7rem 0.75rem;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.45);
+  }
+  .mobileTop .header {
+    margin-bottom: 0.4rem;
+  }
+
   .card {
     grid-template-columns: 38px 68px minmax(0, 1fr) auto;
     grid-template-rows: auto;

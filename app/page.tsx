@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { Container } from 'react-bootstrap';
 import AdBanner from '@/components/ads/AdBanner';
-import DomainChangeNotice from '@/components/DomainChangeNotice';
+import FeedbackBox from '@/components/FeedbackBox';
 import styles from './page.module.css';
 
 const PriceDashboard = dynamic(() => import('@/components/PriceDashboard'), {
@@ -49,8 +49,8 @@ export default function Home() {
           <PriceComparisonStats />
         </PriceChartProvider>
 
-        {/* 도메인 변경 안내 (차트·통계 아래 빈 공간) */}
-        <DomainChangeNotice />
+        {/* 익명 의견 박스 (차트·통계 아래 빈 공간) */}
+        <FeedbackBox />
 
         {/* 모바일 익스트림 홍보 + 광고 */}
         <div className="d-block d-lg-none my-3">

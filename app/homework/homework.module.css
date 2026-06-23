@@ -106,8 +106,9 @@
 /* 한 줄에 묶는 서브 컨트롤 (균열 휴게 / 가토 휴게 / 모래시계 강화) */
 .subCtrl {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
   padding-right: 1.3rem;
   margin-right: 0.3rem;
   border-right: 1px solid var(--border-color);
@@ -389,7 +390,12 @@
     font-size: 0.84rem;
   }
 
+  /* 모바일: 균열 휴게·가토 휴게는 한 줄에 2칸, 모래시계 강화는 다음 줄로 (세로 2줄 배치는 공통) */
   .subCtrl {
-    padding-right: 0.9rem;
+    flex: 1 1 40%;
+    min-width: 140px;
+    padding-right: 0;
+    margin-right: 0;
+    border-right: none;
   }
 }

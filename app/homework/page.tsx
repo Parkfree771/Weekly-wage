@@ -135,9 +135,6 @@ export default function HomeworkPage() {
           <h1 style={{ fontSize: 'clamp(1.35rem, 3vw, 1.7rem)', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
             일일/주간 숙제 정리
           </h1>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.4rem 0 0' }}>
-            레이드 제외 · 레벨과 기간을 고르면 균열 · 가토 · 카게 · 필보 · 모래시계 재화가 한눈에
-          </p>
         </div>
 
         {/* 컨트롤 */}
