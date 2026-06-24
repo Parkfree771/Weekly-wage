@@ -139,16 +139,28 @@ export function calcTotals(
 export type PassTier = 'free' | 'premium' | 'super';
 
 /**
- * 티어별 가치.
- *  - free  : 택1(달성) 가치 — 무료라 가격 비교 대상 아님
- *  - premium: 프리미엄 보상만 (택1 제외) → 프리미엄 가격과 비교
- *  - super : 프리미엄 + 슈퍼 보상 (택1 제외) → 슈퍼 가격과 비교
- *  택1은 무료로 받으므로 유료 티어 가치에서 제외한다.
+ * 티어별 "총 획득 가치" (표시용 — 택1 포함).
+ *  free=달성, premium=달성+프리미엄, super=달성+프리미엄+슈퍼
  */
 export function tierValue(totals: TierTotals, tier: PassTier): number {
   switch (tier) {
     case 'free':
       return totals.achievement;
+    case 'premium':
+      return totals.achievement + totals.premium;
+    case 'super':
+      return totals.achievement + totals.premium + totals.superPremium;
+  }
+}
+
+/**
+ * 티어별 "유료 보상 가치" (효율/이득률 계산용 — 무료 택1 제외).
+ *  premium=프리미엄, super=프리미엄+슈퍼 → 패스 가격과 비교
+ */
+export function tierPaidValue(totals: TierTotals, tier: PassTier): number {
+  switch (tier) {
+    case 'free':
+      return 0;
     case 'premium':
       return totals.premium;
     case 'super':

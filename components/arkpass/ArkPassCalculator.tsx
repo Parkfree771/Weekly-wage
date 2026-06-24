@@ -10,6 +10,7 @@ import {
   calcTotals,
   selectedAchievement,
   tierValue,
+  tierPaidValue,
   type PassTier,
   type PriceCtx,
 } from '@/lib/arkpass-calc';
@@ -61,9 +62,13 @@ export default function ArkPassCalculator() {
     [choices, prices, ctx]
   );
 
+  // 표시용 총 획득 가치 (택1 포함)
   const freeValue = tierValue(totals, 'free');
   const premiumValue = tierValue(totals, 'premium');
   const superValue = tierValue(totals, 'super');
+  // 이득률 계산용 유료 보상 가치 (무료 택1 제외)
+  const premiumPaid = tierPaidValue(totals, 'premium');
+  const superPaid = tierPaidValue(totals, 'super');
 
   // 패키지 효율과 동일한 이득률(%) 계산
   // goldPerWon = 1원당 골드, 가격(원)을 골드로 환산해 보상 골드와 비교
@@ -76,17 +81,18 @@ export default function ArkPassCalculator() {
     return ((value - cashGold) / cashGold) * 100;
   }
 
-  // 티어 비교 행 데이터
+  // 티어 비교 행 데이터 — value=총 가치(표시), paid=유료 가치(이득률)
   const tierRows: {
     key: PassTier;
     label: string;
     value: number;
+    paid: number;
     price: number;
     benefit: number | null;
   }[] = [
-    { key: 'free', label: '무료', value: freeValue, price: 0, benefit: null },
-    { key: 'premium', label: '프리미엄', value: premiumValue, price: premiumPrice, benefit: benefitPct(premiumValue, premiumPrice) },
-    { key: 'super', label: '슈퍼 프리미엄', value: superValue, price: superPrice, benefit: benefitPct(superValue, superPrice) },
+    { key: 'free', label: '무료', value: freeValue, paid: 0, price: 0, benefit: null },
+    { key: 'premium', label: '프리미엄', value: premiumValue, paid: premiumPaid, price: premiumPrice, benefit: benefitPct(premiumPaid, premiumPrice) },
+    { key: 'super', label: '슈퍼 프리미엄', value: superValue, paid: superPaid, price: superPrice, benefit: benefitPct(superPaid, superPrice) },
   ];
 
   function pickAchievement(level: number, idx: number) {
@@ -102,9 +108,9 @@ export default function ArkPassCalculator() {
   }
 
   const selectedRow = tierRows.find((r) => r.key === tier)!;
-  // 패스 가격(원)을 환율로 골드 환산 → 보상 골드와 직접 비교
+  // 패스 가격(원)을 환율로 골드 환산 → 유료 보상 골드(택1 제외)와 비교
   const selPriceGold = selectedRow.price > 0 && goldPerWon > 0 ? Math.round(selectedRow.price * goldPerWon) : 0;
-  const selDiff = selectedRow.value - selPriceGold;
+  const selDiff = selectedRow.paid - selPriceGold;
 
   return (
     <div className={styles.layout}>
@@ -130,7 +136,7 @@ export default function ArkPassCalculator() {
             const picked = selectedAchievement(lv, choices, prices, ctx);
             const pickedIdx = picked ? lv.achievement.indexOf(picked) : -1;
             const single = lv.achievement.length === 1;
-            // 레벨별 가치 — 무료=택1, 프리미엄=프리미엄만, 슈퍼=프리미엄+슈퍼 (택1 제외)
+            // 레벨별 가치(표시) — 택1 포함: 무료=택1, 프리미엄=택1+프리미엄, 슈퍼=전부
             const achGold = picked ? rewardGold(picked, prices, ctx) ?? 0 : 0;
             const premGold = sumGold(lv.premium, prices, ctx);
             const superGold = lv.superPremium ? sumGold(lv.superPremium, prices, ctx) : 0;
@@ -138,8 +144,8 @@ export default function ArkPassCalculator() {
               tier === 'free'
                 ? achGold
                 : tier === 'premium'
-                ? premGold
-                : premGold + superGold;
+                ? achGold + premGold
+                : achGold + premGold + superGold;
             return (
               <div key={lv.level} className={`${styles.row} ${lv.special ? styles.rowSpecial : ''}`}>
                 {/* 레벨 */}
