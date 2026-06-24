@@ -1,11 +1,12 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import styles from '@/app/arkpass/arkpass.module.css';
 import { fetchPriceData } from '@/lib/price-history-client';
-import { ARKPASS_LEVELS, ARKPASS_PRICE, type Reward } from '@/data/arkpass';
+import { ARKPASS_LEVELS, ARKPASS_PRICE, type Reward, type BoxContents } from '@/data/arkpass';
 import {
   rewardGold,
+  sumGold,
   calcTotals,
   selectedAchievement,
   tierValue,
@@ -18,6 +19,12 @@ const CATEGORY_LABEL: Record<string, string> = {
   wallpaper: '벽지',
 };
 
+const BOX_MODE_LABEL: Record<string, string> = {
+  select: '아래 중 1종 선택',
+  include: '포함 구성품',
+  random: '랜덤 구성품',
+};
+
 const TIER_META: { key: PassTier; label: string; sub: string }[] = [
   { key: 'free', label: '무료', sub: '달성 보상' },
   { key: 'premium', label: '프리미엄', sub: '달성 + 프리미엄' },
@@ -28,8 +35,8 @@ export default function ArkPassCalculator() {
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [tier, setTier] = useState<PassTier>('premium');
   const [choices, setChoices] = useState<Record<number, number>>({});
-  // 환율: 100골드 = N원 (패키지 효율 계산과 동일)
-  const [wonPer100Gold, setWonPer100Gold] = useState<number>(15);
+  // 환율: 100골드 = N원 (패키지 등록 페이지 "엄거래 100골드:N원"과 동일) — 기본 100:16
+  const [wonPer100Gold, setWonPer100Gold] = useState<number>(16);
 
   // 100블루크리스탈 = 2750원(왕실) 기준 → 블루크리스탈 골드 환산율(100블크 = N골드)
   const exchangeRate = wonPer100Gold > 0 ? Math.round((2750 / wonPer100Gold) * 100) : 0;
@@ -44,7 +51,10 @@ export default function ArkPassCalculator() {
       .catch(() => {});
   }, []);
 
-  const ctx = useMemo(() => ({ exchangeRate }), [exchangeRate]);
+  const ctx = useMemo(
+    () => ({ exchangeRate, goldPerWon: wonPer100Gold > 0 ? 100 / wonPer100Gold : 0 }),
+    [exchangeRate, wonPer100Gold]
+  );
 
   const totals = useMemo(
     () => calcTotals(ARKPASS_LEVELS, choices, prices, ctx),
@@ -120,6 +130,16 @@ export default function ArkPassCalculator() {
             const picked = selectedAchievement(lv, choices, prices, ctx);
             const pickedIdx = picked ? lv.achievement.indexOf(picked) : -1;
             const single = lv.achievement.length === 1;
+            // 레벨별 가치 — 무료=택1, 프리미엄=프리미엄만, 슈퍼=프리미엄+슈퍼 (택1 제외)
+            const achGold = picked ? rewardGold(picked, prices, ctx) ?? 0 : 0;
+            const premGold = sumGold(lv.premium, prices, ctx);
+            const superGold = lv.superPremium ? sumGold(lv.superPremium, prices, ctx) : 0;
+            const levelGold =
+              tier === 'free'
+                ? achGold
+                : tier === 'premium'
+                ? premGold
+                : premGold + superGold;
             return (
               <div key={lv.level} className={`${styles.row} ${lv.special ? styles.rowSpecial : ''}`}>
                 {/* 레벨 */}
@@ -178,9 +198,46 @@ export default function ArkPassCalculator() {
                     )}
                   </div>
                 </div>
+
+                {/* 레벨 가치 (선택 티어 기준 누적) */}
+                <div className={`${styles.colResult} ${styles.section}`}>
+                  <div className={styles.secLabel} data-k="result">레벨 가치</div>
+                  <div className={styles.resultBox}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/gold.webp" alt="" className={styles.resultIcon} />
+                    <span className={styles.resultVal}>{levelGold.toLocaleString()}</span>
+                  </div>
+                </div>
               </div>
             );
           })}
+
+          {/* 합계 행 — 열별 총합 + 선택 티어 총합 */}
+          <div className={`${styles.row} ${styles.rowTotal}`}>
+            <div className={styles.colLevel}>
+              <div className={styles.totalBadge}>합계</div>
+            </div>
+            <div className={`${styles.colAchieve} ${styles.section} ${styles.totalCell}`}>
+              <span className={styles.totalLabel}>택1(무료) 선택 합</span>
+              <span className={styles.totalVal}>{totals.achievement.toLocaleString()} G</span>
+            </div>
+            <div className={`${styles.colPremium} ${styles.section} ${styles.totalCell}`}>
+              <span className={styles.totalLabel}>프리미엄 합</span>
+              <span className={styles.totalVal}>{totals.premium.toLocaleString()} G</span>
+            </div>
+            <div className={`${styles.colSuper} ${styles.section} ${styles.totalCell}`}>
+              <span className={styles.totalLabel}>슈퍼 합</span>
+              <span className={styles.totalVal}>{totals.superPremium.toLocaleString()} G</span>
+            </div>
+            <div className={`${styles.colResult} ${styles.section} ${styles.totalCell}`}>
+              <span className={styles.totalLabel}>
+                {tier === 'free' ? '무료' : tier === 'premium' ? '프리미엄' : '슈퍼'} 총합
+              </span>
+              <span className={`${styles.totalVal} ${styles.totalGrand}`}>
+                {selectedRow.value.toLocaleString()} G
+              </span>
+            </div>
+          </div>
         </div>
 
         <p className={styles.fillNote}>
@@ -312,12 +369,6 @@ export default function ArkPassCalculator() {
               <span className={styles.breakVal}>+{totals.superPremium.toLocaleString()} G</span>
             </div>
           </div>
-
-          {/* 임시 데이터 안내 (하단) */}
-          <div className={styles.tempNotice}>
-            <strong>※ 이 데이터는 임시입니다</strong>
-            <span>지난 시즌 표 기반으로, 정식 데이터로 교체 예정입니다. 실제 보상·가격과 다릅니다.</span>
-          </div>
         </div>
       </aside>
     </div>
@@ -338,46 +389,56 @@ function RewardTile({
   const catLabel = reward.category ? CATEGORY_LABEL[reward.category] : undefined;
   const isAvatar = reward.category === 'avatar';
 
-  // 선택 상자: 옵션 이미지들을 나란히 + 택1 배지
-  if (reward.choices && reward.choices.length > 0) {
-    return (
-      <span className={styles.tile}>
-        <span className={styles.tileChoiceRow}>
-          {reward.choices.map((opt, i) => (
-            <Fragment key={i}>
-              {i > 0 && <span className={styles.tileChoiceSep}>/</span>}
-              <span className={styles.tileImg}>
-                {opt.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={opt.image} alt="" />
-                ) : (
-                  <span className={styles.tilePlaceholder} />
-                )}
-                {opt.qty > 1 && <span className={styles.tileQty}>×{opt.qty.toLocaleString()}</span>}
-              </span>
-            </Fragment>
-          ))}
-        </span>
-        <span className={styles.tileName}>
-          {reward.name}
-          {reward.qty > 1 ? ` ×${reward.qty}` : ''}
-          <span className={styles.choiceBadge}>택1</span>
-        </span>
-        {gold != null ? (
-          <span className={styles.tileGold}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/gold.webp" alt="" />
-            {gold.toLocaleString()}
-          </span>
-        ) : (
-          <span className={styles.tileCat}>{catLabel || '가치 미산정'}</span>
-        )}
-      </span>
+  // 호버 구성품:
+  //  - contents 가 있으면 정보형(확률/수량/귀속/안내문) 표시
+  //  - 없고 choices 가 있으면 시세형(옵션별 골드 + 자동 최고가) 표시
+  const infoBox: BoxContents | undefined = reward.contents;
+  const pricedChoices =
+    !infoBox && reward.choices && reward.choices.length > 0 ? reward.choices : null;
+  const choiceGolds = pricedChoices ? pricedChoices.map((c) => rewardGold(c, prices, ctx)) : null;
+  let maxIdx = -1;
+  if (choiceGolds) {
+    let best = -Infinity;
+    choiceGolds.forEach((v, i) => {
+      const g = v ?? -1;
+      if (g > best) {
+        best = g;
+        maxIdx = i;
+      }
+    });
+  }
+  const singleChoice = !!pricedChoices && pricedChoices.length === 1;
+  const showHead = !!pricedChoices || (!!infoBox && infoBox.items.length > 0);
+  const hasTip = !!(infoBox || pricedChoices);
+
+  const ref = useRef<HTMLSpanElement>(null);
+  // 호버 툴팁 위치 — overflow:hidden 컨테이너를 벗어나도록 position:fixed
+  const [tip, setTip] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
+
+  function showTip() {
+    const el = ref.current;
+    if (!el) return;
+    const rc = el.getBoundingClientRect();
+    const W = 360;
+    const left = Math.max(8, Math.min(rc.left + rc.width / 2 - W / 2, window.innerWidth - W - 8));
+    const enoughAbove = rc.top > 280;
+    setTip(
+      enoughAbove
+        ? { left, bottom: window.innerHeight - rc.top + 8 }
+        : { left, top: rc.bottom + 8 }
     );
+  }
+  function hideTip() {
+    setTip(null);
   }
 
   return (
-    <span className={`${styles.tile} ${isAvatar ? styles.tileAvatar : ''}`}>
+    <span
+      ref={ref}
+      className={`${styles.tile} ${isAvatar ? styles.tileAvatar : ''} ${hasTip ? styles.tileBox : ''}`}
+      onMouseEnter={hasTip ? showTip : undefined}
+      onMouseLeave={hasTip ? hideTip : undefined}
+    >
       <span
         className={`${styles.tileImg} ${isAvatar ? styles.tileImgWide : ''} ${(reward.category && styles[`cat_${reward.category}`]) || ''}`}
       >
@@ -392,6 +453,7 @@ function RewardTile({
           <span className={styles.tilePlaceholder} />
         )}
         {reward.qty > 1 && <span className={styles.tileQty}>×{reward.qty.toLocaleString()}</span>}
+        {hasTip && <span className={styles.boxFlag}>구성품</span>}
       </span>
       <span className={styles.tileName}>{reward.name}</span>
       {gold != null ? (
@@ -399,9 +461,87 @@ function RewardTile({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/gold.webp" alt="" />
           {gold.toLocaleString()}
+          {reward.bonusGold ? (
+            <span className={styles.bonusChip}>가공 +{reward.bonusGold.toLocaleString()}</span>
+          ) : null}
         </span>
       ) : (
         <span className={styles.tileCat}>{catLabel || '가치 미산정'}</span>
+      )}
+
+      {hasTip && tip && (
+        <span
+          className={styles.boxTip}
+          style={{ left: tip.left, top: tip.top, bottom: tip.bottom }}
+          role="tooltip"
+        >
+          {showHead && (
+            <span className={styles.boxTipHead}>
+              {pricedChoices
+                ? singleChoice
+                  ? '포함 구성품'
+                  : `${pricedChoices.length}종 중 자동 최고가 선택`
+                : BOX_MODE_LABEL[infoBox!.mode]}
+            </span>
+          )}
+          {infoBox?.note && <span className={styles.boxTipNote}>{infoBox.note}</span>}
+
+          {/* 시세형 (옵션별 수량 × 시세 + 최고가 강조) */}
+          {pricedChoices && (
+            <span className={styles.boxTipList}>
+              {pricedChoices.map((c, i) => {
+                const g = choiceGolds![i];
+                const isTop = !singleChoice && i === maxIdx;
+                return (
+                  <span
+                    key={i}
+                    className={`${styles.boxTipItem} ${isTop ? styles.boxTipItemTop : ''}`}
+                  >
+                    {c.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={c.image} alt="" className={styles.boxTipImg} />
+                    ) : (
+                      <span className={styles.boxTipDot} />
+                    )}
+                    <span className={styles.boxTipName}>
+                      {c.name}
+                      {c.bound && <em className={styles.boxTipBound}>귀속</em>}
+                      {isTop && <em className={styles.boxTipPick}>최고가</em>}
+                    </span>
+                    {c.qty > 1 && <span className={styles.boxTipQty}>×{c.qty.toLocaleString()}</span>}
+                    <span className={styles.boxTipPrice}>
+                      {g != null ? `${g.toLocaleString()} G` : '-'}
+                    </span>
+                  </span>
+                );
+              })}
+            </span>
+          )}
+
+          {/* 정보형 (확률/수량/귀속) */}
+          {infoBox && infoBox.items.length > 0 && (
+            <span className={styles.boxTipList}>
+              {infoBox.items.map((it, i) => (
+                <span key={i} className={styles.boxTipItem}>
+                  {it.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={it.image} alt="" className={styles.boxTipImg} />
+                  ) : (
+                    <span className={styles.boxTipDot} />
+                  )}
+                  <span className={styles.boxTipName}>
+                    {it.name}
+                    {it.bound && <em className={styles.boxTipBound}>귀속</em>}
+                  </span>
+                  {it.prob != null && <span className={styles.boxTipProb}>{it.prob}%</span>}
+                  {it.qty && it.qty > 1 && (
+                    <span className={styles.boxTipQty}>×{it.qty.toLocaleString()}</span>
+                  )}
+                </span>
+              ))}
+            </span>
+          )}
+        </span>
       )}
     </span>
   );
