@@ -78,8 +78,8 @@ const ALL_RAIDS = [
     level: 1710,
     image: '/cerka.webp',
     gates: [
-      { gate: 1, gold: 12800, boundGold: 6400, moreGold: 4480 },
-      { gate: 2, gold: 19200, boundGold: 9600, moreGold: 6720 },
+      { gate: 1, gold: 13000, boundGold: 6500, moreGold: 4480 },
+      { gate: 2, gold: 19000, boundGold: 9500, moreGold: 6720 },
     ],
   },
   {
@@ -87,8 +87,8 @@ const ALL_RAIDS = [
     level: 1730,
     image: '/abrelshud.webp',
     gates: [
-      { gate: 1, gold: 15692, boundGold: 0, moreGold: 5440 },
-      { gate: 2, gold: 32308, boundGold: 0, moreGold: 11200 },
+      { gate: 1, gold: 16000, boundGold: 0, moreGold: 5440 },
+      { gate: 2, gold: 32000, boundGold: 0, moreGold: 11200 },
     ],
   },
   {
@@ -96,8 +96,8 @@ const ALL_RAIDS = [
     level: 1710,
     image: '/abrelshud.webp',
     gates: [
-      { gate: 1, gold: 11200, boundGold: 5600, moreGold: 4480 },
-      { gate: 2, gold: 20800, boundGold: 10400, moreGold: 8320 },
+      { gate: 1, gold: 11000, boundGold: 5500, moreGold: 4480 },
+      { gate: 2, gold: 21000, boundGold: 10500, moreGold: 8320 },
     ],
   },
   {
@@ -105,8 +105,8 @@ const ALL_RAIDS = [
     level: 1720,
     image: '/illiakan.webp',
     gates: [
-      { gate: 1, gold: 13571, boundGold: 0, moreGold: 4800 },
-      { gate: 2, gold: 24429, boundGold: 0, moreGold: 8640 },
+      { gate: 1, gold: 13500, boundGold: 0, moreGold: 4800 },
+      { gate: 2, gold: 24500, boundGold: 0, moreGold: 8640 },
     ],
   },
   {
@@ -114,8 +114,8 @@ const ALL_RAIDS = [
     level: 1700,
     image: '/illiakan.webp',
     gates: [
-      { gate: 1, gold: 10228, boundGold: 5114, moreGold: 4000 },
-      { gate: 2, gold: 16772, boundGold: 8386, moreGold: 6500 },
+      { gate: 1, gold: 10000, boundGold: 5000, moreGold: 4000 },
+      { gate: 2, gold: 17000, boundGold: 8500, moreGold: 6500 },
     ],
   },
   {
