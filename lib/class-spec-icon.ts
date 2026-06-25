@@ -39,7 +39,8 @@ const SPEC_RULES: Record<string, SpecRule> = {
   // 마법사
   '바드':         { sig: '절실한 구원',      withId: '바드 절구',      elseId: '바드 진용' },
   '서머너':       { sig: '상급 소환사',      withId: '서머너 상소',    elseId: '서머너 교감' },
-  '아르카나':     { sig: '황제',            withId: '알카 황제',      elseId: '알카 황후' },
+  // sig는 '황제'(부분일치)면 황후 트리의 "황제의 자비" 노드에도 걸려 오분류됨 → 황제 전용 노드로 한정
+  '아르카나':     { sig: '황제의 칙령',      withId: '알카 황제',      elseId: '알카 황후' },
   '소서리스':     { sig: '점화',            withId: '소서 점화',      elseId: '소서 환류' },
   // 암살자
   '데모닉':       { sig: '멈출 수 없는 충동', withId: '데모닉 충동',    elseId: '데모닉 억제' },

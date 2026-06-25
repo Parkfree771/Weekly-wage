@@ -59,6 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/character', label: '캐릭터 조회' },
       { href: '/tier', label: '직업 티어표' },
+      { href: '/engraving', label: '직업별 각인', badge: 'NEW' },
     ],
   },
 ];
@@ -101,7 +102,8 @@ export default function Navbar() {
                       href === '/cerka' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
                       href === '/character' ? 'nav-character' :
-                      href === '/tier' ? 'nav-character' : 'nav-weekly';
+                      href === '/tier' ? 'nav-character' :
+                      href === '/engraving' ? 'nav-character' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();
   };

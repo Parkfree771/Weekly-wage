@@ -1,0 +1,374 @@
+.wrap {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+/* ── 헤더 ── */
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+
+.title {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.countBadge {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border-radius: 999px;
+  padding: 0.15rem 0.65rem;
+}
+
+/* ── 검색 ── */
+.searchRow {
+  position: relative;
+  max-width: 380px;
+  margin-bottom: 0.9rem;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-disabled);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.6rem 2.1rem 0.6rem 2.2rem;
+  outline: none;
+  transition: border-color 0.12s ease;
+}
+
+.searchInput:focus {
+  border-color: var(--color-primary);
+}
+
+.searchInput::placeholder {
+  color: var(--text-disabled);
+}
+
+.searchClear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.searchClear:hover {
+  color: var(--text-primary);
+  background: var(--color-primary-light);
+}
+
+/* ── 직업군 버튼 ── */
+.groupBtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.3rem;
+}
+
+/* 역할 행은 바로 아래 직업군 행과 묶이도록 간격 축소 */
+.roleRow {
+  margin-bottom: 0.5rem;
+}
+
+.groupBtn {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  padding: 0.42rem 0.85rem;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.groupBtn:hover {
+  border-color: var(--color-primary);
+  color: var(--text-primary);
+}
+
+.groupBtnActive {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.groupBtnActive:hover {
+  color: #fff;
+}
+
+/* ── 각인 필터 ── */
+.filterBlock {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.6rem;
+}
+
+.filterHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.legend {
+  display: flex;
+  gap: 0.9rem;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.legendDot {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dotInc {
+  background: var(--color-primary);
+}
+
+.dotExc {
+  background: var(--loss-color);
+}
+
+.resetBtn {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+.resetBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--color-primary);
+}
+
+.chipPool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary, transparent);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 0.42rem 0.95rem 0.42rem 0.6rem;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.chip:hover {
+  border-color: var(--color-primary);
+  color: var(--text-primary);
+}
+
+.chipInc {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.chipInc:hover {
+  color: #fff;
+}
+
+.chipExc {
+  color: #fff;
+  background: var(--loss-color);
+  border-color: var(--loss-color);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.chipExc:hover {
+  color: #fff;
+  border-color: var(--loss-color);
+}
+
+/* ── 결과 그리드 ── */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+  gap: 0.75rem;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 13px;
+  padding: 0.9rem 0.95rem;
+  transition: border-color 0.12s ease, transform 0.12s ease;
+}
+
+.card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.7rem;
+}
+
+.cardName {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.statBadge {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--color-primary);
+  border-radius: 6px;
+  padding: 0.14rem 0.46rem;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.badgeRow {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--color-primary-light);
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 0.4rem 0.6rem 0.4rem 0.42rem;
+}
+
+/* 유저마다 갈리는 슬롯('A or B') — 한 칸, 점선으로 가변임을 표시 */
+.orBadge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.1rem;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--color-primary-light);
+  border: 1px dashed var(--border-color);
+  border-radius: 9px;
+  padding: 0.4rem 0.6rem 0.4rem 0.42rem;
+}
+
+.engItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.engName {
+  white-space: nowrap;
+}
+
+.orSep {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin: 0 0.4rem;
+}
+
+.badgeIcon {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.chipIcon {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 5px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.badgeHit {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  padding: 2.5rem 0;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .title {
+    font-size: 1.5rem;
+  }
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+}
