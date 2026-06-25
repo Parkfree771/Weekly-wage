@@ -271,10 +271,10 @@ export default function ArkPassCalculator() {
             <div className={styles.effMain}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/gold.webp" alt="" className={styles.effGoldIcon} />
-              <span className={styles.effBig}>{selectedRow.value.toLocaleString()}</span>
+              <span className={styles.effBig}>{(tier === 'free' ? selectedRow.value : selectedRow.paid).toLocaleString()}</span>
               <span className={styles.effBigUnit}>G</span>
             </div>
-            <div className={styles.effSubLabel}>총 보상 골드 가치</div>
+            <div className={styles.effSubLabel}>{tier === 'free' ? '보상 골드 가치' : '유료 보상 가치 (무료 제외)'}</div>
             <div className={styles.effCompare}>
               <div className={styles.effCmpRow}>
                 <span className={styles.effCmpKey}>패스 가격</span>
@@ -343,7 +343,7 @@ export default function ArkPassCalculator() {
                 <span className={styles.cmpVal}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/gold.webp" alt="" className={styles.cmpGoldIcon} />
-                  {row.value.toLocaleString()}
+                  {(row.key === 'free' ? row.value : row.paid).toLocaleString()}
                 </span>
                 <span className={styles.cmpPrice}>{row.price > 0 ? `${row.price.toLocaleString()}원` : '무료'}</span>
                 <span className={`${styles.cmpEff} ${row.benefit != null ? (row.benefit >= 0 ? styles.pos : styles.neg) : ''}`}>

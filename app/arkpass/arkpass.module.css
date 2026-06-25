@@ -4,12 +4,9 @@
    ======================================== */
 
 .layout {
-  display: flex;
-  gap: 2.6rem;
-  /* 전체 레이아웃을 살짝 오른쪽으로 (히어로 이미지 라인과 정렬) */
-  margin-left: 3.5rem;
-  /* stretch: 사이드바가 본문 높이만큼 늘어나야 내부 sticky 가 스크롤을 따라 내려옴 */
-  align-items: stretch;
+  /* 메인 표는 히어로(760px)와 같은 가운데 라인에 맞추고,
+     사이드바는 그 오른쪽으로 절대배치해 튀어나오게 한다. */
+  position: relative;
 }
 
 /* 테마 컬러 — 사이트 표준 팔레트(브랜드 블루 + 액센트 오렌지)에 매핑.
@@ -27,7 +24,9 @@
 }
 
 .main {
-  flex: 1;
+  /* 오른쪽 끝만 히어로 오른쪽(50% + 380px)에 맞추고, 왼쪽은 넓게 튀어나오게(레이아웃 확보) */
+  margin-left: 0;
+  margin-right: calc(50% - 380px);
   min-width: 0;
 }
 
@@ -46,7 +45,7 @@
   width: 100%;
   max-width: 760px;
   height: clamp(150px, 26vw, 215px);
-  margin: 0 auto 1.4rem;
+  margin: 0 auto 1.4rem; /* 가운데 정렬 (기준선) */
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--border-color);
@@ -168,7 +167,7 @@
 /* ===== 행 (4열 그리드) — 하나의 큰 박스, 행/열을 선으로 분리 ===== */
 .row {
   display: grid;
-  grid-template-columns: 58px minmax(0, 2.2fr) minmax(0, 1.15fr) minmax(0, 1.15fr) 104px;
+  grid-template-columns: 58px minmax(0, 2.1fr) minmax(0, 1.1fr) minmax(0, 1.1fr) 150px;
   gap: 0.8rem;
   align-items: stretch;
 }
@@ -301,18 +300,18 @@
 }
 
 .resultIcon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .resultVal {
-  font-size: 1.02rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--ap-gold);
   line-height: 1.15;
-  word-break: break-all;
+  white-space: nowrap;
 }
 
 /* ===== 합계 행 ===== */
@@ -355,11 +354,11 @@
   font-size: 1.05rem;
   font-weight: 800;
   color: var(--ap-gold);
-  word-break: break-all;
+  white-space: nowrap;
 }
 
 .totalGrand {
-  font-size: 1.18rem;
+  font-size: 1.32rem;
 }
 
 .secPick {
@@ -848,8 +847,13 @@
    사이드바 (스크롤 따라옴)
    ======================================== */
 .sidebar {
+  /* 가운데 정렬된 메인(760px)의 오른쪽 끝(50% + 380px) + 간격(2.6rem)에서 시작해 오른쪽으로 튀어나옴.
+     top/bottom 0 으로 본문 높이만큼 늘려 내부 sticky 동작 유지. */
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% + 380px + 2.6rem);
   width: 420px;
-  flex-shrink: 0;
 }
 
 .sideInner {
@@ -1227,12 +1231,21 @@
 /* 그리드(중앙정렬) 미적용 폭에서는 사이드바를 위로 쌓아 크게 노출 */
 /* 좁은 화면: 세로로 쌓고 사이드바를 위로(효율 결과·환율 먼저). sticky 해제 */
 @media (max-width: 1024px) {
+  /* 좁은 화면: 세로로 쌓고(효율 카드 위), 절대배치·가운데정렬 해제 */
   .layout {
+    position: static;
+    display: flex;
     flex-direction: column;
-    margin-left: 0;
+  }
+
+  .main {
+    max-width: none;
+    margin: 0;
   }
 
   .sidebar {
+    position: static;
+    inset: auto;
     width: 100%;
     order: -1;
   }
