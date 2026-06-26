@@ -6,6 +6,7 @@ import {
   saveNewbieRecs,
 } from '@/lib/newbie-server';
 import { TIER_CLASSES } from '@/lib/tier-data';
+import { purgeNewbieRecCdn } from '@/lib/purge-cdn';
 
 const META = new Map(TIER_CLASSES.map((c) => [c.id, c]));
 const TOP_N = 10;
@@ -27,11 +28,14 @@ export async function GET() {
       .filter((x): x is NonNullable<typeof x> => x !== null)
       .slice(0, TOP_N);
 
+    // CDN(엣지) 캐시로 방문마다 DB를 치지 않게 함. 랭킹은 투표가 있을 때만 바뀌므로
+    // 길게 캐시하고, 투표 저장 시 'newbie-rec' 태그를 퍼지해 즉시 갱신한다.
     return new NextResponse(JSON.stringify({ ranking, total }), {
       status: 200,
       headers: {
         'content-type': 'application/json',
-        'cache-control': 'public, s-maxage=30, stale-while-revalidate=120',
+        'cache-control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Netlify-Cache-Tag': 'newbie-rec',
       },
     });
   } catch {
@@ -60,6 +64,8 @@ export async function POST(request: Request) {
 
   try {
     const count = await saveNewbieRecs(uid, classIds as string[]);
+    // 랭킹 CDN 캐시 즉시 무효화 → 다음 조회부터 갱신본 반영
+    await purgeNewbieRecCdn();
     return NextResponse.json({ ok: true, count });
   } catch (e: any) {
     return NextResponse.json(

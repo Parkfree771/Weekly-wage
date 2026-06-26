@@ -26,9 +26,11 @@ export function useNewbieRec() {
   // 내가 이미 저장해 둔 추천 (있으면 "수정하기"로 표시)
   const [myPicks, setMyPicks] = useState<string[]>([]);
 
-  const refreshRanking = useCallback(async () => {
+  // fresh=true면 캐시 우회(투표 직후 즉시 반영용). 기본은 CDN 캐시 사용(방문당 DB 미조회).
+  const refreshRanking = useCallback(async (fresh = false) => {
     try {
-      const res = await fetch('/api/newbie-rec', { cache: 'no-store' });
+      const url = fresh ? `/api/newbie-rec?ts=${Date.now()}` : '/api/newbie-rec';
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setRanking(data.ranking || []);
@@ -141,7 +143,7 @@ export function useNewbieRec() {
         setVotingMode(false);
         setDone(true);
         setMyPicks([...selected]); // 다음부터 "수정하기"로 표시
-        await refreshRanking();
+        await refreshRanking(true); // 내 투표 즉시 반영 (캐시 우회)
       }
     } catch {
       /* 무시 — 버튼 다시 누르면 재시도 */

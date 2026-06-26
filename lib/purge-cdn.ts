@@ -9,3 +9,13 @@ export async function purgeTierStatsCdn(): Promise<void> {
     /* 로컬/비-Netlify: 무시 — DB 스냅샷 캐시는 이미 무효화됨 */
   }
 }
+
+// 뉴비 추천 랭킹 CDN 캐시(태그: newbie-rec)만 퍼지. best-effort.
+export async function purgeNewbieRecCdn(): Promise<void> {
+  try {
+    const { purgeCache } = await import('@netlify/functions');
+    await purgeCache({ tags: ['newbie-rec'] });
+  } catch {
+    /* 로컬/비-Netlify: 무시 */
+  }
+}
