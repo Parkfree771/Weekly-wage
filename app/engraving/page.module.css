@@ -2,6 +2,8 @@
   max-width: 1140px;
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
+  /* 뉴비 추천 사이드바(절대위치)의 기준 컨테이너 */
+  position: relative;
 }
 
 /* ── 헤더 ── */
@@ -239,14 +241,20 @@
   border-color: var(--loss-color);
 }
 
+/* ── 결과 영역 (뉴비 추천 사이드바의 기준 컨테이너) ── */
+.results {
+  position: relative;
+}
+
 /* ── 결과 그리드 ── */
 .cardGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 0.85rem;
 }
 
 .card {
+  position: relative;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 13px;
@@ -259,6 +267,52 @@
   transform: translateY(-2px);
 }
 
+/* ── 뉴비 추천 투표 모드 ── */
+/* 투표 중: 비활성처럼 보이지 않게 평소 카드 그대로 두고,
+   '고를 수 있음'은 우상단 체크박스로 표시 (선택은 카드 클릭) */
+.cardSelectable {
+  cursor: pointer;
+  /* 체크박스 자리 확보 — 직업명이 동그라미와 겹치지 않게 */
+  padding-right: 2.6rem;
+}
+
+.cardSelectable:hover {
+  transform: none;
+  border-color: var(--color-primary);
+}
+
+/* 선택됨: 메인 컬러 테두리 + 연한 배경으로 확실히 '켜짐' 표시 */
+.cardSelected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+
+.cardCheck {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  background: var(--card-bg);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+/* 선택 가능 상태에서 카드에 호버하면 체크박스도 메인 컬러로 반응 */
+.cardSelectable:hover .cardCheck {
+  border-color: var(--color-primary);
+}
+
+.cardSelected .cardCheck {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+
 .cardHead {
   display: flex;
   align-items: center;
@@ -269,18 +323,18 @@
 .cardName {
   flex: 1;
   min-width: 0;
-  font-size: 1.02rem;
+  font-size: 1.14rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .statBadge {
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   font-weight: 800;
   color: #fff;
   background: var(--color-primary);
   border-radius: 6px;
-  padding: 0.14rem 0.46rem;
+  padding: 0.16rem 0.5rem;
   white-space: nowrap;
   letter-spacing: 0.02em;
 }
@@ -295,13 +349,13 @@
 .badge {
   display: flex;
   align-items: center;
-  font-size: 0.98rem;
+  font-size: 1.06rem;
   font-weight: 600;
   color: var(--text-primary);
   background: var(--color-primary-light);
   border: 1px solid transparent;
   border-radius: 9px;
-  padding: 0.4rem 0.6rem 0.4rem 0.42rem;
+  padding: 0.46rem 0.66rem 0.46rem 0.46rem;
 }
 
 /* 유저마다 갈리는 슬롯('A or B') — 한 칸, 점선으로 가변임을 표시 */
@@ -310,13 +364,13 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.1rem;
-  font-size: 0.98rem;
+  font-size: 1.06rem;
   font-weight: 600;
   color: var(--text-primary);
   background: var(--color-primary-light);
   border: 1px dashed var(--border-color);
   border-radius: 9px;
-  padding: 0.4rem 0.6rem 0.4rem 0.42rem;
+  padding: 0.46rem 0.66rem 0.46rem 0.46rem;
 }
 
 .engItem {
@@ -330,15 +384,15 @@
 }
 
 .orSep {
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: var(--text-muted);
   margin: 0 0.4rem;
 }
 
 .badgeIcon {
-  width: 1.7rem;
-  height: 1.7rem;
+  width: 1.9rem;
+  height: 1.9rem;
   border-radius: 6px;
   object-fit: cover;
   flex-shrink: 0;

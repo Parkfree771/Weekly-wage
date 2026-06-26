@@ -32,8 +32,8 @@ function getPageConfig(pathname: string): PageConfig {
 const AD_EXTRA = 456;
 
 // 좌우 사이드 레일 전체 비활성화 스위치 (재활용용).
-// 현재: 로아온 종료 → 아크패스 효율 배너로 교체하여 노출.
-const SIDE_RAILS_DISABLED = false;
+// 현재: 창공의 안내자(아크패스) 배너 노출 종료 → 사이드 레일 전체 OFF.
+const SIDE_RAILS_DISABLED = true;
 
 export default function AdLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

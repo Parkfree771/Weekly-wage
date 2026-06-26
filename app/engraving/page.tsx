@@ -6,6 +6,8 @@ import { ENGRAVING_BUILDS, type EngravingBuild } from '@/lib/engraving-builds.ge
 import { ENGRAVING_OVERRIDES } from '@/lib/engraving-overrides';
 import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import ClassIcon from '@/components/tier/ClassIcon';
+import { useNewbieRec } from '@/components/newbie/useNewbieRec';
+import NewbieRecSidebar from '@/components/newbie/NewbieRecSidebar';
 import styles from './page.module.css';
 
 // 딜러 스펙이지만 표본 대부분이 서포터 각인이라 의미 없음 → 페이지에서 숨김
@@ -83,7 +85,7 @@ const SHORT_NAME: Record<string, string> = {
   '정기 흡수': '정흡',
   '중갑 착용': '중갑',
   '폭발물 전문가': '폭전',
-  '구슬동자': '구슬',
+  '구슬동자': '구동',
 };
 const label = (n: string) => SHORT_NAME[n] ?? n;
 
@@ -95,6 +97,9 @@ export default function EngravingPage() {
   const [group, setGroup] = useState<string>('전체');
   // 각인명 → 'include'(이 각인 쓰는 직업) | 'exclude'(안 쓰는 직업)
   const [filters, setFilters] = useState<Record<string, FilterState>>({});
+
+  // 뉴비 추천 직업 투표 (사이드바 + 카드 선택 연동)
+  const nr = useNewbieRec();
 
   const term = search.trim();
 
@@ -228,18 +233,41 @@ export default function EngravingPage() {
         </div>
       </div>
 
-      {/* 결과 — 가나다순 평면 그리드 */}
-      {shown.length === 0 ? (
+      {/* 결과 — 가나다순 평면 그리드 (+ 뉴비 추천 사이드바를 그리드 시작점에 정렬) */}
+      <div className={styles.results}>
+        <NewbieRecSidebar nr={nr} />
+        {shown.length === 0 ? (
         <p className={styles.empty}>조건에 맞는 직업이 없습니다.</p>
       ) : (
         <div className={styles.cardGrid}>
           {shown.map((spec) => {
             const slots = SORTED_SLOTS[spec.id];
             const stat = BUILDS[spec.id].stat;
+            const picked = nr.selected.has(spec.id);
             return (
-              <div key={spec.id} className={styles.card}>
+              <div
+                key={spec.id}
+                className={`${styles.card} ${
+                  nr.votingMode ? styles.cardSelectable : ''
+                } ${picked ? styles.cardSelected : ''}`}
+                onClick={nr.votingMode ? () => nr.toggle(spec.id) : undefined}
+                role={nr.votingMode ? 'button' : undefined}
+                aria-pressed={nr.votingMode ? picked : undefined}
+              >
+                {nr.votingMode && (
+                  <span className={styles.cardCheck} aria-hidden>
+                    {picked && (
+                      <svg viewBox="0 0 20 20" width="13" height="13">
+                        <path
+                          d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0l-3.5-3.5a1 1 0 111.4-1.4l2.8 2.79 6.8-6.79a1 1 0 011.4 0z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                )}
                 <div className={styles.cardHead}>
-                  <ClassIcon name={spec.name} src={spec.icon} size={38} />
+                  <ClassIcon name={spec.name} src={spec.icon} size={42} />
                   <span className={styles.cardName}>{spec.name}</span>
                   {stat && <span className={styles.statBadge}>{stat}</span>}
                 </div>
@@ -278,6 +306,7 @@ export default function EngravingPage() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

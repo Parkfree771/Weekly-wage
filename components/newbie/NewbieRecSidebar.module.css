@@ -1,0 +1,201 @@
+/* 절대위치 사이드바: 콘텐츠(.wrap) 오른쪽 여백에 띄움.
+   - position:absolute 라 레이아웃을 절대 밀지 않음(흐름 밖).
+   - sticky 아님 → 스크롤하면 콘텐츠와 함께 올라감(따라다니지 않음).
+   - 사이드바가 들어갈 가로 여유가 없는 폭에선 숨김(침범 방지). */
+.sidebar {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 1rem);
+  width: 250px;
+  display: none;
+}
+
+/* 사이드바(폭 250 + 좌측 갭 16)가 콘텐츠 오른쪽 여백에 온전히 들어갈 만큼
+   넓을 때만 노출 → 콘텐츠를 절대 밀거나 침범하지 않음 */
+@media (min-width: 1680px) {
+  .sidebar {
+    display: block;
+  }
+}
+
+.box {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 0.85rem 0.85rem 0.9rem;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--color-primary);
+  border-radius: 6px;
+  padding: 0.1rem 0.4rem;
+  letter-spacing: 0.02em;
+}
+
+.sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0.15rem 0 0.7rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rank {
+  width: 1.1rem;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.rankTop {
+  color: var(--color-primary);
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.count {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.empty {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 0.9rem 0;
+  text-align: center;
+}
+
+/* 투표 모드: 왼쪽 카드를 가리키는 선택 안내 (← 진하게) */
+.pickHint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 0;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pickArrow {
+  flex-shrink: 0;
+  color: var(--color-primary);
+  animation: pickNudge 0.9s ease-in-out infinite;
+}
+
+@keyframes pickNudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-5px);
+  }
+}
+
+.footer {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.primaryBtn {
+  width: 100%;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 9px;
+  padding: 0.6rem;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+
+.primaryBtn:hover {
+  opacity: 0.92;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cancelBtn {
+  width: 100%;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  padding: 0.45rem;
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--color-primary);
+}
+
+.loginBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.loginMsg {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--loss-color);
+  text-align: center;
+}
+
+.done {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-align: center;
+  margin-bottom: 0.2rem;
+}

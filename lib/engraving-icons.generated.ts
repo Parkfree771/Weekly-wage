@@ -24,4 +24,7 @@ export const ENGRAVING_ICONS: Record<string, string> = {
   "중갑 착용": "/engravings/%EC%A4%91%EA%B0%91%20%EC%B0%A9%EC%9A%A9.webp",
   "질량 증가": "/engravings/%EC%A7%88%EB%9F%89%20%EC%A6%9D%EA%B0%80.webp",
   "타격의 대가": "/engravings/%ED%83%80%EA%B2%A9%EC%9D%98%20%EB%8C%80%EA%B0%80.webp",
+  // 수동 추가: 폭발물 전문가는 샘플 빌드엔 없고 서포터 오버라이드에만 있어 생성기가 못 잡음.
+  // (public/engravings/폭발물 전문가.png 존재) — gen-engraving-icons.mjs 재실행 시 이 줄 재추가 필요.
+  "폭발물 전문가": "/engravings/%ED%8F%AD%EB%B0%9C%EB%AC%BC%20%EC%A0%84%EB%AC%B8%EA%B0%80.png",
 };
