@@ -2,24 +2,39 @@
 
 import { useMemo, useState } from 'react';
 import { TIER_CLASSES, GROUP_ORDER, roleOf } from '@/lib/tier-data';
-import { ENGRAVING_BUILDS, type EngravingBuild } from '@/lib/engraving-builds.generated';
-import { ENGRAVING_OVERRIDES } from '@/lib/engraving-overrides';
+import { ENGRAVING_BUILDS } from '@/lib/engraving-builds.generated';
+import { ENGRAVING_OVERRIDES, type EngSlot } from '@/lib/engraving-overrides';
 import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import ClassIcon from '@/components/tier/ClassIcon';
 import { useNewbieRec } from '@/components/newbie/useNewbieRec';
 import NewbieRecSidebar from '@/components/newbie/NewbieRecSidebar';
 import styles from './page.module.css';
 
-// 딜러 스펙이지만 표본 대부분이 서포터 각인이라 의미 없음 → 페이지에서 숨김
-const EXCLUDED_SPEC_IDS = new Set(['도화가 회귀', '바드 진용']);
+// 표본 부족 등으로 페이지에서 숨길 스펙 (현재 없음 — 보정 빌드로 노출)
+const EXCLUDED_SPEC_IDS = new Set<string>([]);
+
+// 성별 필터: 직업 prefix(이름 첫 토큰) 기준. 여캐만 등록, 나머지는 남캐.
+const FEMALE_PREFIXES = new Set([
+  '가나', '건슬', '기공', '기상', '데모닉', '도화가', '리퍼', '바드', '발키리',
+  '배마', '블레', '서머너', '소서', '소울', '슬레', '알카', '인파', '창술', '환수',
+]);
+const genderOf = (id: string): 'female' | 'male' =>
+  FEMALE_PREFIXES.has(id.split(' ')[0]) ? 'female' : 'male';
 
 // 표시 대상 스펙 (제외 + 빌드 없는 스펙 빼고) — 이름 가나다순 평면 정렬이 기본
 const SPECS = TIER_CLASSES.filter(
   (c) => !EXCLUDED_SPEC_IDS.has(c.id) && ENGRAVING_BUILDS[c.id]
 ).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
+// 슬롯 정규화: string[](고정/택1) 와 {pick,pool}(택N)을 한 번에 다룬다.
+const poolOf = (s: EngSlot): string[] => (Array.isArray(s) ? s : s.pool);
+const pickOf = (s: EngSlot): number => (Array.isArray(s) ? 1 : s.pick);
+const isFixed = (s: EngSlot): boolean => Array.isArray(s) && s.length === 1;
+
+type MergedBuild = { slots: EngSlot[]; stat: string; sample: number };
+
 // 생성 데이터 + 수동 보정 병합 (보정은 slots 등 일부만 덮어씀)
-const BUILDS: Record<string, EngravingBuild> = {};
+const BUILDS: Record<string, MergedBuild> = {};
 for (const s of SPECS) {
   const ov = ENGRAVING_OVERRIDES[s.id];
   BUILDS[s.id] = ov ? { ...ENGRAVING_BUILDS[s.id], ...ov } : ENGRAVING_BUILDS[s.id];
@@ -30,14 +45,14 @@ const GROUPS = GROUP_ORDER.filter((g) => SPECS.some((s) => s.group === g));
 
 // 각인 필터 풀: 모든 표시 스펙의 각인(슬롯 전체) 합집합 (가나다순)
 const ALL_ENGRAVINGS = Array.from(
-  new Set(SPECS.flatMap((s) => BUILDS[s.id].slots.flat()))
+  new Set(SPECS.flatMap((s) => BUILDS[s.id].slots.flatMap(poolOf)))
 ).sort((a, b) => a.localeCompare(b, 'ko'));
 
 // 전역 각인 순서 규칙: 전체 직업에서 많이 쓰일수록 위. 동률은 가나다.
 // → 모든 카드에서 같은 각인은 항상 같은 상대 위치에 온다(아드가 어디선 1번 어디선 3번 X).
 const ENG_FREQ = new Map<string, number>();
 for (const s of SPECS) {
-  for (const n of BUILDS[s.id].slots.flat()) {
+  for (const n of BUILDS[s.id].slots.flatMap(poolOf)) {
     ENG_FREQ.set(n, (ENG_FREQ.get(n) ?? 0) + 1);
   }
 }
@@ -51,14 +66,23 @@ const byEngOrder = (a: string, b: string) =>
 
 // 스펙별 정렬 슬롯: 고정(길이1) 먼저 전역순 → 그다음 or묶음(내부도 전역순).
 // SPEC_ENG_SET: 필터(포함/제외)용 스펙별 각인 집합.
-const SORTED_SLOTS: Record<string, string[][]> = {};
+const SORTED_SLOTS: Record<string, EngSlot[]> = {};
 const SPEC_ENG_SET: Record<string, Set<string>> = {};
 for (const s of SPECS) {
   const slots = BUILDS[s.id].slots;
-  const fixed = slots.filter((sl) => sl.length === 1).sort((a, b) => byEngOrder(a[0], b[0]));
-  const ors = slots.filter((sl) => sl.length > 1).map((sl) => [...sl].sort(byEngOrder));
+  const fixed = slots
+    .filter(isFixed)
+    .sort((a, b) => byEngOrder(poolOf(a)[0], poolOf(b)[0]));
+  // 택1·택N 모두 내부 후보를 전역순으로 정렬 (pick 수는 유지)
+  const ors = slots
+    .filter((sl) => !isFixed(sl))
+    .map((sl): EngSlot =>
+      Array.isArray(sl)
+        ? [...sl].sort(byEngOrder)
+        : { pick: sl.pick, pool: [...sl.pool].sort(byEngOrder) }
+    );
   SORTED_SLOTS[s.id] = [...fixed, ...ors];
-  SPEC_ENG_SET[s.id] = new Set(slots.flat());
+  SPEC_ENG_SET[s.id] = new Set(slots.flatMap(poolOf));
 }
 
 // 표시용 축약명 (데이터/필터는 원래 이름 유지, UI 라벨만 짧게)
@@ -94,6 +118,7 @@ type FilterState = 'include' | 'exclude';
 export default function EngravingPage() {
   const [search, setSearch] = useState('');
   const [role, setRole] = useState<'전체' | 'dealer' | 'support'>('전체');
+  const [gender, setGender] = useState<'전체' | 'female' | 'male'>('전체');
   const [group, setGroup] = useState<string>('전체');
   // 각인명 → 'include'(이 각인 쓰는 직업) | 'exclude'(안 쓰는 직업)
   const [filters, setFilters] = useState<Record<string, FilterState>>({});
@@ -122,6 +147,7 @@ export default function EngravingPage() {
   const shown = useMemo(() => {
     return SPECS.filter((spec) => {
       if (role !== '전체' && roleOf(spec.id) !== role) return false;
+      if (gender !== '전체' && genderOf(spec.id) !== gender) return false;
       if (group !== '전체' && spec.group !== group) return false;
       if (term && !spec.name.includes(term)) return false;
       const engSet = SPEC_ENG_SET[spec.id];
@@ -129,7 +155,7 @@ export default function EngravingPage() {
       if (excludeList.some((e) => engSet.has(e))) return false; // 제외: 하나라도 쓰면 탈락
       return true;
     });
-  }, [role, group, term, includeList, excludeList]);
+  }, [role, gender, group, term, includeList, excludeList]);
 
   return (
     <div className={styles.wrap}>
@@ -171,6 +197,23 @@ export default function EngravingPage() {
             key={val}
             className={`${styles.groupBtn} ${role === val ? styles.groupBtnActive : ''}`}
             onClick={() => setRole(val)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* 성별 선택 (남캐 / 여캐) */}
+      <div className={`${styles.groupBtns} ${styles.roleRow}`}>
+        {([
+          ['전체', '전체'],
+          ['여캐', 'female'],
+          ['남캐', 'male'],
+        ] as const).map(([label, val]) => (
+          <button
+            key={val}
+            className={`${styles.groupBtn} ${gender === val ? styles.groupBtnActive : ''}`}
+            onClick={() => setGender(val)}
           >
             {label}
           </button>
@@ -273,8 +316,10 @@ export default function EngravingPage() {
                 </div>
                 <div className={styles.badgeRow}>
                   {slots.map((slot, i) => {
-                    const isOr = slot.length > 1;
-                    const hit = slot.some((n) => filters[n] === 'include');
+                    const pool = poolOf(slot);
+                    const pick = pickOf(slot);
+                    const isOr = pool.length > 1;
+                    const hit = pool.some((n) => filters[n] === 'include');
                     return (
                       <span
                         key={i}
@@ -282,7 +327,7 @@ export default function EngravingPage() {
                           hit ? styles.badgeHit : ''
                         }`}
                       >
-                        {slot.map((n, j) => (
+                        {pool.map((n, j) => (
                           <span key={n} className={styles.engItem}>
                             {j > 0 && <span className={styles.orSep}>or</span>}
                             {ENGRAVING_ICONS[n] && (
@@ -297,6 +342,7 @@ export default function EngravingPage() {
                             <span className={styles.engName}>{label(n)}</span>
                           </span>
                         ))}
+                        {pick > 1 && <span className={styles.pickTag}>택{pick}</span>}
                       </span>
                     );
                   })}

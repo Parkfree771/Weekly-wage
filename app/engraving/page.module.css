@@ -390,6 +390,19 @@
   margin: 0 0.4rem;
 }
 
+/* 'A or B or … 택2' — 풀에서 N개 고르는 슬롯임을 끝에 표시 */
+.pickTag {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--color-primary);
+  border-radius: 6px;
+  padding: 0.12rem 0.44rem;
+  letter-spacing: 0.02em;
+}
+
 .badgeIcon {
   width: 1.9rem;
   height: 1.9rem;
