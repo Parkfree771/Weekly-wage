@@ -20,6 +20,7 @@ export const ENGRAVING_ICONS: Record<string, string> = {
   "원한": "/engravings/%EC%9B%90%ED%95%9C.webp",
   "저주받은 인형": "/engravings/%EC%A0%80%EC%A3%BC%EB%B0%9B%EC%9D%80%20%EC%9D%B8%ED%98%95.webp",
   "전문의": "/engravings/%EC%A0%84%EB%AC%B8%EC%9D%98.webp",
+  "정밀 단도": "/engravings/%EC%A0%95%EB%B0%80%20%EB%8B%A8%EB%8F%84.webp",
   "중갑 착용": "/engravings/%EC%A4%91%EA%B0%91%20%EC%B0%A9%EC%9A%A9.webp",
   "질량 증가": "/engravings/%EC%A7%88%EB%9F%89%20%EC%A6%9D%EA%B0%80.webp",
   "타격의 대가": "/engravings/%ED%83%80%EA%B2%A9%EC%9D%98%20%EB%8C%80%EA%B0%80.webp",
