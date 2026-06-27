@@ -39,6 +39,8 @@ type PriceContextType = {
   toggleWednesdayDots: () => void;  // 수요일 점 표시 토글
   showRegularDots: boolean;  // 차트 일반 날짜 점 표시 여부
   toggleRegularDots: () => void;  // 일반 날짜 점 표시 토글
+  showComparisonLine: boolean;  // 비교선(일반재료×5 회색 점선) 표시 여부
+  toggleComparisonLine: () => void;  // 비교선 표시 토글
 };
 
 export const PriceContext = createContext<PriceContextType>({
@@ -60,6 +62,8 @@ export const PriceContext = createContext<PriceContextType>({
   toggleWednesdayDots: () => {},
   showRegularDots: true,
   toggleRegularDots: () => {},
+  showComparisonLine: false,
+  toggleComparisonLine: () => {},
 });
 
 // 그리드 아이콘 SVG 컴포넌트

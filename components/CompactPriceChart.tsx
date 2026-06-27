@@ -2,7 +2,7 @@ import { useTheme } from './ThemeProvider';
 import React, { useMemo, useCallback, useContext, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
 import { TrackedItem, ItemCategory } from '@/lib/items-to-track';
 import { PriceContext } from './PriceComparisonStats';
 import { ColoredItemName } from '@/lib/components/ColoredItemName';
@@ -104,9 +104,190 @@ type CompactPriceChartProps = {
 
 type PeriodOption = '7d' | '1m' | '2m' | '3m' | '6m' | '1y' | 'all';
 
+type YAxisStats = { min: number; max: number; avg: number } | null;
+type YAxisRange = { min: number; max: number } | null;
+
+// Y축 도메인·틱 계산 (전체 기간 / 줌 구간 모두에서 동일 로직 재사용)
+function buildYAxisConfig(stats: YAxisStats, comparisonRange: YAxisRange) {
+  if (!stats) return { domain: ['auto', 'auto'], ticks: [] as number[], avgValue: null as number | null };
+
+  // 메인 가격 + 비교가격을 모두 포함하는 실제 표시 범위
+  const dataMin = comparisonRange ? Math.min(stats.min, comparisonRange.min) : stats.min;
+  const dataMax = comparisonRange ? Math.max(stats.max, comparisonRange.max) : stats.max;
+  const priceRange = dataMax - dataMin;
+  const avgPrice = stats.avg;
+
+  // 목표 틱 개수 (5-7개 정도로 제한)
+  const TARGET_TICK_COUNT = 15;
+
+  // 가격대별로 적절한 틱 단위 결정 (틱 개수를 줄이기 위해 더 큰 단위 사용)
+  let tickUnit = 1;
+
+  // 100만 골드 이상
+  if (dataMax >= 1000000) {
+    if (priceRange >= 500000) tickUnit = 200000;
+    else if (priceRange >= 200000) tickUnit = 100000;
+    else if (priceRange >= 100000) tickUnit = 50000;
+    else tickUnit = 20000;
+  }
+  // 10만~100만 골드
+  else if (dataMax >= 100000) {
+    if (priceRange >= 100000) tickUnit = 50000;
+    else if (priceRange >= 50000) tickUnit = 20000;
+    else if (priceRange >= 20000) tickUnit = 10000;
+    else if (priceRange >= 10000) tickUnit = 5000;
+    else tickUnit = 2000;
+  }
+  // 1만~10만 골드
+  else if (dataMax >= 10000) {
+    if (priceRange >= 10000) tickUnit = 5000;
+    else if (priceRange >= 5000) tickUnit = 2000;
+    else if (priceRange >= 2000) tickUnit = 1000;
+    else tickUnit = 500;
+  }
+  // 1000~1만 골드
+  else if (dataMax >= 1000) {
+    if (priceRange >= 2000) tickUnit = 1000;
+    else if (priceRange >= 1000) tickUnit = 500;
+    else if (priceRange >= 500) tickUnit = 200;
+    else tickUnit = 100;
+  }
+  // 100~1000 골드
+  else if (dataMax >= 100) {
+    if (priceRange >= 200) tickUnit = 100;
+    else if (priceRange >= 100) tickUnit = 50;
+    else if (priceRange >= 50) tickUnit = 20;
+    else tickUnit = 10;
+  }
+  // 100 골드 미만
+  else {
+    if (priceRange >= 50) tickUnit = 20;
+    else if (priceRange >= 20) tickUnit = 10;
+    else if (priceRange >= 10) tickUnit = 5;
+    else if (priceRange >= 5) tickUnit = 2;
+    else if (priceRange >= 2) tickUnit = 1;
+    else if (priceRange >= 1) tickUnit = 0.5;
+    else tickUnit = 0.2;
+  }
+
+  // 정확한 평균가를 중심 틱으로 사용 (반올림하지 않음)
+  const centerTick = avgPrice;
+
+  // 데이터 범위에 약간의 패딩 추가
+  const paddingRatio = 0.15; // 15% 패딩으로 상단 여유 확보
+  const padding = Math.max(priceRange * paddingRatio, tickUnit * 1.5);
+  const minWithPadding = dataMin - padding;
+  const maxWithPadding = dataMax + padding;
+
+  // 평균가(정확한 값)을 기준으로 위아래로 틱 생성
+  const ticks: number[] = [centerTick];
+
+  if (dataMax < 100) {
+    // 100 미만: 부동소수점 오차 방지
+    const centerTickScaled = Math.round(centerTick * 100); // 소수점 2자리까지 정확히
+    const minScaled = Math.round(minWithPadding * 100);
+    const maxScaled = Math.round(maxWithPadding * 100);
+    let tickUnitScaled = Math.round(tickUnit * 100);
+
+    // 아래쪽 틱 추가
+    let currentTickScaled = centerTickScaled - tickUnitScaled;
+    while (currentTickScaled >= minScaled && ticks.length < TARGET_TICK_COUNT) {
+      ticks.unshift(currentTickScaled / 100);
+      currentTickScaled -= tickUnitScaled;
+    }
+
+    // 위쪽 틱 추가
+    currentTickScaled = centerTickScaled + tickUnitScaled;
+    while (currentTickScaled <= maxScaled && ticks.length < TARGET_TICK_COUNT) {
+      ticks.push(currentTickScaled / 100);
+      currentTickScaled += tickUnitScaled;
+    }
+
+    // 틱이 너무 많으면 간격을 2배로 늘려서 재계산
+    if (ticks.length > TARGET_TICK_COUNT) {
+      tickUnitScaled *= 2;
+      const newTicks = [centerTick];
+
+      currentTickScaled = centerTickScaled - tickUnitScaled;
+      while (currentTickScaled >= minScaled) {
+        newTicks.unshift(currentTickScaled / 100);
+        currentTickScaled -= tickUnitScaled;
+      }
+
+      currentTickScaled = centerTickScaled + tickUnitScaled;
+      while (currentTickScaled <= maxScaled) {
+        newTicks.push(currentTickScaled / 100);
+        currentTickScaled += tickUnitScaled;
+      }
+
+      ticks.length = 0;
+      ticks.push(...newTicks);
+    }
+  } else {
+    // 100 이상
+    let actualTickUnit = tickUnit;
+
+    // 아래쪽 틱 추가
+    let currentTick = centerTick - actualTickUnit;
+    while (currentTick >= minWithPadding && ticks.length < TARGET_TICK_COUNT) {
+      ticks.unshift(currentTick);
+      currentTick -= actualTickUnit;
+    }
+
+    // 위쪽 틱 추가
+    currentTick = centerTick + actualTickUnit;
+    while (currentTick <= maxWithPadding && ticks.length < TARGET_TICK_COUNT) {
+      ticks.push(currentTick);
+      currentTick += actualTickUnit;
+    }
+
+    // 틱이 너무 많으면 간격을 2배로 늘려서 재계산
+    if (ticks.length > TARGET_TICK_COUNT) {
+      actualTickUnit *= 2;
+      const newTicks = [centerTick];
+
+      currentTick = centerTick - actualTickUnit;
+      while (currentTick >= minWithPadding) {
+        newTicks.unshift(currentTick);
+        currentTick -= actualTickUnit;
+      }
+
+      currentTick = centerTick + actualTickUnit;
+      while (currentTick <= maxWithPadding) {
+        newTicks.push(currentTick);
+        currentTick += actualTickUnit;
+      }
+
+      ticks.length = 0;
+      ticks.push(...newTicks);
+    }
+  }
+
+  // 도메인 설정 (최소/최대 틱 기준으로 약간의 여유 추가)
+  const minTick = ticks[0];
+  const maxTick = ticks[ticks.length - 1];
+
+  // 틱 사이의 간격을 계산합니다 (틱이 하나만 있는 경우 대비 안전장치 포함)
+  const tickGap = ticks.length > 1 ? Math.abs(ticks[1] - ticks[0]) : 0;
+
+  // 소수점 오차로 인해 숫자가 잘리는 것을 막기 위해
+  // 틱 간격의 5% 정도만큼 위아래로 범위를 살짝 넓혀줍니다.
+  const buffer = tickGap * 0.05;
+
+  // 버퍼가 0일 경우(틱이 1개뿐일 때)를 대비해 안전하게 처리
+  const domainMin = minTick - (buffer || 0.1);
+  const domainMax = maxTick + (buffer || 0.1);
+
+  return {
+    domain: [domainMin, domainMax],
+    ticks,
+    avgValue: centerTick, // 정확한 평균가 (틱으로 표시됨)
+  };
+}
+
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle, hidePeriodButtons = false }: CompactPriceChartProps) {
   const { theme } = useTheme();
-  const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots, showWednesdayDots, toggleWednesdayDots, showRegularDots, toggleRegularDots } = useContext(PriceContext);
+  const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots, showWednesdayDots, toggleWednesdayDots, showRegularDots, toggleRegularDots, showComparisonLine, toggleComparisonLine } = useContext(PriceContext);
 
   // 모바일 감지 및 마운트 상태
   const [isMobile, setIsMobile] = useState(false);
@@ -268,6 +449,119 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     );
   }, [filteredHistory, comparisonPriceMap, categoryStyle]);
 
+  // 드래그 박스 줌: 선택한 X축 구간으로 확대 (Y축도 해당 구간 가격대로 재계산)
+  const [zoomKeys, setZoomKeys] = useState<{ left: string; right: string } | null>(null);
+  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
+  const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+
+  // 아이템/기간 변경 시 줌 해제
+  useEffect(() => {
+    setZoomKeys(null);
+    setRefAreaLeft(null);
+    setRefAreaRight(null);
+    setIsSelecting(false);
+  }, [selectedItem, selectedPeriod]);
+
+  // 현재 표시할 데이터 (줌 구간이 있으면 그 구간만 잘라서 표시)
+  const visibleData = useMemo(() => {
+    if (!zoomKeys) return chartData;
+    const li = chartData.findIndex(d => d.날짜 === zoomKeys.left);
+    const ri = chartData.findIndex(d => d.날짜 === zoomKeys.right);
+    if (li < 0 || ri < 0) return chartData;
+    const a = Math.min(li, ri);
+    const b = Math.max(li, ri);
+    return chartData.slice(a, b + 1);
+  }, [chartData, zoomKeys]);
+
+  const isZoomed = !!zoomKeys && visibleData.length !== chartData.length;
+
+  // 줌 구간 통계 (min/max/avg/current)
+  const visibleStats = useMemo(() => {
+    if (visibleData.length === 0) return null;
+    const prices = visibleData.map(d => d.가격).filter((v): v is number => typeof v === 'number' && isFinite(v));
+    if (prices.length === 0) return null;
+    const current = prices[prices.length - 1];
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
+    return { current, min, max, avg };
+  }, [visibleData]);
+
+  // 줌 구간 비교가격(회색선) 범위
+  const visibleComparisonRange = useMemo(() => {
+    if (!showComparisonLine) return null;
+    const vals = visibleData
+      .map(d => d.비교가격)
+      .filter((v): v is number => typeof v === 'number' && isFinite(v));
+    if (vals.length === 0) return null;
+    return { min: Math.min(...vals), max: Math.max(...vals) };
+  }, [visibleData, showComparisonLine]);
+
+  const visibleYAxisConfig = useMemo(
+    () => buildYAxisConfig(visibleStats, visibleComparisonRange),
+    [visibleStats, visibleComparisonRange]
+  );
+
+  const visibleAveragePrice = useMemo(() => {
+    if (visibleData.length === 0) return 0;
+    return visibleData.reduce((s, d) => s + d.가격, 0) / visibleData.length;
+  }, [visibleData]);
+
+  // 줌 구간 X축 틱 (균등 간격으로 추출)
+  const visibleXTicks = useMemo(() => {
+    const n = visibleData.length;
+    if (n <= 1) return visibleData.map(d => d.날짜);
+    const target = isMobile ? 6 : 10;
+    const step = Math.max(1, Math.ceil(n / target));
+    const ticks: string[] = [];
+    for (let i = 0; i < n; i += step) ticks.push(visibleData[i].날짜);
+    const lastKey = visibleData[n - 1].날짜;
+    if (ticks[ticks.length - 1] !== lastKey) ticks.push(lastKey);
+    return ticks;
+  }, [visibleData, isMobile]);
+
+  // 드래그 핸들러 (recharts mouse 이벤트의 activeLabel = X축 날짜 키)
+  const handleZoomMouseDown = useCallback((e: { activeLabel?: string | number } | null | undefined) => {
+    if (e && e.activeLabel != null) {
+      const key = String(e.activeLabel);
+      setRefAreaLeft(key);
+      setRefAreaRight(key);
+      setIsSelecting(true);
+    }
+  }, []);
+
+  const handleZoomMouseMove = useCallback((e: { activeLabel?: string | number } | null | undefined) => {
+    if (isSelecting && e && e.activeLabel != null) {
+      const key = String(e.activeLabel);
+      // 같은 데이터 지점 위면 setState 생략 → 불필요한 리렌더 방지
+      setRefAreaRight(prev => (prev === key ? prev : key));
+    }
+  }, [isSelecting]);
+
+  const handleZoomMouseUp = useCallback(() => {
+    setIsSelecting(false);
+    if (refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight) {
+      const li = chartData.findIndex(d => d.날짜 === refAreaLeft);
+      const ri = chartData.findIndex(d => d.날짜 === refAreaRight);
+      // 최소 2포인트 이상 선택 시에만 줌 (의도치 않은 클릭 방지)
+      if (li >= 0 && ri >= 0 && Math.abs(ri - li) >= 1) {
+        const a = Math.min(li, ri);
+        const b = Math.max(li, ri);
+        setZoomKeys({ left: chartData[a].날짜, right: chartData[b].날짜 });
+      }
+    }
+    setRefAreaLeft(null);
+    setRefAreaRight(null);
+  }, [refAreaLeft, refAreaRight, chartData]);
+
+  const resetZoom = useCallback(() => {
+    setZoomKeys(null);
+    setRefAreaLeft(null);
+    setRefAreaRight(null);
+    setIsSelecting(false);
+  }, []);
+
   const formatPrice = useCallback((value: number) => {
     // 악세, 보석 카테고리는 소수점 없이 표시
     if (categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌' || categoryStyle?.label === '보석') {
@@ -315,189 +609,15 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
   // 비교가격(회색선) 범위 — Y축이 비교선까지 감싸도록 (없으면 null)
   const comparisonRange = useMemo(() => {
+    if (!showComparisonLine) return null; // 비교선 끄면 Y축도 메인 가격에 맞춰 좁힘
     const vals = chartData
       .map((d) => d.비교가격)
       .filter((v): v is number => typeof v === 'number' && isFinite(v));
     if (vals.length === 0) return null;
     return { min: Math.min(...vals), max: Math.max(...vals) };
-  }, [chartData]);
+  }, [chartData, showComparisonLine]);
 
-  const yAxisConfig = useMemo(() => {
-    if (!stats) return { domain: ['auto', 'auto'], ticks: [], avgValue: null };
-
-    // 메인 가격 + 비교가격을 모두 포함하는 실제 표시 범위
-    const dataMin = comparisonRange ? Math.min(stats.min, comparisonRange.min) : stats.min;
-    const dataMax = comparisonRange ? Math.max(stats.max, comparisonRange.max) : stats.max;
-    const priceRange = dataMax - dataMin;
-    const avgPrice = stats.avg;
-
-    // 목표 틱 개수 (5-7개 정도로 제한)
-    const TARGET_TICK_COUNT = 15;
-
-    // 가격대별로 적절한 틱 단위 결정 (틱 개수를 줄이기 위해 더 큰 단위 사용)
-    let tickUnit = 1;
-
-    // 100만 골드 이상
-    if (dataMax >= 1000000) {
-      if (priceRange >= 500000) tickUnit = 200000;
-      else if (priceRange >= 200000) tickUnit = 100000;
-      else if (priceRange >= 100000) tickUnit = 50000;
-      else tickUnit = 20000;
-    }
-    // 10만~100만 골드
-    else if (dataMax >= 100000) {
-      if (priceRange >= 100000) tickUnit = 50000;
-      else if (priceRange >= 50000) tickUnit = 20000;
-      else if (priceRange >= 20000) tickUnit = 10000;
-      else if (priceRange >= 10000) tickUnit = 5000;
-      else tickUnit = 2000;
-    }
-    // 1만~10만 골드
-    else if (dataMax >= 10000) {
-      if (priceRange >= 10000) tickUnit = 5000;
-      else if (priceRange >= 5000) tickUnit = 2000;
-      else if (priceRange >= 2000) tickUnit = 1000;
-      else tickUnit = 500;
-    }
-    // 1000~1만 골드
-    else if (dataMax >= 1000) {
-      if (priceRange >= 2000) tickUnit = 1000;
-      else if (priceRange >= 1000) tickUnit = 500;
-      else if (priceRange >= 500) tickUnit = 200;
-      else tickUnit = 100;
-    }
-    // 100~1000 골드
-    else if (dataMax >= 100) {
-      if (priceRange >= 200) tickUnit = 100;
-      else if (priceRange >= 100) tickUnit = 50;
-      else if (priceRange >= 50) tickUnit = 20;
-      else tickUnit = 10;
-    }
-    // 100 골드 미만
-    else {
-      if (priceRange >= 50) tickUnit = 20;
-      else if (priceRange >= 20) tickUnit = 10;
-      else if (priceRange >= 10) tickUnit = 5;
-      else if (priceRange >= 5) tickUnit = 2;
-      else if (priceRange >= 2) tickUnit = 1;
-      else if (priceRange >= 1) tickUnit = 0.5;
-      else tickUnit = 0.2;
-    }
-
-    // 정확한 평균가를 중심 틱으로 사용 (반올림하지 않음)
-    const centerTick = avgPrice;
-
-    // 데이터 범위에 약간의 패딩 추가
-    const paddingRatio = 0.15; // 15% 패딩으로 상단 여유 확보
-    const padding = Math.max(priceRange * paddingRatio, tickUnit * 1.5);
-    const minWithPadding = dataMin - padding;
-    const maxWithPadding = dataMax + padding;
-
-    // 평균가(정확한 값)을 기준으로 위아래로 틱 생성
-    const ticks = [centerTick];
-
-    if (dataMax < 100) {
-      // 100 미만: 부동소수점 오차 방지
-      const centerTickScaled = Math.round(centerTick * 100); // 소수점 2자리까지 정확히
-      const minScaled = Math.round(minWithPadding * 100);
-      const maxScaled = Math.round(maxWithPadding * 100);
-      let tickUnitScaled = Math.round(tickUnit * 100);
-
-      // 아래쪽 틱 추가
-      let currentTickScaled = centerTickScaled - tickUnitScaled;
-      while (currentTickScaled >= minScaled && ticks.length < TARGET_TICK_COUNT) {
-        ticks.unshift(currentTickScaled / 100);
-        currentTickScaled -= tickUnitScaled;
-      }
-
-      // 위쪽 틱 추가
-      currentTickScaled = centerTickScaled + tickUnitScaled;
-      while (currentTickScaled <= maxScaled && ticks.length < TARGET_TICK_COUNT) {
-        ticks.push(currentTickScaled / 100);
-        currentTickScaled += tickUnitScaled;
-      }
-
-      // 틱이 너무 많으면 간격을 2배로 늘려서 재계산
-      if (ticks.length > TARGET_TICK_COUNT) {
-        tickUnitScaled *= 2;
-        const newTicks = [centerTick];
-
-        currentTickScaled = centerTickScaled - tickUnitScaled;
-        while (currentTickScaled >= minScaled) {
-          newTicks.unshift(currentTickScaled / 100);
-          currentTickScaled -= tickUnitScaled;
-        }
-
-        currentTickScaled = centerTickScaled + tickUnitScaled;
-        while (currentTickScaled <= maxScaled) {
-          newTicks.push(currentTickScaled / 100);
-          currentTickScaled += tickUnitScaled;
-        }
-
-        ticks.length = 0;
-        ticks.push(...newTicks);
-      }
-    } else {
-      // 100 이상
-      let actualTickUnit = tickUnit;
-
-      // 아래쪽 틱 추가
-      let currentTick = centerTick - actualTickUnit;
-      while (currentTick >= minWithPadding && ticks.length < TARGET_TICK_COUNT) {
-        ticks.unshift(currentTick);
-        currentTick -= actualTickUnit;
-      }
-
-      // 위쪽 틱 추가
-      currentTick = centerTick + actualTickUnit;
-      while (currentTick <= maxWithPadding && ticks.length < TARGET_TICK_COUNT) {
-        ticks.push(currentTick);
-        currentTick += actualTickUnit;
-      }
-
-      // 틱이 너무 많으면 간격을 2배로 늘려서 재계산
-      if (ticks.length > TARGET_TICK_COUNT) {
-        actualTickUnit *= 2;
-        const newTicks = [centerTick];
-
-        currentTick = centerTick - actualTickUnit;
-        while (currentTick >= minWithPadding) {
-          newTicks.unshift(currentTick);
-          currentTick -= actualTickUnit;
-        }
-
-        currentTick = centerTick + actualTickUnit;
-        while (currentTick <= maxWithPadding) {
-          newTicks.push(currentTick);
-          currentTick += actualTickUnit;
-        }
-
-        ticks.length = 0;
-        ticks.push(...newTicks);
-      }
-    }
-
-    // 도메인 설정 (최소/최대 틱 기준으로 약간의 여유 추가)
-    const minTick = ticks[0];
-    const maxTick = ticks[ticks.length - 1];
-    
-    // 틱 사이의 간격을 계산합니다 (틱이 하나만 있는 경우 대비 안전장치 포함)
-    const tickGap = ticks.length > 1 ? Math.abs(ticks[1] - ticks[0]) : 0;
-    
-    // 소수점 오차로 인해 숫자가 잘리는 것을 막기 위해
-    // 틱 간격의 5% 정도만큼 위아래로 범위를 살짝 넓혀줍니다.
-    const buffer = tickGap * 0.05;
-
-    // 버퍼가 0일 경우(틱이 1개뿐일 때)를 대비해 안전하게 처리
-    const domainMin = minTick - (buffer || 0.1);
-    const domainMax = maxTick + (buffer || 0.1);
-
-    return {
-      domain: [domainMin, domainMax],
-      ticks,
-      avgValue: centerTick // 정확한 평균가 (틱으로 표시됨)
-    };
-  }, [stats, comparisonRange]);
+  const yAxisConfig = useMemo(() => buildYAxisConfig(stats, comparisonRange), [stats, comparisonRange]);
 
   const changeRate = useMemo(() => {
     if (chartData.length < 2) return 0;
@@ -801,6 +921,12 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     });
   }, [chartData, selectedPeriod]);
 
+  // 줌 반영 유효값 (줌 중이면 구간 기준, 아니면 전체 기준 — 비줌 시 기존과 100% 동일)
+  const effectiveData = isZoomed ? visibleData : chartData;
+  const effectiveYAxisConfig = isZoomed ? visibleYAxisConfig : yAxisConfig;
+  const effectiveXTicks = isZoomed ? visibleXTicks : xAxisTicks;
+  const effectiveAvg = isZoomed ? visibleAveragePrice : averagePrice;
+
   if (!selectedItem) {
     return (
       <div className="text-center py-5">
@@ -919,6 +1045,35 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                         boxShadow: showEventDots ? `0 0 0 2px var(--card-bg)` : 'none',
                       }} />
                     </button>
+                    {comparisonData && (
+                      <button
+                        onClick={toggleComparisonLine}
+                        title={showComparisonLine ? '×5 비교선 숨기기' : '×5 비교선 표시'}
+                        aria-pressed={showComparisonLine}
+                        style={dotBtnStyle}
+                      >
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          <Image
+                            src={comparisonData.normalIcon || ''}
+                            alt=""
+                            width={24}
+                            height={24}
+                            style={{
+                              borderRadius: '5px',
+                              border: showComparisonLine ? `2px solid ${comparisonColor}` : '2px solid transparent',
+                              filter: showComparisonLine ? 'none' : 'grayscale(100%)',
+                              opacity: showComparisonLine ? 1 : 0.35,
+                              transition: 'filter 0.2s, opacity 0.2s, border-color 0.2s',
+                            }}
+                          />
+                          <span style={{
+                            fontSize: '0.85rem', fontWeight: 800, color: comparisonColor,
+                            opacity: showComparisonLine ? 1 : 0.35,
+                            transition: 'opacity 0.2s',
+                          }}>×5</span>
+                        </span>
+                      </button>
+                    )}
                   </>
                 );
               })()}
@@ -1264,6 +1419,35 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                         boxShadow: showEventDots ? `0 0 0 2px var(--card-bg)` : 'none',
                       }} />
                     </button>
+                    {comparisonData && (
+                      <button
+                        onClick={toggleComparisonLine}
+                        title={showComparisonLine ? '×5 비교선 숨기기' : '×5 비교선 표시'}
+                        aria-pressed={showComparisonLine}
+                        style={dotBtnStyle}
+                      >
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                          <Image
+                            src={comparisonData.normalIcon || ''}
+                            alt=""
+                            width={20}
+                            height={20}
+                            style={{
+                              borderRadius: '4px',
+                              border: showComparisonLine ? `2px solid ${comparisonColor}` : '2px solid transparent',
+                              filter: showComparisonLine ? 'none' : 'grayscale(100%)',
+                              opacity: showComparisonLine ? 1 : 0.35,
+                              transition: 'filter 0.2s, opacity 0.2s, border-color 0.2s',
+                            }}
+                          />
+                          <span style={{
+                            fontSize: '0.7rem', fontWeight: 800, color: comparisonColor,
+                            opacity: showComparisonLine ? 1 : 0.35,
+                            transition: 'opacity 0.2s',
+                          }}>×5</span>
+                        </span>
+                      </button>
+                    )}
                   </>
                 );
               })()}
@@ -1429,15 +1613,37 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           </div>
         ) : (
           <>
-            {!isMobile && <div style={{ width: '100%', height: '500px' }}>
+            {!isMobile && <div style={{ width: '100%', height: '500px', position: 'relative' }}>
+              {isZoomed && (
+                <button
+                  onClick={resetZoom}
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '12px',
+                    zIndex: 10,
+                    padding: '4px 12px',
+                    borderRadius: '8px',
+                    border: `2px solid ${chartColor}`,
+                    backgroundColor: 'var(--card-bg)',
+                    color: chartColor,
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: 'var(--shadow-md)',
+                  }}
+                >
+                  전체보기
+                </button>
+              )}
               <ResponsiveContainer width="100%" height="100%" minHeight={500}>
-                <LineChart data={chartData} margin={{ top: 25, right: 10, left: 0, bottom: 0 }}>
+                <LineChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: 25, right: 10, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical={true} horizontal={true} />
-                  <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-35)">{payload.value}</text>{eventLabel && (<text x={0} y={12} dy={10} textAnchor="end" fill={eventColor} fontSize={12} fontWeight="700" transform="rotate(-35)">{eventLabel}</text>)}</g>); }} height={80} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
-                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 14 : 16} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 105 : stats && stats.max >= 100000 ? 90 : stats && stats.max >= 10000 ? 78 : stats && stats.max >= 1000 ? 70 : stats && stats.max >= 100 ? 58 : 54} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} interval={0} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
+                  <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-35)">{payload.value}</text>{eventLabel && (<text x={0} y={12} dy={10} textAnchor="end" fill={eventColor} fontSize={12} fontWeight="700" transform="rotate(-35)">{eventLabel}</text>)}</g>); }} height={80} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
+                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = effectiveYAxisConfig.avgValue && Math.abs(payload.value - effectiveYAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 14 : 16} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 105 : stats && stats.max >= 100000 ? 90 : stats && stats.max >= 10000 ? 78 : stats && stats.max >= 1000 ? 70 : stats && stats.max >= 100 ? 58 : 54} domain={effectiveYAxisConfig.domain} ticks={effectiveYAxisConfig.ticks} interval={0} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
                   <Tooltip content={<CustomTooltip />} cursor={{ stroke: chartColor, strokeWidth: 2, strokeDasharray: '5 5' }} />
-                  <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} />
+                  <ReferenceLine y={effectiveAvg} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} />
                   {/* 사용자 선택 참조선 */}
                   {activeReferenceLines?.has('min') && stats && (
                     <ReferenceLine y={stats.min} stroke="#3b82f6" strokeDasharray="8 4" strokeWidth={2} />
@@ -1460,23 +1666,49 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                     <ReferenceLine y={currentCustomLines.buyPrice} stroke="#f59e0b" strokeDasharray="10 5" strokeWidth={2.5} />
                   )}
                   {/* 비교 라인 (일반 재료 × 5) - 점선 */}
-                  {comparisonData && (
-                    <Line type="monotone" dataKey="비교가격" stroke={comparisonColor} strokeWidth={2} strokeDasharray="8 4" dot={false} activeDot={{ r: 6, fill: comparisonColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} connectNulls />
+                  {comparisonData && showComparisonLine && (
+                    <Line type="monotone" dataKey="비교가격" stroke={comparisonColor} strokeWidth={2} strokeDasharray="8 4" dot={false} activeDot={{ r: 6, fill: comparisonColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
                   )}
-                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={<CustomDot />} activeDot={{ r: 9, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 4 }} fill="url(#colorPrice)" />
+                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={<CustomDot />} activeDot={{ r: 9, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 4 }} fill="url(#colorPrice)" isAnimationActive={false} />
+                  {/* 드래그 선택 영역 (확대 미리보기) */}
+                  {isSelecting && refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight && (
+                    <ReferenceArea x1={refAreaLeft} x2={refAreaRight} stroke={chartColor} strokeOpacity={0.4} fill={chartColor} fillOpacity={0.12} />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             </div>}
 
-            {isMobile && <div style={{ width: '100%', height: '350px', marginTop: '-8px' }}>
+            {isMobile && <div style={{ width: '100%', height: '350px', marginTop: '-8px', position: 'relative' }}>
+              {isZoomed && (
+                <button
+                  onClick={resetZoom}
+                  style={{
+                    position: 'absolute',
+                    top: '2px',
+                    right: '8px',
+                    zIndex: 10,
+                    padding: '3px 10px',
+                    borderRadius: '7px',
+                    border: `2px solid ${chartColor}`,
+                    backgroundColor: 'var(--card-bg)',
+                    color: chartColor,
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: 'var(--shadow-md)',
+                  }}
+                >
+                  전체보기
+                </button>
+              )}
               <ResponsiveContainer width="100%" height="100%" minHeight={350}>
-                <LineChart data={chartData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
+                <LineChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />
-                  <XAxis dataKey="날짜" ticks={xAxisTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = chartData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = chartData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-45)">{payload.value}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
-                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = yAxisConfig.avgValue && Math.abs(payload.value - yAxisConfig.avgValue) < 0.01; const fontSize = stats ? (stats.max >= 1000000 ? 6 : stats.max >= 100000 ? 7 : stats.max >= 10000 ? 8 : stats.max >= 1000 ? 9 : stats.max >= 100 ? 7.5 : 7) : 8; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={fontSize} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-2}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 46 : stats && stats.max >= 100000 ? 42 : stats && stats.max >= 10000 ? 38 : stats && stats.max >= 1000 ? 38 : stats && stats.max >= 100 ? 32 : 30} domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
+                  <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-45)">{payload.value}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
+                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = effectiveYAxisConfig.avgValue && Math.abs(payload.value - effectiveYAxisConfig.avgValue) < 0.01; const fontSize = stats ? (stats.max >= 1000000 ? 6 : stats.max >= 100000 ? 7 : stats.max >= 10000 ? 8 : stats.max >= 1000 ? 9 : stats.max >= 100 ? 7.5 : 7) : 8; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={fontSize} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-2}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 46 : stats && stats.max >= 100000 ? 42 : stats && stats.max >= 10000 ? 38 : stats && stats.max >= 1000 ? 38 : stats && stats.max >= 100 ? 32 : 30} domain={effectiveYAxisConfig.domain} ticks={effectiveYAxisConfig.ticks} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
                   <Tooltip content={<CustomTooltipMobile />} cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: '3 3' }} />
-                  <ReferenceLine y={averagePrice} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} />
+                  <ReferenceLine y={effectiveAvg} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} />
                   {/* 사용자 선택 참조선 - 모바일 */}
                   {activeReferenceLines?.has('min') && stats && (
                     <ReferenceLine y={stats.min} stroke="#3b82f6" strokeDasharray="6 3" strokeWidth={1.5} />
@@ -1499,10 +1731,14 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                     <ReferenceLine y={currentCustomLines.buyPrice} stroke="#f59e0b" strokeDasharray="8 4" strokeWidth={2} />
                   )}
                   {/* 비교 라인 (일반 재료 × 5) - 점선 */}
-                  {comparisonData && (
-                    <Line type="monotone" dataKey="비교가격" stroke={comparisonColor} strokeWidth={1.5} strokeDasharray="6 3" dot={false} activeDot={{ r: 4, fill: comparisonColor, stroke: 'var(--card-bg)', strokeWidth: 1 }} connectNulls />
+                  {comparisonData && showComparisonLine && (
+                    <Line type="monotone" dataKey="비교가격" stroke={comparisonColor} strokeWidth={1.5} strokeDasharray="6 3" dot={false} activeDot={{ r: 4, fill: comparisonColor, stroke: 'var(--card-bg)', strokeWidth: 1 }} connectNulls isAnimationActive={false} />
                   )}
-                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.5} dot={<CustomDotMobile />} activeDot={{ r: 6, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} fill="url(#colorPriceMobile)" />
+                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.5} dot={<CustomDotMobile />} activeDot={{ r: 6, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} fill="url(#colorPriceMobile)" isAnimationActive={false} />
+                  {/* 드래그 선택 영역 (확대 미리보기) - 모바일 */}
+                  {isSelecting && refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight && (
+                    <ReferenceArea x1={refAreaLeft} x2={refAreaRight} stroke={chartColor} strokeOpacity={0.4} fill={chartColor} fillOpacity={0.12} />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             </div>}

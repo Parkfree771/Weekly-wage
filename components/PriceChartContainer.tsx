@@ -61,6 +61,7 @@ type ChartConfig = {
   showEventDots: boolean;       // 차트에 특별 이벤트 점 표시 여부
   showWednesdayDots: boolean;   // 차트에 수요일 점 표시 여부
   showRegularDots: boolean;     // 차트에 일반 날짜 점 표시 여부
+  showComparisonLine: boolean;  // 비교선(일반재료×5 회색 점선) 표시 여부
 };
 
 const getDefaultChartConfig = (): ChartConfig => ({
@@ -68,6 +69,7 @@ const getDefaultChartConfig = (): ChartConfig => ({
   showEventDots: true,
   showWednesdayDots: true,
   showRegularDots: true,
+  showComparisonLine: false,
 });
 
 const loadChartConfig = (): ChartConfig => {
@@ -81,6 +83,7 @@ const loadChartConfig = (): ChartConfig => {
         showEventDots: parsed.showEventDots !== false,
         showWednesdayDots: parsed.showWednesdayDots !== false,
         showRegularDots: parsed.showRegularDots !== false,
+        showComparisonLine: parsed.showComparisonLine === true,
       };
     }
   } catch (e) {
@@ -502,11 +505,20 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     });
   }, []);
 
+  // 비교선(일반재료×5 회색 점선) 표시 토글 (즉시 저장)
+  const toggleComparisonLine = useCallback(() => {
+    setChartConfig(prev => {
+      const next = { ...prev, showComparisonLine: !prev.showComparisonLine };
+      saveChartConfig(next);
+      return next;
+    });
+  }, []);
+
 
   const categoryStyle = CATEGORY_STYLES[selectedCategory];
 
   return (
-    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod, comparisonData, isGridView, onToggleGridView: handleToggleGridView, activeReferenceLines, toggleReferenceLine, selectItemById, categoryColor: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor, openChartSettings, showEventDots: chartConfig.showEventDots, toggleEventDots, showWednesdayDots: chartConfig.showWednesdayDots, toggleWednesdayDots, showRegularDots: chartConfig.showRegularDots, toggleRegularDots }}>
+    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod, comparisonData, isGridView, onToggleGridView: handleToggleGridView, activeReferenceLines, toggleReferenceLine, selectItemById, categoryColor: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor, openChartSettings, showEventDots: chartConfig.showEventDots, toggleEventDots, showWednesdayDots: chartConfig.showWednesdayDots, toggleWednesdayDots, showRegularDots: chartConfig.showRegularDots, toggleRegularDots, showComparisonLine: chartConfig.showComparisonLine, toggleComparisonLine }}>
       {dashboard}
       <div className="price-chart-container">
         {/* 데스크톱: 사이드바 레이아웃 */}

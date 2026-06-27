@@ -96,6 +96,36 @@ export async function GET(req: Request) {
   return NextResponse.json({ items });
 }
 
+// ─── 의견 처리상태/메모 수정 (관리자 전용) ───
+export async function PATCH(req: Request) {
+  if (!(await verifyBearerAdmin(req))) {
+    return NextResponse.json({ message: '권한이 없습니다.' }, { status: 403 });
+  }
+
+  let body: { id?: unknown; processed?: unknown; memo?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ message: '잘못된 요청입니다.' }, { status: 400 });
+  }
+
+  const id = typeof body.id === 'string' ? body.id : '';
+  if (!id) {
+    return NextResponse.json({ message: 'id가 필요합니다.' }, { status: 400 });
+  }
+
+  const update: Record<string, unknown> = {};
+  if (typeof body.processed === 'boolean') update.processed = body.processed;
+  if (typeof body.memo === 'string') update.memo = body.memo.slice(0, 1000);
+
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json({ message: '변경할 내용이 없습니다.' }, { status: 400 });
+  }
+
+  await getAdminFirestore().collection(COLLECTION).doc(id).update(update);
+  return NextResponse.json({ ok: true });
+}
+
 // ─── 의견 삭제 (관리자 전용) ───
 export async function DELETE(req: Request) {
   if (!(await verifyBearerAdmin(req))) {
