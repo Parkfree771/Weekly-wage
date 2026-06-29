@@ -13,7 +13,8 @@ import {
   increment,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db } from './firebase-client';
+import { db } from './firebase-firestore';
+import { isAdmin } from './admin';
 import type {
   InquiryPost,
   InquiryPostCreateData,
@@ -24,12 +25,9 @@ import type {
 const COLLECTION = 'inquiryPosts';
 
 // ─── 관리자 ───
-
-export const ADMIN_EMAIL = 'dbfh1498@gmail.com';
-
-export function isAdmin(email: string | null | undefined): boolean {
-  return email === ADMIN_EMAIL;
-}
+// 순수 판별 로직은 lib/admin.ts 로 분리됨(글로벌 번들 firestore 누수 방지).
+// 기존 import 호환을 위해 여기서 그대로 re-export 한다(isAdmin 은 상단에서 import).
+export { ADMIN_EMAIL, isAdmin } from './admin';
 
 // ─── 게시물 생성 ───
 

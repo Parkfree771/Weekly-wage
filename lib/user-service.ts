@@ -1,7 +1,7 @@
 // 사용자 데이터 관리 서비스
 
 import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from './firebase-client';
+import { db } from './firebase-firestore';
 import {
   UserProfile,
   Character,

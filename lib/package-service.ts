@@ -19,7 +19,7 @@ import {
   Timestamp,
   DocumentSnapshot,
 } from 'firebase/firestore';
-import { db } from './firebase-client';
+import { db } from './firebase-firestore';
 import type {
   PackagePost,
   PackagePostCreateData,

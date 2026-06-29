@@ -85,6 +85,31 @@ for (const s of SPECS) {
   SPEC_ENG_SET[s.id] = new Set(slots.flatMap(poolOf));
 }
 
+// 플레이스타일 분류: 기습의 대가→백사멸, 결투의 대가→헤드사멸, 둘 다 없으면 타대(정면).
+// 기습/결투는 상호배타. 서포터(roleOf===support)는 포지셔널 무관 → 'support'(해당 없음).
+type PlayStyle = 'back' | 'head' | 'normal' | 'support';
+// 자동 분류 보정: 기습/결투가 빌드에 있어도 실제 플레이가 다른 직업은 여기서 고정.
+// 버서커 광기는 기습이 '택1 옵션'일 뿐 실제론 타대 → 타대로 본다.
+// (같은 택1 옵션이라도 홀나 심판자는 백이 맞으므로 일괄 규칙이 아닌 개별 보정으로 처리)
+const STYLE_OVERRIDE: Record<string, PlayStyle> = {
+  '버서커 광기': 'normal',
+};
+const styleOf = (id: string): PlayStyle => {
+  if (roleOf(id) === 'support') return 'support';
+  if (STYLE_OVERRIDE[id]) return STYLE_OVERRIDE[id];
+  const set = SPEC_ENG_SET[id];
+  if (set?.has('기습의 대가')) return 'back';
+  if (set?.has('결투의 대가')) return 'head';
+  return 'normal';
+};
+// 사멸 배지 라벨 (서포터는 배지 없음)
+const STYLE_LABEL: Record<PlayStyle, string | null> = {
+  back: '백사멸',
+  head: '헤드사멸',
+  normal: '타대',
+  support: null,
+};
+
 // 표시용 축약명 (데이터/필터는 원래 이름 유지, UI 라벨만 짧게)
 const SHORT_NAME: Record<string, string> = {
   '타격의 대가': '타대',
@@ -119,6 +144,8 @@ export default function EngravingPage() {
   const [search, setSearch] = useState('');
   const [role, setRole] = useState<'전체' | 'dealer' | 'support'>('전체');
   const [gender, setGender] = useState<'전체' | 'female' | 'male'>('전체');
+  // 백사멸 / 헤드사멸 / 타대(정면) 필터. 서포터는 어느 쪽에도 안 잡힘(전체에서만 노출).
+  const [playStyle, setPlayStyle] = useState<'전체' | 'back' | 'head' | 'normal'>('전체');
   const [group, setGroup] = useState<string>('전체');
   // 각인명 → 'include'(이 각인 쓰는 직업) | 'exclude'(안 쓰는 직업)
   const [filters, setFilters] = useState<Record<string, FilterState>>({});
@@ -148,6 +175,7 @@ export default function EngravingPage() {
     return SPECS.filter((spec) => {
       if (role !== '전체' && roleOf(spec.id) !== role) return false;
       if (gender !== '전체' && genderOf(spec.id) !== gender) return false;
+      if (playStyle !== '전체' && styleOf(spec.id) !== playStyle) return false;
       if (group !== '전체' && spec.group !== group) return false;
       if (term && !spec.name.includes(term)) return false;
       const engSet = SPEC_ENG_SET[spec.id];
@@ -155,7 +183,7 @@ export default function EngravingPage() {
       if (excludeList.some((e) => engSet.has(e))) return false; // 제외: 하나라도 쓰면 탈락
       return true;
     });
-  }, [role, gender, group, term, includeList, excludeList]);
+  }, [role, gender, playStyle, group, term, includeList, excludeList]);
 
   return (
     <div className={styles.wrap}>
@@ -186,38 +214,59 @@ export default function EngravingPage() {
         )}
       </div>
 
-      {/* 역할 선택 (딜러 / 서포터) */}
-      <div className={`${styles.groupBtns} ${styles.roleRow}`}>
-        {([
-          ['전체', '전체'],
-          ['딜러', 'dealer'],
-          ['서포터', 'support'],
-        ] as const).map(([label, val]) => (
-          <button
-            key={val}
-            className={`${styles.groupBtn} ${role === val ? styles.groupBtnActive : ''}`}
-            onClick={() => setRole(val)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* 필터: 역할 / 성별 / 사멸 — 한 줄에 묶고 그룹 사이 구분선 */}
+      <div className={styles.filterBar}>
+        {/* 역할 (전체/딜러/서포터) */}
+        <div className={styles.filterGroup}>
+          {([
+            ['전체', '전체'],
+            ['딜러', 'dealer'],
+            ['서포터', 'support'],
+          ] as const).map(([label, val]) => (
+            <button
+              key={val}
+              className={`${styles.groupBtn} ${role === val ? styles.groupBtnActive : ''}`}
+              onClick={() => setRole(val)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-      {/* 성별 선택 (남캐 / 여캐) */}
-      <div className={`${styles.groupBtns} ${styles.roleRow}`}>
-        {([
-          ['전체', '전체'],
-          ['여캐', 'female'],
-          ['남캐', 'male'],
-        ] as const).map(([label, val]) => (
-          <button
-            key={val}
-            className={`${styles.groupBtn} ${gender === val ? styles.groupBtnActive : ''}`}
-            onClick={() => setGender(val)}
-          >
-            {label}
-          </button>
-        ))}
+        {/* 성별 (전체/여캐/남캐) */}
+        <div className={styles.filterGroup}>
+          {([
+            ['전체', '전체'],
+            ['여캐', 'female'],
+            ['남캐', 'male'],
+          ] as const).map(([label, val]) => (
+            <button
+              key={val}
+              className={`${styles.groupBtn} ${gender === val ? styles.groupBtnActive : ''}`}
+              onClick={() => setGender(val)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* 사멸 (전체/백사멸/헤드사멸/타대) — 기습=백, 결대=헤드, 둘 다 없으면 타대. 서포터 제외 */}
+        <div className={styles.filterGroup}>
+          {([
+            ['전체', '전체'],
+            ['백사멸', 'back'],
+            ['헤드사멸', 'head'],
+            ['타대', 'normal'],
+          ] as const).map(([label, val]) => (
+            <button
+              key={val}
+              className={`${styles.groupBtn} ${playStyle === val ? styles.groupBtnActive : ''}`}
+              onClick={() => setPlayStyle(val)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 직업군 선택 */}
@@ -286,6 +335,7 @@ export default function EngravingPage() {
           {shown.map((spec) => {
             const slots = SORTED_SLOTS[spec.id];
             const stat = BUILDS[spec.id].stat;
+            const styleLabel = STYLE_LABEL[styleOf(spec.id)];
             const picked = nr.selected.has(spec.id);
             return (
               <div
@@ -313,6 +363,7 @@ export default function EngravingPage() {
                   <ClassIcon name={spec.name} src={spec.icon} size={42} />
                   <span className={styles.cardName}>{spec.name}</span>
                   {stat && <span className={styles.statBadge}>{stat}</span>}
+                  {styleLabel && <span className={styles.styleBadge}>{styleLabel}</span>}
                 </div>
                 <div className={styles.badgeRow}>
                   {slots.map((slot, i) => {

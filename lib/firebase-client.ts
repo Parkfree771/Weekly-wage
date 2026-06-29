@@ -1,13 +1,11 @@
 // Firebase 클라이언트 SDK 설정 (브라우저 전용)
+// ⚠️ 여기서는 app + auth 만 초기화한다.
+//    firestore 는 로그인 기능에서만 필요하므로 lib/firebase-firestore.ts 로 분리해
+//    글로벌 번들(모든 페이지)에 firestore(~250KB)가 딸려오지 않게 한다.
+//    storage(클라이언트 SDK)는 사용처가 없어 제거함. 가격 데이터(latest.json)는
+//    /api/price-data/* (서버 firebase-admin)로 받으므로 클라이언트 storage 와 무관하다.
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import {
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
-  Firestore,
-} from 'firebase/firestore';
-import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -22,8 +20,6 @@ const firebaseConfig = {
 // Firebase 앱 초기화 (중복 방지)
 let app: FirebaseApp;
 let auth: Auth;
-let db: Firestore;
-let storage: FirebaseStorage;
 
 if (typeof window !== 'undefined') {
   if (getApps().length === 0) {
@@ -32,13 +28,6 @@ if (typeof window !== 'undefined') {
     app = getApps()[0];
   }
   auth = getAuth(app);
-  // IndexedDB 로컬 캐시 + 멀티탭 지원
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-      tabManager: persistentMultipleTabManager(),
-    }),
-  });
-  storage = getStorage(app);
 }
 
-export { app, auth, db, storage };
+export { app, auth };

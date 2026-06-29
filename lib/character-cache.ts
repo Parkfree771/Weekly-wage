@@ -208,7 +208,7 @@ export interface RankingEntry {
 
 export interface ListRankingOptions {
   className?: string;
-  /** 칭호 필터 — equipped_title에 이 문자열이 포함된 캐릭터만 (정확/시리즈 둘 다 매칭) */
+  /** 칭호 필터 — 누적 칭호(titles_history)에 이 문자열이 포함된 적 있는 캐릭터만 (정확/시리즈 둘 다 매칭) */
   titleQuery?: string;
   /** 고대 코어 필터 — cores 중 grade='고대'인 개수가 정확히 이 값(0~6)인 캐릭터만 */
   ancientCount?: number;
@@ -221,6 +221,15 @@ export interface ListRankingOptions {
   sortDir?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
+}
+
+// 누적 칭호 매칭식: titles_history(jsonb 배열, 원소 { title, firstSeenAt }) 안에
+// 패턴($paramIdx)과 ILIKE로 일치하는 칭호가 하나라도 있으면 true.
+// → "지금 착용" 아니라 "한 번이라도 단 적 있는" 누적 기준. null/비배열은 빈 배열로 안전 처리.
+function titlesHistoryMatchExpr(paramIdx: number): string {
+  return `EXISTS (SELECT 1 FROM jsonb_array_elements(`
+    + `CASE WHEN jsonb_typeof(titles_history) = 'array' THEN titles_history ELSE '[]'::jsonb END`
+    + `) AS th WHERE th->>'title' ILIKE $${paramIdx})`;
 }
 
 export async function listRanking(opts: ListRankingOptions = {}): Promise<RankingEntry[]> {
@@ -245,10 +254,11 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
   }
   if (titlePattern) {
     params.push(titlePattern);
-    // 혹한/홍염의 군주만 부캐 오염 방지를 위해 아이템레벨 floor (1770은 상수 → 인터폴레이션 안전)
+    // 누적 칭호(titles_history) 기준 매칭. 혹한/홍염의 군주만 부캐 오염 방지를 위해
+    // 아이템레벨 floor 유지 (1770은 상수 → 인터폴레이션 안전).
     const titleFloor = titleQuery && TITLES_REQUIRE_MIN_LEVEL.has(titleQuery)
       ? ` AND item_level >= ${TITLE_MIN_ITEM_LEVEL}` : '';
-    conditions.push(`equipped_title ILIKE $${params.length}${titleFloor}`);
+    conditions.push(`${titlesHistoryMatchExpr(params.length)}${titleFloor}`);
   }
   if (ancientCount !== null) {
     params.push(ancientCount);
@@ -373,7 +383,7 @@ export async function getRankingStats(opts: ListRankingOptions = {}): Promise<Ra
     params.push(titlePattern);
     const titleFloor = titleQuery && TITLES_REQUIRE_MIN_LEVEL.has(titleQuery)
       ? ` AND item_level >= ${TITLE_MIN_ITEM_LEVEL}` : '';
-    frags.push({ key: 'title', expr: `equipped_title ILIKE $${params.length}${titleFloor}` });
+    frags.push({ key: 'title', expr: `${titlesHistoryMatchExpr(params.length)}${titleFloor}` });
   }
   if (ancientCount !== null) {
     params.push(ancientCount);

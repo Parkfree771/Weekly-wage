@@ -103,6 +103,27 @@
   margin-bottom: 0.5rem;
 }
 
+/* 역할/성별/사멸 3개 필터를 한 줄에 묶음 (좁으면 줄바꿈) */
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+/* 각 필터 그룹: 버튼 묶음 + 그룹 사이 세로 구분선 */
+.filterGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.filterGroup:not(:last-child) {
+  padding-right: 0.9rem;
+  border-right: 1px solid var(--border-color);
+}
+
 .groupBtn {
   font-size: 0.86rem;
   font-weight: 700;
@@ -333,6 +354,18 @@
   font-weight: 800;
   color: #fff;
   background: var(--color-primary);
+  border-radius: 6px;
+  padding: 0.16rem 0.5rem;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+/* 사멸 배지 (백사멸/헤드사멸/타대) — 특성 배지와 같은 톤, 빨간색 */
+.styleBadge {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #fff;
+  background: #dc3545;
   border-radius: 6px;
   padding: 0.16rem 0.5rem;
   white-space: nowrap;

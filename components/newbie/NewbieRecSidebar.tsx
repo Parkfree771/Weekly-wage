@@ -2,6 +2,7 @@
 
 import ClassIcon from '@/components/tier/ClassIcon';
 import { TIER_CLASSES } from '@/lib/tier-data';
+import EngravingCorrectionBox from '@/components/engraving/EngravingCorrectionBox';
 import type { NewbieRecState } from './useNewbieRec';
 import styles from './NewbieRecSidebar.module.css';
 
@@ -136,6 +137,9 @@ export default function NewbieRecSidebar({ nr }: { nr: NewbieRecState }) {
           )}
         </div>
       </div>
+
+      {/* 각인 정정 요청 — 익명, 관리자 의견함(/api/feedback)으로 전송 */}
+      <EngravingCorrectionBox />
     </aside>
   );
 }

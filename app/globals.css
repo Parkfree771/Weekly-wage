@@ -374,10 +374,12 @@ input, select, textarea,
   }
 }
 
-/* PC 화면일 때만 80% 축소 (모바일은 너무 작아지면 안 되니까) */
+/* PC 화면일 때만 80% 축소 (모바일은 너무 작아지면 안 되니까)
+   → 브라우저 100% 기본에서 적정 크기로. max-width:100vw 제거로 빈 공간 버그 해소됨.
+   값 조절: 크게=0.85, 작게=0.75. */
 @media screen and (min-width: 1024px) {
   body {
-    zoom: 1;
+    zoom: 0.67;
   }
 }
 
@@ -697,7 +699,8 @@ html, body {
   /* clip: 가로 넘침은 자르되 스크롤 컨테이너를 만들지 않음 →
      자손의 position: sticky(광고 사이드바 등)가 정상 동작. hidden은 sticky를 깨뜨림. */
   overflow-x: clip;
-  max-width: 100vw;
+  /* max-width: 100vw 제거 — PC zoom(0.8)과 충돌해 오른쪽에 빈 공간이 생김.
+     가로 넘침은 위 overflow-x: clip 으로 이미 차단되므로 vw 캡 불필요. */
 }
 
 /* Navbar Brand */

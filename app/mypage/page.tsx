@@ -525,7 +525,7 @@ export default function MyPage() {
       (async () => {
         try {
           const { doc, updateDoc } = await import('firebase/firestore');
-          const { db } = await import('@/lib/firebase-client');
+          const { db } = await import('@/lib/firebase-firestore');
           const uid = (profile as any).uid;
           if (!uid) return;
           const userRef = doc(db, 'users', uid);
@@ -556,7 +556,7 @@ export default function MyPage() {
         (async () => {
           try {
             const { doc, updateDoc } = await import('firebase/firestore');
-            const { db } = await import('@/lib/firebase-client');
+            const { db } = await import('@/lib/firebase-firestore');
             const uid = userProfile.uid;
             if (!uid) return;
             const userRef = doc(db, 'users', uid);
@@ -623,7 +623,7 @@ export default function MyPage() {
         (async () => {
           try {
             const { doc, updateDoc } = await import('firebase/firestore');
-            const { db } = await import('@/lib/firebase-client');
+            const { db } = await import('@/lib/firebase-firestore');
             const uid = userProfile.uid;
             if (!uid) return;
             const userRef = doc(db, 'users', uid);
@@ -672,7 +672,7 @@ export default function MyPage() {
       (async () => {
         try {
           const { doc, updateDoc } = await import('firebase/firestore');
-          const { db } = await import('@/lib/firebase-client');
+          const { db } = await import('@/lib/firebase-firestore');
           const userRef = doc(db, 'users', user.uid);
 
           // 골드 기록 업데이트 (중복 방지)
@@ -928,7 +928,7 @@ export default function MyPage() {
       });
 
       const { doc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase-client');
+      const { db } = await import('@/lib/firebase-firestore');
       const userRef = doc(db, 'users', user.uid);
 
       const prefix = getFirestorePrefix(activeExpedition);
@@ -994,7 +994,7 @@ export default function MyPage() {
       });
 
       const { doc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase-client');
+      const { db } = await import('@/lib/firebase-firestore');
       const userRef = doc(db, 'users', user.uid);
 
       const prefix = getFirestorePrefix(activeExpedition);
@@ -1029,7 +1029,7 @@ export default function MyPage() {
 
     try {
       const { doc, updateDoc, deleteField } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase-client');
+      const { db } = await import('@/lib/firebase-firestore');
       const userRef = doc(db, 'users', user.uid);
 
       if (activeExpedition === 1) {
@@ -1370,7 +1370,7 @@ export default function MyPage() {
 
     try {
       const { doc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase-client');
+      const { db } = await import('@/lib/firebase-firestore');
       const userRef = doc(db, 'users', user.uid);
 
       // allSiblings에 갱신된 캐릭터 레벨 반영 + 중복 제거

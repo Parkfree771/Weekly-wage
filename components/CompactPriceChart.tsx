@@ -1248,9 +1248,15 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
           {/* 범례 */}
           <div className="d-flex align-items-center justify-content-center flex-wrap" style={{ gap: '12px', flexShrink: 0 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke={chartColor} strokeWidth="2" strokeDasharray="4 3" /></svg>
-              평균가
+            <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke={chartColor} strokeWidth="2" strokeDasharray="4 3" /></svg>
+                평균가
+              </span>
+              {/* 드래그줌 안내 (평균가 아래 줄) */}
+              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: chartColor }}>
+                [ ] 드래그 확대
+              </span>
             </span>
             {currentCustomLines?.sellPrice != null && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>

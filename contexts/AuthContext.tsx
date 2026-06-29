@@ -9,8 +9,12 @@ import {
   onAuthStateChanged,
   reauthenticateWithPopup,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase-client';
+// ⚠️ AuthContext 는 root layout 에 있어 "모든 페이지"에 로드된다.
+//    firestore(~250KB)를 정적 import 하면 비로그인 방문자도 전부 받게 되므로,
+//    firestore(db + 함수)는 로그인 유저 처리 시점에 동적 import 한다.
+//    auth 는 자동 로그인 상태 확인에 항상 필요하므로 정적 유지.
+//    nickname-service 는 내부적으로 firestore 를 동적 로딩하므로 정적 import 해도 안전.
+import { auth } from '@/lib/firebase-client';
 import { claimNickname, releaseNickname } from '@/lib/nickname-service';
 
 import {
@@ -52,6 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 기존 사용자 프로필 가져오기 (신규 사용자는 생성하지 않음)
   const fetchUserProfile = async (firebaseUser: User): Promise<UserProfile | null> => {
+    const { db } = await import('@/lib/firebase-firestore');
+    const { doc, getDoc, setDoc, serverTimestamp } = await import('firebase/firestore');
     const userRef = doc(db, 'users', firebaseUser.uid);
     const userSnap = await getDoc(userRef);
 
@@ -68,6 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 동의 후 신규 사용자 프로필 생성
   const createUserProfile = async (firebaseUser: User, nickname: string): Promise<UserProfile> => {
+    const { db } = await import('@/lib/firebase-firestore');
+    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
     const userRef = doc(db, 'users', firebaseUser.uid);
     const now = serverTimestamp();
 
@@ -209,6 +217,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await reauthenticateWithPopup(user, provider);
 
       // 2. Firestore에서 사용자 데이터 삭제
+      const { db } = await import('@/lib/firebase-firestore');
+      const { doc, deleteDoc } = await import('firebase/firestore');
       const userRef = doc(db, 'users', user.uid);
       await deleteDoc(userRef);
 

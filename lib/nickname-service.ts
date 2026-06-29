@@ -1,5 +1,6 @@
-import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase-client';
+// ⚠️ 이 서비스는 글로벌 컴포넌트(AuthContext, ConsentModal)에서 import 된다.
+//    그래서 firestore 를 정적 import 하면 모든 페이지 번들에 firestore 가 딸려온다.
+//    → firestore 함수와 db 는 각 함수 안에서 동적 import 한다(로그인 동작 시점에만 로드).
 
 const NICKNAME_REGEX = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9]{1,12}$/;
 
@@ -27,6 +28,8 @@ export function validateNickname(nickname: string): { valid: boolean; message: s
 
 // Firestore에서 중복 확인
 export async function checkNicknameAvailable(nickname: string): Promise<boolean> {
+  const { db } = await import('@/lib/firebase-firestore');
+  const { doc, getDoc } = await import('firebase/firestore');
   const normalizedKey = normalizeNickname(nickname);
   const nicknameRef = doc(db, 'nicknames', normalizedKey);
   const snap = await getDoc(nicknameRef);
@@ -35,6 +38,8 @@ export async function checkNicknameAvailable(nickname: string): Promise<boolean>
 
 // 닉네임 등록 (nicknames 컬렉션 + users 프로필 업데이트)
 export async function claimNickname(nickname: string, uid: string): Promise<void> {
+  const { db } = await import('@/lib/firebase-firestore');
+  const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
   const normalizedKey = normalizeNickname(nickname);
   const nicknameRef = doc(db, 'nicknames', normalizedKey);
   const userRef = doc(db, 'users', uid);
@@ -52,6 +57,8 @@ export async function claimNickname(nickname: string, uid: string): Promise<void
 
 // 기존 닉네임 해제 (변경 시)
 export async function releaseNickname(oldNickname: string): Promise<void> {
+  const { db } = await import('@/lib/firebase-firestore');
+  const { doc, deleteDoc } = await import('firebase/firestore');
   const normalizedKey = normalizeNickname(oldNickname);
   const nicknameRef = doc(db, 'nicknames', normalizedKey);
   await deleteDoc(nicknameRef);

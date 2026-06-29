@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button, Spinner, Dropdown, Modal } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdmin } from '@/lib/inquiry-service';
+import { isAdmin } from '@/lib/admin';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import styles from './LoginButton.module.css';
