@@ -2,6 +2,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import PageInfoFooter from '@/components/PageInfoFooter';
 import ConsentModal from '@/components/auth/ConsentModal';
 import AdLayout from '@/components/ads/AdLayout';
 
@@ -119,6 +120,14 @@ export default function RootLayout({
         <link rel="preload" href="/data/history_archive.json" as="fetch" crossOrigin="anonymous" />
         <link rel="preload" href="/api/price-data/history" as="fetch" crossOrigin="anonymous" />
         <link rel="preload" href="/api/price-data/latest" as="fetch" crossOrigin="anonymous" />
+        {/* Google AdSense — 서버 HTML(head)에 포함되어야 애드센스 크롤러가 사이트 확인 가능.
+            async라 렌더링 비차단. (lazyOnload는 HTML에 안 들어가 검증 실패) */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944494802169618"
+          crossOrigin="anonymous"
+        />
       </head>
       <body className={`${notoSansKr.className} ${jetbrainsMono.variable}`}>
         <ThemeProvider>
@@ -128,18 +137,13 @@ export default function RootLayout({
             <AdLayout>
               {children}
             </AdLayout>
+            <PageInfoFooter />
             <Footer />
             <ConsentModal />
           </AuthProvider>
         </ThemeProvider>
 
-        {/* Google AdSense - lazyOnload로 메인 콘텐츠 우선 */}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944494802169618"
-          crossOrigin="anonymous"
-          strategy="lazyOnload"
-        />
+        {/* Google AdSense 스크립트는 위 <head>로 이동 (애드센스 사이트 확인 위해 서버 HTML에 포함) */}
 
         {/* Google Analytics - lazyOnload로 메인 콘텐츠 우선 */}
         <Script

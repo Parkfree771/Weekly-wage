@@ -2,7 +2,6 @@
 
 import dynamic from 'next/dynamic';
 import { Container } from 'react-bootstrap';
-import AdBanner from '@/components/ads/AdBanner';
 import FeedbackBox from '@/components/FeedbackBox';
 import styles from './page.module.css';
 
@@ -51,11 +50,6 @@ export default function Home() {
 
         {/* 익명 의견 박스 (차트·통계 아래 빈 공간) */}
         <FeedbackBox />
-
-        {/* 모바일 익스트림 홍보 + 광고 */}
-        <div className="d-block d-lg-none my-3">
-          <AdBanner slot="8616653628" />
-        </div>
 
       </Container>
     </div>

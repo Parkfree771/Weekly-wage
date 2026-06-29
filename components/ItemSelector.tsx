@@ -414,6 +414,8 @@ export default function ItemSelector({
         style={{
           height: 'auto',
           maxHeight: '40vh',
+          // 하단 앵커 광고가 떠 있으면 그만큼 위로 올려 버튼이 안 가리게 함 (AdLayout이 변수 설정)
+          bottom: 'var(--mobile-anchor-h, 0px)',
           backgroundColor: 'var(--card-bg)',
           color: 'var(--text-primary)',
           borderTopLeftRadius: '20px',
