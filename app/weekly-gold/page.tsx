@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Container, Row, Col, Card } from 'react-bootstrap';
+import { Container, Row, Col } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
@@ -158,47 +158,18 @@ export default function WeeklyGoldPage() {
               autoSearchName={autoSearchName}
             />
 
+            {!searched && (
+              <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.1rem 0 0' }}>
+                검색해서 원정대 주간 골드 수급 확인하기
+              </p>
+            )}
+
             {/* 가격 데이터 공유를 위한 Provider - RaidCalculator도 포함 */}
             <PriceProvider>
-              {/* 검색 후 원정대 주급 계산기 - 검색 결과가 가장 위에 표시 */}
+              {/* 검색 후 원정대 주급 계산기 */}
               {searched && selectedCharacters.length > 0 && (
-                <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)', position: 'relative' }}>
-                  <Card className="border-0 shadow-lg weekly-gold-header-card" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
-                    <Card.Header
-                      className="py-2 border-0"
-                    >
-                      <div className="d-flex align-items-center justify-content-between">
-                        <div style={{ flex: 1 }} />
-                        <h3 className="weekly-gold-header-title mb-0" style={{ flex: 'none' }}>
-                          원정대 주간 골드 계산
-                        </h3>
-                        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
-                          <button
-                            onClick={handleSave}
-                            title="다음에 접속해도 현재 설정이 유지됩니다"
-                            style={{
-                              fontSize: isMobile ? '0.6rem' : '0.72rem',
-                              padding: isMobile ? '0.3rem 0.6rem' : '0.4rem 0.8rem',
-                              fontWeight: 600,
-                              whiteSpace: 'nowrap',
-                              border: saveStatus === 'saved' ? '1px solid var(--color-success)' : '1px solid var(--border-color)',
-                              borderRadius: '10px',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease',
-                              backgroundColor: saveStatus === 'saved' ? 'var(--color-success)' : 'transparent',
-                              color: saveStatus === 'saved' ? '#fff' : 'var(--text-primary)',
-                              lineHeight: 1.3,
-                            }}
-                          >
-                            {saveStatus === 'saved' ? '저장 완료' : '설정 저장'}
-                          </button>
-                        </div>
-                      </div>
-                    </Card.Header>
-                    <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-blue)'}}>
-                      <RaidCalculator selectedCharacters={selectedCharacters} onGateSelectionChange={handleGateSelectionChange} onSaveReady={handleSaveReady} searchName={autoSearchName} />
-                    </Card.Body>
-                  </Card>
+                <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
+                  <RaidCalculator selectedCharacters={selectedCharacters} onGateSelectionChange={handleGateSelectionChange} onSaveReady={handleSaveReady} searchName={autoSearchName} showSave={true} />
                 </div>
               )}
 
@@ -207,41 +178,14 @@ export default function WeeklyGoldPage() {
                 <AdBanner slot="8616653628" />
               </div>
 
-              {/* 더보기 효율 계산기 섹션 */}
-              <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)', maxWidth: '1100px', margin: '0 auto' }}>
-                <Row className="justify-content-center">
-                  <Col xl={12} lg={12} md={12}>
-                    <div style={{ position: 'relative' }}>
-                      <Card className="border-0 shadow-lg" style={{borderRadius: '16px', overflow: 'hidden', backgroundColor: 'transparent'}}>
-                        <Card.Header
-                          className="text-center py-2 border-0"
-                          style={{
-                            background: 'var(--card-header-bg-stone)',
-                            borderBottom: '1px solid var(--border-color)'
-                          }}
-                        >
-                          <h3
-                            className="mb-0"
-                            style={{
-                              fontWeight: '600',
-                              fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
-                              background: 'var(--gradient-text-stone)',
-                              WebkitBackgroundClip: 'text',
-                              WebkitTextFillColor: 'transparent',
-                              backgroundClip: 'text',
-                              letterSpacing: '-0.025em'
-                            }}
-                          >
-                            더보기 손익 계산
-                          </h3>
-                        </Card.Header>
-                      <Card.Body className="p-2 p-md-3" style={{backgroundColor: 'var(--card-body-bg-stone)'}}>
-                        <SeeMoreCalculator />
-                      </Card.Body>
-                    </Card>
-                    </div>
-                  </Col>
-                </Row>
+              {/* 더보기 손익 계산 섹션 (de-box, 주간 레이드와 너비 1180px 통일) */}
+              <div style={{ maxWidth: '1180px', margin: 'clamp(2.5rem, 5vw, 3.5rem) auto 0' }}>
+                <div className="mb-3" style={{ background: 'rgba(232, 114, 42, 0.16)', borderRadius: '10px', padding: '0.5rem 1rem', textAlign: 'center' }}>
+                  <h3 className="weekly-gold-header-title mb-0">
+                    더보기 손익 계산
+                  </h3>
+                </div>
+                <SeeMoreCalculator />
               </div>
             </PriceProvider>
 

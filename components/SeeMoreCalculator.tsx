@@ -213,6 +213,11 @@ const SeeMoreCalculator: React.FC = () => {
           const isLoss = profitLoss < 0;
           const isSelected = selectedRaid === raid.name;
 
+          // 더보기 비용 대비 손익률 (%) — 레이드 전체 관문 합산
+          const totalMoreGold = (profitData[raid.name] || []).reduce((s, g) => s + g.moreGold, 0);
+          const profitPct = totalMoreGold > 0 ? (profitLoss / totalMoreGold) * 100 : 0;
+          const pctStr = `${profitPct > 0 ? '+' : ''}${profitPct.toFixed(1)}%`;
+
           // LCP 최적화: 처음 6개 이미지는 priority 로딩
           const isPriorityImage = index < 6;
 
@@ -245,6 +250,7 @@ const SeeMoreCalculator: React.FC = () => {
                 {profitData[raid.name] && (
                   <div className={`${styles.goldBadge} ${isProfit ? styles.profitBadge : isLoss ? styles.lossBadge : styles.neutralBadge}`}>
                     {isProfit ? '+' : ''}{Math.round(profitLoss).toLocaleString()}
+                    <span className={styles.goldBadgePct}>{pctStr}</span>
                   </div>
                 )}
               </div>
@@ -281,6 +287,10 @@ const SeeMoreCalculator: React.FC = () => {
             <div className={styles.gatesGrid}>
               {profitData[selectedRaid].map((gateData, index) => {
                 const calculatedGate = calculateGateProfitLoss(selectedRaid, gateData);
+                // 더보기 비용 대비 손익률 (%)
+                const profitPct = gateData.moreGold > 0 ? (calculatedGate.profitLoss / gateData.moreGold) * 100 : 0;
+                const pctStr = `${profitPct > 0 ? '+' : ''}${profitPct.toFixed(1)}%`;
+                const pctClass = calculatedGate.profitLoss > 0 ? 'text-success' : calculatedGate.profitLoss < 0 ? 'text-danger' : 'text-secondary';
                 return (
                 <div key={index} className={`${styles.gateSection} ${calculatedGate.profitLoss > 0 ? styles.profit : calculatedGate.profitLoss < 0 ? styles.loss : styles.neutral}`}>
                 <h6 className={`mb-2 ${styles.gateSectionHeader}`}>
@@ -300,7 +310,7 @@ const SeeMoreCalculator: React.FC = () => {
                   </span>
                   <span className={styles.summarySecondLine}>
                     <strong>손익:</strong> <span className="font-numeric">{Math.round(calculatedGate.totalValue).toLocaleString()} - {gateData.moreGold.toLocaleString()}</span> = <span className={`font-numeric ${calculatedGate.profitLoss > 0 ? 'text-success' : calculatedGate.profitLoss < 0 ? 'text-danger' : 'text-secondary'}`} style={{ fontWeight: 700 }}>
-                      {calculatedGate.profitLoss > 0 ? '+' : ''}{Math.round(calculatedGate.profitLoss).toLocaleString()}골드
+                      {calculatedGate.profitLoss > 0 ? '+' : ''}{Math.round(calculatedGate.profitLoss).toLocaleString()}골드 <span className="font-numeric">({pctStr})</span>
                     </span>
                   </span>
                 </div>
@@ -360,6 +370,14 @@ const SeeMoreCalculator: React.FC = () => {
                     );
                     })}
                   </tbody>
+                  <tfoot>
+                    <tr className={styles.tableRow}>
+                      <td className={styles.tableCell} colSpan={4} style={{ textAlign: 'right', fontWeight: 700 }}>더보기 대비 손익률</td>
+                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>
+                        <span className={`font-numeric ${pctClass}`} style={{ fontWeight: 700 }}>{pctStr}</span>
+                      </td>
+                    </tr>
+                  </tfoot>
                 </Table>
                 </div>
               );

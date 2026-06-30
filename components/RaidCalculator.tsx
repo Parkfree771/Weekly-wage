@@ -1,9 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Card, Table, Form, Badge, Accordion, Row, Col, Button, Collapse } from 'react-bootstrap';
 import Image from 'next/image';
 import { raids, upcomingRaids } from '@/data/raids';
+import {
+  getRaidGroupName,
+  getRaidsForLevel,
+  getRaidsInGroup,
+} from '@/types/user';
+import styles from './RaidCalculator.module.css';
 
 type Character = {
   characterName: string;
@@ -16,1325 +21,687 @@ export type CharacterGoldCalc = {
   bound: number;
 };
 
+type RaidWeeklyState = {
+  raids: Record<string, boolean[]>;                 // raidName -> 관문별 체크
+  raidGoldReceive?: Record<string, boolean>;        // 골드 수령 여부 (기본 true)
+  raidMoreGoldExclude?: Record<string, boolean>;    // 더보기 구매 여부 (기본 false)
+  raidDifficultyOverride?: Record<string, string>;  // 그룹명 -> 선택 난이도 raidName
+};
+
+type AllState = Record<string, RaidWeeklyState>;
+
 type RaidCalculatorProps = {
   selectedCharacters: Character[];
-  onGateSelectionChange?: (gateSelection: GateSelection, characterCalc: { [char: string]: CharacterGoldCalc }) => void;
+  onGateSelectionChange?: (state: any, characterCalc: { [char: string]: CharacterGoldCalc }) => void;
   onSaveReady?: (saveFn: () => boolean) => void;
   searchName?: string;
+  showSave?: boolean;
 };
-
-type GateSelection = {
-  [key: string]: {
-    [key: string]: {
-      [key: string]: 'none' | 'withMore' | 'withoutMore';
-    };
-  };
-};
-
-type OptimizationMode = 'default' | 'goldOptimize' | 'coreOptimize';
 
 const STORAGE_KEY = 'weekly-gold-settings';
 
 type SavedSettings = {
   searchName: string;
   characters: Character[];
-  gateSelection: GateSelection;
-  optimizationMode: { [key: string]: OptimizationMode };
+  state: AllState;
+  optMode?: Record<string, OptimizationMode>;
 };
 
 // 코어를 주는 레이드 그룹
 const CORE_RAID_GROUPS = ['벨가르딘', '성당', '세르카', '종막', '4막'];
 
-// 난이도 배지. 색상은 weekly-gold.module.css 에 정의 (cerka-character 의 강제 흰글씨 룰을
-// 이기려면 !important 가 필요해서 inline style 로는 못 박음). 여기는 className 매핑만.
-type DifficultyType = '나메' | '하드' | '노말';
-const DIFFICULTY_CLASS: Record<DifficultyType, string> = {
-  '나메': 'badge-difficulty-nightmare',
-  '하드': 'badge-difficulty-hard',
-  '노말': 'badge-difficulty-normal',
+// 레이드별 관문당 코어 획득량 (더보기 안 할 때 기준)
+const CORE_PER_GATE: Record<string, number> = {
+  '벨가르딘 나메': 4, '벨가르딘 하드': 3, '벨가르딘 노말': 3,
+  '성당 3단계': 3, '성당 2단계': 2, '성당 1단계': 2,
+  '세르카 나메': 3, '세르카 하드': 2, '세르카 노말': 2,
+  '종막 하드': 2, '종막 노말': 2,
+  '4막 하드': 1, '4막 노말': 1,
 };
 
-const getDifficultyType = (rawDiff: string, groupName: string): DifficultyType | null => {
-  if (groupName === '성당') {
-    if (rawDiff === '3단계') return '나메';
-    if (rawDiff === '2단계') return '하드';
-    if (rawDiff === '1단계') return '노말';
-  }
-  if (rawDiff === '나메' || rawDiff === '하드' || rawDiff === '노말') return rawDiff;
-  return null; // 서막·베히모스 처럼 단일 난이도면 배지 없음
-};
-
-// 귀속 골드 시각 구분: 배경은 일반 골드와 같은 초록(bg-success) 사용,
-// 골드 이미지에 hue-rotate 필터를 걸어서만 색을 다르게 해 구분.
 export const BOUND_GOLD_FILTER = 'hue-rotate(280deg) saturate(1.0)';
-export const BOUND_GOLD_TEXT = '#e879f9'; // 헤더/총합 텍스트 톤 (fuchsia-400)
+export const BOUND_GOLD_TEXT = '#e879f9';
 
-// 설정 저장 버튼 (저장 완료 피드백 포함)
-function SaveButton({ isMobile, onSave }: { isMobile?: boolean; onSave: () => boolean }) {
-  const [saved, setSaved] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+const raidMap = new Map(raids.map(r => [r.name, r]));
 
-  const handleSave = () => {
-    const success = onSave();
-    if (success) {
-      setSaved(true);
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setSaved(false), 2000);
-    }
-  };
-
-  useEffect(() => {
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, []);
-
-  return (
-    <button
-      onClick={handleSave}
-      title="다음에 접속해도 현재 설정이 유지됩니다"
-      style={{
-        fontSize: isMobile ? '0.6rem' : '0.72rem',
-        padding: isMobile ? '0.3rem 0.6rem' : '0.4rem 0.8rem',
-        fontWeight: 600,
-        whiteSpace: 'nowrap',
-        border: saved ? '1px solid #16a34a' : '1px solid var(--border-color)',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        backgroundColor: saved ? '#16a34a' : 'transparent',
-        color: saved ? '#fff' : 'var(--text-primary)',
-        lineHeight: 1.3,
-      }}
-    >
-      {saved ? '저장 완료' : '설정 저장'}
-    </button>
-  );
-}
-
-// 레이드 이름에서 그룹명 추출 (마지막 단어 = 난이도 제외)
-const getRaidGroupName = (raidName: string): string => {
-  const parts = raidName.split(' ');
-  return parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0];
-};
-
-// 출시 예정(비활성) 레이드 그룹 — '다른 레이드 보기'에 비활성 행으로만 노출 (계산 제외).
-// 그룹 + 난이도 목록(나메/하드/노말)을 함께 담아 3개 난이도를 표시.
-type UpcomingGroup = { group: string; releaseLabel: string; difficulties: { name: string; level: number }[] };
-const UPCOMING_GROUPS: UpcomingGroup[] = Array.from(
+// 출시 예정(비활성) 레이드 그룹 — 타일로만 노출, 계산 제외
+const UPCOMING_GROUPS = Array.from(
   upcomingRaids.reduce((m, r) => {
     const g = getRaidGroupName(r.name);
-    const diff = r.name.slice(g.length).trim() || '기본';
-    const entry = m.get(g) || { releaseLabel: r.releaseLabel, difficulties: [] as { name: string; level: number }[] };
-    entry.difficulties.push({ name: diff, level: r.level });
-    m.set(g, entry);
+    if (!m.has(g)) m.set(g, { label: r.releaseLabel, image: r.image });
     return m;
-  }, new Map<string, { releaseLabel: string; difficulties: { name: string; level: number }[] }>())
-).map(([group, info]) => ({ group, releaseLabel: info.releaseLabel, difficulties: info.difficulties }));
+  }, new Map<string, { label: string; image: string }>())
+).map(([group, info]) => ({ group, label: info.label, image: info.image }));
 
-// 그룹별 최고 난이도(레벨) 레이드를 총 클리어 골드 내림차순으로 반환
-const getGroupBestRaidsByGold = (availableRaids: any[]): any[] => {
-  const groupBest: { [group: string]: any } = {};
-  for (const raid of availableRaids) {
+// 레벨에 맞는 모든 레이드 그룹 (최고 난이도 레벨 내림차순) + 출시 예정
+function getAllRaidGroups(itemLevel: number): string[] {
+  const best: Record<string, number> = {};
+  getRaidsForLevel(itemLevel).forEach(r => {
+    const g = getRaidGroupName(r.name);
+    if (best[g] === undefined || r.level > best[g]) best[g] = r.level;
+  });
+  const groups = Object.keys(best).sort((a, b) => best[b] - best[a]);
+  return [...groups, ...UPCOMING_GROUPS.map(u => u.group)];
+}
+
+// 한 레이드의 보상(골드/코어) 계산.
+// 유통(일반)골드는 그대로 두고, 더보기 비용은 귀속골드에서만 차감(귀속 음수 가능) — 레이드 밑 표시용.
+// 귀속 풀 정산(다른 레이드 귀속으로 흡수, 부족분 유통 차감)은 calcCharSplit 에서 캐릭터 단위로 처리.
+function calcRaidReward(raidName: string, gates: boolean[], receive: boolean, more: boolean) {
+  const raid = raidMap.get(raidName);
+  if (!raid) return { free: 0, bound: 0, cores: 0 };
+  const group = getRaidGroupName(raidName);
+  const baseCore = CORE_PER_GATE[raidName] || 0;
+  let gold = 0, bound = 0, moreCost = 0, cores = 0;
+  gates.forEach((checked, i) => {
+    if (!checked || !raid.gates[i]) return;
+    if (receive) {
+      gold += raid.gates[i].gold;
+      bound += raid.gates[i].boundGold;
+    }
+    if (more) moreCost += raid.gates[i].moreGold;
+    if (CORE_RAID_GROUPS.includes(group) && baseCore > 0) {
+      cores += baseCore * (more ? 2 : 1);
+    }
+  });
+  return { free: gold - bound, bound: bound - moreCost, cores };
+}
+
+// 캐릭터 전체 골드 split (체크된 레이드 합산).
+// 귀속은 캐릭터에 쌓이는 풀 — 합산 귀속이 음수면(선택 레이드가 전부 유통만 주는 경우) 유통에서 차감.
+function calcCharSplit(st: RaidWeeklyState): { total: number; free: number; bound: number; cores: number } {
+  let free = 0, bound = 0, cores = 0;
+  Object.entries(st.raids).forEach(([raidName, gates]) => {
+    if (!gates.some(Boolean)) return;
+    const receive = st.raidGoldReceive?.[raidName] !== false;
+    const more = st.raidMoreGoldExclude?.[raidName] === true;
+    const r = calcRaidReward(raidName, gates, receive, more);
+    free += r.free;
+    bound += r.bound;
+    cores += r.cores;
+  });
+  // 귀속 풀이 음수로 떨어지면 부족분을 유통에서 차감
+  if (bound < 0) { free += bound; bound = 0; }
+  return { total: free + bound, free, bound, cores };
+}
+
+type OptimizationMode = 'default' | 'goldOptimize' | 'coreOptimize';
+
+// 그룹별 최고 난이도 레이드를 총 클리어골드 내림차순으로
+function groupBestByGold(itemLevel: number): any[] {
+  const best: Record<string, any> = {};
+  for (const raid of getRaidsForLevel(itemLevel)) {
     const g = getRaidGroupName(raid.name);
-    if (!groupBest[g] || raid.level > groupBest[g].level) groupBest[g] = raid;
+    if (!best[g] || raid.level > best[g].level) best[g] = raid;
   }
   const totalGold = (r: any) => r.gates.reduce((s: number, x: any) => s + x.gold, 0);
-  return Object.values(groupBest).sort((a, b) => totalGold(b) - totalGold(a));
-};
+  return Object.values(best).sort((a, b) => totalGold(b) - totalGold(a));
+}
 
-// Deep clone 대체 유틸리티: 필요한 부분만 얕은 복사
-const updateGateSelection = (
-  prev: GateSelection,
-  characterName: string,
-  raidName: string,
-  gate: string | number,
-  value: 'none' | 'withMore' | 'withoutMore'
-): GateSelection => {
-  return {
-    ...prev,
-    [characterName]: {
-      ...prev[characterName],
-      [raidName]: {
-        ...prev[characterName]?.[raidName],
-        [gate]: value
+// 모드별 선택 상태 구성
+//  기본: 골드 상위 3그룹, 코어 레이드만 더보기 ON
+//  골드 최적화: 골드 상위 3그룹, 더보기 전부 OFF (클골만 — 골드 최대)
+//  코어 최적화: 코어 레이드 전부 더보기 ON(4번째+는 골드 미수령/코어만) + 골드 상위 3개 비코어 채움
+function buildModeState(char: Character, mode: OptimizationMode): RaidWeeklyState {
+  const raidsState: Record<string, boolean[]> = {};
+  const receive: Record<string, boolean> = {};
+  const more: Record<string, boolean> = {};
+  const byGold = groupBestByGold(char.itemLevel);
+  const top3 = byGold.slice(0, 3);
+  const top3Names = new Set(top3.map(r => r.name));
+
+  if (mode === 'coreOptimize') {
+    for (const raid of byGold) {
+      if (CORE_RAID_GROUPS.includes(getRaidGroupName(raid.name))) {
+        raidsState[raid.name] = raid.gates.map(() => true);
+        more[raid.name] = true;
       }
     }
-  };
-};
+    for (const raid of top3) {
+      if (!CORE_RAID_GROUPS.includes(getRaidGroupName(raid.name))) {
+        raidsState[raid.name] = raid.gates.map(() => true);
+        more[raid.name] = false;
+      }
+    }
+    for (const raidName of Object.keys(raidsState)) {
+      receive[raidName] = top3Names.has(raidName);
+    }
+  } else {
+    for (const raid of top3) {
+      raidsState[raid.name] = raid.gates.map(() => true);
+      receive[raid.name] = true;
+      const isCore = CORE_RAID_GROUPS.includes(getRaidGroupName(raid.name));
+      more[raid.name] = mode === 'default' ? isCore : false;
+    }
+  }
+  return { raids: raidsState, raidGoldReceive: receive, raidMoreGoldExclude: more, raidDifficultyOverride: {} };
+}
 
-
-export default function RaidCalculator({ selectedCharacters, onGateSelectionChange, onSaveReady, searchName }: RaidCalculatorProps) {
-  const [gateSelection, setGateSelection] = useState<GateSelection>({});
-  const [showAllRaids, setShowAllRaids] = useState<{ [key: string]: boolean }>({});
+export default function RaidCalculator({ selectedCharacters, onGateSelectionChange, onSaveReady, searchName, showSave }: RaidCalculatorProps) {
+  const [allState, setAllState] = useState<AllState>({});
+  const [optMode, setOptMode] = useState<Record<string, OptimizationMode>>({});
+  const [raidScrollIndex, setRaidScrollIndex] = useState<Record<string, number>>({});
+  const [diffOpenKey, setDiffOpenKey] = useState<string | null>(null);
+  const [expandedDiff, setExpandedDiff] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
-  const [optimizationMode, setOptimizationMode] = useState<{ [key: string]: OptimizationMode }>({});
+  const [savedFlash, setSavedFlash] = useState(false);
+  const savedTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 레이드 그룹명과 이미지 파일명 매핑
-  const raidImages: { [key: string]: string } = {
-    '벨가르딘': '/belgardin2.webp',
-    '성당': '/wlvuddmltjdekd1.webp',
-    '세르카': '/cerka2.webp',
-    '종막': '/abrelshud.webp',
-    '4막': '/illiakan.webp',
-    '3막': '/ivory-tower.webp',
-    '2막': '/kazeros.webp',
-    '1막': '/aegir.webp',
-    '서막': '/echidna.webp',
-    '베히모스': '/behemoth.webp'
-  };
-
-  // 레이드별 관문당 코어 획득량 (더보기 안 할 때 기준)
-  const corePerGate: { [key: string]: number } = {
-    '벨가르딘 나메': 4,
-    '벨가르딘 하드': 3,
-    '벨가르딘 노말': 3,
-    '성당 3단계': 3,
-    '성당 2단계': 2,
-    '성당 1단계': 2,
-    '세르카 나메': 3,
-    '세르카 하드': 2,
-    '세르카 노말': 2,
-    '종막 하드': 2,
-    '종막 노말': 2,
-    '4막 하드': 1,
-    '4막 노말': 1,
-  };
-
-  // 모바일 감지
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
-  // groupRaids를 useMemo로 메모이제이션
-  const groupedRaids = useMemo(() => {
-    const grouped: { [key: string]: any[] } = {};
-    raids.forEach(raid => {
-      const groupName = getRaidGroupName(raid.name);
-      if (!grouped[groupName]) {
-        grouped[groupName] = [];
-      }
-      grouped[groupName].push(raid);
-    });
-    return grouped;
-  }, []);
-
-  // 캐릭터별 최적 레이드 선택 계산
-  const computeOptimizedSelection = useCallback((character: Character, mode: OptimizationMode): { [raidName: string]: { [gate: string]: 'none' | 'withMore' | 'withoutMore' } } => {
-    const result: { [raidName: string]: { [gate: string]: 'none' | 'withMore' | 'withoutMore' } } = {};
-
-    // 모든 레이드 초기화
-    raids.forEach(raid => {
-      result[raid.name] = {};
-      raid.gates.forEach(gate => {
-        result[raid.name][gate.gate] = 'none';
-      });
-    });
-
-    // 캐릭터 레벨에 맞는 레이드 → 그룹별 최고 난이도를 골드 내림차순으로
-    const availableRaids = raids.filter(raid => character.itemLevel >= raid.level);
-    const sortedByGold = getGroupBestRaidsByGold(availableRaids);
-
-    if (mode === 'goldOptimize') {
-      // 골드 최적화: 기본과 동일하게 골드 상위 3개 선택, 단 더보기는 전부 OFF (클골만)
-      for (const raid of sortedByGold.slice(0, 3)) {
-        for (const gate of raid.gates) {
-          result[raid.name][gate.gate] = 'withMore';
-        }
-      }
-    } else if (mode === 'coreOptimize') {
-      // 코어 최적화: 코어 주는 레이드는 전부 더보기 ON, 골드 받는 레이드는 기본과 동일(골드 상위 3개)
-      // 1) 코어 레이드 전부 더보기 ON (4번째+는 골드 미수령이라 더보기 비용만큼 마이너스)
-      for (const raid of sortedByGold) {
-        const groupName = getRaidGroupName(raid.name);
-        if (!CORE_RAID_GROUPS.includes(groupName)) continue;
-        for (const gate of raid.gates) {
-          result[raid.name][gate.gate] = 'withoutMore';
-        }
-      }
-      // 2) 골드 상위 3개 중 아직 미선택(비코어) 그룹 추가 — 골드 받는 레이드를 기본과 동일하게 유지 (더보기 OFF)
-      for (const raid of sortedByGold.slice(0, 3)) {
-        const groupName = getRaidGroupName(raid.name);
-        if (CORE_RAID_GROUPS.includes(groupName)) continue;
-        for (const gate of raid.gates) {
-          result[raid.name][gate.gate] = 'withMore';
-        }
-      }
-    }
-
-    return result;
-  }, []);
-
-  // 기본 모드 선택 계산 (상위 레이드 3개, 코어 레이드면 더보기 체크)
-  const computeDefaultSelection = useCallback((character: Character): { [raidName: string]: { [gate: string]: 'none' | 'withMore' | 'withoutMore' } } => {
-    const result: { [raidName: string]: { [gate: string]: 'none' | 'withMore' | 'withoutMore' } } = {};
-
-    // 모든 레이드 초기화
-    raids.forEach(raid => {
-      result[raid.name] = {};
-      raid.gates.forEach(gate => {
-        result[raid.name][gate.gate] = 'none';
-      });
-    });
-
-    // 캐릭터 레벨에 맞는 레이드
-    const availableRaids = raids.filter(raid => character.itemLevel >= raid.level);
-
-    // 그룹별 최고 난이도 레이드를 골드 많이 주는 순으로 상위 3개 선택
-    // (코어 레이드면 더보기 ON, 비코어면 클골만)
-    for (const raid of getGroupBestRaidsByGold(availableRaids).slice(0, 3)) {
-      const groupName = getRaidGroupName(raid.name);
-      const selection = CORE_RAID_GROUPS.includes(groupName) ? 'withoutMore' : 'withMore';
-      for (const gate of raid.gates) {
-        result[raid.name][gate.gate] = selection;
-      }
-    }
-
-    return result;
-  }, []);
-
-  // 초기 선택 (저장된 설정 있으면 복원, 없으면 기본 모드)
+  // 초기화: 저장된 설정 복원 or 기본 선택
   useEffect(() => {
     let restored = false;
-
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const saved: SavedSettings = JSON.parse(raw);
-        // 저장된 캐릭터 목록과 현재 캐릭터 목록이 동일한지 확인
-        const savedNames = saved.characters.map(c => c.characterName).sort().join(',');
+        const savedNames = (saved.characters || []).map(c => c.characterName).sort().join(',');
         const currentNames = selectedCharacters.map(c => c.characterName).sort().join(',');
-
-        if (savedNames === currentNames && saved.gateSelection && saved.optimizationMode) {
-          setGateSelection(saved.gateSelection);
-          setOptimizationMode(saved.optimizationMode);
+        if (savedNames === currentNames && saved.state) {
+          setAllState(saved.state);
+          setOptMode(saved.optMode || {});
           restored = true;
         }
       }
     } catch {}
 
     if (!restored) {
-      const initialSelection: GateSelection = {};
-      selectedCharacters.forEach(character => {
-        initialSelection[character.characterName] = computeDefaultSelection(character);
+      const init: AllState = {};
+      const modes: Record<string, OptimizationMode> = {};
+      selectedCharacters.forEach(c => {
+        init[c.characterName] = buildModeState(c, 'default');
+        modes[c.characterName] = 'default';
       });
-      setGateSelection(initialSelection);
-
-      const initialMode: { [key: string]: OptimizationMode } = {};
-      selectedCharacters.forEach(character => {
-        initialMode[character.characterName] = 'default';
-      });
-      setOptimizationMode(initialMode);
+      setAllState(init);
+      setOptMode(modes);
     }
+    setRaidScrollIndex({});
+    setDiffOpenKey(null);
   }, [selectedCharacters]);
 
-  // 설정 저장 함수
+  // 설정 저장
   const saveSettings = useCallback(() => {
     try {
       const settings: SavedSettings = {
         searchName: searchName || selectedCharacters[0]?.characterName || '',
         characters: selectedCharacters,
-        gateSelection,
-        optimizationMode,
+        state: allState,
+        optMode,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
       return true;
     } catch {
       return false;
     }
-  }, [selectedCharacters, gateSelection, optimizationMode, searchName]);
+  }, [selectedCharacters, allState, optMode, searchName]);
 
-  // 부모에게 save 함수 전달
-  useEffect(() => {
-    onSaveReady?.(saveSettings);
-  }, [saveSettings, onSaveReady]);
+  useEffect(() => { onSaveReady?.(saveSettings); }, [saveSettings, onSaveReady]);
 
-  const getHeaderCheckState = (characterName: string, raidName: string, selection: 'withMore' | 'withoutMore') => {
-    const raid = raids.find(r => r.name === raidName);
-    if (!raid || !gateSelection[characterName]?.[raidName]) return false;
+  // 결과 줄 설정 저장 버튼 (저장 완료 피드백)
+  const handleSaveClick = useCallback(() => {
+    if (saveSettings()) {
+      setSavedFlash(true);
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setSavedFlash(false), 2000);
+    }
+  }, [saveSettings]);
+  useEffect(() => () => { if (savedTimerRef.current) clearTimeout(savedTimerRef.current); }, []);
 
-    return raid.gates.every(gate =>
-      gateSelection[characterName][raidName][gate.gate] === selection
-    );
-  };
-
-  const hasAnyGateSelected = (characterName: string, raidName: string) => {
-    const raid = raids.find(r => r.name === raidName);
-    if (!raid || !gateSelection[characterName]?.[raidName]) return false;
-
-    return raid.gates.some(gate =>
-      gateSelection[characterName][raidName][gate.gate] !== 'none'
-    );
-  };
-
-  const handleHeaderChange = useCallback((characterName: string, raidName: string, selection: 'withMore' | 'withoutMore') => {
-    // 최적화 모드에서 수동 변경 시 기본 모드로 전환
-    setOptimizationMode(prev => ({ ...prev, [characterName]: 'default' }));
-
-    setGateSelection(prev => {
-      const raid = raids.find(r => r.name === raidName)!;
-      const allSelected = raid.gates.every(gate =>
-        prev[characterName]?.[raidName]?.[gate.gate] === selection
-      );
-
-      const newSelection = allSelected ? 'none' : selection;
-      const groupName = getRaidGroupName(raidName);
-
-      let result = { ...prev };
-      result[characterName] = { ...result[characterName] };
-
-      if (newSelection !== 'none') {
-        for (const r of groupedRaids[groupName]) {
-          if (r.name !== raidName && result[characterName]?.[r.name]) {
-            result[characterName][r.name] = { ...result[characterName][r.name] };
-            for (const gate of raid.gates) {
-              const sameGate = r.gates.find((g: any) => g.gate === gate.gate);
-              if (sameGate) {
-                result[characterName][r.name][gate.gate] = 'none';
-              }
-            }
-          }
-        }
-      }
-
-      result[characterName][raidName] = { ...result[characterName][raidName] };
-      for (const gate of raid.gates) {
-        result[characterName][raidName][gate.gate] = newSelection;
-      }
-
-      return result;
+  // 캐릭터별 계산값 메모
+  const perChar = useMemo(() => {
+    const out: Record<string, { total: number; free: number; bound: number; cores: number }> = {};
+    selectedCharacters.forEach(c => {
+      out[c.characterName] = calcCharSplit(allState[c.characterName] || { raids: {} });
     });
-  }, [groupedRaids]);
+    return out;
+  }, [allState, selectedCharacters]);
 
-  const handleGateChange = useCallback((characterName: string, raidName: string, gate: number, selection: 'none' | 'withMore' | 'withoutMore') => {
-    // 최적화 모드에서 수동 변경 시 기본 모드로 전환
-    setOptimizationMode(prev => ({ ...prev, [characterName]: 'default' }));
+  const grand = useMemo(() => {
+    let total = 0, free = 0, bound = 0, cores = 0;
+    Object.values(perChar).forEach(p => { total += p.total; free += p.free; bound += p.bound; cores += p.cores; });
+    return { total, free, bound, cores };
+  }, [perChar]);
 
-    setGateSelection(prev => {
-      const currentSelection = prev[characterName]?.[raidName]?.[gate];
-      const newSelection = currentSelection === selection ? 'none' : selection;
-      const groupName = getRaidGroupName(raidName);
-
-      let result = { ...prev };
-      result[characterName] = { ...result[characterName] };
-
-      if (newSelection !== 'none') {
-        for (const r of groupedRaids[groupName]) {
-          if (r.name !== raidName) {
-            const sameGate = r.gates.find((g: any) => g.gate === gate);
-            if (sameGate && result[characterName]?.[r.name]) {
-              result[characterName][r.name] = { ...result[characterName][r.name] };
-              result[characterName][r.name][gate] = 'none';
-            }
-          }
-        }
-      }
-
-      result[characterName][raidName] = { ...result[characterName][raidName] };
-      result[characterName][raidName][gate] = newSelection;
-
-      return result;
-    });
-  }, [groupedRaids]);
-
-  // 최적화 모드 변경 핸들러
-  const handleModeChange = useCallback((characterName: string, mode: OptimizationMode) => {
-    setOptimizationMode(prev => ({ ...prev, [characterName]: mode }));
-
-    if (mode === 'default') {
-      // 기본 모드: computeDefaultSelection으로 복원
-      const character = selectedCharacters.find(c => c.characterName === characterName);
-      if (!character) return;
-
-      const defaultSel = computeDefaultSelection(character);
-      setGateSelection(prev => ({
-        ...prev,
-        [characterName]: defaultSel
-      }));
-    } else {
-      // 골드/코어 최적화
-      const character = selectedCharacters.find(c => c.characterName === characterName);
-      if (!character) return;
-
-      const optimized = computeOptimizedSelection(character, mode);
-      setGateSelection(prev => ({
-        ...prev,
-        [characterName]: optimized
-      }));
-    }
-  }, [selectedCharacters, computeDefaultSelection, computeOptimizedSelection]);
-
-  // 골드 계산 (최적화 모드에서는 상위 3개만 골드 지급)
-  const calculatedData = useMemo(() => {
-    const raidGroupGold: { [char: string]: { [group: string]: number } } = {};
-    const characterGold: { [char: string]: number } = {};
-    const raidGroupCores: { [char: string]: { [group: string]: number } } = {};
-    const characterCores: { [char: string]: number } = {};
-    const raidGroupFree: { [char: string]: { [group: string]: number } } = {};
-    const raidGroupBound: { [char: string]: { [group: string]: number } } = {};
-    const characterFree: { [char: string]: number } = {};
-    const characterBound: { [char: string]: number } = {};
-    const moreSelected: { [char: string]: { [group: string]: boolean } } = {};
-    const checkedGroups: { [char: string]: string[] } = {};
-    const goldExcludedGroups: { [char: string]: string[] } = {}; // 골드 미수령 그룹
-    let totalGold = 0;
-    let totalFree = 0;
-    let totalBound = 0;
-    let hasAnyMore = false;
-
-    for (const characterName in gateSelection) {
-      raidGroupGold[characterName] = {};
-      raidGroupFree[characterName] = {};
-      raidGroupBound[characterName] = {};
-      raidGroupCores[characterName] = {};
-      moreSelected[characterName] = {};
-      checkedGroups[characterName] = [];
-      goldExcludedGroups[characterName] = [];
-      let charCores = 0;
-
-      // 1단계: 그룹별 baseGold(총), baseBound(귀속), moreCost, cores 계산
-      const groupCalc: { [group: string]: { baseGold: number; baseBound: number; moreCost: number; cores: number; hasMore: boolean; hasChecked: boolean } } = {};
-
-      for (const groupName in groupedRaids) {
-        let baseGold = 0;
-        let baseBound = 0;
-        let moreCost = 0;
-        let groupCores = 0;
-        let groupHasMore = false;
-        let groupHasChecked = false;
-
-        for (const raidName in gateSelection[characterName]) {
-          if (raidName.startsWith(groupName)) {
-            for (const gate in gateSelection[characterName][raidName]) {
-              const selection = gateSelection[characterName][raidName][gate];
-              if (selection !== 'none') {
-                groupHasChecked = true;
-                const raid = raids.find(r => r.name === raidName);
-                if (raid) {
-                  const gateInfo = raid.gates.find(g => g.gate === parseInt(gate));
-                  if (gateInfo) {
-                    baseGold += gateInfo.gold;
-                    baseBound += gateInfo.boundGold;
-                    if (selection === 'withoutMore') {
-                      moreCost += gateInfo.moreGold;
-                      groupHasMore = true;
-                      hasAnyMore = true;
-                    }
-                  }
-                }
-
-                // 코어 계산
-                if (CORE_RAID_GROUPS.includes(groupName)) {
-                  const baseCores = corePerGate[raidName] || 0;
-                  if (baseCores > 0) {
-                    const multiplier = selection === 'withoutMore' ? 2 : 1;
-                    groupCores += baseCores * multiplier;
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        groupCalc[groupName] = { baseGold, baseBound, moreCost, cores: groupCores, hasMore: groupHasMore, hasChecked: groupHasChecked };
-
-        if (groupHasChecked) {
-          checkedGroups[characterName].push(groupName);
-        }
-
-        raidGroupCores[characterName][groupName] = groupCores;
-        moreSelected[characterName][groupName] = groupHasMore;
-        charCores += groupCores;
-      }
-
-      characterCores[characterName] = charCores;
-
-      // 2단계: 체크된 그룹 중 상위 3개만 골드 지급 (4개 이상일 때).
-      // 더보기 비용은 귀속 골드에서 우선 차감하고 부족하면 일반 골드에서 차감.
-      const checked = checkedGroups[characterName];
-      const sorted = [...checked].sort((a, b) => groupCalc[b].baseGold - groupCalc[a].baseGold);
-
-      let charGold = 0;
-      let charFree = 0;
-      let charBound = 0;
-      for (let i = 0; i < sorted.length; i++) {
-        const g = sorted[i];
-        const calc = groupCalc[g];
-        if (i < 3) {
-          // 상위 3개: 골드 수령. 귀속 우선 차감.
-          const baseFreeGold = calc.baseGold - calc.baseBound;
-          const boundDeduct = Math.min(calc.baseBound, calc.moreCost);
-          const groupBound = calc.baseBound - boundDeduct;
-          const groupFree = baseFreeGold - (calc.moreCost - boundDeduct);
-          const groupTotal = groupFree + groupBound; // = calc.baseGold - calc.moreCost
-
-          raidGroupGold[characterName][g] = groupTotal;
-          raidGroupFree[characterName][g] = groupFree;
-          raidGroupBound[characterName][g] = groupBound;
-          charGold += groupTotal;
-          charFree += groupFree;
-          charBound += groupBound;
-        } else {
-          // 4번째+: 골드 미수령. 더보기 비용은 귀속 골드 마이너스로 차감.
-          const groupFree = 0;
-          const groupBound = -calc.moreCost;
-          const groupTotal = groupFree + groupBound;
-
-          raidGroupGold[characterName][g] = groupTotal;
-          raidGroupFree[characterName][g] = groupFree;
-          raidGroupBound[characterName][g] = groupBound;
-          charGold += groupTotal;
-          charFree += groupFree;
-          charBound += groupBound;
-          goldExcludedGroups[characterName].push(g);
-        }
-      }
-
-      // 체크 안 된 그룹 0
-      for (const g in groupCalc) {
-        if (!checked.includes(g)) {
-          raidGroupGold[characterName][g] = 0;
-          raidGroupFree[characterName][g] = 0;
-          raidGroupBound[characterName][g] = 0;
-        }
-      }
-
-      characterGold[characterName] = charGold;
-      characterFree[characterName] = charFree;
-      characterBound[characterName] = charBound;
-      totalGold += charGold;
-      totalFree += charFree;
-      totalBound += charBound;
-    }
-
-    return {
-      raidGroupGold,
-      raidGroupFree,
-      raidGroupBound,
-      characterGold,
-      characterFree,
-      characterBound,
-      raidGroupCores,
-      characterCores,
-      moreSelected,
-      checkedGroups,
-      goldExcludedGroups,
-      totalGold,
-      totalFree,
-      totalBound,
-      hasAnyMore
-    };
-  }, [gateSelection, groupedRaids, corePerGate]);
-
-  // 부모에게 gateSelection/characterCalc 전달 (top-3 골드 한정 계산값을 그대로 전달)
-  const prevCalcRef = useRef('');
+  // 부모에게 계산값 전달
+  const prevRef = useRef('');
   useEffect(() => {
-    const characterCalc: { [char: string]: CharacterGoldCalc } = {};
-    for (const char in calculatedData.characterGold) {
-      characterCalc[char] = {
-        total: calculatedData.characterGold[char] || 0,
-        free: calculatedData.characterFree[char] || 0,
-        bound: calculatedData.characterBound[char] || 0,
-      };
+    const cc: Record<string, CharacterGoldCalc> = {};
+    Object.entries(perChar).forEach(([name, p]) => { cc[name] = { total: p.total, free: p.free, bound: p.bound }; });
+    const s = JSON.stringify(cc);
+    if (s !== prevRef.current) {
+      prevRef.current = s;
+      onGateSelectionChange?.(allState, cc);
     }
-    const serialized = JSON.stringify(characterCalc);
-    if (serialized !== prevCalcRef.current) {
-      prevCalcRef.current = serialized;
-      onGateSelectionChange?.(gateSelection, characterCalc);
-    }
-  }, [gateSelection, calculatedData.characterGold, calculatedData.characterFree, calculatedData.characterBound, onGateSelectionChange]);
+  }, [perChar, allState, onGateSelectionChange]);
 
-  // 그룹에서 캐릭터가 선택한 (가장 높은) 난이도 추출. 단일 난이도(서막/베히모스) 면 null.
-  const getSelectedDifficulty = useCallback((characterName: string, groupName: string): { rawDiff: string; type: DifficultyType } | null => {
-    const charSel = gateSelection[characterName];
-    if (!charSel) return null;
-    for (const raid of (groupedRaids[groupName] || [])) {
-      const sel = charSel[raid.name];
-      if (sel && Object.values(sel).some(v => v !== 'none')) {
-        const rawDiff = raid.name.substring(groupName.length).trim();
-        const type = getDifficultyType(rawDiff, groupName);
-        return type ? { rawDiff, type } : null;
+  // ── 핸들러 ───────────────────────────────────────────────
+  const toggleRaid = useCallback((charName: string, raidName: string) => {
+    setOptMode(prev => ({ ...prev, [charName]: 'default' }));
+    setAllState(prev => {
+      const st = prev[charName] || { raids: {} };
+      const raid = raidMap.get(raidName);
+      if (!raid) return prev;
+      const gates = st.raids[raidName]?.length ? st.raids[raidName] : raid.gates.map(() => false);
+      const allChecked = gates.length > 0 && gates.every(Boolean);
+      const willCheck = !allChecked;
+      const newGates = gates.map(() => willCheck);
+      const receive = { ...(st.raidGoldReceive || {}) };
+      const more = { ...(st.raidMoreGoldExclude || {}) };
+      if (willCheck) {
+        // 현재 골드 수령 중인 다른 레이드 수 (주간 3개 제한)
+        const goldCount = Object.entries(st.raids).filter(([n, g]) =>
+          n !== raidName && g.some(Boolean) && receive[n] !== false
+        ).length;
+        const within = goldCount < 3;
+        receive[raidName] = within;
+        more[raidName] = within && CORE_RAID_GROUPS.includes(getRaidGroupName(raidName));
+      } else {
+        delete receive[raidName];
+        delete more[raidName];
       }
-    }
-    return null;
-  }, [gateSelection, groupedRaids]);
+      return { ...prev, [charName]: { ...st, raids: { ...st.raids, [raidName]: newGates }, raidGoldReceive: receive, raidMoreGoldExclude: more } };
+    });
+  }, []);
 
-  const calculateRaidGroupGold = useCallback((characterName: string, groupName: string) => {
-    return calculatedData.raidGroupGold[characterName]?.[groupName] || 0;
-  }, [calculatedData]);
+  const toggleMore = useCallback((charName: string, raidName: string) => {
+    setOptMode(prev => ({ ...prev, [charName]: 'default' }));
+    setAllState(prev => {
+      const st = prev[charName] || { raids: {} };
+      const more = { ...(st.raidMoreGoldExclude || {}) };
+      more[raidName] = !more[raidName];
+      return { ...prev, [charName]: { ...st, raidMoreGoldExclude: more } };
+    });
+  }, []);
 
-  const calculateRaidGroupFree = useCallback((characterName: string, groupName: string) => {
-    return calculatedData.raidGroupFree[characterName]?.[groupName] || 0;
-  }, [calculatedData]);
+  const toggleGold = useCallback((charName: string, raidName: string) => {
+    setOptMode(prev => ({ ...prev, [charName]: 'default' }));
+    setAllState(prev => {
+      const st = prev[charName] || { raids: {} };
+      const receive = { ...(st.raidGoldReceive || {}) };
+      receive[raidName] = receive[raidName] === false ? true : false;
+      return { ...prev, [charName]: { ...st, raidGoldReceive: receive } };
+    });
+  }, []);
 
-  const calculateRaidGroupBound = useCallback((characterName: string, groupName: string) => {
-    return calculatedData.raidGroupBound[characterName]?.[groupName] || 0;
-  }, [calculatedData]);
+  const changeDifficulty = useCallback((charName: string, group: string, oldRaidName: string, newRaidName: string) => {
+    setOptMode(prev => ({ ...prev, [charName]: 'default' }));
+    setAllState(prev => {
+      const st = prev[charName] || { raids: {} };
+      const newRaid = raidMap.get(newRaidName);
+      if (!newRaid) return prev;
+      const oldGates = st.raids[oldRaidName] || [];
+      const wasChecked = oldGates.some(Boolean);
+      const raidsState = { ...st.raids };
+      const receive = { ...(st.raidGoldReceive || {}) };
+      const more = { ...(st.raidMoreGoldExclude || {}) };
 
-  const calculateCharacterGold = useCallback((characterName: string) => {
-    return calculatedData.characterGold[characterName] || 0;
-  }, [calculatedData]);
+      if (oldRaidName !== newRaidName) {
+        raidsState[oldRaidName] = oldGates.map(() => false);
+        const prevReceive = receive[oldRaidName];
+        const prevMore = more[oldRaidName];
+        delete receive[oldRaidName];
+        delete more[oldRaidName];
+        if (wasChecked) {
+          receive[newRaidName] = prevReceive !== false;
+          more[newRaidName] = prevMore === true;
+        }
+      }
+      raidsState[newRaidName] = newRaid.gates.map(() => wasChecked);
+      const override = { ...(st.raidDifficultyOverride || {}), [group]: newRaidName };
+      return { ...prev, [charName]: { ...st, raids: raidsState, raidGoldReceive: receive, raidMoreGoldExclude: more, raidDifficultyOverride: override } };
+    });
+  }, []);
 
-  const calculateCharacterFree = useCallback((characterName: string) => {
-    return calculatedData.characterFree[characterName] || 0;
-  }, [calculatedData]);
+  // 관문 단위 체크 토글 (톱니 메뉴 관문별 설정)
+  const toggleGate = useCallback((charName: string, raidName: string, gateIdx: number) => {
+    setOptMode(prev => ({ ...prev, [charName]: 'default' }));
+    setAllState(prev => {
+      const st = prev[charName] || { raids: {} };
+      const raid = raidMap.get(raidName);
+      if (!raid) return prev;
+      const gates = st.raids[raidName]?.length ? [...st.raids[raidName]] : raid.gates.map(() => false);
+      const wasAny = gates.some(Boolean);
+      gates[gateIdx] = !gates[gateIdx];
+      const nowAny = gates.some(Boolean);
+      const receive = { ...(st.raidGoldReceive || {}) };
+      const more = { ...(st.raidMoreGoldExclude || {}) };
+      if (nowAny && !wasAny) {
+        // 새로 선택됨 → 골드 수령 3개 제한, 코어 레이드는 더보기 ON
+        const goldCount = Object.entries(st.raids).filter(([n, g]) =>
+          n !== raidName && g.some(Boolean) && receive[n] !== false
+        ).length;
+        const within = goldCount < 3;
+        receive[raidName] = within;
+        more[raidName] = within && CORE_RAID_GROUPS.includes(getRaidGroupName(raidName));
+      } else if (!nowAny) {
+        delete receive[raidName];
+        delete more[raidName];
+      }
+      return { ...prev, [charName]: { ...st, raids: { ...st.raids, [raidName]: gates }, raidGoldReceive: receive, raidMoreGoldExclude: more } };
+    });
+  }, []);
 
-  const calculateCharacterBound = useCallback((characterName: string) => {
-    return calculatedData.characterBound[characterName] || 0;
-  }, [calculatedData]);
+  const handleModeChange = useCallback((charName: string, mode: OptimizationMode) => {
+    const char = selectedCharacters.find(c => c.characterName === charName);
+    if (!char) return;
+    setOptMode(prev => ({ ...prev, [charName]: mode }));
+    setAllState(prev => ({ ...prev, [charName]: buildModeState(char, mode) }));
+  }, [selectedCharacters]);
 
-  const calculateTotalGold = useCallback(() => {
-    return calculatedData.totalGold;
-  }, [calculatedData]);
+  const MODE_BTNS: { key: OptimizationMode; label: string; title: string; cls: string }[] = [
+    { key: 'default', label: '기본', title: '기본 (골드 상위 3개)', cls: styles.modeDefault },
+    { key: 'goldOptimize', label: '골드', title: '골드 최적화 (더보기 전부 OFF)', cls: styles.modeGold },
+    { key: 'coreOptimize', label: '코어', title: '코어 최적화 (코어 레이드 더보기 ON)', cls: styles.modeCore },
+  ];
 
-  const calculateTotalFree = useCallback(() => {
-    return calculatedData.totalFree;
-  }, [calculatedData]);
-
-  const calculateTotalBound = useCallback(() => {
-    return calculatedData.totalBound;
-  }, [calculatedData]);
-
-  const hasMoreSelected = useCallback((characterName: string, groupName: string) => {
-    return calculatedData.moreSelected[characterName]?.[groupName] || false;
-  }, [calculatedData]);
-
-  const calculateRaidGroupCores = useCallback((characterName: string, groupName: string) => {
-    return calculatedData.raidGroupCores[characterName]?.[groupName] || 0;
-  }, [calculatedData]);
-
-  const calculateCharacterCores = useCallback((characterName: string) => {
-    return calculatedData.characterCores[characterName] || 0;
-  }, [calculatedData]);
-
-  const hasAnyMoreReward = useCallback(() => {
-    return calculatedData.hasAnyMore;
-  }, [calculatedData]);
-
-  const getCheckedRaidGroups = useCallback((characterName: string) => {
-    return calculatedData.checkedGroups[characterName] || [];
-  }, [calculatedData]);
-
-  const isGoldExcluded = useCallback((characterName: string, groupName: string) => {
-    return calculatedData.goldExcludedGroups[characterName]?.includes(groupName) || false;
-  }, [calculatedData]);
-
-  if (selectedCharacters.length === 0) {
+  const renderModeButtons = (charName: string) => {
+    const cur = optMode[charName] || 'default';
     return (
-      <div className="text-center p-5">
-      </div>
-    );
-  }
-
-  // 모드 버튼 렌더링
-  const renderModeButtons = (characterName: string, hasBackground: boolean) => {
-    const currentMode = optimizationMode[characterName] || 'default';
-    const modes: { key: OptimizationMode; label: string; shortLabel: string; activeColor: string }[] = [
-      { key: 'default', label: '기본', shortLabel: '기본', activeColor: '#16a34a' },
-      { key: 'goldOptimize', label: '골드 최적화', shortLabel: '골드', activeColor: '#d97706' },
-      { key: 'coreOptimize', label: '코어 최적화', shortLabel: '코어', activeColor: '#7c3aed' },
-    ];
-
-    return (
-      <div className="d-flex" style={{
-        gap: '0px',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        border: hasBackground ? '1px solid rgba(255,255,255,0.4)' : '1px solid var(--border-color)',
-        backdropFilter: hasBackground ? 'blur(6px)' : 'none',
-      }}>
-        {modes.map(m => {
-          const isActive = currentMode === m.key;
-          return (
-            <button
-              key={m.key}
-              onClick={() => handleModeChange(characterName, m.key)}
-              style={{
-                fontSize: isMobile ? '0.6rem' : '0.72rem',
-                padding: isMobile ? '0.3rem 0.5rem' : '0.3rem 0.7rem',
-                fontWeight: isActive ? 700 : 600,
-                whiteSpace: 'nowrap',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                backgroundColor: isActive
-                  ? m.activeColor
-                  : hasBackground ? 'rgba(255,255,255,0.15)' : 'rgba(128,128,128,0.1)',
-                color: isActive
-                  ? '#fff'
-                  : hasBackground ? 'rgba(255,255,255,0.9)' : 'var(--text-primary)',
-                lineHeight: 1.3,
-                textShadow: hasBackground ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
-                boxShadow: isActive ? '0 0 8px rgba(0,0,0,0.3)' : 'none',
-              }}
-            >
-              {isMobile ? m.shortLabel : m.label}
-            </button>
-          );
-        })}
+      <div className={styles.modeGroup}>
+        {MODE_BTNS.map(m => (
+          <button
+            key={m.key}
+            className={`${styles.modeBtn} ${m.cls} ${cur === m.key ? styles.modeBtnActive : ''}`}
+            onClick={() => handleModeChange(charName, m.key)}
+            title={m.title}
+          >
+            {m.label}
+          </button>
+        ))}
       </div>
     );
   };
+
+  if (selectedCharacters.length === 0) return null;
+
+  const raidCount = isMobile ? 3 : 4;
 
   return (
-    <div className="raid-calculator-page">
-      <Row className="align-items-stretch">
-        {selectedCharacters.map(character => {
-          const checkedGroups = getCheckedRaidGroups(character.characterName);
-          const uncheckedGroups = Object.keys(groupedRaids).filter(g => !checkedGroups.includes(g));
-          const showAll = showAllRaids[character.characterName] || false;
-          const hasBackground = character.itemLevel >= 1750;
-          // 1750+ 캐릭터 카드 배경: 벨가르딘 (상반신 컷)
-          const bgImage = character.itemLevel >= 1750 ? '/belgardin2.webp' : null;
+    <div className={styles.cardGrid}>
+      {selectedCharacters.map(char => {
+        const st = allState[char.characterName] || { raids: {} };
+        const p = perChar[char.characterName] || { total: 0, free: 0, bound: 0, cores: 0 };
+        const allGroups = getAllRaidGroups(char.itemLevel);
+        const startIdx = raidScrollIndex[char.characterName] || 0;
+        const canLeft = startIdx > 0;
+        const canRight = startIdx + raidCount < allGroups.length;
 
-          return (
-            <Col lg={4} md={6} sm={12} key={character.characterName} className="mb-3 mb-md-4">
-              <Card className={`character-raid-card ${hasBackground ? 'cerka-character' : ''}`} style={{ borderColor: 'var(--border-color)', height: '100%', position: 'relative', overflow: 'hidden' }}>
+        return (
+          <div key={char.characterName} className={styles.characterCard}>
+            {/* 헤더: 이름 + 레벨 (좌) / 최적화 모드 (우) */}
+            <div className={styles.cardHeader}>
+              <div className={styles.headerLeft}>
+                <span className={styles.charName}>{char.characterName}</span>
+                <span className={styles.charLevel}>Lv.{char.itemLevel.toFixed(0)}</span>
+              </div>
+              {renderModeButtons(char.characterName)}
+            </div>
 
-                {bgImage && (
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
-                    <Image
-                      src={bgImage}
-                      alt="레이드 배경"
-                      fill
-                      style={{ objectFit: 'cover', opacity: 1 }}
-                      priority={true}
-                    />
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.3)' }} />
-                  </div>
-                )}
-                <Card.Header
-                  className="character-raid-header"
-                  style={{
-                    padding: isMobile ? '0.6rem 0.75rem' : '1.1rem 1.2rem',
-                    position: 'relative',
-                    zIndex: 1
-                  }}
-                >
-                  {/* 1줄: 캐릭터명 + 레벨 + 모드 버튼 */}
-                  <div className="d-flex align-items-center justify-content-between" style={{ gap: isMobile ? '0.4rem' : '0.5rem', flexWrap: 'nowrap' }}>
-                    <div className="d-flex align-items-center gap-1" style={{ minWidth: 0, flex: '1 1 auto' }}>
-                      <span style={{
-                        fontSize: isMobile ? '0.95rem' : '1.25rem',
-                        fontWeight: 600,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {character.characterName}
-                      </span>
-                      <Badge
-                        className="character-level-badge"
-                        style={{
-                          fontSize: isMobile ? '0.68rem' : '0.88rem',
-                          padding: '0.3em 0.55em',
-                          fontWeight: 500,
-                          flexShrink: 0,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        Lv.{character.itemLevel}
-                      </Badge>
-                    </div>
+            {/* 본문: 레이드 + 보상 / 우측 합산 */}
+            <div className={styles.cardBody}>
+              <div className={styles.cardMain}>
+                <div className={styles.raidRowWrapper}>
+                  {canLeft && (
+                    <button
+                      className={`${styles.navBtn} ${styles.navLeft}`}
+                      onClick={() => setRaidScrollIndex(prev => ({ ...prev, [char.characterName]: Math.max(0, (prev[char.characterName] || 0) - 1) }))}
+                      aria-label="이전 레이드"
+                    >‹</button>
+                  )}
 
-                    <div style={{ flexShrink: 0 }}>
-                      {renderModeButtons(character.characterName, hasBackground)}
-                    </div>
-                  </div>
+                  <div className={styles.itemRow}>
+                    {Array.from({ length: raidCount }).map((_, i) => {
+                      const group = allGroups[startIdx + i];
 
-                  {/* 2줄: 코어 + 골드 오른쪽 정렬 */}
-                  <div className="d-flex align-items-center justify-content-end gap-2" style={{ marginTop: '0.55rem' }}>
-                    {calculateCharacterCores(character.characterName) > 0 && (
-                      <div className="d-flex align-items-center gap-1" style={{ whiteSpace: 'nowrap' }}>
-                        <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 24 : 31} height={isMobile ? 24 : 31} style={{ borderRadius: '3px' }} />
-                        <span style={{
-                          fontSize: isMobile ? '0.92rem' : '1.18rem',
-                          fontWeight: 700,
-                          color: 'var(--text-primary)'
-                        }}>
-                          x{calculateCharacterCores(character.characterName)}
-                        </span>
-                      </div>
-                    )}
+                      // 빈 슬롯
+                      if (!group) {
+                        return (
+                          <div key={`empty-${i}`} className={styles.raidCell}>
+                            <div className={`${styles.raidCard} ${styles.raidEmpty}`}><div className={styles.emptySlot}>-</div></div>
+                            <div className={styles.rewardUnder} />
+                          </div>
+                        );
+                      }
 
-                    <div className="character-gold-display d-flex align-items-center gap-1" style={{
-                      padding: '0.35em 0.6em',
-                      borderRadius: '6px',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      <Image src="/gold.webp" alt="일반 골드" title="일반 골드" width={isMobile ? 15 : 20} height={isMobile ? 15 : 20} style={{ borderRadius: '3px' }} />
-                      <span style={{
-                        fontSize: isMobile ? '0.78rem' : '1rem',
-                        fontWeight: 700
-                      }}>
-                        {calculateCharacterFree(character.characterName).toLocaleString()}
-                      </span>
-                      <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={isMobile ? 15 : 20} height={isMobile ? 15 : 20} style={{ borderRadius: '3px', filter: BOUND_GOLD_FILTER, marginLeft: '4px' }} />
-                      <span style={{
-                        fontSize: isMobile ? '0.78rem' : '1rem',
-                        fontWeight: 700,
-                        color: BOUND_GOLD_TEXT
-                      }}>
-                        {calculateCharacterBound(character.characterName).toLocaleString()}
-                      </span>
-                      <span style={{ margin: isMobile ? '0 1px' : '0 3px', fontSize: isMobile ? '0.78rem' : '1rem', fontWeight: 700, opacity: 0.6 }}>=</span>
-                      <span style={{
-                        fontSize: isMobile ? '0.85rem' : '1.08rem',
-                        fontWeight: 800,
-                        color: calculateCharacterGold(character.characterName) < 0 ? '#c0392b' : 'var(--text-primary)'
-                      }}>
-                        {calculateCharacterGold(character.characterName).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </Card.Header>
-                <Card.Body style={{ padding: isMobile ? '0.4rem' : '1rem 1rem 0.85rem', position: 'relative', zIndex: 1 }}>
-                  <Accordion flush className="theme-accordion">
-                    {/* 체크된 레이드 그룹들 */}
-                    {checkedGroups.map(groupName => {
-                      const excluded = isGoldExcluded(character.characterName, groupName);
-                      return (
-                      <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
-                        <Accordion.Header style={{ fontSize: isMobile ? '1.05rem' : '1.35rem', padding: isMobile ? '0.28rem 0.5rem' : '0.4rem 0.75rem' }}>
-                          <div className="d-flex align-items-center w-100">
-                            {raidImages[groupName] && (
-                              <Image
-                                src={raidImages[groupName]}
-                                alt={groupName}
-                                width={100}
-                                height={100}
-                                quality={100}
-                                style={{
-                                  marginLeft: isMobile ? '-1rem' : '-1.25rem',
-                                  marginRight: '0.5rem',
-                                  borderRadius: '4px',
-                                  width: isMobile ? '42px' : '54px',
-                                  height: isMobile ? '42px' : '54px',
-                                  objectFit: 'cover',
-                                  flexShrink: 0
-                                }}
-                              />
-                            )}
-                            {/* 이름(1줄) + 난이도 배지(2줄) */}
-                            <div className="d-flex flex-column" style={{ minWidth: 0 }}>
-                              <span className="badge-raid-name" style={{
-                                display: 'inline-block',
-                                alignSelf: 'flex-start',
-                                padding: isMobile ? '0.24em 0.55em' : '0.3em 0.65em',
-                                fontWeight: 700,
-                                fontSize: isMobile ? '0.78rem' : '1.0rem',
-                                borderRadius: '0.375rem',
-                                whiteSpace: 'nowrap',
-                                lineHeight: 1.2,
-                              }}>{groupName}</span>
-                              <div className="d-flex align-items-center" style={{ marginTop: '2px' }}>
-                                {(() => {
-                                  const diff = getSelectedDifficulty(character.characterName, groupName);
-                                  if (!diff) return null;
-                                  const cls = DIFFICULTY_CLASS[diff.type];
-                                  // <Badge> 는 bg prop 없으면 bg-primary(!important) 가 붙어 파랗게 나오므로 plain span 으로.
-                                  // 색상은 weekly-gold.module.css 의 cls 매칭 룰에서 결정.
-                                  return (
-                                    <span className={cls} style={{
-                                      display: 'inline-block',
-                                      padding: isMobile ? '0.2em 0.5em' : '0.27em 0.6em',
-                                      fontSize: isMobile ? '0.68rem' : '0.88rem',
-                                      lineHeight: 1,
-                                      borderRadius: '0.375rem',
-                                    }}>
-                                      {diff.rawDiff}
-                                    </span>
-                                  );
-                                })()}
+                      // 출시 예정
+                      const upcoming = UPCOMING_GROUPS.find(u => u.group === group);
+                      if (upcoming) {
+                        return (
+                          <div key={`upcoming-${group}`} className={styles.raidCell}>
+                            <div className={styles.raidCard} style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+                              <Image src={upcoming.image} alt={group} fill sizes="220px" className={styles.raidImg} style={{ filter: 'grayscale(0.5)' }} unoptimized />
+                              <div className={styles.raidOverlay} />
+                              <div className={styles.raidInfo}>
+                                <span className={styles.raidName}>{group}</span>
+                                <span className={styles.raidDiff}>{upcoming.label}</span>
                               </div>
                             </div>
-                            {/* 일반 골드(1줄) + 귀속 골드(2줄) */}
-                            {(!excluded || hasMoreSelected(character.characterName, groupName)) && (
-                              <div className="d-flex flex-column ms-2" style={{ gap: '3px' }}>
-                                <Badge bg="success" className="d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.66rem' : '0.88rem' }}>
-                                  <Image src="/gold.webp" alt="일반" title="일반 골드" width={isMobile ? 11 : 14} height={isMobile ? 11 : 14} style={{ borderRadius: '2px' }} />
-                                  {calculateRaidGroupFree(character.characterName, groupName).toLocaleString()}
-                                </Badge>
-                                <Badge bg="success" className="d-inline-flex align-items-center gap-1" style={{ fontSize: isMobile ? '0.66rem' : '0.88rem' }}>
-                                  <Image src="/gold.webp" alt="귀속" title="귀속 골드" width={isMobile ? 11 : 14} height={isMobile ? 11 : 14} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
-                                  {calculateRaidGroupBound(character.characterName, groupName).toLocaleString()}
-                                </Badge>
-                              </div>
-                            )}
-                            {/* 더보기 (1줄) + 골드 미수령 (더보기 아래) */}
-                            {(hasMoreSelected(character.characterName, groupName) || excluded) && (
-                              <div className="d-flex flex-column ms-2" style={{ gap: '3px' }}>
-                                {hasMoreSelected(character.characterName, groupName) && (
-                                  <Badge bg="danger" style={{ fontSize: isMobile ? '0.66rem' : '0.88rem', alignSelf: 'flex-start' }}>더보기</Badge>
-                                )}
-                                {excluded && (
-                                  <span className="badge badge-gold-excluded" style={{
-                                    alignSelf: 'flex-start',
-                                    fontSize: isMobile ? '0.66rem' : '0.88rem',
-                                    backgroundColor: '#3b82f6',
-                                    color: '#fff',
-                                    fontWeight: 600,
-                                    textShadow: hasBackground ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
-                                  }}>
-                                    골드 미수령
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            {/* 코어 (1줄) */}
-                            {(CORE_RAID_GROUPS.includes(groupName)) && (
-                              <span className="ms-2 d-inline-flex align-items-center">
-                                <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 28 : 36} height={isMobile ? 28 : 36} style={{ borderRadius: '3px' }} />
-                                <span style={{ marginLeft: '4px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.92rem' : '1.15rem' }}>
-                                  x{calculateRaidGroupCores(character.characterName, groupName)}
-                                </span>
-                              </span>
-                            )}
+                            <div className={styles.rewardUnder} />
                           </div>
-                        </Accordion.Header>
-                        <Accordion.Body style={{ padding: isMobile ? '0.5rem' : '1.2rem' }}>
-                          <Accordion flush>
-                            {groupedRaids[groupName].map(raid => {
-                              const isSelected = hasAnyGateSelected(character.characterName, raid.name);
-                              return (
-                              <Accordion.Item eventKey={raid.name} key={raid.name} className="raid-difficulty-accordion">
-                                <Accordion.Header style={{ fontSize: isMobile ? '0.85rem' : '1.15rem', padding: isMobile ? '0.45rem' : '0.7rem' }}>
-                                  <span style={{ fontWeight: isSelected ? 600 : 400 }}>{raid.name}</span>
-                                  <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.76rem' }}>
-                                    {raid.level}
-                                  </Badge>
-                                  {isSelected && (
-                                    <Badge bg="success" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.65rem' }}>✓</Badge>
-                                  )}
-                                </Accordion.Header>
-                                <Accordion.Body style={{ padding: isMobile ? '0.25rem' : '0.9rem' }}>
-                                  <Table bordered responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.72rem' : '1.0rem', tableLayout: 'fixed' }}>
-                                    <thead>
-                                      <tr>
-                                        <th style={{ padding: isMobile ? '0.2rem' : '0.6rem', width: isMobile ? '18%' : '20%', whiteSpace: 'nowrap' }}>관문</th>
-                                        <th style={{ padding: isMobile ? '0.2rem' : '0.6rem', width: isMobile ? '41%' : '40%' }}>
-                                          <Form.Check
-                                            type="checkbox"
-                                            label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>클골</span>}
-                                            checked={getHeaderCheckState(character.characterName, raid.name, 'withMore')}
-                                            onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')}
-                                            style={{ marginBottom: 0 }}
-                                          />
-                                        </th>
-                                        <th style={{ padding: isMobile ? '0.2rem' : '0.6rem', width: isMobile ? '41%' : '40%' }}>
-                                          <Form.Check
-                                            type="checkbox"
-                                            label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>더보기</span>}
-                                            checked={getHeaderCheckState(character.characterName, raid.name, 'withoutMore')}
-                                            onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')}
-                                            style={{ marginBottom: 0 }}
-                                          />
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {raid.gates.map((gate: any) => (
-                                        <tr key={`${raid.name}-${gate.gate}`}>
-                                          <td style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', whiteSpace: 'nowrap' }}>{gate.gate}관</td>
-                                          <td
-                                            onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}
-                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: 'pointer' }}
-                                          >
-                                            <Form.Check
-                                              type="radio"
-                                              name={`${character.characterName}-${raid.name}-${gate.gate}`}
-                                              id={`${character.characterName}-${raid.name}-${gate.gate}-with-more`}
-                                              label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>{gate.gold.toLocaleString()}</span>}
-                                              checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withMore'}
-                                              onChange={() => {}}
-                                              style={{ marginBottom: 0 }}
-                                            />
-                                          </td>
-                                          <td
-                                            onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withoutMore')}
-                                            style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: 'pointer' }}
-                                          >
-                                            <Form.Check
-                                              type="radio"
-                                              name={`${character.characterName}-${raid.name}-${gate.gate}`}
-                                              id={`${character.characterName}-${raid.name}-${gate.gate}-without-more`}
-                                              label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>{(gate.gold - gate.moreGold).toLocaleString()}</span>}
-                                              checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withoutMore'}
-                                              onChange={() => {}}
-                                              style={{ marginBottom: 0 }}
-                                            />
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </Table>
-                                </Accordion.Body>
-                              </Accordion.Item>
-                              );
-                            })}
-                          </Accordion>
-                        </Accordion.Body>
-                      </Accordion.Item>
-                      );
-                    })}
+                        );
+                      }
 
-                    {/* 체크되지 않은 레이드 그룹들 (접기/펼치기) */}
-                    {uncheckedGroups.length > 0 && (
-                      <>
-                        <div className="text-center mt-4 mb-2">
-                          <Button
-                            variant="link"
-                            onClick={() => setShowAllRaids(prev => ({
-                              ...prev,
-                              [character.characterName]: !prev[character.characterName]
-                            }))}
-                            style={{
-                              fontSize: isMobile ? '0.7rem' : '0.85rem',
-                              padding: isMobile ? '0.4rem 0.8rem' : '0.5rem 1rem',
-                              color: 'var(--text-primary)',
-                              textDecoration: 'none',
-                              fontWeight: '600',
-                              backgroundColor: showAll ? 'var(--card-header-bg)' : 'transparent',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: '8px',
-                              transition: 'all 0.2s ease',
-                              boxShadow: showAll ? 'var(--shadow-sm)' : 'none',
-                              width: '100%'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'var(--card-header-bg)';
-                              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = showAll ? 'var(--card-header-bg)' : 'transparent';
-                              e.currentTarget.style.boxShadow = showAll ? 'var(--shadow-sm)' : 'none';
-                            }}
+                      const difficulties = getRaidsInGroup(group, char.itemLevel);
+                      if (difficulties.length === 0) {
+                        return (
+                          <div key={`none-${group}`} className={styles.raidCell}>
+                            <div className={`${styles.raidCard} ${styles.raidEmpty}`}><div className={styles.emptySlot}>-</div></div>
+                            <div className={styles.rewardUnder} />
+                          </div>
+                        );
+                      }
+
+                      const checkedRaid = difficulties.find(d => st.raids[d.name]?.some(Boolean));
+                      const overrideName = st.raidDifficultyOverride?.[group];
+                      const overrideRaid = overrideName ? difficulties.find(d => d.name === overrideName) : null;
+                      const raid = checkedRaid || overrideRaid || difficulties[0];
+                      const checked = !!st.raids[raid.name]?.some(Boolean);
+                      const receive = st.raidGoldReceive?.[raid.name] !== false;
+                      const more = st.raidMoreGoldExclude?.[raid.name] === true;
+                      const diffLabel = raid.name.startsWith(group) ? raid.name.slice(group.length).trim() : '';
+                      const diffKey = `${char.characterName}-${group}`;
+                      const reward = checked ? calcRaidReward(raid.name, st.raids[raid.name], receive, more) : null;
+
+                      return (
+                        <div key={group} className={styles.raidCell}>
+                          <div
+                            className={`${styles.raidCard} ${checked ? styles.raidChecked : ''}`}
+                            onClick={() => toggleRaid(char.characterName, raid.name)}
                           >
-                            {showAll ? (
-                              <>
-                                다른 레이드 접기
-                              </>
-                            ) : (
-                              <>
-                                다른 레이드 보기
-                                <span style={{ marginLeft: '0.4rem', color: 'var(--text-muted)', fontSize: '0.9em' }}>
-                                  ({uncheckedGroups.length}개)
-                                </span>
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                        <Collapse in={showAll}>
-                          <div>
-                            {uncheckedGroups.map(groupName => (
-                              <Accordion.Item eventKey={groupName} key={groupName} className="raid-group-accordion">
-                                <Accordion.Header style={{ fontSize: isMobile ? '1.05rem' : '1.35rem', padding: isMobile ? '0.28rem 0.5rem' : '0.4rem 0.75rem' }}>
-                                  <div className="d-flex align-items-center w-100">
-                                    {raidImages[groupName] && (
-                                      <Image
-                                        src={raidImages[groupName]}
-                                        alt={groupName}
-                                        width={100}
-                                        height={100}
-                                        quality={100}
-                                        style={{
-                                          marginLeft: isMobile ? '-1rem' : '-1.25rem',
-                                          marginRight: '0.5rem',
-                                          borderRadius: '4px',
-                                          opacity: 0.7,
-                                          width: isMobile ? '38px' : '48px',
-                                          height: isMobile ? '38px' : '48px',
-                                          objectFit: 'cover',
-                                          flexShrink: 0
-                                        }}
-                                      />
-                                    )}
-                                    <span style={{ fontWeight: 600, opacity: 0.7 }}>{groupName}</span>
-                                    <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.6rem' : '0.82rem' }}>
-                                      0 G
-                                    </Badge>
-                                    {(CORE_RAID_GROUPS.includes(groupName)) && (
-                                      <span className="ms-1 d-inline-flex align-items-center" style={{ opacity: 0.7 }}>
-                                        <img src="/cerka-core2.webp" alt="코어" width={isMobile ? 24 : 31} height={isMobile ? 24 : 31} style={{ borderRadius: '3px' }} />
-                                        <span style={{ marginLeft: '3px', fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.85rem' : '1.05rem' }}>
-                                          x{calculateRaidGroupCores(character.characterName, groupName)}
-                                        </span>
-                                      </span>
-                                    )}
-                                  </div>
-                                </Accordion.Header>
-                                <Accordion.Body style={{ padding: isMobile ? '0.5rem' : '1.2rem' }}>
-                                  <Accordion flush>
-                                    {groupedRaids[groupName].map(raid => {
-                                      const isSelected = hasAnyGateSelected(character.characterName, raid.name);
-                                      return (
-                                      <Accordion.Item eventKey={raid.name} key={raid.name} className="raid-difficulty-accordion">
-                                        <Accordion.Header style={{ fontSize: isMobile ? '0.85rem' : '1.15rem', padding: isMobile ? '0.45rem' : '0.7rem' }}>
-                                          <span style={{ fontWeight: isSelected ? 600 : 400 }}>{raid.name}</span>
-                                          <Badge bg="secondary" className="ms-1" style={{ fontSize: isMobile ? '0.55rem' : '0.76rem' }}>
-                                            {raid.level}
-                                          </Badge>
-                                          {isSelected && (
-                                            <Badge bg="success" className="ms-1" style={{ fontSize: isMobile ? '0.5rem' : '0.65rem' }}>✓</Badge>
-                                          )}
-                                        </Accordion.Header>
-                                        <Accordion.Body style={{ padding: isMobile ? '0.25rem' : '0.9rem' }}>
-                                          <Table striped bordered hover responsive className="raid-table mb-0" style={{ fontSize: isMobile ? '0.72rem' : '1.0rem', tableLayout: 'fixed' }}>
-                                            <thead>
-                                              <tr>
-                                                <th style={{ padding: isMobile ? '0.2rem' : '0.6rem', width: isMobile ? '18%' : '20%', whiteSpace: 'nowrap' }}>관문</th>
-                                                <th style={{ padding: isMobile ? '0.2rem' : '0.6rem', width: isMobile ? '41%' : '40%' }}>
-                                                  <Form.Check
-                                                    type="checkbox"
-                                                    label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>클골</span>}
-                                                    checked={getHeaderCheckState(character.characterName, raid.name, 'withMore')}
-                                                    onChange={() => handleHeaderChange(character.characterName, raid.name, 'withMore')}
-                                                    style={{ marginBottom: 0 }}
-                                                  />
-                                                </th>
-                                                <th style={{ padding: isMobile ? '0.2rem' : '0.6rem', width: isMobile ? '41%' : '40%' }}>
-                                                  <Form.Check
-                                                    type="checkbox"
-                                                    label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>더보기</span>}
-                                                    checked={getHeaderCheckState(character.characterName, raid.name, 'withoutMore')}
-                                                    onChange={() => handleHeaderChange(character.characterName, raid.name, 'withoutMore')}
-                                                    style={{ marginBottom: 0 }}
-                                                  />
-                                                </th>
-                                              </tr>
-                                            </thead>
-                                            <tbody>
-                                              {raid.gates.map((gate: any) => (
-                                                <tr key={`${raid.name}-${gate.gate}`}>
-                                                  <td style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', whiteSpace: 'nowrap' }}>{gate.gate}관</td>
-                                                  <td
-                                                    onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withMore')}
-                                                    style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: 'pointer' }}
-                                                  >
-                                                    <Form.Check
-                                                      type="radio"
-                                                      name={`${character.characterName}-${raid.name}-${gate.gate}`}
-                                                      id={`${character.characterName}-${raid.name}-${gate.gate}-with-more-hidden`}
-                                                      label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>{gate.gold.toLocaleString()}</span>}
-                                                      checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withMore'}
-                                                      onChange={() => {}}
-                                                      style={{ marginBottom: 0 }}
-                                                    />
-                                                  </td>
-                                                  <td
-                                                    onClick={() => handleGateChange(character.characterName, raid.name, gate.gate, 'withoutMore')}
-                                                    style={{ padding: isMobile ? '0.15rem 0.2rem' : '0.5rem 0.6rem', cursor: 'pointer' }}
-                                                  >
-                                                    <Form.Check
-                                                      type="radio"
-                                                      name={`${character.characterName}-${raid.name}-${gate.gate}`}
-                                                      id={`${character.characterName}-${raid.name}-${gate.gate}-without-more-hidden`}
-                                                      label={<span style={{ fontSize: isMobile ? '0.6rem' : '0.82rem', whiteSpace: 'nowrap' }}>{(gate.gold - gate.moreGold).toLocaleString()}</span>}
-                                                      checked={gateSelection[character.characterName]?.[raid.name]?.[gate.gate] === 'withoutMore'}
-                                                      onChange={() => {}}
-                                                      style={{ marginBottom: 0 }}
-                                                    />
-                                                  </td>
-                                                </tr>
-                                              ))}
-                                            </tbody>
-                                          </Table>
-                                        </Accordion.Body>
-                                      </Accordion.Item>
-                                      );
-                                    })}
-                                  </Accordion>
-                                </Accordion.Body>
-                              </Accordion.Item>
-                            ))}
+                            <Image src={raid.image} alt={group} fill sizes="220px" className={styles.raidImg} quality={90} unoptimized />
+                            <div className={styles.raidOverlay} />
+                            <div className={styles.raidInfo}>
+                              <span className={styles.raidName}>{group}</span>
+                              {diffLabel && <span className={styles.raidDiff}>{diffLabel}</span>}
+                              <span className={styles.raidLevel}>Lv.{raid.level}</span>
+                            </div>
 
-                            {/* 출시 예정(비활성) 레이드 — 표시만, 선택/계산 불가 (난이도 3개 노출) */}
-                            {UPCOMING_GROUPS.map(u => (
+                            {checked && (
                               <div
-                                key={`upcoming-${u.group}`}
-                                style={{ opacity: 0.6, padding: isMobile ? '0.5rem' : '0.7rem 0.75rem', cursor: 'not-allowed' }}
+                                className={`${styles.moreBadge} ${more ? styles.moreBadgeActive : ''}`}
+                                onClick={(e) => { e.stopPropagation(); toggleMore(char.characterName, raid.name); }}
+                                title={more ? '더보기 구매 중' : '더보기 미구매'}
+                              >더보기</div>
+                            )}
+                            {checked && (
+                              <div
+                                className={`${styles.goldToggle} ${receive ? styles.goldActive : styles.goldInactive}`}
+                                onClick={(e) => { e.stopPropagation(); toggleGold(char.characterName, raid.name); }}
+                                title={receive ? '골드 수령 중' : '골드 미수령'}
                               >
-                                <div className="d-flex align-items-center w-100">
-                                  {raidImages[u.group] && (
-                                    <Image
-                                      src={raidImages[u.group]}
-                                      alt={u.group}
-                                      width={100}
-                                      height={100}
-                                      quality={100}
-                                      style={{
-                                        marginLeft: isMobile ? '-1rem' : '-1.25rem',
-                                        marginRight: '0.5rem',
-                                        borderRadius: '4px',
-                                        filter: 'grayscale(0.5)',
-                                        width: isMobile ? '38px' : '48px',
-                                        height: isMobile ? '38px' : '48px',
-                                        objectFit: 'cover',
-                                        flexShrink: 0,
-                                      }}
-                                    />
-                                  )}
-                                  <span style={{ fontWeight: 600 }}>{u.group}</span>
-                                  <Badge bg="secondary" className="ms-2" style={{ fontSize: isMobile ? '0.62rem' : '0.82rem' }}>
-                                    {u.releaseLabel}
-                                  </Badge>
-                                </div>
-                                <div className="d-flex flex-wrap gap-1 mt-2" style={{ paddingLeft: isMobile ? '1.6rem' : '2.4rem' }}>
-                                  {u.difficulties.map(d => (
-                                    <span
-                                      key={d.name}
-                                      style={{
-                                        fontSize: isMobile ? '0.6rem' : '0.74rem',
-                                        fontWeight: 600,
-                                        padding: '0.12rem 0.45rem',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: '6px',
-                                        color: 'var(--text-secondary)',
-                                        whiteSpace: 'nowrap',
+                                <Image src="/gold.webp" alt="골드" width={21} height={21} />
+                              </div>
+                            )}
+
+                            <button
+                              className={styles.gearBtn}
+                              onClick={(e) => { e.stopPropagation(); setExpandedDiff(null); setDiffOpenKey(diffOpenKey === diffKey ? null : diffKey); }}
+                              aria-label="난이도/관문 설정"
+                            >⚙</button>
+
+                            {checked && <div className={styles.raidCheck}>✓</div>}
+                          </div>
+
+                          {/* 톱니 메뉴: 난이도 + 관문별 설정/데이터 (타일 밖에 두어 잘림 방지) */}
+                          {diffOpenKey === diffKey && (
+                            <div className={styles.diffMenu} onClick={(e) => e.stopPropagation()}>
+                              {difficulties.map(d => {
+                                const dl = d.name.startsWith(group) ? (d.name.slice(group.length).trim() || '기본') : '기본';
+                                const isSel = d.name === raid.name;
+                                const isExpanded = expandedDiff === d.name;
+                                return (
+                                  <div key={d.name}>
+                                    <button
+                                      className={`${styles.diffOption} ${isSel ? styles.diffSelected : ''}`}
+                                      onClick={() => {
+                                        changeDifficulty(char.characterName, group, raid.name, d.name);
+                                        setExpandedDiff(isExpanded ? null : d.name);
                                       }}
                                     >
-                                      {d.name} Lv.{d.level}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
+                                      <span>{dl} (Lv.{d.level}){isSel ? ' · 선택됨' : ''}</span>
+                                      <span className={styles.diffSelMark}>{isExpanded ? '▾' : '▸'}</span>
+                                    </button>
+                                    {isExpanded && (
+                                      <div className={styles.gateSubList}>
+                                        {d.gates.map((g: any, gi: number) => {
+                                          const gChecked = !!st.raids[d.name]?.[gi];
+                                          return (
+                                            <button
+                                              key={g.gate}
+                                              className={`${styles.gateRow} ${gChecked ? styles.gateRowOn : ''}`}
+                                              onClick={() => toggleGate(char.characterName, d.name, gi)}
+                                            >
+                                              <span>{gChecked ? '✓' : '○'} {g.gate}관문</span>
+                                              <span className={styles.gateRowGold}>
+                                                {g.gold.toLocaleString()}
+                                                <span className={styles.gateRowMore}>더보기 -{g.moreGold.toLocaleString()}</span>
+                                              </span>
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* 타일 아래 보상 — 유통(일반)은 그대로, 더보기 비용은 귀속에서 차감(음수 가능) */}
+                          <div className={styles.rewardUnder}>
+                            {reward && (
+                              <>
+                                {!receive && <span className={styles.rewardExcluded}>골드 미수령</span>}
+                                {reward.free !== 0 && (
+                                  <span className={styles.rewardItem} title="유통(일반) 골드">
+                                    <Image src="/gold.webp" alt="유통 골드" width={17} height={17} style={{ borderRadius: '3px' }} />
+                                    <span className={reward.free < 0 ? styles.rewardGoldNeg : ''}>{reward.free.toLocaleString()}</span>
+                                  </span>
+                                )}
+                                {reward.bound !== 0 && (
+                                  <span className={styles.rewardItem} title="귀속 골드">
+                                    <Image src="/gold.webp" alt="귀속 골드" width={17} height={17} style={{ borderRadius: '3px', filter: BOUND_GOLD_FILTER }} />
+                                    <span className={reward.bound < 0 ? styles.rewardGoldNeg : ''} style={reward.bound < 0 ? undefined : { color: BOUND_GOLD_TEXT }}>{reward.bound.toLocaleString()}</span>
+                                  </span>
+                                )}
+                                {reward.cores > 0 && (
+                                  <span className={styles.rewardItem}>
+                                    <img src="/cerka-core2.webp" alt="코어" width={16} height={16} style={{ borderRadius: '2px' }} />
+                                    x{reward.cores}
+                                  </span>
+                                )}
+                              </>
+                            )}
                           </div>
-                        </Collapse>
-                      </>
-                    )}
-                  </Accordion>
-                </Card.Body>
-              </Card>
-            </Col>
-          );
-        })}
-      </Row>
-      <Card className="mt-2 total-gold-card">
-        <Card.Body style={{ padding: isMobile ? '0.75rem' : '1.3rem' }}>
-          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div style={{ flex: 1, minWidth: 0 }} />
-            <div className="d-flex align-items-center justify-content-center flex-wrap gap-2 gap-md-3" style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: isMobile ? '0.95rem' : '1.25rem' }}>
-              <span className="d-inline-flex align-items-center gap-1">
-                <Image src="/gold.webp" alt="일반 골드" title="일반 골드" width={isMobile ? 22 : 30} height={isMobile ? 22 : 30} style={{ borderRadius: '5px' }} />
-                <span>일반 {calculateTotalFree().toLocaleString()}</span>
-              </span>
-              <span className="d-inline-flex align-items-center gap-1" style={{ color: BOUND_GOLD_TEXT }}>
-                <Image src="/gold.webp" alt="귀속 골드" title="귀속 골드" width={isMobile ? 22 : 30} height={isMobile ? 22 : 30} style={{ borderRadius: '5px', filter: BOUND_GOLD_FILTER }} />
-                <span>귀속 {calculateTotalBound().toLocaleString()}</span>
-              </span>
-              <span style={{ opacity: 0.8, fontSize: isMobile ? '0.85rem' : '1rem' }}>
-                = 총 {calculateTotalGold().toLocaleString()} G
-              </span>
-            </div>
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', minWidth: 0 }}>
-              <SaveButton isMobile={isMobile} onSave={saveSettings} />
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {canRight && (
+                    <button
+                      className={`${styles.navBtn} ${styles.navRight}`}
+                      onClick={() => setRaidScrollIndex(prev => ({ ...prev, [char.characterName]: Math.min(allGroups.length - raidCount, (prev[char.characterName] || 0) + 1) }))}
+                      aria-label="다음 레이드"
+                    >›</button>
+                  )}
+                </div>
+              </div>
+
+              {/* 우측 합산 — 코어/유통/귀속 나열 후 마지막에 총 획득 */}
+              <div className={styles.charTotalBox}>
+                <div className={styles.totalSplit}>
+                  {p.cores > 0 && (
+                    <span className={styles.coreRow}>
+                      <img src="/cerka-core2.webp" alt="코어" width={16} height={16} style={{ borderRadius: '2px' }} />
+                      코어 x{p.cores}
+                    </span>
+                  )}
+                  <span className={styles.totalSplitRow}>
+                    <Image src="/gold.webp" alt="유통" width={15} height={15} style={{ borderRadius: '2px' }} />
+                    유통 {p.free.toLocaleString()}
+                  </span>
+                  <span className={styles.totalSplitRow} style={{ color: BOUND_GOLD_TEXT }}>
+                    <Image src="/gold.webp" alt="귀속" width={15} height={15} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
+                    귀속 {p.bound.toLocaleString()}
+                  </span>
+                </div>
+                <div className={styles.totalDivider} />
+                <div className={styles.totalResultRow}>
+                  <span className={styles.totalLabel}>총 획득</span>
+                  <span className={`${styles.totalValue} ${p.total < 0 ? styles.totalValueNeg : ''}`}>{p.total.toLocaleString()}</span>
+                </div>
+              </div>
             </div>
           </div>
-        </Card.Body>
-      </Card>
+        );
+      })}
 
+      {/* 전체 합산 */}
+      <div className={styles.grandTotalCard}>
+        <span className={styles.grandItem}>
+          <Image src="/gold.webp" alt="유통 골드" width={26} height={26} style={{ borderRadius: '4px' }} />
+          유통 {grand.free.toLocaleString()}
+        </span>
+        <span className={styles.grandItem} style={{ color: BOUND_GOLD_TEXT }}>
+          <Image src="/gold.webp" alt="귀속 골드" width={26} height={26} style={{ borderRadius: '4px', filter: BOUND_GOLD_FILTER }} />
+          귀속 {grand.bound.toLocaleString()}
+        </span>
+        <span className={styles.grandTotal}>= 총 {grand.total.toLocaleString()} G</span>
+        {grand.cores > 0 && (
+          <span className={styles.grandItem}>
+            <img src="/cerka-core2.webp" alt="코어" width={26} height={26} style={{ borderRadius: '4px' }} />
+            x{grand.cores}
+          </span>
+        )}
+        {showSave && (
+          <button
+            onClick={handleSaveClick}
+            title="기본·골드·코어 최적화 등 현재 설정을 저장합니다 (다음 접속에도 유지)"
+            style={{
+              marginLeft: 'auto',
+              fontSize: isMobile ? '0.72rem' : '0.82rem',
+              padding: isMobile ? '0.4rem 0.8rem' : '0.5rem 1rem',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              border: savedFlash ? '1px solid var(--color-success)' : '1px solid var(--border-color)',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              backgroundColor: savedFlash ? 'var(--color-success)' : 'transparent',
+              color: savedFlash ? '#fff' : 'var(--text-primary)',
+              lineHeight: 1.3,
+            }}
+          >
+            {savedFlash ? '저장 완료' : '설정 저장'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

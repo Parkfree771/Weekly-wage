@@ -28,7 +28,7 @@
 }
 
 .raidCard.selected {
-  border-color: var(--primary-color);
+  border-color: var(--color-accent);
   box-shadow: var(--shadow-lg);
   transform: translateY(-4px);
 }
@@ -103,6 +103,15 @@
     0 0 10px rgba(0, 0, 0, 0.8);
 }
 
+/* 카드 배지의 손익률 (%) — 숫자 아래 줄로 띄워 표시 (좁은 카드 잘림 방지) */
+.goldBadgePct {
+  display: block;
+  margin-top: 0.18rem;
+  font-size: 0.82em;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
 .profitBadge {
   color: var(--color-success);
 }
@@ -138,9 +147,9 @@
   }
 }
 
-.selectedRaidCard :global(.card-header) {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-  color: white !important;
+:global(.pageWrapper) .selectedRaidCard :global(.card-header) {
+  background: rgba(232, 114, 42, 0.16) !important;
+  color: var(--text-primary) !important;
   font-size: 1.25rem;
   font-weight: 700;
   padding: 1.25rem 1.5rem;
@@ -797,4 +806,12 @@
     width: 24px;
     height: 24px;
   }
+}
+
+/* 카드 손익 배지 — 어두운 이미지 위 가독성 위해 초록/빨강 살짝 밝게 (모바일 포함 일관 적용) */
+.goldBadge.profitBadge {
+  color: #22c55e;
+}
+.goldBadge.lossBadge {
+  color: #f87171;
 }
