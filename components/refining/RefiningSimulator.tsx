@@ -331,6 +331,32 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     return BASE_PROBABILITY[level] || 0;
   };
 
+  // 시작 강화 단계 조정 (표 데이터 범위 내: 계승 전 10~25 / 계승 후 11~25)
+  const START_LEVEL_MIN = isSuccessionMode ? 11 : 10;
+  const START_LEVEL_MAX = 25;
+  const adjustStartLevel = (delta: number) => {
+    if (!selectedEquipment || isAutoMode) return;
+    const newLevel = Math.min(Math.max(currentLevel + delta, START_LEVEL_MIN), START_LEVEL_MAX);
+    if (newLevel === currentLevel) return;
+    setCurrentLevel(newLevel);
+    setEnhancedLevels(prev => ({ ...prev, [selectedEquipment.name]: newLevel }));
+    // 시작 단계 변경 시 현재 강화 진행 상태 초기화 (누적 비용은 유지)
+    setJangin(0);
+    setCurrentProbBonus(0);
+    setUseBreath(false);
+    setUseBook(false);
+    setLevelAttempts(0);
+    setLevelCost({
+      수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0, 골드: 0, 빙하: 0, 용암: 0,
+      수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0,
+      야금술1114: 0, 야금술1518: 0, 야금술1920: 0, 재봉술1114: 0, 재봉술1518: 0, 재봉술1920: 0
+    });
+    setUsedBreathThisLevel(false);
+    setBreathCountThisLevel(0);
+    setUsedBookThisLevel(false);
+    setBookCountThisLevel(0);
+  };
+
   // 자동강화 시작
   const startAutoRefining = () => {
     if (!selectedEquipment || autoTargetLevel <= currentLevel) return;
@@ -712,6 +738,28 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                 {/* 첫 번째 상자: 강화 정보 및 버튼 */}
                 <div className={styles.box}>
                   <div className={styles.boxTitle}>강화 정보</div>
+
+                  {/* 시작 강화 단계 조정 */}
+                  <div className={styles.startAdjustRow}>
+                    <span className={styles.startAdjustLabel}>시작 단계</span>
+                    <button
+                      className={styles.startAdjustBtn}
+                      onClick={() => adjustStartLevel(-1)}
+                      disabled={isAutoMode || currentLevel <= START_LEVEL_MIN}
+                      aria-label="시작 단계 감소"
+                    >
+                      −
+                    </button>
+                    <span className={styles.startAdjustValue}>+{currentLevel}</span>
+                    <button
+                      className={styles.startAdjustBtn}
+                      onClick={() => adjustStartLevel(1)}
+                      disabled={isAutoMode || currentLevel >= START_LEVEL_MAX}
+                      aria-label="시작 단계 증가"
+                    >
+                      +
+                    </button>
+                  </div>
 
                   {currentLevel >= maxLevel ? (
                     /* 25강 완료 화면 */

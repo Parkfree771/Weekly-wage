@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Card, Badge } from 'react-bootstrap';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
 import { getTries, getSuccessionTries, type CalcMode } from '../../lib/refiningSimulationData';
+import { optimalBreath, type OptimalPolicy } from '../../lib/optimalBreath';
 import styles from './RefiningCalculator.module.css';
 import {
   BASE_PROBABILITY,
@@ -81,6 +82,8 @@ const MaterialCard = ({
   showEnableToggle,
   isEnabled,
   onToggleEnabled,
+  renderToggle,
+  footer,
 }: {
   icon: string;
   name: string;
@@ -94,6 +97,8 @@ const MaterialCard = ({
   showEnableToggle?: boolean;
   isEnabled?: boolean;
   onToggleEnabled?: () => void;
+  renderToggle?: React.ReactNode;
+  footer?: React.ReactNode;
 }) => (
   <div
     className={`${styles.materialCard} ${showCheckbox ? styles.materialCardClickable : ''} ${showEnableToggle && !isEnabled ? styles.materialCardDisabled : ''} ${showEnableToggle && isEnabled && !isBound ? styles.materialCardEnabled : ''} ${isBound ? styles.materialCardBound : ''}`}
@@ -107,7 +112,7 @@ const MaterialCard = ({
       ...customStyle,
     } as React.CSSProperties}
   >
-    {showEnableToggle && (
+    {showEnableToggle && (renderToggle ?? (
        <Form.Check
         type="switch"
         id={`enable-switch-${name}`}
@@ -116,7 +121,7 @@ const MaterialCard = ({
         className={`${styles.materialCardEnableSwitch} refining-checkbox`}
         onClick={(e) => e.stopPropagation()}
       />
-    )}
+    ))}
     {showCheckbox && (
       <div className={`${styles.materialCardBoundLabel} ${!isBound ? styles.materialCardBoundLabelUnbound : ''}`}>
         귀속
@@ -147,6 +152,7 @@ const MaterialCard = ({
         {Math.round(isBound ? 0 : cost).toLocaleString()}
       </div>
     )}
+    {footer}
   </div>
 );
 
@@ -168,9 +174,46 @@ export default function RefiningCalculator({
   const { theme } = useTheme();
 
   // Props에서 전달받은 검색 결과
-  const equipments = externalEquipments || [];
+  const baseEquipments = externalEquipments || [];
   const searched = externalSearched || false;
   const characterInfo = externalCharacterInfo || null;
+
+  // 장비별 시작 강화 단계 override (사용자가 현재 상태를 직접 조정)
+  // 키 = 장비명, 값 = { normal: 일반 재련 시작단계, advanced: 상급 재련 시작단계 }
+  const [startOverrides, setStartOverrides] = useState<Record<string, { normal: number; advanced: number }>>({});
+
+  // override를 적용한 실질 장비 목록 (currentLevel/currentAdvancedLevel 치환)
+  // 원본 단계는 origNormal/origAdvanced로 보존
+  const equipments = useMemo(() => baseEquipments.map(eq => {
+    const ov = startOverrides[eq.name];
+    return {
+      ...eq,
+      currentLevel: ov ? ov.normal : eq.currentLevel,
+      currentAdvancedLevel: ov ? ov.advanced : eq.currentAdvancedLevel,
+      origNormal: eq.currentLevel,
+      origAdvanced: eq.currentAdvancedLevel,
+    };
+  }), [baseEquipments, startOverrides]);
+
+  // 시작 단계 조정 (표 데이터 범위 내: 일반=계승전 10 / 계승후 11 ~ 25, 상급=0~40)
+  const adjustStart = (eq: (typeof equipments)[number], kind: 'normal' | 'advanced', delta: number) => {
+    const normalMin = eq.isSuccession ? 11 : 10;
+    const nextNormal = kind === 'normal'
+      ? Math.min(Math.max(eq.currentLevel + delta, normalMin), 25)
+      : eq.currentLevel;
+    const nextAdvanced = kind === 'advanced'
+      ? Math.min(Math.max(eq.currentAdvancedLevel + delta, 0), 40)
+      : eq.currentAdvancedLevel;
+    setStartOverrides(prev => ({
+      ...prev,
+      [eq.name]: { normal: nextNormal, advanced: nextAdvanced },
+    }));
+    // 시작 단계가 바뀌면 해당 종류의 목표는 초기화 (목표 <= 시작 방지)
+    setTargetLevels(prev => ({
+      ...prev,
+      [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), [kind]: null },
+    }));
+  };
 
   // 모바일 감지
   const [isMobile, setIsMobile] = useState(false);
@@ -190,8 +233,8 @@ export default function RefiningCalculator({
 
   // 추가 재료 옵션 (일반 강화용)
   const [materialOptions, setMaterialOptions] = useState({
-    glacierBreath: { enabled: false, isBound: false },
-    lavaBreath: { enabled: false, isBound: false },
+    glacierBreath: { enabled: false, isBound: false, optimal: false },
+    lavaBreath: { enabled: false, isBound: false, optimal: false },
     tailoring: { enabled: false, isBound: false },        // 재봉술 11~14
     tailoring1518: { enabled: false, isBound: false },    // 재봉술 15~18
     tailoring1920: { enabled: false, isBound: false },    // 재봉술 19~20
@@ -273,18 +316,20 @@ export default function RefiningCalculator({
 
   // 장비 데이터가 변경되면 (새 검색) 상태 초기화
   useEffect(() => {
-    if (equipments.length > 0) {
+    if (baseEquipments.length > 0) {
+      // 시작 단계 override 초기화 (새 검색 시)
+      setStartOverrides({});
       // 목표 레벨 초기화 (사용자가 선택하기 전까지 null)
       const initialTargets: Record<string, { normal: number | null, advanced: number | null }> = {};
-      equipments.forEach(eq => {
+      baseEquipments.forEach(eq => {
         initialTargets[eq.name] = { normal: null, advanced: null };
       });
       setTargetLevels(initialTargets);
 
       // 재료 옵션 및 귀속 상태 초기화
       setMaterialOptions({
-        glacierBreath: { enabled: false, isBound: false },
-        lavaBreath: { enabled: false, isBound: false },
+        glacierBreath: { enabled: false, isBound: false, optimal: false },
+        lavaBreath: { enabled: false, isBound: false, optimal: false },
         tailoring: { enabled: false, isBound: false },
         tailoring1518: { enabled: false, isBound: false },
         tailoring1920: { enabled: false, isBound: false },
@@ -324,7 +369,7 @@ export default function RefiningCalculator({
       setSelectedArmorBulkLevel({ normal: null, advanced: null });
       setSelectedWeaponBulkLevel({ normal: null, advanced: null });
     }
-  }, [equipments]);
+  }, [baseEquipments]);
 
   // 재료량 계산 로직 (useEffect로 분리)
   useEffect(() => {
@@ -334,7 +379,7 @@ export default function RefiningCalculator({
     } else {
       setMaterials(null);
     }
-  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments, calcMode]);
+  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments, calcMode, marketPrices]);
 
   // 비용 계산 로직 (useEffect로 분리)
   useEffect(() => {
@@ -532,6 +577,145 @@ export default function RefiningCalculator({
 
     fetchMarketPrices();
   }, []);
+
+  // 계승 후 "최적 숨결" 단계별 정책 테이블 (현재 모드 + 시세 기준)
+  // level 키 = 현재 레벨(L→L+1). armor/weapon 각각.
+  const optimalBreathTable = useMemo(() => {
+    const armor: Record<number, OptimalPolicy> = {};
+    const weapon: Record<number, OptimalPolicy> = {};
+    const glacierP = marketPrices['66111132'] || 0; // 빙하
+    const lavaP = marketPrices['66111131'] || 0;    // 용암
+    for (let L = 11; L <= 24; L++) {
+      const baseProb = SUCCESSION_BASE_PROBABILITY[L];
+      if (!baseProb) continue;
+      const be = getSuccessionBreathEffect(baseProb);
+      const target = L + 1;
+      const aCost = SUCCESSION_ARMOR_MATERIAL_COSTS[target];
+      const wCost = SUCCESSION_WEAPON_MATERIAL_COSTS[target];
+      // 1회당 재료 골드값 (시세 합 + 누골, 실링은 귀속이라 제외)
+      const aMat = aCost
+        ? (aCost as any).수호석결정 * (marketPrices['66102107'] || 0)
+          + (aCost as any).위대한돌파석 * (marketPrices['66110226'] || 0)
+          + (aCost as any).상급아비도스 * (marketPrices['6861013'] || 0)
+          + aCost.운명파편 * (marketPrices['66130143'] || 0)
+          + aCost.골드
+        : 0;
+      const wMat = wCost
+        ? (wCost as any).파괴석결정 * (marketPrices['66102007'] || 0)
+          + (wCost as any).위대한돌파석 * (marketPrices['66110226'] || 0)
+          + (wCost as any).상급아비도스 * (marketPrices['6861013'] || 0)
+          + wCost.운명파편 * (marketPrices['66130143'] || 0)
+          + wCost.골드
+        : 0;
+      armor[L] = optimalBreath(baseProb, be, aMat, glacierP, calcMode);
+      weapon[L] = optimalBreath(baseProb, be, wMat, lavaP, calcMode);
+    }
+    return { armor, weapon };
+  }, [calcMode, marketPrices]);
+
+  // 실제 강화 대상 단계 (계승 후만, 타입별) — 최적 숨결 표시는 이 구간만
+  const refinedLevelsByType = useMemo(() => {
+    const armor = new Set<number>();
+    const weapon = new Set<number>();
+    equipments.forEach(eq => {
+      if (!eq.isSuccession) return; // 계승 후만
+      const t = targetLevels[eq.name];
+      if (!t?.normal || t.normal <= eq.currentLevel) return;
+      const set = eq.type === 'armor' ? armor : weapon;
+      for (let L = eq.currentLevel; L < t.normal; L++) set.add(L);
+    });
+    return {
+      armor: Array.from(armor).sort((a, b) => a - b),
+      weapon: Array.from(weapon).sort((a, b) => a - b),
+    };
+  }, [equipments, targetLevels]);
+
+  // 최적 숨결 단계별 팝업 (열려있는 타입)
+  const [openBreathPopup, setOpenBreathPopup] = useState<'armor' | 'weapon' | null>(null);
+
+  // 팝업 바깥 클릭 시 닫기
+  useEffect(() => {
+    if (!openBreathPopup) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-breath-popup]') || t.closest('[data-breath-opt-btn]')) return;
+      setOpenBreathPopup(null);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [openBreathPopup]);
+
+  // 숨결 3단 모드 (미사용/풀숨/최적)
+  const breathModeOf = (type: 'armor' | 'weapon'): 'off' | 'full' | 'optimal' => {
+    const o = type === 'armor' ? materialOptions.glacierBreath : materialOptions.lavaBreath;
+    return !o.enabled ? 'off' : (o.optimal ? 'optimal' : 'full');
+  };
+  const setBreathMode = (type: 'armor' | 'weapon', mode: 'off' | 'full' | 'optimal') => {
+    const key = type === 'armor' ? 'glacierBreath' : 'lavaBreath';
+    setMaterialOptions(p => ({ ...p, [key]: { ...(p as any)[key], enabled: mode !== 'off', optimal: mode === 'optimal' } }));
+  };
+  const calcModeLabel = calcMode === 'median' ? '중앙값' : calcMode === 'average' ? '평균값' : '장기백';
+
+  // 숨결 컨트롤 (미사용/풀숨/최적) — 카드 내부 하단. 귀속은 카드 우상단 라벨(다른 재료와 동일)
+  // 팝업은 "최적" 버튼을 감싼 래퍼에 붙어 바로 위로 뜬다.
+  const renderBreathControls = (type: 'armor' | 'weapon') => {
+    const mode = breathModeOf(type);
+    return (
+      <div className={styles.breathControls} onClick={e => e.stopPropagation()}>
+        <div className={styles.breathModeSeg}>
+          <button type="button" className={`${styles.breathModeBtn} ${mode === 'off' ? styles.breathModeBtnActive : ''}`} onClick={() => setBreathMode(type, 'off')}>미사용</button>
+          <button type="button" className={`${styles.breathModeBtn} ${mode === 'full' ? styles.breathModeBtnActive : ''}`} onClick={() => setBreathMode(type, 'full')}>풀숨</button>
+          <button
+            type="button"
+            data-breath-opt-btn
+            className={`${styles.breathModeBtn} ${mode === 'optimal' ? styles.breathModeBtnActive : ''}`}
+            onClick={() => {
+              if (mode !== 'optimal') { setBreathMode(type, 'optimal'); setOpenBreathPopup(type); }
+              else setOpenBreathPopup(o => (o === type ? null : type));
+            }}
+            onMouseEnter={() => { if (mode === 'optimal') setOpenBreathPopup(type); }}
+            title="최적 숨결 · 단계별 보기"
+          >
+            최적{mode === 'optimal' ? ' ▾' : ''}
+          </button>
+        </div>
+        {renderBreathPopup(type)}
+      </div>
+    );
+  };
+
+  // 최적 숨결 단계별 팝업 — 최적 버튼 바로 위(카드 안에서 나옴), 실제 강화 구간만·한 줄
+  const renderBreathPopup = (type: 'armor' | 'weapon') => {
+    if (openBreathPopup !== type) return null;
+    const tbl = type === 'armor' ? optimalBreathTable.armor : optimalBreathTable.weapon;
+    const levels = type === 'armor' ? refinedLevelsByType.armor : refinedLevelsByType.weapon;
+    return (
+      <div className={styles.breathPopup} data-breath-popup onClick={e => e.stopPropagation()}>
+        <div className={styles.breathPopupHeader}>
+          <span>최적 숨결 <span className={styles.breathPopupSub}>({calcModeLabel}·시세연동)</span></span>
+          <button type="button" className={styles.breathPopupClose} onClick={() => setOpenBreathPopup(null)}>✕</button>
+        </div>
+        {levels.length === 0 ? (
+          <div className={styles.breathPopupEmpty}>목표 단계를 먼저 설정하세요</div>
+        ) : (
+          <div className={styles.breathPopupLine}>
+            {levels.map(L => {
+              const p = tbl[L];
+              if (!p) return null;
+              const label = p.kind === 'none' ? '노숨' : p.kind === 'full' ? '풀숨' : `앞${p.optimalN}회`;
+              const cls = p.kind === 'none' ? styles.breathChipNone : p.kind === 'full' ? styles.breathChipFull : styles.breathChipPartial;
+              return (
+                <span key={L} className={`${styles.breathChip} ${cls}`}>
+                  <span className={styles.breathChipLv}>+{L}→{L + 1}</span>
+                  <span className={styles.breathChipVal}>{label}</span>
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // 계산이 필요한 장비 필터링
   const getEquipmentsToRefine = () => {
@@ -773,36 +957,47 @@ export default function RefiningCalculator({
             const baseProb = SUCCESSION_BASE_PROBABILITY[level];
             if (!baseProb) continue;
 
-            // 숨결 사용 여부 확인
-            const useBreath = (eq.type === 'armor' && materialOptions.glacierBreath.enabled) || (eq.type === 'weapon' && materialOptions.lavaBreath.enabled);
-
-            // 시뮬레이션 데이터에서 평균 시도 횟수 조회
-            // (장인의 기운, 실패 시 확률 증가 규칙이 모두 반영됨)
-            const avgTries = getSuccessionTries(level, useBreath, calcMode);
-            if (avgTries === 0) continue;
+            // 숨결 옵션 (미사용/풀숨/최적)
+            const isArmor = eq.type === 'armor';
+            const breathOpt = isArmor ? materialOptions.glacierBreath : materialOptions.lavaBreath;
+            const useBreath = breathOpt.enabled;
+            const useOptimal = breathOpt.enabled && breathOpt.optimal;
 
             // 숨결 효과 (비용 계산용) - 계승 후용 테이블 사용
             const breathEffect = getSuccessionBreathEffect(baseProb);
 
-            const materialCostPerTry = eq.type === 'armor'
+            const materialCostPerTry = isArmor
               ? SUCCESSION_ARMOR_MATERIAL_COSTS[nextLevel]
               : SUCCESSION_WEAPON_MATERIAL_COSTS[nextLevel];
 
             if (!materialCostPerTry) continue;
 
-            if (eq.type === 'armor') {
+            // 시도 횟수 / 숨결 개수 결정
+            let avgTries: number;
+            let breathCount: number;
+            if (useOptimal) {
+              // 최적 숨결: 앞 N회만 풀숨 (현재 모드+시세 기준 DP)
+              const pol = (isArmor ? optimalBreathTable.armor : optimalBreathTable.weapon)[level];
+              if (!pol) continue;
+              avgTries = pol.tries;
+              breathCount = pol.breaths;
+            } else {
+              avgTries = getSuccessionTries(level, useBreath, calcMode);
+              breathCount = useBreath ? breathEffect.max * avgTries : 0;
+            }
+            if (avgTries === 0) continue;
+
+            if (isArmor) {
               totalMaterials.수호석결정 = (totalMaterials.수호석결정 || 0) + (materialCostPerTry as any).수호석결정 * avgTries;
-              // 숨결 비용 (방어구: 빙하의 숨결)
-              if (useBreath) {
-                totalMaterials.빙하 += breathEffect.max * avgTries;
-                totalMaterials.빙하_일반 += breathEffect.max * avgTries;
+              if (breathCount > 0) {
+                totalMaterials.빙하 += breathCount;
+                totalMaterials.빙하_일반 += breathCount;
               }
             } else {
               totalMaterials.파괴석결정 = (totalMaterials.파괴석결정 || 0) + (materialCostPerTry as any).파괴석결정 * avgTries;
-              // 숨결 비용 (무기: 용암의 숨결)
-              if (useBreath) {
-                totalMaterials.용암 += breathEffect.max * avgTries;
-                totalMaterials.용암_일반 += breathEffect.max * avgTries;
+              if (breathCount > 0) {
+                totalMaterials.용암 += breathCount;
+                totalMaterials.용암_일반 += breathCount;
               }
             }
             totalMaterials.위대한돌파석 = (totalMaterials.위대한돌파석 || 0) + (materialCostPerTry as any).위대한돌파석 * avgTries;
@@ -940,40 +1135,42 @@ export default function RefiningCalculator({
 
   const equipmentsToRefine = searched ? getEquipmentsToRefine() : [];
 
-  // 예상 도달 아이템 레벨 계산
-  const calculateExpectedItemLevel = (): string | null => {
+  // 시작 단계 override + 목표를 반영한 현재/예상 아이템 레벨 계산
+  // - baselineOffset: 시작 단계를 원본과 다르게 조정한 만큼 현재 아이템레벨 보정
+  // - targetIncrease: 목표 단계까지의 아이템레벨 증가량
+  const itemLevelSummary = useMemo(() => {
     if (!characterInfo) return null;
+    const real = parseFloat(characterInfo.itemLevel.replace(/,/g, ''));
+    if (isNaN(real)) return null;
 
-    // 현재 아이템 레벨 파싱
-    const currentItemLevel = parseFloat(characterInfo.itemLevel.replace(/,/g, ''));
-    if (isNaN(currentItemLevel)) return null;
-
-    // 각 장비의 강화 단계 증가량 계산
-    let totalIncrease = 0;
+    let baselineOffset = 0;
+    let targetIncrease = 0;
     equipments.forEach(eq => {
+      // 일반 강화: 1단계당 0.8333 / 상급 재련: 1단계당 0.16666
+      baselineOffset += (eq.currentLevel - eq.origNormal) * 0.8333;
+      baselineOffset += (eq.currentAdvancedLevel - eq.origAdvanced) * (0.8333 / 5);
+
       const targets = targetLevels[eq.name];
       if (!targets) return;
-
-      // 일반 강화: 1단계당 0.8333 증가
       if (targets.normal && targets.normal > eq.currentLevel) {
-        const normalIncrease = targets.normal - eq.currentLevel;
-        totalIncrease += normalIncrease * 0.8333;
+        targetIncrease += (targets.normal - eq.currentLevel) * 0.8333;
       }
-
-      // 상급 재련: 1단계당 0.16666 증가
       if (targets.advanced && targets.advanced > eq.currentAdvancedLevel) {
-        const stepsToRefine = targets.advanced - eq.currentAdvancedLevel;
-        totalIncrease += stepsToRefine * (0.8333 / 5);
+        targetIncrease += (targets.advanced - eq.currentAdvancedLevel) * (0.8333 / 5);
       }
     });
 
-    if (totalIncrease === 0) return null;
+    const current = real + baselineOffset;
+    return {
+      current,
+      expected: current + targetIncrease,
+      increase: targetIncrease,
+    };
+  }, [characterInfo, equipments, targetLevels]);
 
-    const expectedLevel = currentItemLevel + totalIncrease;
-    return expectedLevel.toFixed(2);
-  };
-
-  const expectedItemLevel = calculateExpectedItemLevel();
+  // 아이템 레벨 표시용 포맷 (쉼표 + 소수점 2자리)
+  const formatItemLevel = (n: number): string =>
+    n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
     <div className={styles.container}>
@@ -1033,27 +1230,27 @@ export default function RefiningCalculator({
 
                         {/* 레벨 정보 그리드 */}
                         <div className={styles.characterLevelGrid}>
-                          {/* 현재 레벨 */}
+                          {/* 현재 레벨 (시작 단계 조정 반영) */}
                           <div className={styles.levelBox}>
                             <div className={styles.levelLabel}>Current Level</div>
                             <div className={styles.characterLevel}>
-                              {characterInfo.itemLevel}
+                              {itemLevelSummary ? formatItemLevel(itemLevelSummary.current) : characterInfo.itemLevel}
                             </div>
                           </div>
 
-                          {/* 화살표 (예상 레벨이 있을 때만) */}
-                          {expectedItemLevel && (
+                          {/* 화살표 (예상 증가가 있을 때만) */}
+                          {itemLevelSummary && itemLevelSummary.increase > 0 && (
                             <div className={styles.levelArrow}>→</div>
                           )}
 
                           {/* 예상 레벨 */}
-                          {expectedItemLevel && (
+                          {itemLevelSummary && itemLevelSummary.increase > 0 && (
                             <div className={styles.levelBox}>
                               <div className={styles.levelLabel}>Expected Level</div>
                               <div className={styles.expectedLevel}>
-                                {expectedItemLevel}
+                                {formatItemLevel(itemLevelSummary.expected)}
                                 <span className={styles.levelBadge}>
-                                  +{(parseFloat(expectedItemLevel) - parseFloat(characterInfo.itemLevel.replace(/,/g, ''))).toFixed(2)}
+                                  +{itemLevelSummary.increase.toFixed(2)}
                                 </span>
                               </div>
                             </div>
@@ -1142,22 +1339,76 @@ export default function RefiningCalculator({
                                 {eq.name}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                              <Badge
-                                pill
-                                bg=""
-                                className={`${eq.isEsther ? styles.levelBadgeEsther : (eq.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor)} ${isMobile ? styles.levelBadgeMobile : ''}`}
-                              >
-                                +{eq.currentLevel}
-                              </Badge>
-                              {eq.currentAdvancedLevel > 0 && (
+                            <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                              {/* 에스더는 일반 재련이 없어 조정 불가 - 정보용 배지만 표시 */}
+                              {eq.isEsther && (
                                 <Badge
                                   pill
                                   bg=""
-                                  className={`${styles.advancedLevelBadge} ${isMobile ? styles.advancedLevelBadgeMobile : ''}`}
+                                  className={`${styles.levelBadgeEsther} ${isMobile ? styles.levelBadgeMobile : ''}`}
                                 >
-                                  상+{eq.currentAdvancedLevel}
+                                  +{eq.currentLevel}
                                 </Badge>
+                              )}
+                              {/* 일반 재련 시작 단계 스템퍼 (에스더는 일반 재련 없음) */}
+                              {!eq.isEsther && (
+                                <div className={styles.startStepper}>
+                                  <button
+                                    type="button"
+                                    className={styles.startStepperBtn}
+                                    onClick={() => adjustStart(eq, 'normal', -1)}
+                                    disabled={eq.currentLevel <= (eq.isSuccession ? 11 : 10)}
+                                    aria-label="일반 시작 단계 감소"
+                                  >
+                                    −
+                                  </button>
+                                  <Badge
+                                    pill
+                                    bg=""
+                                    className={`${eq.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor} ${isMobile ? styles.levelBadgeMobile : ''}`}
+                                  >
+                                    +{eq.currentLevel}
+                                  </Badge>
+                                  <button
+                                    type="button"
+                                    className={styles.startStepperBtn}
+                                    onClick={() => adjustStart(eq, 'normal', 1)}
+                                    disabled={eq.currentLevel >= 25}
+                                    aria-label="일반 시작 단계 증가"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              )}
+                              {/* 상급 재련 시작 단계 스템퍼 (에스더 또는 상급 보유 업화 장비) */}
+                              {(eq.isEsther || (!eq.isSuccession && eq.origAdvanced > 0)) && (
+                                <div className={styles.startStepper}>
+                                  <button
+                                    type="button"
+                                    className={styles.startStepperBtn}
+                                    onClick={() => adjustStart(eq, 'advanced', -1)}
+                                    disabled={eq.currentAdvancedLevel <= 0}
+                                    aria-label="상급 시작 단계 감소"
+                                  >
+                                    −
+                                  </button>
+                                  <Badge
+                                    pill
+                                    bg=""
+                                    className={`${styles.advancedLevelBadge} ${isMobile ? styles.advancedLevelBadgeMobile : ''}`}
+                                  >
+                                    상+{eq.currentAdvancedLevel}
+                                  </Badge>
+                                  <button
+                                    type="button"
+                                    className={styles.startStepperBtn}
+                                    onClick={() => adjustStart(eq, 'advanced', 1)}
+                                    disabled={eq.currentAdvancedLevel >= 40}
+                                    aria-label="상급 시작 단계 증가"
+                                  >
+                                    +
+                                  </button>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -2172,12 +2423,10 @@ export default function RefiningCalculator({
                                   amount={materials.빙하_일반}
                                   color="#34d399"
                                   cost={results.materialCosts['빙하_일반']}
-                                  showEnableToggle={true}
-                                  isEnabled={materialOptions.glacierBreath.enabled}
-                                  onToggleEnabled={() => setMaterialOptions(p => ({...p, glacierBreath: {...p.glacierBreath, enabled: !p.glacierBreath.enabled}}))}
                                   showCheckbox={true}
                                   isBound={materialOptions.glacierBreath.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, glacierBreath: {...p.glacierBreath, isBound: !p.glacierBreath.isBound}}))}
+                                  footer={renderBreathControls('armor')}
                                 />
                               </Col>
                               {requiredMats.needsArmorBook1014 && (
@@ -2243,12 +2492,10 @@ export default function RefiningCalculator({
                                   amount={materials.용암_일반}
                                   color="#34d399"
                                   cost={results.materialCosts['용암_일반']}
-                                  showEnableToggle={true}
-                                  isEnabled={materialOptions.lavaBreath.enabled}
-                                  onToggleEnabled={() => setMaterialOptions(p => ({...p, lavaBreath: {...p.lavaBreath, enabled: !p.lavaBreath.enabled}}))}
                                   showCheckbox={true}
                                   isBound={materialOptions.lavaBreath.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, lavaBreath: {...p.lavaBreath, isBound: !p.lavaBreath.isBound}}))}
+                                  footer={renderBreathControls('weapon')}
                                 />
                               </Col>
                               {requiredMats.needsWeaponBook1014 && (

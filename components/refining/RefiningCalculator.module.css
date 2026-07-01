@@ -625,6 +625,41 @@ span.equipmentGrade,
   border-radius: 6px;
 }
 
+/* 시작 단계 조정 스템퍼 */
+.startStepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.startStepperBtn {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-secondary);
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.startStepperBtn:hover:not(:disabled) {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+.startStepperBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /* Select 스타일 (슬림 & 모던) - 높은 우선순위 */
 select.equipmentSelect,
 .equipmentSelect.equipmentSelect,
@@ -888,6 +923,140 @@ button.bulkButton:disabled,
   transform: scale(clamp(0.5, 1vw, 0.75));
   transform-origin: top left;
 }
+
+/* 숨결 컨트롤 (카드 내부 하단) */
+.breathControls {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+/* 미사용/풀숨/최적 세그먼트 */
+.breathModeSeg {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+.breathModeBtn {
+  flex: 1;
+  font-size: clamp(0.5rem, 1.4vw, 0.68rem);
+  font-weight: 600;
+  padding: 4px 0;
+  line-height: 1.15;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border-color);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.breathModeBtn:last-child { border-right: none; }
+.breathModeBtn:hover { color: #10b981; }
+.breathModeBtnActive {
+  background: #10b981;
+  color: #fff;
+}
+.breathModeBtnActive:hover { color: #fff; }
+
+/* 최적 숨결 단계별 팝업 — breathControls(relative) 기준, "최적"(오른쪽 1/3) 위로 */
+.breathPopup {
+  position: absolute;
+  z-index: 100;
+  bottom: calc(100% + 3px);
+  left: 83.333%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(520px, 78vw);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  padding: 9px 11px;
+}
+/* 아래(최적 버튼)를 가리키는 말풍선 꼬리 */
+.breathPopup::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: -1px;
+  border: 7px solid transparent;
+  border-top-color: var(--card-bg);
+}
+.breathPopupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 7px;
+}
+.breathPopupSub {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.7rem;
+}
+.breathPopupClose {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+}
+.breathPopupEmpty {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 4px 2px;
+}
+/* 한 줄 나열 (가로 스크롤) */
+.breathPopupLine {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+}
+.breathChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+.breathChipLv {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.breathChipVal {
+  font-weight: 700;
+}
+.breathChipNone .breathChipVal { color: #9ca3af; }
+.breathChipFull {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.08);
+}
+.breathChipFull .breathChipVal { color: #10b981; }
+.breathChipPartial {
+  border-color: rgba(245, 158, 11, 0.6);
+  background: rgba(245, 158, 11, 0.1);
+}
+.breathChipPartial .breathChipVal { color: #d97706; }
 
 .materialIcon {
   position: relative;

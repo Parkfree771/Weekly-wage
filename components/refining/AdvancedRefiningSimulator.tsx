@@ -248,6 +248,26 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, equipments
     setEnhancedLevels({}); // 모든 장비의 강화 진행 상태 초기화
   };
 
+  // 시작 상급 재련 단계 조정 (0~40)
+  const ADV_START_MIN = 0;
+  const ADV_START_MAX = 40;
+  const adjustStartLevel = (delta: number) => {
+    if (!selectedEquipment || isAutoMode || isAnimating) return;
+    const newLevel = Math.min(Math.max(currentLevel + delta, ADV_START_MIN), ADV_START_MAX);
+    if (newLevel === currentLevel) return;
+    setCurrentLevel(newLevel);
+    setStartLevel(newLevel);
+    setEnhancedLevels(prev => ({ ...prev, [selectedEquipment.name]: newLevel }));
+    // 시작 단계 변경 시 진행 상태 초기화 (누적 비용은 유지)
+    setCurrentExp(0);
+    setGahoCount(0);
+    setIsBonusTurn(false);
+    setIsEnhancedBonus(false);
+    setNextTurnFree(false);
+    setUseBreath(false);
+    setUseBook(false);
+  };
+
   // 현재 재료 조합
   const getMaterialCombo = (): MaterialCombo => {
     if (useBreath && useBook) return 'both';
@@ -753,6 +773,28 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, equipments
               {/* 첫 번째 상자: 강화 정보 */}
               <div className={styles.box}>
                 <div className={styles.boxTitle}>상급 재련 정보</div>
+
+                {/* 시작 상급 재련 단계 조정 */}
+                <div className={styles.startAdjustRow}>
+                  <span className={styles.startAdjustLabel}>시작 단계</span>
+                  <button
+                    className={styles.startAdjustBtn}
+                    onClick={() => adjustStartLevel(-1)}
+                    disabled={isAutoMode || isAnimating || currentLevel <= ADV_START_MIN}
+                    aria-label="시작 단계 감소"
+                  >
+                    −
+                  </button>
+                  <span className={styles.startAdjustValue}>+{currentLevel}</span>
+                  <button
+                    className={styles.startAdjustBtn}
+                    onClick={() => adjustStartLevel(1)}
+                    disabled={isAutoMode || isAnimating || currentLevel >= ADV_START_MAX}
+                    aria-label="시작 단계 증가"
+                  >
+                    +
+                  </button>
+                </div>
 
                 {currentLevel >= 40 ? (
                   <div className={`${styles.maxLevelComplete} ${selectedEquipment.type === 'weapon' ? styles.maxLevelWeapon : styles.maxLevelArmor}`}>

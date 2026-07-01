@@ -425,6 +425,60 @@
   border-bottom: 2px solid var(--border-color);
 }
 
+/* 시작 강화 단계 조정 */
+.startAdjustRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.75rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.startAdjustLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-right: 0.15rem;
+}
+
+.startAdjustValue {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  min-width: 42px;
+  text-align: center;
+}
+
+.startAdjustBtn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+  background-color: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.startAdjustBtn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.startAdjustBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* 첫 번째 상자: 강화 정보 */
 .equipmentStatus {
   display: flex;
