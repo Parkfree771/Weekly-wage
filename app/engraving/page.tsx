@@ -138,6 +138,89 @@ const SHORT_NAME: Record<string, string> = {
 };
 const label = (n: string) => SHORT_NAME[n] ?? n;
 
+// 검색용 정식 명칭 별칭: 축약 직업명(이름 첫 토큰) → 풀네임.
+// "브레이커" 검색 시 "브커 권왕"도 잡히게 한다. 이미 풀네임인 직업(버서커, 바드 등)은 등록 불필요.
+const CLASS_FULL_NAME: Record<string, string> = {
+  '가나': '가디언나이트',
+  '건슬': '건슬링어',
+  '기공': '기공사',
+  '기상': '기상술사',
+  '데헌': '데빌헌터',
+  '디트': '디스트로이어',
+  '배마': '배틀마스터',
+  '브커': '브레이커',
+  '블래': '블래스터',
+  '블레': '블레이드',
+  '소서': '소서리스',
+  '소울': '소울이터',
+  '스카': '스카우터',
+  '스커': '스트라이커',
+  '슬레': '슬레이어',
+  '알카': '아르카나',
+  '인파': '인파이터',
+  '창술': '창술사',
+  '호크': '호크아이',
+  '홀나': '홀리나이트',
+  '환수': '환수사',
+};
+// 검색용 스펙(직업 각인) 정식 명칭: 축약 스펙명 → 풀네임.
+// "핸드거너" 검색 시 "데헌 핸건"도 잡히게 한다. 스펙명이 이미 풀네임이면(광기, 절정 등) 등록 불필요.
+const SPEC_FULL_NAME: Record<string, string> = {
+  '가나 드드': '드레드로어',
+  '가나 업화': '업화의 계승자',
+  '건슬 사시': '사냥의 시간',
+  '건슬 피메': '피스메이커',
+  '기공 세맥': '세맥타통',
+  '기공 역천': '역천지체',
+  '기상 질풍': '질풍노도',
+  '데모닉 억제': '완벽한 억제',
+  '데모닉 충동': '멈출 수 없는 충동',
+  '데헌 전탄': '전술 탄환',
+  '데헌 핸건': '핸드거너',
+  '디트 분망': '분노의 망치',
+  '디트 중수': '중력 수련',
+  '리퍼 달소': '달의 소리',
+  '바드 절구': '절실한 구원',
+  '바드 진용': '진실된 용맹',
+  '발키리 빛의기사': '빛의 기사',
+  '배마 오의': '오의 강화',
+  '버서커 비기': '광전사의 비기',
+  '브커 권왕': '권왕파천무',
+  '브커 수라': '수라의 길',
+  '블래 포강': '포격 강화',
+  '블래 화강': '화력 강화',
+  '블레 잔재': '잔재된 기운',
+  '서머너 상소': '상급 소환사',
+  '소울 그믐': '그믐의 경계',
+  '소울 만월': '만월의 집행자',
+  '스카 기술': '아르데타인의 기술',
+  '스카 유산': '진화의 유산',
+  '스커 난무': '오의난무',
+  '스커 일격': '일격필살',
+  '슬레 처단': '처단자',
+  '슬레 포식': '포식자',
+  '알카 황제': '황제의 칙령',
+  '알카 황후': '황후의 은총',
+  '워로드 고기': '고독한 기사',
+  '워로드 전태': '전투 태세',
+  '인파 체술': '극의 : 체술',
+  '인파 충단': '충격 단련',
+  '호크 두동': '두 번째 동료',
+  '호크 죽습': '죽음의 습격',
+  '홀나 축오': '축복의 오라',
+};
+// 스펙별 검색 대상 문자열: "축약명 스펙" + 직업 풀네임 + 스펙 풀네임 (예: "브커 권왕 브레이커 권왕파천무")
+const SEARCH_TEXT: Record<string, string> = {};
+for (const s of SPECS) {
+  SEARCH_TEXT[s.id] = [
+    s.name,
+    CLASS_FULL_NAME[s.name.split(' ')[0]],
+    SPEC_FULL_NAME[s.id],
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
 type FilterState = 'include' | 'exclude';
 
 export default function EngravingPage() {
@@ -149,11 +232,12 @@ export default function EngravingPage() {
   const [group, setGroup] = useState<string>('전체');
   // 각인명 → 'include'(이 각인 쓰는 직업) | 'exclude'(안 쓰는 직업)
   const [filters, setFilters] = useState<Record<string, FilterState>>({});
+  // 겹침 순위에서 선택한 각인들 — 카드의 해당 각인 칸에 테두리만 표시 (필터링은 안 함, 중복 선택 가능)
+  const [highlights, setHighlights] = useState<Set<string>>(new Set());
 
   // 뉴비 추천 직업 투표 (사이드바 + 카드 선택 연동)
   const nr = useNewbieRec();
 
-  const term = search.trim();
 
   // 칩 클릭: 해제 → 포함 → 제외 → 해제 순환
   const cycleFilter = (name: string) => {
@@ -167,23 +251,48 @@ export default function EngravingPage() {
     });
   };
 
+  const toggleHighlight = (name: string) => {
+    setHighlights((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
   const includeList = Object.keys(filters).filter((k) => filters[k] === 'include');
   const excludeList = Object.keys(filters).filter((k) => filters[k] === 'exclude');
   const hasFilter = includeList.length > 0 || excludeList.length > 0;
 
   const shown = useMemo(() => {
+    // 쉼표로 여러 직업 동시 검색 가능 (예: "드드,권왕" → 둘 다 표시)
+    const terms = search
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
     return SPECS.filter((spec) => {
       if (role !== '전체' && roleOf(spec.id) !== role) return false;
       if (gender !== '전체' && genderOf(spec.id) !== gender) return false;
       if (playStyle !== '전체' && styleOf(spec.id) !== playStyle) return false;
       if (group !== '전체' && spec.group !== group) return false;
-      if (term && !spec.name.includes(term)) return false;
+      if (terms.length > 0 && !terms.some((t) => SEARCH_TEXT[spec.id].includes(t))) return false;
       const engSet = SPEC_ENG_SET[spec.id];
       if (includeList.some((e) => !engSet.has(e))) return false; // 포함: 다 써야 통과
       if (excludeList.some((e) => engSet.has(e))) return false; // 제외: 하나라도 쓰면 탈락
       return true;
     });
-  }, [role, gender, playStyle, group, term, includeList, excludeList]);
+  }, [role, gender, playStyle, group, search, includeList, excludeList]);
+
+  // 왼쪽 사이드바: 현재 표시 중인 직업들이 가장 많이 공유하는 각인 순위 (동률은 가나다순)
+  const engRanking = useMemo(() => {
+    const cnt = new Map<string, number>();
+    for (const spec of shown) {
+      for (const n of SPEC_ENG_SET[spec.id]) cnt.set(n, (cnt.get(n) ?? 0) + 1);
+    }
+    return [...cnt.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko'))
+      .slice(0, 10);
+  }, [shown]);
 
   return (
     <div className={styles.wrap}>
@@ -193,6 +302,7 @@ export default function EngravingPage() {
       </header>
 
       {/* 직업 검색 */}
+      <div className={styles.searchLine}>
       <div className={styles.searchRow}>
         <svg className={styles.searchIcon} viewBox="0 0 20 20" width="16" height="16" aria-hidden>
           <path
@@ -212,6 +322,12 @@ export default function EngravingPage() {
             ×
           </button>
         )}
+      </div>
+      <span className={styles.searchHint}>
+        쉼표(<span className={styles.hintComma}>,</span>)로 구분하면 여러 직업 동시 검색 (예: 드드
+        <span className={styles.hintComma}>,</span> 권왕
+        <span className={styles.hintComma}>,</span> 알카)
+      </span>
       </div>
 
       {/* 필터: 역할 / 성별 / 사멸 — 한 줄에 묶고 그룹 사이 구분선 */}
@@ -328,6 +444,51 @@ export default function EngravingPage() {
       {/* 결과 — 가나다순 평면 그리드 (+ 뉴비 추천 사이드바를 그리드 시작점에 정렬) */}
       <div className={styles.results}>
         <NewbieRecSidebar nr={nr} />
+
+        {/* 왼쪽: 표시 중인 직업들의 각인 겹침 순위 (절대배치 — 레이아웃 안 밈) */}
+        <aside className={styles.engSidebar} aria-label="유각 겹침 순위">
+          <div className={styles.engSideBox}>
+            <div className={styles.engSideHead}>
+              <span className={styles.engSideTitle}>유각 겹침 순위</span>
+              <span className={styles.engSideBadge}>TOP 10</span>
+            </div>
+            <div className={styles.engSideSub}>표시 중인 {shown.length}개 직업 기준</div>
+            {engRanking.length === 0 ? (
+              <div className={styles.engSideEmpty}>표시 중인 직업이 없습니다</div>
+            ) : (
+              <ol className={styles.engSideList}>
+                {engRanking.map(([name, count], i) => (
+                  <li key={name}>
+                    <button
+                      className={`${styles.engSideItem} ${
+                        highlights.has(name) ? styles.engSideItemActive : ''
+                      }`}
+                      onClick={() => toggleHighlight(name)}
+                      aria-pressed={highlights.has(name)}
+                    >
+                      <span
+                        className={`${styles.engSideRank} ${i < 3 ? styles.engSideRankTop : ''}`}
+                      >
+                        {i + 1}
+                      </span>
+                      {ENGRAVING_ICONS[name] && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          className={styles.engSideIcon}
+                          src={ENGRAVING_ICONS[name]}
+                          alt=""
+                          loading="lazy"
+                        />
+                      )}
+                      <span className={styles.engSideName}>{label(name)}</span>
+                      <span className={styles.engSideCount}>{count}</span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </aside>
         {shown.length === 0 ? (
         <p className={styles.empty}>조건에 맞는 직업이 없습니다.</p>
       ) : (
@@ -370,7 +531,9 @@ export default function EngravingPage() {
                     const pool = poolOf(slot);
                     const pick = pickOf(slot);
                     const isOr = pool.length > 1;
-                    const hit = pool.some((n) => filters[n] === 'include');
+                    const hit = pool.some(
+                      (n) => filters[n] === 'include' || highlights.has(n)
+                    );
                     return (
                       <span
                         key={i}

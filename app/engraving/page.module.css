@@ -32,10 +32,32 @@
 }
 
 /* ── 검색 ── */
+/* 검색창 + 안내문을 한 줄에 (좁으면 안내문이 아래로 줄바꿈) */
+.searchLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
 .searchRow {
   position: relative;
+  flex: 1 1 260px;
   max-width: 380px;
-  margin-bottom: 0.9rem;
+}
+
+.searchHint {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+/* 안내문 속 쉼표만 빨간색으로 강조 */
+.hintComma {
+  color: var(--loss-color);
+  font-weight: 800;
 }
 
 .searchIcon {
@@ -43,24 +65,27 @@
   left: 0.7rem;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-disabled);
+  color: var(--color-primary);
   pointer-events: none;
 }
 
 .searchInput {
   width: 100%;
-  font-size: 0.95rem;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--text-primary);
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 0.6rem 2.1rem 0.6rem 2.2rem;
+  border: 2px solid var(--color-primary);
+  border-radius: 11px;
+  padding: 0.68rem 2.1rem 0.68rem 2.3rem;
   outline: none;
-  transition: border-color 0.12s ease;
+  box-shadow: 0 0 0 3px var(--color-primary-light), 0 3px 10px rgba(0, 0, 0, 0.14);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .searchInput:focus {
   border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-light), 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 
 .searchInput::placeholder {
@@ -265,6 +290,139 @@
 /* ── 결과 영역 (뉴비 추천 사이드바의 기준 컨테이너) ── */
 .results {
   position: relative;
+}
+
+/* ── 왼쪽 유각 겹침 순위 사이드바 ──
+   오른쪽 뉴비 추천과 동일한 절대배치 방식: 콘텐츠 왼쪽 여백에 띄워
+   레이아웃을 절대 밀지 않고, 들어갈 폭이 없으면 숨김. */
+.engSidebar {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 1rem);
+  width: 250px;
+  display: none;
+}
+
+@media (min-width: 1130px) {
+  .engSidebar {
+    display: block;
+  }
+}
+
+.engSideBox {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 0.85rem 0.85rem 0.9rem;
+}
+
+.engSideHead {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.engSideTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.engSideBadge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--color-primary);
+  border-radius: 6px;
+  padding: 0.1rem 0.4rem;
+  letter-spacing: 0.02em;
+}
+
+.engSideSub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0.15rem 0 0.7rem;
+}
+
+.engSideList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+/* 순위 항목 = 토글 버튼: 누르면 카드의 해당 각인 칸에 테두리 표시 */
+.engSideItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.22rem 0.35rem;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.engSideItem:hover {
+  border-color: var(--color-primary);
+}
+
+.engSideItemActive {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.engSideRank {
+  width: 1.1rem;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.engSideRankTop {
+  color: var(--color-primary);
+}
+
+.engSideIcon {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 5px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.engSideName {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.engSideCount {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.engSideEmpty {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 0.9rem 0;
+  text-align: center;
 }
 
 /* ── 결과 그리드 ── */
