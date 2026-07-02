@@ -30,7 +30,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/life-master', label: '생활 제작' },
       { href: '/package', label: '패키지 효율' },
       { href: '/hell-reward', label: '지옥 보상' },
-      { href: '/arkpass', label: '아크패스 효율', badge: 'NEW' },
+      { href: '/arkpass', label: '아크패스 효율' },
     ],
   },
   {
@@ -38,18 +38,18 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-hell',
     items: [
       { href: '/weekly-gold', label: '주간 레이드' },
-      { href: '/homework', label: '일일/주간 숙제', badge: 'NEW' },
+      { href: '/homework', label: '일일/주간 숙제' },
       { href: '/cathedral', label: '지평의 성당' },
       { href: '/cerka', label: '세르카' },
       { href: '/extreme', label: '익스트림' },
-      { href: '/belgardin', label: '벨가르딘', badge: 'NEW' },
+      { href: '/belgardin', label: '벨가르딘' },
     ],
   },
   {
     label: '시뮬',
     colorClass: 'nav-refining',
     items: [
-      { href: '/refining', label: '재련 시뮬' },
+      { href: '/refining', label: '재련 시뮬', badge: 'NEW' },
       { href: '/bracelet', label: '팔찌 시뮬' },
     ],
   },
