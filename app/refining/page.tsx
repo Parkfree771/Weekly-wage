@@ -265,10 +265,11 @@ export default function RefiningPage() {
             {/* 모드 선택 탭 */}
             {ModeSelector}
 
-            {/* 상급재련 완화 패치 배지 (탭 버튼 바로 아래) */}
+            {/* 상급재련 완화 패치 배지 + 보조재료 최적화 업데이트 배지 (탭 버튼 바로 아래) */}
             {(mode === 'average' || mode === 'advanced') && (
-              <div className={styles.patchBadgeRow}>
+              <div className={`${styles.patchBadgeRow} ${styles.patchBadgeCol}`}>
                 <span className={styles.patchBadge}>2026.06.24 상급재련 완화 적용</span>
+                <span className={`${styles.patchBadge} ${styles.patchBadgeNew}`}>보조재료(숨결·책) 최적화 업데이트</span>
               </div>
             )}
 

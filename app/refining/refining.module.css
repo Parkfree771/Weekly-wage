@@ -80,6 +80,19 @@
   white-space: nowrap;
 }
 
+/* 배지 세로 스택 (완화 배지 + 보조재료 최적화 배지) */
+.patchBadgeCol {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* 보조재료 최적화 배지 — 완화 배지와 구분(인디고) */
+.patchBadgeNew {
+  background-color: #4f46e5;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
+}
+
 @media (max-width: 576px) {
   .patchBadge {
     font-size: 0.72rem;
