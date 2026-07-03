@@ -122,6 +122,11 @@
   white-space: nowrap;
 }
 
+/* 기존 직업 토글 — 데스크톱(≥1520px)은 좌측 사이드바가 대체하므로 숨김 (기본 숨김) */
+.specToggle {
+  display: none;
+}
+
 /* 넓은 화면(≥1520px)에서만 우측 배치. 좁으면 랭킹 아래로 스택(랭킹 위치·크기 불변) */
 @media (max-width: 1519.98px) {
   .layout {
@@ -140,6 +145,10 @@
   /* 좌측 스펙 사이드바는 데스크톱(≥1520px) 전용 — 좁으면 기존 토글 검색 사용 */
   .specAside {
     display: none;
+  }
+  /* 좁은 화면·모바일에선 기존 직업 토글 복원 (flex 참여 위해 contents) */
+  .specToggle {
+    display: contents;
   }
 }
 

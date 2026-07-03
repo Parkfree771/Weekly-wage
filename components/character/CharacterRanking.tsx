@@ -361,14 +361,14 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
     <aside className={styles.specAside}>
       <div className={styles.specAsideHead}>
         <span className={styles.headDot} aria-hidden />
-        <span className={styles.specAsideTitle}>직업 · 스펙</span>
+        <span className={styles.specAsideTitle}>직업</span>
       </div>
       <input
         className={styles.specSearch}
         value={specQuery}
         onChange={(e) => setSpecQuery(e.target.value)}
-        placeholder="직업·스펙 검색 (예: 창술사, 권왕)"
-        aria-label="직업·스펙 검색"
+        placeholder="직업 검색 (예: 창술사, 권왕)"
+        aria-label="직업 검색"
       />
       <div className={styles.specScroll}>
         {SPEC_GROUPS.map((g) => {
@@ -416,17 +416,20 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
           </button>
         </div>
         <div className={styles.controls}>
-          <FilterSelect
-            value={selectedSpec}
-            onChange={setSelectedSpec}
-            groups={SPEC_FILTER_GROUPS}
-            placeholder="전체 직업"
-            ariaLabel="직업/스펙 필터"
-            searchable
-            searchTexts={SPEC_SEARCH_TEXTS}
-            searchOnlyGroups={CLASS_FILTER_GROUPS}
-            searchPlaceholder="직업·스펙 검색 (예: 창술사, 권왕)"
-          />
+          {/* 직업 토글 — 데스크톱(≥1520px)에선 좌측 사이드바가 대체하므로 숨김. 좁은 화면·모바일은 유지 */}
+          <span className={styles.specToggle}>
+            <FilterSelect
+              value={selectedSpec}
+              onChange={setSelectedSpec}
+              groups={SPEC_FILTER_GROUPS}
+              placeholder="전체 직업"
+              ariaLabel="직업 필터"
+              searchable
+              searchTexts={SPEC_SEARCH_TEXTS}
+              searchOnlyGroups={CLASS_FILTER_GROUPS}
+              searchPlaceholder="직업 검색 (예: 창술사, 권왕)"
+            />
+          </span>
 
           <FilterSelect
             value={selectedTitle}
