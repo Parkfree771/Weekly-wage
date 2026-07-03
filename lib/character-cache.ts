@@ -151,6 +151,7 @@ export async function upsertCharacter(characterName: string, parsed: CharacterDa
   await sql`
     INSERT INTO characters (
       character_name, class_name, combat_power, item_level,
+      max_combat_power, max_item_level,
       character_image, server_name, guild_name,
       main_core_icon, main_core_grade, cores,
       equipped_title, titles_history,
@@ -158,6 +159,7 @@ export async function upsertCharacter(characterName: string, parsed: CharacterDa
     )
     VALUES (
       ${characterName}, ${f.className}, ${f.combatPower}, ${f.itemLevel},
+      ${f.combatPower}, ${f.itemLevel},
       ${f.characterImage}, ${f.serverName}, ${f.guildName},
       ${f.mainCoreIcon}, ${f.mainCoreGrade}, ${JSON.stringify(f.cores)}::jsonb,
       ${f.equippedTitle}, ${JSON.stringify(nextHistory)}::jsonb,
@@ -167,6 +169,8 @@ export async function upsertCharacter(characterName: string, parsed: CharacterDa
       class_name      = EXCLUDED.class_name,
       combat_power    = EXCLUDED.combat_power,
       item_level      = EXCLUDED.item_level,
+      max_combat_power = GREATEST(COALESCE(characters.max_combat_power, 0), EXCLUDED.combat_power),
+      max_item_level   = GREATEST(COALESCE(characters.max_item_level, 0), EXCLUDED.item_level),
       character_image = EXCLUDED.character_image,
       server_name     = EXCLUDED.server_name,
       guild_name      = EXCLUDED.guild_name,
@@ -216,6 +220,10 @@ export interface ListRankingOptions {
   specId?: string;
   /** 역할 필터 — 'support'(바드/발키리/홀나/도화가 서포터 스펙) | 'dealer'(그 외 전부) */
   role?: 'dealer' | 'support';
+  /** 아이템레벨 하한 (이상). 최대 기록(max_item_level) 기준 — 표기 레벨과 일치 */
+  minItemLevel?: number;
+  /** 아이템레벨 상한 (이하). 최대 기록 기준 */
+  maxItemLevel?: number;
   sortBy?: RankingSortBy;
   /** 정렬 방향. 기본 desc(내림차순) */
   sortDir?: 'asc' | 'desc';
@@ -232,6 +240,12 @@ function titlesHistoryMatchExpr(paramIdx: number): string {
     + `) AS th WHERE th->>'title' ILIKE $${paramIdx})`;
 }
 
+// 아이템레벨 필터 정규화: 유한 양수만 허용, 소수 2자리로 절사 (이상값·주입 방지)
+function normalizeItemLevel(v: number | undefined): number | null {
+  if (typeof v !== 'number' || !isFinite(v) || v <= 0) return null;
+  return Math.min(Math.round(v * 100) / 100, 99999);
+}
+
 export async function listRanking(opts: ListRankingOptions = {}): Promise<RankingEntry[]> {
   const limit = Math.min(Math.max(opts.limit ?? 10, 1), 100);
   const offset = Math.max(opts.offset ?? 0, 0);
@@ -244,10 +258,26 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
     typeof opts.ancientCount === 'number' && opts.ancientCount >= 0 && opts.ancientCount <= 6
       ? Math.floor(opts.ancientCount)
       : null;
+  const minItemLevel = normalizeItemLevel(opts.minItemLevel);
+  const maxItemLevel = normalizeItemLevel(opts.maxItemLevel);
+
+  // 랭킹(메인)은 최대 기록 기준 — 캐릭터를 벗기거나 스펙을 내려도 최고 기록이 유지됨.
+  // 상세 페이지는 data(현재값)를 그대로 쓰므로 영향 없음. GREATEST는 백필 전 행/이상치 방어.
+  const maxCp = `GREATEST(combat_power, COALESCE(max_combat_power, 0))`;
+  const maxIl = `GREATEST(item_level, COALESCE(max_item_level, 0))`;
 
   // 동적 WHERE 조립 — $1, $2… placeholder + 파라미터 배열로 sql.query 호출
   const conditions: string[] = [];
   const params: any[] = [];
+  // 아이템레벨 범위 — 표기와 같은 최대 기록 기준으로 필터 (둘 다 선택적)
+  if (minItemLevel !== null) {
+    params.push(minItemLevel);
+    conditions.push(`${maxIl} >= $${params.length}`);
+  }
+  if (maxItemLevel !== null) {
+    params.push(maxItemLevel);
+    conditions.push(`${maxIl} <= $${params.length}`);
+  }
   if (className) {
     params.push(className);
     conditions.push(`class_name = $${params.length}`);
@@ -297,8 +327,8 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
   // character_name(고유 PK)을 마지막 정렬키로 → 동점에서도 페이지 경계가 결정적(중복·누락 방지)
   const orderClause =
     sortBy === 'item_level'
-      ? `ORDER BY item_level ${sortDir}, combat_power ${sortDir}, character_name ASC`
-      : `ORDER BY combat_power ${sortDir}, item_level ${sortDir}, character_name ASC`;
+      ? `ORDER BY ${maxIl} ${sortDir}, ${maxCp} ${sortDir}, character_name ASC`
+      : `ORDER BY ${maxCp} ${sortDir}, ${maxIl} ${sortDir}, character_name ASC`;
   params.push(limit);
   const limitIdx = params.length;
   params.push(offset);
@@ -314,7 +344,8 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
       WHERE e->>'category' = '깨달음') AS enl_nodes`;
 
   const queryText = `
-    SELECT character_name, class_name, combat_power, item_level,
+    SELECT character_name, class_name,
+           ${maxCp} AS combat_power, ${maxIl} AS item_level,
            character_image, server_name, cores, equipped_title, fetched_at,
            ${enlExpr}
     FROM characters
@@ -354,7 +385,7 @@ export interface RankingStats {
   /** 매칭 집합의 평균 아이템레벨 */
   avgItemLevel: number;
   /** 활성 필터 각각을 단독 적용했을 때의 수 (활성 필터만 키 존재) */
-  breakdown: { spec?: number; title?: number; ancient?: number; role?: number };
+  breakdown: { spec?: number; title?: number; ancient?: number; role?: number; level?: number };
 }
 
 /**
@@ -370,10 +401,27 @@ export async function getRankingStats(opts: ListRankingOptions = {}): Promise<Ra
     typeof opts.ancientCount === 'number' && opts.ancientCount >= 0 && opts.ancientCount <= 6
       ? Math.floor(opts.ancientCount)
       : null;
+  const minItemLevel = normalizeItemLevel(opts.minItemLevel);
+  const maxItemLevel = normalizeItemLevel(opts.maxItemLevel);
 
   // 각 필터를 독립 boolean 표현식으로 만들어 matched(AND 결합)와 단독 FILTER에 모두 재사용
   const params: any[] = [];
-  const frags: { key: 'spec' | 'title' | 'ancient' | 'class' | 'role'; expr: string }[] = [];
+  const frags: { key: 'spec' | 'title' | 'ancient' | 'class' | 'role' | 'level'; expr: string }[] = [];
+
+  if (minItemLevel !== null || maxItemLevel !== null) {
+    // 랭킹 표기와 동일하게 최대 기록 기준
+    const maxIl = `GREATEST(item_level, COALESCE(max_item_level, 0))`;
+    const parts: string[] = [];
+    if (minItemLevel !== null) {
+      params.push(minItemLevel);
+      parts.push(`${maxIl} >= $${params.length}`);
+    }
+    if (maxItemLevel !== null) {
+      params.push(maxItemLevel);
+      parts.push(`${maxIl} <= $${params.length}`);
+    }
+    frags.push({ key: 'level', expr: parts.join(' AND ') });
+  }
 
   if (className) {
     params.push(className);
@@ -422,8 +470,9 @@ export async function getRankingStats(opts: ListRankingOptions = {}): Promise<Ra
   const selects: string[] = [
     `count(*) AS total`,
     `count(*) FILTER (WHERE ${matchedExpr}) AS matched`,
-    `COALESCE(round(avg(combat_power) FILTER (WHERE ${matchedExpr}), 2), 0) AS avg_cp`,
-    `COALESCE(round(avg(item_level) FILTER (WHERE ${matchedExpr}), 2), 0) AS avg_il`,
+    // 평균도 랭킹과 동일하게 최대 기록 기준 — 잘못 갱신된(벗은) 현재값이 통계를 끌어내리지 않도록
+    `COALESCE(round(avg(GREATEST(combat_power, COALESCE(max_combat_power, 0))) FILTER (WHERE ${matchedExpr}), 2), 0) AS avg_cp`,
+    `COALESCE(round(avg(GREATEST(item_level, COALESCE(max_item_level, 0))) FILTER (WHERE ${matchedExpr}), 2), 0) AS avg_il`,
   ];
   // 단독 비율(breakdown) — class는 spec에 포함되므로 별도 노출 안 함
   for (const f of frags) {
@@ -440,6 +489,7 @@ export async function getRankingStats(opts: ListRankingOptions = {}): Promise<Ra
   if (frags.some(f => f.key === 'title')) breakdown.title = num(r.title_only);
   if (frags.some(f => f.key === 'ancient')) breakdown.ancient = num(r.ancient_only);
   if (frags.some(f => f.key === 'role')) breakdown.role = num(r.role_only);
+  if (frags.some(f => f.key === 'level')) breakdown.level = num(r.level_only);
 
   return {
     total: num(r.total),

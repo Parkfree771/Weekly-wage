@@ -84,6 +84,12 @@
   border-color: rgba(217, 119, 6, 0.35);
 }
 
+.chipLevel {
+  background: rgba(8, 145, 178, 0.14);
+  color: #0891b2;
+  border-color: rgba(8, 145, 178, 0.35);
+}
+
 .chipAll {
   background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.05));
   color: var(--text-muted, #99a);
@@ -260,6 +266,7 @@
 .tag_spec { background: #3b82f6; }
 .tag_title { background: #7c3aed; }
 .tag_ancient { background: #d97706; }
+.tag_level { background: #0891b2; }
 
 .fName {
   flex: 1;
@@ -298,6 +305,7 @@
 .fill_spec { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
 .fill_title { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
 .fill_ancient { background: linear-gradient(90deg, #d97706, #fbbf24); }
+.fill_level { background: linear-gradient(90deg, #0891b2, #22d3ee); }
 
 .fCount {
   grid-column: 1 / -1;

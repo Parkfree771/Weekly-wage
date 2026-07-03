@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getRankingStats } from '@/lib/character-cache';
 
+// 아이템레벨 파라미터 파싱: 유한 양수만 유효, 그 외 undefined
+function parseLevel(raw: string | null): number | undefined {
+  if (raw === null || raw === '') return undefined;
+  const v = parseFloat(raw);
+  return isFinite(v) && v > 0 ? v : undefined;
+}
+
 // 필터 조합별 매칭 비율 통계. 정수 몇 개만 반환(egress ~0).
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -14,9 +21,14 @@ export async function GET(request: Request) {
   const specId = searchParams.get('spec') || undefined;
   const roleRaw = searchParams.get('role');
   const role = roleRaw === 'support' || roleRaw === 'dealer' ? roleRaw : undefined;
+  let minItemLevel = parseLevel(searchParams.get('minLevel'));
+  let maxItemLevel = parseLevel(searchParams.get('maxLevel'));
+  if (minItemLevel !== undefined && maxItemLevel !== undefined && minItemLevel > maxItemLevel) {
+    [minItemLevel, maxItemLevel] = [maxItemLevel, minItemLevel];
+  }
 
   try {
-    const stats = await getRankingStats({ className, titleQuery, ancientCount, specId, role });
+    const stats = await getRankingStats({ className, titleQuery, ancientCount, specId, role, minItemLevel, maxItemLevel });
     const res = NextResponse.json(stats);
     // 랭킹 API와 동일: 필터 조합별 캐시키 분리 + 5분 엣지 캐시 → 같은 조합 반복 시 DB 안 침
     res.headers.set('Netlify-Vary', 'query');

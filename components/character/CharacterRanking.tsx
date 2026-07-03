@@ -2,10 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { TIER_ENTRIES } from '@/lib/tier-entries.generated';
+import { specFilterFor } from '@/lib/class-spec-icon';
+import { specSearchText, classSearchText, fullClassNameOf } from '@/lib/spec-search';
 import styles from './CharacterRanking.module.css';
 import TitleBadge from './TitleBadge';
 import FilterSelect, { type FilterGroup } from './FilterSelect';
 import FilterStats from './FilterStats';
+import ClassSpecCompare from './ClassSpecCompare';
 
 // 스펙 필터 옵션: 58개 매핑을 직업군(group)별로 묶음 (TIER_ENTRIES는 group→name 정렬됨)
 const SPEC_GROUP_ORDER = ['전사', '무도가', '헌터', '마법사', '암살자', '스페셜리스트', '기타'];
@@ -28,6 +31,34 @@ const SPEC_FILTER_GROUPS: FilterGroup[] = SPEC_GROUPS.map(g => ({
     ),
   })),
 }));
+
+// 직업 단위 옵션 (검색 시에만 노출): 값은 "class:정식직업명" — 두 스펙을 합쳐서 필터
+const CLASS_PREFIX = 'class:';
+const CLASS_NAMES_ORDERED: string[] = (() => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const e of TIER_ENTRIES) {
+    const cn = fullClassNameOf(e.id);
+    if (!seen.has(cn)) { seen.add(cn); out.push(cn); }
+  }
+  return out;
+})();
+const CLASS_FILTER_GROUPS: FilterGroup[] = [{
+  label: '직업 전체 (스펙 합산)',
+  options: CLASS_NAMES_ORDERED.map(cn => ({
+    value: `${CLASS_PREFIX}${cn}`,
+    label: `${cn} 전체`,
+    node: <span className={styles.classAllOpt}>{cn} <em>전체</em></span>,
+  })),
+}];
+
+// 검색 별칭: 스펙은 "축약 id+직업 풀네임+스펙 풀네임", 직업 옵션은 "풀네임+축약명"
+const SPEC_SEARCH_TEXTS: Record<string, string> = (() => {
+  const map: Record<string, string> = {};
+  for (const e of TIER_ENTRIES) map[e.id] = specSearchText(e.id);
+  for (const cn of CLASS_NAMES_ORDERED) map[`${CLASS_PREFIX}${cn}`] = classSearchText(cn);
+  return map;
+})();
 
 type Core = {
   name: string;
@@ -122,6 +153,11 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
   const [selectedTitle, setSelectedTitle] = useState<string>('');
   const [selectedAncient, setSelectedAncient] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<string>('');
+  // 아이템레벨 범위 — 빈칸 = 무제한. levelMin만 입력하면 "이상", levelMax만 입력하면 "이하"
+  const [levelMin, setLevelMin] = useState<string>('');
+  const [levelMax, setLevelMax] = useState<string>('');
+  // 타이핑 중 매 글자마다 API를 치지 않도록 500ms 디바운스된 값으로만 조회
+  const [debLevel, setDebLevel] = useState<{ min: string; max: string }>({ min: '', max: '' });
   const [sort, setSort] = useState<SortState>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -138,13 +174,35 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
     return () => mq.removeEventListener('change', update);
   }, []);
 
-  const hasActiveFilter = !!(selectedSpec || selectedTitle || selectedAncient || selectedRole || sort);
+  // 레벨 입력 디바운스: 500ms 입력이 멈추면 조회값으로 반영 (유효하지 않은 값은 빈 값 취급)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const norm = (s: string) => {
+        const v = parseFloat(s);
+        return isFinite(v) && v > 0 ? s.trim() : '';
+      };
+      setDebLevel({ min: norm(levelMin), max: norm(levelMax) });
+    }, 500);
+    return () => clearTimeout(t);
+  }, [levelMin, levelMax]);
+
+  // min > max로 입력해도 스왑해서 조회 (입력칸 자체는 건드리지 않음)
+  const effLevel = (() => {
+    const mn = debLevel.min ? parseFloat(debLevel.min) : null;
+    const mx = debLevel.max ? parseFloat(debLevel.max) : null;
+    if (mn !== null && mx !== null && mn > mx) return { min: debLevel.max, max: debLevel.min };
+    return debLevel;
+  })();
+
+  const hasActiveFilter = !!(selectedSpec || selectedTitle || selectedAncient || selectedRole || levelMin || levelMax || sort);
 
   const resetFilters = () => {
     setSelectedSpec('');
     setSelectedTitle('');
     setSelectedAncient('');
     setSelectedRole('');
+    setLevelMin('');
+    setLevelMax('');
     setSort(null);
   };
 
@@ -157,14 +215,23 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
     });
   };
 
+  // 직업 단위 선택("class:창술사")과 스펙 선택("창술 절정") 분기
+  const isClassSel = selectedSpec.startsWith(CLASS_PREFIX);
+  const selClass = isClassSel ? selectedSpec.slice(CLASS_PREFIX.length) : '';
+  // 스펙 비교 패널 대상 직업: 직업 선택이면 그 직업, 스펙 선택이면 스펙의 직업
+  const compareClass = isClassSel ? selClass : (selectedSpec ? (specFilterFor(selectedSpec)?.className ?? null) : null);
+
   // 랭킹 API 쿼리 파라미터 조립 (필터·정렬 공통)
   const buildParams = (extra?: Record<string, string>) => {
     const p = new URLSearchParams();
     if (sort) { p.set('sort', sort.key); p.set('dir', sort.dir); }
-    if (selectedSpec) p.set('spec', selectedSpec);
+    if (isClassSel) p.set('class', selClass);
+    else if (selectedSpec) p.set('spec', selectedSpec);
     if (selectedTitle) p.set('title', selectedTitle);
     if (selectedAncient) p.set('ancient', selectedAncient);
     if (selectedRole) p.set('role', selectedRole);
+    if (effLevel.min) p.set('minLevel', effLevel.min);
+    if (effLevel.max) p.set('maxLevel', effLevel.max);
     if (extra) for (const [k, v] of Object.entries(extra)) p.set(k, v);
     return p;
   };
@@ -198,7 +265,7 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSpec, selectedTitle, selectedAncient, selectedRole, sort]);
+  }, [selectedSpec, selectedTitle, selectedAncient, selectedRole, effLevel.min, effLevel.max, sort]);
 
   // reloadKey 변경(새 캐릭터 저장 등) → 데이터만 갱신하고 "더보기로 펼친 개수"는 유지.
   // 첫 10개로 리셋하지 않음 → 캐릭터 보고 뒤로가기해도 보던 목록 그대로.
@@ -264,12 +331,17 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
   }, [hasMore, isLoading]);
 
   // 통계 사이드바 breakdown·칩용 라벨
-  const specEntry = selectedSpec ? TIER_ENTRIES.find(e => e.id === selectedSpec) : undefined;
-  const specLabel = selectedSpec ? (specEntry?.name ?? selectedSpec) : undefined;
+  const specEntry = selectedSpec && !isClassSel ? TIER_ENTRIES.find(e => e.id === selectedSpec) : undefined;
+  const specLabel = isClassSel ? `${selClass} 전체` : selectedSpec ? (specEntry?.name ?? selectedSpec) : undefined;
   const specIcon = specEntry?.icon;
   const titleLabel = selectedTitle ? (TITLE_FILTER_OPTIONS.find(t => t.value === selectedTitle)?.label ?? selectedTitle) : undefined;
   const ancientLabel = selectedAncient ? `${selectedAncient}고대` : undefined;
   const roleLabel = selectedRole === 'support' ? '서포터' : selectedRole === 'dealer' ? '딜러' : undefined;
+  const levelLabel =
+    effLevel.min && effLevel.max ? `${effLevel.min} ~ ${effLevel.max}`
+    : effLevel.min ? `${effLevel.min} 이상`
+    : effLevel.max ? `${effLevel.max} 이하`
+    : undefined;
 
   return (
     <div className={styles.layout}>
@@ -294,6 +366,10 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
             groups={SPEC_FILTER_GROUPS}
             placeholder="전체 직업"
             ariaLabel="직업/스펙 필터"
+            searchable
+            searchTexts={SPEC_SEARCH_TEXTS}
+            searchOnlyGroups={CLASS_FILTER_GROUPS}
+            searchPlaceholder="직업·스펙 검색 (예: 창술사, 권왕)"
           />
 
           <FilterSelect
@@ -328,6 +404,31 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
             <option value="support">서포터</option>
           </select>
 
+          <div className={styles.levelGroup} role="group" aria-label="아이템레벨 범위 필터">
+            <span className={styles.levelLabel}>레벨</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              className={styles.levelInput}
+              value={levelMin}
+              onChange={(e) => setLevelMin(e.target.value)}
+              placeholder="최소"
+              aria-label="아이템레벨 최소 (빈칸이면 제한 없음)"
+            />
+            <span className={styles.levelTilde}>~</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              className={styles.levelInput}
+              value={levelMax}
+              onChange={(e) => setLevelMax(e.target.value)}
+              placeholder="최대"
+              aria-label="아이템레벨 최대 (빈칸이면 제한 없음)"
+            />
+          </div>
+
           <div className={styles.sortGroup} role="group" aria-label="정렬 기준">
             <button
               type="button"
@@ -353,13 +454,25 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
       {isMobile && (
         <div className={styles.mobileStats}>
           <FilterStats
-            spec={selectedSpec}
+            spec={isClassSel ? '' : selectedSpec}
+            klass={selClass}
             title={selectedTitle}
             ancient={selectedAncient}
             role={selectedRole}
+            minLevel={effLevel.min}
+            maxLevel={effLevel.max}
             variant="mobile"
-            labels={{ spec: specLabel, specIcon, title: titleLabel, ancient: ancientLabel, role: roleLabel }}
+            labels={{ spec: specLabel, specIcon, title: titleLabel, ancient: ancientLabel, role: roleLabel, level: levelLabel }}
           />
+          {compareClass && (
+            <div className={styles.mobileCompare}>
+              <ClassSpecCompare
+                klass={compareClass}
+                selectedSpecId={isClassSel ? undefined : selectedSpec || undefined}
+                onSelectSpec={setSelectedSpec}
+              />
+            </div>
+          )}
         </div>
       )}
       </div>
@@ -376,8 +489,8 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
 
       {!isLoading && !error && entries.length === 0 && (
         <div className={styles.emptyState}>
-          {selectedSpec
-            ? `아직 ${selectedSpec} 캐릭터가 조회되지 않았습니다.`
+          {specLabel
+            ? `아직 ${specLabel} 캐릭터가 조회되지 않았습니다.`
             : '아직 조회된 캐릭터가 없습니다. 위 검색창에서 캐릭터를 검색하면 랭킹에 반영됩니다.'}
         </div>
       )}
@@ -484,11 +597,19 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
       {!isMobile && (
         <aside className={styles.statsAside}>
           <FilterStats
-            spec={selectedSpec}
+            spec={isClassSel ? '' : selectedSpec}
+            klass={selClass}
             title={selectedTitle}
             ancient={selectedAncient}
             role={selectedRole}
-            labels={{ spec: specLabel, specIcon, title: titleLabel, ancient: ancientLabel, role: roleLabel }}
+            minLevel={effLevel.min}
+            maxLevel={effLevel.max}
+            labels={{ spec: specLabel, specIcon, title: titleLabel, ancient: ancientLabel, role: roleLabel, level: levelLabel }}
+          />
+          <ClassSpecCompare
+            klass={compareClass}
+            selectedSpecId={isClassSel ? undefined : selectedSpec || undefined}
+            onSelectSpec={setSelectedSpec}
           />
         </aside>
       )}

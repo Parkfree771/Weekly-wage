@@ -9,16 +9,21 @@ interface Stats {
   matched: number;
   avgCombatPower: number;
   avgItemLevel: number;
-  breakdown: { spec?: number; title?: number; ancient?: number; role?: number };
+  breakdown: { spec?: number; title?: number; ancient?: number; role?: number; level?: number };
 }
 
 interface Props {
   spec: string;
+  /** 직업 단위 필터 (정식 직업명, 예: '창술사') — 스펙 구분 없이 직업 전체 */
+  klass?: string;
   title: string;
   ancient: string;
   role: string;
+  /** 아이템레벨 범위 (빈 문자열 = 미적용) */
+  minLevel?: string;
+  maxLevel?: string;
   /** 활성 필터의 사람이 읽는 라벨 */
-  labels: { spec?: string; specIcon?: string; title?: string; ancient?: string; role?: string };
+  labels: { spec?: string; specIcon?: string; title?: string; ancient?: string; role?: string; level?: string };
   /** 'sidebar'(기본, 세로 패널) | 'mobile'(가로 압축 — 상단 고정용) */
   variant?: 'sidebar' | 'mobile';
 }
@@ -39,16 +44,19 @@ function fmtNum(n: number, frac = 2): string {
   return n.toLocaleString('ko-KR', { minimumFractionDigits: frac, maximumFractionDigits: frac });
 }
 
-export default function FilterStats({ spec, title, ancient, role, labels, variant = 'sidebar' }: Props) {
+export default function FilterStats({ spec, klass = '', title, ancient, role, minLevel = '', maxLevel = '', labels, variant = 'sidebar' }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const p = new URLSearchParams();
     if (spec) p.set('spec', spec);
+    if (klass) p.set('class', klass);
     if (title) p.set('title', title);
     if (ancient) p.set('ancient', ancient);
     if (role) p.set('role', role);
+    if (minLevel) p.set('minLevel', minLevel);
+    if (maxLevel) p.set('maxLevel', maxLevel);
 
     let cancelled = false;
     setLoading(true);
@@ -58,9 +66,10 @@ export default function FilterStats({ spec, title, ancient, role, labels, varian
       .catch(() => { if (!cancelled) setStats(null); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [spec, title, ancient, role]);
+  }, [spec, klass, title, ancient, role, minLevel, maxLevel]);
 
-  const hasFilter = !!(spec || title || ancient || role);
+  const hasLevel = !!(minLevel || maxLevel);
+  const hasFilter = !!(spec || klass || title || ancient || role || hasLevel);
   const total = stats?.total ?? 0;
   const matched = hasFilter ? (stats?.matched ?? 0) : total;
   const pctNum = total > 0 ? Math.min(100, (matched / total) * 100) : 0;
@@ -74,15 +83,16 @@ export default function FilterStats({ spec, title, ancient, role, labels, varian
     if (spec && stats.breakdown.spec != null) rows.push({ key: 'spec', label: labels.spec || '직업', count: stats.breakdown.spec });
     if (title && stats.breakdown.title != null) rows.push({ key: 'title', label: labels.title || '칭호', count: stats.breakdown.title });
     if (ancient && stats.breakdown.ancient != null) rows.push({ key: 'ancient', label: labels.ancient || '고대', count: stats.breakdown.ancient });
+    if (hasLevel && stats.breakdown.level != null) rows.push({ key: 'level', label: labels.level || '레벨', count: stats.breakdown.level });
   }
 
-  const tagText: Record<string, string> = { role: '역할', spec: '직업', title: '칭호', ancient: '고대' };
+  const tagText: Record<string, string> = { role: '역할', spec: '직업', title: '칭호', ancient: '고대', level: '레벨' };
 
   // 활성 필터 칩 (sidebar·mobile 공용)
   const chipNodes = hasFilter ? (
     <>
       {role && <span className={`${styles.chip} ${styles.chipRole}`}>{labels.role || (role === 'support' ? '서포터' : '딜러')}</span>}
-      {spec && (
+      {(spec || klass) && (
         <span className={`${styles.chip} ${styles.chipSpec}`}>
           {labels.specIcon && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -93,6 +103,7 @@ export default function FilterStats({ spec, title, ancient, role, labels, varian
       )}
       {title && <TitleBadge title={labels.title} fontSize="0.74rem" />}
       {ancient && <span className={`${styles.chip} ${styles.chipAncient}`}>{labels.ancient}</span>}
+      {hasLevel && <span className={`${styles.chip} ${styles.chipLevel}`}>{labels.level || '레벨'}</span>}
     </>
   ) : (
     <span className={`${styles.chip} ${styles.chipAll}`}>전체 캐릭터</span>
@@ -152,7 +163,7 @@ export default function FilterStats({ spec, title, ancient, role, labels, varian
         {hasFilter ? (
           <>
             {role && <span className={`${styles.chip} ${styles.chipRole}`}>{labels.role || (role === 'support' ? '서포터' : '딜러')}</span>}
-            {spec && (
+            {(spec || klass) && (
               <span className={`${styles.chip} ${styles.chipSpec}`}>
                 {labels.specIcon && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -163,6 +174,7 @@ export default function FilterStats({ spec, title, ancient, role, labels, varian
             )}
             {title && <TitleBadge title={labels.title} fontSize="0.78rem" />}
             {ancient && <span className={`${styles.chip} ${styles.chipAncient}`}>{labels.ancient}</span>}
+            {hasLevel && <span className={`${styles.chip} ${styles.chipLevel}`}>{labels.level || '레벨'}</span>}
           </>
         ) : (
           <span className={`${styles.chip} ${styles.chipAll}`}>전체 캐릭터</span>

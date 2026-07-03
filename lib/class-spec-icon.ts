@@ -74,6 +74,16 @@ for (const [className, rule] of Object.entries(SPEC_RULES)) {
 
 export type SpecFilter = { className: string; sig: string; requireSig: boolean };
 
+/** 직업(class_name)의 스펙 판별 규칙. 스펙 비교 통계·직업 단위 필터용 */
+export function classRuleFor(className: string | null | undefined): (SpecRule & { className: string }) | null {
+  if (!className) return null;
+  const rule = SPEC_RULES[className];
+  return rule ? { ...rule, className } : null;
+}
+
+/** 판별 규칙이 있는 전체 직업명 목록 (로아 API CharacterClassName 기준) */
+export const ALL_CLASS_NAMES: string[] = Object.keys(SPEC_RULES);
+
 /** 스펙 id(예: "디트 분망")로 랭킹 필터 조건을 얻는다. 알 수 없는 id면 null */
 export function specFilterFor(specId: string | null | undefined): SpecFilter | null {
   if (!specId) return null;

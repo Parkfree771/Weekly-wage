@@ -14,11 +14,16 @@
 .statsAside {
   grid-column: 3;
   width: 100%;
-  max-width: 360px;
+  max-width: 430px;
   justify-self: start;
   align-self: start;
   position: sticky;
   top: 70px;
+  /* 패널 2개(비율+스펙비교) 세로 스택. 내부 overflow 스크롤 금지 —
+     스크롤바 폭만큼 패널이 좁아져 보임 */
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
 }
 
 /* 넓은 화면(≥1520px)에서만 우측 배치. 좁으면 랭킹 아래로 스택(랭킹 위치·크기 불변) */
@@ -46,6 +51,10 @@
   margin-top: 0.6rem;
   padding-top: 0.6rem;
   border-top: 1px solid var(--border-color);
+}
+
+.mobileCompare {
+  margin-top: 0.6rem;
 }
 
 .section {
@@ -126,6 +135,55 @@
   min-width: 150px;
 }
 
+/* 아이템레벨 범위 필터 (최소 ~ 최대, 빈칸 = 무제한) */
+.levelGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0 0.55rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--input-bg);
+}
+
+.levelLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.levelInput {
+  width: 62px;
+  padding: 0.4rem 0.1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.levelInput::-webkit-outer-spin-button,
+.levelInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.levelInput::placeholder {
+  color: var(--text-muted, #99a);
+  font-weight: 500;
+}
+
+.levelTilde {
+  color: var(--text-muted, #99a);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
 .sortGroup {
   display: inline-flex;
   border: 1px solid var(--border-color);
@@ -147,6 +205,21 @@
 .sortButton.active {
   background-color: var(--color-primary);
   color: white;
+}
+
+/* 직업 전체 옵션 (검색 시 노출) */
+.classAllOpt {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+
+.classAllOpt em {
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #0891b2;
 }
 
 /* 직업/스펙 필터 옵션: 아이콘 + 이름 */
@@ -555,6 +628,8 @@
     font-size: 0.82rem;
     padding: 0.4rem 0.55rem;
   }
+  .levelGroup { min-width: 0; }
+  .levelInput { width: 100%; min-width: 0; font-size: 0.82rem; }
   .resetButton { order: 1; }
   .sortGroup { order: 2; grid-column: 1 / -1; justify-content: stretch; }
   .sortButton { flex: 1; text-align: center; }

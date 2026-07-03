@@ -64,6 +64,45 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
+/* 패널 상단 검색 입력 — 스크롤해도 상단 고정 */
+.searchBox {
+  position: sticky;
+  top: -0.3rem;
+  margin: -0.3rem -0.3rem 0.25rem;
+  padding: 0.45rem;
+  background-color: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 1;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.38rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--color-accent);
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.searchEmpty {
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 .group + .group {
   margin-top: 0.2rem;
   border-top: 1px solid var(--border-color);

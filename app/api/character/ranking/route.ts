@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { listRanking } from '@/lib/character-cache';
 
+// 아이템레벨 파라미터 파싱: 유한 양수만 유효, 그 외 undefined
+function parseLevel(raw: string | null): number | undefined {
+  if (raw === null || raw === '') return undefined;
+  const v = parseFloat(raw);
+  return isFinite(v) && v > 0 ? v : undefined;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const className = searchParams.get('class') || undefined;
@@ -17,9 +24,18 @@ export async function GET(request: Request) {
   const specId = searchParams.get('spec') || undefined;
   const roleRaw = searchParams.get('role');
   const role = roleRaw === 'support' || roleRaw === 'dealer' ? roleRaw : undefined;
+  // 아이템레벨 범위 (선택). 뒤바뀐 min/max는 서버에서도 스왑해 빈 결과 방지
+  let minItemLevel = parseLevel(searchParams.get('minLevel'));
+  let maxItemLevel = parseLevel(searchParams.get('maxLevel'));
+  if (minItemLevel !== undefined && maxItemLevel !== undefined && minItemLevel > maxItemLevel) {
+    [minItemLevel, maxItemLevel] = [maxItemLevel, minItemLevel];
+  }
 
   try {
-    const entries = await listRanking({ className, titleQuery, ancientCount, specId, role, sortBy, sortDir, limit, offset });
+    const entries = await listRanking({
+      className, titleQuery, ancientCount, specId, role,
+      minItemLevel, maxItemLevel, sortBy, sortDir, limit, offset,
+    });
     const res = NextResponse.json({ entries });
     // Netlify-Vary: query → 쿼리 문자열(offset·필터·정렬)별로 캐시 키 분리.
     // 이게 없으면 모든 페이지가 한 캐시로 뭉개져 1~30위만 반복됨(페이지네이션 깨짐).

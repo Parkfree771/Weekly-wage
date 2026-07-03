@@ -24,10 +24,21 @@ interface Props {
   ariaLabel: string;
   /** 트리거 최소 너비(px). 미지정 시 기본 160 */
   minWidth?: number;
+  /** 패널 상단에 검색 입력 표시 */
+  searchable?: boolean;
+  /** 검색 대상 문자열 (value → 별칭 포함 텍스트). 없으면 label로 매칭 */
+  searchTexts?: Record<string, string>;
+  /** 검색어가 있을 때만 노출되는 그룹 (예: "직업 전체" 옵션들) — 일반 그룹보다 위에 표시 */
+  searchOnlyGroups?: FilterGroup[];
+  searchPlaceholder?: string;
 }
 
-export default function FilterSelect({ value, onChange, groups, placeholder, ariaLabel, minWidth }: Props) {
+export default function FilterSelect({
+  value, onChange, groups, placeholder, ariaLabel, minWidth,
+  searchable, searchTexts, searchOnlyGroups, searchPlaceholder,
+}: Props) {
   const [open, setOpen] = useState(false);
+  const [term, setTerm] = useState('');
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,14 +55,45 @@ export default function FilterSelect({ value, onChange, groups, placeholder, ari
     };
   }, [open]);
 
-  // 선택된 옵션 탐색
+  // 닫힐 때 검색어 초기화
+  useEffect(() => { if (!open) setTerm(''); }, [open]);
+
+  // 선택된 옵션 탐색 (검색 전용 그룹 포함)
   let selected: FilterOption | null = null;
-  for (const g of groups) {
+  for (const g of [...(searchOnlyGroups ?? []), ...groups]) {
     const f = g.options.find(o => o.value === value);
     if (f) { selected = f; break; }
   }
 
   const choose = (v: string) => { onChange(v); setOpen(false); };
+
+  // 검색어 매칭: searchTexts의 별칭 문자열(없으면 label) 부분일치
+  const t = term.trim();
+  const matches = (o: FilterOption) => !t || (searchTexts?.[o.value] ?? o.label).includes(t);
+  const filterGroups = (gs: FilterGroup[]) =>
+    gs.map(g => ({ ...g, options: g.options.filter(matches) })).filter(g => g.options.length > 0);
+
+  const shownSearchOnly = t ? filterGroups(searchOnlyGroups ?? []) : [];
+  const shownGroups = filterGroups(groups);
+  const isEmpty = shownSearchOnly.length === 0 && shownGroups.length === 0;
+
+  const renderGroup = (g: FilterGroup, gi: number | string) => (
+    <div key={g.label ?? gi} className={styles.group}>
+      {g.label && <div className={styles.groupLabel}>{g.label}</div>}
+      {g.options.map(o => (
+        <button
+          key={o.value}
+          type="button"
+          className={`${styles.option} ${value === o.value ? styles.optionActive : ''}`}
+          onClick={() => choose(o.value)}
+          role="option"
+          aria-selected={value === o.value}
+        >
+          {o.node ?? o.label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div
@@ -75,32 +117,33 @@ export default function FilterSelect({ value, onChange, groups, placeholder, ari
 
       {open && (
         <div className={styles.panel} role="listbox" aria-label={ariaLabel}>
-          <button
-            type="button"
-            className={`${styles.option} ${value === '' ? styles.optionActive : ''}`}
-            onClick={() => choose('')}
-            role="option"
-            aria-selected={value === ''}
-          >
-            {placeholder}
-          </button>
-          {groups.map((g, gi) => (
-            <div key={g.label ?? gi} className={styles.group}>
-              {g.label && <div className={styles.groupLabel}>{g.label}</div>}
-              {g.options.map(o => (
-                <button
-                  key={o.value}
-                  type="button"
-                  className={`${styles.option} ${value === o.value ? styles.optionActive : ''}`}
-                  onClick={() => choose(o.value)}
-                  role="option"
-                  aria-selected={value === o.value}
-                >
-                  {o.node ?? o.label}
-                </button>
-              ))}
+          {searchable && (
+            <div className={styles.searchBox}>
+              <input
+                type="text"
+                className={styles.searchInput}
+                value={term}
+                onChange={e => setTerm(e.target.value)}
+                placeholder={searchPlaceholder || '검색'}
+                aria-label={`${ariaLabel} 검색`}
+                autoFocus
+              />
             </div>
-          ))}
+          )}
+          {!t && (
+            <button
+              type="button"
+              className={`${styles.option} ${value === '' ? styles.optionActive : ''}`}
+              onClick={() => choose('')}
+              role="option"
+              aria-selected={value === ''}
+            >
+              {placeholder}
+            </button>
+          )}
+          {shownSearchOnly.map((g, gi) => renderGroup(g, `s${gi}`))}
+          {shownGroups.map((g, gi) => renderGroup(g, gi))}
+          {t && isEmpty && <div className={styles.searchEmpty}>검색 결과가 없습니다</div>}
         </div>
       )}
     </div>
