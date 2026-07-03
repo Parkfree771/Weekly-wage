@@ -26,6 +26,102 @@
   gap: 0.8rem;
 }
 
+/* 좌측: 전 스펙 펼침 사이드바 (grid 왼쪽 1fr 컬럼). 우측 통계와 대칭 */
+.specAside {
+  grid-column: 1;
+  width: 100%;
+  max-width: 300px;
+  justify-self: end;
+  align-self: start;
+  position: sticky;
+  top: 70px;
+  max-height: calc(100vh - 90px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 0.7rem;
+}
+.specAsideHead {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.specAsideTitle {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.specSearch {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.03));
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+.specSearch:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+.specScroll {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-right: 2px;
+}
+.specGroupLabel {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary, #94a3b8);
+  margin-bottom: 0.25rem;
+}
+.specGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+}
+.specChip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 5px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  min-width: 0;
+}
+.specChip:hover {
+  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.05));
+}
+.specChipActive {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+}
+.specChipIcon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.specChipName {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* 넓은 화면(≥1520px)에서만 우측 배치. 좁으면 랭킹 아래로 스택(랭킹 위치·크기 불변) */
 @media (max-width: 1519.98px) {
   .layout {
@@ -40,6 +136,10 @@
     position: static;
     width: 100%;
     max-width: 1028px;
+  }
+  /* 좌측 스펙 사이드바는 데스크톱(≥1520px) 전용 — 좁으면 기존 토글 검색 사용 */
+  .specAside {
+    display: none;
   }
 }
 
@@ -426,6 +526,25 @@
   height: 34px;
   object-fit: contain;
   border-radius: 50%;
+}
+
+/* 코어 번호(1·2·3) 배지 — 우상단. 가시성 위해 크게 + 빨강 배경 흰 글씨 */
+.coreNum {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background: #dc2626;
+  color: #fff;
+  border: 2px solid var(--card-bg, #fff);
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 15px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 /* 전투력/아이템레벨 */

@@ -60,11 +60,21 @@ const SPEC_SEARCH_TEXTS: Record<string, string> = (() => {
   return map;
 })();
 
+// 좌측 스펙 사이드바 검색 매칭 (공백 무시 부분일치)
+function matchSpec(id: string, query: string): boolean {
+  if (!query) return true;
+  const nq = query.toLowerCase().replace(/\s+/g, '');
+  const t = (SPEC_SEARCH_TEXTS[id] || '').toLowerCase().replace(/\s+/g, '');
+  return t.includes(nq);
+}
+
 type Core = {
   name: string;
   icon: string | null;
   grade: string | null;
   point: number;
+  /** 질서 코어 번호(1·2·3). 혼돈·미매칭은 null */
+  num?: number | null;
 };
 
 type RankingEntry = {
@@ -150,6 +160,8 @@ const TITLE_FILTER_GROUPS: FilterGroup[] = [{
 export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
   const [entries, setEntries] = useState<RankingEntry[]>([]);
   const [selectedSpec, setSelectedSpec] = useState<string>('');
+  // 좌측 스펙 사이드바 검색어
+  const [specQuery, setSpecQuery] = useState<string>('');
   const [selectedTitle, setSelectedTitle] = useState<string>('');
   const [selectedAncient, setSelectedAncient] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<string>('');
@@ -345,6 +357,50 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
 
   return (
     <div className={styles.layout}>
+    {/* 좌측: 전 스펙 펼침 사이드바 (grid 왼쪽 1fr 컬럼 채움 — 데스크톱 전용) */}
+    <aside className={styles.specAside}>
+      <div className={styles.specAsideHead}>
+        <span className={styles.headDot} aria-hidden />
+        <span className={styles.specAsideTitle}>직업 · 스펙</span>
+      </div>
+      <input
+        className={styles.specSearch}
+        value={specQuery}
+        onChange={(e) => setSpecQuery(e.target.value)}
+        placeholder="직업·스펙 검색 (예: 창술사, 권왕)"
+        aria-label="직업·스펙 검색"
+      />
+      <div className={styles.specScroll}>
+        {SPEC_GROUPS.map((g) => {
+          const items = g.entries.filter((e) => matchSpec(e.id, specQuery));
+          if (items.length === 0) return null;
+          return (
+            <div key={g.group} className={styles.specGroup}>
+              <div className={styles.specGroupLabel}>{g.group}</div>
+              <div className={styles.specGrid}>
+                {items.map((e) => {
+                  const active = selectedSpec === e.id;
+                  return (
+                    <button
+                      key={e.id}
+                      type="button"
+                      className={`${styles.specChip} ${active ? styles.specChipActive : ''}`}
+                      onClick={() => setSelectedSpec(active ? '' : e.id)}
+                      title={e.name}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={e.icon} alt="" className={styles.specChipIcon} />
+                      <span className={styles.specChipName}>{e.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </aside>
+
     <section className={styles.section}>
       <div className={styles.mobileTop}>
       <div className={styles.header}>
@@ -629,12 +685,13 @@ function CoreBadge({ core }: { core: Core }) {
         borderColor: factionColor,
         boxShadow: `0 0 6px ${factionColor}44`,
       }}
-      title={`${core.name} (${core.grade || ''}) ${core.point || 0}P`}
+      title={`${core.name} (${core.grade || ''}) ${core.point || 0}P${core.num ? ` · ${core.num}번` : ''}`}
     >
       {core.icon ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={core.icon} alt={shortName} />
       ) : null}
+      {core.num != null && <span className={styles.coreNum}>{core.num}</span>}
     </div>
   );
 }

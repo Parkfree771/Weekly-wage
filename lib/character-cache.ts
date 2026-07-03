@@ -1,6 +1,7 @@
 import { sql } from './neon';
 import type { CharacterData } from './characterData';
-import { resolveSpecIcon, specFilterFor, SUPPORT_SPEC_RULES } from './class-spec-icon';
+import { resolveSpecIcon, enlightenmentNodeNames, specFilterFor, SUPPORT_SPEC_RULES } from './class-spec-icon';
+import { coreNumberFor } from './arkgrid-cores';
 
 // 칭호 필터 최소 아이템레벨. 칭호는 한 번 획득하면 저렙 부캐도 달 수 있어
 // 통계가 오염되므로, 아래 칭호로 필터할 때만 이 레벨 이상으로 집계한다.
@@ -31,6 +32,8 @@ export type CoreData = {
   icon: string | null;
   grade: string | null;
   point: number;
+  /** 질서 코어 번호(1·2·3). 스펙 순서 데이터로 계산. 혼돈·미매칭은 null */
+  num: number | null;
 };
 
 export type TitleHistoryEntry = {
@@ -67,11 +70,14 @@ export function isAccumulatedTitle(cleanTitle: string): boolean {
 // 인덱스 컬럼 추출 (파싱 결과 CharacterData 기반)
 function extractIndexFields(parsed: CharacterData) {
   const p = parsed.profile;
+  // 스펙 판별(깨달음 시그니처) → 코어 번호 계산에 사용. 판별 불가 시 num=null.
+  const specId = resolveSpecIcon(p.className, enlightenmentNodeNames(parsed.arkPassive))?.id ?? null;
   const cores: CoreData[] = (parsed.arkGrid?.cores || []).map(c => ({
     name: c.name || '',
     icon: c.icon || null,
     grade: c.grade || null,
     point: typeof c.point === 'number' ? c.point : 0,
+    num: coreNumberFor(p.className, specId, c.name),
   }));
 
   // 호환용 단일 코어 컬럼은 그대로 유지 (기존 컬럼)
@@ -358,6 +364,14 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
   return rows.map(r => {
     const enlNodes: string[] = Array.isArray(r.enl_nodes) ? r.enl_nodes.filter(Boolean) : [];
     const spec = resolveSpecIcon(r.class_name, enlNodes);
+    // 저장된 num이 있으면 사용, 없으면(구 데이터) 즉석 계산 (스펙 순서 데이터 기준)
+    const cores: CoreData[] = (Array.isArray(r.cores) ? r.cores : []).map((c: any) => ({
+      name: c?.name || '',
+      icon: c?.icon ?? null,
+      grade: c?.grade ?? null,
+      point: typeof c?.point === 'number' ? c.point : 0,
+      num: c?.num != null ? c.num : coreNumberFor(r.class_name, spec?.id ?? null, c?.name),
+    }));
     return {
       characterName: r.character_name,
       className: r.class_name,
@@ -365,7 +379,7 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
       itemLevel: Number(r.item_level),
       characterImage: r.character_image,
       serverName: r.server_name,
-      cores: Array.isArray(r.cores) ? r.cores : [],
+      cores,
       equippedTitle: r.equipped_title || null,
       fetchedAt: r.fetched_at,
       specId: spec?.id ?? null,

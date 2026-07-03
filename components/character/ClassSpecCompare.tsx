@@ -14,7 +14,10 @@ type CoreStat = {
   grade: string | null;
   count: number;
   pct: number;
+  num?: number | null; // 질서 코어 번호(1·2·3)
 };
+
+type ComboStat = { code: string; count: number; pct: number };
 
 type SpecStat = {
   specId: string;
@@ -22,7 +25,12 @@ type SpecStat = {
   avgCombatPower: number;
   avgItemLevel: number;
   cores: CoreStat[];
+  combos?: ComboStat[];
+  orderIcons?: { 해: string | null; 달: string | null; 별: string | null };
 };
+
+// 코어 아이콘 배경 — 고대 등급 배경(베이지 그라데이션)으로 통일해 가독성 향상
+const ANCIENT_BG = 'linear-gradient(180deg, #f5e8c8 0%, #c19a5c 100%)';
 
 type CompareData = {
   className: string;
@@ -186,13 +194,15 @@ function SpecMode({ data, spec, total, onSelectSpec }: {
         <div className={`${styles.coreGroupLabel} ${colorCls}`}>{label}</div>
         {list.map(c => (
           <div key={c.name} className={styles.coreRow} title={`${c.name} — ${c.count}명 (${c.pct}%)`}>
-            <span className={styles.coreIconWrap} style={{ borderColor: gradeColor(c.grade) }}>
+            <span className={styles.coreIconWrap} style={{ borderColor: gradeColor(c.grade), background: ANCIENT_BG }}>
               {c.icon ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={c.icon} alt="" />
               ) : null}
             </span>
-            <span className={styles.coreName}>{coreShortName(c.name)}</span>
+            <span className={styles.coreName}>
+              {c.num != null && <b className={styles.coreNumInline}>{c.num}.</b>} {coreShortName(c.name)}
+            </span>
             <span className={styles.corePct}>{c.pct}%</span>
             <span className={styles.coreBar}>
               <span className={`${styles.coreBarFill} ${colorCls}`} style={{ width: `${c.pct}%` }} />
@@ -223,12 +233,40 @@ function SpecMode({ data, spec, total, onSelectSpec }: {
         </div>
       </div>
 
-      {/* 코어 사용 통계 */}
+      {/* 코어 사용 통계 — 질서는 조합코드(해·달·별) 분포, 혼돈·기타는 개별 */}
       {spec.cores.length === 0 ? (
         <div className={styles.loading}>코어 데이터가 없습니다</div>
       ) : (
         <div className={styles.coreList}>
-          {renderCores('질서 코어', orderCores, styles.coreOrder)}
+          {spec.combos && spec.combos.length > 0 ? (
+            <div className={styles.coreGroup}>
+              <div className={`${styles.coreGroupLabel} ${styles.coreOrder}`}>
+                질서 코어 <span className={styles.comboHint}>해·달·별 조합</span>
+              </div>
+              {spec.combos.map(cb => (
+                <div key={cb.code} className={styles.comboRow} title={`${cb.code} — ${cb.count}명 (${cb.pct}%)`}>
+                  <span className={styles.comboIcons}>
+                    {(['해', '달', '별'] as const).map(cel => (
+                      <span key={cel} className={styles.comboIcon} style={{ background: ANCIENT_BG }}>
+                        {spec.orderIcons?.[cel] ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={spec.orderIcons[cel]!} alt={cel} />
+                        ) : null}
+                      </span>
+                    ))}
+                  </span>
+                  <span className={styles.comboCode}>{cb.code}</span>
+                  <span className={styles.comboBar}>
+                    <span className={styles.comboBarFill} style={{ width: `${cb.pct}%` }} />
+                  </span>
+                  <span className={styles.comboPct}>{cb.pct}%</span>
+                  <span className={styles.comboCount}>{cb.count}명</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            renderCores('질서 코어', orderCores, styles.coreOrder)
+          )}
           {renderCores('혼돈 코어', chaosCores, styles.coreChaos)}
           {renderCores('기타', etcCores, styles.coreEtc)}
         </div>
