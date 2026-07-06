@@ -84,7 +84,15 @@ export default function LoginButton() {
           {isLoggingIn ? <Spinner animation="border" size="sm" /> : <span>로그인</span>}
         </button>
 
-        <Modal show={showLoginModal} onHide={() => !isLoggingIn && setShowLoginModal(false)} centered size="sm">
+        {/* backdrop 없이 — 화면을 어둡게 덮지 않는 깔끔한 로그인 카드 */}
+        <Modal
+          show={showLoginModal}
+          onHide={() => !isLoggingIn && setShowLoginModal(false)}
+          centered
+          size="sm"
+          backdrop={false}
+          contentClassName={styles.loginModalContent}
+        >
           <Modal.Header closeButton={!isLoggingIn}>
             <Modal.Title style={{ fontSize: '1rem' }}>로그인</Modal.Title>
           </Modal.Header>

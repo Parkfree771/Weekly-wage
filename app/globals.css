@@ -381,6 +381,18 @@ input, select, textarea,
   body {
     zoom: 0.67;
   }
+
+  /* body zoom 보정: 모달/백드롭은 fixed 요소라 body zoom과 뷰포트가 어긋나
+     배경이 화면 일부만 덮고 오른쪽·아래에 검은 띠가 생긴다 → 역배율로 원복 */
+  .modal-backdrop,
+  .modal {
+    zoom: 1.4925; /* = 1 / 0.67 */
+  }
+
+  /* 역배율 보정 후 모달 내용물이 페이지(0.67)보다 너무 커 보이지 않게 */
+  .modal-dialog {
+    zoom: 0.75;
+  }
 }
 
 /* Input Placeholder Styles for Dark Mode */
