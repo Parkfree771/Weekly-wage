@@ -140,21 +140,20 @@ export function getSandMaterials(level1750: boolean, enhance: number): Material[
 import { getCurrentWeekStart } from '@/types/user';
 
 const GUARDIAN_ROTATION = [
-  { name: '베스칼', element: '화구', image: '/qptm.webp' },
-  { name: '루멘칼리고', element: '암구', image: '/fnaps.webp' },
-  { name: '가르가디스', element: '토구', image: '/rkfm.webp' },
-  { name: '스콜라키아', element: '토구', image: '/tmzhf.webp' },
-  { name: '크라티오스', element: '뇌구', image: '/zmfk.webp' },
-  { name: '아게오로스', element: '세구', image: '/dkrp.webp' },
-  { name: '드렉탈라스', element: '화구', image: '/emfpr.webp' },
-  { name: '소나벨', element: '암구', image: '/thsk.webp' },
+  { name: '쿤겔라니움', element: '뇌구', image: '/znsrpf.webp' },
+  { name: '하누마탄', element: '무속성', image: '/gksn.webp' },
+  { name: '데스칼루다', element: '수구', image: '/eptm.webp' },
+  { name: '이그렉시온', element: '화구', image: '/dlrm.webp' },
+  { name: '벨가누스', element: '세구', image: '/qpfrk.webp' },
+  { name: '아카테스', element: '암구', image: '/dkzk.webp' },
+  { name: '엘버하스틱', element: '수구', image: '/dpfqj.webp' },
 ];
 const GUARDIAN_FIXED = [
   { minLevel: 1720, name: '크라티오스', element: '뇌구', image: '/zmfk.webp' },
   { minLevel: 1700, name: '드렉탈라스', element: '화구', image: '/emfpr.webp' },
   { minLevel: 1680, name: '스콜라키아', element: '토구', image: '/tmzhf.webp' },
 ];
-const GUARDIAN_REF_WEEK = '2026-02-25'; // 기준주(수) = 베스칼(인덱스 0)
+const GUARDIAN_REF_WEEK = '2026-06-24'; // 기준주(수) = 쿤겔라니움(인덱스 0) → 07-01 하누마탄, 07-08 데스칼루다
 
 export function getCurrentGuardian(itemLevel: number): { name: string; element: string; image: string } {
   if (itemLevel >= 1730) {
@@ -167,7 +166,7 @@ export function getCurrentGuardian(itemLevel: number): { name: string; element: 
   for (const g of GUARDIAN_FIXED) {
     if (itemLevel >= g.minLevel) return g;
   }
-  return { name: '가디언 토벌', element: '', image: '/qptm.webp' };
+  return { name: '가디언 토벌', element: '', image: '' };
 }
 
 // 선택 레벨에 맞는 티어 찾기 (가장 높은 minLevel ≤ level)
