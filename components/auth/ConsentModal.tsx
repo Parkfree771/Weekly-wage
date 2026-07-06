@@ -104,7 +104,7 @@ export default function ConsentModal() {
         </p>
 
         <div className={styles.userInfo}>
-          <span className={styles.userEmail}>{user.email}</span>
+          <span className={styles.userEmail}>{user.email || '소셜 계정'}</span>
           <span className={styles.userLabel}>계정으로 가입합니다</span>
         </div>
 
@@ -178,7 +178,7 @@ export default function ConsentModal() {
               }
             />
             <p className={styles.consentDesc}>
-              Google 로그인 시 제공되는 이메일 주소가 저장됩니다.
+              Google/Apple 로그인 시 제공되는 이메일 주소가 저장됩니다. (Apple 이메일 가리기 사용 시 릴레이 주소가 저장됩니다)
             </p>
           </div>
 
@@ -197,7 +197,7 @@ export default function ConsentModal() {
               }
             />
             <p className={styles.consentDesc}>
-              Google 계정의 표시 이름과 프로필 사진이 저장됩니다.
+              소셜 계정의 표시 이름과 프로필 사진이 저장됩니다. (Apple은 이름만 제공될 수 있습니다)
             </p>
           </div>
 

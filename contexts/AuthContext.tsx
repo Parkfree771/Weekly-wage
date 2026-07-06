@@ -5,6 +5,7 @@ import {
   User,
   signInWithPopup,
   GoogleAuthProvider,
+  OAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   reauthenticateWithPopup,
@@ -36,6 +37,7 @@ type AuthContextType = {
   needsConsent: boolean;  // 신규 사용자 동의 필요 여부
   needsNickname: boolean; // 기존 사용자 닉네임 미설정
   signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -118,27 +120,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // 로그인 공통 처리: 기존 사용자는 바로, 신규는 동의 플로우로
+  const handleSignedIn = async (firebaseUser: User) => {
+    const profile = await fetchUserProfile(firebaseUser);
+    if (profile) {
+      setUserProfile(profile);
+      setNeedsConsent(false);
+    } else {
+      setUser(firebaseUser);
+      setNeedsConsent(true);
+    }
+  };
+
   // Google 로그인
   const signInWithGoogle = async () => {
     setError(null);
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-
-      // 기존 사용자인지 확인
-      const profile = await fetchUserProfile(result.user);
-
-      if (profile) {
-        // 기존 사용자: 바로 로그인
-        setUserProfile(profile);
-        setNeedsConsent(false);
-      } else {
-        // 신규 사용자: 동의 필요
-        setUser(result.user);
-        setNeedsConsent(true);
-      }
+      await handleSignedIn(result.user);
     } catch (err: any) {
       console.error('Google 로그인 실패:', err);
+      setError(err.message || '로그인에 실패했습니다.');
+      throw err;
+    }
+  };
+
+  // Apple 로그인 (앱과 같은 계정을 쓰기 위한 웹 지원 — Firebase 콘솔 Apple 공급자에 Services ID 필요)
+  const signInWithApple = async () => {
+    setError(null);
+    try {
+      const provider = new OAuthProvider('apple.com');
+      provider.addScope('email');
+      provider.addScope('name');
+      const result = await signInWithPopup(auth, provider);
+      await handleSignedIn(result.user);
+    } catch (err: any) {
+      console.error('Apple 로그인 실패:', err);
       setError(err.message || '로그인에 실패했습니다.');
       throw err;
     }
@@ -212,17 +230,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const deleteAccount = async () => {
     if (!user) return;
     try {
-      // 1. 재인증 (보안상 최근 로그인 필요)
-      const provider = new GoogleAuthProvider();
+      // 1. 재인증 (보안상 최근 로그인 필요) — 가입한 공급자(구글/애플)로 재인증해야 성공한다
+      const providerId = user.providerData[0]?.providerId;
+      const provider = providerId === 'apple.com'
+        ? new OAuthProvider('apple.com')
+        : new GoogleAuthProvider();
       await reauthenticateWithPopup(user, provider);
 
-      // 2. Firestore에서 사용자 데이터 삭제
+      // 2. 점유 중인 닉네임 해제 (안 하면 탈퇴 후에도 닉네임이 영구 점유됨)
+      if (userProfile?.nickname) {
+        try {
+          await releaseNickname(userProfile.nickname);
+        } catch {
+          // 닉네임 해제 실패는 탈퇴를 막지 않음
+        }
+      }
+
+      // 3. Firestore에서 사용자 데이터 삭제
       const { db } = await import('@/lib/firebase-firestore');
       const { doc, deleteDoc } = await import('firebase/firestore');
       const userRef = doc(db, 'users', user.uid);
       await deleteDoc(userRef);
 
-      // 3. Firebase Auth 계정 삭제
+      // 4. Firebase Auth 계정 삭제
       await user.delete();
 
       // 4. 상태 초기화
@@ -278,6 +308,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         needsConsent,
         needsNickname,
         signInWithGoogle,
+        signInWithApple,
         signOut,
         refreshUserProfile,
         deleteAccount,
