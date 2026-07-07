@@ -51,12 +51,12 @@ export const REFINE_ADDITIONAL_SUBCATEGORIES: Record<RefineAdditionalSubCategory
   weapon: {
     label: '무기 보조 재료',
     // 야금술 아이템들 + 용암의 숨결
-    ids: ['66111131', '66112553', '66112551', '66112543', '66112717', '66112715', '66112713', '66112711']
+    ids: ['66111131', '66112555', '66112553', '66112551', '66112543', '66112717', '66112715', '66112713', '66112711']
   },
   armor: {
     label: '방어구 보조 재료',
     // 재봉술 아이템들 + 빙하의 숨결
-    ids: ['66111132', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712']
+    ids: ['66111132', '66112556', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712']
   }
 };
 
@@ -151,6 +151,20 @@ export const TRACKED_ITEMS: TrackedItem[] = [
   },
 
   // === 2. 재련 추가 재료 ===
+  {
+    id: '66112555',
+    name: '강화 야금술 : 업화 [19-20] (무기)',
+    type: 'market',
+    icon: '/metallurgy-karma.webp',
+    iconBorderColor: '#059669'
+  },
+  {
+    id: '66112556',
+    name: '강화 재봉술 : 업화 [19-20] (방어구)',
+    type: 'market',
+    icon: '/tailoring-karma.webp',
+    iconBorderColor: '#059669'
+  },
   {
     id: '66112553',
     name: '야금술 : 업화 [19-20] (무기)',
@@ -856,7 +870,7 @@ export function getItemsByCategory(category: ItemCategory): TrackedItem[] {
   const categoryMap: Record<ItemCategory, string[]> = {
     refine: ['66150010', '66102007', '66102107', '66110226', '6861013', '6861012', '66102006', '66102106', '66110225', '6861011', '66130143', '66130133'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
-    refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
+    refine_additional: ['66112555', '66112556', '66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
     accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high', 'auction_necklace_support_refine3', 'auction_necklace_support_refine3_high', 'auction_ring_support_refine3', 'auction_ring_support_refine3_high'],
     bracelet: ['auction_bracelet_spec_crit', 'auction_bracelet_crit_swift', 'auction_bracelet_spec_swift'],
@@ -877,7 +891,7 @@ export function findItemById(itemId: string): { item: TrackedItem; category: Ite
   const categoryMap: Record<ItemCategory, string[]> = {
     refine: ['66150010', '66102007', '66102107', '66110226', '6861013', '6861012', '66102006', '66102106', '66110225', '6861011', '66130143', '66130133'],
     gem: ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'],
-    refine_additional: ['66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
+    refine_additional: ['66112555', '66112556', '66112553', '66112551', '66112543', '66112554', '66112552', '66112546', '66112718', '66112716', '66112714', '66112712', '66112717', '66112715', '66112713', '66112711', '66111131', '66111132'],
     engraving: ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'],
     accessory: ['auction_necklace_ancient_refine3', 'auction_ring_ancient_refine3', 'auction_earring_ancient_refine3', 'auction_necklace_ancient_refine3_high', 'auction_ring_ancient_refine3_high', 'auction_earring_ancient_refine3_high', 'auction_necklace_support_refine3', 'auction_necklace_support_refine3_high', 'auction_ring_support_refine3', 'auction_ring_support_refine3_high'],
     bracelet: ['auction_bracelet_spec_crit', 'auction_bracelet_crit_swift', 'auction_bracelet_spec_swift'],
