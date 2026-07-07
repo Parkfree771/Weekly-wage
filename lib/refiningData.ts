@@ -147,3 +147,30 @@ export const getBookType = (level: number): '1114' | '1518' | '1920' | null => {
   if (level >= 19 && level <= 20) return '1920';
   return null;
 };
+
+// ========================================
+// 책별 성공 확률 증가량 (거래소 아이템 ID 기준)
+// 가격 시세·평균 시뮬 호버 툴팁 표시용
+// 일반 책 = 기본확률 +100% 가산, 강화 책 = 일반 책의 2배 가산
+// ========================================
+export const BOOK_PROBABILITY_BONUS: Record<string, { targets: string; bonus: number }[]> = {
+  // 야금술 : 업화 [11-14] (무기) / 재봉술 : 업화 [11-14] (방어구)
+  '66112543': [{ targets: '11~12', bonus: 0.10 }, { targets: '13~14', bonus: 0.05 }],
+  '66112546': [{ targets: '11~12', bonus: 0.10 }, { targets: '13~14', bonus: 0.05 }],
+  // 야금술 : 업화 [15-18] / 재봉술 : 업화 [15-18]
+  '66112551': [{ targets: '15~16', bonus: 0.04 }, { targets: '17~18', bonus: 0.03 }],
+  '66112552': [{ targets: '15~16', bonus: 0.04 }, { targets: '17~18', bonus: 0.03 }],
+  // 야금술 : 업화 [19-20] / 재봉술 : 업화 [19-20]
+  '66112553': [{ targets: '19', bonus: 0.03 }, { targets: '20', bonus: 0.015 }],
+  '66112554': [{ targets: '19', bonus: 0.03 }, { targets: '20', bonus: 0.015 }],
+  // 강화 야금술 : 업화 [19-20] / 강화 재봉술 : 업화 [19-20]
+  '66112555': [{ targets: '19', bonus: 0.06 }, { targets: '20', bonus: 0.03 }],
+  '66112556': [{ targets: '19', bonus: 0.06 }, { targets: '20', bonus: 0.03 }],
+};
+
+// 책 확률 증가량을 표시용 문자열 배열로 변환 (책이 아니면 null)
+export const getBookBonusLines = (itemId: string): string[] | null => {
+  const info = BOOK_PROBABILITY_BONUS[itemId];
+  if (!info) return null;
+  return info.map(e => `목표 ${e.targets}단계: 성공 확률 +${parseFloat((e.bonus * 100).toFixed(2))}%`);
+};

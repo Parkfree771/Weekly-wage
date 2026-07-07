@@ -20,6 +20,15 @@ export interface OptimalPolicy {
 // 계승 전: 숨결 N회 + 책 사용 여부까지 포함한 정책
 export interface PreSuccessionPolicy extends OptimalPolicy {
   useBook: boolean; // 책 사용이 이득인가 (책 소모 수 = tries)
+  bookId: string | null; // 사용하는 책 후보 id (일반/강화 구분), 미사용 시 null
+  cost: number; // 해당 정책의 기대 총 골드 (변형 간 비교용)
+}
+
+// 책 후보 (일반/강화 등). prob = 가산 확률, price = 1권 시세
+export interface BookCandidate {
+  id: string;
+  prob: number;
+  price: number;
 }
 
 // 정책 N(앞 N회 풀숨)에 대한 시도 분포 정확 계산. bookProb = 책 가산 확률(항상 적용)
@@ -111,44 +120,58 @@ export function optimalBreath(
 }
 
 /**
- * 계승 전 최적 정책 계산: 숨결(앞 N회) × 책 사용 여부를 함께 탐색해 총 골드 최소화
- * @param bookProb 책 가산 확률 (= 기본확률, 책 미지원 레벨이면 0)
- * @param bookUnitPrice 책 1권 시세 (0이면 책 선택지 제외)
- * @param bookMode 'auto' = 책 사용 여부도 최적화, 'on'/'off' = 책 상태 고정(사용자 토글 조건부)
- * @returns 시세 미로딩 시 null (호출부는 수동 설정 경로로 폴백)
+ * 계승 전 최적 정책 계산: 숨결(앞 N회) × 책 선택(후보 중 택1 또는 미사용)을 함께 탐색해 총 골드 최소화
+ * @param books 허용된 책 후보 목록 (일반/강화). price 0 = 귀속(공짜) 책으로 취급.
+ *              시세 미로딩 등으로 사용할 수 없는 책은 호출부에서 목록에 넣지 않아야 한다.
+ * @param breathUnitPrice 숨결 1개 시세. 0 = 귀속(공짜) 숨결 → 비용 최소화 결과가 자연히 풀숨으로 수렴
+ * @param bookMode 'auto' = 책 미사용 포함 자유 최적화, 'on' = 후보 중 반드시 하나 사용, 'off' = 책 미사용 고정
+ * @returns 재료비 미산정(0) 시 null (호출부는 수동 설정 경로로 폴백)
  */
 export function optimalBreathWithBook(
   baseProb: number,
   be: BreathEffect,
-  bookProb: number,
+  books: BookCandidate[],
   matGoldPerTry: number,
   breathUnitPrice: number,
-  bookUnitPrice: number,
   mode: CalcMode,
   bookMode: 'auto' | 'on' | 'off' = 'auto'
 ): PreSuccessionPolicy | null {
-  if (!be || breathUnitPrice <= 0 || matGoldPerTry <= 0) return null;
+  if (!be || matGoldPerTry <= 0) return null;
 
-  const bookAvailable = bookProb > 0 && bookUnitPrice > 0;
-  const bookChoices = !bookAvailable ? [false]
-    : bookMode === 'on' ? [true]
-    : bookMode === 'off' ? [false]
-    : [false, true];
-  let best: { useBook: boolean; N: number; cost: number; tries: number; breaths: number } | null = null;
-  for (const useBook of bookChoices) {
-    const bp = useBook ? bookProb : 0;
-    const perTry = matGoldPerTry + (useBook ? bookUnitPrice : 0); // 책은 1회당 1권
+  const validBooks = books.filter(b => b.prob > 0 && b.price >= 0);
+  const bookChoices: (BookCandidate | null)[] =
+    bookMode === 'off' ? [null]
+    : bookMode === 'on' ? (validBooks.length > 0 ? validBooks : [null])
+    : [null, ...validBooks];
+  let best: { book: BookCandidate | null; N: number; cost: number; tries: number; breaths: number } | null = null;
+  for (const book of bookChoices) {
+    const bp = book ? book.prob : 0;
+    const perTry = matGoldPerTry + (book ? book.price : 0); // 책은 1회당 1권
     for (let N = 0; N <= 250; N++) {
       const m = metricsForN(baseProb, be, N, mode, bp);
       const cost = m.tries * perTry + m.breaths * breathUnitPrice;
-      if (best === null || cost < best.cost - 1e-6) best = { useBook, N, cost, tries: m.tries, breaths: m.breaths };
+      if (best === null || cost < best.cost - 1e-6) best = { book, N, cost, tries: m.tries, breaths: m.breaths };
     }
   }
   const b = best!;
-  const full = metricsForN(baseProb, be, 100000, mode, b.useBook ? bookProb : 0);
+  const full = metricsForN(baseProb, be, 100000, mode, b.book ? b.book.prob : 0);
   let kind: OptimalPolicy['kind'];
   if (b.N === 0) kind = 'none';
   else if (Math.abs(b.breaths - full.breaths) < 1e-6) kind = 'full';
   else kind = 'partial';
-  return { optimalN: b.N, tries: b.tries, breaths: b.breaths, kind, useBook: b.useBook };
+  return { optimalN: b.N, tries: b.tries, breaths: b.breaths, kind, useBook: b.book !== null, bookId: b.book?.id ?? null, cost: b.cost };
+}
+
+/**
+ * 고정 정책(노숨 또는 풀숨 + 임의 책 가산 확률)의 대표 시도·숨결 수
+ * CASE 테이블에 없는 조합(강화 책 등)을 수동 모드에서 계산할 때 사용
+ */
+export function triesForFixedBookPolicy(
+  baseProb: number,
+  be: BreathEffect,
+  useBreath: boolean,
+  bookProb: number,
+  mode: CalcMode
+): { tries: number; breaths: number } {
+  return metricsForN(baseProb, be, useBreath ? 100000 : 0, mode, bookProb);
 }

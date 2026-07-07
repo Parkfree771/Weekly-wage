@@ -6,11 +6,12 @@ import { Form, Row, Col, Card, Badge } from 'react-bootstrap';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
 import { getTries, getSuccessionTries, type CalcMode } from '../../lib/refiningSimulationData';
-import { optimalBreath, optimalBreathWithBook, type OptimalPolicy, type PreSuccessionPolicy } from '../../lib/optimalBreath';
+import { optimalBreath, optimalBreathWithBook, triesForFixedBookPolicy, type OptimalPolicy, type PreSuccessionPolicy } from '../../lib/optimalBreath';
 
-// 계승 전 최적 정책 3종: rec(책 여부도 자유 최적화 — 토글 자동 세팅용),
-// on/off(책 토글 상태를 조건으로 한 숨결 최적화 — 실제 계산·표시용)
-type PreOptVariants = { rec: PreSuccessionPolicy; on: PreSuccessionPolicy; off: PreSuccessionPolicy };
+// 계승 전 최적 정책: rec(책 종류·여부도 자유 최적화 — 토글 자동 세팅용),
+// on/off(책 토글 상태를 조건으로 한 숨결 최적화 — 실제 계산·표시용),
+// onEnhanced(강화 책 고정, 목표 19~20 전용)
+type PreOptVariants = { rec: PreSuccessionPolicy; on: PreSuccessionPolicy; off: PreSuccessionPolicy; onEnhanced?: PreSuccessionPolicy };
 import { computeOptimalAdvancedPlan, advComboLabel, type AdvStageNum } from '../../lib/optimalAdvancedRefining';
 import styles from './RefiningCalculator.module.css';
 import {
@@ -22,7 +23,8 @@ import {
   SUCCESSION_WEAPON_MATERIAL_COSTS,
   getBreathEffect,
   getSuccessionBreathEffect,
-  JANGIN_ACCUMULATE_DIVIDER
+  JANGIN_ACCUMULATE_DIVIDER,
+  getBookBonusLines
 } from '../../lib/refiningData';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import {
@@ -54,9 +56,11 @@ type Materials = {
   방어구책1114?: number; // 재봉술 : 업화 [11-14]
   방어구책1518?: number; // 재봉술 : 업화 [15-18]
   방어구책1920?: number; // 재봉술 : 업화 [19-20]
+  방어구책1920강?: number; // 강화 재봉술 : 업화 [19-20]
   무기책1114?: number; // 야금술 : 업화 [11-14]
   무기책1518?: number; // 야금술 : 업화 [15-18]
   무기책1920?: number; // 야금술 : 업화 [19-20]
+  무기책1920강?: number; // 강화 야금술 : 업화 [19-20]
   재봉술1단?: number; // 장인의 재봉술 1단계 (상급 1~10)
   재봉술2단?: number; // 장인의 재봉술 2단계 (상급 11~20)
   재봉술3단?: number; // 장인의 재봉술 3단계 (상급 21~30)
@@ -90,6 +94,7 @@ const MaterialCard = ({
   onToggleEnabled,
   renderToggle,
   footer,
+  tooltip,
 }: {
   icon: string;
   name: string;
@@ -105,6 +110,7 @@ const MaterialCard = ({
   onToggleEnabled?: () => void;
   renderToggle?: React.ReactNode;
   footer?: React.ReactNode;
+  tooltip?: React.ReactNode;
 }) => (
   <div
     className={`${styles.materialCard} ${showCheckbox ? styles.materialCardClickable : ''} ${showEnableToggle && !isEnabled ? styles.materialCardDisabled : ''} ${showEnableToggle && isEnabled && !isBound ? styles.materialCardEnabled : ''} ${isBound ? styles.materialCardBound : ''}`}
@@ -158,9 +164,22 @@ const MaterialCard = ({
         {Math.round(isBound ? 0 : cost).toLocaleString()}
       </div>
     )}
+    {tooltip && <div className={styles.materialTooltip}>{tooltip}</div>}
     {footer}
   </div>
 );
+
+// 책 카드 호버 툴팁: 목표 단계별 성공 확률 증가량
+const bookBonusTooltip = (itemId: string): React.ReactNode => {
+  const lines = getBookBonusLines(itemId);
+  if (!lines) return undefined;
+  return (
+    <>
+      <div className={styles.materialTooltipTitle}>재련 확률 증가</div>
+      {lines.map(line => <div key={line}>{line}</div>)}
+    </>
+  );
+};
 
 type RefiningMode = 'normal' | 'succession';
 
@@ -244,9 +263,11 @@ export default function RefiningCalculator({
     tailoring: { enabled: false, isBound: false },        // 재봉술 11~14
     tailoring1518: { enabled: false, isBound: false },    // 재봉술 15~18
     tailoring1920: { enabled: false, isBound: false },    // 재봉술 19~20
+    tailoring1920Enhanced: { enabled: false, isBound: false }, // 강화 재봉술 19~20
     metallurgy: { enabled: false, isBound: false },       // 야금술 11~14
     metallurgy1518: { enabled: false, isBound: false },   // 야금술 15~18
     metallurgy1920: { enabled: false, isBound: false },   // 야금술 19~20
+    metallurgy1920Enhanced: { enabled: false, isBound: false }, // 강화 야금술 19~20
   });
 
   // 상급재련 추가 재료 옵션
@@ -279,12 +300,12 @@ export default function RefiningCalculator({
   const [selectedArmorBulkLevel, setSelectedArmorBulkLevel] = useState<{ normal: number | null, advanced: number | null }>({ normal: null, advanced: null });
   const [selectedWeaponBulkLevel, setSelectedWeaponBulkLevel] = useState<{ normal: number | null, advanced: number | null }>({ normal: null, advanced: null });
 
-  // 귀속 재료 상태
+  // 귀속 재료 상태 (기본 전부 비귀속 — 귀속 체크 시 최적 정책 계산에도 반영됨)
   const [boundMaterials, setBoundMaterials] = useState<Record<string, boolean>>({
-    '수호석': true,
-    '파괴석': true,
-    '돌파석': true,
-    '운명파편': true,
+    '수호석': false,
+    '파괴석': false,
+    '돌파석': false,
+    '운명파편': false,
     '아비도스': false,
   });
 
@@ -308,6 +329,8 @@ export default function RefiningCalculator({
     '66111132': 0, // 빙하의 숨결
     '66112554': 0, // 재봉술 책 19-20
     '66112553': 0, // 야금술 책 19-20
+    '66112556': 0, // 강화 재봉술 책 19-20
+    '66112555': 0, // 강화 야금술 책 19-20
     '66112552': 0, // 재봉술 책 15-18
     '66112551': 0, // 야금술 책 15-18
     '66112546': 0, // 재봉술 책 11-14
@@ -339,9 +362,11 @@ export default function RefiningCalculator({
         tailoring: { enabled: false, isBound: false },
         tailoring1518: { enabled: false, isBound: false },
         tailoring1920: { enabled: false, isBound: false },
+        tailoring1920Enhanced: { enabled: false, isBound: false },
         metallurgy: { enabled: false, isBound: false },
         metallurgy1518: { enabled: false, isBound: false },
         metallurgy1920: { enabled: false, isBound: false },
+        metallurgy1920Enhanced: { enabled: false, isBound: false },
       });
       setAdvancedMaterialOptions({
         armorNormalBreath: { enabled: false, isBound: false },
@@ -366,10 +391,10 @@ export default function RefiningCalculator({
         weaponBonusBook4: { enabled: false, isBound: false },
       });
       setBoundMaterials({
-        '수호석': true,
-        '파괴석': true,
-        '돌파석': true,
-        '운명파편': true,
+        '수호석': false,
+        '파괴석': false,
+        '돌파석': false,
+        '운명파편': false,
         '아비도스': false,
       });
       setSelectedArmorBulkLevel({ normal: null, advanced: null });
@@ -420,9 +445,11 @@ export default function RefiningCalculator({
     costs['방어구책1114'] = (materials.방어구책1114 || 0) * (marketPrices['66112546'] || 0);  // 재봉술 [11-14]
     costs['방어구책1518'] = (materials.방어구책1518 || 0) * (marketPrices['66112552'] || 0);  // 재봉술 [15-18]
     costs['방어구책1920'] = (materials.방어구책1920 || 0) * (marketPrices['66112554'] || 0);  // 재봉술 [19-20]
+    costs['방어구책1920강'] = (materials.방어구책1920강 || 0) * (marketPrices['66112556'] || 0);  // 강화 재봉술 [19-20]
     costs['무기책1114'] = (materials.무기책1114 || 0) * (marketPrices['66112543'] || 0);  // 야금술 [11-14]
     costs['무기책1518'] = (materials.무기책1518 || 0) * (marketPrices['66112551'] || 0);  // 야금술 [15-18]
     costs['무기책1920'] = (materials.무기책1920 || 0) * (marketPrices['66112553'] || 0);  // 야금술 [19-20]
+    costs['무기책1920강'] = (materials.무기책1920강 || 0) * (marketPrices['66112555'] || 0);  // 강화 야금술 [19-20]
 
     // 상급 재련 책 비용 (1단, 2단, 3단, 4단)
     costs['재봉술1단'] = (materials.재봉술1단 || 0) * (marketPrices['66112712'] || 0);
@@ -496,6 +523,9 @@ export default function RefiningCalculator({
     if ((materialOptions.tailoring1920.enabled || armorPreOptimal) && !materialOptions.tailoring1920.isBound) {
       totalMaterialCost += costs['방어구책1920'] || 0;
     }
+    if ((materialOptions.tailoring1920Enhanced.enabled || armorPreOptimal) && !materialOptions.tailoring1920Enhanced.isBound) {
+      totalMaterialCost += costs['방어구책1920강'] || 0;
+    }
     if ((materialOptions.metallurgy.enabled || weaponPreOptimal) && !materialOptions.metallurgy.isBound) {
       totalMaterialCost += costs['무기책1114'] || 0;
     }
@@ -504,6 +534,9 @@ export default function RefiningCalculator({
     }
     if ((materialOptions.metallurgy1920.enabled || weaponPreOptimal) && !materialOptions.metallurgy1920.isBound) {
       totalMaterialCost += costs['무기책1920'] || 0;
+    }
+    if ((materialOptions.metallurgy1920Enhanced.enabled || weaponPreOptimal) && !materialOptions.metallurgy1920Enhanced.isBound) {
+      totalMaterialCost += costs['무기책1920강'] || 0;
     }
 
     // 상급 재련 책 비용 추가 — 재료량(costs)에 일반턴+선조턴 소모가 이미 합산되어 있으므로
@@ -558,13 +591,18 @@ export default function RefiningCalculator({
     fetchMarketPrices();
   }, []);
 
-  // 계승 후 "최적 숨결" 단계별 정책 테이블 (현재 모드 + 시세 기준)
+  // 계승 후 "최적 숨결" 단계별 정책 테이블 (현재 모드 + 시세 + 귀속 상태 기준)
   // level 키 = 현재 레벨(L→L+1). armor/weapon 각각.
+  // 귀속 체크된 재료·숨결·책은 실지출 0으로 취급해 정책이 바로 다시 계산된다 (골드(누골)는 항상 실지출)
   const optimalBreathTable = useMemo(() => {
     const armor: Record<number, OptimalPolicy> = {};
     const weapon: Record<number, OptimalPolicy> = {};
-    const glacierP = marketPrices['66111132'] || 0; // 빙하
-    const lavaP = marketPrices['66111131'] || 0;    // 용암
+    const mp = (id: string) => marketPrices[id] || 0;
+    const bnd = (key: string) => !!boundMaterials[key];
+    const glacierMkt = mp('66111132'); // 빙하 시세 (로딩 판정용)
+    const lavaMkt = mp('66111131');    // 용암 시세 (로딩 판정용)
+    const glacierP = materialOptions.glacierBreath.isBound ? 0 : glacierMkt;
+    const lavaP = materialOptions.lavaBreath.isBound ? 0 : lavaMkt;
     for (let L = 11; L <= 24; L++) {
       const baseProb = SUCCESSION_BASE_PROBABILITY[L];
       if (!baseProb) continue;
@@ -572,19 +610,19 @@ export default function RefiningCalculator({
       const target = L + 1;
       const aCost = SUCCESSION_ARMOR_MATERIAL_COSTS[target];
       const wCost = SUCCESSION_WEAPON_MATERIAL_COSTS[target];
-      // 1회당 재료 골드값 (시세 합 + 누골, 실링은 귀속이라 제외)
+      // 1회당 재료 골드값 (시세 합 + 누골, 실링·귀속 재료 제외)
       const aMat = aCost
-        ? (aCost as any).수호석결정 * (marketPrices['66102107'] || 0)
-          + (aCost as any).위대한돌파석 * (marketPrices['66110226'] || 0)
-          + (aCost as any).상급아비도스 * (marketPrices['6861013'] || 0)
-          + aCost.운명파편 * (marketPrices['66130143'] || 0)
+        ? (bnd('수호석결정') ? 0 : (aCost as any).수호석결정 * mp('66102107'))
+          + (bnd('위대한돌파석') ? 0 : (aCost as any).위대한돌파석 * mp('66110226'))
+          + (bnd('상급아비도스') ? 0 : (aCost as any).상급아비도스 * mp('6861013'))
+          + (bnd('운명파편') ? 0 : aCost.운명파편 * mp('66130143'))
           + aCost.골드
         : 0;
       const wMat = wCost
-        ? (wCost as any).파괴석결정 * (marketPrices['66102007'] || 0)
-          + (wCost as any).위대한돌파석 * (marketPrices['66110226'] || 0)
-          + (wCost as any).상급아비도스 * (marketPrices['6861013'] || 0)
-          + wCost.운명파편 * (marketPrices['66130143'] || 0)
+        ? (bnd('파괴석결정') ? 0 : (wCost as any).파괴석결정 * mp('66102007'))
+          + (bnd('위대한돌파석') ? 0 : (wCost as any).위대한돌파석 * mp('66110226'))
+          + (bnd('상급아비도스') ? 0 : (wCost as any).상급아비도스 * mp('6861013'))
+          + (bnd('운명파편') ? 0 : wCost.운명파편 * mp('66130143'))
           + wCost.골드
         : 0;
       armor[L] = optimalBreath(baseProb, be, aMat, glacierP, calcMode);
@@ -602,37 +640,51 @@ export default function RefiningCalculator({
       const aCost = ARMOR_MATERIAL_COSTS[target];
       const wCost = WEAPON_MATERIAL_COSTS[target];
       const aMat = aCost
-        ? aCost.수호석 * (marketPrices['66102106'] || 0)
-          + aCost.돌파석 * (marketPrices['66110225'] || 0)
-          + aCost.아비도스 * (marketPrices['6861012'] || 0)
-          + aCost.운명파편 * (marketPrices['66130143'] || 0)
+        ? (bnd('수호석') ? 0 : aCost.수호석 * mp('66102106'))
+          + (bnd('돌파석') ? 0 : aCost.돌파석 * mp('66110225'))
+          + (bnd('아비도스') ? 0 : aCost.아비도스 * mp('6861012'))
+          + (bnd('운명파편') ? 0 : aCost.운명파편 * mp('66130143'))
           + aCost.골드
         : 0;
       const wMat = wCost
-        ? wCost.파괴석 * (marketPrices['66102006'] || 0)
-          + wCost.돌파석 * (marketPrices['66110225'] || 0)
-          + wCost.아비도스 * (marketPrices['6861012'] || 0)
-          + wCost.운명파편 * (marketPrices['66130143'] || 0)
+        ? (bnd('파괴석') ? 0 : wCost.파괴석 * mp('66102006'))
+          + (bnd('돌파석') ? 0 : wCost.돌파석 * mp('66110225'))
+          + (bnd('아비도스') ? 0 : wCost.아비도스 * mp('6861012'))
+          + (bnd('운명파편') ? 0 : wCost.운명파편 * mp('66130143'))
           + wCost.골드
         : 0;
       // 책: 목표 11~20만, 효과 = 기본확률 +100% 가산 (CASE 테이블 검증됨)
+      // 강화 책: 목표 19~20 전용, 효과 = 기본확률 +200% 가산 (19단계 +6%, 20단계 +3%)
       const bookProb = target >= 11 && target <= 20 ? baseProb : 0;
-      const aBookP = target <= 14 ? (marketPrices['66112546'] || 0) : target <= 18 ? (marketPrices['66112552'] || 0) : (marketPrices['66112554'] || 0);
-      const wBookP = target <= 14 ? (marketPrices['66112543'] || 0) : target <= 18 ? (marketPrices['66112551'] || 0) : (marketPrices['66112553'] || 0);
-      const mkVariants = (mat: number, breathP: number, bookP: number): PreOptVariants | null => {
-        const rec = optimalBreathWithBook(baseProb, be, bookProb, mat, breathP, bookP, calcMode, 'auto');
-        const on = optimalBreathWithBook(baseProb, be, bookProb, mat, breathP, bookP, calcMode, 'on');
-        const off = optimalBreathWithBook(baseProb, be, bookProb, mat, breathP, bookP, calcMode, 'off');
-        return rec && on && off ? { rec, on, off } : null;
+      const hasEnhancedBook = target >= 19 && target <= 20;
+      const aBookMkt = target <= 14 ? mp('66112546') : target <= 18 ? mp('66112552') : mp('66112554');
+      const wBookMkt = target <= 14 ? mp('66112543') : target <= 18 ? mp('66112551') : mp('66112553');
+      const aBookBound = target <= 14 ? materialOptions.tailoring.isBound : target <= 18 ? materialOptions.tailoring1518.isBound : materialOptions.tailoring1920.isBound;
+      const wBookBound = target <= 14 ? materialOptions.metallurgy.isBound : target <= 18 ? materialOptions.metallurgy1518.isBound : materialOptions.metallurgy1920.isBound;
+      const aEnhMkt = hasEnhancedBook ? mp('66112556') : 0;
+      const wEnhMkt = hasEnhancedBook ? mp('66112555') : 0;
+      const aEnhBound = materialOptions.tailoring1920Enhanced.isBound;
+      const wEnhBound = materialOptions.metallurgy1920Enhanced.isBound;
+      const mkVariants = (mat: number, breathP: number, bookMkt: number, bookBound: boolean, enhMkt: number, enhBound: boolean): PreOptVariants | null => {
+        // 시세가 있는 책만 후보에 올리고, 귀속 책은 가격 0(공짜)으로 반영
+        const normalBooks = bookProb > 0 && bookMkt > 0 ? [{ id: 'normal', prob: bookProb, price: bookBound ? 0 : bookMkt }] : [];
+        const enhancedBooks = hasEnhancedBook && enhMkt > 0 ? [{ id: 'enhanced', prob: bookProb * 2, price: enhBound ? 0 : enhMkt }] : [];
+        const rec = optimalBreathWithBook(baseProb, be, [...normalBooks, ...enhancedBooks], mat, breathP, calcMode, 'auto');
+        const on = optimalBreathWithBook(baseProb, be, normalBooks, mat, breathP, calcMode, 'on');
+        const off = optimalBreathWithBook(baseProb, be, [], mat, breathP, calcMode, 'off');
+        const onEnhanced = enhancedBooks.length > 0 ? optimalBreathWithBook(baseProb, be, enhancedBooks, mat, breathP, calcMode, 'on') : null;
+        if (!rec || !on || !off) return null;
+        return { rec, on, off, ...(onEnhanced ? { onEnhanced } : {}) };
       };
-      const pa = mkVariants(aMat, glacierP, aBookP);
-      const pw = mkVariants(wMat, lavaP, wBookP);
+      // 숨결 시세 미로딩 상태에서는 최적 정책 생략 (수동 CASE 테이블 경로 폴백)
+      const pa = glacierMkt > 0 ? mkVariants(aMat, glacierP, aBookMkt, aBookBound, aEnhMkt, aEnhBound) : null;
+      const pw = lavaMkt > 0 ? mkVariants(wMat, lavaP, wBookMkt, wBookBound, wEnhMkt, wEnhBound) : null;
       if (pa) preArmor[L] = pa;
       if (pw) preWeapon[L] = pw;
     }
 
     return { armor, weapon, preArmor, preWeapon };
-  }, [calcMode, marketPrices]);
+  }, [calcMode, marketPrices, boundMaterials, materialOptions]);
 
   // 실제 강화 대상 단계 (타입별, 계승 전/후 구분) — 최적 숨결 표시는 이 구간만
   const refinedLevelsByType = useMemo(() => {
@@ -663,6 +715,23 @@ export default function RefiningCalculator({
   // 시세 미로딩 상태에서 클릭하면 테이블이 준비된 시점에 1회 적용된다.
   const pendingBookSync = useRef<{ armor: boolean; weapon: boolean }>({ armor: false, weapon: false });
 
+  // 귀속 상태(재료·숨결·책)가 바뀌면, 최적 모드가 켜져 있는 타입은 권장 책 토글을 다시 동기화한다.
+  // (아래 동기화 effect보다 먼저 선언되어야 같은 렌더 사이클에서 플래그가 소비된다)
+  const boundSignature = useMemo(() => JSON.stringify([
+    boundMaterials,
+    materialOptions.glacierBreath.isBound, materialOptions.lavaBreath.isBound,
+    materialOptions.tailoring.isBound, materialOptions.tailoring1518.isBound,
+    materialOptions.tailoring1920.isBound, materialOptions.tailoring1920Enhanced.isBound,
+    materialOptions.metallurgy.isBound, materialOptions.metallurgy1518.isBound,
+    materialOptions.metallurgy1920.isBound, materialOptions.metallurgy1920Enhanced.isBound,
+  ]), [boundMaterials, materialOptions]);
+
+  useEffect(() => {
+    if (materialOptions.glacierBreath.enabled && materialOptions.glacierBreath.optimal) pendingBookSync.current.armor = true;
+    if (materialOptions.lavaBreath.enabled && materialOptions.lavaBreath.optimal) pendingBookSync.current.weapon = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boundSignature]);
+
   useEffect(() => {
     const collect = (type: 'armor' | 'weapon'): Record<string, boolean> | null => {
       if (!pendingBookSync.current[type]) return null;
@@ -682,8 +751,18 @@ export default function RefiningCalculator({
         const range = t <= 14 ? '1114' : t <= 18 ? '1518' : t <= 20 ? '1920' : '';
         if (!range) return;
         const key = keys[range as keyof typeof keys];
-        desired[key] = (desired[key] || false) || v.rec.useBook;
+        if (range === '1920') {
+          // 19~20은 일반/강화 책 중 정책이 고른 쪽 토글만 켠다
+          desired[key] = (desired[key] || false) || (v.rec.useBook && v.rec.bookId !== 'enhanced');
+          const enhKey = `${key}Enhanced`;
+          desired[enhKey] = (desired[enhKey] || false) || (v.rec.useBook && v.rec.bookId === 'enhanced');
+        } else {
+          desired[key] = (desired[key] || false) || v.rec.useBook;
+        }
       });
+      // 일반/강화 책은 동시 사용 불가 — 19·20 레벨별 권장이 갈리면 강화 쪽만 켠다
+      const k1920 = keys['1920'];
+      if (desired[`${k1920}Enhanced`]) desired[k1920] = false;
       pendingBookSync.current[type] = false;
       return desired;
     };
@@ -823,7 +902,7 @@ export default function RefiningCalculator({
     const levels = isArmor ? refinedLevelsByType.armor : refinedLevelsByType.weapon;
     const preLevels = isArmor ? refinedLevelsByType.preArmor : refinedLevelsByType.preWeapon;
     const bookName = isArmor ? '재봉술' : '야금술';
-    // 표시도 실제 계산과 동일하게: 책 토글 상태를 조건으로 한 정책(on/off 변형)
+    // 표시도 실제 계산과 동일하게: 책 토글 상태를 조건으로 한 정책(on/off/onEnhanced 변형)
     const preBookToggleOn = (target: number) => {
       if (target > 20) return false;
       if (isArmor) {
@@ -835,6 +914,16 @@ export default function RefiningCalculator({
         : target <= 18 ? materialOptions.metallurgy1518.enabled
         : materialOptions.metallurgy1920.enabled;
     };
+    const preEnhancedToggleOn = (target: number) =>
+      target >= 19 && target <= 20 &&
+      (isArmor ? materialOptions.tailoring1920Enhanced.enabled : materialOptions.metallurgy1920Enhanced.enabled);
+    // 계산 루프와 동일한 규칙으로 변형 선택 (일반+강화 둘 다 켜지면 비용 싼 쪽)
+    const pickPrePolicy = (v: PreOptVariants, target: number): PreSuccessionPolicy => {
+      if (preEnhancedToggleOn(target) && v.onEnhanced) {
+        return preBookToggleOn(target) && v.on.cost <= v.onEnhanced.cost ? v.on : v.onEnhanced;
+      }
+      return preBookToggleOn(target) ? v.on : v.off;
+    };
     const breathKindCls = (kind: OptimalPolicy['kind']) =>
       kind === 'none' ? styles.breathChipNone : kind === 'full' ? styles.breathChipFull : styles.breathChipPartial;
     const breathLabel = (p: OptimalPolicy) =>
@@ -842,7 +931,8 @@ export default function RefiningCalculator({
     // 책은 매 시도 1권 소모 → 권수(=시도 수)를 그대로 보여줘 재료 카드 합계와 이어지게 한다
     const preLabel = (p: PreSuccessionPolicy) => {
       if (!p.useBook) return breathLabel(p);
-      return `${bookName} ${Math.round(p.tries)}권 · ${breathLabel(p)}`;
+      const name = p.bookId === 'enhanced' ? `강화 ${bookName}` : bookName;
+      return `${name} ${Math.round(p.tries)}권 · ${breathLabel(p)}`;
     };
     const bothShown = levels.length > 0 && preLevels.length > 0;
     const popup = (
@@ -862,7 +952,7 @@ export default function RefiningCalculator({
                   {preLevels.map(L => {
                     const v = preTbl[L];
                     if (!v) return null;
-                    const p = preBookToggleOn(L + 1) ? v.on : v.off;
+                    const p = pickPrePolicy(v, L + 1);
                     return (
                       <span key={L} className={`${styles.breathChip} ${breathKindCls(p.kind)}`}>
                         <span className={styles.breathChipLv}>+{L}→{L + 1}</span>
@@ -1175,8 +1265,8 @@ export default function RefiningCalculator({
     let totalMaterials: Materials = {
       수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0,
       누골: 0, 빙하: 0, 용암: 0, 빙하_일반: 0, 용암_일반: 0, 빙하_상급: 0, 용암_상급: 0,
-      방어구책1114: 0, 방어구책1518: 0, 방어구책1920: 0,
-      무기책1114: 0, 무기책1518: 0, 무기책1920: 0,
+      방어구책1114: 0, 방어구책1518: 0, 방어구책1920: 0, 방어구책1920강: 0,
+      무기책1114: 0, 무기책1518: 0, 무기책1920: 0, 무기책1920강: 0,
       재봉술1단: 0, 재봉술2단: 0, 재봉술3단: 0, 재봉술4단: 0,
       야금술1단: 0, 야금술2단: 0, 야금술3단: 0, 야금술4단: 0,
       // 계승 재료
@@ -1254,6 +1344,7 @@ export default function RefiningCalculator({
 
             // 레벨에 따라 적절한 책 옵션 확인
             let useBook = false;
+            let useEnhancedBook = false; // 강화 책 (목표 19~20 전용)
             let bookType = '';
             if (nextLevel >= 11 && nextLevel <= 14) {
               useBook = isArmorPre ? materialOptions.tailoring.enabled : materialOptions.metallurgy.enabled;
@@ -1263,26 +1354,46 @@ export default function RefiningCalculator({
               bookType = '1518';
             } else if (nextLevel >= 19 && nextLevel <= 20) {
               useBook = isArmorPre ? materialOptions.tailoring1920.enabled : materialOptions.metallurgy1920.enabled;
+              useEnhancedBook = isArmorPre ? materialOptions.tailoring1920Enhanced.enabled : materialOptions.metallurgy1920Enhanced.enabled;
               bookType = '1920';
             }
 
             // 최적 모드: 책은 사용자 토글을 조건으로 두고(끄면 계산에서도 빠짐),
-            // 그 조건에서의 최적 숨결 정책(on/off 변형)을 적용
+            // 그 조건에서의 최적 숨결 정책(on/off/onEnhanced 변형)을 적용
+            // 일반+강화 둘 다 켜져 있으면 기대 비용이 싼 쪽을 레벨별로 선택
             const polSet = breathOptPre.enabled && breathOptPre.optimal
               ? (isArmorPre ? optimalBreathTable.preArmor : optimalBreathTable.preWeapon)[level]
               : undefined;
-            const polPre = polSet ? (bookType && useBook ? polSet.on : polSet.off) : undefined;
+            let polPre: PreSuccessionPolicy | undefined;
+            if (polSet) {
+              if (bookType === '1920' && useEnhancedBook && polSet.onEnhanced) {
+                polPre = useBook && polSet.on.cost <= polSet.onEnhanced.cost ? polSet.on : polSet.onEnhanced;
+              } else {
+                polPre = bookType && useBook ? polSet.on : polSet.off;
+              }
+            }
 
+            let usedEnhanced = false; // 이번 레벨에서 실제로 강화 책을 소모하는가
             let avgTries: number;
             let breathTotal: number;
             if (polPre) {
               avgTries = polPre.tries;
               breathTotal = polPre.breaths;
               useBook = polPre.useBook; // 책 미지원 레벨이면 정책상 false
+              usedEnhanced = polPre.bookId === 'enhanced';
             } else {
               const useBreath = breathOptPre.enabled;
-              avgTries = getTries(nextLevel, useBreath, useBook, calcMode);
-              breathTotal = useBreath ? getBreathEffect(BASE_PROBABILITY[level]).max * avgTries : 0;
+              if (bookType === '1920' && useEnhancedBook) {
+                // 강화 책은 CASE 테이블에 없어 DP로 직접 계산 (가산 확률 = 기본확률 x2)
+                const m = triesForFixedBookPolicy(BASE_PROBABILITY[level], getBreathEffect(BASE_PROBABILITY[level]), useBreath, BASE_PROBABILITY[level] * 2, calcMode);
+                avgTries = m.tries;
+                breathTotal = m.breaths;
+                useBook = true;
+                usedEnhanced = true;
+              } else {
+                avgTries = getTries(nextLevel, useBreath, useBook, calcMode);
+                breathTotal = useBreath ? getBreathEffect(BASE_PROBABILITY[level]).max * avgTries : 0;
+              }
             }
             if (avgTries === 0) continue;
 
@@ -1299,7 +1410,10 @@ export default function RefiningCalculator({
               if (useBook && bookType) {
                 if (bookType === '1114') totalMaterials.방어구책1114 = (totalMaterials.방어구책1114 || 0) + avgTries;
                 if (bookType === '1518') totalMaterials.방어구책1518 = (totalMaterials.방어구책1518 || 0) + avgTries;
-                if (bookType === '1920') totalMaterials.방어구책1920 = (totalMaterials.방어구책1920 || 0) + avgTries;
+                if (bookType === '1920') {
+                  if (usedEnhanced) totalMaterials.방어구책1920강 = (totalMaterials.방어구책1920강 || 0) + avgTries;
+                  else totalMaterials.방어구책1920 = (totalMaterials.방어구책1920 || 0) + avgTries;
+                }
               }
             } else { // weapon
               totalMaterials.파괴석 += (materialCostPerTry as any).파괴석 * avgTries;
@@ -1310,7 +1424,10 @@ export default function RefiningCalculator({
               if (useBook && bookType) {
                 if (bookType === '1114') totalMaterials.무기책1114 = (totalMaterials.무기책1114 || 0) + avgTries;
                 if (bookType === '1518') totalMaterials.무기책1518 = (totalMaterials.무기책1518 || 0) + avgTries;
-                if (bookType === '1920') totalMaterials.무기책1920 = (totalMaterials.무기책1920 || 0) + avgTries;
+                if (bookType === '1920') {
+                  if (usedEnhanced) totalMaterials.무기책1920강 = (totalMaterials.무기책1920강 || 0) + avgTries;
+                  else totalMaterials.무기책1920 = (totalMaterials.무기책1920 || 0) + avgTries;
+                }
               }
             }
             totalMaterials.돌파석 += materialCostPerTry.돌파석 * avgTries;
@@ -2700,6 +2817,7 @@ export default function RefiningCalculator({
                                     amount={materials.방어구책1114 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1114'] || 0}
+                                    tooltip={bookBonusTooltip('66112546')}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.tailoring.enabled}
                                     onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring: {...p.tailoring, enabled: !p.tailoring.enabled}}))}
@@ -2717,6 +2835,7 @@ export default function RefiningCalculator({
                                     amount={materials.방어구책1518 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1518'] || 0}
+                                    tooltip={bookBonusTooltip('66112552')}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.tailoring1518.enabled}
                                     onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring1518: {...p.tailoring1518, enabled: !p.tailoring1518.enabled}}))}
@@ -2734,12 +2853,41 @@ export default function RefiningCalculator({
                                     amount={materials.방어구책1920 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1920'] || 0}
+                                    tooltip={bookBonusTooltip('66112554')}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.tailoring1920.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring1920: {...p.tailoring1920, enabled: !p.tailoring1920.enabled}}))}
+                                    onToggleEnabled={() => setMaterialOptions(p => ({
+                                      ...p,
+                                      tailoring1920: {...p.tailoring1920, enabled: !p.tailoring1920.enabled},
+                                      // 일반/강화는 동시 사용 불가 — 켜는 순간 반대쪽을 끈다
+                                      ...(!p.tailoring1920.enabled ? { tailoring1920Enhanced: {...p.tailoring1920Enhanced, enabled: false} } : {}),
+                                    }))}
                                     showCheckbox={true}
                                     isBound={materialOptions.tailoring1920.isBound}
                                     onBoundChange={() => setMaterialOptions(p => ({...p, tailoring1920: {...p.tailoring1920, isBound: !p.tailoring1920.isBound}}))}
+                                  />
+                                </Col>
+                              )}
+                              {requiredMats.needsArmorBook1920 && (
+                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
+                                  <MaterialCard
+                                    icon="/tailoring-karma.webp"
+                                    name="강화 재봉술: 업화(19~20) 방어구"
+                                    amount={materials.방어구책1920강 || 0}
+                                    color="#34d399"
+                                    cost={results.materialCosts['방어구책1920강'] || 0}
+                                    tooltip={bookBonusTooltip('66112556')}
+                                    showEnableToggle={true}
+                                    isEnabled={materialOptions.tailoring1920Enhanced.enabled}
+                                    onToggleEnabled={() => setMaterialOptions(p => ({
+                                      ...p,
+                                      tailoring1920Enhanced: {...p.tailoring1920Enhanced, enabled: !p.tailoring1920Enhanced.enabled},
+                                      // 일반/강화는 동시 사용 불가 — 켜는 순간 반대쪽을 끈다
+                                      ...(!p.tailoring1920Enhanced.enabled ? { tailoring1920: {...p.tailoring1920, enabled: false} } : {}),
+                                    }))}
+                                    showCheckbox={true}
+                                    isBound={materialOptions.tailoring1920Enhanced.isBound}
+                                    onBoundChange={() => setMaterialOptions(p => ({...p, tailoring1920Enhanced: {...p.tailoring1920Enhanced, isBound: !p.tailoring1920Enhanced.isBound}}))}
                                   />
                                 </Col>
                               )}
@@ -2769,6 +2917,7 @@ export default function RefiningCalculator({
                                     amount={materials.무기책1114 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1114'] || 0}
+                                    tooltip={bookBonusTooltip('66112543')}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.metallurgy.enabled}
                                     onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy: {...p.metallurgy, enabled: !p.metallurgy.enabled}}))}
@@ -2786,6 +2935,7 @@ export default function RefiningCalculator({
                                     amount={materials.무기책1518 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1518'] || 0}
+                                    tooltip={bookBonusTooltip('66112551')}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.metallurgy1518.enabled}
                                     onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy1518: {...p.metallurgy1518, enabled: !p.metallurgy1518.enabled}}))}
@@ -2803,12 +2953,41 @@ export default function RefiningCalculator({
                                     amount={materials.무기책1920 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1920'] || 0}
+                                    tooltip={bookBonusTooltip('66112553')}
                                     showEnableToggle={true}
                                     isEnabled={materialOptions.metallurgy1920.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy1920: {...p.metallurgy1920, enabled: !p.metallurgy1920.enabled}}))}
+                                    onToggleEnabled={() => setMaterialOptions(p => ({
+                                      ...p,
+                                      metallurgy1920: {...p.metallurgy1920, enabled: !p.metallurgy1920.enabled},
+                                      // 일반/강화는 동시 사용 불가 — 켜는 순간 반대쪽을 끈다
+                                      ...(!p.metallurgy1920.enabled ? { metallurgy1920Enhanced: {...p.metallurgy1920Enhanced, enabled: false} } : {}),
+                                    }))}
                                     showCheckbox={true}
                                     isBound={materialOptions.metallurgy1920.isBound}
                                     onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy1920: {...p.metallurgy1920, isBound: !p.metallurgy1920.isBound}}))}
+                                  />
+                                </Col>
+                              )}
+                              {requiredMats.needsWeaponBook1920 && (
+                                <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
+                                  <MaterialCard
+                                    icon="/metallurgy-karma.webp"
+                                    name="강화 야금술: 업화(19~20) 무기"
+                                    amount={materials.무기책1920강 || 0}
+                                    color="#34d399"
+                                    cost={results.materialCosts['무기책1920강'] || 0}
+                                    tooltip={bookBonusTooltip('66112555')}
+                                    showEnableToggle={true}
+                                    isEnabled={materialOptions.metallurgy1920Enhanced.enabled}
+                                    onToggleEnabled={() => setMaterialOptions(p => ({
+                                      ...p,
+                                      metallurgy1920Enhanced: {...p.metallurgy1920Enhanced, enabled: !p.metallurgy1920Enhanced.enabled},
+                                      // 일반/강화는 동시 사용 불가 — 켜는 순간 반대쪽을 끈다
+                                      ...(!p.metallurgy1920Enhanced.enabled ? { metallurgy1920: {...p.metallurgy1920, enabled: false} } : {}),
+                                    }))}
+                                    showCheckbox={true}
+                                    isBound={materialOptions.metallurgy1920Enhanced.isBound}
+                                    onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy1920Enhanced: {...p.metallurgy1920Enhanced, isBound: !p.metallurgy1920Enhanced.isBound}}))}
                                   />
                                 </Col>
                               )}

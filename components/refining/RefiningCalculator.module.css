@@ -885,6 +885,47 @@ button.bulkButton:disabled,
   z-index: 300;
 }
 
+/* 책 카드 호버 툴팁 (목표 단계별 확률 증가량) */
+.materialTooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid #059669;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.6;
+  white-space: nowrap;
+  text-align: left;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.materialTooltipTitle {
+  font-weight: 700;
+  margin-bottom: 2px;
+  color: #059669;
+}
+
+.materialCard:hover .materialTooltip {
+  display: block;
+}
+
+[data-theme="dark"] .materialTooltip {
+  border-color: #34d399;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .materialTooltipTitle {
+  color: #34d399;
+}
+
 .materialCardBound {
   border: 2px solid var(--color-primary);
   background-color: rgba(99, 102, 241, 0.05);

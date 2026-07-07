@@ -1,6 +1,7 @@
 'use client';
 
 import { ItemCategory, TrackedItem, getItemsByCategory, RefineAdditionalSubCategory, REFINE_ADDITIONAL_SUBCATEGORIES, getItemsBySubCategory } from '@/lib/items-to-track';
+import { getBookBonusLines } from '@/lib/refiningData';
 import React, { useMemo, useState, useContext } from 'react';
 import { useTheme } from './ThemeProvider';
 import { Offcanvas } from 'react-bootstrap';
@@ -85,6 +86,43 @@ function ColoredItemName({ name }: { name: string }) {
   return <>{parts}</>;
 }
 
+// 책 아이템 호버 시 목표 단계별 확률 증가량 툴팁
+function BookBonusTooltip({ itemId, theme }: { itemId: string; theme: string }) {
+  const lines = getBookBonusLines(itemId);
+  if (!lines) return null;
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 'calc(100% + 8px)',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 1050,
+        backgroundColor: theme === 'dark' ? '#1a1f2e' : '#ffffff',
+        color: 'var(--text-primary)',
+        border: `1px solid ${theme === 'dark' ? '#34d399' : '#059669'}`,
+        borderRadius: '8px',
+        padding: '8px 12px',
+        fontSize: '0.75rem',
+        fontWeight: 500,
+        lineHeight: 1.6,
+        whiteSpace: 'nowrap',
+        textAlign: 'left',
+        pointerEvents: 'none',
+        boxShadow: theme === 'dark' ? '0 4px 14px rgba(0,0,0,0.5)' : '0 4px 14px rgba(0,0,0,0.15)',
+      }}
+    >
+      <div style={{ fontWeight: 700, marginBottom: '2px', color: theme === 'dark' ? '#34d399' : '#059669' }}>
+        재련 확률 증가
+      </div>
+      {lines.map((line) => (
+        <div key={line}>{line}</div>
+      ))}
+    </div>
+  );
+}
+
 type ItemSelectorProps = {
   selectedCategory: ItemCategory;
   selectedItem: TrackedItem | null;
@@ -116,6 +154,7 @@ export default function ItemSelector({
     'all': '전체',
   };
   const [showItems, setShowItems] = useState(true);
+  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [bottomSheetCategory, setBottomSheetCategory] = useState<ItemCategory>(selectedCategory);
   const [bottomSheetSubCategory, setBottomSheetSubCategory] = useState<RefineAdditionalSubCategory | null>(null);
@@ -381,8 +420,10 @@ export default function ItemSelector({
                   whiteSpace: 'nowrap',
                   cursor: 'pointer',
                   minWidth: '200px',
+                  position: 'relative',
                 }}
                 onMouseEnter={(e) => {
+                  setHoveredItemId(item.id);
                   if (selectedItem.id !== item.id) {
                     e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
                     e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
@@ -390,6 +431,7 @@ export default function ItemSelector({
                   }
                 }}
                 onMouseLeave={(e) => {
+                  setHoveredItemId(null);
                   if (selectedItem.id !== item.id) {
                     e.currentTarget.style.backgroundColor = 'var(--card-bg)';
                     e.currentTarget.style.borderColor = 'var(--border-color)';
@@ -398,6 +440,7 @@ export default function ItemSelector({
                 }}
               >
                 <ColoredItemName name={item.name} />
+                {hoveredItemId === item.id && <BookBonusTooltip itemId={item.id} theme={theme} />}
               </button>
             );
           })}
