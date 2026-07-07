@@ -201,6 +201,47 @@ export default function PrivacyPolicy() {
                 </div>
               </section>
 
+              <section className="mb-4">
+                <h2 className="h5 text-primary mb-3">11. 모바일 앱(로아로골 앱) 개인정보 처리</h2>
+                <p>
+                  본 방침은 로아로골 모바일 애플리케이션(Android/iOS)에도 동일하게 적용되며,
+                  앱에서는 아래 사항이 추가로 적용됩니다.
+                </p>
+                <div className="bg-light p-3 rounded mb-3">
+                  <h6 className="fw-semibold mb-3">로그인 (선택 사항)</h6>
+                  <ul className="mb-2">
+                    <li>Google 로그인: 위 9항과 동일한 정보가 수집됩니다.</li>
+                    <li>
+                      Apple로 로그인(iOS): Apple 계정 고유 식별자, 이름(선택), 이메일(선택 —
+                      &lsquo;이메일 가리기&rsquo; 사용 시 Apple의 중계 이메일)이 수집됩니다.
+                    </li>
+                  </ul>
+                  <p className="small text-muted mb-0">
+                    ※ 로그인하지 않아도 앱의 대부분 기능(시세 차트, 재련 계산, 주간 숙제 등)을 이용할 수 있습니다.
+                  </p>
+                </div>
+                <div className="bg-light p-3 rounded mb-3">
+                  <h6 className="fw-semibold mb-3">광고 (Google AdMob)</h6>
+                  <p className="mb-2">
+                    앱은 Google AdMob을 통해 광고를 표시하며, 이 과정에서 광고 식별자
+                    (Android 광고 ID / iOS IDFA)와 대략적인 위치(국가 단위), 기기 정보가
+                    Google에 전송될 수 있습니다.
+                  </p>
+                  <ul className="mb-0">
+                    <li>iOS: 앱 추적 투명성(ATT) 권한을 거부해도 광고는 계속 표시되며, 맞춤화되지 않은 광고가 제공됩니다.</li>
+                    <li>EEA 등 규제 지역에서는 Google의 동의 관리 플랫폼(UMP)을 통해 동의를 받은 후 광고가 표시됩니다.</li>
+                  </ul>
+                </div>
+                <div className="bg-light p-3 rounded">
+                  <h6 className="fw-semibold mb-3">계정 삭제</h6>
+                  <p className="mb-0">
+                    앱 내 메뉴의 계정 삭제 기능으로 언제든지 계정과 저장된 모든 데이터
+                    (캐릭터 정보, 주간 체크리스트, 골드 기록)를 즉시 삭제할 수 있습니다.
+                    삭제된 데이터는 복구되지 않습니다.
+                  </p>
+                </div>
+              </section>
+
               <div className="alert alert-info">
                 <strong>문의사항:</strong> 개인정보 처리방침에 대한 문의사항이 있으시면,
                 웹사이트 하단의 연락처를 통해 문의해 주시기 바랍니다.
