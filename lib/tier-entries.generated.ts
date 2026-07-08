@@ -349,5 +349,17 @@ export const TIER_ENTRIES: TierEntry[] = [
     "name": "환수 야성",
     "group": "스페셜리스트",
     "icon": "/class-icons/%ED%99%98%EC%88%98%20%EC%95%BC%EC%84%B1.webp"
+  },
+  {
+    "id": "차원 공간검사",
+    "name": "차원 공간검사",
+    "group": "기타",
+    "icon": "/class-icons/%EC%B0%A8%EC%9B%90%20%EA%B3%B5%EA%B0%84%EA%B2%80%EC%82%AC.webp"
+  },
+  {
+    "id": "차원 시간관리자",
+    "name": "차원 시간관리자",
+    "group": "기타",
+    "icon": "/class-icons/%EC%B0%A8%EC%9B%90%20%EC%8B%9C%EA%B0%84%EA%B4%80%EB%A6%AC%EC%9E%90.webp"
   }
 ];

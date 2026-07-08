@@ -16,6 +16,9 @@ const SPEC_GROUPS = SPEC_GROUP_ORDER
   .map(group => ({ group, entries: TIER_ENTRIES.filter(e => e.group === group) }))
   .filter(g => g.entries.length > 0);
 
+// 신규 출시 직업(각인 정보 미확정) — 필터 옵션에 NEW 배지 표시
+const NEW_SPEC_IDS = new Set(['차원 공간검사', '차원 시간관리자']);
+
 // 직업/스펙 필터: 아이콘 + 이름
 const SPEC_FILTER_GROUPS: FilterGroup[] = SPEC_GROUPS.map(g => ({
   label: g.group,
@@ -27,6 +30,7 @@ const SPEC_FILTER_GROUPS: FilterGroup[] = SPEC_GROUPS.map(g => ({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={s.icon} alt="" className={styles.specOptIcon} />
         <span>{s.name}</span>
+        {NEW_SPEC_IDS.has(s.id) && <span className={styles.specOptNew}>NEW</span>}
       </span>
     ),
   })),
@@ -391,6 +395,7 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={e.icon} alt="" className={styles.specChipIcon} />
                       <span className={styles.specChipName}>{e.name}</span>
+                      {NEW_SPEC_IDS.has(e.id) && <span className={styles.specChipNew}>NEW</span>}
                     </button>
                   );
                 })}

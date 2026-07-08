@@ -114,6 +114,8 @@
   flex-shrink: 0;
 }
 .specChipName {
+  flex: 1;
+  min-width: 0;
   font-size: 0.74rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -348,6 +350,19 @@
   flex-shrink: 0;
   border: 1px solid var(--border-color);
   background-color: var(--card-body-bg-stone, rgba(0,0,0,0.05));
+}
+
+/* 신규 출시 직업 배지 (사이드바 칩 + 드롭다운 옵션 공용) */
+.specChipNew,
+.specOptNew {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #fff;
+  background: #8b5cf6;
+  border-radius: 999px;
+  padding: 0.06rem 0.32rem;
+  letter-spacing: 0.02em;
 }
 
 .resetButton {
