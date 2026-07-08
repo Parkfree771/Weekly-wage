@@ -31,62 +31,6 @@
   padding: 0.15rem 0.65rem;
 }
 
-/* ── 신규 직업 안내 배너 ── */
-.newClassBanner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 13px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.1rem;
-}
-
-.newClassBadge {
-  flex-shrink: 0;
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: #fff;
-  background: #8b5cf6;
-  border-radius: 999px;
-  padding: 0.2rem 0.6rem;
-  letter-spacing: 0.02em;
-}
-
-.newClassIcons {
-  display: flex;
-  gap: 0.4rem;
-  flex-shrink: 0;
-}
-
-.newClassIcon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  object-fit: cover;
-}
-
-.newClassText {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
-}
-
-.newClassName {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-.newClassDesc {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-}
-
 /* ── 검색 ── */
 /* 검색창 + 안내문을 한 줄에 (좁으면 안내문이 아래로 줄바꿈) */
 .searchLine {
@@ -580,6 +524,18 @@
   font-weight: 800;
   color: #fff;
   background: #dc3545;
+  border-radius: 6px;
+  padding: 0.16rem 0.5rem;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+/* 신규 직업 잠정 빌드 배지 — 유저 표본 없이 임시로 넣은 빌드임을 표시 */
+.provisionalBadge {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #fff;
+  background: #8b5cf6;
   border-radius: 6px;
   padding: 0.16rem 0.5rem;
   white-space: nowrap;

@@ -21,9 +21,13 @@ const FEMALE_PREFIXES = new Set([
 const genderOf = (id: string): 'female' | 'male' =>
   FEMALE_PREFIXES.has(id.split(' ')[0]) ? 'female' : 'male';
 
+// 유저 표본 없이 보정 빌드(ENGRAVING_OVERRIDES)만으로 잠정 노출 중인 신규 직업 스펙
+const PROVISIONAL_SPEC_IDS = new Set(['차원 공간검사', '차원 시간관리자']);
+
 // 표시 대상 스펙 (제외 + 빌드 없는 스펙 빼고) — 이름 가나다순 평면 정렬이 기본
+// 잠정 스펙은 ENGRAVING_BUILDS 집계가 없어도 ENGRAVING_OVERRIDES만으로 노출
 const SPECS = TIER_CLASSES.filter(
-  (c) => !EXCLUDED_SPEC_IDS.has(c.id) && ENGRAVING_BUILDS[c.id]
+  (c) => !EXCLUDED_SPEC_IDS.has(c.id) && (ENGRAVING_BUILDS[c.id] || ENGRAVING_OVERRIDES[c.id]?.slots)
 ).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
 // 슬롯 정규화: string[](고정/택1) 와 {pick,pool}(택N)을 한 번에 다룬다.
@@ -158,6 +162,7 @@ const CLASS_FULL_NAME: Record<string, string> = {
   '슬레': '슬레이어',
   '알카': '아르카나',
   '인파': '인파이터',
+  '차원': '차원술사',
   '창술': '창술사',
   '호크': '호크아이',
   '홀나': '홀리나이트',
@@ -300,31 +305,6 @@ export default function EngravingPage() {
         <h1 className={styles.title}>직업별 각인 정리</h1>
         <span className={styles.countBadge}>{shown.length}직업</span>
       </header>
-
-      {/* 신규 직업 안내 — 각인 데이터 집계 전이라 목록에는 아직 포함하지 않음 */}
-      <div className={styles.newClassBanner}>
-        <span className={styles.newClassBadge}>NEW</span>
-        <div className={styles.newClassIcons}>
-          <img
-            className={styles.newClassIcon}
-            src="/class-icons/차원 공간검사.webp"
-            alt="차원술사 공간 검사"
-            width={36}
-            height={36}
-          />
-          <img
-            className={styles.newClassIcon}
-            src="/class-icons/차원 시간관리자.webp"
-            alt="차원술사 시간 관리자"
-            width={36}
-            height={36}
-          />
-        </div>
-        <div className={styles.newClassText}>
-          <span className={styles.newClassName}>차원술사</span>
-          <span className={styles.newClassDesc}>각인 정보는 아직 모름 (데이터 쌓이면 업데이트 예정)</span>
-        </div>
-      </div>
 
       {/* 직업 검색 */}
       <div className={styles.searchLine}>
@@ -548,6 +528,9 @@ export default function EngravingPage() {
                 <div className={styles.cardHead}>
                   <ClassIcon name={spec.name} src={spec.icon} size={42} />
                   <span className={styles.cardName}>{spec.name}</span>
+                  {PROVISIONAL_SPEC_IDS.has(spec.id) && (
+                    <span className={styles.provisionalBadge}>예상(미확정)</span>
+                  )}
                   {stat && <span className={styles.statBadge}>{stat}</span>}
                   {styleLabel && <span className={styles.styleBadge}>{styleLabel}</span>}
                 </div>
