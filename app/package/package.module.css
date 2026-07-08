@@ -1089,9 +1089,9 @@
   border-color: rgba(249, 115, 22, 0.25);
 }
 
-/* 선택 상자(choiceBox): 후보가 많아 좁은 그리드 셀에서 줄바꿈이 심하므로 전체 폭 사용 */
+/* 선택 상자(choiceBox): 후보가 많아 기본 셀(160px)에서 줄바꿈이 심하므로 2칸만큼만 확장 */
 .itemCardFull {
-  grid-column: 1 / -1;
+  grid-column: span 2;
 }
 
 .itemCardChoicesWide {
@@ -2127,6 +2127,13 @@
 
 .choiceOptionQtyInput {
   width: 70px;
+  flex-shrink: 0;
+}
+
+.choiceOptionTotalHint {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
   flex-shrink: 0;
 }
 

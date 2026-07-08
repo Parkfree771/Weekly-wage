@@ -107,17 +107,22 @@ function getPackageItemGold(
   if (item.choiceOptions && item.choiceOptions.length > 0) {
     // 선택된 선택지가 없으면 등록 시 저장된 기본(최고가) 선택지 사용
     const effectiveId = selectedChoiceItemId || item.itemId;
-    const qty = item.choiceOptions.find((c) => c.itemId === effectiveId)?.quantity ?? item.quantity;
+    const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === effectiveId)?.quantity ?? 1);
     return getItemUnitPrice(effectiveId, prices) * qty;
   }
   return getItemUnitPrice(item.itemId, prices) * item.quantity;
 }
 
-/** choiceOptions가 있는 아이템의 "현재 선택된 선택지" 개수 (선택지별로 다르면 그 값, 아니면 item.quantity) */
+/**
+ * choiceOptions가 있는 아이템의 "현재 선택된 선택지" 개수.
+ * item.quantity = 박스 개수, choiceOptions[i].quantity = 그 선택지의 박스당 개수(미지정 시 1배).
+ * 최종 개수 = 박스 개수 × 박스당 개수 — 다른 선택지를 고르면 그 선택지 배수로 재계산된다.
+ */
 function getEffectiveQty(item: PackageItem, selectedChoiceItemId: string | undefined): number {
   if (!item.choiceOptions || item.choiceOptions.length === 0) return item.quantity;
   const effectiveId = selectedChoiceItemId || item.itemId;
-  return item.choiceOptions.find((c) => c.itemId === effectiveId)?.quantity ?? item.quantity;
+  const perBoxQty = item.choiceOptions.find((c) => c.itemId === effectiveId)?.quantity ?? 1;
+  return item.quantity * perBoxQty;
 }
 
 export default function PackageDetailPage() {
@@ -1251,7 +1256,7 @@ export default function PackageDetailPage() {
                   ? item.choiceOptions!.find((c) => c.itemId === effectiveChoiceId)
                   : null;
                 const gold = bonusItemSubtotals[idx] || 0;
-                const effectiveQty = effectiveChoice?.quantity ?? item.quantity;
+                const effectiveQty = item.quantity * (effectiveChoice?.quantity ?? 1);
 
                 return (
                   <div

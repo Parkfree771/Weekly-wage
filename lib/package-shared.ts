@@ -841,9 +841,13 @@ export function calculatePostEfficiency(
     if (item.goldOverride != null) {
       return getTicketUnit(item.itemId, item.goldOverride) * item.quantity;
     }
+    // choice 타입: item.quantity = 박스 개수, choiceOptions[i].quantity = 선택지별 박스당 개수(미지정 시 1배)
+    const qty = item.choiceOptions && item.choiceOptions.length > 0
+      ? item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1)
+      : item.quantity;
     const raw = latestPrices[item.itemId] || 0;
     const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-    return (raw / bundle) * item.quantity;
+    return (raw / bundle) * qty;
   };
 
   const itemValues = post.items.map(itemValue);

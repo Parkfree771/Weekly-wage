@@ -278,10 +278,10 @@ export default function PackageRegisterPage() {
     ? royalCrystalPrice
     : blueCrystalPrice * 27.5;
 
-  // choice 타입: 현재 선택된 선택지의 개수 (선택지별로 다르게 지정했으면 그 값, 아니면 공용 quantity)
+  // choice 타입: 박스 개수(added.quantity) × 선택지별 박스당 개수 (미지정 선택지는 1배 = 기존과 동일)
   const getChoiceQty = (added: AddedItem, template: TemplateItem): number => {
     const choiceId = added.selectedChoiceId || template.choices?.[0]?.itemId || '';
-    return added.choiceQuantities?.[choiceId] ?? added.quantity;
+    return added.quantity * (added.choiceQuantities?.[choiceId] ?? 1);
   };
 
   // 아이템별 소계 계산
@@ -442,7 +442,8 @@ export default function PackageRegisterPage() {
             {template.choices.map((choice) => {
               const isSelected = added.selectedChoiceId === choice.itemId;
               const choicePrice = getItemUnitPrice(choice.itemId, latestPrices);
-              const choiceQty = added.choiceQuantities?.[choice.itemId] ?? added.quantity;
+              const perBoxQty = added.choiceQuantities?.[choice.itemId] ?? 1;
+              const choiceTotalQty = added.quantity * perBoxQty;
               return (
                 <div key={choice.itemId} className={styles.choiceOptionRow}>
                   <button type="button"
@@ -460,10 +461,13 @@ export default function PackageRegisterPage() {
                   </button>
                   <input type="number"
                     className={`${styles.quantityInput} ${styles.choiceOptionQtyInput}`}
-                    value={choiceQty || ''}
+                    value={perBoxQty || ''}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => handleChoiceQuantityChange(added.id, choice.itemId, parseInt(e.target.value) || 0)}
-                    min={0} title="이 선택지를 골랐을 때의 개수" />
+                    min={0} title="박스 1개당 개수 (박스 개수와 곱해져 총 개수가 계산됩니다)" />
+                  <span className={styles.choiceOptionTotalHint}>
+                    ×{added.quantity} = {formatNumber(choiceTotalQty)}개
+                  </span>
                 </div>
               );
             })}
@@ -623,20 +627,19 @@ export default function PackageRegisterPage() {
               const selectedId = added.selectedChoiceId || template.choices?.[0]?.itemId || '';
               const choice = template.choices?.find((c) => c.itemId === selectedId);
               const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
-              // 선택지별 개수(예: 파괴석 1000개/수호석 5000개처럼 다를 때)를 각 선택지에 저장해
-              // 상세페이지에서 다른 선택지로 바꿔도 그 선택지에 맞는 개수로 재계산되게 함
+              const boxCount = added.quantity * inner;
+              // 선택지별 "박스 1개당 개수"(예: 파괴석 1000개/수호석 5000개처럼 다를 때). 미지정 시 1배(기존과 동일)
+              // 최종 개수 = 박스 개수(quantity) × 선택지별 배수 — 상세페이지에서 다른 선택지로 바꿔도 재계산됨
               const choiceOptions = template.choices?.map((c) => ({
                 itemId: c.itemId,
                 name: c.name,
                 ...(c.icon ? { icon: c.icon } : {}),
-                quantity: (added.choiceQuantities?.[c.itemId] ?? added.quantity) * inner,
+                quantity: added.choiceQuantities?.[c.itemId] ?? 1,
               }));
-              const totalQty = choiceOptions?.find((c) => c.itemId === selectedId)?.quantity
-                ?? added.quantity * inner;
               return {
                 itemId: selectedId,
                 name: choice?.name || template.name,
-                quantity: totalQty,
+                quantity: boxCount,
                 icon: template.icon,
                 choiceOptions,
               };

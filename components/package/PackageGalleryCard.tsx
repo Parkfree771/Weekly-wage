@@ -78,9 +78,12 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
           : item.goldOverride != null
           ? item.goldOverride * item.quantity
           : (() => {
+              const qty = item.choiceOptions && item.choiceOptions.length > 0
+                ? item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1)
+                : item.quantity;
               const raw = latestPrices[item.itemId] || 0;
               const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-              return (raw / bundle) * item.quantity;
+              return (raw / bundle) * qty;
             })();
         return { idx, value };
       });
@@ -131,9 +134,13 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
         const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
         return dynamicUnit * item.quantity;
       }
+      // choice 타입: item.quantity = 박스 개수, choiceOptions[i].quantity = 선택지별 박스당 개수(미지정 시 1배)
+      const qty = item.choiceOptions && item.choiceOptions.length > 0
+        ? item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1)
+        : item.quantity;
       const raw = latestPrices[item.itemId] || 0;
       const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-      return (raw / bundle) * item.quantity;
+      return (raw / bundle) * qty;
     });
   }, [post.items, latestPrices, goldPerWon]);
 
@@ -180,9 +187,13 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
         const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
         return sum + dynamicUnit * item.quantity;
       }
+      // choice 타입: item.quantity = 박스 개수, choiceOptions[i].quantity = 선택지별 박스당 개수(미지정 시 1배)
+      const qty = item.choiceOptions && item.choiceOptions.length > 0
+        ? item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1)
+        : item.quantity;
       const raw = latestPrices[item.itemId] || 0;
       const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-      return sum + (raw / bundle) * item.quantity;
+      return sum + (raw / bundle) * qty;
     }, 0);
   }, [post.items, latestPrices, checkedItems, goldPerWon]);
   // 가챠: 기대값 계산 (체크 해제 아이템은 골드 0으로 계산, 확률은 유지)
