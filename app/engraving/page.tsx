@@ -301,6 +301,31 @@ export default function EngravingPage() {
         <span className={styles.countBadge}>{shown.length}직업</span>
       </header>
 
+      {/* 신규 직업 안내 — 각인 데이터 집계 전이라 목록에는 아직 포함하지 않음 */}
+      <div className={styles.newClassBanner}>
+        <span className={styles.newClassBadge}>NEW</span>
+        <div className={styles.newClassIcons}>
+          <img
+            className={styles.newClassIcon}
+            src="/class-icons/차원 공간검사.webp"
+            alt="차원술사 공간 검사"
+            width={36}
+            height={36}
+          />
+          <img
+            className={styles.newClassIcon}
+            src="/class-icons/차원 시간관리자.webp"
+            alt="차원술사 시간 관리자"
+            width={36}
+            height={36}
+          />
+        </div>
+        <div className={styles.newClassText}>
+          <span className={styles.newClassName}>차원술사</span>
+          <span className={styles.newClassDesc}>각인 정보는 아직 모름 (데이터 쌓이면 업데이트 예정)</span>
+        </div>
+      </div>
+
       {/* 직업 검색 */}
       <div className={styles.searchLine}>
       <div className={styles.searchRow}>
