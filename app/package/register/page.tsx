@@ -9,6 +9,7 @@ import NicknameModal from '@/components/auth/NicknameModal';
 import type { PackagePostCreateData, PackageItem, PackageType, PriceCurrency } from '@/types/package';
 import {
   type AddedItem,
+  type ChoiceBoxCandidate,
   TEMPLATE_ITEMS,
   TEMPLATES_MAP,
   ICON_SIZE_CATALOG,
@@ -21,6 +22,7 @@ import {
   getUnitPrice,
   calculateGachaItemGold,
   calculateGachaExpectedValue,
+  pickTopNCandidateIds,
 } from '@/lib/package-shared';
 import styles from '../package.module.css';
 
@@ -47,6 +49,8 @@ export default function PackageRegisterPage() {
   const [selectableCount, setSelectableCount] = useState<number>(0);
   const [checkedItemIds, setCheckedItemIds] = useState<Set<string>>(new Set());
   const [gachaProbabilities, setGachaProbabilities] = useState<Record<string, number>>({});
+  // '3+보너스' 전용: 아이템 클릭 시 확정 구성품/보너스 구성품 중 어디에 추가할지
+  const [addTarget, setAddTarget] = useState<'main' | 'bonus'>('main');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -75,6 +79,9 @@ export default function PackageRegisterPage() {
 
     itemCounterRef.current += 1;
     const newItem: AddedItem = { id: `${templateId}_${itemCounterRef.current}`, templateId, quantity: 1 };
+    if (packageType === '3+보너스' && addTarget === 'bonus') {
+      newItem.isBonus = true;
+    }
     if (template.type === 'choice' && template.choices?.length) {
       // 시세상 가장 비싼 선택지를 기본 선택
       const best = template.choices.reduce((max, c) =>
@@ -92,7 +99,89 @@ export default function PackageRegisterPage() {
       newItem.bundleQuantities = {};
       template.bundleContents.forEach(bc => { newItem.bundleQuantities![bc.itemId] = 0; });
     }
+    if (template.type === 'choiceBox') {
+      newItem.isChoiceBox = true;
+      newItem.choiceBoxCandidates = [];
+      newItem.choiceBoxPickCount = 1;
+      newItem.choiceBoxSelectedIds = [];
+    }
     setAddedItems((prev) => [...prev, newItem]);
+  };
+
+  const choiceBoxCandidateCounterRef = useRef(0);
+
+  const handleChoiceBoxPickCountChange = (itemId: string, pickCount: number) => {
+    setAddedItems((prev) =>
+      prev.map((a) => {
+        if (a.id !== itemId) return a;
+        const candidates = a.choiceBoxCandidates || [];
+        return {
+          ...a,
+          choiceBoxPickCount: pickCount,
+          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, pickCount, latestPrices),
+        };
+      }),
+    );
+  };
+
+  const handleChoiceBoxNameChange = (itemId: string, name: string) => {
+    setAddedItems((prev) =>
+      prev.map((a) => (a.id === itemId ? { ...a, choiceBoxName: name } : a)),
+    );
+  };
+
+  const handleChoiceBoxAddCandidate = (itemId: string, candidateTemplateId: string) => {
+    const candidateTemplate = TEMPLATES_MAP[candidateTemplateId];
+    if (!candidateTemplate || !candidateTemplate.itemId) return;
+    choiceBoxCandidateCounterRef.current += 1;
+    const newCandidate: ChoiceBoxCandidate = {
+      id: `cand_${choiceBoxCandidateCounterRef.current}`,
+      name: candidateTemplate.name,
+      icon: candidateTemplate.icon,
+      itemId: candidateTemplate.itemId,
+      quantity: 1,
+    };
+    setAddedItems((prev) =>
+      prev.map((a) => {
+        if (a.id !== itemId) return a;
+        const candidates = [...(a.choiceBoxCandidates || []), newCandidate];
+        return {
+          ...a,
+          choiceBoxCandidates: candidates,
+          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, a.choiceBoxPickCount || 1, latestPrices),
+        };
+      }),
+    );
+  };
+
+  const handleChoiceBoxRemoveCandidate = (itemId: string, candidateId: string) => {
+    setAddedItems((prev) =>
+      prev.map((a) => {
+        if (a.id !== itemId) return a;
+        const candidates = (a.choiceBoxCandidates || []).filter((c) => c.id !== candidateId);
+        return {
+          ...a,
+          choiceBoxCandidates: candidates,
+          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, a.choiceBoxPickCount || 1, latestPrices),
+        };
+      }),
+    );
+  };
+
+  const handleChoiceBoxCandidateQuantityChange = (itemId: string, candidateId: string, qty: number) => {
+    setAddedItems((prev) =>
+      prev.map((a) => {
+        if (a.id !== itemId) return a;
+        const candidates = (a.choiceBoxCandidates || []).map((c) =>
+          c.id === candidateId ? { ...c, quantity: Math.max(1, qty) } : c,
+        );
+        return {
+          ...a,
+          choiceBoxCandidates: candidates,
+          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, a.choiceBoxPickCount || 1, latestPrices),
+        };
+      }),
+    );
   };
 
   const handleBundleQuantityChange = (itemId: string, contentItemId: string, qty: number) => {
@@ -133,6 +222,7 @@ export default function PackageRegisterPage() {
       isCustom: true,
       customName: '',
       customGoldPerUnit: 0,
+      ...(packageType === '3+보너스' && addTarget === 'bonus' ? { isBonus: true } : {}),
     }]);
   };
 
@@ -187,34 +277,48 @@ export default function PackageRegisterPage() {
       const template = TEMPLATES_MAP[added.templateId];
       if (!template) return 0;
       const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0);
-      const qty = template.type === 'gold' ? 1 : added.quantity;
+      const qty = (template.type === 'gold' || template.type === 'choiceBox') ? 1 : added.quantity;
       const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
       return unitPrice * qty * inner;
     });
   }, [addedItems, latestPrices, goldPerWon, officialGold]);
 
-  // selectableCount > 0일 때 가장 비싼 N개 자동 선택
+  // selectableCount > 0일 때 가장 비싼 N개 자동 선택 (보너스 구성품은 N선택 대상에서 제외, 항상 포함)
   useEffect(() => {
-    if (selectableCount <= 0 || addedItems.length === 0) {
-      setCheckedItemIds(new Set(addedItems.map((a) => a.id)));
-      return;
+    const mainEntries = addedItems.map((a, idx) => ({ a, idx })).filter(({ a }) => !a.isBonus);
+    const newChecked = new Set<string>();
+    addedItems.forEach((a) => { if (a.isBonus) newChecked.add(a.id); });
+    if (selectableCount <= 0 || mainEntries.length === 0) {
+      mainEntries.forEach(({ a }) => newChecked.add(a.id));
+    } else {
+      const withValue = mainEntries.map(({ a, idx }) => ({ id: a.id, value: itemSubtotals[idx] || 0 }));
+      withValue.sort((x, y) => y.value - x.value);
+      withValue.slice(0, selectableCount).forEach((v) => newChecked.add(v.id));
     }
-    const withValue = addedItems.map((a, idx) => ({
-      id: a.id,
-      value: itemSubtotals[idx] || 0,
-    }));
-    withValue.sort((a, b) => b.value - a.value);
-    const topN = new Set(withValue.slice(0, selectableCount).map((v) => v.id));
-    setCheckedItemIds(topN);
+    setCheckedItemIds(newChecked);
   }, [addedItems, itemSubtotals, selectableCount]);
 
-  // 총 골드 계산 (체크된 아이템만)
+  // 총 골드 계산 (확정 구성품은 체크된 것만, 보너스 구성품은 3회 구매당 1회이므로 /3 반영)
   const totalGoldValue = useMemo(() => {
-    return addedItems.reduce((sum, added, idx) => {
+    const mainTotal = addedItems.reduce((sum, added, idx) => {
+      if (added.isBonus) return sum;
       if (selectableCount > 0 && !checkedItemIds.has(added.id)) return sum;
       return sum + (itemSubtotals[idx] || 0);
     }, 0);
-  }, [addedItems, itemSubtotals, selectableCount, checkedItemIds]);
+    if (packageType === '3+보너스') {
+      const bonusTotal = addedItems.reduce((sum, added, idx) => (
+        added.isBonus ? sum + (itemSubtotals[idx] || 0) : sum
+      ), 0);
+      return mainTotal + bonusTotal / 3;
+    }
+    return mainTotal;
+  }, [addedItems, itemSubtotals, selectableCount, checkedItemIds, packageType]);
+
+  const bonusGoldValue = useMemo(() => {
+    return addedItems.reduce((sum, added, idx) => (
+      added.isBonus ? sum + (itemSubtotals[idx] || 0) : sum
+    ), 0);
+  }, [addedItems, itemSubtotals]);
 
   const multiplier = packageType === '3+1' ? 4 / 3 : packageType === '2+1' ? 3 / 2 : 1;
   const adjustedValue = totalGoldValue * multiplier;
@@ -235,6 +339,218 @@ export default function PackageRegisterPage() {
     ? ((fullPackageGold - fullCashGold) / fullCashGold) * 100
     : 0;
 
+  // 구성품 한 줄 렌더링 (확정/보너스 구역 공용)
+  const renderAddedRow = (added: AddedItem) => {
+    // ── 커스텀 아이템 ──
+    if (added.isCustom) {
+      const cSubtotal = (added.customGoldPerUnit || 0) * added.quantity;
+      const isChecked = checkedItemIds.has(added.id);
+      return (
+        <div key={added.id} className={`${styles.packageBoxItem} ${!added.isBonus && selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
+          <div className={styles.customItemRow}>
+            <input type="text" className={styles.customNameInput}
+              value={added.customName || ''}
+              onChange={(e) => handleCustomNameChange(added.id, e.target.value)}
+              placeholder="아이템 이름" maxLength={30} />
+            <input type="number" className={styles.quantityInput}
+              value={added.customGoldPerUnit || ''}
+              onChange={(e) => handleCustomGoldChange(added.id, parseInt(e.target.value) || 0)}
+              placeholder="골드" style={{ width: '80px' }} min={0} />
+            <span className={styles.packageBoxItemX}>x</span>
+            <input type="number" className={styles.quantityInput}
+              value={added.quantity || ''}
+              onChange={(e) => handleQuantityChange(added.id, parseInt(e.target.value) || 0)}
+              min={0} />
+            <span className={styles.packageBoxItemSubtotal}>{formatNumber(cSubtotal)}G</span>
+            {packageType === '가챠' && (
+              <>
+                <input type="number" className={styles.gachaProbInput}
+                  value={gachaProbabilities[added.id] ?? ''}
+                  onChange={(e) => setGachaProbabilities((p) => ({ ...p, [added.id]: parseFloat(e.target.value) || 0 }))}
+                  placeholder="%" min={0} max={100} step={0.1} />
+                <span className={styles.gachaProbUnit}>%</span>
+              </>
+            )}
+            <button type="button" className={styles.removeItemBtn}
+              onClick={() => handleRemoveItem(added.id)} title="제거">&times;</button>
+          </div>
+        </div>
+      );
+    }
+    // ── 일반 아이템 ──
+    const template = TEMPLATES_MAP[added.templateId];
+    if (!template) return null;
+    const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0);
+    const qty = (template.type === 'gold' || template.type === 'choiceBox') ? 1 : added.quantity;
+    const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
+    const subtotal = unitPrice * qty * inner;
+    const isChecked = checkedItemIds.has(added.id);
+    return (
+      <div key={added.id} className={`${styles.packageBoxItem} ${!added.isBonus && selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
+        <div className={styles.packageBoxItemMain}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={template.icon} alt={template.name}
+            className={styles.packageBoxItemIcon}
+            style={{
+              ...(ICON_SIZE_BOX[template.id] ? { width: ICON_SIZE_BOX[template.id], height: ICON_SIZE_BOX[template.id] } : {}),
+              ...(ICON_POSITION[template.id] ? { objectFit: 'cover' as const, objectPosition: ICON_POSITION[template.id] } : {}),
+            }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <span className={styles.packageBoxItemName}>
+            {template.type === 'choiceBox' ? (added.choiceBoxName?.trim() || template.name) : template.name}
+          </span>
+          {template.type === 'gold' ? (
+            <input type="number" className={styles.quantityInput}
+              value={added.goldAmount || ''}
+              onChange={(e) => handleGoldChange(added.id, parseInt(e.target.value) || 0)}
+              placeholder="골드" style={{ width: '100px' }} />
+          ) : template.type === 'choiceBox' ? null : (
+            <>
+              <span className={styles.packageBoxItemX}>x</span>
+              <input type="number" className={styles.quantityInput}
+                value={added.quantity || ''}
+                onChange={(e) => handleQuantityChange(added.id, parseInt(e.target.value) || 0)}
+                min={0} />
+            </>
+          )}
+          <span className={styles.packageBoxItemSubtotal}>{formatNumber(subtotal)}G</span>
+          {packageType === '가챠' && (
+            <>
+              <input type="number" className={styles.gachaProbInput}
+                value={gachaProbabilities[added.id] ?? ''}
+                onChange={(e) => setGachaProbabilities((p) => ({ ...p, [added.id]: parseFloat(e.target.value) || 0 }))}
+                placeholder="%" min={0} max={100} step={0.1} />
+              <span className={styles.gachaProbUnit}>%</span>
+            </>
+          )}
+          <button type="button" className={styles.removeItemBtn}
+            onClick={() => handleRemoveItem(added.id)} title="제거">&times;</button>
+        </div>
+        {template.type === 'choice' && template.choices && template.choices.length <= 3 && (
+          <div className={styles.choiceBranch}>
+            {template.choices.map((choice) => {
+              const isSelected = added.selectedChoiceId === choice.itemId;
+              const choicePrice = getItemUnitPrice(choice.itemId, latestPrices);
+              return (
+                <button key={choice.itemId} type="button"
+                  className={`${styles.choiceOption} ${isSelected ? styles.choiceOptionSelected : ''}`}
+                  onClick={() => handleChoiceChange(added.id, choice.itemId)}>
+                  {choice.icon && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={choice.icon} alt={choice.name} className={styles.choiceOptionIcon}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  )}
+                  <span className={styles.choiceOptionName}>{choice.name}</span>
+                  <span className={styles.choiceOptionPrice}>
+                    {priceLoading ? '...' : `${formatNumber(choicePrice)}G`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {template.type === 'choice' && template.choices && template.choices.length > 3 && (
+          <div className={styles.choiceDropdown}>
+            <select className={styles.choiceSelect} value={added.selectedChoiceId || ''}
+              onChange={(e) => handleChoiceChange(added.id, e.target.value)}>
+              {template.choices.map((choice) => {
+                const choicePrice = getItemUnitPrice(choice.itemId, latestPrices);
+                return (
+                  <option key={choice.itemId} value={choice.itemId}>
+                    {choice.name} ({formatNumber(choicePrice)}G)
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        )}
+        {template.boxItem && (
+          <div className={styles.innerQuantityRow}>
+            <span className={styles.innerQuantityLabel}>상자당</span>
+            <input type="number" className={styles.quantityInput}
+              value={added.innerQuantity || ''}
+              onChange={(e) => handleInnerQuantityChange(added.id, parseInt(e.target.value) || 0)}
+              min={0} />
+            <span className={styles.innerQuantityLabel}>개</span>
+          </div>
+        )}
+        {template.type === 'bundle' && template.bundleContents && (
+          <div className={styles.bundleContentsRow}>
+            {template.bundleContents.map((bc) => (
+              <div key={bc.itemId} className={styles.innerQuantityRow}>
+                <img src={bc.icon} alt={bc.name} style={{ width: 20, height: 20 }} />
+                <span className={styles.innerQuantityLabel}>{bc.name}</span>
+                <input type="number" className={styles.quantityInput}
+                  value={added.bundleQuantities?.[bc.itemId] || ''}
+                  onChange={(e) => handleBundleQuantityChange(added.id, bc.itemId, parseInt(e.target.value) || 0)}
+                  min={0} />
+                <span className={styles.innerQuantityLabel}>개</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {template.type === 'choiceBox' && (
+          <div className={styles.bundleContentsRow}>
+            <div className={styles.innerQuantityRow}>
+              <span className={styles.innerQuantityLabel}>상자 이름</span>
+              <input type="text" className={styles.customNameInput}
+                value={added.choiceBoxName ?? ''}
+                onChange={(e) => handleChoiceBoxNameChange(added.id, e.target.value)}
+                placeholder={template.name} maxLength={30} />
+            </div>
+            <div className={styles.innerQuantityRow}>
+              <span className={styles.innerQuantityLabel}>선택 개수 (N)</span>
+              <input type="number" className={styles.quantityInput}
+                value={added.choiceBoxPickCount ?? 1}
+                onChange={(e) => handleChoiceBoxPickCountChange(added.id, Math.max(1, parseInt(e.target.value) || 1))}
+                min={1} />
+              <span className={styles.innerQuantityLabel}>개 (보는 사람이 직접 선택)</span>
+            </div>
+            {(added.choiceBoxCandidates || []).map((cand) => {
+              const isTopSelected = (added.choiceBoxSelectedIds || []).includes(cand.id);
+              const candPrice = cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0);
+              return (
+                <div key={cand.id} className={styles.innerQuantityRow}>
+                  {cand.icon && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={cand.icon} alt={cand.name} style={{ width: 20, height: 20 }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  )}
+                  <span className={styles.innerQuantityLabel} style={{ opacity: isTopSelected ? 1 : 0.55 }}>
+                    {cand.name}
+                  </span>
+                  <input type="number" className={styles.quantityInput}
+                    value={cand.quantity}
+                    onChange={(e) => handleChoiceBoxCandidateQuantityChange(added.id, cand.id, parseInt(e.target.value) || 1)}
+                    min={1} style={{ width: '60px' }} />
+                  <span className={styles.innerQuantityLabel}>{formatNumber(candPrice)}G</span>
+                  <button type="button" className={styles.removeItemBtn}
+                    onClick={() => handleChoiceBoxRemoveCandidate(added.id, cand.id)} title="후보 제거">&times;</button>
+                </div>
+              );
+            })}
+            <div className={styles.choiceDropdown}>
+              <select className={styles.choiceSelect} value=""
+                onChange={(e) => {
+                  if (e.target.value) handleChoiceBoxAddCandidate(added.id, e.target.value);
+                  e.target.value = '';
+                }}>
+                <option value="">+ 후보 아이템 추가</option>
+                {TEMPLATE_ITEMS.filter((t) => t.type === 'simple').map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+        {template.type === 'fixed' && (template.fixedGold ?? 0) > 0 &&
+          !DYNAMIC_TICKET_IDS.has(template.id) && (
+          <div className={styles.fixedPriceBadge}>{formatNumber(template.fixedGold || 0)}G</div>
+        )}
+      </div>
+    );
+  };
+
   // 등록
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,7 +558,7 @@ export default function PackageRegisterPage() {
 
     const errors: Record<string, string> = {};
     if (!title.trim()) errors.title = '제목을 입력해주세요.';
-    if (addedItems.length === 0) errors.items = '아이템을 1개 이상 추가해주세요.';
+    if (addedItems.filter((a) => !a.isBonus).length === 0) errors.items = '아이템을 1개 이상 추가해주세요.';
     if (priceCurrency === 'cash' && royalCrystalPrice <= 0) errors.price = '현금 가격을 입력해주세요.';
     if (priceCurrency === 'blueCrystal' && blueCrystalPrice <= 0) errors.price = '블루크리스탈 가격을 입력해주세요.';
     if (goldPerWon <= 0) errors.rate = '환율을 입력해주세요.';
@@ -261,7 +577,7 @@ export default function PackageRegisterPage() {
     setError('');
 
     try {
-      const items: PackageItem[] = addedItems
+      const buildItems = (list: AddedItem[]): PackageItem[] => list
         .map((added) => {
           if (added.isCustom) {
             return {
@@ -362,6 +678,16 @@ export default function PackageRegisterPage() {
                 bundleItems,
               };
             }
+            case 'choiceBox':
+              return {
+                itemId: `choicebox_${added.id}`,
+                name: added.choiceBoxName?.trim() || template.name,
+                quantity: 1,
+                icon: template.icon,
+                choiceBoxCandidates: added.choiceBoxCandidates || [],
+                choiceBoxPickCount: added.choiceBoxPickCount || 1,
+                choiceBoxSelectedIds: added.choiceBoxSelectedIds || [],
+              };
             default:
               return null;
           }
@@ -369,10 +695,15 @@ export default function PackageRegisterPage() {
         .flat()
         .filter(Boolean) as PackageItem[];
 
+      const mainAdded = addedItems.filter((a) => !a.isBonus);
+      const bonusAdded = addedItems.filter((a) => a.isBonus);
+      const items = buildItems(mainAdded);
+      const bonusItems = packageType === '3+보너스' ? buildItems(bonusAdded) : [];
+
       // 가챠: 아이템에 확률 주입
       if (packageType === '가챠') {
         let idx = 0;
-        for (const added of addedItems) {
+        for (const added of mainAdded) {
           if (idx < items.length) {
             items[idx].probability = gachaProbabilities[added.id] || 0;
           }
@@ -393,6 +724,7 @@ export default function PackageRegisterPage() {
         items,
         ...(goldPerWon > 0 ? { goldPerWon } : {}),
         ...(selectableCount > 0 ? { selectableCount } : {}),
+        ...(bonusItems.length > 0 ? { bonusItems } : {}),
       };
 
       const postId = await createPackagePost(postData);
@@ -448,166 +780,19 @@ export default function PackageRegisterPage() {
                   </div>
                 ) : (
                   <div className={styles.packageBoxList}>
-                    {addedItems.map((added) => {
-                      // ── 커스텀 아이템 ──
-                      if (added.isCustom) {
-                        const cSubtotal = (added.customGoldPerUnit || 0) * added.quantity;
-                        const isChecked = checkedItemIds.has(added.id);
-                        return (
-                          <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
-                            <div className={styles.customItemRow}>
-                              <input type="text" className={styles.customNameInput}
-                                value={added.customName || ''}
-                                onChange={(e) => handleCustomNameChange(added.id, e.target.value)}
-                                placeholder="아이템 이름" maxLength={30} />
-                              <input type="number" className={styles.quantityInput}
-                                value={added.customGoldPerUnit || ''}
-                                onChange={(e) => handleCustomGoldChange(added.id, parseInt(e.target.value) || 0)}
-                                placeholder="골드" style={{ width: '80px' }} min={0} />
-                              <span className={styles.packageBoxItemX}>x</span>
-                              <input type="number" className={styles.quantityInput}
-                                value={added.quantity || ''}
-                                onChange={(e) => handleQuantityChange(added.id, parseInt(e.target.value) || 0)}
-                                min={0} />
-                              <span className={styles.packageBoxItemSubtotal}>{formatNumber(cSubtotal)}G</span>
-                              {packageType === '가챠' && (
-                                <>
-                                  <input type="number" className={styles.gachaProbInput}
-                                    value={gachaProbabilities[added.id] ?? ''}
-                                    onChange={(e) => setGachaProbabilities((p) => ({ ...p, [added.id]: parseFloat(e.target.value) || 0 }))}
-                                    placeholder="%" min={0} max={100} step={0.1} />
-                                  <span className={styles.gachaProbUnit}>%</span>
-                                </>
-                              )}
-                              <button type="button" className={styles.removeItemBtn}
-                                onClick={() => handleRemoveItem(added.id)} title="제거">&times;</button>
-                            </div>
-                          </div>
-                        );
-                      }
-                      // ── 일반 아이템 ──
-                      const template = TEMPLATES_MAP[added.templateId];
-                      if (!template) return null;
-                      const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0);
-                      const qty = template.type === 'gold' ? 1 : added.quantity;
-                      const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
-                      const subtotal = unitPrice * qty * inner;
-                      const isChecked = checkedItemIds.has(added.id);
-                      return (
-                        <div key={added.id} className={`${styles.packageBoxItem} ${selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
-                          <div className={styles.packageBoxItemMain}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={template.icon} alt={template.name}
-                              className={styles.packageBoxItemIcon}
-                              style={{
-                                ...(ICON_SIZE_BOX[template.id] ? { width: ICON_SIZE_BOX[template.id], height: ICON_SIZE_BOX[template.id] } : {}),
-                                ...(ICON_POSITION[template.id] ? { objectFit: 'cover' as const, objectPosition: ICON_POSITION[template.id] } : {}),
-                              }}
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                            <span className={styles.packageBoxItemName}>{template.name}</span>
-                            {template.type === 'gold' ? (
-                              <input type="number" className={styles.quantityInput}
-                                value={added.goldAmount || ''}
-                                onChange={(e) => handleGoldChange(added.id, parseInt(e.target.value) || 0)}
-                                placeholder="골드" style={{ width: '100px' }} />
-                            ) : (
-                              <>
-                                <span className={styles.packageBoxItemX}>x</span>
-                                <input type="number" className={styles.quantityInput}
-                                  value={added.quantity || ''}
-                                  onChange={(e) => handleQuantityChange(added.id, parseInt(e.target.value) || 0)}
-                                  min={0} />
-                              </>
-                            )}
-                            <span className={styles.packageBoxItemSubtotal}>{formatNumber(subtotal)}G</span>
-                            {packageType === '가챠' && (
-                              <>
-                                <input type="number" className={styles.gachaProbInput}
-                                  value={gachaProbabilities[added.id] ?? ''}
-                                  onChange={(e) => setGachaProbabilities((p) => ({ ...p, [added.id]: parseFloat(e.target.value) || 0 }))}
-                                  placeholder="%" min={0} max={100} step={0.1} />
-                                <span className={styles.gachaProbUnit}>%</span>
-                              </>
-                            )}
-                            <button type="button" className={styles.removeItemBtn}
-                              onClick={() => handleRemoveItem(added.id)} title="제거">&times;</button>
-                          </div>
-                          {template.type === 'choice' && template.choices && template.choices.length <= 3 && (
-                            <div className={styles.choiceBranch}>
-                              {template.choices.map((choice) => {
-                                const isSelected = added.selectedChoiceId === choice.itemId;
-                                const choicePrice = getItemUnitPrice(choice.itemId, latestPrices);
-                                return (
-                                  <button key={choice.itemId} type="button"
-                                    className={`${styles.choiceOption} ${isSelected ? styles.choiceOptionSelected : ''}`}
-                                    onClick={() => handleChoiceChange(added.id, choice.itemId)}>
-                                    {choice.icon && (
-                                      /* eslint-disable-next-line @next/next/no-img-element */
-                                      <img src={choice.icon} alt={choice.name} className={styles.choiceOptionIcon}
-                                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                    )}
-                                    <span className={styles.choiceOptionName}>{choice.name}</span>
-                                    <span className={styles.choiceOptionPrice}>
-                                      {priceLoading ? '...' : `${formatNumber(choicePrice)}G`}
-                                    </span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )}
-                          {template.type === 'choice' && template.choices && template.choices.length > 3 && (
-                            <div className={styles.choiceDropdown}>
-                              <select className={styles.choiceSelect} value={added.selectedChoiceId || ''}
-                                onChange={(e) => handleChoiceChange(added.id, e.target.value)}>
-                                {template.choices.map((choice) => {
-                                  const choicePrice = getItemUnitPrice(choice.itemId, latestPrices);
-                                  return (
-                                    <option key={choice.itemId} value={choice.itemId}>
-                                      {choice.name} ({formatNumber(choicePrice)}G)
-                                    </option>
-                                  );
-                                })}
-                              </select>
-                            </div>
-                          )}
-                          {template.boxItem && (
-                            <div className={styles.innerQuantityRow}>
-                              <span className={styles.innerQuantityLabel}>상자당</span>
-                              <input type="number" className={styles.quantityInput}
-                                value={added.innerQuantity || ''}
-                                onChange={(e) => handleInnerQuantityChange(added.id, parseInt(e.target.value) || 0)}
-                                min={0} />
-                              <span className={styles.innerQuantityLabel}>개</span>
-                            </div>
-                          )}
-                          {template.type === 'bundle' && template.bundleContents && (
-                            <div className={styles.bundleContentsRow}>
-                              {template.bundleContents.map((bc) => (
-                                <div key={bc.itemId} className={styles.innerQuantityRow}>
-                                  <img src={bc.icon} alt={bc.name} style={{ width: 20, height: 20 }} />
-                                  <span className={styles.innerQuantityLabel}>{bc.name}</span>
-                                  <input type="number" className={styles.quantityInput}
-                                    value={added.bundleQuantities?.[bc.itemId] || ''}
-                                    onChange={(e) => handleBundleQuantityChange(added.id, bc.itemId, parseInt(e.target.value) || 0)}
-                                    min={0} />
-                                  <span className={styles.innerQuantityLabel}>개</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {template.type === 'fixed' && (template.fixedGold ?? 0) > 0 &&
-                            !DYNAMIC_TICKET_IDS.has(template.id) && (
-                            <div className={styles.fixedPriceBadge}>{formatNumber(template.fixedGold || 0)}G</div>
-                          )}
-                        </div>
-                      );
-                    })}
+                    {addedItems.filter((a) => !a.isBonus).map(renderAddedRow)}
+                    {packageType === '3+보너스' && addedItems.some((a) => a.isBonus) && (
+                      <div style={{ padding: '0.6rem 0.2rem 0.3rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', borderTop: '1px dashed var(--border-color)', marginTop: '0.3rem' }}>
+                        보너스 구성품 (3회 구매 시 1회 지급)
+                      </div>
+                    )}
+                    {packageType === '3+보너스' && addedItems.filter((a) => a.isBonus).map(renderAddedRow)}
                   </div>
                 )}
               </div>
               {addedItems.length > 0 && packageType !== '가챠' && (
                 <div className={styles.packageBoxTotal}>
-                  <span>총 골드 가치</span>
+                  <span>총 골드 가치{packageType === '3+보너스' && bonusGoldValue > 0 ? ' (보너스 ÷3 반영)' : ''}</span>
                   <span className={styles.packageBoxTotalValue}>{formatNumber(totalGoldValue)} G</span>
                 </div>
               )}
@@ -634,7 +819,7 @@ export default function PackageRegisterPage() {
                   {fieldErrors.title && <p className={styles.fieldErrorMsg}>{fieldErrors.title}</p>}
                 </div>
                 <div className={styles.typeButtonRow}>
-                  {(['일반', '2+1', '3+1', '가챠'] as PackageType[]).map((t) => (
+                  {(['일반', '2+1', '3+1', '3+보너스', '가챠'] as PackageType[]).map((t) => (
                     <button key={t} type="button"
                       className={`${styles.typeButton} ${packageType === t ? styles.typeButtonActive : ''}`}
                       onClick={() => setPackageType(t)}>{t}</button>
@@ -747,6 +932,16 @@ export default function PackageRegisterPage() {
           {/* 아이템 추가 그리드 */}
           <div className={styles.availableSection}>
             <h2 className={styles.sectionTitle}>아이템 추가</h2>
+            {packageType === '3+보너스' && (
+              <div className={styles.typeButtonRow} style={{ marginBottom: '0.6rem' }}>
+                <button type="button"
+                  className={`${styles.typeButton} ${addTarget === 'main' ? styles.typeButtonActive : ''}`}
+                  onClick={() => setAddTarget('main')}>확정 구성품에 추가</button>
+                <button type="button"
+                  className={`${styles.typeButton} ${addTarget === 'bonus' ? styles.typeButtonActive : ''}`}
+                  onClick={() => setAddTarget('bonus')}>보너스 구성품에 추가 (3회 구매 시 1회)</button>
+              </div>
+            )}
             <div className={styles.availableGrid}>
               {TEMPLATE_ITEMS.map((template) => {
                 const addedCount = addedItems.filter((a) => a.templateId === template.id).length;
@@ -851,7 +1046,16 @@ export default function PackageRegisterPage() {
                         {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
                       </span>
                     </div>
-                    {packageType !== '일반' && (
+                    {packageType === '3+보너스' && bonusGoldValue > 0 && (
+                      <>
+                        <hr className={styles.calcDivider} />
+                        <div className={styles.calcRow}>
+                          <span className={styles.calcLabel}>보너스 구성품 가치 (÷3 반영 전)</span>
+                          <span className={styles.calcValue}>{formatNumber(bonusGoldValue)}G</span>
+                        </div>
+                      </>
+                    )}
+                    {packageType !== '일반' && packageType !== '3+보너스' && (
                       <>
                         <hr className={styles.calcDivider} />
                         <div className={styles.calcRow}>

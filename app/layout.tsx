@@ -2,7 +2,6 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import PageInfoFooter from '@/components/PageInfoFooter';
 import ConsentModal from '@/components/auth/ConsentModal';
 import AdLayout from '@/components/ads/AdLayout';
 
@@ -137,7 +136,6 @@ export default function RootLayout({
             <AdLayout>
               {children}
             </AdLayout>
-            <PageInfoFooter />
             <Footer />
             <ConsentModal />
           </AuthProvider>

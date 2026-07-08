@@ -31,6 +31,13 @@
   padding: 0.15rem 0.65rem;
 }
 
+.intro {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 1.1rem;
+}
+
 /* ── 검색 ── */
 /* 검색창 + 안내문을 한 줄에 (좁으면 안내문이 아래로 줄바꿈) */
 .searchLine {

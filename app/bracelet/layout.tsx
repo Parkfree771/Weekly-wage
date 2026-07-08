@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-config'
+import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
   title: '팔찌 시뮬레이터',
@@ -48,6 +49,24 @@ export default function BraceletLayout({
               "재변환 비교 선택",
               "실제 확률 기반 시뮬레이션"
             ]
+          })
+        }}
+      />
+      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": faqData.map((item) => ({
+              "@type": "Question",
+              "name": item.q,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": item.a,
+              },
+            })),
           })
         }}
       />

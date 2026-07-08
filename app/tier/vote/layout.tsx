@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { faqData } from './faq-data';
 
 export const metadata: Metadata = {
   title: '직업 티어 투표',
@@ -25,5 +26,26 @@ export default function TierVoteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: faqData.map((item) => ({
+              '@type': 'Question',
+              name: item.q,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: item.a,
+              },
+            })),
+          }),
+        }}
+      />
+    </>
+  );
 }

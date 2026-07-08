@@ -9,7 +9,8 @@ export type TierClass = TierEntry;
 
 export const TIER_CLASSES: TierClass[] = TIER_ENTRIES;
 
-export const GROUP_ORDER = ['전사', '무도가', '헌터', '마법사', '암살자', '스페셜리스트', '기타'];
+// '기타'(신규 직업)는 맨 앞에 노출
+export const GROUP_ORDER = ['기타', '전사', '무도가', '헌터', '마법사', '암살자', '스페셜리스트'];
 
 // 그룹별 묶음 (미배치 풀·직업 선택용)
 export const TIER_GROUPS: { group: string; entries: TierEntry[] }[] = GROUP_ORDER

@@ -1,4 +1,6 @@
 import { Metadata } from 'next'
+import { SITE_URL } from '@/lib/site-config'
+import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
   title: '지평의 성당 보상',
@@ -25,5 +27,53 @@ export default function CathedralLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <>{children}</>
+  return (
+    <>
+      {children}
+      {/* SEO를 위한 JSON-LD 구조화된 데이터 - WebApplication */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "로아로골 - 지평의 성당 보상 계산기",
+            "url": `${SITE_URL}/cathedral`,
+            "description": "지평의 성당 1~3단계 클리어 보상과 더보기 손익, 은총의 파편 교환 상점 효율을 실시간 시세로 계산",
+            "applicationCategory": "GameApplication",
+            "operatingSystem": "Any",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "KRW"
+            },
+            "featureList": [
+              "지평의 성당 단계별 클리어 보상 정리",
+              "더보기 재료 가치와 손익 실시간 계산",
+              "은총의 파편 교환 상점 효율 분석",
+              "은총의 파편 주간 수급·교환 계획 달력"
+            ]
+          })
+        }}
+      />
+      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": faqData.map((item) => ({
+              "@type": "Question",
+              "name": item.q,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": item.a
+              }
+            }))
+          })
+        }}
+      />
+    </>
+  )
 }

@@ -15,12 +15,16 @@ export type PackageItem = {
   choiceOptions?: { itemId: string; name: string; icon?: string }[]; // 선택지 목록 (선택 아이템용)
   probability?: number; // 가챠 아이템 확률 (0~100, 예: 10.0 = 10%)
   bundleItems?: { itemId: string; name: string; icon: string; quantity: number }[]; // 묶음 주머니 내부 아이템들
+  // 선택 상자 (사용자가 직접 담은 아이템 중 N개를 택하는 상자)
+  choiceBoxCandidates?: { id: string; name: string; icon?: string; itemId?: string; goldPerUnit?: number; quantity: number }[]; // goldPerUnit: itemId 없는 커스텀 후보용
+  choiceBoxPickCount?: number; // 택N
+  choiceBoxSelectedIds?: string[]; // 실제 가치 계산에 포함되는 후보 id들 (길이 = pickCount)
 };
 
 // ─── 게시물 ───
 
 /** 패키지 타입 */
-export type PackageType = '3+1' | '2+1' | '일반' | '가챠';
+export type PackageType = '3+1' | '2+1' | '3+보너스' | '일반' | '가챠';
 
 /** 가격 통화 타입 */
 export type PriceCurrency = 'cash' | 'blueCrystal';
@@ -41,6 +45,7 @@ export type PackagePost = {
   blueCrystalPrice?: number; // 블루크리스탈 가격 (블크 결제 시)
   items: PackageItem[];
   selectableCount?: number; // 0 또는 미설정 = 전체, N = N개 선택
+  bonusItems?: PackageItem[]; // '3+보너스' 전용: 3개 구매 시 1회만 지급되는 특별 보상
 
   // 환율 (등록 시 입력값)
   goldPerWon?: number;

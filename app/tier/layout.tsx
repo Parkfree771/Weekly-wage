@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
+import { faqData } from './faq-data';
 
 export const metadata: Metadata = {
   title: '직업 티어표',
@@ -46,6 +47,23 @@ export default function TierLayout({
               price: '0',
               priceCurrency: 'KRW',
             },
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: faqData.map((item) => ({
+              '@type': 'Question',
+              name: item.q,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: item.a,
+              },
+            })),
           }),
         }}
       />

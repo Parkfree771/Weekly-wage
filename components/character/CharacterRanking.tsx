@@ -11,7 +11,8 @@ import FilterStats from './FilterStats';
 import ClassSpecCompare from './ClassSpecCompare';
 
 // 스펙 필터 옵션: 58개 매핑을 직업군(group)별로 묶음 (TIER_ENTRIES는 group→name 정렬됨)
-const SPEC_GROUP_ORDER = ['전사', '무도가', '헌터', '마법사', '암살자', '스페셜리스트', '기타'];
+// '기타'(신규 직업)는 맨 앞에 노출
+const SPEC_GROUP_ORDER = ['기타', '전사', '무도가', '헌터', '마법사', '암살자', '스페셜리스트'];
 const SPEC_GROUPS = SPEC_GROUP_ORDER
   .map(group => ({ group, entries: TIER_ENTRIES.filter(e => e.group === group) }))
   .filter(g => g.entries.length > 0);

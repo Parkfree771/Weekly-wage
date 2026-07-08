@@ -19,7 +19,7 @@ export type TemplateItem = {
   id: string;
   icon: string;
   name: string;
-  type: 'simple' | 'choice' | 'gold' | 'fixed' | 'crystal' | 'expected' | 'bundle';
+  type: 'simple' | 'choice' | 'gold' | 'fixed' | 'crystal' | 'expected' | 'bundle' | 'choiceBox';
   itemId?: string;
   choices?: ChoiceOption[];
   fixedGold?: number;
@@ -41,7 +41,53 @@ export type AddedItem = {
   customName?: string;
   customGoldPerUnit?: number;
   bundleQuantities?: Record<string, number>; // bundle 타입: 각 아이템별 수량
+  // 선택 상자 (사용자가 직접 담은 아이템 중 N개를 택하는 상자)
+  isChoiceBox?: boolean;
+  choiceBoxName?: string; // 등록자가 직접 정하는 상자 이름 (비우면 템플릿 기본 이름 사용)
+  choiceBoxCandidates?: ChoiceBoxCandidate[];
+  choiceBoxPickCount?: number;
+  choiceBoxSelectedIds?: string[];
+  // '3+보너스' 패키지 전용: 3개 구매 시 1회만 지급되는 보너스 구성품 여부
+  isBonus?: boolean;
 };
+
+export type ChoiceBoxCandidate = {
+  id: string; // 후보 인스턴스 고유 ID
+  name: string;
+  icon?: string;
+  itemId?: string; // 시세 추적 아이템인 경우 (TRACKED_ITEMS id)
+  goldPerUnit?: number; // 커스텀 아이템인 경우 개당 골드 (itemId 없을 때 사용)
+  quantity: number;
+};
+
+/** 선택 상자: 선택된 후보들의 가치 합산 (등록/수정 폼과 저장된 게시물 양쪽에서 재사용) */
+export function getChoiceBoxGold(
+  candidates: ChoiceBoxCandidate[] | undefined,
+  selectedIds: string[] | undefined,
+  prices: Record<string, number>,
+): number {
+  if (!candidates || !selectedIds || selectedIds.length === 0) return 0;
+  return candidates
+    .filter((c) => selectedIds.includes(c.id))
+    .reduce((sum, c) => {
+      const unit = c.itemId ? getItemUnitPrice(c.itemId, prices) : (c.goldPerUnit || 0);
+      return sum + unit * c.quantity;
+    }, 0);
+}
+
+/** 선택 상자: 후보들 중 가치(단가×수량)가 가장 높은 N개의 id를 반환 (등록 시 기본 선택값) */
+export function pickTopNCandidateIds(
+  candidates: ChoiceBoxCandidate[],
+  pickCount: number,
+  prices: Record<string, number>,
+): string[] {
+  const withValue = candidates.map((c) => ({
+    id: c.id,
+    value: (c.itemId ? getItemUnitPrice(c.itemId, prices) : (c.goldPerUnit || 0)) * c.quantity,
+  }));
+  withValue.sort((a, b) => b.value - a.value);
+  return withValue.slice(0, Math.max(0, pickCount)).map((v) => v.id);
+}
 
 // ─── 패키지에 넣을 수 있는 아이템 목록 ───
 export const TEMPLATE_ITEMS: TemplateItem[] = [
@@ -61,11 +107,13 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     itemId: '66102107',
   },
   {
+    // 파괴석 결정 OR 수호석 결정 중 하나만 선택하는 아이템.
+    // 예전엔 type: 'bundle'로 잘못 구현되어 있어 둘 다 합산되는 버그가 있었음 → 'choice'로 수정.
     id: 'crystal-choice',
     icon: '/vkrhltngh.webp',
     name: '파괴/수호 결정 선택',
-    type: 'bundle',
-    bundleContents: [
+    type: 'choice',
+    choices: [
       { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/top-destiny-destruction-stone5.webp' },
       { itemId: '66102107', name: '운명의 수호석 결정', icon: '/top-destiny-guardian-stone5.webp' },
     ],
@@ -79,6 +127,25 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
       { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/top-destiny-destruction-stone5.webp' },
       { itemId: '66102107', name: '운명의 수호석 결정', icon: '/top-destiny-guardian-stone5.webp' },
     ],
+  },
+  {
+    // 파괴석 OR 수호석 중 하나만 선택하는 주머니 (결정 아님, 일반 돌)
+    id: 'stone-choice-pouch',
+    icon: '/vkrhltjrtnghtjr.webp',
+    name: '파괴석/수호석 선택 주머니',
+    type: 'choice',
+    choices: [
+      { itemId: '66102006', name: '운명의 파괴석', icon: '/destiny-destruction-stone5.webp' },
+      { itemId: '66102106', name: '운명의 수호석', icon: '/destiny-guardian-stone5.webp' },
+    ],
+  },
+  // ── 선택 상자 (직접 구성) ──
+  {
+    // 등록자가 시세 아이템 후보를 직접 담고, 보는 사람이 그중 N개를 골라보는 범용 상자
+    id: 'custom-choice-box',
+    icon: '/magic-reagent-select.webp',
+    name: '선택 상자',
+    type: 'choiceBox',
   },
   // ── 돌파석 ──
   {
@@ -152,6 +219,34 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     itemId: '6861012',
   },
   // ── 장인의 야금술/재봉술 ──
+  {
+    id: 'metallurgy-karma-19-20',
+    icon: '/metallurgy-karma.webp',
+    name: '야금술 : 업화 [19-20]',
+    type: 'simple',
+    itemId: '66112553',
+  },
+  {
+    id: 'metallurgy-karma-19-20-enhanced',
+    icon: '/metallurgy-karma.webp',
+    name: '강화 야금술 : 업화 [19-20]',
+    type: 'simple',
+    itemId: '66112555',
+  },
+  {
+    id: 'tailoring-karma-19-20',
+    icon: '/tailoring-karma.webp',
+    name: '재봉술 : 업화 [19-20]',
+    type: 'simple',
+    itemId: '66112554',
+  },
+  {
+    id: 'tailoring-karma-19-20-enhanced',
+    icon: '/tailoring-karma.webp',
+    name: '강화 재봉술 : 업화 [19-20]',
+    type: 'simple',
+    itemId: '66112556',
+  },
   {
     id: 'master-metallurgy-3',
     icon: '/master-metallurgy-3.webp',
@@ -500,12 +595,14 @@ export const ICON_SIZE_CATALOG: Record<string, number> = {
   'shilling': 65, 'blue-crystal-input': 65,
   'master-tailoring-3': 65, 'master-tailoring-4': 65,
   'master-metallurgy-3': 65, 'master-metallurgy-4': 65,
+  'metallurgy-karma-19-20': 65, 'metallurgy-karma-19-20-enhanced': 65,
+  'tailoring-karma-19-20': 65, 'tailoring-karma-19-20-enhanced': 65,
   'bracelet-reconversion': 65,
   'relic-core': 65,
   'cardpack-legendary': 65, 'cardpack-rare': 65, 'cardpack-all': 65,
   'ninav-blessing': 65, 'engraving-choice': 65,
   'destruction-stone': 65, 'guardian-stone': 65,
-  'destruction-crystal': 65, 'guardian-crystal': 65, 'crystal-choice': 65, 'crystal-bundle': 65,
+  'destruction-crystal': 65, 'guardian-crystal': 65, 'crystal-choice': 65, 'crystal-bundle': 65, 'stone-choice-pouch': 65,
   'great-breakthrough': 65, 'breakthrough-stone': 65,
   'lava-breath': 65, 'glacier-breath': 65, 'breath-choice': 65,
   'superior-abidos': 65, 'abidos-fusion': 65,
@@ -622,6 +719,8 @@ export function getUnitPrice(
         const qty = added.bundleQuantities?.[bc.itemId] || 0;
         return sum + getItemUnitPrice(bc.itemId, prices) * qty;
       }, 0);
+    case 'choiceBox':
+      return getChoiceBoxGold(added.choiceBoxCandidates, added.choiceBoxSelectedIds, prices);
     default:
       return 0;
   }
@@ -727,7 +826,10 @@ export function calculatePostEfficiency(
     return fallback;
   };
 
-  const itemValues = post.items.map((item) => {
+  const itemValue = (item: import('@/types/package').PackageItem): number => {
+    if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
+      return getChoiceBoxGold(item.choiceBoxCandidates, item.choiceBoxSelectedIds, latestPrices) * item.quantity;
+    }
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
       return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
     }
@@ -741,7 +843,9 @@ export function calculatePostEfficiency(
     const raw = latestPrices[item.itemId] || 0;
     const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
     return (raw / bundle) * item.quantity;
-  });
+  };
+
+  const itemValues = post.items.map(itemValue);
 
   let totalGold: number;
   if (post.selectableCount && post.selectableCount > 0) {
@@ -749,6 +853,13 @@ export function calculatePostEfficiency(
     totalGold = sorted.slice(0, post.selectableCount).reduce((s, v) => s + v, 0);
   } else {
     totalGold = itemValues.reduce((s, v) => s + v, 0);
+  }
+
+  // '3+보너스': 3개 구매 시 1회만 지급되는 고정 보상. 3개 단위로 균등 배분해 개당 효율에 반영.
+  if (post.packageType === '3+보너스') {
+    const bonusGold = (post.bonusItems || []).reduce((s, item) => s + itemValue(item), 0);
+    const adjustedTotalGold = totalGold + bonusGold / 3;
+    return post.royalCrystalPrice > 0 ? adjustedTotalGold / post.royalCrystalPrice : 0;
   }
 
   const multiplier = post.packageType === '3+1' ? 4 / 3 : post.packageType === '2+1' ? 3 / 2 : 1;

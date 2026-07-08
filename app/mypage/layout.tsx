@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
+import { faqData } from './faq-data';
 
 // 매 요청마다 동적 SSR. 시간 의존 렌더(getCurrentGameDayIdx 등) 의 하이드레이션 미스매치 방지.
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,19 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/mypage',
   },
+};
+
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqData.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.a,
+    },
+  })),
 };
 
 export default function MypageLayout({
@@ -49,6 +63,10 @@ export default function MypageLayout({
             },
           }),
         }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
     </>
   );

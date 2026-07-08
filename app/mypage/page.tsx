@@ -22,6 +22,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { registerCharacter, saveWeeklyChecklist, refreshCharacter, updateCharacterImages } from '@/lib/user-service';
 import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service';
 import NicknameModal from '@/components/auth/NicknameModal';
+import GuideFaq from '@/components/common/GuideFaq';
+import { faqData } from './faq-data';
 import { raids, upcomingRaids } from '@/data/raids';
 import { raidClearRewards } from '@/data/raidClearRewards';
 import { DEMO_CHARACTERS, DEMO_WEEKLY_CHECKLIST, DEMO_GOLD_HISTORY, DEMO_COMMON_CONTENT, DEMO_MAIN_CHARACTER } from '@/data/demoMypage';
@@ -1500,6 +1502,9 @@ export default function MyPage() {
             <div className={styles.demoCtaInner}>
               <h3 className={styles.demoCtaTitle}>일간 / 주간 숙제 체크리스트</h3>
               <p className={styles.demoCtaDesc}>아래는 예시 화면입니다.</p>
+              <p className={styles.demoCtaDesc}>
+                로그인하면 실제 보유 캐릭터를 원정대별로 등록해 레이드 관문 체크, 일일 숙제 체크, 골드 히스토리가 Google 계정에 연결된 나의 데이터로 안전하게 저장됩니다. 매주 반복되는 숙제를 빠짐없이 챙기고 체크한 만큼 자동 합산되는 골드로 이번 주 수급량을 바로 파악할 수 있어, 매주 손으로 다시 계산할 필요가 없습니다. 체크 현황은 로스트아크 서버 초기화 시각과 같은 매주 수요일 오전 6시에 새 주차 기준으로 자동 초기화되며, 초기화 직전 골드는 캐릭터별 골드 히스토리에 남아 지난 주 수급량도 나중에 다시 확인할 수 있습니다.
+              </p>
               <button onClick={signInWithGoogle} className={styles.demoCtaBtn}>
                 <svg width="18" height="18" viewBox="0 0 48 48">
                   <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -2612,6 +2617,44 @@ export default function MyPage() {
 
         {/* 닉네임 미설정 시 모달 */}
         {!isDemo && userProfile && !userProfile.nickname && <NicknameModal />}
+
+        {/* ═══════════════════════════════════════════
+            섹션: 이용 가이드 + FAQ
+            ═══════════════════════════════════════════ */}
+        <GuideFaq
+          guideTitle="마이페이지 이용 가이드"
+          intro={[
+            '마이페이지는 원정대의 캐릭터를 등록해 이번 주 레이드 진행 상황과 매일 챙겨야 하는 일일 숙제, 그리고 그 결과로 쌓이는 골드 수급량을 한 화면에서 관리하는 개인 대시보드입니다. 원정대는 최대 3개까지, 원정대 하나에는 캐릭터를 최대 6개까지 등록할 수 있고, 캐릭터별로 이번 주에 클리어한 레이드 관문, 카오스던전(균열/전선)·가디언 토벌(가토)의 요일별 체크(일반/휴게/PC방/PC방+휴게), 카오스 게이트·필드보스·낙원(또는 할의 모래시계) 같은 원정대 공통 컨텐츠 체크를 각각 기록합니다. 체크한 내역은 곧바로 예상 골드로 환산되어 캐릭터별·원정대 전체 주간 총 골드로 표시되고, 지난 주차별 골드 추이는 화면 하단 그래프로도 확인할 수 있습니다. 실제 데이터 저장은 Google 계정으로 로그인한 뒤부터 가능하며, 로그인 전인 지금은 실제 화면 구성을 미리 보여드리기 위한 예시 데이터가 채워져 있습니다.',
+          ]}
+          sections={[
+            {
+              heading: '원정대와 캐릭터 등록',
+              paragraphs: [
+                '원정대 탭의 \'+\' 버튼을 누르면 로스트아크 API로 조회한 형제 캐릭터 목록 중 아이템 레벨 1640 이상인 캐릭터를 골라 원정대를 구성할 수 있습니다. 원정대는 최대 3개까지 만들 수 있고, 원정대 하나에는 캐릭터를 최대 6개까지 담을 수 있어 본캐와 부캐를 나눠 관리하기 좋습니다.',
+                '캐릭터 카드 우측 상단의 갱신 버튼을 누르면 로스트아크 API에서 최신 아이템 레벨과 장착 아바타 정보를 다시 불러옵니다. 서버 부하를 줄이기 위해 캐릭터별로 일정 시간 동안은 다시 갱신할 수 없으며, 남은 대기 시간은 버튼 위에 안내됩니다.',
+              ],
+            },
+            {
+              heading: '레이드·일일 숙제 체크와 골드 계산',
+              paragraphs: [
+                '캐릭터 카드에서는 이번 주에 클리어 가능한 레이드 관문과 카오스던전(균열/전선), 가디언 토벌(가토)을 체크할 수 있습니다. 카오스던전과 가디언 토벌은 요일마다 일반·휴게·PC방·PC방+휴게 네 단계 중 하나로 체크해, 그 주에 며칠을 어떤 조건으로 처치했는지까지 기록됩니다.',
+                '캐릭터 레벨에 따라 카오스 게이트·필드보스·낙원(또는 할의 모래시계) 같은 원정대 공통 컨텐츠도 함께 표시되며, 체크한 항목은 곧바로 예상 획득 골드로 환산되어 캐릭터별·원정대 전체 주간 총 골드에 실시간으로 더해집니다.',
+              ],
+              bullets: [
+                '레이드·숙제를 체크한 뒤에는 반드시 상단의 \'저장하기\' 버튼을 눌러야 변경 사항이 저장됩니다.',
+                '카오스 게이트·필드보스·복주머니 등은 재료 가치를 제외한 골드만 합산 대상으로 계산됩니다.',
+              ],
+            },
+            {
+              heading: '초기화 주기와 골드 히스토리',
+              paragraphs: [
+                '체크 상태는 로스트아크 서버 초기화 시각과 동일한 매주 수요일 오전 6시(KST) 기준으로 새 주차로 넘어가며, 초기화 시점 이후 첫 접속 시 지난주까지 쌓인 골드가 캐릭터별 골드 히스토리에 자동으로 저장됩니다.',
+                '화면 하단 그래프에서는 이렇게 저장된 주차별 골드 추이를 확인할 수 있어, 이번 주뿐 아니라 지난 몇 주 동안 원정대가 벌어들인 골드 변화도 함께 살펴볼 수 있습니다.',
+              ],
+            },
+          ]}
+          faqs={faqData}
+        />
 
       </Container>
     </div>

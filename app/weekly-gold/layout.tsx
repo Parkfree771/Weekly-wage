@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-config'
+import { faqData } from './faq-data'
 
 // layout.tsx
 
@@ -66,56 +67,14 @@ export default function WeeklyGoldLayout({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "FAQPage",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "신규 레이드 밸가르딘 골드도 계산되나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "네, 신규 레이드 밸가르딘의 클리어 골드와 더보기 보상 손익을 실시간 거래소 시세로 자동 계산합니다. 캐릭터별 밸가르딘 주급을 한눈에 확인하세요."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "로아 주간 골드는 어떻게 계산하나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 주간 골드는 캐릭터별 클리어 레이드를 선택하면 자동으로 계산됩니다. 로아 더보기 보상의 손익을 로아 거래소 실시간 시세로 분석해드립니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "로아 더보기는 언제 선택하는 게 이득인가요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 더보기 효율은 로아 거래소 시세에 따라 달라집니다. 초록색이면 로아 더보기가 이득, 빨간색이면 기본 골드가 유리합니다. 로아로골에서 실시간으로 확인하세요."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "로아 지평의 성당 더보기 효율은 어떻게 확인하나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 지평의 성당 더보기 효율은 로아로골에서 실시간 거래소 가격으로 자동 계산됩니다. 로아 지평의 성당 보상과 더보기 손익을 한눈에 확인할 수 있습니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "로아 주급은 최대 얼마까지 벌 수 있나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 주급은 캐릭터 수와 레이드 난이도에 따라 다릅니다. 6캐릭터로 로아 지평의 성당, 로아 세르카, 로아 카제로스 레이드를 클리어하면 수십만 골드까지 가능합니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "로아 지평의 성당, 로아 세르카 레이드를 지원하나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "네, 로아 지평의 성당(3단계, 2단계, 1단계), 로아 세르카, 로아 카제로스(종막, 4막, 3막, 2막, 1막) 레이드를 모두 지원합니다. 각 로아 레이드의 골드 수익과 더보기 손익을 계산할 수 있습니다."
-                }
+            "mainEntity": faqData.map((item) => ({
+              "@type": "Question",
+              "name": item.q,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": item.a
               }
-            ]
+            }))
           })
         }}
       />

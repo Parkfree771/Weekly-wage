@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
+import { faqData } from './faq-data';
 
 export const metadata: Metadata = {
   title: '패키지 효율 계산기',
@@ -44,6 +45,24 @@ export default function PackageLayout({
               name: '로아로골',
               url: SITE_URL,
             },
+          }),
+        }}
+      />
+      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: faqData.map((item) => ({
+              '@type': 'Question',
+              name: item.q,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: item.a,
+              },
+            })),
           }),
         }}
       />

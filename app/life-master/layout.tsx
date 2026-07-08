@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
+import { faqData } from './faq-data';
 
 export const metadata: Metadata = {
   title: '벌목 계산기',
@@ -73,40 +74,14 @@ export default function LifeMasterLayout({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "FAQPage",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "로아 벌목 효율은 어떻게 계산하나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 벌목 효율은 로아 목재 시세와 로아 융화재료 시세를 기준으로 계산됩니다. 로아로골에서 로아 벌목 손익을 실시간으로 확인하세요."
-                }
+            "mainEntity": faqData.map((item) => ({
+              "@type": "Question",
+              "name": item.q,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": item.a,
               },
-              {
-                "@type": "Question",
-                "name": "로아 융화재료 제작이 이득인가요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 융화재료 제작은 로아 생활 재료 시세에 따라 달라집니다. 로아 벌목 계산기에서 실시간 손익을 확인하고 효율적으로 제작하세요."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "로아 생활의 가루는 어디에 사용하나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 생활의 가루는 로아 융화재료 제작에 필요합니다. 로아 생활 콘텐츠에서 획득하거나 로아 거래소에서 구매할 수 있습니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "로아 생활 중 어떤 콘텐츠가 가장 효율적인가요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 생활 효율은 시세에 따라 달라집니다. 로아 벌목, 로아 채광, 로아 고고학 등 각 콘텐츠별 효율을 로아로골에서 비교해보세요."
-                }
-              }
-            ]
+            })),
           })
         }}
       />

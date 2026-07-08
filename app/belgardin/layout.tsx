@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-config'
+import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
   title: '벨가르딘 보상',
@@ -55,47 +56,21 @@ export default function BelgardinLayout({
           })
         }}
       />
-      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage */}
+      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage (화면에 렌더링되는 faq-data.ts와 동일한 소스 사용) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "FAQPage",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "로아 벨가르딘은 어떤 레이드인가요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 벨가르딘은 그림자 레이드로, 노말(1750)/하드(1770)/나메(1780) 난이도로 나뉩니다. 난이도가 올라갈수록 클리어 골드와 코어 등 보상이 많아집니다. 로아로골에서 난이도별 관문 클리어 골드와 코어 보상을 정리해드립니다."
-                }
+            "mainEntity": faqData.map((item) => ({
+              "@type": "Question",
+              "name": item.q,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": item.a,
               },
-              {
-                "@type": "Question",
-                "name": "로아 벨가르딘 정복전 무공/유물 칭호는 무엇인가요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 벨가르딘은 정복전 콘텐츠로 진행 정도와 난이도에 따라 무공 칭호, 유물 칭호 등을 획득할 수 있습니다. 로아로골에서 벨가르딘 칭호 관련 정보를 함께 확인할 수 있습니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "로아 벨가르딘 난이도별 클리어 골드는 얼마인가요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 벨가르딘은 노말/하드/나메 각 관문별로 클리어 골드가 다르게 지급됩니다. 로아로골에서 난이도별 관문 클리어 골드와 더보기 비용을 정리해 확인할 수 있습니다."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "로아 벨가르딘에서 코어는 얼마나 얻나요?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "로아 벨가르딘은 코어를 획득할 수 있는 그림자 레이드로, 난이도와 관문에 따라 코어 획득량이 달라집니다. 로아로골에서 벨가르딘 관문별 코어 획득량을 확인할 수 있습니다."
-                }
-              }
-            ]
+            })),
           })
         }}
       />

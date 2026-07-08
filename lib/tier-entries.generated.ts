@@ -352,13 +352,13 @@ export const TIER_ENTRIES: TierEntry[] = [
   },
   {
     "id": "차원 공간검사",
-    "name": "차원 공간검사",
+    "name": "차원 공간",
     "group": "기타",
     "icon": "/class-icons/%EC%B0%A8%EC%9B%90%20%EA%B3%B5%EA%B0%84%EA%B2%80%EC%82%AC.webp"
   },
   {
     "id": "차원 시간관리자",
-    "name": "차원 시간관리자",
+    "name": "차원 시간",
     "group": "기타",
     "icon": "/class-icons/%EC%B0%A8%EC%9B%90%20%EC%8B%9C%EA%B0%84%EA%B4%80%EB%A6%AC%EC%9E%90.webp"
   }

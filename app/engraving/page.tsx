@@ -8,6 +8,8 @@ import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import ClassIcon from '@/components/tier/ClassIcon';
 import { useNewbieRec } from '@/components/newbie/useNewbieRec';
 import NewbieRecSidebar from '@/components/newbie/NewbieRecSidebar';
+import GuideFaq from '@/components/common/GuideFaq';
+import { faqData } from './faq-data';
 import styles from './page.module.css';
 
 // 표본 부족 등으로 페이지에서 숨길 스펙 (현재 없음 — 보정 빌드로 노출)
@@ -24,11 +26,16 @@ const genderOf = (id: string): 'female' | 'male' =>
 // 유저 표본 없이 보정 빌드(ENGRAVING_OVERRIDES)만으로 잠정 노출 중인 신규 직업 스펙
 const PROVISIONAL_SPEC_IDS = new Set(['차원 공간검사', '차원 시간관리자']);
 
-// 표시 대상 스펙 (제외 + 빌드 없는 스펙 빼고) — 이름 가나다순 평면 정렬이 기본
+// 표시 대상 스펙 (제외 + 빌드 없는 스펙 빼고) — 신규 직업(PROVISIONAL_SPEC_IDS) 우선, 나머지는 이름 가나다순
 // 잠정 스펙은 ENGRAVING_BUILDS 집계가 없어도 ENGRAVING_OVERRIDES만으로 노출
 const SPECS = TIER_CLASSES.filter(
   (c) => !EXCLUDED_SPEC_IDS.has(c.id) && (ENGRAVING_BUILDS[c.id] || ENGRAVING_OVERRIDES[c.id]?.slots)
-).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+).sort((a, b) => {
+  const aNew = PROVISIONAL_SPEC_IDS.has(a.id);
+  const bNew = PROVISIONAL_SPEC_IDS.has(b.id);
+  if (aNew !== bNew) return aNew ? -1 : 1;
+  return a.name.localeCompare(b.name, 'ko');
+});
 
 // 슬롯 정규화: string[](고정/택1) 와 {pick,pool}(택N)을 한 번에 다룬다.
 const poolOf = (s: EngSlot): string[] => (Array.isArray(s) ? s : s.pool);
@@ -575,6 +582,48 @@ export default function EngravingPage() {
         </div>
       )}
       </div>
+
+      <GuideFaq
+        intro={[
+          '실제 유저 캐릭터가 장착한 각인을 집계해 직업·세팅별 대표 각인 5종과 조건부 서브 각인을 정리했습니다. 직업 검색, 역할·성별·플레이 스타일 필터, 각인 포함/제외 필터를 조합해 원하는 조건의 직업만 빠르게 추려볼 수 있습니다.',
+        ]}
+        sections={[
+          {
+            heading: '각인 데이터는 어떻게 만들어지나요',
+            paragraphs: [
+              '카드에 표시되는 각인 5칸은 개발자가 임의로 고른 것이 아니라, 실제 유저 캐릭터가 장착 중인 각인을 세팅(스펙)별로 집계한 빈도 데이터를 기반으로 자동 생성됩니다. 표본 수가 적어 자동 집계가 실제 메타와 어긋나는 일부 세팅만 예외적으로 수동 보정을 거칩니다.',
+              '실선 배지로 표시된 각인은 대부분의 유저가 고정으로 채용하는 각인이고, 점선 배지에 "or"로 묶인 각인은 유저마다 취향이나 아이템 상황에 따라 갈리는 슬롯입니다. 후자 중 "택N" 표시가 붙은 경우 여러 후보 중 N개를 골라 쓴다는 뜻입니다.',
+            ],
+            bullets: [
+              '실선 배지 = 사실상 고정으로 쓰는 각인',
+              '점선 배지 + or = 유저마다 갈리는 선택 슬롯',
+              '택N 표기 = 후보 중 N개를 함께 채용',
+            ],
+          },
+          {
+            heading: '검색과 필터를 함께 쓰는 법',
+            paragraphs: [
+              '검색창에는 축약된 직업명이나 세팅명을 입력해도 되고, "브레이커"·"핸드거너"처럼 정식 명칭으로 입력해도 관련된 축약 세팅이 함께 검색됩니다. 쉼표(,)로 여러 검색어를 구분하면 여러 직업의 각인 구성을 한 화면에 동시에 띄워 비교할 수 있습니다.',
+              '역할(딜러/서포터), 성별, 플레이 스타일, 직업군 필터는 서로 겹쳐서 적용되므로 "여캐 딜러 중 백사멸 세팅"처럼 조건을 좁혀 나갈 수 있습니다. 여기에 각인 칩을 클릭해 포함·제외 조건을 추가하면, 보유한 각인서 조합에 맞춰 어떤 직업이 그 조합을 쓰는지까지 찾아낼 수 있습니다.',
+            ],
+          },
+          {
+            heading: '백사멸·헤드사멸·타대는 어떤 기준으로 나뉘나요',
+            paragraphs: [
+              '플레이 스타일 배지는 세팅이 채용하는 각인으로 자동 분류됩니다. "기습의 대가"를 쓰는 세팅은 백사멸(등 뒤 공격 특화), "결투의 대가"를 쓰는 세팅은 헤드사멸(정면 얼굴 공격 특화)로 분류되고, 둘 다 쓰지 않으면 타대(정면 위주)로 분류됩니다.',
+              '서포터는 포지셔닝 개념이 딜러와 달라 이 분류 대상에서 제외됩니다. 또한 택1 각인 후보에 기습·결투가 포함되어 있어도 실제 플레이 방식이 다른 일부 세팅(예: 버서커 광기는 기습이 후보에 있어도 실제로는 타대)은 개별적으로 분류를 바로잡아 두었습니다.',
+            ],
+          },
+          {
+            heading: '유각 겹침 순위와 뉴비 추천 사이드바',
+            paragraphs: [
+              '왼쪽 사이드바의 "유각 겹침 순위"는 현재 필터로 걸러진 직업들만 놓고, 그 직업들이 가장 많이 공유하는 각인을 상위 10개까지 보여줍니다. 항목을 클릭하면 그 각인을 쓰는 카드 칸에 테두리가 표시되어, 어떤 직업들이 같은 각인서를 공유하는지 한눈에 파악할 수 있습니다.',
+              '뉴비 추천 직업 사이드바는 구글 로그인 후 참여하는 실시간 투표 결과로, 신규·복귀 유저에게 추천하고 싶은 직업을 유저들이 직접 고른 순위입니다. 이미 참여한 뒤에도 선택을 바꿔 다시 제출할 수 있고, 각인 정보가 실제와 다르다고 느껴지면 익명 정정 요청 기능으로 의견을 남길 수 있습니다.',
+            ],
+          },
+        ]}
+        faqs={faqData}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-config'
+import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
   // 루트 layout의 title.template('로아로골 | %s')이 자동으로 접두어를 붙이므로
@@ -56,6 +57,24 @@ export default function CharacterLayout({
               '칭호(혹한의 군주·홍염의 군주·심연의 군주) 및 카드 조회',
               '전투력·아이템레벨 기준 캐릭터 랭킹·랭커 비교',
             ],
+          }),
+        }}
+      />
+      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: faqData.map((item) => ({
+              '@type': 'Question',
+              name: item.q,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: item.a,
+              },
+            })),
           }),
         }}
       />

@@ -8,6 +8,7 @@ import {
   PRICE_BUNDLE_SIZE,
   CRYSTAL_PER_UNIT_FALLBACK,
   calculateGachaItemGold,
+  getChoiceBoxGold,
 } from '@/lib/package-shared';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import styles from './PackageGalleryCard.module.css';
@@ -20,6 +21,7 @@ type Props = {
 function getBadgeClass(type: PackageType): string {
   if (type === '3+1') return styles.badge31;
   if (type === '2+1') return styles.badge21;
+  if (type === '3+보너스') return styles.badge31;
   if (type === '가챠') return styles.badgeGacha;
   return styles.badgeNormal;
 }
@@ -71,7 +73,9 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
     if (post.selectableCount && post.selectableCount > 0) {
       // 가장 비싼 N개만 체크
       const withValue = post.items.map((item, idx) => {
-        const value = item.goldOverride != null
+        const value = item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0
+          ? getChoiceBoxGold(item.choiceBoxCandidates, item.choiceBoxSelectedIds, latestPrices) * item.quantity
+          : item.goldOverride != null
           ? item.goldOverride * item.quantity
           : (() => {
               const raw = latestPrices[item.itemId] || 0;
@@ -112,6 +116,9 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
   // 아이템별 소계 (N선택 토글 로직용)
   const itemSubtotals = useMemo(() => {
     return post.items.map((item) => {
+      if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
+        return getChoiceBoxGold(item.choiceBoxCandidates, item.choiceBoxSelectedIds, latestPrices) * item.quantity;
+      }
       if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
         return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
       }
@@ -158,6 +165,9 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
   const totalGold = useMemo(() => {
     return post.items.reduce((sum, item, idx) => {
       if (checkedItems[idx] === false) return sum;
+      if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
+        return sum + getChoiceBoxGold(item.choiceBoxCandidates, item.choiceBoxSelectedIds, latestPrices) * item.quantity;
+      }
       if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
         return sum + item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
       }
@@ -351,10 +361,34 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
     setMultiHighlights([]);
   };
 
+  // '3+보너스' 전용: 3회 구매 시 1회 지급되는 보너스 구성품 가치 (3으로 나눠 1회 구매당 가치로 환산)
+  const bonusTotalGold = useMemo(() => {
+    if (post.packageType !== '3+보너스' || !post.bonusItems || post.bonusItems.length === 0) return 0;
+    return post.bonusItems.reduce((sum, item) => {
+      if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
+        return sum + getChoiceBoxGold(item.choiceBoxCandidates, item.choiceBoxSelectedIds, latestPrices) * item.quantity;
+      }
+      if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
+        return sum + item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
+      }
+      if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
+        const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
+        if (fallback) return sum + fallback * goldPerWon * 27.5 * item.quantity;
+      }
+      if (item.goldOverride != null) {
+        const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
+        return sum + dynamicUnit * item.quantity;
+      }
+      const raw = latestPrices[item.itemId] || 0;
+      const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
+      return sum + (raw / bundle) * item.quantity;
+    }, 0);
+  }, [post.packageType, post.bonusItems, latestPrices, goldPerWon]);
+
   const cashGold = post.royalCrystalPrice * goldPerWon;
   const isBundle = post.packageType === '3+1' || post.packageType === '2+1';
 
-  const effectiveGold = isGacha ? gachaExpectedGold : totalGold;
+  const effectiveGold = isGacha ? gachaExpectedGold : totalGold + bonusTotalGold / 3;
   const singleBenefit = cashGold > 0 ? ((effectiveGold - cashGold) / cashGold) * 100 : 0;
 
   const buyCount = post.packageType === '3+1' ? 3 : post.packageType === '2+1' ? 2 : 1;
@@ -484,6 +518,13 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
               {formatNumber(isGacha ? gachaExpectedGold : totalGold)} G
             </span>
           </div>
+
+          {post.packageType === '3+보너스' && bonusTotalGold > 0 && (
+            <div className={styles.resultRow}>
+              <span className={styles.resultLabel}>보너스 반영 (3회당 1회 ÷3)</span>
+              <span className={styles.resultValueGold}>{formatNumber(effectiveGold)} G</span>
+            </div>
+          )}
 
           {isBundle && !isGacha && (
             <div className={styles.resultRow}>
