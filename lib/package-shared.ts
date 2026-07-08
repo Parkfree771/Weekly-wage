@@ -41,6 +41,7 @@ export type AddedItem = {
   customName?: string;
   customGoldPerUnit?: number;
   bundleQuantities?: Record<string, number>; // bundle 타입: 각 아이템별 수량
+  choiceQuantities?: Record<string, number>; // choice 타입: 선택지별 개수 (예: 파괴석 1000 / 수호석 5000처럼 선택지마다 다를 때). 미설정 시 quantity 사용
   // 선택 상자 (사용자가 직접 담은 아이템 중 N개를 택하는 상자)
   isChoiceBox?: boolean;
   choiceBoxName?: string; // 등록자가 직접 정하는 상자 이름 (비우면 템플릿 기본 이름 사용)

@@ -106,9 +106,18 @@ function getPackageItemGold(
   if (item.goldOverride != null) return item.goldOverride * item.quantity;
   if (item.choiceOptions && item.choiceOptions.length > 0) {
     // 선택된 선택지가 없으면 등록 시 저장된 기본(최고가) 선택지 사용
-    return getItemUnitPrice(selectedChoiceItemId || item.itemId, prices) * item.quantity;
+    const effectiveId = selectedChoiceItemId || item.itemId;
+    const qty = item.choiceOptions.find((c) => c.itemId === effectiveId)?.quantity ?? item.quantity;
+    return getItemUnitPrice(effectiveId, prices) * qty;
   }
   return getItemUnitPrice(item.itemId, prices) * item.quantity;
+}
+
+/** choiceOptions가 있는 아이템의 "현재 선택된 선택지" 개수 (선택지별로 다르면 그 값, 아니면 item.quantity) */
+function getEffectiveQty(item: PackageItem, selectedChoiceItemId: string | undefined): number {
+  if (!item.choiceOptions || item.choiceOptions.length === 0) return item.quantity;
+  const effectiveId = selectedChoiceItemId || item.itemId;
+  return item.choiceOptions.find((c) => c.itemId === effectiveId)?.quantity ?? item.quantity;
 }
 
 export default function PackageDetailPage() {
@@ -243,9 +252,10 @@ export default function PackageDetailPage() {
       if (item.choiceOptions && item.choiceOptions.length > 0) {
         effectiveItemId = choiceSelections[idx] || item.itemId;
       }
+      const effectiveQty = getEffectiveQty(item, choiceSelections[idx]);
       const value = item.goldOverride != null
         ? item.goldOverride * item.quantity
-        : getItemUnitPrice(effectiveItemId, latestPrices) * item.quantity;
+        : getItemUnitPrice(effectiveItemId, latestPrices) * effectiveQty;
       return { idx, value };
     });
     withValue.sort((a, b) => b.value - a.value);
@@ -559,6 +569,7 @@ export default function PackageDetailPage() {
       if (item.choiceOptions && item.choiceOptions.length > 0) {
         effectiveItemId = choiceSelections[idx] || item.itemId;
       }
+      const effectiveQty = getEffectiveQty(item, choiceSelections[idx]);
       if (item.goldOverride != null) {
         const unit = getCrystalAdjustedUnit(item);
         const sub = unit * item.quantity;
@@ -566,7 +577,7 @@ export default function PackageDetailPage() {
         if (checkedItems[idx] !== false) total += sub;
       } else {
         const unitPrice = getItemUnitPrice(effectiveItemId, latestPrices);
-        const sub = unitPrice * item.quantity;
+        const sub = unitPrice * effectiveQty;
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
       }
@@ -585,9 +596,6 @@ export default function PackageDetailPage() {
     );
     return { bonusTotalGold: subtotals.reduce((s, v) => s + v, 0), bonusItemSubtotals: subtotals };
   }, [post, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections, bonusChoiceBoxSelections]);
-
-  // 확정 구성품 가치 + 보너스 구성품 가치의 3분의 1 (3회 구매당 1회 지급이므로)
-  const totalGoldWithBonus = totalGold + bonusTotalGold / 3;
 
   if (loading) {
     return (
@@ -615,15 +623,17 @@ export default function PackageDetailPage() {
   }
 
   const cashGold = post.royalCrystalPrice * detailGoldPerWon;
+  const isBonusPkg = post.packageType === '3+보너스';
 
-  // 1개 이득률 (3+보너스는 보너스 ÷3 반영된 값 기준)
-  const singleBenefit = cashGold > 0 ? ((totalGoldWithBonus - cashGold) / cashGold) * 100 : 0;
+  // 1개 이득률: 보너스 가정 없이 순수 1회 구매 기준 (3+1/2+1과 동일한 원칙)
+  const singleBenefit = cashGold > 0 ? ((totalGold - cashGold) / cashGold) * 100 : 0;
 
-  // N+1 이득률
-  const buyCount = post.packageType === '3+1' ? 3 : post.packageType === '2+1' ? 2 : 1;
+  // N+1 / 3+보너스 이득률
+  const buyCount = post.packageType === '3+1' ? 3 : post.packageType === '2+1' ? 2 : isBonusPkg ? 3 : 1;
   const getCount = post.packageType === '3+1' ? 4 : post.packageType === '2+1' ? 3 : 1;
   const bundleCash = cashGold * buyCount;
-  const bundleGold = totalGold * getCount;
+  // '3+보너스': 3회 구매 시 확정 구성품 3배 + 보너스 구성품 1회(고정, 배수 아님)
+  const bundleGold = isBonusPkg ? totalGold * 3 + bonusTotalGold : totalGold * getCount;
   const bundleBenefit = bundleCash > 0 ? ((bundleGold - bundleCash) / bundleCash) * 100 : 0;
 
   // 가챠 전용 렌더링
@@ -975,22 +985,12 @@ export default function PackageDetailPage() {
                 </span>
               </div>
 
-              {/* 보너스 구성품 (3+보너스 전용) */}
-              {post.packageType === '3+보너스' && bonusTotalGold > 0 && (
-                <div className={styles.resultRow}>
-                  <span className={styles.resultRowLabel}>보너스 반영 (3회당 1회 ÷3)</span>
-                  <span className={styles.resultRowValueGold}>
-                    {formatNumber(totalGoldWithBonus)} G
-                  </span>
-                </div>
-              )}
-
-              {/* N+1 보정 */}
-              {post.packageType !== '일반' && post.packageType !== '3+보너스' && (
+              {/* N+1 / 3+보너스 보정 */}
+              {post.packageType !== '일반' && (
                 <div className={styles.resultRow}>
                   <span className={styles.resultRowLabel}>{post.packageType} 보정</span>
                   <span className={styles.resultRowValueGold}>
-                    {formatNumber(totalGold * getCount)} G
+                    {formatNumber(bundleGold)} G
                   </span>
                 </div>
               )}
@@ -1038,7 +1038,7 @@ export default function PackageDetailPage() {
                       {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
                     </span>
                   </div>
-                  {post.packageType !== '일반' && post.packageType !== '3+보너스' && (
+                  {post.packageType !== '일반' && (
                     <div className={styles.resultRow}>
                       <span className={styles.resultRowLabel}>{post.packageType} 구매</span>
                       <span className={`${styles.resultBenefitNum} ${bundleBenefit >= 0 ? styles.benefitUp : styles.benefitDown}`}>
@@ -1103,13 +1103,14 @@ export default function PackageDetailPage() {
                 const hasChoices = item.choiceOptions && item.choiceOptions.length > 0;
                 const hasChoiceBox = !!(item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0);
                 const choiceBoxSelected = choiceBoxSelections[idx] ?? item.choiceBoxSelectedIds ?? [];
+                const effectiveQty = getEffectiveQty(item, choiceSelections[idx]);
 
                 const isChecked = checkedItems[idx] !== false;
 
                 return (
                   <div
                     key={idx}
-                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox) ? styles.itemCardChoice : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
+                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
                   >
                     <label className={styles.itemCardCheckLabel} onClick={(e) => e.stopPropagation()}>
                       <input
@@ -1152,8 +1153,8 @@ export default function PackageDetailPage() {
                             </div>
                           ))
                         : hasChoiceBox
-                        ? `${item.name} (최대 ${item.choiceBoxPickCount || 1}개 선택)`
-                        : `${shortenItemName(effective.name)} ×${item.quantity.toLocaleString()}`}
+                        ? `${item.name} (최대 ${item.choiceBoxPickCount || 1}개 선택)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
+                        : `${shortenItemName(effective.name)} ×${effectiveQty.toLocaleString()}`}
                     </div>
 
                     {hasChoices && item.choiceOptions!.length <= 3 && (
@@ -1193,7 +1194,7 @@ export default function PackageDetailPage() {
                     )}
 
                     {hasChoiceBox && (
-                      <div className={styles.itemCardChoices}>
+                      <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
                         {item.choiceBoxCandidates!.map((cand) => {
                           const isSelected = choiceBoxSelected.includes(cand.id);
                           const candPrice = (cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0)) * cand.quantity;
@@ -1220,7 +1221,7 @@ export default function PackageDetailPage() {
                         <div className={styles.itemCardPriceLine}>
                           {`${formatNumber(unitPrice)}G`}
                           {' x '}
-                          {item.quantity}개
+                          {effectiveQty}개
                         </div>
                       )}
                       <div className={styles.itemCardSubtotal}>
@@ -1250,11 +1251,12 @@ export default function PackageDetailPage() {
                   ? item.choiceOptions!.find((c) => c.itemId === effectiveChoiceId)
                   : null;
                 const gold = bonusItemSubtotals[idx] || 0;
+                const effectiveQty = effectiveChoice?.quantity ?? item.quantity;
 
                 return (
                   <div
                     key={idx}
-                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox) ? styles.itemCardChoice : ''}`}
+                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''}`}
                   >
                     <div className={styles.itemCardIconWrap}>
                       {item.bundleItems && item.bundleItems.length > 0 ? (
@@ -1282,8 +1284,8 @@ export default function PackageDetailPage() {
                             </div>
                           ))
                         : hasChoiceBox
-                        ? `${item.name} (최대 ${item.choiceBoxPickCount || 1}개 선택)`
-                        : `${shortenItemName(effectiveChoice?.name || item.name)} ×${item.quantity.toLocaleString()}`}
+                        ? `${item.name} (최대 ${item.choiceBoxPickCount || 1}개 선택)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
+                        : `${shortenItemName(effectiveChoice?.name || item.name)} ×${effectiveQty.toLocaleString()}`}
                     </div>
 
                     {hasChoices && item.choiceOptions!.length <= 3 && (
@@ -1319,7 +1321,7 @@ export default function PackageDetailPage() {
                     )}
 
                     {hasChoiceBox && (
-                      <div className={styles.itemCardChoices}>
+                      <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
                         {item.choiceBoxCandidates!.map((cand) => {
                           const isSelected = choiceBoxSelected.includes(cand.id);
                           const candPrice = (cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0)) * cand.quantity;
@@ -1344,7 +1346,7 @@ export default function PackageDetailPage() {
                     <div className={styles.itemCardBottom}>
                       {!hasChoiceBox && (
                         <div className={styles.itemCardPriceLine}>
-                          {item.quantity}개
+                          {effectiveQty}개
                         </div>
                       )}
                       <div className={styles.itemCardSubtotal}>

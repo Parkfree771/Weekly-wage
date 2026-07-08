@@ -12,7 +12,7 @@ export type PackageItem = {
   icon?: string;         // 아이콘 경로
   goldOverride?: number; // 골드/고정가 아이템용 (시세 대신 이 값 사용)
   crystalPerUnit?: number; // 블크 기반 아이템용 (환율 변경 시 재계산에 사용)
-  choiceOptions?: { itemId: string; name: string; icon?: string }[]; // 선택지 목록 (선택 아이템용)
+  choiceOptions?: { itemId: string; name: string; icon?: string; quantity?: number }[]; // 선택지 목록 (선택 아이템용). quantity: 선택지별 개수(다르면 개별 지정, 없으면 상위 quantity 사용)
   probability?: number; // 가챠 아이템 확률 (0~100, 예: 10.0 = 10%)
   bundleItems?: { itemId: string; name: string; icon: string; quantity: number }[]; // 묶음 주머니 내부 아이템들
   // 선택 상자 (사용자가 직접 담은 아이템 중 N개를 택하는 상자)

@@ -1089,6 +1089,22 @@
   border-color: rgba(249, 115, 22, 0.25);
 }
 
+/* 선택 상자(choiceBox): 후보가 많아 좁은 그리드 셀에서 줄바꿈이 심하므로 전체 폭 사용 */
+.itemCardFull {
+  grid-column: 1 / -1;
+}
+
+.itemCardChoicesWide {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.itemCardChoicesWide .itemCardChoiceBtn {
+  flex: 0 1 auto;
+  width: auto;
+}
+
 .itemCardUnchecked {
   opacity: 0.4;
   filter: grayscale(0.6);
@@ -2097,6 +2113,21 @@
   font-weight: 600;
   color: var(--color-accent);
   font-size: 0.75rem;
+}
+
+.choiceOptionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.choiceOptionRow .choiceOption {
+  flex: 1;
+}
+
+.choiceOptionQtyInput {
+  width: 70px;
+  flex-shrink: 0;
 }
 
 /* 드롭다운 (3개 이상 선택지) */

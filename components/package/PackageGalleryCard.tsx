@@ -387,14 +387,17 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
 
   const cashGold = post.royalCrystalPrice * goldPerWon;
   const isBundle = post.packageType === '3+1' || post.packageType === '2+1';
+  const isBonusPkg = post.packageType === '3+보너스';
 
-  const effectiveGold = isGacha ? gachaExpectedGold : totalGold + bonusTotalGold / 3;
+  // '1개 구매'는 보너스 가정 없이 순수 1회 구매 기준 (3+1/2+1과 동일한 원칙)
+  const effectiveGold = isGacha ? gachaExpectedGold : totalGold;
   const singleBenefit = cashGold > 0 ? ((effectiveGold - cashGold) / cashGold) * 100 : 0;
 
-  const buyCount = post.packageType === '3+1' ? 3 : post.packageType === '2+1' ? 2 : 1;
+  const buyCount = post.packageType === '3+1' ? 3 : post.packageType === '2+1' ? 2 : isBonusPkg ? 3 : 1;
   const getCount = post.packageType === '3+1' ? 4 : post.packageType === '2+1' ? 3 : 1;
   const bundleCash = cashGold * buyCount;
-  const bundleGold = totalGold * getCount;
+  // '3+보너스': 3회 구매 시 확정 구성품 3배 + 보너스 구성품 1회(고정, 배수 아님)
+  const bundleGold = isBonusPkg ? totalGold * 3 + bonusTotalGold : totalGold * getCount;
   const bundleBenefit = bundleCash > 0 ? ((bundleGold - bundleCash) / bundleCash) * 100 : 0;
 
   return (
@@ -519,17 +522,10 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
             </span>
           </div>
 
-          {post.packageType === '3+보너스' && bonusTotalGold > 0 && (
-            <div className={styles.resultRow}>
-              <span className={styles.resultLabel}>보너스 반영 (3회당 1회 ÷3)</span>
-              <span className={styles.resultValueGold}>{formatNumber(effectiveGold)} G</span>
-            </div>
-          )}
-
-          {isBundle && !isGacha && (
+          {(isBundle || isBonusPkg) && !isGacha && (
             <div className={styles.resultRow}>
               <span className={styles.resultLabel}>{post.packageType} 보정</span>
-              <span className={styles.resultValueGold}>{formatNumber(totalGold * getCount)} G</span>
+              <span className={styles.resultValueGold}>{formatNumber(bundleGold)} G</span>
             </div>
           )}
 
@@ -568,7 +564,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                     {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
                   </span>
                 </div>
-                {isBundle && (
+                {(isBundle || isBonusPkg) && (
                   <div className={styles.benefitLine}>
                     <span className={styles.benefitLabel}>{post.packageType} 구매</span>
                     <span className={`${styles.benefitValue} ${bundleBenefit >= 0 ? styles.benefitPositive : styles.benefitNegative}`}>

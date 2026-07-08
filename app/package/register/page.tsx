@@ -10,6 +10,7 @@ import type { PackagePostCreateData, PackageItem, PackageType, PriceCurrency } f
 import {
   type AddedItem,
   type ChoiceBoxCandidate,
+  type TemplateItem,
   TEMPLATE_ITEMS,
   TEMPLATES_MAP,
   ICON_SIZE_CATALOG,
@@ -250,6 +251,15 @@ export default function PackageRegisterPage() {
     );
   };
 
+  // 선택지별 개수 (예: 파괴석 1000개 / 수호석 5000개처럼 선택지마다 개수가 다를 때 개별 지정)
+  const handleChoiceQuantityChange = (itemId: string, choiceId: string, qty: number) => {
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId ? { ...a, choiceQuantities: { ...a.choiceQuantities, [choiceId]: Math.max(0, qty) } } : a,
+      ),
+    );
+  };
+
   const handleGoldChange = (itemId: string, amount: number) => {
     setAddedItems((prev) =>
       prev.map((a) =>
@@ -268,6 +278,12 @@ export default function PackageRegisterPage() {
     ? royalCrystalPrice
     : blueCrystalPrice * 27.5;
 
+  // choice 타입: 현재 선택된 선택지의 개수 (선택지별로 다르게 지정했으면 그 값, 아니면 공용 quantity)
+  const getChoiceQty = (added: AddedItem, template: TemplateItem): number => {
+    const choiceId = added.selectedChoiceId || template.choices?.[0]?.itemId || '';
+    return added.choiceQuantities?.[choiceId] ?? added.quantity;
+  };
+
   // 아이템별 소계 계산
   const itemSubtotals = useMemo(() => {
     return addedItems.map((added) => {
@@ -277,7 +293,7 @@ export default function PackageRegisterPage() {
       const template = TEMPLATES_MAP[added.templateId];
       if (!template) return 0;
       const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0);
-      const qty = (template.type === 'gold' || template.type === 'choiceBox') ? 1 : added.quantity;
+      const qty = template.type === 'gold' ? 1 : template.type === 'choice' ? getChoiceQty(added, template) : added.quantity;
       const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
       return unitPrice * qty * inner;
     });
@@ -298,21 +314,14 @@ export default function PackageRegisterPage() {
     setCheckedItemIds(newChecked);
   }, [addedItems, itemSubtotals, selectableCount]);
 
-  // 총 골드 계산 (확정 구성품은 체크된 것만, 보너스 구성품은 3회 구매당 1회이므로 /3 반영)
+  // 총 골드 계산 (확정 구성품은 체크된 것만, 순수 1개 구매 기준 — 보너스 미반영)
   const totalGoldValue = useMemo(() => {
-    const mainTotal = addedItems.reduce((sum, added, idx) => {
+    return addedItems.reduce((sum, added, idx) => {
       if (added.isBonus) return sum;
       if (selectableCount > 0 && !checkedItemIds.has(added.id)) return sum;
       return sum + (itemSubtotals[idx] || 0);
     }, 0);
-    if (packageType === '3+보너스') {
-      const bonusTotal = addedItems.reduce((sum, added, idx) => (
-        added.isBonus ? sum + (itemSubtotals[idx] || 0) : sum
-      ), 0);
-      return mainTotal + bonusTotal / 3;
-    }
-    return mainTotal;
-  }, [addedItems, itemSubtotals, selectableCount, checkedItemIds, packageType]);
+  }, [addedItems, itemSubtotals, selectableCount, checkedItemIds]);
 
   const bonusGoldValue = useMemo(() => {
     return addedItems.reduce((sum, added, idx) => (
@@ -325,16 +334,18 @@ export default function PackageRegisterPage() {
   const efficiency = effectiveCashPrice > 0 ? adjustedValue / effectiveCashPrice : 0;
   // 100:X 비율 (100골드 당 원)
   const ratePer100 = goldPerWon > 0 ? Math.round(100 / goldPerWon) : 0;
-  // 1개 구매 기준
+  // 1개 구매 기준 (보너스 가정 없이 순수 1회 구매)
   const singleCashGold = effectiveCashPrice * goldPerWon;
   const singleBenefit = singleCashGold > 0
     ? ((totalGoldValue - singleCashGold) / singleCashGold) * 100
     : 0;
-  // N+1 전부 구매 기준 (3+1: 3개값 내고 4개 받음, 2+1: 2개값 내고 3개 받음)
-  const buyCount = packageType === '3+1' ? 3 : packageType === '2+1' ? 2 : 1;
+  // N+1 / 3+보너스 전부 구매 기준 (3+1: 3개값 내고 4개 받음, 2+1: 2개값 내고 3개 받음,
+  // 3+보너스: 3개값 내고 확정 구성품 3배 + 보너스 구성품 1회 고정 지급)
+  const isBonusPkg = packageType === '3+보너스';
+  const buyCount = packageType === '3+1' ? 3 : packageType === '2+1' ? 2 : isBonusPkg ? 3 : 1;
   const getCount = packageType === '3+1' ? 4 : packageType === '2+1' ? 3 : 1;
   const fullCashGold = effectiveCashPrice * buyCount * goldPerWon;
-  const fullPackageGold = totalGoldValue * getCount;
+  const fullPackageGold = isBonusPkg ? totalGoldValue * 3 + bonusGoldValue : totalGoldValue * getCount;
   const fullBenefit = fullCashGold > 0
     ? ((fullPackageGold - fullCashGold) / fullCashGold) * 100
     : 0;
@@ -381,7 +392,7 @@ export default function PackageRegisterPage() {
     const template = TEMPLATES_MAP[added.templateId];
     if (!template) return null;
     const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0);
-    const qty = (template.type === 'gold' || template.type === 'choiceBox') ? 1 : added.quantity;
+    const qty = template.type === 'gold' ? 1 : template.type === 'choice' ? getChoiceQty(added, template) : added.quantity;
     const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
     const subtotal = unitPrice * qty * inner;
     const isChecked = checkedItemIds.has(added.id);
@@ -404,7 +415,7 @@ export default function PackageRegisterPage() {
               value={added.goldAmount || ''}
               onChange={(e) => handleGoldChange(added.id, parseInt(e.target.value) || 0)}
               placeholder="골드" style={{ width: '100px' }} />
-          ) : template.type === 'choiceBox' ? null : (
+          ) : (
             <>
               <span className={styles.packageBoxItemX}>x</span>
               <input type="number" className={styles.quantityInput}
@@ -431,20 +442,29 @@ export default function PackageRegisterPage() {
             {template.choices.map((choice) => {
               const isSelected = added.selectedChoiceId === choice.itemId;
               const choicePrice = getItemUnitPrice(choice.itemId, latestPrices);
+              const choiceQty = added.choiceQuantities?.[choice.itemId] ?? added.quantity;
               return (
-                <button key={choice.itemId} type="button"
-                  className={`${styles.choiceOption} ${isSelected ? styles.choiceOptionSelected : ''}`}
-                  onClick={() => handleChoiceChange(added.id, choice.itemId)}>
-                  {choice.icon && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={choice.icon} alt={choice.name} className={styles.choiceOptionIcon}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  )}
-                  <span className={styles.choiceOptionName}>{choice.name}</span>
-                  <span className={styles.choiceOptionPrice}>
-                    {priceLoading ? '...' : `${formatNumber(choicePrice)}G`}
-                  </span>
-                </button>
+                <div key={choice.itemId} className={styles.choiceOptionRow}>
+                  <button type="button"
+                    className={`${styles.choiceOption} ${isSelected ? styles.choiceOptionSelected : ''}`}
+                    onClick={() => handleChoiceChange(added.id, choice.itemId)}>
+                    {choice.icon && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={choice.icon} alt={choice.name} className={styles.choiceOptionIcon}
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    )}
+                    <span className={styles.choiceOptionName}>{choice.name}</span>
+                    <span className={styles.choiceOptionPrice}>
+                      {priceLoading ? '...' : `${formatNumber(choicePrice)}G`}
+                    </span>
+                  </button>
+                  <input type="number"
+                    className={`${styles.quantityInput} ${styles.choiceOptionQtyInput}`}
+                    value={choiceQty || ''}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => handleChoiceQuantityChange(added.id, choice.itemId, parseInt(e.target.value) || 0)}
+                    min={0} title="이 선택지를 골랐을 때의 개수" />
+                </div>
               );
             })}
           </div>
@@ -600,22 +620,25 @@ export default function PackageRegisterPage() {
                 icon: template.icon,
               };
             case 'choice': {
-              const choice = template.choices?.find(
-                (c) => c.itemId === added.selectedChoiceId,
-              );
-              const totalQty = template.boxItem
-                ? added.quantity * (added.innerQuantity || 1)
-                : added.quantity;
+              const selectedId = added.selectedChoiceId || template.choices?.[0]?.itemId || '';
+              const choice = template.choices?.find((c) => c.itemId === selectedId);
+              const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
+              // 선택지별 개수(예: 파괴석 1000개/수호석 5000개처럼 다를 때)를 각 선택지에 저장해
+              // 상세페이지에서 다른 선택지로 바꿔도 그 선택지에 맞는 개수로 재계산되게 함
+              const choiceOptions = template.choices?.map((c) => ({
+                itemId: c.itemId,
+                name: c.name,
+                ...(c.icon ? { icon: c.icon } : {}),
+                quantity: (added.choiceQuantities?.[c.itemId] ?? added.quantity) * inner,
+              }));
+              const totalQty = choiceOptions?.find((c) => c.itemId === selectedId)?.quantity
+                ?? added.quantity * inner;
               return {
-                itemId: added.selectedChoiceId || template.choices?.[0]?.itemId || '',
+                itemId: selectedId,
                 name: choice?.name || template.name,
                 quantity: totalQty,
                 icon: template.icon,
-                choiceOptions: template.choices?.map((c) => ({
-                  itemId: c.itemId,
-                  name: c.name,
-                  ...(c.icon ? { icon: c.icon } : {}),
-                })),
+                choiceOptions,
               };
             }
             case 'gold':
@@ -682,7 +705,7 @@ export default function PackageRegisterPage() {
               return {
                 itemId: `choicebox_${added.id}`,
                 name: added.choiceBoxName?.trim() || template.name,
-                quantity: 1,
+                quantity: added.quantity || 1,
                 icon: template.icon,
                 choiceBoxCandidates: added.choiceBoxCandidates || [],
                 choiceBoxPickCount: added.choiceBoxPickCount || 1,
@@ -792,7 +815,7 @@ export default function PackageRegisterPage() {
               </div>
               {addedItems.length > 0 && packageType !== '가챠' && (
                 <div className={styles.packageBoxTotal}>
-                  <span>총 골드 가치{packageType === '3+보너스' && bonusGoldValue > 0 ? ' (보너스 ÷3 반영)' : ''}</span>
+                  <span>총 골드 가치</span>
                   <span className={styles.packageBoxTotalValue}>{formatNumber(totalGoldValue)} G</span>
                 </div>
               )}
@@ -1046,18 +1069,15 @@ export default function PackageRegisterPage() {
                         {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
                       </span>
                     </div>
-                    {packageType === '3+보너스' && bonusGoldValue > 0 && (
+                    {packageType !== '일반' && (
                       <>
                         <hr className={styles.calcDivider} />
-                        <div className={styles.calcRow}>
-                          <span className={styles.calcLabel}>보너스 구성품 가치 (÷3 반영 전)</span>
-                          <span className={styles.calcValue}>{formatNumber(bonusGoldValue)}G</span>
-                        </div>
-                      </>
-                    )}
-                    {packageType !== '일반' && packageType !== '3+보너스' && (
-                      <>
-                        <hr className={styles.calcDivider} />
+                        {isBonusPkg && bonusGoldValue > 0 && (
+                          <div className={styles.calcRow}>
+                            <span className={styles.calcLabel}>보너스 구성품 가치 (3회당 1회, 배수 아님)</span>
+                            <span className={styles.calcValue}>{formatNumber(bonusGoldValue)}G</span>
+                          </div>
+                        )}
                         <div className={styles.calcRow}>
                           <span className={styles.calcLabel}>{packageType} 지출</span>
                           <span className={styles.calcValue}>
