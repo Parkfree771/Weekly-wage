@@ -9,8 +9,8 @@ import GuideFaq from '@/components/common/GuideFaq';
 import { faqData } from './faq-data';
 
 // ─── 일정 데이터 ───
-const EVENT_START = new Date(2026, 3, 22, 10, 0, 0); // 2026-04-22 수요일 오전 10시 (KST)
-const TOTAL_WEEKS = 8;
+// 3막·종막 코밍순 추정일: 벨가르딘(8/5 출시) 6주 이벤트 + 1주 브레이크 기준
+const COMING_SOON_DATE = '2026년 9월 23일 (수)';
 
 // ─── 난이도별 보상 ───
 type Difficulty = {
@@ -26,11 +26,6 @@ const DIFFICULTIES: Difficulty[] = [
   { name: '하드', level: 1750, gold: 45000, token: 200, gates: 1 },
   { name: '노말', level: 1720, gold: 20000, token: 150, gates: 1 },
 ];
-
-function formatFullDate(d: Date): string {
-  const days = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
-}
 
 // ─── 토큰 상점 테마 색상 ───
 const SHOP_THEME_COLORS: { [key: string]: { name: string; accent: string; border: string; iconBg: string } } = {
@@ -118,191 +113,7 @@ type ShopItem = {
   limit: ShopLimit | null;
 };
 
-const SHOP_ITEMS: ShopItem[] = [
-  // 1. 유물 전투 각인서
-  {
-    id: 1, name: '유물 전투 각인서 선택 주머니', qty: 1,
-    requiredLevel: 1730, image: '/engraving.webp', theme: 'engraving', hasBg: true,
-    costs: [{ name: '토큰', amount: 100 }, { name: '골드', amount: 50000 }],
-    limit: { kind: 'once' },
-  },
-  // 2. 희귀 지옥 열쇠 Ⅲ
-  {
-    id: 2, name: '희귀 지옥 열쇠 Ⅲ 상자', qty: 1,
-    requiredLevel: 1730, image: '/celtic_key_3.webp', theme: 'hell', hasBg: true,
-    costs: [{ name: '토큰', amount: 10 }, { name: '골드', amount: 15000 }],
-    limit: { kind: 'weekly', count: 1 },
-  },
-  // 3~5. 영웅 젬 선택 상자
-  {
-    id: 3, name: '영웅 젬 선택 상자', qty: 1,
-    requiredLevel: 1720, image: '/gem-hero.webp', theme: 'gem', hasBg: false,
-    costs: [{ name: '토큰', amount: 60 }],
-    limit: { kind: 'once' },
-  },
-  {
-    id: 4, name: '영웅 젬 선택 상자', qty: 1,
-    requiredLevel: 1750, image: '/gem-hero.webp', theme: 'gem', hasBg: false,
-    costs: [{ name: '토큰', amount: 60 }],
-    limit: { kind: 'once' },
-  },
-  {
-    id: 5, name: '영웅 젬 선택 상자', qty: 1,
-    requiredLevel: 1770, image: '/gem-hero.webp', theme: 'gem', hasBg: false,
-    costs: [{ name: '토큰', amount: 60 }],
-    limit: { kind: 'once' },
-  },
-  // 6~7. 영웅 젬 상자 (랜덤)
-  {
-    id: 6, name: '영웅 젬 상자', qty: 1,
-    requiredLevel: 1720, image: '/gem-hero.webp', theme: 'gemRandom', hasBg: false,
-    costs: [{ name: '토큰', amount: 10 }, { name: '골드', amount: 10000 }],
-    limit: { kind: 'weekly', count: 1 },
-  },
-  {
-    id: 7, name: '영웅 젬 상자', qty: 1,
-    requiredLevel: 1750, image: '/gem-hero.webp', theme: 'gemRandom', hasBg: false,
-    costs: [{ name: '토큰', amount: 10 }, { name: '골드', amount: 10000 }],
-    limit: { kind: 'weekly', count: 1 },
-  },
-  // 8. 야금술 선택 상자 (4단계 1개 또는 3단계 2개 중 택1)
-  {
-    id: 8, name: '야금술 선택 상자', qty: 1,
-    selectOne: true,
-    components: [
-      { icon: '/master-metallurgy-4.webp', name: '장인의 야금술 : 4단계', count: 1, hasBg: true, itemId: '66112717' },
-      { icon: '/master-metallurgy-3.webp', name: '장인의 야금술 : 3단계', count: 2, hasBg: true, itemId: '66112715' },
-    ],
-    requiredLevel: 1720, image: '/master-metallurgy-4.webp', theme: 'craft', hasBg: true,
-    costs: [{ name: '토큰', amount: 10 }],
-    limit: { kind: 'weekly', count: 2 },
-  },
-  // 9. 재봉술 선택 상자 (4단계 1개 또는 3단계 2개 중 택1)
-  {
-    id: 9, name: '재봉술 선택 상자', qty: 1,
-    selectOne: true,
-    components: [
-      { icon: '/master-tailoring-4.webp', name: '장인의 재봉술 : 4단계', count: 1, hasBg: true, itemId: '66112718' },
-      { icon: '/master-tailoring-3.webp', name: '장인의 재봉술 : 3단계', count: 2, hasBg: true, itemId: '66112716' },
-    ],
-    requiredLevel: 1720, image: '/master-tailoring-4.webp', theme: 'craft', hasBg: true,
-    costs: [{ name: '토큰', amount: 10 }],
-    limit: { kind: 'weekly', count: 2 },
-  },
-  // 10. 어빌리티 스톤 키트
-  {
-    id: 10, name: '어빌리티 스톤 키트', qty: 1,
-    requiredLevel: 1720, image: '/djqlfflxltmxhs.webp', theme: 'ability', hasBg: true,
-    costs: [{ name: '토큰', amount: 3 }],
-    limit: { kind: 'weekly', count: 10 },
-  },
-  // 11~12. 정령된 혼돈의 돌 상자
-  {
-    id: 11, name: '정령된 혼돈의 돌 상자 (무기)', qty: 1,
-    components: [
-      { icon: '/weapon-quality.webp', name: '정령된 혼돈의 돌 (무기)', count: 1, hasBg: true },
-    ],
-    requiredLevel: 1720, image: '/weapon-quality.webp', theme: 'chaosStone', hasBg: true,
-    costs: [{ name: '토큰', amount: 2 }],
-    limit: { kind: 'weekly', count: 10 },
-  },
-  {
-    id: 12, name: '정령된 혼돈의 돌 상자 (방어구)', qty: 1,
-    components: [
-      { icon: '/armor-quality.webp', name: '정령된 혼돈의 돌 (방어구)', count: 3, hasBg: true },
-    ],
-    requiredLevel: 1720, image: '/armor-quality.webp', theme: 'chaosStone', hasBg: true,
-    costs: [{ name: '토큰', amount: 2 }],
-    limit: { kind: 'weekly', count: 10 },
-  },
-  // 13. 아비도스 융화재료 상자
-  {
-    id: 13, name: '아비도스 융화재료 상자', qty: 1,
-    components: [
-      { icon: '/abidos-fusion5.webp?v=4', name: '아비도스 융화 재료', count: 100, hasBg: true, itemId: '6861012' },
-    ],
-    requiredLevel: 1720, image: '/abidos-fusion5.webp?v=4', theme: 'abidos', hasBg: true,
-    costs: [{ name: '토큰', amount: 20 }],
-    limit: { kind: 'weekly', count: 1 },
-  },
-  // 14~16. 상급 아비도스 융화 재료 상자
-  {
-    id: 14, name: '상급 아비도스 융화 재료 상자', qty: 1,
-    components: [
-      { icon: '/top-abidos-fusion5.webp', name: '상급 아비도스 융화 재료', count: 50, hasBg: true, itemId: '6861013' },
-    ],
-    requiredLevel: 1730, image: '/top-abidos-fusion5.webp', theme: 'abidos', hasBg: true,
-    costs: [{ name: '토큰', amount: 20 }],
-    limit: { kind: 'weekly', count: 1 },
-  },
-  {
-    id: 15, name: '상급 아비도스 융화 재료 상자', qty: 1,
-    components: [
-      { icon: '/top-abidos-fusion5.webp', name: '상급 아비도스 융화 재료', count: 50, hasBg: true, itemId: '6861013' },
-    ],
-    requiredLevel: 1750, image: '/top-abidos-fusion5.webp', theme: 'abidos', hasBg: true,
-    costs: [{ name: '토큰', amount: 20 }],
-    limit: { kind: 'weekly', count: 1 },
-  },
-  {
-    id: 16, name: '상급 아비도스 융화 재료 상자', qty: 1,
-    components: [
-      { icon: '/top-abidos-fusion5.webp', name: '상급 아비도스 융화 재료', count: 50, hasBg: true, itemId: '6861013' },
-    ],
-    requiredLevel: 1770, image: '/top-abidos-fusion5.webp', theme: 'abidos', hasBg: true,
-    costs: [{ name: '토큰', amount: 20 }],
-    limit: { kind: 'weekly', count: 1 },
-  },
-  // 17. 운명의 파괴석/수호석 (기본)
-  {
-    id: 17, name: '운명의 파괴석/수호석', qty: 1,
-    components: [
-      { icon: '/destiny-destruction-stone.webp', name: '운명의 파괴석', count: 5000, hasBg: true, itemId: '66102006', bundleSize: 100 },
-      { icon: '/destiny-guardian-stone.webp',   name: '운명의 수호석', count: 10000, hasBg: true, itemId: '66102106', bundleSize: 100 },
-    ],
-    requiredLevel: 1720, image: '/vkrhltjrtnghtjr.webp', theme: 'refine', hasBg: true,
-    costs: [{ name: '토큰', amount: 5 }, { name: '골드', amount: 2000 }],
-    limit: { kind: 'weekly', count: 1 },
-  },
-  // 18~20. 운명의 파괴석/수호석 결정
-  {
-    id: 18, name: '운명의 파괴석/수호석 결정', qty: 1,
-    components: [
-      { icon: '/destiny-destruction-stone2.webp', name: '운명의 파괴석 결정', count: 1000, hasBg: true, itemId: '66102007', bundleSize: 100 },
-      { icon: '/destiny-guardian-stone2.webp',   name: '운명의 수호석 결정', count: 2000, hasBg: true, itemId: '66102107', bundleSize: 100 },
-    ],
-    requiredLevel: 1730, image: '/vkrhltngh.webp', theme: 'refine', hasBg: true,
-    costs: [{ name: '토큰', amount: 5 }, { name: '골드', amount: 2000 }],
-    limit: { kind: 'weekly', count: 1 },
-  },
-  {
-    id: 19, name: '운명의 파괴석/수호석 결정', qty: 1,
-    components: [
-      { icon: '/destiny-destruction-stone2.webp', name: '운명의 파괴석 결정', count: 1000, hasBg: true, itemId: '66102007', bundleSize: 100 },
-      { icon: '/destiny-guardian-stone2.webp',   name: '운명의 수호석 결정', count: 2000, hasBg: true, itemId: '66102107', bundleSize: 100 },
-    ],
-    requiredLevel: 1750, image: '/vkrhltngh.webp', theme: 'refine', hasBg: true,
-    costs: [{ name: '토큰', amount: 5 }, { name: '골드', amount: 2000 }],
-    limit: { kind: 'weekly', count: 1 },
-  },
-  {
-    id: 20, name: '운명의 파괴석/수호석 결정', qty: 1,
-    components: [
-      { icon: '/destiny-destruction-stone2.webp', name: '운명의 파괴석 결정', count: 1000, hasBg: true, itemId: '66102007', bundleSize: 100 },
-      { icon: '/destiny-guardian-stone2.webp',   name: '운명의 수호석 결정', count: 2000, hasBg: true, itemId: '66102107', bundleSize: 100 },
-    ],
-    requiredLevel: 1770, image: '/vkrhltngh.webp', theme: 'refine', hasBg: true,
-    costs: [{ name: '토큰', amount: 5 }, { name: '골드', amount: 2000 }],
-    limit: { kind: 'weekly', count: 1 },
-  },
-  // 21. 실링
-  {
-    id: 21, name: '실링', qty: 20000,
-    requiredLevel: 1720, image: '/shilling.webp', theme: 'silling', hasBg: true,
-    costs: [{ name: '토큰', amount: 2 }],
-    limit: { kind: 'unlimited' },
-  },
-];
+const SHOP_ITEMS: ShopItem[] = [];
 
 function formatLimit(l: ShopLimit | null, mode: 'short' | 'long'): string {
   if (!l) return '미정';
@@ -312,9 +123,6 @@ function formatLimit(l: ShopLimit | null, mode: 'short' | 'long'): string {
 }
 
 export default function ExtremePage() {
-  // 난이도
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
-
   // 상점
   const [selectedShopItem, setSelectedShopItem] = useState<number | null>(null);
   const selectedShopData = SHOP_ITEMS.find(i => i.id === selectedShopItem);
@@ -410,105 +218,6 @@ export default function ExtremePage() {
   const getGoldCost = (item: ShopItem): number =>
     item.costs.find(c => c.name === '골드')?.amount || 0;
 
-  const eventEnd = new Date(EVENT_START);
-  eventEnd.setDate(eventEnd.getDate() + TOTAL_WEEKS * 7 - 1);
-  eventEnd.setHours(23, 59, 59);
-
-  const selectedDiff = DIFFICULTIES.find(d => d.name === selectedDifficulty);
-
-  // 보상 표 렌더링 (데스크톱 하단 + 모바일 카드별 인라인 양쪽에서 공통 사용)
-  const renderRewardTables = (diff: Difficulty) => (
-    <>
-      <div className={styles.fcTableWrap}>
-        <div className={styles.fcTableHeader}>최초 클리어 보상 · {diff.name}</div>
-        <div className={`${styles.fcGrid} ${diff.name === '나이트메어' ? styles.fcGrid6 : styles.fcGrid4}`}>
-          <div className={styles.fcGridCell}>
-            <div className={styles.fcCell}>
-              <span className={styles.fcCellLabel}>도약의 전설 카드 선택 팩 Ⅲ</span>
-              <div className={styles.fcCellRow}>
-                <Image src="/legendary-cardpack.webp" alt="전설 카드팩" width={40} height={40} />
-                <span className={styles.fcCellValue}>x1</span>
-              </div>
-            </div>
-          </div>
-          <div className={styles.fcGridCell}>
-            <div className={styles.fcCell}>
-              <span className={styles.fcCellLabel}>영웅 젬 선택 상자</span>
-              <div className={styles.fcCellRow}>
-                <Image src="/gem-hero.webp" alt="영웅 젬 선택 상자" width={40} height={40} />
-                <span className={styles.fcCellValue}>x1</span>
-              </div>
-            </div>
-          </div>
-          <div className={styles.fcGridCell}>
-            <div className={styles.fcCell}>
-              <span className={styles.fcCellLabel}>젬 가공 초기화권</span>
-              <div className={styles.fcCellRow}>
-                <Image src="/gem-reset-ticket.webp" alt="젬 가공 초기화권" width={40} height={40} />
-                <span className={styles.fcCellValue}>x1</span>
-              </div>
-            </div>
-          </div>
-          <div className={styles.fcGridCell}>
-            <div className={styles.fcCell}>
-              <span className={styles.fcCellLabel}>불과 얼음의 주화</span>
-              <div className={styles.fcCellRow}>
-                <Image src="/xhzms.webp" alt="불과 얼음의 주화" width={40} height={40} />
-                <span className={styles.fcCellValue}>x100</span>
-              </div>
-            </div>
-          </div>
-          {diff.name === '나이트메어' && (
-            <>
-              <div className={styles.fcGridCell}>
-                <div className={styles.fcCell}>
-                  <span className={styles.fcCellLabel}>전설 칭호</span>
-                  <div className={styles.fcCellRow}>
-                    <Image src="/extreme-fire.webp" alt="홍염의 군주" width={40} height={40} className={styles.titleIconFire} />
-                    <span className={`${styles.fcCellValue} ${styles.titleMatchFire}`}>홍염의 군주</span>
-                  </div>
-                </div>
-              </div>
-              <div className={styles.fcGridCell}>
-                <div className={styles.fcCell}>
-                  <span className={styles.fcCellLabel}>전설 칭호</span>
-                  <div className={styles.fcCellRow}>
-                    <Image src="/extreme-ice.webp" alt="혹한의 군주" width={40} height={40} />
-                    <span className={`${styles.fcCellValue} ${styles.titleMatchIce}`}>혹한의 군주</span>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className={styles.fcTableWrap}>
-        <div className={styles.fcTableHeader}>기본 클리어 보상 · {diff.name}</div>
-        <div className={`${styles.fcGrid} ${styles.fcGrid2}`}>
-          <div className={styles.fcGridCell}>
-            <div className={styles.fcCell}>
-              <span className={styles.fcCellLabel}>클리어 골드</span>
-              <div className={styles.fcCellRow}>
-                <Image src="/gold.webp" alt="골드" width={28} height={28} />
-                <span className={styles.fcCellValue}>{diff.gold.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
-          <div className={styles.fcGridCell}>
-            <div className={styles.fcCell}>
-              <span className={styles.fcCellLabel}>불과 얼음의 주화</span>
-              <div className={styles.fcCellRow}>
-                <Image src="/xhzms.webp" alt="불과 얼음의 주화" width={36} height={36} />
-                <span className={styles.fcCellValue}>x{diff.token}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
       <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
@@ -519,63 +228,37 @@ export default function ExtremePage() {
             <div className="text-center mb-3">
               <h1 className={styles.pageTitle}>익스트림</h1>
               <p className={styles.pageSubtitle}>
-                {formatFullDate(EVENT_START)} ~ {formatFullDate(eventEnd)} | 총 {TOTAL_WEEKS}주
+                3막 · 종막 업데이트 준비 중 — {COMING_SOON_DATE} 출시 예정
               </p>
             </div>
 
             {/* ═══════════════════════════════════════════
                 섹션: 난이도별 보상
                 ═══════════════════════════════════════════ */}
-            <div className={styles.diffSection} style={{ maxWidth: '900px', margin: '0 auto 1.5rem' }}>
+            <div className={styles.diffSection} style={{ margin: '0 auto 1.5rem' }}>
               <h2 className={styles.sectionTitle}>난이도별 보상</h2>
               <div className={styles.diffGrid}>
-                {DIFFICULTIES.map((diff) => {
-                  const colorClass = diff.name === '나이트메어' ? styles.diffNightmare
-                    : diff.name === '하드' ? styles.diffHard
-                    : styles.diffNormal;
-                  const isActive = selectedDifficulty === diff.name;
-                  return (
-                    <div key={diff.name} className={styles.diffGroup}>
-                      <button
-                        type="button"
-                        className={`${styles.diffCard} ${isActive ? styles.diffCardActive : ''}`}
-                        onClick={() => setSelectedDifficulty(isActive ? null : diff.name)}
-                        aria-pressed={isActive}
-                      >
-                        <Image
-                          src="/dlrtmxmfla.webp"
-                          alt={diff.name}
-                          width={300}
-                          height={225}
-                          className={styles.diffImage}
-                        />
-                        <div className={styles.diffOverlay} />
-                        <div className={`${styles.diffContent} ${colorClass}`}>
-                          <div className={styles.diffNameRow}>
-                            <span className={styles.diffName}>{diff.name}</span>
-                            <span className={styles.diffLevel}>Lv. {diff.level}</span>
-                          </div>
-                          <div className={styles.diffGold}>{diff.gold.toLocaleString()}G</div>
-                          <div className={styles.diffToken}>토큰 {diff.token}개</div>
-                        </div>
-                      </button>
-                      {/* 모바일: 각 카드 바로 밑에 표 인라인 표시 */}
-                      {isActive && (
-                        <div className={styles.diffTablesInline}>
-                          {renderRewardTables(diff)}
-                        </div>
-                      )}
+                {DIFFICULTIES.map((diff) => (
+                  <div key={diff.name} className={styles.diffGroup}>
+                    <div className={styles.diffCard}>
+                      <Image
+                        src="/extreme-s3-finale.jpg"
+                        alt="익스트림 3막 · 종막"
+                        fill
+                        sizes="380px"
+                        className={styles.diffImage}
+                      />
+                      <div className={styles.diffContent}>
+                        <span className={styles.diffName}>{diff.name}</span>
+                        <span className={styles.comingSoonPill}>
+                          <span className={styles.comingSoonDot} />
+                          COMING SOON
+                        </span>
+                      </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
-
-              {/* 데스크톱: 카드 그리드 아래에 통합 표 1회 표시 */}
-              {selectedDiff && (
-                <div className={styles.diffTablesBottom}>
-                  {renderRewardTables(selectedDiff)}
-                </div>
-              )}
             </div>
 
             {/* ═══════════════════════════════════════════
@@ -593,6 +276,9 @@ export default function ExtremePage() {
                       {/* 좌: 목록 */}
                       <div className={styles.shopList}>
                         <div className={styles.shopListHeader}>토큰 교환 목록</div>
+                        {SHOP_ITEMS.length === 0 && (
+                          <div className={styles.shopDetailEmpty}>상점 구성이 아직 공개되지 않았습니다</div>
+                        )}
                         {SHOP_ITEMS.map((item) => {
                           const tc = SHOP_THEME_COLORS[item.theme];
                           const isActive = selectedShopItem === item.id;

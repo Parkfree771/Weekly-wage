@@ -1,0 +1,55 @@
+/* 공식 스토어 배지 — 애플/구글 브랜드 가이드라인상 배경은 항상 검정(라이트/다크 테마 무관) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  background: #000;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.32);
+  color: #fff;
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.textGroup {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.sub {
+  font-size: 0.6rem;
+  opacity: 0.85;
+}
+
+.main {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+/* 좁은 사이드바용 — 아이콘 + 한 줄 텍스트만.
+   min-width로 App Store/Google Play 배지 폭을 맞춤(글자 수 달라도 나란히 크기 통일) */
+.badgeCompact {
+  min-width: 108px;
+  padding: 0.38rem 0.55rem;
+  border-radius: 8px;
+  gap: 0.3rem;
+  justify-content: center;
+}
+
+.compactMain {
+  font-size: 0.66rem;
+  font-weight: 700;
+  white-space: nowrap;
+}

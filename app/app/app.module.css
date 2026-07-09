@@ -1,0 +1,287 @@
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+/* ── 히어로 ── */
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(59, 80, 181, 0.08) 0%, rgba(232, 114, 42, 0.10) 100%);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+}
+
+.heroLeft {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.heroIconRow {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.heroIcon {
+  border-radius: 20%;
+  box-shadow: var(--shadow-md);
+  flex-shrink: 0;
+}
+
+.heroName {
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.heroTagline {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.heroTitle {
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin-bottom: 0.6rem;
+}
+
+.heroTitle strong {
+  color: var(--color-primary);
+}
+
+.heroDesc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1.4rem;
+}
+
+.storeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 0.6rem;
+}
+
+/* ── QR ── */
+.heroRight {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qrBox {
+  width: 132px;
+  height: 132px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+}
+
+.qrBox svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.qrLabel {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ── 스크린샷 스트립 ── */
+.section {
+  margin-bottom: 2.2rem;
+}
+
+.sectionTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.shotStrip {
+  display: flex;
+  gap: 0.9rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.shotStrip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.shotStrip::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.shotCard {
+  flex: 0 0 auto;
+  width: clamp(140px, 32vw, 190px);
+  scroll-snap-align: start;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  background: var(--card-bg);
+}
+
+.shotCard img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ── 기능 목록 ── */
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.8rem;
+}
+
+.featureCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.featureCard:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.featureIcon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: rgba(59, 80, 181, 0.1);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.featureIcon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.featureName {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.featureDesc {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* ── 하단 CTA ── */
+.footerCta {
+  text-align: center;
+  padding: clamp(1.5rem, 4vw, 2.5rem) 1rem;
+  border-radius: 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.footerCtaTitle {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.footerCta .storeRow {
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+/* ── 모바일 ── */
+@media (max-width: 768px) {
+  .hero {
+    flex-direction: column;
+    gap: 1.4rem;
+    text-align: center;
+  }
+
+  .heroIconRow {
+    justify-content: center;
+  }
+
+  .heroDesc {
+    text-align: left;
+  }
+
+  .storeRow {
+    justify-content: center;
+  }
+
+  .heroRight {
+    align-self: center;
+  }
+
+  .qrBox {
+    width: 108px;
+    height: 108px;
+  }
+
+  .featureGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .featureCard {
+    padding: 0.75rem;
+    gap: 0.55rem;
+  }
+
+  .featureName {
+    font-size: 0.8rem;
+  }
+
+  .featureDesc {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+}

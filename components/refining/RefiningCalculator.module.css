@@ -935,10 +935,6 @@ button.bulkButton:disabled,
     inset 2px 2px 4px rgba(255, 255, 255, 0.3);
 }
 
-.materialCardClickable {
-  cursor: pointer;
-}
-
 .materialCardDisabled {
   opacity: 0.6;
 }
@@ -952,37 +948,91 @@ button.bulkButton:disabled,
     inset 2px 2px 4px rgba(255, 255, 255, 0.3);
 }
 
-.materialCardBoundLabel {
-  position: absolute;
-  top: clamp(4px, 1vw, 10px);
-  right: clamp(4px, 1vw, 10px);
-  font-size: clamp(0.5rem, 1.3vw, 0.75rem);
-  color: var(--color-primary);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: clamp(2px, 0.4vw, 4px);
-  padding: clamp(2px, 0.4vw, 4px) clamp(4px, 0.6vw, 8px);
-  border-radius: 6px;
-  background-color: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
-}
-
-.materialCardBoundLabelUnbound {
-  color: var(--text-secondary);
-  background-color: transparent;
-  border-color: transparent;
-  box-shadow: none;
-}
-
 .materialCardEnableSwitch {
   position: absolute;
   top: clamp(2px, 0.8vw, 6px);
   left: clamp(2px, 0.8vw, 6px);
   transform: scale(clamp(0.5, 1vw, 0.75));
   transform-origin: top left;
+}
+
+/* 귀속 토글 (우상단) — 박스/테두리/배경 없이 체크 이미지 + "귀속" 글자만 배치.
+   평소엔 흐린 회색, 클릭하면 둘 다 진한 초록색으로 활성화 (마이페이지 체크와 같은 색상) */
+.materialCardBoundToggle {
+  position: absolute;
+  top: clamp(2px, 0.8vw, 6px);
+  right: clamp(2px, 0.8vw, 6px);
+  display: flex;
+  align-items: center;
+  gap: clamp(2px, 0.4vw, 4px);
+  cursor: pointer;
+}
+
+.materialCardBoundCheckMark {
+  width: clamp(15px, 3.4vw, 20px);
+  height: clamp(15px, 3.4vw, 20px);
+  fill: none;
+  stroke: var(--text-secondary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+
+.materialCardBoundCheckMarkActive {
+  stroke: var(--color-primary);
+  stroke-width: 4.5;
+  opacity: 1;
+  filter: drop-shadow(0 0 5px rgba(59, 80, 181, 0.7));
+}
+
+[data-theme="dark"] .materialCardBoundCheckMarkActive {
+  filter: drop-shadow(0 0 5px rgba(107, 126, 214, 0.8));
+}
+
+.materialCardBoundLabel {
+  font-size: clamp(0.55rem, 1.4vw, 0.72rem);
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.materialCardBoundLabelActive {
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+/* 보유 개수 입력 — 필요 개수에서 이 값을 뺀 만큼만 비용 계산 */
+.materialCardOwnedRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(2px, 0.5vw, 4px);
+  margin-top: clamp(2px, 0.6vw, 5px);
+  width: 100%;
+}
+
+.materialCardOwnedLabel {
+  font-size: clamp(0.48rem, 1.1vw, 0.65rem);
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.materialCardOwnedInput {
+  width: clamp(72px, 26vw, 96px);
+  font-size: clamp(0.6rem, 1.3vw, 0.75rem);
+  text-align: center;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  padding: 2px 4px;
+}
+
+.materialCardOwnedInput:disabled {
+  opacity: 0.5;
 }
 
 /* 숨결 컨트롤 (카드 내부 하단) */
@@ -996,43 +1046,13 @@ button.bulkButton:disabled,
   padding-top: 8px;
   border-top: 1px solid var(--border-color);
 }
-/* 미사용/풀숨/최적 세그먼트 */
-.breathModeSeg {
-  display: flex;
-  width: 100%;
-  border: 1px solid var(--border-color);
-  border-radius: 7px;
-  overflow: hidden;
-  background: var(--card-bg);
-}
-.breathModeBtn {
-  flex: 1;
-  font-size: clamp(0.5rem, 1.4vw, 0.68rem);
-  font-weight: 600;
-  padding: 4px 0;
-  line-height: 1.15;
-  color: var(--text-secondary);
-  background: transparent;
-  border: none;
-  border-right: 1px solid var(--border-color);
-  cursor: pointer;
-  white-space: nowrap;
-}
-.breathModeBtn:last-child { border-right: none; }
-.breathModeBtn:hover { color: #10b981; }
-.breathModeBtnActive {
-  background: #10b981;
-  color: #fff;
-}
-.breathModeBtnActive:hover { color: #fff; }
-
 /* 최적 숨결 단계별 팝업 — breathControls(relative) 기준, "최적"(오른쪽 1/3) 위로.
    상급재련 최적화 팝업(advOptPopup)과 동일한 톤·크기 */
 .breathPopup {
   position: absolute;
   z-index: 100;
   bottom: calc(100% + 10px);
-  left: 83.333%;
+  left: 50%;
   transform: translateX(-50%);
   width: max-content;
   max-width: min(680px, 90vw);
@@ -1132,6 +1152,9 @@ button.bulkButton:disabled,
   background: rgba(245, 158, 11, 0.1);
 }
 .breathChipPartial .breathChipVal { color: #d97706; }
+
+/* 책 이름(재봉술/야금술, 강화 포함) — 해당 재료 카드와 같은 색으로 구분감을 살림 */
+.breathChipBookName { color: #34d399; }
 
 /* ── 상급재련 최적 조합 ── */
 /* 라벨 옆 버튼 — 에메랄드 그라데이션 필 버튼 */
@@ -1476,6 +1499,46 @@ button.bulkButton:disabled,
   font-size: 0.55rem;
   padding: 0.15rem 0.3rem;
   border-radius: 4px;
+}
+
+/* 상급재련 카드 하단 — 일반턴/선조턴(+최적화) 라벨·버튼 쌍 */
+.advTurnRow {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.advTurnItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.advTurnItemLabel {
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.advTurnItemLabelMobile {
+  font-size: 0.52rem;
+}
+
+.advTurnOptItem {
+  padding-left: 10px;
+  border-left: 1px solid var(--border-color);
+}
+
+.advTurnOptItemMobile {
+  padding-left: 5px;
+}
+
+@media (max-width: 767px) {
+  .advTurnRow { gap: 5px; }
 }
 
 /* 다크모드 */

@@ -256,14 +256,31 @@
   margin-top: auto;
 }
 
-.metaHeart {
-  color: #ef4444;
+.metaAuthor {
+  color: var(--gc-text-secondary);
+  max-width: 6.5em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metaViewIcon {
+  width: 12px;
+  height: 9px;
+  margin-right: 3px;
+  vertical-align: -1px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .metaLeft {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  min-width: 0;
 }
 
 .metaDate {

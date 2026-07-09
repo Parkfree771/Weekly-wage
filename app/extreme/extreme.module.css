@@ -1005,14 +1005,13 @@
 .diffCard {
   position: relative;
   flex: 1;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 2.774 / 1;
   border-radius: 14px;
   overflow: hidden;
   box-shadow: var(--shadow-md);
   border: 2px solid transparent;
   padding: 0;
   background: none;
-  cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
@@ -1020,87 +1019,57 @@
   transform: translateY(-2px);
 }
 
-.diffCardActive {
-  border-color: #dc3545;
-  box-shadow:
-    0 0 0 3px rgba(220, 53, 69, 0.25),
-    var(--shadow-md);
-}
-
 .diffImage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.diffOverlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.7) 100%);
+  object-fit: contain !important;
 }
 
 .diffContent {
   position: absolute;
-  bottom: 0;
   left: 0;
-  right: 0;
+  bottom: 0;
+  padding: 0.5rem 0.65rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 0.65rem 0.85rem;
+  gap: 0.3rem;
   z-index: 1;
-  text-align: left;
-}
-
-.diffNameRow {
-  display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-  margin-bottom: 0.25rem;
 }
 
 .diffName {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 800;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.8);
-}
-
-.diffLevel {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.9);
-  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
-}
-
-.diffGold {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #f5d442;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
-  margin-bottom: 0.15rem;
-}
-
-.diffToken {
-  font-size: 0.78rem;
-  font-weight: 700;
   color: #fff;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 0, 0, 0.6);
 }
 
-/* 난이도별 글씨 색 */
-.diffNightmare .diffName { color: #d8b4fe; }
-.diffNightmare .diffLevel { color: #e9d5ff; }
+.comingSoonPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(3px);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #fff;
+}
 
-.diffHard .diffName { color: #f59e0b; }
-.diffHard .diffLevel { color: #fcd34d; }
+.comingSoonDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ff9a52;
+  flex-shrink: 0;
+  animation: extremeDiffPulse 1.8s ease-in-out infinite;
+}
 
-.diffNormal .diffName { color: #fff; }
+@keyframes extremeDiffPulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
 
 /* ==========================================================================
    최초 클리어 보상 테이블
@@ -1124,71 +1093,6 @@
 
 .diffGroup .diffCard {
   width: 100%;
-}
-
-/* 모바일: 카드 바로 밑 인라인 표시 / 데스크톱: 숨김 */
-.diffTablesInline {
-  display: none;
-  width: 100%;
-  margin-top: 0.6rem;
-}
-
-/* 데스크톱: 카드 그리드 아래 표시 / 모바일: 숨김 */
-.diffTablesBottom {
-  display: block;
-}
-
-/* ─── 최초/기본 클리어 보상 표 (CSS Grid 기반) ─── */
-.fcTableWrap {
-  margin-top: 0.85rem;
-  box-shadow:
-    3px 3px 0 0 rgba(59, 80, 181, 0.2),
-    5px 5px 0 0 rgba(59, 80, 181, 0.1);
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1.5px solid var(--color-primary);
-  background: var(--card-bg);
-}
-
-.fcTableWrap + .fcTableWrap {
-  margin-top: 1rem;
-}
-
-.fcTableHeader {
-  background: var(--color-primary);
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.95rem;
-  padding: 0.7rem 0.5rem;
-  text-align: center;
-  letter-spacing: -0.01em;
-}
-
-.fcGrid {
-  display: grid;
-}
-
-.fcGrid6 { grid-template-columns: repeat(6, 1fr); }
-.fcGrid4 { grid-template-columns: repeat(4, 1fr); }
-.fcGrid2 { grid-template-columns: repeat(2, 1fr); }
-
-.fcGridCell {
-  padding: 0.9rem 0.75rem;
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--card-bg);
-}
-
-.fcGridCell:last-child {
-  border-right: none;
-}
-
-:global([data-theme="dark"]) .fcTableWrap {
-  box-shadow:
-    3px 3px 0 0 rgba(107, 126, 214, 0.25),
-    5px 5px 0 0 rgba(107, 126, 214, 0.12);
 }
 
 .fcTable {
@@ -1224,46 +1128,6 @@
 
 .fcTable tbody td:last-child {
   border-right: none !important;
-}
-
-.fcCell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  line-height: 1.25;
-  min-width: 0;
-}
-
-.fcCellLabel {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  text-align: center;
-  word-break: keep-all;
-  letter-spacing: -0.01em;
-}
-
-.fcCellRow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.fcCellValue {
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-}
-
-/* 보상 셀 안의 칭호(홍염/혹한의 군주)는 한 줄 강제 + 축소 */
-.fcCellValue.titleMatchFire,
-.fcCellValue.titleMatchIce {
-  font-size: 0.78rem;
-  white-space: nowrap;
 }
 
 .fcHeaderRow {
@@ -1653,15 +1517,11 @@
 
   .diffCard {
     width: 100%;
-    aspect-ratio: 2 / 1;
+    aspect-ratio: 2.774 / 1;
   }
 
   .diffContent {
     padding: 0.6rem 0.85rem;
-  }
-
-  .diffOverlay {
-    background: linear-gradient(to right, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0) 100%);
   }
 
   /* 최초 클리어 보상 — 세로 변환 */
@@ -1696,17 +1556,6 @@
   /* 최초 클리어 테이블 모바일 */
   .fcTable thead th { font-size: 0.85rem; padding: 0.55rem 0.4rem; }
   .fcTable tbody td { padding: 0.65rem 0.35rem; }
-  .fcCell { gap: 0.3rem; }
-  .fcCellLabel { font-size: 0.7rem; }
-  .fcCellValue { font-size: 0.85rem; }
-  .fcCellValue.titleMatchFire,
-  .fcCellValue.titleMatchIce { font-size: 0.7rem; }
-  .fcCellRow { gap: 0.3rem; }
-  .fcCellRow img { width: 34px !important; height: 34px !important; }
-
-  /* 표 inline/bottom 전환: 모바일 → 각 카드 밑 인라인 표시 */
-  .diffTablesInline { display: block; }
-  .diffTablesBottom { display: none; }
 
   /* 모바일 표 크기 축소 */
   .fcTableHeader { font-size: 0.85rem; padding: 0.55rem 0.4rem; }
@@ -1793,11 +1642,10 @@
 
   /* 난이도 카드 */
   .diffCard {
-    aspect-ratio: 1.8 / 1;
+    aspect-ratio: 2.774 / 1;
   }
 
   .diffName { font-size: 0.95rem; }
-  .diffGold { font-size: 0.95rem; }
 
   /* 최초 클리어 보상 아이템 2열 */
   .fcRewardsMerged {
@@ -2346,3 +2194,4 @@
   .shopDetailCostItem { padding: 0.2rem 0.35rem; font-size: 0.75rem; gap: 0.2rem; }
   .shopDetailCostItem img { width: 18px !important; height: 18px !important; }
 }
+

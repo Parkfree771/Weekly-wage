@@ -9,6 +9,7 @@ import TitleBadge from './TitleBadge';
 import FilterSelect, { type FilterGroup } from './FilterSelect';
 import FilterStats from './FilterStats';
 import ClassSpecCompare from './ClassSpecCompare';
+import AppSidebarPromo from '@/components/AppSidebarPromo';
 
 // 스펙 필터 옵션: 58개 매핑을 직업군(group)별로 묶음 (TIER_ENTRIES는 group→name 정렬됨)
 // '기타'(신규 직업)는 맨 앞에 노출
@@ -676,6 +677,7 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
             selectedSpecId={isClassSel ? undefined : selectedSpec || undefined}
             onSelectSpec={setSelectedSpec}
           />
+          <AppSidebarPromo />
         </aside>
       )}
     </div>

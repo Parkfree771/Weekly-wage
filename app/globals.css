@@ -785,6 +785,49 @@ html, body {
   box-shadow: var(--shadow-sm);
 }
 
+/* 앱 다운로드 전용 배지 스타일 네비 링크 — 사이트 대표색 단색 배경 + 흰 글씨로 다른 메뉴와 구분 */
+.navbar-nav-link-badge {
+  color: #fff !important;
+  background-color: var(--color-primary) !important;
+  border-radius: 999px !important;
+  border-color: transparent !important;
+}
+
+.navbar-nav-link-badge:hover {
+  color: #fff !important;
+  background-color: var(--color-primary) !important;
+  opacity: 0.88;
+}
+
+.navbar-nav-link-badge.active {
+  color: #fff !important;
+  background-color: var(--color-primary) !important;
+}
+
+[data-theme="dark"] .navbar-nav-link-badge,
+[data-theme="dark"] .navbar-nav-link-badge:hover,
+[data-theme="dark"] .navbar-nav-link-badge.active {
+  color: #fff !important;
+  background-color: var(--color-primary) !important;
+}
+
+.navbar-offcanvas-link-badge {
+  color: #fff !important;
+  background-color: var(--color-primary) !important;
+  font-weight: 700 !important;
+}
+
+.navbar-offcanvas-link-badge:hover {
+  color: #fff !important;
+  background-color: var(--color-primary) !important;
+  opacity: 0.88;
+}
+
+[data-theme="dark"] .navbar-offcanvas-link-badge {
+  color: #fff !important;
+  background-color: var(--color-primary) !important;
+}
+
 /* Nav New Badge - Red Accent */
 .nav-badge-new {
   display: inline-block;
@@ -1177,6 +1220,27 @@ html, body {
 .side-rail-sticky {
   position: sticky;
   top: 56px;
+}
+
+/* 앱 다운로드 프로모 — content-shell 밖에서 뜨는 독립 fixed 레일.
+   .content-shell/.content-shell-main의 폭·정렬에 전혀 관여하지 않아 메인 콘텐츠가 절대 밀리지 않음.
+   left/top은 AdLayout에서 콘텐츠 오른쪽 끝 바로 옆(상단)으로 인라인 계산해 넣음. */
+.app-promo-fixed-rail {
+  position: fixed;
+  width: 136px;
+  z-index: 40;
+}
+
+/* body zoom(0.67, ≥1024px) 보정 — fixed 요소는 body zoom과 뷰포트가 어긋나
+   실제보다 왼쪽/위로 쏠려 보임 → 역배율(1/0.67)로 위치 복원, 내용물은 다시 0.67로 축소해 페이지와 톤 맞춤 */
+@media screen and (min-width: 1024px) {
+  .app-promo-fixed-rail {
+    zoom: 1.4925;
+  }
+
+  .app-promo-fixed-rail > * {
+    zoom: 0.67;
+  }
 }
 
 /* ---- 사이드바 업데이트 카드 (팝업 동일 디자인) ---- */

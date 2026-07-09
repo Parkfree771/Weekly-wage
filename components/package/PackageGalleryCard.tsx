@@ -499,8 +499,14 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
 
         <div className={styles.leftMeta}>
           <div className={styles.metaLeft}>
-            <span><span className={styles.metaHeart}>{'\u2665'}</span> {post.likeCount || 0}</span>
-            <span>{'\uD83D\uDC41'} {post.viewCount || 0}</span>
+            <span className={styles.metaAuthor}>\uC791\uC131\uC790: {post.authorName || '\uC775\uBA85'}</span>
+            <span>
+              <svg viewBox="0 0 20 14" className={styles.metaViewIcon}>
+                <path d="M1 7C1 7 4.5 1.5 10 1.5C15.5 1.5 19 7 19 7C19 7 15.5 12.5 10 12.5C4.5 12.5 1 7 1 7Z" />
+                <circle cx="10" cy="7" r="2.5" />
+              </svg>
+              {post.viewCount || 0}
+            </span>
           </div>
           <span className={styles.metaDate}>{formatShortDate(post.createdAt)}</span>
         </div>

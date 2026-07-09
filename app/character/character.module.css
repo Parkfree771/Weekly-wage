@@ -1508,7 +1508,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 2px solid;
+  border: 3px solid;
   object-fit: cover;
 }
 
@@ -1523,6 +1523,20 @@
   align-items: center;
   gap: 0.1rem;
   z-index: 3;
+}
+
+.engCircleNameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.engCircleIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .engCircleName {
@@ -2765,5 +2779,18 @@
   /* 더 좁은 화면에서 각인 원형 추가 축소 */
   .engSection .engCircleBg {
     max-width: 280px;
+  }
+}
+
+/* 보석 호버 툴팁 — body zoom(0.67, ≥1024px) 보정.
+   position:fixed 요소는 body zoom과 뷰포트가 어긋나 엉뚱한 위치에 나타남
+   → 역배율(1/0.67)로 위치 복원, 내용물은 다시 0.67로 축소해 페이지와 톤 맞춤 */
+@media screen and (min-width: 1024px) {
+  .gemTooltipZoomFix {
+    zoom: 1.4925;
+  }
+
+  .gemTooltipZoomInner {
+    zoom: 0.67;
   }
 }

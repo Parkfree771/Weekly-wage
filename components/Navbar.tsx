@@ -20,6 +20,7 @@ type NavGroup = {
   colorClass: string; // 드롭다운 트리거 색상
   href?: string;      // 있으면 드롭다운 대신 직접 링크로 렌더
   badge?: string;     // 직접 링크용 배지
+  emphasized?: boolean; // 색배경 + 흰 글씨 배지 스타일로 강조 (다른 메뉴와 구분)
 };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -30,7 +31,6 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/life-master', label: '생활 제작' },
       { href: '/package', label: '패키지 효율' },
       { href: '/hell-reward', label: '지옥 보상' },
-      { href: '/arkpass', label: '아크패스 효율' },
     ],
   },
   {
@@ -61,6 +61,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/tier', label: '직업 티어표' },
       { href: '/engraving', label: '직업별 각인', badge: 'NEW' },
     ],
+  },
+  {
+    label: '앱 다운로드',
+    colorClass: 'nav-weekly',
+    href: '/app',
+    emphasized: true,
+    items: [],
   },
 ];
 
@@ -97,7 +104,6 @@ export default function Navbar() {
                       href === '/hell-reward' ? 'nav-hell' :
                       href === '/bracelet' ? 'nav-bracelet' :
                       href === '/package' ? 'nav-package' :
-                      href === '/arkpass' ? 'nav-package' :
                       href === '/cathedral' ? 'nav-weekly' :
                       href === '/cerka' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
@@ -160,7 +166,7 @@ export default function Navbar() {
                 <Link
                   key={group.label}
                   href={group.href}
-                  className={`navbar-nav-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''}`}
+                  className={`navbar-nav-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''} ${group.emphasized ? 'navbar-nav-link-badge' : ''}`}
                 >
                   {group.label}
                   {group.badge && <span className="nav-badge-new">{group.badge}</span>}
@@ -310,7 +316,7 @@ export default function Navbar() {
                   <Link
                     key={group.label}
                     href={group.href}
-                    className={`navbar-offcanvas-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''}`}
+                    className={`navbar-offcanvas-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''} ${group.emphasized ? 'navbar-offcanvas-link-badge' : ''}`}
                     onClick={handleClose}
                   >
                     {group.label}

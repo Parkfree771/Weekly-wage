@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { CharacterData, EngravingInfo, GemInfo, SiblingCharacter } from '@/lib/characterData';
 import { getGradeColor } from '@/lib/characterData';
+import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import styles from '@/app/character/character.module.css';
 import TitleBadge from './TitleBadge';
 
@@ -887,8 +888,8 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                             }).join(' ');
                             return (
                               <>
-                                <polygon points={pent(58)} fill="var(--card-body-bg-stone)" stroke="var(--border-color)" strokeWidth="1" strokeLinejoin="round" />
-                                <polygon points={pent(90)} fill="none" stroke="var(--border-color)" strokeWidth="1" strokeLinejoin="round" opacity="0.5" />
+                                <polygon points={pent(58)} fill="var(--card-body-bg-stone)" stroke="var(--border-color)" strokeWidth="2" strokeLinejoin="round" />
+                                <polygon points={pent(90)} fill="none" stroke="var(--border-color)" strokeWidth="2" strokeLinejoin="round" opacity="0.85" />
                               </>
                             );
                           })()}
@@ -904,15 +905,15 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                                 x1={140 + 18 * Math.cos(rad)} y1={140 + 18 * Math.sin(rad)}
                                 x2={140 + 90 * Math.cos(rad)} y2={140 + 90 * Math.sin(rad)}
                                 stroke={stoneEng ? '#38bdf8' : 'var(--border-color)'}
-                                strokeWidth={stoneEng ? '1.5' : '1'}
-                                opacity={stoneEng ? '0.7' : '0.25'}
+                                strokeWidth={stoneEng ? '2' : '1.5'}
+                                opacity={stoneEng ? '0.9' : '0.45'}
                               />
                             );
                           })}
 
                           {/* 중앙 스톤 원 */}
                           {data.abilityStone && (
-                            <circle cx="140" cy="140" r="18" fill="var(--card-bg)" stroke={getGradeColor(data.abilityStone.grade)} strokeWidth="2" />
+                            <circle cx="140" cy="140" r="18" fill="var(--card-bg)" stroke={getGradeColor(data.abilityStone.grade)} strokeWidth="3" />
                           )}
                         </svg>
 
@@ -933,7 +934,12 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                           const stoneLv = eng.abilityStoneLevel ?? 0;
                           return (
                             <div key={i} className={styles.engCircleControls} style={{ '--eng-x': `${50 + 39 * Math.cos(rad)}%`, '--eng-y': `${50 + 39 * Math.sin(rad)}%` } as React.CSSProperties}>
-                              <span className={styles.engCircleName}>{eng.name}</span>
+                              <div className={styles.engCircleNameRow}>
+                                {ENGRAVING_ICONS[eng.name] && (
+                                  <img src={ENGRAVING_ICONS[eng.name]} alt="" className={styles.engCircleIcon} />
+                                )}
+                                <span className={styles.engCircleName}>{eng.name}</span>
+                              </div>
                               <div className={styles.engCircleDiamonds}>
                                 {[1, 2, 3, 4].map(lv => (
                                   <span key={lv} className={styles.engDiamond}
@@ -1064,6 +1070,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
           const gc = isAtk ? '#ef4444' : '#3b82f6';
           return (
             <div
+              className={styles.gemTooltipZoomFix}
               style={{
                 position: 'fixed',
                 left: x,
@@ -1071,47 +1078,53 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                 transform: 'translate(-50%, -100%)',
                 zIndex: 9999,
                 pointerEvents: 'none',
-                width: 400,
-                maxWidth: 'calc(100vw - 24px)',
-                background: 'var(--card-bg, #1a1a1f)',
-                border: `1.5px solid ${gc}`,
-                borderRadius: 12,
-                boxShadow: '0 10px 32px rgba(0,0,0,0.5)',
-                padding: '1rem 1.1rem 1.05rem',
-                color: 'var(--text-primary)',
               }}
             >
-              {/* 헤더: 보석 + 스킬 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 12, borderBottom: '1px solid var(--border-color)' }}>
-                {gem.icon && (
-                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                    <img src={gem.icon} alt={gem.type} style={{ width: 56, height: 56, borderRadius: 8, border: `2px solid ${gc}`, objectFit: 'cover' }} />
-                    <span style={{ position: 'absolute', bottom: -5, right: -5, fontSize: '0.7rem', fontWeight: 800, color: '#fff', background: gc, padding: '1px 6px', borderRadius: 5, lineHeight: '14px' }}>{gem.level}</span>
-                  </div>
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {gem.skillIcon && <img src={gem.skillIcon} alt="" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />}
-                    <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gem.skillName || '-'}</span>
-                  </div>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: gc }}>{gem.type} {gem.level}레벨</span>
-                </div>
-              </div>
-
-              {/* 트라이포드 — 선택한 이름만 표시 */}
-              {gem.tripods && gem.tripods.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
-                  {gem.tripods.map((t, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#fff', background: '#6b7280', padding: '1px 5px', borderRadius: 4, flexShrink: 0 }}>{i + 1}</span>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: t.lock ? 'var(--text-muted)' : '#fbbf24' }}>{t.name}</span>
-                      {t.lock && <span style={{ fontSize: '0.6rem', background: '#374151', color: '#fff', padding: '0 4px', borderRadius: 4 }}>🔒</span>}
+              <div
+                className={styles.gemTooltipZoomInner}
+                style={{
+                  width: 400,
+                  maxWidth: 'calc(100vw - 24px)',
+                  background: 'var(--card-bg, #1a1a1f)',
+                  border: `1.5px solid ${gc}`,
+                  borderRadius: 12,
+                  boxShadow: '0 10px 32px rgba(0,0,0,0.5)',
+                  padding: '1rem 1.1rem 1.05rem',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                {/* 헤더: 보석 + 스킬 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 12, borderBottom: '1px solid var(--border-color)' }}>
+                  {gem.icon && (
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <img src={gem.icon} alt={gem.type} style={{ width: 56, height: 56, borderRadius: 8, border: `2px solid ${gc}`, objectFit: 'cover' }} />
+                      <span style={{ position: 'absolute', bottom: -5, right: -5, fontSize: '0.7rem', fontWeight: 800, color: '#fff', background: gc, padding: '1px 6px', borderRadius: 5, lineHeight: '14px' }}>{gem.level}</span>
                     </div>
-                  ))}
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {gem.skillIcon && <img src={gem.skillIcon} alt="" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />}
+                      <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gem.skillName || '-'}</span>
+                    </div>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: gc }}>{gem.type} {gem.level}레벨</span>
+                  </div>
                 </div>
-              ) : (
-                <div style={{ marginTop: 12, fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>트라이포드 정보 없음</div>
-              )}
+
+                {/* 트라이포드 — 선택한 이름만 표시 */}
+                {gem.tripods && gem.tripods.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                    {gem.tripods.map((t, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#fff', background: '#6b7280', padding: '1px 5px', borderRadius: 4, flexShrink: 0 }}>{i + 1}</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: t.lock ? 'var(--text-muted)' : '#fbbf24' }}>{t.name}</span>
+                        {t.lock && <span style={{ fontSize: '0.6rem', background: '#374151', color: '#fff', padding: '0 4px', borderRadius: 4 }}>🔒</span>}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 12, fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>트라이포드 정보 없음</div>
+                )}
+              </div>
             </div>
           );
         })(),

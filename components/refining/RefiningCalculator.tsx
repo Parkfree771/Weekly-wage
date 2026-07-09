@@ -95,6 +95,8 @@ const MaterialCard = ({
   renderToggle,
   footer,
   tooltip,
+  ownedAmount,
+  onOwnedAmountChange,
 }: {
   icon: string;
   name: string;
@@ -111,14 +113,11 @@ const MaterialCard = ({
   renderToggle?: React.ReactNode;
   footer?: React.ReactNode;
   tooltip?: React.ReactNode;
+  ownedAmount?: number;
+  onOwnedAmountChange?: (value: number) => void;
 }) => (
   <div
-    className={`${styles.materialCard} ${showCheckbox ? styles.materialCardClickable : ''} ${showEnableToggle && !isEnabled ? styles.materialCardDisabled : ''} ${showEnableToggle && isEnabled && !isBound ? styles.materialCardEnabled : ''} ${isBound ? styles.materialCardBound : ''}`}
-    onClick={() => {
-      if (showCheckbox && !(showEnableToggle && !isEnabled)) {
-        onBoundChange?.(name, !isBound);
-      }
-    }}
+    className={`${styles.materialCard} ${showEnableToggle && !isEnabled ? styles.materialCardDisabled : ''} ${showEnableToggle && isEnabled && !isBound ? styles.materialCardEnabled : ''} ${isBound ? styles.materialCardBound : ''}`}
     style={{
       '--hover-color': color,
       ...customStyle,
@@ -135,8 +134,16 @@ const MaterialCard = ({
       />
     ))}
     {showCheckbox && (
-      <div className={`${styles.materialCardBoundLabel} ${!isBound ? styles.materialCardBoundLabelUnbound : ''}`}>
-        귀속
+      <div className={styles.materialCardBoundToggle} onClick={() => onBoundChange?.(name, !isBound)}>
+        <svg
+          viewBox="0 0 24 24"
+          className={`${styles.materialCardBoundCheckMark} ${isBound ? styles.materialCardBoundCheckMarkActive : ''}`}
+        >
+          <polyline points="4 12 10 18 20 6" />
+        </svg>
+        <span className={`${styles.materialCardBoundLabel} ${isBound ? styles.materialCardBoundLabelActive : ''}`}>
+          귀속
+        </span>
       </div>
     )}
     <div className={styles.materialIcon}>
@@ -162,6 +169,20 @@ const MaterialCard = ({
       <div className={styles.materialCost}>
         <Image src="/gold.webp" alt="gold" width={10} height={10} style={{ marginRight: '2px' }} />
         {Math.round(isBound ? 0 : cost).toLocaleString()}
+      </div>
+    )}
+    {showCheckbox && (
+      <div className={styles.materialCardOwnedRow}>
+        <span className={styles.materialCardOwnedLabel}>보유</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={ownedAmount || ''}
+          disabled={isBound}
+          onChange={(e) => onOwnedAmountChange?.(Math.max(0, Number(e.target.value.replace(/[^0-9]/g, '')) || 0))}
+          className={styles.materialCardOwnedInput}
+          placeholder="0"
+        />
       </div>
     )}
     {tooltip && <div className={styles.materialTooltip}>{tooltip}</div>}
@@ -309,6 +330,91 @@ export default function RefiningCalculator({
     '아비도스': false,
   });
 
+  // 재료별 보유 개수 (귀속 재료를 일부만 가진 경우 부족분만 비용 계산에 반영)
+  const [ownedMaterials, setOwnedMaterials] = useState<Record<string, number>>({});
+
+  // materialOptions(일반 재련 숨결·책)의 단일 isBound 키 매핑
+  const MATERIAL_OPTION_KEY_BY_MATERIAL: Record<string, string> = {
+    '빙하_일반': 'glacierBreath',
+    '용암_일반': 'lavaBreath',
+    '방어구책1114': 'tailoring',
+    '방어구책1518': 'tailoring1518',
+    '방어구책1920': 'tailoring1920',
+    '방어구책1920강': 'tailoring1920Enhanced',
+    '무기책1114': 'metallurgy',
+    '무기책1518': 'metallurgy1518',
+    '무기책1920': 'metallurgy1920',
+    '무기책1920강': 'metallurgy1920Enhanced',
+  };
+  // advancedMaterialOptions(상급재련 숨결·책)는 일반턴+선조턴 두 키를 함께 귀속 처리
+  const ADVANCED_OPTION_KEYS_BY_MATERIAL: Record<string, [string, string]> = {
+    '빙하_상급': ['armorNormalBreath', 'armorBonusBreath'],
+    '용암_상급': ['weaponNormalBreath', 'weaponBonusBreath'],
+    '재봉술1단': ['armorNormalBook1', 'armorBonusBook1'],
+    '재봉술2단': ['armorNormalBook2', 'armorBonusBook2'],
+    '재봉술3단': ['armorNormalBook3', 'armorBonusBook3'],
+    '재봉술4단': ['armorNormalBook4', 'armorBonusBook4'],
+    '야금술1단': ['weaponNormalBook1', 'weaponBonusBook1'],
+    '야금술2단': ['weaponNormalBook2', 'weaponBonusBook2'],
+    '야금술3단': ['weaponNormalBook3', 'weaponBonusBook3'],
+    '야금술4단': ['weaponNormalBook4', 'weaponBonusBook4'],
+  };
+  // boundMaterials(단순 귀속 플래그)로 관리되는 재료 키 — 계승 재료는 첫 클릭 전엔 상태 객체에 없을 수 있어
+  // 런타임 `in` 체크 대신 고정 목록으로 판별한다
+  const BASIC_BOUND_KEYS = new Set([
+    '수호석', '파괴석', '돌파석', '아비도스', '운명파편',
+    '수호석결정', '파괴석결정', '위대한돌파석', '상급아비도스',
+  ]);
+  // 재료 키에 해당하는 귀속 체크를 켠다 (보유 개수가 필요량을 채웠을 때 자동 체크용)
+  const setBoundForKey = (key: string) => {
+    if (BASIC_BOUND_KEYS.has(key)) {
+      setBoundMaterials(prev => (prev[key] ? prev : { ...prev, [key]: true }));
+      return;
+    }
+    const optKey = MATERIAL_OPTION_KEY_BY_MATERIAL[key];
+    if (optKey) {
+      setMaterialOptions(prev => ({ ...prev, [optKey]: { ...(prev as any)[optKey], isBound: true } }));
+      return;
+    }
+    const advKeys = ADVANCED_OPTION_KEYS_BY_MATERIAL[key];
+    if (advKeys) {
+      const [a, b] = advKeys;
+      setAdvancedMaterialOptions(prev => ({
+        ...prev,
+        [a]: { ...(prev as any)[a], isBound: true },
+        [b]: { ...(prev as any)[b], isBound: true },
+      }));
+    }
+  };
+  // 빙하/용암의 숨결은 일반 재련·상급 재련이 같은 물리적 아이템(재고)을 나눠 쓰므로,
+  // 한쪽에 보유 개수를 입력하면 다른 쪽에도 동일하게 반영한다
+  const SHARED_OWNED_KEYS: Record<string, string> = {
+    '빙하_일반': '빙하_상급',
+    '빙하_상급': '빙하_일반',
+    '용암_일반': '용암_상급',
+    '용암_상급': '용암_일반',
+  };
+  const handleOwnedChange = (key: string, value: number) => {
+    const owned = Math.max(0, value);
+    const linkedKey = SHARED_OWNED_KEYS[key];
+    setOwnedMaterials(prev => ({
+      ...prev,
+      [key]: owned,
+      ...(linkedKey ? { [linkedKey]: owned } : {}),
+    }));
+    // 보유 개수가 필요 개수 이상이 되면 자동으로 귀속 체크
+    const checkBound = (k: string) => {
+      const need = (materials as any)?.[k] || 0;
+      if (need > 0 && owned >= need) setBoundForKey(k);
+    };
+    checkBound(key);
+    if (linkedKey) checkBound(linkedKey);
+  };
+  const ownedProps = (key: string) => ({
+    ownedAmount: ownedMaterials[key],
+    onOwnedAmountChange: (v: number) => handleOwnedChange(key, v),
+  });
+
   // 계산 모드 (중앙값/평균값/장기백)
   const [calcMode, setCalcMode] = useState<CalcMode>('median');
 
@@ -397,6 +503,7 @@ export default function RefiningCalculator({
         '운명파편': false,
         '아비도스': false,
       });
+      setOwnedMaterials({});
       setSelectedArmorBulkLevel({ normal: null, advanced: null });
       setSelectedWeaponBulkLevel({ normal: null, advanced: null });
     }
@@ -422,44 +529,48 @@ export default function RefiningCalculator({
     const costs: Record<string, number> = {};
     let totalMaterialCost = 0;
 
+    // 보유 개수만큼 차감한 실제 필요 개수 (귀속 재료를 일부만 가진 경우 부족분만 비용에 반영)
+    const owned = (key: string) => ownedMaterials[key] || 0;
+    const need = (amount: number, key: string) => Math.max(0, amount - owned(key));
+
     // 개별 재료 비용 계산 (marketPrices는 이미 개당 가격으로 변환됨)
-    costs['수호석'] = materials.수호석 * (marketPrices['66102106'] || 0);
-    costs['파괴석'] = materials.파괴석 * (marketPrices['66102006'] || 0);
-    costs['돌파석'] = materials.돌파석 * (marketPrices['66110225'] || 0);
-    costs['아비도스'] = materials.아비도스 * (marketPrices['6861012'] || 0);
-    costs['운명파편'] = materials.운명파편 * (marketPrices['66130143'] || 0);
+    costs['수호석'] = need(materials.수호석, '수호석') * (marketPrices['66102106'] || 0);
+    costs['파괴석'] = need(materials.파괴석, '파괴석') * (marketPrices['66102006'] || 0);
+    costs['돌파석'] = need(materials.돌파석, '돌파석') * (marketPrices['66110225'] || 0);
+    costs['아비도스'] = need(materials.아비도스, '아비도스') * (marketPrices['6861012'] || 0);
+    costs['운명파편'] = need(materials.운명파편, '운명파편') * (marketPrices['66130143'] || 0);
 
     // 계승 재료 비용 계산
-    costs['수호석결정'] = (materials.수호석결정 || 0) * (marketPrices['66102107'] || 0);
-    costs['파괴석결정'] = (materials.파괴석결정 || 0) * (marketPrices['66102007'] || 0);
-    costs['위대한돌파석'] = (materials.위대한돌파석 || 0) * (marketPrices['66110226'] || 0);
-    costs['상급아비도스'] = (materials.상급아비도스 || 0) * (marketPrices['6861013'] || 0);
+    costs['수호석결정'] = need(materials.수호석결정 || 0, '수호석결정') * (marketPrices['66102107'] || 0);
+    costs['파괴석결정'] = need(materials.파괴석결정 || 0, '파괴석결정') * (marketPrices['66102007'] || 0);
+    costs['위대한돌파석'] = need(materials.위대한돌파석 || 0, '위대한돌파석') * (marketPrices['66110226'] || 0);
+    costs['상급아비도스'] = need(materials.상급아비도스 || 0, '상급아비도스') * (marketPrices['6861013'] || 0);
     costs['빙하'] = materials.빙하 * (marketPrices['66111132'] || 0);
     costs['용암'] = materials.용암 * (marketPrices['66111131'] || 0);
-    costs['빙하_일반'] = materials.빙하_일반 * (marketPrices['66111132'] || 0);
-    costs['용암_일반'] = materials.용암_일반 * (marketPrices['66111131'] || 0);
-    costs['빙하_상급'] = materials.빙하_상급 * (marketPrices['66111132'] || 0);
-    costs['용암_상급'] = materials.용암_상급 * (marketPrices['66111131'] || 0);
+    costs['빙하_일반'] = need(materials.빙하_일반, '빙하_일반') * (marketPrices['66111132'] || 0);
+    costs['용암_일반'] = need(materials.용암_일반, '용암_일반') * (marketPrices['66111131'] || 0);
+    costs['빙하_상급'] = need(materials.빙하_상급, '빙하_상급') * (marketPrices['66111132'] || 0);
+    costs['용암_상급'] = need(materials.용암_상급, '용암_상급') * (marketPrices['66111131'] || 0);
 
     // 일반 재련 책 비용 (단계별)
-    costs['방어구책1114'] = (materials.방어구책1114 || 0) * (marketPrices['66112546'] || 0);  // 재봉술 [11-14]
-    costs['방어구책1518'] = (materials.방어구책1518 || 0) * (marketPrices['66112552'] || 0);  // 재봉술 [15-18]
-    costs['방어구책1920'] = (materials.방어구책1920 || 0) * (marketPrices['66112554'] || 0);  // 재봉술 [19-20]
-    costs['방어구책1920강'] = (materials.방어구책1920강 || 0) * (marketPrices['66112556'] || 0);  // 강화 재봉술 [19-20]
-    costs['무기책1114'] = (materials.무기책1114 || 0) * (marketPrices['66112543'] || 0);  // 야금술 [11-14]
-    costs['무기책1518'] = (materials.무기책1518 || 0) * (marketPrices['66112551'] || 0);  // 야금술 [15-18]
-    costs['무기책1920'] = (materials.무기책1920 || 0) * (marketPrices['66112553'] || 0);  // 야금술 [19-20]
-    costs['무기책1920강'] = (materials.무기책1920강 || 0) * (marketPrices['66112555'] || 0);  // 강화 야금술 [19-20]
+    costs['방어구책1114'] = need(materials.방어구책1114 || 0, '방어구책1114') * (marketPrices['66112546'] || 0);  // 재봉술 [11-14]
+    costs['방어구책1518'] = need(materials.방어구책1518 || 0, '방어구책1518') * (marketPrices['66112552'] || 0);  // 재봉술 [15-18]
+    costs['방어구책1920'] = need(materials.방어구책1920 || 0, '방어구책1920') * (marketPrices['66112554'] || 0);  // 재봉술 [19-20]
+    costs['방어구책1920강'] = need(materials.방어구책1920강 || 0, '방어구책1920강') * (marketPrices['66112556'] || 0);  // 강화 재봉술 [19-20]
+    costs['무기책1114'] = need(materials.무기책1114 || 0, '무기책1114') * (marketPrices['66112543'] || 0);  // 야금술 [11-14]
+    costs['무기책1518'] = need(materials.무기책1518 || 0, '무기책1518') * (marketPrices['66112551'] || 0);  // 야금술 [15-18]
+    costs['무기책1920'] = need(materials.무기책1920 || 0, '무기책1920') * (marketPrices['66112553'] || 0);  // 야금술 [19-20]
+    costs['무기책1920강'] = need(materials.무기책1920강 || 0, '무기책1920강') * (marketPrices['66112555'] || 0);  // 강화 야금술 [19-20]
 
     // 상급 재련 책 비용 (1단, 2단, 3단, 4단)
-    costs['재봉술1단'] = (materials.재봉술1단 || 0) * (marketPrices['66112712'] || 0);
-    costs['재봉술2단'] = (materials.재봉술2단 || 0) * (marketPrices['66112714'] || 0);
-    costs['재봉술3단'] = (materials.재봉술3단 || 0) * (marketPrices['66112716'] || 0);
-    costs['재봉술4단'] = (materials.재봉술4단 || 0) * (marketPrices['66112718'] || 0);
-    costs['야금술1단'] = (materials.야금술1단 || 0) * (marketPrices['66112711'] || 0);
-    costs['야금술2단'] = (materials.야금술2단 || 0) * (marketPrices['66112713'] || 0);
-    costs['야금술3단'] = (materials.야금술3단 || 0) * (marketPrices['66112715'] || 0);
-    costs['야금술4단'] = (materials.야금술4단 || 0) * (marketPrices['66112717'] || 0);
+    costs['재봉술1단'] = need(materials.재봉술1단 || 0, '재봉술1단') * (marketPrices['66112712'] || 0);
+    costs['재봉술2단'] = need(materials.재봉술2단 || 0, '재봉술2단') * (marketPrices['66112714'] || 0);
+    costs['재봉술3단'] = need(materials.재봉술3단 || 0, '재봉술3단') * (marketPrices['66112716'] || 0);
+    costs['재봉술4단'] = need(materials.재봉술4단 || 0, '재봉술4단') * (marketPrices['66112718'] || 0);
+    costs['야금술1단'] = need(materials.야금술1단 || 0, '야금술1단') * (marketPrices['66112711'] || 0);
+    costs['야금술2단'] = need(materials.야금술2단 || 0, '야금술2단') * (marketPrices['66112713'] || 0);
+    costs['야금술3단'] = need(materials.야금술3단 || 0, '야금술3단') * (marketPrices['66112715'] || 0);
+    costs['야금술4단'] = need(materials.야금술4단 || 0, '야금술4단') * (marketPrices['66112717'] || 0);
 
     // 귀속 재료를 제외한 총 재료비 계산
     if (!boundMaterials['수호석']) totalMaterialCost += costs['수호석'];
@@ -565,7 +676,7 @@ export default function RefiningCalculator({
 
     setResults({ totalGold, materialCosts: costs });
 
-  }, [materials, marketPrices, boundMaterials, materialOptions, advancedMaterialOptions]);
+  }, [materials, marketPrices, boundMaterials, ownedMaterials, materialOptions, advancedMaterialOptions]);
 
   // 거래소 가격 불러오기 (latest_prices.json 사용)
   useEffect(() => {
@@ -598,11 +709,15 @@ export default function RefiningCalculator({
     const armor: Record<number, OptimalPolicy> = {};
     const weapon: Record<number, OptimalPolicy> = {};
     const mp = (id: string) => marketPrices[id] || 0;
-    const bnd = (key: string) => !!boundMaterials[key];
+    // 보유 개수가 필요량 전체를 덮으면 귀속과 동일하게 실지출 0으로 취급
+    const owned = (key: string) => ownedMaterials[key] || 0;
+    const covered = (explicitBound: boolean, key: string) =>
+      explicitBound || owned(key) >= ((materials as any)?.[key] || 0);
+    const bnd = (key: string) => covered(!!boundMaterials[key], key);
     const glacierMkt = mp('66111132'); // 빙하 시세 (로딩 판정용)
     const lavaMkt = mp('66111131');    // 용암 시세 (로딩 판정용)
-    const glacierP = materialOptions.glacierBreath.isBound ? 0 : glacierMkt;
-    const lavaP = materialOptions.lavaBreath.isBound ? 0 : lavaMkt;
+    const glacierP = covered(materialOptions.glacierBreath.isBound, '빙하_일반') ? 0 : glacierMkt;
+    const lavaP = covered(materialOptions.lavaBreath.isBound, '용암_일반') ? 0 : lavaMkt;
     for (let L = 11; L <= 24; L++) {
       const baseProb = SUCCESSION_BASE_PROBABILITY[L];
       if (!baseProb) continue;
@@ -659,12 +774,14 @@ export default function RefiningCalculator({
       const hasEnhancedBook = target >= 19 && target <= 20;
       const aBookMkt = target <= 14 ? mp('66112546') : target <= 18 ? mp('66112552') : mp('66112554');
       const wBookMkt = target <= 14 ? mp('66112543') : target <= 18 ? mp('66112551') : mp('66112553');
-      const aBookBound = target <= 14 ? materialOptions.tailoring.isBound : target <= 18 ? materialOptions.tailoring1518.isBound : materialOptions.tailoring1920.isBound;
-      const wBookBound = target <= 14 ? materialOptions.metallurgy.isBound : target <= 18 ? materialOptions.metallurgy1518.isBound : materialOptions.metallurgy1920.isBound;
+      const aBookKey = target <= 14 ? '방어구책1114' : target <= 18 ? '방어구책1518' : '방어구책1920';
+      const wBookKey = target <= 14 ? '무기책1114' : target <= 18 ? '무기책1518' : '무기책1920';
+      const aBookBound = covered(target <= 14 ? materialOptions.tailoring.isBound : target <= 18 ? materialOptions.tailoring1518.isBound : materialOptions.tailoring1920.isBound, aBookKey);
+      const wBookBound = covered(target <= 14 ? materialOptions.metallurgy.isBound : target <= 18 ? materialOptions.metallurgy1518.isBound : materialOptions.metallurgy1920.isBound, wBookKey);
       const aEnhMkt = hasEnhancedBook ? mp('66112556') : 0;
       const wEnhMkt = hasEnhancedBook ? mp('66112555') : 0;
-      const aEnhBound = materialOptions.tailoring1920Enhanced.isBound;
-      const wEnhBound = materialOptions.metallurgy1920Enhanced.isBound;
+      const aEnhBound = covered(materialOptions.tailoring1920Enhanced.isBound, '방어구책1920강');
+      const wEnhBound = covered(materialOptions.metallurgy1920Enhanced.isBound, '무기책1920강');
       const mkVariants = (mat: number, breathP: number, bookMkt: number, bookBound: boolean, enhMkt: number, enhBound: boolean): PreOptVariants | null => {
         // 시세가 있는 책만 후보에 올리고, 귀속 책은 가격 0(공짜)으로 반영
         const normalBooks = bookProb > 0 && bookMkt > 0 ? [{ id: 'normal', prob: bookProb, price: bookBound ? 0 : bookMkt }] : [];
@@ -684,7 +801,7 @@ export default function RefiningCalculator({
     }
 
     return { armor, weapon, preArmor, preWeapon };
-  }, [calcMode, marketPrices, boundMaterials, materialOptions]);
+  }, [calcMode, marketPrices, boundMaterials, ownedMaterials, materials, materialOptions]);
 
   // 실제 강화 대상 단계 (타입별, 계승 전/후 구분) — 최적 숨결 표시는 이 구간만
   const refinedLevelsByType = useMemo(() => {
@@ -719,12 +836,13 @@ export default function RefiningCalculator({
   // (아래 동기화 effect보다 먼저 선언되어야 같은 렌더 사이클에서 플래그가 소비된다)
   const boundSignature = useMemo(() => JSON.stringify([
     boundMaterials,
+    ownedMaterials,
     materialOptions.glacierBreath.isBound, materialOptions.lavaBreath.isBound,
     materialOptions.tailoring.isBound, materialOptions.tailoring1518.isBound,
     materialOptions.tailoring1920.isBound, materialOptions.tailoring1920Enhanced.isBound,
     materialOptions.metallurgy.isBound, materialOptions.metallurgy1518.isBound,
     materialOptions.metallurgy1920.isBound, materialOptions.metallurgy1920Enhanced.isBound,
-  ]), [boundMaterials, materialOptions]);
+  ]), [boundMaterials, ownedMaterials, materialOptions]);
 
   useEffect(() => {
     if (materialOptions.glacierBreath.enabled && materialOptions.glacierBreath.optimal) pendingBookSync.current.armor = true;
@@ -815,10 +933,55 @@ export default function RefiningCalculator({
     return { armor: collect('armor'), weapon: collect('weapon') };
   }, [equipments, targetLevels]);
 
-  const advOptimalPlan = useMemo(() => ({
-    armor: computeOptimalAdvancedPlan('armor', advStagesByType.armor, marketPrices),
-    weapon: computeOptimalAdvancedPlan('weapon', advStagesByType.weapon, marketPrices),
-  }), [advStagesByType, marketPrices]);
+  // 귀속 처리되었거나 보유 개수가 전체 필요량을 덮는 재료는 실지출 0으로 취급해 최적 조합을 다시 계산
+  const advOptimalPlan = useMemo(() => {
+    const mp = (id: string) => marketPrices[id] || 0;
+    const owned = (key: string) => ownedMaterials[key] || 0;
+    const covered = (explicitBound: boolean, key: string) =>
+      explicitBound || owned(key) >= ((materials as any)?.[key] || 0);
+
+    const baseCoveredPrice = (id: string, key: string) =>
+      covered(!!boundMaterials[key], key) ? 0 : mp(id);
+
+    const bookIdMap: Record<'armor' | 'weapon', Record<AdvStageNum, string>> = {
+      armor: { 1: '66112712', 2: '66112714', 3: '66112716', 4: '66112718' },
+      weapon: { 1: '66112711', 2: '66112713', 3: '66112715', 4: '66112717' },
+    };
+    const bookKeyMap: Record<'armor' | 'weapon', Record<AdvStageNum, string>> = {
+      armor: { 1: '재봉술1단', 2: '재봉술2단', 3: '재봉술3단', 4: '재봉술4단' },
+      weapon: { 1: '야금술1단', 2: '야금술2단', 3: '야금술3단', 4: '야금술4단' },
+    };
+
+    const buildPrices = (type: 'armor' | 'weapon'): Record<string, number> => {
+      const isArmor = type === 'armor';
+      const breathBound = isArmor
+        ? (advancedMaterialOptions.armorNormalBreath.isBound && advancedMaterialOptions.armorBonusBreath.isBound)
+        : (advancedMaterialOptions.weaponNormalBreath.isBound && advancedMaterialOptions.weaponBonusBreath.isBound);
+      const breathKey = isArmor ? '빙하_상급' : '용암_상급';
+      const breathId = isArmor ? '66111132' : '66111131';
+
+      const prices: Record<string, number> = {
+        '66102106': baseCoveredPrice('66102106', '수호석'),
+        '66102006': baseCoveredPrice('66102006', '파괴석'),
+        '66110225': baseCoveredPrice('66110225', '돌파석'),
+        '6861012': baseCoveredPrice('6861012', '아비도스'),
+        '66130143': baseCoveredPrice('66130143', '운명파편'),
+        [breathId]: covered(breathBound, breathKey) ? 0 : mp(breathId),
+      };
+      ([1, 2, 3, 4] as AdvStageNum[]).forEach(stage => {
+        const id = bookIdMap[type][stage];
+        const normalBound = (advancedMaterialOptions as any)[`${type}NormalBook${stage}`].isBound;
+        const bonusBound = (advancedMaterialOptions as any)[`${type}BonusBook${stage}`].isBound;
+        prices[id] = covered(normalBound && bonusBound, bookKeyMap[type][stage]) ? 0 : mp(id);
+      });
+      return prices;
+    };
+
+    return {
+      armor: computeOptimalAdvancedPlan('armor', advStagesByType.armor, buildPrices('armor')),
+      weapon: computeOptimalAdvancedPlan('weapon', advStagesByType.weapon, buildPrices('weapon')),
+    };
+  }, [advStagesByType, marketPrices, boundMaterials, ownedMaterials, materials, advancedMaterialOptions]);
 
   const [openAdvOptPopup, setOpenAdvOptPopup] = useState<'armor' | 'weapon' | null>(null);
 
@@ -870,27 +1033,73 @@ export default function RefiningCalculator({
     const mode = breathModeOf(type);
     return (
       <div className={styles.breathControls} onClick={e => e.stopPropagation()}>
-        <div className={styles.breathModeSeg}>
-          <button type="button" className={`${styles.breathModeBtn} ${mode === 'off' ? styles.breathModeBtnActive : ''}`} onClick={() => setBreathMode(type, 'off')}>미사용</button>
-          <button type="button" className={`${styles.breathModeBtn} ${mode === 'full' ? styles.breathModeBtnActive : ''}`} onClick={() => setBreathMode(type, 'full')}>풀숨</button>
-          <button
-            type="button"
-            data-breath-opt-btn
-            className={`${styles.breathModeBtn} ${mode === 'optimal' ? styles.breathModeBtnActive : ''}`}
-            onClick={() => {
-              if (mode !== 'optimal') { setBreathMode(type, 'optimal'); setOpenBreathPopup(type); }
-              else setOpenBreathPopup(o => (o === type ? null : type));
-            }}
-            onMouseEnter={() => { if (mode === 'optimal') setOpenBreathPopup(type); }}
-            title="최적 숨결 · 단계별 보기"
-          >
-            최적{mode === 'optimal' ? ' ▾' : ''}
-          </button>
+        <div className={styles.advTurnRow}>
+          <div className={styles.advTurnItem}>
+            <button
+              type="button"
+              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${mode === 'off' ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
+              onClick={() => setBreathMode(type, 'off')}
+            >
+              미사용
+            </button>
+          </div>
+          <div className={styles.advTurnItem}>
+            <button
+              type="button"
+              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${mode === 'full' ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
+              onClick={() => setBreathMode(type, 'full')}
+            >
+              풀숨
+            </button>
+          </div>
+          <div className={styles.advTurnItem}>
+            <button
+              type="button"
+              data-breath-opt-btn
+              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${mode === 'optimal' ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
+              onClick={() => {
+                if (mode !== 'optimal') { setBreathMode(type, 'optimal'); setOpenBreathPopup(type); }
+                else setOpenBreathPopup(o => (o === type ? null : type));
+              }}
+              onMouseEnter={() => { if (mode === 'optimal') setOpenBreathPopup(type); }}
+              title="최적 숨결 · 단계별 보기"
+            >
+              최적{mode === 'optimal' ? ' ▾' : ''}
+            </button>
+            {renderBreathPopup(type)}
+          </div>
         </div>
-        {renderBreathPopup(type)}
       </div>
     );
   };
+
+  // 일반 재련 책 카드 하단 컨트롤 — 사용/미사용 버튼 (상급재련 카드와 동일한 느낌).
+  // exclusiveWithKey를 주면 켜는 순간 반대쪽(일반/강화 등)을 자동으로 끈다.
+  const renderSimpleToggle = (
+    key: keyof typeof materialOptions,
+    exclusiveWithKey?: keyof typeof materialOptions
+  ) => (
+    <div className={styles.breathControls} onClick={e => e.stopPropagation()}>
+      <div className={styles.advTurnRow}>
+        <div className={styles.advTurnItem}>
+          <button
+            type="button"
+            onClick={() => setMaterialOptions(p => {
+              const nextEnabled = !(p as any)[key].enabled;
+              return {
+                ...p,
+                [key]: { ...(p as any)[key], enabled: nextEnabled },
+                ...(exclusiveWithKey && nextEnabled ? { [exclusiveWithKey]: { ...(p as any)[exclusiveWithKey], enabled: false } } : {}),
+              };
+            })}
+            className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${(materialOptions as any)[key].enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
+          >
+            {(materialOptions as any)[key].enabled ? '사용' : '미사용'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   // 최적 숨결 단계별 팝업 — 최적 버튼 바로 위(카드 안에서 나옴), 실제 강화 구간만·한 줄
   // 계승 전 장비가 있으면 "계승 전" 그룹도 함께 표시 (책 사용 여부 포함)
@@ -932,7 +1141,13 @@ export default function RefiningCalculator({
     const preLabel = (p: PreSuccessionPolicy) => {
       if (!p.useBook) return breathLabel(p);
       const name = p.bookId === 'enhanced' ? `강화 ${bookName}` : bookName;
-      return `${name} ${Math.round(p.tries)}권 · ${breathLabel(p)}`;
+      return (
+        <>
+          <span className={styles.breathChipBookName}>{name} {Math.round(p.tries)}권</span>
+          {' · '}
+          {breathLabel(p)}
+        </>
+      );
     };
     const bothShown = levels.length > 0 && preLevels.length > 0;
     const popup = (
@@ -988,14 +1203,15 @@ export default function RefiningCalculator({
     return isMobile ? createPortal(popup, document.body) : popup;
   };
 
-  // 상급재련 최적 조합 — 라벨 옆 버튼 + 버튼 위로 뜨는 컴팩트 팝업
-  const renderAdvOptControl = (type: 'armor' | 'weapon') => {
+  // 상급재련 최적 조합 팝업 (단계별 일반턴/선조턴 조합 + 예상 비용) — "최적" 버튼 바로 위로 뜬다
+  const renderAdvOptPopup = (type: 'armor' | 'weapon') => {
+    if (openAdvOptPopup !== type) return null;
     const plan = advOptimalPlan[type];
     const hasTarget = advStagesByType[type].length > 0;
     const savePct = plan && plan.noneCost > 0
       ? Math.round((1 - plan.totalCost / plan.noneCost) * 100)
       : 0;
-    const popup = openAdvOptPopup !== type ? null : (
+    const popup = (
           <div className={styles.advOptPopup} data-advopt-popup onClick={e => e.stopPropagation()}>
             <div className={styles.advOptPopupHeader}>
               <span className={styles.advOptPopupTitle}>
@@ -1025,29 +1241,63 @@ export default function RefiningCalculator({
                     <b className={styles.advOptGold}>{Math.round(plan.totalCost / 10000).toLocaleString()}만G</b>
                     {savePct > 0 && <em className={styles.advOptSave}> · 미사용 대비 -{savePct}%</em>}
                   </span>
-                  <button type="button" className={styles.advOptApply} onClick={() => applyAdvOptimal(type)}>적용</button>
+                  <button type="button" className={styles.advOptApply} onClick={() => applyAdvOptimal(type)}>다시 적용</button>
                 </div>
               </>
             )}
           </div>
     );
-    return (
-      <span className={styles.advOptWrap}>
-        <button
-          type="button"
-          data-advopt-btn
-          className={`${styles.advOptBtn} ${openAdvOptPopup === type ? styles.advOptBtnActive : ''}`}
-          onClick={() => setOpenAdvOptPopup(o => (o === type ? null : type))}
-          title="시세 기준 최적 숨결·책 조합"
-        >
-          숨결·{type === 'armor' ? '재봉술' : '야금술'} 최적화
-          <span className={`${styles.advOptChevron} ${openAdvOptPopup === type ? styles.advOptChevronOpen : ''}`}>▾</span>
-        </button>
-        {/* 모바일: 상위 transform에 fixed가 갇히지 않도록 body 포털로 렌더 */}
-        {popup && (isMobile ? createPortal(popup, document.body) : popup)}
-      </span>
-    );
+    // 모바일: 상위 transform에 fixed가 갇히지 않도록 body 포털로 렌더
+    return isMobile ? createPortal(popup, document.body) : popup;
   };
+
+  // 상급재련 재료 카드 하단 컨트롤 — 일반턴/선조턴 사용 여부를 라벨+토글 버튼 쌍(이전 디자인 느낌)으로 각각 표시.
+  // 숨결 카드에는 optType을 넘겨 "최적화" 버튼(+팝업)도 같은 자리에 함께 배치한다.
+  const renderAdvTurnToggle = (
+    normalKey: keyof typeof advancedMaterialOptions,
+    bonusKey: keyof typeof advancedMaterialOptions,
+    optType?: 'armor' | 'weapon'
+  ) => (
+    <div className={styles.breathControls} onClick={e => e.stopPropagation()}>
+      <div className={styles.advTurnRow}>
+        <div className={styles.advTurnItem}>
+          <span className={`${styles.advTurnItemLabel} ${isMobile ? styles.advTurnItemLabelMobile : ''}`}>일반턴</span>
+          <button
+            type="button"
+            onClick={() => setAdvancedMaterialOptions(p => ({ ...p, [normalKey]: { ...p[normalKey], enabled: !p[normalKey].enabled } }))}
+            className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions[normalKey].enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
+          >
+            {advancedMaterialOptions[normalKey].enabled ? '사용' : '미사용'}
+          </button>
+        </div>
+        <div className={styles.advTurnItem}>
+          <span className={`${styles.advTurnItemLabel} ${isMobile ? styles.advTurnItemLabelMobile : ''}`}>선조턴</span>
+          <button
+            type="button"
+            onClick={() => setAdvancedMaterialOptions(p => ({ ...p, [bonusKey]: { ...p[bonusKey], enabled: !p[bonusKey].enabled } }))}
+            className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions[bonusKey].enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
+          >
+            {advancedMaterialOptions[bonusKey].enabled ? '사용' : '미사용'}
+          </button>
+        </div>
+        {optType && (
+          <div className={`${styles.advTurnItem} ${styles.advTurnOptItem} ${isMobile ? styles.advTurnOptItemMobile : ''}`}>
+            <span className={`${styles.advTurnItemLabel} ${isMobile ? styles.advTurnItemLabelMobile : ''}`}>최적화</span>
+            <button
+              type="button"
+              data-advopt-btn
+              onClick={() => setOpenAdvOptPopup(o => (o === optType ? null : optType))}
+              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${openAdvOptPopup === optType ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
+              title="시세 기준 최적 숨결·책 조합"
+            >
+              {openAdvOptPopup === optType ? '보는 중' : '확인'}
+            </button>
+            {renderAdvOptPopup(optType)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   // 계산이 필요한 장비 필터링
   const getEquipmentsToRefine = () => {
@@ -2030,10 +2280,10 @@ export default function RefiningCalculator({
                       </div>
                     )}
 
-                    {/* 방어구 상급 일괄 설정 — 모바일: 목표 2x2(좌) + 일반턴/선조턴(우, 남은 폭 반반) */}
+                    {/* 방어구 상급 일괄 설정 (숨결·책 사용 여부는 "상급 재련 추가 재료" 카드에서 직접 설정) */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: isMobile ? 'auto 1fr 1fr' : '1fr 220px 220px',
+                      gridTemplateColumns: isMobile ? 'auto' : '1fr',
                       gap: isMobile ? '0.4rem' : '2rem',
                       alignItems: 'center',
                       marginBottom: isMobile ? '0.6rem' : '1rem'
@@ -2048,7 +2298,6 @@ export default function RefiningCalculator({
                           fontWeight: '600'
                         }}>
                           방어구 (상급)
-                          {renderAdvOptControl('armor')}
                         </div>
                         <div style={{
                           display: isMobile ? 'grid' : 'flex',
@@ -2103,262 +2352,12 @@ export default function RefiningCalculator({
                           })}
                         </div>
                       </div>
-
-                      {/* 일반턴 재료 - 방어구 */}
-                      <div className="d-flex flex-column gap-1 align-items-center">
-                        <div className={`${styles.advancedMaterialLabel} ${isMobile ? styles.advancedMaterialLabelMobile : ''}`}>일반턴</div>
-                        <div style={{ display: 'flex', gap: isMobile ? '0.25rem' : '0.5rem', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
-                          {/* 빙하의 숨결 - 항상 표시 */}
-                          <div className="d-flex flex-column align-items-center">
-                            <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                              <Image src="/breath-glacier.webp" alt="빙하의 숨결" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                            </div>
-                            <button
-                              onClick={() => setAdvancedMaterialOptions(prev => ({
-                                ...prev,
-                                armorNormalBreath: { ...prev.armorNormalBreath, enabled: !prev.armorNormalBreath.enabled }
-                              }))}
-                              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.armorNormalBreath.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                            >
-                              {advancedMaterialOptions.armorNormalBreath.enabled ? '사용' : '미사용'}
-                            </button>
-                          </div>
-
-                          {/* 장인의 책 표시 조건 확인 - 일반턴 */}
-                          {(() => {
-                            const armorEquipments = equipments.filter(eq => eq.type === 'armor');
-                            if (armorEquipments.length === 0) return null;
-
-                            const minCurrentLevel = Math.min(...armorEquipments.map(eq => eq.currentAdvancedLevel));
-                            const maxTargetLevel = Math.max(...armorEquipments.map(eq => {
-                              const target = targetLevels[eq.name];
-                              return target?.advanced || 0;
-                            }));
-
-                            // 목표가 없으면 아무것도 표시 안 함
-                            if (maxTargetLevel === 0) return null;
-
-                            // 1단계 책: 현재 레벨이 10 미만이고, 목표가 1 이상일 때 (1~10단계 구간을 지나감)
-                            const showBook1 = minCurrentLevel < 10 && maxTargetLevel >= 1;
-
-                            // 2단계 책: 현재 레벨이 20 미만이고, 목표가 10 초과일 때 (11~20단계 구간을 지나감)
-                            const showBook2 = minCurrentLevel < 20 && maxTargetLevel > 10;
-
-                            // 3단계 책: 현재 레벨이 30 미만이고, 목표가 20 초과일 때 (21~30단계 구간을 지나감)
-                            const showBook3 = minCurrentLevel < 30 && maxTargetLevel > 20;
-
-                            // 4단계 책: 현재 레벨이 40 미만이고, 목표가 30 초과일 때 (31~40단계 구간을 지나감)
-                            const showBook4 = minCurrentLevel < 40 && maxTargetLevel > 30;
-
-                            return (
-                              <>
-                                {/* 장인의 재봉술 1단계 */}
-                                {showBook1 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                    <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                      <Image src="/master-tailoring-1.webp" alt="장인의 재봉술 1단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                    </div>
-                                    <button
-                                      onClick={() => setAdvancedMaterialOptions(prev => ({
-                                        ...prev,
-                                        armorNormalBook1: { ...prev.armorNormalBook1, enabled: !prev.armorNormalBook1.enabled }
-                                      }))}
-                                      className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.armorNormalBook1.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                    >
-                                      {advancedMaterialOptions.armorNormalBook1.enabled ? '사용' : '미사용'}
-                                    </button>
-                                  </div>
-                                )}
-
-                                {/* 장인의 재봉술 2단계 */}
-                                {showBook2 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                  <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                    <Image src="/master-tailoring-2.webp" alt="장인의 재봉술 2단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                  </div>
-                                  <button
-                                    onClick={() => setAdvancedMaterialOptions(prev => ({
-                                      ...prev,
-                                      armorNormalBook2: { ...prev.armorNormalBook2, enabled: !prev.armorNormalBook2.enabled }
-                                    }))}
-                                    className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.armorNormalBook2.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                  >
-                                    {advancedMaterialOptions.armorNormalBook2.enabled ? '사용' : '미사용'}
-                                  </button>
-                                </div>
-                                )}
-
-                                {/* 장인의 재봉술 3단계 */}
-                                {showBook3 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                  <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                    <Image src="/master-tailoring-3.webp" alt="장인의 재봉술 3단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                  </div>
-                                  <button
-                                    onClick={() => setAdvancedMaterialOptions(prev => ({
-                                      ...prev,
-                                      armorNormalBook3: { ...prev.armorNormalBook3, enabled: !prev.armorNormalBook3.enabled }
-                                    }))}
-                                    className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.armorNormalBook3.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                  >
-                                    {advancedMaterialOptions.armorNormalBook3.enabled ? '사용' : '미사용'}
-                                  </button>
-                                </div>
-                                )}
-
-                                {/* 장인의 재봉술 4단계 */}
-                                {showBook4 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                  <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                    <Image src="/master-tailoring-4.webp" alt="장인의 재봉술 4단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                  </div>
-                                  <button
-                                    onClick={() => setAdvancedMaterialOptions(prev => ({
-                                      ...prev,
-                                      armorNormalBook4: { ...prev.armorNormalBook4, enabled: !prev.armorNormalBook4.enabled }
-                                    }))}
-                                    className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.armorNormalBook4.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                  >
-                                    {advancedMaterialOptions.armorNormalBook4.enabled ? '사용' : '미사용'}
-                                  </button>
-                                </div>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </div>
-
-                      {/* 선조턴 재료 - 방어구 */}
-                      <div className="d-flex flex-column gap-1 align-items-center">
-                        <div className={`${styles.advancedMaterialLabel} ${isMobile ? styles.advancedMaterialLabelMobile : ''}`}>선조턴</div>
-                        <div style={{ display: 'flex', gap: isMobile ? '0.25rem' : '0.5rem', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
-                          {/* 빙하의 숨결 - 항상 표시 */}
-                          <div className="d-flex flex-column align-items-center">
-                            <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                              <Image src="/breath-glacier.webp" alt="빙하의 숨결" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                            </div>
-                            <button
-                              onClick={() => setAdvancedMaterialOptions(prev => ({
-                                ...prev,
-                                armorBonusBreath: { ...prev.armorBonusBreath, enabled: !prev.armorBonusBreath.enabled }
-                              }))}
-                              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.armorBonusBreath.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                            >
-                              {advancedMaterialOptions.armorBonusBreath.enabled ? '사용' : '미사용'}
-                            </button>
-                          </div>
-
-                          {/* 장인의 책 표시 조건 확인 - 선조턴 */}
-                          {(() => {
-                            const armorEquipments = equipments.filter(eq => eq.type === 'armor');
-                            if (armorEquipments.length === 0) return null;
-
-                            const minCurrentLevel = Math.min(...armorEquipments.map(eq => eq.currentAdvancedLevel));
-                            const maxTargetLevel = Math.max(...armorEquipments.map(eq => {
-                              const target = targetLevels[eq.name];
-                              return target?.advanced || 0;
-                            }));
-
-                            // 목표가 없으면 아무것도 표시 안 함
-                            if (maxTargetLevel === 0) return null;
-
-                            // 1단계 책: 현재 레벨이 10 미만이고, 목표가 1 이상일 때 (1~10단계 구간을 지나감)
-                            const showBook1 = minCurrentLevel < 10 && maxTargetLevel >= 1;
-
-                            // 2단계 책: 현재 레벨이 20 미만이고, 목표가 10 초과일 때 (11~20단계 구간을 지나감)
-                            const showBook2 = minCurrentLevel < 20 && maxTargetLevel > 10;
-
-                            // 3단계 책: 현재 레벨이 30 미만이고, 목표가 20 초과일 때 (21~30단계 구간을 지나감)
-                            const showBook3 = minCurrentLevel < 30 && maxTargetLevel > 20;
-
-                            // 4단계 책: 현재 레벨이 40 미만이고, 목표가 30 초과일 때 (31~40단계 구간을 지나감)
-                            const showBook4 = minCurrentLevel < 40 && maxTargetLevel > 30;
-
-                            return (
-                              <>
-                                {/* 장인의 재봉술 1단계 */}
-                                {showBook1 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                    <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                      <Image src="/master-tailoring-1.webp" alt="장인의 재봉술 1단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                    </div>
-                                    <button
-                                      onClick={() => setAdvancedMaterialOptions(prev => ({
-                                        ...prev,
-                                        armorBonusBook1: { ...prev.armorBonusBook1, enabled: !prev.armorBonusBook1.enabled }
-                                      }))}
-                                      className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.armorBonusBook1.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                    >
-                                      {advancedMaterialOptions.armorBonusBook1.enabled ? '사용' : '미사용'}
-                                    </button>
-                                  </div>
-                                )}
-
-                                {/* 장인의 재봉술 2단계 */}
-                                {showBook2 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                  <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                    <Image src="/master-tailoring-2.webp" alt="장인의 재봉술 2단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                  </div>
-                                  <button
-                                    onClick={() => setAdvancedMaterialOptions(prev => ({
-                                      ...prev,
-                                      armorBonusBook2: { ...prev.armorBonusBook2, enabled: !prev.armorBonusBook2.enabled }
-                                    }))}
-                                    className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.armorBonusBook2.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                  >
-                                    {advancedMaterialOptions.armorBonusBook2.enabled ? '사용' : '미사용'}
-                                  </button>
-                                </div>
-                                )}
-
-                                {/* 장인의 재봉술 3단계 */}
-                                {showBook3 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                  <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                    <Image src="/master-tailoring-3.webp" alt="장인의 재봉술 3단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                  </div>
-                                  <button
-                                    onClick={() => setAdvancedMaterialOptions(prev => ({
-                                      ...prev,
-                                      armorBonusBook3: { ...prev.armorBonusBook3, enabled: !prev.armorBonusBook3.enabled }
-                                    }))}
-                                    className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.armorBonusBook3.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                  >
-                                    {advancedMaterialOptions.armorBonusBook3.enabled ? '사용' : '미사용'}
-                                  </button>
-                                </div>
-                                )}
-
-                                {/* 장인의 재봉술 4단계 */}
-                                {showBook4 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                  <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                    <Image src="/master-tailoring-4.webp" alt="장인의 재봉술 4단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                  </div>
-                                  <button
-                                    onClick={() => setAdvancedMaterialOptions(prev => ({
-                                      ...prev,
-                                      armorBonusBook4: { ...prev.armorBonusBook4, enabled: !prev.armorBonusBook4.enabled }
-                                    }))}
-                                    className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.armorBonusBook4.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                  >
-                                    {advancedMaterialOptions.armorBonusBook4.enabled ? '사용' : '미사용'}
-                                  </button>
-                                </div>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </div>
                     </div>
 
-                    {/* 무기 상급 일괄 설정 — 모바일: 목표 2x2(좌) + 일반턴/선조턴(우, 남은 폭 반반) */}
+                    {/* 무기 상급 일괄 설정 (숨결·책 사용 여부는 "상급 재련 추가 재료" 카드에서 직접 설정) */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: isMobile ? 'auto 1fr 1fr' : '1fr 220px 220px',
+                      gridTemplateColumns: isMobile ? 'auto' : '1fr',
                       gap: isMobile ? '0.4rem' : '2rem',
                       alignItems: 'center'
                     }}>
@@ -2372,7 +2371,6 @@ export default function RefiningCalculator({
                           fontWeight: '600'
                         }}>
                           무기 (상급)
-                          {renderAdvOptControl('weapon')}
                         </div>
                         <div style={{
                           display: isMobile ? 'grid' : 'flex',
@@ -2425,256 +2423,6 @@ export default function RefiningCalculator({
                               </button>
                             );
                           })}
-                        </div>
-                      </div>
-
-                      {/* 일반턴 재료 - 무기 */}
-                      <div className="d-flex flex-column gap-1 align-items-center">
-                        <div className={`${styles.advancedMaterialLabel} ${isMobile ? styles.advancedMaterialLabelMobile : ''}`}>일반턴</div>
-                        <div style={{ display: 'flex', gap: isMobile ? '0.25rem' : '0.5rem', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
-                          {/* 용암의 숨결 - 항상 표시 */}
-                          <div className="d-flex flex-column align-items-center">
-                            <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                              <Image src="/breath-lava.webp" alt="용암의 숨결" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                            </div>
-                            <button
-                              onClick={() => setAdvancedMaterialOptions(prev => ({
-                                ...prev,
-                                weaponNormalBreath: { ...prev.weaponNormalBreath, enabled: !prev.weaponNormalBreath.enabled }
-                              }))}
-                              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.weaponNormalBreath.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                            >
-                              {advancedMaterialOptions.weaponNormalBreath.enabled ? '사용' : '미사용'}
-                            </button>
-                          </div>
-
-                          {/* 장인의 책 표시 조건 확인 - 일반턴 무기 */}
-                          {(() => {
-                            const weaponEquipments = equipments.filter(eq => eq.type === 'weapon');
-                            if (weaponEquipments.length === 0) return null;
-
-                            const minCurrentLevel = Math.min(...weaponEquipments.map(eq => eq.currentAdvancedLevel));
-                            const maxTargetLevel = Math.max(...weaponEquipments.map(eq => {
-                              const target = targetLevels[eq.name];
-                              return target?.advanced || 0;
-                            }));
-
-                            // 목표가 없으면 아무것도 표시 안 함
-                            if (maxTargetLevel === 0) return null;
-
-                            // 1단계 책: 현재 레벨이 10 미만이고, 목표가 1 이상일 때 (1~10단계 구간을 지나감)
-                            const showBook1 = minCurrentLevel < 10 && maxTargetLevel >= 1;
-
-                            // 2단계 책: 현재 레벨이 20 미만이고, 목표가 10 초과일 때 (11~20단계 구간을 지나감)
-                            const showBook2 = minCurrentLevel < 20 && maxTargetLevel > 10;
-
-                            // 3단계 책: 현재 레벨이 30 미만이고, 목표가 20 초과일 때 (21~30단계 구간을 지나감)
-                            const showBook3 = minCurrentLevel < 30 && maxTargetLevel > 20;
-
-                            // 4단계 책: 현재 레벨이 40 미만이고, 목표가 30 초과일 때 (31~40단계 구간을 지나감)
-                            const showBook4 = minCurrentLevel < 40 && maxTargetLevel > 30;
-
-                            return (
-                              <>
-                                {/* 장인의 야금술 1단계 */}
-                                {showBook1 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                    <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                      <Image src="/master-metallurgy-1.webp" alt="장인의 야금술 1단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                    </div>
-                                    <button
-                                      onClick={() => setAdvancedMaterialOptions(prev => ({
-                                        ...prev,
-                                        weaponNormalBook1: { ...prev.weaponNormalBook1, enabled: !prev.weaponNormalBook1.enabled }
-                                      }))}
-                                      className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.weaponNormalBook1.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                    >
-                                      {advancedMaterialOptions.weaponNormalBook1.enabled ? '사용' : '미사용'}
-                                    </button>
-                                  </div>
-                                )}
-
-                                {/* 장인의 야금술 2단계 */}
-                                {showBook2 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                  <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                    <Image src="/master-metallurgy-2.webp" alt="장인의 야금술 2단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                  </div>
-                                  <button
-                                    onClick={() => setAdvancedMaterialOptions(prev => ({
-                                      ...prev,
-                                      weaponNormalBook2: { ...prev.weaponNormalBook2, enabled: !prev.weaponNormalBook2.enabled }
-                                    }))}
-                                    className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.weaponNormalBook2.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                  >
-                                    {advancedMaterialOptions.weaponNormalBook2.enabled ? '사용' : '미사용'}
-                                  </button>
-                                </div>
-                                )}
-
-                                {/* 장인의 야금술 3단계 */}
-                                {showBook3 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                  <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                    <Image src="/master-metallurgy-3.webp" alt="장인의 야금술 3단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                  </div>
-                                  <button
-                                    onClick={() => setAdvancedMaterialOptions(prev => ({
-                                      ...prev,
-                                      weaponNormalBook3: { ...prev.weaponNormalBook3, enabled: !prev.weaponNormalBook3.enabled }
-                                    }))}
-                                    className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.weaponNormalBook3.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                  >
-                                    {advancedMaterialOptions.weaponNormalBook3.enabled ? '사용' : '미사용'}
-                                  </button>
-                                </div>
-                                )}
-
-                                {/* 장인의 야금술 4단계 */}
-                                {showBook4 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                  <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                    <Image src="/master-metallurgy-4.webp" alt="장인의 야금술 4단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                  </div>
-                                  <button
-                                    onClick={() => setAdvancedMaterialOptions(prev => ({
-                                      ...prev,
-                                      weaponNormalBook4: { ...prev.weaponNormalBook4, enabled: !prev.weaponNormalBook4.enabled }
-                                    }))}
-                                    className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.weaponNormalBook4.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                  >
-                                    {advancedMaterialOptions.weaponNormalBook4.enabled ? '사용' : '미사용'}
-                                  </button>
-                                </div>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </div>
-
-                      {/* 선조턴 재료 - 무기 */}
-                      <div className="d-flex flex-column gap-1 align-items-center">
-                        <div className={`${styles.advancedMaterialLabel} ${isMobile ? styles.advancedMaterialLabelMobile : ''}`}>선조턴</div>
-                        <div style={{ display: 'flex', gap: isMobile ? '0.25rem' : '0.5rem', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
-                          {/* 용암의 숨결 - 항상 표시 */}
-                          <div className="d-flex flex-column align-items-center">
-                            <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                              <Image src="/breath-lava.webp" alt="용암의 숨결" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                            </div>
-                            <button
-                              onClick={() => setAdvancedMaterialOptions(prev => ({
-                                ...prev,
-                                weaponBonusBreath: { ...prev.weaponBonusBreath, enabled: !prev.weaponBonusBreath.enabled }
-                              }))}
-                              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.weaponBonusBreath.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                            >
-                              {advancedMaterialOptions.weaponBonusBreath.enabled ? '사용' : '미사용'}
-                            </button>
-                          </div>
-
-                          {/* 장인의 책 표시 조건 확인 - 선조턴 무기 */}
-                          {(() => {
-                            const weaponEquipments = equipments.filter(eq => eq.type === 'weapon');
-                            if (weaponEquipments.length === 0) return null;
-
-                            const minCurrentLevel = Math.min(...weaponEquipments.map(eq => eq.currentAdvancedLevel));
-                            const maxTargetLevel = Math.max(...weaponEquipments.map(eq => {
-                              const target = targetLevels[eq.name];
-                              return target?.advanced || 0;
-                            }));
-
-                            // 목표가 없으면 아무것도 표시 안 함
-                            if (maxTargetLevel === 0) return null;
-
-                            // 1단계 책: 현재 레벨이 10 미만이고, 목표가 1 이상일 때 (1~10단계 구간을 지나감)
-                            const showBook1 = minCurrentLevel < 10 && maxTargetLevel >= 1;
-
-                            // 2단계 책: 현재 레벨이 20 미만이고, 목표가 10 초과일 때 (11~20단계 구간을 지나감)
-                            const showBook2 = minCurrentLevel < 20 && maxTargetLevel > 10;
-
-                            // 3단계 책: 현재 레벨이 30 미만이고, 목표가 20 초과일 때 (21~30단계 구간을 지나감)
-                            const showBook3 = minCurrentLevel < 30 && maxTargetLevel > 20;
-
-                            // 4단계 책: 현재 레벨이 40 미만이고, 목표가 30 초과일 때 (31~40단계 구간을 지나감)
-                            const showBook4 = minCurrentLevel < 40 && maxTargetLevel > 30;
-
-                            return (
-                              <>
-                                {/* 장인의 야금술 1단계 */}
-                                {showBook1 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                    <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                      <Image src="/master-metallurgy-1.webp" alt="장인의 야금술 1단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                    </div>
-                                    <button
-                                      onClick={() => setAdvancedMaterialOptions(prev => ({
-                                        ...prev,
-                                        weaponBonusBook1: { ...prev.weaponBonusBook1, enabled: !prev.weaponBonusBook1.enabled }
-                                      }))}
-                                      className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.weaponBonusBook1.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                    >
-                                      {advancedMaterialOptions.weaponBonusBook1.enabled ? '사용' : '미사용'}
-                                    </button>
-                                  </div>
-                                )}
-
-                                {/* 장인의 야금술 2단계 */}
-                                {showBook2 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                    <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                      <Image src="/master-metallurgy-2.webp" alt="장인의 야금술 2단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                    </div>
-                                    <button
-                                      onClick={() => setAdvancedMaterialOptions(prev => ({
-                                        ...prev,
-                                        weaponBonusBook2: { ...prev.weaponBonusBook2, enabled: !prev.weaponBonusBook2.enabled }
-                                      }))}
-                                      className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.weaponBonusBook2.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                    >
-                                      {advancedMaterialOptions.weaponBonusBook2.enabled ? '사용' : '미사용'}
-                                    </button>
-                                  </div>
-                                )}
-
-                                {/* 장인의 야금술 3단계 */}
-                                {showBook3 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                    <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                      <Image src="/master-metallurgy-3.webp" alt="장인의 야금술 3단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                    </div>
-                                    <button
-                                      onClick={() => setAdvancedMaterialOptions(prev => ({
-                                        ...prev,
-                                        weaponBonusBook3: { ...prev.weaponBonusBook3, enabled: !prev.weaponBonusBook3.enabled }
-                                      }))}
-                                      className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.weaponBonusBook3.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                    >
-                                      {advancedMaterialOptions.weaponBonusBook3.enabled ? '사용' : '미사용'}
-                                    </button>
-                                  </div>
-                                )}
-
-                                {/* 장인의 야금술 4단계 */}
-                                {showBook4 && (
-                                  <div className="d-flex flex-column align-items-center">
-                                    <div className={`${styles.advancedItemImageContainer} ${isMobile ? styles.advancedItemImageContainerMobile : ''}`}>
-                                      <Image src="/master-metallurgy-4.webp" alt="장인의 야금술 4단계" width={isMobile ? 18 : 32} height={isMobile ? 18 : 32} style={{ objectFit: 'contain' }} />
-                                    </div>
-                                    <button
-                                      onClick={() => setAdvancedMaterialOptions(prev => ({
-                                        ...prev,
-                                        weaponBonusBook4: { ...prev.weaponBonusBook4, enabled: !prev.weaponBonusBook4.enabled }
-                                      }))}
-                                      className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions.weaponBonusBook4.enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                                    >
-                                      {advancedMaterialOptions.weaponBonusBook4.enabled ? '사용' : '미사용'}
-                                    </button>
-                                  </div>
-                                )}
-                              </>
-                            );
-                          })()}
                         </div>
                       </div>
                     </div>
@@ -2734,49 +2482,49 @@ export default function RefiningCalculator({
                           {/* 업화 장비 재료 (일반 재련) */}
                           {materials.수호석 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-guardian-stone.webp" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
+                              <MaterialCard icon="/destiny-guardian-stone.webp" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} {...ownedProps('수호석')} />
                             </Col>
                           )}
                           {materials.파괴석 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-destruction-stone.webp" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} />
+                              <MaterialCard icon="/destiny-destruction-stone.webp" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} {...ownedProps('파괴석')} />
                             </Col>
                           )}
                           {materials.돌파석 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-breakthrough-stone.webp" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} />
+                              <MaterialCard icon="/destiny-breakthrough-stone.webp" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} {...ownedProps('돌파석')} />
                             </Col>
                           )}
                           {materials.아비도스 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/abidos-fusion.webp?v=4" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} />
+                              <MaterialCard icon="/abidos-fusion.webp?v=4" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} {...ownedProps('아비도스')} />
                             </Col>
                           )}
                           {/* 전율 장비 재료 (계승 재련) */}
                           {(materials.수호석결정 || 0) > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-guardian-stone2.webp?v=3" name="수호석결정" amount={materials.수호석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['수호석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석결정']} />
+                              <MaterialCard icon="/destiny-guardian-stone2.webp?v=3" name="수호석결정" amount={materials.수호석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['수호석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석결정']} {...ownedProps('수호석결정')} />
                             </Col>
                           )}
                           {(materials.파괴석결정 || 0) > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-destruction-stone2.webp?v=3" name="파괴석결정" amount={materials.파괴석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['파괴석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석결정']} />
+                              <MaterialCard icon="/destiny-destruction-stone2.webp?v=3" name="파괴석결정" amount={materials.파괴석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['파괴석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석결정']} {...ownedProps('파괴석결정')} />
                             </Col>
                           )}
                           {(materials.위대한돌파석 || 0) > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-breakthrough-stone2.webp?v=3" name="위대한돌파석" amount={materials.위대한돌파석 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['위대한돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['위대한돌파석']} />
+                              <MaterialCard icon="/destiny-breakthrough-stone2.webp?v=3" name="위대한돌파석" amount={materials.위대한돌파석 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['위대한돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['위대한돌파석']} {...ownedProps('위대한돌파석')} />
                             </Col>
                           )}
                           {(materials.상급아비도스 || 0) > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/abidos-fusion2.webp?v=3" name="상급아비도스" amount={materials.상급아비도스 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['상급아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['상급아비도스']} />
+                              <MaterialCard icon="/abidos-fusion2.webp?v=3" name="상급아비도스" amount={materials.상급아비도스 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['상급아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['상급아비도스']} {...ownedProps('상급아비도스')} />
                             </Col>
                           )}
                           {/* 공통 재료 */}
                           {materials.운명파편 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} />
+                              <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} {...ownedProps('운명파편')} />
                             </Col>
                           )}
                           {(materials.실링 || 0) > 0 && (
@@ -2806,6 +2554,7 @@ export default function RefiningCalculator({
                                   showCheckbox={true}
                                   isBound={materialOptions.glacierBreath.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, glacierBreath: {...p.glacierBreath, isBound: !p.glacierBreath.isBound}}))}
+                                  {...ownedProps('빙하_일반')}
                                   footer={renderBreathControls('armor')}
                                 />
                               </Col>
@@ -2818,12 +2567,14 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1114'] || 0}
                                     tooltip={bookBonusTooltip('66112546')}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring: {...p.tailoring, enabled: !p.tailoring.enabled}}))}
+                                    onToggleEnabled={() => {}}
                                     showCheckbox={true}
                                     isBound={materialOptions.tailoring.isBound}
                                     onBoundChange={() => setMaterialOptions(p => ({...p, tailoring: {...p.tailoring, isBound: !p.tailoring.isBound}}))}
+                                    {...ownedProps('방어구책1114')}
+                                    footer={renderSimpleToggle('tailoring')}
                                   />
                                 </Col>
                               )}
@@ -2836,12 +2587,14 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1518'] || 0}
                                     tooltip={bookBonusTooltip('66112552')}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring1518.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, tailoring1518: {...p.tailoring1518, enabled: !p.tailoring1518.enabled}}))}
+                                    onToggleEnabled={() => {}}
                                     showCheckbox={true}
                                     isBound={materialOptions.tailoring1518.isBound}
                                     onBoundChange={() => setMaterialOptions(p => ({...p, tailoring1518: {...p.tailoring1518, isBound: !p.tailoring1518.isBound}}))}
+                                    {...ownedProps('방어구책1518')}
+                                    footer={renderSimpleToggle('tailoring1518')}
                                   />
                                 </Col>
                               )}
@@ -2854,17 +2607,14 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1920'] || 0}
                                     tooltip={bookBonusTooltip('66112554')}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring1920.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({
-                                      ...p,
-                                      tailoring1920: {...p.tailoring1920, enabled: !p.tailoring1920.enabled},
-                                      // 일반/강화는 동시 사용 불가 — 켜는 순간 반대쪽을 끈다
-                                      ...(!p.tailoring1920.enabled ? { tailoring1920Enhanced: {...p.tailoring1920Enhanced, enabled: false} } : {}),
-                                    }))}
+                                    onToggleEnabled={() => {}}
                                     showCheckbox={true}
                                     isBound={materialOptions.tailoring1920.isBound}
                                     onBoundChange={() => setMaterialOptions(p => ({...p, tailoring1920: {...p.tailoring1920, isBound: !p.tailoring1920.isBound}}))}
+                                    {...ownedProps('방어구책1920')}
+                                    footer={renderSimpleToggle('tailoring1920', 'tailoring1920Enhanced')}
                                   />
                                 </Col>
                               )}
@@ -2877,17 +2627,14 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1920강'] || 0}
                                     tooltip={bookBonusTooltip('66112556')}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring1920Enhanced.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({
-                                      ...p,
-                                      tailoring1920Enhanced: {...p.tailoring1920Enhanced, enabled: !p.tailoring1920Enhanced.enabled},
-                                      // 일반/강화는 동시 사용 불가 — 켜는 순간 반대쪽을 끈다
-                                      ...(!p.tailoring1920Enhanced.enabled ? { tailoring1920: {...p.tailoring1920, enabled: false} } : {}),
-                                    }))}
+                                    onToggleEnabled={() => {}}
                                     showCheckbox={true}
                                     isBound={materialOptions.tailoring1920Enhanced.isBound}
                                     onBoundChange={() => setMaterialOptions(p => ({...p, tailoring1920Enhanced: {...p.tailoring1920Enhanced, isBound: !p.tailoring1920Enhanced.isBound}}))}
+                                    {...ownedProps('방어구책1920강')}
+                                    footer={renderSimpleToggle('tailoring1920Enhanced', 'tailoring1920')}
                                   />
                                 </Col>
                               )}
@@ -2906,6 +2653,7 @@ export default function RefiningCalculator({
                                   showCheckbox={true}
                                   isBound={materialOptions.lavaBreath.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, lavaBreath: {...p.lavaBreath, isBound: !p.lavaBreath.isBound}}))}
+                                  {...ownedProps('용암_일반')}
                                   footer={renderBreathControls('weapon')}
                                 />
                               </Col>
@@ -2918,12 +2666,14 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1114'] || 0}
                                     tooltip={bookBonusTooltip('66112543')}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy: {...p.metallurgy, enabled: !p.metallurgy.enabled}}))}
+                                    onToggleEnabled={() => {}}
                                     showCheckbox={true}
                                     isBound={materialOptions.metallurgy.isBound}
                                     onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy: {...p.metallurgy, isBound: !p.metallurgy.isBound}}))}
+                                    {...ownedProps('무기책1114')}
+                                    footer={renderSimpleToggle('metallurgy')}
                                   />
                                 </Col>
                               )}
@@ -2936,12 +2686,14 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1518'] || 0}
                                     tooltip={bookBonusTooltip('66112551')}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy1518.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({...p, metallurgy1518: {...p.metallurgy1518, enabled: !p.metallurgy1518.enabled}}))}
+                                    onToggleEnabled={() => {}}
                                     showCheckbox={true}
                                     isBound={materialOptions.metallurgy1518.isBound}
                                     onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy1518: {...p.metallurgy1518, isBound: !p.metallurgy1518.isBound}}))}
+                                    {...ownedProps('무기책1518')}
+                                    footer={renderSimpleToggle('metallurgy1518')}
                                   />
                                 </Col>
                               )}
@@ -2954,17 +2706,14 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1920'] || 0}
                                     tooltip={bookBonusTooltip('66112553')}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy1920.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({
-                                      ...p,
-                                      metallurgy1920: {...p.metallurgy1920, enabled: !p.metallurgy1920.enabled},
-                                      // 일반/강화는 동시 사용 불가 — 켜는 순간 반대쪽을 끈다
-                                      ...(!p.metallurgy1920.enabled ? { metallurgy1920Enhanced: {...p.metallurgy1920Enhanced, enabled: false} } : {}),
-                                    }))}
+                                    onToggleEnabled={() => {}}
                                     showCheckbox={true}
                                     isBound={materialOptions.metallurgy1920.isBound}
                                     onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy1920: {...p.metallurgy1920, isBound: !p.metallurgy1920.isBound}}))}
+                                    {...ownedProps('무기책1920')}
+                                    footer={renderSimpleToggle('metallurgy1920', 'metallurgy1920Enhanced')}
                                   />
                                 </Col>
                               )}
@@ -2977,17 +2726,14 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1920강'] || 0}
                                     tooltip={bookBonusTooltip('66112555')}
-                                    showEnableToggle={true}
+                                    showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy1920Enhanced.enabled}
-                                    onToggleEnabled={() => setMaterialOptions(p => ({
-                                      ...p,
-                                      metallurgy1920Enhanced: {...p.metallurgy1920Enhanced, enabled: !p.metallurgy1920Enhanced.enabled},
-                                      // 일반/강화는 동시 사용 불가 — 켜는 순간 반대쪽을 끈다
-                                      ...(!p.metallurgy1920Enhanced.enabled ? { metallurgy1920: {...p.metallurgy1920, enabled: false} } : {}),
-                                    }))}
+                                    onToggleEnabled={() => {}}
                                     showCheckbox={true}
                                     isBound={materialOptions.metallurgy1920Enhanced.isBound}
                                     onBoundChange={() => setMaterialOptions(p => ({...p, metallurgy1920Enhanced: {...p.metallurgy1920Enhanced, isBound: !p.metallurgy1920Enhanced.isBound}}))}
+                                    {...ownedProps('무기책1920강')}
+                                    footer={renderSimpleToggle('metallurgy1920Enhanced', 'metallurgy1920')}
                                   />
                                 </Col>
                               )}
@@ -3002,6 +2748,11 @@ export default function RefiningCalculator({
                           <div className={styles.materialsSectionTitle}>
                             상급 재련 추가 재료
                           </div>
+                          {(requiredMats.needsAdvancedArmorBook1 || requiredMats.needsAdvancedArmorBook2 || requiredMats.needsAdvancedArmorBook3 || requiredMats.needsAdvancedArmorBook4) && (
+                            <div className="mb-2" style={{ fontSize: isMobile ? '0.85rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                              방어구
+                            </div>
+                          )}
                           {/* 4줄: 빙하의 숨결 + 장인의 재봉술 1,2,3,4단계 */}
                           {(requiredMats.needsAdvancedArmorBook1 || requiredMats.needsAdvancedArmorBook2 || requiredMats.needsAdvancedArmorBook3 || requiredMats.needsAdvancedArmorBook4) && (
                             <Row className={isMobile ? 'g-2 justify-content-center mb-3' : 'g-3 justify-content-center mb-3'}>
@@ -3025,6 +2776,8 @@ export default function RefiningCalculator({
                                       armorBonusBreath: {...p.armorBonusBreath, isBound: newBound}
                                     }));
                                   }}
+                                  {...ownedProps('빙하_상급')}
+                                  footer={renderAdvTurnToggle('armorNormalBreath', 'armorBonusBreath', 'armor')}
                                 />
                               </Col>
                               {requiredMats.needsAdvancedArmorBook1 && (
@@ -3048,6 +2801,8 @@ export default function RefiningCalculator({
                                         armorBonusBook1: {...p.armorBonusBook1, isBound: newBound}
                                       }));
                                     }}
+                                    {...ownedProps('재봉술1단')}
+                                    footer={renderAdvTurnToggle('armorNormalBook1', 'armorBonusBook1')}
                                   />
                                 </Col>
                               )}
@@ -3072,6 +2827,8 @@ export default function RefiningCalculator({
                                         armorBonusBook2: {...p.armorBonusBook2, isBound: newBound}
                                       }));
                                     }}
+                                    {...ownedProps('재봉술2단')}
+                                    footer={renderAdvTurnToggle('armorNormalBook2', 'armorBonusBook2')}
                                   />
                                 </Col>
                               )}
@@ -3096,6 +2853,8 @@ export default function RefiningCalculator({
                                         armorBonusBook3: {...p.armorBonusBook3, isBound: newBound}
                                       }));
                                     }}
+                                    {...ownedProps('재봉술3단')}
+                                    footer={renderAdvTurnToggle('armorNormalBook3', 'armorBonusBook3')}
                                   />
                                 </Col>
                               )}
@@ -3120,10 +2879,17 @@ export default function RefiningCalculator({
                                         armorBonusBook4: {...p.armorBonusBook4, isBound: newBound}
                                       }));
                                     }}
+                                    {...ownedProps('재봉술4단')}
+                                    footer={renderAdvTurnToggle('armorNormalBook4', 'armorBonusBook4')}
                                   />
                                 </Col>
                               )}
                             </Row>
+                          )}
+                          {(requiredMats.needsAdvancedWeaponBook1 || requiredMats.needsAdvancedWeaponBook2 || requiredMats.needsAdvancedWeaponBook3 || requiredMats.needsAdvancedWeaponBook4) && (
+                            <div className="mb-2" style={{ fontSize: isMobile ? '0.85rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                              무기
+                            </div>
                           )}
                           {/* 5줄: 용암의 숨결 + 장인의 야금술 1,2,3,4단계 */}
                           {(requiredMats.needsAdvancedWeaponBook1 || requiredMats.needsAdvancedWeaponBook2 || requiredMats.needsAdvancedWeaponBook3 || requiredMats.needsAdvancedWeaponBook4) && (
@@ -3148,6 +2914,8 @@ export default function RefiningCalculator({
                                       weaponBonusBreath: {...p.weaponBonusBreath, isBound: newBound}
                                     }));
                                   }}
+                                  {...ownedProps('용암_상급')}
+                                  footer={renderAdvTurnToggle('weaponNormalBreath', 'weaponBonusBreath', 'weapon')}
                                 />
                               </Col>
                               {requiredMats.needsAdvancedWeaponBook1 && (
@@ -3171,6 +2939,8 @@ export default function RefiningCalculator({
                                         weaponBonusBook1: {...p.weaponBonusBook1, isBound: newBound}
                                       }));
                                     }}
+                                    {...ownedProps('야금술1단')}
+                                    footer={renderAdvTurnToggle('weaponNormalBook1', 'weaponBonusBook1')}
                                   />
                                 </Col>
                               )}
@@ -3195,6 +2965,8 @@ export default function RefiningCalculator({
                                         weaponBonusBook2: {...p.weaponBonusBook2, isBound: newBound}
                                       }));
                                     }}
+                                    {...ownedProps('야금술2단')}
+                                    footer={renderAdvTurnToggle('weaponNormalBook2', 'weaponBonusBook2')}
                                   />
                                 </Col>
                               )}
@@ -3219,6 +2991,8 @@ export default function RefiningCalculator({
                                         weaponBonusBook3: {...p.weaponBonusBook3, isBound: newBound}
                                       }));
                                     }}
+                                    {...ownedProps('야금술3단')}
+                                    footer={renderAdvTurnToggle('weaponNormalBook3', 'weaponBonusBook3')}
                                   />
                                 </Col>
                               )}
@@ -3243,6 +3017,8 @@ export default function RefiningCalculator({
                                         weaponBonusBook4: {...p.weaponBonusBook4, isBound: newBound}
                                       }));
                                     }}
+                                    {...ownedProps('야금술4단')}
+                                    footer={renderAdvTurnToggle('weaponNormalBook4', 'weaponBonusBook4')}
                                   />
                                 </Col>
                               )}
