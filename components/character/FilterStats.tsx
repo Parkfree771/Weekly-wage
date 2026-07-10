@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import TitleBadge from './TitleBadge';
+import { cachedGetJson } from '@/lib/client-fetch-cache';
 import styles from './FilterStats.module.css';
 
 interface Stats {
@@ -60,8 +61,8 @@ export default function FilterStats({ spec, klass = '', title, ancient, role, mi
 
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/character/stats?${p.toString()}`)
-      .then(r => (r.ok ? r.json() : Promise.reject()))
+    // 같은 필터 재선택·모바일/데스크톱 remount 시 5분 메모리 캐시로 재요청 방지
+    cachedGetJson(`/api/character/stats?${p.toString()}`)
       .then(d => { if (!cancelled) setStats(d); })
       .catch(() => { if (!cancelled) setStats(null); })
       .finally(() => { if (!cancelled) setLoading(false); });

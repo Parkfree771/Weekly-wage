@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { TIER_ENTRIES } from '@/lib/tier-entries.generated';
+import { cachedGetJson } from '@/lib/client-fetch-cache';
 import styles from './ClassSpecCompare.module.css';
 
 // 직업/스펙 통계 패널 — 랭킹 사이드바용. 두 가지 모드:
@@ -75,8 +76,8 @@ export default function ClassSpecCompare({ klass, selectedSpecId, onSelectSpec }
     if (!klass) { setData(null); return; }
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/character/class-compare?class=${encodeURIComponent(klass)}`)
-      .then(r => (r.ok ? r.json() : Promise.reject()))
+    // 직업 재선택·모바일/데스크톱 remount 시 5분 메모리 캐시로 재요청 방지
+    cachedGetJson(`/api/character/class-compare?class=${encodeURIComponent(klass)}`)
       .then(d => { if (!cancelled) setData(d); })
       .catch(() => { if (!cancelled) setData(null); })
       .finally(() => { if (!cancelled) setLoading(false); });

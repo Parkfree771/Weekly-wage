@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { CharacterData, EngravingInfo, GemInfo, SiblingCharacter } from '@/lib/characterData';
-import { getGradeColor } from '@/lib/characterData';
+import { getGradeColor } from '@/lib/grade-color';
 import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import styles from '@/app/character/character.module.css';
 import TitleBadge from './TitleBadge';

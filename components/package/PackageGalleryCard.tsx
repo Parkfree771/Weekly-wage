@@ -499,7 +499,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
 
         <div className={styles.leftMeta}>
           <div className={styles.metaLeft}>
-            <span className={styles.metaAuthor}>\uC791\uC131\uC790: {post.authorName || '\uC775\uBA85'}</span>
+            <span className={styles.metaAuthor}>{post.authorName || '익명'}</span>
             <span>
               <svg viewBox="0 0 20 14" className={styles.metaViewIcon}>
                 <path d="M1 7C1 7 4.5 1.5 10 1.5C15.5 1.5 19 7 19 7C19 7 15.5 12.5 10 12.5C4.5 12.5 1 7 1 7Z" />

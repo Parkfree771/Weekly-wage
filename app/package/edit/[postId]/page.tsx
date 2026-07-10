@@ -896,6 +896,13 @@ export default function PackageEditPage() {
         bonusItems,
       });
 
+      // ISR 캐시된 상세 페이지를 즉시 재생성 (완료를 기다려야 이동 후 최신이 보인다)
+      await fetch('/api/package/revalidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId }),
+      }).catch(() => {});
+
       router.push(`/package/${postId}`);
     } catch (err: any) {
       console.error('수정 실패:', err);

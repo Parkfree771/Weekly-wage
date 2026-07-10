@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdmin } from '@/lib/inquiry-service';
+import { isAdmin } from '@/lib/admin';
 import styles from './page.module.css';
 
 type FeedbackItem = {

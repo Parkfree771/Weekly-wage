@@ -19,7 +19,7 @@ const CardBgImage = memo(function CardBgImage({ src, alt, className }: { src: st
 // 하위 호환용 alias
 const Image = NextImage;
 import { useAuth } from '@/contexts/AuthContext';
-import { registerCharacter, saveWeeklyChecklist, refreshCharacter, updateCharacterImages } from '@/lib/user-service';
+import { registerCharacter, refreshCharacter, updateCharacterImages } from '@/lib/user-service';
 import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service';
 import NicknameModal from '@/components/auth/NicknameModal';
 import GuideFaq from '@/components/common/GuideFaq';
@@ -410,6 +410,10 @@ export default function MyPage() {
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [loadingImages, setLoadingImages] = useState(false);
   const imageLoadAttempted = useRef(false);
+  // 주간 초기화를 이미 수행한 원정대 (세션 내). 리셋 후 userProfile(컨텍스트)의
+  // lastWeeklyReset이 갱신되지 않아 탭을 오가면 같은 리셋이 다시 돌면서
+  // 중복 쓰기 + 저장 전 체크 유실이 발생하는 것을 막는다.
+  const weeklyResetApplied = useRef<Set<number>>(new Set());
 
   // 캐릭터 등록 모달 (2단계)
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -638,7 +642,8 @@ export default function MyPage() {
     }
 
     // 주간 초기화 체크 (수요일 06:00 KST) - 현재 활성 원정대만
-    if (chars.length > 0 && needsWeeklyReset(lastReset)) {
+    if (chars.length > 0 && needsWeeklyReset(lastReset) && !weeklyResetApplied.current.has(activeExpedition)) {
+      weeklyResetApplied.current.add(activeExpedition);
       console.log(`[주간 초기화] 원정대${activeExpedition} 수요일 06시 지남, 체크리스트 초기화 시작`);
 
       // 1. 먼저 현재 골드를 기록에 저장
@@ -676,11 +681,14 @@ export default function MyPage() {
           const { db } = await import('@/lib/firebase-firestore');
           const userRef = doc(db, 'users', user.uid);
 
-          // 골드 기록 업데이트 (중복 방지)
+          // 골드 기록 업데이트 (중복 방지, 최근 52주만 유지해 문서 무한 성장 방지)
           let updatedHistory = [...goldHistory];
           if (!alreadySaved && totalGold > 0) {
             updatedHistory.push(newGoldRecord);
             console.log('[주간 골드 저장]', newGoldRecord);
+          }
+          if (updatedHistory.length > 52) {
+            updatedHistory = updatedHistory.slice(-52);
           }
 
           await updateDoc(userRef, {
@@ -694,8 +702,13 @@ export default function MyPage() {
           setWeeklyGoldHistory(updatedHistory);
           setCommonContent(resetCommon);
           console.log(`[주간 초기화] 원정대${activeExpedition} 완료`);
+          // 컨텍스트 userProfile의 lastWeeklyReset을 최신화 — 이게 낡은 채 남으면
+          // 페이지 리마운트 시(ref 초기화) 같은 리셋이 또 돌아 골드 기록이 중복 저장된다
+          refreshUserProfile();
         } catch (error) {
           console.error('[주간 초기화] 실패:', error);
+          // 저장 실패 시 가드 해제 — 다음 로드/탭 전환에서 재시도
+          weeklyResetApplied.current.delete(activeExpedition);
         }
       })();
     }
@@ -730,9 +743,11 @@ export default function MyPage() {
     imageLoadAttempted.current = true;
     setLoadingImages(true);
 
-    updateCharacterImages(user.uid, charsWithoutImage.map(c => c.name), activeExpedition)
+    // 메모리의 userProfile을 넘겨 같은 문서 재조회를 생략하고,
+    // 실제로 이미지가 갱신된 경우에만 프로필을 다시 읽는다
+    updateCharacterImages(user.uid, charsWithoutImage.map(c => c.name), activeExpedition, userProfile)
       .then(result => {
-        if (result.success) {
+        if (result.success && result.updated) {
           refreshUserProfile();
         }
       })
@@ -827,7 +842,8 @@ export default function MyPage() {
     setRegisterError(null);
 
     try {
-      const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(registerName.trim())}`);
+      // 등록 조회는 명시적 액션 — refresh=1로 라우트가 캐시 없이 최신을 반환
+      const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(registerName.trim())}&refresh=1`);
 
       if (!response.ok) {
         if (response.status === 404) {

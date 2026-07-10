@@ -57,16 +57,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [needsNickname, setNeedsNickname] = useState(false);
 
   // 기존 사용자 프로필 가져오기 (신규 사용자는 생성하지 않음)
+  // 읽기 전용이어야 한다. onAuthStateChanged와 refreshUserProfile이 모두 이 함수를 타므로
+  // 여기서 쓰기를 하면 로그인 상태의 모든 페이지 로드마다 users 문서에 쓰기가 발생한다.
   const fetchUserProfile = async (firebaseUser: User): Promise<UserProfile | null> => {
     const { db } = await import('@/lib/firebase-firestore');
-    const { doc, getDoc, setDoc, serverTimestamp } = await import('firebase/firestore');
+    const { doc, getDoc } = await import('firebase/firestore');
     const userRef = doc(db, 'users', firebaseUser.uid);
     const userSnap = await getDoc(userRef);
 
     if (userSnap.exists()) {
-      // 기존 사용자: lastLoginAt 업데이트
       const existingProfile = userSnap.data() as UserProfile;
-      await setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true });
       return { ...existingProfile, uid: firebaseUser.uid };
     }
 

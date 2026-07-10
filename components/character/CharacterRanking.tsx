@@ -7,6 +7,7 @@ import { specSearchText, classSearchText, fullClassNameOf } from '@/lib/spec-sea
 import styles from './CharacterRanking.module.css';
 import TitleBadge from './TitleBadge';
 import FilterSelect, { type FilterGroup } from './FilterSelect';
+import { cachedGetJson, invalidateCachedGet } from '@/lib/client-fetch-cache';
 import FilterStats from './FilterStats';
 import ClassSpecCompare from './ClassSpecCompare';
 import AppSidebarPromo from '@/components/AppSidebarPromo';
@@ -31,7 +32,7 @@ const SPEC_FILTER_GROUPS: FilterGroup[] = SPEC_GROUPS.map(g => ({
     node: (
       <span className={styles.specOpt}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={s.icon} alt="" className={styles.specOptIcon} />
+        <img src={s.icon} alt="" className={styles.specOptIcon} loading="lazy" decoding="async" />
         <span>{s.name}</span>
       </span>
     ),
@@ -262,20 +263,17 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
     setEntries([]);
     setHasMore(false);
 
-    fetch(`/api/character/ranking?${buildParams({ limit: String(PAGE_STEP) }).toString()}`)
-      .then(async (r) => {
-        if (!r.ok) throw new Error('랭킹을 불러올 수 없습니다.');
-        return r.json();
-      })
+    // 같은 필터 조합으로 되돌아오면 5분간 메모리 캐시로 응답 (재요청 없음)
+    cachedGetJson(`/api/character/ranking?${buildParams({ limit: String(PAGE_STEP) }).toString()}`)
       .then((data) => {
         if (cancelled) return;
         const list: RankingEntry[] = data.entries || [];
         setEntries(list);
         setHasMore(list.length >= PAGE_STEP);
       })
-      .catch((e) => {
+      .catch(() => {
         if (cancelled) return;
-        setError(e.message || '오류');
+        setError('랭킹을 불러올 수 없습니다.');
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -292,6 +290,8 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
     if (!didMountRef.current) { didMountRef.current = true; return; }
 
     let cancelled = false;
+    // 캐릭터 저장 직후라 서버 데이터가 바뀜 — 메모리 캐시를 비우고 원본에서 다시 가져온다
+    invalidateCachedGet('/api/character/');
     const count = Math.max(entries.length, PAGE_STEP);
     fetch(`/api/character/ranking?${buildParams({ limit: String(count) }).toString()}`)
       .then(async (r) => {
@@ -397,7 +397,7 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
                       title={e.name}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={e.icon} alt="" className={styles.specChipIcon} />
+                      <img src={e.icon} alt="" className={styles.specChipIcon} loading="lazy" decoding="async" />
                       <span className={styles.specChipName}>{e.name}</span>
                     </button>
                   );

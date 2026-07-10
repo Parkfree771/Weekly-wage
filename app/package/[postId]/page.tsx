@@ -1,22 +1,46 @@
+import { cache } from 'react';
 import { Metadata } from 'next';
 import { getAdminFirestore } from '@/lib/firebase-admin';
 import { SITE_URL } from '@/lib/site-config';
+import type { PackagePost } from '@/types/package';
 import PackageDetailPage from './PackageDetailClient';
+
+// ISR: 상세 페이지 렌더(+ Firestore 읽기)를 5분간 재사용해 조회 폭주를 CDN이 흡수.
+// 수정·삭제는 /api/package/revalidate 호출로 즉시 반영된다.
+// 시세·좋아요 상태는 클라이언트에서 실시간 조회하므로 영향 없음.
+export const revalidate = 300;
 
 type Props = {
   params: Promise<{ postId: string }>;
 };
 
-async function getPost(postId: string) {
+/** Firestore Timestamp → ISO 문자열 (서버→클라이언트 prop은 직렬화 가능해야 함) */
+function toISO(value: any): string | null {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate().toISOString();
+  return null;
+}
+
+/**
+ * generateMetadata와 Page가 같은 요청에서 각각 호출되므로 cache()로 감싸
+ * 요청당 Firestore 읽기를 1회로 합친다.
+ */
+const getPost = cache(async (postId: string): Promise<PackagePost | null> => {
   try {
     const db = getAdminFirestore();
-    const doc = await db.collection('packagePosts').doc(postId).get();
-    if (!doc.exists) return null;
-    return doc.data();
+    const snap = await db.collection('packagePosts').doc(postId).get();
+    if (!snap.exists) return null;
+    const data = snap.data()!;
+    return {
+      ...data,
+      id: snap.id,
+      createdAt: toISO(data.createdAt),
+      updatedAt: toISO(data.updatedAt),
+    } as PackagePost;
   } catch {
     return null;
   }
-}
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { postId } = await params;
@@ -55,6 +79,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function Page() {
-  return <PackageDetailPage />;
+export default async function Page({ params }: Props) {
+  const { postId } = await params;
+  const post = await getPost(postId);
+
+  return <PackageDetailPage initialPost={post} />;
 }

@@ -1,0 +1,371 @@
+/* 더보기 효율 페이지 — RaidCalculator 레이드 카드 형식(정사각 이미지 + 오버레이) 유지 */
+
+.pageWrapper {
+  padding: 1.5rem 0 3rem;
+}
+
+.pageHeader {
+  margin-bottom: 1.25rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.35rem;
+}
+
+.pageSubtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ─── 섹션 타이틀 바 (스크린샷의 상단 바 형태) ─── */
+.sectionBar {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.55rem 1rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+/* ─── 레이드 카드 그리드 ─── */
+.raidGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.raidCard {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1.05;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid var(--border-color);
+  padding: 0;
+  background: none;
+  text-align: left;
+  display: block;
+}
+
+.raidCardSelected {
+  border-color: var(--color-accent);
+}
+
+.raidImg {
+  object-fit: cover;
+}
+
+.raidOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, transparent 38%, rgba(0, 0, 0, 0.82) 100%);
+  z-index: 1;
+}
+
+.raidInfo {
+  position: absolute;
+  left: 0.6rem;
+  right: 0.6rem;
+  bottom: 0.55rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.raidName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+  line-height: 1.2;
+}
+
+.raidLevel {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+}
+
+.raidProfit {
+  font-size: 13px;
+  font-weight: 800;
+  margin-top: 3px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+
+.raidProfitRate {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+
+.profitText {
+  color: #4ade80;
+}
+
+.lossText {
+  color: #f87171;
+}
+
+.upcomingCard {
+  cursor: default;
+}
+
+.upcomingCard .raidImg {
+  filter: grayscale(0.55);
+}
+
+.upcomingLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #c4b5fd;
+  margin-top: 3px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+/* 시세 기준 안내 (스크린샷 하단 문구) */
+.priceNote {
+  text-align: right;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* ─── 상세 모달 (티어표 페이지와 동일한 백드롭 패턴) ─── */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 1rem;
+}
+
+.detailPanel {
+  position: relative;
+  width: 100%;
+  max-width: 780px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: var(--shadow-xl);
+  padding: 1.3rem 1.3rem 1.4rem;
+}
+
+.modalClose {
+  position: absolute;
+  top: 0.9rem;
+  right: 1rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.7rem;
+  cursor: pointer;
+}
+
+.modalClose:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.detailTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+}
+
+.detailLevel {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.9rem;
+}
+
+.detailSection {
+  margin-bottom: 1.2rem;
+}
+
+.detailSection:last-child {
+  margin-bottom: 0;
+}
+
+.detailSectionTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid var(--color-accent);
+  display: inline-block;
+  margin-bottom: 0.6rem;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.detailTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  min-width: 560px;
+}
+
+.detailTable th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.76rem;
+  padding: 0.35rem 0.55rem;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.detailTable th.num {
+  text-align: right;
+}
+
+.detailTable td {
+  padding: 0.5rem 0.55rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.detailTable tr:last-child td {
+  border-bottom: none;
+}
+
+.gateCell {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.kindCell {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.profit {
+  color: #27ae60;
+  font-weight: 700;
+}
+
+.loss {
+  color: #e74c3c;
+  font-weight: 700;
+}
+
+.totalRow td {
+  font-weight: 800;
+  background: var(--input-bg);
+}
+
+.boundNote {
+  color: var(--text-muted);
+  font-size: 0.73rem;
+}
+
+/* 재료 아이콘 목록 */
+.matList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.7rem;
+}
+
+.matItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  white-space: nowrap;
+}
+
+.matIcon {
+  border-radius: 4px;
+}
+
+.matAmount {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.matUntradable {
+  opacity: 0.75;
+}
+
+.tbdNote {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* 관련 도구 링크 */
+.relatedLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+.relatedLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  text-decoration: none;
+}
+
+.relatedLink:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+@media (max-width: 576px) {
+  .pageTitle {
+    font-size: 1.25rem;
+  }
+
+  .raidGrid {
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .raidName {
+    font-size: 12px;
+  }
+
+  .raidProfit {
+    font-size: 11.5px;
+  }
+}

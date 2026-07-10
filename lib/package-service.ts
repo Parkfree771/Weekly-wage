@@ -57,20 +57,13 @@ export async function getPackagePosts(options: PackageListOptions): Promise<{
 }> {
   const { sortBy, limit: pageSize, startAfterDoc } = options;
 
-  const constraints: any[] = [];
+  const constraints: any[] = [orderBy(sortBy, 'desc')];
 
-  // 효율순은 클라이언트 정렬이므로 createdAt 기준 전체 조회
-  if (sortBy === 'efficiency') {
-    constraints.push(orderBy('createdAt', 'desc'));
-  } else {
-    constraints.push(orderBy(sortBy, 'desc'));
-
-    if (startAfterDoc) {
-      constraints.push(startAfter(startAfterDoc));
-    }
-
-    constraints.push(firestoreLimit(pageSize));
+  if (startAfterDoc) {
+    constraints.push(startAfter(startAfterDoc));
   }
+
+  constraints.push(firestoreLimit(pageSize));
 
   const q = query(collection(db, COLLECTION), ...constraints);
   const snapshot = await getDocs(q);
@@ -188,13 +181,14 @@ export async function createPackageComment(
   return commentRef.id;
 }
 
-/** 댓글 목록 조회 (최신순) */
+/** 댓글 목록 조회 (최신순, 방어적 상한 — 글 하나가 흥해도 조회당 읽기가 무한히 늘지 않게) */
 export async function getPackageComments(
   postId: string,
 ): Promise<PackageComment[]> {
   const q = query(
     collection(db, COLLECTION, postId, 'comments'),
     orderBy('createdAt', 'desc'),
+    firestoreLimit(200),
   );
   const snapshot = await getDocs(q);
   return snapshot.docs.map((docSnap) => ({

@@ -133,8 +133,9 @@ export async function getTitlesHistory(characterName: string): Promise<TitleHist
  * 파싱된 CharacterData를 그대로 data 컬럼에 저장.
  * 기존: 로아 API 원본 raw → 클라가 매번 parseCharacterData
  * 변경: 서버에서 한 번 parse → 결과만 저장 (스토리지 70~80% 절약)
+ * 반환값: 최종 저장된 titles_history — 호출부가 재조회(getTitlesHistory)하지 않도록.
  */
-export async function upsertCharacter(characterName: string, parsed: CharacterData): Promise<void> {
+export async function upsertCharacter(characterName: string, parsed: CharacterData): Promise<TitleHistoryEntry[]> {
   const f = extractIndexFields(parsed);
 
   // 기존 history 읽어서 매칭 칭호일 때만 누적 (중복 제거)
@@ -189,6 +190,8 @@ export async function upsertCharacter(characterName: string, parsed: CharacterDa
       fetched_at      = NOW(),
       updated_at      = NOW()
   `;
+
+  return nextHistory;
 }
 
 /** 저장된 data가 파싱 결과 형식인지 검사 (구 raw 캐시 자동 무효화용) */

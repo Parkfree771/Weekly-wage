@@ -4,6 +4,7 @@ import { SITE_URL } from '@/lib/site-config'
 const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'monthly'; priority: number }> = [
   { path: '',                    changeFrequency: 'daily',   priority: 1.0 },
   { path: '/weekly-gold',        changeFrequency: 'daily',   priority: 0.9 },
+  { path: '/more-reward',        changeFrequency: 'daily',   priority: 0.8 },
   { path: '/refining',           changeFrequency: 'weekly',  priority: 0.8 },
   { path: '/life-master',        changeFrequency: 'daily',   priority: 0.8 },
   { path: '/package',            changeFrequency: 'daily',   priority: 0.8 },

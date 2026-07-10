@@ -38,6 +38,7 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-hell',
     items: [
       { href: '/weekly-gold', label: '주간 레이드' },
+      { href: '/more-reward', label: '더보기 효율', badge: 'NEW' },
       { href: '/homework', label: '일일/주간 숙제' },
       { href: '/cathedral', label: '지평의 성당' },
       { href: '/cerka', label: '세르카' },

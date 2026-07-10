@@ -6,8 +6,7 @@ import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
 import { getPackagePosts } from '@/lib/package-service';
 import { useAuth } from '@/contexts/AuthContext';
-import type { PackagePost, PackageSortBy } from '@/types/package';
-import { calculatePostEfficiency } from '@/lib/package-shared';
+import type { PackagePost } from '@/types/package';
 import AdBanner from '@/components/ads/AdBanner';
 import GuideFaq from '@/components/common/GuideFaq';
 import { faqData } from './faq-data';
@@ -23,8 +22,6 @@ export default function PackageGalleryPage() {
   const lastDocRef = useRef<any>(null);
   const [hasMore, setHasMore] = useState(true);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
-
-  const [sortBy, setSortBy] = useState<PackageSortBy>('createdAt');
 
   useEffect(() => {
     fetch('/api/price-data/latest')
@@ -43,30 +40,19 @@ export default function PackageGalleryPage() {
 
       try {
         const result = await getPackagePosts({
-          sortBy,
+          sortBy: 'createdAt',
           limit: PAGE_SIZE,
           startAfterDoc: isLoadMore ? lastDocRef.current : undefined,
         });
 
-        let fetched = result.posts;
-
-        // 효율순: 클라이언트에서 계산 후 정렬
-        if (sortBy === 'efficiency' && Object.keys(latestPrices).length > 0) {
-          fetched = [...fetched].sort(
-            (a, b) =>
-              calculatePostEfficiency(b, latestPrices) -
-              calculatePostEfficiency(a, latestPrices),
-          );
-        }
-
         if (isLoadMore) {
-          setPosts((prev) => [...prev, ...fetched]);
+          setPosts((prev) => [...prev, ...result.posts]);
         } else {
-          setPosts(fetched);
+          setPosts(result.posts);
         }
 
         lastDocRef.current = result.lastDoc;
-        setHasMore(sortBy !== 'efficiency' && result.posts.length === PAGE_SIZE);
+        setHasMore(result.posts.length === PAGE_SIZE);
       } catch (err) {
         console.error('게시물 로딩 실패:', err);
       } finally {
@@ -74,12 +60,12 @@ export default function PackageGalleryPage() {
         setLoadingMore(false);
       }
     },
-    [sortBy, latestPrices],
+    // latestPrices는 카드 표시용일 뿐 조회 조건이 아니다.
+    // deps에 넣으면 시세 응답 직후 재조회가 일어나 방문당 읽기가 2배가 된다.
+    [],
   );
 
   useEffect(() => {
-    lastDocRef.current = null;
-    setHasMore(true);
     fetchPosts(false);
   }, [fetchPosts]);
 
@@ -104,18 +90,6 @@ export default function PackageGalleryPage() {
         </div>
 
         <div className={styles.controls}>
-          <div className={styles.filterRow}>
-            <select
-              className={styles.filterSelect}
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as PackageSortBy)}
-            >
-              <option value="efficiency">효율순</option>
-              <option value="createdAt">최신순</option>
-              <option value="likeCount">인기순</option>
-            </select>
-          </div>
-
           <Link href="/package/register" className={styles.registerLink}>
             + 등록하기
           </Link>
@@ -189,7 +163,7 @@ export default function PackageGalleryPage() {
             {
               heading: '목록 정렬 방식',
               paragraphs: [
-                '상단 드롭다운으로 게시물 정렬 기준을 바꿀 수 있습니다. "효율순"은 방금 설명한 총 골드 가치 대비 결제 금액 기준 이득률이 높은 패키지부터 보여주고, "최신순"은 등록된 지 얼마 안 된 게시물을, "인기순"은 다른 이용자들의 좋아요 수가 많은 게시물을 우선 보여줍니다. 같은 패키지라도 시세 변동에 따라 효율순 결과가 바뀔 수 있으니 여러 기준을 함께 참고하는 것이 좋습니다.',
+                '게시물은 최근에 등록된 순서로 표시됩니다. 각 카드에 표시되는 이득률은 실시간 시세 기준으로 계산되므로, 같은 패키지라도 등록 시점과 지금 보는 시점의 값이 달라질 수 있습니다.',
               ],
             },
           ]}

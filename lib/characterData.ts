@@ -229,19 +229,10 @@ export type CharacterData = {
 };
 
 // ============================
-// 등급 색상
+// 등급 색상 — lib/grade-color.ts로 분리 (기존 import 호환용 재export)
+// 클라이언트 컴포넌트는 번들 크기를 위해 '@/lib/grade-color'에서 직접 import할 것
 // ============================
-export function getGradeColor(grade: string): string {
-  const colors: Record<string, string> = {
-    '에스더': '#3dd2cc',
-    '고대': '#d97706',
-    '유물': '#9333ea',
-    '영웅': '#3b82f6',
-    '희귀': '#10b981',
-    '전설': '#f59e0b',
-  };
-  return colors[grade] || '#6b7280';
-}
+export { getGradeColor } from './grade-color';
 
 // ============================
 // 연마 효과 등급 분류 (상/중/하)

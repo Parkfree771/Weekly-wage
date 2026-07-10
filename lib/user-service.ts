@@ -1,6 +1,6 @@
 // 사용자 데이터 관리 서비스
 
-import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase-firestore';
 import {
   UserProfile,
@@ -28,7 +28,8 @@ export async function registerCharacter(
 ): Promise<{ success: boolean; characters?: Character[]; error?: string }> {
   try {
     // 로아 API로 캐릭터 정보 조회 (profile, siblings 포함)
-    const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(characterName)}`);
+    // 등록은 명시적 액션 — refresh=1로 라우트가 캐시 없이 최신을 반환한다
+    const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(characterName)}&refresh=1`);
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -102,7 +103,8 @@ export async function refreshCharacter(
   characterName: string
 ): Promise<{ success: boolean; character?: Character; error?: string }> {
   try {
-    const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(characterName)}`);
+    // 갱신 버튼은 명시적 액션 — refresh=1로 라우트가 캐시 없이 최신을 반환한다
+    const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(characterName)}&refresh=1`);
 
     if (!response.ok) {
       return { success: false, error: '캐릭터 정보를 가져오는데 실패했습니다.' };
@@ -171,32 +173,36 @@ export async function updateCharacterWeekly(
 }
 
 // 여러 캐릭터의 이미지를 순차적으로 가져와서 업데이트
+// preloadedProfile: 호출부가 이미 들고 있는 프로필 — 넘기면 같은 문서 getDoc 재조회를 생략한다
 export async function updateCharacterImages(
   uid: string,
   characterNames: string[],
-  expeditionIndex: 1 | 2 | 3 = 1
-): Promise<{ success: boolean; error?: string }> {
+  expeditionIndex: 1 | 2 | 3 = 1,
+  preloadedProfile?: UserProfile
+): Promise<{ success: boolean; updated?: boolean; error?: string }> {
   try {
     const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
 
-    if (!userSnap.exists()) {
-      return { success: false, error: '사용자를 찾을 수 없습니다.' };
+    let userProfile: UserProfile;
+    if (preloadedProfile) {
+      userProfile = preloadedProfile;
+    } else {
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        return { success: false, error: '사용자를 찾을 수 없습니다.' };
+      }
+      userProfile = userSnap.data() as UserProfile;
     }
 
-    const userProfile = userSnap.data() as UserProfile;
-
-    // 원정대별 데이터 읽기
+    // 원정대별 데이터 읽기 — 요소까지 복사한다.
+    // preloadedProfile은 React 컨텍스트의 살아있는 상태 객체일 수 있으므로
+    // 얕은 배열 복사만 하면 아래 imageUrl/itemLevel 대입이 컨텍스트 상태를 직접 변형하게 된다.
     let characters: Character[];
-    let weeklyChecklist: WeeklyChecklist;
     if (expeditionIndex === 1) {
-      characters = [...(userProfile.characters || [])];
-      weeklyChecklist = userProfile.weeklyChecklist || {};
+      characters = (userProfile.characters || []).map(c => ({ ...c }));
     } else {
       const expKey = expeditionIndex === 2 ? 'expedition2' : 'expedition3';
-      const exp = userProfile[expKey];
-      characters = [...(exp?.characters || [])];
-      weeklyChecklist = exp?.weeklyChecklist || {};
+      characters = (userProfile[expKey]?.characters || []).map(c => ({ ...c }));
     }
 
     let updated = false;
@@ -227,26 +233,20 @@ export async function updateCharacterImages(
       // 레벨 순 정렬
       characters.sort((a, b) => b.itemLevel - a.itemLevel);
 
-      // 주간 체크리스트도 업데이트 (레벨 변경된 캐릭터)
-      characters.forEach(char => {
-        if (!weeklyChecklist[char.name]) {
-          weeklyChecklist[char.name] = createEmptyWeeklyState(char.itemLevel);
-        }
-      });
-
-      // 원정대별 Firestore 저장
+      // characters 필드만 쓴다. 체크리스트 시딩은 등록 시(registerCharacter)와
+      // UI 가드(|| createEmptyWeeklyState)가 이미 담당하고, 여기서 weeklyChecklist를
+      // 통째로 쓰면 동시에 도는 주간 초기화 쓰기를 낡은 스냅샷으로 덮어쓸 수 있다.
       if (expeditionIndex === 1) {
-        await updateDoc(userRef, { characters, weeklyChecklist });
+        await updateDoc(userRef, { characters });
       } else {
         const prefix = expeditionIndex === 2 ? 'expedition2' : 'expedition3';
         await updateDoc(userRef, {
           [`${prefix}.characters`]: characters,
-          [`${prefix}.weeklyChecklist`]: weeklyChecklist,
         });
       }
     }
 
-    return { success: true };
+    return { success: true, updated };
   } catch (error) {
     console.error('캐릭터 이미지 업데이트 오류:', error);
     return { success: false, error: '이미지 로드에 실패했습니다.' };

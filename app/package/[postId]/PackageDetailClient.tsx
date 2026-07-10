@@ -3,10 +3,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Container, Spinner } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  getPackagePost,
   togglePackageLike,
   checkPackageLike,
   deletePackagePost,
@@ -125,14 +124,18 @@ function getEffectiveQty(item: PackageItem, selectedChoiceItemId: string | undef
   return item.quantity * perBoxQty;
 }
 
-export default function PackageDetailPage() {
+type Props = {
+  /** 서버에서 이미 읽어온 게시물. 클라이언트에서 같은 문서를 다시 읽지 않는다. */
+  initialPost: PackagePost | null;
+};
+
+export default function PackageDetailPage({ initialPost }: Props) {
   const params = useParams();
   const router = useRouter();
   const postId = params.postId as string;
   const { user, userProfile } = useAuth();
 
-  const [post, setPost] = useState<PackagePost | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [post, setPost] = useState<PackagePost | null>(initialPost);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
@@ -164,15 +167,17 @@ export default function PackageDetailPage() {
       .catch((err) => console.error('가격 데이터 로딩 실패:', err));
   }, []);
 
-  const viewCounted = useRef(false);
+  // 조회수 중복 전송 방지 — postId 기준 (같은 컴포넌트 인스턴스로 다른 글에 진입해도 각각 집계)
+  const viewCountedFor = useRef<string | null>(null);
 
   useEffect(() => {
     if (!postId) return;
     const load = async () => {
-      setLoading(true);
       try {
-        const data = await getPackagePost(postId);
+        const data = initialPost;
         if (data) {
+          // 클라이언트 내비게이션으로 다른 글에 진입한 경우 post 상태 동기화
+          // (useState 초기값은 최초 마운트에만 반영되므로 여기서 반드시 갱신)
           setPost(data);
           setLikeCount(data.likeCount || 0);
           const initial: Record<number, string> = {};
@@ -226,8 +231,8 @@ export default function PackageDetailPage() {
           if (data.goldPerWon && data.goldPerWon > 0) {
             setDetailWonPer100Gold(Math.round(100 / data.goldPerWon));
           }
-          if (!viewCounted.current) {
-            viewCounted.current = true;
+          if (viewCountedFor.current !== postId) {
+            viewCountedFor.current = postId;
             fetch('/api/package/view', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -237,12 +242,11 @@ export default function PackageDetailPage() {
         }
       } catch (err) {
         console.error('게시물 로딩 실패:', err);
-      } finally {
-        setLoading(false);
       }
     };
     load();
-  }, [postId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId, initialPost]);
 
   // 시세 로드 후 N선택 재계산
   useEffect(() => {
@@ -293,6 +297,12 @@ export default function PackageDetailPage() {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
       await deletePackagePost(postId);
+      // ISR 캐시된 상세 페이지 즉시 무효화 (다른 방문자에게 삭제된 글이 남지 않도록)
+      fetch('/api/package/revalidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId }),
+      }).catch(() => {});
       router.push('/package');
     } catch (err) {
       console.error('삭제 실패:', err);
@@ -601,16 +611,6 @@ export default function PackageDetailPage() {
     );
     return { bonusTotalGold: subtotals.reduce((s, v) => s + v, 0), bonusItemSubtotals: subtotals };
   }, [post, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections, bonusChoiceBoxSelections]);
-
-  if (loading) {
-    return (
-      <Container fluid style={{ maxWidth: '1100px' }}>
-        <div className={styles.detailWrapper} style={{ textAlign: 'center', paddingTop: '3rem' }}>
-          <Spinner animation="border" style={{ color: 'var(--color-primary)' }} />
-        </div>
-      </Container>
-    );
-  }
 
   if (!post) {
     return (

@@ -137,15 +137,8 @@ const nextConfig = {
           },
         ],
       },
-      {
-        source: '/api/lostark',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate',
-          },
-        ],
-      },
+      // /api/lostark no-store 헤더 제거: 라우트 핸들러가 직접 CDN 캐시(s-maxage=120)를
+      // 설정한다. 갱신·등록 같은 명시적 액션은 refresh=1 파라미터로 캐시 없이 응답.
       // /api/market/:path* 헤더 제거: Next.js 내부 캐시 제어에 맡김
       // revalidateTag가 CDN까지 무효화하려면 강제 헤더 없어야 함
     ];
