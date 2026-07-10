@@ -95,14 +95,14 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   // ── 결정 ──
   {
     id: 'destruction-crystal',
-    icon: '/top-destiny-destruction-stone5.webp',
+    icon: '/destruction-stone-crystal.webp',
     name: '운명의 파괴석 결정',
     type: 'simple',
     itemId: '66102007',
   },
   {
     id: 'guardian-crystal',
-    icon: '/top-destiny-guardian-stone5.webp',
+    icon: '/guardian-stone-crystal.webp',
     name: '운명의 수호석 결정',
     type: 'simple',
     itemId: '66102107',
@@ -115,8 +115,8 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     name: '파괴/수호 결정 선택',
     type: 'choice',
     choices: [
-      { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/top-destiny-destruction-stone5.webp' },
-      { itemId: '66102107', name: '운명의 수호석 결정', icon: '/top-destiny-guardian-stone5.webp' },
+      { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/destruction-stone-crystal.webp' },
+      { itemId: '66102107', name: '운명의 수호석 결정', icon: '/guardian-stone-crystal.webp' },
     ],
   },
   {
@@ -125,8 +125,8 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     name: '파결+수결 묶음 주머니',
     type: 'bundle',
     bundleContents: [
-      { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/top-destiny-destruction-stone5.webp' },
-      { itemId: '66102107', name: '운명의 수호석 결정', icon: '/top-destiny-guardian-stone5.webp' },
+      { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/destruction-stone-crystal.webp' },
+      { itemId: '66102107', name: '운명의 수호석 결정', icon: '/guardian-stone-crystal.webp' },
     ],
   },
   {
@@ -136,8 +136,8 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     name: '파괴석/수호석 선택 주머니',
     type: 'choice',
     choices: [
-      { itemId: '66102006', name: '운명의 파괴석', icon: '/destiny-destruction-stone5.webp' },
-      { itemId: '66102106', name: '운명의 수호석', icon: '/destiny-guardian-stone5.webp' },
+      { itemId: '66102006', name: '운명의 파괴석', icon: '/destruction-stone.webp' },
+      { itemId: '66102106', name: '운명의 수호석', icon: '/guardian-stone.webp' },
     ],
   },
   // ── 선택 상자 (직접 구성) ──
@@ -151,14 +151,14 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   // ── 돌파석 ──
   {
     id: 'great-breakthrough',
-    icon: '/top-destiny-breakthrough-stone5.webp',
+    icon: '/breakthrough-stone-crystal.webp',
     name: '위대한 운명의 돌파석',
     type: 'simple',
     itemId: '66110226',
   },
   {
     id: 'breakthrough-stone',
-    icon: '/destiny-breakthrough-stone5.webp',
+    icon: '/breakthrough-stone.webp',
     name: '운명의 돌파석',
     type: 'simple',
     itemId: '66110225',
@@ -180,7 +180,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   },
   {
     id: 'breath-choice',
-    icon: '/material-select-box.webp',
+    icon: '/gong-support.webp',
     name: '용숨/빙숨 선택 상자',
     type: 'choice',
     boxItem: true,
@@ -192,14 +192,14 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   // ── 파괴석 / 수호석 ──
   {
     id: 'destruction-stone',
-    icon: '/destiny-destruction-stone5.webp',
+    icon: '/destruction-stone.webp',
     name: '운명의 파괴석',
     type: 'simple',
     itemId: '66102006',
   },
   {
     id: 'guardian-stone',
-    icon: '/destiny-guardian-stone5.webp',
+    icon: '/guardian-stone.webp',
     name: '운명의 수호석',
     type: 'simple',
     itemId: '66102106',
@@ -279,7 +279,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   // ── 파편 ──
   {
     id: 'destiny-shard',
-    icon: '/destiny-shard-bag-large5.webp',
+    icon: '/fate-fragment.webp',
     name: '운명의 파편',
     type: 'simple',
     itemId: '66130143',

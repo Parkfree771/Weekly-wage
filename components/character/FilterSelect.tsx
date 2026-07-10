@@ -12,6 +12,8 @@ export interface FilterOption {
 
 export interface FilterGroup {
   label?: string;
+  /** 그룹 헤더에 렌더할 커스텀 노드(NEW 배지 등). 없으면 label 텍스트. label은 key·검색용으로 유지 */
+  labelNode?: ReactNode;
   options: FilterOption[];
 }
 
@@ -79,7 +81,7 @@ export default function FilterSelect({
 
   const renderGroup = (g: FilterGroup, gi: number | string) => (
     <div key={g.label ?? gi} className={styles.group}>
-      {g.label && <div className={styles.groupLabel}>{g.label}</div>}
+      {(g.labelNode || g.label) && <div className={styles.groupLabel}>{g.labelNode ?? g.label}</div>}
       {g.options.map(o => (
         <button
           key={o.value}
