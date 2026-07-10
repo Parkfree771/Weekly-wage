@@ -16,8 +16,6 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/engraving',          changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/homework',           changeFrequency: 'daily',   priority: 0.7 },
   { path: '/character',          changeFrequency: 'weekly',  priority: 0.7 },
-  { path: '/tier',               changeFrequency: 'daily',   priority: 0.8 },
-  { path: '/tier/vote',          changeFrequency: 'daily',   priority: 0.6 },
   { path: '/mypage',             changeFrequency: 'weekly',  priority: 0.6 },
   { path: '/app',                changeFrequency: 'monthly', priority: 0.6 },
   { path: '/hell-reward',        changeFrequency: 'weekly',  priority: 0.6 },

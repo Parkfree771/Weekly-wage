@@ -76,7 +76,6 @@ export default function Home() {
             <Link href="/refining" className="btn btn-sm btn-outline-primary">재련 계산기</Link>
             <Link href="/hell-reward" className="btn btn-sm btn-outline-primary">지옥의 나락 보상</Link>
             <Link href="/life-master" className="btn btn-sm btn-outline-primary">생활의 달인</Link>
-            <Link href="/tier" className="btn btn-sm btn-outline-primary">직업 티어표</Link>
             <Link href="/character" className="btn btn-sm btn-outline-primary">캐릭터 검색</Link>
           </div>
         </div>
@@ -84,7 +83,7 @@ export default function Home() {
         <GuideFaq
           guideTitle="로골로골 이용 가이드"
           intro={[
-            '로골로골은 로스트아크 원정대의 주간 레이드 골드 수익을 자동으로 계산하고, 거래소·경매장 실시간 시세를 한눈에 보여주는 무료 계산기 모음 사이트입니다. 벨가르딘, 지평의 성당, 세르카, 카제로스 등 최신 레이드의 클리어 골드와 더보기(모험의 서약) 손익을 캐릭터별로 자동 계산하며, T4 재련 비용 시뮬레이터, 지옥의 나락 보상 계산기, 생활의 달인 손익 계산, 직업 티어표, 아크그리드 팔찌·각인 조합 조회 등 원정대 운영에 필요한 도구를 한 곳에서 제공합니다.',
+            '로골로골은 로스트아크 원정대의 주간 레이드 골드 수익을 자동으로 계산하고, 거래소·경매장 실시간 시세를 한눈에 보여주는 무료 계산기 모음 사이트입니다. 벨가르딘, 지평의 성당, 세르카, 카제로스 등 최신 레이드의 클리어 골드와 더보기(모험의 서약) 손익을 캐릭터별로 자동 계산하며, T4 재련 비용 시뮬레이터, 지옥의 나락 보상 계산기, 생활의 달인 손익 계산, 아크그리드 팔찌·각인 조합 조회 등 원정대 운영에 필요한 도구를 한 곳에서 제공합니다.',
             '모든 시세 데이터는 로스트아크 공식 Open API를 매시 정각 자동 조회해 갱신하며, 캐릭터 정보 역시 수동 입력이 아닌 공식 API 응답을 그대로 사용합니다. 회원가입 없이 캐릭터명만 입력하면 바로 결과를 확인할 수 있습니다.',
           ]}
           sections={[
@@ -106,9 +105,9 @@ export default function Home() {
               ],
             },
             {
-              heading: '지옥의 나락 · 생활의 달인 · 티어 · 아크그리드',
+              heading: '지옥의 나락 · 생활의 달인 · 아크그리드',
               paragraphs: [
-                '지옥의 나락 보상 계산기로 층별 기대 수익을 확인하고, 생활의 달인에서는 아비도스 융화재료 등 생활 콘텐츠 손익을 분석합니다. 직업 티어표는 이용자 투표를 집계해 매치업 상대 우위를 보여주며, 팔찌·각인·아크그리드 페이지에서는 조합별 옵션과 효율을 조회할 수 있습니다.',
+                '지옥의 나락 보상 계산기로 층별 기대 수익을 확인하고, 생활의 달인에서는 아비도스 융화재료 등 생활 콘텐츠 손익을 분석합니다. 팔찌·각인·아크그리드 페이지에서는 조합별 옵션과 효율을 조회할 수 있습니다.',
               ],
             },
           ]}

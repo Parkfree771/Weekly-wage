@@ -20,8 +20,6 @@ function getPageConfig(pathname: string): PageConfig {
   if (pathname === '/life-master') return { contentWidth: 1200, adTop: 110 };
   if (pathname === '/mypage') return { contentWidth: 1600, adTop: 130 };
   if (pathname === '/character') return { contentWidth: 1400, adTop: 90 };
-  if (pathname === '/tier') return { contentWidth: 1100, adTop: 90 };
-  if (pathname === '/tier/vote') return { contentWidth: 1320, adTop: 90 };
   if (pathname === '/cathedral') return { contentWidth: 1200, adTop: 90 };
   if (pathname === '/cerka') return { contentWidth: 1200, adTop: 90 };
   if (pathname === '/extreme') return { contentWidth: 1200, adTop: 90 };
@@ -62,9 +60,8 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   // 사이드 레일만 비활성 — 자체 사이드바가 있어 좌우 레일과 충돌하는 페이지.
   // (상단 배너·앵커는 가로/하단이라 충돌 안 하므로 여기서 막지 않음)
   // - /character: 오른쪽에 필터 통계 사이드바를 자체 배치
-  // - /tier/vote: 직업 선택·투표 화면이 자체 사이드바를 사용
   const railsDisabled =
-    pathname === '/character' || pathname === '/tier/vote' ||
+    pathname === '/character' ||
     pathname === '/package/register' || pathname.startsWith('/package/edit');
 
   // 광고 전부 비활성 — 등록·수정 같은 작업/폼 화면 (상단 배너·앵커 포함)

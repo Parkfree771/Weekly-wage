@@ -4,34 +4,30 @@
   padding: 1.5rem 0 3rem;
 }
 
-.pageHeader {
-  margin-bottom: 1.25rem;
-}
-
-.pageTitle {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 0.35rem;
-}
-
-.pageSubtitle {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-/* ─── 섹션 타이틀 바 (스크린샷의 상단 바 형태) ─── */
-.sectionBar {
-  background: var(--card-bg);
+/* ─── 섹션 레이아웃 (카드로 감싸 시각적으로 구분) ─── */
+.sectionCard {
   border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 0.55rem 1rem;
-  text-align: center;
+  border-radius: 14px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-bottom: 1.75rem;
+}
+
+.sectionCardHeader {
+  padding: 0.7rem 1.1rem;
   font-size: 1rem;
   font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 1rem;
+  color: #fff;
+  background: var(--color-primary);
+}
+
+.sectionCardHeaderAccent {
+  background: var(--color-accent);
+}
+
+.sectionCardBody {
+  padding: 1.1rem 1.1rem 1.3rem;
 }
 
 /* ─── 레이드 카드 그리드 ─── */
@@ -144,35 +140,24 @@
   margin-bottom: 1.5rem;
 }
 
-/* ─── 상세 모달 (티어표 페이지와 동일한 백드롭 패턴) ─── */
-.modalBackdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1050;
-  padding: 1rem;
+/* ─── 상세 표 (팝업이 아니라 섹션 카드 안에서 카드 그리드 바로 아래로 펼쳐짐) ─── */
+.detailPanel {
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.1rem 1.1rem 1.3rem;
+  margin-top: 0.9rem;
 }
 
-.detailPanel {
-  position: relative;
-  width: 100%;
-  max-width: 780px;
-  max-height: 88vh;
-  overflow-y: auto;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  box-shadow: var(--shadow-xl);
-  padding: 1.3rem 1.3rem 1.4rem;
+.detailPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .modalClose {
-  position: absolute;
-  top: 0.9rem;
-  right: 1rem;
+  flex-shrink: 0;
   background: var(--input-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -189,7 +174,7 @@
 }
 
 .detailTitle {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: var(--text-primary);
   margin-bottom: 0.2rem;
@@ -198,10 +183,11 @@
 .detailLevel {
   font-size: 0.8rem;
   color: var(--text-muted);
-  margin-bottom: 0.9rem;
+  margin-bottom: 0;
 }
 
 .detailSection {
+  margin-top: 1.1rem;
   margin-bottom: 1.2rem;
 }
 
@@ -219,109 +205,221 @@
   margin-bottom: 0.6rem;
 }
 
-.tableWrap {
-  overflow-x: auto;
-}
-
-.detailTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.84rem;
-  min-width: 560px;
-}
-
-.detailTable th {
-  text-align: left;
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.76rem;
-  padding: 0.35rem 0.55rem;
-  border-bottom: 1px solid var(--border-color);
-  white-space: nowrap;
-}
-
-.detailTable th.num {
-  text-align: right;
-}
-
-.detailTable td {
-  padding: 0.5rem 0.55rem;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-primary);
-  vertical-align: middle;
-}
-
-.detailTable tr:last-child td {
-  border-bottom: none;
-}
-
-.gateCell {
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.kindCell {
-  color: var(--text-muted);
-  font-size: 0.76rem;
-  white-space: nowrap;
-}
-
-.num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.profit {
-  color: #27ae60;
-  font-weight: 700;
-}
-
-.loss {
-  color: #e74c3c;
-  font-weight: 700;
-}
-
-.totalRow td {
-  font-weight: 800;
-  background: var(--input-bg);
-}
-
 .boundNote {
   color: var(--text-muted);
   font-size: 0.73rem;
 }
 
-/* 재료 아이콘 목록 */
-.matList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 0.7rem;
-}
-
-.matItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.28rem;
-  white-space: nowrap;
-}
-
-.matIcon {
-  border-radius: 4px;
-}
-
-.matAmount {
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.matUntradable {
-  opacity: 0.75;
-}
-
 .tbdNote {
   color: var(--text-muted);
   font-size: 0.8rem;
+}
+
+/* ─── 총 골드 배지 (레이드 클리어 보상 카드) ─── */
+.totalBadge {
+  font-size: 13px;
+  font-weight: 800;
+  margin-top: 3px;
+  color: var(--color-gold);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   클리어 보상 상세 표 — 지평의 성당·세르카 페이지와 동일한 디자인
+   ========================================================================== */
+
+.gatesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.gateSection {
+  background: var(--card-body-bg-blue);
+  border-radius: 10px;
+  padding: 0.6rem;
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gateHeader {
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid var(--color-accent-light);
+}
+
+.gateName {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 0.25rem;
+}
+
+.goldRow { background: rgba(201, 168, 76, 0.08); }
+.costRow { background: rgba(192, 100, 60, 0.06); }
+
+.infoLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.goldValue { font-size: 0.85rem; font-weight: 700; color: var(--color-accent); font-variant-numeric: tabular-nums; }
+.costValue { font-size: 0.85rem; font-weight: 700; color: var(--color-danger); font-variant-numeric: tabular-nums; }
+
+.materialTable {
+  width: 100%;
+  color: var(--text-primary);
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1.5px solid var(--color-primary);
+  margin-top: 0.4rem;
+  font-family: inherit;
+  box-shadow: var(--shadow-sm);
+}
+
+.materialTable th:nth-child(1),
+.materialTable td:nth-child(1) {
+  width: 30px;
+  padding: 0.4rem 0.25rem;
+}
+
+.materialTable thead th {
+  background: var(--color-primary) !important;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.6rem 0.5rem;
+  color: #fff !important;
+  border-bottom: 2px solid var(--color-accent) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  text-align: center;
+}
+
+.materialTable thead th:last-child { border-right: none; }
+
+.materialTable tbody td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  vertical-align: middle;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+  background: var(--card-bg);
+  font-variant-numeric: tabular-nums;
+}
+
+.materialTable tbody td:nth-child(2) { text-align: left; }
+.materialTable tbody td:last-child { border-right: none; }
+.materialTable tbody tr:last-child td { border-bottom: none; }
+
+.subtotalRow td {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.5rem;
+  background: var(--card-body-bg-blue);
+  text-align: left;
+}
+
+.subtotalRow td:last-child {
+  text-align: center;
+}
+
+.gateTotalRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.materialCheckbox {
+  margin: 0 !important;
+  display: flex;
+  justify-content: center;
+}
+.materialCheckbox :global(.form-check-input) { accent-color: var(--color-success); }
+.materialCheckbox :global(.form-check-input:checked) {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+}
+.materialCheckbox :global(.form-check-input:focus) {
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
+}
+
+.materialCell { display: flex; align-items: center; gap: 0.5rem; }
+.materialCell span { font-size: 0.9rem; }
+.materialCell img { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
+
+/* ─── 더보기 포함 총 가치 합계 ─── */
+.finalSection {
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--color-accent-light);
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.finalTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.finalGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+
+.finalGridItem {
+  text-align: center;
+  padding: 0.35rem 0.2rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.finalLabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.2rem;
+}
+
+.finalItemValue {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.finalTotalRow {
+  grid-column: 1 / -1;
+  border-top: 2px solid var(--color-accent-light);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
 }
 
 /* 관련 도구 링크 */
@@ -352,10 +450,6 @@
 }
 
 @media (max-width: 576px) {
-  .pageTitle {
-    font-size: 1.25rem;
-  }
-
   .raidGrid {
     grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
     gap: 0.5rem;
@@ -368,4 +462,20 @@
   .raidProfit {
     font-size: 11.5px;
   }
+
+  .gatesGrid { grid-template-columns: 1fr; gap: 0.6rem; }
+  .gateSection { padding: 0.5rem; }
+  .gateName { font-size: 0.85rem; }
+  .finalSection { padding: 0.65rem; }
+  .finalTitle { font-size: 0.82rem; }
+  .finalGrid { grid-template-columns: repeat(2, 1fr); gap: 0.35rem; }
+  .materialTable thead th { font-size: 0.78rem; padding: 0.4rem 0.3rem; }
+  .materialTable tbody td { padding: 0.4rem 0.3rem; font-size: 0.78rem; }
+  .materialCell { gap: 0.3rem; }
+  .materialCell img { width: 22px !important; height: 22px !important; }
+  .materialCell span { font-size: 0.72rem; white-space: nowrap; }
+  .subtotalRow td { font-size: 0.78rem; padding: 0.4rem 0.3rem !important; }
+  .finalGridItem { padding: 0.3rem 0.15rem; }
+  .finalLabel { font-size: 0.6rem; }
+  .finalItemValue { font-size: 0.72rem; }
 }

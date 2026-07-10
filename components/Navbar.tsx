@@ -30,6 +30,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/life-master', label: '생활 제작' },
       { href: '/package', label: '패키지 효율' },
+      { href: '/more-reward', label: '더보기 효율 & 레이드 보상 정리', badge: 'NEW' },
       { href: '/hell-reward', label: '지옥 보상' },
     ],
   },
@@ -38,7 +39,6 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-hell',
     items: [
       { href: '/weekly-gold', label: '주간 레이드' },
-      { href: '/more-reward', label: '더보기 효율', badge: 'NEW' },
       { href: '/homework', label: '일일/주간 숙제' },
       { href: '/cathedral', label: '지평의 성당' },
       { href: '/cerka', label: '세르카' },
@@ -59,7 +59,6 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-character',
     items: [
       { href: '/character', label: '캐릭터 조회' },
-      { href: '/tier', label: '직업 티어표' },
       { href: '/engraving', label: '직업별 각인', badge: 'NEW' },
     ],
   },
@@ -109,7 +108,6 @@ export default function Navbar() {
                       href === '/cerka' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
                       href === '/character' ? 'nav-character' :
-                      href === '/tier' ? 'nav-character' :
                       href === '/engraving' ? 'nav-character' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();

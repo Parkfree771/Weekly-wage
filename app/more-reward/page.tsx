@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Container } from 'react-bootstrap';
+import { Container, Form } from 'react-bootstrap';
 import { raids, upcomingRaids } from '@/data/raids';
 import { raidRewards, type MaterialReward } from '@/data/raidRewards';
 import { raidClearRewards } from '@/data/raidClearRewards';
@@ -29,6 +29,8 @@ const MATERIAL_ICONS: Record<string, string> = {
 
 const fmt = (n: number) => Math.round(n).toLocaleString('ko-KR');
 
+type Raid = (typeof raids)[number];
+
 export default function MoreRewardPage() {
   return (
     <PriceProvider>
@@ -37,10 +39,13 @@ export default function MoreRewardPage() {
   );
 }
 
+type CheckType = 'basic' | 'more';
+
 function MoreRewardInner() {
   const { unitPrices, loading } = usePriceData();
-  // 열려 있는 레이드 상세 (null = 닫힘). 같은 카드 재클릭·백드롭 클릭으로 닫는다.
-  const [openName, setOpenName] = useState<string | null>(null);
+  // 두 섹션(더보기 손익 계산 / 레이드 클리어 보상)은 각자 독립적으로 펼침 상태를 가진다.
+  const [openEff, setOpenEff] = useState<string | null>(null);
+  const [openClear, setOpenClear] = useState<string | null>(null);
 
   // 시세 기준일 — SSR/클라이언트 불일치 방지 위해 마운트 후 표시
   const [priceDate, setPriceDate] = useState('');
@@ -53,7 +58,7 @@ function MoreRewardInner() {
   const valueOf = (materials: MaterialReward[]): number =>
     materials.reduce((sum, m) => sum + (m.itemId !== 0 ? (unitPrices[m.itemId] || 0) * m.amount : 0), 0);
 
-  // 카드별 요약: 레이드(난이도) 전체 관문 합산 더보기 손익 + 손익률
+  // 상단 카드: 레이드(난이도) 전체 관문 합산 더보기 손익 + 손익률
   const summaries = useMemo(() => {
     const map = new Map<string, { profit: number; cost: number; hasData: boolean }>();
     for (const raid of raids) {
@@ -73,205 +78,338 @@ function MoreRewardInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unitPrices]);
 
-  const selectedRaid = openName ? raids.find((r) => r.name === openName) : null;
+  // 하단 카드: 클리어 골드 + 기본 재료 가치 + 더보기 재료 가치 - 더보기 비용 (더보기 포함 총 가치)
+  const clearSummaries = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const raid of raids) {
+      let total = 0;
+      for (const g of raid.gates) {
+        const clear = raidClearRewards.find((r) => r.raidName === raid.name && r.gate === g.gate);
+        const more = raidRewards.find((r) => r.raidName === raid.name && r.gate === g.gate);
+        total += g.gold + (clear ? valueOf(clear.materials) : 0) + (more ? valueOf(more.materials) : 0) - g.moreGold;
+      }
+      map.set(raid.name, total);
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unitPrices]);
 
-  const handleSelect = (name: string) => {
-    setOpenName((prev) => (prev === name ? null : name));
+  // 재료 체크 상태: raid × 구분(기본/더보기) × 관문 × 재료명 단위 (itemId 0인 재료가 여럿이라 itemName으로 구분)
+  const [materialChecks, setMaterialChecks] = useState<Record<string, boolean>>({});
+  const checkKey = (raidName: string, type: CheckType, gate: number, itemName: string) =>
+    `${raidName}::${type}::${gate}::${itemName}`;
+  const isMatChecked = (raidName: string, type: CheckType, gate: number, itemName: string) =>
+    materialChecks[checkKey(raidName, type, gate, itemName)] ?? true;
+  const toggleMatCheck = (raidName: string, type: CheckType, gate: number, itemName: string) => {
+    const key = checkKey(raidName, type, gate, itemName);
+    setMaterialChecks((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
+  };
+  const getCheckedValue = (materials: MaterialReward[], raidName: string, type: CheckType, gate: number): number =>
+    materials.reduce((sum, m) => {
+      if (m.itemId === 0 || !isMatChecked(raidName, type, gate, m.itemName)) return sum;
+      return sum + (unitPrices[m.itemId] || 0) * m.amount;
+    }, 0);
+
+  // 재료 표 (지평의 성당·세르카 페이지와 동일한 체크박스 + 단가/총가치 표 디자인)
+  const renderMaterialTable = (materials: MaterialReward[], raidName: string, type: CheckType, gate: number) => (
+    <table className={styles.materialTable}>
+      <thead>
+        <tr>
+          <th></th>
+          <th>재료</th>
+          <th>수량</th>
+          <th>단가</th>
+          <th>총가치</th>
+        </tr>
+      </thead>
+      <tbody>
+        {materials.map((m) => {
+          const untradable = m.itemId === 0;
+          const checked = isMatChecked(raidName, type, gate, m.itemName);
+          const unitPrice = untradable ? 0 : unitPrices[m.itemId] || 0;
+          const totalPrice = untradable ? 0 : unitPrice * m.amount;
+          const icon = MATERIAL_ICONS[m.itemName];
+          return (
+            <tr key={m.itemName} style={!checked ? { opacity: 0.4 } : undefined}>
+              <td>
+                <Form.Check
+                  type="checkbox"
+                  checked={checked}
+                  disabled={untradable}
+                  onChange={() => toggleMatCheck(raidName, type, gate, m.itemName)}
+                  className={styles.materialCheckbox}
+                />
+              </td>
+              <td>
+                <div className={styles.materialCell}>
+                  {icon && <Image src={icon} alt={m.itemName} width={22} height={22} unoptimized />}
+                  <span>{m.itemName}</span>
+                </div>
+              </td>
+              <td>{fmt(m.amount)}</td>
+              <td>{untradable ? '-' : loading ? '—' : unitPrice >= 1 ? unitPrice.toFixed(2) : unitPrice.toFixed(4)}</td>
+              <td>{untradable ? '-' : loading ? '—' : fmt(totalPrice)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+      <tfoot>
+        <tr className={styles.subtotalRow}>
+          <td colSpan={4}>재료 가치</td>
+          <td>{loading ? '—' : fmt(getCheckedValue(materials, raidName, type, gate))}</td>
+        </tr>
+      </tfoot>
+    </table>
+  );
+
+  // 레이드 상세 — 기본 클리어 보상 + 더보기 보상 + 더보기 포함 총 가치 (전체 보상 표)
+  // 팝업이 아니라 각 섹션 레이아웃 안, 카드 그리드 바로 아래에 펼쳐진다.
+  const renderRaidDetail = (raid: Raid, onClose: () => void) => {
+    const totalClearGold = raid.gates.reduce((s, g) => s + g.gold, 0);
+    const totalMoreGold = raid.gates.reduce((s, g) => s + g.moreGold, 0);
+    const totalBasicValue = raid.gates.reduce((s, g) => {
+      const clear = raidClearRewards.find((r) => r.raidName === raid.name && r.gate === g.gate);
+      return s + (clear ? getCheckedValue(clear.materials, raid.name, 'basic', g.gate) : 0);
+    }, 0);
+    const totalMoreValue = raid.gates.reduce((s, g) => {
+      const more = raidRewards.find((r) => r.raidName === raid.name && r.gate === g.gate);
+      return s + (more ? getCheckedValue(more.materials, raid.name, 'more', g.gate) : 0);
+    }, 0);
+    const finalValue = totalClearGold + totalBasicValue + totalMoreValue - totalMoreGold;
+
+    return (
+      <section className={styles.detailPanel}>
+        <div className={styles.detailPanelHeader}>
+          <div>
+            <h2 className={styles.detailTitle}>{raid.name} 클리어 보상</h2>
+            <p className={styles.detailLevel}>입장 레벨 {raid.level} 이상</p>
+          </div>
+          <button type="button" className={styles.modalClose} onClick={onClose} aria-label="접기">
+            접기
+          </button>
+        </div>
+
+        {/* 기본 클리어 보상 */}
+        <div className={styles.detailSection}>
+          <h3 className={styles.detailSectionTitle}>기본 클리어 보상</h3>
+          <div className={styles.gatesGrid}>
+            {raid.gates.map((g) => {
+              const clear = raidClearRewards.find((r) => r.raidName === raid.name && r.gate === g.gate);
+              const freeGold = g.gold - g.boundGold;
+              return (
+                <div key={`basic-${g.gate}`} className={styles.gateSection}>
+                  <div className={styles.gateHeader}>
+                    <span className={styles.gateName}>{g.gate}관문</span>
+                  </div>
+                  <div className={`${styles.infoRow} ${styles.goldRow}`}>
+                    <span className={styles.infoLabel}>클리어 골드</span>
+                    <span className={styles.goldValue}>
+                      {fmt(g.gold)}
+                      {g.boundGold > 0 && (
+                        <>
+                          {' '}
+                          <span className={styles.boundNote}>
+                            (귀속 {fmt(g.boundGold)}{freeGold > 0 ? ` · 일반 ${fmt(freeGold)}` : ''})
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  {clear
+                    ? renderMaterialTable(clear.materials, raid.name, 'basic', g.gate)
+                    : <p className={styles.tbdNote}>출시 후 공개</p>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 더보기 보상 */}
+        <div className={styles.detailSection}>
+          <h3 className={styles.detailSectionTitle}>더보기 보상</h3>
+          <div className={styles.gatesGrid}>
+            {raid.gates.map((g) => {
+              const more = raidRewards.find((r) => r.raidName === raid.name && r.gate === g.gate);
+              const moreValue = more ? getCheckedValue(more.materials, raid.name, 'more', g.gate) : 0;
+              const profit = moreValue - g.moreGold;
+              return (
+                <div key={`more-${g.gate}`} className={styles.gateSection}>
+                  <div className={styles.gateHeader}>
+                    <span className={styles.gateName}>{g.gate}관문 더보기</span>
+                  </div>
+                  <div className={`${styles.infoRow} ${styles.costRow}`}>
+                    <span className={styles.infoLabel}>더보기 비용</span>
+                    <span className={styles.costValue}>-{fmt(g.moreGold)}</span>
+                  </div>
+                  {more
+                    ? renderMaterialTable(more.materials, raid.name, 'more', g.gate)
+                    : <p className={styles.tbdNote}>보상 구성 출시 후 공개</p>}
+                  {more && (
+                    <div className={styles.gateTotalRow}>
+                      <span>더보기 손익</span>
+                      <span style={{ color: profit >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                        {loading ? '…' : `${profit >= 0 ? '+' : ''}${fmt(profit)}`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 더보기 포함 총 가치 */}
+        <div className={styles.finalSection}>
+          <div className={styles.finalTitle}>더보기 포함 총 가치</div>
+          <div className={styles.finalGrid}>
+            <div className={styles.finalGridItem}>
+              <div className={styles.finalLabel}>클리어 골드</div>
+              <div className={styles.finalItemValue} style={{ color: 'var(--color-gold)' }}>{fmt(totalClearGold)}</div>
+            </div>
+            <div className={styles.finalGridItem}>
+              <div className={styles.finalLabel}>기본 재료 가치</div>
+              <div className={styles.finalItemValue}>{loading ? '—' : `+${fmt(totalBasicValue)}`}</div>
+            </div>
+            <div className={styles.finalGridItem}>
+              <div className={styles.finalLabel}>더보기 재료 가치</div>
+              <div className={styles.finalItemValue}>{loading ? '—' : `+${fmt(totalMoreValue)}`}</div>
+            </div>
+            <div className={styles.finalGridItem}>
+              <div className={styles.finalLabel}>더보기 비용</div>
+              <div className={styles.finalItemValue} style={{ color: 'var(--color-danger)' }}>-{fmt(totalMoreGold)}</div>
+            </div>
+            <div className={`${styles.finalGridItem} ${styles.finalTotalRow}`}>
+              <div className={styles.finalLabel}>총 가치</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+                <Image src="/gold.webp" alt="골드" width={22} height={22} />
+                <span className={styles.finalItemValue} style={{ color: 'var(--color-gold)', fontSize: '1.1rem' }}>
+                  {loading ? '—' : fmt(finalValue)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   };
 
-  const renderMaterials = (materials: MaterialReward[]) => (
-    <div className={styles.matList}>
-      {materials.map((m) => {
-        const untradable = m.itemId === 0;
-        const icon = MATERIAL_ICONS[m.itemName];
-        return (
-          <span
-            key={m.itemName}
-            className={`${styles.matItem} ${untradable ? styles.matUntradable : ''}`}
-            title={untradable ? `${m.itemName} (거래불가 — 손익 계산 제외)` : m.itemName}
-          >
-            {icon && (
-              <Image src={icon} alt={m.itemName} width={20} height={20} className={styles.matIcon} unoptimized />
-            )}
-            <span className={styles.matAmount}>{fmt(m.amount)}</span>
-          </span>
-        );
-      })}
-    </div>
-  );
+  const selectedEffRaid = openEff ? raids.find((r) => r.name === openEff) : null;
+  const selectedClearRaid = openClear ? raids.find((r) => r.name === openClear) : null;
 
   return (
     <Container fluid style={{ maxWidth: '1100px' }}>
       <div className={styles.pageWrapper}>
-        <header className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>로아 더보기 효율</h1>
-          <p className={styles.pageSubtitle}>
-            레이드별 더보기 비용과 보상 재료를 실시간 거래소 시세로 환산한 더보기 손익입니다.
-            카드를 누르면 관문별 더보기 효율과 클리어 보상 상세를 확인할 수 있습니다.
-          </p>
-        </header>
+        <div className="text-center" style={{ marginBottom: '2rem' }}>
+          <h1 style={{
+            fontSize: 'clamp(1.3rem, 3vw, 1.6rem)',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            marginTop: 0,
+            marginBottom: 0,
+          }}>
+            더보기 효율 & 레이드 보상 정리
+          </h1>
+        </div>
 
-        <div className={styles.sectionBar}>더보기 손익 계산</div>
-
-        {/* 레이드 카드 그리드 */}
-        <div className={styles.raidGrid}>
-          {upcomingRaids.map((raid) => (
-            <div key={raid.name} className={`${styles.raidCard} ${styles.upcomingCard}`}>
-              <Image src={raid.image} alt={raid.name} fill sizes="220px" className={styles.raidImg} unoptimized />
-              <div className={styles.raidOverlay} />
-              <div className={styles.raidInfo}>
-                <span className={styles.raidName}>{raid.name}</span>
-                <span className={styles.raidLevel}>Lv. {raid.level}</span>
-                <span className={styles.upcomingLabel}>{raid.releaseLabel}</span>
-              </div>
-            </div>
-          ))}
-          {raids.map((raid) => {
-            const s = summaries.get(raid.name);
-            const profit = s?.profit ?? 0;
-            const rate = s && s.cost > 0 ? (profit / s.cost) * 100 : 0;
-            const cls = profit >= 0 ? styles.profitText : styles.lossText;
-            return (
-              <button
-                key={raid.name}
-                type="button"
-                className={`${styles.raidCard} ${openName === raid.name ? styles.raidCardSelected : ''}`}
-                onClick={() => handleSelect(raid.name)}
-              >
-                <Image src={raid.image} alt={raid.name} fill sizes="220px" className={styles.raidImg} quality={90} unoptimized />
-                <div className={styles.raidOverlay} />
-                <div className={styles.raidInfo}>
-                  <span className={styles.raidName}>{raid.name}</span>
-                  <span className={styles.raidLevel}>Lv. {raid.level}</span>
-                  <span className={`${styles.raidProfit} ${cls}`}>
-                    {loading ? '…' : `${profit >= 0 ? '+' : ''}${fmt(profit)}`}
-                  </span>
-                  <span className={`${styles.raidProfitRate} ${cls}`}>
-                    {loading ? '' : `${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%`}
-                  </span>
+        {/* 더보기 손익 계산 섹션 */}
+        <div className={styles.sectionCard}>
+          <div className={styles.sectionCardHeader}>더보기 손익 계산</div>
+          <div className={styles.sectionCardBody}>
+            <div className={styles.raidGrid}>
+              {upcomingRaids.map((raid) => (
+                <div key={raid.name} className={`${styles.raidCard} ${styles.upcomingCard}`}>
+                  <Image src={raid.image} alt={raid.name} fill sizes="220px" className={styles.raidImg} unoptimized />
+                  <div className={styles.raidOverlay} />
+                  <div className={styles.raidInfo}>
+                    <span className={styles.raidName}>{raid.name}</span>
+                    <span className={styles.raidLevel}>Lv. {raid.level}</span>
+                    <span className={styles.upcomingLabel}>{raid.releaseLabel}</span>
+                  </div>
                 </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <p className={styles.priceNote}>
-          {priceDate && `${priceDate} 평균 거래가 | `}실시간 시세와 차이가 있을 수 있습니다
-        </p>
-
-        {/* 선택 레이드 상세 모달 — 1) 더보기 효율  2) 클리어 보상
-            백드롭(빈 공간) 클릭 시 닫힘, 카드 재클릭도 토글로 닫힘 */}
-        {selectedRaid && (
-        <div className={styles.modalBackdrop} onClick={() => setOpenName(null)}>
-          <section className={styles.detailPanel} onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className={styles.modalClose}
-              onClick={() => setOpenName(null)}
-              aria-label="닫기"
-            >
-              닫기
-            </button>
-            <h2 className={styles.detailTitle}>{selectedRaid.name}</h2>
-            <p className={styles.detailLevel}>입장 레벨 {selectedRaid.level} 이상</p>
-
-            {/* 1. 더보기 효율: 더보기 골드 vs 재료 가치 */}
-            <div className={styles.detailSection}>
-              <h3 className={styles.detailSectionTitle}>더보기 효율</h3>
-              <div className={styles.tableWrap}>
-                <table className={styles.detailTable}>
-                  <thead>
-                    <tr>
-                      <th>관문</th>
-                      <th className={styles.num}>더보기 비용</th>
-                      <th>더보기 보상 재료</th>
-                      <th className={styles.num}>재료 가치</th>
-                      <th className={styles.num}>손익</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedRaid.gates.map((g) => {
-                      const more = raidRewards.find(
-                        (r) => r.raidName === selectedRaid.name && r.gate === g.gate,
-                      );
-                      const value = more ? valueOf(more.materials) : 0;
-                      const profit = value - g.moreGold;
-                      return (
-                        <tr key={g.gate}>
-                          <td className={styles.gateCell}>{g.gate}관문</td>
-                          <td className={styles.num}>-{fmt(g.moreGold)}G</td>
-                          <td>{more ? renderMaterials(more.materials) : <span className={styles.tbdNote}>출시 후 공개</span>}</td>
-                          <td className={styles.num}>{more ? (loading ? '…' : `${fmt(value)}G`) : '-'}</td>
-                          <td className={`${styles.num} ${more ? (profit >= 0 ? styles.profit : styles.loss) : ''}`}>
-                            {more ? (loading ? '…' : `${profit >= 0 ? '+' : ''}${fmt(profit)}G`) : '-'}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {(() => {
-                      const s = summaries.get(selectedRaid.name);
-                      if (!s?.hasData) return null;
-                      const rate = s.cost > 0 ? (s.profit / s.cost) * 100 : 0;
-                      return (
-                        <tr className={styles.totalRow}>
-                          <td>합계</td>
-                          <td className={styles.num}>-{fmt(s.cost)}G</td>
-                          <td></td>
-                          <td className={styles.num}>{loading ? '…' : `${fmt(s.cost + s.profit)}G`}</td>
-                          <td className={`${styles.num} ${s.profit >= 0 ? styles.profit : styles.loss}`}>
-                            {loading ? '…' : `${s.profit >= 0 ? '+' : ''}${fmt(s.profit)}G (${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%)`}
-                          </td>
-                        </tr>
-                      );
-                    })()}
-                  </tbody>
-                </table>
-              </div>
+              ))}
+              {raids.map((raid) => {
+                const s = summaries.get(raid.name);
+                const profit = s?.profit ?? 0;
+                const rate = s && s.cost > 0 ? (profit / s.cost) * 100 : 0;
+                const cls = profit >= 0 ? styles.profitText : styles.lossText;
+                return (
+                  <button
+                    key={raid.name}
+                    type="button"
+                    className={`${styles.raidCard} ${openEff === raid.name ? styles.raidCardSelected : ''}`}
+                    onClick={() => setOpenEff((prev) => (prev === raid.name ? null : raid.name))}
+                  >
+                    <Image src={raid.image} alt={raid.name} fill sizes="220px" className={styles.raidImg} quality={90} unoptimized />
+                    <div className={styles.raidOverlay} />
+                    <div className={styles.raidInfo}>
+                      <span className={styles.raidName}>{raid.name}</span>
+                      <span className={styles.raidLevel}>Lv. {raid.level}</span>
+                      <span className={`${styles.raidProfit} ${cls}`}>
+                        {loading ? '…' : `${profit >= 0 ? '+' : ''}${fmt(profit)}`}
+                      </span>
+                      <span className={`${styles.raidProfitRate} ${cls}`}>
+                        {loading ? '' : `${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%`}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* 2. 클리어 보상: 클리어 보상 + 더보기 보상 전체 */}
-            <div className={styles.detailSection}>
-              <h3 className={styles.detailSectionTitle}>클리어 보상</h3>
-              <div className={styles.tableWrap}>
-                <table className={styles.detailTable}>
-                  <thead>
-                    <tr>
-                      <th>관문</th>
-                      <th>구분</th>
-                      <th className={styles.num}>골드</th>
-                      <th>보상 재료</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedRaid.gates.map((g) => {
-                      const clear = raidClearRewards.find(
-                        (r) => r.raidName === selectedRaid.name && r.gate === g.gate,
-                      );
-                      const more = raidRewards.find(
-                        (r) => r.raidName === selectedRaid.name && r.gate === g.gate,
-                      );
-                      const freeGold = g.gold - g.boundGold;
-                      return (
-                        <MoreRewardClearRows
-                          key={g.gate}
-                          gate={g.gate}
-                          gold={g.gold}
-                          freeGold={freeGold}
-                          boundGold={g.boundGold}
-                          moreGold={g.moreGold}
-                          clearMaterials={clear?.materials}
-                          moreMaterials={more?.materials}
-                          renderMaterials={renderMaterials}
-                        />
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
+            <p className={styles.priceNote}>
+              {priceDate && `${priceDate} 평균 거래가 | `}실시간 시세와 차이가 있을 수 있습니다
+            </p>
+
+            {selectedEffRaid && renderRaidDetail(selectedEffRaid, () => setOpenEff(null))}
+          </div>
         </div>
-        )}
+
+        {/* 레이드 클리어 보상 섹션 */}
+        <div className={styles.sectionCard}>
+          <div className={`${styles.sectionCardHeader} ${styles.sectionCardHeaderAccent}`}>레이드 클리어 보상</div>
+          <div className={styles.sectionCardBody}>
+            <div className={styles.raidGrid}>
+              {upcomingRaids.map((raid) => (
+                <div key={`clear-${raid.name}`} className={`${styles.raidCard} ${styles.upcomingCard}`}>
+                  <Image src={raid.image} alt={raid.name} fill sizes="220px" className={styles.raidImg} unoptimized />
+                  <div className={styles.raidOverlay} />
+                  <div className={styles.raidInfo}>
+                    <span className={styles.raidName}>{raid.name}</span>
+                    <span className={styles.raidLevel}>Lv. {raid.level}</span>
+                    <span className={styles.upcomingLabel}>{raid.releaseLabel}</span>
+                  </div>
+                </div>
+              ))}
+              {raids.map((raid) => {
+                const total = clearSummaries.get(raid.name) ?? 0;
+                return (
+                  <button
+                    key={`clear-${raid.name}`}
+                    type="button"
+                    className={`${styles.raidCard} ${openClear === raid.name ? styles.raidCardSelected : ''}`}
+                    onClick={() => setOpenClear((prev) => (prev === raid.name ? null : raid.name))}
+                  >
+                    <Image src={raid.image} alt={raid.name} fill sizes="220px" className={styles.raidImg} quality={90} unoptimized />
+                    <div className={styles.raidOverlay} />
+                    <div className={styles.raidInfo}>
+                      <span className={styles.raidName}>{raid.name}</span>
+                      <span className={styles.raidLevel}>Lv. {raid.level}</span>
+                      <span className={styles.totalBadge}>
+                        {loading ? '…' : `${fmt(total)}G`}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className={styles.priceNote}>
+              {priceDate && `${priceDate} 평균 거래가 | `}실시간 시세와 차이가 있을 수 있습니다
+            </p>
+
+            {selectedClearRaid && renderRaidDetail(selectedClearRaid, () => setOpenClear(null))}
+          </div>
+        </div>
 
         <AdBanner slot="8616653628" />
 
@@ -295,9 +433,9 @@ function MoreRewardInner() {
               ],
             },
             {
-              heading: '더보기 효율과 클리어 보상, 두 단락으로 나눈 이유',
+              heading: '더보기 손익 계산과 레이드 클리어 보상, 두 섹션으로 나눈 이유',
               paragraphs: [
-                '카드를 누르면 두 가지 정보가 나옵니다. 더보기 효율 단락은 관문별 더보기 비용과 재료 가치를 비교해 지금 더보기를 사는 게 이득인지 알려주고, 클리어 보상 단락은 관문을 깨면 무조건 받는 클리어 골드·재료와 더보기로 받는 재료를 모두 정리해 레이드 한 번에 나오는 보상 전체를 보여줍니다. 클리어 골드에는 자유롭게 거래할 수 있는 일반 골드와 캐릭터에 묶이는 귀속 골드가 섞여 있어서, 표에서는 귀속 비중을 함께 표기합니다.',
+                '위쪽 더보기 손익 계산 섹션은 관문별 더보기 비용과 재료 가치만 비교해 지금 더보기를 사는 게 이득인지 퍼센트로 보여주고, 아래쪽 레이드 클리어 보상 섹션은 관문을 깨면 무조건 받는 클리어 골드·재료에 더보기 재료까지 모두 더한 레이드 한 번의 전체 가치를 보여줍니다. 카드를 누르면 해당 섹션 바로 아래에 기본 클리어 보상, 더보기 보상, 더보기 포함 총 가치를 관문별로 정리한 표가 펼쳐지고, 재료별 체크박스로 필요 없는 재료를 빼고 다시 계산할 수도 있습니다.',
               ],
             },
             {
@@ -312,52 +450,5 @@ function MoreRewardInner() {
         />
       </div>
     </Container>
-  );
-}
-
-// 클리어 보상 표: 관문 하나 = 클리어 행 + 더보기 행 (두 보상 모두 표시)
-function MoreRewardClearRows({
-  gate,
-  gold,
-  freeGold,
-  boundGold,
-  moreGold,
-  clearMaterials,
-  moreMaterials,
-  renderMaterials,
-}: {
-  gate: number;
-  gold: number;
-  freeGold: number;
-  boundGold: number;
-  moreGold: number;
-  clearMaterials?: MaterialReward[];
-  moreMaterials?: MaterialReward[];
-  renderMaterials: (m: MaterialReward[]) => React.ReactNode;
-}) {
-  return (
-    <>
-      <tr>
-        <td className={styles.gateCell} rowSpan={2}>{gate}관문</td>
-        <td className={styles.kindCell}>클리어</td>
-        <td className={styles.num}>
-          +{fmt(gold)}G
-          {boundGold > 0 && (
-            <>
-              {' '}
-              <span className={styles.boundNote}>
-                (귀속 {fmt(boundGold)}{freeGold > 0 ? ` · 일반 ${fmt(freeGold)}` : ''})
-              </span>
-            </>
-          )}
-        </td>
-        <td>{clearMaterials ? renderMaterials(clearMaterials) : <span className={styles.tbdNote}>출시 후 공개</span>}</td>
-      </tr>
-      <tr>
-        <td className={styles.kindCell}>더보기</td>
-        <td className={styles.num}>-{fmt(moreGold)}G</td>
-        <td>{moreMaterials ? renderMaterials(moreMaterials) : <span className={styles.tbdNote}>보상 구성 출시 후 공개</span>}</td>
-      </tr>
-    </>
   );
 }
