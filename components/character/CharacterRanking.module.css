@@ -154,6 +154,15 @@
   }
 }
 
+/* 1520~1660 구간(노트북 100% 배율 등): 사이드바는 켜지지만 좌측 1fr 컬럼이 ~226px로
+   눌려 2열 칩이면 직업명(약 60px)이 잘려 뭉개짐 → 이 구간만 1열로 펼쳐 폭을 확보한다.
+   (크롬 90% 줌 ≈ 1707px부터는 2열도 여유 있어 정상 노출) 세로는 .specScroll이 자체 스크롤. */
+@media (min-width: 1520px) and (max-width: 1659.98px) {
+  .specGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 데스크톱/태블릿: 래퍼는 레이아웃에 영향 없음(헤더를 그대로 노출) */
 .mobileTop {
   display: contents;
@@ -352,17 +361,16 @@
   background-color: var(--card-body-bg-stone, rgba(0,0,0,0.05));
 }
 
-/* 신규 출시 직업 배지 (사이드바 칩 + 드롭다운 옵션 공용) */
-.specChipNew,
-.specOptNew {
-  flex-shrink: 0;
-  font-size: 0.6rem;
+/* 신규 출시 직업 그룹('기타') 배지 — 그룹 라벨 자리에 표시 (사이드바 헤더 + 드롭다운 헤더 공용) */
+.specGroupNew {
+  display: inline-block;
+  font-size: 0.62rem;
   font-weight: 800;
   color: #fff;
   background: #8b5cf6;
   border-radius: 999px;
-  padding: 0.06rem 0.32rem;
-  letter-spacing: 0.02em;
+  padding: 0.08rem 0.42rem;
+  letter-spacing: 0.04em;
 }
 
 .resetButton {

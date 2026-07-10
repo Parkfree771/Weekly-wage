@@ -18,12 +18,13 @@ const SPEC_GROUPS = SPEC_GROUP_ORDER
   .map(group => ({ group, entries: TIER_ENTRIES.filter(e => e.group === group) }))
   .filter(g => g.entries.length > 0);
 
-// 신규 출시 직업(각인 정보 미확정) — 필터 옵션에 NEW 배지 표시
-const NEW_SPEC_IDS = new Set(['차원 공간검사', '차원 시간관리자']);
+// 신규 출시 직업(차원술사 등)이 묶이는 그룹 — 그룹 라벨 자체를 NEW 배지로 표시해 신캐임을 알림
+const NEW_GROUP = '기타';
 
 // 직업/스펙 필터: 아이콘 + 이름
 const SPEC_FILTER_GROUPS: FilterGroup[] = SPEC_GROUPS.map(g => ({
   label: g.group,
+  labelNode: g.group === NEW_GROUP ? <span className={styles.specGroupNew}>NEW</span> : undefined,
   options: g.entries.map(s => ({
     value: s.id,
     label: s.name,
@@ -32,7 +33,6 @@ const SPEC_FILTER_GROUPS: FilterGroup[] = SPEC_GROUPS.map(g => ({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={s.icon} alt="" className={styles.specOptIcon} />
         <span>{s.name}</span>
-        {NEW_SPEC_IDS.has(s.id) && <span className={styles.specOptNew}>NEW</span>}
       </span>
     ),
   })),
@@ -382,7 +382,9 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
           if (items.length === 0) return null;
           return (
             <div key={g.group} className={styles.specGroup}>
-              <div className={styles.specGroupLabel}>{g.group}</div>
+              <div className={styles.specGroupLabel}>
+                {g.group === NEW_GROUP ? <span className={styles.specGroupNew}>NEW</span> : g.group}
+              </div>
               <div className={styles.specGrid}>
                 {items.map((e) => {
                   const active = selectedSpec === e.id;
@@ -397,7 +399,6 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={e.icon} alt="" className={styles.specChipIcon} />
                       <span className={styles.specChipName}>{e.name}</span>
-                      {NEW_SPEC_IDS.has(e.id) && <span className={styles.specChipNew}>NEW</span>}
                     </button>
                   );
                 })}
