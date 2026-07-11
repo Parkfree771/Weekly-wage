@@ -115,8 +115,11 @@ export default function RootLayout({
     // suppressHydrationWarning: head의 보기 배율 스크립트가 하이드레이션 전에 html style(zoom)을 설정함
     <html lang="ko" suppressHydrationWarning>
       <head>
-        {/* 사이트 보기 배율 — 저장된 배율을 첫 페인트 전에 적용해 번쩍임 방지 (컨트롤: components/ZoomControl.tsx) */}
+        {/* 사이트 보기 배율 — 저장된 배율을 첫 페인트 전에 적용해 번쩍임 방지 (컨트롤: components/ZoomControl.tsx)
+            suppressHydrationWarning: 아래 애드센스 로더가 head에 관리 스크립트를 동적 주입하면서
+            hydration 시 이 노드의 자리가 밀려 mismatch 경고가 뜸 — 기능엔 영향 없는 dev 전용 경고라 억제 */}
         <script
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `try{var z=parseInt(localStorage.getItem('site-zoom')||'',10);if(z>=90&&z<=150&&z!==100)document.documentElement.style.zoom=z/100;}catch(e){}`,
           }}
