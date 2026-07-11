@@ -112,8 +112,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    // suppressHydrationWarning: head의 보기 배율 스크립트가 하이드레이션 전에 html style(zoom)을 설정함
+    <html lang="ko" suppressHydrationWarning>
       <head>
+        {/* 사이트 보기 배율 — 저장된 배율을 첫 페인트 전에 적용해 번쩍임 방지 (컨트롤: components/ZoomControl.tsx) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var z=parseInt(localStorage.getItem('site-zoom')||'',10);if(z>=90&&z<=150&&z!==100)document.documentElement.style.zoom=z/100;}catch(e){}`,
+          }}
+        />
         {/* 가격 데이터 preload — URL이 안정적이라(캐시키 제거됨) 정적 preload 태그로 처리.
             클라이언트 fetch URL과 정확히 일치해야 브라우저 preload가 재사용됨(price-history-client.ts). */}
         <link rel="preload" href="/data/history_archive.json" as="fetch" crossOrigin="anonymous" />

@@ -20,17 +20,24 @@ import {
 } from '../../lib/wangapData';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 
-interface WangapHistoryEntry {
-  type: 'attempt' | 'promotion';
-  number: number;
-  level: number;            // attempt: 시도 당시 레벨 / promotion: 승급 당시 레벨
-  grade: WangapGrade;       // attempt: 시도 당시 등급 / promotion: 승급 후 등급
-  success: boolean;
-  guaranteed: boolean;
-  probability: number;
-  janginBefore: number;
-  janginAfter: number;
-}
+type WangapHistoryEntry =
+  | {
+      type: 'attempt';
+      number: number;
+      level: number;          // 시도 당시 레벨
+      grade: WangapGrade;     // 시도 당시 등급
+      success: boolean;
+      guaranteed: boolean;
+      probability: number;
+      janginBefore: number;
+      janginAfter: number;
+    }
+  | {
+      type: 'promotion';
+      number: number;
+      level: number;          // 승급 당시 레벨
+      grade: WangapGrade;     // 승급 후 등급
+    };
 
 interface AccumulatedCost {
   파괴석결정: number;
@@ -53,6 +60,9 @@ const createZeroCost = (): AccumulatedCost => ({
 
 const MANUAL_REVEAL_DELAY = 650;
 const AUTO_REVEAL_DELAY = 0; // 자동강화는 배속이 정확히 지켜지도록 즉시 판정
+// 자동강화 장시간 구동 시 렌더 비용이 계속 커지지 않도록 기록 "표시"는 최근 N개만 유지
+// (총 시도/성공/실패 통계는 별도 카운터로 전체 누적)
+const MAX_HISTORY = 300;
 
 // === 보조재료 최적화 대상 재료 (시세가 있는 7종 — 실링·골드 제외) ===
 type OptMatKey = '파괴석결정' | '수호석결정' | '위대한돌파석' | '상급아비도스' | '운명파편' | '용암' | '빙하';
@@ -85,6 +95,17 @@ const remainingFromMaterials = (materials: OptMaterials): Record<OptMatKey, numb
 const createZeroCounts = (): Record<OptMatKey, number> =>
   Object.fromEntries(OPT_MATERIAL_LIST.map(m => [m.key, 0])) as Record<OptMatKey, number>;
 
+// 시세가 있는 재료 키 (골드 환산 대상 — 최적화 대상과 동일한 7종)
+const PRICED_COST_KEYS = OPT_MATERIAL_LIST.map(m => m.key);
+
+// 누적 비용 표시 행: 시세 있는 7종(OPT_MATERIAL_LIST 재사용) + 시세 없는 3종
+const COST_ROWS: Array<{ key: keyof AccumulatedCost; label: string; icon: string; priced: boolean }> = [
+  ...OPT_MATERIAL_LIST.map(m => ({ key: m.key as keyof AccumulatedCost, label: m.label, icon: m.icon, priced: true })),
+  { key: '승급재료유물', label: WANGAP_PROMOTION_MATERIALS.유물.name, icon: WANGAP_PROMOTION_MATERIALS.유물.icon, priced: false },
+  { key: '승급재료고대', label: WANGAP_PROMOTION_MATERIALS.고대.name, icon: WANGAP_PROMOTION_MATERIALS.고대.icon, priced: false },
+  { key: '실링', label: '실링', icon: '/shilling.webp', priced: false },
+];
+
 export default function WangapSimulator() {
   // === 강화 상태 ===
   const [currentLevel, setCurrentLevel] = useState(0);
@@ -108,6 +129,8 @@ export default function WangapSimulator() {
   // 등급 카드 사이 승급 재료 상세 패널
   const [openPromoInfo, setOpenPromoInfo] = useState<'유물' | '고대' | null>(null);
   const [history, setHistory] = useState<WangapHistoryEntry[]>([]);
+  // 전체 누적 통계 (기록 리스트는 MAX_HISTORY개만 표시하므로 별도 유지)
+  const [totals, setTotals] = useState({ attempts: 0, success: 0, fail: 0 });
   const [accumulatedCost, setAccumulatedCost] = useState<AccumulatedCost>(createZeroCost());
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -119,6 +142,9 @@ export default function WangapSimulator() {
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [autoTargetLevel, setAutoTargetLevel] = useState(0);
   const [autoSettings, setAutoSettings] = useState({ useLava: false, useGlacier: false, speed: 1000 });
+  // 현재/목표 단계 직접 입력 초안 (커밋 시 실제 상태 반영)
+  const [levelDraft, setLevelDraft] = useState('0');
+  const [targetDraft, setTargetDraft] = useState('');
 
   // === 거래소 시세 ===
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
@@ -129,6 +155,7 @@ export default function WangapSimulator() {
 
   const busyRef = useRef(false);
   const isAutoModeRef = useRef(false);
+  const entryNoRef = useRef(0); // 기록 번호 — 리스트를 잘라내도 번호가 이어지도록 ref로 관리
   const autoPauseUntilRef = useRef(0); // 자동강화 중 성공 직후 일시정지 시각
   const autoIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -138,12 +165,13 @@ export default function WangapSimulator() {
   const attemptRef = useRef<() => void>(() => {});
 
   useEffect(() => {
-    latestStateRef.current = { currentLevel, grade, autoTargetLevel };
-  });
-
-  useEffect(() => {
     isAutoModeRef.current = isAutoMode;
   }, [isAutoMode]);
+
+  // 현재 단계 입력칸은 실제 레벨과 동기화 (강화 성공·승급·초기화 반영)
+  useEffect(() => {
+    setLevelDraft(String(currentLevel));
+  }, [currentLevel]);
 
   // 거래소 가격 로드 — latest.json만 조회 (개당 가격으로 환산)
   useEffect(() => {
@@ -194,8 +222,7 @@ export default function WangapSimulator() {
 
   // 등급별 강화 구간: 전설 0~15 / 유물 15~20 / 고대 20~25
   const gradeRange = WANGAP_GRADE_RANGES[grade];
-  const promotionInfo = WANGAP_PROMOTION_AT[grade]; // 전설/유물에만 존재
-  const nextGrade = promotionInfo?.next as '유물' | '고대' | undefined;
+  const nextGrade = WANGAP_PROMOTION_AT[grade]?.next; // 전설→유물, 유물→고대 (고대는 없음)
 
   const isMaxed = currentLevel >= WANGAP_MAX_LEVEL;
   const atGradeCap = !isMaxed && currentLevel >= gradeRange.max; // 등급 상한 도달 (전설 +15 / 유물 +20)
@@ -368,17 +395,26 @@ export default function WangapSimulator() {
         setProbBonus(prev => Math.min(prev + base * 0.1, base));
       }
 
-      setHistory(prev => [...prev, {
-        type: 'attempt',
-        number: prev.length + 1,
-        level,
-        grade: latestStateRef.current.grade,
-        success,
-        guaranteed,
-        probability: finalProb,
-        janginBefore,
-        janginAfter,
-      }]);
+      setTotals(prev => ({
+        attempts: prev.attempts + 1,
+        success: prev.success + (success ? 1 : 0),
+        fail: prev.fail + (success ? 0 : 1),
+      }));
+      entryNoRef.current += 1;
+      setHistory(prev => {
+        const next = [...prev, {
+          type: 'attempt' as const,
+          number: entryNoRef.current,
+          level,
+          grade: latestStateRef.current.grade,
+          success,
+          guaranteed,
+          probability: finalProb,
+          janginBefore,
+          janginAfter,
+        }];
+        return next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next;
+      });
 
       busyRef.current = false;
       setIsBusy(false);
@@ -406,17 +442,16 @@ export default function WangapSimulator() {
       setJangin(0);
       setProbBonus(0);
 
-      setHistory(prev => [...prev, {
-        type: 'promotion',
-        number: prev.length + 1,
-        level,
-        grade: next,
-        success: true,
-        guaranteed: false,
-        probability: 1,
-        janginBefore: 0,
-        janginAfter: 0,
-      }]);
+      entryNoRef.current += 1;
+      setHistory(prev => {
+        const entries = [...prev, {
+          type: 'promotion' as const,
+          number: entryNoRef.current,
+          level,
+          grade: next,
+        }];
+        return entries.length > MAX_HISTORY ? entries.slice(entries.length - MAX_HISTORY) : entries;
+      });
 
       busyRef.current = false;
       setIsBusy(false);
@@ -429,7 +464,7 @@ export default function WangapSimulator() {
   const selectGrade = (g: WangapGrade) => {
     if (g === grade || isBusy || isAutoMode) return;
     if (atGradeCap && nextGrade === g) {
-      promoteTo(g as '유물' | '고대');
+      promoteTo(nextGrade);
       return;
     }
     setGrade(g);
@@ -438,13 +473,20 @@ export default function WangapSimulator() {
     setProbBonus(0);
   };
 
+  // 자동강화 interval이 항상 최신 상태·함수를 보도록 렌더마다 ref 갱신
   useEffect(() => {
+    latestStateRef.current = { currentLevel, grade, autoTargetLevel };
     attemptRef.current = attemptEnhance;
   });
 
   // === 자동강화 ===
   const startAutoEnhance = () => {
-    if (autoTargetLevel <= currentLevel) return;
+    const target = Math.min(autoTargetLevel, gradeRange.max);
+    if (target <= currentLevel) return;
+    if (target !== autoTargetLevel) {
+      setAutoTargetLevel(target);
+      setTargetDraft(String(target));
+    }
     // 최적화 적용 중에는 숨결을 최적화가 제어하므로 풀숨 설정을 무시
     if (!optimize.enabled) {
       setUseLava(autoSettings.useLava);
@@ -499,9 +541,13 @@ export default function WangapSimulator() {
     setProbBonus(0);
     setUseLava(false);
     setUseGlacier(false);
+    setAutoTargetLevel(0);
+    setTargetDraft('');
     setRemainingOwned(remainingFromMaterials(optimize.materials)); // 보유 잔량 복원
     setFreeUsed(createZeroCounts());
     setHistory([]);
+    setTotals({ attempts: 0, success: 0, fail: 0 });
+    entryNoRef.current = 0;
     setAccumulatedCost(createZeroCost());
   };
 
@@ -527,7 +573,22 @@ export default function WangapSimulator() {
       return [m.key, { bound: d.bound, owned: d.bound ? 0 : (parseInt(d.owned) || 0) }];
     })) as OptMaterials;
     setOptimize({ enabled: true, materials });
-    setRemainingOwned(remainingFromMaterials(materials));
+    // 현재 설정을 지금까지의 누적 소모량 전체에 소급 적용
+    // (설정을 중간에 바꿔도 과거 무료분이 남지 않도록 무료 사용분·보유 잔량을 재계산)
+    const nextFree = createZeroCounts();
+    const nextRemaining = createZeroCounts();
+    OPT_MATERIAL_LIST.forEach(m => {
+      const consumed = accumulatedCost[m.key];
+      const s = materials[m.key];
+      if (s.bound) {
+        nextFree[m.key] = consumed;
+      } else {
+        nextFree[m.key] = Math.min(s.owned, consumed);
+        nextRemaining[m.key] = Math.max(0, s.owned - consumed);
+      }
+    });
+    setFreeUsed(nextFree);
+    setRemainingOwned(nextRemaining);
     // 수동 토글은 최적화가 대체
     setUseLava(false);
     setUseGlacier(false);
@@ -536,39 +597,60 @@ export default function WangapSimulator() {
 
   const disableOptimize = () => {
     setOptimize(prev => ({ ...prev, enabled: false }));
+    // 해제 시 무료분 없이 전량 구매 기준으로 환산 (재적용하면 다시 소급 계산됨)
+    setFreeUsed(createZeroCounts());
+    setRemainingOwned(createZeroCounts());
     setShowOptimizeModal(false);
   };
 
-  // === 시작 단계 조정 (현재 등급 구간 내에서만) ===
-  const adjustStartLevel = (delta: number) => {
-    if (isAutoMode || isBusy) return;
-    const newLevel = Math.min(Math.max(currentLevel + delta, gradeRange.min), gradeRange.max - 1);
-    if (newLevel === currentLevel) return;
-    setCurrentLevel(newLevel);
-    setJangin(0);
-    setProbBonus(0);
+  // === 현재/목표 단계 직접 입력 (현재 등급 구간 내에서만) ===
+  const commitLevelDraft = () => {
+    if (isAutoMode || isBusy) {
+      setLevelDraft(String(currentLevel));
+      return;
+    }
+    const v = parseInt(levelDraft);
+    if (isNaN(v)) {
+      setLevelDraft(String(currentLevel));
+      return;
+    }
+    const nv = Math.min(Math.max(v, gradeRange.min), gradeRange.max - 1);
+    setLevelDraft(String(nv));
+    if (nv !== currentLevel) {
+      setCurrentLevel(nv);
+      setJangin(0);
+      setProbBonus(0);
+    }
+  };
+
+  const commitTargetDraft = () => {
+    if (targetDraft === '') {
+      setAutoTargetLevel(0);
+      return;
+    }
+    const v = parseInt(targetDraft);
+    if (isNaN(v)) {
+      setTargetDraft(autoTargetLevel > 0 ? String(autoTargetLevel) : '');
+      return;
+    }
+    const nv = Math.min(Math.max(v, Math.min(currentLevel + 1, gradeRange.max)), gradeRange.max);
+    setTargetDraft(String(nv));
+    setAutoTargetLevel(nv);
   };
 
   // === 골드 환산 ===
-  const getUnitPrice = (key: string): number => {
+  const getUnitPrice = (key: OptMatKey): number => {
     const itemId = WANGAP_MATERIAL_IDS[key];
     return itemId ? (marketPrices[String(itemId)] || 0) : 0;
   };
 
-  // 골드 환산: 최적화의 귀속·보유(무료) 사용분은 제외하고 실구매분만 계산
-  const getMaterialGoldCost = (key: string, amount: number): number => {
-    const free = (freeUsed as Record<string, number>)[key] || 0;
-    const paidAmount = Math.max(0, amount - free);
-    return Math.round(paidAmount * getUnitPrice(key));
-  };
+  // 구매 필요 수량: 누적 소모량에서 귀속·보유(무료) 사용분을 뺀 나머지
+  const getBuyAmount = (key: OptMatKey, amount: number): number =>
+    Math.max(0, amount - freeUsed[key]);
 
-  const calculateTotalGoldCost = (): number => {
-    let total = goldIncludeMap['골드'] ? accumulatedCost.골드 : 0;
-    (['파괴석결정', '수호석결정', '위대한돌파석', '상급아비도스', '운명파편', '용암', '빙하'] as const).forEach(key => {
-      if (goldIncludeMap[key]) total += getMaterialGoldCost(key, accumulatedCost[key]);
-    });
-    return Math.round(total);
-  };
+  // 골드 환산: 최적화의 귀속·보유(무료) 사용분은 제외하고 실구매분만 계산
+  const getMaterialGoldCost = (key: OptMatKey, amount: number): number =>
+    Math.round(getBuyAmount(key, amount) * getUnitPrice(key));
 
   const toggleGoldInclude = (key: string) => {
     setGoldIncludeMap(prev => ({ ...prev, [key]: !prev[key] }));
@@ -580,21 +662,19 @@ export default function WangapSimulator() {
   const currentBreaths = getAttemptBreaths(currentLevel);
   const finalProb = calcProbWith(currentBreaths.lava, currentBreaths.glacier);
   const materialCost = WANGAP_MATERIAL_COSTS[currentLevel + 1];
-  const successCount = history.filter(h => h.type === 'attempt' && h.success).length;
-  const failCount = history.filter(h => h.type === 'attempt' && !h.success).length;
 
-  const COST_ROWS: Array<{ key: keyof AccumulatedCost; label: string; icon: string; priced: boolean }> = [
-    { key: '파괴석결정', label: '파괴석 결정', icon: '/top-destiny-destruction-stone5.webp', priced: true },
-    { key: '수호석결정', label: '수호석 결정', icon: '/top-destiny-guardian-stone5.webp', priced: true },
-    { key: '위대한돌파석', label: '위대한 돌파석', icon: '/top-destiny-breakthrough-stone5.webp', priced: true },
-    { key: '상급아비도스', label: '상급 아비도스', icon: '/top-abidos-fusion5.webp', priced: true },
-    { key: '운명파편', label: '운명의 파편', icon: '/destiny-shard-bag-large5.webp', priced: true },
-    { key: '용암', label: '용암의 숨결', icon: '/breath-lava5.webp', priced: true },
-    { key: '빙하', label: '빙하의 숨결', icon: '/breath-glacier5.webp', priced: true },
-    { key: '승급재료유물', label: WANGAP_PROMOTION_MATERIALS.유물.name, icon: WANGAP_PROMOTION_MATERIALS.유물.icon, priced: false },
-    { key: '승급재료고대', label: WANGAP_PROMOTION_MATERIALS.고대.name, icon: WANGAP_PROMOTION_MATERIALS.고대.icon, priced: false },
-    { key: '실링', label: '실링', icon: '/shilling.webp', priced: false },
-  ];
+  // 골드 분리: 재료 구매 골드(귀속·보유 차감 후) + 누르는 골드(강화 소모 골드) = 총 골드
+  const materialBuyGold = PRICED_COST_KEYS.reduce(
+    (sum, key) => (goldIncludeMap[key] ? sum + getMaterialGoldCost(key, accumulatedCost[key]) : sum), 0);
+  const pressGold = goldIncludeMap['골드'] ? accumulatedCost.골드 : 0;
+  const totalGold = Math.round(materialBuyGold + pressGold);
+  // 최적화로 아낀 골드: 귀속·보유(무료) 사용분의 시세 가치
+  const savedGold = optimize.enabled
+    ? PRICED_COST_KEYS.reduce(
+        (sum, key) => (goldIncludeMap[key]
+          ? sum + Math.round(Math.min(freeUsed[key], accumulatedCost[key]) * getUnitPrice(key))
+          : sum), 0)
+    : 0;
 
   return (
     <div className={styles.container} data-grade={grade}>
@@ -635,19 +715,17 @@ export default function WangapSimulator() {
                   onClick={() => selectGrade(g)}
                   disabled={isBusy || isAutoMode}
                 >
+                  <div className={styles.equipmentName} data-grade={g}>{g} 완갑</div>
                   <span className={styles.equipmentIcon} data-grade={g}>
                     <Image src={WANGAP_ITEM_IMAGES[g]} alt={`완갑 ${g}`} fill sizes="54px" style={{ objectFit: 'contain' }} />
                     <span className={styles.equipmentFrame}>
                       <Image src="/wjsdbf3.webp" alt="" fill sizes="84px" style={{ objectFit: 'fill' }} unoptimized />
                     </span>
                   </span>
-                  <div className={styles.equipmentInfo}>
-                    <div className={styles.equipmentName} data-grade={g}>{g} 완갑</div>
-                    <div className={styles.equipmentLevel}>
-                      <span className={styles.levelBadge} data-grade={g}>
-                        +{WANGAP_GRADE_RANGES[g].min}~{WANGAP_GRADE_RANGES[g].max}
-                      </span>
-                    </div>
+                  <div className={styles.equipmentLevel}>
+                    <span className={styles.levelBadge} data-grade={g}>
+                      +{WANGAP_GRADE_RANGES[g].min}~{WANGAP_GRADE_RANGES[g].max}
+                    </span>
                   </div>
                 </button>
               </Fragment>
@@ -697,26 +775,52 @@ export default function WangapSimulator() {
             <span className={styles.gradeBadge}>{grade}</span>
           </div>
 
-          {/* 시작 단계 조정 (실제 시뮬과 동일 위치) */}
+          {/* 현재/목표 단계 입력 — 상자 → 상자 (라벨은 상자 안에 작게) */}
           <div className={styles.startAdjustRow}>
-            <span className={styles.startAdjustLabel}>시작 단계</span>
-            <button
-              className={styles.startAdjustBtn}
-              onClick={() => adjustStartLevel(-1)}
-              disabled={isAutoMode || isBusy || currentLevel <= gradeRange.min}
-              aria-label="시작 단계 감소"
-            >
-              −
-            </button>
-            <span className={styles.startAdjustValue}>+{currentLevel}</span>
-            <button
-              className={styles.startAdjustBtn}
-              onClick={() => adjustStartLevel(1)}
-              disabled={isAutoMode || isBusy || currentLevel >= gradeRange.max - 1}
-              aria-label="시작 단계 증가"
-            >
-              +
-            </button>
+            <label className={styles.levelBox}>
+              <span className={styles.levelBoxLabel}>현재</span>
+              <span className={styles.levelBoxValue}>
+                <span className={styles.levelInputPrefix}>+</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className={styles.levelInput}
+                  value={levelDraft}
+                  disabled={isAutoMode || isBusy}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '' || /^\d+$/.test(v)) setLevelDraft(v);
+                  }}
+                  onBlur={commitLevelDraft}
+                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                  aria-label="현재 단계"
+                />
+              </span>
+            </label>
+            <span className={styles.levelFieldArrow} aria-hidden="true">→</span>
+            <label className={styles.levelBox}>
+              <span className={styles.levelBoxLabel}>목표</span>
+              <span className={styles.levelBoxValue}>
+                <span className={styles.levelInputPrefix}>+</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className={styles.levelInput}
+                  value={targetDraft}
+                  disabled={isAutoMode}
+                  placeholder={String(gradeRange.max)}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '' || /^\d+$/.test(v)) setTargetDraft(v);
+                  }}
+                  onBlur={commitTargetDraft}
+                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                  aria-label="목표 단계"
+                />
+              </span>
+            </label>
           </div>
 
           {/* 아이템 슬롯 */}
@@ -915,7 +1019,6 @@ export default function WangapSimulator() {
                       if (isAutoMode) {
                         stopAutoEnhance();
                       } else {
-                        if (!showAutoSettings) setAutoTargetLevel(currentLevel + 1);
                         setShowAutoSettings(!showAutoSettings);
                       }
                     }}
@@ -929,47 +1032,20 @@ export default function WangapSimulator() {
                       <div className={styles.autoDropdownTitle}>자동강화 설정</div>
 
                       <div className={styles.autoDropdownSection}>
-                        <div className={styles.autoDropdownLabel}>목표 레벨 ({currentLevel + 1}~{gradeRange.max})</div>
-                        <div className={styles.autoDropdownLevelRow}>
-                          <span>+{currentLevel} → +</span>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            className={styles.autoDropdownInput}
-                            value={autoTargetLevel || ''}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === '' || /^\d+$/.test(value)) {
-                                setAutoTargetLevel(value === '' ? 0 : parseInt(value));
-                              }
-                            }}
-                            onBlur={(e) => {
-                              const val = parseInt(e.target.value) || 0;
-                              if (val > 0) {
-                                setAutoTargetLevel(Math.min(Math.max(val, currentLevel + 1), gradeRange.max));
-                              }
-                            }}
-                            placeholder={`${currentLevel + 1}`}
-                          />
-                        </div>
-                        <div className={styles.autoDropdownHint}>자동강화는 현재 등급 상한(+{gradeRange.max})까지 진행되며, 승급은 직접 선택해야 합니다</div>
-                      </div>
-
-                      <div className={styles.autoDropdownSection}>
                         <div className={styles.autoDropdownLabel}>보조 재료</div>
                         {optimize.enabled ? (
                           <div className={styles.autoDropdownOptimizeNote}>
                             보조재료 최적화 적용 중 — 단계마다 최적 개수가 자동 사용됩니다
                           </div>
                         ) : (
-                          <>
+                          <div className={styles.autoBreathChecks}>
                             <label className={styles.autoDropdownCheckbox}>
                               <input
                                 type="checkbox"
                                 checked={autoSettings.useLava}
                                 onChange={(e) => setAutoSettings({ ...autoSettings, useLava: e.target.checked })}
                               />
-                              용암의 숨결 (풀숨)
+                              용숨 (풀숨)
                             </label>
                             <label className={styles.autoDropdownCheckbox}>
                               <input
@@ -977,9 +1053,9 @@ export default function WangapSimulator() {
                                 checked={autoSettings.useGlacier}
                                 onChange={(e) => setAutoSettings({ ...autoSettings, useGlacier: e.target.checked })}
                               />
-                              빙하의 숨결 (풀숨)
+                              빙숨 (풀숨)
                             </label>
-                          </>
+                          </div>
                         )}
                       </div>
 
@@ -1002,14 +1078,16 @@ export default function WangapSimulator() {
                         </div>
                       </div>
 
+                      <div className={styles.autoDropdownHint}>
+                        {autoTargetLevel > currentLevel
+                          ? `+${currentLevel} → +${Math.min(autoTargetLevel, gradeRange.max)} 자동 진행 (승급은 직접 선택)`
+                          : '상단의 목표 단계를 먼저 입력하세요'}
+                      </div>
+
                       <button
                         className={styles.autoDropdownStartBtn}
-                        onClick={() => {
-                          const validTarget = Math.min(Math.max(autoTargetLevel, currentLevel + 1), gradeRange.max);
-                          setAutoTargetLevel(validTarget);
-                          startAutoEnhance();
-                        }}
-                        disabled={!autoTargetLevel || autoTargetLevel <= currentLevel || autoTargetLevel > gradeRange.max}
+                        onClick={startAutoEnhance}
+                        disabled={autoTargetLevel <= currentLevel}
                       >
                         자동강화 시작
                       </button>
@@ -1037,15 +1115,15 @@ export default function WangapSimulator() {
               <div className={styles.historyEmpty}>강화 버튼을 눌러 시뮬레이션을 시작하세요</div>
             ) : (
               <div className={styles.historyList}>
-                {history.map((entry, index) => (
+                {history.map((entry) => (
                   entry.type === 'promotion' ? (
-                    <div key={index} className={styles.historyPromotion} data-grade={entry.grade}>
+                    <div key={`p-${entry.number}`} className={styles.historyPromotion} data-grade={entry.grade}>
                       <span className={styles.historyItemNumber}>#{entry.number}</span>
                       <span className={styles.historyPromotionText}>{entry.grade} 등급 승급 (+{entry.level})</span>
                     </div>
                   ) : (
                     <div
-                      key={index}
+                      key={`a-${entry.number}`}
                       className={`${styles.historyItem} ${entry.success ? styles.historyItemSuccess : styles.historyItemFail}`}
                     >
                       <div className={styles.historyItemHeader}>
@@ -1070,15 +1148,15 @@ export default function WangapSimulator() {
           <div className={styles.historyStats}>
             <div className={styles.historyStatItem}>
               <span>총 시도</span>
-              <span>{history.filter(h => h.type === 'attempt').length}회</span>
+              <span>{totals.attempts}회</span>
             </div>
             <div className={styles.historyStatItem}>
               <span>성공</span>
-              <span className={styles.statSuccess}>{successCount}회</span>
+              <span className={styles.statSuccess}>{totals.success}회</span>
             </div>
             <div className={styles.historyStatItem}>
               <span>실패</span>
-              <span className={styles.statFail}>{failCount}회</span>
+              <span className={styles.statFail}>{totals.fail}회</span>
             </div>
           </div>
         </section>
@@ -1088,8 +1166,14 @@ export default function WangapSimulator() {
           <div className={styles.boxTitle}>누적 비용</div>
           <div className={styles.totalCostContainer}>
             <div className={styles.totalMaterialsList}>
-              {COST_ROWS.map(row => (
-                accumulatedCost[row.key] > 0 && (
+              {COST_ROWS.map(row => {
+                const amount = accumulatedCost[row.key];
+                if (amount <= 0) return null;
+                const matKey = row.priced ? (row.key as OptMatKey) : null;
+                const showBuy = optimize.enabled && matKey !== null;
+                const isBound = matKey ? optimize.materials[matKey].bound : false;
+                const buyAmount = matKey ? getBuyAmount(matKey, amount) : 0;
+                return (
                   <div
                     key={row.key}
                     className={`${styles.totalMaterialItem} ${row.priced ? styles.totalMaterialItemCheckable : ''}`}
@@ -1106,17 +1190,28 @@ export default function WangapSimulator() {
                     )}
                     <Image src={row.icon} alt={row.label} width={26} height={26} />
                     <span className={styles.materialName}>{row.label}</span>
-                    <span className={styles.materialAmount}>{accumulatedCost[row.key].toLocaleString()}</span>
-                    {row.priced ? (
-                      <span className={`${styles.materialGold} ${!goldIncludeMap[row.key] ? styles.materialGoldExcluded : ''}`}>
-                        {getMaterialGoldCost(row.key, accumulatedCost[row.key]).toLocaleString()}G
+                    <span className={styles.materialAmount}>
+                      {amount.toLocaleString()}
+                      {showBuy && (
+                        isBound ? (
+                          <span className={`${styles.materialBuyInfo} ${styles.materialBuyFree}`}>귀속</span>
+                        ) : buyAmount > 0 ? (
+                          <span className={styles.materialBuyInfo}>구매 {buyAmount.toLocaleString()}</span>
+                        ) : (
+                          <span className={`${styles.materialBuyInfo} ${styles.materialBuyFree}`}>보유분 사용</span>
+                        )
+                      )}
+                    </span>
+                    {matKey ? (
+                      <span className={`${styles.materialGold} ${!goldIncludeMap[matKey] ? styles.materialGoldExcluded : ''}`}>
+                        {getMaterialGoldCost(matKey, amount).toLocaleString()}G
                       </span>
                     ) : (
                       <span />
                     )}
                   </div>
-                )
-              ))}
+                );
+              })}
               {accumulatedCost.골드 > 0 && (
                 <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('골드')}>
                   <input
@@ -1156,9 +1251,33 @@ export default function WangapSimulator() {
               </div>
             )}
 
-            <div className={styles.totalGoldCost}>
-              <Image src="/gold.webp" alt="gold" width={30} height={30} />
-              <span>{calculateTotalGoldCost().toLocaleString()} G</span>
+            {/* 아낀 골드 (최적화 적용 시) */}
+            {optimize.enabled && savedGold > 0 && (
+              <div className={styles.goldSplitRows}>
+                <div className={styles.goldSplitRow}>
+                  <span>귀속·보유로 아낀 골드</span>
+                  <span className={styles.goldSplitSaved}>−{savedGold.toLocaleString()} G</span>
+                </div>
+              </div>
+            )}
+
+            {/* 골드 요약: 누르는 골드 / 재료 구매 골드 / 총 골드 */}
+            <div className={styles.goldSummarySection}>
+              <div className={styles.goldSummaryRow}>
+                <Image src="/gold.webp" alt="골드" width={20} height={20} />
+                <span className={styles.goldSummaryLabel}>누르는 골드</span>
+                <span className={styles.goldSummaryValue}>{pressGold.toLocaleString()}G</span>
+              </div>
+              <div className={styles.goldSummaryRow}>
+                <Image src="/gold.webp" alt="골드" width={20} height={20} />
+                <span className={styles.goldSummaryLabel}>재료 구매 골드</span>
+                <span className={styles.goldSummaryValue}>{Math.round(materialBuyGold).toLocaleString()}G</span>
+              </div>
+              <div className={`${styles.goldSummaryRow} ${styles.goldSummaryTotal}`}>
+                <Image src="/gold.webp" alt="골드" width={24} height={24} />
+                <span className={styles.goldSummaryLabel}>총 골드</span>
+                <span className={styles.goldSummaryValue}>{totalGold.toLocaleString()}G</span>
+              </div>
             </div>
           </div>
         </section>

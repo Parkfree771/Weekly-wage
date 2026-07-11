@@ -36,6 +36,19 @@
   --wg-core-grad: linear-gradient(0deg, #c9a45e 0%, #63491d 60%, #0e0b05 100%);
 }
 
+/* 뉴모피즘 입체감 (장비 선택 상자와 동일 값) — 버튼 상자 공통 */
+.container {
+  --nm-shadow: 6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.7);
+  --nm-shadow-hover: 8px 8px 16px rgba(0, 0, 0, 0.15), -8px -8px 16px rgba(255, 255, 255, 0.8);
+  --nm-shadow-sm: 3px 3px 6px rgba(0, 0, 0, 0.1), -3px -3px 6px rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .container {
+  --nm-shadow: 6px 6px 12px rgba(0, 0, 0, 0.5), -6px -6px 12px rgba(255, 255, 255, 0.03);
+  --nm-shadow-hover: 8px 8px 16px rgba(0, 0, 0, 0.6), -8px -8px 16px rgba(255, 255, 255, 0.04);
+  --nm-shadow-sm: 3px 3px 6px rgba(0, 0, 0, 0.5), -3px -3px 6px rgba(255, 255, 255, 0.03);
+}
+
 .container button {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -92,39 +105,23 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  width: 118px;
-  height: 118px;
+  gap: 0.5rem;
+  width: 132px;
+  height: 132px;
   flex-shrink: 0;
-  padding: 0.5rem;
+  padding: 0.65rem 0.5rem;
   background: var(--card-bg);
   border: none;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: center;
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.1),
-    -6px -6px 12px rgba(255, 255, 255, 0.7);
-}
-
-[data-theme="dark"] .equipmentItem {
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.5),
-    -6px -6px 12px rgba(255, 255, 255, 0.03);
+  box-shadow: var(--nm-shadow);
 }
 
 .equipmentItem:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow:
-    8px 8px 16px rgba(0, 0, 0, 0.15),
-    -8px -8px 16px rgba(255, 255, 255, 0.8);
-}
-
-[data-theme="dark"] .equipmentItem:hover:not(:disabled) {
-  box-shadow:
-    8px 8px 16px rgba(0, 0, 0, 0.6),
-    -8px -8px 16px rgba(255, 255, 255, 0.04);
+  box-shadow: var(--nm-shadow-hover);
 }
 
 .equipmentItem:disabled {
@@ -187,28 +184,28 @@
   z-index: 1;
 }
 
-.equipmentInfo {
-  width: 100%;
-  min-width: 0;
-}
-
 .equipmentName {
+  max-width: 100%;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.equipmentName[data-grade='전설'] { color: #ca8a04; }
-.equipmentName[data-grade='유물'] { color: #d97706; }
-.equipmentName[data-grade='고대'] { color: #c19a5c; }
+.equipmentName[data-grade='전설'] { color: #a16207; }
+.equipmentName[data-grade='유물'] { color: #b45309; }
+.equipmentName[data-grade='고대'] { color: #9c7c42; }
+
+/* 다크모드: 어두운 톤은 배경에 묻혀서 진하고 선명한 밝은 톤으로 */
+[data-theme="dark"] .equipmentName[data-grade='전설'] { color: #eab308; }
+[data-theme="dark"] .equipmentName[data-grade='유물'] { color: #f59e0b; }
+[data-theme="dark"] .equipmentName[data-grade='고대'] { color: #d4b06a; }
 
 .equipmentLevel {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 0.25rem;
 }
 
 .levelBadge {
@@ -240,28 +237,12 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.1),
-    -6px -6px 12px rgba(255, 255, 255, 0.7);
-}
-
-[data-theme="dark"] .promoConnector {
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.5),
-    -6px -6px 12px rgba(255, 255, 255, 0.03);
+  box-shadow: var(--nm-shadow);
 }
 
 .promoConnector:hover {
   transform: translateY(-2px);
-  box-shadow:
-    8px 8px 16px rgba(0, 0, 0, 0.15),
-    -8px -8px 16px rgba(255, 255, 255, 0.8);
-}
-
-[data-theme="dark"] .promoConnector:hover {
-  box-shadow:
-    8px 8px 16px rgba(0, 0, 0, 0.6),
-    -8px -8px 16px rgba(255, 255, 255, 0.04);
+  box-shadow: var(--nm-shadow-hover);
 }
 
 .promoConnectorActive {
@@ -302,57 +283,78 @@
 }
 
 /* 시작 단계 조정 (실제 시뮬과 동일 — 강화 상자 상단) */
+/* 현재 → 목표 입력 줄 (감싸는 상자 없이 상자 2개 + 화살표만) */
 .startAdjustRow {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.4rem 0.5rem;
   margin-bottom: 0.75rem;
-  background-color: var(--card-bg);
+}
+
+/* 현재/목표 단계 숫자 입력 — 상자 → 상자 */
+.levelBox {
+  flex: 1;
+  max-width: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--input-bg);
   border: 1px solid var(--border-color);
   border-radius: 10px;
+  box-shadow: var(--nm-shadow-sm);
+  cursor: text;
 }
 
-.startAdjustLabel {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-right: 0.15rem;
+.levelBox:focus-within {
+  border-color: var(--color-primary);
 }
 
-.startAdjustValue {
-  font-size: 0.95rem;
+.levelBoxLabel {
+  font-size: 0.62rem;
   font-weight: 700;
-  color: var(--color-primary);
-  min-width: 42px;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.levelBoxValue {
+  display: flex;
+  align-items: baseline;
+  gap: 0.05rem;
+}
+
+.levelFieldArrow {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.levelInputPrefix {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.levelInput {
+  width: 44px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-weight: 800;
   text-align: center;
 }
 
-.startAdjustBtn {
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--text-primary);
-  background-color: var(--card-body-bg-blue);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  cursor: pointer;
+.levelInput:focus {
+  outline: none;
 }
 
-.startAdjustBtn:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-.startAdjustBtn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.levelInput:disabled {
+  opacity: 0.5;
 }
 
 /* 승급 재료 상세 패널 */
@@ -476,8 +478,8 @@
 
 .itemSlot {
   position: relative;
-  width: 96px;
-  height: 96px;
+  width: 86px;
+  height: 86px;
   border-radius: 0; /* 프레임 개구부에 맞춰 직각 */
   display: flex;
   align-items: center;
@@ -497,7 +499,7 @@
 
 .itemImage {
   position: absolute;
-  inset: 3px;
+  inset: 9px; /* 이미지가 슬롯에 꽉 차지 않게 여백 */
   display: block;
 }
 
@@ -638,6 +640,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 30px;
+  box-shadow: var(--nm-shadow-sm);
 }
 
 .optimizeButton:hover:not(:disabled) {
@@ -676,7 +679,7 @@
   gap: 0.2rem;
   padding: 0.6rem 0.4rem;
   background-color: var(--card-bg);
-  border: 2px solid var(--border-color);
+  border: none;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -684,10 +687,12 @@
   font-weight: 600;
   color: var(--text-secondary);
   min-height: 44px;
+  box-shadow: var(--nm-shadow);
 }
 
 .breathButton:hover:not(:disabled) {
-  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--nm-shadow-hover);
 }
 
 .breathButton:disabled {
@@ -703,7 +708,6 @@
 .breathButtonActiveLava,
 .breathButtonActiveGlacier {
   background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
-  border-color: transparent;
   color: white;
 }
 
@@ -772,12 +776,12 @@
   transition: all 0.3s ease;
   background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
   color: white;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--nm-shadow), inset 2px 2px 4px rgba(255, 255, 255, 0.35), inset -2px -2px 5px rgba(0, 0, 0, 0.22);
 }
 
 .enhanceButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--nm-shadow-hover), inset 2px 2px 4px rgba(255, 255, 255, 0.35), inset -2px -2px 5px rgba(0, 0, 0, 0.22);
 }
 
 .enhanceButton:disabled {
@@ -803,12 +807,12 @@
   transition: all 0.3s ease;
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--nm-shadow), inset 2px 2px 4px rgba(255, 255, 255, 0.35), inset -2px -2px 5px rgba(0, 0, 0, 0.22);
 }
 
 .autoButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--nm-shadow-hover), inset 2px 2px 4px rgba(255, 255, 255, 0.35), inset -2px -2px 5px rgba(0, 0, 0, 0.22);
 }
 
 .autoButton:disabled {
@@ -833,6 +837,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: var(--nm-shadow-sm);
 }
 
 .resetButton:hover:not(:disabled) {
@@ -867,12 +872,13 @@
 .autoDropdown {
   position: absolute;
   bottom: 100%;
-  left: 0;
+  left: auto;
   right: 0;
+  width: min(280px, calc(100vw - 2rem));
   margin-bottom: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.85rem;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--color-primary);
   border-radius: 12px;
   box-shadow: var(--shadow-md);
   z-index: 100;
@@ -898,33 +904,17 @@
   margin-bottom: 0.2rem;
 }
 
-.autoDropdownLevelRow {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.autoDropdownInput {
-  width: 45px;
-  padding: 0.25rem 0.4rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background: var(--input-bg);
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-align: center;
-}
-
 .autoDropdownHint {
-  margin-top: 0.3rem;
+  margin: 0.1rem 0 0.5rem;
   font-size: 0.65rem;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+.autoBreathChecks {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .autoDropdownCheckbox {
@@ -962,6 +952,7 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
+  box-shadow: var(--nm-shadow-sm);
 }
 
 .speedButton:hover {
@@ -984,6 +975,7 @@
   font-weight: 600;
   font-size: 0.8rem;
   cursor: pointer;
+  box-shadow: var(--nm-shadow-sm);
 }
 
 .autoDropdownStartBtn:disabled {
@@ -1048,12 +1040,12 @@
   transition: all 0.3s ease;
   background: linear-gradient(135deg, var(--wg-b), var(--wg-a));
   color: white;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--nm-shadow);
 }
 
 .promoteButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--nm-shadow-hover);
 }
 
 .promoteButton:disabled {
@@ -1349,6 +1341,98 @@
   opacity: 0.4;
 }
 
+/* 최적화 적용 시: 총 소모량 아래 실제 구매 필요 수량 */
+.materialBuyInfo {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #ef4444;
+  white-space: nowrap;
+}
+
+.materialBuyFree {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* 골드 분리 요약: 재료 구매 골드 / 누르는 골드 / 아낀 골드 */
+.goldSplitRows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0;
+}
+
+.goldSplitRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.goldSplitRow span:last-child {
+  font-weight: 800;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.goldSplitRow span.goldSplitSaved {
+  color: #10b981;
+}
+
+/* 골드 요약 (평균 시뮬과 동일한 라벨+값 행) */
+.goldSummarySection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.goldSummaryRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.goldSummaryLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.goldSummaryValue {
+  margin-left: auto;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.goldSummaryTotal {
+  margin-top: 0.2rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.goldSummaryTotal .goldSummaryLabel {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.goldSummaryTotal .goldSummaryValue {
+  font-size: 1.3rem;
+  color: #f97316;
+}
+
 .costEmpty {
   display: flex;
   align-items: center;
@@ -1402,25 +1486,6 @@
   font-size: 0.92rem;
   font-weight: 800;
   color: var(--text-primary);
-}
-
-.totalGoldCost {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
-  border-radius: 12px;
-  color: #ffffff;
-  font-size: 1.5rem;
-  font-weight: 800;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  flex-shrink: 0;
-}
-
-.totalGoldCost span {
-  color: #ffffff !important;
 }
 
 /* ===== 보조재료 최적화 모달 ===== */
@@ -1625,6 +1690,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 44px;
+  box-shadow: var(--nm-shadow-sm);
 }
 
 .modalSecondaryBtn:hover {
@@ -1643,14 +1709,14 @@
   font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--nm-shadow);
   transition: all 0.2s ease;
   min-height: 44px;
 }
 
 .modalPrimaryBtn:hover {
   transform: translateY(-1px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--nm-shadow-hover);
 }
 
 /* ===== 임시 수치 고지 ===== */
@@ -1665,122 +1731,479 @@
   line-height: 1.5;
 }
 
-/* ===== 반응형 ===== */
+/* ===== 반응형 (실제 시뮬 RefiningSimulator와 동일 구조) ===== */
 @media (max-width: 1100px) {
+  /* 강화 + 기록 나란히, 누적 비용 아래 전체 폭 */
   .mainCard {
     grid-template-columns: 1fr 1fr;
   }
 
-  .stageCol {
-    grid-column: 1 / -1;
-  }
-
-  /* 스택 배치: 절대배치 기록 영역을 위해 상자 자체 높이 고정 */
-  .historyCol {
-    min-height: 440px;
+  .mainCard .col:nth-child(3) {
+    grid-column: span 2;
   }
 }
 
-@media (max-width: 700px) {
-  .mainCard {
-    grid-template-columns: 1fr;
-    gap: 0.8rem;
+/* ========================================
+   모바일 레이아웃 (max-width: 768px) — 실제 시뮬과 동일
+   ======================================== */
+@media (max-width: 768px) {
+  .mainLayout {
+    gap: 0.75rem;
+    max-width: 100%;
   }
 
+  /* 장비 목록: 3열 그리드 (실제 시뮬과 동일) */
   .equipmentPanel {
     padding: 0.75rem;
+    border-radius: 10px;
   }
 
-  /* 좁은 화면: 정사각 상자 유지, 넘치면 가로 스크롤 */
+  .equipmentPanelTitle {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+  }
+
+  /* 전설 → 승급 → 유물 → 승급 → 고대 한 줄 플로우 유지 (카드 축소, 테두리는 %라 같은 비율로 축소됨) */
   .equipmentList {
-    justify-content: flex-start;
-    gap: 0.35rem;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    padding-bottom: 0.35rem;
-  }
-
-  .equipmentItem {
-    width: 92px;
-    height: 92px;
-    padding: 0.4rem;
-  }
-
-  .equipmentIcon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .equipmentFrame {
-    inset: -10px;
-  }
-
-  .equipmentName {
-    font-size: 0.68rem;
-  }
-
-  .promoConnector {
-    width: 76px;
-    height: 76px;
-  }
-
-  .promoConnectorIcon {
-    width: 38px;
-    height: 38px;
-  }
-
-  .promoConnectorArrow {
-    font-size: 0.62rem;
+    gap: 0.2rem;
   }
 
   .listArrow {
-    font-size: 0.85rem;
+    font-size: 0.7rem;
   }
 
+  .equipmentItem {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 94px;
+    width: auto;
+    height: auto;
+    min-height: 96px;
+    padding: 0.45rem 0.25rem;
+    gap: 0.3rem;
+    border-radius: 8px;
+  }
+
+  .equipmentItem:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .equipmentIcon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .equipmentName {
+    font-size: 0.58rem;
+    max-width: 100%;
+  }
+
+  .levelBadge {
+    font-size: 0.55rem;
+    padding: 0.08rem 0.3rem;
+  }
+
+  .promoConnector {
+    flex: 0 0 auto;
+    width: 54px;
+    height: auto;
+    min-height: 84px;
+    padding: 0.3rem 0.2rem;
+    gap: 0.25rem;
+    border-radius: 8px;
+  }
+
+  .promoConnector:hover {
+    transform: none;
+  }
+
+  .promoConnectorIcon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .promoConnectorArrow {
+    font-size: 0.55rem;
+  }
+
+  /* 시뮬레이터 패널 */
+  .simulatorPanel {
+    padding: 0.5rem;
+    border-radius: 12px;
+  }
+
+  /* 강화(2fr)+기록(1fr) 한 줄, 누적 비용 아래 (실제 시뮬과 동일) */
+  .mainCard {
+    grid-template-columns: 2fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .stageCol {
+    grid-column: span 1;
+    min-height: auto;
+  }
+
+  .historyCol {
+    grid-column: span 1;
+    min-height: 0;
+  }
+
+  .mainCard .col:nth-child(3) {
+    grid-column: span 2;
+  }
+
+  /* 상자 공통 */
   .col {
-    padding: 0.85rem 0.9rem;
+    padding: 0.5rem;
+    border-radius: 10px;
+  }
+
+  .boxTitle {
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.3rem;
+  }
+
+  /* 강화 상자 압축 */
+  .startAdjustRow {
+    margin-bottom: 0.5rem;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  .levelBox {
+    padding: 0.2rem 0.3rem;
+    border-radius: 8px;
+  }
+
+  .levelBoxLabel {
+    font-size: 0.55rem;
+  }
+
+  .levelInput {
+    width: 38px;
+    font-size: 16px; /* iOS 포커스 확대 방지 */
+  }
+
+  .stageArea {
+    padding: 0.5rem 0 0.4rem;
   }
 
   .itemSlot {
-    width: 80px;
-    height: 80px;
+    width: 62px;
+    height: 62px;
   }
 
   .itemImage {
-    inset: 6px;
+    inset: 7px;
+  }
+
+  .itemName {
+    margin-top: 0.7rem;
+    font-size: 0.75rem;
+  }
+
+  .probSection {
+    padding: 0.4rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .probLabel {
+    font-size: 0.65rem;
+    margin-bottom: 0.1rem;
+  }
+
+  .probValue {
+    font-size: 1rem;
+  }
+
+  .probBase {
+    font-size: 0.65rem;
+  }
+
+  .janginSection {
+    margin-bottom: 0.4rem;
+  }
+
+  .janginHeader {
+    margin-bottom: 0.2rem;
+  }
+
+  .janginHeader span:first-child {
+    font-size: 0.7rem;
+  }
+
+  .janginValue {
+    font-size: 0.75rem;
+  }
+
+  .janginBarOuter {
+    height: 14px;
+  }
+
+  .breathHeader {
+    margin-bottom: 0.3rem;
+  }
+
+  .breathRow {
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .breathButton {
+    padding: 0.4rem;
+    border-radius: 8px;
+    min-height: 40px;
+  }
+
+  .breathIcon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .breathName {
+    font-size: 0.68rem;
+  }
+
+  .breathMeta {
+    font-size: 0.6rem;
+  }
+
+  .singleCostSection {
+    margin-bottom: 0.5rem;
+  }
+
+  .singleCostTitle {
+    font-size: 0.65rem;
+    margin-bottom: 0.25rem;
   }
 
   .singleCostGrid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.4rem;
+    gap: 0.25rem;
   }
 
+  .singleCostItem {
+    padding: 0.3rem;
+    font-size: 0.7rem;
+    border-radius: 6px;
+    gap: 0.25rem;
+  }
+
+  .singleCostItem img {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* 강화/자동강화 반반 (실제 시뮬과 동일) */
   .buttonRow {
-    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
   }
 
-  .enhanceButton,
+  .enhanceButton {
+    padding: 0.6rem;
+    font-size: 0.85rem;
+    border-radius: 10px;
+  }
+
   .autoButton {
-    min-height: 48px;
+    padding: 0.6rem 0.4rem;
+    font-size: 0.8rem;
+    border-radius: 10px;
+  }
+
+  .resetButton {
+    padding: 0.35rem;
+    font-size: 0.7rem;
+    border-radius: 6px;
+  }
+
+  /* 자동강화 드롭다운: 버튼 중앙 기준으로 띄워 화면 밖으로 안 나가게 */
+  .autoDropdown {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(260px, calc(100vw - 2rem));
+    padding: 0.7rem;
+  }
+
+  /* 강화 기록: 컴팩트 + 상세 정보 숨김 (실제 시뮬과 동일) */
+  .historyContainer {
+    top: 2.25rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 3.5rem;
+  }
+
+  .historyStats {
+    bottom: 0.4rem;
+    left: 0.4rem;
+    right: 0.4rem;
+    gap: 0.25rem;
+  }
+
+  .historyStatItem {
+    padding: 0.2rem;
+    font-size: 0.55rem;
+    border-radius: 6px;
+    gap: 0.1rem;
+  }
+
+  .historyStatItem span:last-child {
+    font-size: 0.7rem;
+  }
+
+  .historyList {
+    gap: 0.2rem;
+  }
+
+  .historyItem {
+    padding: 0.25rem 0.35rem;
+    border-radius: 6px;
+    border-left-width: 3px;
+  }
+
+  .historyItemHeader {
+    margin-bottom: 0;
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+  }
+
+  .historyItemNumber {
+    font-size: 0.55rem;
+    flex-shrink: 0;
+  }
+
+  .historyItemLevel {
+    font-size: 0.55rem;
+    white-space: nowrap;
+  }
+
+  .historyItemResult {
+    font-size: 0.5rem;
+    padding: 0.08rem 0.2rem;
+    flex-shrink: 0;
+  }
+
+  .historyItemDetails {
+    display: none;
+  }
+
+  .historyPromotion {
+    padding: 0.3rem 0.35rem;
+    border-left-width: 3px;
+    border-radius: 6px;
+    gap: 0.25rem;
+    font-size: 0.6rem;
+  }
+
+  .historyEmpty {
+    font-size: 0.7rem;
+  }
+
+  /* 누적 비용 */
+  .totalMaterialsList {
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+    max-height: none;
+  }
+
+  .totalMaterialItem {
+    grid-template-columns: 22px 1fr 60px 60px;
+    padding: 0.35rem 0.5rem;
+    gap: 0.25rem;
+    border-radius: 6px;
+  }
+
+  .totalMaterialItemCheckable {
+    grid-template-columns: 14px 22px 1fr 60px 60px;
+  }
+
+  .totalMaterialItem img {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .materialCheckbox {
+    width: 13px;
+    height: 13px;
+  }
+
+  .materialName {
+    font-size: 0.7rem;
+  }
+
+  .materialAmount {
+    font-size: 0.75rem;
+  }
+
+  .materialGold {
+    font-size: 0.7rem;
+  }
+
+  .materialBuyInfo {
+    font-size: 0.58rem;
+  }
+
+  .goldSplitRow {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.68rem;
+  }
+
+  .goldSummarySection {
+    padding-top: 0.5rem;
+    gap: 0.3rem;
+  }
+
+  .goldSummaryLabel {
+    font-size: 0.75rem;
+  }
+
+  .goldSummaryValue {
+    font-size: 0.85rem;
+  }
+
+  .goldSummaryTotal .goldSummaryValue {
+    font-size: 1.1rem;
+  }
+
+  .progressSummary {
+    padding: 0.4rem 0.5rem;
+  }
+
+  /* 승급 패널/안내 */
+  .promotionPanel {
+    padding: 0.6rem;
+    gap: 0.45rem;
+  }
+
+  .promotionTitle {
+    font-size: 0.8rem;
+  }
+
+  .promotionDesc {
+    font-size: 0.68rem;
+  }
+
+  .promoteButton {
+    padding: 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .promoInfoPanel {
+    padding: 0.6rem 0.75rem;
   }
 
   /* iOS: 16px 미만 input은 포커스 시 화면이 확대됨 */
-  .autoDropdownInput,
   .modalInput {
     font-size: 16px;
   }
 
-  .historyCol {
-    min-height: 380px;
-  }
-
-  .totalMaterialsList {
-    max-height: none;
-  }
-
-  .startAdjustBtn {
-    width: 36px;
-    height: 36px;
+  .tempNotice {
+    font-size: 0.68rem;
+    padding: 0.5rem 0.75rem;
   }
 }
 

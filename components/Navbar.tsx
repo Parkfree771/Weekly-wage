@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useTheme } from './ThemeProvider';
 import { Container, Navbar as BSNavbar, Nav, Offcanvas } from 'react-bootstrap';
 import LoginButton from './auth/LoginButton';
+import ZoomControl from './ZoomControl';
 
 type NavItem = {
   href: string;
@@ -260,6 +261,7 @@ export default function Navbar() {
           >
             마이페이지
           </Link>
+          <ZoomControl />
           <Link
             href="/"
             className="navbar-theme-toggle"
@@ -385,6 +387,10 @@ export default function Navbar() {
                 마이페이지
               </Link>
             </Nav>
+            <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
+            <div className="d-flex justify-content-center">
+              <ZoomControl withLabel />
+            </div>
             <hr className="my-3" />
             <div className="d-flex justify-content-center">
               <LoginButton />

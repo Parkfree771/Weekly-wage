@@ -7,6 +7,7 @@ import AdAnchorMobile from './AdAnchorMobile';
 import AdUnit from './AdUnit';
 import { AD_PREVIEW, AD_SLOTS } from './adConfig';
 import AppSidebarPromo from '../AppSidebarPromo';
+import { SITE_ZOOM_EVENT, getSiteZoom } from '../ZoomControl';
 
 interface PageConfig {
   contentWidth: number;
@@ -72,7 +73,9 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
     // 콘텐츠 폭 + 레일이 들어갈 만큼 넓은 뷰포트에서만 레일 노출 (콘텐츠 침범 방지)
     const needed = contentWidth + AD_EXTRA; // 양쪽 레일까지 들어갈 폭 (body 좌표)
     const check = () => {
-      const w = window.innerWidth;
+      // 사이트 보기 배율(html zoom) 반영 — 배율 Z만큼 레이아웃 뷰포트가 innerWidth/Z로 줄어들고,
+      // 그 안에서 기존 body zoom(0.67) 좌표계가 그대로 동작하므로 w만 보정하면 이하 계산이 전부 유지됨
+      const w = window.innerWidth / getSiteZoom();
       setIsMobile(w < 768);
       // 데스크톱 body zoom(0.67) 반영 → 실제 레이아웃 폭 = w / zoom
       const zoom = w >= 1024 ? DESKTOP_ZOOM : 1;
@@ -85,7 +88,11 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
 
     check();
     window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
+    window.addEventListener(SITE_ZOOM_EVENT, check);
+    return () => {
+      window.removeEventListener('resize', check);
+      window.removeEventListener(SITE_ZOOM_EVENT, check);
+    };
   }, [contentWidth, railsDisabled]);
 
   // 광고 자리 노출 조건 (미리보기/실제 공통).
