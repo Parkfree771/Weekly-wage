@@ -51,6 +51,7 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-refining',
     items: [
       { href: '/refining', label: '재련 시뮬', badge: 'NEW' },
+      { href: '/wangap', label: '완갑 시뮬', badge: 'NEW' },
       { href: '/bracelet', label: '팔찌 시뮬' },
     ],
   },
@@ -100,6 +101,7 @@ export default function Navbar() {
 
   const getNavClass = (href: string) => {
     const pageClass = href === '/refining' ? 'nav-refining' :
+                      href === '/wangap' ? 'nav-refining' :
                       href === '/life-master' ? 'nav-life' :
                       href === '/hell-reward' ? 'nav-hell' :
                       href === '/bracelet' ? 'nav-bracelet' :

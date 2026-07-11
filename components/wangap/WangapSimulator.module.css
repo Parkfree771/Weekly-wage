@@ -1,0 +1,1793 @@
+/* ============================================================
+   완갑 강화 시뮬레이터
+   계승 후 실제 시뮬(RefiningSimulator)과 동일한 디자인 언어 사용:
+   파란 카드 박스(2px 테두리) + 내부 타일(card-bg),
+   확률 초록 / 장인의 기운 주황-빨강 게이지 / 그라데이션 버튼.
+   등급(전설/유물/고대) 요소만 코어 색 유지.
+   ============================================================ */
+
+.container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  /* 등급 테마 기본값 (전설)
+     코어 배경: 아래는 등급색, 위로 갈수록 어두워져 검정에 가깝게 */
+  --wg-a: #ca8a04;
+  --wg-b: #713f12;
+  --wg-light: #fde68a;
+  --wg-soft: rgba(202, 138, 4, 0.1);
+  --wg-core-grad: linear-gradient(0deg, #ca8a04 0%, #4a3305 60%, #0d0a03 100%);
+}
+
+.container[data-grade='유물'] {
+  --wg-a: #d97706;
+  --wg-b: #7c2d12;
+  --wg-light: #fdba74;
+  --wg-soft: rgba(217, 119, 6, 0.1);
+  --wg-core-grad: linear-gradient(0deg, #c25c04 0%, #6b2d07 60%, #0d0603 100%);
+}
+
+.container[data-grade='고대'] {
+  --wg-a: #c19a5c;
+  --wg-b: #8a6a3b;
+  --wg-light: #f5e8c8;
+  --wg-soft: rgba(193, 154, 92, 0.12);
+  --wg-core-grad: linear-gradient(0deg, #c9a45e 0%, #63491d 60%, #0e0b05 100%);
+}
+
+.container button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ===== 전체 레이아웃 (실제 시뮬과 동일: 세로 스택) ===== */
+.mainLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ===== 장비 선택 패널 (실제 시뮬 장비 현황과 동일한 상자) ===== */
+.equipmentPanel {
+  width: 100%;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: var(--shadow-md);
+}
+
+.equipmentPanelTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  text-align: center;
+}
+
+/* 선택 카드 — 줄을 채우지 않고 정사각 상자 5개(등급 3 + 승급 2)를 화살표로 연결 */
+.equipmentList {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.listArrow {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* 등급 카드 — 정사각형, 실제 시뮬과 동일한 입체감 그림자 */
+.equipmentItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 118px;
+  height: 118px;
+  flex-shrink: 0;
+  padding: 0.5rem;
+  background: var(--card-bg);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.1),
+    -6px -6px 12px rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .equipmentItem {
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.5),
+    -6px -6px 12px rgba(255, 255, 255, 0.03);
+}
+
+.equipmentItem:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.15),
+    -8px -8px 16px rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="dark"] .equipmentItem:hover:not(:disabled) {
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.6),
+    -8px -8px 16px rgba(255, 255, 255, 0.04);
+}
+
+.equipmentItem:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* 선택 상태 — 실제 시뮬과 동일한 링 + 입체감 */
+.equipmentItemSelected {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.8),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3),
+    0 0 0 2px rgba(99, 102, 241, 0.4);
+}
+
+[data-theme="dark"] .equipmentItemSelected {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.5),
+    -6px -6px 12px rgba(255, 255, 255, 0.03),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.05),
+    0 0 0 2px rgba(99, 102, 241, 0.5);
+}
+
+.equipmentIcon {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 0; /* 프레임 개구부가 직각이라 둥근 모서리 금지 */
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+/* 코어 배경: 아래 등급색 → 위 검정
+   타일보다 10% 넓게 깔아(블리드) 프레임 개구부의 모서리 장식 부분까지 채움 */
+.equipmentIcon::before {
+  content: '';
+  position: absolute;
+  inset: -10%;
+  z-index: 0;
+}
+
+.equipmentIcon[data-grade='전설']::before { background: linear-gradient(0deg, #ca8a04 0%, #4a3305 60%, #0d0a03 100%); }
+.equipmentIcon[data-grade='유물']::before { background: linear-gradient(0deg, #c25c04 0%, #6b2d07 60%, #0d0603 100%); }
+.equipmentIcon[data-grade='고대']::before { background: linear-gradient(0deg, #c9a45e 0%, #63491d 60%, #0e0b05 100%); }
+
+/* 세르카 계승 테두리 (선택 카드)
+   프레임 실측: 안쪽 개구부 = 가로 68.2% / 세로 69.9%, 중심 x -1.6% 치우침
+   → 개구부가 타일과 정확히 일치, 모서리 틈은 배경 블리드가 채움 */
+.equipmentFrame {
+  position: absolute;
+  top: -21.5%;
+  bottom: -21.5%;
+  left: -21%;
+  right: -25.6%;
+  display: block;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.equipmentInfo {
+  width: 100%;
+  min-width: 0;
+}
+
+.equipmentName {
+  font-size: 0.75rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equipmentName[data-grade='전설'] { color: #ca8a04; }
+.equipmentName[data-grade='유물'] { color: #d97706; }
+.equipmentName[data-grade='고대'] { color: #c19a5c; }
+
+.equipmentLevel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
+
+.levelBadge {
+  font-size: 0.68rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
+  font-weight: 700;
+  color: white;
+}
+
+.levelBadge[data-grade='전설'] { background: linear-gradient(135deg, #713f12, #ca8a04); }
+.levelBadge[data-grade='유물'] { background: linear-gradient(135deg, #7c2d12, #d97706); }
+.levelBadge[data-grade='고대'] { background: linear-gradient(135deg, #8a6a3b, #c19a5c); }
+
+/* 카드 사이 승급 재료 커넥터 */
+/* 승급 재료 상자 — 등급 카드와 같은 정사각형(조금 작게), 화살표로 연결 */
+.promoConnector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  padding: 0.4rem;
+  background: var(--card-bg);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.1),
+    -6px -6px 12px rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .promoConnector {
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.5),
+    -6px -6px 12px rgba(255, 255, 255, 0.03);
+}
+
+.promoConnector:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.15),
+    -8px -8px 16px rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="dark"] .promoConnector:hover {
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.6),
+    -8px -8px 16px rgba(255, 255, 255, 0.04);
+}
+
+.promoConnectorActive {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.8),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3),
+    0 0 0 2px rgba(99, 102, 241, 0.4);
+}
+
+[data-theme="dark"] .promoConnectorActive {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.5),
+    -6px -6px 12px rgba(255, 255, 255, 0.03),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.05),
+    0 0 0 2px rgba(99, 102, 241, 0.5);
+}
+
+.promoConnectorIcon {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(0deg, #3a2a52 0%, #1d152b 60%, #0b0810 100%);
+}
+
+.promoConnectorArrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.promoConnectorActive .promoConnectorArrow {
+  color: var(--color-primary);
+}
+
+/* 시작 단계 조정 (실제 시뮬과 동일 — 강화 상자 상단) */
+.startAdjustRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.75rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.startAdjustLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-right: 0.15rem;
+}
+
+.startAdjustValue {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  min-width: 42px;
+  text-align: center;
+}
+
+.startAdjustBtn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+  background-color: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.startAdjustBtn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.startAdjustBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 승급 재료 상세 패널 */
+.promoInfoPanel {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+  background-color: var(--card-body-bg-blue);
+  animation: promoInfoFade 0.18s ease-out;
+}
+
+@keyframes promoInfoFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.promoInfoPanel[data-grade='유물'] { border-color: #d97706; }
+.promoInfoPanel[data-grade='고대'] { border-color: #c19a5c; }
+
+.promoInfoTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  color: var(--text-primary);
+}
+
+.promoInfoRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  padding: 0.16rem 0;
+}
+
+.promoInfoRow strong {
+  margin-left: auto;
+}
+
+.promoInfoIcon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.promoInfoDesc {
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ===== 시뮬레이터 외곽 패널 (실제 시뮬과 동일) ===== */
+.simulatorPanel {
+  width: 100%;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== 3상자 레이아웃 (실제 시뮬과 동일) ===== */
+.mainCard {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.col {
+  background-color: var(--card-body-bg-blue);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* 그리드 자동 최소 크기 제거 — 기록이 늘어나도 행이 무한히 길어지지 않고 내부 스크롤 */
+  min-height: 0;
+}
+
+.stageCol {
+  position: relative;
+  /* 25강 완료 등으로 내용이 짧아져도 상자 높이가 줄어들지 않게 고정 하한 */
+  min-height: 640px;
+}
+
+.boxTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.gradeBadge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--wg-b), var(--wg-a));
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+}
+
+/* ===== 아이템 스테이지 ===== */
+.stageArea {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 0 0.5rem;
+}
+
+.itemSlot {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 0; /* 프레임 개구부에 맞춰 직각 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--wg-a);
+  transition: border-color 0.25s, filter 0.25s;
+}
+
+/* 코어 배경 블리드 — 슬롯보다 10% 넓게 깔아 개구부 모서리까지 채움 */
+.itemSlot::before {
+  content: '';
+  position: absolute;
+  inset: -10%;
+  background: var(--wg-core-grad);
+  z-index: 0;
+}
+
+.itemImage {
+  position: absolute;
+  inset: 3px;
+  display: block;
+}
+
+/* 세르카 계승 장비 테두리 오버레이 (개구부 = 슬롯 크기와 정확 일치) */
+.slotFrame {
+  position: absolute;
+  top: -21.5%;
+  bottom: -21.5%;
+  left: -21%;
+  right: -25.6%;
+  display: block;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.itemName {
+  margin-top: 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ===== 강화 확률 (실제 시뮬과 동일) ===== */
+.probSection {
+  padding: 0.75rem;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.probLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.probValue {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.probNumber {
+  color: #10b981;
+}
+
+.probBase {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.probGuaranteed {
+  color: #f59e0b;
+}
+
+/* ===== 장인의 기운 (실제 시뮬과 동일) ===== */
+.janginSection {
+  margin-bottom: 0.75rem;
+}
+
+.janginHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.janginHeader span:first-child {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.janginValue {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+.janginBarOuter {
+  height: 20px;
+  background-color: var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.janginBarInner {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.janginBarInner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ===== 보조 재료 ===== */
+.breathHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.breathHeaderLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.optimizeButton {
+  padding: 0.28rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-primary);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 30px;
+}
+
+.optimizeButton:hover:not(:disabled) {
+  background-color: var(--color-primary-light);
+}
+
+.optimizeButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.optimizeButtonActive {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+  border-color: transparent;
+  color: white;
+}
+
+.ownedInfo {
+  margin: -0.3rem 0 0.6rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.breathRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.breathButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.6rem 0.4rem;
+  background-color: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-height: 44px;
+}
+
+.breathButton:hover:not(:disabled) {
+  border-color: var(--primary-color);
+}
+
+.breathButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.breathButtonAuto:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.breathButtonActiveLava,
+.breathButtonActiveGlacier {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+  border-color: transparent;
+  color: white;
+}
+
+.breathIcon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.breathName {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.breathMeta {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+/* ===== 1회 비용 (실제 시뮬과 동일) ===== */
+.singleCostSection {
+  margin-bottom: 1rem;
+}
+
+.singleCostTitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.singleCostGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.singleCostItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 0;
+}
+
+/* ===== 강화 버튼 (실제 시뮬과 동일) ===== */
+.buttonRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.enhanceButton {
+  flex: 1;
+  padding: 0.85rem;
+  font-size: 1rem;
+  font-weight: 800;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.enhanceButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.enhanceButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.autoButtonWrap {
+  position: relative;
+  flex: 1;
+}
+
+.autoButton {
+  width: 100%;
+  height: 100%;
+  padding: 0.85rem 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.autoButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.autoButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.autoButtonStop {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.resetButton {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  background-color: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetButton:hover:not(:disabled) {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: white;
+}
+
+.resetButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.resetButtonConfirm {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: white;
+  animation: confirmPulse 0.5s ease-in-out infinite alternate;
+}
+
+.resetButtonConfirm:hover:not(:disabled) {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+@keyframes confirmPulse {
+  from { opacity: 1; }
+  to { opacity: 0.7; }
+}
+
+/* ===== 자동강화 드롭다운 (실제 시뮬과 동일 — 버튼 위로 열림) ===== */
+.autoDropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  z-index: 100;
+}
+
+.autoDropdownTitle {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.autoDropdownSection {
+  margin-bottom: 0.5rem;
+  padding: 0.4rem;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+}
+
+.autoDropdownLabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.autoDropdownLevelRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.autoDropdownInput {
+  width: 45px;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.autoDropdownHint {
+  margin-top: 0.3rem;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.autoDropdownCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0.1rem 0;
+}
+
+.autoDropdownOptimizeNote {
+  font-size: 0.7rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.speedButtonGroup {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+}
+
+.speedButton {
+  flex: 1;
+  padding: 0.4rem 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--card-background);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.speedButton:hover {
+  border-color: var(--primary-color);
+}
+
+.speedButtonActive {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #10b981;
+  color: white;
+}
+
+.autoDropdownStartBtn {
+  width: 100%;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.autoDropdownStartBtn:disabled {
+  background: #6b7280;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== 승급 패널 ===== */
+.promotionPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  border: 2px solid var(--wg-a);
+  background-color: var(--card-bg);
+}
+
+.promotionTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.promotionTitle strong {
+  color: var(--wg-a);
+  font-weight: 800;
+}
+
+.promotionDesc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.promotionCostRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.promotionCostItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.promotionCostItem strong {
+  margin-left: auto;
+}
+
+.promoteButton {
+  padding: 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, var(--wg-b), var(--wg-a));
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.promoteButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.promoteButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ===== 최고 단계 완료 (실제 시뮬처럼 배경 이미지 — 빨간 불꽃) ===== */
+.maxComplete {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  border-radius: 12px;
+  background: url('/25anrl.webp') center center / cover no-repeat;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.maxCompleteTitle {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  position: relative;
+  z-index: 2;
+}
+
+.maxCompleteDesc {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  margin-bottom: 0.75rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* 배경 위에서도 읽히도록 완료 화면의 초기화 버튼 오버라이드 */
+.maxComplete .resetButton {
+  position: relative;
+  z-index: 2;
+  max-width: 220px;
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+}
+
+.maxComplete .resetButton:hover:not(:disabled) {
+  background-color: #ef4444;
+  border-color: #ef4444;
+}
+
+/* ===== 강화 기록 (실제 시뮬과 동일: 절대배치로 상자 높이에 기여하지 않음
+       → 기록이 쌓여도 레이아웃이 길어지지 않고 내부 스크롤) ===== */
+.historyCol {
+  position: relative;
+  overflow: hidden;
+}
+
+.historyContainer {
+  position: absolute;
+  top: 3.3rem;      /* 제목 아래 */
+  left: 1rem;
+  right: 1rem;
+  bottom: 4.6rem;   /* 통계 위 */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.historyEmpty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.5rem;
+}
+
+.historyItem {
+  padding: 0.6rem;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.historyItemSuccess {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-left-color: #10b981;
+}
+
+.historyItemFail {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left-color: #ef4444;
+}
+
+.historyItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.historyItemNumber {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.historyItemLevel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.historyItemResult {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  color: white;
+}
+
+.historyResultSuccess {
+  background-color: #10b981;
+}
+
+.historyResultFail {
+  background-color: #ef4444;
+}
+
+.historyItemDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.historyPromotion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border-radius: 8px;
+  border-left: 4px solid var(--wg-a);
+  background-color: var(--wg-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.historyPromotion[data-grade='유물'] {
+  border-left-color: #d97706;
+  background-color: rgba(217, 119, 6, 0.1);
+}
+
+.historyPromotion[data-grade='고대'] {
+  border-left-color: #c19a5c;
+  background-color: rgba(193, 154, 92, 0.12);
+}
+
+.historyPromotion .historyItemNumber {
+  color: var(--text-muted);
+}
+
+.historyPromotionText {
+  letter-spacing: 0.02em;
+}
+
+/* 통계는 항상 기록 상자 맨 아래에 고정 (실제 시뮬과 동일한 절대배치) */
+.historyStats {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.historyStatItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.4rem;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.historyStatItem span:last-child {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.statSuccess { color: #10b981 !important; }
+.statFail { color: #ef4444 !important; }
+
+/* ===== 누적 비용 (실제 시뮬과 동일) ===== */
+.totalCostContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.totalMaterialsList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.totalMaterialItem {
+  display: grid;
+  grid-template-columns: 28px 1fr 80px 80px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.totalMaterialItemCheckable {
+  grid-template-columns: 18px 28px 1fr 80px 80px;
+  cursor: pointer;
+}
+
+.totalMaterialItemCheckable:hover {
+  background-color: var(--card-body-bg-blue);
+}
+
+.materialCheckbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.materialName {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.materialAmount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.materialGold {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #f59e0b;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.materialGoldExcluded {
+  text-decoration: line-through;
+  opacity: 0.4;
+}
+
+.costEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.costNote {
+  margin-bottom: 0.5rem;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.progressSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background-color: var(--card-bg);
+  flex-shrink: 0;
+}
+
+.progressLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.progressValue {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.progressGradeBadge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--wg-b), var(--wg-a));
+}
+
+.progressLevel {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.totalGoldCost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.totalGoldCost span {
+  color: #ffffff !important;
+}
+
+/* ===== 보조재료 최적화 모달 ===== */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  animation: overlayFade 0.18s ease-out;
+}
+
+@keyframes overlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  width: 100%;
+  max-width: 400px;
+  max-height: 88vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 1.1rem;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
+  animation: modalPop 0.2s ease-out;
+}
+
+@keyframes modalPop {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modalTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.modalDesc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-bottom: 0.8rem;
+}
+
+.modalCheck {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.6rem 0.65rem;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 0.6rem;
+  transition: all 0.2s ease;
+}
+
+.modalCheck:has(input:checked) {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.modalCheck input {
+  margin-top: 0.15rem;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.modalCheckText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.modalCheckText small {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.modalMatList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+  max-height: 46vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.15rem;
+}
+
+.modalMatRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background-color: var(--card-bg);
+  transition: all 0.2s ease;
+}
+
+.modalMatRowBound {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.modalInputIcon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.modalMatLabel {
+  flex: 1;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modalBoundCheck {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.modalBoundCheck input {
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.modalMatRowBound .modalBoundCheck {
+  color: var(--color-primary);
+}
+
+.modalInput {
+  width: 74px;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.modalInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.modalInput:disabled {
+  opacity: 0.6;
+}
+
+.modalHint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.modalSecondaryBtn {
+  flex: 1;
+  padding: 0.55rem;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.modalSecondaryBtn:hover {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: white;
+}
+
+.modalPrimaryBtn {
+  flex: 1.4;
+  padding: 0.55rem;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+  color: white;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.modalPrimaryBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ===== 임시 수치 고지 ===== */
+.tempNotice {
+  margin-top: 1rem;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ===== 반응형 ===== */
+@media (max-width: 1100px) {
+  .mainCard {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stageCol {
+    grid-column: 1 / -1;
+  }
+
+  /* 스택 배치: 절대배치 기록 영역을 위해 상자 자체 높이 고정 */
+  .historyCol {
+    min-height: 440px;
+  }
+}
+
+@media (max-width: 700px) {
+  .mainCard {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
+  .equipmentPanel {
+    padding: 0.75rem;
+  }
+
+  /* 좁은 화면: 정사각 상자 유지, 넘치면 가로 스크롤 */
+  .equipmentList {
+    justify-content: flex-start;
+    gap: 0.35rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-bottom: 0.35rem;
+  }
+
+  .equipmentItem {
+    width: 92px;
+    height: 92px;
+    padding: 0.4rem;
+  }
+
+  .equipmentIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .equipmentFrame {
+    inset: -10px;
+  }
+
+  .equipmentName {
+    font-size: 0.68rem;
+  }
+
+  .promoConnector {
+    width: 76px;
+    height: 76px;
+  }
+
+  .promoConnectorIcon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .promoConnectorArrow {
+    font-size: 0.62rem;
+  }
+
+  .listArrow {
+    font-size: 0.85rem;
+  }
+
+  .col {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .itemSlot {
+    width: 80px;
+    height: 80px;
+  }
+
+  .itemImage {
+    inset: 6px;
+  }
+
+  .singleCostGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+  }
+
+  .buttonRow {
+    flex-direction: column;
+  }
+
+  .enhanceButton,
+  .autoButton {
+    min-height: 48px;
+  }
+
+  /* iOS: 16px 미만 input은 포커스 시 화면이 확대됨 */
+  .autoDropdownInput,
+  .modalInput {
+    font-size: 16px;
+  }
+
+  .historyCol {
+    min-height: 380px;
+  }
+
+  .totalMaterialsList {
+    max-height: none;
+  }
+
+  .startAdjustBtn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* ===== 모션 최소화 설정 존중 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .resetButtonConfirm,
+  .janginBarInner::after {
+    animation: none;
+  }
+}
