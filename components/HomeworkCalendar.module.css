@@ -1,0 +1,556 @@
+/* 숙제 기록 달력 (HomeworkCalendar) — 웹 모달 스타일 */
+
+.modalDialog {
+  max-width: 480px;
+}
+
+.modalContent {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.sheet {
+  padding: 14px 14px 0;
+}
+
+/* ─── 헤더 ─── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.navBtn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 20px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.navBtn:hover {
+  background: var(--bg-secondary, #f5f5f5);
+}
+
+.titleBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.titleText {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.titleCaret {
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+}
+
+/* ─── 캐릭터 칩 ─── */
+.charRow {
+  display: flex;
+  gap: 6px;
+  padding: 4px 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.charRow::-webkit-scrollbar {
+  display: none;
+}
+
+.charChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  border-radius: 15px;
+  padding: 3px 10px 3px 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.charChipOn {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.charChipAvatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  overflow: hidden;
+  background: var(--bg-secondary, #f5f5f5);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.charChipAvatarImg {
+  position: absolute;
+  top: -4px;
+  width: 22px;
+  height: 44px;
+  object-fit: cover;
+}
+
+.charChipInitial {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.charChipName {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.charChipOn .charChipName {
+  font-weight: 800;
+  color: #6366f1;
+}
+
+/* ─── 연/월 선택 ─── */
+.picker {
+  padding: 6px 0 16px;
+}
+
+.yearRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin-bottom: 12px;
+}
+
+.yearText {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+  min-width: 84px;
+  text-align: center;
+}
+
+.monthGrid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.monthCell {
+  width: 25%;
+  padding: 13px 0;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.monthCell:hover {
+  background: var(--bg-secondary, #f5f5f5);
+}
+
+.monthCellOn {
+  font-weight: 800;
+  color: #6366f1;
+}
+
+/* ─── 요일/그리드 ─── */
+.weekRow {
+  display: flex;
+  margin: 4px 0 2px;
+}
+
+.weekCell {
+  width: calc(100% / 7);
+  text-align: center;
+  padding: 5px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+}
+
+.cell {
+  width: calc(100% / 7);
+  min-height: 64px;
+  padding: 4px 1px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+}
+
+.cellBtn {
+  cursor: pointer;
+}
+
+.cellBtn:disabled {
+  cursor: default;
+}
+
+.cellSel {
+  background: rgba(99, 102, 241, 0.09);
+}
+
+.dayNum {
+  height: 21px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: 2px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.65;
+}
+
+.dayNumHas {
+  font-weight: 700;
+  color: var(--text-primary);
+  opacity: 1;
+}
+
+.dayNumBox {
+  width: 21px;
+  height: 21px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.coversBox {
+  position: relative;
+  width: 29px;
+  height: 29px;
+  margin-top: 1px;
+  display: block;
+}
+
+.coverItem {
+  position: absolute;
+}
+
+.valBox {
+  height: 29px;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+}
+
+.goldText {
+  font-size: 9px;
+  font-weight: 800;
+  color: #d97706;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.extraBadge {
+  position: absolute;
+  right: -6px;
+  bottom: -2px;
+  min-width: 15px;
+  height: 15px;
+  border-radius: 8px;
+  padding: 0 3px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.miniIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bg-secondary, #f5f5f5);
+  border: 1px solid var(--border-color);
+}
+
+.miniIconFallback {
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+/* ─── 선택한 날 상세 ─── */
+.detail {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.detailHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.detailTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.detailChar {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6366f1;
+}
+
+.detailCount {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.detailGoldTotal {
+  font-size: 13px;
+  font-weight: 800;
+  color: #d97706;
+  font-variant-numeric: tabular-nums;
+}
+
+.goldRows {
+  max-height: 150px;
+  overflow-y: auto;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-bottom: 2px;
+}
+
+.goldRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.goldRowLabel {
+  flex: 1;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goldRowVal {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.goldRowUnit {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.spreadRow {
+  display: flex;
+  gap: 14px;
+  padding: 12px 2px 8px;
+  overflow-x: auto;
+}
+
+.spreadItem {
+  width: 74px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bigIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-secondary, #f5f5f5);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-style: solid;
+  border-color: var(--border-color);
+}
+
+.bigIconFallback {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.spreadLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  margin-top: 6px;
+  line-height: 1.25;
+}
+
+.spreadCommon {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.chip {
+  padding: 2px 6px;
+  border-radius: 5px;
+  margin-top: 4px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.hintWrap {
+  padding: 24px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ─── 월 합계 ─── */
+.monthSum {
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin-top: 8px;
+  background: var(--bg-secondary, #f5f5f5);
+}
+
+.monthSumHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.monthSumTitle {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.monthSumGold {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.monthSumEmpty {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.matWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.matWrapItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.matAmount {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── 모드 바 ─── */
+.modeBar {
+  display: flex;
+  margin: 10px -14px 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 11px 0;
+  border: none;
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.modeBtn + .modeBtn {
+  border-left: 1px solid var(--border-color);
+}
+
+.modeBtnOn {
+  font-weight: 800;
+  color: #6366f1;
+}
+
+@media (max-width: 480px) {
+  .modalDialog {
+    max-width: none;
+    margin: 8px;
+  }
+
+  .cell {
+    min-height: 58px;
+  }
+}

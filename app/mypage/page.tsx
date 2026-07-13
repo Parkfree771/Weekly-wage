@@ -87,10 +87,18 @@ import {
   resetWeeklyChecklist,
   getWeekLabel,
   getCurrentWeekStart,
-  calculateTotalGoldFromChecklist,
+  getThisWeekWednesday6AM,
 } from '@/types/user';
+import {
+  ActivityLog, loadActivityLog, persistActivityLog, withActivity, withActivityRemovedThisWeek,
+  todayGameDateKey, weekDayDateKey, mergeCloudActivityLog, unpackActivityLog,
+  encodeRaidLogValue, encodeSandLogValue, encodeCommonLogValue,
+  packForUpload, markLogSynced,
+} from '@/lib/activity-log';
+import { syncLogWithState, RAID_CARD_IMAGES, getRaidDifficultyLabel } from '@/lib/weekly-rewards';
 import dynamic from 'next/dynamic';
 const WeeklyGoldChart = dynamic(() => import('@/components/WeeklyGoldChart'), { ssr: false });
+const HomeworkCalendar = dynamic(() => import('@/components/HomeworkCalendar'), { ssr: false });
 import styles from './mypage.module.css';
 
 // 레이드 그룹별 가능한 난이도 가져오기
@@ -414,6 +422,17 @@ export default function MyPage() {
   // lastWeeklyReset이 갱신되지 않아 탭을 오가면 같은 리셋이 다시 돌면서
   // 중복 쓰기 + 저장 전 체크 유실이 발생하는 것을 막는다.
   const weeklyResetApplied = useRef<Set<number>>(new Set());
+  // 현재 활성 원정대의 마지막 리셋 시각 (visibilitychange 재검사용)
+  const lastResetRef = useRef<string | undefined>(undefined);
+
+  // 원정대 이미지 줄 → 누르면 해당 캐릭터 카드 위치로 스크롤 (앱 scrollToChar와 동일)
+  const charCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const scrollToChar = (name: string) => {
+    const el = charCardRefs.current[name];
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - 76;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  };
 
   // 캐릭터 등록 모달 (2단계)
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -455,6 +474,28 @@ export default function MyPage() {
       return saved ? JSON.parse(saved) : {};
     } catch { return {}; }
   });
+
+  // 숙제 활동 기록 (달력) — 체크할 때마다 게임일(06시 경계) 날짜별 로그.
+  // 주간 초기화로 체크가 지워져도 이 기록은 남아 과거 조회가 가능하다 (앱과 동일, 원정대 1만).
+  const [activityLog, setActivityLog] = useState<ActivityLog>({});
+  const [activityLogLoaded, setActivityLogLoaded] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarChar, setCalendarChar] = useState<string | null>(null);
+  const activityLogRef = useRef<ActivityLog>({});
+  activityLogRef.current = activityLog;
+  // 클라우드 백업 병합은 프로필당 1회
+  const cloudLogMergedRef = useRef(false);
+  useEffect(() => {
+    setActivityLog(loadActivityLog());
+    setActivityLogLoaded(true);
+  }, []);
+  const applyActivityLog = useCallback((updater: (log: ActivityLog) => ActivityLog) => {
+    setActivityLog(prev => {
+      const next = updater(prev);
+      if (next !== prev) persistActivityLog(next);
+      return next;
+    });
+  }, []);
 
   // 일일 컨텐츠 휴게 설정 열림 (charName-field)
   // 데스크톱 여부 (레이드 표시 개수 분기)
@@ -641,34 +682,58 @@ export default function MyPage() {
       setAllSiblings([]);
     }
 
-    // 주간 초기화 체크 (수요일 06:00 KST) - 현재 활성 원정대만
+    // visibilitychange 재검사용 최신값
+    lastResetRef.current = lastReset;
+
+    // 주간 초기화 체크 (수요일 06:00 KST) - 현재 활성 원정대만.
+    // 스냅샷·주차 키·보관량은 앱 applyWeeklyReset(WeeklyScreen.tsx)과 동일 규칙 — 웹·앱이 같은 기록을 만든다.
     if (chars.length > 0 && needsWeeklyReset(lastReset) && !weeklyResetApplied.current.has(activeExpedition)) {
       weeklyResetApplied.current.add(activeExpedition);
       console.log(`[주간 초기화] 원정대${activeExpedition} 수요일 06시 지남, 체크리스트 초기화 시작`);
 
-      // 1. 먼저 현재 골드를 기록에 저장
-      const { totalGold, raidGold, additionalGold, commonGold } = calculateTotalGoldFromChecklist(chars, checklist, saved || undefined);
+      // 1. 리셋 직전 골드 스냅샷 — 레이드(유통/귀속 분리) + 추가 골드
+      let raidGold = 0;
+      let additionalGold = 0;
+      let freeGold = 0;
+      let boundGold = 0;
+      chars.forEach(char => {
+        const cs = checklist[char.name];
+        if (!cs) return;
+        const split = calcCharRaidGoldSplit(cs);
+        raidGold += split.total;
+        freeGold += split.free;
+        boundGold += split.bound;
+        additionalGold += cs.additionalGold || 0;
+      });
 
-      // 지난 주 시작일 계산 (현재 주 시작일 - 7일)
-      const lastWeekStart = lastReset
-        ? lastReset.split('T')[0]
-        : getCurrentWeekStart();
-      const lastWeekLabel = getWeekLabel(new Date(lastWeekStart));
+      // 2. 골드 기록 정돈 (형식 검증 + 중복 제거 + 정렬) 후 지난 주 스냅샷 append
+      const byWeek = new Map<string, WeeklyGoldRecord>();
+      goldHistory.forEach(h => {
+        if (h && typeof h.weekStart === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(h.weekStart)) byWeek.set(h.weekStart, h);
+      });
+      const updatedHistory = Array.from(byWeek.values()).sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+      if (lastReset && raidGold + additionalGold > 0) {
+        const prevWednesday = new Date(getThisWeekWednesday6AM().getTime() - 7 * 24 * 60 * 60 * 1000);
+        const kst = new Date(prevWednesday.getTime() + 9 * 60 * 60 * 1000);
+        const lastWeekStart = `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, '0')}-${String(kst.getUTCDate()).padStart(2, '0')}`;
+        if (!updatedHistory.some(h => h.weekStart === lastWeekStart)) {
+          const newGoldRecord: WeeklyGoldRecord = {
+            weekStart: lastWeekStart,
+            weekLabel: getWeekLabel(prevWednesday),
+            totalGold: raidGold + additionalGold,
+            raidGold,
+            additionalGold,
+            characterCount: chars.length,
+            freeGold: freeGold + additionalGold, // 추가 골드는 유통으로 합산
+            boundGold,
+          };
+          updatedHistory.push(newGoldRecord);
+          console.log('[주간 골드 저장]', newGoldRecord);
+          while (updatedHistory.length > 120) updatedHistory.shift(); // 월/년/전체 차트용 약 2년 보관
+        }
+      }
 
-      // 이미 저장된 주인지 체크
-      const alreadySaved = goldHistory.some(h => h.weekStart === lastWeekStart);
-
-      const newGoldRecord: WeeklyGoldRecord = {
-        weekStart: lastWeekStart,
-        weekLabel: lastWeekLabel,
-        totalGold,
-        raidGold,
-        additionalGold,
-        commonGold,
-        characterCount: chars.length,
-      };
-
-      // 2. 초기화
+      // 3. 초기화 (더보기/골드수령/모래시계레벨/난이도 설정은 유지 — resetWeeklyChecklist)
       const resetChecklist = resetWeeklyChecklist(checklist, chars);
       const resetCommon: CommonContentState = { date: getCurrentWeekStart(), checks: {} };
       const now = new Date().toISOString();
@@ -681,16 +746,6 @@ export default function MyPage() {
           const { db } = await import('@/lib/firebase-firestore');
           const userRef = doc(db, 'users', user.uid);
 
-          // 골드 기록 업데이트 (중복 방지, 최근 52주만 유지해 문서 무한 성장 방지)
-          let updatedHistory = [...goldHistory];
-          if (!alreadySaved && totalGold > 0) {
-            updatedHistory.push(newGoldRecord);
-            console.log('[주간 골드 저장]', newGoldRecord);
-          }
-          if (updatedHistory.length > 52) {
-            updatedHistory = updatedHistory.slice(-52);
-          }
-
           await updateDoc(userRef, {
             [`${prefix}weeklyChecklist`]: resetChecklist,
             [`${prefix}weeklyGoldHistory`]: updatedHistory,
@@ -701,6 +756,7 @@ export default function MyPage() {
           setWeeklyChecklist(resetChecklist);
           setWeeklyGoldHistory(updatedHistory);
           setCommonContent(resetCommon);
+          lastResetRef.current = now;
           console.log(`[주간 초기화] 원정대${activeExpedition} 완료`);
           // 컨텍스트 userProfile의 lastWeeklyReset을 최신화 — 이게 낡은 채 남으면
           // 페이지 리마운트 시(ref 초기화) 같은 리셋이 또 돌아 골드 기록이 중복 저장된다
@@ -713,6 +769,51 @@ export default function MyPage() {
       })();
     }
   }, [userProfile, user, activeExpedition, getExpeditionData, getFirestorePrefix]);
+
+  // 탭이 다시 활성화될 때 주간 초기화 재검사 — 페이지를 켜둔 채 수요일 06시를 넘긴 경우
+  // (앱의 AppState 포그라운드 리스너와 동일한 역할)
+  useEffect(() => {
+    if (isDemo || !user) return;
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!needsWeeklyReset(lastResetRef.current)) return;
+      weeklyResetApplied.current.delete(activeExpedition);
+      refreshUserProfile(); // 프로필 재로드 → 위 주간 초기화 이펙트가 다시 실행됨
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [isDemo, user, activeExpedition, refreshUserProfile]);
+
+  // 클라우드 달력 백업(users/{uid}.appActivityLog) 병합 — 로컬 우선, 빈 자리만 채움.
+  // 기기 변경·브라우저 데이터 삭제 시 계정에서 달력 기록을 복구하는 경로 (앱과 동일 포맷 공유)
+  useEffect(() => {
+    if (!activityLogLoaded || !user || !userProfile?.appActivityLog || cloudLogMergedRef.current) return;
+    cloudLogMergedRef.current = true;
+    // 다운로드한 백업을 업로드 캐시에 심음 — 달력이 안 바뀌었으면 다음 저장에서 재업로드 생략
+    markLogSynced(user.uid, userProfile.appActivityLog);
+    const cloud = unpackActivityLog(userProfile.appActivityLog);
+    if (!cloud) return;
+    setActivityLog(prev => {
+      const merged = mergeCloudActivityLog(prev, cloud);
+      if (merged !== prev) persistActivityLog(merged);
+      return merged;
+    });
+  }, [activityLogLoaded, user, userProfile?.appActivityLog]);
+
+  // 달력 로그를 체크리스트(DB 원본)와 동기화 — 기능 추가 전이나 앱/다른 기기에서 체크한 것도 달력에 반영.
+  // 원정대 1만 기록 (앱과 동일 — 앱 syncLogWithState가 원정대 1 기준으로 이번 주 로그를 정리한다)
+  useEffect(() => {
+    if (!activityLogLoaded || isDemo || !user || !userProfile || activeExpedition !== 1 || characters.length === 0) return;
+    // 프로필 로드 전 한 렌더 동안 characters가 데모 데이터인 채 이펙트가 돌 수 있다 —
+    // 현재 state가 프로필의 원정대 1 캐릭터와 일치할 때만 동기화 (데모 캐릭터 기록 오염 방지)
+    const profChars = userProfile.characters || [];
+    if (!characters.every(c => profChars.some(pc => pc.name === c.name))) return;
+    setActivityLog(prev => {
+      const next = syncLogWithState(prev, { characters, weeklyChecklist, commonContent });
+      if (next !== prev) persistActivityLog(next);
+      return next;
+    });
+  }, [activityLogLoaded, isDemo, user, userProfile, activeExpedition, characters, weeklyChecklist, commonContent]);
 
   // 데모 모드 데이터 초기화
   const demoInitialized = useRef(false);
@@ -1131,8 +1232,33 @@ export default function MyPage() {
     setRefreshingChar(null);
   };
 
+  // 달력 로그 기록 가능 여부 (원정대 1만 — 앱과 동일)
+  const canLogActivity = !isDemo && !!user && activeExpedition === 1;
+
   // 레이드 전체 토글 (레이드 클릭 시)
   const toggleRaid = (charName: string, raidName: string) => {
+    // 달력 기록 — 현재 상태 기준으로 판정. 기록 연산은 멱등 (앱 toggleRaid와 동일)
+    if (canLogActivity) {
+      const cs = weeklyChecklist[charName];
+      const gates0 = cs?.raids?.[raidName] || [];
+      const willCheck = !(gates0.length > 0 && gates0.every(v => v));
+      const group = getRaidGroupName(raidName);
+      const actId = `raid|${charName}|${group}`;
+      if (willCheck) {
+        applyActivityLog(log => withActivity(log, todayGameDateKey(), actId, {
+          label: `${group} ${getRaidDifficultyLabel(raidName)}`.trim(),
+          image: RAID_CARD_IMAGES[group] || raidMap.get(raidName)?.image,
+          charName, kind: 'raid',
+          value: encodeRaidLogValue(
+            cs?.raidGoldReceive?.[raidName] === false,
+            cs?.raidMoreGoldExclude?.[raidName] === true,
+          ),
+        }));
+      } else {
+        applyActivityLog(log => withActivityRemovedThisWeek(log, actId));
+      }
+    }
+
     setWeeklyChecklist(prev => {
       const charState = prev[charName] || createEmptyWeeklyState(
         characters.find(c => c.name === charName)?.itemLevel || 0
@@ -1185,6 +1311,24 @@ export default function MyPage() {
 
   // 낙원/할의 모래시계/카던/가토 토글
   const toggleExtra = (charName: string, field: 'paradise' | 'sandOfTime' | 'chaosDungeon' | 'guardianRaid') => {
+    // 달력 기록 (낙원/모래시계 — 앱 toggleExtra와 동일)
+    if (canLogActivity && (field === 'paradise' || field === 'sandOfTime')) {
+      const cs = weeklyChecklist[charName];
+      const willCheck = !cs?.[field];
+      const actId = `weekly|${charName}|${field}`;
+      if (willCheck) {
+        const lvl = characters.find(c => c.name === charName)?.itemLevel || 0;
+        applyActivityLog(log => withActivity(log, todayGameDateKey(), actId, {
+          label: field === 'sandOfTime' ? '모래시계' : '낙원',
+          image: field === 'sandOfTime' ? '/gkf.webp' : '/skrdnjs.webp',
+          charName, kind: 'weekly',
+          value: field === 'sandOfTime' ? encodeSandLogValue(cs?.sandOfTimeLevel || 0, lvl >= 1750) : 1,
+        }));
+      } else {
+        applyActivityLog(log => withActivityRemovedThisWeek(log, actId));
+      }
+    }
+
     setWeeklyChecklist(prev => {
       const charState = prev[charName] || createEmptyWeeklyState(
         characters.find(c => c.name === charName)?.itemLevel || 0
@@ -1202,6 +1346,24 @@ export default function MyPage() {
 
   // 일일 컨텐츠 (카던/가토) 요일별 사이클 (0→1→2→3→4→0)
   const toggleDailyCheck = (charName: string, field: 'chaosDungeon' | 'guardianRaid', dayIdx: number) => {
+    // 달력 기록 — 요일 칸은 이번 주 해당 날짜로, 값(일반/휴게/PC방…)째로 저장. 0이면 제거. 멱등. (앱 동일)
+    if (canLogActivity) {
+      const cs = weeklyChecklist[charName];
+      const st = cs?.[field] && typeof cs[field] === 'object' ? cs[field] as DailyContentState : EMPTY_DAILY;
+      const maxVal = field === 'guardianRaid' ? 2 : 4;
+      const cur0 = typeof st.checks[dayIdx] === 'number' ? st.checks[dayIdx] : (st.checks[dayIdx] ? 1 : 0);
+      const newVal = cur0 >= maxVal ? 0 : cur0 + 1;
+      const lvl = characters.find(c => c.name === charName)?.itemLevel || 0;
+      const label = field === 'chaosDungeon' ? getChaosDungeonLabel(lvl) : getGuardianRaidLabel(lvl);
+      const image = field === 'chaosDungeon'
+        ? (lvl >= 1730 ? '/zkejs.webp' : '/wjstjs.webp')
+        : (getCurrentGuardian(lvl).image || undefined);
+      applyActivityLog(log => withActivity(
+        log, weekDayDateKey(dayIdx), `daily|${charName}|${field}`,
+        newVal > 0 ? { label: label || (field === 'chaosDungeon' ? '균열/전선' : '가디언 토벌'), image, charName, kind: 'daily', value: newVal } : null,
+      ));
+    }
+
     setWeeklyChecklist(prev => {
       const charState = prev[charName] || createEmptyWeeklyState(
         characters.find(c => c.name === charName)?.itemLevel || 0
@@ -1229,6 +1391,18 @@ export default function MyPage() {
   const toggleCommonContent = (day: number, contentName: string) => {
     const key = `${day}-${contentName}`;
     const content = COMMON_CONTENTS.find(c => c.name === contentName);
+
+    // 달력 기록 — 공통 컨텐츠 카드는 오늘 것만 노출되므로 오늘 날짜로 기록. 멱등. (앱 동일)
+    if (canLogActivity) {
+      const willCheck = !(commonContent.checks[key] === true);
+      applyActivityLog(log => withActivity(
+        log, todayGameDateKey(), `common|${contentName}`,
+        willCheck ? {
+          label: content?.shortName || contentName, image: content?.image, kind: 'common',
+          value: encodeCommonLogValue(maxCharLevel >= 1750),
+        } : null,
+      ));
+    }
 
     setCommonContent(prev => {
       const currentChecked = prev.checks[key] === true;
@@ -1407,12 +1581,17 @@ export default function MyPage() {
       const cleanChars = Array.from(charMap.values());
 
       const prefix = getFirestorePrefix(activeExpedition);
-      await updateDoc(userRef, {
+      const payload: Record<string, any> = {
         [`${prefix}characters`]: cleanChars,
         [`${prefix}allCharacters`]: updatedSiblings,
         [`${prefix}weeklyChecklist`]: weeklyChecklist,
         [`${prefix}commonContent`]: commonContent,
-      });
+      };
+      // 달력 로그 백업 — 같은 쓰기에 실어 보냄 (앱 pushCloudState와 동일, 지난 업로드와 같으면 생략)
+      const packedLog = packForUpload(user.uid, activityLogRef.current);
+      if (packedLog) payload.appActivityLog = packedLog;
+      await updateDoc(userRef, payload);
+      if (packedLog) markLogSynced(user.uid, packedLog);
 
       setHasChanges(false);
       setSaveMessage({ type: 'success', text: '저장되었습니다.' });
@@ -1452,12 +1631,15 @@ export default function MyPage() {
       total += state.additionalGold || 0;
     });
 
-    // 공통 컨텐츠 골드 (복주머니, 카오스게이트 등) — 일반 골드
+    // 공통 컨텐츠 골드 (카오스게이트 등) — 귀속 골드 (앱 summary와 동일)
     Object.entries(commonContent.checks).forEach(([key, checked]) => {
       if (!checked) return;
       const contentName = key.split('-').slice(1).join('-');
       const content = COMMON_CONTENTS.find(c => c.name === contentName);
-      if (content?.gold) total += content.gold;
+      if (content?.gold) {
+        total += content.gold;
+        bound += content.gold;
+      }
     });
 
     return { total, free: total - bound, bound };
@@ -1601,6 +1783,15 @@ export default function MyPage() {
                 {characters.length > 0 && (
                   <button className={styles.editBtn} onClick={openEditModal}>편집</button>
                 )}
+                {activeExpedition === 1 && characters.length > 0 && (
+                  <button
+                    className={styles.editBtn}
+                    onClick={() => { setCalendarChar(null); setCalendarOpen(true); }}
+                    title="숙제 기록 달력 — 날짜별 기록·골드·재료 정산"
+                  >
+                    달력
+                  </button>
+                )}
                 <button
                   className={`${styles.saveButton} ${hasChanges ? styles.hasChanges : ''}`}
                   onClick={handleSave}
@@ -1639,6 +1830,33 @@ export default function MyPage() {
           <div className={styles.loadingImages}>
             <Spinner animation="border" size="sm" /> 캐릭터 이미지 로딩 중...
           </div>
+        )}
+
+        {/* 모바일 전용 — 앱과 동일 레이아웃: 원정대 이미지 줄 + 골드 차트를 카드 위에 (데스크톱은 기존 그대로) */}
+        {!isDesktop && characters.length > 0 && (
+          <>
+            {/* 원정대 캐릭터 이미지 줄 (최대 6개) — 누르면 해당 캐릭터 카드로 스크롤 */}
+            <div className={styles.rosterStrip}>
+              {characters.slice(0, 6).map((c, idx) => (
+                <button key={c.name} className={styles.rosterCell} onClick={() => scrollToChar(c.name)} title={c.name}>
+                  <span className={styles.rosterThumb}>
+                    {c.imageUrl ? (
+                      <Image src={c.imageUrl} alt={c.name} fill sizes="90px" className={styles.rosterThumbImg} unoptimized loading="lazy" />
+                    ) : (
+                      <span className={styles.rosterThumbEmpty}>{c.name[0]}</span>
+                    )}
+                    <span className={styles.rosterNumBadge}>{idx + 1}</span>
+                  </span>
+                  <span className={styles.rosterLevel}>{Math.round(c.itemLevel)}</span>
+                </button>
+              ))}
+            </div>
+
+            <WeeklyGoldChart
+              history={weeklyGoldHistory}
+              currentWeek={{ total: totalGold, free: totalGoldSplit.free, bound: totalGoldSplit.bound }}
+            />
+          </>
         )}
 
         {/* 캐릭터 없음 */}
@@ -1681,11 +1899,11 @@ export default function MyPage() {
             const raidSplit = calcCharRaidGoldSplit(charState);
             let charGold = raidSplit.total;
             let charFree = raidSplit.free;
-            const charBound = raidSplit.bound;
+            let charBound = raidSplit.bound;
             // 추가 골드 — 일반 골드
             charGold += charState.additionalGold || 0;
             charFree += charState.additionalGold || 0;
-            // 대표 캐릭터: 공통 컨텐츠 골드 포함 (일반 골드)
+            // 대표 캐릭터: 공통 컨텐츠 골드 포함 (카게 — 귀속 골드, 앱과 동일)
             if (char.name === representativeChar) {
               Object.entries(commonContent.checks).forEach(([key, checked]) => {
                 if (!checked) return;
@@ -1693,7 +1911,7 @@ export default function MyPage() {
                 const content = COMMON_CONTENTS.find(c => c.name === contentName);
                 if (content?.gold) {
                   charGold += content.gold;
-                  charFree += content.gold;
+                  charBound += content.gold;
                 }
               });
             }
@@ -1755,12 +1973,30 @@ export default function MyPage() {
             };
 
             return (
-              <div key={char.name} className={styles.cardWrapper}>
+              <div
+                key={char.name}
+                className={styles.cardWrapper}
+                ref={el => { charCardRefs.current[char.name] = el; }}
+              >
               <div className={styles.characterCard}>
                 {/* 카드 헤더: 닉네임 + 갱신버튼 + 레벨 */}
                 <div className={styles.cardHeader}>
                   <span className={styles.characterName}>{char.name}{char.name === representativeChar && <span className={styles.repBadge}>대표</span>}</span>
                   <div className={styles.headerRight}>
+                    {!isDemo && activeExpedition === 1 && (
+                      <button
+                        className={styles.refreshBtn}
+                        onClick={() => { setCalendarChar(char.name); setCalendarOpen(true); }}
+                        title="이 캐릭터의 숙제 기록 달력"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                          <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" strokeWidth="2" />
+                          <line x1="8" y1="2.8" x2="8" y2="6.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          <line x1="16" y1="2.8" x2="16" y2="6.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          <path d="M3.5 9.5H20.5" stroke="currentColor" strokeWidth="2" />
+                        </svg>
+                      </button>
+                    )}
                     <button
                       className={`${styles.refreshBtn} ${!isDemo && !canRefresh(char.name) ? styles.refreshDisabled : ''}`}
                       onClick={() => isDemo ? setDemoLoginPrompt(true) : handleRefresh(char.name)}
@@ -2403,12 +2639,11 @@ export default function MyPage() {
         )}
 
 
-        {/* 주간 골드 차트 (맨 아래) */}
-        {characters.length > 0 && (
+        {/* 주간 골드 차트 — 데스크톱은 원래 위치(맨 아래) 유지 */}
+        {isDesktop && characters.length > 0 && (
           <WeeklyGoldChart
             history={weeklyGoldHistory}
-            currentWeekGold={totalGold}
-            currentWeekLabel={getWeekLabel(new Date())}
+            currentWeek={{ total: totalGold, free: totalGoldSplit.free, bound: totalGoldSplit.bound }}
           />
         )}
 
@@ -2417,9 +2652,23 @@ export default function MyPage() {
           <div className={styles.notice}>
             <p>매주 수요일 06:00 이후 첫 접속 시 이전 주 골드가 자동 저장됩니다.</p>
             <p>레이드 체크 후 상단의 '저장하기' 버튼을 눌러야 변경사항이 반영됩니다.</p>
+            <p>체크한 숙제는 날짜별 기록으로 남아 '달력'에서 과거 기록과 골드·재료 정산을 확인할 수 있으며, 저장 시 계정에 백업되어 앱과도 공유됩니다.</p>
             <p>카오스게이트, 필드보스, 복주머니 등은 재료의 가치는 제외하고 획득하는 골드만 설정했습니다.</p>
             <p>아바타 변경이 안될 시 인게임에서 아바타 해제 → 영지 이동 → 아바타 재장착 → 영지 밖 이동 후 다시 시도해주세요.</p>
           </div>
+        )}
+
+        {/* 숙제 기록 달력 (원정대 1 — 앱과 동일 기록 공유) */}
+        {!isDemo && activeExpedition === 1 && characters.length > 0 && calendarOpen && (
+          <HomeworkCalendar
+            show={calendarOpen}
+            onClose={() => setCalendarOpen(false)}
+            log={activityLog}
+            todayKey={todayGameDateKey()}
+            characters={characters.map(c => ({ name: c.name, imageUrl: c.imageUrl }))}
+            initialChar={calendarChar}
+            maxLevel={maxCharLevel}
+          />
         )}
 
         {/* 캐릭터 등록 모달 (2단계) */}

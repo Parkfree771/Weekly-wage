@@ -10,6 +10,9 @@ export type WeeklyGoldRecord = {
   additionalGold: number; // 추가 골드
   commonGold?: number;    // 공통 컨텐츠 골드 (복주머니, 카오스게이트 등)
   characterCount: number; // 캐릭터 수
+  // 유통/귀속 분리 (앱과 공유 — 없는 옛 기록은 차트에서 단일 막대)
+  freeGold?: number;
+  boundGold?: number;
 };
 
 // 캐릭터 정보
@@ -117,6 +120,8 @@ export type UserProfile = {
   // 원정대 2, 3 (선택)
   expedition2?: ExpeditionData;
   expedition3?: ExpeditionData;
+  // 숙제 활동 달력 백업 (앱과 공유 — packActivityLog 압축 문자열, lib/activity-log.ts)
+  appActivityLog?: string;
   // UI 설정
   uiSettings?: {
     priceOrder?: string[];
@@ -396,6 +401,8 @@ export function resetWeeklyChecklist(
       raidGoldReceive: existingState?.raidGoldReceive || {},
       // 모래시계 보상강화 레벨 유지
       sandOfTimeLevel: existingState?.sandOfTimeLevel || 0,
+      // 난이도 수동 선택 유지 (앱 resetWeeklyChecklist와 동일)
+      raidDifficultyOverride: existingState?.raidDifficultyOverride || {},
     };
   });
 

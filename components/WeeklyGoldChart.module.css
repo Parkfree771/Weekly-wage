@@ -1,316 +1,287 @@
-.container {
+/* 주간 골드 차트 — 앱 WeeklyScreen 골드 기록 카드 디자인 이식 */
+
+.chartCard {
   background: var(--card-bg);
-  border-radius: 16px;
-  padding: 24px;
   border: 1px solid var(--border-color);
-  margin-top: 32px;
-  margin-bottom: 24px;
-  box-shadow: var(--shadow-md);
-  overflow-x: auto;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
   max-width: 100%;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-color);
+/* 데스크톱: 맨 아래 배치 — 과도하게 늘어나지 않게 폭 제한 + 가운데 정렬 */
+@media (min-width: 901px) {
+  .chartCard {
+    max-width: 720px;
+    margin: 32px auto 24px;
+  }
 }
 
-.titleArea {
+.titleRow {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
 .title {
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: 12.5px;
+  font-weight: 800;
   color: var(--text-primary);
-  margin: 0;
 }
 
-.subtitle {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+/* 기간 세그먼트 (주/월/년/전체) — 트랙 + 활성 채움 */
+.seg {
+  display: flex;
   background: var(--bg-secondary, #f5f5f5);
-  padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: 10px;
+  padding: 3px;
 }
 
-.chartWrapper {
-  display: flex;
-  gap: 8px;
-  overflow: hidden;
-}
-
-.yAxis {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-width: 40px;
-  height: 240px;
-}
-
-.yLabel {
-  font-size: 0.7rem;
+.segItem {
+  flex: 1;
+  padding: 6px 0;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text-muted);
-  text-align: right;
-  font-weight: 500;
+  cursor: pointer;
+}
+
+.segItemOn {
+  background: #6366f1;
+  color: #fff;
+}
+
+/* 기간 네비 + HERO */
+.navRow {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.navArrow {
+  padding: 0 6px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.navArrow:disabled {
+  color: var(--text-muted);
+  opacity: 0.4;
+  cursor: default;
+}
+
+.navLabel {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text-primary);
+  min-width: 96px;
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 
-.chartArea {
-  flex: 1;
-  min-width: 0;
-  position: relative;
+.hero {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
 }
 
-.gridLines {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 240px;
+.heroTotal {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.heroSplit {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.heroSplitItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 차트: y축 + 플롯 */
+.plotRow {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  pointer-events: none;
+  margin-top: 16px;
+}
+
+.yAxis {
+  position: relative;
+  width: 34px;
+  flex-shrink: 0;
+}
+
+.yLabel {
+  position: absolute;
+  right: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.plotArea {
+  flex: 1;
+  min-width: 0;
+}
+
+.plot {
+  position: relative;
+  border-left: 1px solid var(--border-color);
 }
 
 .gridLine {
+  position: absolute;
+  left: 0;
+  right: 0;
   height: 1px;
   background: var(--border-color);
-  opacity: 0.3;
+  pointer-events: none;
 }
 
-.barsContainer {
+.barsRow {
+  position: absolute;
+  inset: 0;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-around;
-  gap: 10px;
-  height: 240px;
-  border-bottom: 2px solid var(--text-muted);
 }
 
-.barWrapper {
+.barCol {
   flex: 1;
-  max-width: 60px;
+  min-width: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  height: 100%;
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
 }
 
-.barValue {
-  font-size: 0.72rem;
+.barStack {
+  display: flex;
+  flex-direction: column;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  overflow: hidden;
+}
+
+/* 다크 툴팁 (앱과 동일) */
+.tip {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  display: block;
+}
+
+.tipBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #111827;
+  border-radius: 9px;
+  padding: 7px 10px;
+}
+
+.tipDate {
+  font-size: 10.5px;
   font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.tipValue {
+  font-size: 14px;
+  font-weight: 800;
+  color: #f9fafb;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tipSub {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #d1d5db;
+  margin-top: 2px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
-.currentValue {
-  color: #10b981;
-  font-weight: 700;
+/* 평균 점선 + 배지 */
+.avgLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1.5px dashed #6366f1;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
-.bar {
-  width: 100%;
-  max-width: 44px;
-  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
-  border-radius: 6px 6px 0 0;
-  position: relative;
-  transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  min-height: 0;
-  box-shadow: var(--shadow-sm);
-  transform-origin: bottom;
+.avgBadge {
+  position: absolute;
+  right: 0;
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  z-index: 6;
+  pointer-events: none;
 }
 
-.currentBar {
-  background: linear-gradient(180deg, #34d399 0%, #10b981 50%, #059669 100%);
-  box-shadow: var(--shadow-sm);
+.baseline {
+  height: 1px;
+  background: var(--border-color);
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-
-.xAxisLabels {
+/* x축 라벨 */
+.xRow {
   display: flex;
-  justify-content: space-around;
-  gap: 10px;
-  padding-top: 10px;
+  margin-top: 5px;
+}
+
+.xCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
 }
 
 .xLabel {
-  flex: 1;
-  max-width: 60px;
-  font-size: 0.7rem;
-  color: var(--text-primary);
-  text-align: center;
+  font-size: 10px;
   white-space: nowrap;
-  font-weight: 600;
-}
-
-.currentLabel {
-  color: #10b981;
-  font-weight: 700;
-}
-
-
-.notice {
-  margin-top: 16px;
-  padding: 12px 16px;
-  background: var(--bg-secondary, #f5f5f5);
-  border-radius: 10px;
-  border-left: 3px solid var(--text-muted);
-}
-
-.notice p {
-  margin: 0;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.notice p + p {
-  margin-top: 4px;
-}
-
-.emptyState {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text-muted);
-}
-
-.emptyState p {
-  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .emptyHint {
-  font-size: 0.85rem;
-  margin-top: 8px !important;
-  opacity: 0.7;
-}
-
-/* 반응형 */
-@media (max-width: 900px) {
-  .container {
-    padding: 18px;
-    margin-top: 24px;
-  }
-
-  .header {
-    margin-bottom: 18px;
-    padding-bottom: 12px;
-  }
-
-  .yAxis {
-    min-width: 50px;
-    height: 200px;
-  }
-
-  .barsContainer {
-    height: 200px;
-  }
-
-  .gridLines {
-    height: 200px;
-  }
-
-  .barWrapper {
-    max-width: 48px;
-  }
-
-  .bar {
-    max-width: 36px;
-  }
-
-  .xLabel {
-    font-size: 0.62rem;
-    max-width: 48px;
-  }
-
-  .barValue {
-    font-size: 0.65rem;
-  }
-
-  .yLabel {
-    font-size: 0.62rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: 10px;
-    border-radius: 12px;
-  }
-
-  .chartWrapper {
-    gap: 4px;
-  }
-
-  .yAxis {
-    min-width: 36px;
-    height: 160px;
-  }
-
-  .barsContainer {
-    gap: 2px;
-    height: 160px;
-  }
-
-  .gridLines {
-    height: 180px;
-  }
-
-  .xAxisLabels {
-    gap: 4px;
-  }
-
-  .gridLines {
-    height: 160px;
-  }
-
-  .barWrapper {
-    max-width: 28px;
-  }
-
-  .xLabel {
-    font-size: 0.48rem;
-    max-width: 28px;
-  }
-
-  .bar {
-    max-width: 18px;
-  }
-
-  .barValue {
-    font-size: 0.5rem;
-  }
-
-  .yLabel {
-    font-size: 0.5rem;
-  }
-
-  .barValue {
-    font-size: 0.58rem;
-  }
-
-  .yLabel {
-    font-size: 0.58rem;
-  }
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin: 8px 0 0;
 }
