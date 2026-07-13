@@ -50,7 +50,7 @@ const FEATURES: Feature[] = [
   {
     name: '숙제 완료 달력',
     desc: '날짜별 완료 기록을 한눈에',
-    href: '/homework',
+    href: '/weekly-gold',
     icon: (
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 3v3M16 3v3" /></svg>
     ),

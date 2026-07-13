@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: '사이트 소개',
   description: '로아로골은 원정대 주간 골드 수익 계산, 레이드 더보기 효율 분석, T4 재련 비용 계산 등을 제공하는 무료 로스트아크 웹 서비스입니다.',
   openGraph: {
+    images: ['/og-image.png'],
     title: '로아로골 | 사이트 소개',
     description: '로아로골은 원정대 주간 골드 수익 계산, 레이드 더보기 효율 분석, T4 재련 비용 계산 등을 제공하는 무료 로스트아크 웹 서비스입니다.',
     url: '/about',

@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description: '로스트아크 시즌3 지옥/나락 보상을 단계별로 정리하고 실시간 시세 기반으로 골드 가치를 계산합니다.',
   keywords: '로아로골, 로아 지옥 보상, 로아 나락 보상, 지옥 보상 계산, 낙원 보상 정리, 로스트아크 지옥, 나락 보상표',
   openGraph: {
+    images: ['/og-image.png'],
     title: '로아로골 | 지옥 보상 계산기',
     description: '로스트아크 지옥/나락 보상을 층수별로 정리하고 실시간 시세 기반으로 골드 가치를 계산합니다.',
     url: '/hell-reward',

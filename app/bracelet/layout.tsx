@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description: '로스트아크 팔찌 시뮬레이터! 전투 특성을 선택하고 부여 효과를 시뮬레이션하세요. 잠금과 재변환으로 최적의 팔찌를 만들어보세요!',
   keywords: '로아로골, 로아 팔찌, 로아 팔찌 시뮬, 팔찌 부여효과, 팔찌 시뮬레이터, 로스트아크 팔찌, 팔찌 재변환',
   openGraph: {
+    images: ['/og-image.png'],
     title: '로아로골 | 팔찌 시뮬레이터 - 로아 팔찌 부여효과',
     description: '로스트아크 팔찌 시뮬레이터! 전투 특성을 선택하고 부여 효과를 시뮬레이션하세요.',
     url: '/bracelet',

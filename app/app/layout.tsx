@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: '앱 다운로드',
   description: '로아로골 모바일 앱 - 재련 강화 시뮬레이션, 패키지 효율 계산, 주간 레이드 체크리스트, 골드 수익 기록, 캐릭터 조회까지 한 손 안에서.',
   openGraph: {
+    images: ['/og-image.png'],
     title: '로아로골 | 앱 다운로드',
     description: '로아로골 모바일 앱 - 재련 강화 시뮬레이션, 패키지 효율 계산, 주간 레이드 체크리스트, 골드 수익 기록, 캐릭터 조회까지 한 손 안에서.',
     url: '/app',

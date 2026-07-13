@@ -15,7 +15,6 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/belgardin',          changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/extreme',            changeFrequency: 'weekly',  priority: 0.8 },
   { path: '/engraving',          changeFrequency: 'weekly',  priority: 0.7 },
-  { path: '/homework',           changeFrequency: 'daily',   priority: 0.7 },
   { path: '/character',          changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/mypage',             changeFrequency: 'weekly',  priority: 0.6 },
   { path: '/app',                changeFrequency: 'monthly', priority: 0.6 },

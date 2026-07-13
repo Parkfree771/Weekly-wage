@@ -65,8 +65,11 @@ export default function Home() {
           <PriceComparisonStats />
         </PriceChartProvider>
 
-        {/* 익명 의견 박스 (차트·통계 아래 빈 공간) */}
-        <FeedbackBox />
+        {/* 익명 의견 박스 — 넓은 데스크톱에선 앱 다운로드 사이드바 밑(AdLayout)에 붙으므로
+            여기 띠는 사이드바가 안 뜨는 모바일·좁은 화면에서만 노출 */}
+        <div className="d-xl-none">
+          <FeedbackBox />
+        </div>
 
         {/* 애드센스 콘텐츠 보강용 소개 텍스트 — 항상 하단 배치 */}
         <div className="mt-4 mt-md-5">

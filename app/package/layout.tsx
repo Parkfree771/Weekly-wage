@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   keywords:
     '로아 패키지 효율, 로아 PC방 효율, 로스트아크 패키지, 로아 캐시샵 패키지, PC방 패키지, 로아 로열 크리스탈, 로스트아크 PC방, 로아로골',
   openGraph: {
+    images: ['/og-image.png'],
     title: '로아로골 | 로아 패키지 효율 · PC방 효율 계산기',
     description:
       '로스트아크 캐시샵 패키지와 PC방 패키지의 효율을 비교하세요. 실시간 시세 반영.',

@@ -785,32 +785,7 @@ html, body {
   box-shadow: var(--shadow-sm);
 }
 
-/* 앱 다운로드 전용 배지 스타일 네비 링크 — 사이트 대표색 단색 배경 + 흰 글씨로 다른 메뉴와 구분 */
-.navbar-nav-link-badge {
-  color: #fff !important;
-  background-color: var(--color-primary) !important;
-  border-radius: 999px !important;
-  border-color: transparent !important;
-}
-
-.navbar-nav-link-badge:hover {
-  color: #fff !important;
-  background-color: var(--color-primary) !important;
-  opacity: 0.88;
-}
-
-.navbar-nav-link-badge.active {
-  color: #fff !important;
-  background-color: var(--color-primary) !important;
-}
-
-[data-theme="dark"] .navbar-nav-link-badge,
-[data-theme="dark"] .navbar-nav-link-badge:hover,
-[data-theme="dark"] .navbar-nav-link-badge.active {
-  color: #fff !important;
-  background-color: var(--color-primary) !important;
-}
-
+/* 앱 다운로드 오프캔버스 링크 — 사이트 대표색 단색 배경 + 흰 글씨로 다른 메뉴와 구분 */
 .navbar-offcanvas-link-badge {
   color: #fff !important;
   background-color: var(--color-primary) !important;
@@ -828,21 +803,39 @@ html, body {
   background-color: var(--color-primary) !important;
 }
 
-/* Nav New Badge - Red Accent */
+/* Nav New Badge - Orange Gradient + Shine */
 .nav-badge-new {
+  position: relative;
   display: inline-block;
-  margin-left: 5px;
-  padding: 1px 6px;
-  font-size: 9px;
+  margin-left: 6px;
+  padding: 2px 7px;
+  font-size: 8.5px;
   font-weight: 800;
-  line-height: 1.5;
+  line-height: 1.4;
   color: #fff;
-  background: #8b5cf6;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+  border-radius: 5px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   vertical-align: middle;
-  box-shadow: 0 1px 4px rgba(139, 92, 246, 0.45);
+  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4);
+  overflow: hidden;
+}
+
+.nav-badge-new::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: navBadgeShine 2.6s ease-in-out infinite;
+}
+
+@keyframes navBadgeShine {
+  0% { left: -60%; }
+  55%, 100% { left: 140%; }
 }
 
 /* Nav Dropdown */
@@ -1070,6 +1063,24 @@ html, body {
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background: transparent;
+}
+
+/* 앱 다운로드 버튼 — 마이페이지와 동일 형태, 대표색 채움 + 흰 글씨 */
+.navbar-app-btn {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.navbar-app-btn:hover {
+  color: #fff;
+  opacity: 0.88;
+}
+
+[data-theme="dark"] .navbar-app-btn {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 /* Navbar Toggler */

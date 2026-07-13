@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: '로아로골의 개인정보처리방침입니다. 개인정보 수집 및 이용, 보유기간, 제3자 제공, 쿠키 사용 등에 대한 정책을 안내합니다.',
   keywords: '로아로골, 개인정보처리방침, 개인정보보호, 프라이버시정책',
   openGraph: {
+    images: ['/og-image.png'],
     title: '로아로골 | 개인정보처리방침',
     description: '로아로골의 개인정보처리방침 및 데이터 보호 정책',
     url: '/privacy',

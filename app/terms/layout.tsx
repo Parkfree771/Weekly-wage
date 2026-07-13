@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: '로아로골의 이용약관입니다. 서비스 이용 시 권리와 의무, 면책조항, 데이터 출처 등을 안내합니다.',
   keywords: '로아로골, 이용약관, 서비스약관',
   openGraph: {
+    images: ['/og-image.png'],
     title: '로아로골 | 이용약관',
     description: '로아로골의 이용약관 및 서비스 정책',
     url: '/terms',

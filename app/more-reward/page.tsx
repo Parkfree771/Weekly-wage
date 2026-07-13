@@ -162,9 +162,10 @@ function MoreRewardInner() {
     </table>
   );
 
-  // 레이드 상세 — 기본 클리어 보상 + 더보기 보상 + 더보기 포함 총 가치 (전체 보상 표)
-  // 팝업이 아니라 각 섹션 레이아웃 안, 카드 그리드 바로 아래에 펼쳐진다.
-  const renderRaidDetail = (raid: Raid, onClose: () => void) => {
+  // 레이드 상세 — 각 섹션 레이아웃 안, 카드 그리드 바로 아래에 펼쳐진다.
+  // mode 'more': 더보기 보상·비용·손익만 표시 (상단 더보기 손익 계산 섹션용)
+  // mode 'all': 기본 클리어 보상 + 더보기 보상 + 더보기 포함 총 가치 전체 표시 (하단 클리어 보상 섹션용)
+  const renderRaidDetail = (raid: Raid, onClose: () => void, mode: 'more' | 'all') => {
     const totalClearGold = raid.gates.reduce((s, g) => s + g.gold, 0);
     const totalMoreGold = raid.gates.reduce((s, g) => s + g.moreGold, 0);
     const totalBasicValue = raid.gates.reduce((s, g) => {
@@ -181,7 +182,7 @@ function MoreRewardInner() {
       <section className={styles.detailPanel}>
         <div className={styles.detailPanelHeader}>
           <div>
-            <h2 className={styles.detailTitle}>{raid.name} 클리어 보상</h2>
+            <h2 className={styles.detailTitle}>{raid.name} {mode === 'more' ? '더보기 보상' : '클리어 보상'}</h2>
             <p className={styles.detailLevel}>입장 레벨 {raid.level} 이상</p>
           </div>
           <button type="button" className={styles.modalClose} onClick={onClose} aria-label="접기">
@@ -189,7 +190,8 @@ function MoreRewardInner() {
           </button>
         </div>
 
-        {/* 기본 클리어 보상 */}
+        {/* 기본 클리어 보상 — 클리어 보상 섹션에서만 표시 */}
+        {mode === 'all' && (
         <div className={styles.detailSection}>
           <h3 className={styles.detailSectionTitle}>기본 클리어 보상</h3>
           <div className={styles.gatesGrid}>
@@ -223,6 +225,7 @@ function MoreRewardInner() {
             })}
           </div>
         </div>
+        )}
 
         {/* 더보기 보상 */}
         <div className={styles.detailSection}>
@@ -258,7 +261,40 @@ function MoreRewardInner() {
           </div>
         </div>
 
-        {/* 더보기 포함 총 가치 */}
+        {/* 더보기 손익 계산 섹션: 더보기 재료 가치 - 비용 = 손익만 요약 */}
+        {mode === 'more' && (
+        <div className={styles.finalSection}>
+          <div className={styles.finalTitle}>더보기 총손익</div>
+          <div className={styles.finalGrid}>
+            <div className={styles.finalGridItem}>
+              <div className={styles.finalLabel}>더보기 재료 가치</div>
+              <div className={styles.finalItemValue}>{loading ? '—' : `+${fmt(totalMoreValue)}`}</div>
+            </div>
+            <div className={styles.finalGridItem}>
+              <div className={styles.finalLabel}>더보기 비용</div>
+              <div className={styles.finalItemValue} style={{ color: 'var(--color-danger)' }}>-{fmt(totalMoreGold)}</div>
+            </div>
+            <div className={`${styles.finalGridItem} ${styles.finalTotalRow}`}>
+              <div className={styles.finalLabel}>더보기 손익</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+                <Image src="/gold.webp" alt="골드" width={22} height={22} />
+                <span
+                  className={styles.finalItemValue}
+                  style={{
+                    color: totalMoreValue - totalMoreGold >= 0 ? 'var(--color-success)' : 'var(--color-danger)',
+                    fontSize: '1.1rem',
+                  }}
+                >
+                  {loading ? '—' : `${totalMoreValue - totalMoreGold >= 0 ? '+' : ''}${fmt(totalMoreValue - totalMoreGold)}`}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        )}
+
+        {/* 더보기 포함 총 가치 — 클리어 보상 섹션에서만 표시 */}
+        {mode === 'all' && (
         <div className={styles.finalSection}>
           <div className={styles.finalTitle}>더보기 포함 총 가치</div>
           <div className={styles.finalGrid}>
@@ -289,6 +325,7 @@ function MoreRewardInner() {
             </div>
           </div>
         </div>
+        )}
       </section>
     );
   };
@@ -360,7 +397,7 @@ function MoreRewardInner() {
               {priceDate && `${priceDate} 평균 거래가 | `}실시간 시세와 차이가 있을 수 있습니다
             </p>
 
-            {selectedEffRaid && renderRaidDetail(selectedEffRaid, () => setOpenEff(null))}
+            {selectedEffRaid && renderRaidDetail(selectedEffRaid, () => setOpenEff(null), 'more')}
           </div>
         </div>
 
@@ -407,7 +444,7 @@ function MoreRewardInner() {
               {priceDate && `${priceDate} 평균 거래가 | `}실시간 시세와 차이가 있을 수 있습니다
             </p>
 
-            {selectedClearRaid && renderRaidDetail(selectedClearRaid, () => setOpenClear(null))}
+            {selectedClearRaid && renderRaidDetail(selectedClearRaid, () => setOpenClear(null), 'all')}
           </div>
         </div>
 

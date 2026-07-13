@@ -21,7 +21,6 @@ type NavGroup = {
   colorClass: string; // 드롭다운 트리거 색상
   href?: string;      // 있으면 드롭다운 대신 직접 링크로 렌더
   badge?: string;     // 직접 링크용 배지
-  emphasized?: boolean; // 색배경 + 흰 글씨 배지 스타일로 강조 (다른 메뉴와 구분)
 };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -40,7 +39,6 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-hell',
     items: [
       { href: '/weekly-gold', label: '주간 레이드' },
-      { href: '/homework', label: '일일/주간 숙제' },
       { href: '/cathedral', label: '지평의 성당' },
       { href: '/cerka', label: '세르카' },
       { href: '/extreme', label: '익스트림' },
@@ -51,7 +49,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: '시뮬',
     colorClass: 'nav-refining',
     items: [
-      { href: '/refining', label: '재련 시뮬', badge: 'NEW' },
+      { href: '/refining', label: '재련 시뮬' },
       { href: '/wangap', label: '완갑 시뮬', badge: 'NEW' },
       { href: '/bracelet', label: '팔찌 시뮬' },
     ],
@@ -61,15 +59,8 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-character',
     items: [
       { href: '/character', label: '캐릭터 조회' },
-      { href: '/engraving', label: '직업별 각인', badge: 'NEW' },
+      { href: '/engraving', label: '직업별 각인' },
     ],
-  },
-  {
-    label: '앱 다운로드',
-    colorClass: 'nav-weekly',
-    href: '/app',
-    emphasized: true,
-    items: [],
   },
 ];
 
@@ -168,7 +159,7 @@ export default function Navbar() {
                 <Link
                   key={group.label}
                   href={group.href}
-                  className={`navbar-nav-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''} ${group.emphasized ? 'navbar-nav-link-badge' : ''}`}
+                  className={`navbar-nav-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''}`}
                 >
                   {group.label}
                   {group.badge && <span className="nav-badge-new">{group.badge}</span>}
@@ -256,6 +247,12 @@ export default function Navbar() {
         {/* 데스크톱 테마 토글 + 홈버튼 + 로그인 */}
         <div className="d-none d-lg-flex align-items-center gap-2">
           <Link
+            href="/app"
+            className="navbar-feedback-btn navbar-app-btn"
+          >
+            앱 다운로드
+          </Link>
+          <Link
             href="/mypage"
             className="navbar-feedback-btn"
           >
@@ -319,7 +316,7 @@ export default function Navbar() {
                   <Link
                     key={group.label}
                     href={group.href}
-                    className={`navbar-offcanvas-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''} ${group.emphasized ? 'navbar-offcanvas-link-badge' : ''}`}
+                    className={`navbar-offcanvas-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''}`}
                     onClick={handleClose}
                   >
                     {group.label}
@@ -379,6 +376,13 @@ export default function Navbar() {
             </Nav>
             <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
             <Nav className="flex-column gap-2">
+              <Link
+                href="/app"
+                className="navbar-offcanvas-link navbar-offcanvas-link-badge"
+                onClick={handleClose}
+              >
+                앱 다운로드
+              </Link>
               <Link
                 href="/mypage"
                 className={`navbar-offcanvas-link ${isActive('/mypage') ? 'active' : ''}`}

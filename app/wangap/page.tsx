@@ -18,9 +18,6 @@ export default function WangapPage() {
           >
             완갑 재련 시뮬레이터
           </h1>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-            전설에서 고대까지, 벨가르딘 완갑 재련을 미리 체험해보세요
-          </p>
 
           <noscript>
             <div style={{ padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px', margin: '1rem 0' }}>

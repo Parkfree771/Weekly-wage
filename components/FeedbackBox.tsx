@@ -11,11 +11,12 @@ type Status = 'idle' | 'sending' | 'sent' | 'error';
 /**
  * 익명 의견 박스.
  * - 메인페이지 등에 슬림한 띠로 노출, 클릭하면 팝업으로 입력.
+ * - variant 'sidebar': 앱 다운로드 프로모 레일 밑에 붙는 세로 컴팩트 카드.
  * - 로그인 없이 전송, 현재 페이지 경로를 함께 저장.
  * - 서버에서 IP 해시 기준 5분 쿨다운. 관리자만 /admin/feedback 에서 열람.
  * - 클래스명에 ad/banner 류 단어를 쓰지 않아 애드블록 코스메틱 필터에 걸리지 않음.
  */
-export default function FeedbackBox() {
+export default function FeedbackBox({ variant = 'strip' }: { variant?: 'strip' | 'sidebar' }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -74,7 +75,7 @@ export default function FeedbackBox() {
   return (
     <>
       <div
-        className={styles.strip}
+        className={variant === 'sidebar' ? `${styles.strip} ${styles.stripSidebar}` : styles.strip}
         role="button"
         tabIndex={0}
         onClick={openModal}
@@ -86,13 +87,13 @@ export default function FeedbackBox() {
         }}
       >
         <div className={styles.stripBody}>
-          <div className={styles.stripTitle}>관리자 양반, 이거 좀 해주쇼!</div>
+          <div className={styles.stripTitle}>의견 보내기</div>
           <div className={styles.stripDesc}>
-            이런 기능 있으면 좋겠다 싶은 기능 건의·수정 의견 등 편하게 남겨주세요.
+            건의·수정 의견을 익명으로 남겨주세요.
           </div>
         </div>
         <div className={styles.fakeInput}>
-          <span>여기 눌러서 의견 남기기</span>
+          <span>작성하기</span>
           <span className={styles.arrow} aria-hidden>
             ▾
           </span>
@@ -118,9 +119,9 @@ export default function FeedbackBox() {
             </button>
 
             <div className={styles.modalHead}>
-              <div className={styles.modalTitle}>관리자 양반, 이거 좀 해주쇼!</div>
+              <div className={styles.modalTitle}>의견 보내기</div>
               <div className={styles.modalSub}>
-                익명으로 전송돼요 · 관리자만 열람 · 5분에 한 번 보낼 수 있어요
+                익명 전송 · 관리자만 열람 · 5분에 1회
               </div>
             </div>
 
@@ -128,7 +129,7 @@ export default function FeedbackBox() {
               <div className={styles.sentBox}>
                 <div className={styles.sentTitle}>전송 완료</div>
                 <p className={styles.sentText}>
-                  소중한 의견 잘 받았어요. 반영을 고민해볼게요!
+                  의견 잘 받았습니다. 검토 후 반영할게요.
                 </p>
                 <button type="button" className={styles.primaryBtn} onClick={close}>
                   닫기

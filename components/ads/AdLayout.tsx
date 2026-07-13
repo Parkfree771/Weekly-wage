@@ -7,6 +7,7 @@ import AdAnchorMobile from './AdAnchorMobile';
 import AdUnit from './AdUnit';
 import { AD_PREVIEW, AD_SLOTS } from './adConfig';
 import AppSidebarPromo from '../AppSidebarPromo';
+import FeedbackBox from '../FeedbackBox';
 import { SITE_ZOOM_EVENT, getSiteZoom } from '../ZoomControl';
 
 interface PageConfig {
@@ -42,7 +43,7 @@ const DESKTOP_ZOOM = 0.67;
 const RAIL_PAGES = new Set(['/', '/refining']);
 
 // 앱 다운로드 사이드바 프로모를 붙일 페이지 (광고 레일과 별개, 여유 폭 있을 때만 오른쪽 한 칸)
-const APP_PROMO_PAGES = new Set(['/', '/refining', '/package', '/mypage']);
+const APP_PROMO_PAGES = new Set(['/', '/refining', '/wangap', '/package', '/mypage']);
 
 // 앱 프로모 세로 위치 — 페이지별 adTop 무시하고 상단 네비(52px) 바로 아래 고정 간격으로 통일
 const APP_PROMO_TOP = 66;
@@ -100,10 +101,13 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   const railsVisible =
     RAIL_PAGES.has(pathname) &&
     (AD_PREVIEW || !!AD_SLOTS.sidebar) && !railsDisabled && railsWide && !isMobile;
-  // 앱 다운로드 프로모 — 광고 레일이 이미 그 자리를 쓰고 있지 않을 때만, 오른쪽 한 칸
+  // 메인은 광고를 왼쪽 레일 하나에만 — 오른쪽 레일은 자리(스페이서)만 유지해 가운데 정렬 보존
+  const rightRailAdVisible = railsVisible && pathname !== '/';
+  // 앱 다운로드 프로모 — 오른쪽 광고가 그 자리를 쓰고 있지 않을 때만, 오른쪽 한 칸
   const appPromoVisible =
-    APP_PROMO_PAGES.has(pathname) && !railsDisabled && !railsVisible && railsWide && !isMobile;
-  const topBannerVisible = (AD_PREVIEW || !!AD_SLOTS.topBanner) && !noAds && !isMobile;
+    APP_PROMO_PAGES.has(pathname) && !railsDisabled && !rightRailAdVisible && railsWide && !isMobile;
+  const topBannerVisible =
+    (AD_PREVIEW || !!AD_SLOTS.topBanner) && !noAds && !isMobile && pathname !== '/';
   // 실제 앵커는 애드센스 자동광고가 처리(수동 <ins> 없음) → 미리보기에서만 자리 표시
   const showAnchor = AD_PREVIEW && !noAds && isMobile;
 
@@ -166,7 +170,7 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
         </main>
         {railsVisible && (
           <aside className="side-rail side-rail-right" style={{ paddingTop: `${adTop}px` }}>
-            <div className="side-rail-sticky">{renderRail()}</div>
+            {rightRailAdVisible && <div className="side-rail-sticky">{renderRail()}</div>}
           </aside>
         )}
       </div>
@@ -176,6 +180,7 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
       {appPromoVisible && promoLeft != null && (
         <div className="app-promo-fixed-rail" style={{ left: `${promoLeft}px`, top: `${APP_PROMO_TOP}px` }}>
           <AppSidebarPromo />
+          {pathname === '/' && <FeedbackBox variant="sidebar" />}
         </div>
       )}
       {showAnchor && <AdAnchorMobile />}
