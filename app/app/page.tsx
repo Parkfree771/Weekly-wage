@@ -1,85 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-download-config';
 import { AppleStoreBadge, GooglePlayBadge } from '@/components/StoreBadges';
+import { SITE_URL } from '@/lib/site-config';
 import styles from './app.module.css';
-
-type Feature = {
-  name: string;
-  desc: string;
-  href: string;
-  icon: React.ReactNode;
-};
-
-const FEATURES: Feature[] = [
-  {
-    name: '재련 강화 시뮬레이션',
-    desc: '실제 확률로 미리 강화하고 비용까지 계산',
-    href: '/refining',
-    icon: (
-      <svg viewBox="0 0 24 24"><path d="M4 20L20 4M14 4h6v6" /></svg>
-    ),
-  },
-  {
-    name: '패키지 효율 계산',
-    desc: '패키지를 골드 가치로 환산해 비교',
-    href: '/package',
-    icon: (
-      <svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5Z" /><path d="M3 8v8l9 5 9-5V8M12 13v8" /></svg>
-    ),
-  },
-  {
-    name: '주간 레이드 체크리스트',
-    desc: '원정대 숙제를 캐릭터별로 관리',
-    href: '/weekly-gold',
-    icon: (
-      <svg viewBox="0 0 24 24"><path d="M9 11l2 2 4-4" /><rect x="3" y="3" width="18" height="18" rx="3" /></svg>
-    ),
-  },
-  {
-    name: '골드 수익 기록',
-    desc: '원정대가 번 골드를 주·월·년 그래프로',
-    href: '/mypage',
-    icon: (
-      <svg viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-7" /></svg>
-    ),
-  },
-  {
-    name: '숙제 완료 달력',
-    desc: '날짜별 완료 기록을 한눈에',
-    href: '/weekly-gold',
-    icon: (
-      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 3v3M16 3v3" /></svg>
-    ),
-  },
-  {
-    name: '장비·악세·각인 조회',
-    desc: '캐릭터 세팅 전체를 한 화면에서',
-    href: '/character',
-    icon: (
-      <svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" /></svg>
-    ),
-  },
-  {
-    name: '캐릭터 검색',
-    desc: '아이템 레벨·전투력·아크 그리드까지',
-    href: '/character',
-    icon: (
-      <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.8-4.8" /></svg>
-    ),
-  },
-  {
-    name: '아이템 시세 차트',
-    desc: '평균가·최저가·최고가까지 표시',
-    href: '/',
-    icon: (
-      <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8" /><path d="M15 7h6v6" /></svg>
-    ),
-  },
-];
 
 const SCREENSHOTS = [
   { file: 'shot-01-refining.png', alt: '재련 강화 시뮬레이션 화면' },
@@ -95,6 +21,27 @@ const SCREENSHOTS = [
 
 export default function AppDownloadPage() {
   const shotStripRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+
+  // 공유 — 모바일은 시스템 공유 시트, 그 외는 링크 복사
+  const shareApp = async () => {
+    const url = `${SITE_URL}/app`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: '로아로골 앱', url });
+        return;
+      } catch {
+        return; // 공유 시트 취소
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // 클립보드 접근 불가 환경은 무시
+    }
+  };
 
   // 마우스 휠(세로 스크롤)을 스크린샷 스트립의 가로 스크롤로 변환 — 데스크톱 마우스는 기본적으로 가로 스크롤 입력이 없음
   useEffect(() => {
@@ -125,13 +72,19 @@ export default function AppDownloadPage() {
             <strong>J들은</strong><br />이런 거 좋아함
           </h1>
           <p className={styles.heroDesc}>
-            숙제 체크, 골드 기록, 실시간 시세까지 자동으로 착착 정리됩니다.
-            정리는 앱이 할 테니, 플레이는 당신이 하세요.
+            숙제 체크 · 골드 기록 · 실시간 시세 · 패키지 효율 · 재련 시뮬까지, 한 앱에서.
           </p>
           <div className={styles.storeRow}>
             <AppleStoreBadge href={APP_STORE_URL} />
             <GooglePlayBadge href={PLAY_STORE_URL} />
           </div>
+          <button type="button" className={styles.shareBtn} onClick={shareApp}>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+              <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+            </svg>
+            {copied ? '링크 복사 완료' : '공유하기'}
+          </button>
         </div>
 
         <div className={styles.heroRight}>
@@ -157,30 +110,6 @@ export default function AppDownloadPage() {
         </div>
       </section>
 
-      {/* 기능 목록 */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>주요 기능</h2>
-        <div className={styles.featureGrid}>
-          {FEATURES.map((f) => (
-            <Link key={f.name} href={f.href} className={styles.featureCard}>
-              <span className={styles.featureIcon}>{f.icon}</span>
-              <div>
-                <div className={styles.featureName}>{f.name}</div>
-                <div className={styles.featureDesc}>{f.desc}</div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* 하단 CTA */}
-      <section className={styles.footerCta}>
-        <div className={styles.footerCtaTitle}>지금 받고, 숙제는 앱에게 맡기세요</div>
-        <div className={styles.storeRow}>
-          <AppleStoreBadge href={APP_STORE_URL} />
-          <GooglePlayBadge href={PLAY_STORE_URL} />
-        </div>
-      </section>
     </div>
   );
 }

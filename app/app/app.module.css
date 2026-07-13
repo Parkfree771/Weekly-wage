@@ -74,6 +74,28 @@
   margin-bottom: 0.6rem;
 }
 
+/* ── 공유 버튼 ── */
+.shareBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.shareBtn:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
 /* ── QR ── */
 .heroRight {
   flex: 0 0 auto;
@@ -153,86 +175,6 @@
   display: block;
 }
 
-/* ── 기능 목록 ── */
-.featureGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 0.8rem;
-}
-
-.featureCard {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 1rem;
-  border-radius: 14px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  text-decoration: none;
-  transition: border-color 0.15s ease, transform 0.15s ease;
-}
-
-.featureCard:hover {
-  border-color: var(--color-primary);
-  transform: translateY(-2px);
-}
-
-.featureIcon {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  border-radius: 9px;
-  background: rgba(59, 80, 181, 0.1);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.featureIcon svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.featureName {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-}
-
-.featureDesc {
-  font-size: 0.76rem;
-  color: var(--text-muted);
-  line-height: 1.45;
-}
-
-/* ── 하단 CTA ── */
-.footerCta {
-  text-align: center;
-  padding: clamp(1.5rem, 4vw, 2.5rem) 1rem;
-  border-radius: 18px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-}
-
-.footerCtaTitle {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 1rem;
-}
-
-.footerCta .storeRow {
-  justify-content: center;
-  margin-bottom: 0;
-}
-
 /* ── 모바일 ── */
 @media (max-width: 768px) {
   .hero {
@@ -260,28 +202,5 @@
   .qrBox {
     width: 108px;
     height: 108px;
-  }
-
-  .featureGrid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .featureCard {
-    padding: 0.75rem;
-    gap: 0.55rem;
-  }
-
-  .featureName {
-    font-size: 0.8rem;
-  }
-
-  .featureDesc {
-    font-size: 0.7rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .featureGrid {
-    grid-template-columns: 1fr;
   }
 }
