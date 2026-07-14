@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { preload } from 'react-dom';
 import { Container } from 'react-bootstrap';
 import Link from 'next/link';
 import FeedbackBox from '@/components/FeedbackBox';
@@ -56,6 +57,11 @@ const PriceChartProvider = dynamic(
 
 
 export default function Home() {
+  // 가격 히스토리 preload — 메인 시세 차트 전용이라 루트 레이아웃이 아닌 여기서만.
+  // fetch URL과 정확히 일치해야 브라우저가 preload를 재사용함(price-history-client.ts).
+  preload('/data/history_archive.json', { as: 'fetch', crossOrigin: 'anonymous' });
+  preload('/api/price-data/history', { as: 'fetch', crossOrigin: 'anonymous' });
+
   return (
     <div className={styles.mainContainer}>
       <Container fluid className="mt-2 mt-md-3" style={{ maxWidth: '1400px', margin: '0 auto' }}>

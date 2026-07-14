@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { fetchPriceData } from '@/lib/price-history-client';
+import { fetchLatestPrices } from '@/lib/price-history-client';
 import { MATERIAL_IDS, MATERIAL_BUNDLE_SIZES } from '@/data/raidRewards';
 
 type LatestPrices = Record<string, number>;
@@ -31,7 +31,7 @@ export function PriceProvider({ children }: PriceProviderProps) {
     setLoading(true);
     setError(null);
     try {
-      const { latest } = await fetchPriceData();
+      const latest = await fetchLatestPrices();
       setLatestPrices(latest);
 
       // 개당 가격 계산

@@ -682,8 +682,8 @@ export default function RefiningCalculator({
   useEffect(() => {
     const fetchMarketPrices = async () => {
       try {
-        const { fetchPriceData } = await import('@/lib/price-history-client');
-        const { latest } = await fetchPriceData();
+        const { fetchLatestPrices } = await import('@/lib/price-history-client');
+        const latest = await fetchLatestPrices();
 
         // latest_prices.json의 가격을 marketPrices 형식으로 변환 (묶음 가격 → 개당 가격)
         const prices: Record<string, number> = {};

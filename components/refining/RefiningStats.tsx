@@ -105,8 +105,8 @@ export default function RefiningStats() {
   useEffect(() => {
     const fetchMarketPrices = async () => {
       try {
-        const { fetchPriceData } = await import('@/lib/price-history-client');
-        const { latest } = await fetchPriceData();
+        const { fetchLatestPrices } = await import('@/lib/price-history-client');
+        const latest = await fetchLatestPrices();
         const prices: Record<string, number> = {};
         Object.entries(latest).forEach(([itemId, bundlePrice]) => {
           const bundleSize = MATERIAL_BUNDLE_SIZES[Number(itemId)] || 1;

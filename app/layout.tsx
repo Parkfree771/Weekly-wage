@@ -125,9 +125,9 @@ export default function RootLayout({
           }}
         />
         {/* 가격 데이터 preload — URL이 안정적이라(캐시키 제거됨) 정적 preload 태그로 처리.
-            클라이언트 fetch URL과 정확히 일치해야 브라우저 preload가 재사용됨(price-history-client.ts). */}
-        <link rel="preload" href="/data/history_archive.json" as="fetch" crossOrigin="anonymous" />
-        <link rel="preload" href="/api/price-data/history" as="fetch" crossOrigin="anonymous" />
+            클라이언트 fetch URL과 정확히 일치해야 브라우저 preload가 재사용됨(price-history-client.ts).
+            history·archive(합산 100KB+)는 메인 시세 차트에서만 쓰므로 app/page.tsx에서 preload —
+            전역 preload 금지(전 페이지 대역폭 낭비). 여기는 전 페이지가 쓰는 latest(2KB)만. */}
         <link rel="preload" href="/api/price-data/latest" as="fetch" crossOrigin="anonymous" />
         {/* Google AdSense — 서버 HTML(head)에 포함되어야 애드센스 크롤러가 사이트 확인 가능.
             async라 렌더링 비차단. (lazyOnload는 HTML에 안 들어가 검증 실패) */}

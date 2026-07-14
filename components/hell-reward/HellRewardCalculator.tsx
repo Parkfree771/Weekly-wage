@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import NextImage from 'next/image';
 import styles from '@/app/hell-reward/hell-reward.module.css';
-import { fetchPriceData } from '@/lib/price-history-client';
+import { fetchLatestPrices } from '@/lib/price-history-client';
 import {
   ENGRAVING_IDS,
   TOTAL_ENGRAVINGS,
@@ -78,8 +78,8 @@ export default function HellRewardCalculator() {
   const [excludeAbilityStone, setExcludeAbilityStone] = useState<boolean>(true);
 
   useEffect(() => {
-    fetchPriceData()
-      .then(({ latest }) => setPrices(latest))
+    fetchLatestPrices()
+      .then((latest) => setPrices(latest))
       .catch(() => {})
       .finally(() => setPriceLoading(false));
   }, []);
