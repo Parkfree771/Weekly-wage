@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Container, Row, Col, Collapse } from 'react-bootstrap';
+import InquiryButton from './InquiryButton';
 
 export default function Footer() {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,7 +31,7 @@ export default function Footer() {
               <span className="footer-divider">|</span>
               <Link href="/terms">이용약관</Link>
               <span className="footer-divider">|</span>
-              <a href="https://forms.gle/n9XKQJmheLhZcSf69" target="_blank" rel="noopener noreferrer">건의하기</a>
+              <InquiryButton className="footer-inquiry-link">문의하기</InquiryButton>
               <span className="footer-divider">|</span>
               <button
                 className="footer-toggle"

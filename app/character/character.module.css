@@ -2782,15 +2782,15 @@
   }
 }
 
-/* 보석 호버 툴팁 — body zoom(0.67, ≥1024px) 보정.
+/* 보석 호버 툴팁 — body zoom(0.85, ≥1024px) 보정.
    position:fixed 요소는 body zoom과 뷰포트가 어긋나 엉뚱한 위치에 나타남
-   → 역배율(1/0.67)로 위치 복원, 내용물은 다시 0.67로 축소해 페이지와 톤 맞춤 */
+   → 역배율(1/0.85)로 위치 복원, 내용물은 다시 0.85로 축소해 페이지와 톤 맞춤 */
 @media screen and (min-width: 1024px) {
   .gemTooltipZoomFix {
-    zoom: 1.4925;
+    zoom: 1.1765;
   }
 
   .gemTooltipZoomInner {
-    zoom: 0.67;
+    zoom: 0.85;
   }
 }

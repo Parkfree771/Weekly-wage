@@ -1,10 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { preload } from 'react-dom';
-import { Container } from 'react-bootstrap';
+import { Container, Collapse } from 'react-bootstrap';
 import Link from 'next/link';
-import FeedbackBox from '@/components/FeedbackBox';
 import GuideFaq from '@/components/common/GuideFaq';
 import styles from './page.module.css';
 
@@ -57,6 +57,8 @@ const PriceChartProvider = dynamic(
 
 
 export default function Home() {
+  const [showIntro, setShowIntro] = useState(false);
+
   // 가격 히스토리 preload — 메인 시세 차트 전용이라 루트 레이아웃이 아닌 여기서만.
   // fetch URL과 정확히 일치해야 브라우저가 preload를 재사용함(price-history-client.ts).
   preload('/data/history_archive.json', { as: 'fetch', crossOrigin: 'anonymous' });
@@ -71,22 +73,28 @@ export default function Home() {
           <PriceComparisonStats />
         </PriceChartProvider>
 
-        {/* 익명 의견 박스 — 넓은 데스크톱에선 앱 다운로드 사이드바 밑(AdLayout)에 붙으므로
-            여기 띠는 사이드바가 안 뜨는 모바일·좁은 화면에서만 노출 */}
-        <div className="d-xl-none">
-          <FeedbackBox />
-        </div>
-
-        {/* 애드센스 콘텐츠 보강용 소개 텍스트 — 항상 하단 배치 */}
+        {/* 애드센스 콘텐츠 보강용 소개 텍스트 — 항상 하단 배치, 기본 접힘 */}
         <div className="mt-4 mt-md-5">
-          <h1 className="h4 mb-2">로골로골 - 로스트아크 주간 골드 계산기 &amp; 시세 정보</h1>
-          <div className="d-flex flex-wrap gap-2">
-            <Link href="/weekly-gold" className="btn btn-sm btn-outline-primary">주간 골드 계산기</Link>
-            <Link href="/refining" className="btn btn-sm btn-outline-primary">재련 계산기</Link>
-            <Link href="/hell-reward" className="btn btn-sm btn-outline-primary">지옥의 나락 보상</Link>
-            <Link href="/life-master" className="btn btn-sm btn-outline-primary">생활의 달인</Link>
-            <Link href="/character" className="btn btn-sm btn-outline-primary">캐릭터 검색</Link>
-          </div>
+          <button
+            type="button"
+            className="btn btn-link p-0 h5 text-primary text-decoration-none"
+            onClick={() => setShowIntro((v) => !v)}
+            aria-expanded={showIntro}
+          >
+            사이트 소개 · 바로가기 보기 {showIntro ? '▴' : '▾'}
+          </button>
+          <Collapse in={showIntro}>
+            <div className="mt-3">
+              <h1 className="h4 mb-2">로골로골 - 로스트아크 주간 골드 계산기 &amp; 시세 정보</h1>
+              <div className="d-flex flex-wrap gap-2">
+                <Link href="/weekly-gold" className="btn btn-sm btn-outline-primary">주간 골드 계산기</Link>
+                <Link href="/refining" className="btn btn-sm btn-outline-primary">재련 계산기</Link>
+                <Link href="/hell-reward" className="btn btn-sm btn-outline-primary">지옥의 나락 보상</Link>
+                <Link href="/life-master" className="btn btn-sm btn-outline-primary">생활의 달인</Link>
+                <Link href="/character" className="btn btn-sm btn-outline-primary">캐릭터 검색</Link>
+              </div>
+            </div>
+          </Collapse>
         </div>
 
         <GuideFaq

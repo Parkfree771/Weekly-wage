@@ -519,6 +519,16 @@
   border-top: 1px dashed var(--border-color);
 }
 
+/* 합산 행 — 개별 컨텐츠 줄과 구분되도록 아래쪽에 실선(점선 아님) */
+.sideMaterialTotalRow {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sideMaterialTotalRow + .sideMaterialRow {
+  border-top: none;
+}
+
 .sideMaterialLabel {
   font-size: 12.5px;
   font-weight: 700;
@@ -741,6 +751,48 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* 접힘 상태(모바일, 상세 미노출)에서는 위에 아무것도 없으므로 구분선 제거 — 앱과 동일 */
+.sideGoldSectionCollapsed {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 4px;
+}
+
+/* 모바일 "주간 수급량" 박스 — 캐릭터 카드와 한 몸으로 보이도록 위 테두리 없이 이어 붙임
+   (캐릭터 카드는 .characterCardMergedBottom로 아래쪽 테두리/모서리를 제거해 맞춤) */
+.mobileMatsBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--card-bg);
+  border: 1.5px solid var(--color-primary);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  padding: 10px 12px;
+  margin: 0 0 14px;
+}
+
+/* 캐릭터 카드 바로 아래 모바일 수급량 박스가 이어 붙을 때 — 경계선이 겹치지 않게 아래쪽을 비움 */
+.characterCardMergedBottom {
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.mobileMatsToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 2px 0 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-primary);
+  cursor: pointer;
 }
 
 .sideGoldRow {
@@ -2137,6 +2189,7 @@
 
   .cardWrapper {
     flex-direction: column;
+    gap: 0;
   }
 
   .dailySideBox {

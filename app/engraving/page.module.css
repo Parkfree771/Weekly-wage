@@ -310,7 +310,7 @@
   display: none;
 }
 
-@media (min-width: 1130px) {
+@media (min-width: 1428px) {
   .engSidebar {
     display: block;
   }

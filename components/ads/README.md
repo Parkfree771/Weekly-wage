@@ -10,8 +10,9 @@
 
 ## 광고 위치(기기별)
 - 데스크톱: 상단 배너 + (재련 페이지·넓은 화면일 때만) 좌우 사이드 레일 (160×600 스카이스크래퍼)
-  - 사이드 레일은 `RAIL_PAGES`(현재 메인 `/`·재련 `/refining`)에서만. 좌우 양쪽, 스티키(스크롤 따라옴), 본문 옆 여백이라 본문을 안 가림.
-  - 노출 판정은 데스크톱 body zoom(0.67)을 반영해 실제 레이아웃 폭으로 계산(`innerWidth / 0.67`).
+  - 사이드 레일은 `RAIL_PAGES`(메인 `/`·재련 `/refining`·완갑 `/wangap`·패키지 `/package`)에서만. 좌우 양쪽, 스티키(스크롤 따라옴), 본문 옆 여백이라 본문을 안 가림.
+  - 노출 판정은 데스크톱 body zoom(0.85)을 반영해 실제 레이아웃 폭으로 계산(`innerWidth / 0.85`).
+  - 앱 다운로드 프로모(`APP_PROMO_PAGES`)는 오른쪽 레일과 같은 칸에 어깨를 맞춰 공존 가능 — `getPageConfig`에 `appPromoTop`이 지정된 페이지(`/wangap`, `/package`)만 해당, 나머지는 겹침 방지를 위해 광고가 뜨면 프로모를 숨김.
 - 모바일: 하단 앵커(자동광고)가 기본. 본문 인-콘텐츠(AdBanner)는 전역 토글 `MOBILE_INCONTENT`로 OFF.
   - 메인의 차트 바텀시트(ItemSelector Offcanvas)처럼 하단에서 올라오는 UI는 앵커와 겹치므로,
     AdLayout이 앵커 노출 중 `--mobile-anchor-h`(=`MOBILE_ANCHOR_H`px)를 body에 설정하고,

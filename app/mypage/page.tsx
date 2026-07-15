@@ -509,6 +509,15 @@ export default function MyPage() {
 
   const [isDesktop, setIsDesktop] = useState(true);
   const [row2ScrollIndex, setRow2ScrollIndex] = useState<Record<string, number>>({});
+  // 모바일 "주간 수급량" 상세 펼침 상태 — 앱과 동일하게 기본 접힘, 캐릭터별 토글
+  const [matsOpenChars, setMatsOpenChars] = useState<Set<string>>(new Set());
+  const toggleMatsOpen = (name: string) => {
+    setMatsOpenChars(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
+  };
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth > 900);
     check();
@@ -1701,7 +1710,7 @@ export default function MyPage() {
               <h3 className={styles.demoCtaTitle}>일간 / 주간 숙제 체크리스트</h3>
               <p className={styles.demoCtaDesc}>아래는 예시 화면입니다.</p>
               <p className={styles.demoCtaDesc}>
-                로그인하면 실제 보유 캐릭터를 원정대별로 등록해 레이드 관문 체크, 일일 숙제 체크, 골드 히스토리가 Google 계정에 연결된 나의 데이터로 안전하게 저장됩니다. 매주 반복되는 숙제를 빠짐없이 챙기고 체크한 만큼 자동 합산되는 골드로 이번 주 수급량을 바로 파악할 수 있어, 매주 손으로 다시 계산할 필요가 없습니다. 체크 현황은 로스트아크 서버 초기화 시각과 같은 매주 수요일 오전 6시에 새 주차 기준으로 자동 초기화되며, 초기화 직전 골드는 캐릭터별 골드 히스토리에 남아 지난 주 수급량도 나중에 다시 확인할 수 있습니다.
+                로그인하면 원정대 캐릭터의 레이드·숙제 체크와 골드 히스토리가 내 Google 계정에 안전하게 저장됩니다. 체크만 하면 이번 주 수급 골드가 자동 합산되고, 매주 수요일 오전 6시 서버 초기화에 맞춰 새 주차로 넘어가며 지난 골드는 히스토리에 그대로 남습니다.
               </p>
               <button onClick={signInWithGoogle} className={styles.demoCtaBtn}>
                 <svg width="18" height="18" viewBox="0 0 48 48">
@@ -1978,7 +1987,7 @@ export default function MyPage() {
                 className={styles.cardWrapper}
                 ref={el => { charCardRefs.current[char.name] = el; }}
               >
-              <div className={styles.characterCard}>
+              <div className={`${styles.characterCard} ${!isDesktop && char.itemLevel >= 1680 ? styles.characterCardMergedBottom : ''}`}>
                 {/* 카드 헤더: 닉네임 + 갱신버튼 + 레벨 */}
                 <div className={styles.cardHeader}>
                   <span className={styles.characterName}>{char.name}{char.name === representativeChar && <span className={styles.repBadge}>대표</span>}</span>
@@ -2357,9 +2366,22 @@ export default function MyPage() {
                 )}
               </div>
 
-              {/* 오른쪽 수급량 + 골드 상자 (데스크톱) */}
-              {isDesktop && char.itemLevel >= 1680 && (
-                <div className={styles.dailySideBox}>
+              {/* 수급량 + 골드 상자 — 데스크톱은 오른쪽 사이드 컬럼, 모바일은 카드 하단에
+                  접이식(기본 접힘)으로 표시(앱과 동일 UX). */}
+              {char.itemLevel >= 1680 && (
+                <div className={isDesktop ? styles.dailySideBox : styles.mobileMatsBox}>
+                  {!isDesktop && (
+                    <button
+                      type="button"
+                      className={styles.mobileMatsToggle}
+                      onClick={() => toggleMatsOpen(char.name)}
+                    >
+                      <span>주간 수급량</span>
+                      <span>{matsOpenChars.has(char.name) ? '접기 ▲' : '상세 ▼'}</span>
+                    </button>
+                  )}
+                  {(isDesktop || matsOpenChars.has(char.name)) && (
+                  <>
                   {/* 수급량 */}
                   {(() => {
                     // 카던/가토 수급량
@@ -2441,10 +2463,56 @@ export default function MyPage() {
                     const hasSandReward = charState.sandOfTime;
                     const hasAny = hasDailyMats || raidMats.length > 0 || hasCommonChecked || hasSandReward;
 
+                    // 재료 합산 (앱과 동일 — 골드 제외, 아이콘별 전체 합계를 맨 위 한 줄로 요약)
+                    const matTotalsMap = new Map<string, number>();
+                    const addMatTotal = (image: string, amount: number) => {
+                      if (!image || !amount) return;
+                      matTotalsMap.set(image, (matTotalsMap.get(image) || 0) + amount);
+                    };
+                    if (hasChaos) chaosReward.materials.forEach(mat => addMatTotal(mat.image, mat.daily * chaosChecks));
+                    if (hasGuardian) guardianReward.materials.forEach(mat => addMatTotal(mat.image, mat.daily * guardianChecks));
+                    if (charState.sandOfTime) {
+                      const stLv = charState.sandOfTimeLevel || 0;
+                      const stReward = getSandOfTimeRewards(char.itemLevel)[stLv];
+                      if (stReward && (stReward.gems !== 0 || stReward.stones !== 0)) {
+                        addMatTotal('/1fpqrjqghk.webp', char.itemLevel >= 1750 ? stReward.gems * 9 : stReward.gems * 3);
+                        addMatTotal('/top-destiny-breakthrough-stone5.webp', stReward.stones);
+                        addMatTotal('/breath-lava5.webp', stReward.lavaBreath);
+                        addMatTotal('/breath-glacier5.webp', stReward.glacierBreath);
+                      }
+                    }
+                    raidMats.forEach(({ materials }) => materials.forEach(mat => addMatTotal(mat.image, mat.amount)));
+                    if (charIdx === 0) {
+                      COMMON_CONTENTS.forEach(content => {
+                        const checkedCount = Object.entries(commonContent.checks)
+                          .filter(([k, v]) => k.endsWith(`-${content.name}`) && v === true).length;
+                        if (checkedCount === 0) return;
+                        const rewards = COMMON_CONTENT_MATERIALS_BY_LEVEL[content.name]?.[chaosGateLevelTier];
+                        rewards?.filter(r => r.image !== '/gold.webp').forEach(r => addMatTotal(r.image, r.amount * checkedCount));
+                      });
+                    }
+                    const matTotalsList = Array.from(matTotalsMap.entries()).map(([image, amount]) => ({ image, amount }));
+
                     return (
                       <div className={styles.sideMaterialSection}>
                         <div className={styles.sideMaterialTitle}>주간 수급량</div>
                         {!hasAny && <div className={styles.sideMaterialEmpty}>레이드를 체크하면 수급량이 표시됩니다</div>}
+                        {matTotalsList.length > 0 && (
+                          <div className={`${styles.sideMaterialRow} ${styles.sideMaterialTotalRow}`}>
+                            <span className={styles.sideMaterialLabel}>합산</span>
+                            <div className={styles.sideMaterialItems}>
+                              {matTotalsList.map((item, mi) => (
+                                <div key={mi} className={styles.sideMaterialItem}>
+                                  <StaticIcon src={item.image} alt="" width={20} height={20} className={styles.matIcon2} />
+                                  <span className={styles.sideMatOp}>×</span>
+                                  <span className={styles.sideMatAmount}>
+                                    {Number.isInteger(item.amount) ? item.amount.toLocaleString() : item.amount.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         {hasChaos && (
                           <div className={styles.sideMaterialRow}>
                             <span className={styles.sideMaterialLabel}>{char.itemLevel >= 1730 ? '균열' : '전선'}</span>
@@ -2577,9 +2645,11 @@ export default function MyPage() {
                       </div>
                     );
                   })()}
+                  </>
+                  )}
 
-                  {/* 추가골드 + 총획득 */}
-                  <div className={styles.sideGoldSection}>
+                  {/* 추가골드 + 총획득 — 접힘 상태에서도 항상 표시(앱과 동일) */}
+                  <div className={isDesktop || matsOpenChars.has(char.name) ? styles.sideGoldSection : `${styles.sideGoldSection} ${styles.sideGoldSectionCollapsed}`}>
                     <div className={styles.sideGoldRow}>
                       <span className={styles.sideGoldLabel}>추가획득</span>
                       <span className={styles.sideGoldValue}>

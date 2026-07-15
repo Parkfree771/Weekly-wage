@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button, Spinner, Dropdown, Modal } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdmin } from '@/lib/admin';
+import InquiryButton from '../InquiryButton';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import styles from './LoginButton.module.css';
@@ -162,7 +163,7 @@ export default function LoginButton() {
         <Dropdown.Divider />
         <Dropdown.Item href="/mypage" className={styles.menuItem}>마이페이지</Dropdown.Item>
         <Dropdown.Item onClick={() => router.push('/mypage')} className={styles.menuItem}>닉네임 변경</Dropdown.Item>
-        <Dropdown.Item href="https://forms.gle/n9XKQJmheLhZcSf69" target="_blank" rel="noopener noreferrer" className={styles.menuItem}>문의하기</Dropdown.Item>
+        <InquiryButton className={`dropdown-item ${styles.menuItem}`}>문의하기</InquiryButton>
         {isAdmin(user.email) && (
           <Dropdown.Item href="/admin/feedback" className={styles.menuItem}>관리자 의견함</Dropdown.Item>
         )}

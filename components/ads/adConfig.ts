@@ -4,7 +4,7 @@
 // true  = 실제 광고 대신 "여기에 광고 들어감" placeholder(자리/크기)만 표시.
 // false = 실제 광고(<ins>) 동작. (단, 아래 슬롯 ID가 채워진 자리에만 렌더됨)
 // 실제 전환 절차는 components/ads/README 주석 참고.
-export const AD_PREVIEW = false;
+export const AD_PREVIEW = true;
 
 // 애드센스 게시자 ID (app/layout.tsx 스크립트와 동일해야 함)
 export const AD_CLIENT = 'ca-pub-6944494802169618';

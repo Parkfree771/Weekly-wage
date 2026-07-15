@@ -8,6 +8,7 @@ import { useTheme } from './ThemeProvider';
 import { Container, Navbar as BSNavbar, Nav, Offcanvas } from 'react-bootstrap';
 import LoginButton from './auth/LoginButton';
 import ZoomControl from './ZoomControl';
+import InquiryButton from './InquiryButton';
 
 type NavItem = {
   href: string;
@@ -70,6 +71,7 @@ export default function Navbar() {
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const dropdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleClose = () => {
@@ -125,6 +127,9 @@ export default function Navbar() {
       const target = e.target as HTMLElement;
       if (!target.closest('.nav-dropdown-wrapper')) {
         setOpenDropdown(null);
+      }
+      if (!target.closest('.settings-dropdown-wrapper')) {
+        setShowSettings(false);
       }
     };
     document.addEventListener('click', handleClick);
@@ -208,6 +213,13 @@ export default function Navbar() {
 
         {/* 모바일 버튼들 */}
         <div className="d-flex align-items-center gap-2 d-lg-none">
+          <InquiryButton className="navbar-theme-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+              <path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10" />
+              <path d="M3 7l9 6l9 -6" />
+            </svg>
+          </InquiryButton>
           <Link
             href="/"
             className="navbar-theme-toggle"
@@ -258,33 +270,68 @@ export default function Navbar() {
           >
             마이페이지
           </Link>
-          <ZoomControl />
-          <Link
-            href="/"
-            className="navbar-theme-toggle"
-            style={{ textDecoration: 'none' }}
-            aria-label="홈으로 이동"
+          <div
+            className="nav-dropdown-wrapper settings-dropdown-wrapper"
+            style={{ position: 'relative' }}
           >
-            <Image
-              src="/home.webp"
-              alt="홈"
-              width={22}
-              height={22}
-              style={{ borderRadius: '4px' }}
-            />
-          </Link>
-          <button
-            className="navbar-theme-toggle"
-            onClick={toggleTheme}
-            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-          >
-            <Image
-              src={theme === 'light' ? '/icon-moon.svg' : '/icon-sun.svg'}
-              alt={theme === 'light' ? 'Dark mode' : 'Light mode'}
-              width={22}
-              height={22}
-            />
-          </button>
+            <button
+              type="button"
+              className="navbar-theme-toggle"
+              onClick={() => setShowSettings(v => !v)}
+              aria-label="설정"
+              aria-expanded={showSettings}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" />
+                <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+              </svg>
+            </button>
+
+            <div
+              className="nav-dropdown-menu settings-dropdown-menu"
+              style={{ display: showSettings ? 'flex' : 'none' }}
+            >
+              <InquiryButton className="nav-dropdown-item settings-menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10" />
+                  <path d="M3 7l9 6l9 -6" />
+                </svg>
+                <span>문의하기</span>
+              </InquiryButton>
+
+              <Link
+                href="/"
+                className="nav-dropdown-item settings-menu-item"
+                onClick={() => setShowSettings(false)}
+              >
+                <Image src="/home.webp" alt="" width={18} height={18} style={{ borderRadius: '4px' }} />
+                <span>홈</span>
+              </Link>
+
+              <button
+                type="button"
+                className="nav-dropdown-item settings-menu-item"
+                onClick={toggleTheme}
+              >
+                <Image
+                  src={theme === 'light' ? '/icon-moon.svg' : '/icon-sun.svg'}
+                  alt=""
+                  width={18}
+                  height={18}
+                />
+                <span>{theme === 'light' ? '다크모드' : '라이트모드'}</span>
+              </button>
+
+              <div className="settings-menu-divider" />
+
+              <div className="settings-menu-zoom-row">
+                <ZoomControl withLabel />
+              </div>
+            </div>
+          </div>
+
           <LoginButton />
         </div>
 

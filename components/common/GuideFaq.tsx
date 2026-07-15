@@ -1,6 +1,7 @@
 'use client';
 
-import { Accordion } from 'react-bootstrap';
+import { useState } from 'react';
+import { Accordion, Collapse } from 'react-bootstrap';
 
 export interface GuideSection {
   /** 소제목 (h3) */
@@ -36,45 +37,68 @@ export default function GuideFaq({
   guideTitle = '이용 가이드',
   faqTitle = '자주 묻는 질문',
 }: GuideFaqProps) {
+  const [open, setOpen] = useState(false);
+
+  const hasGuide = !!(intro?.length || sections?.length);
+  const hasFaq = !!faqs?.length;
+
+  if (!hasGuide && !hasFaq) return null;
+
   return (
     <div className="mt-5">
-      {(intro?.length || sections?.length) ? (
-        <section className="mb-4">
-          <h2 className="h5 text-primary mb-3">{guideTitle}</h2>
-          {intro?.map((p, i) => (
-            <p key={i} className="mb-3">{p}</p>
-          ))}
-          {sections?.map((sec, i) => (
-            <div key={i} className="bg-light p-3 rounded mb-3">
-              <h3 className="h6 fw-semibold text-dark">{sec.heading}</h3>
-              {sec.paragraphs.map((p, j) => (
-                <p key={j} className="small mb-2">{p}</p>
+      <button
+        type="button"
+        className="btn btn-link p-0 h5 text-primary text-decoration-none"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        {guideTitle} · {faqTitle} 보기 {open ? '▴' : '▾'}
+      </button>
+      <Collapse in={open}>
+        <div className="mt-3">
+          {hasGuide && (
+            <section className="mb-4">
+              <h2 className="h5 text-primary mb-3">{guideTitle}</h2>
+              {intro?.map((p, i) => (
+                <p key={i} className="mb-3">{p}</p>
               ))}
-              {sec.bullets && (
-                <ul className="small mb-0">
-                  {sec.bullets.map((b, j) => (
-                    <li key={j}>{b}</li>
+              {sections?.map((sec, i) => (
+                <div
+                  key={i}
+                  className="p-3 rounded mb-3"
+                  style={{ backgroundColor: 'var(--card-body-bg-blue)' }}
+                >
+                  <h3 className="h6 fw-semibold" style={{ color: 'var(--text-primary)' }}>{sec.heading}</h3>
+                  {sec.paragraphs.map((p, j) => (
+                    <p key={j} className="small mb-2">{p}</p>
                   ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </section>
-      ) : null}
+                  {sec.bullets && (
+                    <ul className="small mb-0">
+                      {sec.bullets.map((b, j) => (
+                        <li key={j}>{b}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </section>
+          )}
 
-      {faqs?.length ? (
-        <section>
-          <h2 className="h5 text-primary mb-3">{faqTitle}</h2>
-          <Accordion alwaysOpen={false}>
-            {faqs.map((item, i) => (
-              <Accordion.Item eventKey={String(i)} key={i}>
-                <Accordion.Header>{item.q}</Accordion.Header>
-                <Accordion.Body className="small">{item.a}</Accordion.Body>
-              </Accordion.Item>
-            ))}
-          </Accordion>
-        </section>
-      ) : null}
+          {hasFaq && (
+            <section>
+              <h2 className="h5 text-primary mb-3">{faqTitle}</h2>
+              <Accordion alwaysOpen={false}>
+                {faqs!.map((item, i) => (
+                  <Accordion.Item eventKey={String(i)} key={i}>
+                    <Accordion.Header>{item.q}</Accordion.Header>
+                    <Accordion.Body className="small">{item.a}</Accordion.Body>
+                  </Accordion.Item>
+                ))}
+              </Accordion>
+            </section>
+          )}
+        </div>
+      </Collapse>
     </div>
   );
 }

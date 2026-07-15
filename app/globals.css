@@ -249,6 +249,21 @@ input, select, textarea,
   will-change: height;
 }
 
+/* Accordion 다크모드 대응 — Bootstrap 기본 active/expanded 색상은 테마 변수와 무관하게 고정된 밝은 파란색이라 별도 오버라이드 필요 */
+[data-theme="dark"] .accordion-item {
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .accordion-button:not(.collapsed) {
+  background-color: var(--card-body-bg-blue);
+  color: var(--color-primary);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .accordion-button::after {
+  filter: invert(1) brightness(1.6);
+}
+
 /* CLS Prevention - 이미지 컨테이너 */
 .img-container {
   contain: layout style;
@@ -379,19 +394,20 @@ input, select, textarea,
    값 조절: 크게=0.85, 작게=0.75. */
 @media screen and (min-width: 1024px) {
   body {
-    zoom: 0.67;
+    zoom: 0.85;
   }
 
   /* body zoom 보정: 모달/백드롭은 fixed 요소라 body zoom과 뷰포트가 어긋나
-     배경이 화면 일부만 덮고 오른쪽·아래에 검은 띠가 생긴다 → 역배율로 원복 */
+     배경이 화면 일부만 덮고 오른쪽·아래에 검은 띠가 생긴다 → 역배율로 원복
+     2026-07-15: body zoom 0.67→0.85로 조정하면서 역배율도 1/0.85로 재계산 */
   .modal-backdrop,
   .modal {
-    zoom: 1.4925; /* = 1 / 0.67 */
+    zoom: 1.1765; /* = 1 / 0.85 */
   }
 
-  /* 역배율 보정 후 모달 내용물이 페이지(0.67)보다 너무 커 보이지 않게 */
+  /* 역배율 보정 후 모달 내용물이 페이지(0.85)보다 너무 커 보이지 않게 (0.67 기준 0.75를 0.85 기준으로 비례 조정) */
   .modal-dialog {
-    zoom: 0.75;
+    zoom: 0.95;
   }
 }
 
@@ -526,13 +542,19 @@ textarea:-ms-input-placeholder {
   flex-wrap: wrap;
 }
 
-.footer-links a {
+.footer-links a,
+.footer-links button.footer-inquiry-link {
   color: var(--text-muted);
   text-decoration: none;
   font-size: 0.8rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
-.footer-links a:hover {
+.footer-links a:hover,
+.footer-links button.footer-inquiry-link:hover {
   color: var(--brand-primary);
 }
 
@@ -866,6 +888,42 @@ html, body {
   box-shadow: var(--shadow-lg);
 }
 
+/* 톱니(설정) 드롭다운 — 우측 끝에 붙어 있어 중앙 정렬 대신 오른쪽 정렬 */
+.settings-dropdown-menu {
+  left: auto;
+  right: 0;
+  transform: none;
+  min-width: 240px;
+  padding: 8px;
+  gap: 2px;
+}
+
+.nav-dropdown-item.settings-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+}
+
+.settings-menu-item img {
+  flex-shrink: 0;
+}
+
+.settings-menu-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 6px 4px;
+}
+
+.settings-menu-zoom-row {
+  padding: 8px 14px 4px;
+  display: flex;
+  justify-content: center;
+}
+
 .nav-dropdown-item {
   display: block;
   padding: 8px 14px;
@@ -1006,22 +1064,24 @@ html, body {
 .zoom-control {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
 }
 
 .zoom-control-label {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
-  margin-right: 6px;
+  white-space: nowrap;
+  margin-right: 4px;
 }
 
 .zoom-control-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background-color: transparent;
@@ -1290,19 +1350,19 @@ html, body {
    left/top은 AdLayout에서 콘텐츠 오른쪽 끝 바로 옆(상단)으로 인라인 계산해 넣음. */
 .app-promo-fixed-rail {
   position: fixed;
-  width: 136px;
+  width: 160px;
   z-index: 40;
 }
 
-/* body zoom(0.67, ≥1024px) 보정 — fixed 요소는 body zoom과 뷰포트가 어긋나
-   실제보다 왼쪽/위로 쏠려 보임 → 역배율(1/0.67)로 위치 복원, 내용물은 다시 0.67로 축소해 페이지와 톤 맞춤 */
+/* body zoom(0.85, ≥1024px) 보정 — fixed 요소는 body zoom과 뷰포트가 어긋나
+   실제보다 왼쪽/위로 쏠려 보임 → 역배율(1/0.85)로 위치 복원, 내용물은 다시 0.85로 축소해 페이지와 톤 맞춤 */
 @media screen and (min-width: 1024px) {
   .app-promo-fixed-rail {
-    zoom: 1.4925;
+    zoom: 1.1765;
   }
 
   .app-promo-fixed-rail > * {
-    zoom: 0.67;
+    zoom: 0.85;
   }
 }
 
