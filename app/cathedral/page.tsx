@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import GuideFaq from '@/components/common/GuideFaq';
+import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
 import styles from './cathedral.module.css';
 
@@ -1314,6 +1315,11 @@ export default function CathedralPage() {
 
             {/* ─── 은총의 파편 주간 달력 ─── */}
             <GraceCalendar />
+
+            {/* 모바일 인-콘텐츠 광고 — 본문 아래·가이드 위 (앱 배치와 유사) */}
+            <div className="d-block d-lg-none my-3">
+              <AdBanner slot="8616653628" />
+            </div>
 
             <GuideFaq
               guideTitle="지평의 성당 이용 가이드"

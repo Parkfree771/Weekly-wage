@@ -16,6 +16,7 @@ import {
 } from '@/lib/braceletData';
 import styles from './bracelet.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
+import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
 
 export default function BraceletPage() {
@@ -439,6 +440,11 @@ export default function BraceletPage() {
         {phase === 'result' && renderResult()}
         {phase === 'comparing' && renderComparing()}
         {phase === 'final' && renderFinal()}
+
+        {/* 모바일 인-콘텐츠 광고 — 본문 아래·가이드 위 (앱 배치와 유사) */}
+        <div className="d-block d-lg-none my-3">
+          <AdBanner slot="8616653628" />
+        </div>
 
         <GuideFaq
           guideTitle="팔찌 부여효과 이용 가이드"

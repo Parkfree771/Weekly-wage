@@ -1,6 +1,7 @@
 'use client';
 
 import WangapSimulator from '@/components/wangap/WangapSimulator';
+import AdBanner from '@/components/ads/AdBanner';
 
 export default function WangapPage() {
   return (
@@ -28,6 +29,11 @@ export default function WangapPage() {
         </div>
 
         <WangapSimulator />
+
+        {/* 모바일 인-콘텐츠 광고 — 앱 완갑(시뮬 본문 아래)과 동일 위치 */}
+        <div className="d-block d-lg-none my-3">
+          <AdBanner slot="8616653628" />
+        </div>
       </div>
     </div>
   );

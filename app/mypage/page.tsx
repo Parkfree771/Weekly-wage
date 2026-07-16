@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react';
 import { Container, Card, Button, Form, Spinner, Alert, Modal, Row, Col } from 'react-bootstrap';
 import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
@@ -23,6 +23,7 @@ import { registerCharacter, refreshCharacter, updateCharacterImages } from '@/li
 import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service';
 import NicknameModal from '@/components/auth/NicknameModal';
 import GuideFaq from '@/components/common/GuideFaq';
+import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
 import { raids, upcomingRaids } from '@/data/raids';
 import { raidClearRewards } from '@/data/raidClearRewards';
@@ -414,6 +415,9 @@ export default function MyPage() {
   const [demoLoginPrompt, setDemoLoginPrompt] = useState(false);
   const [showAllCharacters, setShowAllCharacters] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  // 프로필 로드 이펙트가 미저장 변경을 덮어쓰지 않도록 하는 최신값 참조 (deps 추가 없이 읽음)
+  const hasChangesRef = useRef(false);
+  hasChangesRef.current = hasChanges;
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [loadingImages, setLoadingImages] = useState(false);
@@ -650,6 +654,11 @@ export default function MyPage() {
   // 프로필 데이터 로드 + 주간 초기화 체크
   useEffect(() => {
     if (!userProfile || !user) return;
+    // 미저장 변경이 있으면 프로필 재로드로 로컬 상태를 덮어쓰지 않는다 —
+    // 이미지 갱신 등 백그라운드 refreshUserProfile()이 편집 중인 체크를 되돌리고,
+    // 그 상태로 저장하면 되돌아간 데이터가 DB에 기록되는 유실을 막는다.
+    // (주간 초기화 검사도 함께 미뤄지며, 저장 → 프로필 새로고침 때 다시 수행된다)
+    if (hasChangesRef.current) return;
 
     const { chars, checklist, goldHistory, saved, allChars, lastReset } = getExpeditionData(userProfile, activeExpedition);
 
@@ -778,6 +787,17 @@ export default function MyPage() {
       })();
     }
   }, [userProfile, user, activeExpedition, getExpeditionData, getFirestorePrefix]);
+
+  // 마이페이지 진입 시 프로필 1회 재조회 — SPA 이동으로 AuthContext 프로필이 낡아 있거나
+  // 앱(같은 계정)에서 저장한 변경이 있을 수 있다. 미저장 변경 보호는 위 로드 이펙트 가드가 담당.
+  const profileRefetchedRef = useRef(false);
+  useEffect(() => {
+    if (!user || profileRefetchedRef.current) return;
+    profileRefetchedRef.current = true;
+    // refreshUserProfile은 AuthProvider 렌더마다 재생성되므로 deps에 넣으면 무한 재조회가 된다
+    refreshUserProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // 탭이 다시 활성화될 때 주간 초기화 재검사 — 페이지를 켜둔 채 수요일 06시를 넘긴 경우
   // (앱의 AppState 포그라운드 리스너와 동일한 역할)
@@ -1605,6 +1625,9 @@ export default function MyPage() {
       setHasChanges(false);
       setSaveMessage({ type: 'success', text: '저장되었습니다.' });
       setTimeout(() => setSaveMessage(null), 3000);
+      // 컨텍스트 프로필 최신화 — 안 하면 SPA 이동 후 재방문·원정대 탭 전환 시
+      // 낡은 userProfile로 화면이 되돌아가고, 그 상태에서 재저장하면 방금 저장분이 유실된다
+      await refreshUserProfile();
     } catch (error) {
       console.error('저장 오류:', error);
       setSaveMessage({ type: 'error', text: '저장에 실패했습니다.' });
@@ -1982,8 +2005,8 @@ export default function MyPage() {
             };
 
             return (
+              <Fragment key={char.name}>
               <div
-                key={char.name}
                 className={styles.cardWrapper}
                 ref={el => { charCardRefs.current[char.name] = el; }}
               >
@@ -2488,7 +2511,7 @@ export default function MyPage() {
                           .filter(([k, v]) => k.endsWith(`-${content.name}`) && v === true).length;
                         if (checkedCount === 0) return;
                         const rewards = COMMON_CONTENT_MATERIALS_BY_LEVEL[content.name]?.[chaosGateLevelTier];
-                        rewards?.filter(r => r.image !== '/gold.webp').forEach(r => addMatTotal(r.image, r.amount * checkedCount));
+                        rewards?.filter(r => r.image && r.image !== '/gold.webp').forEach(r => addMatTotal(r.image!, r.amount * checkedCount));
                       });
                     }
                     const matTotalsList = Array.from(matTotalsMap.entries()).map(([image, amount]) => ({ image, amount }));
@@ -2691,6 +2714,13 @@ export default function MyPage() {
                 </div>
               )}
               </div>
+              {/* 모바일 인-콘텐츠 광고 — 앱 주간숙제(캐릭터 2개마다 1개, 1개뿐이면 그 아래)와 동일 */}
+              {(charIdx % 2 === 1 || displayCharacters.length === 1) && (
+                <div className="d-block d-lg-none my-2">
+                  <AdBanner slot="8616653628" />
+                </div>
+              )}
+              </Fragment>
             );
           })}
         </div>

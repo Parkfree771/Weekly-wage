@@ -826,6 +826,7 @@ html, body {
 }
 
 /* Nav New Badge - Orange Gradient + Shine */
+/* 매트한 배지 — 광 스윕·글로우 없이 색만 유지 */
 .nav-badge-new {
   position: relative;
   display: inline-block;
@@ -840,24 +841,6 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 0.8px;
   vertical-align: middle;
-  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4);
-  overflow: hidden;
-}
-
-.nav-badge-new::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -60%;
-  width: 40%;
-  height: 100%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-  animation: navBadgeShine 2.6s ease-in-out infinite;
-}
-
-@keyframes navBadgeShine {
-  0% { left: -60%; }
-  55%, 100% { left: 140%; }
 }
 
 /* Nav Dropdown */
@@ -1046,6 +1029,8 @@ html, body {
   border-radius: 8px;
   background-color: transparent;
   cursor: pointer;
+  /* 톱니·문의 아이콘이 currentColor stroke — 버튼 기본색(검정)이면 다크모드에서 안 보인다 */
+  color: var(--text-primary);
 }
 
 .navbar-theme-toggle:hover {
@@ -1057,6 +1042,11 @@ html, body {
 }
 
 [data-theme="dark"] .navbar-theme-toggle img {
+  filter: invert(1);
+}
+
+/* 톱니 드롭다운 안 아이콘(홈·해/달 img)도 모바일 버튼과 동일하게 다크모드에서 반전 */
+[data-theme="dark"] .settings-menu-item img {
   filter: invert(1);
 }
 
@@ -1181,6 +1171,20 @@ html, body {
 
 .navbar-offcanvas-body {
   padding-top: 1rem;
+  /* 영역(메뉴/계정/앱/광고)을 세로로 쌓고, 광고는 남는 공간이 있으면 맨 하단으로 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 모바일 메뉴 영역 구분 — 메뉴 / 계정 / 앱 프로모 / 광고 섹션을 구분선으로 명확히 분리 */
+.navbar-offcanvas-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.navbar-offcanvas-section-ad {
+  margin-top: auto; /* 콘텐츠가 짧으면 광고를 드로어 맨 하단에 붙임 (앱 드로어와 동일) */
 }
 
 .navbar-offcanvas-link {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { TIER_ENTRIES } from '@/lib/tier-entries.generated';
 import { specFilterFor } from '@/lib/class-spec-icon';
 import { specSearchText, classSearchText, fullClassNameOf } from '@/lib/spec-search';
@@ -11,6 +11,7 @@ import { cachedGetJson, invalidateCachedGet } from '@/lib/client-fetch-cache';
 import FilterStats from './FilterStats';
 import ClassSpecCompare from './ClassSpecCompare';
 import AppSidebarPromo from '@/components/AppSidebarPromo';
+import AdBanner from '@/components/ads/AdBanner';
 
 // 스펙 필터 옵션: 58개 매핑을 직업군(group)별로 묶음 (TIER_ENTRIES는 group→name 정렬됨)
 // '기타'(신규 직업)는 맨 앞에 노출
@@ -571,8 +572,8 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
             const orderCores = e.cores.filter(c => c.name.includes('질서'));
             const chaosCores = e.cores.filter(c => c.name.includes('혼돈'));
             return (
+              <Fragment key={e.characterName}>
               <button
-                key={e.characterName}
                 type="button"
                 className={styles.card}
                 onClick={() => onSelect(e.characterName)}
@@ -634,6 +635,13 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
                   )}
                 </div>
               </button>
+              {/* 모바일 인-콘텐츠 광고 — 앱 랭킹(7행마다 1개, 마지막 뒤 제외)과 동일 */}
+              {(idx + 1) % 7 === 0 && idx + 1 < entries.length && (
+                <div className="d-block d-lg-none my-2">
+                  <AdBanner slot="8616653628" />
+                </div>
+              )}
+              </Fragment>
             );
           })}
         </div>

@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { Container, Row, Col } from 'react-bootstrap';
 import GuideFaq from '@/components/common/GuideFaq';
+import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
 
 const HellRewardCalculator = dynamic(
@@ -31,6 +32,11 @@ export default function HellRewardPage() {
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 층수별 보상을 실시간 시세 기반으로 골드 가치를 계산합니다
               </p>
+            </div>
+
+            {/* 모바일 인-콘텐츠 광고 — 앱 지옥보상(콘텐츠 최상단)과 동일 위치 */}
+            <div className="d-block d-lg-none mb-3">
+              <AdBanner slot="8616653628" />
             </div>
 
             <HellRewardCalculator />

@@ -6,6 +6,7 @@ import { Container, Row, Col, Card } from 'react-bootstrap';
 import styles from './extreme.module.css';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import GuideFaq from '@/components/common/GuideFaq';
+import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
 
 // ─── 일정 데이터 ───
@@ -684,6 +685,11 @@ export default function ExtremePage() {
                   </Card.Body>
                 </Card>
               </div>
+            </div>
+
+            {/* 모바일 인-콘텐츠 광고 — 본문 아래·가이드 위 (앱 배치와 유사) */}
+            <div className="d-block d-lg-none my-3">
+              <AdBanner slot="8616653628" />
             </div>
 
             {/* ═══════════════════════════════════════════

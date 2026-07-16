@@ -10,13 +10,12 @@ export const AD_PREVIEW = true;
 export const AD_CLIENT = 'ca-pub-6944494802169618';
 
 // 모바일 본문 인-콘텐츠 광고(AdBanner) 사용 여부.
-// false면 모바일은 하단 앵커만 노출. 되살리려면 true.
-export const MOBILE_INCONTENT = false;
+// 모바일은 하단 앵커를 없애고 앱(AdMob BannerAdBar)과 같은 위치의 인-콘텐츠만 사용.
+export const MOBILE_INCONTENT = true;
 
 // 광고 단위 슬롯 ID (애드센스 > 광고 > 광고 단위에서 발급).
 // 빈 문자열이면 실제 모드에서 그 자리는 렌더 안 함 → 깨진/빈 <ins> 방지.
 export const AD_SLOTS = {
   mobileInContent: '8616653628', // 기존 슬롯 (모바일 인-콘텐츠)
-  topBanner: '',                 // TODO: 디스플레이 가로 광고 단위 발급 후 입력
   sidebar: '',                   // TODO: 디스플레이 세로 광고 단위 발급 후 입력
 };

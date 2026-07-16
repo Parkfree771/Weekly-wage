@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import styles from './belgardin.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
+import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
 
 // 재료 이미지 매핑
@@ -561,6 +562,11 @@ export default function BelgardinPage() {
 
                 </Card.Body>
               </Card>
+            </div>
+
+            {/* 모바일 인-콘텐츠 광고 — 본문 아래·가이드 위 (앱 배치와 유사) */}
+            <div className="d-block d-lg-none my-3">
+              <AdBanner slot="8616653628" />
             </div>
 
             <GuideFaq

@@ -6,7 +6,9 @@ import { useEffect, useState } from 'react';
 // 우리 도메인의 localStorage에만 저장되므로 브라우저 설정·다른 사이트에는 영향 없음.
 // 첫 로드 시 번쩍임 방지는 app/layout.tsx <head>의 인라인 스크립트가 담당 (키·범위 동일해야 함).
 const ZOOM_KEY = 'site-zoom';
-const ZOOM_MIN = 90;
+// 하한 60 = body zoom(0.85)과 중첩 시 체감 51%까지 축소 허용 — 사용자가 직접 선택하는 값이라 넓게 열어둠.
+// 범위 변경 시 app/layout.tsx head 인라인 스크립트의 범위도 반드시 같이 갱신할 것.
+const ZOOM_MIN = 60;
 const ZOOM_MAX = 150;
 const ZOOM_STEP = 10;
 

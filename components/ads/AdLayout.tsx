@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import AdPlaceholder from './AdPlaceholder';
-import AdAnchorMobile from './AdAnchorMobile';
 import AdUnit from './AdUnit';
 import { AD_PREVIEW, AD_SLOTS } from './adConfig';
 import AppSidebarPromo from '../AppSidebarPromo';
@@ -36,7 +35,8 @@ function getPageConfig(pathname: string): PageConfig {
   // contentWidth 1180 = 실제 레이드 카드 그리드 폭(RaidCalculator.module.css .cardGrid max-width).
   // 컨테이너 자체는 1800px지만 거의 텅 빈 바깥 여백이었고, 진짜 콘텐츠는 1180px에서 안 넘어감 —
   // 그래서 레일이 카드보다 한참 바깥에 떠 있었음. 실제 카드 폭 기준으로 확 좁혀 붙임.
-  if (pathname === '/weekly-gold') return { contentWidth: 1180, adTop: 110 };
+  // adTop 300 = 제목·검색창을 지나 레이드 카드 영역 상단 부근(직접 요청으로 기존 110에서 크게 내림).
+  if (pathname === '/weekly-gold') return { contentWidth: 1180, adTop: 300 };
   // adTop 200 = "메인 카드"(아이템 선택+가격 입력) 상자 상단과 나란히(기존 110에서 크게 내림).
   if (pathname === '/life-master') return { contentWidth: 1200, adTop: 200 };
   // adTop 300 = 원정대 탭·주간 수급 요약을 지나 첫 번째 캐릭터 카드 상단과 나란히(기존 130에서 크게 내림).
@@ -68,14 +68,17 @@ const AD_EXTRA = 456;
 // 2026-07-15: body zoom을 0.67→0.85로 고정하면서 이 값도 같이 갱신.
 const DESKTOP_ZOOM = 0.85;
 
-// 광고 슬롯 zoom 역보정 배율 — 애드센스는 광고 요소의 "실제 렌더링 픽셀 크기"로 규격(160×600,
-// 970×90 등)을 인식하므로, body zoom(0.85)에 그대로 맡기면 136×510처럼 줄어든 채 렌더돼
-// 표준 규격 미달로 처리될 위험이 있음. 광고를 담는 컨테이너에 1/zoom을 곱해 실제 화면 px를
-// 선언한 값 그대로 복원 — 페이지 다른 요소보다 조금 커 보이지만 애드센스 입장에선 정확한 규격.
+// 광고 슬롯 zoom 역보정 배율 — 애드센스는 광고 요소의 "실제 렌더링 픽셀 크기"로 규격(160×600)을
+// 인식하므로, body zoom(0.85)에 그대로 맡기면 136×510처럼 줄어든 채 렌더돼 표준 규격 미달로
+// 처리될 위험이 있음. 광고를 담는 컨테이너에 1/zoom을 곱해 실제 화면 px를 선언한 값 그대로 복원
+// — 페이지 다른 요소보다 조금 커 보이지만 애드센스 입장에선 정확한 규격.
 const AD_ZOOM_COMPENSATE = 1 / DESKTOP_ZOOM;
 
+// 데스크톱 광고는 사이드 레일이 전부 — 상단 배너·모바일 하단 앵커는 제거됨.
+// 모바일은 앱(AdMob)과 동일한 본문 인-콘텐츠(AdBanner)만 사용, 애드센스 자동광고(앵커 포함) 금지.
 // 사이드 광고를 붙일 페이지 — 캐릭터 조회(자체 사이드바), 패키지 등록·수정(폼 화면, railsDisabled에서
 // 별도 제외), 직업 각인(전용 사이드바)만 빼고 대부분 페이지에 적용.
+// 이 목록에 없는 페이지는 데스크톱에서 광고가 아예 없다.
 const RAIL_PAGES = new Set([
   '/', '/refining', '/wangap', '/package',
   '/weekly-gold', '/life-master', '/mypage', '/more-reward',
@@ -94,10 +97,6 @@ const APP_PROMO_PAGES = new Set(['/', '/refining', '/wangap', '/package', '/mypa
 // 앱 프로모 세로 위치 기본값 — 상단 네비(52px) 바로 아래 고정 간격. 페이지별로 다른 콘텐츠 블록에
 // 어깨를 맞춰야 하면 getPageConfig에서 appPromoTop으로 오버라이드(예: /wangap, /package)
 const APP_PROMO_TOP = 66;
-
-// 모바일 하단 앵커 높이(px). 하단에서 올라오는 UI(차트 바텀시트 등)를 이만큼 위로 올려 겹침 방지.
-// CSS 변수 --mobile-anchor-h 로 노출 → 필요한 컴포넌트가 bottom 오프셋으로 사용.
-const MOBILE_ANCHOR_H = 60;
 
 export default function AdLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -118,15 +117,10 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   const leftAdRef = useRef<HTMLDivElement>(null);
   const dockedPromoRef = useRef<HTMLDivElement>(null);
 
-  // 사이드 레일만 비활성 — 자체 사이드바가 있어 좌우 레일과 충돌하는 페이지.
-  // (상단 배너·앵커는 가로/하단이라 충돌 안 하므로 여기서 막지 않음)
+  // 사이드 레일 비활성 — 자체 사이드바가 있어 좌우 레일과 충돌하는 페이지 + 등록/수정 폼 화면.
   // - /character: 오른쪽에 필터 통계 사이드바를 자체 배치
   const railsDisabled =
     pathname === '/character' ||
-    pathname === '/package/register' || pathname.startsWith('/package/edit');
-
-  // 광고 전부 비활성 — 등록·수정 같은 작업/폼 화면 (상단 배너·앵커 포함)
-  const noAds =
     pathname === '/package/register' || pathname.startsWith('/package/edit');
 
   useEffect(() => {
@@ -170,10 +164,6 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   const dockedPromo = showPromo && rightRailAdVisible && promoTunedForRail;
   // 플로팅형 — 레일이 없거나(메인 오른쪽은 스페이서) 도킹 대상이 아닐 때, 기존처럼 fixed로 띄움.
   const floatingPromo = showPromo && !dockedPromo;
-  const topBannerVisible =
-    (AD_PREVIEW || !!AD_SLOTS.topBanner) && !noAds && !isMobile && pathname !== '/';
-  // 실제 앵커는 애드센스 자동광고가 처리(수동 <ins> 없음) → 미리보기에서만 자리 표시
-  const showAnchor = AD_PREVIEW && !noAds && isMobile;
 
   // 앱 프로모 가로 위치 (플로팅형 전용) — zoom 배율로 역산하지 않고 실측(getBoundingClientRect)으로
   // 계산 오차를 없앰. 오른쪽에 레일(스페이서 포함)이 있으면 그 칸에 맞춤, 없으면 콘텐츠 오른쪽 끝에 붙임.
@@ -240,12 +230,6 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
     };
   }, [dockedPromo, railsVisible]);
 
-  // 앵커가 떠 있는 동안만 --mobile-anchor-h 설정 → 하단에서 올라오는 UI가 앵커 위로 비켜남.
-  useEffect(() => {
-    document.body.style.setProperty('--mobile-anchor-h', showAnchor ? `${MOBILE_ANCHOR_H}px` : '0px');
-    return () => { document.body.style.removeProperty('--mobile-anchor-h'); };
-  }, [showAnchor]);
-
   // 사이드 레일 한 칸 내용 — 표준 세로 규격 160×600(와이드 스카이스크래퍼) 고정.
   // (미리보기=placeholder, 실제=AdUnit 고정 사이즈, key로 라우트마다 갱신)
   // 실제 화면 px가 160×600 그대로 나오도록 zoom 역보정 래퍼로 감쌈(위 AD_ZOOM_COMPENSATE 참고).
@@ -276,41 +260,21 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   const layoutStyle: React.CSSProperties =
     railsVisible ? { maxWidth: `${contentWidth + AD_EXTRA}px` } : {};
 
+  // 도킹 페이지(프로모+광고 스택)의 오른쪽 레일은 스택 top(56) > 시작 문서 y(52)라 처음부터
+  // 화면에 고정되어 스크롤과 무관하게 안 움직인다. 왼쪽 광고가 기본(top:56)대로 따라 올라가면
+  // 스크롤 중 좌우 높이가 어긋나므로, 도킹 페이지에서만 왼쪽도 시작 위치(52+adTop)에 그대로 고정해
+  // 좌우가 항상 같은 높이를 유지하게 한다 (52 = body padding-top, 네비 클리어런스).
+  const leftStickyTop = dockedPromo ? { top: `${52 + adTop}px` } : undefined;
+
   return (
     <>
       <div className="content-shell" style={layoutStyle} ref={shellRef}>
         {railsVisible && (
           <aside className="side-rail side-rail-left" style={{ paddingTop: `${adTop}px` }}>
-            <div className="side-rail-sticky" ref={leftAdRef}>{renderRail()}</div>
+            <div className="side-rail-sticky" style={leftStickyTop} ref={leftAdRef}>{renderRail()}</div>
           </aside>
         )}
         <main className="content-shell-main" style={{ minHeight: 'calc(100vh - 200px)' }}>
-          {topBannerVisible && (
-            <div
-              style={{
-                maxWidth: '970px',
-                margin: '0 auto 16px',
-                // 상단 배너도 zoom 역보정 — 970px 선언폭이 실제로도 970px로 렌더되도록
-                ...(desktopZoomActive ? { zoom: AD_ZOOM_COMPENSATE } : {}),
-              }}
-            >
-              {AD_PREVIEW ? (
-                <AdPlaceholder
-                  label="광고 영역 · 상단 배너"
-                  sub="데스크톱 · 반응형 가로 (예: 970×90)"
-                  style={{ maxWidth: '970px', height: '90px', minHeight: '90px' }}
-                />
-              ) : (
-                <AdUnit
-                  key={pathname}
-                  slot={AD_SLOTS.topBanner}
-                  format="horizontal"
-                  responsive
-                  style={{ minHeight: '90px' }}
-                />
-              )}
-            </div>
-          )}
           {children}
         </main>
         {railsVisible && (
@@ -349,7 +313,6 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
           <AppSidebarPromo />
         </div>
       )}
-      {showAnchor && <AdAnchorMobile />}
     </>
   );
 }

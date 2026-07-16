@@ -6,6 +6,7 @@ import { preload } from 'react-dom';
 import { Container, Collapse } from 'react-bootstrap';
 import Link from 'next/link';
 import GuideFaq from '@/components/common/GuideFaq';
+import AdBanner from '@/components/ads/AdBanner';
 import styles from './page.module.css';
 
 const HOME_FAQS = [
@@ -72,6 +73,11 @@ export default function Home() {
           {/* 가격 분석 통계 */}
           <PriceComparisonStats />
         </PriceChartProvider>
+
+        {/* 모바일 인-콘텐츠 광고 — 앱 홈(통계 바 아래)과 동일 위치 */}
+        <div className="d-block d-lg-none my-3">
+          <AdBanner slot="8616653628" />
+        </div>
 
         {/* 애드센스 콘텐츠 보강용 소개 텍스트 — 항상 하단 배치, 기본 접힘 */}
         <div className="mt-4 mt-md-5">

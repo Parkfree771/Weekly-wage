@@ -9,6 +9,8 @@ import { Container, Navbar as BSNavbar, Nav, Offcanvas } from 'react-bootstrap';
 import LoginButton from './auth/LoginButton';
 import ZoomControl from './ZoomControl';
 import InquiryButton from './InquiryButton';
+import AdBanner from './ads/AdBanner';
+import AppSidebarPromo from './AppSidebarPromo';
 
 type NavItem = {
   href: string;
@@ -357,6 +359,8 @@ export default function Navbar() {
             </Offcanvas.Title>
           </Offcanvas.Header>
           <Offcanvas.Body className="navbar-offcanvas-body">
+            {/* ── 메뉴 ── */}
+            <div className="navbar-offcanvas-group-label">메뉴</div>
             <Nav className="flex-column gap-2">
               {NAV_GROUPS.map((group) => (
                 group.href ? (
@@ -421,15 +425,9 @@ export default function Navbar() {
                 )
               ))}
             </Nav>
-            <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
-            <Nav className="flex-column gap-2">
-              <Link
-                href="/app"
-                className="navbar-offcanvas-link navbar-offcanvas-link-badge"
-                onClick={handleClose}
-              >
-                앱 다운로드
-              </Link>
+            {/* ── 계정: 마이페이지 + 로그인 ── */}
+            <div className="navbar-offcanvas-section">
+              <div className="navbar-offcanvas-group-label">계정</div>
               <Link
                 href="/mypage"
                 className={`navbar-offcanvas-link ${isActive('/mypage') ? 'active' : ''}`}
@@ -437,15 +435,22 @@ export default function Navbar() {
               >
                 마이페이지
               </Link>
-            </Nav>
-            <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
-            <div className="d-flex justify-content-center">
-              <ZoomControl withLabel />
+              <div className="d-flex justify-content-center mt-2">
+                <LoginButton />
+              </div>
             </div>
-            <hr className="my-3" />
-            <div className="d-flex justify-content-center">
-              <LoginButton />
+
+            {/* ── 로아로골 앱 — 데스크톱 사이드바 프로모와 동일 디자인 (구글/iOS 배지) ── */}
+            <div className="navbar-offcanvas-section">
+              <AppSidebarPromo />
             </div>
+
+            {/* ── 광고 — 맨 하단 고정 (앱 메뉴 드로어와 동일). 열려 있을 때만 마운트 ── */}
+            {showOffcanvas && (
+              <div className="navbar-offcanvas-section navbar-offcanvas-section-ad">
+                <AdBanner slot="8616653628" />
+              </div>
+            )}
           </Offcanvas.Body>
         </Offcanvas>
       </Container>

@@ -717,7 +717,8 @@ export default function WangapSimulator() {
                 >
                   <div className={styles.equipmentName} data-grade={g}>{g} 완갑</div>
                   <span className={styles.equipmentIcon} data-grade={g}>
-                    <Image src={WANGAP_ITEM_IMAGES[g]} alt={`완갑 ${g}`} fill sizes="54px" style={{ objectFit: 'contain' }} />
+                    {/* padding: 이미지가 개구부에 꽉 차 링을 침범해 보이지 않게 여백 */}
+                    <Image src={WANGAP_ITEM_IMAGES[g]} alt={`완갑 ${g}`} fill sizes="54px" style={{ objectFit: 'contain', padding: '8%' }} />
                     <span className={styles.equipmentFrame}>
                       <Image src="/wjsdbf3.webp" alt="" fill sizes="84px" style={{ objectFit: 'fill' }} unoptimized />
                     </span>

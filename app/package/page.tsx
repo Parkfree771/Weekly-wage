@@ -113,7 +113,8 @@ export default function PackageGalleryPage() {
                     post={post}
                     latestPrices={latestPrices}
                   />
-                  {index === 1 && posts.length > 2 && (
+                  {/* 앱 패키지 갤러리(카드 2개마다 1개, 마지막 뒤 제외)와 동일 */}
+                  {index % 2 === 1 && index < posts.length - 1 && (
                     <div className="d-block d-md-none" style={{ gridColumn: '1 / -1' }}>
                       <AdBanner slot="8616653628" />
                     </div>

@@ -121,7 +121,7 @@ export default function RootLayout({
         <script
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
-            __html: `try{var z=parseInt(localStorage.getItem('site-zoom')||'',10);if(z>=90&&z<=150&&z!==100)document.documentElement.style.zoom=z/100;}catch(e){}`,
+            __html: `try{var z=parseInt(localStorage.getItem('site-zoom')||'',10);if(z>=60&&z<=150&&z!==100)document.documentElement.style.zoom=z/100;}catch(e){}`,
           }}
         />
         {/* 가격 데이터 preload — URL이 안정적이라(캐시키 제거됨) 정적 preload 태그로 처리.
