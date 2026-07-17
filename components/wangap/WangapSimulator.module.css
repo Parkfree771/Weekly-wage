@@ -2216,3 +2216,188 @@
     animation: none;
   }
 }
+
+/* ========================================
+   평균 시뮬 전용 (WangapAverageCalculator)
+   ======================================== */
+
+/* 현재/목표 단계 입력 — 두 칸 모두 동일한 파란 배지형 직접 입력 + ± 스테퍼 */
+.avgLevelInput {
+  width: 62px;
+  padding: 0.38rem 0.4rem;
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: none;
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.avgLevelInput:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 1px;
+}
+
+/* ± 스테퍼 (재련 것보다 크고 진하게 — 가시성 확보) */
+.avgStepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.avgStepBtn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #2563eb;
+  background-color: var(--card-bg);
+  border: 2px solid rgba(59, 130, 246, 0.55);
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .avgStepBtn {
+  color: #60a5fa;
+  border-color: rgba(96, 165, 250, 0.55);
+}
+
+.avgStepBtn:hover:not(:disabled) {
+  border-color: #2563eb;
+}
+
+[data-theme="dark"] .avgStepBtn:hover:not(:disabled) {
+  border-color: #60a5fa;
+}
+
+.avgStepBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 강화 여정 표시 (전설 +0 → 승급 → 유물 +15 → … → 고대 +25)
+   — 선택 컨트롤과 여유 있게 띄우고, 노드도 장비 선택 패널 수준으로 큼직하게 */
+.journeyRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.4rem;
+  margin-top: 2rem;
+}
+
+.journeyNode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.journeyNode .equipmentIcon {
+  width: 58px;
+  height: 58px;
+}
+
+/* 여정 승급 상자 — 장비 선택 패널의 승급 커넥터와 같은 느낌 */
+.journeyPromo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 82px;
+  height: 88px;
+  flex-shrink: 0;
+  padding: 0.4rem;
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--nm-shadow-sm);
+}
+
+.journeyPromoIcon {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(0deg, #3a2a52 0%, #1d152b 60%, #0b0810 100%);
+}
+
+.journeyPromoText {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  /* iOS: 16px 미만 input은 포커스 시 화면이 확대됨 */
+  .avgLevelInput {
+    font-size: 16px;
+    width: 54px;
+    padding: 0.32rem 0.3rem;
+  }
+
+  .avgStepper {
+    gap: 0.28rem;
+  }
+
+  .avgStepBtn {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+    border-radius: 7px;
+  }
+
+  /* 여정: 최장 케이스(노드 3 + 승급 2 + 화살표 4)가 360px 폰에서도 한 줄에 들어가게 축소
+     노드 프레임이 아이콘 밖 ~21%까지 튀어나오므로 gap은 그보다 넓게 유지 */
+  .journeyRow {
+    gap: 0.35rem 0.4rem;
+    margin-top: 1.4rem;
+  }
+
+  .journeyRow .listArrow {
+    font-size: 0.75rem;
+  }
+
+  .journeyNode {
+    gap: 0.45rem;
+  }
+
+  .journeyNode .equipmentIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .journeyNode .levelBadge {
+    font-size: 0.56rem;
+    padding: 0.08rem 0.3rem;
+    white-space: nowrap;
+  }
+
+  .journeyPromo {
+    width: 52px;
+    height: 60px;
+    gap: 0.2rem;
+    padding: 0.25rem;
+    border-radius: 8px;
+  }
+
+  .journeyPromoIcon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .journeyPromoText {
+    font-size: 0.54rem;
+  }
+}

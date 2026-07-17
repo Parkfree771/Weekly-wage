@@ -19,6 +19,20 @@ import {
   type WangapGrade,
 } from '../../lib/wangapData';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
+import {
+  OPT_MATERIAL_LIST,
+  COST_ROWS,
+  PRICED_COST_KEYS,
+  createOptMaterials,
+  createOptDraft,
+  remainingFromMaterials,
+  createZeroCounts,
+  createZeroCost,
+  type OptMatKey,
+  type OptMaterials,
+  type OptDraft,
+  type WangapCostTotals,
+} from './wangapShared';
 
 type WangapHistoryEntry =
   | {
@@ -39,72 +53,13 @@ type WangapHistoryEntry =
       grade: WangapGrade;     // 승급 후 등급
     };
 
-interface AccumulatedCost {
-  파괴석결정: number;
-  수호석결정: number;
-  위대한돌파석: number;
-  상급아비도스: number;
-  운명파편: number;
-  실링: number;
-  골드: number;
-  용암: number;
-  빙하: number;
-  승급재료유물: number;
-  승급재료고대: number;
-}
-
-const createZeroCost = (): AccumulatedCost => ({
-  파괴석결정: 0, 수호석결정: 0, 위대한돌파석: 0, 상급아비도스: 0,
-  운명파편: 0, 실링: 0, 골드: 0, 용암: 0, 빙하: 0, 승급재료유물: 0, 승급재료고대: 0,
-});
+type AccumulatedCost = WangapCostTotals;
 
 const MANUAL_REVEAL_DELAY = 650;
 const AUTO_REVEAL_DELAY = 0; // 자동강화는 배속이 정확히 지켜지도록 즉시 판정
 // 자동강화 장시간 구동 시 렌더 비용이 계속 커지지 않도록 기록 "표시"는 최근 N개만 유지
 // (총 시도/성공/실패 통계는 별도 카운터로 전체 누적)
 const MAX_HISTORY = 300;
-
-// === 보조재료 최적화 대상 재료 (시세가 있는 7종 — 실링·골드 제외) ===
-type OptMatKey = '파괴석결정' | '수호석결정' | '위대한돌파석' | '상급아비도스' | '운명파편' | '용암' | '빙하';
-
-const OPT_MATERIAL_LIST: Array<{ key: OptMatKey; label: string; icon: string }> = [
-  { key: '파괴석결정', label: '파괴석 결정', icon: '/top-destiny-destruction-stone5.webp' },
-  { key: '수호석결정', label: '수호석 결정', icon: '/top-destiny-guardian-stone5.webp' },
-  { key: '위대한돌파석', label: '위대한 돌파석', icon: '/top-destiny-breakthrough-stone5.webp' },
-  { key: '상급아비도스', label: '상급 아비도스', icon: '/top-abidos-fusion5.webp' },
-  { key: '운명파편', label: '운명의 파편', icon: '/destiny-shard-bag-large5.webp' },
-  { key: '용암', label: '용암의 숨결', icon: '/breath-lava5.webp' },
-  { key: '빙하', label: '빙하의 숨결', icon: '/breath-glacier5.webp' },
-];
-
-type OptMaterials = Record<OptMatKey, { bound: boolean; owned: number }>;
-type OptDraft = Record<OptMatKey, { bound: boolean; owned: string }>;
-
-const createOptMaterials = (bound: boolean): OptMaterials =>
-  Object.fromEntries(OPT_MATERIAL_LIST.map(m => [m.key, { bound, owned: 0 }])) as OptMaterials;
-
-const createOptDraft = (materials: OptMaterials): OptDraft =>
-  Object.fromEntries(OPT_MATERIAL_LIST.map(m => {
-    const s = materials[m.key];
-    return [m.key, { bound: s.bound, owned: s.owned > 0 ? String(s.owned) : '' }];
-  })) as OptDraft;
-
-const remainingFromMaterials = (materials: OptMaterials): Record<OptMatKey, number> =>
-  Object.fromEntries(OPT_MATERIAL_LIST.map(m => [m.key, materials[m.key].owned])) as Record<OptMatKey, number>;
-
-const createZeroCounts = (): Record<OptMatKey, number> =>
-  Object.fromEntries(OPT_MATERIAL_LIST.map(m => [m.key, 0])) as Record<OptMatKey, number>;
-
-// 시세가 있는 재료 키 (골드 환산 대상 — 최적화 대상과 동일한 7종)
-const PRICED_COST_KEYS = OPT_MATERIAL_LIST.map(m => m.key);
-
-// 누적 비용 표시 행: 시세 있는 7종(OPT_MATERIAL_LIST 재사용) + 시세 없는 3종
-const COST_ROWS: Array<{ key: keyof AccumulatedCost; label: string; icon: string; priced: boolean }> = [
-  ...OPT_MATERIAL_LIST.map(m => ({ key: m.key as keyof AccumulatedCost, label: m.label, icon: m.icon, priced: true })),
-  { key: '승급재료유물', label: WANGAP_PROMOTION_MATERIALS.유물.name, icon: WANGAP_PROMOTION_MATERIALS.유물.icon, priced: false },
-  { key: '승급재료고대', label: WANGAP_PROMOTION_MATERIALS.고대.name, icon: WANGAP_PROMOTION_MATERIALS.고대.icon, priced: false },
-  { key: '실링', label: '실링', icon: '/shilling.webp', priced: false },
-];
 
 export default function WangapSimulator() {
   // === 강화 상태 ===

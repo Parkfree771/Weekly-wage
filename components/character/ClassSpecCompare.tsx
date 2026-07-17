@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { TIER_ENTRIES } from '@/lib/tier-entries.generated';
+import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import { cachedGetJson } from '@/lib/client-fetch-cache';
 import styles from './ClassSpecCompare.module.css';
 
@@ -20,6 +21,13 @@ type CoreStat = {
 
 type ComboStat = { code: string; count: number; pct: number };
 
+type EngravingComboStat = {
+  label: string;                 // 축약 라벨 (예: "원한 질증 돌대 기습 저받") — 툴팁용
+  names: string[];               // 관용 순서대로 정렬된 각인 이름 5개 (아이콘 매핑용)
+  count: number;
+  pct: number;
+};
+
 type SpecStat = {
   specId: string;
   count: number;
@@ -27,6 +35,7 @@ type SpecStat = {
   avgItemLevel: number;
   cores: CoreStat[];
   combos?: ComboStat[];
+  engravingCombos?: EngravingComboStat[];
   orderIcons?: { 해: string | null; 달: string | null; 별: string | null };
 };
 
@@ -185,7 +194,6 @@ function SpecMode({ data, spec, total, onSelectSpec }: {
   const sharePct = total > 0 ? Math.round((spec.count / total) * 100) : 0;
 
   const orderCores = spec.cores.filter(c => c.name.includes('질서'));
-  const chaosCores = spec.cores.filter(c => c.name.includes('혼돈'));
   const etcCores = spec.cores.filter(c => !c.name.includes('질서') && !c.name.includes('혼돈'));
 
   const renderCores = (label: string, list: CoreStat[], colorCls: string) => {
@@ -195,11 +203,13 @@ function SpecMode({ data, spec, total, onSelectSpec }: {
         <div className={`${styles.coreGroupLabel} ${colorCls}`}>{label}</div>
         {list.map(c => (
           <div key={c.name} className={styles.coreRow} title={`${c.name} — ${c.count}명 (${c.pct}%)`}>
-            <span className={styles.coreIconWrap} style={{ borderColor: gradeColor(c.grade), background: ANCIENT_BG }}>
-              {c.icon ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={c.icon} alt="" />
-              ) : null}
+            <span className={styles.iconTipWrap} data-tip={c.name} title="">
+              <span className={styles.coreIconWrap} style={{ borderColor: gradeColor(c.grade), background: ANCIENT_BG }}>
+                {c.icon ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.icon} alt="" />
+                ) : null}
+              </span>
             </span>
             <span className={styles.coreName}>
               {c.num != null && <b className={styles.coreNumInline}>{c.num}.</b>} {coreShortName(c.name)}
@@ -248,11 +258,13 @@ function SpecMode({ data, spec, total, onSelectSpec }: {
                 <div key={cb.code} className={styles.comboRow} title={`${cb.code} — ${cb.count}명 (${cb.pct}%)`}>
                   <span className={styles.comboIcons}>
                     {(['해', '달', '별'] as const).map(cel => (
-                      <span key={cel} className={styles.comboIcon} style={{ background: ANCIENT_BG }}>
-                        {spec.orderIcons?.[cel] ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={spec.orderIcons[cel]!} alt={cel} />
-                        ) : null}
+                      <span key={cel} className={styles.iconTipWrap} data-tip={`질서 ${cel} 코어`} title="">
+                        <span className={styles.comboIcon} style={{ background: ANCIENT_BG }}>
+                          {spec.orderIcons?.[cel] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={spec.orderIcons[cel]!} alt={cel} />
+                          ) : null}
+                        </span>
                       </span>
                     ))}
                   </span>
@@ -268,7 +280,38 @@ function SpecMode({ data, spec, total, onSelectSpec }: {
           ) : (
             renderCores('질서 코어', orderCores, styles.coreOrder)
           )}
-          {renderCores('혼돈 코어', chaosCores, styles.coreChaos)}
+          {/* 각인 조합 채용률 (기존 혼돈 코어 자리) — 아이콘 5개 + 앞글자 코드 (질서 조합 행과 동일 형식) */}
+          {spec.engravingCombos && spec.engravingCombos.length > 0 && (
+            <div className={styles.coreGroup}>
+              <div className={`${styles.coreGroupLabel} ${styles.coreChaos}`}>
+                각인 <span className={styles.comboHint}>5개 조합 채용률</span>
+              </div>
+              {spec.engravingCombos.map(ec => (
+                <div key={ec.label} className={styles.comboRow} title={`${ec.label} — ${ec.count}명 (${ec.pct}%)`}>
+                  <span className={styles.engrIcons}>
+                    {ec.names.map(name => (
+                      <span key={name} className={styles.iconTipWrap} data-tip={name} title="">
+                        <span className={styles.engrIcon}>
+                          {ENGRAVING_ICONS[name] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={ENGRAVING_ICONS[name]} alt={name} />
+                          ) : (
+                            // 아이콘 에셋이 없는 각인은 첫 글자로 표시 (호버 시 전체 이름)
+                            <i className={styles.engrIconFallback}>{name.charAt(0)}</i>
+                          )}
+                        </span>
+                      </span>
+                    ))}
+                  </span>
+                  <span className={styles.comboBar}>
+                    <span className={styles.engrBarFill} style={{ width: `${ec.pct}%` }} />
+                  </span>
+                  <span className={styles.comboPct}>{ec.pct}%</span>
+                  <span className={styles.comboCount}>{ec.count}명</span>
+                </div>
+              ))}
+            </div>
+          )}
           {renderCores('기타', etcCores, styles.coreEtc)}
         </div>
       )}

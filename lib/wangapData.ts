@@ -184,6 +184,10 @@ export const getWangapStats = (level: number, grade: WangapGrade): WangapStats =
   };
 };
 
+// 보조재료 최적화·골드 환산 대상 재료 키 (시세가 있는 7종 — 실링·골드 제외)
+export type WangapOptMatKey =
+  | '파괴석결정' | '수호석결정' | '위대한돌파석' | '상급아비도스' | '운명파편' | '용암' | '빙하';
+
 // 거래소 시세 조회용 아이템 ID
 export const WANGAP_MATERIAL_IDS: Record<string, number> = {
   파괴석결정: 66102007,

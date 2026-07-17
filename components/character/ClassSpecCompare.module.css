@@ -247,20 +247,48 @@
 .coreGroupLabel.coreChaos { color: #3b82f6; }
 .coreGroupLabel.coreEtc { color: #64748b; }
 
-.coreBarFill.coreOrder { background: linear-gradient(90deg, #ef4444, #f87171); }
-.coreBarFill.coreChaos { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-.coreBarFill.coreEtc { background: linear-gradient(90deg, #64748b, #94a3b8); }
+.coreBarFill.coreOrder { background: #ef4444; }
+.coreBarFill.coreChaos { background: #3b82f6; }
+.coreBarFill.coreEtc { background: #64748b; }
 
 .coreRow {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) auto 72px;
+  grid-template-columns: 34px minmax(0, 1fr) auto 64px;
   align-items: center;
   gap: 0.5rem;
 }
 
+/* 아이콘 호버 툴팁 래퍼 — 아이콘 상자는 overflow:hidden이라 바깥 래퍼에 ::after로 표시.
+   아이콘이 행 왼쪽 끝이라 좌측 정렬(패널 overflow:hidden에 잘리지 않게) */
+.iconTipWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.iconTipWrap::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  display: none;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #fff;
+  background: #0f172a;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.iconTipWrap:hover::after {
+  display: block;
+}
+
 .coreIconWrap {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   border-radius: 8px;
   border: 1.5px solid var(--border-color);
   background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.05));
@@ -336,8 +364,8 @@
   flex-shrink: 0;
 }
 .comboIcon {
-  width: 27px;
-  height: 27px;
+  width: 31px;
+  height: 31px;
   border-radius: 7px;
   border: 1.5px solid #c19a5c;
   overflow: hidden;
@@ -351,23 +379,23 @@
   object-fit: cover;
 }
 
-/* 조합 코드 — 전부 통일. 유물 코어 색감(앰버) 배경 + 흰 글씨 */
+/* 조합 코드 — 전부 통일. 유물 코어 색감(앰버) 단색 매트 배경 + 흰 글씨 */
 .comboCode {
   font-family: var(--font-mono), monospace;
   font-size: 1.15rem;
   font-weight: 900;
   letter-spacing: 2px;
   color: #fff;
-  background: linear-gradient(180deg, #b45309 0%, #d97706 100%);
+  background: #b45309;
   padding: 0.12rem 0.5rem 0.12rem 0.55rem;
   border-radius: 8px;
   text-align: center;
   line-height: 1.25;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
   flex-shrink: 0;
 }
 
 /* 비율 바 (코드 옆) */
+/* 비율 바 — 아이콘과 %/인원 사이 빈 공간을 전부 채움 */
 .comboBar {
   flex: 1;
   min-width: 40px;
@@ -381,7 +409,7 @@
   height: 100%;
   border-radius: 5px;
   min-width: 2px;
-  background: linear-gradient(90deg, #b45309, #f59e0b);
+  background: #d97706;
 }
 
 .comboPct {
@@ -391,6 +419,49 @@
   color: var(--text-primary);
   text-align: right;
   min-width: 40px;
+}
+
+/* ── 각인 5개 조합 채용률 (혼돈 코어 자리 대체, 질서 조합 행과 동일 형식) ── */
+/* 각인 아이콘 5개 — 코드 칩 없이 아이콘이 주인공이라 해·달·별(27px)과 같은 크기로 */
+.engrIcons {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.engrIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid #3b82f6;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+}
+
+.engrIcon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 아이콘 에셋 없는 각인의 첫 글자 폴백 */
+.engrIconFallback {
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #93c5fd;
+  line-height: 1;
+}
+
+.engrBarFill {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  min-width: 2px;
+  background: #3b82f6;
 }
 .comboCount {
   font-size: 0.72rem;
