@@ -61,8 +61,9 @@ const comboKey = (breath: boolean, book: boolean): string =>
  * 상급재련 최적 조합 계산
  * @param type 방어구/무기
  * @param stages 실제 강화 대상 구간 (1~4)
- * @param unitPrices 개당 가격 (RefiningCalculator의 marketPrices)
- * @returns 시세 미로딩 시 null
+ * @param unitPrices 개당 가격 (RefiningCalculator의 marketPrices).
+ *   가격 0은 "귀속/보유분이라 무료"라는 의미로 정상 입력 — 시세 로딩 여부 판단은 호출부 책임.
+ * @returns 대상 구간이 없으면 null
  */
 export function computeOptimalAdvancedPlan(
   type: 'armor' | 'weapon',
@@ -72,7 +73,6 @@ export function computeOptimalAdvancedPlan(
   if (stages.length === 0) return null;
   const isArmor = type === 'armor';
   const breathPrice = unitPrices[isArmor ? PRICE_IDS.빙하 : PRICE_IDS.용암] || 0;
-  if (breathPrice <= 0) return null; // 시세 미로딩
 
   const materialsTable = isArmor ? T4_ARMOR_MATERIALS : T4_WEAPON_MATERIALS;
 

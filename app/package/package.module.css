@@ -1235,6 +1235,38 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 구성품 상세 섹션 — 젬 상자류 구성·계산 근거 (전체 폭, 줄바꿈 허용이라 글자 안 잘림) */
+.gemDetailList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gemDetailRow {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+}
+
+.gemDetailTitle {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.4rem;
+}
+
+.gemDetailLine {
+  font-size: 0.86rem;
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.gemDetailLine strong {
+  color: var(--color-accent);
+}
+
 /* 선택 아이템 UI */
 .itemCardChoices {
   display: flex;
@@ -1870,6 +1902,19 @@
   .itemCardSubtotal {
     font-size: 0.5rem;
     padding-top: 0.15rem;
+  }
+
+  .gemDetailRow {
+    padding: 0.6rem 0.7rem;
+    border-radius: 8px;
+  }
+
+  .gemDetailTitle {
+    font-size: 0.8rem;
+  }
+
+  .gemDetailLine {
+    font-size: 0.72rem;
   }
 
   .itemCardCheckBox {

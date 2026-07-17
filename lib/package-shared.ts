@@ -344,6 +344,42 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     ],
   },
   {
+    id: 'gem-order-processed',
+    icon: '/fixed-hero-gem-select.webp',
+    name: '가공 완료 질서의 젬 상자',
+    type: 'fixed',
+    fixedGold: 8100,
+  },
+  {
+    id: 'gem-chaos-processed',
+    icon: '/fixed-hero-gem-select.webp',
+    name: '가공 완료 혼돈의 젬 상자',
+    type: 'fixed',
+    fixedGold: 8100,
+  },
+  {
+    id: 'gem-hero-fixed-select',
+    icon: '/fixed-hero-gem-select.webp',
+    name: '고정형 영웅 젬 선택 상자',
+    type: 'choice',
+    choices: [
+      // 공격형: 추가 피해 / 공격력 / 보스 피해 중 2종 고정 (itemId에 :atk/:sup 접미사로 구분 — 안정 등 실제 시세 조회 시 접미사 제거)
+      { itemId: '67400003:atk', name: '공격형 질서의 젬 : 안정 (추가 피해/공격력)', icon: '/gem-order-stable.webp?v=3' },
+      { itemId: '67400103:atk', name: '공격형 질서의 젬 : 견고 (보스 피해/공격력)', icon: '/gem-order-solid.webp?v=3' },
+      { itemId: '67400203:atk', name: '공격형 질서의 젬 : 불변 (보스 피해/추가 피해)', icon: '/gem-order-immutable.webp?v=3' },
+      { itemId: '67410303:atk', name: '공격형 혼돈의 젬 : 침식 (공격력/추가 피해)', icon: '/gem-chaos-erosion.webp?v=3' },
+      { itemId: '67410403:atk', name: '공격형 혼돈의 젬 : 왜곡 (보스 피해/공격력)', icon: '/gem-chaos-distortion.webp?v=3' },
+      { itemId: '67410503:atk', name: '공격형 혼돈의 젬 : 붕괴 (보스 피해/추가 피해)', icon: '/gem-chaos-collapse.webp?v=3' },
+      // 지원형: 아군 공격 강화 / 아군 피해 강화 / 낙인력 중 2종 고정
+      { itemId: '67400003:sup', name: '지원형 질서의 젬 : 안정 (아군 피해 강화/낙인력)', icon: '/gem-order-stable.webp?v=3' },
+      { itemId: '67400103:sup', name: '지원형 질서의 젬 : 견고 (아군 공격 강화/아군 피해 강화)', icon: '/gem-order-solid.webp?v=3' },
+      { itemId: '67400203:sup', name: '지원형 질서의 젬 : 불변 (아군 공격 강화/낙인력)', icon: '/gem-order-immutable.webp?v=3' },
+      { itemId: '67410303:sup', name: '지원형 혼돈의 젬 : 침식 (아군 피해 강화/낙인력)', icon: '/gem-chaos-erosion.webp?v=3' },
+      { itemId: '67410403:sup', name: '지원형 혼돈의 젬 : 왜곡 (아군 공격 강화/아군 피해 강화)', icon: '/gem-chaos-distortion.webp?v=3' },
+      { itemId: '67410503:sup', name: '지원형 혼돈의 젬 : 붕괴 (아군 공격 강화/낙인력)', icon: '/gem-chaos-collapse.webp?v=3' },
+    ],
+  },
+  {
     id: 'gem-fear-8',
     icon: '/gem-radiance-8.png',
     name: '8레벨 광휘의 보석 (귀속)',
@@ -592,6 +628,7 @@ export const ICON_SIZE_CATALOG: Record<string, number> = {
   'hell-heroic-ticket': 110,
   'pheon': 110,
   'gem-choice': 110, 'gem-hero': 110, 'gem-hero-random': 110,
+  'gem-order-processed': 110, 'gem-chaos-processed': 110, 'gem-hero-fixed-select': 110,
   'weapon-quality': 110, 'armor-quality': 110, 'karma-stone': 110,
   'shilling': 65, 'blue-crystal-input': 65,
   'master-tailoring-3': 65, 'master-tailoring-4': 65,
@@ -647,6 +684,8 @@ export const DYNAMIC_TICKET_IDS = new Set([
   'hell-heroic-ticket',
   'naraka-legendary-ticket',
   'relic-core',
+  'gem-order-processed',
+  'gem-chaos-processed',
 ]);
 
 export function formatNumber(n: number): string {
@@ -660,6 +699,86 @@ export function getItemUnitPrice(itemId: string, prices: Record<string, number>)
   const raw = prices[itemId] || 0;
   const bundle = PRICE_BUNDLE_SIZE[itemId] || 1;
   return raw / bundle;
+}
+
+// 고정형 영웅 젬 선택 상자: 아이콘으로 template 식별 (choiceOptions만 저장되고 templateId는 저장 안 되므로)
+export const FIXED_GEM_SELECT_ICON = '/fixed-hero-gem-select.webp';
+
+// 젬 가공은 4개 스탯 중 2개가 중복 없이 붙음 → 원하는 2종 조합(딜러/서폿 유효옵션)이 뜰 확률 = 1/6.
+// 고정형 상자는 그 조합을 확정으로 주므로 확률을 뒤집어(×6) 곱해 프리미엄을 반영.
+// 초기화는 옵션이 고정된 초기 상태로 되돌리므로, 추가 초기화 1회 = 확정 조합 가치(×6) 한 번 더 − 초기화권(100크리스탈) 비용.
+export const FIXED_GEM_COMBO_MULTIPLIER = 6; // 1 ÷ (1/6)
+export const GEM_RESET_TICKET_CRYSTAL = 100; // 젬 가공 초기화권 1장 = 100 크리스탈
+
+/** 고정형 젬 공식의 각 항 분해 (상세 페이지 공식 표시용) */
+export function getFixedGemSelectBreakdown(
+  choiceItemId: string,
+  prices: Record<string, number>,
+  goldPerWon?: number,
+): { base: number; multiplier: number; comboValue: number; ticketGold: number; total: number } {
+  const gemItemId = choiceItemId.split(':')[0]; // '67400003:atk' → '67400003'
+  const base = getItemUnitPrice(gemItemId, prices);
+  const comboValue = base * FIXED_GEM_COMBO_MULTIPLIER;
+  const ticketGold = (goldPerWon || 0) * GEM_RESET_TICKET_CRYSTAL * 27.5;
+  return {
+    base,
+    multiplier: FIXED_GEM_COMBO_MULTIPLIER,
+    comboValue,
+    ticketGold,
+    total: comboValue + comboValue - ticketGold,
+  };
+}
+
+/** 고정형 영웅 젬 선택 상자의 선택지 1개 가치 = 젬 시세 × 6 (확률 역수) + 젬 시세 (추가 초기화 1회) − 초기화권 골드 */
+export function getFixedGemSelectUnitPrice(
+  choiceItemId: string,
+  prices: Record<string, number>,
+  goldPerWon?: number,
+): number {
+  return getFixedGemSelectBreakdown(choiceItemId, prices, goldPerWon).total;
+}
+
+/** 고정형 젬 상자: 선택지 중 현재 시세 최고가 — 뷰어 선택이 없는 곳(갤러리 소계·효율 정렬)에서 시세 변동 따라 항상 최고가로 계산 */
+export function getFixedGemSelectBestUnitPrice(
+  choiceOptions: { itemId: string }[] | undefined,
+  fallbackItemId: string,
+  prices: Record<string, number>,
+  goldPerWon?: number,
+): number {
+  let best = getFixedGemSelectUnitPrice(fallbackItemId, prices, goldPerWon);
+  for (const c of choiceOptions || []) {
+    const v = getFixedGemSelectUnitPrice(c.itemId, prices, goldPerWon);
+    if (v > best) best = v;
+  }
+  return best;
+}
+
+// 가공 완료 젬 상자: 등록 시 저장된 goldOverride 대신 항상 최신 시세(latest_prices)로 재계산
+export const PROCESSED_GEM_BOX_GEM: Record<string, string> = {
+  'fixed_gem-order-processed': '67400003', // 질서의 젬 : 안정
+  'fixed_gem-chaos-processed': '67410303', // 혼돈의 젬 : 침식
+};
+export const PROCESSED_GEM_BOX_EXTRA_GOLD = 8100; // 가공 완료에 소모되는 골드
+
+// 가공 완료 젬 상자 구성 정보 (상세 페이지 공식/옵션 표시용, 인게임 툴팁 기준)
+export const PROCESSED_GEM_BOX_INFO: Record<string, { gemShort: string; gemName: string; options: string }> = {
+  'fixed_gem-order-processed': {
+    gemShort: '안정',
+    gemName: '질서의 젬 : 안정',
+    options: '의지력 효율 Lv.5 · 질서 포인트 Lv.4 · 공격력 Lv.1 · 아군 피해 강화 Lv.1',
+  },
+  'fixed_gem-chaos-processed': {
+    gemShort: '침식',
+    gemName: '혼돈의 젬 : 침식',
+    options: '의지력 효율 Lv.5 · 혼돈 포인트 Lv.4 · 공격력 Lv.1 · 아군 피해 강화 Lv.1',
+  },
+};
+
+/** 가공 완료 젬 상자 단가 = 연결 젬 실시간 시세 + 8,100골드 */
+export function getProcessedGemBoxUnitPrice(fixedItemId: string, prices: Record<string, number>): number {
+  const gemId = PROCESSED_GEM_BOX_GEM[fixedItemId];
+  if (!gemId) return 0;
+  return getItemUnitPrice(gemId, prices) + PROCESSED_GEM_BOX_EXTRA_GOLD;
 }
 
 // 은총의 파편 1개 가치 = 재련 재료 상자 구성 가치 합 ÷ 60 (지평의 성당 페이지와 동일)
@@ -694,7 +813,10 @@ export function getUnitPrice(
     case 'simple':
       return getItemUnitPrice(template.itemId!, prices);
     case 'choice':
-      return added.selectedChoiceId ? getItemUnitPrice(added.selectedChoiceId, prices) : 0;
+      if (!added.selectedChoiceId) return 0;
+      if (template.id === 'gem-hero-fixed-select')
+        return getFixedGemSelectUnitPrice(added.selectedChoiceId, prices, goldPerWon);
+      return getItemUnitPrice(added.selectedChoiceId, prices);
     case 'gold':
       return added.goldAmount || 0;
     case 'fixed': {
@@ -707,6 +829,8 @@ export function getUnitPrice(
         return calcTicketAverage('narak', 2, prices, bcRate);
       if (template.id === 'relic-core')
         return getRelicCoreSelectPrice(prices);
+      if (PROCESSED_GEM_BOX_GEM[`fixed_${template.id}`])
+        return getProcessedGemBoxUnitPrice(`fixed_${template.id}`, prices);
       return template.fixedGold || 0;
     }
     case 'crystal':
@@ -751,15 +875,20 @@ export function calculateGachaItemGold(
   }
   // 선택(choice) 아이템 → 선택지 중 최고가
   if (item.choiceOptions && item.choiceOptions.length > 0) {
+    const isFixedGemSelect = item.icon === FIXED_GEM_SELECT_ICON;
     let maxPrice = 0;
     for (const c of item.choiceOptions) {
-      const p = getItemUnitPrice(c.itemId, prices);
+      const p = isFixedGemSelect
+        ? getFixedGemSelectUnitPrice(c.itemId, prices, goldPerWon)
+        : getItemUnitPrice(c.itemId, prices);
       if (p > maxPrice) maxPrice = p;
     }
     return maxPrice * item.quantity;
   }
   // 동적 티켓
   if (item.goldOverride != null) {
+    if (PROCESSED_GEM_BOX_GEM[item.itemId] && Object.keys(prices).length > 0)
+      return getProcessedGemBoxUnitPrice(item.itemId, prices) * item.quantity;
     if (bcRate > 0) {
       if (item.itemId === 'fixed_hell-legendary-ticket')
         return calcTicketAverage('hell', 7, prices, bcRate) * item.quantity;
@@ -816,6 +945,8 @@ export function calculatePostEfficiency(
   }
 
   const getTicketUnit = (itemId: string, fallback: number): number => {
+    if (PROCESSED_GEM_BOX_GEM[itemId] && hasPrices)
+      return getProcessedGemBoxUnitPrice(itemId, latestPrices);
     if (bcRate > 0 && hasPrices) {
       if (itemId === 'fixed_hell-legendary-ticket')
         return calcTicketAverage('hell', 7, latestPrices, bcRate);
@@ -845,6 +976,9 @@ export function calculatePostEfficiency(
     const qty = item.choiceOptions && item.choiceOptions.length > 0
       ? item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1)
       : item.quantity;
+    if (item.icon === FIXED_GEM_SELECT_ICON && item.choiceOptions && item.choiceOptions.length > 0) {
+      return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
+    }
     const raw = latestPrices[item.itemId] || 0;
     const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
     return (raw / bundle) * qty;

@@ -20,6 +20,7 @@ import {
   DYNAMIC_TICKET_IDS,
   formatNumber,
   getItemUnitPrice,
+  getFixedGemSelectUnitPrice,
   getUnitPrice,
   calculateGachaItemGold,
   calculateGachaExpectedValue,
@@ -85,8 +86,11 @@ export default function PackageRegisterPage() {
     }
     if (template.type === 'choice' && template.choices?.length) {
       // 시세상 가장 비싼 선택지를 기본 선택
+      const priceOf = (itemId: string) => template.id === 'gem-hero-fixed-select'
+        ? getFixedGemSelectUnitPrice(itemId, latestPrices, goldPerWon)
+        : getItemUnitPrice(itemId, latestPrices);
       const best = template.choices.reduce((max, c) =>
-        getItemUnitPrice(c.itemId, latestPrices) > getItemUnitPrice(max.itemId, latestPrices) ? c : max,
+        priceOf(c.itemId) > priceOf(max.itemId) ? c : max,
         template.choices[0]);
       newItem.selectedChoiceId = best.itemId;
     }
@@ -441,7 +445,9 @@ export default function PackageRegisterPage() {
           <div className={styles.choiceBranch}>
             {template.choices.map((choice) => {
               const isSelected = added.selectedChoiceId === choice.itemId;
-              const choicePrice = getItemUnitPrice(choice.itemId, latestPrices);
+              const choicePrice = template.id === 'gem-hero-fixed-select'
+                ? getFixedGemSelectUnitPrice(choice.itemId, latestPrices, goldPerWon)
+                : getItemUnitPrice(choice.itemId, latestPrices);
               const perBoxQty = added.choiceQuantities?.[choice.itemId] ?? 1;
               const choiceTotalQty = added.quantity * perBoxQty;
               return (
@@ -478,7 +484,9 @@ export default function PackageRegisterPage() {
             <select className={styles.choiceSelect} value={added.selectedChoiceId || ''}
               onChange={(e) => handleChoiceChange(added.id, e.target.value)}>
               {template.choices.map((choice) => {
-                const choicePrice = getItemUnitPrice(choice.itemId, latestPrices);
+                const choicePrice = template.id === 'gem-hero-fixed-select'
+                  ? getFixedGemSelectUnitPrice(choice.itemId, latestPrices, goldPerWon)
+                  : getItemUnitPrice(choice.itemId, latestPrices);
                 return (
                   <option key={choice.itemId} value={choice.itemId}>
                     {choice.name} ({formatNumber(choicePrice)}G)

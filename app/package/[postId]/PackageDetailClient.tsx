@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
@@ -17,6 +17,14 @@ import {
   PRICE_BUNDLE_SIZE,
   CRYSTAL_PER_UNIT_FALLBACK,
   getItemUnitPrice,
+  getFixedGemSelectUnitPrice,
+  getFixedGemSelectBestUnitPrice,
+  getFixedGemSelectBreakdown,
+  FIXED_GEM_SELECT_ICON,
+  PROCESSED_GEM_BOX_GEM,
+  PROCESSED_GEM_BOX_EXTRA_GOLD,
+  PROCESSED_GEM_BOX_INFO,
+  getProcessedGemBoxUnitPrice,
   getChoiceBoxGold,
   calculateGachaItemGold,
   groupMultiResults,
@@ -91,6 +99,8 @@ function getPackageItemGold(
     return (bcRate > 0 ? calcTicketAverage('hell', 6, prices, bcRate) : (item.goldOverride || 0)) * item.quantity;
   if (item.itemId === 'fixed_naraka-legendary-ticket')
     return (bcRate > 0 ? calcTicketAverage('narak', 2, prices, bcRate) : (item.goldOverride || 0)) * item.quantity;
+  if (PROCESSED_GEM_BOX_GEM[item.itemId])
+    return (Object.keys(prices).length > 0 ? getProcessedGemBoxUnitPrice(item.itemId, prices) : (item.goldOverride || 0)) * item.quantity;
   if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
     return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
   }
@@ -107,7 +117,10 @@ function getPackageItemGold(
     // 선택된 선택지가 없으면 등록 시 저장된 기본(최고가) 선택지 사용
     const effectiveId = selectedChoiceItemId || item.itemId;
     const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === effectiveId)?.quantity ?? 1);
-    return getItemUnitPrice(effectiveId, prices) * qty;
+    const unit = item.icon === FIXED_GEM_SELECT_ICON
+      ? getFixedGemSelectUnitPrice(effectiveId, prices, goldPerWon)
+      : getItemUnitPrice(effectiveId, prices);
+    return unit * qty;
   }
   return getItemUnitPrice(item.itemId, prices) * item.quantity;
 }
@@ -248,6 +261,35 @@ export default function PackageDetailPage({ initialPost }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, initialPost]);
 
+  // 고정형 젬 상자: 시세 로드 후 최고가 선택지로 자동 갱신 (등록 시점이 아닌 현재 시세 기준, 이후 뷰어가 직접 변경 가능)
+  const fixedGemAutoSelectedPostId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!post || Object.keys(latestPrices).length === 0) return;
+    if (fixedGemAutoSelectedPostId.current === post.id) return;
+    fixedGemAutoSelectedPostId.current = post.id;
+    const pickBest = (items: PackageItem[]): Record<number, string> => {
+      const updates: Record<number, string> = {};
+      items.forEach((item, idx) => {
+        if (item.icon !== FIXED_GEM_SELECT_ICON || !item.choiceOptions?.length) return;
+        let bestId = item.itemId;
+        let best = getFixedGemSelectUnitPrice(bestId, latestPrices, detailGoldPerWon);
+        for (const c of item.choiceOptions) {
+          const v = getFixedGemSelectUnitPrice(c.itemId, latestPrices, detailGoldPerWon);
+          if (v > best) { best = v; bestId = c.itemId; }
+        }
+        if (bestId !== item.itemId) updates[idx] = bestId;
+      });
+      return updates;
+    };
+    const mainUpdates = pickBest(post.items);
+    if (Object.keys(mainUpdates).length > 0)
+      setChoiceSelections((prev) => ({ ...prev, ...mainUpdates }));
+    const bonusUpdates = pickBest(post.bonusItems || []);
+    if (Object.keys(bonusUpdates).length > 0)
+      setBonusChoiceSelections((prev) => ({ ...prev, ...bonusUpdates }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestPrices, post?.id]);
+
   // 시세 로드 후 N선택 재계산
   useEffect(() => {
     if (!post || !post.selectableCount || post.selectableCount <= 0) return;
@@ -262,9 +304,14 @@ export default function PackageDetailPage({ initialPost }: Props) {
         effectiveItemId = choiceSelections[idx] || item.itemId;
       }
       const effectiveQty = getEffectiveQty(item, choiceSelections[idx]);
+      const unit = item.icon === FIXED_GEM_SELECT_ICON
+        ? getFixedGemSelectBestUnitPrice(item.choiceOptions, effectiveItemId, latestPrices, detailGoldPerWon)
+        : getItemUnitPrice(effectiveItemId, latestPrices);
       const value = item.goldOverride != null
-        ? item.goldOverride * item.quantity
-        : getItemUnitPrice(effectiveItemId, latestPrices) * effectiveQty;
+        ? (PROCESSED_GEM_BOX_GEM[item.itemId]
+            ? getProcessedGemBoxUnitPrice(item.itemId, latestPrices)
+            : item.goldOverride) * item.quantity
+        : unit * effectiveQty;
       return { idx, value };
     });
     withValue.sort((a, b) => b.value - a.value);
@@ -554,6 +601,11 @@ export default function PackageDetailPage({ initialPost }: Props) {
       return bcRate > 0 ? calcTicketAverage('hell', 6, latestPrices, bcRate) : (item.goldOverride || 0);
     if (item.itemId === 'fixed_naraka-legendary-ticket')
       return bcRate > 0 ? calcTicketAverage('narak', 2, latestPrices, bcRate) : (item.goldOverride || 0);
+    // 가공 완료 젬 상자: 연결 젬 실시간 시세 + 8,100골드
+    if (PROCESSED_GEM_BOX_GEM[item.itemId])
+      return Object.keys(latestPrices).length > 0
+        ? getProcessedGemBoxUnitPrice(item.itemId, latestPrices)
+        : (item.goldOverride || 0);
     // crystal 아이템
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && detailGoldPerWon > 0) {
       return item.crystalPerUnit * detailGoldPerWon * 27.5;
@@ -591,7 +643,9 @@ export default function PackageDetailPage({ initialPost }: Props) {
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
       } else {
-        const unitPrice = getItemUnitPrice(effectiveItemId, latestPrices);
+        const unitPrice = item.icon === FIXED_GEM_SELECT_ICON
+          ? getFixedGemSelectUnitPrice(effectiveItemId, latestPrices, detailGoldPerWon)
+          : getItemUnitPrice(effectiveItemId, latestPrices);
         const sub = unitPrice * effectiveQty;
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
@@ -1103,6 +1157,8 @@ export default function PackageDetailPage({ initialPost }: Props) {
                     : item.itemId;
                 const unitPrice = isFixed
                   ? getCrystalAdjustedUnit(item)
+                  : item.icon === FIXED_GEM_SELECT_ICON
+                  ? getFixedGemSelectUnitPrice(effectiveItemId, latestPrices, detailGoldPerWon)
                   : getItemUnitPrice(effectiveItemId, latestPrices);
                 const subtotal = itemSubtotals[idx] || 0;
                 const hasChoices = item.choiceOptions && item.choiceOptions.length > 0;
@@ -1159,6 +1215,8 @@ export default function PackageDetailPage({ initialPost }: Props) {
                           ))
                         : hasChoiceBox
                         ? `${item.name} (최대 ${item.choiceBoxPickCount || 1}개 선택)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
+                        : item.icon === FIXED_GEM_SELECT_ICON && hasChoices
+                        ? `고정형 영웅 젬 선택 상자 ×${effectiveQty.toLocaleString()}`
                         : `${shortenItemName(effective.name)} ×${effectiveQty.toLocaleString()}`}
                     </div>
 
@@ -1240,6 +1298,55 @@ export default function PackageDetailPage({ initialPost }: Props) {
           </section>
         </div>
 
+        {/* 구성품 상세 — 젬 상자류의 구성·계산 근거 (카드 안에 다 안 들어가는 정보를 여기에 풀어씀) */}
+        {(() => {
+          const rows: ReactNode[] = [];
+          const pushGemRows = (items: PackageItem[], selections: Record<number, string>, keyPrefix: string) => {
+            items.forEach((item, idx) => {
+              if (item.icon === FIXED_GEM_SELECT_ICON && item.choiceOptions && item.choiceOptions.length > 0) {
+                const selId = selections[idx] || item.itemId;
+                const sel = item.choiceOptions.find((c) => c.itemId === selId);
+                const bd = getFixedGemSelectBreakdown(selId, latestPrices, detailGoldPerWon);
+                const fixedOpts = sel?.name.match(/\(([^)]+)\)/)?.[1];
+                rows.push(
+                  <div key={`${keyPrefix}${idx}`} className={styles.gemDetailRow}>
+                    <div className={styles.gemDetailTitle}>고정형 영웅 젬 선택 상자 ×{item.quantity.toLocaleString()}</div>
+                    <div className={styles.gemDetailLine}>
+                      선택: {sel?.name || ''} — {fixedOpts ? `${fixedOpts} 옵션이 고정된 상태로 지급` : '옵션 고정 지급'}, 초기화 가능 횟수 +1
+                    </div>
+                    <div className={styles.gemDetailLine}>
+                      계산: 젬 시세 {formatNumber(bd.base)}G × {bd.multiplier} (조합 확률 1/6 확정) × 2 (초기화 가능 횟수 +1) − {formatNumber(bd.ticketGold)}G (초기화권 100크리스탈) = <strong>{formatNumber(bd.total)}G</strong>
+                    </div>
+                  </div>,
+                );
+              } else if (PROCESSED_GEM_BOX_GEM[item.itemId]) {
+                const info = PROCESSED_GEM_BOX_INFO[item.itemId];
+                const base = getItemUnitPrice(PROCESSED_GEM_BOX_GEM[item.itemId], latestPrices);
+                rows.push(
+                  <div key={`${keyPrefix}${idx}`} className={styles.gemDetailRow}>
+                    <div className={styles.gemDetailTitle}>{item.name} ×{item.quantity.toLocaleString()}</div>
+                    <div className={styles.gemDetailLine}>
+                      구성: {info.gemName} 확정 — {info.options}
+                    </div>
+                    <div className={styles.gemDetailLine}>
+                      계산: {info.gemShort} 시세 {formatNumber(base)}G + 가공 비용 {formatNumber(PROCESSED_GEM_BOX_EXTRA_GOLD)}G = <strong>{formatNumber(getProcessedGemBoxUnitPrice(item.itemId, latestPrices))}G</strong>
+                    </div>
+                  </div>,
+                );
+              }
+            });
+          };
+          pushGemRows(post.items, choiceSelections, 'gd-m-');
+          pushGemRows(post.bonusItems || [], bonusChoiceSelections, 'gd-b-');
+          if (rows.length === 0) return null;
+          return (
+            <section className={styles.itemCardsSection}>
+              <h2 className={styles.sectionTitle}>구성품 상세</h2>
+              <div className={styles.gemDetailList}>{rows}</div>
+            </section>
+          );
+        })()}
+
         {/* 보너스 구성품 (3+보너스 전용, 3회 구매 시 1회 지급) */}
         {post.packageType === '3+보너스' && post.bonusItems && post.bonusItems.length > 0 && (
           <section className={styles.itemCardsSection}>
@@ -1290,6 +1397,8 @@ export default function PackageDetailPage({ initialPost }: Props) {
                           ))
                         : hasChoiceBox
                         ? `${item.name} (최대 ${item.choiceBoxPickCount || 1}개 선택)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
+                        : item.icon === FIXED_GEM_SELECT_ICON && hasChoices
+                        ? `고정형 영웅 젬 선택 상자 ×${effectiveQty.toLocaleString()}`
                         : `${shortenItemName(effectiveChoice?.name || item.name)} ×${effectiveQty.toLocaleString()}`}
                     </div>
 

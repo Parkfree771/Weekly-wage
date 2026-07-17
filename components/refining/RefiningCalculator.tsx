@@ -977,9 +977,11 @@ export default function RefiningCalculator({
       return prices;
     };
 
+    // 시세 로딩 판정: 귀속/보유분은 가격이 의도적으로 0이 되므로, 원본 시세가 하나라도 들어왔는지로 판단
+    const pricesLoaded = Object.values(marketPrices).some(v => v > 0);
     return {
-      armor: computeOptimalAdvancedPlan('armor', advStagesByType.armor, buildPrices('armor')),
-      weapon: computeOptimalAdvancedPlan('weapon', advStagesByType.weapon, buildPrices('weapon')),
+      armor: pricesLoaded ? computeOptimalAdvancedPlan('armor', advStagesByType.armor, buildPrices('armor')) : null,
+      weapon: pricesLoaded ? computeOptimalAdvancedPlan('weapon', advStagesByType.weapon, buildPrices('weapon')) : null,
     };
   }, [advStagesByType, marketPrices, boundMaterials, ownedMaterials, materials, advancedMaterialOptions]);
 

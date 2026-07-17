@@ -9,6 +9,10 @@ import {
   CRYSTAL_PER_UNIT_FALLBACK,
   calculateGachaItemGold,
   getChoiceBoxGold,
+  getFixedGemSelectBestUnitPrice,
+  FIXED_GEM_SELECT_ICON,
+  PROCESSED_GEM_BOX_GEM,
+  getProcessedGemBoxUnitPrice,
 } from '@/lib/package-shared';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import styles from './PackageGalleryCard.module.css';
@@ -105,6 +109,8 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
   // 티켓 동적 시세 계산 (시세 변동 시 자동 반영)
   const getTicketDynamicUnit = (itemId: string, fallback: number): number => {
     const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
+    if (PROCESSED_GEM_BOX_GEM[itemId] && Object.keys(latestPrices).length > 0)
+      return getProcessedGemBoxUnitPrice(itemId, latestPrices);
     if (bcRate > 0 && Object.keys(latestPrices).length > 0) {
       if (itemId === 'fixed_hell-legendary-ticket')
         return calcTicketAverage('hell', 7, latestPrices, bcRate);
@@ -138,6 +144,9 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
       const qty = item.choiceOptions && item.choiceOptions.length > 0
         ? item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1)
         : item.quantity;
+      if (item.icon === FIXED_GEM_SELECT_ICON) {
+        return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
+      }
       const raw = latestPrices[item.itemId] || 0;
       const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
       return (raw / bundle) * qty;
@@ -191,6 +200,9 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
       const qty = item.choiceOptions && item.choiceOptions.length > 0
         ? item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1)
         : item.quantity;
+      if (item.icon === FIXED_GEM_SELECT_ICON) {
+        return sum + getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
+      }
       const raw = latestPrices[item.itemId] || 0;
       const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
       return sum + (raw / bundle) * qty;
