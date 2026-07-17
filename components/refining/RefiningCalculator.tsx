@@ -936,20 +936,16 @@ export default function RefiningCalculator({
   // 귀속 처리되었거나 보유 개수가 전체 필요량을 덮는 재료는 실지출 0으로 취급해 최적 조합을 다시 계산
   const advOptimalPlan = useMemo(() => {
     const mp = (id: string) => marketPrices[id] || 0;
-    const owned = (key: string) => ownedMaterials[key] || 0;
-    const covered = (explicitBound: boolean, key: string) =>
-      explicitBound || owned(key) >= ((materials as any)?.[key] || 0);
-
-    const baseCoveredPrice = (id: string, key: string) =>
-      covered(!!boundMaterials[key], key) ? 0 : mp(id);
+    // 최적화 입력 가격: "명시적 귀속 체크"만 0원으로 취급한다.
+    // 보유 수량(ownedMaterials) 기반 커버리지는 현재 조합의 필요량(materials)에 의존하는데,
+    // 최적화 적용 → 필요량 변화 → 커버리지/가격 변화 → 최적 조합 재변화로 이어지는
+    // 무한 피드백 루프(Maximum update depth)를 만들므로 최적화 입력에서는 절대 사용하지 않는다.
+    // (특히 미사용 재료는 필요량 0이라 항상 "커버됨(0원)"으로 계산돼 사용/미사용이 영원히 진동함)
+    const basePrice = (id: string, key: string) => (boundMaterials[key] ? 0 : mp(id));
 
     const bookIdMap: Record<'armor' | 'weapon', Record<AdvStageNum, string>> = {
       armor: { 1: '66112712', 2: '66112714', 3: '66112716', 4: '66112718' },
       weapon: { 1: '66112711', 2: '66112713', 3: '66112715', 4: '66112717' },
-    };
-    const bookKeyMap: Record<'armor' | 'weapon', Record<AdvStageNum, string>> = {
-      armor: { 1: '재봉술1단', 2: '재봉술2단', 3: '재봉술3단', 4: '재봉술4단' },
-      weapon: { 1: '야금술1단', 2: '야금술2단', 3: '야금술3단', 4: '야금술4단' },
     };
 
     const buildPrices = (type: 'armor' | 'weapon'): Record<string, number> => {
@@ -957,35 +953,63 @@ export default function RefiningCalculator({
       const breathBound = isArmor
         ? (advancedMaterialOptions.armorNormalBreath.isBound && advancedMaterialOptions.armorBonusBreath.isBound)
         : (advancedMaterialOptions.weaponNormalBreath.isBound && advancedMaterialOptions.weaponBonusBreath.isBound);
-      const breathKey = isArmor ? '빙하_상급' : '용암_상급';
       const breathId = isArmor ? '66111132' : '66111131';
 
       const prices: Record<string, number> = {
-        '66102106': baseCoveredPrice('66102106', '수호석'),
-        '66102006': baseCoveredPrice('66102006', '파괴석'),
-        '66110225': baseCoveredPrice('66110225', '돌파석'),
-        '6861012': baseCoveredPrice('6861012', '아비도스'),
-        '66130143': baseCoveredPrice('66130143', '운명파편'),
-        [breathId]: covered(breathBound, breathKey) ? 0 : mp(breathId),
+        '66102106': basePrice('66102106', '수호석'),
+        '66102006': basePrice('66102006', '파괴석'),
+        '66110225': basePrice('66110225', '돌파석'),
+        '6861012': basePrice('6861012', '아비도스'),
+        '66130143': basePrice('66130143', '운명파편'),
+        [breathId]: breathBound ? 0 : mp(breathId),
       };
       ([1, 2, 3, 4] as AdvStageNum[]).forEach(stage => {
         const id = bookIdMap[type][stage];
         const normalBound = (advancedMaterialOptions as any)[`${type}NormalBook${stage}`].isBound;
         const bonusBound = (advancedMaterialOptions as any)[`${type}BonusBook${stage}`].isBound;
-        prices[id] = covered(normalBound && bonusBound, bookKeyMap[type][stage]) ? 0 : mp(id);
+        prices[id] = (normalBound && bonusBound) ? 0 : mp(id);
       });
       return prices;
     };
 
-    // 시세 로딩 판정: 귀속/보유분은 가격이 의도적으로 0이 되므로, 원본 시세가 하나라도 들어왔는지로 판단
+    // 시세 로딩 판정: 귀속은 가격이 의도적으로 0이 되므로, 원본 시세가 하나라도 들어왔는지로 판단
     const pricesLoaded = Object.values(marketPrices).some(v => v > 0);
     return {
       armor: pricesLoaded ? computeOptimalAdvancedPlan('armor', advStagesByType.armor, buildPrices('armor')) : null,
       weapon: pricesLoaded ? computeOptimalAdvancedPlan('weapon', advStagesByType.weapon, buildPrices('weapon')) : null,
     };
-  }, [advStagesByType, marketPrices, boundMaterials, ownedMaterials, materials, advancedMaterialOptions]);
+  }, [advStagesByType, marketPrices, boundMaterials, advancedMaterialOptions]);
 
   const [openAdvOptPopup, setOpenAdvOptPopup] = useState<'armor' | 'weapon' | null>(null);
+  // 최적화 적용 상태 — 적용 후에는 시세·귀속 변경으로 최적 조합이 바뀔 때마다 자동 재적용(일반 재련 최적화와 동일).
+  // 사용자가 일반턴/선조턴을 수동 토글하면 그 타입의 자동 재적용은 해제된다.
+  const [advOptApplied, setAdvOptApplied] = useState<{ armor: boolean; weapon: boolean }>({ armor: false, weapon: false });
+
+  useEffect(() => {
+    (['armor', 'weapon'] as const).forEach(type => {
+      if (!advOptApplied[type]) return;
+      const plan = advOptimalPlan[type];
+      if (!plan) return;
+      setAdvancedMaterialOptions(prev => {
+        const next = { ...prev };
+        let changed = false;
+        const patch = (key: string, enabled: boolean) => {
+          const cur = (next as Record<string, { enabled: boolean; isBound: boolean }>)[key];
+          if (cur && cur.enabled !== enabled) {
+            (next as Record<string, { enabled: boolean; isBound: boolean }>)[key] = { ...cur, enabled };
+            changed = true;
+          }
+        };
+        patch(`${type}NormalBreath`, plan.normalBreath);
+        patch(`${type}BonusBreath`, plan.bonusBreath);
+        plan.stages.forEach(s => {
+          patch(`${type}NormalBook${s.stage}`, s.normalBook);
+          patch(`${type}BonusBook${s.stage}`, s.bonusBook);
+        });
+        return changed ? next : prev;
+      });
+    });
+  }, [advOptimalPlan, advOptApplied]);
 
   useEffect(() => {
     if (!openAdvOptPopup) return;
@@ -998,10 +1022,11 @@ export default function RefiningCalculator({
     return () => document.removeEventListener('mousedown', onDown);
   }, [openAdvOptPopup]);
 
-  // 최적 조합을 기존 일반턴/선조턴 옵션에 그대로 적용 (사용자가 이후 수동 조정 가능)
+  // 최적 조합을 기존 일반턴/선조턴 옵션에 적용 + 자동 재적용 모드 진입 (수동 토글 시 해제)
   const applyAdvOptimal = (type: 'armor' | 'weapon') => {
     const plan = advOptimalPlan[type];
     if (!plan) return;
+    setAdvOptApplied(p => ({ ...p, [type]: true }));
     const pre = type === 'armor' ? 'armor' : 'weapon';
     setAdvancedMaterialOptions(prev => {
       const next: Record<string, { enabled: boolean; isBound: boolean }> = { ...prev };
@@ -1059,12 +1084,8 @@ export default function RefiningCalculator({
               type="button"
               data-breath-opt-btn
               className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${mode === 'optimal' ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-              onClick={() => {
-                if (mode !== 'optimal') { setBreathMode(type, 'optimal'); setOpenBreathPopup(type); }
-                else setOpenBreathPopup(o => (o === type ? null : type));
-              }}
-              onMouseEnter={() => { if (mode === 'optimal') setOpenBreathPopup(type); }}
-              title="최적 숨결 · 단계별 보기"
+              onClick={() => setOpenBreathPopup(o => (o === type ? null : type))}
+              title="시세 기준 최적 숨결 조합 (팝업에서 적용)"
             >
               최적{mode === 'optimal' ? ' ▾' : ''}
             </button>
@@ -1107,6 +1128,7 @@ export default function RefiningCalculator({
   // 계승 전 장비가 있으면 "계승 전" 그룹도 함께 표시 (책 사용 여부 포함)
   const renderBreathPopup = (type: 'armor' | 'weapon') => {
     if (openBreathPopup !== type) return null;
+    const mode = breathModeOf(type);
     const isArmor = type === 'armor';
     const tbl = isArmor ? optimalBreathTable.armor : optimalBreathTable.weapon;
     const preTbl = isArmor ? optimalBreathTable.preArmor : optimalBreathTable.preWeapon;
@@ -1197,6 +1219,17 @@ export default function RefiningCalculator({
                 </div>
               </>
             )}
+            <div className={styles.advOptFooter}>
+              <span className={styles.advOptSummary} />
+              <button
+                type="button"
+                className={styles.advOptApply}
+                onClick={() => setBreathMode(type, 'optimal')}
+                disabled={mode === 'optimal'}
+              >
+                {mode === 'optimal' ? '적용됨 · 자동 갱신' : '적용'}
+              </button>
+            </div>
           </>
         )}
       </div>
@@ -1243,7 +1276,9 @@ export default function RefiningCalculator({
                     <b className={styles.advOptGold}>{Math.round(plan.totalCost / 10000).toLocaleString()}만G</b>
                     {savePct > 0 && <em className={styles.advOptSave}> · 미사용 대비 -{savePct}%</em>}
                   </span>
-                  <button type="button" className={styles.advOptApply} onClick={() => applyAdvOptimal(type)}>다시 적용</button>
+                  <button type="button" className={styles.advOptApply} onClick={() => applyAdvOptimal(type)} disabled={advOptApplied[type]}>
+                    {advOptApplied[type] ? '적용됨 · 자동 갱신' : '적용'}
+                  </button>
                 </div>
               </>
             )}
@@ -1259,14 +1294,21 @@ export default function RefiningCalculator({
     normalKey: keyof typeof advancedMaterialOptions,
     bonusKey: keyof typeof advancedMaterialOptions,
     optType?: 'armor' | 'weapon'
-  ) => (
+  ) => {
+    // 수동 토글 = 사용자가 직접 제어 → 해당 타입의 최적화 자동 재적용 해제
+    const advType: 'armor' | 'weapon' = String(normalKey).startsWith('armor') ? 'armor' : 'weapon';
+    const manualToggle = (key: keyof typeof advancedMaterialOptions) => {
+      setAdvOptApplied(p => ({ ...p, [advType]: false }));
+      setAdvancedMaterialOptions(p => ({ ...p, [key]: { ...p[key], enabled: !p[key].enabled } }));
+    };
+    return (
     <div className={styles.breathControls} onClick={e => e.stopPropagation()}>
       <div className={styles.advTurnRow}>
         <div className={styles.advTurnItem}>
           <span className={`${styles.advTurnItemLabel} ${isMobile ? styles.advTurnItemLabelMobile : ''}`}>일반턴</span>
           <button
             type="button"
-            onClick={() => setAdvancedMaterialOptions(p => ({ ...p, [normalKey]: { ...p[normalKey], enabled: !p[normalKey].enabled } }))}
+            onClick={() => manualToggle(normalKey)}
             className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions[normalKey].enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
           >
             {advancedMaterialOptions[normalKey].enabled ? '사용' : '미사용'}
@@ -1276,7 +1318,7 @@ export default function RefiningCalculator({
           <span className={`${styles.advTurnItemLabel} ${isMobile ? styles.advTurnItemLabelMobile : ''}`}>선조턴</span>
           <button
             type="button"
-            onClick={() => setAdvancedMaterialOptions(p => ({ ...p, [bonusKey]: { ...p[bonusKey], enabled: !p[bonusKey].enabled } }))}
+            onClick={() => manualToggle(bonusKey)}
             className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${advancedMaterialOptions[bonusKey].enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
           >
             {advancedMaterialOptions[bonusKey].enabled ? '사용' : '미사용'}
@@ -1299,7 +1341,8 @@ export default function RefiningCalculator({
         )}
       </div>
     </div>
-  );
+    );
+  };
 
   // 계산이 필요한 장비 필터링
   const getEquipmentsToRefine = () => {

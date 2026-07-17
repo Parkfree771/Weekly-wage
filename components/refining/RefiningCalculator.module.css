@@ -880,8 +880,9 @@ button.bulkButton:disabled,
   z-index: 200;
 }
 
-/* 최적 숨결 팝업이 열려 있는 카드는 hover 중인 다른 카드(200)보다도 항상 위 */
-.materialCard:has([data-breath-popup]) {
+/* 최적 숨결·상급재련 최적화 팝업이 열려 있는 카드는 hover 중인 다른 카드(200)보다도 항상 위 */
+.materialCard:has([data-breath-popup]),
+.materialCard:has([data-advopt-popup]) {
   z-index: 300;
 }
 
@@ -1318,6 +1319,12 @@ button.bulkButton:disabled,
 .advOptApply:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(16, 185, 129, 0.45);
+}
+.advOptApply:disabled {
+  opacity: 0.65;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
 }
 
 /* 모바일: 말풍선이 화면을 넘어 적용 버튼이 안 보이는 문제 →

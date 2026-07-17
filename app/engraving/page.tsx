@@ -536,9 +536,6 @@ export default function EngravingPage() {
                 <div className={styles.cardHead}>
                   <ClassIcon name={spec.name} src={spec.icon} size={42} />
                   <span className={styles.cardName}>{spec.name}</span>
-                  {PROVISIONAL_SPEC_IDS.has(spec.id) && (
-                    <span className={styles.provisionalBadge}>예상(미확정)</span>
-                  )}
                   {stat && <span className={styles.statBadge}>{stat}</span>}
                   {styleLabel && <span className={styles.styleBadge}>{styleLabel}</span>}
                 </div>

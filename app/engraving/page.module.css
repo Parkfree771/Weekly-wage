@@ -538,17 +538,6 @@
 }
 
 /* 신규 직업 잠정 빌드 배지 — 유저 표본 없이 임시로 넣은 빌드임을 표시 */
-.provisionalBadge {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #fff;
-  background: #8b5cf6;
-  border-radius: 6px;
-  padding: 0.16rem 0.5rem;
-  white-space: nowrap;
-  letter-spacing: 0.02em;
-}
-
 .badgeRow {
   display: flex;
   flex-direction: column;
