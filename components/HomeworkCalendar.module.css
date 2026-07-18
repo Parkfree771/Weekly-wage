@@ -1,5 +1,11 @@
 /* 숙제 기록 달력 (HomeworkCalendar) — 웹 모달 스타일 */
 
+/* 백드롭 그림자 제거 — 데스크톱 body zoom(0.85)과 fixed 백드롭의 보정이 어긋나
+   그림자가 화면 일부만 덮이는 문제. 요소는 유지해 바깥 클릭 닫기는 그대로 동작 */
+.noDim {
+  opacity: 0 !important;
+}
+
 .modalDialog {
   max-width: 480px;
 }

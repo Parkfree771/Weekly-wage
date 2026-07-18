@@ -187,7 +187,14 @@ export default function HomeworkCalendar({ show, onClose, log, todayKey, charact
   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
   return (
-    <Modal show={show} onHide={onClose} centered contentClassName={styles.modalContent} dialogClassName={styles.modalDialog}>
+    <Modal
+      show={show}
+      onHide={onClose}
+      centered
+      contentClassName={styles.modalContent}
+      dialogClassName={styles.modalDialog}
+      backdropClassName={styles.noDim}
+    >
       <div className={styles.sheet}>
         {/* 헤더 — 월 이동 + 제목(클릭 시 연/월 선택) + 닫기 */}
         <div className={styles.header}>
