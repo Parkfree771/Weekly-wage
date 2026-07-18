@@ -31,8 +31,9 @@ export async function GET(request: Request) {
     const stats = await getRankingStats({ className, titleQuery, ancientCount, specId, role, minItemLevel, maxItemLevel });
     const res = NextResponse.json(stats);
     // 랭킹 API와 동일: 필터 조합별 캐시키 분리 + 5분 엣지 캐시 → 같은 조합 반복 시 DB 안 침
+    // durable: 엣지 노드 공유 캐시 — TTL은 그대로, 적중률만 향상
     res.headers.set('Netlify-Vary', 'query');
-    res.headers.set('Netlify-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    res.headers.set('Netlify-CDN-Cache-Control', 'public, durable, s-maxage=300, stale-while-revalidate=600');
     res.headers.set('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
     return res;
   } catch (err: any) {

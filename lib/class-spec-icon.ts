@@ -58,8 +58,9 @@ const SPEC_RULES: Record<string, SpecRule> = {
 // 서포터 스펙 4종(전부 시그니처 보유 스펙). 딜러/서포터 역할 필터용.
 // 바드 절구 / 발키리 해방자 / 홀나 축오 / 도화가 만개
 const SUPPORT_CLASSES = ['바드', '발키리', '홀리나이트', '도화가'] as const;
-export const SUPPORT_SPEC_RULES: { className: string; sig: string }[] =
-  SUPPORT_CLASSES.map(c => ({ className: c, sig: SPEC_RULES[c].sig }));
+
+/** 서포터 스펙 id 4종 — DB spec_id 컬럼 기반 역할 필터용 */
+export const SUPPORT_SPEC_IDS: string[] = SUPPORT_CLASSES.map(c => SPEC_RULES[c].withId);
 
 const ICON_BY_ID = new Map(TIER_ENTRIES.map(e => [e.id, e]));
 
@@ -90,6 +91,13 @@ export const ALL_CLASS_NAMES: string[] = Object.keys(SPEC_RULES);
 export function specFilterFor(specId: string | null | undefined): SpecFilter | null {
   if (!specId) return null;
   return SPEC_FILTER_BY_ID.get(specId) || null;
+}
+
+/** 스펙 id로 아이콘 엔트리 조회 (DB spec_id 컬럼 → 표시용). 알 수 없는 id면 null */
+export function specEntryById(specId: string | null | undefined): SpecIcon | null {
+  if (!specId) return null;
+  const entry = ICON_BY_ID.get(specId);
+  return entry ? { id: entry.id, name: entry.name, icon: entry.icon } : null;
 }
 
 /** 깨달음 노드 이름 배열로 스펙 아이콘 판별. 매칭 불가/데이터 없으면 null */

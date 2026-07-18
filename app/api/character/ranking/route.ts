@@ -41,7 +41,8 @@ export async function GET(request: Request) {
     // 이게 없으면 모든 페이지가 한 캐시로 뭉개져 1~30위만 반복됨(페이지네이션 깨짐).
     res.headers.set('Netlify-Vary', 'query');
     // 같은 페이지 반복 요청은 5분 엣지 캐시 적중 → DB·함수 호출 절감. 만료 후 SWR로 지연 0.
-    res.headers.set('Netlify-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    // durable: 엣지 노드 공유 캐시 — TTL은 그대로(신규 캐릭터 반영 5분 유지), 적중률만 향상
+    res.headers.set('Netlify-CDN-Cache-Control', 'public, durable, s-maxage=300, stale-while-revalidate=600');
     res.headers.set('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
     return res;
   } catch (err: any) {

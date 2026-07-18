@@ -1,6 +1,6 @@
 import { sql } from './neon';
 import type { CharacterData } from './characterData';
-import { resolveSpecIcon, enlightenmentNodeNames, specFilterFor, SUPPORT_SPEC_RULES } from './class-spec-icon';
+import { resolveSpecIcon, enlightenmentNodeNames, specFilterFor, specEntryById, SUPPORT_SPEC_IDS } from './class-spec-icon';
 import { coreNumberFor } from './arkgrid-cores';
 
 // 칭호 필터 최소 아이템레벨. 칭호는 한 번 획득하면 저렙 부캐도 달 수 있어
@@ -8,23 +8,12 @@ import { coreNumberFor } from './arkgrid-cores';
 const TITLE_MIN_ITEM_LEVEL = 1770;
 const TITLES_REQUIRE_MIN_LEVEL = new Set<string>(['혹한의 군주', '홍염의 군주']);
 
-// arkPassive 깨달음 효과 배열 (없거나 비배열이면 빈 배열) — 스펙/역할 판별 공용
-const ENL_ARR = `jsonb_array_elements(
-  CASE WHEN jsonb_typeof(data->'arkPassive'->'effects') = 'array'
-       THEN data->'arkPassive'->'effects' ELSE '[]'::jsonb END)`;
-
-// 서포터(역할) 판별 SQL. params에 className/sig 패턴을 push하고 boolean 표현식을 반환.
-// 서포터 = 4직업 각각의 시그니처 깨달음 노드를 가진 캐릭터. 딜러 = NOT 서포터.
+// 서포터(역할) 판별 SQL — 사전계산 spec_id 컬럼 기반 (data JSONB 파싱 없음).
+// 서포터 = 서포터 스펙 id 4종 중 하나. 딜러 = NOT 서포터 (spec_id NULL 포함).
 function supportRoleExpr(params: any[]): string {
-  const parts = SUPPORT_SPEC_RULES.map(r => {
-    params.push(r.className);
-    const ci = params.length;
-    params.push(`%${r.sig}%`);
-    const si = params.length;
-    return `(class_name = $${ci} AND EXISTS (SELECT 1 FROM ${ENL_ARR} AS ee
-       WHERE ee->>'category' = '깨달음' AND ee->>'name' LIKE $${si}))`;
-  });
-  return `(${parts.join(' OR ')})`;
+  params.push(SUPPORT_SPEC_IDS);
+  // COALESCE: spec_id NULL(깨달음 데이터 없음)은 서포터 아님 → NOT 시 딜러로 분류 (기존 의미 유지)
+  return `COALESCE(spec_id = ANY($${params.length}), FALSE)`;
 }
 
 export type CoreData = {
@@ -84,6 +73,13 @@ function extractIndexFields(parsed: CharacterData) {
   const mainCoreIcon: string | null = cores[0]?.icon || null;
   const mainCoreGrade: string | null = cores[0]?.grade || null;
 
+  // 사전계산 컬럼 (랭킹·통계 쿼리가 data JSONB를 풀지 않도록 저장 시점에 계산)
+  const enlNodes = enlightenmentNodeNames(parsed.arkPassive);
+  const engravingNames = (parsed.engravings || [])
+    .filter(e => e?.isArkPassive && e.name)
+    .map(e => e.name);
+  const ancientCores = cores.filter(c => c.grade === '고대').length;
+
   return {
     className: p.className || '',
     combatPower: isFinite(p.combatPower) ? p.combatPower : 0,
@@ -95,6 +91,10 @@ function extractIndexFields(parsed: CharacterData) {
     mainCoreGrade,
     cores,
     equippedTitle: p.title || null,
+    specId,
+    enlNodes,
+    engravingNames,
+    ancientCores,
   };
 }
 
@@ -162,6 +162,7 @@ export async function upsertCharacter(characterName: string, parsed: CharacterDa
       character_image, server_name, guild_name,
       main_core_icon, main_core_grade, cores,
       equipped_title, titles_history,
+      spec_id, ancient_cores, enl_nodes, engraving_names,
       data, fetched_at, updated_at
     )
     VALUES (
@@ -170,6 +171,7 @@ export async function upsertCharacter(characterName: string, parsed: CharacterDa
       ${f.characterImage}, ${f.serverName}, ${f.guildName},
       ${f.mainCoreIcon}, ${f.mainCoreGrade}, ${JSON.stringify(f.cores)}::jsonb,
       ${f.equippedTitle}, ${JSON.stringify(nextHistory)}::jsonb,
+      ${f.specId}, ${f.ancientCores}, ${f.enlNodes}::text[], ${f.engravingNames}::text[],
       ${JSON.stringify(dataToStore)}::jsonb, NOW(), NOW()
     )
     ON CONFLICT (character_name) DO UPDATE SET
@@ -186,6 +188,10 @@ export async function upsertCharacter(characterName: string, parsed: CharacterDa
       cores           = EXCLUDED.cores,
       equipped_title  = EXCLUDED.equipped_title,
       titles_history  = EXCLUDED.titles_history,
+      spec_id         = EXCLUDED.spec_id,
+      ancient_cores   = EXCLUDED.ancient_cores,
+      enl_nodes       = EXCLUDED.enl_nodes,
+      engraving_names = EXCLUDED.engraving_names,
       data            = EXCLUDED.data,
       fetched_at      = NOW(),
       updated_at      = NOW()
@@ -301,29 +307,12 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
   }
   if (ancientCount !== null) {
     params.push(ancientCount);
-    conditions.push(
-      `(SELECT count(*) FROM jsonb_array_elements(cores) AS e WHERE e->>'grade' = '고대') = $${params.length}`
-    );
+    conditions.push(`ancient_cores = $${params.length}`);
   }
-  // 스펙 필터: 직업 + 깨달음 시그니처 노드 유무. resolveSpecIcon과 동일 의미로 매칭.
-  const specFilter = specFilterFor(opts.specId);
-  if (specFilter) {
-    params.push(specFilter.className);
-    conditions.push(`class_name = $${params.length}`);
-    params.push(`%${specFilter.sig}%`);
-    const sigIdx = params.length;
-    const enlArr = `jsonb_array_elements(
-         CASE WHEN jsonb_typeof(data->'arkPassive'->'effects') = 'array'
-              THEN data->'arkPassive'->'effects' ELSE '[]'::jsonb END)`;
-    const sigExists = `EXISTS (SELECT 1 FROM ${enlArr} AS ee
-       WHERE ee->>'category' = '깨달음' AND ee->>'name' LIKE $${sigIdx})`;
-    if (specFilter.requireSig) {
-      conditions.push(sigExists);
-    } else {
-      // else 스펙: 깨달음 데이터는 존재하나 시그니처 노드는 없음
-      const enlExists = `EXISTS (SELECT 1 FROM ${enlArr} AS ee WHERE ee->>'category' = '깨달음')`;
-      conditions.push(`${enlExists} AND NOT ${sigExists}`);
-    }
+  // 스펙 필터: 사전계산 spec_id 컬럼 직접 매칭 (specFilterFor로 알려진 id만 통과 — 화이트리스트)
+  if (opts.specId && specFilterFor(opts.specId)) {
+    params.push(opts.specId);
+    conditions.push(`spec_id = $${params.length}`);
   }
   // 역할 필터 (딜러/서포터)
   if (opts.role === 'support') {
@@ -343,20 +332,12 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
   params.push(offset);
   const offsetIdx = params.length;
 
-  // 깨달음 노드 이름 배열만 추출 (스펙 아이콘 판별용). arkPassive 없거나 비배열이면 안전하게 빈 배열
-  const enlExpr = `
-    (SELECT array_agg(e->>'name')
-       FROM jsonb_array_elements(
-         CASE WHEN jsonb_typeof(data->'arkPassive'->'effects') = 'array'
-              THEN data->'arkPassive'->'effects' ELSE '[]'::jsonb END
-       ) AS e
-      WHERE e->>'category' = '깨달음') AS enl_nodes`;
-
+  // 스펙 아이콘: 사전계산 spec_id 컬럼 사용 — data JSONB를 아예 읽지 않음
   const queryText = `
     SELECT character_name, class_name,
            ${maxCp} AS combat_power, ${maxIl} AS item_level,
            character_image, server_name, cores, equipped_title, fetched_at,
-           ${enlExpr}
+           spec_id
     FROM characters
     ${whereClause}
     ${orderClause}
@@ -365,8 +346,7 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
   const rows = (await sql.query(queryText, params)) as any[];
 
   return rows.map(r => {
-    const enlNodes: string[] = Array.isArray(r.enl_nodes) ? r.enl_nodes.filter(Boolean) : [];
-    const spec = resolveSpecIcon(r.class_name, enlNodes);
+    const spec = specEntryById(r.spec_id);
     // 저장된 num이 있으면 사용, 없으면(구 데이터) 즉석 계산 (스펙 순서 데이터 기준)
     const cores: CoreData[] = (Array.isArray(r.cores) ? r.cores : []).map((c: any) => ({
       name: c?.name || '',
@@ -452,30 +432,12 @@ export async function getRankingStats(opts: ListRankingOptions = {}): Promise<Ra
   }
   if (ancientCount !== null) {
     params.push(ancientCount);
-    frags.push({
-      key: 'ancient',
-      expr: `(SELECT count(*) FROM jsonb_array_elements(cores) AS e WHERE e->>'grade' = '고대') = $${params.length}`,
-    });
+    frags.push({ key: 'ancient', expr: `ancient_cores = $${params.length}` });
   }
-  const specFilter = specFilterFor(opts.specId);
-  if (specFilter) {
-    params.push(specFilter.className);
-    const ci = params.length;
-    params.push(`%${specFilter.sig}%`);
-    const si = params.length;
-    const enlArr = `jsonb_array_elements(
-         CASE WHEN jsonb_typeof(data->'arkPassive'->'effects') = 'array'
-              THEN data->'arkPassive'->'effects' ELSE '[]'::jsonb END)`;
-    const sigExists = `EXISTS (SELECT 1 FROM ${enlArr} AS ee
-       WHERE ee->>'category' = '깨달음' AND ee->>'name' LIKE $${si})`;
-    let expr: string;
-    if (specFilter.requireSig) {
-      expr = `class_name = $${ci} AND ${sigExists}`;
-    } else {
-      const enlExists = `EXISTS (SELECT 1 FROM ${enlArr} AS ee WHERE ee->>'category' = '깨달음')`;
-      expr = `class_name = $${ci} AND ${enlExists} AND NOT ${sigExists}`;
-    }
-    frags.push({ key: 'spec', expr });
+  // 스펙 필터: 사전계산 spec_id 컬럼 직접 매칭 (알려진 id만 통과 — 화이트리스트)
+  if (opts.specId && specFilterFor(opts.specId)) {
+    params.push(opts.specId);
+    frags.push({ key: 'spec', expr: `spec_id = $${params.length}` });
   }
   if (opts.role === 'support' || opts.role === 'dealer') {
     const expr = opts.role === 'support' ? supportRoleExpr(params) : `NOT ${supportRoleExpr(params)}`;

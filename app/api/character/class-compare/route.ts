@@ -65,33 +65,28 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 깨달음 배열 + 시그니처 유무를 한 번 계산해 두 집계가 공유
+    // 사전계산 컬럼 기반: spec_id로 시그니처 유무 판별, engraving_names로 각인 집계
+    // (data JSONB를 아예 읽지 않음 — 행 수가 늘어도 밀리초 단위 유지)
+    // spec_id IS NOT NULL = 깨달음 데이터 있는 캐릭터만 (기존 has_enl 조건과 동일)
     const base = `
       WITH cls AS (
         SELECT cores,
-               data->'engravings' AS engr,
+               engraving_names,
                GREATEST(combat_power, COALESCE(max_combat_power, 0)) AS cp,
                GREATEST(item_level, COALESCE(max_item_level, 0)) AS il,
-               EXISTS (SELECT 1 FROM jsonb_array_elements(
-                   CASE WHEN jsonb_typeof(data->'arkPassive'->'effects') = 'array'
-                        THEN data->'arkPassive'->'effects' ELSE '[]'::jsonb END) AS ee
-                 WHERE ee->>'category' = '깨달음' AND ee->>'name' LIKE $2) AS has_sig,
-               EXISTS (SELECT 1 FROM jsonb_array_elements(
-                   CASE WHEN jsonb_typeof(data->'arkPassive'->'effects') = 'array'
-                        THEN data->'arkPassive'->'effects' ELSE '[]'::jsonb END) AS ee
-                 WHERE ee->>'category' = '깨달음') AS has_enl
+               (spec_id = $2) AS has_sig
         FROM characters
-        WHERE class_name = $1
+        WHERE class_name = $1 AND spec_id IS NOT NULL
       )
     `;
-    const params = [className, `%${rule.sig}%`];
+    const params = [className, rule.withId];
 
     // 1) 스펙별 인원·평균 (최대 기록 기준 — 랭킹·통계와 동일)
     const aggRows = (await sql.query(
       `${base}
        SELECT has_sig, count(*) AS cnt,
               round(avg(cp), 2) AS avg_cp, round(avg(il), 2) AS avg_il
-       FROM cls WHERE has_enl
+       FROM cls
        GROUP BY has_sig`,
       params
     )) as any[];
@@ -105,7 +100,7 @@ export async function GET(request: Request) {
               count(*) AS cnt
        FROM cls,
             jsonb_array_elements(CASE WHEN jsonb_typeof(cores) = 'array' THEN cores ELSE '[]'::jsonb END) AS e
-       WHERE has_enl AND e->>'name' IS NOT NULL AND e->>'name' <> ''
+       WHERE e->>'name' IS NOT NULL AND e->>'name' <> ''
        GROUP BY has_sig, e->>'name'
        ORDER BY cnt DESC`,
       params
@@ -119,10 +114,8 @@ export async function GET(request: Request) {
     const comboRows = (await sql.query(
       `${base}
        SELECT has_sig, ${pick('해')} AS h, ${pick('달')} AS d, ${pick('별')} AS s,
-              (SELECT array_agg(e->>'name')
-                 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(engr)='array' THEN engr ELSE '[]'::jsonb END) AS e
-                WHERE e->>'isArkPassive' = 'true' AND e->>'name' IS NOT NULL AND e->>'name' <> '') AS engr_names
-       FROM cls WHERE has_enl`,
+              engraving_names AS engr_names
+       FROM cls`,
       params
     )) as any[];
 
@@ -216,10 +209,11 @@ export async function GET(request: Request) {
       className,
       specs: [buildSpec(rule.withId, true), buildSpec(rule.elseId, false)],
     });
-    // 직업별 캐시 키 분리 + 5분 엣지 캐시 (랭킹·통계 API와 동일 정책)
+    // 직업별 캐시 키 분리. 집계 통계라 실시간성이 덜 중요 — 30분 엣지 캐시 + 만료 후 하루까지
+    // 옛 응답 즉시 반환·백그라운드 갱신(SWR). durable: 엣지 노드 공유 캐시로 콜드 미스 최소화
     res.headers.set('Netlify-Vary', 'query');
-    res.headers.set('Netlify-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
-    res.headers.set('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+    res.headers.set('Netlify-CDN-Cache-Control', 'public, durable, s-maxage=1800, stale-while-revalidate=86400');
+    res.headers.set('Cache-Control', 'public, max-age=0, s-maxage=1800, stale-while-revalidate=86400');
     return res;
   } catch (err: any) {
     // eslint-disable-next-line no-console

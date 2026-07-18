@@ -786,6 +786,52 @@
   padding: 1.5rem 1rem;
 }
 
+/* ── 로딩 스켈레톤: 실제 카드와 같은 프레임(테두리·둥근모서리·높이) — 필터 전환 시 레이아웃 유지 ── */
+.skelCard {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.75rem 0.9rem;
+  min-height: 78px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.skelAvatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background-color: var(--card-body-bg-stone, rgba(0, 0, 0, 0.07));
+  animation: skelPulse 1.2s ease-in-out infinite;
+}
+
+.skelLines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.skelLine {
+  height: 12px;
+  border-radius: 6px;
+  background-color: var(--card-body-bg-stone, rgba(0, 0, 0, 0.07));
+  animation: skelPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skelPulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@media (max-width: 900px) {
+  .skelCard { min-height: 64px; }
+  .skelAvatar { width: 46px; height: 46px; }
+}
+
 .loadMoreContainer {
   display: flex;
   flex-direction: column;

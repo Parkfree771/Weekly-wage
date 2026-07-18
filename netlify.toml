@@ -21,6 +21,11 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# Netlify 이미지 CDN — 랭킹 카드 아바타 리사이즈용 (원본 55~133KB JPEG → ~5KB WebP)
+# /.netlify/images?url=... 로 요청하면 리사이즈+포맷 변환+엣지 캐시. 허용 원격 도메인 명시 필수.
+[images]
+  remote_images = ["https://img.lostark.co.kr/.*"]
+
 # 배포 성공 후 Durable Cache 전체 퍼지 (Cloudflare 경유 캐시 포함)
 [[plugins]]
   package = "./plugins/purge-cache"

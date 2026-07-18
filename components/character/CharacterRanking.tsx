@@ -8,6 +8,7 @@ import styles from './CharacterRanking.module.css';
 import TitleBadge from './TitleBadge';
 import FilterSelect, { type FilterGroup } from './FilterSelect';
 import { cachedGetJson, invalidateCachedGet } from '@/lib/client-fetch-cache';
+import { squareThumb } from '@/lib/image-cdn';
 import FilterStats from './FilterStats';
 import ClassSpecCompare from './ClassSpecCompare';
 import RankingFilterSheet from './RankingFilterSheet';
@@ -621,9 +622,18 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
         </div>
       )}
 
+      {/* 로딩: 실제 카드 자리를 미리 잡는 스켈레톤 — 필터 전환 시 화면이 확 비었다 차는 출렁임 방지 */}
       {isLoading && (
-        <div className={styles.loadingContainer}>
-          <div className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+        <div className={styles.cardList} aria-hidden="true">
+          {Array.from({ length: 8 }, (_, i) => (
+            <div key={i} className={styles.skelCard}>
+              <span className={styles.skelAvatar} />
+              <span className={styles.skelLines}>
+                <span className={styles.skelLine} style={{ width: '34%' }} />
+                <span className={styles.skelLine} style={{ width: '55%' }} />
+              </span>
+            </div>
+          ))}
         </div>
       )}
 
@@ -659,8 +669,9 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
                 <div className={`${styles.rank} ${rankCls}`}>{isMobile ? rank : `#${rank}`}</div>
                 <div className={styles.charImage}>
                   {e.characterImage ? (
+                    // 원본 55~133KB JPEG → CDN 리사이즈 112px(레티나 2x) — 카드 30장 기준 수 MB 절감
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={e.characterImage} alt={e.characterName} loading="lazy" decoding="async" />
+                    <img src={squareThumb(e.characterImage, 112) ?? undefined} alt={e.characterName} loading="lazy" decoding="async" />
                   ) : null}
                 </div>
                 <div className={styles.charInfo}>

@@ -83,14 +83,24 @@ function gradeColor(grade: string | null): string {
 
 export default function ClassSpecCompare({ klass, selectedSpecId, onSelectSpec, variant = 'sidebar' }: Props) {
   const [data, setData] = useState<CompareData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // 직업 전환 시 이전 직업 데이터가 한 프레임도 렌더되지 않도록 렌더 중에 즉시 비움
+  // (effect는 페인트 후 실행이라 effect에서만 비우면 이전 직업 통계가 한 번 깜빡임)
+  const [prevKlass, setPrevKlass] = useState(klass);
+  if (klass !== prevKlass) {
+    setPrevKlass(klass);
+    setData(null);
+    setLoading(true);
+  }
 
   useEffect(() => {
     if (!klass) { setData(null); return; }
     let cancelled = false;
     setLoading(true);
-    // 직업 재선택·모바일/데스크톱 remount 시 5분 메모리 캐시로 재요청 방지
-    cachedGetJson(`/api/character/class-compare?class=${encodeURIComponent(klass)}`)
+    // 직업 재선택·모바일/데스크톱 remount 시 메모리 캐시로 재요청 방지
+    // 집계 통계라 CDN(s-maxage=1800)과 맞춰 30분 — 세션 내 직업 전환은 사실상 항상 즉시
+    cachedGetJson(`/api/character/class-compare?class=${encodeURIComponent(klass)}`, 30 * 60 * 1000)
       .then(d => { if (!cancelled) setData(d); })
       .catch(() => { if (!cancelled) setData(null); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -122,7 +132,12 @@ export default function ClassSpecCompare({ klass, selectedSpecId, onSelectSpec, 
         {total > 0 && <span className={styles.headSub}>{klass} {total.toLocaleString('ko-KR')}명</span>}
       </div>
 
-      {loading && !data && <div className={styles.loading}>불러오는 중...</div>}
+      {loading && !data && (
+        <div className={styles.loadingBox}>
+          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+          <span>통계 불러오는 중...</span>
+        </div>
+      )}
       {!loading && !data && <div className={styles.loading}>통계를 불러올 수 없습니다</div>}
 
       {data && mode === 'class' && <ClassMode data={data} total={total} onSelectSpec={onSelectSpec} />}
