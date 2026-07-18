@@ -90,6 +90,33 @@ export function pickTopNCandidateIds(
   return withValue.slice(0, Math.max(0, pickCount)).map((v) => v.id);
 }
 
+/** 선택 상자: 현재 시세 기준 가치 상위 N개 합 — 저장된 선택(등록 시점 시세)이 아닌 최신 시세로 항상 최고 조합 */
+export function getChoiceBoxBestGold(
+  candidates: ChoiceBoxCandidate[] | undefined,
+  pickCount: number | undefined,
+  prices: Record<string, number>,
+): number {
+  if (!candidates || candidates.length === 0) return 0;
+  const n = Math.max(1, pickCount || 1);
+  return getChoiceBoxGold(candidates, pickTopNCandidateIds(candidates, n, prices), prices);
+}
+
+/** 일반 choice 아이템: 선택지 중 현재 시세 최고가 (단가 × 선택지별 수량) — 상자 1개 기준.
+    저장된 선택은 등록 시점 시세라 이후 시세가 뒤집히면 낮은 아이템으로 계산되는 문제 방지 */
+export function getChoiceBestValue(
+  choiceOptions: { itemId: string; quantity?: number }[],
+  fallbackItemId: string,
+  prices: Record<string, number>,
+): number {
+  let best = getItemUnitPrice(fallbackItemId, prices)
+    * (choiceOptions.find((c) => c.itemId === fallbackItemId)?.quantity ?? 1);
+  for (const c of choiceOptions) {
+    const v = getItemUnitPrice(c.itemId, prices) * (c.quantity ?? 1);
+    if (v > best) best = v;
+  }
+  return best;
+}
+
 // ─── 패키지에 넣을 수 있는 아이템 목록 ───
 export const TEMPLATE_ITEMS: TemplateItem[] = [
   // ── 결정 ──
@@ -866,6 +893,11 @@ export function calculateGachaItemGold(
     const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
     if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
   }
+  // 선택 상자 → 현재 시세 기준 가치 상위 N개 합
+  if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
+    const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
+    return getChoiceBoxBestGold(item.choiceBoxCandidates, n, prices) * item.quantity;
+  }
   // 묶음 주머니 → 내부 아이템 시세 합산 × 주머니 수량
   if (item.bundleItems && item.bundleItems.length > 0) {
     const perBundleValue = item.bundleItems.reduce((sum, bi) => {
@@ -873,17 +905,17 @@ export function calculateGachaItemGold(
     }, 0);
     return perBundleValue * item.quantity;
   }
-  // 선택(choice) 아이템 → 선택지 중 최고가
+  // 선택(choice) 아이템 → 선택지 중 최고가 (선택지별 수량 반영)
   if (item.choiceOptions && item.choiceOptions.length > 0) {
-    const isFixedGemSelect = item.icon === FIXED_GEM_SELECT_ICON;
-    let maxPrice = 0;
-    for (const c of item.choiceOptions) {
-      const p = isFixedGemSelect
-        ? getFixedGemSelectUnitPrice(c.itemId, prices, goldPerWon)
-        : getItemUnitPrice(c.itemId, prices);
-      if (p > maxPrice) maxPrice = p;
+    if (item.icon === FIXED_GEM_SELECT_ICON) {
+      let maxPrice = 0;
+      for (const c of item.choiceOptions) {
+        const p = getFixedGemSelectUnitPrice(c.itemId, prices, goldPerWon);
+        if (p > maxPrice) maxPrice = p;
+      }
+      return maxPrice * item.quantity;
     }
-    return maxPrice * item.quantity;
+    return getChoiceBestValue(item.choiceOptions, item.itemId, prices) * item.quantity;
   }
   // 동적 티켓
   if (item.goldOverride != null) {
@@ -960,7 +992,9 @@ export function calculatePostEfficiency(
 
   const itemValue = (item: import('@/types/package').PackageItem): number => {
     if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
-      return getChoiceBoxGold(item.choiceBoxCandidates, item.choiceBoxSelectedIds, latestPrices) * item.quantity;
+      // 저장된 선택 대신 현재 시세 상위 N개로 계산 (등록 후 시세 역전 대응)
+      const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
+      return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
     }
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
       return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
@@ -972,16 +1006,17 @@ export function calculatePostEfficiency(
     if (item.goldOverride != null) {
       return getTicketUnit(item.itemId, item.goldOverride) * item.quantity;
     }
-    // choice 타입: item.quantity = 박스 개수, choiceOptions[i].quantity = 선택지별 박스당 개수(미지정 시 1배)
-    const qty = item.choiceOptions && item.choiceOptions.length > 0
-      ? item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1)
-      : item.quantity;
-    if (item.icon === FIXED_GEM_SELECT_ICON && item.choiceOptions && item.choiceOptions.length > 0) {
-      return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
+    // choice 타입: 저장된 선택이 아닌 현재 시세 최고가 선택지 기준 (item.quantity = 박스 개수)
+    if (item.choiceOptions && item.choiceOptions.length > 0) {
+      if (item.icon === FIXED_GEM_SELECT_ICON) {
+        const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
+        return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
+      }
+      return getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity;
     }
     const raw = latestPrices[item.itemId] || 0;
     const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-    return (raw / bundle) * qty;
+    return (raw / bundle) * item.quantity;
   };
 
   const itemValues = post.items.map(itemValue);

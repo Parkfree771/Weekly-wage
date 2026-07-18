@@ -10,6 +10,7 @@ import FilterSelect, { type FilterGroup } from './FilterSelect';
 import { cachedGetJson, invalidateCachedGet } from '@/lib/client-fetch-cache';
 import FilterStats from './FilterStats';
 import ClassSpecCompare from './ClassSpecCompare';
+import RankingFilterSheet from './RankingFilterSheet';
 import AppSidebarPromo from '@/components/AppSidebarPromo';
 import AdBanner from '@/components/ads/AdBanner';
 
@@ -185,6 +186,8 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
   const [error, setError] = useState<string | null>(null);
   // 모바일(≤900px)에서는 필터 비율을 상단 고정 가로형으로, 그 외엔 우측 세로 패널로 렌더
   const [isMobile, setIsMobile] = useState(false);
+  // 모바일 필터·통계 바텀시트 (앱과 동일 구조)
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 900px)');
@@ -362,6 +365,17 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
     : effLevel.max ? `${effLevel.max} 이하`
     : undefined;
 
+  // 모바일: 적용된 필터 칩 (탭하면 개별 제거 — 앱과 동일)
+  const mobileChips: { key: string; label: string; icon?: string; onRemove: () => void }[] = [];
+  if (selectedSpec) mobileChips.push({ key: 'spec', label: specLabel || '', icon: specIcon, onRemove: () => setSelectedSpec('') });
+  if (selectedTitle) mobileChips.push({ key: 'title', label: titleLabel || '', onRemove: () => setSelectedTitle('') });
+  if (selectedAncient) mobileChips.push({ key: 'ancient', label: ancientLabel || '', onRemove: () => setSelectedAncient('') });
+  if (selectedRole) mobileChips.push({ key: 'role', label: roleLabel || '', onRemove: () => setSelectedRole('') });
+  if (levelMin || levelMax) {
+    const lvl = levelMin && levelMax ? `${levelMin}~${levelMax}` : levelMin ? `${levelMin} 이상` : `${levelMax} 이하`;
+    mobileChips.push({ key: 'level', label: `Lv ${lvl}`, onRemove: () => { setLevelMin(''); setLevelMax(''); } });
+  }
+
   return (
     <div className={styles.layout}>
     {/* 좌측: 전 스펙 펼침 사이드바 (grid 왼쪽 1fr 컬럼 채움 — 데스크톱 전용) */}
@@ -412,18 +426,8 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
 
     <section className={styles.section}>
       <div className={styles.mobileTop}>
+      {!isMobile && (
       <div className={styles.header}>
-        <div className={styles.titleRow}>
-          <h2 className={styles.title}>캐릭터 랭킹</h2>
-          <button
-            type="button"
-            className={styles.resetBadge}
-            onClick={resetFilters}
-            disabled={!hasActiveFilter}
-          >
-            초기화
-          </button>
-        </div>
         <div className={styles.controls}>
           {/* 직업 토글 — 데스크톱(≥1520px)에선 좌측 사이드바가 대체하므로 숨김. 좁은 화면·모바일은 유지 */}
           <span className={styles.specToggle}>
@@ -516,10 +520,67 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
             </button>
           </div>
 
+          {/* 초기화: 필터 줄 맨 오른쪽 (제목 줄 제거로 한 줄 위로 당김) */}
+          <button
+            type="button"
+            className={`${styles.resetBadge} ${styles.resetBadgeEnd}`}
+            onClick={resetFilters}
+            disabled={!hasActiveFilter}
+          >
+            초기화
+          </button>
         </div>
       </div>
+      )}
 
+      {/* 모바일: 앱과 동일한 헤더 — 제목 + 필터 버튼, 정렬 퀵토글, 적용 필터 칩, 통계 요약 */}
       {isMobile && (
+        <>
+        <div className={styles.mHeadRow}>
+          <h2 className={styles.title}>캐릭터 랭킹</h2>
+          <button
+            type="button"
+            className={`${styles.mFilterBtn} ${hasActiveFilter ? styles.mFilterBtnActive : ''}`}
+            onClick={() => setSheetOpen(true)}
+          >
+            필터 · 통계{mobileChips.length > 0 ? ` (${mobileChips.length})` : ''}
+          </button>
+        </div>
+
+        <div className={styles.mSortRow}>
+          <span className={styles.mSortLabel}>정렬</span>
+          {([['combat_power', '전투력'], ['item_level', '아이템레벨']] as [SortKey, string][]).map(([key, label]) => {
+            const active = sort?.key === key;
+            const arrow = active ? (sort!.dir === 'desc' ? ' ↓' : ' ↑') : '';
+            return (
+              <button
+                key={key}
+                type="button"
+                className={`${styles.mSortBtn} ${active ? styles.mSortBtnActive : ''}`}
+                onClick={() => cycleSort(key)}
+              >
+                {label}{arrow}
+              </button>
+            );
+          })}
+        </div>
+
+        {mobileChips.length > 0 && (
+          <div className={styles.mChipsRow}>
+            {mobileChips.map(c => (
+              <button key={c.key} type="button" className={styles.mActiveChip} onClick={c.onRemove}>
+                {c.icon && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.icon} alt="" className={styles.mChipIcon} />
+                )}
+                <span className={styles.mChipLabel}>{c.label}</span>
+                <span className={styles.mChipX} aria-hidden>✕</span>
+              </button>
+            ))}
+            <button type="button" className={styles.mClearChip} onClick={resetFilters}>모두 지우기</button>
+          </div>
+        )}
+
         <div className={styles.mobileStats}>
           <FilterStats
             spec={isClassSel ? '' : selectedSpec}
@@ -532,18 +593,33 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
             variant="mobile"
             labels={{ spec: specLabel, specIcon, title: titleLabel, ancient: ancientLabel, role: roleLabel, level: levelLabel }}
           />
-          {compareClass && (
-            <div className={styles.mobileCompare}>
-              <ClassSpecCompare
-                klass={compareClass}
-                selectedSpecId={isClassSel ? undefined : selectedSpec || undefined}
-                onSelectSpec={setSelectedSpec}
-              />
-            </div>
-          )}
         </div>
+
+        {compareClass && (
+          <div className={styles.mobileCompare}>
+            <ClassSpecCompare
+              klass={compareClass}
+              selectedSpecId={isClassSel ? undefined : selectedSpec || undefined}
+              onSelectSpec={setSelectedSpec}
+            />
+          </div>
+        )}
+        </>
       )}
       </div>
+
+      {/* 데스크톱: 직업 선택 시 코어·각인 통계를 필터와 랭킹 사이에 표시
+          (사이드바에 두면 세로로 길어져 화면에 따라 거의 안 보이는 문제) */}
+      {!isMobile && compareClass && (
+        <div className={styles.topCompare}>
+          <ClassSpecCompare
+            klass={compareClass}
+            selectedSpecId={isClassSel ? undefined : selectedSpec || undefined}
+            onSelectSpec={setSelectedSpec}
+            variant="wide"
+          />
+        </div>
+      )}
 
       {isLoading && (
         <div className={styles.loadingContainer}>
@@ -569,8 +645,9 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
           {entries.map((e, idx) => {
             const rank = idx + 1;
             const rankCls = rank === 1 ? styles.rank1 : rank === 2 ? styles.rank2 : rank === 3 ? styles.rank3 : '';
-            const orderCores = e.cores.filter(c => c.name.includes('질서'));
-            const chaosCores = e.cores.filter(c => c.name.includes('혼돈'));
+            // 모바일은 앱과 동일하게 질서·혼돈 각 3개까지만 (카드 한 줄 유지)
+            const orderCores = e.cores.filter(c => c.name.includes('질서')).slice(0, isMobile ? 3 : undefined);
+            const chaosCores = e.cores.filter(c => c.name.includes('혼돈')).slice(0, isMobile ? 3 : undefined);
             return (
               <Fragment key={e.characterName}>
               <button
@@ -578,7 +655,8 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
                 className={styles.card}
                 onClick={() => onSelect(e.characterName)}
               >
-                <div className={`${styles.rank} ${rankCls}`}>#{rank}</div>
+                {/* 모바일은 아바타 위 메달(숫자만) — 앱과 동일 */}
+                <div className={`${styles.rank} ${rankCls}`}>{isMobile ? rank : `#${rank}`}</div>
                 <div className={styles.charImage}>
                   {e.characterImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -681,13 +759,46 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
             maxLevel={effLevel.max}
             labels={{ spec: specLabel, specIcon, title: titleLabel, ancient: ancientLabel, role: roleLabel, level: levelLabel }}
           />
-          <ClassSpecCompare
-            klass={compareClass}
-            selectedSpecId={isClassSel ? undefined : selectedSpec || undefined}
-            onSelectSpec={setSelectedSpec}
-          />
           <AppSidebarPromo />
         </aside>
+      )}
+
+      {/* 모바일: 필터 · 통계 바텀시트 (앱 RankingFilterSheet 미러) */}
+      {isMobile && (
+        <RankingFilterSheet
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          selectedSpec={selectedSpec}
+          onSelectSpec={setSelectedSpec}
+          selectedTitle={selectedTitle}
+          onTitle={setSelectedTitle}
+          selectedAncient={selectedAncient}
+          onAncient={setSelectedAncient}
+          selectedRole={selectedRole}
+          onRole={setSelectedRole}
+          levelMin={levelMin}
+          levelMax={levelMax}
+          onLevelMin={setLevelMin}
+          onLevelMax={setLevelMax}
+          sort={sort}
+          onCycleSort={cycleSort}
+          hasActiveFilter={hasActiveFilter}
+          onReset={resetFilters}
+          titleOptions={TITLE_FILTER_OPTIONS}
+          statsNode={
+            <FilterStats
+              spec={isClassSel ? '' : selectedSpec}
+              klass={selClass}
+              title={selectedTitle}
+              ancient={selectedAncient}
+              role={selectedRole}
+              minLevel={effLevel.min}
+              maxLevel={effLevel.max}
+              variant="mobile"
+              labels={{ spec: specLabel, specIcon, title: titleLabel, ancient: ancientLabel, role: roleLabel, level: levelLabel }}
+            />
+          }
+        />
       )}
     </div>
   );
@@ -698,20 +809,25 @@ function CoreBadge({ core }: { core: Core }) {
   const factionColor = getFactionColor(core.name);
   const shortName = (core.name || '').replace(/.*코어\s*[:\-]\s*/, '');
   return (
-    <div
-      className={styles.coreBadge}
-      style={{
-        background: bg,
-        borderColor: factionColor,
-        boxShadow: `0 0 6px ${factionColor}44`,
-      }}
-      title={`${core.name} (${core.grade || ''}) ${core.point || 0}P${core.num ? ` · ${core.num}번` : ''}`}
+    // 호버 즉시 코어 이름 툴팁 (브라우저 title 지연 없이 어떤 코어인지 바로 표시)
+    <span
+      className={styles.coreTipWrap}
+      data-tip={`${core.name}${core.grade ? ` · ${core.grade}` : ''} · ${core.point || 0}P${core.num ? ` · ${core.num}번` : ''}`}
     >
-      {core.icon ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={core.icon} alt={shortName} />
-      ) : null}
-      {core.num != null && <span className={styles.coreNum}>{core.num}</span>}
-    </div>
+      <div
+        className={styles.coreBadge}
+        style={{
+          background: bg,
+          borderColor: factionColor,
+          boxShadow: `0 0 6px ${factionColor}44`,
+        }}
+      >
+        {core.icon ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={core.icon} alt={shortName} />
+        ) : null}
+        {core.num != null && <span className={styles.coreNum}>{core.num}</span>}
+      </div>
+    </span>
   );
 }

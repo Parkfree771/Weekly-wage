@@ -26,6 +26,7 @@ import {
   PROCESSED_GEM_BOX_INFO,
   getProcessedGemBoxUnitPrice,
   getChoiceBoxGold,
+  pickTopNCandidateIds,
   calculateGachaItemGold,
   groupMultiResults,
 } from '@/lib/package-shared';
@@ -261,23 +262,38 @@ export default function PackageDetailPage({ initialPost }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, initialPost]);
 
-  // 고정형 젬 상자: 시세 로드 후 최고가 선택지로 자동 갱신 (등록 시점이 아닌 현재 시세 기준, 이후 뷰어가 직접 변경 가능)
-  const fixedGemAutoSelectedPostId = useRef<string | null>(null);
+  // 선택형 아이템: 시세 로드 후 최고가 선택지로 자동 갱신 (등록 시점이 아닌 현재 시세 기준, 이후 뷰어가 직접 변경 가능)
+  // 고정형 젬 상자뿐 아니라 일반 choice·선택 상자도 등록 후 시세가 역전되면 저장된 선택이 낮은 아이템일 수 있음
+  const autoSelectedPostId = useRef<string | null>(null);
   useEffect(() => {
     if (!post || Object.keys(latestPrices).length === 0) return;
-    if (fixedGemAutoSelectedPostId.current === post.id) return;
-    fixedGemAutoSelectedPostId.current = post.id;
+    if (autoSelectedPostId.current === post.id) return;
+    autoSelectedPostId.current = post.id;
     const pickBest = (items: PackageItem[]): Record<number, string> => {
       const updates: Record<number, string> = {};
       items.forEach((item, idx) => {
-        if (item.icon !== FIXED_GEM_SELECT_ICON || !item.choiceOptions?.length) return;
+        if (!item.choiceOptions?.length) return;
+        const unit = (id: string) =>
+          item.icon === FIXED_GEM_SELECT_ICON
+            ? getFixedGemSelectUnitPrice(id, latestPrices, detailGoldPerWon)
+            : getItemUnitPrice(id, latestPrices) * (item.choiceOptions!.find((c) => c.itemId === id)?.quantity ?? 1);
         let bestId = item.itemId;
-        let best = getFixedGemSelectUnitPrice(bestId, latestPrices, detailGoldPerWon);
+        let best = unit(bestId);
         for (const c of item.choiceOptions) {
-          const v = getFixedGemSelectUnitPrice(c.itemId, latestPrices, detailGoldPerWon);
+          const v = unit(c.itemId);
           if (v > best) { best = v; bestId = c.itemId; }
         }
         if (bestId !== item.itemId) updates[idx] = bestId;
+      });
+      return updates;
+    };
+    // 선택 상자: 현재 시세 기준 가치 상위 N개로 초기 선택 재계산
+    const pickBestBox = (items: PackageItem[]): Record<number, string[]> => {
+      const updates: Record<number, string[]> = {};
+      items.forEach((item, idx) => {
+        if (!item.choiceBoxCandidates?.length) return;
+        const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
+        updates[idx] = pickTopNCandidateIds(item.choiceBoxCandidates, n, latestPrices);
       });
       return updates;
     };
@@ -287,6 +303,12 @@ export default function PackageDetailPage({ initialPost }: Props) {
     const bonusUpdates = pickBest(post.bonusItems || []);
     if (Object.keys(bonusUpdates).length > 0)
       setBonusChoiceSelections((prev) => ({ ...prev, ...bonusUpdates }));
+    const mainBoxUpdates = pickBestBox(post.items);
+    if (Object.keys(mainBoxUpdates).length > 0)
+      setChoiceBoxSelections((prev) => ({ ...prev, ...mainBoxUpdates }));
+    const bonusBoxUpdates = pickBestBox(post.bonusItems || []);
+    if (Object.keys(bonusBoxUpdates).length > 0)
+      setBonusChoiceBoxSelections((prev) => ({ ...prev, ...bonusBoxUpdates }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestPrices, post?.id]);
 

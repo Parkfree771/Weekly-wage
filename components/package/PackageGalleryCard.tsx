@@ -8,7 +8,8 @@ import {
   PRICE_BUNDLE_SIZE,
   CRYSTAL_PER_UNIT_FALLBACK,
   calculateGachaItemGold,
-  getChoiceBoxGold,
+  getChoiceBoxBestGold,
+  getChoiceBestValue,
   getFixedGemSelectBestUnitPrice,
   FIXED_GEM_SELECT_ICON,
   PROCESSED_GEM_BOX_GEM,
@@ -78,16 +79,15 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
       // 가장 비싼 N개만 체크
       const withValue = post.items.map((item, idx) => {
         const value = item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0
-          ? getChoiceBoxGold(item.choiceBoxCandidates, item.choiceBoxSelectedIds, latestPrices) * item.quantity
+          ? getChoiceBoxBestGold(item.choiceBoxCandidates, item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length, latestPrices) * item.quantity
           : item.goldOverride != null
           ? item.goldOverride * item.quantity
+          : item.choiceOptions && item.choiceOptions.length > 0
+          ? getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity
           : (() => {
-              const qty = item.choiceOptions && item.choiceOptions.length > 0
-                ? item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1)
-                : item.quantity;
               const raw = latestPrices[item.itemId] || 0;
               const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-              return (raw / bundle) * qty;
+              return (raw / bundle) * item.quantity;
             })();
         return { idx, value };
       });
@@ -126,7 +126,9 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
   const itemSubtotals = useMemo(() => {
     return post.items.map((item) => {
       if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
-        return getChoiceBoxGold(item.choiceBoxCandidates, item.choiceBoxSelectedIds, latestPrices) * item.quantity;
+        // 현재 시세 상위 N개 조합 (저장된 선택은 등록 시점 시세라 역전될 수 있음)
+        const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
+        return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
       }
       if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
         return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
@@ -140,16 +142,17 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
         const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
         return dynamicUnit * item.quantity;
       }
-      // choice 타입: item.quantity = 박스 개수, choiceOptions[i].quantity = 선택지별 박스당 개수(미지정 시 1배)
-      const qty = item.choiceOptions && item.choiceOptions.length > 0
-        ? item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1)
-        : item.quantity;
-      if (item.icon === FIXED_GEM_SELECT_ICON) {
-        return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
+      // choice 타입: 현재 시세 최고가 선택지 기준 (item.quantity = 박스 개수)
+      if (item.choiceOptions && item.choiceOptions.length > 0) {
+        if (item.icon === FIXED_GEM_SELECT_ICON) {
+          const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
+          return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
+        }
+        return getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity;
       }
       const raw = latestPrices[item.itemId] || 0;
       const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-      return (raw / bundle) * qty;
+      return (raw / bundle) * item.quantity;
     });
   }, [post.items, latestPrices, goldPerWon]);
 
@@ -181,33 +184,9 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
   const totalGold = useMemo(() => {
     return post.items.reduce((sum, item, idx) => {
       if (checkedItems[idx] === false) return sum;
-      if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
-        return sum + getChoiceBoxGold(item.choiceBoxCandidates, item.choiceBoxSelectedIds, latestPrices) * item.quantity;
-      }
-      if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
-        return sum + item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
-      }
-      // 기존 패키지 하위 호환
-      if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
-        const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
-        if (fallback) return sum + fallback * goldPerWon * 27.5 * item.quantity;
-      }
-      if (item.goldOverride != null) {
-        const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
-        return sum + dynamicUnit * item.quantity;
-      }
-      // choice 타입: item.quantity = 박스 개수, choiceOptions[i].quantity = 선택지별 박스당 개수(미지정 시 1배)
-      const qty = item.choiceOptions && item.choiceOptions.length > 0
-        ? item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1)
-        : item.quantity;
-      if (item.icon === FIXED_GEM_SELECT_ICON) {
-        return sum + getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
-      }
-      const raw = latestPrices[item.itemId] || 0;
-      const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-      return sum + (raw / bundle) * qty;
+      return sum + (itemSubtotals[idx] || 0);
     }, 0);
-  }, [post.items, latestPrices, checkedItems, goldPerWon]);
+  }, [post.items, checkedItems, itemSubtotals]);
   // 가챠: 기대값 계산 (체크 해제 아이템은 골드 0으로 계산, 확률은 유지)
   const isGacha = post.packageType === '가챠';
   const gachaBcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
@@ -389,7 +368,9 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
     if (post.packageType !== '3+보너스' || !post.bonusItems || post.bonusItems.length === 0) return 0;
     return post.bonusItems.reduce((sum, item) => {
       if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
-        return sum + getChoiceBoxGold(item.choiceBoxCandidates, item.choiceBoxSelectedIds, latestPrices) * item.quantity;
+        // 현재 시세 상위 N개 조합 (저장된 선택은 등록 시점 시세라 역전될 수 있음)
+        const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
+        return sum + getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
       }
       if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
         return sum + item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
@@ -401,6 +382,14 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
       if (item.goldOverride != null) {
         const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
         return sum + dynamicUnit * item.quantity;
+      }
+      // choice 타입: 현재 시세 최고가 선택지 기준
+      if (item.choiceOptions && item.choiceOptions.length > 0) {
+        if (item.icon === FIXED_GEM_SELECT_ICON) {
+          const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
+          return sum + getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
+        }
+        return sum + getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity;
       }
       const raw = latestPrices[item.itemId] || 0;
       const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
@@ -543,73 +532,77 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
             </span>
           </div>
 
-          {/* 총 골드 가치 / 기대값 */}
-          <div className={styles.resultRow}>
-            <span className={styles.resultLabel}>{isGacha ? '기대값' : '총 골드 가치'}</span>
-            <span className={styles.resultValueGold}>
-              {formatNumber(isGacha ? gachaExpectedGold : totalGold)} G
-            </span>
-          </div>
-
-          {(isBundle || isBonusPkg) && !isGacha && (
+          {/* 가격 줄 바로 아래: 33,000원 = [골드] 환산값 — 구성품 가치 줄과 같은 열 정렬 */}
+          {goldPerWon > 0 && post.priceCurrency !== 'blueCrystal' && (
             <div className={styles.resultRow}>
-              <span className={styles.resultLabel}>{post.packageType} 보정</span>
-              <span className={styles.resultValueGold}>{formatNumber(bundleGold)} G</span>
+              <span className={styles.cashNum}>{formatNumber(post.royalCrystalPrice)}원</span>
+              <span className={styles.resultValueGold}>
+                ={' '}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/gold.webp" alt="골드" className={styles.goldIconInline} />
+                {formatNumber(cashGold)}
+              </span>
             </div>
           )}
 
-          <div className={styles.resultDivider} />
-
-          {/* 환율 */}
-          <div className={styles.resultRow} onClick={(e) => e.stopPropagation()}>
-            <span className={styles.resultLabel}>환율</span>
-            <div className={styles.rateRow}>
+          {/* 구성품 가치 / 기대값 */}
+          <div className={styles.resultRow}>
+            <span className={styles.resultLabel}>{isGacha ? '기대값' : '구성품 가치'}</span>
+            <span className={styles.resultValueGold}>
+              ={' '}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/gold.webp" alt="골드" className={styles.rateIconGold} />
-              <span className={styles.rateFixed}>100</span>
-              <span className={styles.rateSep}>:</span>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/royal.webp" alt="로얄" className={styles.rateIconRoyal} />
-              <input
-                type="number"
-                className={styles.rateInput}
-                value={wonPer100Gold || ''}
-                onChange={(e) => setWonPer100Gold(parseInt(e.target.value) || 0)}
-                placeholder="32"
-                min={1}
-              />
-            </div>
+              <img src="/gold.webp" alt="골드" className={styles.goldIconInline} />
+              {formatNumber(isGacha ? gachaExpectedGold : totalGold)}
+            </span>
           </div>
-          <span className={styles.rateHint}>&#8593; 직접 수정 가능</span>
 
-          {/* 이득률 */}
+          {/* 1개 구매 결과 — 매트 배지 (이득 초록 / 손해 빨강) */}
           {goldPerWon > 0 && !isGacha && (
+            <div className={styles.resultRow}>
+              <span className={styles.resultLabel}>1개 구매</span>
+              <span className={`${styles.benefitBadge} ${singleBenefit >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
+                {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
+              </span>
+            </div>
+          )}
+
+          {/* 가챠: 기대 효율 배지 */}
+          {goldPerWon > 0 && isGacha && (
+            <div className={styles.resultRow}>
+              <span className={styles.resultLabel}>기대 효율</span>
+              <span className={`${styles.benefitBadge} ${singleBenefit >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
+                {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
+              </span>
+            </div>
+          )}
+
+          {(isBundle || isBonusPkg) && !isGacha && (
             <>
+              {/* 구분선: 1개 구매 결과와 묶음(3+1/3+보너스) 구간 사이 */}
               <div className={styles.resultDivider} />
-              <div className={styles.benefitArea}>
-                <div className={styles.benefitLine}>
-                  <span className={styles.benefitLabel}>1개 구매</span>
-                  <span className={`${styles.benefitValue} ${singleBenefit >= 0 ? styles.benefitPositive : styles.benefitNegative}`}>
-                    {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
+              <div className={styles.resultRow}>
+                <span className={styles.resultLabel}>{isBonusPkg ? post.packageType : `${post.packageType} 보정`}</span>
+                <span className={styles.resultValueGold}>
+                  ={' '}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/gold.webp" alt="골드" className={styles.goldIconInline} />
+                  {formatNumber(bundleGold)}
+                </span>
+              </div>
+              {goldPerWon > 0 && (
+                <div className={styles.resultRow}>
+                  <span className={styles.resultLabel}>{post.packageType} 구매</span>
+                  <span className={`${styles.benefitBadge} ${bundleBenefit >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
+                    {bundleBenefit >= 0 ? '+' : ''}{bundleBenefit.toFixed(1)}%
                   </span>
                 </div>
-                {(isBundle || isBonusPkg) && (
-                  <div className={styles.benefitLine}>
-                    <span className={styles.benefitLabel}>{post.packageType} 구매</span>
-                    <span className={`${styles.benefitValue} ${bundleBenefit >= 0 ? styles.benefitPositive : styles.benefitNegative}`}>
-                      {bundleBenefit >= 0 ? '+' : ''}{bundleBenefit.toFixed(1)}%
-                    </span>
-                  </div>
-                )}
-              </div>
+              )}
             </>
           )}
 
           {/* 가챠 버튼 + 결과 */}
           {isGacha && (
             <>
-              <div className={styles.resultDivider} />
-
               {/* 1회 결과 - 컴팩트 2줄 */}
               {gachaPhase === 'result' && gachaMode === 'single' && gachaWinner >= 0 && (() => {
                 const winOrigIdx = gachaDisplayOrder[gachaWinner];
@@ -626,7 +619,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                   </div>
                   <div className={styles.gachaResultRow}>
                     {goldPerWon > 0 && (
-                      <span className={`${styles.gachaResultBenefit} ${benefit >= 0 ? styles.benefitPositive : styles.benefitNegative}`}>
+                      <span className={`${styles.benefitBadge} ${benefit >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
                         {benefit >= 0 ? '+' : ''}{benefit.toFixed(1)}%
                       </span>
                     )}
@@ -656,7 +649,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                     </div>
                     <div className={styles.gachaResultRow}>
                       {goldPerWon > 0 && (
-                        <span className={`${styles.gachaResultBenefit} ${multiBenefit >= 0 ? styles.benefitPositive : styles.benefitNegative}`}>
+                        <span className={`${styles.benefitBadge} ${multiBenefit >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
                           {multiBenefit >= 0 ? '+' : ''}{multiBenefit.toFixed(1)}%
                         </span>
                       )}
@@ -679,10 +672,33 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
               )}
             </>
           )}
+
         </div>
 
-        <div className={styles.detailLink}>
-          상세보기 &#8594;
+        {/* 하단 한 줄: 환율 입력(좌) │ 상세보기(우) — 위 결과와는 가로선, 둘 사이는 세로선 */}
+        <div className={styles.bottomRow}>
+          <div className={styles.bottomRate} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.rateRow}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/gold.webp" alt="골드" className={styles.rateIconGold} />
+              <span className={styles.rateFixed}>100</span>
+              <span className={styles.rateSep}>:</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/royal.webp" alt="로얄" className={styles.rateIconRoyal} />
+              <input
+                type="number"
+                className={styles.rateInput}
+                value={wonPer100Gold || ''}
+                onChange={(e) => setWonPer100Gold(parseInt(e.target.value) || 0)}
+                placeholder="32"
+                min={1}
+                aria-label="100골드당 원화 환율"
+              />
+            </div>
+          </div>
+          <div className={styles.detailLink}>
+            상세보기 &#8594;
+          </div>
         </div>
       </div>
     </article>

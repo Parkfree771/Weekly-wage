@@ -37,6 +37,8 @@ type SpecStat = {
   combos?: ComboStat[];
   engravingCombos?: EngravingComboStat[];
   orderIcons?: { 해: string | null; 달: string | null; 별: string | null };
+  /** 코어 번호(1·2·3) → 옵션명. 조합 코드 각 자리의 실제 코어 이름 */
+  orderNames?: { 해: string[]; 달: string[]; 별: string[] } | null;
 };
 
 // 코어 아이콘 배경 — 고대 등급 배경(베이지 그라데이션)으로 통일해 가독성 향상
@@ -53,6 +55,8 @@ interface Props {
   /** 현재 선택된 스펙 id — 있으면 코어 통계 모드 */
   selectedSpecId?: string;
   onSelectSpec?: (specId: string) => void;
+  /** 'sidebar'(기본, 세로 스택) | 'wide'(랭킹 상단 가로 — 좌 코어 · 우 각인 2컬럼) */
+  variant?: 'sidebar' | 'wide';
 }
 
 const ENTRY_BY_ID = new Map(TIER_ENTRIES.map(e => [e.id, e]));
@@ -77,7 +81,7 @@ function gradeColor(grade: string | null): string {
   }
 }
 
-export default function ClassSpecCompare({ klass, selectedSpecId, onSelectSpec }: Props) {
+export default function ClassSpecCompare({ klass, selectedSpecId, onSelectSpec, variant = 'sidebar' }: Props) {
   const [data, setData] = useState<CompareData | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -103,9 +107,18 @@ export default function ClassSpecCompare({ klass, selectedSpecId, onSelectSpec }
     <div className={styles.panel}>
       <div className={styles.head}>
         <span className={styles.headDot} aria-hidden />
-        <span className={styles.headTitle}>
-          {mode === 'spec' ? `${ENTRY_BY_ID.get(selSpec!.specId)?.name ?? selSpec!.specId} 코어 통계` : `${klass} 스펙 분포`}
-        </span>
+        {mode === 'spec' ? (
+          // 선택된 스펙을 아이콘 + 이름으로 명확하게 (예: [아이콘] 가나 업화)
+          <span className={styles.headSpec}>
+            {ENTRY_BY_ID.get(selSpec!.specId)?.icon && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={ENTRY_BY_ID.get(selSpec!.specId)!.icon} alt="" className={styles.headSpecIcon} loading="lazy" decoding="async" />
+            )}
+            <span className={styles.headTitle}>{ENTRY_BY_ID.get(selSpec!.specId)?.name ?? selSpec!.specId}</span>
+          </span>
+        ) : (
+          <span className={styles.headTitle}>{klass} 스펙 분포</span>
+        )}
         {total > 0 && <span className={styles.headSub}>{klass} {total.toLocaleString('ko-KR')}명</span>}
       </div>
 
@@ -114,7 +127,7 @@ export default function ClassSpecCompare({ klass, selectedSpecId, onSelectSpec }
 
       {data && mode === 'class' && <ClassMode data={data} total={total} onSelectSpec={onSelectSpec} />}
       {data && mode === 'spec' && (
-        <SpecMode data={data} spec={selSpec!} total={total} onSelectSpec={onSelectSpec} />
+        <SpecMode data={data} spec={selSpec!} total={total} onSelectSpec={onSelectSpec} wide={variant === 'wide'} />
       )}
     </div>
   );
@@ -132,14 +145,22 @@ function ClassMode({ data, total, onSelectSpec }: {
         <div className={styles.vsBar}>
           {data.specs.map((s, i) => {
             const pct = (s.count / total) * 100;
+            const en = ENTRY_BY_ID.get(s.specId);
             return (
-              <div
+              <button
                 key={s.specId}
-                className={`${styles.vsFill} ${i === 0 ? styles.colorA : styles.colorB}`}
+                type="button"
+                className={`${styles.vsFill} ${styles.vsFillBtn} ${i === 0 ? styles.colorA : styles.colorB}`}
                 style={{ width: `${pct}%` }}
+                onClick={() => onSelectSpec?.(s.specId)}
+                title={`${en?.name ?? s.specId} 선택`}
               >
-                {pct >= 18 && <span className={styles.vsPct}>{Math.round(pct)}%</span>}
-              </div>
+                {en?.icon && pct >= 10 && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={en.icon} alt="" className={styles.vsIcon} loading="lazy" decoding="async" />
+                )}
+                {pct >= 24 && <span className={styles.vsPct}>{Math.round(pct)}%</span>}
+              </button>
             );
           })}
         </div>
@@ -182,16 +203,28 @@ function ClassMode({ data, total, onSelectSpec }: {
 }
 
 // ── 스펙 모드: 선택 스펙의 코어별 사용 비율 (질서/혼돈 그룹)
-function SpecMode({ data, spec, total, onSelectSpec }: {
+function SpecMode({ data, spec, total, onSelectSpec, wide = false }: {
   data: CompareData;
   spec: SpecStat;
   total: number;
   onSelectSpec?: (id: string) => void;
+  /** 가로 배치 — 질서 코어(좌) · 각인(우) 2컬럼 */
+  wide?: boolean;
 }) {
-  const entry = ENTRY_BY_ID.get(spec.specId);
-  const other = data.specs.find(s => s.specId !== spec.specId);
-  const otherEntry = other ? ENTRY_BY_ID.get(other.specId) : undefined;
-  const sharePct = total > 0 ? Math.round((spec.count / total) * 100) : 0;
+  // 모바일엔 호버 툴팁이 없어 각인 조합 행을 탭하면 이름·인원을 펼쳐 보여줌
+  const [openEngr, setOpenEngr] = useState<string | null>(null);
+  // 조합이 많은 스펙(각인 8조합 등)은 상위 5개만 기본 노출 — 코어·각인 한 버튼으로 같이 펼침
+  const [showAll, setShowAll] = useState(false);
+  const hiddenCount =
+    Math.max(0, (spec.combos?.length ?? 0) - 5) + Math.max(0, (spec.engravingCombos?.length ?? 0) - 5);
+
+  // 조합 코드("121")의 각 자리(해·달·별 번호)를 실제 코어 옵션명으로 — 행마다 다른 코어가 정확히 표시됨
+  const CELS = ['해', '달', '별'] as const;
+  const comboCoreTip = (code: string, cel: '해' | '달' | '별') => {
+    const n = Number(code[CELS.indexOf(cel)]);
+    const nm = spec.orderNames?.[cel]?.[n - 1];
+    return nm ? `${cel} ${n}번 · ${nm}` : `질서 ${cel} 코어`;
+  };
 
   const orderCores = spec.cores.filter(c => c.name.includes('질서'));
   const etcCores = spec.cores.filter(c => !c.name.includes('질서') && !c.name.includes('혼돈'));
@@ -226,39 +259,88 @@ function SpecMode({ data, spec, total, onSelectSpec }: {
 
   return (
     <>
-      {/* 스펙 헤더: 큰 아이콘 + 점유율 + 평균 */}
-      <div className={styles.specHero}>
-        {entry?.icon && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={entry.icon} alt="" className={styles.heroIcon} />
-        )}
-        <div className={styles.heroInfo}>
-          <div className={styles.heroName}>{entry?.name ?? spec.specId}</div>
-          <div className={styles.heroMeta}>
-            {spec.count.toLocaleString('ko-KR')}명 · 직업 내 {sharePct}%
-          </div>
+      {/* 스펙 분포: 어떤 스펙을 골라도 직업 전체 내 비율 바를 먼저 표시.
+          바 안에 스펙 아이콘을 넣어 어느 쪽이 어느 스펙인지 바로 보이게 (탭하면 전환) */}
+      {total > 0 && (
+        <div className={styles.vsBar}>
+          {data.specs.map((s, i) => {
+            const pct = (s.count / total) * 100;
+            const active = s.specId === spec.specId;
+            const en = ENTRY_BY_ID.get(s.specId);
+            return (
+              <button
+                key={s.specId}
+                type="button"
+                className={`${styles.vsFill} ${styles.vsFillBtn} ${i === 0 ? styles.colorA : styles.colorB} ${active ? '' : styles.vsDim}`}
+                style={{ width: `${pct}%` }}
+                onClick={() => onSelectSpec?.(s.specId)}
+                title={`${en?.name ?? s.specId}로 전환`}
+              >
+                {en?.icon && pct >= 10 && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={en.icon} alt="" className={styles.vsIcon} loading="lazy" decoding="async" />
+                )}
+                {pct >= 24 && <span className={styles.vsPct}>{Math.round(pct)}%</span>}
+              </button>
+            );
+          })}
         </div>
-        <div className={styles.heroAvgs}>
-          <span><i>전투력</i>{fmtNum(spec.avgCombatPower)}</span>
-          <span><i>아이템</i>{fmtNum(spec.avgItemLevel)}</span>
-        </div>
+      )}
+
+      {/* 두 스펙 요약 카드: 인원·점유율 + 평균 전투력·아이템레벨 (선택 스펙 강조) */}
+      <div className={styles.duoGrid}>
+        {data.specs.map((s, i) => {
+          const en = ENTRY_BY_ID.get(s.specId);
+          const pct = total > 0 ? Math.round((s.count / total) * 100) : 0;
+          const active = s.specId === spec.specId;
+          return (
+            <button
+              key={s.specId}
+              type="button"
+              className={`${styles.duoCard} ${i === 0 ? styles.duoCardA : styles.duoCardB} ${active ? styles.duoActive : ''}`}
+              onClick={() => onSelectSpec?.(s.specId)}
+              title={active ? undefined : `${en?.name ?? s.specId}로 전환`}
+            >
+              <div className={styles.duoHead}>
+                {en?.icon && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={en.icon} alt="" className={styles.duoIcon} loading="lazy" decoding="async" />
+                )}
+                <div className={styles.duoNameCol}>
+                  <span className={styles.duoName}>{en?.name ?? s.specId}</span>
+                  <span className={styles.duoMeta}>
+                    {s.count.toLocaleString('ko-KR')}명 · <b className={i === 0 ? styles.textA : styles.textB}>{pct}%</b>
+                  </span>
+                </div>
+              </div>
+              <div className={styles.duoAvgRow}>
+                <span className={styles.duoAvgLabel}>전투력</span>
+                <span className={styles.duoAvgVal}>{fmtNum(s.avgCombatPower)}</span>
+              </div>
+              <div className={styles.duoAvgRow}>
+                <span className={styles.duoAvgLabel}>아이템</span>
+                <span className={styles.duoAvgVal}>{fmtNum(s.avgItemLevel)}</span>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* 코어 사용 통계 — 질서는 조합코드(해·달·별) 분포, 혼돈·기타는 개별 */}
       {spec.cores.length === 0 ? (
         <div className={styles.loading}>코어 데이터가 없습니다</div>
       ) : (
-        <div className={styles.coreList}>
+        <div className={`${styles.coreList} ${wide ? styles.coreListWide : ''}`}>
           {spec.combos && spec.combos.length > 0 ? (
             <div className={styles.coreGroup}>
               <div className={`${styles.coreGroupLabel} ${styles.coreOrder}`}>
                 질서 코어 <span className={styles.comboHint}>해·달·별 조합</span>
               </div>
-              {spec.combos.map(cb => (
+              {(showAll ? spec.combos : spec.combos.slice(0, 5)).map(cb => (
                 <div key={cb.code} className={styles.comboRow} title={`${cb.code} — ${cb.count}명 (${cb.pct}%)`}>
                   <span className={styles.comboIcons}>
                     {(['해', '달', '별'] as const).map(cel => (
-                      <span key={cel} className={styles.iconTipWrap} data-tip={`질서 ${cel} 코어`} title="">
+                      <span key={cel} className={styles.iconTipWrap} data-tip={comboCoreTip(cb.code, cel)} title="">
                         <span className={styles.comboIcon} style={{ background: ANCIENT_BG }}>
                           {spec.orderIcons?.[cel] ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -286,8 +368,15 @@ function SpecMode({ data, spec, total, onSelectSpec }: {
               <div className={`${styles.coreGroupLabel} ${styles.coreChaos}`}>
                 각인 <span className={styles.comboHint}>5개 조합 채용률</span>
               </div>
-              {spec.engravingCombos.map(ec => (
-                <div key={ec.label} className={styles.comboRow} title={`${ec.label} — ${ec.count}명 (${ec.pct}%)`}>
+              {(showAll ? spec.engravingCombos : spec.engravingCombos.slice(0, 5)).map(ec => (
+                <div key={ec.label}>
+                {/* 행을 탭/클릭하면 조합 이름·인원 펼침 — 호버 툴팁이 없는 모바일 대응 */}
+                <button
+                  type="button"
+                  className={`${styles.comboRow} ${styles.comboRowTap}`}
+                  title={`${ec.label} — ${ec.count}명 (${ec.pct}%)`}
+                  onClick={() => setOpenEngr(prev => (prev === ec.label ? null : ec.label))}
+                >
                   <span className={styles.engrIcons}>
                     {ec.names.map(name => (
                       <span key={name} className={styles.iconTipWrap} data-tip={name} title="">
@@ -308,6 +397,10 @@ function SpecMode({ data, spec, total, onSelectSpec }: {
                   </span>
                   <span className={styles.comboPct}>{ec.pct}%</span>
                   <span className={styles.comboCount}>{ec.count}명</span>
+                </button>
+                {openEngr === ec.label && (
+                  <div className={styles.engrOpenLabel}>{ec.label} · {ec.count.toLocaleString('ko-KR')}명</div>
+                )}
                 </div>
               ))}
             </div>
@@ -316,24 +409,13 @@ function SpecMode({ data, spec, total, onSelectSpec }: {
         </div>
       )}
 
-      {/* 반대 스펙 전환 */}
-      {other && (
-        <button
-          type="button"
-          className={styles.otherSpec}
-          onClick={() => onSelectSpec?.(other.specId)}
-        >
-          {otherEntry?.icon && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={otherEntry.icon} alt="" className={styles.otherIcon} />
-          )}
-          <span className={styles.otherName}>{otherEntry?.name ?? other.specId}</span>
-          <span className={styles.otherMeta}>
-            {total > 0 ? Math.round((other.count / total) * 100) : 0}% · {other.count.toLocaleString('ko-KR')}명 보기
-          </span>
-          <span className={styles.otherArrow} aria-hidden>→</span>
+      {/* 코어·각인 5개 초과분을 한 버튼으로 같이 펼침/접힘 */}
+      {hiddenCount > 0 && (
+        <button type="button" className={styles.moreBtn} onClick={() => setShowAll(v => !v)}>
+          {showAll ? '접기' : `조합 ${hiddenCount}개 더보기`}
         </button>
       )}
+
     </>
   );
 }

@@ -19,8 +19,8 @@
   align-self: start;
   position: sticky;
   top: 70px;
-  /* 패널 2개(비율+스펙비교) 세로 스택. 내부 overflow 스크롤 금지 —
-     스크롤바 폭만큼 패널이 좁아져 보임 */
+  /* 필터 비율 + 앱 홍보 세로 스택 (스펙비교는 랭킹 상단으로 이동).
+     내부 overflow 스크롤 금지 — 스크롤바 폭만큼 패널이 좁아져 보임 */
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
@@ -167,14 +167,134 @@
 .mobileTop {
   display: contents;
 }
+/* 통계 요약 카드 (앱 statsCard 미러) */
 .mobileStats {
-  margin-top: 0.6rem;
-  padding-top: 0.6rem;
-  border-top: 1px solid var(--border-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+  padding: 0.7rem 0.75rem;
 }
 
 .mobileCompare {
-  margin-top: 0.6rem;
+  margin-top: 0.65rem;
+}
+
+/* ── 모바일 앱-미러 헤더 (≤900px에서만 렌더) ── */
+.mHeadRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.mFilterBtn {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-secondary, #64748b);
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.42rem 0.75rem;
+  cursor: pointer;
+}
+
+.mFilterBtnActive {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+
+.mSortRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.mSortLabel {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.mSortBtn {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-secondary, #64748b);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.32rem 0.65rem;
+  cursor: pointer;
+}
+
+.mSortBtnActive {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  font-weight: 800;
+}
+
+/* 적용 필터 칩 (탭하면 개별 제거) — 가로 스크롤 */
+.mChipsRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  overflow-x: auto;
+  margin-bottom: 0.6rem;
+  scrollbar-width: none;
+}
+.mChipsRow::-webkit-scrollbar { display: none; }
+
+.mActiveChip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid #3b82f6;
+  border-radius: 16px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem 0.3rem 0.5rem;
+  max-width: 180px;
+  cursor: pointer;
+}
+
+.mChipIcon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.mChipLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mChipX {
+  font-weight: 800;
+}
+
+.mClearChip {
+  flex-shrink: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.04));
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+}
+
+/* 데스크톱: 직업 선택 시 코어·각인 통계 — 필터 컨트롤과 랭킹 목록 사이 */
+.topCompare {
+  margin: 0.9rem 0 1rem;
 }
 
 .section {
@@ -194,13 +314,7 @@
   margin-bottom: 1rem;
 }
 
-.titleRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
+/* 모바일 헤더 제목 (데스크톱은 제목 줄 없이 필터부터 시작) */
 .title {
   font-size: clamp(1rem, 2.5vw, 1.15rem);
   font-weight: 700;
@@ -208,7 +322,7 @@
   margin: 0;
 }
 
-/* '캐릭터 랭킹' 줄 오른쪽 초기화 배지 */
+/* 필터 줄 오른쪽 초기화 배지 */
 .resetBadge {
   flex-shrink: 0;
   padding: 0.28rem 0.75rem;
@@ -234,6 +348,11 @@
   border-color: var(--border-color);
   background-color: transparent;
   color: var(--text-muted, #999);
+}
+
+/* 초기화를 필터 줄 맨 오른쪽으로 밀착 */
+.resetBadgeEnd {
+  margin-left: auto;
 }
 
 .controls {
@@ -541,6 +660,33 @@
   border-left: 1px solid var(--border-color);
 }
 
+/* 코어 배지 호버 툴팁 — 즉시 표시 (title 지연 없이 어떤 코어인지 바로) */
+.coreTipWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.coreTipWrap::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  display: none;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: #0f172a;
+  padding: 0.28rem 0.55rem;
+  border-radius: 6px;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.coreTipWrap:hover::after {
+  display: block;
+}
+
 .coreBadge {
   position: relative;
   width: 44px;
@@ -682,48 +828,54 @@
 }
 
 /* ═══════════════════════════════════════
-   모바일 ≤900px: 2행 압축 그리드
-   [rank][image] | [name+title]   [전투력/아이템레벨]
-                 | [코어 6개]     [직업·서버]
+   모바일 ≤900px (앱 랭킹 카드 미러):
+   [아바타+순위메달] [닉네임+칭호] [직업아이콘] [전투력/아이템] [코어 3+3]
+   헤더는 앱과 동일: 제목+필터버튼 / 정렬 토글 / 칩 / 통계 카드 (고정 없음, 스크롤 흐름)
    ═══════════════════════════════════════ */
 @media (max-width: 900px) {
-  /* 필터 버튼 + 필터비율(가로형)을 한 덩어리로 상단 고정 */
   .mobileTop {
     display: block;
-    position: sticky;
-    top: 48px; /* 모바일 네비바 높이 */
-    z-index: 30;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 14px;
-    padding: 0.65rem 0.7rem 0.75rem;
     margin-bottom: 0.85rem;
-    box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.45);
-  }
-  .mobileTop .header {
-    margin-bottom: 0.4rem;
   }
 
   .card {
-    grid-template-columns: 38px 68px minmax(0, 1fr) auto;
+    position: relative;
+    grid-template-columns: 46px minmax(0, 1fr) auto auto auto;
     grid-template-rows: auto;
-    grid-template-areas: "rank image name stats";
-    gap: 0.35rem 0.55rem;
-    padding: 0.7rem 0.8rem;
+    grid-template-areas: "image name meta stats cores";
+    gap: 0.3rem 0.5rem;
+    padding: 0.65rem 0.7rem;
     align-items: center;
   }
 
+  /* 순위: 아바타 좌상단 메달 (1·2·3위 금·은·동) — 앱과 동일 */
   .rank {
-    grid-area: rank;
-    align-self: center;
-    font-size: 1.05rem;
+    position: absolute;
+    top: 0.35rem;
+    left: 0.35rem;
+    z-index: 2;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.66rem;
+    font-weight: 900;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.62);
+    border: 1.5px solid #fff;
+    border-radius: 9px;
   }
+  .rank.rank1 { background: #f59e0b; color: #fff; }
+  .rank.rank2 { background: #94a3b8; color: #fff; }
+  .rank.rank3 { background: #d97706; color: #fff; }
 
   .charImage {
     grid-area: image;
     align-self: center;
-    width: 68px;
-    height: 68px;
+    width: 46px;
+    height: 46px;
   }
 
   .charInfo {
@@ -733,7 +885,21 @@
     align-items: flex-start;
     gap: 0.15rem;
   }
-  .charName { font-size: 1rem; }
+  .charName { font-size: 0.9rem; }
+
+  /* 직업 아이콘만 노출 (서버·직업명 텍스트 숨김 — 앱과 동일) */
+  .meta {
+    grid-area: meta;
+    min-width: 0;
+    padding-left: 0;
+    border-left: none;
+  }
+  .metaText { display: none; }
+  .specIcon {
+    width: 28px;
+    height: 28px;
+    border-width: 1px;
+  }
 
   .stats {
     grid-area: stats;
@@ -746,72 +912,81 @@
     border-left: none;
   }
   .statLine {
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     justify-content: flex-end;
-    gap: 0.3rem;
+    gap: 0.25rem;
   }
-  .statLabel { font-size: 0.7rem; }
-  .statValueActive { font-size: 0.92rem; }
+  .statLabel { font-size: 0.64rem; }
+  .statValueActive { font-size: 0.86rem; }
 
-  /* 모바일에서는 서버·직업·코어 숨김 (압축 1행 카드) */
-  .meta,
-  .coresRow { display: none; }
+  /* 코어: 질서(위) 3 · 혼돈(아래) 3 — 앱과 동일 */
+  .coresRow {
+    grid-area: cores;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    padding-left: 0;
+    border-left: none;
+  }
+  .coreGroup { gap: 3px; }
+  .coreGroup + .coreGroup {
+    padding-left: 0;
+    border-left: none;
+  }
+  .coreBadge {
+    width: 24px;
+    height: 24px;
+    border-width: 1.5px;
+  }
+  .coreBadge img {
+    width: 17px;
+    height: 17px;
+  }
+  .coreNum {
+    min-width: 13px;
+    height: 13px;
+    padding: 0 2px;
+    border-width: 1px;
+    border-radius: 6.5px;
+    font-size: 8px;
+    top: -4px;
+    right: -4px;
+  }
 }
 
 @media (max-width: 640px) {
   .section { padding: 0.5rem 0; }
-  .header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.6rem;
-  }
   .title { font-size: 1.05rem; }
-  /* 컨트롤이 5개(스펙·칭호·고대·정렬·초기화)라 flex-wrap이면 줄이 어긋남 → 2열 그리드로 정렬 고정.
-     배치: [스펙][칭호] / [고대][초기화] / [정렬 풀폭] */
-  .controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.45rem;
-    align-items: stretch;
-  }
-  .classSelect {
-    min-width: 0;
-    font-size: 0.82rem;
-    padding: 0.4rem 0.55rem;
-  }
-  .levelGroup { min-width: 0; }
-  .levelInput { width: 100%; min-width: 0; font-size: 0.82rem; }
-  .resetButton { order: 1; }
-  .sortGroup { order: 2; grid-column: 1 / -1; justify-content: stretch; }
-  .sortButton { flex: 1; text-align: center; }
 
   .card {
-    grid-template-columns: 34px 62px minmax(0, 1fr) auto;
-    padding: 0.6rem 0.65rem;
-    gap: 0.3rem 0.45rem;
+    grid-template-columns: 42px minmax(0, 1fr) auto auto auto;
+    padding: 0.6rem 0.6rem;
+    gap: 0.3rem 0.4rem;
   }
-  .rank { font-size: 0.95rem; }
-  .charImage { width: 62px; height: 62px; }
-  .charName { font-size: 0.95rem; }
+  .charImage { width: 42px; height: 42px; }
+  .charName { font-size: 0.86rem; }
 
-  .statLine { font-size: 0.74rem; gap: 0.25rem; }
-  .statLabel { font-size: 0.66rem; }
-  .statValueActive { font-size: 0.88rem; }
+  .statLine { font-size: 0.7rem; gap: 0.22rem; }
+  .statLabel { font-size: 0.6rem; }
+  .statValueActive { font-size: 0.82rem; }
 
   .loadMoreButton { width: 100%; max-width: 320px; }
 }
 
 @media (max-width: 380px) {
-  /* 아주 좁은 화면: 1열로 쌓아 각 컨트롤에 여유 */
-  .controls { grid-template-columns: 1fr; }
-
   .card {
-    grid-template-columns: 32px 54px minmax(0, 1fr) auto;
-    padding: 0.55rem 0.6rem;
+    grid-template-columns: 38px minmax(0, 1fr) auto auto;
+    grid-template-areas: "image name stats cores";
+    padding: 0.55rem 0.55rem;
   }
-  .charImage { width: 54px; height: 54px; }
-  .charName { font-size: 0.9rem; }
-  .statLine { font-size: 0.7rem; }
+  /* 초소형: 직업 아이콘까지는 자리가 없어 숨김 */
+  .meta { display: none; }
+  .charImage { width: 38px; height: 38px; }
+  .charName { font-size: 0.82rem; }
+  .statLine { font-size: 0.66rem; }
+  .coreBadge { width: 21px; height: 21px; }
+  .coreBadge img { width: 15px; height: 15px; }
   .statLabel { font-size: 0.62rem; }
   .statValueActive { font-size: 0.82rem; }
 }

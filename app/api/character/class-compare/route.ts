@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { sql } from '@/lib/neon';
 import { classRuleFor } from '@/lib/class-spec-icon';
 import { coreNumberFor, orderCoreCode } from '@/lib/arkgrid-cores';
+import { ORDER_CORE_OPTIONS } from '@/data/arkgrid-core-order';
 
 // 직업의 두 스펙(예: 창술사 절정/절제) 비교 통계.
 // 스펙별 인원·평균 전투력·평균 아이템레벨 + 주력 코어 사용 순위(장착 비율)를 반환.
@@ -206,6 +207,8 @@ export async function GET(request: Request) {
         combos: buildCombos(specId, hasSig),
         engravingCombos: buildEngravingCombos(hasSig),
         orderIcons: { 해: orderIconFor('해'), 달: orderIconFor('달'), 별: orderIconFor('별') },
+        // 코어 번호(1·2·3) → 옵션명 테이블. 조합 코드의 각 자리가 실제 어떤 코어인지 툴팁용
+        orderNames: ORDER_CORE_OPTIONS[className]?.[specId] ?? null,
       };
     };
 

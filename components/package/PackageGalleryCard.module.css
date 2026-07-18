@@ -333,6 +333,22 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 환산 줄 왼쪽 현금 숫자 — 현금은 검정 bold (골드 주황과 명확히 구분) */
+.cashNum {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gc-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.goldIconInline {
+  width: 15px;
+  height: 15px;
+  vertical-align: -2px;
+  margin-right: 2px;
+}
+
 .resultDivider {
   border: none;
   border-top: 1px solid var(--gc-divider);
@@ -356,6 +372,71 @@
   border: 1px solid var(--gc-border);
   border-radius: 8px;
   padding: 0.4rem 0.6rem;
+}
+
+/* 하단 한 줄: 환율(좌) + 상세보기(우) — 선 대신 색으로 확실히 구분 */
+.bottomRow {
+  margin-top: auto;
+  padding-top: 0.6rem;
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+/* 환율: 연한 입력 박스 */
+.bottomRate {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gc-input-bg);
+  border: 1px solid var(--gc-border);
+  border-radius: 9px;
+  padding: 0.35rem 0.4rem;
+}
+
+/* 하단 줄에서는 환율 입력의 상자(배경·테두리)를 빼고 인라인으로 컴팩트하게 */
+.bottomRate .rateRow {
+  background: none;
+  border: none;
+  padding: 0;
+  gap: 0.3rem;
+}
+
+.bottomRate .rateIconGold {
+  width: 16px;
+  height: 16px;
+}
+
+.bottomRate .rateIconRoyal {
+  width: 22px;
+  height: 22px;
+}
+
+.bottomRate .rateInput {
+  width: 34px;
+  border-bottom: 1px solid var(--gc-border);
+}
+
+/* 결과 % 배지 — 매트 톤 (이득 초록 / 손해 빨강, 흰 글자) */
+.benefitBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.75rem;
+  border-radius: 9px;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.benefitBadgeUp {
+  background: #35815a;
+}
+
+.benefitBadgeDown {
+  background: #a04a44;
 }
 
 .rateRow:focus-within {
@@ -617,19 +698,22 @@
   text-align: center;
 }
 
-/* ─── 상세보기 링크 ─── */
+/* ─── 상세보기 (하단 줄 우측 절반) — 강조색 버튼으로 확실히 구분 ─── */
 .detailLink {
-  margin-top: auto;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--gc-divider);
-  text-align: center;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--color-accent);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent);
+  border-radius: 9px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
 }
 
 .rightBox:hover .detailLink {
-  color: var(--color-accent-dark);
+  background: var(--color-accent-dark, var(--color-accent));
+  color: #fff;
 }
 
 /* ─── 반응형 ─── */
@@ -654,9 +738,10 @@
 }
 
 @media (max-width: 576px) {
-  /* 가로 레이아웃 유지, 오른쪽 축소 */
+  /* 앱 카드 배열 미러: 아이템(좌) 4열 균등 그리드 · 결과(우)는 최소 170px 보장.
+     왼쪽은 236px까지만 자라서(셀 최대 ~50px) 화면이 넓어지면 결과 영역이 커진다 */
   .galleryCard {
-    grid-template-columns: 1fr 145px;
+    grid-template-columns: minmax(0, 236px) minmax(170px, 1fr);
   }
 
   /* 왼쪽 박스: 축소 */
@@ -664,7 +749,7 @@
     padding: 0.75rem;
     min-height: auto;
     gap: 0.6rem;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .cardTitle {
@@ -676,12 +761,13 @@
     padding: 0.1rem 0.35rem;
   }
 
+  /* 한 줄 4개 — 4열 균등이라 아이템이 2개여도 셀 크기는 동일(늘어나지 않음) */
   .itemGrid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 3px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
     max-height: none;
-    overflow: visible;
+    overflow: hidden;
     flex: unset;
   }
 
@@ -695,6 +781,21 @@
     border-radius: 6px;
   }
 
+  /* 묶음(겹침) 아이콘이 셀 밖으로 넘치지 않게 축소 */
+  .bundleIconStack {
+    width: 34px;
+    height: 24px;
+  }
+
+  .bundleIconItem {
+    width: 20px;
+    height: 20px;
+  }
+
+  .bundleIconItem:nth-child(2) {
+    left: 12px;
+  }
+
   .itemCellHidden {
     display: none;
   }
@@ -703,9 +804,11 @@
     font-size: 0.62rem;
   }
 
+  /* 인라인 px 크기(페온·젬·티켓 등 오버라이드)가 셀보다 커서 잘리는 것 방지 —
+     모바일에서는 항상 셀 비율로 강제 */
   .itemCellIcon {
-    width: 72%;
-    height: 72%;
+    width: 78% !important;
+    height: 78% !important;
     border-radius: 4px;
   }
 
@@ -729,82 +832,73 @@
     border-top: none;
   }
 
+  /* 값 줄은 전부 한 줄 유지 (라벨 왼쪽 · 값 오른쪽) — 폭에 맞게 폰트만 축소 */
   .resultLabel {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
   }
 
   .resultValue {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
   }
 
   .resultValueGold {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
   }
 
-  .resultRow:has(.resultValueGold) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.1rem;
+  .cashNum {
+    font-size: 0.8rem;
   }
 
-  .resultRow:has(.resultValueGold) .resultValueGold::before {
-    content: '= ';
+  .goldIconInline {
+    width: 12px;
+    height: 12px;
   }
 
   .resultDivider {
     margin: 0.4rem 0;
   }
 
-  .rateHint {
-    display: none;
+  .detailLink {
+    font-size: 0.78rem;
+    padding: 0.45rem 0;
   }
 
-  .resultRow:has(.rateRow) {
-    flex-direction: column;
-    align-items: flex-start;
+  .benefitBadge {
+    font-size: 0.88rem;
+    padding: 0.22rem 0.6rem;
+  }
+
+  /* 하단 한 줄 유지: 환율 박스(좌) + 상세보기 버튼(우) — 좁은 폭용 압축 */
+  .bottomRow {
+    gap: 0.35rem;
+  }
+
+  .bottomRate {
+    padding: 0.25rem 0.3rem;
+  }
+
+  .bottomRate .rateRow {
     gap: 0.2rem;
   }
 
-  .rateRow {
-    padding: 0.3rem 0.4rem;
-    gap: 0.25rem;
-    width: 100%;
+  .bottomRate .rateIconGold {
+    width: 12px;
+    height: 12px;
   }
 
-  .rateIconGold {
+  .bottomRate .rateIconRoyal {
     width: 16px;
     height: 16px;
   }
 
-  .rateIconRoyal {
-    width: 22px;
-    height: 22px;
-  }
-
-  .rateFixed {
+  .bottomRate .rateInput {
+    width: 24px;
     font-size: 0.7rem;
   }
 
-  .rateSep {
+  .bottomRate .rateFixed,
+  .bottomRate .rateSep {
     font-size: 0.7rem;
-  }
-
-  .rateInput {
-    width: 36px;
-    font-size: 0.7rem;
-  }
-
-  .benefitLabel {
-    font-size: 0.72rem;
-  }
-
-  .benefitValue {
-    font-size: 0.82rem;
-  }
-
-  .detailLink {
-    font-size: 0.7rem;
-    padding-top: 0.5rem;
   }
 
   .gachaBtn {
