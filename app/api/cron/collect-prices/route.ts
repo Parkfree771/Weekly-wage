@@ -36,7 +36,7 @@ export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
   const isProduction = process.env.NODE_ENV === 'production';
 
-  if (isProduction && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (isProduction && (!cronSecret || authHeader !== `Bearer ${cronSecret}`)) {
     return NextResponse.json(
       { message: '인증되지 않은 요청입니다.' },
       { status: 401 }
