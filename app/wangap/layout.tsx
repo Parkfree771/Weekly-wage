@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-config'
+import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
   title: '완갑 재련 시뮬레이터 - 벨가르딘 완갑 강화 시뮬, 재련 견적·비용',
@@ -56,6 +57,23 @@ export default function WangapLayout({
               "전설-유물-고대 등급 승급 (벨가르딘 특수 재료)",
               "용암·빙하의 숨결 보조재료 시세 기반 최적화"
             ]
+          })
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": faqData.map((item) => ({
+              "@type": "Question",
+              "name": item.q,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": item.a,
+              },
+            })),
           })
         }}
       />

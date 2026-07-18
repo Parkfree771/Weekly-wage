@@ -65,6 +65,12 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/engraving', label: '직업별 각인' },
     ],
   },
+  {
+    label: '가이드',
+    colorClass: 'nav-guide',
+    href: '/guide',
+    items: [],
+  },
 ];
 
 export default function Navbar() {

@@ -25,6 +25,8 @@ export default function Footer() {
             <div className="footer-links">
               <Link href="/about">사이트 소개</Link>
               <span className="footer-divider">|</span>
+              <Link href="/guide">가이드</Link>
+              <span className="footer-divider">|</span>
               <Link href="/app">앱 다운로드</Link>
               <span className="footer-divider">|</span>
               <Link href="/privacy">개인정보처리방침</Link>

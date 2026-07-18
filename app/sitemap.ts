@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { SITE_URL } from '@/lib/site-config'
+import { guides } from '@/data/guides'
 
 const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'monthly'; priority: number }> = [
   { path: '',                    changeFrequency: 'daily',   priority: 1.0 },
@@ -16,9 +17,11 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/extreme',            changeFrequency: 'weekly',  priority: 0.8 },
   { path: '/engraving',          changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/character',          changeFrequency: 'weekly',  priority: 0.7 },
-  { path: '/mypage',             changeFrequency: 'weekly',  priority: 0.6 },
   { path: '/app',                changeFrequency: 'monthly', priority: 0.6 },
   { path: '/hell-reward',        changeFrequency: 'weekly',  priority: 0.6 },
+  { path: '/guide',              changeFrequency: 'weekly',  priority: 0.7 },
+  // 개별 가이드 글은 data/guides.ts 에서 자동 등록
+  ...guides.map((g) => ({ path: g.href, changeFrequency: 'monthly' as const, priority: 0.6 })),
   { path: '/about',              changeFrequency: 'monthly', priority: 0.6 },
   { path: '/privacy',            changeFrequency: 'monthly', priority: 0.5 },
   { path: '/terms',              changeFrequency: 'monthly', priority: 0.5 },
