@@ -137,6 +137,14 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944494802169618"
           crossOrigin="anonymous"
         />
+        {/* 미러(프록시) 사이트 차단 가드 — 허용되지 않은 호스트에서 열리면 정식 도메인으로 강제 이동.
+            미러가 HTML 내 도메인 문자열을 자기 것으로 치환하는 수법을 쓰므로 도메인은 base64로 숨김
+            (bG9hbG9nb2wua3I= → loalogol.kr). head 최상단 동기 실행이라 미러에서 콘텐츠 노출 전에 이탈. */}
+        <script
+          dangerouslySetInnerHTML={{ __html:
+            `(function(){try{var d=atob("bG9hbG9nb2wua3I=");var h=location.hostname;if(h===d||h==="www."+d||h==="localhost"||h==="127.0.0.1"||/\\.netlify\\.app$/.test(h))return;location.replace("https://"+d+location.pathname+location.search);}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className={`${notoSansKr.className} ${jetbrainsMono.variable}`}>
         <ThemeProvider>
@@ -162,8 +170,9 @@ export default function RootLayout({
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-QBV4JHCBJF');
+            // 정식 도메인에서만 수집 — 미러(프록시)·로컬 트래픽이 애널리틱스를 오염시키지 않게
+            (function(){var d=atob("bG9hbG9nb2wua3I=");var h=location.hostname;
+              if(h===d||h==="www."+d){gtag('js', new Date());gtag('config', 'G-QBV4JHCBJF');}})();
           `}
         </Script>
 
