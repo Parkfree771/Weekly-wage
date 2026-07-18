@@ -65,12 +65,6 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/engraving', label: '직업별 각인' },
     ],
   },
-  {
-    label: '가이드',
-    colorClass: 'nav-guide',
-    href: '/guide',
-    items: [],
-  },
 ];
 
 export default function Navbar() {
@@ -321,6 +315,22 @@ export default function Navbar() {
               >
                 <Image src="/home.webp" alt="" width={18} height={18} style={{ borderRadius: '4px' }} />
                 <span>홈</span>
+              </Link>
+
+              <Link
+                href="/guide"
+                className="nav-dropdown-item settings-menu-item"
+                onClick={() => setShowSettings(false)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" />
+                  <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" />
+                  <path d="M3 6l0 13" />
+                  <path d="M12 6l0 13" />
+                  <path d="M21 6l0 13" />
+                </svg>
+                <span>가이드</span>
               </Link>
 
               <button
