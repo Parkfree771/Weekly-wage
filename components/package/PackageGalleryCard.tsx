@@ -66,6 +66,15 @@ function getDisplayIcon(icon: string): string {
   return icon;
 }
 
+// 이득률 % — 매트 단색 + 양 모서리 컷 칩 (이득 초록 / 손해 빨강)
+function BenefitPct({ v }: { v: number }) {
+  return (
+    <span className={`${styles.benefitBadge} ${v >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
+      {v >= 0 ? '+' : ''}{v.toFixed(1)}%
+    </span>
+  );
+}
+
 export default function PackageGalleryCard({ post, latestPrices }: Props) {
   const router = useRouter();
 
@@ -556,23 +565,19 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
             </span>
           </div>
 
-          {/* 1개 구매 결과 — 매트 배지 (이득 초록 / 손해 빨강) */}
+          {/* 1개 구매 결과 — 입체 텍스트 % (이득 초록 / 손해 빨강) */}
           {goldPerWon > 0 && !isGacha && (
             <div className={styles.resultRow}>
               <span className={styles.resultLabel}>1개 구매</span>
-              <span className={`${styles.benefitBadge} ${singleBenefit >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
-                {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
-              </span>
+              <BenefitPct v={singleBenefit} />
             </div>
           )}
 
-          {/* 가챠: 기대 효율 배지 */}
+          {/* 가챠: 기대 효율 */}
           {goldPerWon > 0 && isGacha && (
             <div className={styles.resultRow}>
               <span className={styles.resultLabel}>기대 효율</span>
-              <span className={`${styles.benefitBadge} ${singleBenefit >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
-                {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
-              </span>
+              <BenefitPct v={singleBenefit} />
             </div>
           )}
 
@@ -592,9 +597,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
               {goldPerWon > 0 && (
                 <div className={styles.resultRow}>
                   <span className={styles.resultLabel}>{post.packageType} 구매</span>
-                  <span className={`${styles.benefitBadge} ${bundleBenefit >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
-                    {bundleBenefit >= 0 ? '+' : ''}{bundleBenefit.toFixed(1)}%
-                  </span>
+                  <BenefitPct v={bundleBenefit} />
                 </div>
               )}
             </>
@@ -618,11 +621,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                     <span className={styles.gachaResultGold}>{formatNumber(wonGold)}G</span>
                   </div>
                   <div className={styles.gachaResultRow}>
-                    {goldPerWon > 0 && (
-                      <span className={`${styles.benefitBadge} ${benefit >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
-                        {benefit >= 0 ? '+' : ''}{benefit.toFixed(1)}%
-                      </span>
-                    )}
+                    {goldPerWon > 0 && <BenefitPct v={benefit} />}
                     <button className={styles.gachaReroll} onClick={resetGacha}>다시 뽑기</button>
                   </div>
                 </div>
@@ -648,11 +647,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                       <span className={styles.gachaResultGold}>{formatNumber(totalWonGold)}G</span>
                     </div>
                     <div className={styles.gachaResultRow}>
-                      {goldPerWon > 0 && (
-                        <span className={`${styles.benefitBadge} ${multiBenefit >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
-                          {multiBenefit >= 0 ? '+' : ''}{multiBenefit.toFixed(1)}%
-                        </span>
-                      )}
+                      {goldPerWon > 0 && <BenefitPct v={multiBenefit} />}
                       <button className={styles.gachaReroll} onClick={resetGacha}>다시 뽑기</button>
                     </div>
                   </div>
