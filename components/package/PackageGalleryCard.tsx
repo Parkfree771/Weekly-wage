@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PackagePost, PackageItem, PackageType } from '@/types/package';
 import {
@@ -82,34 +82,12 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
     ? Math.round(100 / post.goldPerWon)
     : 0;
   const [wonPer100Gold, setWonPer100Gold] = useState<number>(defaultWon);
+  // N선택 패키지는 시세 로드 후 아래 useEffect에서 최고가 N개를 확정한다
+  // (마운트 시점엔 latestPrices가 비어 있어 goldOverride 티켓만 값이 잡히는 오선택이 났었음)
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>(() => {
     const initial: Record<number, boolean> = {};
-    if (post.selectableCount && post.selectableCount > 0) {
-      // 가장 비싼 N개만 체크
-      const withValue = post.items.map((item, idx) => {
-        const value = item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0
-          ? getChoiceBoxBestGold(item.choiceBoxCandidates, item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length, latestPrices) * item.quantity
-          : item.goldOverride != null
-          ? item.goldOverride * item.quantity
-          : item.choiceOptions && item.choiceOptions.length > 0
-          ? getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity
-          : (() => {
-              const raw = latestPrices[item.itemId] || 0;
-              const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-              return (raw / bundle) * item.quantity;
-            })();
-        return { idx, value };
-      });
-      withValue.sort((a, b) => b.value - a.value);
-      post.items.forEach((_, idx) => { initial[idx] = false; });
-      withValue.slice(0, post.selectableCount).forEach((v) => {
-        initial[v.idx] = true;
-      });
-    } else {
-      post.items.forEach((_, idx) => {
-        initial[idx] = true;
-      });
-    }
+    const selectable = !!(post.selectableCount && post.selectableCount > 0);
+    post.items.forEach((_, idx) => { initial[idx] = !selectable; });
     return initial;
   });
 
@@ -164,6 +142,23 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
       return (raw / bundle) * item.quantity;
     });
   }, [post.items, latestPrices, goldPerWon]);
+
+  // 시세 로드 후 N선택 재계산 — 표시 소계(itemSubtotals)와 동일한 값 기준 (티켓은 지옥 보상 평균 연동).
+  // useState 초기값은 시세 도착 전(빈 prices)에 계산되어 goldOverride 티켓만 값이 잡히는 문제가 있어 여기서 확정한다.
+  const autoPickedRef = useRef(false);
+  useEffect(() => {
+    const sc = post.selectableCount || 0;
+    if (sc <= 0) return;
+    if (Object.keys(latestPrices).length === 0) return;
+    if (autoPickedRef.current) return;
+    autoPickedRef.current = true;
+    const withValue = itemSubtotals.map((value, idx) => ({ idx, value }));
+    withValue.sort((a, b) => b.value - a.value);
+    const next: Record<number, boolean> = {};
+    post.items.forEach((_, idx) => { next[idx] = false; });
+    withValue.slice(0, sc).forEach((v) => { next[v.idx] = true; });
+    setCheckedItems(next);
+  }, [latestPrices, itemSubtotals, post.items, post.selectableCount]);
 
   const handleToggleCheck = (idx: number) => {
     const sc = post.selectableCount || 0;

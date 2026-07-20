@@ -26,6 +26,8 @@ import {
   PROCESSED_GEM_BOX_INFO,
   getProcessedGemBoxUnitPrice,
   getChoiceBoxGold,
+  getChoiceBoxBestGold,
+  getChoiceBestValue,
   pickTopNCandidateIds,
   calculateGachaItemGold,
   groupMultiResults,
@@ -220,21 +222,10 @@ export default function PackageDetailPage({ initialPost }: Props) {
                 : item.choiceBoxCandidates.slice(0, item.choiceBoxPickCount || 1).map((c) => c.id);
             }
           });
-          // N선택: 가장 비싼 N개만 초기 체크
+          // N선택: 시세 로드 후 재계산 effect가 최고가 N개를 확정 (시세 없는 시점의 goldOverride 기반 오선택 방지)
           if (data.selectableCount && data.selectableCount > 0) {
-            const withValue = data.items.map((item, idx) => {
-              const value = item.goldOverride != null
-                ? item.goldOverride * item.quantity
-                : getItemUnitPrice(item.itemId, {}) * item.quantity; // 시세 아직 없으므로 0 기반
-              return { idx, value };
-            });
-            // 시세가 아직 없을 수 있으므로 나중에 latestPrices 로드 후 재계산
             data.items.forEach((_, idx) => {
               initialChecked[idx] = false;
-            });
-            withValue.sort((a, b) => b.value - a.value);
-            withValue.slice(0, data.selectableCount).forEach((v) => {
-              initialChecked[v.idx] = true;
             });
           }
           setChoiceSelections(initial);
@@ -317,24 +308,24 @@ export default function PackageDetailPage({ initialPost }: Props) {
     if (!post || !post.selectableCount || post.selectableCount <= 0) return;
     if (Object.keys(latestPrices).length === 0) return;
     const withValue = post.items.map((item, idx) => {
+      // 선택 상자: 현재 시세 기준 최고 조합 (자동 최고가 선택 effect가 같은 조합으로 갱신하므로 표시값과 일치)
       if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
-        const selected = choiceBoxSelections[idx] ?? item.choiceBoxSelectedIds ?? [];
-        return { idx, value: getChoiceBoxGold(item.choiceBoxCandidates, selected, latestPrices) * item.quantity };
+        const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
+        return { idx, value: getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity };
       }
-      let effectiveItemId = item.itemId;
+      if (item.goldOverride != null) {
+        // 티켓(지옥 보상 평균)·가공 젬·크리스탈 전부 표시 소계와 동일한 동적 단가로 비교
+        return { idx, value: getCrystalAdjustedUnit(item) * item.quantity };
+      }
+      // choice 타입: 현재 시세 최고가 선택지 기준
       if (item.choiceOptions && item.choiceOptions.length > 0) {
-        effectiveItemId = choiceSelections[idx] || item.itemId;
+        if (item.icon === FIXED_GEM_SELECT_ICON) {
+          const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
+          return { idx, value: getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, detailGoldPerWon) * qty };
+        }
+        return { idx, value: getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity };
       }
-      const effectiveQty = getEffectiveQty(item, choiceSelections[idx]);
-      const unit = item.icon === FIXED_GEM_SELECT_ICON
-        ? getFixedGemSelectBestUnitPrice(item.choiceOptions, effectiveItemId, latestPrices, detailGoldPerWon)
-        : getItemUnitPrice(effectiveItemId, latestPrices);
-      const value = item.goldOverride != null
-        ? (PROCESSED_GEM_BOX_GEM[item.itemId]
-            ? getProcessedGemBoxUnitPrice(item.itemId, latestPrices)
-            : item.goldOverride) * item.quantity
-        : unit * effectiveQty;
-      return { idx, value };
+      return { idx, value: getItemUnitPrice(item.itemId, latestPrices) * item.quantity };
     });
     withValue.sort((a, b) => b.value - a.value);
     const newChecked: Record<number, boolean> = {};
