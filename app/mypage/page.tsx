@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'rea
 import { Container, Card, Button, Form, Spinner, Alert, Modal, Row, Col } from 'react-bootstrap';
 import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
+import Link from 'next/link';
+import { AppleStoreBadge, GooglePlayBadge } from '@/components/StoreBadges';
+import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-download-config';
 import { memo } from 'react';
 
 // 작은 정적 아이콘용 (재화 아이콘 등 - 최적화 API 호출 생략)
@@ -396,7 +399,7 @@ function getKSTWeekInfo() {
 
 export default function MyPage() {
   const router = useRouter();
-  const { user, userProfile, loading, refreshUserProfile, signInWithGoogle, setNickname: updateNickname } = useAuth();
+  const { user, userProfile, loading, refreshUserProfile, signInWithGoogle, signInWithApple, setNickname: updateNickname } = useAuth();
 
   // 데모 모드 (비로그인 시)
   const isDemo = !user && !loading;
@@ -1723,7 +1726,23 @@ export default function MyPage() {
     <div className={styles.pageWrapper}>
       <Container fluid className={styles.container}>
         <div className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>마이페이지</h1>
+          <h1 className={styles.pageTitle}>숙제 체크</h1>
+        </div>
+
+        {/* 앱 다운로드 가로 배너 — 이 페이지 전용(제목 아래). 앵커 중첩 방지로 안내는 Link, 배지는 각자 <a> */}
+        <div className={styles.appBanner}>
+          <Link href="/app" className={styles.appBannerInfo}>
+            <span className={styles.appBannerIcon}>
+              <NextImage src="/icon.png" alt="로아로골 앱" width={30} height={30} />
+            </span>
+            <span className={styles.appBannerText}>
+              <strong>J들은 이런 거 좋아함</strong>
+            </span>
+          </Link>
+          <span className={styles.appBannerBadges}>
+            <AppleStoreBadge href={APP_STORE_URL} compact />
+            <GooglePlayBadge href={PLAY_STORE_URL} compact />
+          </span>
         </div>
 
         {/* 데모 안내 */}
@@ -1731,19 +1750,27 @@ export default function MyPage() {
           <div className={styles.demoCta}>
             <div className={styles.demoCtaInner}>
               <h3 className={styles.demoCtaTitle}>일간 / 주간 숙제 체크리스트</h3>
-              <p className={styles.demoCtaDesc}>아래는 예시 화면입니다.</p>
               <p className={styles.demoCtaDesc}>
-                로그인하면 원정대 캐릭터의 레이드·숙제 체크와 골드 히스토리가 내 Google 계정에 안전하게 저장됩니다. 체크만 하면 이번 주 수급 골드가 자동 합산되고, 매주 수요일 오전 6시 서버 초기화에 맞춰 새 주차로 넘어가며 지난 골드는 히스토리에 그대로 남습니다.
+                아래는 예시 화면입니다. 로그인하면 체크·골드 기록이 내 계정에 저장되고,
+                매주 수요일 6시 초기화 후에도 지난 골드는 히스토리에 남습니다.
               </p>
-              <button onClick={signInWithGoogle} className={styles.demoCtaBtn}>
-                <svg width="18" height="18" viewBox="0 0 48 48">
-                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                </svg>
-                Google 로그인
-              </button>
+              <div className={styles.demoCtaBtns}>
+                <button onClick={signInWithGoogle} className={styles.darkLoginBtn}>
+                  <svg width="18" height="18" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                  </svg>
+                  Google 로그인
+                </button>
+                <button onClick={signInWithApple} className={styles.darkLoginBtn}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+                    <path d="M16.365 1.43c0 1.14-.462 2.033-1.11 2.72-.7.744-1.85 1.32-2.79 1.24-.13-1.09.45-2.24 1.09-2.95.71-.8 1.96-1.4 2.81-1.01Zm4.14 16.53c-.55 1.26-.81 1.83-1.52 2.94-.99 1.55-2.39 3.48-4.12 3.5-1.53.02-1.93-.99-4.01-.98-2.08.01-2.52.99-4.05.97-1.73-.02-3.06-1.75-4.05-3.3C-.4 16.86-.66 12 1.05 9.4c1.16-1.78 2.99-2.82 4.71-2.82 1.75 0 2.85 1 4.3 1 1.4 0 2.26-1 4.3-1 1.53 0 3.15.83 4.3 2.27-3.78 2.07-3.17 7.46 1.6 8.68-.24.65-.5 1.3-.71 1.4Z"/>
+                  </svg>
+                  Apple 로그인
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1754,9 +1781,9 @@ export default function MyPage() {
             <div style={{ fontSize: '40px', marginBottom: '12px' }}>🔒</div>
             <h5 style={{ fontWeight: 700, marginBottom: '8px' }}>저장은 로그인 후 가능합니다</h5>
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-              Google 계정으로 로그인하고<br />원정대를 등록하면 데이터가 저장됩니다.
+              Google 또는 Apple 계정으로 로그인하고<br />원정대를 등록하면 데이터가 저장됩니다.
             </p>
-            <button onClick={() => { setDemoLoginPrompt(false); signInWithGoogle(); }} className={styles.googleLoginBtn} style={{ margin: '0 auto 12px' }}>
+            <button onClick={() => { setDemoLoginPrompt(false); signInWithGoogle(); }} className={styles.darkLoginBtn} style={{ width: '100%', margin: '0 auto 10px' }}>
               <svg width="18" height="18" viewBox="0 0 48 48">
                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                 <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -1764,6 +1791,12 @@ export default function MyPage() {
                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
               </svg>
               <span>Google 로그인</span>
+            </button>
+            <button onClick={() => { setDemoLoginPrompt(false); signInWithApple(); }} className={styles.darkLoginBtn} style={{ width: '100%', margin: '0 auto 12px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+                <path d="M16.365 1.43c0 1.14-.462 2.033-1.11 2.72-.7.744-1.85 1.32-2.79 1.24-.13-1.09.45-2.24 1.09-2.95.71-.8 1.96-1.4 2.81-1.01Zm4.14 16.53c-.55 1.26-.81 1.83-1.52 2.94-.99 1.55-2.39 3.48-4.12 3.5-1.53.02-1.93-.99-4.01-.98-2.08.01-2.52.99-4.05.97-1.73-.02-3.06-1.75-4.05-3.3C-.4 16.86-.66 12 1.05 9.4c1.16-1.78 2.99-2.82 4.71-2.82 1.75 0 2.85 1 4.3 1 1.4 0 2.26-1 4.3-1 1.53 0 3.15.83 4.3 2.27-3.78 2.07-3.17 7.46 1.6 8.68-.24.65-.5 1.3-.71 1.4Z"/>
+              </svg>
+              <span>Apple 로그인</span>
             </button>
             <button onClick={() => setDemoLoginPrompt(false)} className={styles.backHomeBtn} style={{ padding: '8px 16px', fontSize: '13px' }}>
               계속 체험하기

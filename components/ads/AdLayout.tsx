@@ -92,7 +92,8 @@ function isRailPage(pathname: string): boolean {
 
 // 앱 다운로드 사이드바 프로모를 붙일 페이지 — 광고 레일이 있는 페이지도 포함되며,
 // appPromoTop이 지정된 페이지는 같은 레일 칸 위쪽에 어깨를 맞춰 공존한다(아래 promoLeft 계산 참고)
-const APP_PROMO_PAGES = new Set(['/', '/refining', '/wangap', '/package', '/mypage']);
+// /mypage는 페이지 내부(제목 아래 가로 배너)로 앱 다운로드를 노출하므로 전역 레일 프로모 대상에서 제외.
+const APP_PROMO_PAGES = new Set(['/', '/refining', '/wangap', '/package']);
 
 // 앱 프로모 세로 위치 기본값 — 상단 네비(52px) 바로 아래 고정 간격. 페이지별로 다른 콘텐츠 블록에
 // 어깨를 맞춰야 하면 getPageConfig에서 appPromoTop으로 오버라이드(예: /wangap, /package)

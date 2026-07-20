@@ -44,13 +44,13 @@
   cursor: pointer;
 }
 
+/* Google/Apple 로그인 버튼 통일 — 검정 배경 + 흰 글씨 */
 .providerGoogle {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
+  background-color: #000;
+  border: 1px solid #000;
+  color: #fff;
 }
 
-/* Apple 브랜드 가이드: 검정 버튼 + 흰 로고/텍스트 */
 .providerApple {
   background-color: #000;
   border: 1px solid #000;

@@ -14,19 +14,19 @@
   caret-color: transparent;
 }
 
-/* 컨테이너 */
+/* 컨테이너 — 상단은 body의 네비 클리어런스(52px) 위에 최소 여백만 (기존 80px는 과다) */
 .container {
   max-width: 1500px;
   margin: 0 auto;
-  padding: 80px 16px 40px;
+  padding: 24px 16px 40px;
 }
 
 /* 페이지 헤더 */
 .pageHeader {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -36,6 +36,53 @@
   font-weight: 700;
   margin: 0;
   color: var(--text-primary);
+  text-align: center;
+}
+
+/* 앱 다운로드 가로 배너 (숙제 체크 페이지 전용 — 제목 아래, 1~2줄) */
+.appBanner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  max-width: 640px;
+  margin: 0 auto 22px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(99, 102, 241, 0.14) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.appBannerInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.appBannerIcon {
+  display: inline-flex;
+  border-radius: 7px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.appBannerText {
+  font-size: 0.88rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.appBannerText strong {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.appBannerBadges {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .headerRight {
@@ -3154,6 +3201,34 @@
 .demoCtaBtn:hover {
   filter: brightness(1.1);
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+}
+
+/* 데모 로그인 버튼 행 (Google + Apple 나란히, 좁으면 줄바꿈) */
+.demoCtaBtns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* 로그인 버튼 (Google/Apple 공용) — 검정 배경 + 흰 글씨로 통일. 데모 CTA/모달 공용 */
+.darkLoginBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: #000;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.darkLoginBtn:hover {
+  filter: brightness(1.18);
 }
 
 /* ─── 원정대 캐릭터 이미지 줄 (앱 rosterThumb 이식) — 누르면 해당 카드로 스크롤 ─── */

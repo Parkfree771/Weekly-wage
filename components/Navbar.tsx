@@ -273,9 +273,9 @@ export default function Navbar() {
           </Link>
           <Link
             href="/mypage"
-            className="navbar-feedback-btn"
+            className="navbar-feedback-btn navbar-app-btn"
           >
-            마이페이지
+            숙제 체크
           </Link>
           <div
             className="nav-dropdown-wrapper settings-dropdown-wrapper"
@@ -446,7 +446,7 @@ export default function Navbar() {
                 )
               ))}
             </Nav>
-            {/* ── 계정: 마이페이지 + 로그인 ── */}
+            {/* ── 계정: 숙제 체크 + 로그인 ── */}
             <div className="navbar-offcanvas-section">
               <div className="navbar-offcanvas-group-label">계정</div>
               <Link
@@ -454,7 +454,7 @@ export default function Navbar() {
                 className={`navbar-offcanvas-link ${isActive('/mypage') ? 'active' : ''}`}
                 onClick={handleClose}
               >
-                마이페이지
+                숙제 체크
               </Link>
               <div className="d-flex justify-content-center mt-2">
                 <LoginButton />
