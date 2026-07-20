@@ -1004,38 +1004,6 @@ button.bulkButton:disabled,
   font-weight: 800;
 }
 
-/* 보유 개수 입력 — 필요 개수에서 이 값을 뺀 만큼만 비용 계산 */
-.materialCardOwnedRow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(2px, 0.5vw, 4px);
-  margin-top: clamp(2px, 0.6vw, 5px);
-  width: 100%;
-}
-
-.materialCardOwnedLabel {
-  font-size: clamp(0.48rem, 1.1vw, 0.65rem);
-  color: var(--text-secondary);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.materialCardOwnedInput {
-  width: clamp(72px, 26vw, 96px);
-  font-size: clamp(0.6rem, 1.3vw, 0.75rem);
-  text-align: center;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background-color: var(--input-bg);
-  color: var(--text-primary);
-  padding: 2px 4px;
-}
-
-.materialCardOwnedInput:disabled {
-  opacity: 0.5;
-}
-
 /* 숨결 컨트롤 (카드 내부 하단) */
 .breathControls {
   position: relative;

@@ -24,8 +24,6 @@ const MaterialCard = ({
   renderToggle,
   footer,
   tooltip,
-  ownedAmount,
-  onOwnedAmountChange,
 }: {
   icon: string;
   name: string;
@@ -42,8 +40,6 @@ const MaterialCard = ({
   renderToggle?: React.ReactNode;
   footer?: React.ReactNode;
   tooltip?: React.ReactNode;
-  ownedAmount?: number;
-  onOwnedAmountChange?: (value: number) => void;
 }) => (
   <div
     className={`${styles.materialCard} ${showEnableToggle && !isEnabled ? styles.materialCardDisabled : ''} ${showEnableToggle && isEnabled && !isBound ? styles.materialCardEnabled : ''} ${isBound ? styles.materialCardBound : ''}`}
@@ -98,20 +94,6 @@ const MaterialCard = ({
       <div className={styles.materialCost}>
         <Image src="/gold.webp" alt="gold" width={10} height={10} style={{ marginRight: '2px' }} />
         {Math.round(isBound ? 0 : cost).toLocaleString()}
-      </div>
-    )}
-    {showCheckbox && (
-      <div className={styles.materialCardOwnedRow}>
-        <span className={styles.materialCardOwnedLabel}>보유</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={ownedAmount || ''}
-          disabled={isBound}
-          onChange={(e) => onOwnedAmountChange?.(Math.max(0, Number(e.target.value.replace(/[^0-9]/g, '')) || 0))}
-          className={styles.materialCardOwnedInput}
-          placeholder="0"
-        />
       </div>
     )}
     {tooltip && <div className={styles.materialTooltip}>{tooltip}</div>}
