@@ -140,7 +140,11 @@ export default function RootLayout({
         {/* 미러(프록시) 사이트 차단 가드 — 허용되지 않은 호스트에서 열리면 정식 도메인으로 강제 이동.
             미러가 HTML 내 도메인 문자열을 자기 것으로 치환하는 수법을 쓰므로 도메인은 base64로 숨김
             (bG9hbG9nb2wua3I= → loalogol.kr). head 최상단 동기 실행이라 미러에서 콘텐츠 노출 전에 이탈. */}
+        {/* suppressHydrationWarning: 위 배율 스크립트와 동일 사유 — 애드센스 async 로더가 head에
+            노드를 동적 주입해 형제 위치가 밀리며 mismatch 경고가 뜸. 내용은 서버·클라 동일한 정적
+            문자열이라 실제 불일치 아님(위치 밀림) → 억제가 올바른 처리 */}
         <script
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html:
             `(function(){try{var d=atob("bG9hbG9nb2wua3I=");var h=location.hostname;if(h===d||h==="www."+d||h==="localhost"||h==="127.0.0.1"||/\\.netlify\\.app$/.test(h))return;location.replace("https://"+d+location.pathname+location.search);}catch(e){}})();`,
           }}

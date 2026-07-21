@@ -1,5 +1,5 @@
 // 완갑 실제 시뮬(WangapSimulator) · 평균 시뮬(WangapAverageCalculator) 공용
-// 재료 목록 / 비용 행 / 보조재료 최적화 상태 타입·헬퍼
+// 재료 목록 / 비용 행 타입·헬퍼
 
 import { WANGAP_PROMOTION_MATERIALS, type WangapOptMatKey } from '../../lib/wangapData';
 
@@ -15,25 +15,7 @@ export const OPT_MATERIAL_LIST: Array<{ key: OptMatKey; label: string; icon: str
   { key: '빙하', label: '빙하의 숨결', icon: '/breath-glacier5.webp' },
 ];
 
-export type OptMaterials = Record<OptMatKey, { bound: boolean; owned: number }>;
-export type OptDraft = Record<OptMatKey, { bound: boolean; owned: string }>;
-
-export const createOptMaterials = (bound: boolean): OptMaterials =>
-  Object.fromEntries(OPT_MATERIAL_LIST.map(m => [m.key, { bound, owned: 0 }])) as OptMaterials;
-
-export const createOptDraft = (materials: OptMaterials): OptDraft =>
-  Object.fromEntries(OPT_MATERIAL_LIST.map(m => {
-    const s = materials[m.key];
-    return [m.key, { bound: s.bound, owned: s.owned > 0 ? String(s.owned) : '' }];
-  })) as OptDraft;
-
-export const remainingFromMaterials = (materials: OptMaterials): Record<OptMatKey, number> =>
-  Object.fromEntries(OPT_MATERIAL_LIST.map(m => [m.key, materials[m.key].owned])) as Record<OptMatKey, number>;
-
-export const createZeroCounts = (): Record<OptMatKey, number> =>
-  Object.fromEntries(OPT_MATERIAL_LIST.map(m => [m.key, 0])) as Record<OptMatKey, number>;
-
-// 시세가 있는 재료 키 (골드 환산 대상 — 최적화 대상과 동일한 7종)
+// 시세가 있는 재료 키 (골드 환산 대상 — 7종)
 export const PRICED_COST_KEYS = OPT_MATERIAL_LIST.map(m => m.key);
 
 // 누적/예상 비용의 전체 키 (시세 7종 + 실링·골드 + 승급 재료 2종)

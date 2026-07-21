@@ -2433,7 +2433,7 @@ export default function MyPage() {
                       onClick={() => toggleMatsOpen(char.name)}
                     >
                       <span>주간 수급량</span>
-                      <span>{matsOpenChars.has(char.name) ? '접기 ▲' : '상세 ▼'}</span>
+                      <span>{matsOpenChars.has(char.name) ? '접기 ↑' : '상세 ↓'}</span>
                     </button>
                   )}
                   {(isDesktop || matsOpenChars.has(char.name)) && (
@@ -2551,7 +2551,8 @@ export default function MyPage() {
 
                     return (
                       <div className={styles.sideMaterialSection}>
-                        <div className={styles.sideMaterialTitle}>주간 수급량</div>
+                        {/* 모바일은 위 mobileMatsToggle이 색 헤더 역할을 하므로 중복 헤더 숨김(겹침 방지). 데스크톱만 표시 */}
+                        {isDesktop && <div className={styles.sideMaterialTitle}>주간 수급량</div>}
                         {!hasAny && <div className={styles.sideMaterialEmpty}>레이드를 체크하면 수급량이 표시됩니다</div>}
                         {matTotalsList.length > 0 && (
                           <div className={`${styles.sideMaterialRow} ${styles.sideMaterialTotalRow}`}>

@@ -57,9 +57,8 @@ export default function WangapAverageCalculator() {
   const [lavaMode, setLavaMode] = useState<WangapBreathMode>('off');
   const [glacierMode, setGlacierMode] = useState<WangapBreathMode>('off');
 
-  // === 귀속·보유 (재련 재료 카드와 동일: 귀속 = 0골드, 보유 = 부족분만 비용 반영) ===
+  // === 귀속 (재련 재료 카드와 동일: 귀속 = 0골드) ===
   const [boundMaterials, setBoundMaterials] = useState<Record<OptMatKey, boolean>>(createBoundFlags);
-  const [ownedMaterials, setOwnedMaterials] = useState<Record<string, number>>({});
 
   // 등급 카드 사이 승급 재료 상세 패널
   const [openPromoInfo, setOpenPromoInfo] = useState<'유물' | '고대' | null>(null);
@@ -189,11 +188,9 @@ export default function WangapAverageCalculator() {
     return items;
   }, [result.rows, startGrade, startLevel, targetLevel]);
 
-  // === 골드 환산 (귀속 = 0골드, 보유 수량은 부족분만 비용 반영) ===
+  // === 골드 환산 (귀속 = 0골드) ===
   const amountOf = (key: OptMatKey): number => Math.round(totals[key]);
-  const needOf = (key: OptMatKey): number =>
-    Math.max(0, amountOf(key) - (ownedMaterials[key] || 0));
-  const costOf = (key: OptMatKey): number => needOf(key) * getUnitPrice(key);
+  const costOf = (key: OptMatKey): number => amountOf(key) * getUnitPrice(key);
 
   const pressGold = Math.round(totals.골드);
   const totalGold = Math.round(
@@ -232,16 +229,13 @@ export default function WangapAverageCalculator() {
     );
   };
 
-  // 재료 카드 공통 props (귀속 토글 + 보유 수량)
+  // 재료 카드 공통 props (귀속 토글)
   const matCardProps = (key: OptMatKey) => ({
     showCheckbox: true,
     isBound: boundMaterials[key],
     onBoundChange: (_: string, isBound: boolean) =>
       setBoundMaterials(prev => ({ ...prev, [key]: isBound })),
     cost: costOf(key),
-    ownedAmount: ownedMaterials[key],
-    onOwnedAmountChange: (v: number) =>
-      setOwnedMaterials(prev => ({ ...prev, [key]: v })),
   });
 
   return (

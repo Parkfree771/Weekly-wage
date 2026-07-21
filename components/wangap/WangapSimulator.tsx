@@ -20,17 +20,10 @@ import {
 } from '../../lib/wangapData';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import {
-  OPT_MATERIAL_LIST,
   COST_ROWS,
   PRICED_COST_KEYS,
-  createOptMaterials,
-  createOptDraft,
-  remainingFromMaterials,
-  createZeroCounts,
   createZeroCost,
   type OptMatKey,
-  type OptMaterials,
-  type OptDraft,
   type WangapCostTotals,
 } from './wangapShared';
 
@@ -69,17 +62,6 @@ export default function WangapSimulator() {
   const [probBonus, setProbBonus] = useState(0);
   const [useLava, setUseLava] = useState(false);
   const [useGlacier, setUseGlacier] = useState(false);
-
-  // === 보조재료 최적화 (시세·확률 기반 기대비용 최소화) ===
-  const [optimize, setOptimize] = useState<{ enabled: boolean; materials: OptMaterials }>({
-    enabled: false,
-    materials: createOptMaterials(true),
-  });
-  const [remainingOwned, setRemainingOwned] = useState<Record<OptMatKey, number>>(createZeroCounts);
-  // 귀속·보유분으로 무료 소모한 누적량 — 골드 환산에서 제외
-  const [freeUsed, setFreeUsed] = useState<Record<OptMatKey, number>>(createZeroCounts);
-  const [showOptimizeModal, setShowOptimizeModal] = useState(false);
-  const [optDraft, setOptDraft] = useState<OptDraft>(() => createOptDraft(createOptMaterials(true)));
 
   // 등급 카드 사이 승급 재료 상세 패널
   const [openPromoInfo, setOpenPromoInfo] = useState<'유물' | '고대' | null>(null);
@@ -183,7 +165,7 @@ export default function WangapSimulator() {
   const atGradeCap = !isMaxed && currentLevel >= gradeRange.max; // 등급 상한 도달 (전설 +15 / 유물 +20)
   const canEnhance = !isMaxed && !atGradeCap && getBaseProb(currentLevel) > 0;
 
-  // 숨결 개수를 받아 최종 확률 계산 (최적화 모드는 부분 개수 사용 가능)
+  // 숨결 개수를 받아 최종 확률 계산
   const calcProbWith = (nLava: number, nGlacier: number): number => {
     const base = getBaseProb(currentLevel);
     if (base === 0) return 0;
@@ -193,67 +175,8 @@ export default function WangapSimulator() {
     return Math.min(capped + (nLava + nGlacier) * eff.per, 1);
   };
 
-  // 시세·확률 기반 최적 숨결 개수 계산: (1회 시도 실비용) / (성공 확률) 기대비용 최소화
-  // 귀속 재료는 무료, 보유 수량은 잔량만큼 무료로 우선 사용 — 그 이상만 시세로 계산
-  const computeOptimalBreaths = (
-    level: number,
-    janginNow: number,
-    bonus: number,
-    remaining: Record<OptMatKey, number>,
-  ): { lava: number; glacier: number } => {
-    const base = getBaseProb(level);
-    const eff = getWangapBreathEffect(base);
-    const materialCost = WANGAP_MATERIAL_COSTS[level + 1];
-    if (base === 0 || eff.max === 0 || !materialCost) return { lava: 0, glacier: 0 };
-
-    // 확정 성공(장인의 기운 100%)에는 숨결이 무의미 — 귀속분도 아낀다
-    if (janginNow >= 1) return { lava: 0, glacier: 0 };
-
-    const mats = optimize.materials;
-    // 재료별 실구매 비용: 귀속이면 0, 아니면 보유 잔량 초과분만 시세 적용
-    const paidFor = (key: OptMatKey, needed: number): number => {
-      if (mats[key].bound) return 0;
-      return Math.max(0, needed - remaining[key]) * getUnitPrice(key);
-    };
-
-    // 1회 시도 기본 실비용 (귀속·보유분 반영한 골드 환산)
-    const baseCost =
-      materialCost.골드 +
-      paidFor('파괴석결정', materialCost.파괴석결정) +
-      paidFor('수호석결정', materialCost.수호석결정) +
-      paidFor('위대한돌파석', materialCost.위대한돌파석) +
-      paidFor('상급아비도스', materialCost.상급아비도스) +
-      paidFor('운명파편', materialCost.운명파편);
-
-    const freeLava = mats.용암.bound ? eff.max : Math.min(remaining.용암, eff.max);
-    const freeGlacier = mats.빙하.bound ? eff.max : Math.min(remaining.빙하, eff.max);
-    const priceLava = getUnitPrice('용암');
-    const priceGlacier = getUnitPrice('빙하');
-    const capped = Math.min(base + bonus, base * 2);
-
-    // 무료(귀속·보유)분은 항상 전부 투입하는 게 이득 — 그 이상 구매분만 탐색
-    let best = { lava: freeLava, glacier: freeGlacier };
-    let bestExpected = Infinity;
-    for (let l = freeLava; l <= eff.max; l++) {
-      for (let g = freeGlacier; g <= eff.max; g++) {
-        const p = Math.min(capped + (l + g) * eff.per, 1);
-        if (p <= 0) continue;
-        const paidCost = (l - freeLava) * priceLava + (g - freeGlacier) * priceGlacier;
-        const expected = (baseCost + paidCost) / p;
-        if (expected < bestExpected - 1e-9) {
-          bestExpected = expected;
-          best = { lava: l, glacier: g };
-        }
-      }
-    }
-    return best;
-  };
-
-  // 이번 시도에 사용할 숨결 개수 (최적화 자동 or 수동 토글=풀숨)
+  // 이번 시도에 사용할 숨결 개수 (수동 토글 = 풀숨)
   const getAttemptBreaths = (level: number): { lava: number; glacier: number } => {
-    if (optimize.enabled) {
-      return computeOptimalBreaths(level, jangin, probBonus, remainingOwned);
-    }
     const eff = getWangapBreathEffect(getBaseProb(level));
     return { lava: useLava ? eff.max : 0, glacier: useGlacier ? eff.max : 0 };
   };
@@ -291,39 +214,6 @@ export default function WangapSimulator() {
       next.빙하 += breaths.glacier;
       return next;
     });
-
-    // 최적화 모드: 무료(귀속·보유) 소모량 기록 + 보유 잔량 차감
-    if (optimize.enabled) {
-      const usage: Record<OptMatKey, number> = {
-        파괴석결정: materialCost?.파괴석결정 ?? 0,
-        수호석결정: materialCost?.수호석결정 ?? 0,
-        위대한돌파석: materialCost?.위대한돌파석 ?? 0,
-        상급아비도스: materialCost?.상급아비도스 ?? 0,
-        운명파편: materialCost?.운명파편 ?? 0,
-        용암: breaths.lava,
-        빙하: breaths.glacier,
-      };
-      // 이번 시도에서 무료로 처리되는 양: 귀속이면 전량, 아니면 보유 잔량까지
-      setFreeUsed(prev => {
-        const next = { ...prev };
-        OPT_MATERIAL_LIST.forEach(m => {
-          const use = usage[m.key];
-          if (use <= 0) return;
-          const freePart = optimize.materials[m.key].bound ? use : Math.min(remainingOwned[m.key], use);
-          if (freePart > 0) next[m.key] += freePart;
-        });
-        return next;
-      });
-      setRemainingOwned(prev => {
-        const next = { ...prev };
-        OPT_MATERIAL_LIST.forEach(m => {
-          if (!optimize.materials[m.key].bound) {
-            next[m.key] = Math.max(0, next[m.key] - usage[m.key]);
-          }
-        });
-        return next;
-      });
-    }
 
     const delay = isAutoModeRef.current ? AUTO_REVEAL_DELAY : MANUAL_REVEAL_DELAY;
     revealTimerRef.current = setTimeout(() => {
@@ -442,11 +332,8 @@ export default function WangapSimulator() {
       setAutoTargetLevel(target);
       setTargetDraft(String(target));
     }
-    // 최적화 적용 중에는 숨결을 최적화가 제어하므로 풀숨 설정을 무시
-    if (!optimize.enabled) {
-      setUseLava(autoSettings.useLava);
-      setUseGlacier(autoSettings.useGlacier);
-    }
+    setUseLava(autoSettings.useLava);
+    setUseGlacier(autoSettings.useGlacier);
     setShowAutoSettings(false);
     setIsAutoMode(true);
   };
@@ -498,8 +385,6 @@ export default function WangapSimulator() {
     setUseGlacier(false);
     setAutoTargetLevel(0);
     setTargetDraft('');
-    setRemainingOwned(remainingFromMaterials(optimize.materials)); // 보유 잔량 복원
-    setFreeUsed(createZeroCounts());
     setHistory([]);
     setTotals({ attempts: 0, success: 0, fail: 0 });
     entryNoRef.current = 0;
@@ -514,48 +399,6 @@ export default function WangapSimulator() {
       setConfirmReset(true);
       setTimeout(() => setConfirmReset(false), 3000);
     }
-  };
-
-  // === 보조재료 최적화 설정 ===
-  const openOptimizeModal = () => {
-    setOptDraft(createOptDraft(optimize.materials));
-    setShowOptimizeModal(true);
-  };
-
-  const applyOptimize = () => {
-    const materials = Object.fromEntries(OPT_MATERIAL_LIST.map(m => {
-      const d = optDraft[m.key];
-      return [m.key, { bound: d.bound, owned: d.bound ? 0 : (parseInt(d.owned) || 0) }];
-    })) as OptMaterials;
-    setOptimize({ enabled: true, materials });
-    // 현재 설정을 지금까지의 누적 소모량 전체에 소급 적용
-    // (설정을 중간에 바꿔도 과거 무료분이 남지 않도록 무료 사용분·보유 잔량을 재계산)
-    const nextFree = createZeroCounts();
-    const nextRemaining = createZeroCounts();
-    OPT_MATERIAL_LIST.forEach(m => {
-      const consumed = accumulatedCost[m.key];
-      const s = materials[m.key];
-      if (s.bound) {
-        nextFree[m.key] = consumed;
-      } else {
-        nextFree[m.key] = Math.min(s.owned, consumed);
-        nextRemaining[m.key] = Math.max(0, s.owned - consumed);
-      }
-    });
-    setFreeUsed(nextFree);
-    setRemainingOwned(nextRemaining);
-    // 수동 토글은 최적화가 대체
-    setUseLava(false);
-    setUseGlacier(false);
-    setShowOptimizeModal(false);
-  };
-
-  const disableOptimize = () => {
-    setOptimize(prev => ({ ...prev, enabled: false }));
-    // 해제 시 무료분 없이 전량 구매 기준으로 환산 (재적용하면 다시 소급 계산됨)
-    setFreeUsed(createZeroCounts());
-    setRemainingOwned(createZeroCounts());
-    setShowOptimizeModal(false);
   };
 
   // === 현재/목표 단계 직접 입력 (현재 등급 구간 내에서만) ===
@@ -599,13 +442,9 @@ export default function WangapSimulator() {
     return itemId ? (marketPrices[String(itemId)] || 0) : 0;
   };
 
-  // 구매 필요 수량: 누적 소모량에서 귀속·보유(무료) 사용분을 뺀 나머지
-  const getBuyAmount = (key: OptMatKey, amount: number): number =>
-    Math.max(0, amount - freeUsed[key]);
-
-  // 골드 환산: 최적화의 귀속·보유(무료) 사용분은 제외하고 실구매분만 계산
+  // 골드 환산: 시세 × 누적 소모량
   const getMaterialGoldCost = (key: OptMatKey, amount: number): number =>
-    Math.round(getBuyAmount(key, amount) * getUnitPrice(key));
+    Math.round(amount * getUnitPrice(key));
 
   const toggleGoldInclude = (key: string) => {
     setGoldIncludeMap(prev => ({ ...prev, [key]: !prev[key] }));
@@ -613,7 +452,7 @@ export default function WangapSimulator() {
 
   const baseProb = getBaseProb(currentLevel);
   const breathEffect = getWangapBreathEffect(baseProb);
-  // 현재 상태 기준 이번 시도의 숨결 개수 (최적화 자동 or 수동) — 표시 확률과 실제 판정이 동일
+  // 현재 상태 기준 이번 시도의 숨결 개수 (수동) — 표시 확률과 실제 판정이 동일
   const currentBreaths = getAttemptBreaths(currentLevel);
   const finalProb = calcProbWith(currentBreaths.lava, currentBreaths.glacier);
   const materialCost = WANGAP_MATERIAL_COSTS[currentLevel + 1];
@@ -623,13 +462,6 @@ export default function WangapSimulator() {
     (sum, key) => (goldIncludeMap[key] ? sum + getMaterialGoldCost(key, accumulatedCost[key]) : sum), 0);
   const pressGold = goldIncludeMap['골드'] ? accumulatedCost.골드 : 0;
   const totalGold = Math.round(materialBuyGold + pressGold);
-  // 최적화로 아낀 골드: 귀속·보유(무료) 사용분의 시세 가치
-  const savedGold = optimize.enabled
-    ? PRICED_COST_KEYS.reduce(
-        (sum, key) => (goldIncludeMap[key]
-          ? sum + Math.round(Math.min(freeUsed[key], accumulatedCost[key]) * getUnitPrice(key))
-          : sum), 0)
-    : 0;
 
   return (
     <div className={styles.container} data-grade={grade}>
@@ -869,57 +701,38 @@ export default function WangapSimulator() {
                 </div>
               </div>
 
-              {/* 보조 재료: 숨결 2종 동시 사용 + 시세·확률 기반 최적화 */}
+              {/* 보조 재료: 숨결 2종 동시 사용 (수동 토글 = 풀숨) */}
               <div className={styles.breathHeader}>
                 <span className={styles.breathHeaderLabel}>보조 재료</span>
-                <button
-                  className={`${styles.optimizeButton} ${optimize.enabled ? styles.optimizeButtonActive : ''}`}
-                  onClick={openOptimizeModal}
-                  disabled={isAutoMode}
-                >
-                  {optimize.enabled ? '최적화 적용 중' : '최적화'}
-                </button>
               </div>
               <div className={styles.breathRow}>
                 <button
-                  className={`${styles.breathButton} ${optimize.enabled ? styles.breathButtonAuto : ''} ${(optimize.enabled ? currentBreaths.lava > 0 : useLava) ? styles.breathButtonActiveLava : ''}`}
+                  className={`${styles.breathButton} ${useLava ? styles.breathButtonActiveLava : ''}`}
                   onClick={() => setUseLava(!useLava)}
-                  disabled={breathEffect.max === 0 || optimize.enabled}
+                  disabled={breathEffect.max === 0}
                 >
                   <span className={styles.breathIcon}>
                     <Image src="/breath-lava5.webp" alt="용암의 숨결" fill sizes="28px" style={{ objectFit: 'contain' }} />
                   </span>
                   <span className={styles.breathName}>용암의 숨결</span>
                   <span className={styles.breathMeta}>
-                    {optimize.enabled
-                      ? `자동 ${currentBreaths.lava}개`
-                      : useLava ? `${breathEffect.max}개 +${(breathEffect.max * breathEffect.per * 100).toFixed(2)}%` : '미사용'}
+                    {useLava ? `${breathEffect.max}개 +${(breathEffect.max * breathEffect.per * 100).toFixed(2)}%` : '미사용'}
                   </span>
                 </button>
                 <button
-                  className={`${styles.breathButton} ${optimize.enabled ? styles.breathButtonAuto : ''} ${(optimize.enabled ? currentBreaths.glacier > 0 : useGlacier) ? styles.breathButtonActiveGlacier : ''}`}
+                  className={`${styles.breathButton} ${useGlacier ? styles.breathButtonActiveGlacier : ''}`}
                   onClick={() => setUseGlacier(!useGlacier)}
-                  disabled={breathEffect.max === 0 || optimize.enabled}
+                  disabled={breathEffect.max === 0}
                 >
                   <span className={styles.breathIcon}>
                     <Image src="/breath-glacier5.webp" alt="빙하의 숨결" fill sizes="28px" style={{ objectFit: 'contain' }} />
                   </span>
                   <span className={styles.breathName}>빙하의 숨결</span>
                   <span className={styles.breathMeta}>
-                    {optimize.enabled
-                      ? `자동 ${currentBreaths.glacier}개`
-                      : useGlacier ? `${breathEffect.max}개 +${(breathEffect.max * breathEffect.per * 100).toFixed(2)}%` : '미사용'}
+                    {useGlacier ? `${breathEffect.max}개 +${(breathEffect.max * breathEffect.per * 100).toFixed(2)}%` : '미사용'}
                   </span>
                 </button>
               </div>
-              {optimize.enabled && (!optimize.materials.용암.bound || !optimize.materials.빙하.bound) && (
-                <div className={styles.ownedInfo}>
-                  보유 잔량 — {[
-                    !optimize.materials.용암.bound ? `용암 ${remainingOwned.용암.toLocaleString()}개` : null,
-                    !optimize.materials.빙하.bound ? `빙하 ${remainingOwned.빙하.toLocaleString()}개` : null,
-                  ].filter(Boolean).join(' · ')}
-                </div>
-              )}
 
               {/* 1회 강화 비용 */}
               {materialCost && (
@@ -989,30 +802,24 @@ export default function WangapSimulator() {
 
                       <div className={styles.autoDropdownSection}>
                         <div className={styles.autoDropdownLabel}>보조 재료</div>
-                        {optimize.enabled ? (
-                          <div className={styles.autoDropdownOptimizeNote}>
-                            보조재료 최적화 적용 중 — 단계마다 최적 개수가 자동 사용됩니다
-                          </div>
-                        ) : (
-                          <div className={styles.autoBreathChecks}>
-                            <label className={styles.autoDropdownCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={autoSettings.useLava}
-                                onChange={(e) => setAutoSettings({ ...autoSettings, useLava: e.target.checked })}
-                              />
-                              용숨 (풀숨)
-                            </label>
-                            <label className={styles.autoDropdownCheckbox}>
-                              <input
-                                type="checkbox"
-                                checked={autoSettings.useGlacier}
-                                onChange={(e) => setAutoSettings({ ...autoSettings, useGlacier: e.target.checked })}
-                              />
-                              빙숨 (풀숨)
-                            </label>
-                          </div>
-                        )}
+                        <div className={styles.autoBreathChecks}>
+                          <label className={styles.autoDropdownCheckbox}>
+                            <input
+                              type="checkbox"
+                              checked={autoSettings.useLava}
+                              onChange={(e) => setAutoSettings({ ...autoSettings, useLava: e.target.checked })}
+                            />
+                            용숨 (풀숨)
+                          </label>
+                          <label className={styles.autoDropdownCheckbox}>
+                            <input
+                              type="checkbox"
+                              checked={autoSettings.useGlacier}
+                              onChange={(e) => setAutoSettings({ ...autoSettings, useGlacier: e.target.checked })}
+                            />
+                            빙숨 (풀숨)
+                          </label>
+                        </div>
                       </div>
 
                       <div className={styles.autoDropdownSection}>
@@ -1126,9 +933,6 @@ export default function WangapSimulator() {
                 const amount = accumulatedCost[row.key];
                 if (amount <= 0) return null;
                 const matKey = row.priced ? (row.key as OptMatKey) : null;
-                const showBuy = optimize.enabled && matKey !== null;
-                const isBound = matKey ? optimize.materials[matKey].bound : false;
-                const buyAmount = matKey ? getBuyAmount(matKey, amount) : 0;
                 return (
                   <div
                     key={row.key}
@@ -1148,15 +952,6 @@ export default function WangapSimulator() {
                     <span className={styles.materialName}>{row.label}</span>
                     <span className={styles.materialAmount}>
                       {amount.toLocaleString()}
-                      {showBuy && (
-                        isBound ? (
-                          <span className={`${styles.materialBuyInfo} ${styles.materialBuyFree}`}>귀속</span>
-                        ) : buyAmount > 0 ? (
-                          <span className={styles.materialBuyInfo}>구매 {buyAmount.toLocaleString()}</span>
-                        ) : (
-                          <span className={`${styles.materialBuyInfo} ${styles.materialBuyFree}`}>보유분 사용</span>
-                        )
-                      )}
                     </span>
                     {matKey ? (
                       <span className={`${styles.materialGold} ${!goldIncludeMap[matKey] ? styles.materialGoldExcluded : ''}`}>
@@ -1190,12 +985,6 @@ export default function WangapSimulator() {
               )}
             </div>
 
-            {optimize.enabled && (
-              <div className={styles.costNote}>
-                최적화의 귀속·보유(무료) 사용분은 골드 환산에서 제외됩니다
-              </div>
-            )}
-
             {/* 등급/단계 진행 표시 */}
             {history.length > 0 && (
               <div className={styles.progressSummary}>
@@ -1203,16 +992,6 @@ export default function WangapSimulator() {
                 <div className={styles.progressValue}>
                   <span className={styles.progressGradeBadge} data-grade={grade}>{grade}</span>
                   <span className={styles.progressLevel}>+{currentLevel}</span>
-                </div>
-              </div>
-            )}
-
-            {/* 아낀 골드 (최적화 적용 시) */}
-            {optimize.enabled && savedGold > 0 && (
-              <div className={styles.goldSplitRows}>
-                <div className={styles.goldSplitRow}>
-                  <span>귀속·보유로 아낀 골드</span>
-                  <span className={styles.goldSplitSaved}>−{savedGold.toLocaleString()} G</span>
                 </div>
               </div>
             )}
@@ -1240,92 +1019,6 @@ export default function WangapSimulator() {
       </div>
       </div>
       </div>
-
-      {/* 보조재료 최적화 설정 모달 */}
-      {showOptimizeModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowOptimizeModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-            <div className={styles.modalTitle}>보조재료 최적화</div>
-            <p className={styles.modalDesc}>
-              거래소 시세와 강화 확률을 기반으로, 단계마다 기대비용이 가장 낮아지는 숨결 개수를 자동으로 사용합니다.
-              재료별 귀속·보유 수량은 시도 비용 계산에 그대로 반영됩니다.
-            </p>
-
-            <label className={styles.modalCheck}>
-              <input
-                type="checkbox"
-                checked={OPT_MATERIAL_LIST.every(m => optDraft[m.key].bound)}
-                onChange={(e) => {
-                  const bound = e.target.checked;
-                  setOptDraft(prev =>
-                    Object.fromEntries(
-                      OPT_MATERIAL_LIST.map(m => [m.key, { ...prev[m.key], bound }])
-                    ) as OptDraft
-                  );
-                }}
-              />
-              <span className={styles.modalCheckText}>
-                전체 귀속
-                <small>모든 재료의 귀속 체크를 한 번에 켜거나 끕니다</small>
-              </span>
-            </label>
-
-            <div className={styles.modalMatList}>
-              {OPT_MATERIAL_LIST.map(m => {
-                const d = optDraft[m.key];
-                return (
-                  <div key={m.key} className={`${styles.modalMatRow} ${d.bound ? styles.modalMatRowBound : ''}`}>
-                    <span className={styles.modalInputIcon}>
-                      <Image src={m.icon} alt={m.label} fill sizes="24px" style={{ objectFit: 'contain' }} />
-                    </span>
-                    <span className={styles.modalMatLabel}>{m.label}</span>
-                    <label className={styles.modalBoundCheck}>
-                      <input
-                        type="checkbox"
-                        checked={d.bound}
-                        onChange={(e) =>
-                          setOptDraft(prev => ({ ...prev, [m.key]: { ...prev[m.key], bound: e.target.checked } }))
-                        }
-                      />
-                      귀속
-                    </label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      className={styles.modalInput}
-                      value={d.bound ? '' : d.owned}
-                      disabled={d.bound}
-                      placeholder={d.bound ? '무제한' : '0'}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        if (v === '' || /^\d+$/.test(v)) {
-                          setOptDraft(prev => ({ ...prev, [m.key]: { ...prev[m.key], owned: v } }));
-                        }
-                      }}
-                      aria-label={`${m.label} 보유 수량`}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-
-            <p className={styles.modalHint}>
-              귀속 재료는 무료로 계산됩니다. 보유 수량을 입력하면 그만큼 무료로 우선 사용하고, 소진 후에는 시세 기준으로 계산합니다.
-            </p>
-
-            <div className={styles.modalActions}>
-              {optimize.enabled && (
-                <button className={styles.modalSecondaryBtn} onClick={disableOptimize}>
-                  최적화 해제
-                </button>
-              )}
-              <button className={styles.modalPrimaryBtn} onClick={applyOptimize}>
-                적용
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className={styles.tempNotice}>
         완갑은 아직 인게임 스펙이 공개되지 않아 확률·재료 소모량·승급 비용이 전부 임시값입니다. 공개 후 실제 수치로 교체됩니다.
