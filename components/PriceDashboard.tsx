@@ -67,6 +67,29 @@ const DASHBOARD_ITEMS: PriceItem[] = [
 
 const STORAGE_KEY = 'priceDashboardConfig';
 
+// 악세 shortName 등급 글자 색상 (카테고리 차트 renderAccessoryItemName과 동일 팔레트)
+const GRADE_CHAR_COLORS: Record<string, string> = {
+  '상': '#fbbf24',
+  '중': '#a855f7',
+  '하': '#3b82f6',
+};
+
+// 악세 아이템 이름 끝의 등급 글자("상중"/"상상")에 고유색 적용
+const renderShortName = (item: PriceItem) => {
+  const isAccessory = item.id.startsWith('auction_necklace') || item.id.startsWith('auction_ring') || item.id.startsWith('auction_earring');
+  if (!isAccessory) return item.shortName;
+  const m = item.shortName.match(/^(.*?)([상중하]+)$/);
+  if (!m) return item.shortName;
+  return (
+    <>
+      {m[1]}
+      {m[2].split('').map((ch, i) => (
+        <span key={i} style={{ color: GRADE_CHAR_COLORS[ch], fontWeight: 700 }}>{ch}</span>
+      ))}
+    </>
+  );
+};
+
 // 선택된 아이템 ID 목록 (순서대로)
 type DashboardConfig = {
   selectedItems: string[];
@@ -80,18 +103,18 @@ type PriceData = {
 
 // 기본 설정 (사용자 지정)
 const DEFAULT_SELECTED_ITEMS = [
-  '66150010',  // 에스더의 기운
   '66102007',  // 파괴석 결정
+  '66102107',  // 수호석 결정
   '6861013',   // 상비도스
-  '65203905',  // 아드레날린
-  '65200505',  // 원한
-  '65203305',  // 돌격대장
-  '65203505',  // 질량 증가
-  '65202805',  // 저주받은 인형
-  'auction_gem_fear_8',  // 8겁화
   'auction_gem_fear_10', // 10겁화
-  'auction_necklace_ancient_refine3', // 목걸이 상중
-  'auction_ring_ancient_refine3',     // 반지 상중
+  'auction_gem_fear_9',  // 9겁화
+  'auction_gem_fear_8',  // 8겁화
+  '65203905',  // 아드레날린
+  '65203305',  // 돌격대장
+  '65200505',  // 원한
+  '65201005',  // 예리한 둔기
+  'auction_necklace_ancient_refine3_high', // 목걸이 상상
+  'auction_ring_ancient_refine3_high',     // 반지 상상
 ];
 
 const getDefaultConfig = (): DashboardConfig => ({
@@ -436,15 +459,15 @@ export default function PriceDashboard() {
                   }}
                 />
                 <span style={{
-                  fontSize: '0.8rem',
-                  fontWeight: 500,
-                  color: 'var(--text-secondary)',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: 'var(--text-primary)',
                   textAlign: 'center',
                   marginBottom: '6px',
                   lineHeight: 1.2,
                   whiteSpace: 'nowrap'
                 }}>
-                  {item.shortName}
+                  {renderShortName(item)}
                 </span>
                 <span className="price-value" style={{
                   fontSize: '0.95rem',
@@ -624,7 +647,7 @@ export default function PriceDashboard() {
                         lineHeight: 1.2,
                         wordBreak: 'keep-all',
                       }}>
-                        {item.shortName}
+                        {renderShortName(item)}
                       </span>
                     </div>
                   );

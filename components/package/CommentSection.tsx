@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { isAdmin } from '@/lib/admin';
 import {
   createPackageComment,
   getPackageComments,
@@ -219,7 +220,7 @@ export default function CommentSection({ postId, commentCount, onCommentCountCha
   };
 
   const renderCommentBody = (c: PackageComment, isReply: boolean) => {
-    const isOwner = user && user.uid === c.authorUid;
+    const isOwner = user && (user.uid === c.authorUid || isAdmin(user.email));
     const isEditing = editingId === c.id;
 
     return (

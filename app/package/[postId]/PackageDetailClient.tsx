@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
+import { isAdmin } from '@/lib/admin';
 import {
   togglePackageLike,
   checkPackageLike,
@@ -102,6 +103,8 @@ function getPackageItemGold(
     return (bcRate > 0 ? calcTicketAverage('hell', 6, prices, bcRate) : (item.goldOverride || 0)) * item.quantity;
   if (item.itemId === 'fixed_naraka-legendary-ticket')
     return (bcRate > 0 ? calcTicketAverage('narak', 2, prices, bcRate) : (item.goldOverride || 0)) * item.quantity;
+  if (item.itemId === 'fixed_cube-ticket')
+    return (bcRate > 0 ? calcTicketAverage('hell', 6, prices, bcRate) / 6 : (item.goldOverride || 0)) * item.quantity;
   if (PROCESSED_GEM_BOX_GEM[item.itemId])
     return (Object.keys(prices).length > 0 ? getProcessedGemBoxUnitPrice(item.itemId, prices) : (item.goldOverride || 0)) * item.quantity;
   if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
@@ -174,7 +177,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
   // 가챠 제외 아이템 (제외 시 골드 0으로 계산, 확률은 유지)
   const [gachaExcluded, setGachaExcluded] = useState<Record<number, boolean>>({});
 
-  const isOwner = user && post && user.uid === post.authorUid;
+  const isOwner = user && post && (user.uid === post.authorUid || isAdmin(user.email));
 
   useEffect(() => {
     fetch('/api/price-data/latest')
@@ -614,6 +617,8 @@ export default function PackageDetailPage({ initialPost }: Props) {
       return bcRate > 0 ? calcTicketAverage('hell', 6, latestPrices, bcRate) : (item.goldOverride || 0);
     if (item.itemId === 'fixed_naraka-legendary-ticket')
       return bcRate > 0 ? calcTicketAverage('narak', 2, latestPrices, bcRate) : (item.goldOverride || 0);
+    if (item.itemId === 'fixed_cube-ticket')
+      return bcRate > 0 ? calcTicketAverage('hell', 6, latestPrices, bcRate) / 6 : (item.goldOverride || 0);
     // 가공 완료 젬 상자: 연결 젬 실시간 시세 + 8,100골드
     if (PROCESSED_GEM_BOX_GEM[item.itemId])
       return Object.keys(latestPrices).length > 0

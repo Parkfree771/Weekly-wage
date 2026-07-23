@@ -33,7 +33,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/life-master', label: '생활 제작' },
       { href: '/package', label: '패키지 효율' },
-      { href: '/more-reward', label: '더보기 효율 & 레이드 보상 정리', badge: 'NEW' },
+      { href: '/more-reward', label: '더보기 효율 & 레이드 보상 정리' },
       { href: '/hell-reward', label: '지옥 보상' },
     ],
   },

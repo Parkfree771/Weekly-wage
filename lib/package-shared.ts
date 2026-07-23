@@ -475,7 +475,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     icon: '/cube-ticket.webp',
     name: '큐브 티켓',
     type: 'fixed',
-    fixedGold: 8000,
+    fixedGold: 8000, // 폴백 전용 — 실제 가격은 영웅 지옥 티켓 평균가 ÷ 6 동적 계산 (getUnitPrice)
   },
   {
     id: 'bracelet-reconversion',
@@ -710,6 +710,7 @@ export const DYNAMIC_TICKET_IDS = new Set([
   'hell-legendary-ticket',
   'hell-heroic-ticket',
   'naraka-legendary-ticket',
+  'cube-ticket',
   'relic-core',
   'gem-order-processed',
   'gem-chaos-processed',
@@ -854,6 +855,8 @@ export function getUnitPrice(
         return calcTicketAverage('hell', 6, prices, bcRate);
       if (template.id === 'naraka-legendary-ticket')
         return calcTicketAverage('narak', 2, prices, bcRate);
+      if (template.id === 'cube-ticket')
+        return calcTicketAverage('hell', 6, prices, bcRate) / 6; // 큐브 티켓 6장 = 영웅 지옥 티켓 1장 교환
       if (template.id === 'relic-core')
         return getRelicCoreSelectPrice(prices);
       if (PROCESSED_GEM_BOX_GEM[`fixed_${template.id}`])
@@ -928,6 +931,8 @@ export function calculateGachaItemGold(
         return calcTicketAverage('hell', 6, prices, bcRate) * item.quantity;
       if (item.itemId === 'fixed_naraka-legendary-ticket')
         return calcTicketAverage('narak', 2, prices, bcRate) * item.quantity;
+      if (item.itemId === 'fixed_cube-ticket')
+        return (calcTicketAverage('hell', 6, prices, bcRate) / 6) * item.quantity;
     }
     return item.goldOverride * item.quantity;
   }
@@ -986,6 +991,8 @@ export function calculatePostEfficiency(
         return calcTicketAverage('hell', 6, latestPrices, bcRate);
       if (itemId === 'fixed_naraka-legendary-ticket')
         return calcTicketAverage('narak', 2, latestPrices, bcRate);
+      if (itemId === 'fixed_cube-ticket')
+        return calcTicketAverage('hell', 6, latestPrices, bcRate) / 6;
     }
     return fallback;
   };

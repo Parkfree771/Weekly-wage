@@ -105,6 +105,8 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
         return calcTicketAverage('hell', 6, latestPrices, bcRate);
       if (itemId === 'fixed_naraka-legendary-ticket')
         return calcTicketAverage('narak', 2, latestPrices, bcRate);
+      if (itemId === 'fixed_cube-ticket')
+        return calcTicketAverage('hell', 6, latestPrices, bcRate) / 6;
     }
     return fallback;
   };

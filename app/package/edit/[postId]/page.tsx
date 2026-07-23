@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Container, Spinner } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
+import { isAdmin } from '@/lib/admin';
 import { getPackagePost, updatePackagePost } from '@/lib/package-service';
 import type { PackageItem, PackageType, PriceCurrency } from '@/types/package';
 import {
@@ -169,7 +170,7 @@ export default function PackageEditPage() {
     const load = async () => {
       try {
         const post = await getPackagePost(postId);
-        if (!post || post.authorUid !== user.uid) {
+        if (!post || (post.authorUid !== user.uid && !isAdmin(user.email))) {
           setNotFound(true);
           setPageLoading(false);
           return;

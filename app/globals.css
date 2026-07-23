@@ -842,7 +842,7 @@ html, body {
   vertical-align: middle;
 }
 
-/* BETA 배지 — NEW보다 살짝 크게, 보라 단색 */
+/* BETA 배지 — NEW보다 살짝 크게, 앱 다운로드와 동일한 대표색 단색 */
 .nav-badge-beta {
   position: relative;
   display: inline-block;
@@ -852,7 +852,7 @@ html, body {
   font-weight: 800;
   line-height: 1.4;
   color: #fff;
-  background: #7c3aed;
+  background: var(--color-primary);
   border-radius: 5px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
