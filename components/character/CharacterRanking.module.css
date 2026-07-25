@@ -26,11 +26,12 @@
   gap: 0.8rem;
 }
 
-/* 좌측: 전 스펙 펼침 사이드바 (grid 왼쪽 1fr 컬럼). 우측 통계와 대칭 */
+/* 좌측: 전 스펙 펼침 사이드바 (grid 왼쪽 1fr 컬럼). 우측 통계와 대칭.
+   칩이 1열이라 폭도 그에 맞춤 (아이콘 22px + 스펙명, 긴 이름은 ellipsis) */
 .specAside {
   grid-column: 1;
   width: 100%;
-  max-width: 300px;
+  max-width: 190px;
   justify-self: end;
   align-self: start;
   position: sticky;
@@ -107,8 +108,8 @@
   background: rgba(59, 130, 246, 0.12);
 }
 .specChipIcon {
-  width: 22px;
-  height: 22px;
+  width: 27px;
+  height: 27px;
   border-radius: 6px;
   object-fit: cover;
   flex-shrink: 0;
@@ -116,7 +117,7 @@
 .specChipName {
   flex: 1;
   min-width: 0;
-  font-size: 0.74rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: var(--text-primary);
   overflow: hidden;
