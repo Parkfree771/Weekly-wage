@@ -8,6 +8,7 @@ import styles from './CharacterRanking.module.css';
 import TitleBadge from './TitleBadge';
 import FilterSelect, { type FilterGroup } from './FilterSelect';
 import { cachedGetJson, invalidateCachedGet } from '@/lib/client-fetch-cache';
+import { coreIconFor } from '@/lib/core-icon';
 import { squareThumb } from '@/lib/image-cdn';
 import FilterStats from './FilterStats';
 import ClassSpecCompare from './ClassSpecCompare';
@@ -80,14 +81,15 @@ function matchSpec(id: string, query: string): boolean {
 
 type Core = {
   name: string;
-  icon: string | null;
+  /** slim 응답에는 없음 — 렌더 시 coreIconFor(name)로 유도 */
+  icon?: string | null;
   grade: string | null;
   point: number;
   /** 질서 코어 번호(1·2·3). 혼돈·미매칭은 null */
   num?: number | null;
 };
 
-type RankingEntry = {
+export type RankingEntry = {
   characterName: string;
   className: string;
   combatPower: number;
@@ -141,6 +143,8 @@ function getFactionColor(coreName: string): string {
 interface Props {
   onSelect: (name: string) => void;
   reloadKey?: number;
+  /** 서버(page.tsx)에서 미리 조회한 첫 페이지 — 있으면 마운트 시 fetch 없이 즉시 렌더 */
+  initialEntries?: RankingEntry[];
 }
 
 const PAGE_STEP = 30;
@@ -167,8 +171,9 @@ const TITLE_FILTER_GROUPS: FilterGroup[] = [{
   })),
 }];
 
-export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
-  const [entries, setEntries] = useState<RankingEntry[]>([]);
+export default function CharacterRanking({ onSelect, reloadKey = 0, initialEntries }: Props) {
+  const hasInitial = !!initialEntries && initialEntries.length > 0;
+  const [entries, setEntries] = useState<RankingEntry[]>(initialEntries ?? []);
   const [selectedSpec, setSelectedSpec] = useState<string>('');
   // 좌측 스펙 사이드바 검색어
   const [specQuery, setSpecQuery] = useState<string>('');
@@ -181,9 +186,9 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
   // 타이핑 중 매 글자마다 API를 치지 않도록 500ms 디바운스된 값으로만 조회
   const [debLevel, setDebLevel] = useState<{ min: string; max: string }>({ min: '', max: '' });
   const [sort, setSort] = useState<SortState>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!hasInitial);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState(hasInitial && initialEntries!.length >= PAGE_STEP);
   const [error, setError] = useState<string | null>(null);
   // 모바일(≤900px)에서는 필터 비율을 상단 고정 가로형으로, 그 외엔 우측 세로 패널로 렌더
   const [isMobile, setIsMobile] = useState(false);
@@ -256,12 +261,17 @@ export default function CharacterRanking({ onSelect, reloadKey = 0 }: Props) {
     if (selectedRole) p.set('role', selectedRole);
     if (effLevel.min) p.set('minLevel', effLevel.min);
     if (effLevel.max) p.set('maxLevel', effLevel.max);
+    p.set('slim', '1'); // cores icon 생략 — coreIconFor(name)로 유도 (응답 ~65% 절감)
     if (extra) for (const [k, v] of Object.entries(extra)) p.set(k, v);
     return p;
   };
 
+  // SSR로 첫 페이지를 받았으면 마운트 직후의 중복 fetch 1회를 건너뜀 (필터 기본 상태와 동일 데이터)
+  const skipInitialFetchRef = useRef(hasInitial);
+
   // 필터/정렬 변경 → 첫 페이지부터 새로 로드 (리셋)
   useEffect(() => {
+    if (skipInitialFetchRef.current) { skipInitialFetchRef.current = false; return; }
     let cancelled = false;
     setIsLoading(true);
     setError(null);
@@ -819,6 +829,7 @@ function CoreBadge({ core }: { core: Core }) {
   const bg = getCoreGradeGradient(core.grade);
   const factionColor = getFactionColor(core.name);
   const shortName = (core.name || '').replace(/.*코어\s*[:\-]\s*/, '');
+  const icon = core.icon ?? coreIconFor(core.name);
   return (
     // 호버 즉시 코어 이름 툴팁 (브라우저 title 지연 없이 어떤 코어인지 바로 표시)
     <span
@@ -833,9 +844,9 @@ function CoreBadge({ core }: { core: Core }) {
           boxShadow: `0 0 6px ${factionColor}44`,
         }}
       >
-        {core.icon ? (
+        {icon ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={core.icon} alt={shortName} />
+          <img src={icon} alt={shortName} loading="lazy" decoding="async" />
         ) : null}
         {core.num != null && <span className={styles.coreNum}>{core.num}</span>}
       </div>

@@ -2,6 +2,7 @@ import { sql } from './neon';
 import type { CharacterData } from './characterData';
 import { resolveSpecIcon, enlightenmentNodeNames, specFilterFor, specEntryById, SUPPORT_SPEC_IDS } from './class-spec-icon';
 import { coreNumberFor } from './arkgrid-cores';
+import { coreIconFor } from './core-icon';
 
 // 칭호 필터 최소 아이템레벨. 칭호는 한 번 획득하면 저렙 부캐도 달 수 있어
 // 통계가 오염되므로, 아래 칭호로 필터할 때만 이 레벨 이상으로 집계한다.
@@ -18,7 +19,8 @@ function supportRoleExpr(params: any[]): string {
 
 export type CoreData = {
   name: string;
-  icon: string | null;
+  /** 슬롯당 1종(전체 6종)이라 저장하지 않고 이름에서 유도. slim 응답에서는 생략 */
+  icon?: string | null;
   grade: string | null;
   point: number;
   /** 질서 코어 번호(1·2·3). 스펙 순서 데이터로 계산. 혼돈·미매칭은 null */
@@ -61,16 +63,16 @@ function extractIndexFields(parsed: CharacterData) {
   const p = parsed.profile;
   // 스펙 판별(깨달음 시그니처) → 코어 번호 계산에 사용. 판별 불가 시 num=null.
   const specId = resolveSpecIcon(p.className, enlightenmentNodeNames(parsed.arkPassive))?.id ?? null;
+  // icon은 cores 컬럼에 저장하지 않는다 — 슬롯당 1종(6종)이라 coreIconFor(name)로 유도 가능
   const cores: CoreData[] = (parsed.arkGrid?.cores || []).map(c => ({
     name: c.name || '',
-    icon: c.icon || null,
     grade: c.grade || null,
     point: typeof c.point === 'number' ? c.point : 0,
     num: coreNumberFor(p.className, specId, c.name),
   }));
 
   // 호환용 단일 코어 컬럼은 그대로 유지 (기존 컬럼)
-  const mainCoreIcon: string | null = cores[0]?.icon || null;
+  const mainCoreIcon: string | null = parsed.arkGrid?.cores?.[0]?.icon || null;
   const mainCoreGrade: string | null = cores[0]?.grade || null;
 
   // 사전계산 컬럼 (랭킹·통계 쿼리가 data JSONB를 풀지 않도록 저장 시점에 계산)
@@ -244,6 +246,9 @@ export interface ListRankingOptions {
   sortDir?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
+  /** true면 cores에서 icon 생략 (웹 클라이언트는 coreIconFor로 직접 유도 — 응답 ~65% 절감).
+   *  기본 false: 구버전 앱이 core.icon을 그대로 렌더하므로 서버에서 유도해 내려준다. */
+  slimCores?: boolean;
 }
 
 // 누적 칭호 매칭식: titles_history(jsonb 배열, 원소 { title, firstSeenAt }) 안에
@@ -348,13 +353,18 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
   return rows.map(r => {
     const spec = specEntryById(r.spec_id);
     // 저장된 num이 있으면 사용, 없으면(구 데이터) 즉석 계산 (스펙 순서 데이터 기준)
-    const cores: CoreData[] = (Array.isArray(r.cores) ? r.cores : []).map((c: any) => ({
-      name: c?.name || '',
-      icon: c?.icon ?? null,
-      grade: c?.grade ?? null,
-      point: typeof c?.point === 'number' ? c.point : 0,
-      num: c?.num != null ? c.num : coreNumberFor(r.class_name, spec?.id ?? null, c?.name),
-    }));
+    const cores: CoreData[] = (Array.isArray(r.cores) ? r.cores : []).map((c: any) => {
+      const name = c?.name || '';
+      const core: CoreData = {
+        name,
+        grade: c?.grade ?? null,
+        point: typeof c?.point === 'number' ? c.point : 0,
+        num: c?.num != null ? c.num : coreNumberFor(r.class_name, spec?.id ?? null, name),
+      };
+      // slim이 아니면(구버전 앱 호환) 저장값 → 유도값 순으로 icon을 채워준다
+      if (!opts.slimCores) core.icon = c?.icon ?? coreIconFor(name);
+      return core;
+    });
     return {
       characterName: r.character_name,
       className: r.class_name,

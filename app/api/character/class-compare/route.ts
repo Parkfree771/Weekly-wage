@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { sql } from '@/lib/neon';
 import { classRuleFor } from '@/lib/class-spec-icon';
 import { coreNumberFor, orderCoreCode } from '@/lib/arkgrid-cores';
+import { coreIconFor } from '@/lib/core-icon';
 import { ORDER_CORE_OPTIONS } from '@/data/arkgrid-core-order';
 
 // 직업의 두 스펙(예: 창술사 절정/절제) 비교 통계.
@@ -95,7 +96,6 @@ export async function GET(request: Request) {
     const coreRows = (await sql.query(
       `${base}
        SELECT has_sig, e->>'name' AS name,
-              max(e->>'icon') AS icon,
               mode() WITHIN GROUP (ORDER BY e->>'grade') AS grade,
               count(*) AS cnt
        FROM cls,
@@ -178,7 +178,8 @@ export async function GET(request: Request) {
         .slice(0, TOP_CORES)
         .map(r => ({
           name: r.name as string,
-          icon: (r.icon as string) || null,
+          // 새 행은 cores에 icon을 저장하지 않으므로 이름에서 유도 (앱·웹 응답 형식은 유지)
+          icon: coreIconFor(r.name as string),
           grade: (r.grade as string) || null,
           count: Number(r.cnt),
           pct: count > 0 ? Math.round((Number(r.cnt) / count) * 100) : 0,
@@ -186,11 +187,13 @@ export async function GET(request: Request) {
           num: coreNumberFor(className, specId, r.name as string),
         }));
       // 질서 해/달/별 대표 아이콘(포지션 고정 — 옵션 무관 동일). 조합 표시용.
-      const orderIconFor = (cel: '해' | '달' | '별') =>
-        coreRows.find(
+      const orderIconFor = (cel: '해' | '달' | '별') => {
+        const found = coreRows.find(
           r => r.has_sig === hasSig && typeof r.name === 'string'
             && r.name.includes('질서') && r.name.includes(`${cel} 코어`)
-        )?.icon || null;
+        );
+        return found ? coreIconFor(found.name as string) : null;
+      };
       return {
         specId,
         count,

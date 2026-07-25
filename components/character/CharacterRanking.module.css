@@ -83,7 +83,7 @@
 }
 .specGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 3px;
 }
 .specChip {
@@ -151,15 +151,6 @@
   /* 좁은 화면·모바일에선 기존 직업 토글 복원 (flex 참여 위해 contents) */
   .specToggle {
     display: contents;
-  }
-}
-
-/* 1520~1660 구간(노트북 100% 배율 등): 사이드바는 켜지지만 좌측 1fr 컬럼이 ~226px로
-   눌려 2열 칩이면 직업명(약 60px)이 잘려 뭉개짐 → 이 구간만 1열로 펼쳐 폭을 확보한다.
-   (크롬 90% 줌 ≈ 1707px부터는 2열도 여유 있어 정상 노출) 세로는 .specScroll이 자체 스크롤. */
-@media (min-width: 1520px) and (max-width: 1659.98px) {
-  .specGrid {
-    grid-template-columns: 1fr;
   }
 }
 

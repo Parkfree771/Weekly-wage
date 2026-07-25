@@ -24,6 +24,8 @@ export async function GET(request: Request) {
   const specId = searchParams.get('spec') || undefined;
   const roleRaw = searchParams.get('role');
   const role = roleRaw === 'support' || roleRaw === 'dealer' ? roleRaw : undefined;
+  // slim=1: cores에서 icon 생략 (웹 클라가 이름→아이콘 유도. 구버전 앱은 slim 없이 호출 → icon 유지)
+  const slimCores = searchParams.get('slim') === '1';
   // 아이템레벨 범위 (선택). 뒤바뀐 min/max는 서버에서도 스왑해 빈 결과 방지
   let minItemLevel = parseLevel(searchParams.get('minLevel'));
   let maxItemLevel = parseLevel(searchParams.get('maxLevel'));
@@ -34,7 +36,7 @@ export async function GET(request: Request) {
   try {
     const entries = await listRanking({
       className, titleQuery, ancientCount, specId, role,
-      minItemLevel, maxItemLevel, sortBy, sortDir, limit, offset,
+      minItemLevel, maxItemLevel, sortBy, sortDir, limit, offset, slimCores,
     });
     const res = NextResponse.json({ entries });
     // Netlify-Vary: query → 쿼리 문자열(offset·필터·정렬)별로 캐시 키 분리.
