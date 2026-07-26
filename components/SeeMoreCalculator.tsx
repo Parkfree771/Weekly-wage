@@ -213,11 +213,6 @@ const SeeMoreCalculator: React.FC = () => {
           const isLoss = profitLoss < 0;
           const isSelected = selectedRaid === raid.name;
 
-          // 더보기 비용 대비 손익률 (%) — 레이드 전체 관문 합산
-          const totalMoreGold = (profitData[raid.name] || []).reduce((s, g) => s + g.moreGold, 0);
-          const profitPct = totalMoreGold > 0 ? (profitLoss / totalMoreGold) * 100 : 0;
-          const pctStr = `${profitPct > 0 ? '+' : ''}${profitPct.toFixed(1)}%`;
-
           // LCP 최적화: 처음 6개 이미지는 priority 로딩
           const isPriorityImage = index < 6;
 
@@ -250,7 +245,6 @@ const SeeMoreCalculator: React.FC = () => {
                 {profitData[raid.name] && (
                   <div className={`${styles.goldBadge} ${isProfit ? styles.profitBadge : isLoss ? styles.lossBadge : styles.neutralBadge}`}>
                     {isProfit ? '+' : ''}{Math.round(profitLoss).toLocaleString()}
-                    <span className={styles.goldBadgePct}>{pctStr}</span>
                   </div>
                 )}
               </div>

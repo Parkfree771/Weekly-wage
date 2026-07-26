@@ -49,6 +49,7 @@ export default function PackageRegisterPage() {
   // 공식 거래: 2750 RC(=2750원) = 100 BC = ?골드 (RC/BC 고정)
   const [officialGold, setOfficialGold] = useState<number>(0);
   const [selectableCount, setSelectableCount] = useState<number>(0);
+  const [isNewRelease, setIsNewRelease] = useState<boolean>(false); // 신규 출시 — 갤러리 NEW 배지 (30일)
   const [checkedItemIds, setCheckedItemIds] = useState<Set<string>>(new Set());
   const [gachaProbabilities, setGachaProbabilities] = useState<Record<string, number>>({});
   // '3+보너스' 전용: 아이템 클릭 시 확정 구성품/보너스 구성품 중 어디에 추가할지
@@ -758,6 +759,7 @@ export default function PackageRegisterPage() {
         items,
         ...(goldPerWon > 0 ? { goldPerWon } : {}),
         ...(selectableCount > 0 ? { selectableCount } : {}),
+        ...(isNewRelease ? { isNewRelease: true } : {}),
         ...(bonusItems.length > 0 ? { bonusItems } : {}),
       };
 
@@ -875,6 +877,13 @@ export default function PackageRegisterPage() {
                   </div>
                 </div>
                 )}
+                <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
+                  <label className={styles.formLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', marginBottom: 0 }}>
+                    <input type="checkbox" checked={isNewRelease}
+                      onChange={(e) => setIsNewRelease(e.target.checked)} />
+                    신규 출시 패키지 (갤러리에 30일간 NEW 배지)
+                  </label>
+                </div>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>패키지 가격 *</label>
                   <div className={styles.priceCurrencyToggle}>

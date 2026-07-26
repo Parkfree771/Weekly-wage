@@ -4,7 +4,7 @@
   border: 1px solid var(--border-color);
   background: var(--card-bg);
   box-shadow: 0 8px 26px rgba(20, 40, 90, 0.08);
-  padding: 1.15rem 1.15rem 1.3rem;
+  padding: 0.95rem 0.95rem 1.1rem;
   overflow: hidden;
 }
 
@@ -95,12 +95,12 @@
   color: var(--text-muted, #99a);
 }
 
-/* 원형 게이지 (칩 아래로 살짝 내림) */
+/* 원형 게이지 (칩 아래로 살짝 내림) — 패널 280px에 맞춰 축소 */
 .gaugeWrap {
   position: relative;
-  width: 172px;
-  height: 172px;
-  margin: 1rem auto 0.2rem;
+  width: 140px;
+  height: 140px;
+  margin: 0.9rem auto 0.2rem;
 }
 
 .gauge {
@@ -134,7 +134,7 @@
   display: flex;
   align-items: baseline;
   font-family: var(--font-mono), monospace;
-  font-size: 2.55rem;
+  font-size: 2.05rem;
   font-weight: 800;
   line-height: 1;
   color: var(--text-primary);
@@ -189,37 +189,41 @@
   color: #d97706;
 }
 
-/* 평균 전투력 · 아이템레벨 */
+/* 평균 전투력 · 아이템레벨 — 세로 스택.
+   그리드 한 열(max-content)로 두 칸의 너비를 긴 쪽에 맞춰 통일하고, 패널 안에서 가운데 정렬 */
 .avgRow {
-  display: flex;
-  gap: 0.6rem;
-  margin-top: 0.9rem;
+  display: grid;
+  grid-template-columns: max-content;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
 }
 
 .avgBox {
-  flex: 1;
-  min-width: 0;
-  padding: 0.7rem 0.5rem;
-  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  max-width: 100%;
+  padding: 0.4rem 0.7rem;
+  border-radius: 10px;
   background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.04));
   border: 1px solid var(--border-color);
-  border-top: 3px solid var(--border-color);
-  text-align: center;
+  border-left: 3px solid var(--border-color);
 }
 
-.avgCp { border-top-color: #3b82f6; }
-.avgIl { border-top-color: #d97706; }
+.avgCp { border-left-color: #3b82f6; }
+.avgIl { border-left-color: #d97706; }
 
 .avgLabel {
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-muted, #99a);
-  margin-bottom: 0.25rem;
 }
 
 .avgValue {
   font-family: var(--font-mono), monospace;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1.1;
@@ -314,17 +318,6 @@
   font-weight: 600;
   color: var(--text-muted, #99a);
   text-align: right;
-}
-
-.hint {
-  margin-top: 1.1rem;
-  padding: 0.85rem;
-  border-radius: 12px;
-  background: var(--card-body-bg-stone, rgba(0, 0, 0, 0.04));
-  font-size: 0.8rem;
-  line-height: 1.55;
-  color: var(--text-muted, #99a);
-  text-align: center;
 }
 
 /* ── 모바일 가로형 (상단 고정 툴바용) ── */

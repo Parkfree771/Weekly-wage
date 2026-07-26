@@ -45,6 +45,7 @@ export type PackagePost = {
   blueCrystalPrice?: number; // 블루크리스탈 가격 (블크 결제 시)
   items: PackageItem[];
   selectableCount?: number; // 0 또는 미설정 = 전체, N = N개 선택
+  isNewRelease?: boolean; // 신규 출시 패키지 — 갤러리 카드 NEW 배지 (등록일로부터 30일 지나면 자동 소멸)
   bonusItems?: PackageItem[]; // '3+보너스' 전용: 3개 구매 시 1회만 지급되는 특별 보상
 
   // 환율 (등록 시 입력값)

@@ -109,6 +109,16 @@
   color: #f87171;
 }
 
+/* 신규 출시 NEW 배지 — 등록일 30일 이내 + isNewRelease 체크된 글만 */
+.badgeNew {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+:global([data-theme="dark"]) .badgeNew {
+  color: #34d399;
+}
+
 /* 가챠 확률 뱃지 */
 .itemProbBadge {
   position: absolute;

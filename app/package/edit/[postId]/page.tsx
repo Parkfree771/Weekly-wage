@@ -147,6 +147,7 @@ export default function PackageEditPage() {
   const [unofficialRate, setUnofficialRate] = useState<number>(0);
   const [officialGold, setOfficialGold] = useState<number>(0);
   const [selectableCount, setSelectableCount] = useState<number>(0);
+  const [isNewRelease, setIsNewRelease] = useState<boolean>(false); // 신규 출시 — 갤러리 NEW 배지 (30일)
   const [checkedItemIds, setCheckedItemIds] = useState<Set<string>>(new Set());
   const [gachaProbabilities, setGachaProbabilities] = useState<Record<string, number>>({});
   const [addTarget, setAddTarget] = useState<'main' | 'bonus'>('main');
@@ -188,6 +189,7 @@ export default function PackageEditPage() {
         if (post.selectableCount && post.selectableCount > 0) {
           setSelectableCount(post.selectableCount);
         }
+        if (post.isNewRelease) setIsNewRelease(true);
         editCustomCounter = 0;
         const mappedMain = mapItemsToAdded(post.items);
         const mappedBonus = mapItemsToAdded(post.bonusItems || []).map((a) => ({ ...a, isBonus: true }));
@@ -902,6 +904,7 @@ export default function PackageEditPage() {
         items,
         ...(goldPerWon > 0 ? { goldPerWon } : { goldPerWon: 0 }),
         selectableCount: selectableCount > 0 ? selectableCount : 0,
+        isNewRelease,
         bonusItems,
       });
 
@@ -1041,6 +1044,13 @@ export default function PackageEditPage() {
                   </div>
                 </div>
                 )}
+                <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
+                  <label className={styles.formLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', marginBottom: 0 }}>
+                    <input type="checkbox" checked={isNewRelease}
+                      onChange={(e) => setIsNewRelease(e.target.checked)} />
+                    신규 출시 패키지 (갤러리에 30일간 NEW 배지)
+                  </label>
+                </div>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>패키지 가격 *</label>
                   <div className={styles.priceCurrencyToggle}>

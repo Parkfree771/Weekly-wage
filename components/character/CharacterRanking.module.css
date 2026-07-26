@@ -14,7 +14,8 @@
 .statsAside {
   grid-column: 3;
   width: 100%;
-  max-width: 430px;
+  /* 필터 통계 패널 폭 — 랭킹 대비 과하게 넓어 축소 (평균 칸은 세로 스택으로 수용) */
+  max-width: 280px;
   justify-self: start;
   align-self: start;
   position: sticky;

@@ -40,6 +40,16 @@ function formatShortDate(timestamp: any): string {
   return `${y}.${m}.${d}`;
 }
 
+// "신규 출시"로 등록된 글만, 등록일로부터 30일 동안 NEW 배지 표시
+const NEW_BADGE_DAYS = 30;
+function isNewPost(timestamp: any): boolean {
+  if (!timestamp) return false;
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  const t = date.getTime();
+  if (!isFinite(t)) return false;
+  return Date.now() - t < NEW_BADGE_DAYS * 24 * 60 * 60 * 1000;
+}
+
 // 갤러리 카드 아이콘 크기 오버라이드 (기본 42px, 셀 62px 고정)
 const GALLERY_ICON_SIZE: Record<string, number> = {
   'fixed_gold-input': 30,
@@ -424,6 +434,9 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
       <div className={styles.leftBox}>
         <div className={styles.leftHeader}>
           <h3 className={styles.cardTitle}>{post.title}</h3>
+          {post.isNewRelease && isNewPost(post.createdAt) && (
+            <span className={`${styles.cardBadge} ${styles.badgeNew}`}>NEW</span>
+          )}
           <span className={`${styles.cardBadge} ${getBadgeClass(post.packageType)}`}>
             {post.packageType}
           </span>

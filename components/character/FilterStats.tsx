@@ -233,7 +233,7 @@ export default function FilterStats({ spec, klass = '', title, ancient, role, mi
         </div>
       </div>
 
-      {rows.length > 0 ? (
+      {rows.length > 0 && (
         <div className={styles.filters}>
           <div className={styles.filtersLabel}>필터별 단독 비율</div>
           {rows.map(r => {
@@ -255,11 +255,6 @@ export default function FilterStats({ spec, klass = '', title, ancient, role, mi
               </div>
             );
           })}
-        </div>
-      ) : (
-        <div className={styles.hint}>
-          직업 · 칭호 · 고대 · 역할 필터를 선택하면<br />
-          전체 대비 비율을 보여드려요.
         </div>
       )}
     </div>

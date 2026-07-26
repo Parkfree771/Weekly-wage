@@ -367,7 +367,6 @@ function MoreRewardInner() {
               {raids.map((raid) => {
                 const s = summaries.get(raid.name);
                 const profit = s?.profit ?? 0;
-                const rate = s && s.cost > 0 ? (profit / s.cost) * 100 : 0;
                 const cls = profit >= 0 ? styles.profitText : styles.lossText;
                 return (
                   <button
@@ -383,9 +382,6 @@ function MoreRewardInner() {
                       <span className={styles.raidLevel}>Lv. {raid.level}</span>
                       <span className={`${styles.raidProfit} ${cls}`}>
                         {loading ? '…' : `${profit >= 0 ? '+' : ''}${fmt(profit)}`}
-                      </span>
-                      <span className={`${styles.raidProfitRate} ${cls}`}>
-                        {loading ? '' : `${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%`}
                       </span>
                     </div>
                   </button>
