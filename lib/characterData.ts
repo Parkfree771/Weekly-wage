@@ -123,7 +123,8 @@ export type ArkPassiveEffect = {
   tier: number;         // 티어 (1~5)
   level: number;        // 노드 레벨
   icon: string;         // 아이콘 URL
-  description: string;  // 효과 설명 (HTML 제거)
+  /** 효과 설명 — 웹·앱 어디서도 미사용이라 저장하지 않음 (행당 ~1.2KB 절감). 구 데이터에만 남아 있음 */
+  description?: string;
 };
 
 export type KarmaInfo = {
@@ -1185,16 +1186,8 @@ export function parseArkPassive(arkpassiveData: any): ArkPassiveInfo | null {
       const nodeName = nameMatch ? stripHtml(nameMatch[1]) : '';
       const level = nameMatch ? parseInt(nameMatch[2]) : 0;
 
-      // ToolTip에서 효과 설명 추출
-      let effectDesc = '';
-      try {
-        const tooltip = typeof eff.ToolTip === 'string' ? JSON.parse(eff.ToolTip) : eff.ToolTip;
-        if (tooltip?.Element_002?.value) {
-          effectDesc = stripHtml(String(tooltip.Element_002.value));
-        }
-      } catch { /* ignore parse errors */ }
-
-      effects.push({ category, name: nodeName, tier, level, icon, description: effectDesc });
+      // 효과 설명(ToolTip)은 웹·앱 어디서도 표시하지 않아 저장하지 않는다 (DB 행당 ~1.2KB 절감)
+      effects.push({ category, name: nodeName, tier, level, icon });
     }
   }
 
