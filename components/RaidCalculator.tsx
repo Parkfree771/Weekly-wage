@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { raids, upcomingRaids, getRaidNewLabel } from '@/data/raids';
+// 코어 레이드 그룹·관문당 획득량 — 단일 원본 테이블(data/rewardTable.ts)에서 파생
+import { CORE_PER_GATE, CORE_RAID_GROUPS } from '@/data/rewardTable';
 import {
   getRaidGroupName,
   getRaidsForLevel,
@@ -45,18 +47,6 @@ type SavedSettings = {
   characters: Character[];
   state: AllState;
   optMode?: Record<string, OptimizationMode>;
-};
-
-// 코어를 주는 레이드 그룹
-const CORE_RAID_GROUPS = ['벨가르딘', '성당', '세르카', '종막', '4막'];
-
-// 레이드별 관문당 코어 획득량 (더보기 안 할 때 기준)
-const CORE_PER_GATE: Record<string, number> = {
-  '벨가르딘 나메': 4, '벨가르딘 하드': 3, '벨가르딘 노말': 3,
-  '성당 3단계': 3, '성당 2단계': 2, '성당 1단계': 2,
-  '세르카 나메': 3, '세르카 하드': 2, '세르카 노말': 2,
-  '종막 하드': 2, '종막 노말': 2,
-  '4막 하드': 1, '4막 노말': 1,
 };
 
 export const BOUND_GOLD_FILTER = 'hue-rotate(280deg) saturate(1.0)';

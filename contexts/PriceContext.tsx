@@ -29,6 +29,13 @@ const THORN_BOX = [
 ];
 const THORN_PER_BOX = 5;
 
+// 1레벨 보석 1개 = 8레벨 겁화 보석 시세 ÷ 3^7.
+// 보석 합성은 같은 레벨 3개 → 상위 1개(실패 없음)라 1레벨 2187개가 8레벨 1개다.
+// 1레벨 보석은 경매장 추적 대상이 아니라, 추적 중인 8레벨 겁화 시세에 연동해 역산한다
+// (latest.json 이 갱신되면 8레벨 시세를 따라 같이 움직인다).
+const GEM_8LV_PRICE_KEY = 'auction_gem_fear_8';
+const GEM_1LV_PER_8LV = 3 ** 7;
+
 interface PriceContextType {
   latestPrices: LatestPrices;
   unitPrices: UnitPrices;
@@ -36,6 +43,8 @@ interface PriceContextType {
   graceUnitPrice: number;
   /** 고통의 가시 1개 환산 가치 (실시간 시세 기준) */
   thornUnitPrice: number;
+  /** 1레벨 보석 1개 환산 가치 (8레벨 겁화 시세 ÷ 3^7, 실시간 연동) */
+  gemUnitPrice: number;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -90,11 +99,17 @@ export function PriceProvider({ children }: PriceProviderProps) {
     [unitPrices],
   );
 
+  const gemUnitPrice = useMemo(
+    () => (latestPrices[GEM_8LV_PRICE_KEY] || 0) / GEM_1LV_PER_8LV,
+    [latestPrices],
+  );
+
   const value: PriceContextType = {
     latestPrices,
     unitPrices,
     graceUnitPrice,
     thornUnitPrice,
+    gemUnitPrice,
     loading,
     error,
     refetch: fetchPrices

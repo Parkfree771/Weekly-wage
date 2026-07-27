@@ -4,8 +4,8 @@ import { raids } from '@/data/raids';
 import { raidClearRewards } from '@/data/raidClearRewards';
 import { raidRewards, MATERIAL_IDS } from '@/data/raidRewards';
 import {
-  Character, CharacterWeeklyState, CommonContentState, DailyContentState, WeeklyChecklist,
-  getRaidGroupName, getCurrentWeekStart,
+  Character, CommonContentState, DailyContentState, WeeklyChecklist,
+  getRaidGroupName,
 } from '@/types/user';
 import {
   ActivityLog, ActivityEntry,
@@ -13,6 +13,12 @@ import {
   encodeRaidLogValue, encodeSandLogValue, encodeCommonLogValue,
   withActivity, weekDayDateKey, todayGameDateKey,
 } from '@/lib/activity-log';
+// 콘텐츠 수치는 전부 단일 원본 테이블에서 가져온다 (직접 하드코딩 금지)
+import {
+  EVENT_CONTENTS, GUARDIAN_TIERS, RAID_CARD_IMAGES, RIFT_TIERS, SAND_TABLE,
+  eventTierOf, findTier, type SandRow,
+} from '@/data/rewardTable';
+import { getCurrentGuardian } from '@/lib/daily-content';
 
 const raidMap = new Map(raids.map(r => [r.name, r]));
 
@@ -33,20 +39,8 @@ export function getRaidDifficultyLabel(raidName: string): string {
   return rest || raidName;
 }
 
-// 레이드 그룹 카드 이미지 (앱 RAID_CARD_IMAGES와 동일)
-export const RAID_CARD_IMAGES: Record<string, string> = {
-  '벨가르딘': '/belgardin2.webp',
-  '지평의 성당': '/wlvuddmltjdekd1.webp',
-  '성당': '/wlvuddmltjdekd1.webp',
-  '세르카': '/cerka2.webp',
-  '종막': '/abrelshud.webp',
-  '4막': '/illiakan.webp',
-  '3막': '/ivory-tower.webp',
-  '2막': '/kazeros.webp',
-  '1막': '/aegir.webp',
-  '서막': '/echidna.webp',
-  '베히모스': '/behemoth.webp',
-};
+// 레이드 그룹 카드 이미지 — 단일 원본 테이블에서 재수출 (앱과 동일)
+export { RAID_CARD_IMAGES };
 
 // ─── 원정대 공통 컨텐츠 (필보/카게) ───
 
@@ -55,202 +49,67 @@ export type CommonContentDef = {
   days: number[]; gold: number; level: number;
 };
 
-const COMMON_CONTENT_BY_LEVEL: Record<string, Record<string, CommonContentDef>> = {
-  '필드보스': {
-    '1730': { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0], gold: 0, level: 1730 },
-    '1750': { name: '필드보스', shortName: '필보', image: '/field-boss.webp', color: '#b91c1c', days: [2, 5, 0], gold: 0, level: 1750 },
-  },
-  '카오스 게이트': {
-    '1730': { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 3500, level: 1730 },
-    '1750': { name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp', color: '#6b21a8', days: [1, 4, 6, 0], gold: 5000, level: 1750 },
-  },
-};
-
+// 원정대 공통 콘텐츠 정의 — 단일 원본 테이블(EVENT_CONTENTS)에서 파생
 export function getCommonContents(maxLevel: number): CommonContentDef[] {
-  const tier = maxLevel >= 1750 ? '1750' : '1730';
-  return Object.values(COMMON_CONTENT_BY_LEVEL).map(byLevel => byLevel[tier]);
+  const tier = eventTierOf(maxLevel);
+  return EVENT_CONTENTS.map(c => ({
+    name: c.name,
+    shortName: c.shortName,
+    image: c.image,
+    color: c.color,
+    days: c.days,
+    gold: c.gold[tier],
+    level: Number(tier),
+  }));
 }
 
-// 공통 컨텐츠 재화 보상 (1회 기준)
+// 공통 컨텐츠 재화 보상 (1회 기준) — EVENT_CONTENTS 에서 파생, 좁은 칸이라 short 라벨을 쓴다
 export type CommonMaterialReward = { image?: string; label: string; amount: number };
-export const COMMON_CONTENT_MATERIALS_BY_LEVEL: Record<string, Record<string, CommonMaterialReward[]>> = {
-  '카오스 게이트': {
-    '1730': [
-      { image: '/breath-lava5.webp', label: '용숨', amount: 6 },
-      { image: '/breath-glacier5.webp', label: '빙숨', amount: 6 },
-      { image: '/gold.webp', label: '귀속골드', amount: 3500 },
-      { image: '/destiny-shard-bag-large5.webp', label: '운파', amount: 12000 },
-      { image: '/1fpqrjqghk.webp', label: '보석', amount: 6 },
-    ],
-    '1750': [
-      { image: '/breath-lava5.webp', label: '용숨', amount: 7 },
-      { image: '/breath-glacier5.webp', label: '빙숨', amount: 7 },
-      { image: '/gold.webp', label: '귀속골드', amount: 5000 },
-      { image: '/destiny-shard-bag-large5.webp', label: '운파', amount: 13200 },
-      { image: '/1fpqrjqghk.webp', label: '보석', amount: 7 },
-    ],
-  },
-  '필드보스': {
-    '1730': [
-      { image: '/top-destiny-destruction-stone5.webp', label: '파결', amount: 486.3 },
-      { image: '/top-destiny-guardian-stone5.webp', label: '수결', amount: 1484.4 },
-      { image: '/top-destiny-breakthrough-stone5.webp', label: '위돌', amount: 41.1 },
-      { image: '/breath-lava5.webp', label: '용숨', amount: 3 },
-      { image: '/breath-glacier5.webp', label: '빙숨', amount: 3 },
-      { image: '/1fpqrjqghk.webp', label: '보석', amount: 21 },
-      { image: '/cjstkd.webp', label: '천상', amount: 0.6 },
-    ],
-    '1750': [
-      { image: '/top-destiny-destruction-stone5.webp', label: '파결', amount: 699.3 },
-      { image: '/top-destiny-guardian-stone5.webp', label: '수결', amount: 2077.3 },
-      { image: '/top-destiny-breakthrough-stone5.webp', label: '위돌', amount: 51 },
-      { image: '/breath-lava5.webp', label: '용숨', amount: 3 },
-      { image: '/breath-glacier5.webp', label: '빙숨', amount: 3 },
-      { image: '/1fpqrjqghk.webp', label: '보석', amount: 21 },
-      { image: '/cjstkd.webp', label: '천상', amount: 0.5 },
-    ],
-  },
-};
+export const COMMON_CONTENT_MATERIALS_BY_LEVEL: Record<string, Record<string, CommonMaterialReward[]>> =
+  Object.fromEntries(
+    EVENT_CONTENTS.map(c => [
+      c.name,
+      Object.fromEntries(
+        (['1730', '1750'] as const).map(tier => [
+          tier,
+          c.byTier[tier].map(m => ({ image: m.image, label: m.short, amount: m.amount })),
+        ]),
+      ),
+    ]),
+  );
 
 // ─── 할의 모래시계 보상 (보상강화 레벨별) ───
 
-type SandReward = { gems: number; stones: number; lavaBreath: number; glacierBreath: number };
-
-const SAND_OF_TIME_REWARDS_1750: SandReward[] = [
-  { gems: 6, stones: 12, lavaBreath: 12, glacierBreath: 12 },
-  { gems: 12, stones: 24, lavaBreath: 24, glacierBreath: 24 },
-  { gems: 18, stones: 36, lavaBreath: 36, glacierBreath: 36 },
-  { gems: 24, stones: 48, lavaBreath: 48, glacierBreath: 48 },
-  { gems: 30, stones: 60, lavaBreath: 60, glacierBreath: 60 },
-  { gems: 36, stones: 72, lavaBreath: 72, glacierBreath: 72 },
-];
-
-const SAND_OF_TIME_REWARDS_1730: SandReward[] = [
-  { gems: 15, stones: 30, lavaBreath: 10, glacierBreath: 10 },
-  { gems: 30, stones: 36, lavaBreath: 20, glacierBreath: 20 },
-  { gems: 45, stones: 42, lavaBreath: 30, glacierBreath: 30 },
-  { gems: 60, stones: 48, lavaBreath: 40, glacierBreath: 40 },
-  { gems: 75, stones: 54, lavaBreath: 50, glacierBreath: 50 },
-  { gems: 90, stones: 60, lavaBreath: 60, glacierBreath: 60 },
-];
+type SandReward = SandRow;
 
 export function getSandOfTimeRewards(itemLevel: number): SandReward[] {
-  return itemLevel >= 1750 ? SAND_OF_TIME_REWARDS_1750 : SAND_OF_TIME_REWARDS_1730;
+  return SAND_TABLE[eventTierOf(itemLevel)];
 }
 
-// ─── 가디언 토벌 로테이션 ───
-
-const GUARDIAN_ROTATION = [
-  { name: '쿤겔라니움', element: '뇌구', image: '/znsrpf.webp' },
-  { name: '하누마탄', element: '무속성', image: '/gksn.webp' },
-  { name: '데스칼루다', element: '수구', image: '/eptm.webp' },
-  { name: '이그렉시온', element: '화구', image: '/dlrm.webp' },
-  { name: '벨가누스', element: '세구', image: '/qpfrk.webp' },
-  { name: '아카테스', element: '암구', image: '/dkzk.webp' },
-  { name: '엘버하스틱', element: '수구', image: '/dpfqj.webp' },
-];
-
-const GUARDIAN_FIXED = [
-  { minLevel: 1720, name: '크라티오스', element: '뇌구', image: '/zmfk.webp' },
-  { minLevel: 1700, name: '드렉탈라스', element: '화구', image: '/emfpr.webp' },
-  { minLevel: 1680, name: '스콜라키아', element: '토구', image: '/tmzhf.webp' },
-  { minLevel: 1640, name: '아게오로스', element: '세구', image: '/dkrp.webp' },
-];
-
-const GUARDIAN_REF_WEEK = '2026-06-24'; // 기준주(수) = 쿤겔라니움(인덱스 0)
-
-export function getCurrentGuardian(itemLevel: number): { name: string; element: string; image: string } {
-  if (itemLevel >= 1730) {
-    const refDate = new Date(GUARDIAN_REF_WEEK + 'T00:00:00+09:00');
-    const currentWeek = new Date(getCurrentWeekStart() + 'T00:00:00+09:00');
-    const diffWeeks = Math.round((currentWeek.getTime() - refDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
-    const index = ((diffWeeks % GUARDIAN_ROTATION.length) + GUARDIAN_ROTATION.length) % GUARDIAN_ROTATION.length;
-    return GUARDIAN_ROTATION[index];
-  }
-  for (const g of GUARDIAN_FIXED) {
-    if (itemLevel >= g.minLevel) return g;
-  }
-  return { name: '가디언 토벌', element: '', image: '' };
-}
+// ─── 가디언 토벌 로테이션 ─── (단일 원본 테이블 기반, lib/daily-content 와 같은 함수)
+export { getCurrentGuardian };
 
 // ─── 카던(균열/전선)·가토 라벨 및 일일 재화 ───
 
+// 라벨·일일 재화 전부 단일 원본 테이블(RIFT_TIERS / GUARDIAN_TIERS)에서 파생한다.
 export function getChaosDungeonLabel(itemLevel: number): string {
-  if (itemLevel >= 1750) return '1750 균열';
-  if (itemLevel >= 1730) return '1730 균열';
-  if (itemLevel >= 1720) return '1720 전선';
-  if (itemLevel >= 1700) return '1700 전선';
-  if (itemLevel >= 1680) return '1680 전선';
-  return '';
+  return findTier(RIFT_TIERS, itemLevel)?.label ?? '';
 }
 
 export function getGuardianRaidLabel(itemLevel: number): string {
-  if (itemLevel >= 1750) return '1750 가토';
-  if (itemLevel >= 1730) return '1730 가토';
-  if (itemLevel >= 1720) return '1720 가토';
-  if (itemLevel >= 1700) return '1700 가토';
-  if (itemLevel >= 1680) return '1680 가토';
-  return '';
+  return findTier(GUARDIAN_TIERS, itemLevel)?.label ?? '';
 }
 
 type DailyRewardDef = { minLevel: number; materials: { image: string; alt: string; daily: number }[] };
 
-const CHAOS_DAILY_REWARDS: DailyRewardDef[] = [
-  {
-    minLevel: 1750,
-    materials: [
-      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 438.8 },
-      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1177.5 },
-      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 18.8 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 54412.6 },
-    ],
-  },
-  {
-    minLevel: 1730,
-    materials: [
-      { image: '/top-destiny-destruction-stone5.webp', alt: '파괴석 결정', daily: 361.5 },
-      { image: '/top-destiny-guardian-stone5.webp', alt: '수호석 결정', daily: 1092.2 },
-      { image: '/top-destiny-breakthrough-stone5.webp', alt: '위대한 돌파석', daily: 17.7 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 43801.2 },
-    ],
-  },
-  {
-    minLevel: 1720,
-    materials: [
-      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 745.8 },
-      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 2058.2 },
-      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 47 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 40311.9 },
-    ],
-  },
-  {
-    minLevel: 1700,
-    materials: [
-      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 593.9 },
-      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 1733.4 },
-      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 41.3 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 33557 },
-    ],
-  },
-  {
-    minLevel: 1680,
-    materials: [
-      { image: '/destiny-destruction-stone5-v2.webp', alt: '파괴석', daily: 416.7 },
-      { image: '/destiny-guardian-stone5-v2.webp', alt: '수호석', daily: 1190.3 },
-      { image: '/destiny-breakthrough-stone5.webp', alt: '돌파석', daily: 36.2 },
-      { image: '/destiny-shard-bag-large5.webp', alt: '파편', daily: 32445.4 },
-    ],
-  },
-];
+const toDaily = (tiers: typeof RIFT_TIERS): DailyRewardDef[] =>
+  tiers.map(t => ({
+    minLevel: t.minLevel,
+    materials: t.materials.map(m => ({ image: m.image, alt: m.short, daily: m.amount })),
+  }));
 
-const GUARDIAN_DAILY_REWARDS: DailyRewardDef[] = [
-  { minLevel: 1750, materials: [{ image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 11.9 }] },
-  { minLevel: 1730, materials: [{ image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 10.5 }] },
-  { minLevel: 1720, materials: [{ image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 6.4 }] },
-  { minLevel: 1700, materials: [{ image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 5.3 }] },
-  { minLevel: 1680, materials: [{ image: '/1fpqrjqghk.webp', alt: '1레벨 보석', daily: 5.2 }] },
-];
-
+const CHAOS_DAILY_REWARDS: DailyRewardDef[] = toDaily(RIFT_TIERS);
+const GUARDIAN_DAILY_REWARDS: DailyRewardDef[] = toDaily(GUARDIAN_TIERS);
 export function getChaosDailyReward(itemLevel: number): DailyRewardDef | null {
   return CHAOS_DAILY_REWARDS.find(r => itemLevel >= r.minLevel) || null;
 }

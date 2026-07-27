@@ -6,6 +6,7 @@ import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
+import { RAID_TABLE } from '@/data/rewardTable';
 import styles from './cathedral.module.css';
 
 // 영웅 젬 구성 요소
@@ -109,137 +110,36 @@ type Gate = {
   moreMaterials: Material[];
 };
 
-// 성당 단계별 보상 데이터
+// 성당 단계별 보상 — 수치는 단일 원본 테이블(data/raidTable.ts)에서 가져온다.
+const STAGE_IMAGES: { [name: string]: string } = {
+  '성당 3단계': '/wlvuddmltjdekd2.webp',
+  '성당 2단계': '/wlvuddmltjdekd1.webp',
+  '성당 1단계': '/wlvuddmltjdekd1.webp',
+};
+
+const toPageMats = (mats: { itemId: number; itemName: string; amount: number }[]): Material[] =>
+  mats.map((mat) => ({ name: mat.itemName, itemId: String(mat.itemId), amount: mat.amount }));
+
 const STAGES: {
   name: string;
   level: number;
   image: string;
   gates: Gate[];
-}[] = [
-  {
-    name: '성당 3단계', level: 1750, image: '/wlvuddmltjdekd2.webp',
-    gates: [
-      { gate: 1, gold: 20000, moreGold: 6400,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 405 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 810 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 8 },
-          { name: '운명의 파편', itemId: '66130143', amount: 9100 },
-          { name: '은총의 파편', itemId: '0', amount: 24 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 860 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 1720 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 36 },
-          { name: '운명의 파편', itemId: '66130143', amount: 19000 },
-          { name: '은총의 파편', itemId: '0', amount: 24 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-      },
-      { gate: 2, gold: 30000, moreGold: 9600,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 500 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 1000 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 12 },
-          { name: '운명의 파편', itemId: '66130143', amount: 11000 },
-          { name: '은총의 파편', itemId: '0', amount: 36 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 1430 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 2860 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 60 },
-          { name: '운명의 파편', itemId: '66130143', amount: 32200 },
-          { name: '은총의 파편', itemId: '0', amount: 36 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-      },
-    ],
-  },
-  {
-    name: '성당 2단계', level: 1720, image: '/wlvuddmltjdekd1.webp',
-    gates: [
-      { gate: 1, gold: 16000, moreGold: 5120,
-        materials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 980 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 1960 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 11 },
-          { name: '운명의 파편', itemId: '66130143', amount: 6800 },
-          { name: '은총의 파편', itemId: '0', amount: 12 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 1680 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 3360 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 53 },
-          { name: '운명의 파편', itemId: '66130143', amount: 14250 },
-          { name: '은총의 파편', itemId: '0', amount: 12 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-      },
-      { gate: 2, gold: 24000, moreGold: 7680,
-        materials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 1150 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 2300 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 16 },
-          { name: '운명의 파편', itemId: '66130143', amount: 8600 },
-          { name: '은총의 파편', itemId: '0', amount: 18 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 2880 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 5760 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 94 },
-          { name: '운명의 파편', itemId: '66130143', amount: 24200 },
-          { name: '은총의 파편', itemId: '0', amount: 18 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-      },
-    ],
-  },
-  {
-    name: '성당 1단계', level: 1700, image: '/wlvuddmltjdekd1.webp',
-    gates: [
-      { gate: 1, gold: 13500, moreGold: 4320,
-        materials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 820 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 1640 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 9 },
-          { name: '운명의 파편', itemId: '66130143', amount: 5400 },
-          { name: '은총의 파편', itemId: '0', amount: 4 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 960 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 1920 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 12 },
-          { name: '운명의 파편', itemId: '66130143', amount: 6800 },
-          { name: '은총의 파편', itemId: '0', amount: 4 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-      },
-      { gate: 2, gold: 16500, moreGold: 5280,
-        materials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 1400 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 2800 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 44 },
-          { name: '운명의 파편', itemId: '66130143', amount: 11880 },
-          { name: '은총의 파편', itemId: '0', amount: 6 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 2400 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 4800 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 78 },
-          { name: '운명의 파편', itemId: '66130143', amount: 20160 },
-          { name: '은총의 파편', itemId: '0', amount: 6 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-      },
-    ],
-  },
-];
+}[] = ['성당 3단계', '성당 2단계', '성당 1단계'].map((name) => {
+  const entry = RAID_TABLE.find((e) => e.name === name)!;
+  return {
+    name: entry.name,
+    level: entry.level,
+    image: STAGE_IMAGES[name],
+    gates: entry.gates.map((g) => ({
+      gate: g.gate,
+      gold: g.gold,
+      moreGold: g.moreGold,
+      materials: toPageMats(g.clear),
+      moreMaterials: toPageMats(g.more),
+    })),
+  };
+});
 
 // 테마 색상 매핑
 const THEME_COLORS: { [key: string]: { name: string; accent: string; bg: string; border: string; iconBg: string } } = {

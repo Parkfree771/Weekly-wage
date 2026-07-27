@@ -63,10 +63,6 @@ const RaidCalculator = dynamic(() => import('@/components/RaidCalculator'), {
   )
 });
 
-const GoldProjection = dynamic(() => import('@/components/GoldProjection'), {
-  loading: () => null
-});
-
 const SeeMoreCalculator = dynamic(() => import('@/components/SeeMoreCalculator'), {
   loading: () => (
     <div className="text-center py-5" style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -84,7 +80,6 @@ type Character = {
 
 export default function WeeklyGoldPage() {
   const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
-  const [allCharacters, setAllCharacters] = useState<Character[]>([]);
   const [searched, setSearched] = useState(false);
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
   const [gateSelection, setGateSelection] = useState<{[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}>({});
@@ -193,7 +188,6 @@ export default function WeeklyGoldPage() {
             {/* 캐릭터 검색 */}
             <CharacterSearch
               onSelectionChange={setSelectedCharacters}
-              onCharactersLoaded={setAllCharacters}
               onSearch={handleSearch}
               searched={searched}
               autoSearchName={autoSearchName}
@@ -211,18 +205,6 @@ export default function WeeklyGoldPage() {
               {searched && selectedCharacters.length > 0 && (
                 <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
                   <RaidCalculator selectedCharacters={selectedCharacters} onGateSelectionChange={handleGateSelectionChange} onSaveReady={handleSaveReady} searchName={autoSearchName} showSave={true} />
-                </div>
-              )}
-
-              {/* 레벨업 골드 시뮬레이션 — 저장된 설정과 무관하게 레벨 기준 최고 클리어 골드로만 계산 */}
-              {searched && selectedCharacters.length > 0 && (
-                <div style={{ maxWidth: '1180px', margin: 'clamp(2rem, 4vw, 2.5rem) auto 0' }}>
-                  <div className="mb-3" style={{ background: 'rgba(232, 114, 42, 0.16)', borderRadius: '10px', padding: '0.5rem 1rem', textAlign: 'center' }}>
-                    <h3 className="weekly-gold-header-title mb-0">
-                      레벨업 골드 시뮬레이션
-                    </h3>
-                  </div>
-                  <GoldProjection selectedCharacters={selectedCharacters} allCharacters={allCharacters} />
                 </div>
               )}
 

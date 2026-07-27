@@ -7,6 +7,7 @@ import styles from '../cathedral/cathedral.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
+import { RAID_TABLE } from '@/data/rewardTable';
 
 // ─────────────────────────────────────────────────────────────────────────
 // 재료 이미지 / 묶음 단위
@@ -54,133 +55,30 @@ type Gate = {
   moreMaterials: Material[];
 };
 
-// 세르카 단계별 보상 데이터
+// 세르카 단계별 보상 — 수치는 단일 원본 테이블(data/raidTable.ts)에서 가져온다.
+const toPageMats = (mats: { itemId: number; itemName: string; amount: number }[]): Material[] =>
+  mats.map((mat) => ({ name: mat.itemName, itemId: String(mat.itemId), amount: mat.amount }));
+
 const STAGES: {
   name: string;
   level: number;
   image: string;
   gates: Gate[];
-}[] = [
-  {
-    name: '세르카 나메', level: 1740, image: '/cerka.webp',
-    gates: [
-      { gate: 1, gold: 21000, moreGold: 6720,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 405 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 810 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 8 },
-          { name: '운명의 파편', itemId: '66130143', amount: 9100 },
-          { name: '고통의 가시', itemId: '0', amount: 10 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 860 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 1720 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 36 },
-          { name: '운명의 파편', itemId: '66130143', amount: 19000 },
-          { name: '고통의 가시', itemId: '0', amount: 10 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-      },
-      { gate: 2, gold: 33000, moreGold: 10560,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 500 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 1000 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 12 },
-          { name: '운명의 파편', itemId: '66130143', amount: 11000 },
-          { name: '고통의 가시', itemId: '0', amount: 15 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 1430 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 2860 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 60 },
-          { name: '운명의 파편', itemId: '66130143', amount: 32200 },
-          { name: '고통의 가시', itemId: '0', amount: 15 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-      },
-    ],
-  },
-  {
-    name: '세르카 하드', level: 1730, image: '/cerka.webp',
-    gates: [
-      { gate: 1, gold: 17500, moreGold: 5600,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 385 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 770 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 7 },
-          { name: '운명의 파편', itemId: '66130143', amount: 8300 },
-          { name: '고통의 가시', itemId: '0', amount: 10 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 750 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 1500 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 30 },
-          { name: '운명의 파편', itemId: '66130143', amount: 17500 },
-          { name: '고통의 가시', itemId: '0', amount: 10 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-      },
-      { gate: 2, gold: 26500, moreGold: 8480,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 475 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 950 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 10 },
-          { name: '운명의 파편', itemId: '66130143', amount: 10100 },
-          { name: '고통의 가시', itemId: '0', amount: 15 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 1130 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 2260 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 45 },
-          { name: '운명의 파편', itemId: '66130143', amount: 26820 },
-          { name: '고통의 가시', itemId: '0', amount: 15 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-      },
-    ],
-  },
-  {
-    name: '세르카 노말', level: 1710, image: '/cerka.webp',
-    gates: [
-      { gate: 1, gold: 14000, moreGold: 4480,
-        materials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 880 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 1760 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 12 },
-          { name: '운명의 파편', itemId: '66130143', amount: 6200 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 1610 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 3220 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 50 },
-          { name: '운명의 파편', itemId: '66130143', amount: 13650 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-      },
-      { gate: 2, gold: 21000, moreGold: 6720,
-        materials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 1100 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 2200 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 15 },
-          { name: '운명의 파편', itemId: '66130143', amount: 7900 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석', itemId: '66102006', amount: 2480 },
-          { name: '운명의 수호석', itemId: '66102106', amount: 4960 },
-          { name: '운명의 돌파석', itemId: '66110225', amount: 82 },
-          { name: '운명의 파편', itemId: '66130143', amount: 20880 },
-          { name: '코어', itemId: '0', amount: 2 },
-        ],
-      },
-    ],
-  },
-];
+}[] = ['세르카 나메', '세르카 하드', '세르카 노말'].map((name) => {
+  const entry = RAID_TABLE.find((e) => e.name === name)!;
+  return {
+    name: entry.name,
+    level: entry.level,
+    image: '/cerka.webp',
+    gates: entry.gates.map((g) => ({
+      gate: g.gate,
+      gold: g.gold,
+      moreGold: g.moreGold,
+      materials: toPageMats(g.clear),
+      moreMaterials: toPageMats(g.more),
+    })),
+  };
+});
 
 // 테마 색상
 const THEME_COLORS: { [key: string]: { name: string; accent: string; bg: string; border: string; iconBg: string } } = {

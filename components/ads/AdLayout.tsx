@@ -49,6 +49,8 @@ function getPageConfig(pathname: string): PageConfig {
   // 세르카와 동일 구성(요청).
   if (pathname === '/belgardin') return { contentWidth: 1200, adTop: 230 };
   if (pathname === '/bracelet') return { contentWidth: 900, adTop: 90 };
+  // adTop 300 = 주간 레이드와 같은 구성(제목+검색창 다음 본문 상단) — 동일 값으로 통일.
+  if (pathname === '/expedition-gold') return { contentWidth: 1180, adTop: 300 };
   // adTop 280 = 기존(90)보다 큰 폭으로 내려서 실제 계산기 상자 상단과 맞춤.
   if (pathname === '/hell-reward') return { contentWidth: 900, adTop: 280 };
   if (pathname.startsWith('/package/')) return { contentWidth: 1100, adTop: 80 };
@@ -83,6 +85,7 @@ const RAIL_PAGES = new Set([
   '/', '/refining', '/wangap', '/package',
   '/weekly-gold', '/life-master', '/mypage', '/more-reward',
   '/cathedral', '/cerka', '/extreme', '/belgardin', '/bracelet', '/hell-reward',
+  '/expedition-gold',
 ]);
 // 패키지 상세(/package/[postId])는 동적 라우트라 위 Set에 못 넣으므로 startsWith로 별도 포함
 // (등록·수정은 railsDisabled가 이미 따로 걸러냄).

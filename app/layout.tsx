@@ -113,7 +113,8 @@ export default function RootLayout({
 }>) {
   return (
     // suppressHydrationWarning: head의 보기 배율 스크립트가 하이드레이션 전에 html style(zoom)을 설정함
-    <html lang="ko" suppressHydrationWarning>
+    // data-scroll-behavior: globals 의 scroll-behavior:smooth 가 의도한 것임을 Next 에 알려 개발 경고를 없앰
+    <html lang="ko" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         {/* 사이트 보기 배율 — 저장된 배율을 첫 페인트 전에 적용해 번쩍임 방지 (컨트롤: components/ZoomControl.tsx)
             suppressHydrationWarning: 아래 애드센스 로더가 head에 관리 스크립트를 동적 주입하면서

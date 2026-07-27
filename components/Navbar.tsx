@@ -55,6 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/refining', label: '재련 시뮬' },
       { href: '/wangap', label: '완갑 시뮬', badge: 'BETA' },
       { href: '/bracelet', label: '팔찌 시뮬' },
+      { href: '/expedition-gold', label: '원정대 수급 골드 시뮬', badge: 'NEW' },
     ],
   },
   {
@@ -103,6 +104,7 @@ export default function Navbar() {
   const getNavClass = (href: string) => {
     const pageClass = href === '/refining' ? 'nav-refining' :
                       href === '/wangap' ? 'nav-refining' :
+                      href === '/expedition-gold' ? 'nav-refining' :
                       href === '/life-master' ? 'nav-life' :
                       href === '/hell-reward' ? 'nav-hell' :
                       href === '/bracelet' ? 'nav-bracelet' :

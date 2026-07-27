@@ -7,6 +7,7 @@ import styles from './belgardin.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
+import { RAID_TABLE } from '@/data/rewardTable';
 
 // 재료 이미지 매핑
 const MATERIAL_IMAGES: { [key: string]: string } = {
@@ -41,141 +42,46 @@ type Gate = {
   moreMaterials: Material[];
 };
 
-// ─── 벨가르딘 단계별 보상 데이터 ───
-// 클리어 골드·더보기 비용: data/raids.ts 기준 (더보기 = 클리어 골드의 32%).
-// 고유 보상(승급 재료)·코어 수량은 공식 공개분.
-// 더보기를 하면 고유 보상과 코어 모두 2배가 되므로, moreMaterials(추가분)에 클리어와 같은 수량을 넣는다.
-// TODO: 재련 재료(파괴석 결정 등) 수량은 공개되면 채우기
+// ─── 벨가르딘 단계별 보상 — 수치는 단일 원본 테이블(data/raidTable.ts)에서 가져온다 ───
+// 더보기를 하면 고유 보상과 코어가 2배 — 테이블의 more 에 클리어와 같은 수량이 들어 있다.
+// 재련 재료(파괴석 결정 등)는 미공개라 0 수량 표기를 유지한다. 공개되면 raidTable 에 채우기.
+const STONE_PLACEHOLDERS: Material[] = [
+  { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
+  { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
+  { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
+  { name: '운명의 파편', itemId: '66130143', amount: 0 },
+];
+
+// 테이블 명칭('벨가르딘 나메') → 페이지 표시 명칭
+const DISPLAY_NAMES: { [tableName: string]: string } = {
+  '벨가르딘 나메': '벨가르딘 나이트메어',
+  '벨가르딘 하드': '벨가르딘 하드',
+  '벨가르딘 노말': '벨가르딘 노말',
+};
+
+const toPageMats = (mats: { itemId: number; itemName: string; amount: number }[]): Material[] =>
+  mats.map((mat) => ({ name: mat.itemName, itemId: String(mat.itemId), amount: mat.amount }));
+
 const STAGES: {
   name: string;
   level: number;
   image: string;
   gates: Gate[];
-}[] = [
-  {
-    name: '벨가르딘 나이트메어', level: 1780, image: '/belgardin2.webp',
-    gates: [
-      { gate: 1, gold: 30000, moreGold: 9600,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '고대 승급 재료', itemId: '0', amount: 20 },
-          { name: '코어', itemId: '0', amount: 4 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '고대 승급 재료', itemId: '0', amount: 20 },
-          { name: '코어', itemId: '0', amount: 4 },
-        ],
-      },
-      { gate: 2, gold: 45000, moreGold: 14400,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '고대 승급 재료', itemId: '0', amount: 30 },
-          { name: '코어', itemId: '0', amount: 4 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '고대 승급 재료', itemId: '0', amount: 30 },
-          { name: '코어', itemId: '0', amount: 4 },
-        ],
-      },
-    ],
-  },
-  {
-    name: '벨가르딘 하드', level: 1770, image: '/belgardin2.webp',
-    gates: [
-      { gate: 1, gold: 25000, moreGold: 8000,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '고대 승급 재료', itemId: '0', amount: 12 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '고대 승급 재료', itemId: '0', amount: 12 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-      },
-      { gate: 2, gold: 37000, moreGold: 11840,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '고대 승급 재료', itemId: '0', amount: 18 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '고대 승급 재료', itemId: '0', amount: 18 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-      },
-    ],
-  },
-  {
-    name: '벨가르딘 노말', level: 1750, image: '/belgardin2.webp',
-    gates: [
-      { gate: 1, gold: 20000, moreGold: 6400,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '유물 승급 재료', itemId: '0', amount: 6 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '유물 승급 재료', itemId: '0', amount: 6 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-      },
-      { gate: 2, gold: 30000, moreGold: 9600,
-        materials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '유물 승급 재료', itemId: '0', amount: 9 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-        moreMaterials: [
-          { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
-          { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
-          { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
-          { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '유물 승급 재료', itemId: '0', amount: 9 },
-          { name: '코어', itemId: '0', amount: 3 },
-        ],
-      },
-    ],
-  },
-];
+}[] = ['벨가르딘 나메', '벨가르딘 하드', '벨가르딘 노말'].map((tableName) => {
+  const entry = RAID_TABLE.find((e) => e.name === tableName)!;
+  return {
+    name: DISPLAY_NAMES[tableName],
+    level: entry.level,
+    image: entry.image,
+    gates: entry.gates.map((g) => ({
+      gate: g.gate,
+      gold: g.gold,
+      moreGold: g.moreGold,
+      materials: [...STONE_PLACEHOLDERS, ...toPageMats(g.clear)],
+      moreMaterials: [...STONE_PLACEHOLDERS, ...toPageMats(g.more)],
+    })),
+  };
+});
 
 // 테마 색상 매핑
 const THEME_COLORS: { [key: string]: { name: string; accent: string; bg: string; border: string; iconBg: string } } = {
