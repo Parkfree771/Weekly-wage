@@ -16,12 +16,13 @@ type Character = {
 
 type CharacterSearchProps = {
   onSelectionChange: (selectedCharacters: Character[]) => void;
+  onCharactersLoaded?: (allCharacters: Character[]) => void; // 원정대 전체 (레벨 내림차순)
   onSearch: () => void;
   searched: boolean;
   autoSearchName?: string; // 저장된 설정 복원 시 자동 검색할 캐릭터명
 };
 
-export default function CharacterSearch({ onSelectionChange, onSearch, searched, autoSearchName }: CharacterSearchProps) {
+export default function CharacterSearch({ onSelectionChange, onCharactersLoaded, onSearch, searched, autoSearchName }: CharacterSearchProps) {
   const [characterName, setCharacterName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -225,6 +226,11 @@ export default function CharacterSearch({ onSelectionChange, onSearch, searched,
     const selectedCharacters = characters.filter((_, index) => checkedState[index]);
     onSelectionChange(selectedCharacters);
   }, [checkedState, characters, onSelectionChange]);
+
+  // 원정대 전체 목록 — 레벨업 시뮬레이션은 체크와 무관하게 전체를 받아 6캐릭을 따로 고른다
+  useEffect(() => {
+    onCharactersLoaded?.(characters);
+  }, [characters, onCharactersLoaded]);
 
   return (
     <>

@@ -135,6 +135,7 @@ export type UserProfile = {
 
 // 레이드 그룹 이미지 매핑
 export const raidGroupImages: { [key: string]: string } = {
+  '벨가르딘': '/belgardin2.webp',
   '지평의 성당': '/wlvuddmltjdekd1.webp',
   '세르카': '/cerka2.webp',
   '종막': '/abrelshud.webp',

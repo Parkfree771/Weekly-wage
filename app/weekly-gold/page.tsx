@@ -34,14 +34,14 @@ const weeklyGoldGuideSections = [
     heading: '현재 지원하는 레이드와 아이템 레벨',
     paragraphs: [
       '2026년 7월 기준으로 서비스 중인 레이드는 지평의 성당(1단계 1700 · 2단계 1720 · 3단계 1750), 세르카(노말 1710 · 하드 1730 · 나메 1740), 카제로스 종막(노말 1710 · 하드 1730), 4막(노말 1700 · 하드 1720), 3막(노말 1680 · 하드 1700), 2막(노말 1670 · 하드 1690), 1막(노말 1660 · 하드 1680), 그리고 입문 단계인 서막과 베히모스(1640)까지입니다.',
-      '신규 레이드인 밸가르딘(노말 1750 · 하드 1770 · 나메 1780)은 2026년 8월 5일 출시 예정이라 현재는 계산에 포함되지 않으며, 출시와 동시에 자동으로 활성화됩니다.',
+      '신규 레이드인 밸가르딘(노말 1750 · 하드 1770 · 나메 1780)은 2026년 8월 5일 출시 예정이지만, 미리 주간 골드 계산에 쓸 수 있도록 지금부터 활성화해 두었습니다. 관문별 클리어 골드와 더보기 비용은 공개된 정보를 역산한 값이라 출시 후 확정치로 갱신됩니다.',
     ],
     bullets: [
       '지평의 성당 1~3단계 (1700 / 1720 / 1750)',
       '세르카 노말·하드·나메 (1710 / 1730 / 1740)',
       '카제로스 종막·4막·3막·2막·1막 (1660~1730)',
       '서막·베히모스 (1640) — 원정대 저레벨 캐릭터용',
-      '밸가르딘 노말·하드·나메 (1750 / 1770 / 1780, 8월 5일 출시 예정)',
+      '밸가르딘 노말·하드·나메 (1750 / 1770 / 1780, 8월 5일 출시 — 미리 활성화)',
     ],
   },
 ];
@@ -63,6 +63,10 @@ const RaidCalculator = dynamic(() => import('@/components/RaidCalculator'), {
   )
 });
 
+const GoldProjection = dynamic(() => import('@/components/GoldProjection'), {
+  loading: () => null
+});
+
 const SeeMoreCalculator = dynamic(() => import('@/components/SeeMoreCalculator'), {
   loading: () => (
     <div className="text-center py-5" style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -80,6 +84,7 @@ type Character = {
 
 export default function WeeklyGoldPage() {
   const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
+  const [allCharacters, setAllCharacters] = useState<Character[]>([]);
   const [searched, setSearched] = useState(false);
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
   const [gateSelection, setGateSelection] = useState<{[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}>({});
@@ -188,6 +193,7 @@ export default function WeeklyGoldPage() {
             {/* 캐릭터 검색 */}
             <CharacterSearch
               onSelectionChange={setSelectedCharacters}
+              onCharactersLoaded={setAllCharacters}
               onSearch={handleSearch}
               searched={searched}
               autoSearchName={autoSearchName}
@@ -205,6 +211,18 @@ export default function WeeklyGoldPage() {
               {searched && selectedCharacters.length > 0 && (
                 <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
                   <RaidCalculator selectedCharacters={selectedCharacters} onGateSelectionChange={handleGateSelectionChange} onSaveReady={handleSaveReady} searchName={autoSearchName} showSave={true} />
+                </div>
+              )}
+
+              {/* 레벨업 골드 시뮬레이션 — 저장된 설정과 무관하게 레벨 기준 최고 클리어 골드로만 계산 */}
+              {searched && selectedCharacters.length > 0 && (
+                <div style={{ maxWidth: '1180px', margin: 'clamp(2rem, 4vw, 2.5rem) auto 0' }}>
+                  <div className="mb-3" style={{ background: 'rgba(232, 114, 42, 0.16)', borderRadius: '10px', padding: '0.5rem 1rem', textAlign: 'center' }}>
+                    <h3 className="weekly-gold-header-title mb-0">
+                      레벨업 골드 시뮬레이션
+                    </h3>
+                  </div>
+                  <GoldProjection selectedCharacters={selectedCharacters} allCharacters={allCharacters} />
                 </div>
               )}
 

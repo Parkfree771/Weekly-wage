@@ -27,6 +27,9 @@ export const MATERIAL_IDS = {
   CERKA_CORE: 0, // 코어 (거래 불가)
   PULSATING_THORN: 0, // 고통의 가시 (거래 불가)
   GRACE_FRAGMENT: 0, // 은총의 파편 (거래 불가)
+  // 벨가르딘 고유 보상 — 완갑 승급 재료 (거래소 시세 미추적이라 가치 계산 제외)
+  RELIC_PROMOTION: 0, // 유물 승급 재료 (노말 고유 보상)
+  ANCIENT_PROMOTION: 0, // 고대 승급 재료 (하드·나메 고유 보상)
 };
 
 export const MATERIAL_NAMES = {
@@ -44,6 +47,8 @@ export const MATERIAL_NAMES = {
   CERKA_CORE: '코어',
   PULSATING_THORN: '고통의 가시',
   GRACE_FRAGMENT: '은총의 파편',
+  RELIC_PROMOTION: '유물 승급 재료',
+  ANCIENT_PROMOTION: '고대 승급 재료',
 };
 
 // 묶음 단위 - 개당 가격 계산을 위한 나눗수

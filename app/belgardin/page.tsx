@@ -15,6 +15,8 @@ const MATERIAL_IMAGES: { [key: string]: string } = {
   '위대한 운명의 돌파석': '/destiny-breakthrough-stone2.webp',
   '운명의 파편': '/destiny-shard-bag-large.webp',
   '코어': '/cerka-core2.webp',
+  '유물 승급 재료': '/wangap-promo-relic5.webp',
+  '고대 승급 재료': '/wangap-promo-ancient5.webp',
 };
 
 // 묶음 단위 (개당 가격 = 시세 / bundleSize)
@@ -40,8 +42,10 @@ type Gate = {
 };
 
 // ─── 벨가르딘 단계별 보상 데이터 ───
-// 클리어 골드·더보기 비용: data/raids.ts 기준. 코어 수량은 미확정(0).
-// TODO: 코어 수량 확정되면 amount 채우기
+// 클리어 골드·더보기 비용: data/raids.ts 기준 (더보기 = 클리어 골드의 32%).
+// 고유 보상(승급 재료)·코어 수량은 공식 공개분.
+// 더보기를 하면 고유 보상과 코어 모두 2배가 되므로, moreMaterials(추가분)에 클리어와 같은 수량을 넣는다.
+// TODO: 재련 재료(파괴석 결정 등) 수량은 공개되면 채우기
 const STAGES: {
   name: string;
   level: number;
@@ -57,14 +61,16 @@ const STAGES: {
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '고대 승급 재료', itemId: '0', amount: 20 },
+          { name: '코어', itemId: '0', amount: 4 },
         ],
         moreMaterials: [
           { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '고대 승급 재료', itemId: '0', amount: 20 },
+          { name: '코어', itemId: '0', amount: 4 },
         ],
       },
       { gate: 2, gold: 45000, moreGold: 14400,
@@ -73,14 +79,16 @@ const STAGES: {
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '고대 승급 재료', itemId: '0', amount: 30 },
+          { name: '코어', itemId: '0', amount: 4 },
         ],
         moreMaterials: [
           { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '고대 승급 재료', itemId: '0', amount: 30 },
+          { name: '코어', itemId: '0', amount: 4 },
         ],
       },
     ],
@@ -94,14 +102,16 @@ const STAGES: {
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '고대 승급 재료', itemId: '0', amount: 12 },
+          { name: '코어', itemId: '0', amount: 3 },
         ],
         moreMaterials: [
           { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '고대 승급 재료', itemId: '0', amount: 12 },
+          { name: '코어', itemId: '0', amount: 3 },
         ],
       },
       { gate: 2, gold: 37000, moreGold: 11840,
@@ -110,14 +120,16 @@ const STAGES: {
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '고대 승급 재료', itemId: '0', amount: 18 },
+          { name: '코어', itemId: '0', amount: 3 },
         ],
         moreMaterials: [
           { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '고대 승급 재료', itemId: '0', amount: 18 },
+          { name: '코어', itemId: '0', amount: 3 },
         ],
       },
     ],
@@ -131,14 +143,16 @@ const STAGES: {
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '유물 승급 재료', itemId: '0', amount: 6 },
+          { name: '코어', itemId: '0', amount: 3 },
         ],
         moreMaterials: [
           { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '유물 승급 재료', itemId: '0', amount: 6 },
+          { name: '코어', itemId: '0', amount: 3 },
         ],
       },
       { gate: 2, gold: 30000, moreGold: 9600,
@@ -147,14 +161,16 @@ const STAGES: {
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '유물 승급 재료', itemId: '0', amount: 9 },
+          { name: '코어', itemId: '0', amount: 3 },
         ],
         moreMaterials: [
           { name: '운명의 파괴석 결정', itemId: '66102007', amount: 0 },
           { name: '운명의 수호석 결정', itemId: '66102107', amount: 0 },
           { name: '위대한 운명의 돌파석', itemId: '66110226', amount: 0 },
           { name: '운명의 파편', itemId: '66130143', amount: 0 },
-          { name: '코어', itemId: '0', amount: 0 },
+          { name: '유물 승급 재료', itemId: '0', amount: 9 },
+          { name: '코어', itemId: '0', amount: 3 },
         ],
       },
     ],
@@ -206,17 +222,18 @@ export default function BelgardinPage() {
   };
 
   // 체크 상태 확인 (기본 true)
-  const isChecked = (stage: string, type: string, gate: number, itemId: string) =>
-    materialChecks[stage]?.[type]?.[`${gate}-${itemId}`] ?? true;
+  // 키는 itemId 가 아니라 재료명 — 거래 불가 재료(코어·승급 재료)는 itemId 가 모두 '0' 이라 겹친다.
+  const isChecked = (stage: string, type: string, gate: number, itemName: string) =>
+    materialChecks[stage]?.[type]?.[`${gate}-${itemName}`] ?? true;
 
-  const toggleCheck = (stage: string, type: string, gate: number, itemId: string) => {
+  const toggleCheck = (stage: string, type: string, gate: number, itemName: string) => {
     setMaterialChecks(prev => ({
       ...prev,
       [stage]: {
         ...prev[stage],
         [type]: {
           ...prev[stage]?.[type],
-          [`${gate}-${itemId}`]: !isChecked(stage, type, gate, itemId),
+          [`${gate}-${itemName}`]: !isChecked(stage, type, gate, itemName),
         },
       },
     }));
@@ -267,10 +284,12 @@ export default function BelgardinPage() {
                 const totalBasicValueCard = stage.gates.reduce((sum, g) =>
                   sum + g.materials.reduce((s, m) => s + getMaterialValue(m), 0), 0);
                 const cardFinalValue = totalGold + totalBasicValueCard;
-                const totalCore = stage.gates.reduce((sum, g) => {
-                  const core = g.materials.find(m => m.name === '코어');
-                  return sum + (core?.amount || 0);
-                }, 0);
+                // 카드 배지는 이 레이드의 고유 보상(승급 재료) 총량. 더보기까지 하면 2배가 된다.
+                const promoMats = stage.gates
+                  .map(g => g.materials.find(m => m.name.endsWith('승급 재료')))
+                  .filter((m): m is Material => !!m);
+                const promoLabel = promoMats[0]?.name.replace(' 재료', '') || '';
+                const totalPromo = promoMats.reduce((sum, m) => sum + m.amount, 0);
                 return (
                   <div
                     key={stage.name}
@@ -294,7 +313,9 @@ export default function BelgardinPage() {
                       <div className={styles.goldBadge}>
                         {priceLoading ? `${totalGold.toLocaleString()}G` : `${cardFinalValue.toLocaleString()}G`}
                       </div>
-                      <div className={styles.graceBadge}>코어 {totalCore}개</div>
+                      {totalPromo > 0 && (
+                        <div className={styles.graceBadge}>{promoLabel} {totalPromo}개</div>
+                      )}
                     </div>
                   </div>
                 );
@@ -305,7 +326,7 @@ export default function BelgardinPage() {
             {selectedStageData && (() => {
               const sn = selectedStageData.name;
               const getCheckedValue = (mats: Material[], type: string, gate: number) =>
-                mats.reduce((s, m) => s + (isChecked(sn, type, gate, m.itemId) ? getMaterialValue(m) : 0), 0);
+                mats.reduce((s, m) => s + (isChecked(sn, type, gate, m.name) ? getMaterialValue(m) : 0), 0);
 
               const totalClearGold = selectedStageData.gates.reduce((s, g) => s + g.gold, 0);
               const totalMoreGold = selectedStageData.gates.reduce((s, g) => s + g.moreGold, 0);
@@ -326,7 +347,7 @@ export default function BelgardinPage() {
                   </thead>
                   <tbody>
                     {mats.map((mat, idx) => {
-                      const checked = isChecked(sn, type, gate, mat.itemId);
+                      const checked = isChecked(sn, type, gate, mat.name);
                       const unitPrice = getUnitPrice(mat.itemId);
                       const totalPrice = getMaterialValue(mat);
                       return (
@@ -335,7 +356,7 @@ export default function BelgardinPage() {
                           <Form.Check
                             type="checkbox"
                             checked={checked}
-                            onChange={() => toggleCheck(sn, type, gate, mat.itemId)}
+                            onChange={() => toggleCheck(sn, type, gate, mat.name)}
                             className={styles.materialCheckbox}
                           />
                         </td>
@@ -575,7 +596,7 @@ export default function BelgardinPage() {
                 {
                   heading: '출시 예정 레이드, 지금 확인할 수 있는 정보',
                   paragraphs: [
-                    '벨가르딘은 2026년 8월 5일 출시 예정인 그림자 레이드입니다. 정식 출시 전이라 원정대 주간 골드 계산에는 포함하지 않으며, 이 페이지에서만 미리 공개된 난이도별 관문 구조와 클리어 골드, 더보기 비용을 확인할 수 있습니다.',
+                    '벨가르딘은 2026년 8월 5일 출시 예정인 그림자 레이드입니다. 출시 전이지만 로아로골에서는 미리 활성화해 두어서, 이 페이지의 난이도별 관문 구조와 클리어 골드·더보기 비용을 주간 골드 계산기와 마이페이지에서도 그대로 체크하고 합산할 수 있습니다. 관문 골드는 공개된 정보를 역산한 값이라 출시 후 확정치로 갱신됩니다.',
                     '재료 칸에 표시되는 "미정"은 오류가 아니라 아직 정확한 지급 수량이 공개되지 않았다는 뜻입니다. 운명의 파괴석 결정 · 운명의 수호석 결정 · 위대한 운명의 돌파석 · 운명의 파편, 아크그리드 코어가 보상에 포함될 예정이라는 재료 종류만 먼저 반영해 두었고, 정확한 수량이 공개되는 대로 실시간 시세를 곱한 총 가치 계산이 활성화됩니다.',
                   ],
                 },

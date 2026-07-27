@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Form } from 'react-bootstrap';
-import { raids, upcomingRaids } from '@/data/raids';
+import { raids, upcomingRaids, getRaidNewLabel } from '@/data/raids';
 import { raidRewards, type MaterialReward } from '@/data/raidRewards';
 import { raidClearRewards } from '@/data/raidClearRewards';
 import { PriceProvider, usePriceData } from '@/contexts/PriceContext';
@@ -25,6 +25,8 @@ const MATERIAL_ICONS: Record<string, string> = {
   '은총의 파편': '/dmschddmlvkvus.webp',
   '코어': '/cerka-core.webp',
   '고통의 가시': '/pulsating-thorn.webp',
+  '유물 승급 재료': '/wangap-promo-relic5.webp',
+  '고대 승급 재료': '/wangap-promo-ancient5.webp',
 };
 
 const fmt = (n: number) => Math.round(n).toLocaleString('ko-KR');
@@ -42,7 +44,7 @@ export default function MoreRewardPage() {
 type CheckType = 'basic' | 'more';
 
 function MoreRewardInner() {
-  const { unitPrices, loading } = usePriceData();
+  const { unitPrices, graceUnitPrice, thornUnitPrice, loading } = usePriceData();
   // 두 섹션(더보기 손익 계산 / 레이드 클리어 보상)은 각자 독립적으로 펼침 상태를 가진다.
   const [openEff, setOpenEff] = useState<string | null>(null);
   const [openClear, setOpenClear] = useState<string | null>(null);
@@ -54,9 +56,18 @@ function MoreRewardInner() {
     setPriceDate(`${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`);
   }, []);
 
-  // 거래 가능 재료만 시세 합산 (itemId 0 = 거래불가 → 가치 계산 제외)
+  // 은총의 파편·고통의 가시는 거래소 미상장이지만 교환 상자 구성품 시세로 환산한 값이 있다
+  // (성당·세르카 페이지와 동일). 코어·승급 재료는 환산 기준이 없어 0으로 둔다.
+  const unitPriceOf = (m: MaterialReward): number => {
+    if (m.itemName === '은총의 파편') return graceUnitPrice;
+    if (m.itemName === '고통의 가시') return thornUnitPrice;
+    return m.itemId !== 0 ? unitPrices[m.itemId] || 0 : 0;
+  };
+  const isPriced = (m: MaterialReward) =>
+    m.itemId !== 0 || m.itemName === '은총의 파편' || m.itemName === '고통의 가시';
+
   const valueOf = (materials: MaterialReward[]): number =>
-    materials.reduce((sum, m) => sum + (m.itemId !== 0 ? (unitPrices[m.itemId] || 0) * m.amount : 0), 0);
+    materials.reduce((sum, m) => sum + unitPriceOf(m) * m.amount, 0);
 
   // 상단 카드: 레이드(난이도) 전체 관문 합산 더보기 손익 + 손익률
   const summaries = useMemo(() => {
@@ -76,7 +87,7 @@ function MoreRewardInner() {
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unitPrices]);
+  }, [unitPrices, graceUnitPrice, thornUnitPrice]);
 
   // 하단 카드: 클리어 골드 + 기본 재료 가치 + 더보기 재료 가치 - 더보기 비용 (더보기 포함 총 가치)
   const clearSummaries = useMemo(() => {
@@ -92,7 +103,7 @@ function MoreRewardInner() {
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unitPrices]);
+  }, [unitPrices, graceUnitPrice, thornUnitPrice]);
 
   // 재료 체크 상태: raid × 구분(기본/더보기) × 관문 × 재료명 단위 (itemId 0인 재료가 여럿이라 itemName으로 구분)
   const [materialChecks, setMaterialChecks] = useState<Record<string, boolean>>({});
@@ -106,8 +117,8 @@ function MoreRewardInner() {
   };
   const getCheckedValue = (materials: MaterialReward[], raidName: string, type: CheckType, gate: number): number =>
     materials.reduce((sum, m) => {
-      if (m.itemId === 0 || !isMatChecked(raidName, type, gate, m.itemName)) return sum;
-      return sum + (unitPrices[m.itemId] || 0) * m.amount;
+      if (!isMatChecked(raidName, type, gate, m.itemName)) return sum;
+      return sum + unitPriceOf(m) * m.amount;
     }, 0);
 
   // 재료 표 (지평의 성당·세르카 페이지와 동일한 체크박스 + 단가/총가치 표 디자인)
@@ -124,9 +135,9 @@ function MoreRewardInner() {
       </thead>
       <tbody>
         {materials.map((m) => {
-          const untradable = m.itemId === 0;
+          const untradable = !isPriced(m);
           const checked = isMatChecked(raidName, type, gate, m.itemName);
-          const unitPrice = untradable ? 0 : unitPrices[m.itemId] || 0;
+          const unitPrice = untradable ? 0 : unitPriceOf(m);
           const totalPrice = untradable ? 0 : unitPrice * m.amount;
           const icon = MATERIAL_ICONS[m.itemName];
           return (
@@ -368,6 +379,7 @@ function MoreRewardInner() {
                 const s = summaries.get(raid.name);
                 const profit = s?.profit ?? 0;
                 const cls = profit >= 0 ? styles.profitText : styles.lossText;
+                const newLabel = getRaidNewLabel(raid.name);
                 return (
                   <button
                     key={raid.name}
@@ -378,11 +390,16 @@ function MoreRewardInner() {
                     <Image src={raid.image} alt={raid.name} fill sizes="220px" className={styles.raidImg} quality={90} unoptimized />
                     <div className={styles.raidOverlay} />
                     <div className={styles.raidInfo}>
+                      {newLabel && <span className={styles.newTag}>{newLabel}</span>}
                       <span className={styles.raidName}>{raid.name}</span>
                       <span className={styles.raidLevel}>Lv. {raid.level}</span>
-                      <span className={`${styles.raidProfit} ${cls}`}>
-                        {loading ? '…' : `${profit >= 0 ? '+' : ''}${fmt(profit)}`}
-                      </span>
+                      {s?.hasData ? (
+                        <span className={`${styles.raidProfit} ${cls}`}>
+                          {loading ? '…' : `${profit >= 0 ? '+' : ''}${fmt(profit)}`}
+                        </span>
+                      ) : (
+                        <span className={`${styles.raidProfit} ${styles.tbdText}`}>보상 미정</span>
+                      )}
                     </div>
                   </button>
                 );
@@ -415,6 +432,7 @@ function MoreRewardInner() {
               ))}
               {raids.map((raid) => {
                 const total = clearSummaries.get(raid.name) ?? 0;
+                const newLabel = getRaidNewLabel(raid.name);
                 return (
                   <button
                     key={`clear-${raid.name}`}
@@ -425,6 +443,7 @@ function MoreRewardInner() {
                     <Image src={raid.image} alt={raid.name} fill sizes="220px" className={styles.raidImg} quality={90} unoptimized />
                     <div className={styles.raidOverlay} />
                     <div className={styles.raidInfo}>
+                      {newLabel && <span className={styles.newTag}>{newLabel}</span>}
                       <span className={styles.raidName}>{raid.name}</span>
                       <span className={styles.raidLevel}>Lv. {raid.level}</span>
                       <span className={styles.totalBadge}>

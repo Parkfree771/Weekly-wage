@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { raids, upcomingRaids } from '@/data/raids';
+import { raids, upcomingRaids, getRaidNewLabel } from '@/data/raids';
 import {
   getRaidGroupName,
   getRaidsForLevel,
@@ -505,6 +505,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                       const receive = st.raidGoldReceive?.[raid.name] !== false;
                       const more = st.raidMoreGoldExclude?.[raid.name] === true;
                       const diffLabel = raid.name.startsWith(group) ? raid.name.slice(group.length).trim() : '';
+                      const newLabel = getRaidNewLabel(group);
                       const diffKey = `${char.characterName}-${group}`;
                       const reward = checked ? calcRaidReward(raid.name, st.raids[raid.name], receive, more) : null;
 
@@ -517,6 +518,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                             <Image src={raid.image} alt={group} fill sizes="220px" className={styles.raidImg} quality={90} unoptimized />
                             <div className={styles.raidOverlay} />
                             <div className={styles.raidInfo}>
+                              {newLabel && <span className={styles.newTag}>{newLabel}</span>}
                               <span className={styles.raidName}>{group}</span>
                               {diffLabel && <span className={styles.raidDiff}>{diffLabel}</span>}
                               <span className={styles.raidLevel}>Lv.{raid.level}</span>

@@ -35,6 +35,7 @@ export function getRaidDifficultyLabel(raidName: string): string {
 
 // 레이드 그룹 카드 이미지 (앱 RAID_CARD_IMAGES와 동일)
 export const RAID_CARD_IMAGES: Record<string, string> = {
+  '벨가르딘': '/belgardin2.webp',
   '지평의 성당': '/wlvuddmltjdekd1.webp',
   '성당': '/wlvuddmltjdekd1.webp',
   '세르카': '/cerka2.webp',

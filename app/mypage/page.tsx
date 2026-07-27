@@ -28,7 +28,7 @@ import NicknameModal from '@/components/auth/NicknameModal';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
-import { raids, upcomingRaids } from '@/data/raids';
+import { raids, upcomingRaids, getRaidNewLabel } from '@/data/raids';
 import { raidClearRewards } from '@/data/raidClearRewards';
 import { DEMO_CHARACTERS, DEMO_WEEKLY_CHECKLIST, DEMO_GOLD_HISTORY, DEMO_COMMON_CONTENT, DEMO_MAIN_CHARACTER } from '@/data/demoMypage';
 
@@ -2176,6 +2176,7 @@ export default function MyPage() {
                               const difficulties = getAvailableDifficulties(groupName, char.itemLevel);
                               const difficulty = raid.name.startsWith(groupName) ? raid.name.slice(groupName.length).trim() : '';
                               const groupImage = raidGroupImages[groupName] || raid.image;
+                              const newLabel = getRaidNewLabel(groupName);
                               const checked = isRaidChecked(char.name, raid.name);
                               const difficultyKey = `${char.name}-${groupName}`;
                               const isDifficultyOpen = difficultyOpenKey === difficultyKey;
@@ -2189,6 +2190,7 @@ export default function MyPage() {
                                   <CardBgImage src={groupImage} alt={groupName} className={styles.raidImage} />
                                   <div className={styles.raidOverlay} />
                                   <div className={styles.raidInfo}>
+                                    {newLabel && <span className={styles.raidNewTag}>{newLabel}</span>}
                                     <span className={styles.raidName}>{groupName}</span>
                                     {difficulty && <span className={styles.raidDifficulty}>{difficulty}</span>}
                                     <span className={styles.raidLevel}>Lv.{raid.level}</span>

@@ -24,6 +24,8 @@ const getMaterialImage = (itemName: string): string => {
     '코어': 'cerka-core.webp',
     '고통의 가시': 'pulsating-thorn.webp',
     '은총의 파편': 'dmschddmlvkvus.webp',
+    '유물 승급 재료': 'wangap-promo-relic5.webp',
+    '고대 승급 재료': 'wangap-promo-ancient5.webp',
   };
 
   return imageMap[itemName] || 'default-material.webp';
@@ -55,7 +57,8 @@ const SeeMoreCalculator: React.FC = () => {
   }>({});
 
   // Context에서 가격 데이터 가져오기
-  const { unitPrices, loading } = usePriceData();
+  // 은총의 파편·고통의 가시 환산 단가는 PriceContext 가 실시간 시세로 계산해 준다
+  const { unitPrices, graceUnitPrice, thornUnitPrice, loading } = usePriceData();
 
   const handleRaidSelect = (raidName: string) => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
@@ -79,31 +82,6 @@ const SeeMoreCalculator: React.FC = () => {
       }
     }));
   };
-
-  // 은총의 파편 1개 가치 = 재련 상자 총 가치 ÷ 60
-  const graceUnitPrice = useMemo(() => {
-    const refineBox = [
-      { itemId: 66102007, amount: 2000 },
-      { itemId: 66102107, amount: 4000 },
-      { itemId: 66110226, amount: 60 },
-      { itemId: 66130143, amount: 22500 },
-    ];
-    const boxValue = refineBox.reduce((sum, comp) => sum + (unitPrices[comp.itemId] || 0) * comp.amount, 0);
-    return boxValue / 60;
-  }, [unitPrices]);
-
-  // 고통의 가시 1개 가치 = 고통의 재련 재료 상자 기댓값 ÷ 5
-  // (운파 6000 / 위돌 3 / 파괴석 결정 100 / 수호석 결정 300, 25%×4)
-  const thornUnitPrice = useMemo(() => {
-    const refineRandomBox = [
-      { itemId: 66130143, amount: 6000, probability: 0.25 },
-      { itemId: 66110226, amount: 3,    probability: 0.25 },
-      { itemId: 66102007, amount: 100,  probability: 0.25 },
-      { itemId: 66102107, amount: 300,  probability: 0.25 },
-    ];
-    const expected = refineRandomBox.reduce((sum, c) => sum + (unitPrices[c.itemId] || 0) * c.amount * c.probability, 0);
-    return expected / 5;
-  }, [unitPrices]);
 
   // 가격 데이터를 기반으로 수익 계산 (메모이제이션)
   const profitData = useMemo(() => {
@@ -242,10 +220,13 @@ const SeeMoreCalculator: React.FC = () => {
                   Lv. {raid.level}
                 </p>
 
-                {profitData[raid.name] && (
+                {profitData[raid.name] ? (
                   <div className={`${styles.goldBadge} ${isProfit ? styles.profitBadge : isLoss ? styles.lossBadge : styles.neutralBadge}`}>
                     {isProfit ? '+' : ''}{Math.round(profitLoss).toLocaleString()}
                   </div>
+                ) : (
+                  /* 더보기 보상 재료 구성이 아직 공개되지 않은 레이드 (벨가르딘) — 손익 계산 불가 */
+                  <div className={`${styles.goldBadge} ${styles.neutralBadge}`}>보상 미정</div>
                 )}
               </div>
             </div>
@@ -376,6 +357,30 @@ const SeeMoreCalculator: React.FC = () => {
                 </div>
               );
               })}
+            </div>
+          </Card.Body>
+        </Card>
+      )}
+
+      {/* 더보기 재료 구성이 아직 없는 레이드 — 공개된 더보기 비용만 표시 */}
+      {selectedRaid && !profitData[selectedRaid] && (
+        <Card className={`mt-4 ${styles.selectedRaidCard}`} style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+          <Card.Header as="h5" style={{ backgroundColor: 'var(--card-header-bg)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>
+            {selectedRaid} 더보기 보상
+          </Card.Header>
+          <Card.Body>
+            <div className={styles.gatesGrid}>
+              {raidMap.get(selectedRaid)?.gates.map(gate => (
+                <div key={gate.gate} className={`${styles.gateSection} ${styles.neutral}`}>
+                  <h6 className={`mb-2 ${styles.gateSectionHeader}`}>{gate.gate}관문</h6>
+                  <div className={`mb-2 ${styles.gateSummaryRow}`}>
+                    <span className={styles.summaryFirstLine}>
+                      <strong>더보기비용:</strong> <span className="font-numeric">{gate.moreGold.toLocaleString()}</span>골드
+                    </span>
+                    <span className={styles.summarySecondLine}>보상 재료 구성 미공개 — 공개되는 대로 손익이 계산됩니다</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </Card.Body>
         </Card>

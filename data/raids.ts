@@ -195,17 +195,24 @@ const ALL_RAIDS = [
 ];
 
 // 비활성화 레이드 (데이터·이미지는 유지, 계산에서만 제외).
-// 벨가르딘: 2026-08-05 출시 예정 — 출시 시 이 목록을 비우면 즉시 재활성화.
-const DISABLED_RAID_NAMES = new Set<string>([
-  '벨가르딘 나메',
-  '벨가르딘 하드',
-  '벨가르딘 노말',
-]);
+// 벨가르딘은 2026-08-05 출시 전이지만 미리 활성화했다 (수치는 역산 기준, 출시 후 확정치로 갱신).
+const DISABLED_RAID_NAMES = new Set<string>([]);
 
 // 출시 예정(비활성) 레이드 그룹별 안내 문구
-const RAID_RELEASE_LABELS: Record<string, string> = {
-  '벨가르딘': '8월 5일 출시 예정',
+const RAID_RELEASE_LABELS: Record<string, string> = {};
+
+// 신규 레이드 배지 — 그룹명 → 배지 문구. 출시 후 해당 항목만 지우면 배지가 사라진다.
+const RAID_NEW_LABELS: Record<string, string> = {
+  '벨가르딘': 'NEW · 8/5',
 };
+
+// 레이드명(또는 그룹명)에 붙일 신규 배지 문구. 없으면 undefined.
+export function getRaidNewLabel(raidName: string): string | undefined {
+  for (const group of Object.keys(RAID_NEW_LABELS)) {
+    if (raidName === group || raidName.startsWith(`${group} `)) return RAID_NEW_LABELS[group];
+  }
+  return undefined;
+}
 
 // 계산에 사용하는 활성 레이드만
 export const raids = ALL_RAIDS.filter((r) => !DISABLED_RAID_NAMES.has(r.name));

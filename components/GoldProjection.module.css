@@ -1,0 +1,623 @@
+/* 레벨업 골드 시뮬레이션 — 주간 레이드 페이지 하단 섹션.
+   주간골드 관련 CSS는 globals 로 빼지 않고 이 모듈 안에서만 관리한다. */
+
+/* 이 페이지(주간 레이드)의 액센트는 주황(--color-accent) 계열이다.
+   RaidCalculator 의 카드 규칙(1.5px 액센트 테두리 · 0.16 헤더 틴트 · 0.07 합계 틴트)을 그대로 따른다. */
+.wrap {
+  background: var(--card-bg);
+  border: 1.5px solid var(--accent-line);
+  border-radius: 12px;
+  padding: 1rem 1.1rem 1.2rem;
+
+  --accent-line: rgba(232, 114, 42, 0.45);
+  --accent-tint: rgba(232, 114, 42, 0.16);
+  --accent-soft: rgba(232, 114, 42, 0.07);
+}
+
+:global([data-theme='dark']) .wrap {
+  --accent-line: rgba(212, 165, 74, 0.45);
+  --accent-tint: rgba(212, 165, 74, 0.16);
+  --accent-soft: rgba(212, 165, 74, 0.08);
+}
+
+/* ─── 골드 인정 캐릭터 편집 ─── */
+
+.picker {
+  padding: 0.7rem 0.85rem 0.75rem;
+  border: 1px solid var(--accent-line);
+  border-radius: 10px;
+  background: var(--accent-tint);
+  margin-bottom: 0.9rem;
+}
+
+.pickerHead {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.55rem;
+}
+
+.pickerTitle {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pickerCount {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.miniBtn {
+  margin-left: auto;
+  padding: 3px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.miniBtn:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.chip:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.chipOn {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.chipLv {
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── 기준 선택 ─── */
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.basisGroup {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+}
+
+.basisBtn {
+  padding: 0.4rem 0.95rem;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.basisBtn:hover {
+  color: var(--text-primary);
+}
+
+.basisActive,
+.basisActive:hover {
+  background: var(--color-accent);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+}
+
+.resetBtn {
+  padding: 0.4rem 0.95rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.resetBtn:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* ─── 캐릭터 카드 ─── */
+
+/* 한 줄에 2캐릭 — 1180px 폭에서 한 캐릭이 한 줄을 다 쓰면 표가 늘어져 읽기 나쁘다 */
+.charList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.charRow {
+  position: relative;
+  padding: 0.75rem 0.9rem 0.8rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.charRowActive {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.charRowActive::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-accent);
+}
+
+.charHead {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin-bottom: 0.6rem;
+}
+
+.charName {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.charLevel {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 목표를 바꾸면 이름 옆에서도 바로 보이게 */
+.charLevelNext {
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── 레벨 버튼 (숫자 + 증감 미리보기 2단) ─── */
+
+.levelBtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.lvBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 62px;
+  padding: 5px 9px 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.lvNum {
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.lvHint {
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-success);
+}
+
+/* '현재' 버튼 아랫줄은 증감이 아니라 현재 레벨 — 다른 버튼과 높이를 맞추면서 정보도 준다 */
+.lvHintPlain {
+  color: var(--text-muted);
+}
+
+.lvBtn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.lvActive,
+.lvActive:hover {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.lvActive .lvHint {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* 올려도 클리어 골드가 그대로인 구간 */
+.lvDead {
+  opacity: 0.42;
+}
+
+.lvDead .lvHint {
+  color: var(--text-muted);
+}
+
+.maxNote {
+  align-self: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ─── 골드 표 (캐릭터 카드 · 합계 카드 공통 구조) ─── */
+
+/* 숫자 열은 내용에 딱 맞춰 붙인다. 1fr 로 늘리면 여백만 커지고 눈이 멀리 이동한다. */
+.table {
+  display: grid;
+  grid-template-columns: auto auto 16px auto auto;
+  justify-content: start;
+  align-items: center;
+  gap: 1px 0.7rem;
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border-color);
+}
+
+.thead,
+.tr {
+  display: contents;
+}
+
+.th {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: right;
+  padding-bottom: 3px;
+  white-space: nowrap;
+}
+
+/* 헤더에 실제 레벨을 박아 "1712 → 1730" 이 바로 읽히게. 목표만 액센트로 튄다. */
+.thLvNow,
+.thLvNext {
+  margin-left: 4px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.thLvNow {
+  color: var(--text-secondary);
+}
+
+.thLvNext {
+  color: var(--color-accent);
+}
+
+.tdLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.goldIcon {
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* 귀속 골드는 사이트 전역에서 자홍색으로 구분한다 (RaidCalculator BOUND_GOLD_TEXT 와 동일) */
+.boundText {
+  color: #e879f9;
+}
+
+.tdNow,
+.tdNext,
+.tdDelta {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.65;
+  min-width: 66px;
+}
+
+.tdNow {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.tdArrow {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.tdNext {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.tdDelta {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+/* 변화 열은 결과 열과 성격이 달라 세로선으로 갈라 둔다 (변화가 있을 때만) */
+.tableChanged .tdDelta,
+.tableChanged .th:last-child {
+  padding-left: 0.55rem;
+  border-left: 1px solid var(--border-color);
+}
+
+/* 합계 줄 — 위에 실선을 그어 소계와 구분 */
+.trSum > * {
+  margin-top: 3px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-color);
+}
+
+.trSum .tdLabel {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.trSum .tdNow,
+.trSum .tdNext {
+  color: var(--color-accent);
+  font-weight: 800;
+}
+
+.trSum .tdDelta {
+  font-size: 1.02rem;
+  font-weight: 900;
+}
+
+/* 합계 카드 쪽은 한 단계 크게 */
+.tableTotal {
+  grid-template-columns: auto auto 20px auto auto;
+  gap: 1px 1.1rem;
+  border-top-style: solid;
+}
+
+.tableTotal .tdNow,
+.tableTotal .tdNext,
+.tableTotal .tdDelta {
+  min-width: 88px;
+}
+
+.tableTotal .tdLabel {
+  font-size: 0.92rem;
+}
+
+.tableTotal .tdNow,
+.tableTotal .tdNext {
+  font-size: 1.02rem;
+}
+
+.tableTotal .tdDelta {
+  font-size: 1.05rem;
+}
+
+.tableTotal .trSum .tdNow,
+.tableTotal .trSum .tdNext {
+  font-size: 1.15rem;
+}
+
+.tableTotal .trSum .tdDelta {
+  font-size: 1.18rem;
+}
+
+/* ─── 레이드 교체 칩 (골드가 왜 변했는지) ─── */
+
+.raidSwap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 0.55rem;
+}
+
+.swapChip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.swapIn {
+  color: var(--color-success);
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.swapOut {
+  color: var(--text-muted);
+  background: rgba(140, 140, 140, 0.16);
+}
+
+/* ─── 합계 카드 ─── */
+
+/* RaidCalculator 의 총합 카드와 같은 규칙 — 액센트 실선 테두리 + 그림자 */
+.totalCard {
+  margin-top: 1rem;
+  padding: 0.95rem 1.05rem 1rem;
+  border: 1.5px solid var(--color-accent);
+  border-radius: 12px;
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-md);
+}
+
+.totalCardActive {
+  background: var(--accent-tint);
+}
+
+.totalHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.totalTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.totalDeltaValue {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  font-size: 1.7rem;
+  font-weight: 900;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.totalUnit {
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.up {
+  color: var(--color-success);
+}
+
+.down {
+  color: var(--color-danger);
+}
+
+.flat {
+  color: var(--text-muted);
+}
+
+/* ─── 모바일 ─── */
+
+/* 태블릿 이하 — 2열이 좁아지면 1열로 */
+@media (max-width: 991px) {
+  .charList {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .wrap {
+    padding: 0.85rem 0.7rem 1rem;
+  }
+
+  .charRow {
+    padding: 0.65rem 0.7rem 0.7rem;
+  }
+
+  .lvBtn {
+    min-width: 58px;
+    padding: 4px 7px 3px;
+  }
+
+  .lvNum {
+    font-size: 0.8rem;
+  }
+
+  .lvHint {
+    font-size: 0.64rem;
+  }
+
+  .table,
+  .tableTotal {
+    gap: 1px 0.5rem;
+  }
+
+  .tdNow,
+  .tdNext,
+  .tdDelta {
+    min-width: 58px;
+    font-size: 0.85rem;
+  }
+
+  .tableTotal .tdNow,
+  .tableTotal .tdNext,
+  .tableTotal .tdDelta {
+    min-width: 68px;
+  }
+
+  .tableTotal .trSum .tdNow,
+  .tableTotal .trSum .tdNext,
+  .tableTotal .trSum .tdDelta {
+    font-size: 1rem;
+  }
+
+  .totalDeltaValue {
+    font-size: 1.45rem;
+  }
+}

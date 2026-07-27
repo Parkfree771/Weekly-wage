@@ -20,6 +20,8 @@ const nextConfig = {
     // dev 모드에서 이미지 최적화 끄기 (CPU 부하 방지)
     unoptimized: isDev,
     formats: ['image/avif', 'image/webp'],
+    // 레이드 카드에서 quality={90} 사용 — 기본값 [75]만 두면 Next 16이 경고를 띄운다.
+    qualities: [75, 90],
     minimumCacheTTL: 31536000, // 1년
     deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],

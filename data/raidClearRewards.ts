@@ -4,6 +4,56 @@ import { RaidReward, MATERIAL_IDS, MATERIAL_NAMES } from './raidRewards';
  * 레이드 기본 클리어 보상 (더보기와 무관하게 항상 획득하는 재료)
  */
 export const raidClearRewards: RaidReward[] = [
+  // 벨가르딘 — 공식 공개분(고유 보상·코어)만 반영. 재련 재료 수량은 아직 미공개.
+  // 고유 보상: 노말은 유물 승급 재료, 하드·나메는 고대 승급 재료.
+  {
+    raidName: '벨가르딘 나메',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.ANCIENT_PROMOTION, itemName: MATERIAL_NAMES.ANCIENT_PROMOTION, amount: 20 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 4 },
+    ]
+  },
+  {
+    raidName: '벨가르딘 나메',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.ANCIENT_PROMOTION, itemName: MATERIAL_NAMES.ANCIENT_PROMOTION, amount: 30 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 4 },
+    ]
+  },
+  {
+    raidName: '벨가르딘 하드',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.ANCIENT_PROMOTION, itemName: MATERIAL_NAMES.ANCIENT_PROMOTION, amount: 12 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 3 },
+    ]
+  },
+  {
+    raidName: '벨가르딘 하드',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.ANCIENT_PROMOTION, itemName: MATERIAL_NAMES.ANCIENT_PROMOTION, amount: 18 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 3 },
+    ]
+  },
+  {
+    raidName: '벨가르딘 노말',
+    gate: 1,
+    materials: [
+      { itemId: MATERIAL_IDS.RELIC_PROMOTION, itemName: MATERIAL_NAMES.RELIC_PROMOTION, amount: 6 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 3 },
+    ]
+  },
+  {
+    raidName: '벨가르딘 노말',
+    gate: 2,
+    materials: [
+      { itemId: MATERIAL_IDS.RELIC_PROMOTION, itemName: MATERIAL_NAMES.RELIC_PROMOTION, amount: 9 },
+      { itemId: MATERIAL_IDS.CERKA_CORE, itemName: MATERIAL_NAMES.CERKA_CORE, amount: 3 },
+    ]
+  },
   // 성당 3단계
   {
     raidName: '성당 3단계',
