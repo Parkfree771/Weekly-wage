@@ -723,7 +723,7 @@ export const RIFT_TIERS: ContentTier[] = [
 
 // ── 가디언 토벌 — 1회 기준 ──
 export const GUARDIAN_TIERS: ContentTier[] = [
-  { minLevel: 1750, label: '1750 가토', materials: [mat(IMG.gem, '1레벨 보석', '1레벨 보석', 11.9)] },
+  { minLevel: 1750, label: '1750 가토', materials: [mat(IMG.gem, '1레벨 보석', '1레벨 보석', 11.8)] },
   { minLevel: 1730, label: '1730 가토', materials: [mat(IMG.gem, '1레벨 보석', '1레벨 보석', 10.5)] },
   { minLevel: 1720, label: '1720 가토', materials: [mat(IMG.gem, '1레벨 보석', '1레벨 보석', 6.4)] },
   { minLevel: 1700, label: '1700 가토', materials: [mat(IMG.gem, '1레벨 보석', '1레벨 보석', 5.3)] },
@@ -759,7 +759,7 @@ export const EVENT_CONTENTS: EventContent[] = [
         mat(IMG.lava, '용숨', '용숨', 3),
         mat(IMG.glacier, '빙숨', '빙숨', 3),
         mat(IMG.gem, '1레벨 보석', '보석', 21),
-        mat(IMG.blessing, '천상 입장권', '천상',0.6),
+        mat(IMG.blessing, '천상 입장권', '천상',0.5),
       ],
       '1750': [
         mat(IMG.destructionCrystal, '파괴석 결정', '파결', 699.3),
@@ -788,7 +788,7 @@ export const EVENT_CONTENTS: EventContent[] = [
         mat(IMG.lava, '용숨', '용숨', 7),
         mat(IMG.glacier, '빙숨', '빙숨', 7),
         mat(IMG.gold, '귀속골드', '귀속골드', 5000),
-        mat(IMG.fragment, '운명의 파편', '운파', 13200),
+        mat(IMG.fragment, '운명의 파편', '운파', 13500),
         mat(IMG.gem, '1레벨 보석', '보석', 7),
       ],
     },

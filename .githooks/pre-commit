@@ -1,0 +1,47 @@
+#!/bin/sh
+# 웹 보상 테이블(data/rewardTable.ts)이 커밋에 포함되면 앱 데이터를 자동 재생성한다.
+#
+# 이 훅이 없으면 `node tools/sync-app-data.mjs` 를 손으로 돌려야 하는데,
+# 잊으면 웹과 앱의 골드·재료 수치가 조용히 어긋난다(실제로 발생했던 문제).
+#
+# 활성화: git config core.hooksPath .githooks   (레포당 1회)
+
+set -e
+
+# 스테이징된 파일에 보상 테이블이 없으면 아무것도 안 한다
+if ! git diff --cached --name-only | grep -q '^data/rewardTable\.ts$'; then
+  exit 0
+fi
+
+echo "▶ data/rewardTable.ts 변경 감지 — 앱 데이터 재생성"
+
+if ! OUT=$(node tools/sync-app-data.mjs 2>&1); then
+  echo "$OUT"
+  echo ""
+  echo "  ⚠ 앱 데이터 재생성 실패 — 앱 레포를 못 찾았을 수 있습니다."
+  echo "    LOALOGOL_APP_DIR 환경변수로 경로를 지정하세요."
+  echo "    웹 커밋은 그대로 진행합니다."
+  echo ""
+  exit 0
+fi
+
+echo "$OUT"
+
+# 생성 경로에서 앱 레포 루트를 역산해 커밋 필요 여부를 알린다
+APP_FILE=$(printf '%s\n' "$OUT" | sed -n 's/^생성 완료: \(.*\) (.*)$/\1/p' | tr '\\' '/')
+[ -n "$APP_FILE" ] || exit 0
+
+APP_ROOT=$(cd "$(dirname "$APP_FILE")/../.." 2>/dev/null && pwd) || exit 0
+
+if [ -n "$(git -C "$APP_ROOT" status --porcelain -- src/data/rewardTable.generated.ts 2>/dev/null)" ]; then
+  echo ""
+  echo "  ┌─────────────────────────────────────────────────────────────"
+  echo "  │ 앱 데이터가 갱신되었습니다. 앱 레포도 커밋해야 반영됩니다."
+  echo "  │"
+  echo "  │   git -C \"$APP_ROOT\" add src/data/rewardTable.generated.ts"
+  echo "  │   git -C \"$APP_ROOT\" commit -m \"chore(data): 웹 보상 테이블 동기화\""
+  echo "  └─────────────────────────────────────────────────────────────"
+  echo ""
+fi
+
+exit 0

@@ -7,13 +7,30 @@
 // 웹·앱에서 어긋나므로, 앱 쪽 수치 파일은 항상 이 스크립트로 만든다.
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const APP_OUT = path.resolve(ROOT, '..', 'loalogol-app', 'src', 'data', 'rewardTable.generated.ts');
+
+// 앱 레포 위치. 레포마다 체크아웃 경로가 달라서 후보를 순서대로 찾고,
+// 없으면 LOALOGOL_APP_DIR 환경변수로 지정한다.
+// (기존 '../loalogol-app' 만 보던 탓에 실제 폴더(Desktop/loalogolapp)를 못 찾아 동기화가 조용히 어긋났다)
+const APP_DIR_CANDIDATES = [
+  process.env.LOALOGOL_APP_DIR,
+  path.resolve(ROOT, '..', '..', 'loalogolapp'),
+  path.resolve(ROOT, '..', 'loalogolapp'),
+  path.resolve(ROOT, '..', 'loalogol-app'),
+].filter(Boolean);
+
+const appDir = APP_DIR_CANDIDATES.find((d) => existsSync(path.join(d, 'src', 'data')));
+if (!appDir) {
+  throw new Error(
+    `앱 레포를 찾지 못했습니다. LOALOGOL_APP_DIR 로 경로를 지정하세요.\n찾아본 곳:\n  ${APP_DIR_CANDIDATES.join('\n  ')}`,
+  );
+}
+const APP_OUT = path.resolve(appDir, 'src', 'data', 'rewardTable.generated.ts');
 
 // rewardTable.ts 는 import 가 없어 단독 컴파일이 된다
 const tmp = mkdtempSync(path.join(tmpdir(), 'reward-sync-'));
@@ -62,6 +79,7 @@ try {
       excelName: e.excelName,
       difficulty: e.difficulty,
       level: e.level,
+      image: e.image,
       gate: g.gate,
       gold: g.gold - g.boundGold, // 앱 gold 는 유통 골드
       boundGold: g.boundGold,
@@ -113,6 +131,7 @@ export type RaidTableRow = {
   excelName: string;
   difficulty: string;
   level: number;
+  image: string;       // 레이드 카드 이미지 (앱 weeklyData 의 Raid.image 로 그대로 쓴다)
   gate: number;
   gold: number;        // 유통 골드
   boundGold: number;   // 귀속 골드
