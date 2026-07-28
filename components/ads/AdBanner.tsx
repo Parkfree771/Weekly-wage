@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import AdPlaceholder from './AdPlaceholder';
 import AdUnit from './AdUnit';
 import AdFitUnit from './AdFitUnit';
-import { AD_PREVIEW, MOBILE_INCONTENT, ADFIT_ENABLED, ADFIT_UNITS } from './adConfig';
+import { AD_PREVIEW, MOBILE_INCONTENT, ADFIT_ENABLED, ADFIT_UNITS, MOBILE_AD_ZOOM_COMPENSATE } from './adConfig';
 
 interface AdBannerProps {
   slot: string;
@@ -45,15 +45,18 @@ export default function AdBanner({ slot, className, placement = 'inContent' }: A
   // 애드핏 우선 — 애드센스는 미승인 상태라 켜져 있어도 채워지지 않는다.
   // key={pathname}: 페이지 이동마다 새 인스턴스 → 애드핏 스크립트가 다시 스캔한다.
   if (ADFIT_ENABLED && adfit.unit) {
+    // zoom 역보정 — 뷰포트가 0.8 로 축소 렌더되므로 그냥 두면 320×100 이 화면에서 256×80 이 된다.
+    // 컨테이너에 1/0.8 을 걸어 실제 화면 px 를 선언한 규격 그대로 복원한다(데스크톱 레일과 동일 방식).
     return (
-      <AdFitUnit
-        key={pathname}
-        unit={adfit.unit}
-        width={adfit.width}
-        height={adfit.height}
-        className={className}
-        style={{ textAlign: 'center' }}
-      />
+      <div className={className} style={{ zoom: MOBILE_AD_ZOOM_COMPENSATE }}>
+        <AdFitUnit
+          key={pathname}
+          unit={adfit.unit}
+          width={adfit.width}
+          height={adfit.height}
+          style={{ textAlign: 'center' }}
+        />
+      </div>
     );
   }
 

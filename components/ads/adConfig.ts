@@ -11,6 +11,13 @@ export const AD_PREVIEW = false;
 // 애드센스 게시자 ID (app/layout.tsx 스크립트와 동일해야 함)
 export const AD_CLIENT = 'ca-pub-6944494802169618';
 
+// 모바일 뷰포트 초기 배율 — app/layout.tsx 의 viewport.initialScale 이 이 값을 쓴다.
+// 페이지를 축소 렌더하므로 광고를 그대로 두면 320×100 이 256×80 으로 나가 규격 미달이 된다.
+// (2026-07-28 애드핏 매체 심사 보류 사유) 광고 컨테이너에 역배율을 걸어 실제 화면 px 를 복원한다.
+// 데스크톱이 body zoom 0.85 에 AD_ZOOM_COMPENSATE 를 거는 것과 같은 방식.
+export const MOBILE_VIEWPORT_SCALE = 0.8;
+export const MOBILE_AD_ZOOM_COMPENSATE = 1 / MOBILE_VIEWPORT_SCALE;
+
 // 모바일 본문 인-콘텐츠 광고(AdBanner) 사용 여부.
 // 모바일은 하단 앵커를 없애고 앱(AdMob BannerAdBar)과 같은 위치의 인-콘텐츠만 사용.
 export const MOBILE_INCONTENT = true;

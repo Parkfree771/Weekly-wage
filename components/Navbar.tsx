@@ -9,7 +9,6 @@ import { Container, Navbar as BSNavbar, Nav, Offcanvas } from 'react-bootstrap';
 import LoginButton from './auth/LoginButton';
 import ZoomControl from './ZoomControl';
 import InquiryButton from './InquiryButton';
-import AdBanner from './ads/AdBanner';
 import AppSidebarPromo from './AppSidebarPromo';
 
 type NavItem = {
@@ -473,12 +472,9 @@ export default function Navbar() {
               <AppSidebarPromo />
             </div>
 
-            {/* ── 광고 — 맨 하단 고정 (앱 메뉴 드로어와 동일). 열려 있을 때만 마운트 ── */}
-            {showOffcanvas && (
-              <div className="navbar-offcanvas-section navbar-offcanvas-section-ad">
-                <AdBanner slot="8616653628" placement="drawer" />
-              </div>
-            )}
+            {/* 드로어 광고 제거(2026-07-28) — 드로어 가용 폭이 248px(280 - Body 패딩 32)인데
+                애드핏 최소 규격이 320px 이라 잘린다. 넣으려면 드로어를 352px 로 넓혀야 해서
+                메뉴 UX 를 광고에 맞추는 꼴이 되고, 메뉴를 연 사용자만 보는 저노출 자리라 뺐다. */}
           </Offcanvas.Body>
         </Offcanvas>
       </Container>

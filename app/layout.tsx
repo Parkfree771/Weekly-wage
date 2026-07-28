@@ -7,6 +7,7 @@ import AdLayout from '@/components/ads/AdLayout';
 
 import ConsoleFilter from '@/components/ConsoleFilter';
 import { SITE_URL } from '@/lib/site-config';
+import { MOBILE_VIEWPORT_SCALE } from '@/components/ads/adConfig';
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
@@ -30,9 +31,13 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
 });
 
+// 축소 렌더(0.8)는 유지한다. 대신 모바일 광고만 역배율로 되돌려 규격대로 노출시킨다
+// (데스크톱이 body zoom 0.85 + AD_ZOOM_COMPENSATE 로 하는 것과 같은 방식).
+// 배율을 바꾸면 모바일 레이아웃 전체가 리플로우되므로, 광고 쪽만 보정하는 편이 영향이 작다.
+// 값은 adConfig 와 공유 — 광고 역보정 배율이 여기서 어긋나면 규격이 틀어진다.
 export const viewport: Viewport = {
   width: 'device-width',
-  initialScale: 0.8,
+  initialScale: MOBILE_VIEWPORT_SCALE,
   maximumScale: 2,
   userScalable: true,
 };
@@ -138,6 +143,10 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944494802169618"
           crossOrigin="anonymous"
         />
+        {/* 카카오 애드핏 로더 — 서버 HTML(head)에 있어야 심사자가 JS 실행 없이도 광고 설치를 확인한다.
+            (AdFitUnit 이 마운트마다 스크립트를 다시 붙이는 건 클라이언트 라우팅으로 새로 생긴
+             광고 자리를 채우기 위한 것이고, 첫 로드분은 여기서 처리한다) */}
+        <script async src="https://t1.kakaocdn.net/kas/static/ba.min.js" />
         {/* 미러(프록시) 사이트 차단 가드 — 허용되지 않은 호스트에서 열리면 정식 도메인으로 강제 이동.
             미러가 HTML 내 도메인 문자열을 자기 것으로 치환하는 수법을 쓰므로 도메인은 base64로 숨김
             (bG9hbG9nb2wua3I= → loalogol.kr). head 최상단 동기 실행이라 미러에서 콘텐츠 노출 전에 이탈. */}
