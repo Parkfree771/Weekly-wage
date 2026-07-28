@@ -476,7 +476,7 @@ export default function Navbar() {
             {/* ── 광고 — 맨 하단 고정 (앱 메뉴 드로어와 동일). 열려 있을 때만 마운트 ── */}
             {showOffcanvas && (
               <div className="navbar-offcanvas-section navbar-offcanvas-section-ad">
-                <AdBanner slot="8616653628" />
+                <AdBanner slot="8616653628" placement="drawer" />
               </div>
             )}
           </Offcanvas.Body>
