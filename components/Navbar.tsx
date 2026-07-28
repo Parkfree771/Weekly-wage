@@ -273,9 +273,12 @@ export default function Navbar() {
           >
             앱 다운로드
           </Link>
+          {/* prefetch 끔: /mypage 는 force-dynamic 이라 프리페치 응답이 CDN 에 안 얹힌다.
+              네비는 모든 페이지에 뜨므로 켜두면 페이지뷰마다 서버리스 함수가 한 번씩 깨어난다. */}
           <Link
             href="/mypage"
             className="navbar-feedback-btn navbar-app-btn"
+            prefetch={false}
           >
             숙제 체크
           </Link>
@@ -451,10 +454,12 @@ export default function Navbar() {
             {/* ── 계정: 숙제 체크 + 로그인 ── */}
             <div className="navbar-offcanvas-section">
               <div className="navbar-offcanvas-group-label">계정</div>
+              {/* 위 데스크톱 버튼과 같은 이유로 prefetch 끔 (오프캔버스가 열리면 링크가 보여 프리페치가 돈다) */}
               <Link
                 href="/mypage"
                 className={`navbar-offcanvas-link ${isActive('/mypage') ? 'active' : ''}`}
                 onClick={handleClose}
+                prefetch={false}
               >
                 숙제 체크
               </Link>

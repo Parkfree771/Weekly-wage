@@ -1222,6 +1222,7 @@ export default function CathedralPage() {
             </div>
 
             <GuideFaq
+              relatedGuides={['/guide/raid-rewards', '/guide/more-reward']}
               guideTitle="지평의 성당 이용 가이드"
               sections={[
                 {

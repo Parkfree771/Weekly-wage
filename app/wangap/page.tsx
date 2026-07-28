@@ -69,6 +69,7 @@ export default function WangapPage() {
 
         {/* 이용 가이드 + FAQ */}
         <GuideFaq
+          relatedGuides={['/guide/refining']}
           guideTitle="완갑 재련 가이드"
           sections={[
             {

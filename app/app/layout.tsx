@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
+import { faqData } from './faq-data';
 
 export const metadata: Metadata = {
-  title: '앱 다운로드',
-  description: '로아로골 모바일 앱 - 재련 강화 시뮬레이션, 패키지 효율 계산, 주간 레이드 체크리스트, 골드 수익 기록, 캐릭터 조회까지 한 손 안에서.',
+  title: '앱 다운로드 - 로스트아크 숙제 체크·재련 시뮬 모바일 앱',
+  description: '로아로골 모바일 앱 - 재련 강화 시뮬레이션, 패키지 효율 계산, 주간 레이드 체크리스트, 골드 수익 기록, 숙제 완료 달력, 장비·각인 조회, 시세 차트까지 한 손 안에서. iOS·안드로이드 무료.',
+  keywords:
+    '로아로골 앱, 로스트아크 앱, 로아 숙제 체크 앱, 로아 재련 시뮬 앱, 로아 시세 앱, 로아 패키지 효율, 로아 골드 기록, 로스트아크 모바일 앱',
   openGraph: {
     images: ['/og-image.png'],
     title: '로아로골 | 앱 다운로드',
@@ -41,6 +44,24 @@ export default function AppDownloadLayout({
               "@type": "Organization",
               "name": "로아로골"
             }
+          })
+        }}
+      />
+      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": faqData.map((item) => ({
+              "@type": "Question",
+              "name": item.q,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": item.a
+              }
+            }))
           })
         }}
       />

@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Accordion, Collapse } from 'react-bootstrap';
+import { guides } from '@/data/guides';
 
 export interface GuideSection {
   /** 소제목 (h3) */
@@ -28,6 +30,12 @@ interface GuideFaqProps {
   guideTitle?: string;
   /** FAQ 영역 상단 제목. 기본값 "자주 묻는 질문" */
   faqTitle?: string;
+  /**
+   * 관련 가이드 글 경로 (data/guides.ts 의 href). 접기 영역 *밖에* 항상 노출된다.
+   * 가이드 글은 /guide 인덱스에서만 연결되면 크롤링 우선순위가 밀리므로,
+   * 도구 페이지에서 해당 글로 내려가는 링크를 하나씩 만들어 준다.
+   */
+  relatedGuides?: string[];
 }
 
 export default function GuideFaq({
@@ -36,24 +44,43 @@ export default function GuideFaq({
   faqs,
   guideTitle = '이용 가이드',
   faqTitle = '자주 묻는 질문',
+  relatedGuides,
 }: GuideFaqProps) {
   const [open, setOpen] = useState(false);
 
   const hasGuide = !!(intro?.length || sections?.length);
   const hasFaq = !!faqs?.length;
+  const related = (relatedGuides ?? [])
+    .map((href) => guides.find((g) => g.href === href))
+    .filter((g): g is (typeof guides)[number] => !!g);
 
-  if (!hasGuide && !hasFaq) return null;
+  if (!hasGuide && !hasFaq && related.length === 0) return null;
 
   return (
     <div className="mt-5">
+      {related.length > 0 && (
+        <div className="mb-3">
+          <h2 className="h6 text-primary mb-2">관련 가이드</h2>
+          <ul className="small mb-0">
+            {related.map((g) => (
+              <li key={g.href}>
+                <Link href={g.href}>{g.title}</Link>
+                <span className="d-block" style={{ color: 'var(--text-muted)' }}>{g.summary}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {(hasGuide || hasFaq) && (
       <button
         type="button"
         className="btn btn-link p-0 h5 text-primary text-decoration-none"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
-        {guideTitle} · {faqTitle} 보기 {open ? '▴' : '▾'}
+        {hasGuide && hasFaq ? `${guideTitle} · ${faqTitle}` : hasGuide ? guideTitle : faqTitle} 보기 {open ? '▴' : '▾'}
       </button>
+      )}
       <Collapse in={open}>
         <div className="mt-3">
           {hasGuide && (

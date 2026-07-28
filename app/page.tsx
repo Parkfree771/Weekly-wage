@@ -104,6 +104,7 @@ export default function Home() {
         </div>
 
         <GuideFaq
+          relatedGuides={['/guide/beginner-gold', '/guide/weekly-gold', '/guide/market-price']}
           guideTitle="로아로골 이용 가이드"
           intro={[
             '로아로골은 로스트아크 원정대의 주간 레이드 골드 수익을 자동으로 계산하고, 거래소·경매장 실시간 시세를 한눈에 보여주는 무료 계산기 모음 사이트입니다. 벨가르딘, 지평의 성당, 세르카, 카제로스 등 최신 레이드의 클리어 골드와 더보기(모험의 서약) 손익을 캐릭터별로 자동 계산하며, T4 재련 비용 시뮬레이터, 지옥의 나락 보상 계산기, 생활의 달인 손익 계산, 아크그리드 팔찌·각인 조합 조회 등 원정대 운영에 필요한 도구를 한 곳에서 제공합니다.',

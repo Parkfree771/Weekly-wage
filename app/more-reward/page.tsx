@@ -475,6 +475,7 @@ function MoreRewardInner() {
         </div>
 
         <GuideFaq
+          relatedGuides={['/guide/more-reward', '/guide/raid-rewards']}
           guideTitle="더보기 효율 이용 가이드"
           sections={[
             {

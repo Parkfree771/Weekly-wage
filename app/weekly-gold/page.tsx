@@ -224,7 +224,11 @@ export default function WeeklyGoldPage() {
               </div>
 
               <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
-                <GuideFaq sections={weeklyGoldGuideSections} faqs={faqData} />
+                <GuideFaq
+                  relatedGuides={['/guide/weekly-gold', '/guide/raid-rewards']}
+                  sections={weeklyGoldGuideSections}
+                  faqs={faqData}
+                />
               </div>
             </PriceProvider>
 

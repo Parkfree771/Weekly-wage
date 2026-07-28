@@ -497,6 +497,7 @@ export default function BelgardinPage() {
             </div>
 
             <GuideFaq
+              relatedGuides={['/guide/raid-rewards']}
               guideTitle="벨가르딘 이용 가이드"
               sections={[
                 {

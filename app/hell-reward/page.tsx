@@ -42,6 +42,7 @@ export default function HellRewardPage() {
             <HellRewardCalculator />
 
             <GuideFaq
+              relatedGuides={['/guide/hell-reward']}
               guideTitle="지옥·나락 보상 이용 가이드"
               sections={[
                 {

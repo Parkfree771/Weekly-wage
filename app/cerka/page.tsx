@@ -1030,6 +1030,7 @@ export default function CerkaPage() {
             </div>
 
             <GuideFaq
+              relatedGuides={['/guide/raid-rewards']}
               guideTitle="세르카 이용 가이드"
               sections={[
                 {

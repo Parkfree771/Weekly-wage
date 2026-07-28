@@ -43,6 +43,7 @@ export default function LifeMasterPage() {
 
             {/* 이용 가이드 + FAQ */}
             <GuideFaq
+              relatedGuides={['/guide/life-content']}
               guideTitle="아비도스 융화재료 제작 가이드"
               sections={[
                 {

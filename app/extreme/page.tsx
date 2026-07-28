@@ -696,6 +696,7 @@ export default function ExtremePage() {
                 섹션: 이용 가이드 + FAQ
                 ═══════════════════════════════════════════ */}
             <GuideFaq
+              relatedGuides={['/guide/raid-rewards']}
               guideTitle="익스트림 레이드 이용 가이드"
               sections={[
                 {

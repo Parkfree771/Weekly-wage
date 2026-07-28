@@ -138,6 +138,7 @@ export default function PackageGalleryPage() {
         )}
 
         <GuideFaq
+          relatedGuides={['/guide/package-efficiency']}
           guideTitle="패키지 효율 게시판 이용 가이드"
           sections={[
             {

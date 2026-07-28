@@ -345,7 +345,11 @@ export default function RefiningPage() {
             )}
 
             <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
-              <GuideFaq sections={refiningGuideSections} faqs={faqData} />
+              <GuideFaq
+                relatedGuides={['/guide/refining']}
+                sections={refiningGuideSections}
+                faqs={faqData}
+              />
             </div>
           </Col>
         </Row>

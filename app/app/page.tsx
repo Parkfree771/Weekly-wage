@@ -5,7 +5,37 @@ import Image from 'next/image';
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-download-config';
 import { AppleStoreBadge, GooglePlayBadge } from '@/components/StoreBadges';
 import { SITE_URL } from '@/lib/site-config';
+import GuideFaq from '@/components/common/GuideFaq';
+import { faqData } from './faq-data';
 import styles from './app.module.css';
+
+// 스크린샷만 있는 페이지가 되지 않도록, 각 기능이 실제로 무엇을 해주는지 본문으로 설명한다.
+const FEATURES = [
+  {
+    title: '재련 강화 시뮬레이션',
+    body: '목표 단계까지 재련을 돌렸을 때 기대되는 재료 소모량과 골드 비용을 확률 기반으로 계산합니다. 장인의 기운 누적과 선재련 여부에 따라 결과가 어떻게 달라지는지 비교할 수 있어, 실제로 재련을 시작하기 전에 예산을 가늠하는 데 씁니다.',
+  },
+  {
+    title: '패키지 효율 계산',
+    body: '유료 패키지에 들어 있는 재료와 아이템을 그날의 거래소 시세로 환산해, 결제 금액 대비 실제 가치가 얼마인지 계산합니다. 골드 100당 원화 단가를 기준으로 비교하므로 서로 다른 가격대의 패키지도 같은 잣대로 볼 수 있습니다.',
+  },
+  {
+    title: '주간 레이드 체크리스트 · 숙제 달력',
+    body: '캐릭터별로 이번 주 클리어한 레이드와 관문을 체크하면 원정대 주간 골드가 자동으로 합산됩니다. 귀속 골드와 유통 골드를 구분해 보여주고, 숙제 완료 상황은 달력으로 쌓여서 어느 주에 무엇을 빠뜨렸는지 되짚어볼 수 있습니다.',
+  },
+  {
+    title: '골드 수익 기록',
+    body: '주차별로 실제 수급한 골드를 기록해 추이를 그래프로 봅니다. 레이드 보상뿐 아니라 직접 입력한 추가 수익까지 합산되므로, 원정대를 늘리거나 레벨을 올린 뒤 주급이 실제로 얼마나 달라졌는지 확인할 수 있습니다.',
+  },
+  {
+    title: '캐릭터 · 장비 · 각인 조회',
+    body: '캐릭터명을 검색해 아이템 레벨, 착용 장비, 각인, 아크패시브 구성을 확인합니다. 원정대 전체 목록을 한 번에 불러오므로 어떤 캐릭터를 다음 목표로 잡을지 비교할 때 편합니다.',
+  },
+  {
+    title: '아이템 시세 차트',
+    body: '재련 재료와 주요 거래 아이템의 가격 변동을 기간별 차트로 봅니다. 지금 사야 할지 기다려야 할지 판단할 때, 최근 흐름을 한눈에 확인할 수 있습니다.',
+  },
+];
 
 const SCREENSHOTS = [
   { file: 'shot-01-refining.png', alt: '재련 강화 시뮬레이션 화면' },
@@ -108,6 +138,39 @@ export default function AppDownloadPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* 기능 소개 — 스크린샷만으로는 전달되지 않는 내용을 본문으로 */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>앱에서 할 수 있는 것</h2>
+        <p className="small mb-4" style={{ color: 'var(--text-muted)' }}>
+          로아로골 앱은 웹사이트에서 자주 쓰이는 계산기들을 모바일 화면에 맞춰 다시 만든 것입니다. 계산 로직과 시세
+          데이터는 웹과 같은 기준을 쓰며, 같은 계정으로 로그인하면 캐릭터 목록과 숙제 체크 상태가 공유됩니다.
+          내려받아 쓰는 데 비용은 들지 않습니다.
+        </p>
+        <div className="row g-3">
+          {FEATURES.map((f) => (
+            <div className="col-12 col-md-6" key={f.title}>
+              <div
+                className="h-100 p-3 rounded"
+                style={{ backgroundColor: 'var(--card-body-bg-blue)' }}
+              >
+                <h3 className="h6 fw-semibold" style={{ color: 'var(--text-primary)' }}>{f.title}</h3>
+                <p className="small mb-0">{f.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <GuideFaq
+          guideTitle="앱 이용 가이드"
+          intro={[
+            'iOS는 App Store, 안드로이드는 Google Play에서 "로아로골"로 검색하거나 위 배지를 눌러 설치할 수 있습니다. 설치와 이용에 비용은 들지 않고, 로그인 없이도 계산기 기능은 그대로 쓸 수 있습니다.',
+            '다만 캐릭터 목록과 주간 숙제 체크 기록을 웹과 함께 쓰려면 같은 계정으로 로그인해야 합니다. 로그인하지 않으면 기록이 설치된 기기에만 남습니다. 패키지 등록·좋아요·댓글은 웹 전용 기능이라 앱에서는 조회만 가능합니다.',
+          ]}
+          faqs={faqData}
+          faqTitle="앱 관련 자주 묻는 질문"
+        />
       </section>
 
     </div>
