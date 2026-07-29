@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
+import { RAID_TABLE } from '@/data/rewardTable';
 import styles from '../guide.module.css';
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export default function MoreRewardGuidePage() {
         <div className={styles.articleHeader}>
           <span className={styles.articleCategory}>골드</span>
           <h1 className={styles.articleTitle}>더보기 보상 손익 판단 가이드 - 언제 사야 이득일까</h1>
-          <span className={styles.articleDate}>2026년 7월 18일 작성</span>
+          <span className={styles.articleDate}>2026년 7월 18일 작성 · 2026년 7월 29일 업데이트</span>
         </div>
 
         <div className={styles.articleBody}>
@@ -70,6 +71,40 @@ export default function MoreRewardGuidePage() {
             초록색 숫자가 큰 레이드부터 더보기를 사면 됩니다.
           </p>
 
+          <h2>레이드 관문별 더보기 비용과 보상 재료 (2026년 7월 기준)</h2>
+          <p>
+            아래 표는 현재 레이드의 관문별 더보기 비용과, 더보기를 선택했을 때 추가로 받는 재료 전체를
+            정리한 것입니다. 2026년 7월 인게임 보상 화면과 전수 대조해 검증한 수치이며,
+            로아로골 더보기 효율 계산기가 손익 계산에 사용하는 데이터와 동일합니다.
+            벨가르딘은 더보기 재련 재료가 아직 공개되지 않아 표에서 제외했습니다.
+          </p>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>레이드</th>
+                <th>관문</th>
+                <th>더보기 비용</th>
+                <th>더보기로 받는 재료</th>
+              </tr>
+            </thead>
+            <tbody>
+              {RAID_TABLE.filter((raid) => !raid.moreDataIncomplete).map((raid) =>
+                raid.gates.map((gate, i) => (
+                  <tr key={`${raid.name}-${gate.gate}`}>
+                    {i === 0 && (
+                      <td rowSpan={raid.gates.length} style={{ fontWeight: 600 }}>{raid.name}</td>
+                    )}
+                    <td>{gate.gate}관문</td>
+                    <td>{gate.moreGold.toLocaleString()}</td>
+                    <td style={{ textAlign: 'left' }}>
+                      {gate.more.map((mat) => `${mat.itemName} ${mat.amount.toLocaleString()}개`).join(', ')}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+
           <h2>거래 불가 재료는 어떻게 계산하나?</h2>
           <p>
             은총의 파편이나 아크그리드용 코어처럼 거래소에서 거래되지 않는 재료는 시세가 없어
@@ -112,7 +147,7 @@ export default function MoreRewardGuidePage() {
             "headline": "더보기 보상 손익 판단 가이드 - 언제 사야 이득일까",
             "description": "더보기 보상의 구조, 귀속 골드 우선 차감 원리, 시세 기반 손익 계산법과 레이드별 우선순위 판단 기준을 설명합니다.",
             "datePublished": "2026-07-18",
-            "dateModified": "2026-07-18",
+            "dateModified": "2026-07-29",
             "author": { "@type": "Organization", "name": "로아로골" },
             "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
             "mainEntityOfPage": `${SITE_URL}/guide/more-reward`

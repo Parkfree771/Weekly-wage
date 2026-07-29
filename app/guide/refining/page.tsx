@@ -1,7 +1,22 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
+import {
+  BASE_PROBABILITY,
+  SUCCESSION_BASE_PROBABILITY,
+  getBreathEffect,
+  getSuccessionBreathEffect,
+  WEAPON_MATERIAL_COSTS,
+  ARMOR_MATERIAL_COSTS,
+  SUCCESSION_WEAPON_MATERIAL_COSTS,
+  SUCCESSION_ARMOR_MATERIAL_COSTS,
+} from '@/lib/refiningData';
 import styles from '../guide.module.css';
+
+// 표 렌더링용 — 수치 원본은 lib/refiningData.ts (시뮬레이터와 동일한 단일 원본)
+const PROB_LEVELS = Object.keys(BASE_PROBABILITY).map(Number).sort((a, b) => a - b);
+const BREATH_PROBS = [0.10, 0.05, 0.04, 0.03, 0.015, 0.01, 0.005];
+const pct = (p: number) => `${parseFloat((p * 100).toFixed(2))}%`;
 
 export const metadata: Metadata = {
   title: 'T4 재련 완벽 가이드 - 확률 구조와 비용 절약 전략',
@@ -23,7 +38,7 @@ export default function RefiningGuidePage() {
         <div className={styles.articleHeader}>
           <span className={styles.articleCategory}>재련</span>
           <h1 className={styles.articleTitle}>T4 재련 완벽 가이드 - 확률 구조와 비용 절약 전략</h1>
-          <span className={styles.articleDate}>2026년 2월 6일 작성 · 2026년 7월 18일 업데이트</span>
+          <span className={styles.articleDate}>2026년 2월 6일 작성 · 2026년 7월 29일 업데이트</span>
         </div>
 
         <div className={styles.articleBody}>
@@ -51,6 +66,125 @@ export default function RefiningGuidePage() {
             파괴석·수호석 결정, 위대한 돌파석, 상급 아비도스 융화 재료로 바뀌고 단계당 소모량이 늘어납니다.
           </p>
 
+          <h2>단계별 재료 소모량 (1회 시도 기준)</h2>
+          <p>
+            아래 표는 재련 1회 시도마다 소모되는 재료로, 로아로골 재련 시뮬레이터가 비용 계산에
+            사용하는 것과 동일한 수치입니다. 실패해도 같은 양이 소모되므로, 목표 단계까지의 총 비용은
+            (1회 소모량 × 예상 시도 횟수)로 계산됩니다.
+          </p>
+
+          <h3>계승 전 — 무기</h3>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>목표 단계</th>
+                <th>파괴석</th>
+                <th>돌파석</th>
+                <th>아비도스</th>
+                <th>운명 파편</th>
+                <th>실링</th>
+                <th>골드</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(WEAPON_MATERIAL_COSTS).map(([level, c]) => (
+                <tr key={level}>
+                  <td>{level}단계</td>
+                  <td>{c.파괴석.toLocaleString()}</td>
+                  <td>{c.돌파석}</td>
+                  <td>{c.아비도스}</td>
+                  <td>{c.운명파편.toLocaleString()}</td>
+                  <td>{c.실링.toLocaleString()}</td>
+                  <td>{c.골드.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h3>계승 전 — 방어구</h3>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>목표 단계</th>
+                <th>수호석</th>
+                <th>돌파석</th>
+                <th>아비도스</th>
+                <th>운명 파편</th>
+                <th>실링</th>
+                <th>골드</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(ARMOR_MATERIAL_COSTS).map(([level, c]) => (
+                <tr key={level}>
+                  <td>{level}단계</td>
+                  <td>{c.수호석.toLocaleString()}</td>
+                  <td>{c.돌파석}</td>
+                  <td>{c.아비도스}</td>
+                  <td>{c.운명파편.toLocaleString()}</td>
+                  <td>{c.실링.toLocaleString()}</td>
+                  <td>{c.골드.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h3>계승 후 — 무기</h3>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>목표 단계</th>
+                <th>파괴석 결정</th>
+                <th>위대한 돌파석</th>
+                <th>상급 아비도스</th>
+                <th>운명 파편</th>
+                <th>실링</th>
+                <th>골드</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(SUCCESSION_WEAPON_MATERIAL_COSTS).map(([level, c]) => (
+                <tr key={level}>
+                  <td>{level}단계</td>
+                  <td>{c.파괴석결정.toLocaleString()}</td>
+                  <td>{c.위대한돌파석}</td>
+                  <td>{c.상급아비도스}</td>
+                  <td>{c.운명파편.toLocaleString()}</td>
+                  <td>{c.실링.toLocaleString()}</td>
+                  <td>{c.골드.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h3>계승 후 — 방어구</h3>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>목표 단계</th>
+                <th>수호석 결정</th>
+                <th>위대한 돌파석</th>
+                <th>상급 아비도스</th>
+                <th>운명 파편</th>
+                <th>실링</th>
+                <th>골드</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(SUCCESSION_ARMOR_MATERIAL_COSTS).map(([level, c]) => (
+                <tr key={level}>
+                  <td>{level}단계</td>
+                  <td>{c.수호석결정.toLocaleString()}</td>
+                  <td>{c.위대한돌파석}</td>
+                  <td>{c.상급아비도스}</td>
+                  <td>{c.운명파편.toLocaleString()}</td>
+                  <td>{c.실링.toLocaleString()}</td>
+                  <td>{c.골드.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
           <h2>일반 재련의 확률 구조</h2>
           <p>
             일반 재련은 단계별로 정해진 확률에 따라 성공과 실패가 갈리고, 실패하면 재료만 소모된 채
@@ -58,6 +192,28 @@ export default function RefiningGuidePage() {
             점차 낮아져 23~24단계에서는 0.5%까지 떨어집니다. 계승 후에는 11~12단계부터 다시 시작하는데,
             이때는 5%로 계승 전보다 낮게 시작하며 이후 구간별 하락 폭은 계승 전과 비슷한 흐름을 따릅니다.
           </p>
+          <p>
+            아래 표는 로아로골 재련 시뮬레이터가 실제 계산에 사용하는 단계별 기본 확률입니다.
+            책·숨결을 쓰지 않은 순수 기본 확률 기준입니다.
+          </p>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>재련 구간</th>
+                <th>계승 전 확률</th>
+                <th>계승 후 확률</th>
+              </tr>
+            </thead>
+            <tbody>
+              {PROB_LEVELS.map((level) => (
+                <tr key={level}>
+                  <td>{level}→{level + 1}단계</td>
+                  <td>{pct(BASE_PROBABILITY[level])}</td>
+                  <td>{SUCCESSION_BASE_PROBABILITY[level] !== undefined ? pct(SUCCESSION_BASE_PROBABILITY[level]) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
           <h2>장인의 기운(장기백)이란?</h2>
           <p>
@@ -83,6 +239,34 @@ export default function RefiningGuidePage() {
             확률 구간마다 최대 누적 개수와 개당 상승폭이 다르게 설계되어 있습니다.
             저확률 구간일수록 더 많이 쌓을 수 있으므로, 숨결 시세와 구간 확률을 함께 고려해
             투입량을 결정하는 것이 비용 절약의 핵심입니다.
+          </p>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>기본 확률 구간</th>
+                <th>최대 투입 개수</th>
+                <th>개당 확률 상승</th>
+                <th>최대 투입 시 총 상승</th>
+              </tr>
+            </thead>
+            <tbody>
+              {BREATH_PROBS.map((prob) => {
+                const e = getBreathEffect(prob);
+                return (
+                  <tr key={prob}>
+                    <td>{pct(prob)}</td>
+                    <td>{e.max}개</td>
+                    <td>+{pct(e.per)}</td>
+                    <td>+{pct(e.max * e.per)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p>
+            계승 후에는 3% 구간만 다르게 적용됩니다 — 최대 {getSuccessionBreathEffect(0.03).max}개까지
+            투입할 수 있고 개당 +{pct(getSuccessionBreathEffect(0.03).per)}씩 오릅니다.
+            나머지 구간은 계승 전과 동일합니다.
           </p>
 
           <h2>일반 재련 vs 상급 재련</h2>
@@ -140,7 +324,7 @@ export default function RefiningGuidePage() {
             "headline": "T4 재련 완벽 가이드 - 확률 구조와 비용 절약 전략",
             "description": "T4 일반 재련의 확률 구조, 장인의 기운 계산식, 재련 책과 숨결 활용법, 상급 재련과의 차이를 상세히 설명합니다.",
             "datePublished": "2026-02-06",
-            "dateModified": "2026-07-18",
+            "dateModified": "2026-07-29",
             "author": { "@type": "Organization", "name": "로아로골" },
             "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
             "mainEntityOfPage": `${SITE_URL}/guide/refining`

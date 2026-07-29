@@ -23,7 +23,7 @@ export default function LifeContentGuidePage() {
         <div className={styles.articleHeader}>
           <span className={styles.articleCategory}>생활</span>
           <h1 className={styles.articleTitle}>생활 콘텐츠 수익 가이드 - 융화재료 제작과 효율 분석</h1>
-          <span className={styles.articleDate}>2026년 2월 6일 작성 · 2026년 7월 18일 업데이트</span>
+          <span className={styles.articleDate}>2026년 2월 6일 작성 · 2026년 7월 29일 업데이트</span>
         </div>
 
         <div className={styles.articleBody}>
@@ -70,10 +70,36 @@ export default function LifeContentGuidePage() {
             아비도스 융화재료는 T4 재련에 반드시 필요한 재료로, 목재 계열 재료 세 가지와 골드를
             소모해 10개 단위로 제작합니다. 일반과 상급 두 종류가 있으며 레시피는 다음과 같습니다:
           </p>
-          <ul>
-            <li><strong>아비도스 융화 재료(일반):</strong> 아비도스 목재 33개 + 부드러운 목재 45개 + 목재 86개 + 골드 400 → 10개</li>
-            <li><strong>상급 아비도스 융화 재료:</strong> 아비도스 목재 43개 + 부드러운 목재 59개 + 목재 112개 + 골드 520 → 10개</li>
-          </ul>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>제작 아이템</th>
+                <th>아비도스 목재</th>
+                <th>부드러운 목재</th>
+                <th>목재</th>
+                <th>제작 골드</th>
+                <th>완성 수량</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ fontWeight: 600 }}>아비도스 융화 재료</td>
+                <td>33개</td>
+                <td>45개</td>
+                <td>86개</td>
+                <td>400</td>
+                <td>10개</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 600 }}>상급 아비도스 융화 재료</td>
+                <td>43개</td>
+                <td>59개</td>
+                <td>112개</td>
+                <td>520</td>
+                <td>10개</td>
+              </tr>
+            </tbody>
+          </table>
           <p>
             상급 쪽이 재료와 골드 요구량이 모두 많은 만큼, 두 융화재료의 실시간 거래소 시세를 비교해
             어느 쪽 손익률이 더 나은지 확인한 뒤 제작하는 것이 좋습니다.
@@ -97,11 +123,50 @@ export default function LifeContentGuidePage() {
           <h2>생활의 가루 교환 시스템</h2>
           <p>
             생활의 가루는 생활 콘텐츠 활동에서 부산물로 얻는 재화로, 남는 재료를 부족한 재료로
-            바꾸는 다리 역할을 합니다. 목재 100개 또는 부드러운 목재 50개를 생활의 가루 80개로 바꿀 수 있고,
-            반대로 생활의 가루 100개는 부드러운 목재 50개, 튼튼한 목재 10개, 아비도스 목재 10개 중
-            하나로 교환할 수 있습니다. 이 외에도 부드러운 목재 25개를 목재 50개로,
-            튼튼한 목재 5개를 목재 50개로 직접 교환하는 경로도 있습니다.
+            바꾸는 다리 역할을 합니다. 교환 경로와 비율은 다음과 같습니다.
           </p>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>교환 종류</th>
+                <th>지불</th>
+                <th>획득</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td rowSpan={2}>재료 → 가루</td>
+                <td>목재 100개</td>
+                <td>생활의 가루 80개</td>
+              </tr>
+              <tr>
+                <td>부드러운 목재 50개</td>
+                <td>생활의 가루 80개</td>
+              </tr>
+              <tr>
+                <td rowSpan={3}>가루 → 재료</td>
+                <td>생활의 가루 100개</td>
+                <td>부드러운 목재 50개</td>
+              </tr>
+              <tr>
+                <td>생활의 가루 100개</td>
+                <td>튼튼한 목재 10개</td>
+              </tr>
+              <tr>
+                <td>생활의 가루 100개</td>
+                <td>아비도스 목재 10개</td>
+              </tr>
+              <tr>
+                <td rowSpan={2}>재료 직접 교환</td>
+                <td>부드러운 목재 25개</td>
+                <td>목재 50개</td>
+              </tr>
+              <tr>
+                <td>튼튼한 목재 5개</td>
+                <td>목재 50개</td>
+              </tr>
+            </tbody>
+          </table>
           <p>
             특히 가장 비싼 아비도스 목재는 직접 구매, 목재를 가루로 바꿔 교환, 부드러운 목재를 가루로
             바꿔 교환하는 세 가지 확보 경로가 있는데, 시세에 따라 최적 경로가 매일 달라집니다.
@@ -140,7 +205,7 @@ export default function LifeContentGuidePage() {
             "headline": "생활 콘텐츠 수익 가이드 - 융화재료 제작과 효율 분석",
             "description": "생활 콘텐츠의 수익 구조와 아비도스 융화재료 제작 손익, 생활의 가루 교환 비율까지 분석합니다.",
             "datePublished": "2026-02-06",
-            "dateModified": "2026-07-18",
+            "dateModified": "2026-07-29",
             "author": { "@type": "Organization", "name": "로아로골" },
             "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
             "mainEntityOfPage": `${SITE_URL}/guide/life-content`
