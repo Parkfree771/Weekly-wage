@@ -1,7 +1,7 @@
 // 완갑 실제 시뮬(WangapSimulator) · 평균 시뮬(WangapAverageCalculator) 공용
 // 재료 목록 / 비용 행 타입·헬퍼
 
-import { WANGAP_PROMOTION_MATERIALS, type WangapOptMatKey } from '../../lib/wangapData';
+import { WANGAP_PROMO_MATERIALS, type WangapOptMatKey } from '../../lib/wangapData';
 
 export type OptMatKey = WangapOptMatKey;
 
@@ -18,19 +18,19 @@ export const OPT_MATERIAL_LIST: Array<{ key: OptMatKey; label: string; icon: str
 // 시세가 있는 재료 키 (골드 환산 대상 — 7종)
 export const PRICED_COST_KEYS = OPT_MATERIAL_LIST.map(m => m.key);
 
-// 누적/예상 비용의 전체 키 (시세 7종 + 실링·골드 + 승급 재료 2종)
-export type WangapCostKey = OptMatKey | '실링' | '골드' | '승급재료유물' | '승급재료고대';
+// 누적/예상 비용의 전체 키 (시세 7종 + 실링·골드 + 승급(해방) 재료 2종)
+export type WangapCostKey = OptMatKey | '실링' | '골드' | '사령의잔영' | '죽음의손';
 export type WangapCostTotals = Record<WangapCostKey, number>;
 
 export const createZeroCost = (): WangapCostTotals => ({
   파괴석결정: 0, 수호석결정: 0, 위대한돌파석: 0, 상급아비도스: 0,
-  운명파편: 0, 실링: 0, 골드: 0, 용암: 0, 빙하: 0, 승급재료유물: 0, 승급재료고대: 0,
+  운명파편: 0, 실링: 0, 골드: 0, 용암: 0, 빙하: 0, 사령의잔영: 0, 죽음의손: 0,
 });
 
 // 비용 표시 행: 시세 있는 7종(OPT_MATERIAL_LIST 재사용) + 시세 없는 3종
 export const COST_ROWS: Array<{ key: WangapCostKey; label: string; icon: string; priced: boolean }> = [
   ...OPT_MATERIAL_LIST.map(m => ({ key: m.key as WangapCostKey, label: m.label, icon: m.icon, priced: true })),
-  { key: '승급재료유물', label: WANGAP_PROMOTION_MATERIALS.유물.name, icon: WANGAP_PROMOTION_MATERIALS.유물.icon, priced: false },
-  { key: '승급재료고대', label: WANGAP_PROMOTION_MATERIALS.고대.name, icon: WANGAP_PROMOTION_MATERIALS.고대.icon, priced: false },
+  { key: '사령의잔영', label: WANGAP_PROMO_MATERIALS.사령의잔영.name, icon: WANGAP_PROMO_MATERIALS.사령의잔영.icon, priced: false },
+  { key: '죽음의손', label: WANGAP_PROMO_MATERIALS.죽음의손.name, icon: WANGAP_PROMO_MATERIALS.죽음의손.icon, priced: false },
   { key: '실링', label: '실링', icon: '/shilling.webp', priced: false },
 ];

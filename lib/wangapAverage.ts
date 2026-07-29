@@ -11,11 +11,13 @@
 import {
   WANGAP_BASE_PROBABILITY,
   WANGAP_MATERIAL_COSTS,
+  WANGAP_GROWTH_COSTS,
   WANGAP_JANGIN_DIVIDER,
   WANGAP_MAX_LEVEL,
-  WANGAP_PROMOTION_COSTS,
+  WANGAP_PROMOTION_AT,
   getWangapBreathEffect,
   type WangapGrade,
+  type WangapPromotedGrade,
   type WangapOptMatKey,
 } from './wangapData';
 
@@ -47,30 +49,32 @@ export interface WangapAvgEnhanceRow {
 
 export interface WangapAvgPromotionRow {
   type: 'promotion';
-  to: '유물' | '고대';
+  to: WangapPromotedGrade;
   level: number;          // 승급 시점 레벨
 }
 
 export type WangapAvgRow = WangapAvgEnhanceRow | WangapAvgPromotionRow;
 
-// 키 구성은 components/wangap/wangapShared.ts의 WangapCostTotals와 동일 (구조적 호환)
+// 승급(해방) 재료는 "두 옵션 중 택1"이라 합산이 불가능 — totals에 넣지 않고
+// promotion 행에서 WANGAP_PROMOTION_COSTS[to]의 옵션을 그대로 표시한다. 승급 골드 소모는 없음.
 export interface WangapAvgTotals {
   파괴석결정: number; 수호석결정: number; 위대한돌파석: number; 상급아비도스: number; 운명파편: number;
-  실링: number; 골드: number; 용암: number; 빙하: number; 승급재료유물: number; 승급재료고대: number;
+  실링: number; 골드: number; 용암: number; 빙하: number;
 }
 
 export interface WangapAvgResult {
   rows: WangapAvgRow[];
   totals: WangapAvgTotals;
   totalTries: number;
-  promotionGold: number; // 승급으로 소모하는 골드 (누르는 골드에 포함된 값)
+  // 장비 성장 비용 — 구간 내 단계마다 1회 고정 지불 (시도 횟수 무관). 강화 재료와 별도 표기용
+  growth: { 운명파편: number; 실링: number };
 }
 
-const GRADE_RANK: Record<WangapGrade, number> = { 전설: 0, 유물: 1, 고대: 2 };
+const GRADE_RANK: Record<WangapGrade, number> = { 영웅: 0, 전설: 1, 유물: 2, 고대: 3 };
 
-// 해당 레벨에서 강화를 시도하려면 필요한 최소 등급 (15→16은 유물, 20→21은 고대)
+// 해당 레벨에서 강화를 시도하려면 필요한 최소 등급 (10→11은 전설, 15→16은 유물, 20→21은 고대)
 const gradeAtLevel = (level: number): WangapGrade =>
-  level >= 20 ? '고대' : level >= 15 ? '유물' : '전설';
+  level >= 20 ? '고대' : level >= 15 ? '유물' : level >= 10 ? '전설' : '영웅';
 
 // 한 시도에 사용할 숨결 개수 결정
 // 최적 모드: 실제 시뮬 computeOptimalBreaths와 동일한 (1회 실비용/성공확률) 기대비용 최소화 그리디.
@@ -82,9 +86,9 @@ const chooseBreaths = (
 ): { lava: number; glacier: number } => {
   const base = WANGAP_BASE_PROBABILITY[level] ?? 0;
   const eff = getWangapBreathEffect(base);
-  const fixedLava = params.lavaMode === 'full' ? eff.max : 0;
-  const fixedGlacier = params.glacierMode === 'full' ? eff.max : 0;
-  if (eff.max === 0 || (params.lavaMode !== 'optimal' && params.glacierMode !== 'optimal')) {
+  const fixedLava = params.lavaMode === 'full' ? eff.lavaMax : 0;
+  const fixedGlacier = params.glacierMode === 'full' ? eff.glacierMax : 0;
+  if ((eff.lavaMax === 0 && eff.glacierMax === 0) || (params.lavaMode !== 'optimal' && params.glacierMode !== 'optimal')) {
     return { lava: fixedLava, glacier: fixedGlacier };
   }
 
@@ -104,9 +108,9 @@ const chooseBreaths = (
 
   const unitLava = params.boundFlags.용암 ? 0 : (params.unitPrices.용암 || 0);
   const unitGlacier = params.boundFlags.빙하 ? 0 : (params.unitPrices.빙하 || 0);
-  const lavaMaxSearch = params.lavaMode === 'optimal' ? eff.max : fixedLava;
+  const lavaMaxSearch = params.lavaMode === 'optimal' ? eff.lavaMax : fixedLava;
   const lavaMinSearch = params.lavaMode === 'optimal' ? 0 : fixedLava;
-  const glacierMaxSearch = params.glacierMode === 'optimal' ? eff.max : fixedGlacier;
+  const glacierMaxSearch = params.glacierMode === 'optimal' ? eff.glacierMax : fixedGlacier;
   const glacierMinSearch = params.glacierMode === 'optimal' ? 0 : fixedGlacier;
 
   let best = { lava: lavaMinSearch, glacier: glacierMinSearch };
@@ -199,24 +203,27 @@ export function computeWangapAverage(params: WangapAvgParams): WangapAvgResult {
   const rows: WangapAvgRow[] = [];
   const totals: WangapAvgTotals = {
     파괴석결정: 0, 수호석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 운명파편: 0,
-    실링: 0, 골드: 0, 용암: 0, 빙하: 0, 승급재료유물: 0, 승급재료고대: 0,
+    실링: 0, 골드: 0, 용암: 0, 빙하: 0,
   };
   let totalTries = 0;
-  let promotionGold = 0;
+  const growth = { 운명파편: 0, 실링: 0 };
 
   const start = Math.max(0, params.startLevel);
   const target = Math.min(params.targetLevel, WANGAP_MAX_LEVEL);
   let curGrade = params.startGrade;
 
   for (let level = start; level < target; level++) {
-    // 등급 상한을 넘어가는 지점에서 승급 비용 합산 (전설→유물 +15, 유물→고대 +20)
+    // 장비 성장 — L→L+1 강화를 시작하려면 목표 단계(L+1)의 성장 비용을 1회 지불
+    const grow = WANGAP_GROWTH_COSTS[level + 1];
+    if (grow) {
+      growth.운명파편 += grow.운명파편;
+      growth.실링 += grow.실링;
+    }
+    // 등급 상한을 넘어가는 지점에서 승급 기록 (영웅→전설 +10, 전설→유물 +15, 유물→고대 +20)
+    // 재료는 택1 옵션이라 totals에 합산하지 않고 행으로만 남긴다 (표시는 소비처에서)
     const required = gradeAtLevel(level);
     while (GRADE_RANK[required] > GRADE_RANK[curGrade]) {
-      const next: '유물' | '고대' = curGrade === '전설' ? '유물' : '고대';
-      const promoCost = WANGAP_PROMOTION_COSTS[next];
-      totals[next === '유물' ? '승급재료유물' : '승급재료고대'] += promoCost.벨가르딘재료;
-      totals.골드 += promoCost.골드;
-      promotionGold += promoCost.골드;
+      const next = WANGAP_PROMOTION_AT[curGrade]!.next;
       rows.push({ type: 'promotion', to: next, level });
       curGrade = next;
     }
@@ -239,5 +246,5 @@ export function computeWangapAverage(params: WangapAvgParams): WangapAvgResult {
     rows.push({ type: 'enhance', level, grade: curGrade, ...step });
   }
 
-  return { rows, totals, totalTries, promotionGold };
+  return { rows, totals, totalTries, growth };
 }

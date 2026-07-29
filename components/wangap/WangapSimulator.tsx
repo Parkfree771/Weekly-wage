@@ -6,17 +6,20 @@ import styles from './WangapSimulator.module.css';
 import {
   WANGAP_BASE_PROBABILITY,
   WANGAP_MATERIAL_COSTS,
+  WANGAP_GROWTH_COSTS,
   WANGAP_MATERIAL_IDS,
   WANGAP_JANGIN_DIVIDER,
   WANGAP_MAX_LEVEL,
   WANGAP_PROMOTION_AT,
   WANGAP_PROMOTION_COSTS,
-  WANGAP_PROMOTION_MATERIALS,
+  WANGAP_PROMO_MATERIALS,
   WANGAP_ITEM_IMAGES,
   WANGAP_GRADE_ORDER,
   WANGAP_GRADE_RANGES,
   getWangapBreathEffect,
   type WangapGrade,
+  type WangapPromotedGrade,
+  type WangapPromoMatKey,
 } from '../../lib/wangapData';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import {
@@ -57,18 +60,20 @@ const MAX_HISTORY = 300;
 export default function WangapSimulator() {
   // === 강화 상태 ===
   const [currentLevel, setCurrentLevel] = useState(0);
-  const [grade, setGrade] = useState<WangapGrade>('전설');
+  const [grade, setGrade] = useState<WangapGrade>('영웅');
   const [jangin, setJangin] = useState(0);
   const [probBonus, setProbBonus] = useState(0);
   const [useLava, setUseLava] = useState(false);
   const [useGlacier, setUseGlacier] = useState(false);
 
   // 등급 카드 사이 승급 재료 상세 패널
-  const [openPromoInfo, setOpenPromoInfo] = useState<'유물' | '고대' | null>(null);
+  const [openPromoInfo, setOpenPromoInfo] = useState<WangapPromotedGrade | null>(null);
   const [history, setHistory] = useState<WangapHistoryEntry[]>([]);
   // 전체 누적 통계 (기록 리스트는 MAX_HISTORY개만 표시하므로 별도 유지)
   const [totals, setTotals] = useState({ attempts: 0, success: 0, fail: 0 });
   const [accumulatedCost, setAccumulatedCost] = useState<AccumulatedCost>(createZeroCost());
+  // 장비 성장 누적 비용 — 단계 최초 도전 시 1회 지불 (강화 재료와 별도 표기)
+  const [growthCost, setGrowthCost] = useState({ 파편: 0, 실링: 0 });
   const [confirmReset, setConfirmReset] = useState(false);
 
   // === 진행 상태 (연출 없음 — 결과는 강화 기록에만 표시) ===
@@ -87,19 +92,23 @@ export default function WangapSimulator() {
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
   const [goldIncludeMap, setGoldIncludeMap] = useState<Record<string, boolean>>({
     파괴석결정: true, 수호석결정: true, 위대한돌파석: true, 상급아비도스: true,
-    운명파편: true, 골드: true, 용암: true, 빙하: true,
+    운명파편: true, 골드: true, 용암: true, 빙하: true, 성장파편: true,
   });
 
   const busyRef = useRef(false);
   const isAutoModeRef = useRef(false);
+  // 성장 비용을 지불한 최고 단계 — 이보다 높은 단계 최초 도전 시 성장 비용 1회 차감.
+  // 직접 입력·등급 전환으로 점프한 단계는 이미 성장된 장비로 간주(비용 미부과).
+  const grownMaxRef = useRef(0);
   const entryNoRef = useRef(0); // 기록 번호 — 리스트를 잘라내도 번호가 이어지도록 ref로 관리
   const autoPauseUntilRef = useRef(0); // 자동강화 중 성공 직후 일시정지 시각
   const autoIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
   const historyContainerRef = useRef<HTMLDivElement>(null);
   const autoWrapRef = useRef<HTMLDivElement>(null);
-  const latestStateRef = useRef({ currentLevel: 0, grade: '전설' as WangapGrade, autoTargetLevel: 0 });
+  const latestStateRef = useRef({ currentLevel: 0, grade: '영웅' as WangapGrade, autoTargetLevel: 0 });
   const attemptRef = useRef<() => void>(() => {});
+  const autoPromoteRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     isAutoModeRef.current = isAutoMode;
@@ -157,12 +166,12 @@ export default function WangapSimulator() {
 
   const getBaseProb = (level: number): number => WANGAP_BASE_PROBABILITY[level] ?? 0;
 
-  // 등급별 강화 구간: 전설 0~15 / 유물 15~20 / 고대 20~25
+  // 등급별 강화 구간: 영웅 0~10 / 전설 10~15 / 유물 15~20 / 고대 20~25
   const gradeRange = WANGAP_GRADE_RANGES[grade];
-  const nextGrade = WANGAP_PROMOTION_AT[grade]?.next; // 전설→유물, 유물→고대 (고대는 없음)
+  const nextGrade = WANGAP_PROMOTION_AT[grade]?.next; // 영웅→전설→유물→고대 (고대는 없음)
 
   const isMaxed = currentLevel >= WANGAP_MAX_LEVEL;
-  const atGradeCap = !isMaxed && currentLevel >= gradeRange.max; // 등급 상한 도달 (전설 +15 / 유물 +20)
+  const atGradeCap = !isMaxed && currentLevel >= gradeRange.max; // 등급 상한 도달 (영웅 +10 / 전설 +15 / 유물 +20)
   const canEnhance = !isMaxed && !atGradeCap && getBaseProb(currentLevel) > 0;
 
   // 숨결 개수를 받아 최종 확률 계산
@@ -175,10 +184,10 @@ export default function WangapSimulator() {
     return Math.min(capped + (nLava + nGlacier) * eff.per, 1);
   };
 
-  // 이번 시도에 사용할 숨결 개수 (수동 토글 = 풀숨)
+  // 이번 시도에 사용할 숨결 개수 (수동 토글 = 풀숨, 용암/빙하 각자의 반반 상한까지)
   const getAttemptBreaths = (level: number): { lava: number; glacier: number } => {
     const eff = getWangapBreathEffect(getBaseProb(level));
-    return { lava: useLava ? eff.max : 0, glacier: useGlacier ? eff.max : 0 };
+    return { lava: useLava ? eff.lavaMax : 0, glacier: useGlacier ? eff.glacierMax : 0 };
   };
 
   // === 강화 시도 ===
@@ -190,6 +199,16 @@ export default function WangapSimulator() {
 
     busyRef.current = true;
     setIsBusy(true);
+
+    // 장비 성장 — 이 단계(level+1) 최초 도전 시 1회 지불 (시도 횟수와 무관한 고정 비용)
+    const growTarget = level + 1;
+    if (growTarget > grownMaxRef.current) {
+      grownMaxRef.current = growTarget;
+      const grow = WANGAP_GROWTH_COSTS[growTarget];
+      if (grow) {
+        setGrowthCost(prev => ({ 파편: prev.파편 + grow.운명파편, 실링: prev.실링 + grow.실링 }));
+      }
+    }
 
     const breaths = getAttemptBreaths(level);
     const finalProb = calcProbWith(breaths.lava, breaths.glacier);
@@ -226,9 +245,8 @@ export default function WangapSimulator() {
         setProbBonus(0);
         janginAfter = 0;
 
-        // 자동강화: 목표 레벨 또는 현재 등급 상한 도달 시 정지 (승급은 수동)
-        const cap = WANGAP_GRADE_RANGES[latestStateRef.current.grade].max;
-        if (isAutoModeRef.current && (newLevel >= latestStateRef.current.autoTargetLevel || newLevel >= cap)) {
+        // 자동강화: 목표 레벨 도달 시에만 정지 — 등급 상한은 interval에서 자동 승급 후 계속 진행
+        if (isAutoModeRef.current && newLevel >= latestStateRef.current.autoTargetLevel) {
           stopAutoEnhance();
         } else if (isAutoModeRef.current) {
           // 빠른 배속에서도 성공 순간을 볼 수 있게 잠시 멈췄다가 재개
@@ -266,20 +284,18 @@ export default function WangapSimulator() {
     }, delay);
   };
 
-  // === 승급 (강화 플로우와 분리 — 등급 상한 도달 시 수동으로 실행) ===
-  const promoteTo = (next: '유물' | '고대') => {
+  // === 승급/해방 (강화 플로우와 분리 — 등급 상한 도달 시 수동으로 실행) ===
+  // 재료 옵션(사령의 잔영 또는 죽음의 손) 중 사용자가 고른 한 가지만 소모. 골드 소모 없음.
+  const promoteTo = (next: WangapPromotedGrade, choice: { material: WangapPromoMatKey; amount: number }) => {
     if (busyRef.current) return;
     const level = latestStateRef.current.currentLevel;
 
     busyRef.current = true;
     setIsBusy(true);
 
-    const promoCost = WANGAP_PROMOTION_COSTS[next];
-    const matKey: keyof AccumulatedCost = next === '유물' ? '승급재료유물' : '승급재료고대';
     setAccumulatedCost(prev => ({
       ...prev,
-      [matKey]: prev[matKey] + promoCost.벨가르딘재료,
-      골드: prev.골드 + promoCost.골드,
+      [choice.material]: prev[choice.material] + choice.amount,
     }));
 
     revealTimerRef.current = setTimeout(() => {
@@ -304,29 +320,42 @@ export default function WangapSimulator() {
   };
 
   // === 등급 선택 (장비 설정) ===
-  // 상한 도달 상태에서 다음 등급을 고르면 승급으로 처리(재료·골드 합산),
+  // 상한 도달 상태에서 다음 등급을 고르면 재료 택1이 필요하므로 바로 승급하지 않고
+  // 재료 상세 패널을 열어 안내 (실제 승급은 중앙 승급 패널의 재료별 버튼으로),
   // 그 외에는 비용 없는 장비 설정 전환으로 해당 등급 시작 레벨부터 진행
   const selectGrade = (g: WangapGrade) => {
     if (g === grade || isBusy || isAutoMode) return;
     if (atGradeCap && nextGrade === g) {
-      promoteTo(nextGrade);
+      setOpenPromoInfo(nextGrade);
       return;
     }
     setGrade(g);
     setCurrentLevel(WANGAP_GRADE_RANGES[g].min);
+    grownMaxRef.current = WANGAP_GRADE_RANGES[g].min;
     setJangin(0);
     setProbBonus(0);
+  };
+
+  // 자동 승급 — 등급 상한 도달 시 첫 번째 재료 옵션(전설·유물 = 사령의 잔영, 고대 = 죽음의 손)으로 승급
+  const autoPromote = () => {
+    const next = WANGAP_PROMOTION_AT[latestStateRef.current.grade]?.next;
+    if (!next) {
+      stopAutoEnhance();
+      return;
+    }
+    promoteTo(next, WANGAP_PROMOTION_COSTS[next][0]);
   };
 
   // 자동강화 interval이 항상 최신 상태·함수를 보도록 렌더마다 ref 갱신
   useEffect(() => {
     latestStateRef.current = { currentLevel, grade, autoTargetLevel };
     attemptRef.current = attemptEnhance;
+    autoPromoteRef.current = autoPromote;
   });
 
-  // === 자동강화 ===
+  // === 자동강화 (승급 자동 포함 — 목표는 최대 25까지) ===
   const startAutoEnhance = () => {
-    const target = Math.min(autoTargetLevel, gradeRange.max);
+    const target = Math.min(autoTargetLevel, WANGAP_MAX_LEVEL);
     if (target <= currentLevel) return;
     if (target !== autoTargetLevel) {
       setAutoTargetLevel(target);
@@ -354,9 +383,15 @@ export default function WangapSimulator() {
       if (Date.now() < autoPauseUntilRef.current) return; // 성공 연출 감상용 일시정지
       const state = latestStateRef.current;
 
-      // 목표 레벨 또는 현재 등급 상한 도달 시 정지 (승급은 사용자가 직접)
-      if (state.currentLevel >= state.autoTargetLevel || state.currentLevel >= WANGAP_GRADE_RANGES[state.grade].max) {
+      // 목표 레벨 도달 시 정지
+      if (state.currentLevel >= state.autoTargetLevel) {
         stopAutoEnhance();
+        return;
+      }
+
+      // 등급 상한 도달 → 자동 승급 후 다음 틱부터 강화 계속 (영웅→전설→유물→고대 자연 전환)
+      if (state.currentLevel >= WANGAP_GRADE_RANGES[state.grade].max) {
+        autoPromoteRef.current();
         return;
       }
 
@@ -378,7 +413,7 @@ export default function WangapSimulator() {
     busyRef.current = false;
     setIsBusy(false);
     setCurrentLevel(0);
-    setGrade('전설');
+    setGrade('영웅');
     setJangin(0);
     setProbBonus(0);
     setUseLava(false);
@@ -388,7 +423,9 @@ export default function WangapSimulator() {
     setHistory([]);
     setTotals({ attempts: 0, success: 0, fail: 0 });
     entryNoRef.current = 0;
+    grownMaxRef.current = 0;
     setAccumulatedCost(createZeroCost());
+    setGrowthCost({ 파편: 0, 실링: 0 });
   };
 
   const handleResetClick = () => {
@@ -416,6 +453,7 @@ export default function WangapSimulator() {
     setLevelDraft(String(nv));
     if (nv !== currentLevel) {
       setCurrentLevel(nv);
+      grownMaxRef.current = nv; // 점프한 단계까지는 이미 성장된 장비로 간주
       setJangin(0);
       setProbBonus(0);
     }
@@ -431,7 +469,8 @@ export default function WangapSimulator() {
       setTargetDraft(autoTargetLevel > 0 ? String(autoTargetLevel) : '');
       return;
     }
-    const nv = Math.min(Math.max(v, Math.min(currentLevel + 1, gradeRange.max)), gradeRange.max);
+    // 승급 자동 진행이 가능하므로 목표는 등급 상한을 넘어 최대 25까지 허용
+    const nv = Math.min(Math.max(v, currentLevel + 1), WANGAP_MAX_LEVEL);
     setTargetDraft(String(nv));
     setAutoTargetLevel(nv);
   };
@@ -458,8 +497,10 @@ export default function WangapSimulator() {
   const materialCost = WANGAP_MATERIAL_COSTS[currentLevel + 1];
 
   // 골드 분리: 재료 구매 골드(귀속·보유 차감 후) + 누르는 골드(강화 소모 골드) = 총 골드
+  // 성장 파편은 강화 파편과 같은 시세로 환산 (성장 실링은 시세 없음)
+  const growthShardGold = goldIncludeMap['성장파편'] ? getMaterialGoldCost('운명파편', growthCost.파편) : 0;
   const materialBuyGold = PRICED_COST_KEYS.reduce(
-    (sum, key) => (goldIncludeMap[key] ? sum + getMaterialGoldCost(key, accumulatedCost[key]) : sum), 0);
+    (sum, key) => (goldIncludeMap[key] ? sum + getMaterialGoldCost(key, accumulatedCost[key]) : sum), 0) + growthShardGold;
   const pressGold = goldIncludeMap['골드'] ? accumulatedCost.골드 : 0;
   const totalGold = Math.round(materialBuyGold + pressGold);
 
@@ -471,10 +512,14 @@ export default function WangapSimulator() {
         <div className={styles.equipmentPanelTitle}>장비 선택</div>
         <div className={styles.equipmentList}>
           {WANGAP_GRADE_ORDER.map((g, i) => {
-            const promoTarget = i > 0 ? (g as '유물' | '고대') : null;
+            const promoTarget = i > 0 ? (g as WangapPromotedGrade) : null;
+            // 커넥터 아이콘은 해당 해방의 첫 번째 재료 옵션 (전설·유물 = 사령의 잔영, 고대 = 죽음의 손)
+            const promoMat = promoTarget ? WANGAP_PROMO_MATERIALS[WANGAP_PROMOTION_COSTS[promoTarget][0].material] : null;
             return (
               <Fragment key={g}>
-                {promoTarget && (
+                {/* 모바일: 유물부터 둘째 줄로 강제 줄바꿈 (데스크톱에선 숨김) */}
+                {g === '유물' && <span className={styles.equipmentRowBreak} aria-hidden="true" />}
+                {promoTarget && promoMat && (
                   <>
                     <span className={styles.listArrow} aria-hidden="true">→</span>
                     <button
@@ -484,8 +529,8 @@ export default function WangapSimulator() {
                     >
                       <span className={styles.promoConnectorIcon}>
                         <Image
-                          src={WANGAP_PROMOTION_MATERIALS[promoTarget].icon}
-                          alt={WANGAP_PROMOTION_MATERIALS[promoTarget].name}
+                          src={promoMat.icon}
+                          alt={promoMat.name}
                           fill
                           sizes="56px"
                           style={{ objectFit: 'contain' }}
@@ -504,8 +549,10 @@ export default function WangapSimulator() {
                 >
                   <div className={styles.equipmentName} data-grade={g}>{g} 완갑</div>
                   <span className={styles.equipmentIcon} data-grade={g}>
-                    {/* padding: 이미지가 개구부에 꽉 차 링을 침범해 보이지 않게 여백 */}
-                    <Image src={WANGAP_ITEM_IMAGES[g]} alt={`완갑 ${g}`} fill sizes="54px" style={{ objectFit: 'contain', padding: '8%' }} />
+                    {/* 이미지가 배경 포함 — 개구부+블리드 박스를 cover로 꽉 채우고 위에 프레임을 덮음 */}
+                    <span className={styles.equipmentIconImg}>
+                      <Image src={WANGAP_ITEM_IMAGES[g]} alt={`완갑 ${g}`} fill sizes="60px" style={{ objectFit: 'cover' }} />
+                    </span>
                     <span className={styles.equipmentFrame}>
                       <Image src="/wjsdbf3.webp" alt="" fill sizes="84px" style={{ objectFit: 'fill' }} unoptimized />
                     </span>
@@ -526,30 +573,29 @@ export default function WangapSimulator() {
       {openPromoInfo && (
         <div className={styles.promoInfoPanel} data-grade={openPromoInfo}>
           <div className={styles.promoInfoTitle}>
-            {openPromoInfo === '유물' ? '전설 → 유물 승급' : '유물 → 고대 승급'}
+            {WANGAP_GRADE_ORDER[WANGAP_GRADE_ORDER.indexOf(openPromoInfo) - 1]} → {openPromoInfo} 승급
           </div>
-          <div className={styles.promoInfoRow}>
-            <span className={styles.promoInfoIcon}>
-              <Image
-                src={WANGAP_PROMOTION_MATERIALS[openPromoInfo].icon}
-                alt={WANGAP_PROMOTION_MATERIALS[openPromoInfo].name}
-                fill
-                sizes="26px"
-                style={{ objectFit: 'contain' }}
-              />
-            </span>
-            <span>{WANGAP_PROMOTION_MATERIALS[openPromoInfo].name}</span>
-            <strong>{WANGAP_PROMOTION_COSTS[openPromoInfo].벨가르딘재료}개</strong>
-          </div>
-          <div className={styles.promoInfoRow}>
-            <span className={styles.promoInfoIcon}>
-              <Image src="/gold.webp" alt="골드" fill sizes="26px" style={{ objectFit: 'contain' }} />
-            </span>
-            <span>골드</span>
-            <strong>{WANGAP_PROMOTION_COSTS[openPromoInfo].골드.toLocaleString()}G</strong>
-          </div>
-          <div className={styles.promoInfoDesc}>
-            벨가르딘 레이드에서 획득하는 특수 재료로, 등급 상한(+{openPromoInfo === '유물' ? 15 : 20}) 도달 후 승급 시 소모됩니다
+          <div className={styles.promoOptionRow}>
+            {WANGAP_PROMOTION_COSTS[openPromoInfo].map((opt, i) => (
+              <Fragment key={opt.material}>
+                {i > 0 && <div className={styles.promoOptionOr}>or</div>}
+                <div className={`${styles.promoOptionCard} ${styles.promoOptionCardStatic}`}>
+                  <span className={styles.promoOptionIcon}>
+                    <Image
+                      src={WANGAP_PROMO_MATERIALS[opt.material].icon}
+                      alt={WANGAP_PROMO_MATERIALS[opt.material].name}
+                      fill
+                      sizes="72px"
+                      style={{ objectFit: 'contain' }}
+                    />
+                  </span>
+                  <span className={styles.promoOptionName}>{WANGAP_PROMO_MATERIALS[opt.material].name}</span>
+                  <span className={styles.promoOptionAmount}>×{opt.amount}</span>
+                  <span className={styles.promoOptionAcquire}>{WANGAP_PROMO_MATERIALS[opt.material].source}</span>
+                  <span className={styles.promoOptionAcquire}>{WANGAP_PROMO_MATERIALS[opt.material].weekly}</span>
+                </div>
+              </Fragment>
+            ))}
           </div>
         </div>
       )}
@@ -597,7 +643,7 @@ export default function WangapSimulator() {
                   className={styles.levelInput}
                   value={targetDraft}
                   disabled={isAutoMode}
-                  placeholder={String(gradeRange.max)}
+                  placeholder={String(WANGAP_MAX_LEVEL)}
                   onFocus={(e) => e.target.select()}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -620,7 +666,7 @@ export default function WangapSimulator() {
                   alt={`완갑 (${grade})`}
                   fill
                   sizes="96px"
-                  style={{ objectFit: 'contain' }}
+                  style={{ objectFit: 'cover' }}
                 />
               </span>
               {/* 세르카 장비 테두리 */}
@@ -630,7 +676,7 @@ export default function WangapSimulator() {
 
             </div>
 
-            <div className={styles.itemName}>완갑</div>
+            <div className={styles.itemName}>{grade} 완갑</div>
           </div>
 
           {isMaxed ? (
@@ -645,30 +691,43 @@ export default function WangapSimulator() {
                 {confirmReset ? '진짜 초기화' : '초기화'}
               </button>
             </div>
-          ) : atGradeCap && nextGrade ? (
-            /* ===== 등급 상한 도달 — 승급 안내 ===== */
+          ) : atGradeCap && nextGrade && !isAutoMode ? (
+            /* ===== 등급 상한 도달 — 승급 안내 (재료 옵션 중 택1).
+                   자동강화 중에는 자동 승급이 즉시 처리하므로 패널 교체 없이 강화 화면 유지 (레이아웃 떨림 방지) ===== */
             <div className={styles.promotionPanel}>
               <div className={styles.promotionTitle}>
                 {grade} 단계 완료 — <strong>{nextGrade}</strong> 승급이 가능합니다
               </div>
               <div className={styles.promotionDesc}>
-                벨가르딘 레이드 특수 재료로 승급하며, 재료와 골드가 누적 비용에 합산됩니다
+                벨가르딘 레이드 특수 재료로 승급하며, 사용한 재료가 누적 비용에 합산됩니다
+                {WANGAP_PROMOTION_COSTS[nextGrade].length > 1 && ' — 두 재료 중 한 가지만 있으면 됩니다'}
               </div>
-              <div className={styles.promotionCostRow}>
-                <div className={styles.promotionCostItem}>
-                  <Image src={WANGAP_PROMOTION_MATERIALS[nextGrade].icon} alt={WANGAP_PROMOTION_MATERIALS[nextGrade].name} width={26} height={26} />
-                  <span>{WANGAP_PROMOTION_MATERIALS[nextGrade].name}</span>
-                  <strong>{WANGAP_PROMOTION_COSTS[nextGrade].벨가르딘재료}</strong>
-                </div>
-                <div className={styles.promotionCostItem}>
-                  <Image src="/gold.webp" alt="골드" width={22} height={22} />
-                  <span>골드</span>
-                  <strong>{WANGAP_PROMOTION_COSTS[nextGrade].골드.toLocaleString()}</strong>
-                </div>
+              {/* 재료 카드 자체가 승급 버튼 — 큰 아이콘으로 "이거 ×N 또는 이거 ×M"이 한눈에 보이게 */}
+              <div className={styles.promoOptionRow}>
+                {WANGAP_PROMOTION_COSTS[nextGrade].map((opt, i) => (
+                  <Fragment key={opt.material}>
+                    {i > 0 && <div className={styles.promoOptionOr}>or</div>}
+                    <button
+                      className={styles.promoOptionCard}
+                      onClick={() => promoteTo(nextGrade, opt)}
+                      disabled={isBusy}
+                    >
+                      <span className={styles.promoOptionIcon}>
+                        <Image
+                          src={WANGAP_PROMO_MATERIALS[opt.material].icon}
+                          alt={WANGAP_PROMO_MATERIALS[opt.material].name}
+                          fill
+                          sizes="72px"
+                          style={{ objectFit: 'contain' }}
+                        />
+                      </span>
+                      <span className={styles.promoOptionName}>{WANGAP_PROMO_MATERIALS[opt.material].name}</span>
+                      <span className={styles.promoOptionAmount}>×{opt.amount}</span>
+                      <span className={styles.promoOptionAction}>{isBusy ? '승급 중...' : '이 재료로 승급'}</span>
+                    </button>
+                  </Fragment>
+                ))}
               </div>
-              <button className={styles.promoteButton} onClick={() => promoteTo(nextGrade)} disabled={isBusy}>
-                {isBusy ? '승급 중...' : `${nextGrade} 등급으로 승급`}
-              </button>
             </div>
           ) : (
             <>
@@ -709,27 +768,27 @@ export default function WangapSimulator() {
                 <button
                   className={`${styles.breathButton} ${useLava ? styles.breathButtonActiveLava : ''}`}
                   onClick={() => setUseLava(!useLava)}
-                  disabled={breathEffect.max === 0}
+                  disabled={breathEffect.lavaMax === 0}
                 >
                   <span className={styles.breathIcon}>
                     <Image src="/breath-lava5.webp" alt="용암의 숨결" fill sizes="28px" style={{ objectFit: 'contain' }} />
                   </span>
                   <span className={styles.breathName}>용암의 숨결</span>
                   <span className={styles.breathMeta}>
-                    {useLava ? `${breathEffect.max}개 +${(breathEffect.max * breathEffect.per * 100).toFixed(2)}%` : '미사용'}
+                    {useLava ? `${breathEffect.lavaMax}개 +${(breathEffect.lavaMax * breathEffect.per * 100).toFixed(2)}%` : '미사용'}
                   </span>
                 </button>
                 <button
                   className={`${styles.breathButton} ${useGlacier ? styles.breathButtonActiveGlacier : ''}`}
                   onClick={() => setUseGlacier(!useGlacier)}
-                  disabled={breathEffect.max === 0}
+                  disabled={breathEffect.glacierMax === 0}
                 >
                   <span className={styles.breathIcon}>
                     <Image src="/breath-glacier5.webp" alt="빙하의 숨결" fill sizes="28px" style={{ objectFit: 'contain' }} />
                   </span>
                   <span className={styles.breathName}>빙하의 숨결</span>
                   <span className={styles.breathMeta}>
-                    {useGlacier ? `${breathEffect.max}개 +${(breathEffect.max * breathEffect.per * 100).toFixed(2)}%` : '미사용'}
+                    {useGlacier ? `${breathEffect.glacierMax}개 +${(breathEffect.glacierMax * breathEffect.per * 100).toFixed(2)}%` : '미사용'}
                   </span>
                 </button>
               </div>
@@ -767,6 +826,21 @@ export default function WangapSimulator() {
                       <Image src="/gold.webp" alt="골드" width={30} height={30} />
                       <span>{materialCost.골드.toLocaleString()}</span>
                     </div>
+                    {/* 장비 성장 비용 — 그리드 남는 2칸에 강화 재료와 동일한 형태로 표시 (성장 배지로 구분) */}
+                    {WANGAP_GROWTH_COSTS[currentLevel + 1] && (
+                      <>
+                        <div className={`${styles.singleCostItem} ${styles.singleCostItemGrowth}`}>
+                          <Image src="/destiny-shard-bag-large5.webp" alt="성장 운명의 파편" width={30} height={30} />
+                          <span>{WANGAP_GROWTH_COSTS[currentLevel + 1].운명파편.toLocaleString()}</span>
+                          <span className={styles.growthBadge}>성장</span>
+                        </div>
+                        <div className={`${styles.singleCostItem} ${styles.singleCostItemGrowth}`}>
+                          <Image src="/shilling.webp" alt="성장 실링" width={30} height={30} />
+                          <span>{WANGAP_GROWTH_COSTS[currentLevel + 1].실링.toLocaleString()}</span>
+                          <span className={styles.growthBadge}>성장</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -843,7 +917,7 @@ export default function WangapSimulator() {
 
                       <div className={styles.autoDropdownHint}>
                         {autoTargetLevel > currentLevel
-                          ? `+${currentLevel} → +${Math.min(autoTargetLevel, gradeRange.max)} 자동 진행 (승급은 직접 선택)`
+                          ? `+${currentLevel} → +${Math.min(autoTargetLevel, WANGAP_MAX_LEVEL)} 자동 진행 (승급 자동 — 사령의 잔영 우선 사용)`
                           : '상단의 목표 단계를 먼저 입력하세요'}
                       </div>
 
@@ -963,6 +1037,32 @@ export default function WangapSimulator() {
                   </div>
                 );
               })}
+              {/* 장비 성장 비용 — 강화 재료와 분리 표기 (단계 최초 도전 시 1회 지불분) */}
+              {growthCost.파편 > 0 && (
+                <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('성장파편')}>
+                  <input
+                    type="checkbox"
+                    className={styles.materialCheckbox}
+                    checked={goldIncludeMap['성장파편']}
+                    onChange={() => toggleGoldInclude('성장파편')}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <Image src="/destiny-shard-bag-large5.webp" alt="성장 파편" width={26} height={26} />
+                  <span className={styles.materialName}>성장 파편</span>
+                  <span className={styles.materialAmount}>{growthCost.파편.toLocaleString()}</span>
+                  <span className={`${styles.materialGold} ${!goldIncludeMap['성장파편'] ? styles.materialGoldExcluded : ''}`}>
+                    {getMaterialGoldCost('운명파편', growthCost.파편).toLocaleString()}G
+                  </span>
+                </div>
+              )}
+              {growthCost.실링 > 0 && (
+                <div className={styles.totalMaterialItem}>
+                  <Image src="/shilling.webp" alt="성장 실링" width={26} height={26} />
+                  <span className={styles.materialName}>성장 실링</span>
+                  <span className={styles.materialAmount}>{growthCost.실링.toLocaleString()}</span>
+                  <span />
+                </div>
+              )}
               {accumulatedCost.골드 > 0 && (
                 <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('골드')}>
                   <input
@@ -1020,9 +1120,6 @@ export default function WangapSimulator() {
       </div>
       </div>
 
-      <div className={styles.tempNotice}>
-        완갑은 아직 인게임 스펙이 공개되지 않아 확률·재료 소모량·승급 비용이 전부 임시값입니다. 공개 후 실제 수치로 교체됩니다.
-      </div>
     </div>
   );
 }

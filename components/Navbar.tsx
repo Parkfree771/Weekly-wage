@@ -15,6 +15,7 @@ type NavItem = {
   href: string;
   label: string;
   badge?: string;
+  badgeClass?: string; // 전용 배지 스타일 (미지정 시 badge 텍스트 기준 기본 스타일)
 };
 
 type NavGroup = {
@@ -52,7 +53,7 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-refining',
     items: [
       { href: '/refining', label: '재련 시뮬' },
-      { href: '/wangap', label: '완갑 시뮬', badge: 'BETA' },
+      { href: '/wangap', label: '완갑 시뮬', badge: 'NEW', badgeClass: 'nav-badge-wangap' },
       { href: '/bracelet', label: '팔찌 시뮬' },
       { href: '/expedition-gold', label: '원정대 수급 골드 시뮬', badge: 'NEW' },
     ],
@@ -91,14 +92,14 @@ export default function Navbar() {
     return group.items.some(item => isActive(item.href));
   };
 
-  // 그룹 내 첫 배지를 그룹 헤더에도 노출 (NEW/BETA 등 텍스트 그대로)
+  // 그룹 내 첫 배지 항목을 그룹 헤더에도 노출 (텍스트·전용 스타일 그대로)
   const getGroupBadge = (group: NavGroup) => {
-    return group.items.find(item => item.badge)?.badge;
+    return group.items.find(item => item.badge);
   };
 
-  // BETA는 전용 스타일, 나머지(NEW 등)는 기존 스타일
-  const badgeClass = (badge: string) =>
-    badge === 'BETA' ? 'nav-badge-beta' : 'nav-badge-new';
+  // 항목 전용 스타일(badgeClass) 우선, 없으면 BETA 전용 / 기본(NEW 등) 스타일
+  const badgeClass = (badge: string, custom?: string) =>
+    custom ?? (badge === 'BETA' ? 'nav-badge-beta' : 'nav-badge-new');
 
   const getNavClass = (href: string) => {
     const pageClass = href === '/refining' ? 'nav-refining' :
@@ -191,7 +192,7 @@ export default function Navbar() {
                   style={{ cursor: 'pointer' }}
                 >
                   {group.label}
-                  {(() => { const b = getGroupBadge(group); return b ? <span className={badgeClass(b)}>{b}</span> : null; })()}
+                  {(() => { const b = getGroupBadge(group); return b?.badge ? <span className={badgeClass(b.badge, b.badgeClass)}>{b.badge}</span> : null; })()}
                   <svg width="10" height="10" viewBox="0 0 10 10" style={{ marginLeft: '4px', opacity: 0.6 }}>
                     <path d="M2 4L5 7L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -209,7 +210,7 @@ export default function Navbar() {
                       onClick={() => setOpenDropdown(null)}
                     >
                       {item.label}
-                      {item.badge && <span className={badgeClass(item.badge)}>{item.badge}</span>}
+                      {item.badge && <span className={badgeClass(item.badge, item.badgeClass)}>{item.badge}</span>}
                     </Link>
                   ))}
                 </div>
@@ -412,7 +413,7 @@ export default function Navbar() {
                   >
                     <span className="navbar-offcanvas-trigger-label">
                       {group.label}
-                      {(() => { const b = getGroupBadge(group); return b ? <span className={badgeClass(b)}>{b}</span> : null; })()}
+                      {(() => { const b = getGroupBadge(group); return b?.badge ? <span className={badgeClass(b.badge, b.badgeClass)}>{b.badge}</span> : null; })()}
                     </span>
                     <svg
                       className={`navbar-offcanvas-chevron ${openMobileGroup === group.label ? 'open' : ''}`}
@@ -441,7 +442,7 @@ export default function Navbar() {
                           onClick={handleClose}
                         >
                           {item.label}
-                          {item.badge && <span className={badgeClass(item.badge)}>{item.badge}</span>}
+                          {item.badge && <span className={badgeClass(item.badge, item.badgeClass)}>{item.badge}</span>}
                         </Link>
                       ))}
                     </div>
