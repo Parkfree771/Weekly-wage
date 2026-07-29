@@ -706,7 +706,7 @@ export default function WangapAverageCalculator() {
             <div className={styles.infoMessage}>
               <span className={styles.infoMessageIcon}></span>
               <small className={styles.infoMessageText}>
-                {calcMode === 'median' && '중앙값 기준: 50%의 유저가 이 비용 이하로 성공합니다. 장인의 기운과 실패 시 확률 증가가 반영된 수치입니다.'}
+                {calcMode === 'median' && '중앙값 기준: 단계마다 절반이 이 횟수 안에 성공하는 값을 더한 수치입니다. 묶는 단계가 많을수록 전체 기준으로는 낮게 잡히니, 구간이 길면 평균값을 함께 보세요.'}
                 {calcMode === 'average' && '평균값 기준: 장인의 기운과 실패 시 확률 증가가 반영된 예상 수치입니다. 실제 소모량은 확률에 따라 다를 수 있습니다.'}
                 {calcMode === 'pity' && '장기백 기준: 매번 장인의 기운 100%에서 성공하는 최악의 경우입니다. 실제로는 이보다 적게 소모됩니다.'}
               </small>
