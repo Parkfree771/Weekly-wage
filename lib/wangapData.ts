@@ -156,13 +156,13 @@ export const WANGAP_PROMO_MATERIALS: Record<
 > = {
   사령의잔영: {
     name: '사령의 잔영',
-    icon: '/wangap-promo-relic5.webp',
+    icon: '/wangap-promo-wraith-echo.webp',
     source: '벨가르딘 노말',
     weekly: '풀더보기 시 주 60개',
   },
   죽음의손: {
     name: '죽음의 손',
-    icon: '/wangap-promo-ancient5.webp',
+    icon: '/wangap-promo-hand-of-death.webp',
     source: '벨가르딘 하드·나이트메어',
     weekly: '풀더보기 시 주 60개',
   },

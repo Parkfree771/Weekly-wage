@@ -16,9 +16,12 @@ const MATERIAL_IMAGES: { [key: string]: string } = {
   '위대한 운명의 돌파석': '/destiny-breakthrough-stone2.webp',
   '운명의 파편': '/destiny-shard-bag-large.webp',
   '코어': '/cerka-core2.webp',
-  '유물 승급 재료': '/wangap-promo-relic5.webp',
-  '고대 승급 재료': '/wangap-promo-ancient5.webp',
+  '사령의 잔영': '/wangap-promo-wraith-echo.webp',
+  '죽음의 손': '/wangap-promo-hand-of-death.webp',
 };
+
+// 완갑 승급(해방) 재료 — 난이도별 고유 보상이라 카드 배지에 총량을 따로 표기한다.
+const PROMO_MATERIAL_NAMES = ['사령의 잔영', '죽음의 손'];
 
 // 묶음 단위 (개당 가격 = 시세 / bundleSize)
 const BUNDLE_SIZES: { [key: string]: number } = {
@@ -192,9 +195,9 @@ export default function BelgardinPage() {
                 const cardFinalValue = totalGold + totalBasicValueCard;
                 // 카드 배지는 이 레이드의 고유 보상(승급 재료) 총량. 더보기까지 하면 2배가 된다.
                 const promoMats = stage.gates
-                  .map(g => g.materials.find(m => m.name.endsWith('승급 재료')))
+                  .map(g => g.materials.find(m => PROMO_MATERIAL_NAMES.includes(m.name)))
                   .filter((m): m is Material => !!m);
-                const promoLabel = promoMats[0]?.name.replace(' 재료', '') || '';
+                const promoLabel = promoMats[0]?.name || '';
                 const totalPromo = promoMats.reduce((sum, m) => sum + m.amount, 0);
                 return (
                   <div

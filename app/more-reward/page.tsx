@@ -25,8 +25,8 @@ const MATERIAL_ICONS: Record<string, string> = {
   '은총의 파편': '/dmschddmlvkvus.webp',
   '코어': '/cerka-core.webp',
   '고통의 가시': '/pulsating-thorn.webp',
-  '유물 승급 재료': '/wangap-promo-relic5.webp',
-  '고대 승급 재료': '/wangap-promo-ancient5.webp',
+  '사령의 잔영': '/wangap-promo-wraith-echo.webp',
+  '죽음의 손': '/wangap-promo-hand-of-death.webp',
 };
 
 const fmt = (n: number) => Math.round(n).toLocaleString('ko-KR');

@@ -12,6 +12,8 @@
 // 수치 검증: 2026-07-27 인게임 보상 화면 캡쳐 전수 대조 완료 (더보기 재료·비용 전면 교정).
 // gold 는 총 클리어 골드(유통+귀속), boundGold 는 그중 귀속. more 는 더보기 시 "추가"로 받는 분량.
 // 코어·고통의 가시·은총의 파편·승급 재료는 클리어와 더보기가 같은 수량.
+// 벨가르딘 승급 재료(사령의 잔영·죽음의 손)는 2026-07-29 공식 수치 — 모든 난이도 동일하게
+// 1관문 12개 / 2관문 18개, 더보기까지 하면 주 60개 (lib/wangapData.ts 의 승급 비용과 짝).
 // 벨가르딘은 더보기 재련 재료가 미공개(moreDataIncomplete) — raidRewards 파생에서 제외되어
 // 더보기 효율 페이지에 '보상 미정'으로 뜬다. 출시 후 more 에 재련 재료만 채우고 플래그를 지우면 된다.
 
@@ -31,9 +33,9 @@ export const MATERIAL_IDS = {
   CERKA_CORE: 0, // 코어 (거래 불가)
   PULSATING_THORN: 0, // 고통의 가시 (거래 불가)
   GRACE_FRAGMENT: 0, // 은총의 파편 (거래 불가)
-  // 벨가르딘 고유 보상 — 완갑 승급 재료 (거래소 시세 미추적이라 가치 계산 제외)
-  RELIC_PROMOTION: 0, // 유물 승급 재료 (노말 고유 보상)
-  ANCIENT_PROMOTION: 0, // 고대 승급 재료 (하드·나메 고유 보상)
+  // 벨가르딘 고유 보상 — 완갑 승급(해방) 재료 (거래 불가라 가치 계산 제외)
+  WRAITH_ECHO: 0, // 사령의 잔영 (노말 고유 보상)
+  HAND_OF_DEATH: 0, // 죽음의 손 (하드·나메 고유 보상)
 };
 
 export const MATERIAL_NAMES = {
@@ -51,8 +53,8 @@ export const MATERIAL_NAMES = {
   CERKA_CORE: '코어',
   PULSATING_THORN: '고통의 가시',
   GRACE_FRAGMENT: '은총의 파편',
-  RELIC_PROMOTION: '유물 승급 재료',
-  ANCIENT_PROMOTION: '고대 승급 재료',
+  WRAITH_ECHO: '사령의 잔영',
+  HAND_OF_DEATH: '죽음의 손',
 };
 
 // 묶음 단위 - 개당 가격 계산을 위한 나눗수
@@ -109,11 +111,11 @@ export const RAID_TABLE: RaidTableEntry[] = [
     moreDataIncomplete: true,
     gates: [
       { gate: 1, gold: 30000, boundGold: 0, moreGold: 9600,
-        clear: [m('ANCIENT_PROMOTION', 20), m('CERKA_CORE', 4)],
-        more: [m('ANCIENT_PROMOTION', 20), m('CERKA_CORE', 4)] },
+        clear: [m('HAND_OF_DEATH', 12), m('CERKA_CORE', 4)],
+        more: [m('HAND_OF_DEATH', 12), m('CERKA_CORE', 4)] },
       { gate: 2, gold: 45000, boundGold: 0, moreGold: 14400,
-        clear: [m('ANCIENT_PROMOTION', 30), m('CERKA_CORE', 4)],
-        more: [m('ANCIENT_PROMOTION', 30), m('CERKA_CORE', 4)] },
+        clear: [m('HAND_OF_DEATH', 18), m('CERKA_CORE', 4)],
+        more: [m('HAND_OF_DEATH', 18), m('CERKA_CORE', 4)] },
     ],
   },
   {
@@ -122,11 +124,11 @@ export const RAID_TABLE: RaidTableEntry[] = [
     moreDataIncomplete: true,
     gates: [
       { gate: 1, gold: 25000, boundGold: 0, moreGold: 8000,
-        clear: [m('ANCIENT_PROMOTION', 12), m('CERKA_CORE', 3)],
-        more: [m('ANCIENT_PROMOTION', 12), m('CERKA_CORE', 3)] },
+        clear: [m('HAND_OF_DEATH', 12), m('CERKA_CORE', 3)],
+        more: [m('HAND_OF_DEATH', 12), m('CERKA_CORE', 3)] },
       { gate: 2, gold: 37000, boundGold: 0, moreGold: 11840,
-        clear: [m('ANCIENT_PROMOTION', 18), m('CERKA_CORE', 3)],
-        more: [m('ANCIENT_PROMOTION', 18), m('CERKA_CORE', 3)] },
+        clear: [m('HAND_OF_DEATH', 18), m('CERKA_CORE', 3)],
+        more: [m('HAND_OF_DEATH', 18), m('CERKA_CORE', 3)] },
     ],
   },
   {
@@ -135,11 +137,11 @@ export const RAID_TABLE: RaidTableEntry[] = [
     moreDataIncomplete: true,
     gates: [
       { gate: 1, gold: 20000, boundGold: 0, moreGold: 6400,
-        clear: [m('RELIC_PROMOTION', 6), m('CERKA_CORE', 3)],
-        more: [m('RELIC_PROMOTION', 6), m('CERKA_CORE', 3)] },
+        clear: [m('WRAITH_ECHO', 12), m('CERKA_CORE', 3)],
+        more: [m('WRAITH_ECHO', 12), m('CERKA_CORE', 3)] },
       { gate: 2, gold: 30000, boundGold: 0, moreGold: 9600,
-        clear: [m('RELIC_PROMOTION', 9), m('CERKA_CORE', 3)],
-        more: [m('RELIC_PROMOTION', 9), m('CERKA_CORE', 3)] },
+        clear: [m('WRAITH_ECHO', 18), m('CERKA_CORE', 3)],
+        more: [m('WRAITH_ECHO', 18), m('CERKA_CORE', 3)] },
     ],
   },
   {

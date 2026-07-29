@@ -59,8 +59,9 @@ try {
     '고통의 가시': 'pulsatingThorn',
     '코어': 'core',
     '은총의 파편': 'graceFragment',
-    '유물 승급 재료': 'promotionMaterial',
-    '고대 승급 재료': 'promotionMaterial',
+    // 완갑 승급(해방) 재료 2종 — 노말과 하드·나메가 서로 다른 재료라 키를 나눠 이름을 살린다.
+    '사령의 잔영': 'wraithEcho',
+    '죽음의 손': 'handOfDeath',
   };
 
   const toAppMats = (mats) => {
@@ -123,7 +124,8 @@ export type RaidTableMaterials = {
   pulsatingThorn?: number;
   core?: number;
   graceFragment?: number;
-  promotionMaterial?: number;
+  wraithEcho?: number;
+  handOfDeath?: number;
 };
 
 export type RaidTableRow = {
@@ -151,7 +153,8 @@ export const RAID_TABLE_MATERIAL_LABELS: Record<keyof RaidTableMaterials, string
     pulsatingThorn: '고통의 가시',
     core: '코어',
     graceFragment: '은총의 파편',
-    promotionMaterial: '승급 재료',
+    wraithEcho: '사령의 잔영',
+    handOfDeath: '죽음의 손',
   }, null, 2)};
 
 export const raidRewardTable: RaidTableRow[] = ${j(raidRows, null, 2)};
