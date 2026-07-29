@@ -533,7 +533,7 @@ export default function WangapSimulator() {
                           alt={promoMat.name}
                           fill
                           sizes="56px"
-                          style={{ objectFit: 'contain' }}
+                          style={{ objectFit: 'cover' }}
                         />
                       </span>
                       <span className={styles.promoConnectorArrow}>승급</span>
@@ -586,7 +586,7 @@ export default function WangapSimulator() {
                       alt={WANGAP_PROMO_MATERIALS[opt.material].name}
                       fill
                       sizes="72px"
-                      style={{ objectFit: 'contain' }}
+                      style={{ objectFit: 'cover' }}
                     />
                   </span>
                   <span className={styles.promoOptionName}>{WANGAP_PROMO_MATERIALS[opt.material].name}</span>
@@ -718,7 +718,7 @@ export default function WangapSimulator() {
                           alt={WANGAP_PROMO_MATERIALS[opt.material].name}
                           fill
                           sizes="72px"
-                          style={{ objectFit: 'contain' }}
+                          style={{ objectFit: 'cover' }}
                         />
                       </span>
                       <span className={styles.promoOptionName}>{WANGAP_PROMO_MATERIALS[opt.material].name}</span>

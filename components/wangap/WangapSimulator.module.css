@@ -274,13 +274,14 @@
     0 0 0 2px rgba(99, 102, 241, 0.5);
 }
 
+/* 승급 재료 아이콘 — 이미지가 배경을 자체 포함(정사각 풀블리드)이라 별도 배경을 깔지 않는다.
+   예전 투명 아이콘 시절의 코어 그라데이션을 남겨두면 이미지 배경과 겹쳐 보인다. */
 .promoConnectorIcon {
   position: relative;
   width: 58px;
   height: 58px;
   border-radius: 8px;
   overflow: hidden;
-  background: linear-gradient(0deg, #3a2a52 0%, #1d152b 60%, #0b0810 100%);
 }
 
 .promoConnectorArrow {
@@ -424,10 +425,13 @@
   cursor: default;
 }
 
+/* 카드 안 큰 아이콘 — 이미지 배경이 각진 정사각으로 튀어 보이지 않게 모서리만 둥글게 */
 .promoOptionIcon {
   position: relative;
   width: 72px;
   height: 72px;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .promoOptionName {
@@ -2063,13 +2067,13 @@
   cursor: pointer;
 }
 
+/* 이미지 자체 배경 — promoConnectorIcon 과 동일하게 배경 없이 둥글게만 자른다 */
 .journeyPromoIcon {
   position: relative;
   width: 48px;
   height: 48px;
   border-radius: 8px;
   overflow: hidden;
-  background: linear-gradient(0deg, #3a2a52 0%, #1d152b 60%, #0b0810 100%);
 }
 
 .journeyPromoText {

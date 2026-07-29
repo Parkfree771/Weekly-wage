@@ -477,7 +477,7 @@ export default function WangapAverageCalculator() {
                           alt={WANGAP_PROMO_MATERIALS[WANGAP_PROMOTION_COSTS[item.to][0].material].name}
                           fill
                           sizes="38px"
-                          style={{ objectFit: 'contain' }}
+                          style={{ objectFit: 'cover' }}
                         />
                       </span>
                       <span className={wg.journeyPromoText}>+{item.level} 승급</span>
@@ -507,7 +507,7 @@ export default function WangapAverageCalculator() {
                         alt={WANGAP_PROMO_MATERIALS[opt.material].name}
                         fill
                         sizes="72px"
-                        style={{ objectFit: 'contain' }}
+                        style={{ objectFit: 'cover' }}
                       />
                     </span>
                     <span className={wg.promoOptionName}>{WANGAP_PROMO_MATERIALS[opt.material].name}</span>
@@ -632,6 +632,7 @@ export default function WangapAverageCalculator() {
                             alt={WANGAP_PROMO_MATERIALS[opt.material].name}
                             width={20}
                             height={20}
+                            style={{ borderRadius: '4px' }}
                           />
                           {WANGAP_PROMO_MATERIALS[opt.material].name} ×{opt.amount}
                         </span>
