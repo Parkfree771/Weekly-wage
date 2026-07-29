@@ -833,61 +833,91 @@ html, body {
   background-color: var(--color-primary) !important;
 }
 
-/* Nav 배지 — 매트 단색, 흰 글씨 (그라데이션·광 효과 없음) */
-.nav-badge-new {
+/* ── Nav 배지 공통 ──
+   매트 단색 + 입체감만. 그라데이션·글로우·광택 애니메이션 없음.
+   입체는 위쪽 미세 하이라이트 / 아래쪽 안쪽 그림자 / 1px 밑동 / 옅은 드롭섀도 네 겹으로만 낸다.
+   색은 --badge-bg / --badge-edge 두 변수로 갈린다. */
+.nav-badge-new,
+.nav-badge-wangap,
+.nav-badge-beta {
+  --badge-bg: #f59e0b;
+  --badge-edge: rgba(0, 0, 0, 0.2);
+  /* 활성 메뉴 대응 — 진한 배경 위에서는 흰 칩 + --badge-ink 글씨, 옅은 틴트 위에서는 --badge-bg-strong */
+  --badge-ink: #b45309;
+  --badge-bg-strong: #d97706;
   position: relative;
-  display: inline-block;
-  margin-left: 6px;
-  padding: 2px 7px;
-  font-size: 8.5px;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 7px;
+  padding: 3.5px 10px;
+  font-size: 11px;
   font-weight: 800;
-  line-height: 1.4;
+  line-height: 1.3;
   color: #fff;
-  background: #f59e0b;
-  border-radius: 5px;
+  background: var(--badge-bg);
+  border-radius: 7px;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.06em;
   vertical-align: middle;
+  white-space: nowrap;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+    0 1px 0 var(--badge-edge),
+    0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
-/* 완갑 시뮬 전용 NEW 배지 — 완갑 등급 성장(영웅 보라 → 고대 골드) 그라데이션 + 은은한 보라 글로우 */
+/* 완갑 시뮬 전용 — 완갑 등급 보라 단색 */
 .nav-badge-wangap {
-  position: relative;
-  display: inline-block;
-  margin-left: 6px;
-  padding: 2.5px 8px;
-  font-size: 9px;
-  font-weight: 800;
-  line-height: 1.4;
-  color: #fff;
-  background: linear-gradient(105deg, #7c3aed 0%, #a855f7 48%, #d97706 100%);
-  border-radius: 5px;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  vertical-align: middle;
-  box-shadow: 0 0 7px rgba(147, 51, 234, 0.5);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --badge-bg: #7c3aed;
+  --badge-edge: rgba(76, 29, 149, 0.55);
+  --badge-ink: #6d28d9;
+  --badge-bg-strong: #6d28d9;
 }
 
 [data-theme="dark"] .nav-badge-wangap {
-  box-shadow: 0 0 9px rgba(168, 85, 247, 0.65);
+  --badge-bg: #8b5cf6;
+  --badge-edge: rgba(59, 20, 120, 0.6);
+  --badge-bg-strong: #7c3aed;
 }
 
-/* BETA 배지 — NEW보다 살짝 크게, 앱 다운로드와 동일한 대표색 단색 */
+/* BETA 배지 — 앱 다운로드와 동일한 대표색 */
 .nav-badge-beta {
-  position: relative;
-  display: inline-block;
-  margin-left: 6px;
-  padding: 2.5px 8px;
-  font-size: 9.5px;
-  font-weight: 800;
-  line-height: 1.4;
-  color: #fff;
-  background: var(--color-primary);
-  border-radius: 5px;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  vertical-align: middle;
+  --badge-bg: var(--color-primary);
+  --badge-edge: rgba(30, 41, 110, 0.5);
+  --badge-ink: var(--color-primary-dark);
+  --badge-bg-strong: var(--color-primary-dark);
+}
+
+/* ── 활성 메뉴 위의 배지 ──
+   1) 대표색 단색 배경(데스크톱 상단 링크·모바일 링크 active): 배지를 흰 칩으로 반전.
+      파랑 배경 위 보라/주황은 서로 뭉개져서 안 읽힌다. */
+.navbar-nav-link.active .nav-badge-new,
+.navbar-nav-link.active .nav-badge-wangap,
+.navbar-nav-link.active .nav-badge-beta,
+.navbar-offcanvas-link.active .nav-badge-new,
+.navbar-offcanvas-link.active .nav-badge-wangap,
+.navbar-offcanvas-link.active .nav-badge-beta {
+  --badge-bg: #fff;
+  --badge-edge: rgba(0, 0, 0, 0.24);
+  color: var(--badge-ink);
+  text-shadow: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 1px 0 var(--badge-edge),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* 2) 옅은 틴트 배경(드롭다운 active 항목·모바일 그룹 트리거 active): 한 톤 진하게만 */
+.nav-dropdown-item.active .nav-badge-new,
+.nav-dropdown-item.active .nav-badge-wangap,
+.nav-dropdown-item.active .nav-badge-beta,
+.navbar-offcanvas-trigger.active .nav-badge-new,
+.navbar-offcanvas-trigger.active .nav-badge-wangap,
+.navbar-offcanvas-trigger.active .nav-badge-beta {
+  --badge-bg: var(--badge-bg-strong);
 }
 
 /* Nav Dropdown */

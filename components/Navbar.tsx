@@ -55,7 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/refining', label: '재련 시뮬' },
       { href: '/wangap', label: '완갑 시뮬', badge: 'NEW', badgeClass: 'nav-badge-wangap' },
       { href: '/bracelet', label: '팔찌 시뮬' },
-      { href: '/expedition-gold', label: '원정대 수급 골드 시뮬', badge: 'NEW' },
+      { href: '/expedition-gold', label: '원정대 수급 골드 시뮬' },
     ],
   },
   {
