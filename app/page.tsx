@@ -83,7 +83,8 @@ export default function Home() {
         <div className="mt-4 mt-md-5">
           <button
             type="button"
-            className="btn btn-link p-0 h5 text-primary text-decoration-none"
+            className="btn btn-link p-0 small text-decoration-none"
+            style={{ color: 'var(--text-muted)' }}
             onClick={() => setShowIntro((v) => !v)}
             aria-expanded={showIntro}
           >

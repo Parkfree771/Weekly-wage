@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 
 interface AdFitUnitProps {
@@ -22,10 +22,20 @@ interface AdFitUnitProps {
 //
 // ins 의 display:none 은 애드핏 규격이다. 광고가 채워질 때 스크립트가 직접 풀어주고,
 // 안 채워지면 숨은 채로 남아 빈 공간이 생기지 않는다(대체 광고 미설정 기준).
+//
+// ins 는 마운트 후에만 렌더한다 — 서버 HTML에 포함하면 head 의 애드핏 로더가
+// 하이드레이션 전에 광고를 채워버려(스타일 변경 + 자식 주입) hydration mismatch 가 난다.
+// 로더가 ins 보다 먼저 실행되면 빈 스캔으로 끝나고 아래 per-mount 스크립트가 채운다.
 export default function AdFitUnit({ unit, width, height, className, style }: AdFitUnitProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     const host = hostRef.current;
     if (!host) return;
 
@@ -37,17 +47,19 @@ export default function AdFitUnit({ unit, width, height, className, style }: AdF
     return () => {
       script.remove();
     };
-  }, [unit]);
+  }, [mounted, unit]);
 
   return (
     <div ref={hostRef} className={className} style={style}>
-      <ins
-        className="kakao_ad_area"
-        style={{ display: 'none' }}
-        data-ad-unit={unit}
-        data-ad-width={String(width)}
-        data-ad-height={String(height)}
-      />
+      {mounted && (
+        <ins
+          className="kakao_ad_area"
+          style={{ display: 'none' }}
+          data-ad-unit={unit}
+          data-ad-width={String(width)}
+          data-ad-height={String(height)}
+        />
+      )}
     </div>
   );
 }

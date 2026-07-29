@@ -224,6 +224,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   padding-top: 52px;
+  /* sticky footer — 콘텐츠가 짧은 페이지에서 푸터가 화면 중간에 뜨지 않도록
+     body를 세로 flex로 만들고 .content-shell(flex:1)이 남는 높이를 채운다.
+     데스크톱은 body zoom 0.85로 시각 높이가 85%로 줄므로 아래 미디어쿼리에서 역보정. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 /* Bootstrap 컴포넌트도 동일 폰트 스택 강제 */
@@ -395,6 +401,8 @@ input, select, textarea,
 @media screen and (min-width: 1024px) {
   body {
     zoom: 0.85;
+    /* zoom 0.85로 렌더 높이가 85%로 줄므로 100vh를 채우려면 1/0.85배 필요 (sticky footer 보정) */
+    min-height: calc(100vh / 0.85);
   }
 
   /* body zoom 보정: 모달/백드롭은 fixed 요소라 body zoom과 뷰포트가 어긋나
@@ -508,9 +516,9 @@ textarea:-ms-input-placeholder {
    Global Footer Styles
    ========================================================================== */
 .site-footer {
-  margin-top: 60px;
-  padding: 20px 0;
-  min-height: 120px;
+  /* 얇은 푸터 — 고정 min-height 없이 내용 높이만큼만. 콘텐츠와의 간격은 margin-top으로 유지 */
+  margin-top: 32px;
+  padding: 14px 0;
   contain: layout style;
   border-top: 1px solid rgba(59, 80, 181, 0.1);
   background: #f8f9fb;
@@ -840,6 +848,29 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 0.8px;
   vertical-align: middle;
+}
+
+/* 완갑 시뮬 전용 NEW 배지 — 완갑 등급 성장(영웅 보라 → 고대 골드) 그라데이션 + 은은한 보라 글로우 */
+.nav-badge-wangap {
+  position: relative;
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2.5px 8px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: #fff;
+  background: linear-gradient(105deg, #7c3aed 0%, #a855f7 48%, #d97706 100%);
+  border-radius: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  vertical-align: middle;
+  box-shadow: 0 0 7px rgba(147, 51, 234, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .nav-badge-wangap {
+  box-shadow: 0 0 9px rgba(168, 85, 247, 0.65);
 }
 
 /* BETA 배지 — NEW보다 살짝 크게, 앱 다운로드와 동일한 대표색 단색 */
@@ -1340,6 +1371,9 @@ html, body {
   display: flex;
   justify-content: center;
   margin: 0 auto;
+  /* body 세로 flex의 채움 담당 — 짧은 페이지에서 남는 높이를 흡수해 푸터를 바닥에 붙인다 */
+  flex: 1 0 auto;
+  width: 100%;
 }
 
 .content-shell-main {

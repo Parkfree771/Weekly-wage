@@ -59,22 +59,21 @@ export default function GuideFaq({
   return (
     <div className="mt-5">
       {related.length > 0 && (
-        <div className="mb-3">
-          <h2 className="h6 text-primary mb-2">관련 가이드</h2>
-          <ul className="small mb-0">
-            {related.map((g) => (
-              <li key={g.href}>
-                <Link href={g.href}>{g.title}</Link>
-                <span className="d-block" style={{ color: 'var(--text-muted)' }}>{g.summary}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="mb-2 small" style={{ color: 'var(--text-muted)' }}>
+          <span className="me-1">관련 가이드:</span>
+          {related.map((g, i) => (
+            <span key={g.href}>
+              {i > 0 && <span className="mx-1">·</span>}
+              <Link href={g.href} style={{ color: 'var(--text-muted)' }}>{g.title}</Link>
+            </span>
+          ))}
         </div>
       )}
       {(hasGuide || hasFaq) && (
       <button
         type="button"
-        className="btn btn-link p-0 h5 text-primary text-decoration-none"
+        className="btn btn-link p-0 small text-decoration-none"
+        style={{ color: 'var(--text-muted)' }}
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
