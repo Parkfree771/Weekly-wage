@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, Fragment } from 'react';
+import { createPortal } from 'react-dom';
 import { Row, Col, Card } from 'react-bootstrap';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
@@ -24,6 +25,8 @@ import {
   type WangapCalcMode,
   type WangapBreathMode,
   type WangapAvgPromotionRow,
+  type WangapAvgEnhanceRow,
+  type WangapBreathPlanSegment,
 } from '../../lib/wangapAverage';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import { OPT_MATERIAL_LIST, type OptMatKey } from './wangapShared';
@@ -65,6 +68,19 @@ export default function WangapAverageCalculator() {
 
   // 등급 카드 사이 승급 재료 상세 패널
   const [openPromoInfo, setOpenPromoInfo] = useState<WangapPromotedGrade | null>(null);
+
+  // 단계별 숨결 투입 계획 팝업 (재련 평균 시뮬의 최적 숨결 팝업과 동일 구조)
+  const [openBreathPopup, setOpenBreathPopup] = useState<'lava' | 'glacier' | null>(null);
+  useEffect(() => {
+    if (!openBreathPopup) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-breath-popup]') || t.closest('[data-breath-opt-btn]')) return;
+      setOpenBreathPopup(null);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [openBreathPopup]);
 
   // === 거래소 시세 ===
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
@@ -173,6 +189,12 @@ export default function WangapAverageCalculator() {
     [result.rows],
   );
 
+  // 단계별 숨결 계획 표시용 강화 행
+  const enhanceRows = useMemo(
+    () => result.rows.filter((r): r is WangapAvgEnhanceRow => r.type === 'enhance'),
+    [result.rows],
+  );
+
   // 강화 여정: [시작 등급 +S] → (승급) → [중간 등급 +10/+15] → (승급) → [최종 등급 +T]
   const journey = useMemo<JourneyItem[]>(() => {
     const items: JourneyItem[] = [{ kind: 'node', grade: startGrade, level: startLevel }];
@@ -200,6 +222,59 @@ export default function WangapAverageCalculator() {
 
   const showPromotion = promoRows.length > 0;
 
+  const calcModeLabel = calcMode === 'median' ? '중앙값' : calcMode === 'average' ? '평균값' : '장기백';
+
+  // 한 구간 표기: "1~4회 용10·빙10" (마지막 구간은 열린 구간 "12회~")
+  const segLabel = (s: WangapBreathPlanSegment, isLast: boolean) => {
+    const range = s.from === s.to ? `${s.from}회`
+      : isLast ? `${s.from}회~`
+      : `${s.from}~${s.to}회`;
+    const mats = [
+      s.lava > 0 ? `용${s.lava}` : null,
+      s.glacier > 0 ? `빙${s.glacier}` : null,
+    ].filter(Boolean).join('·');
+    return `${range} ${mats || '노숨'}`;
+  };
+
+  const planLabel = (row: WangapAvgEnhanceRow) => {
+    if (row.plan.length === 0) return '노숨';
+    if (row.planKind === 'none') return '노숨';
+    if (row.planKind === 'full') return '풀숨';
+    return row.plan.map((s, i) => segLabel(s, i === row.plan.length - 1)).join(' / ');
+  };
+
+  const planChipCls = (kind: WangapAvgEnhanceRow['planKind']) =>
+    kind === 'none' ? styles.breathChipNone : kind === 'full' ? styles.breathChipFull : styles.breathChipPartial;
+
+  // 단계별 숨결 계획 팝업 — "최적" 버튼 바로 위. 어느 단계의 몇 회차에 몇 개를 넣는지 나열한다.
+  const renderBreathPopup = (which: 'lava' | 'glacier') => {
+    if (openBreathPopup !== which) return null;
+    const popup = (
+      <div className={styles.breathPopup} data-breath-popup onClick={e => e.stopPropagation()}>
+        <div className={styles.breathPopupHeader}>
+          <span className={styles.breathPopupTitle}>
+            단계별 숨결 <span className={styles.breathPopupSub}>{calcModeLabel}·시세연동</span>
+          </span>
+          <button type="button" className={styles.breathPopupClose} onClick={() => setOpenBreathPopup(null)}>✕</button>
+        </div>
+        {enhanceRows.length === 0 ? (
+          <div className={styles.breathPopupEmpty}>목표 단계를 먼저 설정하세요</div>
+        ) : (
+          <div className={styles.breathPopupLine}>
+            {enhanceRows.map(row => (
+              <span key={row.level} className={`${styles.breathChip} ${planChipCls(row.planKind)}`}>
+                <span className={styles.breathChipLv}>+{row.level}→{row.level + 1}</span>
+                <span className={styles.breathChipVal}>{planLabel(row)}</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+    // 모바일: 카드 transform에 fixed가 갇히지 않도록 body 포털 (재련 팝업과 동일)
+    return isMobile ? createPortal(popup, document.body) : popup;
+  };
+
   // 숨결 카드 하단 컨트롤 — 미사용/풀숨/최적 (재련 숨결 컨트롤과 동일한 버튼 스타일)
   const renderBreathModeControl = (which: 'lava' | 'glacier') => {
     const mode = which === 'lava' ? lavaMode : glacierMode;
@@ -216,12 +291,18 @@ export default function WangapAverageCalculator() {
             <div key={opt.value} className={styles.advTurnItem}>
               <button
                 type="button"
+                {...(opt.value === 'optimal' ? { 'data-breath-opt-btn': true } : {})}
                 className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${mode === opt.value ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-                onClick={() => setMode(opt.value)}
+                onClick={() => {
+                  setMode(opt.value);
+                  // 최적: 적용과 동시에 단계별 계획 팝업을 열어 어디에 몇 개인지 바로 보여준다
+                  setOpenBreathPopup(prev => (opt.value === 'optimal' ? (prev === which ? null : which) : null));
+                }}
                 title={opt.value === 'optimal' ? '시세·확률 기준 단계별 최적 개수 자동 적용' : undefined}
               >
-                {opt.label}
+                {opt.label}{opt.value === 'optimal' && mode === 'optimal' ? ' ▾' : ''}
               </button>
+              {opt.value === 'optimal' && renderBreathPopup(which)}
             </div>
           ))}
         </div>
@@ -241,37 +322,6 @@ export default function WangapAverageCalculator() {
   return (
     <div className={wg.container} data-grade={startGrade}>
       <div className={wg.mainLayout}>
-        {/* 승급 재료 상세 (여정의 승급 상자 클릭으로 열림) */}
-        {openPromoInfo && (
-          <div className={wg.promoInfoPanel} data-grade={openPromoInfo}>
-            <div className={wg.promoInfoTitle}>
-              {WANGAP_GRADE_ORDER[WANGAP_GRADE_ORDER.indexOf(openPromoInfo) - 1]} → {openPromoInfo} 승급
-            </div>
-            <div className={wg.promoOptionRow}>
-              {WANGAP_PROMOTION_COSTS[openPromoInfo].map((opt, i) => (
-                <Fragment key={opt.material}>
-                  {i > 0 && <div className={wg.promoOptionOr}>or</div>}
-                  <div className={`${wg.promoOptionCard} ${wg.promoOptionCardStatic}`}>
-                    <span className={wg.promoOptionIcon}>
-                      <Image
-                        src={WANGAP_PROMO_MATERIALS[opt.material].icon}
-                        alt={WANGAP_PROMO_MATERIALS[opt.material].name}
-                        fill
-                        sizes="72px"
-                        style={{ objectFit: 'contain' }}
-                      />
-                    </span>
-                    <span className={wg.promoOptionName}>{WANGAP_PROMO_MATERIALS[opt.material].name}</span>
-                    <span className={wg.promoOptionAmount}>×{opt.amount}</span>
-                    <span className={wg.promoOptionAcquire}>{WANGAP_PROMO_MATERIALS[opt.material].source}</span>
-                    <span className={wg.promoOptionAcquire}>{WANGAP_PROMO_MATERIALS[opt.material].weekly}</span>
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* ===== 강화 구간 설정 (재련 평균 시뮬 카드 스타일) ===== */}
         {/* mainCard의 min-height(400px)는 결과 카드용 — 설정 카드는 내용만큼만 */}
         <Card className={styles.mainCard} style={{ minHeight: 'auto' }}>
@@ -439,6 +489,37 @@ export default function WangapAverageCalculator() {
 
           </Card.Body>
         </Card>
+
+        {/* 승급 재료 상세 — 여정의 승급 상자 클릭으로 구간 설정 카드 "아래"에 펼쳐진다 */}
+        {openPromoInfo && (
+          <div className={wg.promoInfoPanel} data-grade={openPromoInfo}>
+            <div className={wg.promoInfoTitle}>
+              {WANGAP_GRADE_ORDER[WANGAP_GRADE_ORDER.indexOf(openPromoInfo) - 1]} → {openPromoInfo} 승급
+            </div>
+            <div className={wg.promoOptionRow}>
+              {WANGAP_PROMOTION_COSTS[openPromoInfo].map((opt, i) => (
+                <Fragment key={opt.material}>
+                  {i > 0 && <div className={wg.promoOptionOr}>or</div>}
+                  <div className={`${wg.promoOptionCard} ${wg.promoOptionCardStatic}`}>
+                    <span className={wg.promoOptionIcon}>
+                      <Image
+                        src={WANGAP_PROMO_MATERIALS[opt.material].icon}
+                        alt={WANGAP_PROMO_MATERIALS[opt.material].name}
+                        fill
+                        sizes="72px"
+                        style={{ objectFit: 'contain' }}
+                      />
+                    </span>
+                    <span className={wg.promoOptionName}>{WANGAP_PROMO_MATERIALS[opt.material].name}</span>
+                    <span className={wg.promoOptionAmount}>×{opt.amount}</span>
+                    <span className={wg.promoOptionAcquire}>{WANGAP_PROMO_MATERIALS[opt.material].source}</span>
+                    <span className={wg.promoOptionAcquire}>{WANGAP_PROMO_MATERIALS[opt.material].weekly}</span>
+                  </div>
+                </Fragment>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ===== 예상 소모 재료 (재련 평균 시뮬과 동일한 카드) ===== */}
         <Card className={styles.mainCard}>

@@ -38,6 +38,18 @@ export interface WangapAvgParams {
   unitPrices: Record<WangapOptMatKey, number>;
 }
 
+// 숨결 투입 계획 한 구간 — "from~to 회차에는 용암 lava개 + 빙하 glacier개"
+// 실패 누적으로 확률이 오르면 최적 개수가 줄어들 수 있어 회차별로 달라진다 (k=11에서 상한 도달 후 일정).
+export interface WangapBreathPlanSegment {
+  from: number;    // 회차 (1부터)
+  to: number;      // 포함
+  lava: number;
+  glacier: number;
+}
+
+// none = 전 회차 노숨 / full = 전 회차 최대 개수 / partial = 회차별로 다름
+export type WangapBreathPlanKind = 'none' | 'full' | 'partial';
+
 export interface WangapAvgEnhanceRow {
   type: 'enhance';
   level: number;          // L → L+1
@@ -45,6 +57,9 @@ export interface WangapAvgEnhanceRow {
   tries: number;          // 대표 시도 횟수 (average 모드는 소수)
   lava: number;
   glacier: number;
+  // 이 단계의 숨결 투입 계획 (장인의 기운 확정 성공 회차는 숨결이 필요 없어 제외)
+  plan: WangapBreathPlanSegment[];
+  planKind: WangapBreathPlanKind;
 }
 
 export interface WangapAvgPromotionRow {
@@ -129,13 +144,32 @@ const chooseBreaths = (
   return best;
 };
 
+// 회차별 선택을 연속 구간으로 합쳐 계획으로 만든다 (같은 개수면 한 구간)
+const buildPlan = (
+  choices: Array<{ lava: number; glacier: number }>,
+  lavaMax: number,
+  glacierMax: number,
+): { plan: WangapBreathPlanSegment[]; planKind: WangapBreathPlanKind } => {
+  const plan: WangapBreathPlanSegment[] = [];
+  choices.forEach((c, i) => {
+    const last = plan[plan.length - 1];
+    if (last && last.lava === c.lava && last.glacier === c.glacier) last.to = i + 1;
+    else plan.push({ from: i + 1, to: i + 1, lava: c.lava, glacier: c.glacier });
+  });
+  const kind: WangapBreathPlanKind =
+    plan.every(s => s.lava === 0 && s.glacier === 0) ? 'none'
+    : plan.every(s => s.lava === lavaMax && s.glacier === glacierMax) ? 'full'
+    : 'partial';
+  return { plan, planKind: kind };
+};
+
 // 한 단계(L → L+1)의 대표 시도 횟수·숨결 소모 (정확한 분포 계산)
 const computeStep = (
   level: number,
   params: WangapAvgParams,
-): { tries: number; lava: number; glacier: number } => {
+): { tries: number; lava: number; glacier: number; plan: WangapBreathPlanSegment[]; planKind: WangapBreathPlanKind } => {
   const base = WANGAP_BASE_PROBABILITY[level] ?? 0;
-  if (base <= 0) return { tries: 0, lava: 0, glacier: 0 };
+  if (base <= 0) return { tries: 0, lava: 0, glacier: 0, plan: [], planKind: 'none' };
   const eff = getWangapBreathEffect(base);
 
   // 실패 확률 보너스는 k=11에서 2배 상한에 도달해 이후 일정 → 숨결 선택도 k별 캐시 가능
@@ -145,6 +179,8 @@ const computeStep = (
   const pk: number[] = [];
   const lavaAt: number[] = [];
   const glacierAt: number[] = [];
+  // 계획 표시용 회차별 선택 (확정 성공 회차는 숨결이 필요 없으므로 넣지 않는다)
+  const choices: Array<{ lava: number; glacier: number }> = [];
 
   while (survive > 1e-13 && k < 100000) {
     k++;
@@ -163,6 +199,7 @@ const computeStep = (
       lava = c.lava;
       glacier = c.glacier;
       fp = Math.min(capped + (lava + glacier) * eff.per, 1);
+      choices.push({ lava, glacier });
     }
     lavaCum += lava;
     glacierCum += glacier;
@@ -175,11 +212,12 @@ const computeStep = (
   }
 
   const n = pk.length;
-  if (n === 0) return { tries: 0, lava: 0, glacier: 0 };
+  const { plan, planKind } = buildPlan(choices, eff.lavaMax, eff.glacierMax);
+  if (n === 0) return { tries: 0, lava: 0, glacier: 0, plan, planKind };
 
   if (params.mode === 'pity') {
     // 매번 장인의 기운 100%에서 성공하는 최악의 경우
-    return { tries: n, lava: lavaAt[n - 1], glacier: glacierAt[n - 1] };
+    return { tries: n, lava: lavaAt[n - 1], glacier: glacierAt[n - 1], plan, planKind };
   }
   if (params.mode === 'average') {
     let tries = 0, lava = 0, glacier = 0;
@@ -188,15 +226,15 @@ const computeStep = (
       lava += pk[i] * lavaAt[i];
       glacier += pk[i] * glacierAt[i];
     }
-    return { tries, lava, glacier };
+    return { tries, lava, glacier, plan, planKind };
   }
   // median: 누적 성공 확률이 50%를 넘는 첫 시도
   let cum = 0;
   for (let i = 0; i < n; i++) {
     cum += pk[i];
-    if (cum >= 0.5) return { tries: i + 1, lava: lavaAt[i], glacier: glacierAt[i] };
+    if (cum >= 0.5) return { tries: i + 1, lava: lavaAt[i], glacier: glacierAt[i], plan, planKind };
   }
-  return { tries: n, lava: lavaAt[n - 1], glacier: glacierAt[n - 1] };
+  return { tries: n, lava: lavaAt[n - 1], glacier: glacierAt[n - 1], plan, planKind };
 };
 
 export function computeWangapAverage(params: WangapAvgParams): WangapAvgResult {
