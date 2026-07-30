@@ -18,7 +18,11 @@ import {
 import { auth } from '@/lib/firebase-client';
 import { claimNickname, releaseNickname } from '@/lib/nickname-service';
 
-import {
+// ⚠️ import type 필수 — types/user.ts 는 이름과 달리 런타임 헬퍼(411줄)를 갖고 있고
+//    거기서 data/raids → data/rewardTable(39KB, 전 레이드 보상표)까지 끌고 온다.
+//    값으로 import 하면 AuthProvider 가 root layout 에 있는 탓에 그 체인이 통째로
+//    "모든 페이지" 공용 번들에 실린다. 아래 4개는 전부 type 이므로 type import 로 고정.
+import type {
   UserProfile as UserProfileType,
   Character,
   WeeklyChecklist,

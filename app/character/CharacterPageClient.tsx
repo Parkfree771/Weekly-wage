@@ -1,13 +1,20 @@
 'use client';
 
 import { useState, useRef, useEffect, Suspense } from 'react';
+import { preconnect } from 'react-dom';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Container } from 'react-bootstrap';
 import { Form, Button } from 'react-bootstrap';
 import { useSearchHistory } from '@/lib/useSearchHistory';
 import type { CharacterData } from '@/lib/characterData';
-import CharacterDashboard from '@/components/character/CharacterDashboard';
+import dynamic from 'next/dynamic';
 import CharacterRanking, { type RankingEntry } from '@/components/character/CharacterRanking';
+
+// 대시보드는 캐릭터를 검색해 combatData 가 생긴 뒤에만 렌더된다.
+// 첫 진입 화면은 랭킹뿐이므로 정적 import 하면 62KB 를 안 쓰고 받는 셈이다.
+const CharacterDashboard = dynamic(() => import('@/components/character/CharacterDashboard'), {
+  loading: () => <div style={{ minHeight: '400px' }} />,
+});
 import GuideFaq from '@/components/common/GuideFaq';
 import { faqData } from './faq-data';
 import styles from './character.module.css';
@@ -27,6 +34,12 @@ function formatFetchedAt(iso: string): string {
 
 // 서버 래퍼(page.tsx)가 첫 랭킹 페이지를 미리 조회해 initialRanking으로 넘긴다
 export default function CharacterPageClient({ initialRanking = [] }: { initialRanking?: RankingEntry[] }) {
+  // 장비·보석·각인 아이콘은 전부 로아 CDN에서 오는데, 그 URL은 캐릭터 조회 응답이
+  // 도착한 뒤에야 알 수 있다. 미리 연결해 두면 첫 아이콘의 DNS+TLS 왕복을 아낀다.
+  // (전역 레이아웃이 아니라 이 페이지에서만 — 다른 페이지는 이 호스트를 안 쓴다)
+  preconnect('https://cdn-lostark.game.onstove.com');
+  preconnect('https://img.lostark.co.kr');
+
   return (
     <Suspense fallback={null}>
       <CharacterPageInner initialRanking={initialRanking} />

@@ -10,8 +10,6 @@ import {
   type EquipmentAPIResponse
 } from '@/lib/equipmentParser';
 import RefiningCalculator from '@/components/refining/RefiningCalculator';
-import RefiningSimulator from '@/components/refining/RefiningSimulator';
-import AdvancedRefiningSimulator from '@/components/refining/AdvancedRefiningSimulator';
 import dynamic from 'next/dynamic';
 import AdBanner from '@/components/ads/AdBanner';
 import GuideFaq from '@/components/common/GuideFaq';
@@ -54,6 +52,15 @@ const refiningGuideSections = [
 const RefiningStats = dynamic(() => import('@/components/refining/RefiningStats'), {
   ssr: false,
   loading: () => <div style={{ minHeight: '200px' }} />,
+});
+
+// 탭은 한 번에 하나만 렌더되는데 셋 다 정적 import 하면 첫 로드에 전부 실린다.
+// 기본 탭(평균 시뮬 = RefiningCalculator)만 정적으로 두고, 나머지 둘은 탭을 눌렀을 때 받는다.
+const RefiningSimulator = dynamic(() => import('@/components/refining/RefiningSimulator'), {
+  loading: () => <div style={{ minHeight: '400px' }} />,
+});
+const AdvancedRefiningSimulator = dynamic(() => import('@/components/refining/AdvancedRefiningSimulator'), {
+  loading: () => <div style={{ minHeight: '400px' }} />,
 });
 
 // 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
