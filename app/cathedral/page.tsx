@@ -331,7 +331,8 @@ function buildCalendar(perWeek: number, totalWeeks: number, exchangeMap: Exchang
 
 export default function CathedralPage() {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
-  const [selectedShopItem, setSelectedShopItem] = useState<number | null>(null);
+  // 기본 선택 = 지평의 재련 재료 상자 (SHOP_ITEMS id 9)
+  const [selectedShopItem, setSelectedShopItem] = useState<number | null>(9);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
   const [priceLoading, setPriceLoading] = useState(true);
   const [materialChecks, setMaterialChecks] = useState<Record<string, Record<string, Record<string, boolean>>>>({});
@@ -418,7 +419,7 @@ export default function CathedralPage() {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
+    <div className={styles.pageTheme} style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
       <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
         <Row className="justify-content-center">
           <Col xl={12} lg={12} md={12}>

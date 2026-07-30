@@ -1,4 +1,21 @@
 /* ==========================================================================
+   레이드 테마 색 — 헤더 채움색(--rd-head) + 그 보색 구분선(--rd-line)
+   익스트림: /extreme-s3-finale.jpg 실측 — 왼쪽 코발트블루(#113b72, 15.7%),
+   오른쪽 브론즈/앰버(#875242). 이미지 자체가 청 vs 주황 보색 대비라 그대로 사용.
+   ========================================================================== */
+.pageTheme {
+  --rd-head: #16407e;
+  --rd-line: #e08a2e;
+  --rd-head-soft: rgba(22, 64, 126, 0.09);
+}
+
+[data-theme="dark"] .pageTheme {
+  --rd-head: #245399;
+  --rd-line: #f0a04a;
+  --rd-head-soft: rgba(36, 83, 153, 0.18);
+}
+
+/* ==========================================================================
    익스트림 레이드 페이지 — 레드 테마
    ========================================================================== */
 
@@ -1683,7 +1700,7 @@
   border-radius: 16px !important;
   overflow: hidden;
   background: transparent !important;
-  border: 1px solid var(--ct-border) !important;
+  border: 1.5px solid var(--rd-head) !important;
   box-shadow: var(--ct-shadow) !important;
 
   --ct-bg: var(--card-bg);
@@ -1701,19 +1718,20 @@
 }
 
 .shopCardHeader {
-  background: var(--ct-bg-surface) !important;
+  background: var(--rd-head) !important;
   border: none !important;
-  border-bottom: 2px solid #dc3545 !important;
-  padding: 0.5rem 1rem !important;
+  border-bottom: 3px solid var(--rd-line) !important;
+  padding: 0.55rem 1rem !important;
   text-align: center;
 }
 
 .shopCardTitle {
   font-weight: 700;
   font-size: clamp(0.95rem, 2.2vw, 1.1rem);
-  color: var(--ct-text);
+  color: #fff;
   letter-spacing: -0.025em;
   margin: 0;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
 }
 
 .shopContainer {
@@ -1726,7 +1744,7 @@
 
 .shopList {
   flex: 0 0 400px;
-  border-right: 1px solid var(--ct-border-light);
+  border-right: 1.5px solid var(--rd-head);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -1737,13 +1755,14 @@
   padding: 0.45rem 0.85rem;
   font-size: 0.9rem;
   font-weight: 700;
-  color: #dc3545;
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border-color);
+  color: #fff;
+  background: var(--rd-head);
+  border-bottom: 3px solid var(--rd-line);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
   position: sticky;
   top: 0;
   z-index: 2;
-  box-shadow: 0 -4px 0 0 var(--card-bg);
+  box-shadow: 0 -4px 0 0 var(--rd-head);
 }
 
 .shopItem {
@@ -2058,7 +2077,7 @@
   width: 100%;
   border-collapse: collapse;
   background: var(--ct-bg);
-  border: 1px solid var(--ct-border-light);
+  border: 1.5px solid var(--rd-head);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -2115,7 +2134,7 @@
 /* 지옥 열쇠 기댓값 카드 */
 .expectedValueCard {
   background: var(--card-bg);
-  border: 2.5px solid #c0392b;
+  border: 2.5px solid var(--rd-line);
   border-radius: 12px;
   padding: 0.8rem 1rem;
   display: flex;

@@ -221,7 +221,8 @@ function boundColor(item: ShopItem): string {
 
 export default function CerkaPage() {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
-  const [selectedShopItem, setSelectedShopItem] = useState<number | null>(null);
+  // 기본 선택 = 고통의 재련 재료 상자 (SHOP_ITEMS id 5)
+  const [selectedShopItem, setSelectedShopItem] = useState<number | null>(5);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
   const [priceLoading, setPriceLoading] = useState(true);
   const [materialChecks, setMaterialChecks] = useState<Record<string, Record<string, Record<string, boolean>>>>({});
@@ -293,7 +294,7 @@ export default function CerkaPage() {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
+    <div className={styles.pageThemeCerka} style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
       <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
         <Row className="justify-content-center">
           <Col xl={12} lg={12} md={12}>

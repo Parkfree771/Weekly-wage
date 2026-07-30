@@ -166,7 +166,7 @@ export default function BelgardinPage() {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
+    <div className={styles.pageTheme} style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
       <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
         <Row className="justify-content-center">
           <Col xl={12} lg={12} md={12}>

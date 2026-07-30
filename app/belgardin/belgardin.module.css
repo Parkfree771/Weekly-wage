@@ -1,4 +1,20 @@
 /* ==========================================================================
+   레이드 테마 색 — 헤더 채움색(--rd-head) + 그 보색 구분선(--rd-line)
+   페이지 루트 div 에 .pageTheme 를 붙여 쓴다.
+   ========================================================================== */
+.pageTheme {
+  --rd-head: #4c1d95;
+  --rd-line: #f0b429;
+  --rd-head-soft: rgba(76, 29, 149, 0.09);
+}
+
+[data-theme="dark"] .pageTheme {
+  --rd-head: #6d3ec0;
+  --rd-line: #f5c451;
+  --rd-head-soft: rgba(109, 62, 192, 0.16);
+}
+
+/* ==========================================================================
    지평의 성당 페이지 — 따뜻한 크림/브라운 테마 (패키지 갤러리 카드 동일)
    ========================================================================== */
 
@@ -73,7 +89,8 @@
    ========================================================================== */
 
 .detailCard {
-  border: 1px solid var(--ct-border);
+  /* 패키지 효율 갤러리 카드와 동일 규격 — 정보 블록 경계를 또렷하게 */
+  border: 1.5px solid var(--rd-head);
   box-shadow: var(--ct-shadow);
   border-radius: 16px;
   background: var(--ct-bg);
@@ -81,14 +98,15 @@
 }
 
 .detailHeader {
-  background: var(--ct-bg-surface) !important;
-  color: var(--ct-text) !important;
+  background: var(--rd-head) !important;
+  color: #fff !important;
   font-size: 0.95rem;
   font-weight: 700;
   padding: 0.6rem 1rem;
   border: none !important;
-  border-bottom: 2px solid var(--ct-accent) !important;
-  -webkit-text-fill-color: var(--ct-text) !important;
+  border-bottom: 3px solid var(--rd-line) !important;
+  -webkit-text-fill-color: #fff !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
 }
 
 .detailBody {
@@ -123,7 +141,7 @@
   background: var(--ct-bg-alt);
   border-radius: 10px;
   padding: 0.6rem;
-  border: 1px solid var(--ct-border-light);
+  border: 1.5px solid var(--rd-head);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -177,7 +195,7 @@
   border-spacing: 0;
   border-radius: 8px;
   overflow: hidden;
-  border: 1.5px solid var(--color-primary);
+  border: 1.5px solid var(--rd-head);
   margin-top: 0.4rem;
   font-family: inherit;
   box-shadow: var(--shadow-sm);
@@ -190,12 +208,12 @@
 }
 
 .materialTable thead th {
-  background: var(--color-primary) !important;
+  background: var(--rd-head) !important;
   font-weight: 700;
   font-size: 0.9rem;
   padding: 0.6rem 0.5rem;
   color: #fff !important;
-  border-bottom: 2px solid var(--color-accent) !important;
+  border-bottom: 2px solid var(--rd-line) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.15);
   text-align: center;
 }
@@ -270,7 +288,7 @@
 /* ─── 합계 ─── */
 .finalSection {
   background: var(--ct-bg-alt);
-  border: 1px solid var(--ct-accent-border);
+  border: 1.5px solid var(--rd-line);
   border-radius: 10px;
   padding: 0.75rem;
 }
@@ -320,7 +338,7 @@
   border-radius: 16px !important;
   overflow: hidden;
   background: transparent !important;
-  border: 1px solid var(--ct-border) !important;
+  border: 1.5px solid var(--rd-head) !important;
   box-shadow: var(--ct-shadow) !important;
 
   /* 글로벌 디자인 시스템 상속 — detailCard와 동일 */
@@ -339,19 +357,20 @@
 }
 
 .shopCardHeader {
-  background: var(--ct-bg-surface) !important;
+  background: var(--rd-head) !important;
   border: none !important;
-  border-bottom: 2px solid var(--color-primary) !important;
-  padding: 0.5rem 1rem !important;
+  border-bottom: 3px solid var(--rd-line) !important;
+  padding: 0.55rem 1rem !important;
   text-align: center;
 }
 
 .shopCardTitle {
   font-weight: 700;
   font-size: clamp(0.95rem, 2.2vw, 1.1rem);
-  color: var(--ct-text);
+  color: #fff;
   letter-spacing: -0.025em;
   margin: 0;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
 }
 
 .shopContainer {
@@ -364,7 +383,7 @@
 
 .shopList {
   flex: 0 0 400px;
-  border-right: 1px solid var(--ct-border-light);
+  border-right: 1.5px solid var(--rd-head);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -375,13 +394,14 @@
   padding: 0.45rem 0.85rem;
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--color-primary);
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border-color);
+  color: #fff;
+  background: var(--rd-head);
+  border-bottom: 3px solid var(--rd-line);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
   position: sticky;
   top: 0;
   z-index: 2;
-  box-shadow: 0 -4px 0 0 var(--card-bg);
+  box-shadow: 0 -4px 0 0 var(--rd-head);
 }
 
 .shopItem {
@@ -397,7 +417,7 @@
 
 
 .shopItem.active {
-  background: var(--color-primary-light);
+  background: var(--rd-head-soft);
 }
 
 .shopItemIcon {
@@ -499,8 +519,8 @@
 
 .gemSelectActive {
   opacity: 1;
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
+  border-color: var(--rd-head);
+  background: var(--rd-head-soft);
 }
 
 .gemSelectCheck {
@@ -553,7 +573,7 @@
   width: 100%;
   margin-top: 0.75rem;
   padding: 0.75rem;
-  background: var(--color-primary-light);
+  background: var(--rd-head-soft);
   border: 1px solid rgba(59, 80, 181, 0.15);
   border-radius: 10px;
 }
@@ -836,13 +856,13 @@
   border-spacing: 0;
   border-radius: 8px;
   overflow: hidden;
-  border: 1.5px solid var(--color-primary);
+  border: 1.5px solid var(--rd-head);
   box-shadow: var(--shadow-sm);
   align-self: center;
 }
 
 .gemTable thead th {
-  background: var(--color-primary);
+  background: var(--rd-head);
   color: #fff;
   font-size: 0.85rem;
   font-weight: 700;
@@ -889,7 +909,7 @@
 }
 
 .gemTableSelected {
-  color: var(--color-primary);
+  color: var(--rd-head);
   font-weight: 700;
 }
 
@@ -953,7 +973,7 @@
   .shopContainer { flex-direction: column; min-height: unset; }
   .shopList {
     width: 100%; min-width: unset; max-height: none; overflow: visible;
-    border-right: none; border-bottom: 1px solid var(--ct-border-light);
+    border-right: none; border-bottom: 1.5px solid var(--rd-head);
   }
   .shopListHeader { position: static; box-shadow: none; }
   .shopDetail { padding: 1rem; }
@@ -1257,7 +1277,7 @@
 
 .calToggleActive {
   background: var(--ct-bg) !important;
-  color: var(--color-primary) !important;
+  color: var(--rd-head) !important;
   box-shadow: var(--shadow-sm);
   font-weight: 700;
 }
