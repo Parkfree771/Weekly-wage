@@ -171,91 +171,87 @@ function GoldTable({
   );
 }
 
-// 재련 재료 표 — 골드 표와 같은 열 구조(현재 → 목표 변화)로 수량을 찍는다.
-// 골드 표 바로 아래에 붙으므로 헤더는 반복하지 않는다.
+// 재련 재료 표 — 수량(현재 → 목표 · 변화) 오른쪽에 그 수량의 골드 환산까지 한 줄에 놓는다.
+// 몇 개 늘었는지보다 "그래서 골드로 얼마인지"가 결론이라, 마지막 열을 골드로 잡는다.
 function MaterialTable({
   before,
   after,
   changed,
-  size = 'row',
+  prices,
 }: {
   before: MaterialCounts;
   after: MaterialCounts;
   changed: boolean;
-  size?: 'row' | 'total';
+  prices: MaterialPrices;
 }) {
-  const px = size === 'total' ? 20 : 17;
   const names = REFINING_MATERIALS.filter((n) => (before[n] ?? 0) > 0 || (after[n] ?? 0) > 0);
   if (names.length === 0) return null;
 
   return (
     <div
-      className={[styles.table, size === 'total' ? styles.tableTotal : '', changed ? styles.tableChanged : '']
+      className={[styles.table, styles.tableMat, changed ? styles.tableChanged : '']
         .filter(Boolean)
         .join(' ')}
     >
       {names.map((n) => {
         const b = before[n] ?? 0;
         const a = after[n] ?? 0;
+        const unit = prices[n] ?? 0;
+        // 늘어난 재료는 더하고 줄어든 재료는 뺀 뒤, 그 차이를 시세로 환산한다
+        const goldDelta = (a - b) * unit;
+        // 보석만 다르게 취급한다 — 3개→상위 1개 합성이 무손실이라 수량이 곧 레벨이 된다
+        const isGem = n === '1레벨 보석';
         return (
-          <div key={n} className={styles.tr}>
-            <span className={styles.tdLabel}>
-              <Image
-                src={MATERIAL_ICONS[n]}
-                alt=""
-                width={px}
-                height={px}
-                unoptimized
-                className={styles.goldIcon}
-              />
-              {MATERIAL_SHORT[n]}
-            </span>
-            <span className={styles.tdNow}>{fmt(b)}</span>
-            <span className={styles.tdArrow}>{changed ? '→' : ''}</span>
-            <span className={styles.tdNext}>{changed ? fmt(a) : ''}</span>
-            <span className={`${styles.tdDelta} ${deltaClass(a - b)}`}>
-              {changed ? signed(a - b) : ''}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// 콘텐츠별 골드 환산 — 레벨을 올렸을 때 어느 콘텐츠에서 얼마가 늘었는지 보여준다.
-// 티어가 바뀌는 콘텐츠(균열/전선·가토·모래시계)는 티어 이름도 같이 찍는다.
-function SourceTable({
-  sources,
-  changed,
-}: {
-  sources: { key: string; label: string; tierB: string; tierA: string; b: number; a: number }[];
-  changed: boolean;
-}) {
-  if (sources.length === 0) return null;
-
-  return (
-    <div className={`${styles.table} ${styles.tableSource} ${changed ? styles.tableChanged : ''}`}>
-      {sources.map((s) => {
-        const tierMoved = changed && s.tierA !== s.tierB;
-        return (
-          <div key={s.key} className={styles.tr}>
-            <span className={styles.tdLabel}>
-              {s.label}
-              {s.tierB && !tierMoved && <span className={styles.srcTier}>{s.tierB}</span>}
-              {tierMoved && (
-                <span className={styles.srcTier}>
-                  {s.tierB || '없음'} → <b>{s.tierA || '없음'}</b>
+          <React.Fragment key={n}>
+            <div className={`${styles.tr} ${isGem ? styles.trGem : ''}`}>
+              <span className={styles.tdLabel}>
+                <Image
+                  src={MATERIAL_ICONS[n]}
+                  alt=""
+                  width={16}
+                  height={16}
+                  unoptimized
+                  className={styles.goldIcon}
+                />
+                {MATERIAL_SHORT[n]}
+              </span>
+              <span className={styles.tdNow}>{fmt(b)}</span>
+              <span className={styles.tdArrow}>{changed ? '→' : ''}</span>
+              <span className={styles.tdNext}>{changed ? fmt(a) : ''}</span>
+              <span className={`${styles.tdDelta} ${deltaClass(a - b)}`}>
+                {changed ? signed(a - b) : ''}
+              </span>
+              {/* 목표를 안 눌렀으면 지금 수급량의 골드 가치, 눌렀으면 그 증감분의 골드 */}
+              <span className={`${styles.tdGold} ${changed ? deltaClass(goldDelta) : styles.tdGoldPlain}`}>
+                <Image src="/gold.webp" alt="" width={13} height={13} unoptimized className={styles.goldIcon} />
+                {changed ? signed(goldDelta) : fmt(b * unit)}
+              </span>
+            </div>
+            {isGem && (
+              <div className={styles.gemBreak}>
+                <span className={styles.gemBreakLabel}>합성하면</span>
+                <span className={styles.gemBreakChips}>
+                  {decomposeGems(b).map((g) => (
+                    <span key={g.level} className={styles.gemChip}>
+                      {g.level}레벨 ×{g.count}
+                    </span>
+                  ))}
                 </span>
-              )}
-            </span>
-            <span className={styles.tdNow}>{fmt(s.b)}</span>
-            <span className={styles.tdArrow}>{changed ? '→' : ''}</span>
-            <span className={styles.tdNext}>{changed ? fmt(s.a) : ''}</span>
-            <span className={`${styles.tdDelta} ${deltaClass(s.a - s.b)}`}>
-              {changed ? signed(s.a - s.b) : ''}
-            </span>
-          </div>
+                {changed && (
+                  <>
+                    <span className={styles.gemBreakArrow}>→</span>
+                    <span className={styles.gemBreakChips}>
+                      {decomposeGems(a).map((g) => (
+                        <span key={g.level} className={`${styles.gemChip} ${styles.gemChipNext}`}>
+                          {g.level}레벨 ×{g.count}
+                        </span>
+                      ))}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+          </React.Fragment>
         );
       })}
     </div>
@@ -285,17 +281,16 @@ function ValueTable({
           className={[styles.tr, r.sum ? styles.trSum : '', r.bound ? styles.trBound : ''].filter(Boolean).join(' ')}
         >
           <span className={styles.tdLabel}>
-            {r.bound && (
-              <Image
-                src="/gold.webp"
-                alt=""
-                width={px}
-                height={px}
-                unoptimized
-                className={styles.goldIcon}
-                style={{ filter: BOUND_GOLD_FILTER }}
-              />
-            )}
+            {/* 귀속 골드는 자홍색 코인, 나머지(합계)는 일반 코인 */}
+            <Image
+              src="/gold.webp"
+              alt=""
+              width={px}
+              height={px}
+              unoptimized
+              className={styles.goldIcon}
+              style={r.bound ? { filter: BOUND_GOLD_FILTER } : undefined}
+            />
             <span className={r.bound ? styles.boundText : undefined}>{r.label}</span>
           </span>
           <span className={styles.tdNow}>{fmt(r.b)}</span>
@@ -602,7 +597,6 @@ export default function GoldProjection({
         </div>
 
         <div className={styles.toolbarRight}>
-          <span className={styles.segLabel}>상위 3레이드 기준</span>
           <div className={styles.segmented} role="group" aria-label="상위 3레이드 선정 기준">
             <button
               type="button"
@@ -678,6 +672,8 @@ export default function GoldProjection({
           const leave = (b?.picked ?? []).filter((p) => !afterNames.has(p.name));
           // 레벨을 바꿔도 그대로 남는 레이드 (안 바꿨으면 지금 도는 3개 그대로)
           const stay = (a?.picked ?? []).filter((p) => beforeNames.has(p.name));
+          // 티어가 실제로 올라가는 콘텐츠만 (균열·전선, 가디언 토벌, 모래시계, 카게·필보)
+          const tierMoves = (mat?.sources ?? []).filter((s) => s.tierA !== s.tierB);
 
           return (
             <div
@@ -730,28 +726,6 @@ export default function GoldProjection({
                 afterLevel={target}
               />
 
-              {mode === 'material' && mat && (
-                <>
-                  <MaterialTable before={mat.countsB} after={mat.countsA} changed={rowChanged} />
-                  <SourceTable sources={mat.sources} changed={rowChanged} />
-                  <ValueTable
-                    changed={rowChanged}
-                    rows={[
-                      // 카오스 게이트 골드는 전액 귀속이라 귀속 색으로 따로 세운다
-                      ...(mat.eventGoldB > 0 || mat.eventGoldA > 0
-                        ? [{ label: '카게 골드', b: mat.eventGoldB, a: mat.eventGoldA, bound: true }]
-                        : []),
-                      {
-                        label: '골드 + 재료',
-                        b: (b?.gold.total ?? 0) + mat.valueB + mat.eventGoldB,
-                        a: (a?.gold.total ?? 0) + mat.valueA + mat.eventGoldA,
-                        sum: true,
-                      },
-                    ]}
-                  />
-                </>
-              )}
-
               {/* 지금 돌고 있는 상위 3레이드. 레벨을 바꾸면 유지·추가·제거를 함께 보여준다. */}
               <div className={styles.raidSwap}>
                 {stay.map((p) => (
@@ -770,6 +744,71 @@ export default function GoldProjection({
                   </span>
                 ))}
               </div>
+
+              {/* 레이드 다음은 콘텐츠 변화 — 균열·가토처럼 티어가 한 단계 올라가는 것만 칩으로 */}
+              {mode === 'material' && rowChanged && tierMoves.length > 0 && (
+                <div className={styles.contentSwap}>
+                  {tierMoves.map((s) => (
+                    <span key={s.key} className={styles.contentChip}>
+                      {s.label}
+                      <span className={styles.contentTier}>
+                        {s.tierB || '없음'} → <b>{s.tierA || '없음'}</b>
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* 재료 수치는 2차 정보라 접어 둔다. 접힌 줄에서 총 가치와 증감은 그대로 읽힌다. */}
+              {mode === 'material' && mat && (
+                <details className={styles.matFold}>
+                  <summary
+                    className={`${styles.matSummary} ${rowChanged ? styles.tableChanged : ''}`}
+                  >
+                    <span className={styles.tdLabel}>
+                      <span className={styles.foldCaret} aria-hidden="true" />
+                      <Image
+                        src="/wofuswofy.webp"
+                        alt=""
+                        width={17}
+                        height={17}
+                        unoptimized
+                        className={styles.goldIcon}
+                      />
+                      재련 재료
+                    </span>
+                    <span className={styles.tdNow}>{fmt(mat.valueB)}</span>
+                    <span className={styles.tdArrow}>{rowChanged ? '→' : ''}</span>
+                    <span className={styles.tdNext}>{rowChanged ? fmt(mat.valueA) : ''}</span>
+                    <span className={`${styles.tdDelta} ${deltaClass(mat.valueA - mat.valueB)}`}>
+                      {rowChanged ? signed(mat.valueA - mat.valueB) : ''}
+                    </span>
+                  </summary>
+                  <div className={styles.matBody}>
+                    <MaterialTable
+                      before={mat.countsB}
+                      after={mat.countsA}
+                      changed={rowChanged}
+                      prices={prices}
+                    />
+                    <ValueTable
+                      changed={rowChanged}
+                      rows={[
+                        // 카오스 게이트 골드는 전액 귀속이라 귀속 색으로 따로 세운다
+                        ...(mat.eventGoldB > 0 || mat.eventGoldA > 0
+                          ? [{ label: '카게 골드', b: mat.eventGoldB, a: mat.eventGoldA, bound: true }]
+                          : []),
+                        {
+                          label: '골드 + 재료',
+                          b: (b?.gold.total ?? 0) + mat.valueB + mat.eventGoldB,
+                          a: (a?.gold.total ?? 0) + mat.valueA + mat.eventGoldA,
+                          sum: true,
+                        },
+                      ]}
+                    />
+                  </div>
+                </details>
+              )}
             </div>
           );
         })}

@@ -26,11 +26,23 @@ import {
   calcSpecialRefiningUnitCost,
   calcEngravingExpectedValue,
   getHeroGemMaxPrice,
+  getHeroGemMax,
   calcBoxRewardGold,
   getRewardData,
+  getBaseRewardRows,
+  PLENTY_MULTIPLIER,
+  multiplyQtyLabel,
 } from '@/lib/hell-reward-calc';
 
 type ModeType = 'hell' | 'narak';
+
+// 층 기본 보상 아이콘 (재련 재료 — 사이트 공통 파일)
+const BASE_REWARD_IMAGES: Record<string, string> = {
+  '운명의 파편': '/destiny-shard-bag-large5.webp',
+  '파괴석 결정': '/top-destiny-destruction-stone5.webp',
+  '수호석 결정': '/top-destiny-guardian-stone5.webp',
+  '위대한 돌파석': '/top-destiny-breakthrough-stone5.webp',
+};
 
 // 보상 이미지 매핑
 const REWARD_IMAGES: Record<string, string> = {
@@ -49,6 +61,16 @@ const REWARD_IMAGES: Record<string, string> = {
   '귀속 보석': '/gem-fear-8.webp',
   '전설카드팩': '/legendary-cardpack.webp',
 };
+
+// 자체 배경(사각 타일)이 그려진 아이콘 — 투명 배경 아이콘과 달리 칸을 꽉 채워
+// 칸의 둥근 모서리로 잘라내야 사각 테두리가 튀어나오지 않는다.
+const FILLED_BG_IMAGES = new Set([
+  '/xmrwo.webp',          // 특수재련
+  '/djqlfflxltmxhs.webp',  // 어빌리티스톤
+  '/vkfwl.webp',           // 팔찌
+  '/engraving.webp',       // 귀속 각인서 랜덤 상자
+  '/gem-fear-8.webp',      // 귀속 보석
+]);
 
 function getRewardImage(rewardName: string, rawVal: string): string {
   if (rewardName === '젬 선택 상자') {
@@ -76,6 +98,16 @@ export default function HellRewardCalculator() {
   const [priceLoading, setPriceLoading] = useState(true);
   const [exchangeRate, setExchangeRate] = useState<number>(15278); // 100골드 = 18원 (100:18)
   const [excludeAbilityStone, setExcludeAbilityStone] = useState<boolean>(true);
+  // 풍요는 상자 단위 효과 — 항목별로 따로 켠다 (한 판에 특정 상자만 풍요로 바뀌므로)
+  const [plentyItems, setPlentyItems] = useState<Set<string>>(new Set());
+
+  const togglePlenty = (name: string) =>
+    setPlentyItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
 
   useEffect(() => {
     fetchLatestPrices()
@@ -93,14 +125,31 @@ export default function HellRewardCalculator() {
   const hasPrices = Object.keys(prices).length > 0;
   const hasAbilityStone = rewards.includes('어빌리티스톤');
 
+  // 층 기본 보상 — 상자 안에 같이 들어 있는 몫이라 각 항목 가치에 더한다 (지옥만)
+  const baseRows = hasPrices ? getBaseRewardRows(mode, selectedTier, prices) : [];
+  const baseGold = baseRows.reduce((s, r) => s + r.gold, 0);
+
   const sortedRewards = rewards
     .map((name) => {
-      const rawVal = rewardData[name]?.[selectedTier];
-      const available = !!rawVal && rawVal !== '-';
-      const goldValue = available && hasPrices
+      const raw = rewardData[name]?.[selectedTier];
+      const available = !!raw && raw !== '-';
+      const boxGold = available && hasPrices
         ? calcBoxRewardGold(name, selectedTier, prices, mode, peonGoldValue, specialRefiningCost)
         : null;
-      return { name, rawVal: rawVal || '-', available, goldValue: goldValue ?? 0 };
+      const box = boxGold ?? 0;
+      // 풍요 상자로 바뀌면 그 상자 몫 전체(고유 보상 + 기본 보상)가 10배가 된다
+      const isPlenty = plentyItems.has(name);
+      const mul = isPlenty ? PLENTY_MULTIPLIER : 1;
+      return {
+        name,
+        rawVal: multiplyQtyLabel(raw || '-', mul),
+        available,
+        isPlenty,
+        mul,
+        boxGold: box * mul,
+        baseGold: baseGold * mul,
+        goldValue: available ? (box + baseGold) * mul : 0,
+      };
     })
     .sort((a, b) => {
       if (!a.available && !b.available) return 0;
@@ -109,14 +158,17 @@ export default function HellRewardCalculator() {
       return b.goldValue - a.goldValue;
     });
 
+  // 상자 평균 — 풍요는 상자마다 켜는 가정값이라 평균에는 넣지 않고 기본 상태로 계산한다
   const avgGold = (() => {
-    let available = sortedRewards.filter(r => r.available && r.goldValue !== null);
+    let available = sortedRewards.filter(r => r.available);
     if (excludeAbilityStone) {
       available = available.filter(r => r.name !== '어빌리티스톤');
     }
     if (available.length === 0) return 0;
-    return Math.floor(available.reduce((s, r) => s + r.goldValue, 0) / available.length);
+    return Math.floor(available.reduce((s, r) => s + r.boxGold / r.mul, 0) / available.length);
   })();
+
+  const totalGold = baseGold + avgGold;
 
   function fmtPrice(v: number): string {
     return v % 1 === 0 ? v.toLocaleString() : v.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -208,9 +260,11 @@ export default function HellRewardCalculator() {
     if (name === '젬 선택 상자') {
       const gem = parseGemSelectBox(rawVal);
       if (!gem) return rawVal;
-      return gem.rarity === 'hero'
-        ? `영웅 ${gem.count}개 × ${getHeroGemMaxPrice(prices).toLocaleString()}G (영웅 젬 최고가 시세)`
-        : `희귀 ${gem.count}개 × ${RARE_GEM_PRICE.toLocaleString()}G (고정가)`;
+      if (gem.rarity !== 'hero') return `희귀 ${gem.count}개 × ${RARE_GEM_PRICE.toLocaleString()}G (고정가)`;
+      const pick = getHeroGemMax(prices);
+      return pick
+        ? `영웅 ${gem.count}개 × ${pick.price.toLocaleString()}G — 지금 최고가는 ${pick.name} (영웅 젬 6종 중 자동 선택, 시세가 뒤집히면 바뀝니다)`
+        : `영웅 ${gem.count}개 × ${getHeroGemMaxPrice(prices).toLocaleString()}G (영웅 젬 최고가 시세)`;
     }
     if (name === '귀속 각인서 랜덤 상자') return `${rawVal}개 × ${calcEngravingExpectedValue(prices).toLocaleString()}G/개 (추적 ${ENGRAVING_IDS.length}종 + 비추적 ${TOTAL_ENGRAVINGS - ENGRAVING_IDS.length}종, 총 ${TOTAL_ENGRAVINGS}종 평균)`;
     if (name === '귀속 보석') {
@@ -242,7 +296,7 @@ export default function HellRewardCalculator() {
   }
 
   return (
-    <>
+    <div className={styles.wrap}>
       {/* 시즌3 / 1750 표기 */}
       <div className={styles.versionBadge}>
         <span className={styles.versionBadgePill}>
@@ -339,8 +393,16 @@ export default function HellRewardCalculator() {
             <div className={styles.avgBanner}>
               <NextImage src="/gold.webp" alt="골드" width={36} height={36} className={styles.avgBannerIcon} />
               <div className={styles.avgBannerText}>
-                <span className={styles.avgBannerLabel}>단계 {selectedTier} 평균 기댓값</span>
-                <span className={styles.avgBannerValue}>{avgGold.toLocaleString()} G</span>
+                <span className={styles.avgBannerLabel}>단계 {selectedTier} 총 기댓값</span>
+                <span className={styles.avgBannerValue}>{totalGold.toLocaleString()} G</span>
+                {baseGold > 0 && (
+                  <span className={styles.avgBannerBreak}>
+                    <span className={styles.calcOp}>=</span>
+                    기본 <b>{baseGold.toLocaleString()}</b>
+                    <span className={styles.calcOp}>+</span>
+                    상자 평균 <b>{avgGold.toLocaleString()}</b>
+                  </span>
+                )}
               </div>
               <div className={styles.avgBannerCount}>
                 {(() => {
@@ -366,6 +428,20 @@ export default function HellRewardCalculator() {
         )}
       </div>
 
+      {/* 층 기본 보상 — 아래 모든 항목 값에 이미 포함돼 있다. 여기서는 총액과 풍요 여부만. */}
+      {!priceLoading && baseRows.length > 0 && (
+        <div className={styles.baseBar}>
+          <span className={styles.baseTitle}>
+            {TIER_LABELS[selectedTier]}층 기본 보상
+            <span className={styles.baseTag}>모든 항목에 포함</span>
+          </span>
+          <span className={styles.baseTotal}>
+            <NextImage src="/gold.webp" alt="" width={18} height={18} />
+            {baseGold.toLocaleString()}
+          </span>
+        </div>
+      )}
+
       {/* 보상 카드 목록 */}
       {priceLoading ? (
         <div className={styles.loading}>시세 불러오는 중...</div>
@@ -377,6 +453,11 @@ export default function HellRewardCalculator() {
             const isExpanded = expandedReward === reward.name;
             const rewardImg = getRewardImage(reward.name, reward.rawVal);
             const rank = reward.available ? idx + 1 : null;
+            // 영웅 젬 선택 상자는 6종 중 최고가 하나를 값으로 잡으므로, 무엇이 뽑혔는지 같이 보여준다
+            const gemPick =
+              reward.name === '젬 선택 상자' && reward.rawVal.includes('영웅')
+                ? getHeroGemMax(prices)
+                : null;
             return (
               <div
                 key={reward.name}
@@ -391,7 +472,7 @@ export default function HellRewardCalculator() {
                       {rank}
                     </span>
                   )}
-                  <div className={`${styles.rewardImgWrap} ${reward.name === '귀속골드' ? styles.rewardImgSmall : ''} ${reward.name === '정련된 운명/혼돈의 돌' ? styles.rewardImgLarge : ''}`}>
+                  <div className={`${styles.rewardImgWrap} ${reward.name === '귀속골드' ? styles.rewardImgSmall : ''} ${reward.name === '정련된 운명/혼돈의 돌' ? styles.rewardImgLarge : ''} ${FILLED_BG_IMAGES.has(rewardImg) ? styles.rewardImgFilled : ''}`}>
                     {rewardImg ? (
                       <NextImage src={rewardImg} alt={reward.name} width={72} height={72} className={styles.rewardImg} />
                     ) : (
@@ -406,9 +487,31 @@ export default function HellRewardCalculator() {
                           {getPriceTagLabel(getPriceTag(reward.name, reward.rawVal))}
                         </span>
                       )}
+                      {/* 풍요 상자 — 이 상자만 풍요로 바뀐 경우를 본다 (상자 몫 전체 ×10) */}
+                      {reward.available && (
+                        <button
+                          type="button"
+                          className={`${styles.plentyBtn} ${reward.isPlenty ? styles.plentyBtnOn : ''}`}
+                          onClick={(e) => { e.stopPropagation(); togglePlenty(reward.name); }}
+                          aria-pressed={reward.isPlenty}
+                          title="이 상자가 풍요 상자로 바뀐 경우 (보상 전체 10배)"
+                        >
+                          풍요
+                          <span className={styles.plentyMul}>×{PLENTY_MULTIPLIER}</span>
+                        </button>
+                      )}
                     </div>
                     <div className={styles.rewardInfoRow}>
-                      <span className={styles.rewardQty}>{reward.rawVal}</span>
+                      <span className={styles.rewardQtyGroup}>
+                        <span className={styles.rewardQty}>{reward.rawVal}</span>
+                        {gemPick && (
+                          <span className={styles.gemPick} title={`${gemPick.name} — 영웅 젬 6종 중 최고가`}>
+                            <NextImage src={gemPick.icon} alt="" width={16} height={16} className={styles.gemPickIcon} />
+                            {gemPick.short}
+                            <span className={styles.gemPickTag}>최고가</span>
+                          </span>
+                        )}
+                      </span>
                       {reward.available && (
                         <span className={styles.rewardPriceSummary}>{getPriceSummary(reward.name, reward.rawVal)}</span>
                       )}
@@ -440,9 +543,51 @@ export default function HellRewardCalculator() {
                       <span className={styles.detailLabel}>산출</span>
                       <span className={styles.detailValue}>{getRewardDetail(reward.name, reward.rawVal)}</span>
                     </div>
-                    <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>골드 가치</span>
-                      <span className={styles.detailGold}>{reward.goldValue.toLocaleString()} G</span>
+
+                    {/* 이 카드의 숫자가 어떻게 나왔는지 — 층마다 확정으로 받는 기본 보상 + 이 상자의 고유 보상 */}
+                    <div className={styles.sumBox}>
+                      {baseRows.map((row, i) => (
+                        <div key={row.name} className={`${styles.sumLine} ${styles.sumLineBase}`}>
+                          <span className={styles.sumName}>
+                            <span className={styles.sumOp}>{i === 0 ? '' : '+'}</span>
+                            <NextImage src={BASE_REWARD_IMAGES[row.name]} alt="" width={17} height={17} />
+                            <span className={styles.sumLabel}>{row.name}</span>
+                            <span className={styles.sumCalc}>
+                              {(row.qty * reward.mul).toLocaleString()}개 × {fmtPrice(Math.round(row.unitPrice * 10) / 10)}G
+                            </span>
+                          </span>
+                          <span className={styles.sumVal}>{(row.gold * reward.mul).toLocaleString()}</span>
+                        </div>
+                      ))}
+                      <div className={styles.sumLine}>
+                        <span className={styles.sumName}>
+                          <span className={styles.sumOp}>{baseRows.length > 0 ? '+' : ''}</span>
+                          {rewardImg && (
+                            <NextImage
+                              src={rewardImg}
+                              alt=""
+                              width={17}
+                              height={17}
+                              className={FILLED_BG_IMAGES.has(rewardImg) ? styles.sumImgFilled : ''}
+                            />
+                          )}
+                          <span className={styles.sumLabel}>{getDisplayName(reward.name)}</span>
+                          <span className={styles.sumTag}>고유</span>
+                          {reward.isPlenty && <span className={styles.plentyMark}>풍요 ×{PLENTY_MULTIPLIER}</span>}
+                          <span className={styles.sumCalc}>{reward.rawVal}</span>
+                        </span>
+                        <span className={styles.sumVal}>{reward.boxGold.toLocaleString()}</span>
+                      </div>
+                      <div className={`${styles.sumLine} ${styles.sumLineTotal}`}>
+                        <span className={styles.sumName}>
+                          <span className={styles.sumOp}>=</span>
+                          합계
+                        </span>
+                        <span className={styles.sumVal}>
+                          <NextImage src="/gold.webp" alt="" width={17} height={17} />
+                          {reward.goldValue.toLocaleString()}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -451,6 +596,6 @@ export default function HellRewardCalculator() {
           })}
         </div>
       )}
-    </>
+    </div>
   );
 }

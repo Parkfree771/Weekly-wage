@@ -30,6 +30,65 @@ export const NARAK_BOX_REWARDS_DATA: Record<string, string[]> = {
   '전설카드팩': ['-', '-', '-', '-', '-', '1', '2', '3', '4', '5', '7'],
 };
 
+// ─── 층 기본 보상 (단계 0~10) ───
+// 상자(열쇠)와 별개로 층을 깰 때마다 항상 지급되는 보상. 지옥에만 있고 나락에는 없다.
+// 원본: kr_TrinityInfernoRewards.json Category 1026 의 Sub. (Plenty=풍요는 정확히 이 값의 10배)
+export const HELL_BASE_REWARDS_DATA: Record<string, string[]> = {
+  '운명의 파편': ['5,200', '6,500', '7,700', '9,000', '10,000', '11,500', '13,000', '14,000', '15,500', '17,000', '18,000'],
+  '파괴석 결정': ['26', '32', '38', '44', '52', '60', '70', '80', '90', '100', '110'],
+  '수호석 결정': ['170', '200', '230', '280', '330', '380', '440', '500', '560', '620', '680'],
+  '위대한 돌파석': ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '15'],
+};
+
+// 기본 보상 재화 시세 (id, 묶음 단위). 전부 거래소 실시간 시세를 쓴다.
+export const BASE_REWARD_PRICE_MAP: Record<string, { id: string; bundle: number }> = {
+  '운명의 파편': { id: '66130143', bundle: 3000 },
+  '파괴석 결정': { id: '66102007', bundle: 100 },
+  '수호석 결정': { id: '66102107', bundle: 100 },
+  '위대한 돌파석': { id: '66110226', bundle: 1 },
+};
+
+// 풍요(Plenty · Wealth Chest) 배수.
+// 보상 상자 하나가 풍요 상자로 바뀌는 효과이므로 그 상자에서 나오는 몫 전체가 10배가 된다
+// (기본 보상 + 상자 고유 보상 모두). 원본 Plenty = Sub × 10 은 11단계 × 4항목 전수 확인.
+export const PLENTY_MULTIPLIER = 10;
+
+// 수량 표기 문자열의 모든 숫자에 배수를 적용한다 ('600/1,800' → '6,000/18,000', '3(희귀)' → '30(희귀)').
+// 보상 가치는 전부 수량에 비례하므로 골드는 값에 배수를 곱하면 그대로 맞는다.
+export function multiplyQtyLabel(raw: string, mul: number): string {
+  if (!raw || raw === '-' || mul === 1) return raw;
+  return raw.replace(/[\d,]+/g, (m) => (Number(m.replace(/,/g, '')) * mul).toLocaleString('en-US'));
+}
+
+export type BaseRewardRow = { name: string; qty: number; unitPrice: number; gold: number };
+
+// 선택한 단계의 기본 보상 목록 + 각 항목 골드 가치. plenty 면 수량이 10배.
+export function getBaseRewardRows(
+  mode: 'hell' | 'narak',
+  tier: number,
+  prices: Record<string, number>,
+  plenty: boolean = false
+): BaseRewardRow[] {
+  if (mode !== 'hell') return [];
+  const mul = plenty ? PLENTY_MULTIPLIER : 1;
+  return Object.keys(HELL_BASE_REWARDS_DATA).map((name) => {
+    const qty = parseRewardValue(HELL_BASE_REWARDS_DATA[name]?.[tier] ?? '0') * mul;
+    const m = BASE_REWARD_PRICE_MAP[name];
+    const unitPrice = m ? (prices[m.id] || 0) / m.bundle : 0;
+    return { name, qty, unitPrice, gold: Math.floor(qty * unitPrice) };
+  });
+}
+
+// 기본 보상 합계 (골드)
+export function calcBaseRewardGold(
+  mode: 'hell' | 'narak',
+  tier: number,
+  prices: Record<string, number>,
+  plenty: boolean = false
+): number {
+  return getBaseRewardRows(mode, tier, prices, plenty).reduce((sum, r) => sum + r.gold, 0);
+}
+
 // ─── 시세 연동 아이템 매핑 ───
 type PriceItemMapping = Record<string, { id: string; bundle: number; id2?: string; bundle2?: number }>;
 
@@ -40,8 +99,20 @@ export const PRICE_ITEM_MAP: PriceItemMapping = {
   '용숨/빙숨': { id: '66111131', bundle: 1, id2: '66111132', bundle2: 1 }, // 용암의 숨결 / 빙하의 숨결
 };
 
-// 영웅 젬 아이템 IDs (질서 3종 + 혼돈 3종)
-export const HERO_GEM_IDS = ['67400003', '67400103', '67400203', '67410303', '67410403', '67410503'];
+// 영웅 젬 6종 (질서 3종 + 혼돈 3종). 이름·아이콘은 /extreme · /cerka 와 같은 파일을 쓴다.
+// 젬 선택 상자는 택1이라 이 중 최고가 하나만 값으로 잡는다 — 시세가 뒤집히면 자동으로 바뀐다.
+export const HERO_GEMS = [
+  { id: '67400003', name: '질서의 젬 : 안정', short: '안정', icon: '/gem-order-stable.webp' },
+  { id: '67400103', name: '질서의 젬 : 견고', short: '견고', icon: '/gem-order-solid.webp' },
+  { id: '67400203', name: '질서의 젬 : 불변', short: '불변', icon: '/gem-order-immutable.webp' },
+  { id: '67410303', name: '혼돈의 젬 : 침식', short: '침식', icon: '/gem-chaos-erosion.webp' },
+  { id: '67410403', name: '혼돈의 젬 : 왜곡', short: '왜곡', icon: '/gem-chaos-distortion.webp' },
+  { id: '67410503', name: '혼돈의 젬 : 붕괴', short: '붕괴', icon: '/gem-chaos-collapse.webp' },
+];
+
+export const HERO_GEM_IDS = HERO_GEMS.map((g) => g.id);
+
+export type HeroGemPick = { id: string; name: string; short: string; icon: string; price: number };
 
 // 각인서 관련 상수
 export const ENGRAVING_IDS = ['65203905', '65200505', '65203305', '65201005', '65203505', '65202805', '65203005', '65203705', '65203405', '65204105', '65200605', '65201505'];
@@ -135,13 +206,19 @@ export function calcEngravingExpectedValue(prices: Record<string, number>): numb
   return Math.floor((trackedSum + NON_TRACKED_ENGRAVING_SUM) / TOTAL_ENGRAVINGS);
 }
 
+// 최고가 영웅 젬 (어떤 젬이 뽑혔는지까지 알려준다). 시세가 없으면 null.
+export function getHeroGemMax(prices: Record<string, number>): HeroGemPick | null {
+  let best: HeroGemPick | null = null;
+  for (const g of HERO_GEMS) {
+    const price = prices[g.id] || 0;
+    if (price > 0 && (!best || price > best.price)) best = { ...g, price };
+  }
+  return best;
+}
+
 // 영웅 젬 최고가
 export function getHeroGemMaxPrice(prices: Record<string, number>): number {
-  let maxPrice = 0;
-  for (const id of HERO_GEM_IDS) {
-    if (prices[id] && prices[id] > maxPrice) maxPrice = prices[id];
-  }
-  return maxPrice;
+  return getHeroGemMax(prices)?.price ?? 0;
 }
 
 // 상자 보상 골드 가치

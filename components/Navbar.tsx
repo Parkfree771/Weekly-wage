@@ -45,7 +45,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/cathedral', label: '지평의 성당' },
       { href: '/cerka', label: '세르카' },
       { href: '/extreme', label: '익스트림' },
-      { href: '/belgardin', label: '벨가르딘' },
+      { href: '/belgardin', label: '벨가르딘', badge: 'NEW', badgeClass: 'nav-badge-wangap' },
     ],
   },
   {

@@ -6,6 +6,7 @@ import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import styles from './belgardin.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
+import ConquestPanel from './ConquestPanel';
 import { faqData } from './faq-data';
 import { RAID_TABLE } from '@/data/rewardTable';
 
@@ -179,6 +180,7 @@ export default function BelgardinPage() {
                 marginBottom: '0.5rem'
               }}>
                 벨가르딘
+                <span className="nav-badge-wangap">NEW</span>
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 벨가르딘 난이도별 클리어 보상과 상점
@@ -193,10 +195,11 @@ export default function BelgardinPage() {
                 const totalBasicValueCard = stage.gates.reduce((sum, g) =>
                   sum + g.materials.reduce((s, m) => s + getMaterialValue(m), 0), 0);
                 const cardFinalValue = totalGold + totalBasicValueCard;
-                // 카드 배지는 이 레이드의 고유 보상(승급 재료) 총량. 더보기까지 하면 2배가 된다.
+                // 카드 배지는 이 레이드에서 실제로 받는 고유 보상(승급 재료) 총량 —
+                // 클리어분과 더보기분을 모두 더한 값이다(관문당 클리어 12/18 + 더보기 12/18 = 60).
                 const promoMats = stage.gates
-                  .map(g => g.materials.find(m => PROMO_MATERIAL_NAMES.includes(m.name)))
-                  .filter((m): m is Material => !!m);
+                  .flatMap(g => [...g.materials, ...g.moreMaterials])
+                  .filter(m => PROMO_MATERIAL_NAMES.includes(m.name));
                 const promoLabel = promoMats[0]?.name || '';
                 const totalPromo = promoMats.reduce((sum, m) => sum + m.amount, 0);
                 return (
@@ -403,6 +406,9 @@ export default function BelgardinPage() {
               </div>
               );
             })()}
+
+            {/* 정복전 — 6주 미션 이벤트 */}
+            <ConquestPanel />
 
             {/* 벨가르딘 상점 */}
             <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>

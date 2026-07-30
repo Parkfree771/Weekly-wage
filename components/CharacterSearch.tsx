@@ -20,13 +20,16 @@ type CharacterSearchProps = {
   onSearch: () => void;
   searched: boolean;
   autoSearchName?: string; // 저장된 설정 복원 시 자동 검색할 캐릭터명
+  demoCharacters?: Character[]; // 검색 전에 결과 화면을 그대로 보여줄 예시 원정대
 };
 
-export default function CharacterSearch({ onSelectionChange, onCharactersLoaded, onSearch, searched, autoSearchName }: CharacterSearchProps) {
+export default function CharacterSearch({ onSelectionChange, onCharactersLoaded, onSearch, searched, autoSearchName, demoCharacters }: CharacterSearchProps) {
   const [characterName, setCharacterName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [checkedState, setCheckedState] = useState<boolean[]>([]);
+  const [characters, setCharacters] = useState<Character[]>(demoCharacters ?? []);
+  const [checkedState, setCheckedState] = useState<boolean[]>(
+    (demoCharacters ?? []).map((_, index) => index < 6),
+  );
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [showAll, setShowAll] = useState(false);
@@ -51,11 +54,13 @@ export default function CharacterSearch({ onSelectionChange, onCharactersLoaded,
   useEffect(() => {
     if (!searched) {
       setCharacterName('');
-      setCharacters([]);
-      setCheckedState([]);
+      // 예시 원정대가 있으면 빈 목록 대신 예시로 되돌린다
+      setCharacters(demoCharacters ?? []);
+      setCheckedState((demoCharacters ?? []).map((_, index) => index < 6));
       setError(null);
     }
-  }, [searched]);
+    // demoCharacters 는 페이지 상수라 참조가 고정된다 (의존성에 넣어도 재실행되지 않음)
+  }, [searched, demoCharacters]);
 
   // 실제 검색 로직 (내부 함수)
   const doSearch = async (name: string) => {
