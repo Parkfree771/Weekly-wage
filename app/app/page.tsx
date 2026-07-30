@@ -38,14 +38,14 @@ const FEATURES = [
 ];
 
 const SCREENSHOTS = [
-  { file: 'shot-01-refining.png', alt: '재련 강화 시뮬레이션 화면' },
-  { file: 'shot-02-package.png', alt: '패키지 효율 계산 화면' },
-  { file: 'shot-03-weekly.png', alt: '주간 레이드 체크리스트 화면' },
-  { file: 'shot-04-income.png', alt: '골드 수익 기록 화면' },
-  { file: 'shot-05-calendar.png', alt: '숙제 완료 달력 화면' },
-  { file: 'shot-06-equipment.png', alt: '장비·악세·각인 조회 화면' },
-  { file: 'shot-07-character.png', alt: '캐릭터 검색 화면' },
-  { file: 'shot-08-price.png', alt: '아이템 시세 차트 화면' },
+  { file: 'shot-01-refining.webp', alt: '재련 강화 시뮬레이션 화면' },
+  { file: 'shot-02-package.webp', alt: '패키지 효율 계산 화면' },
+  { file: 'shot-03-weekly.webp', alt: '주간 레이드 체크리스트 화면' },
+  { file: 'shot-04-income.webp', alt: '골드 수익 기록 화면' },
+  { file: 'shot-05-calendar.webp', alt: '숙제 완료 달력 화면' },
+  { file: 'shot-06-equipment.webp', alt: '장비·악세·각인 조회 화면' },
+  { file: 'shot-07-character.webp', alt: '캐릭터 검색 화면' },
+  { file: 'shot-08-price.webp', alt: '아이템 시세 차트 화면' },
 ];
 
 
