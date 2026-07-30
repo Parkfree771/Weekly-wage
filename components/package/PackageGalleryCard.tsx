@@ -22,6 +22,8 @@ import styles from './PackageGalleryCard.module.css';
 type Props = {
   post: PackagePost;
   latestPrices: Record<string, number>;
+  /** 갤러리 상단에서 지정한 공통 환율(100골드당 원). 0 이면 미적용. */
+  commonWonPer100Gold?: number;
 };
 
 function getBadgeClass(type: PackageType): string {
@@ -86,15 +88,22 @@ function BenefitPct({ v }: { v: number }) {
   );
 }
 
-export default function PackageGalleryCard({ post, latestPrices }: Props) {
+export default function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Props) {
   const router = useRouter();
 
   const defaultWon = post.goldPerWon && post.goldPerWon > 0
     ? Math.round(100 / post.goldPerWon)
     : 0;
-  const [wonPer100Gold, setWonPer100Gold] = useState<number>(defaultWon);
+  const [wonPer100Gold, setWonPer100Gold] = useState<number>(commonWonPer100Gold || defaultWon);
   // 판매 종료 카드는 기본이 흐린 상태 — 우측 상단 버튼으로 해제하면 그대로 비교할 수 있다
   const [saleRevealed, setSaleRevealed] = useState(false);
+
+  // 갤러리 공통 환율이 바뀌면 이 카드도 따라간다.
+  // 적용 후 아래 입력칸으로 개별 수정하는 건 그대로 되고, 공통 환율을 다시 건드릴 때까지 유지된다.
+  // 0(미적용)으로 되돌리면 등록 시점 환율로 복귀.
+  useEffect(() => {
+    setWonPer100Gold(commonWonPer100Gold > 0 ? commonWonPer100Gold : defaultWon);
+  }, [commonWonPer100Gold, defaultWon]);
   // N선택 패키지는 시세 로드 후 아래 useEffect에서 최고가 N개를 확정한다
   // (마운트 시점엔 latestPrices가 비어 있어 goldOverride 티켓만 값이 잡히는 오선택이 났었음)
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>(() => {
@@ -510,13 +519,13 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                   <div className={styles.bundleIconStack}>
                     {item.bundleItems.map((bi, biIdx) => (
                       /* eslint-disable-next-line @next/next/no-img-element */
-                      <img key={biIdx} src={bi.icon} alt={bi.name} className={styles.bundleIconItem}
+                      <img loading="lazy" decoding="async" key={biIdx} src={bi.icon} alt={bi.name} className={styles.bundleIconItem}
                         style={{ zIndex: item.bundleItems!.length - biIdx }} />
                     ))}
                   </div>
                 ) : item.icon ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={getDisplayIcon(item.icon)}
                     alt={item.name} className={styles.itemCellIcon}
                     style={(() => { const s = getGalleryIconSize(item.itemId); return s ? { width: s, height: s } : {}; })()} />
@@ -572,7 +581,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
               {post.priceCurrency === 'blueCrystal' && post.blueCrystalPrice ? (
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/blue.webp" alt="" style={{ width: 14, height: 14, verticalAlign: 'middle', marginRight: 3 }} />
+                  <img loading="lazy" decoding="async" src="/blue.webp" alt="" style={{ width: 14, height: 14, verticalAlign: 'middle', marginRight: 3 }} />
                   {formatNumber(post.blueCrystalPrice)}
                 </>
               ) : (
@@ -588,7 +597,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
               <span className={styles.resultValueGold}>
                 ={' '}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/gold.webp" alt="골드" className={styles.goldIconInline} />
+                <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.goldIconInline} />
                 {formatNumber(cashGold)}
               </span>
             </div>
@@ -600,7 +609,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
             <span className={styles.resultValueGold}>
               ={' '}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/gold.webp" alt="골드" className={styles.goldIconInline} />
+              <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.goldIconInline} />
               {formatNumber(isGacha ? gachaExpectedGold : totalGold)}
             </span>
           </div>
@@ -630,7 +639,7 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
                 <span className={styles.resultValueGold}>
                   ={' '}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/gold.webp" alt="골드" className={styles.goldIconInline} />
+                  <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.goldIconInline} />
                   {formatNumber(bundleGold)}
                 </span>
               </div>
@@ -715,11 +724,11 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
           <div className={styles.bottomRate} onClick={(e) => e.stopPropagation()}>
             <div className={styles.rateRow}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/gold.webp" alt="골드" className={styles.rateIconGold} />
+              <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.rateIconGold} />
               <span className={styles.rateFixed}>100</span>
               <span className={styles.rateSep}>:</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/royal.webp" alt="로얄" className={styles.rateIconRoyal} />
+              <img loading="lazy" decoding="async" src="/royal.webp" alt="로얄" className={styles.rateIconRoyal} />
               <input
                 type="number"
                 className={styles.rateInput}

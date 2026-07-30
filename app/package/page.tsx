@@ -14,6 +14,13 @@ import styles from './package.module.css';
 
 const PAGE_SIZE = 16;
 
+// 공통 환율(100골드당 원) 입력 범위. 기본값은 두지 않는다 —
+// 비어 있으면 미적용이고, 각 카드가 등록 시점 환율을 그대로 쓴다.
+const RATE_MIN = 1;
+const RATE_MAX = 999;
+
+const clampRate = (v: number) => (v <= 0 ? 0 : Math.max(RATE_MIN, Math.min(RATE_MAX, v)));
+
 export default function PackageGalleryPage() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<PackagePost[]>([]);
@@ -22,6 +29,16 @@ export default function PackageGalleryPage() {
   const lastDocRef = useRef<any>(null);
   const [hasMore, setHasMore] = useState(true);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
+  // 갤러리 공통 환율(100골드당 원). 0 이면 미적용 — 각 카드가 등록 시점 환율을 그대로 쓴다.
+  // 값이 들어오면 모든 카드가 이 값으로 맞춰지고, 이후 카드별 개별 수정은 그대로 가능하다.
+  const [commonWonPer100Gold, setCommonWonPer100Gold] = useState<number>(0);
+
+  // 기본값이 없으므로 비어 있을 때 +는 최솟값부터 시작하고, −는 아무 일도 하지 않는다
+  const stepCommonRate = (delta: number) =>
+    setCommonWonPer100Gold((prev) => {
+      if (prev <= 0) return delta > 0 ? RATE_MIN : 0;
+      return clampRate(prev + delta);
+    });
 
   useEffect(() => {
     fetch('/api/price-data/latest')
@@ -90,6 +107,58 @@ export default function PackageGalleryPage() {
         </div>
 
         <div className={styles.controls}>
+          <div className={styles.commonRate}>
+            <div className={styles.commonRateRow}>
+              <button
+                type="button"
+                className={styles.commonRateStep}
+                onClick={() => stepCommonRate(-1)}
+                aria-label="공통 환율 1원 낮추기"
+              >
+                −
+              </button>
+              <div className={styles.commonRateBox}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/gold.webp" alt="골드" className={styles.commonRateIcon} loading="lazy" decoding="async" />
+                <span className={styles.commonRateFixed}>100</span>
+                <span className={styles.commonRateSep}>:</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/royal.webp" alt="로얄" className={styles.commonRateIcon} loading="lazy" decoding="async" />
+                <input
+                  type="number"
+                  className={styles.commonRateInput}
+                  value={commonWonPer100Gold || ''}
+                  onChange={(e) => setCommonWonPer100Gold(clampRate(parseInt(e.target.value) || 0))}
+                  min={RATE_MIN}
+                  max={RATE_MAX}
+                  aria-label="갤러리 공통 환율 (100골드당 원화)"
+                />
+                <span className={styles.commonRateUnit}>원</span>
+              </div>
+              <button
+                type="button"
+                className={styles.commonRateStep}
+                onClick={() => stepCommonRate(1)}
+                aria-label="공통 환율 1원 올리기"
+              >
+                +
+              </button>
+            </div>
+            <div className={styles.commonRateBelow}>
+              <span className={styles.commonRateLabel}>
+                {commonWonPer100Gold > 0 ? '공통 환율 적용 중' : '공통 환율 — 입력하면 전체 카드에 적용'}
+              </span>
+              {commonWonPer100Gold > 0 && (
+                <button
+                  type="button"
+                  className={styles.commonRateReset}
+                  onClick={() => setCommonWonPer100Gold(0)}
+                >
+                  해제
+                </button>
+              )}
+            </div>
+          </div>
           <Link href="/package/register" className={styles.registerLink}>
             + 등록하기
           </Link>
@@ -112,6 +181,7 @@ export default function PackageGalleryPage() {
                   <PackageGalleryCard
                     post={post}
                     latestPrices={latestPrices}
+                    commonWonPer100Gold={commonWonPer100Gold}
                   />
                   {/* 앱 패키지 갤러리(카드 2개마다 1개, 마지막 뒤 제외)와 동일 */}
                   {index % 2 === 1 && index < posts.length - 1 && (
