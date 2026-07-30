@@ -186,13 +186,9 @@ export const WANGAP_PROMOTION_COSTS: Record<
   ],
 };
 
-// 등급별 완갑 아이콘 (2026-07-29 신규 이미지 — 원본 png 제공분을 512px webp로 압축)
-export const WANGAP_ITEM_IMAGES: Record<WangapGrade, string> = {
-  영웅: '/wangap-hero6.webp',
-  전설: '/wangap-legendary6.webp',
-  유물: '/wangap-relic6.webp',
-  고대: '/wangap-ancient6.webp',
-};
+// 등급별 완갑 아이콘 — 실제 정의는 경량 모듈에 있고 여기서는 재수출만 한다.
+// (캐릭터 조회 등 이미지 경로만 필요한 곳이 이 파일 전체를 번들에 끌고 오지 않도록)
+export { WANGAP_ITEM_IMAGES } from './wangap-item-images';
 
 // 보조재료 최적화·골드 환산 대상 재료 키 (시세가 있는 7종 — 실링·골드 제외)
 export type WangapOptMatKey =

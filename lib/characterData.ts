@@ -336,7 +336,8 @@ export function parseEquipmentItems(equipmentData: any[]): EquipmentItem[] {
   const result: EquipmentItem[] = [];
   if (!equipmentData || !Array.isArray(equipmentData)) return result;
 
-  const armorTypes = ['무기', '투구', '어깨', '상의', '하의', '장갑'];
+  // '완갑'은 아직 공식 API 응답에 없다. 실제 Type 문자열이 확인되면 이 배열만 고치면 된다.
+  const armorTypes = ['무기', '투구', '어깨', '상의', '하의', '장갑', '완갑'];
 
   for (const item of equipmentData) {
     if (!armorTypes.includes(item.Type)) continue;
@@ -434,8 +435,8 @@ export function parseEquipmentItems(equipmentData: any[]): EquipmentItem[] {
     });
   }
 
-  // 순서 정렬: 무기, 투구, 어깨, 상의, 하의, 장갑
-  const order = ['무기', '투구', '어깨', '상의', '하의', '장갑'];
+  // 순서 정렬: 무기, 투구, 어깨, 상의, 하의, 장갑, 완갑(맨 아래)
+  const order = ['무기', '투구', '어깨', '상의', '하의', '장갑', '완갑'];
   result.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
 
   return result;

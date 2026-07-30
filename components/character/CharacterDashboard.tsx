@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import type { CharacterData, EngravingInfo, GemInfo, SiblingCharacter } from '@/lib/characterData';
 import { getGradeColor } from '@/lib/grade-color';
 import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
+import { WANGAP_ITEM_IMAGES, type WangapGrade } from '@/lib/wangap-item-images';
 import styles from '@/app/character/character.module.css';
 import TitleBadge from './TitleBadge';
 
@@ -20,6 +21,38 @@ function getQualityColor(q: number): string {
   if (q >= 30) return '#4caf50';
   return '#9e9e9e';
 }
+
+// 로아 API 아이콘은 배경이 없는(투명) 이미지라 그냥 두면 카드 위에 둥둥 뜬다.
+// 게임 안 아이템 배경과 같게 보이도록, 등급별 완갑 이미지(wangap-*6.webp)의 배경을
+// 세로 위치별로 실측해서 그대로 그라디언트로 재현한다.
+// (영웅/전설/유물/고대 = 실측값 / 희귀·에스더는 완갑 이미지가 없어 같은 톤으로 맞춘 값)
+const GRADE_ICON_BG: Record<string, string> = {
+  '영웅': 'linear-gradient(180deg, #06070a 0%, #16051e 25%, #340344 75%, #3c034d 100%)',
+  '전설': 'linear-gradient(180deg, #110f0d 0%, #231405 25%, #5a3305 75%, #613806 100%)',
+  '유물': 'linear-gradient(180deg, #120d0b 0%, #331607 25%, #5b2004 75%, #6f2704 100%)',
+  '고대': 'linear-gradient(180deg, #10100d 0%, #221d12 25%, #957749 75%, #b6985f 100%)',
+  '희귀': 'linear-gradient(180deg, #0b0f0d 0%, #123023 25%, #145f45 75%, #14684a 100%)',
+  '에스더': 'linear-gradient(180deg, #08100f 0%, #103330 25%, #1b716d 75%, #1d7a76 100%)',
+};
+const FALLBACK_ICON_BG = 'linear-gradient(180deg, #0d0e10 0%, #1e2128 25%, #353a44 75%, #3a3f4a 100%)';
+
+// 에스더 아이콘은 API 이미지가 이미 자체 배경/이펙트를 갖고 있어 아무것도 덧입히지 않는다.
+// 완갑도 마찬가지(자체 배경 있는 우리 이미지).
+const hasOwnBackground = (grade: string) => grade === '에스더';
+
+function iconStyle(grade: string): React.CSSProperties {
+  return { background: GRADE_ICON_BG[grade] || FALLBACK_ICON_BG };
+}
+
+// 링(테두리)이 디자인의 일부인 요소 — 어빌리티 스톤, 프로필 보주 미니
+function ringedIconStyle(grade: string): React.CSSProperties {
+  return { ...iconStyle(grade), borderColor: getGradeColor(grade) };
+}
+
+// 완갑 아이콘은 API 아이콘 대신 완갑 시뮬과 같은 자체 이미지(등급별)를 쓴다.
+const WANGAP_GRADES: WangapGrade[] = ['영웅', '전설', '유물', '고대'];
+const wangapIcon = (grade: string): string =>
+  WANGAP_ITEM_IMAGES[(WANGAP_GRADES as string[]).includes(grade) ? (grade as WangapGrade) : '영웅'];
 
 // 고대 악세 기본 힘/민/지 구간 — 연마 3단계 기준 [최소, 최대]
 // (대부분 유저가 3단계라 연마단계 무시하고 이 구간을 3등분해 상/중/하 판정)
@@ -214,6 +247,29 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
 
   const engSlots: (EngravingInfo | null)[] = [];
   for (let i = 0; i < 5; i++) engSlots.push(data.engravings[i] || null);
+
+  // 완갑 — 아직 공식 API가 내려주지 않는다.
+  // 모든 유저가 영웅 완갑에서 시작하므로, 응답에 없으면 영웅 +0 으로 채워 장비 칸 맨 아래에 노출한다.
+  // API가 완갑을 내려주기 시작하면 parseEquipmentItems 가 그대로 담아오고 이 보정은 자동으로 비활성.
+  const equipRows: typeof data.equipmentItems = data.equipmentItems.some(e => e.type === '완갑')
+    ? data.equipmentItems
+    : [
+        ...data.equipmentItems,
+        {
+          type: '완갑',
+          name: '완갑',
+          icon: '',
+          grade: '영웅',
+          quality: 0,
+          itemLevel: 0,
+          enhanceLevel: 0,
+          advancedLevel: 0,
+          transcendence: 0,
+          elixir: [],
+          setName: '',
+          mainStat: 0,
+        },
+      ];
 
   const renderGemCell = (gem: GemInfo | null, idx: number) => {
     if (!gem) return <div key={`empty-${idx}`} className={styles.gemCellEmpty} style={{ width: 120 }} />;
@@ -440,6 +496,28 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                   <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{combatStats.expertise}</span>
                 </div>
               </div>
+
+              {/* 보주 — 장비 칸(완갑 자리)에서 여기 특성 아래로 이동 */}
+              {data.orb && data.orb.icon && (
+                <div className={styles.orbMini}>
+                  <img
+                    src={data.orb.icon}
+                    alt="보주"
+                    className={styles.orbMiniIcon}
+                    style={ringedIconStyle(data.orb.grade)}
+                  />
+                  <div className={styles.orbMiniBody}>
+                    <div className={styles.orbMiniName} style={{ color: getGradeColor(data.orb.grade) }}>
+                      {data.orb.name}
+                    </div>
+                    {data.orb.paradisePower > 0 && (
+                      <div className={styles.orbMiniStat}>
+                        {data.orb.season > 0 ? `시즌${data.orb.season} ` : ''}최대 낙원력 {data.orb.paradisePower.toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -760,21 +838,20 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
               <div className={styles.equipAccGrid}>
                 <div className={styles.equipBlock}>
                   <div className={styles.colLabel}>장비</div>
-                  {data.equipmentItems.map((eq, i) => {
+                  {equipRows.map((eq, i) => {
                     const enhLv = eq.enhanceLevel;
                     const nameOnly = eq.name.replace(/^\+\d+\s*/, '');
                     const isWeapon = eq.type === '무기';
+                    const isWangap = eq.type === '완갑';
+                    // 완갑은 API 아이콘 대신 등급별 자체 이미지 사용
+                    const iconSrc = isWangap ? wangapIcon(eq.grade) : eq.icon;
                     return (
                       <div key={i} className={styles.itemRow}>
-                        {eq.icon && (
-                          eq.name.includes('전율') ? (
-                            <div style={{ position: 'relative', flexShrink: 0, width: 56, height: 56 }}>
-                              <img src={eq.icon} alt={eq.type} style={{ width: 46, height: 46, borderRadius: 6, objectFit: 'cover', position: 'absolute', top: 5, left: 5 }} />
-                              <img src="/wjsdbf3.webp" alt="" style={{ position: 'absolute', top: -2, left: 1, width: 60, height: 60, pointerEvents: 'none' }} />
-                            </div>
-                          ) : (
-                            <img src={eq.icon} alt={eq.type} className={styles.itemIcon} style={{ borderColor: getGradeColor(eq.grade) }} />
-                          )
+                        {iconSrc && (
+                          // 완갑 이미지는 자체 배경이 있어서 테두리·배경을 덧입히지 않는다
+                          isWangap || hasOwnBackground(eq.grade)
+                            ? <img src={iconSrc} alt={eq.type} className={styles.itemIconPlain} />
+                            : <img src={iconSrc} alt={eq.type} className={styles.itemIcon} style={iconStyle(eq.grade)} />
                         )}
                         <div className={styles.itemBody}>
                           <div className={styles.itemNameRow}>
@@ -782,33 +859,19 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                             <span className={styles.itemName} style={{ color: getGradeColor(eq.grade) }}>{nameOnly}</span>
                             {eq.transcendence > 0 && <span className={styles.tag}>초월 {eq.transcendence}</span>}
                           </div>
-                          <div className={styles.qualRow}>
-                            <div className={styles.qualTrack}><div className={styles.qualFill} style={{ width: `${eq.quality}%`, background: getQualityColor(eq.quality) }} /></div>
-                            <span className={styles.qualNum} style={{ color: getQualityColor(eq.quality) }}>{eq.quality}</span>
-                          </div>
+                          {/* 완갑은 품질이 없다 — 품질값이 있을 때만 게이지 노출 */}
+                          {eq.quality > 0 ? (
+                            <div className={styles.qualRow}>
+                              <div className={styles.qualTrack}><div className={styles.qualFill} style={{ width: `${eq.quality}%`, background: getQualityColor(eq.quality) }} /></div>
+                              <span className={styles.qualNum} style={{ color: getQualityColor(eq.quality) }}>{eq.quality}</span>
+                            </div>
+                          ) : isWangap ? (
+                            <div className={styles.statLine}>{eq.grade} 완갑</div>
+                          ) : null}
                         </div>
                       </div>
                     );
                   })}
-
-                  {/* ══ 보주 (장갑 아래) ══ */}
-                  {data.orb && data.orb.icon && (
-                    <div className={styles.itemRow}>
-                      <img src={data.orb.icon} alt="보주" className={styles.itemIcon} style={{ borderColor: getGradeColor(data.orb.grade) }} />
-                      <div className={styles.itemBody}>
-                        <div className={styles.itemNameRow}>
-                          <span className={`${styles.enhBadge} ${styles.enhBadgeArmor}`}>보주</span>
-                          <span className={styles.itemName} style={{ color: getGradeColor(data.orb.grade) }}>{data.orb.name}</span>
-                        </div>
-                        {data.orb.paradisePower > 0 && (
-                          <div className={styles.statLine}>
-                            {data.orb.season > 0 ? `시즌${data.orb.season} ` : ''}최대 낙원력 : {data.orb.paradisePower.toLocaleString()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                 </div>
 
                 <div className={styles.colDivider} />
@@ -817,7 +880,11 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                   <div className={styles.colLabel}>악세서리</div>
                   {data.accessoryItems.map((acc, i) => (
                     <div key={i} className={styles.itemRow}>
-                      {acc.icon && <img src={acc.icon} alt={acc.type} className={styles.itemIcon} style={{ borderColor: getGradeColor(acc.grade) }} />}
+                      {acc.icon && (
+                        hasOwnBackground(acc.grade)
+                          ? <img src={acc.icon} alt={acc.type} className={styles.itemIconPlain} />
+                          : <img src={acc.icon} alt={acc.type} className={styles.itemIcon} style={iconStyle(acc.grade)} />
+                      )}
                       <div className={styles.itemBody}>
                         <div className={styles.itemNameRow}>
                           <span className={styles.itemName} style={{ color: getGradeColor(acc.grade) }}>{acc.type}</span>
@@ -852,7 +919,11 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                   <div className={styles.braceletSection}>
                     <div className={styles.subDivider}><span>팔찌</span></div>
                     <div className={styles.braceletBlock}>
-                      {data.braceletItem.icon && <img src={data.braceletItem.icon} alt="팔찌" className={styles.itemIcon} style={{ borderColor: getGradeColor(data.braceletItem.grade) }} />}
+                      {data.braceletItem.icon && (
+                        hasOwnBackground(data.braceletItem.grade)
+                          ? <img src={data.braceletItem.icon} alt="팔찌" className={styles.itemIconPlain} />
+                          : <img src={data.braceletItem.icon} alt="팔찌" className={styles.itemIcon} style={iconStyle(data.braceletItem.grade)} />
+                      )}
                       <div className={styles.itemBody}>
                         <div className={styles.itemNameRow}>
                           <span className={styles.itemName} style={{ color: getGradeColor(data.braceletItem.grade) }}>팔찌</span>
@@ -888,8 +959,8 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                             }).join(' ');
                             return (
                               <>
-                                <polygon points={pent(58)} fill="var(--card-body-bg-stone)" stroke="var(--border-color)" strokeWidth="2" strokeLinejoin="round" />
-                                <polygon points={pent(90)} fill="none" stroke="var(--border-color)" strokeWidth="2" strokeLinejoin="round" opacity="0.85" />
+                                <polygon points={pent(58)} fill="var(--neu-tile-bg)" stroke="var(--eng-line)" strokeWidth="2" strokeLinejoin="round" />
+                                <polygon points={pent(90)} fill="none" stroke="var(--eng-line-strong)" strokeWidth="2.5" strokeLinejoin="round" />
                               </>
                             );
                           })()}
@@ -901,26 +972,31 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                             const rad = (angle * Math.PI) / 180;
                             const stoneEng = data.abilityStone?.engravings.find(se => se.name === eng.name);
                             return (
+                              // 스톤에 박힌 각인은 굵은 실선, 아닌 것은 가는 점선 — 한눈에 구분되게
                               <line key={`line-${i}`}
-                                x1={140 + 18 * Math.cos(rad)} y1={140 + 18 * Math.sin(rad)}
+                                x1={140 + 32 * Math.cos(rad)} y1={140 + 32 * Math.sin(rad)}
                                 x2={140 + 90 * Math.cos(rad)} y2={140 + 90 * Math.sin(rad)}
-                                stroke={stoneEng ? '#38bdf8' : 'var(--border-color)'}
-                                strokeWidth={stoneEng ? '2' : '1.5'}
-                                opacity={stoneEng ? '0.9' : '0.45'}
+                                stroke={stoneEng ? 'var(--eng-link)' : 'var(--eng-line)'}
+                                strokeWidth={stoneEng ? '4' : '1.5'}
+                                strokeDasharray={stoneEng ? undefined : '4 4'}
+                                strokeLinecap="round"
                               />
                             );
                           })}
 
-                          {/* 중앙 스톤 원 */}
+                          {/* 중앙 스톤 원 — 아이콘(40px)이 들어갈 만큼 키우고 링크색 링을 덧대 스톤임을 명시 */}
                           {data.abilityStone && (
-                            <circle cx="140" cy="140" r="18" fill="var(--card-bg)" stroke={getGradeColor(data.abilityStone.grade)} strokeWidth="3" />
+                            <>
+                              <circle cx="140" cy="140" r="26" fill="var(--card-bg)" stroke={getGradeColor(data.abilityStone.grade)} strokeWidth="3.5" />
+                              <circle cx="140" cy="140" r="30" fill="none" stroke="var(--eng-link)" strokeWidth="1.5" opacity="0.55" />
+                            </>
                           )}
                         </svg>
 
                         {/* 중앙: 스톤 아이콘 */}
                         {data.abilityStone?.icon && (
                           <div className={styles.engCircleCenter}>
-                            <img src={data.abilityStone.icon} alt="스톤" className={styles.engStoneIcon} style={{ borderColor: getGradeColor(data.abilityStone.grade) }} />
+                            <img src={data.abilityStone.icon} alt="스톤" className={styles.engStoneIcon} style={ringedIconStyle(data.abilityStone.grade)} />
                           </div>
                         )}
 
@@ -933,7 +1009,19 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                           const stoneEng = data.abilityStone?.engravings.find(se => se.name === eng.name);
                           const stoneLv = eng.abilityStoneLevel ?? 0;
                           return (
-                            <div key={i} className={styles.engCircleControls} style={{ '--eng-x': `${50 + 39 * Math.cos(rad)}%`, '--eng-y': `${50 + 39 * Math.sin(rad)}%` } as React.CSSProperties}>
+                            <div
+                              key={i}
+                              className={styles.engCircleControls}
+                              style={{
+                                // 오각형 꼭짓점 반지름 90 / viewBox 280 = 32.143%
+                                '--eng-x': `${50 + 32.143 * Math.cos(rad)}%`,
+                                '--eng-y': `${50 + 32.143 * Math.sin(rad)}%`,
+                                '--eng-cos': Math.cos(rad).toFixed(4),
+                                '--eng-sin': Math.sin(rad).toFixed(4),
+                                // 밑변 두 꼭짓점(i=2,3)은 라벨이 왼쪽으로 몰려 보여 살짝 우측 보정
+                                '--eng-nudge-x': i === 2 || i === 3 ? '10px' : '0px',
+                              } as React.CSSProperties}
+                            >
                               <div className={styles.engCircleNameRow}>
                                 {ENGRAVING_ICONS[eng.name] && (
                                   <img src={ENGRAVING_ICONS[eng.name]} alt="" className={styles.engCircleIcon} />
