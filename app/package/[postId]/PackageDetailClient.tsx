@@ -804,11 +804,11 @@ export default function PackageDetailPage({ initialPost }: Props) {
               <span className={styles.gachaExpectedLabel}>환율</span>
               <div className={styles.resultRateInput}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/gold.webp" alt="" className={styles.resultRateIcon} />
+                <img loading="lazy" decoding="async" src="/gold.webp" alt="" className={styles.resultRateIcon} />
                 <span className={styles.resultRateFixed}>100</span>
                 <span className={styles.resultRateSep}>:</span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/royal.webp" alt="" className={styles.resultRateIcon} />
+                <img loading="lazy" decoding="async" src="/royal.webp" alt="" className={styles.resultRateIcon} />
                 <input
                   type="number"
                   className={styles.resultRateNumber}
@@ -887,7 +887,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                   })()}
                   {item.icon && (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={item.icon} alt={item.name} className={styles.gachaItemIcon}
+                    <img loading="lazy" decoding="async" src={item.icon} alt={item.name} className={styles.gachaItemIcon}
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   )}
                   <div className={styles.gachaItemName}>{item.name}</div>
@@ -977,7 +977,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                         <div className={styles.gachaMultiTableName}>
                           {item.icon && (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={item.icon} alt={item.name} className={styles.gachaMultiTableIcon}
+                            <img loading="lazy" decoding="async" src={item.icon} alt={item.name} className={styles.gachaMultiTableIcon}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           )}
                           <span>{item.name}</span>
@@ -1129,11 +1129,11 @@ export default function PackageDetailPage({ initialPost }: Props) {
                 <span className={styles.resultRowLabel}>환율</span>
                 <div className={styles.resultRateInput}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/gold.webp" alt="" className={styles.resultRateIcon} />
+                  <img loading="lazy" decoding="async" src="/gold.webp" alt="" className={styles.resultRateIcon} />
                   <span className={styles.resultRateFixed}>100</span>
                   <span className={styles.resultRateSep}>:</span>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/royal.webp" alt="" className={styles.resultRateIcon} />
+                  <img loading="lazy" decoding="async" src="/royal.webp" alt="" className={styles.resultRateIcon} />
                   <input
                     type="number"
                     className={styles.resultRateNumber}
@@ -1262,13 +1262,13 @@ export default function PackageDetailPage({ initialPost }: Props) {
                         <div className={styles.bundleIconStack}>
                           {item.bundleItems.map((bi, biIdx) => (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img key={biIdx} src={bi.icon} alt={bi.name} className={styles.bundleIconItem}
+                            <img loading="lazy" decoding="async" key={biIdx} src={bi.icon} alt={bi.name} className={styles.bundleIconItem}
                               style={{ zIndex: item.bundleItems!.length - biIdx }} />
                           ))}
                         </div>
                       ) : effective.icon && (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={effective.icon}
                           alt={effective.name}
                           className={styles.itemCardIcon}
@@ -1304,7 +1304,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                           >
                             {choice.icon && (
                               /* eslint-disable-next-line @next/next/no-img-element */
-                              <img src={choice.icon} alt={choice.name} className={styles.itemCardChoiceBtnIcon} />
+                              <img loading="lazy" decoding="async" src={choice.icon} alt={choice.name} className={styles.itemCardChoiceBtnIcon} />
                             )}
                             <span>{choice.name}</span>
                           </button>
@@ -1339,7 +1339,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                             >
                               {cand.icon && (
                                 /* eslint-disable-next-line @next/next/no-img-element */
-                                <img src={cand.icon} alt={cand.name} className={styles.itemCardChoiceBtnIcon} />
+                                <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} className={styles.itemCardChoiceBtnIcon} />
                               )}
                               <span>{cand.name} ×{cand.quantity} ({formatNumber(candPrice)}G)</span>
                             </button>
@@ -1444,13 +1444,13 @@ export default function PackageDetailPage({ initialPost }: Props) {
                         <div className={styles.bundleIconStack}>
                           {item.bundleItems.map((bi, biIdx) => (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img key={biIdx} src={bi.icon} alt={bi.name} className={styles.bundleIconItem}
+                            <img loading="lazy" decoding="async" key={biIdx} src={bi.icon} alt={bi.name} className={styles.bundleIconItem}
                               style={{ zIndex: item.bundleItems!.length - biIdx }} />
                           ))}
                         </div>
                       ) : (effectiveChoice?.icon || item.icon) && (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={effectiveChoice?.icon || item.icon}
                           alt={effectiveChoice?.name || item.name}
                           className={styles.itemCardIcon}
@@ -1482,7 +1482,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                           >
                             {choice.icon && (
                               /* eslint-disable-next-line @next/next/no-img-element */
-                              <img src={choice.icon} alt={choice.name} className={styles.itemCardChoiceBtnIcon} />
+                              <img loading="lazy" decoding="async" src={choice.icon} alt={choice.name} className={styles.itemCardChoiceBtnIcon} />
                             )}
                             <span>{choice.name}</span>
                           </button>
@@ -1517,7 +1517,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                             >
                               {cand.icon && (
                                 /* eslint-disable-next-line @next/next/no-img-element */
-                                <img src={cand.icon} alt={cand.name} className={styles.itemCardChoiceBtnIcon} />
+                                <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} className={styles.itemCardChoiceBtnIcon} />
                               )}
                               <span>{cand.name} ×{cand.quantity} ({formatNumber(candPrice)}G)</span>
                             </button>

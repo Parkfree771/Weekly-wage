@@ -61,7 +61,7 @@ export default function TitleBadge({ title, fontSize }: Props) {
     <span className={styles.titleWrap} style={fontSize ? { fontSize } : undefined}>
       {icon && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={icon} alt="" className={styles.titleIcon} />
+        <img loading="lazy" decoding="async" src={icon} alt="" className={styles.titleIcon} />
       )}
       <span className={`${styles.titleBadge} ${colorCls}`} data-text={title}>
         {title}

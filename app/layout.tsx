@@ -135,6 +135,14 @@ export default function RootLayout({
             history·archive(합산 100KB+)는 메인 시세 차트에서만 쓰므로 app/page.tsx에서 preload —
             전역 preload 금지(전 페이지 대역폭 낭비). 여기는 전 페이지가 쓰는 latest(2KB)만. */}
         <link rel="preload" href="/api/price-data/latest" as="fetch" crossOrigin="anonymous" />
+        {/* 광고·애널리틱스 하위 도메인은 로더 스크립트가 실행된 뒤에야 발견된다 —
+            DNS만 미리 풀어두면 그 시점의 조회 왕복이 사라진다.
+            preconnect가 아닌 dns-prefetch인 이유: 연결까지 미리 맺으면 모바일에서
+            본문 리소스와 대역폭을 다투게 되므로 DNS 단계까지만 앞당긴다. */}
+        <link rel="dns-prefetch" href="https://googleads.g.doubleclick.net" />
+        <link rel="dns-prefetch" href="https://tpc.googlesyndication.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://display.ad.daum.net" />
         {/* Google AdSense — 서버 HTML(head)에 포함되어야 애드센스 크롤러가 사이트 확인 가능.
             async라 렌더링 비차단. (lazyOnload는 HTML에 안 들어가 검증 실패) */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}

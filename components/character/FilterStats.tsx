@@ -97,7 +97,7 @@ export default function FilterStats({ spec, klass = '', title, ancient, role, mi
         <span className={`${styles.chip} ${styles.chipSpec}`}>
           {labels.specIcon && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={labels.specIcon} alt="" className={styles.chipSpecIcon} />
+            <img loading="lazy" decoding="async" src={labels.specIcon} alt="" className={styles.chipSpecIcon} />
           )}
           {labels.spec}
         </span>
@@ -168,7 +168,7 @@ export default function FilterStats({ spec, klass = '', title, ancient, role, mi
               <span className={`${styles.chip} ${styles.chipSpec}`}>
                 {labels.specIcon && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={labels.specIcon} alt="" className={styles.chipSpecIcon} />
+                  <img loading="lazy" decoding="async" src={labels.specIcon} alt="" className={styles.chipSpecIcon} />
                 )}
                 {labels.spec}
               </span>

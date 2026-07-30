@@ -284,7 +284,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
         onMouseLeave={handleGemLeave}
       >
         <div className={styles.gemCellIconWrap} style={{ boxShadow: `0 2px 8px ${gc}30` }}>
-          {gem.icon && <img src={gem.icon} alt={gem.type} className={styles.gemCellImg} style={{ borderColor: gc }} />}
+          {gem.icon && <img loading="lazy" decoding="async" src={gem.icon} alt={gem.type} className={styles.gemCellImg} style={{ borderColor: gc }} />}
           <span className={styles.gemCellLv} style={{ background: gc }}>{gem.level}</span>
         </div>
         <div style={{ fontSize: '0.72rem', fontWeight: 800, color: gc, lineHeight: 1.2 }}>{gem.type}</div>
@@ -300,7 +300,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
           title={gem.skillName}
         >
           {gem.skillIcon && (
-            <img
+            <img loading="lazy" decoding="async"
               src={gem.skillIcon}
               alt={gem.skillName || '스킬'}
               style={{ width: 18, height: 18, borderRadius: 3, objectFit: 'cover', flexShrink: 0 }}
@@ -353,7 +353,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                   }}
                 >
                   {profile.emblems.map((url, i) => (
-                    <img
+                    <img loading="lazy" decoding="async"
                       key={i}
                       src={url}
                       alt="휘장"
@@ -500,7 +500,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
               {/* 보주 — 장비 칸(완갑 자리)에서 여기 특성 아래로 이동 */}
               {data.orb && data.orb.icon && (
                 <div className={styles.orbMini}>
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={data.orb.icon}
                     alt="보주"
                     className={styles.orbMiniIcon}
@@ -612,7 +612,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                                   justifyContent: 'center',
                                 }}
                               >
-                                <img
+                                <img loading="lazy" decoding="async"
                                   src={core.icon}
                                   alt={core.name}
                                   style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'contain' }}
@@ -677,7 +677,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                               {/* Hover 툴팁 — 코어 풀네임 + 등급 + 포인트 */}
                               <div className={styles.coreTooltip}>
                                 <div className={styles.coreTooltipHead} style={{ marginBottom: 0, paddingBottom: 0, borderBottom: 'none' }}>
-                                  <img
+                                  <img loading="lazy" decoding="async"
                                     src={core.icon}
                                     alt={core.name}
                                     className={styles.coreTooltipIcon}
@@ -850,8 +850,8 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                         {iconSrc && (
                           // 완갑 이미지는 자체 배경이 있어서 테두리·배경을 덧입히지 않는다
                           isWangap || hasOwnBackground(eq.grade)
-                            ? <img src={iconSrc} alt={eq.type} className={styles.itemIconPlain} />
-                            : <img src={iconSrc} alt={eq.type} className={styles.itemIcon} style={iconStyle(eq.grade)} />
+                            ? <img loading="lazy" decoding="async" src={iconSrc} alt={eq.type} className={styles.itemIconPlain} />
+                            : <img loading="lazy" decoding="async" src={iconSrc} alt={eq.type} className={styles.itemIcon} style={iconStyle(eq.grade)} />
                         )}
                         <div className={styles.itemBody}>
                           <div className={styles.itemNameRow}>
@@ -882,8 +882,8 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                     <div key={i} className={styles.itemRow}>
                       {acc.icon && (
                         hasOwnBackground(acc.grade)
-                          ? <img src={acc.icon} alt={acc.type} className={styles.itemIconPlain} />
-                          : <img src={acc.icon} alt={acc.type} className={styles.itemIcon} style={iconStyle(acc.grade)} />
+                          ? <img loading="lazy" decoding="async" src={acc.icon} alt={acc.type} className={styles.itemIconPlain} />
+                          : <img loading="lazy" decoding="async" src={acc.icon} alt={acc.type} className={styles.itemIcon} style={iconStyle(acc.grade)} />
                       )}
                       <div className={styles.itemBody}>
                         <div className={styles.itemNameRow}>
@@ -921,8 +921,8 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                     <div className={styles.braceletBlock}>
                       {data.braceletItem.icon && (
                         hasOwnBackground(data.braceletItem.grade)
-                          ? <img src={data.braceletItem.icon} alt="팔찌" className={styles.itemIconPlain} />
-                          : <img src={data.braceletItem.icon} alt="팔찌" className={styles.itemIcon} style={iconStyle(data.braceletItem.grade)} />
+                          ? <img loading="lazy" decoding="async" src={data.braceletItem.icon} alt="팔찌" className={styles.itemIconPlain} />
+                          : <img loading="lazy" decoding="async" src={data.braceletItem.icon} alt="팔찌" className={styles.itemIcon} style={iconStyle(data.braceletItem.grade)} />
                       )}
                       <div className={styles.itemBody}>
                         <div className={styles.itemNameRow}>
@@ -996,7 +996,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                         {/* 중앙: 스톤 아이콘 */}
                         {data.abilityStone?.icon && (
                           <div className={styles.engCircleCenter}>
-                            <img src={data.abilityStone.icon} alt="스톤" className={styles.engStoneIcon} style={ringedIconStyle(data.abilityStone.grade)} />
+                            <img loading="lazy" decoding="async" src={data.abilityStone.icon} alt="스톤" className={styles.engStoneIcon} style={ringedIconStyle(data.abilityStone.grade)} />
                           </div>
                         )}
 
@@ -1024,7 +1024,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                             >
                               <div className={styles.engCircleNameRow}>
                                 {ENGRAVING_ICONS[eng.name] && (
-                                  <img src={ENGRAVING_ICONS[eng.name]} alt="" className={styles.engCircleIcon} />
+                                  <img loading="lazy" decoding="async" src={ENGRAVING_ICONS[eng.name]} alt="" className={styles.engCircleIcon} />
                                 )}
                                 <span className={styles.engCircleName}>{eng.name}</span>
                               </div>
@@ -1074,7 +1074,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                           <div className={styles.cardImgGrid}>
                             {cardSet.cards.map((c, j) => (
                               <div key={j} className={styles.cardImgCell}>
-                                {c.icon && <img src={c.icon} alt={c.name} className={styles.cardImgThumb} style={{ borderColor: getGradeColor(c.grade) }} />}
+                                {c.icon && <img loading="lazy" decoding="async" src={c.icon} alt={c.name} className={styles.cardImgThumb} style={{ borderColor: getGradeColor(c.grade) }} />}
                                 <span className={styles.cardAwakeCount}>{c.awakeCount}/{c.awakeTotal}</span>
                               </div>
                             ))}
@@ -1110,7 +1110,7 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                                 <div className={styles.arkColEffects}>
                                   {catEffects.map((eff, i) => (
                                     <div key={i} className={styles.arkEffectChip}>
-                                      {eff.icon && <img src={eff.icon} alt={eff.name} className={styles.arkEffectChipIcon} />}
+                                      {eff.icon && <img loading="lazy" decoding="async" src={eff.icon} alt={eff.name} className={styles.arkEffectChipIcon} />}
                                       <span className={styles.arkEffectChipName}>{eff.name}</span>
                                       <span className={styles.arkEffectChipLv}>Lv.{eff.level}</span>
                                     </div>
@@ -1185,13 +1185,13 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 12, borderBottom: '1px solid var(--border-color)' }}>
                   {gem.icon && (
                     <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <img src={gem.icon} alt={gem.type} style={{ width: 56, height: 56, borderRadius: 8, border: `2px solid ${gc}`, objectFit: 'cover' }} />
+                      <img loading="lazy" decoding="async" src={gem.icon} alt={gem.type} style={{ width: 56, height: 56, borderRadius: 8, border: `2px solid ${gc}`, objectFit: 'cover' }} />
                       <span style={{ position: 'absolute', bottom: -5, right: -5, fontSize: '0.7rem', fontWeight: 800, color: '#fff', background: gc, padding: '1px 6px', borderRadius: 5, lineHeight: '14px' }}>{gem.level}</span>
                     </div>
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {gem.skillIcon && <img src={gem.skillIcon} alt="" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />}
+                      {gem.skillIcon && <img loading="lazy" decoding="async" src={gem.skillIcon} alt="" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />}
                       <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gem.skillName || '-'}</span>
                     </div>
                     <span style={{ fontSize: '0.78rem', fontWeight: 700, color: gc }}>{gem.type} {gem.level}레벨</span>

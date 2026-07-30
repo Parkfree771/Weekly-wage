@@ -604,7 +604,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                                 )}
                                 {reward.cores > 0 && (
                                   <span className={styles.rewardItem}>
-                                    <img src="/cerka-core2.webp" alt="코어" width={16} height={16} style={{ borderRadius: '2px' }} />
+                                    <img loading="lazy" decoding="async" src="/cerka-core2.webp" alt="코어" width={16} height={16} style={{ borderRadius: '2px' }} />
                                     x{reward.cores}
                                   </span>
                                 )}
@@ -631,7 +631,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
                 <div className={styles.totalSplit}>
                   {p.cores > 0 && (
                     <span className={styles.coreRow}>
-                      <img src="/cerka-core2.webp" alt="코어" width={16} height={16} style={{ borderRadius: '2px' }} />
+                      <img loading="lazy" decoding="async" src="/cerka-core2.webp" alt="코어" width={16} height={16} style={{ borderRadius: '2px' }} />
                       코어 x{p.cores}
                     </span>
                   )}
@@ -668,7 +668,7 @@ export default function RaidCalculator({ selectedCharacters, onGateSelectionChan
         <span className={styles.grandTotal}>= 총 {grand.total.toLocaleString()} G</span>
         {grand.cores > 0 && (
           <span className={styles.grandItem}>
-            <img src="/cerka-core2.webp" alt="코어" width={26} height={26} style={{ borderRadius: '4px' }} />
+            <img loading="lazy" decoding="async" src="/cerka-core2.webp" alt="코어" width={26} height={26} style={{ borderRadius: '4px' }} />
             x{grand.cores}
           </span>
         )}

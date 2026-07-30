@@ -195,7 +195,7 @@ function ClassMode({ data, total, onSelectSpec }: {
             >
               {entry?.icon && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={entry.icon} alt="" className={styles.specBigIcon} />
+                <img loading="lazy" decoding="async" src={entry.icon} alt="" className={styles.specBigIcon} />
               )}
               <span className={styles.specBigName}>{entry?.name ?? s.specId}</span>
               <span className={`${styles.specBigPct} ${i === 0 ? styles.textA : styles.textB}`}>
@@ -255,7 +255,7 @@ function SpecMode({ data, spec, total, onSelectSpec, wide = false }: {
               <span className={styles.coreIconWrap} style={{ borderColor: gradeColor(c.grade), background: ANCIENT_BG }}>
                 {c.icon ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.icon} alt="" />
+                  <img loading="lazy" decoding="async" src={c.icon} alt="" />
                 ) : null}
               </span>
             </span>
@@ -359,7 +359,7 @@ function SpecMode({ data, spec, total, onSelectSpec, wide = false }: {
                         <span className={styles.comboIcon} style={{ background: ANCIENT_BG }}>
                           {spec.orderIcons?.[cel] ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={spec.orderIcons[cel]!} alt={cel} />
+                            <img loading="lazy" decoding="async" src={spec.orderIcons[cel]!} alt={cel} />
                           ) : null}
                         </span>
                       </span>
@@ -398,7 +398,7 @@ function SpecMode({ data, spec, total, onSelectSpec, wide = false }: {
                         <span className={styles.engrIcon}>
                           {ENGRAVING_ICONS[name] ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={ENGRAVING_ICONS[name]} alt={name} />
+                            <img loading="lazy" decoding="async" src={ENGRAVING_ICONS[name]} alt={name} />
                           ) : (
                             // 아이콘 에셋이 없는 각인은 첫 글자로 표시 (호버 시 전체 이름)
                             <i className={styles.engrIconFallback}>{name.charAt(0)}</i>

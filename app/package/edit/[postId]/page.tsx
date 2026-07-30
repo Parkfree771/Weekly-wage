@@ -563,7 +563,7 @@ export default function PackageEditPage() {
       <div key={added.id} className={`${styles.packageBoxItem} ${!added.isBonus && selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
         <div className={styles.packageBoxItemMain}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={template.icon} alt={template.name}
+          <img loading="lazy" decoding="async" src={template.icon} alt={template.name}
             className={styles.packageBoxItemIcon}
             style={{
               ...(ICON_SIZE_BOX[template.id] ? { width: ICON_SIZE_BOX[template.id], height: ICON_SIZE_BOX[template.id] } : {}),
@@ -616,7 +616,7 @@ export default function PackageEditPage() {
                     onClick={() => handleChoiceChange(added.id, choice.itemId)}>
                     {choice.icon && (
                       /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={choice.icon} alt={choice.name} className={styles.choiceOptionIcon}
+                      <img loading="lazy" decoding="async" src={choice.icon} alt={choice.name} className={styles.choiceOptionIcon}
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     )}
                     <span className={styles.choiceOptionName}>{choice.name}</span>
@@ -669,7 +669,7 @@ export default function PackageEditPage() {
           <div className={styles.bundleContentsRow}>
             {template.bundleContents.map((bc) => (
               <div key={bc.itemId} className={styles.innerQuantityRow}>
-                <img src={bc.icon} alt={bc.name} style={{ width: 20, height: 20 }} />
+                <img loading="lazy" decoding="async" src={bc.icon} alt={bc.name} style={{ width: 20, height: 20 }} />
                 <span className={styles.innerQuantityLabel}>{bc.name}</span>
                 <input type="number" className={styles.quantityInput}
                   value={added.bundleQuantities?.[bc.itemId] || ''}
@@ -704,7 +704,7 @@ export default function PackageEditPage() {
                 <div key={cand.id} className={styles.innerQuantityRow}>
                   {cand.icon && (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={cand.icon} alt={cand.name} style={{ width: 20, height: 20 }}
+                    <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} style={{ width: 20, height: 20 }}
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   )}
                   <span className={styles.innerQuantityLabel} style={{ opacity: isTopSelected ? 1 : 0.55 }}>
@@ -1102,7 +1102,7 @@ export default function PackageEditPage() {
                       className={`${styles.priceCurrencyBtn} ${priceCurrency === 'blueCrystal' ? styles.priceCurrencyBtnActive : ''}`}
                       onClick={() => setPriceCurrency('blueCrystal')}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/blue.webp" alt="" style={{ width: 16, height: 16, verticalAlign: 'middle', marginRight: 4 }} />
+                      <img loading="lazy" decoding="async" src="/blue.webp" alt="" style={{ width: 16, height: 16, verticalAlign: 'middle', marginRight: 4 }} />
                       블루크리스탈
                     </button>
                   </div>
@@ -1156,15 +1156,15 @@ export default function PackageEditPage() {
                   <div className={styles.rateCard}>
                     <div className={styles.ratioRow}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/royal.webp" alt="" className={styles.officialRateIcon} />
+                      <img loading="lazy" decoding="async" src="/royal.webp" alt="" className={styles.officialRateIcon} />
                       <span className={styles.ratioFixed}>2750</span>
                       <span className={styles.ratioSeparator}>=</span>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/blue.webp" alt="" className={styles.officialRateIcon} />
+                      <img loading="lazy" decoding="async" src="/blue.webp" alt="" className={styles.officialRateIcon} />
                       <span className={styles.ratioFixed}>100</span>
                       <span className={styles.ratioSeparator}>=</span>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/gold.webp" alt="" className={styles.officialRateIcon} />
+                      <img loading="lazy" decoding="async" src="/gold.webp" alt="" className={styles.officialRateIcon} />
                       <input type="number" className={styles.ratioInput}
                         value={officialGold || ''}
                         onChange={(e) => setOfficialGold(parseInt(e.target.value) || 0)}
@@ -1202,7 +1202,7 @@ export default function PackageEditPage() {
                     onClick={() => handleAddItem(template.id)}>
                     <div className={styles.availableItemIconWrap}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={template.icon} alt={template.name}
+                      <img loading="lazy" decoding="async" src={template.icon} alt={template.name}
                         className={styles.availableItemIcon}
                         style={{
                           ...(ICON_SIZE_CATALOG[template.id] ? { maxWidth: ICON_SIZE_CATALOG[template.id], maxHeight: ICON_SIZE_CATALOG[template.id] } : {}),

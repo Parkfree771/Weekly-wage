@@ -582,7 +582,7 @@ export default function CharacterRanking({ onSelect, reloadKey = 0, initialEntri
               <button key={c.key} type="button" className={styles.mActiveChip} onClick={c.onRemove}>
                 {c.icon && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.icon} alt="" className={styles.mChipIcon} />
+                  <img loading="lazy" decoding="async" src={c.icon} alt="" className={styles.mChipIcon} />
                 )}
                 <span className={styles.mChipLabel}>{c.label}</span>
                 <span className={styles.mChipX} aria-hidden>✕</span>
@@ -708,7 +708,7 @@ export default function CharacterRanking({ onSelect, reloadKey = 0, initialEntri
                   {e.specIcon ? (
                     <div className={styles.specIcon} title={e.specName || undefined}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={e.specIcon} alt={e.specName || ''} />
+                      <img loading="lazy" decoding="async" src={e.specIcon} alt={e.specName || ''} />
                     </div>
                   ) : null}
                   <div className={styles.metaText}>
