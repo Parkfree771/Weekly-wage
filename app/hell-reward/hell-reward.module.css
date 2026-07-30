@@ -372,7 +372,7 @@
 }
 
 /* ─── 층 기본 보상 바 ───
-   구성품은 각 보상 카드를 펼치면 나오므로, 여기서는 총액과 풍요 여부만 한 줄로 둔다. */
+   구성품은 각 보상 카드를 펼치면 나오므로, 여기서는 총액만 한 줄로 둔다. */
 
 .baseBar {
   display: flex;
@@ -405,63 +405,6 @@
   font-weight: 800;
   letter-spacing: 0.02em;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-}
-
-/* 풍요 토글 (보상 카드 안) — 평소 볼록, 켜면 눌린 채 단색이 채워진다 */
-.plentyBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  flex-shrink: 0;
-  padding: 0.18rem 0.5rem;
-  border: none;
-  border-radius: 6px;
-  background: var(--card-bg);
-  color: var(--text-muted);
-  font-size: 0.63rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: box-shadow 0.16s ease, transform 0.16s ease, color 0.16s ease, background 0.16s ease;
-  box-shadow: var(--nm-sm);
-}
-
-.plentyBtn:hover:not(.plentyBtnOn) {
-  transform: translateY(-1px);
-  color: var(--text-primary);
-  box-shadow: var(--nm);
-}
-
-.plentyBtnOn {
-  background: #c2410c;
-  color: #fff;
-  transform: translateY(1px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-}
-
-[data-theme="dark"] .plentyBtnOn {
-  background: #ea580c;
-}
-
-.plentyMul {
-  font-size: 0.6rem;
-  font-weight: 900;
-  opacity: 0.8;
-}
-
-/* 펼친 내역에서 풍요 적용 표시 */
-.plentyMark {
-  padding: 0.1rem 0.4rem;
-  border-radius: 5px;
-  background: #c2410c;
-  color: #fff;
-  font-size: 0.62rem;
-  font-weight: 800;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
-}
-
-[data-theme="dark"] .plentyMark {
-  background: #ea580c;
 }
 
 .baseTotal {
@@ -746,7 +689,7 @@
 }
 
 .rewardName {
-  /* 이름이 남는 폭을 먹고, 배지·풍요 버튼은 오른쪽에 붙는다 */
+  /* 이름이 남는 폭을 먹고, 배지는 오른쪽에 붙는다 */
   flex: 1;
   min-width: 0;
   font-size: 1.02rem;

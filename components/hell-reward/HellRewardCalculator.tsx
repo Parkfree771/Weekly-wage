@@ -30,8 +30,6 @@ import {
   calcBoxRewardGold,
   getRewardData,
   getBaseRewardRows,
-  PLENTY_MULTIPLIER,
-  multiplyQtyLabel,
 } from '@/lib/hell-reward-calc';
 
 type ModeType = 'hell' | 'narak';
@@ -98,16 +96,6 @@ export default function HellRewardCalculator() {
   const [priceLoading, setPriceLoading] = useState(true);
   const [exchangeRate, setExchangeRate] = useState<number>(15278); // 100골드 = 18원 (100:18)
   const [excludeAbilityStone, setExcludeAbilityStone] = useState<boolean>(true);
-  // 풍요는 상자 단위 효과 — 항목별로 따로 켠다 (한 판에 특정 상자만 풍요로 바뀌므로)
-  const [plentyItems, setPlentyItems] = useState<Set<string>>(new Set());
-
-  const togglePlenty = (name: string) =>
-    setPlentyItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
 
   useEffect(() => {
     fetchLatestPrices()
@@ -137,18 +125,13 @@ export default function HellRewardCalculator() {
         ? calcBoxRewardGold(name, selectedTier, prices, mode, peonGoldValue, specialRefiningCost)
         : null;
       const box = boxGold ?? 0;
-      // 풍요 상자로 바뀌면 그 상자 몫 전체(고유 보상 + 기본 보상)가 10배가 된다
-      const isPlenty = plentyItems.has(name);
-      const mul = isPlenty ? PLENTY_MULTIPLIER : 1;
       return {
         name,
-        rawVal: multiplyQtyLabel(raw || '-', mul),
+        rawVal: raw || '-',
         available,
-        isPlenty,
-        mul,
-        boxGold: box * mul,
-        baseGold: baseGold * mul,
-        goldValue: available ? (box + baseGold) * mul : 0,
+        boxGold: box,
+        baseGold,
+        goldValue: available ? box + baseGold : 0,
       };
     })
     .sort((a, b) => {
@@ -158,14 +141,14 @@ export default function HellRewardCalculator() {
       return b.goldValue - a.goldValue;
     });
 
-  // 상자 평균 — 풍요는 상자마다 켜는 가정값이라 평균에는 넣지 않고 기본 상태로 계산한다
+  // 상자 평균
   const avgGold = (() => {
     let available = sortedRewards.filter(r => r.available);
     if (excludeAbilityStone) {
       available = available.filter(r => r.name !== '어빌리티스톤');
     }
     if (available.length === 0) return 0;
-    return Math.floor(available.reduce((s, r) => s + r.boxGold / r.mul, 0) / available.length);
+    return Math.floor(available.reduce((s, r) => s + r.boxGold, 0) / available.length);
   })();
 
   const totalGold = baseGold + avgGold;
@@ -346,15 +329,15 @@ export default function HellRewardCalculator() {
         <div className={styles.exchangeCard}>
           <div className={styles.exchangeRatioRow}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/royal.webp" alt="" className={styles.exchangeIcon} />
+            <img loading="lazy" decoding="async" src="/royal.webp" alt="" className={styles.exchangeIcon} />
             <span className={styles.exchangeFixed}>2750</span>
             <span className={styles.exchangeSep}>=</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/blue.webp" alt="" className={styles.exchangeIcon} />
+            <img loading="lazy" decoding="async" src="/blue.webp" alt="" className={styles.exchangeIcon} />
             <span className={styles.exchangeFixed}>100</span>
             <span className={styles.exchangeSep}>=</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/gold.webp" alt="" className={styles.exchangeIcon} />
+            <img loading="lazy" decoding="async" src="/gold.webp" alt="" className={styles.exchangeIcon} />
             <input
               type="number"
               className={styles.exchangeInput}
@@ -366,11 +349,11 @@ export default function HellRewardCalculator() {
           </div>
           <div className={styles.exchangeRatioRow}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/gold.webp" alt="" className={styles.exchangeIcon} />
+            <img loading="lazy" decoding="async" src="/gold.webp" alt="" className={styles.exchangeIcon} />
             <span className={styles.exchangeFixed}>100</span>
             <span className={styles.exchangeSep}>=</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/royal.webp" alt="" className={styles.exchangeIcon} />
+            <img loading="lazy" decoding="async" src="/royal.webp" alt="" className={styles.exchangeIcon} />
             <input
               type="number"
               className={styles.exchangeInput}
@@ -428,7 +411,7 @@ export default function HellRewardCalculator() {
         )}
       </div>
 
-      {/* 층 기본 보상 — 아래 모든 항목 값에 이미 포함돼 있다. 여기서는 총액과 풍요 여부만. */}
+      {/* 층 기본 보상 — 아래 모든 항목 값에 이미 포함돼 있다. 여기서는 총액만 보여준다. */}
       {!priceLoading && baseRows.length > 0 && (
         <div className={styles.baseBar}>
           <span className={styles.baseTitle}>
@@ -482,24 +465,6 @@ export default function HellRewardCalculator() {
                   <div className={styles.rewardInfo}>
                     <div className={styles.rewardInfoRow}>
                       <span className={styles.rewardName}>{getDisplayName(reward.name)}</span>
-                      {reward.available && (
-                        <span className={`${styles.priceBadge} ${styles[`priceBadge_${getPriceTag(reward.name, reward.rawVal)}`]}`}>
-                          {getPriceTagLabel(getPriceTag(reward.name, reward.rawVal))}
-                        </span>
-                      )}
-                      {/* 풍요 상자 — 이 상자만 풍요로 바뀐 경우를 본다 (상자 몫 전체 ×10) */}
-                      {reward.available && (
-                        <button
-                          type="button"
-                          className={`${styles.plentyBtn} ${reward.isPlenty ? styles.plentyBtnOn : ''}`}
-                          onClick={(e) => { e.stopPropagation(); togglePlenty(reward.name); }}
-                          aria-pressed={reward.isPlenty}
-                          title="이 상자가 풍요 상자로 바뀐 경우 (보상 전체 10배)"
-                        >
-                          풍요
-                          <span className={styles.plentyMul}>×{PLENTY_MULTIPLIER}</span>
-                        </button>
-                      )}
                     </div>
                     <div className={styles.rewardInfoRow}>
                       <span className={styles.rewardQtyGroup}>
@@ -535,6 +500,15 @@ export default function HellRewardCalculator() {
                 </div>
                 {isExpanded && (
                   <div className={styles.detail}>
+                    {/* 가격 기준 배지(실시간 시세·고정가·환율)는 접힌 줄을 어지럽혀서 여기로 내렸다 */}
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>가격 기준</span>
+                      <span className={styles.detailValue}>
+                        <span className={`${styles.priceBadge} ${styles[`priceBadge_${getPriceTag(reward.name, reward.rawVal)}`]}`}>
+                          {getPriceTagLabel(getPriceTag(reward.name, reward.rawVal))}
+                        </span>
+                      </span>
+                    </div>
                     <div className={styles.detailRow}>
                       <span className={styles.detailLabel}>수량</span>
                       <span className={styles.detailValue}>{reward.rawVal}</span>
@@ -553,10 +527,10 @@ export default function HellRewardCalculator() {
                             <NextImage src={BASE_REWARD_IMAGES[row.name]} alt="" width={17} height={17} />
                             <span className={styles.sumLabel}>{row.name}</span>
                             <span className={styles.sumCalc}>
-                              {(row.qty * reward.mul).toLocaleString()}개 × {fmtPrice(Math.round(row.unitPrice * 10) / 10)}G
+                              {row.qty.toLocaleString()}개 × {fmtPrice(Math.round(row.unitPrice * 10) / 10)}G
                             </span>
                           </span>
-                          <span className={styles.sumVal}>{(row.gold * reward.mul).toLocaleString()}</span>
+                          <span className={styles.sumVal}>{row.gold.toLocaleString()}</span>
                         </div>
                       ))}
                       <div className={styles.sumLine}>
@@ -573,7 +547,6 @@ export default function HellRewardCalculator() {
                           )}
                           <span className={styles.sumLabel}>{getDisplayName(reward.name)}</span>
                           <span className={styles.sumTag}>고유</span>
-                          {reward.isPlenty && <span className={styles.plentyMark}>풍요 ×{PLENTY_MULTIPLIER}</span>}
                           <span className={styles.sumCalc}>{reward.rawVal}</span>
                         </span>
                         <span className={styles.sumVal}>{reward.boxGold.toLocaleString()}</span>
