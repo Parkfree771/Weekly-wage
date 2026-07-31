@@ -1,4 +1,5 @@
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
+import { isSaleEnded, toSaleDate } from '@/lib/package-sale';
 import type { PackagePost } from '@/types/package';
 
 // ─── 선택지 옵션 ───
@@ -966,12 +967,37 @@ export function groupMultiResults(
     .sort((a, b) => b.count - a.count);
 }
 
-/** 패키지 게시물의 효율(G/원)을 계산 — 갤러리 정렬용 */
+// ─── 신작 판정 ───
+
+/** "신규 출시"로 등록된 글이 신작으로 취급되는 기간 (등록일 기준) */
+export const NEW_BADGE_DAYS = 30;
+
+/**
+ * 신작인지 — 신규 출시로 등록됐고, 등록 후 30일이 지나지 않았고, 판매 종료가 아닌 글.
+ * 갤러리 카드의 NEW 배지와 "신작순" 정렬이 어긋나지 않도록 판정은 여기 한 곳에서만 한다.
+ */
+export function isNewReleasePost(post: PackagePost): boolean {
+  if (!post.isNewRelease) return false;
+  if (isSaleEnded(post)) return false;
+  const created = toSaleDate(post.createdAt);
+  if (!created) return false;
+  return Date.now() - created.getTime() < NEW_BADGE_DAYS * 24 * 60 * 60 * 1000;
+}
+
+/**
+ * 패키지 게시물의 효율(G/원)을 계산 — 갤러리 정렬용.
+ *
+ * goldPerWonOverride: 갤러리 공통 환율이 적용 중일 때 그 값을 넘긴다.
+ * 모든 글이 같은 환율을 쓰게 되므로 이 효율값의 순서가 카드에 찍히는 이득률 순서와 일치한다.
+ * (넘기지 않으면 글마다 등록 시점 환율이 달라 순서가 이득률과 어긋날 수 있다)
+ */
 export function calculatePostEfficiency(
   post: PackagePost,
   latestPrices: Record<string, number>,
+  goldPerWonOverride?: number,
 ): number {
-  const goldPerWon = post.goldPerWon || 0;
+  const goldPerWon =
+    goldPerWonOverride && goldPerWonOverride > 0 ? goldPerWonOverride : post.goldPerWon || 0;
   const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
   const hasPrices = Object.keys(latestPrices).length > 0;
 

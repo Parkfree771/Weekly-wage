@@ -160,10 +160,22 @@
   background: var(--color-accent-dark);
 }
 
+/* 정렬·필터 — 컨트롤 바 왼쪽 칸 (가운데는 공통 환율, 오른쪽은 등록하기) */
 .filterRow {
+  grid-column: 1;
+  justify-self: start;
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+/* 필터로 좁혀졌을 때만 나오는 "N개 중 M개" — 범위가 불러온 목록임을 알린다 */
+.filterCount {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .filterSelect {
@@ -389,7 +401,15 @@
     justify-self: end;
   }
 
+  .filterRow {
+    grid-column: 1;
+    justify-self: stretch;
+  }
+
+  /* 드롭다운 3개를 한 줄에 균등 분배하되, 더 좁아지면 줄바꿈으로 넘긴다 */
   .filterRow select {
+    flex: 1 1 auto;
+    min-width: 96px;
     font-size: 0.8rem;
     padding: 0.4rem 0.6rem;
   }

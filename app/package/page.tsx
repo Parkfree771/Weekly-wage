@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
 import { getPackagePosts } from '@/lib/package-service';
+import { calculatePostEfficiency, isNewReleasePost } from '@/lib/package-shared';
+import { isSaleEnded } from '@/lib/package-sale';
 import { useAuth } from '@/contexts/AuthContext';
-import type { PackagePost } from '@/types/package';
+import type { PackagePost, PackageType } from '@/types/package';
 import AdBanner from '@/components/ads/AdBanner';
 import GuideFaq from '@/components/common/GuideFaq';
 import { faqData } from './faq-data';
@@ -21,6 +23,38 @@ const RATE_MAX = 999;
 
 const clampRate = (v: number) => (v <= 0 ? 0 : Math.max(RATE_MIN, Math.min(RATE_MAX, v)));
 
+// ─── 정렬·필터 ───
+// 전부 이미 불러온 posts 배열 위에서만 도는 화면 기준 기능이다.
+// Firestore 재조회를 절대 일으키지 않는다 — 예전에 정렬을 서버 쿼리로 돌리다
+// 드롭다운을 건드릴 때마다 읽기가 한 페이지씩 더 나가서 뺐던 기능이라, 같은 실수를 막으려고
+// sortBy/typeFilter 는 fetchPosts 의 의존성에 넣지 않는다.
+type GallerySort = 'createdAt' | 'efficiency' | 'newRelease' | 'likeCount';
+
+// 기본은 업로드순 — Firestore 가 내려주는 순서 그대로다
+const SORT_OPTIONS: [GallerySort, string][] = [
+  ['createdAt', '업로드순'],
+  ['efficiency', '효율순'],
+  ['newRelease', '신작순'],
+  ['likeCount', '인기순'],
+];
+
+const TYPE_OPTIONS: [string, string][] = [
+  ['all', '전체 종류'],
+  ['일반', '일반'],
+  ['3+1', '3+1'],
+  ['2+1', '2+1'],
+  ['3+보너스', '3+보너스'],
+  ['가챠', '가챠'],
+];
+
+type SaleFilter = 'all' | 'onSale' | 'ended';
+
+const SALE_OPTIONS: [SaleFilter, string][] = [
+  ['all', '판매 전체'],
+  ['onSale', '판매중'],
+  ['ended', '판매종료'],
+];
+
 export default function PackageGalleryPage() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<PackagePost[]>([]);
@@ -32,6 +66,10 @@ export default function PackageGalleryPage() {
   // 갤러리 공통 환율(100골드당 원). 0 이면 미적용 — 각 카드가 등록 시점 환율을 그대로 쓴다.
   // 값이 들어오면 모든 카드가 이 값으로 맞춰지고, 이후 카드별 개별 수정은 그대로 가능하다.
   const [commonWonPer100Gold, setCommonWonPer100Gold] = useState<number>(0);
+  // 화면 기준 정렬·필터 (Firestore 재조회 없음)
+  const [sortBy, setSortBy] = useState<GallerySort>('createdAt');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [saleFilter, setSaleFilter] = useState<SaleFilter>('all');
 
   // 기본값이 없으므로 비어 있을 때 +는 최솟값부터 시작하고, −는 아무 일도 하지 않는다
   const stepCommonRate = (delta: number) =>
@@ -86,6 +124,46 @@ export default function PackageGalleryPage() {
     fetchPosts(false);
   }, [fetchPosts]);
 
+  // 이미 받아둔 posts 위에서만 도는 정렬·필터. 여기서 네트워크를 타는 건 아무것도 없다.
+  const visiblePosts = useMemo(() => {
+    let filtered = posts;
+
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter((p) => p.packageType === (typeFilter as PackageType));
+    }
+    if (saleFilter !== 'all') {
+      const wantEnded = saleFilter === 'ended';
+      filtered = filtered.filter((p) => isSaleEnded(p) === wantEnded);
+    }
+
+    // 업로드순은 Firestore 가 이미 그 순서로 내려준 것이라 다시 정렬할 필요가 없다
+    if (sortBy === 'createdAt') return filtered;
+
+    if (sortBy === 'likeCount') {
+      return [...filtered].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+    }
+
+    // 신작순 — NEW 배지가 붙은 글(신규 출시 + 30일 이내 + 판매중)을 앞으로.
+    // 같은 그룹 안에서는 들어온 순서(=업로드순)를 그대로 둔다.
+    if (sortBy === 'newRelease') {
+      return [...filtered].sort(
+        (a, b) => Number(isNewReleasePost(b)) - Number(isNewReleasePost(a)),
+      );
+    }
+
+    // 효율순 — 시세가 도착하기 전엔 전부 0이 나와 순서가 무의미하므로 원래 순서를 유지한다
+    if (Object.keys(latestPrices).length === 0) return filtered;
+    const rateOverride = commonWonPer100Gold > 0 ? 100 / commonWonPer100Gold : 0;
+    return [...filtered].sort(
+      (a, b) =>
+        calculatePostEfficiency(b, latestPrices, rateOverride) -
+        calculatePostEfficiency(a, latestPrices, rateOverride),
+    );
+  }, [posts, typeFilter, saleFilter, sortBy, latestPrices, commonWonPer100Gold]);
+
+  // 정렬·필터는 "지금 불러온 목록" 안에서만 도므로, 범위를 숨기지 않고 그대로 알려준다
+  const isNarrowed = typeFilter !== 'all' || saleFilter !== 'all';
+
   const renderSkeletons = () =>
     Array.from({ length: 8 }).map((_, i) => (
       <div key={i} className={styles.skeletonCard}>
@@ -107,6 +185,43 @@ export default function PackageGalleryPage() {
         </div>
 
         <div className={styles.controls}>
+          <div className={styles.filterRow}>
+            <select
+              className={styles.filterSelect}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as GallerySort)}
+              aria-label="정렬 기준"
+            >
+              {SORT_OPTIONS.map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+            <select
+              className={styles.filterSelect}
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              aria-label="패키지 종류 필터"
+            >
+              {TYPE_OPTIONS.map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+            <select
+              className={styles.filterSelect}
+              value={saleFilter}
+              onChange={(e) => setSaleFilter(e.target.value as SaleFilter)}
+              aria-label="판매 상태 필터"
+            >
+              {SALE_OPTIONS.map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+            {isNarrowed && (
+              <span className={styles.filterCount}>
+                {posts.length}개 중 {visiblePosts.length}개
+              </span>
+            )}
+          </div>
           <div className={styles.commonRate}>
             <div className={styles.commonRateRow}>
               <button
@@ -175,23 +290,34 @@ export default function PackageGalleryPage() {
           </div>
         ) : (
           <>
-            <div className={styles.galleryGrid}>
-              {posts.map((post, index) => (
-                <React.Fragment key={post.id}>
-                  <PackageGalleryCard
-                    post={post}
-                    latestPrices={latestPrices}
-                    commonWonPer100Gold={commonWonPer100Gold}
-                  />
-                  {/* 앱 패키지 갤러리(카드 2개마다 1개, 마지막 뒤 제외)와 동일 */}
-                  {index % 2 === 1 && index < posts.length - 1 && (
-                    <div className="d-block d-md-none" style={{ gridColumn: '1 / -1' }}>
-                      <AdBanner slot="8616653628" />
-                    </div>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
+            {visiblePosts.length === 0 ? (
+              <div className={styles.emptyState}>
+                <p className={styles.emptyText}>조건에 맞는 패키지가 없습니다</p>
+                <p className={styles.emptySubtext}>
+                  {hasMore
+                    ? '아래 "더 보기"로 목록을 더 불러오거나, 필터를 "전체"로 바꿔보세요'
+                    : '필터를 "전체"로 바꿔보세요'}
+                </p>
+              </div>
+            ) : (
+              <div className={styles.galleryGrid}>
+                {visiblePosts.map((post, index) => (
+                  <React.Fragment key={post.id}>
+                    <PackageGalleryCard
+                      post={post}
+                      latestPrices={latestPrices}
+                      commonWonPer100Gold={commonWonPer100Gold}
+                    />
+                    {/* 앱 패키지 갤러리(카드 2개마다 1개, 마지막 뒤 제외)와 동일 */}
+                    {index % 2 === 1 && index < visiblePosts.length - 1 && (
+                      <div className="d-block d-md-none" style={{ gridColumn: '1 / -1' }}>
+                        <AdBanner slot="8616653628" />
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
 
             {hasMore && (
               <div className={styles.loadMoreWrap}>
@@ -233,9 +359,11 @@ export default function PackageGalleryPage() {
               ],
             },
             {
-              heading: '목록 정렬 방식',
+              heading: '목록 정렬과 필터',
               paragraphs: [
-                '게시물은 최근에 등록된 순서로 표시됩니다. 각 카드에 표시되는 이득률은 실시간 시세 기준으로 계산되므로, 같은 패키지라도 등록 시점과 지금 보는 시점의 값이 달라질 수 있습니다.',
+                '게시물은 기본적으로 업로드순(최근에 등록된 순서)으로 표시되며, 상단 왼쪽 드롭다운으로 정렬 기준을 바꿀 수 있습니다. "효율순"은 방금 설명한 총 골드 가치 대비 결제 금액 기준으로 이득이 큰 패키지부터, "신작순"은 신규 출시로 등록된 지 30일이 지나지 않은 판매중 패키지(NEW 배지가 붙은 글)부터, "인기순"은 다른 이용자들의 좋아요가 많은 게시물부터 보여줍니다. 옆의 두 드롭다운으로는 일반·3+1·2+1·3+보너스·가챠 중 원하는 종류만, 그리고 판매중 또는 판매종료 상태만 골라서 볼 수 있습니다.',
+                '정렬과 필터는 지금 화면에 불러와 둔 게시물 안에서 즉시 다시 계산됩니다. 목록을 더 넓게 두고 비교하고 싶다면 아래 "더 보기"로 게시물을 더 불러온 뒤 정렬하면 됩니다. 각 카드에 표시되는 이득률은 실시간 시세 기준으로 계산되므로, 같은 패키지라도 등록 시점과 지금 보는 시점의 값이 달라질 수 있습니다.',
+                '공통 환율을 입력해 둔 상태에서 "효율순"을 고르면 모든 게시물이 같은 환율로 환산되므로, 정렬 순서가 각 카드에 찍히는 이득률 순서와 정확히 일치합니다. 공통 환율 없이 정렬하면 게시물마다 등록 당시 환율이 달라 순서가 카드의 이득률과 어긋나 보일 수 있습니다.',
               ],
             },
           ]}
