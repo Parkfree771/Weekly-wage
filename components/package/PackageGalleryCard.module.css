@@ -22,6 +22,81 @@
   box-shadow: var(--gc-shadow);
 }
 
+/* ─── 판매 종료 ───
+   글을 지우거나 계산을 멈추는 게 아니라 "표시만" 비활성 톤으로 내린다.
+   기본은 블러이고, 오버레이의 '블러 해제'(또는 헤더의 판매 종료 칩)로 껐다 켤 수 있다.
+   오버레이는 pointer-events:none 이라 아이템 체크·환율 입력·상세 이동은 그대로 동작한다. */
+.cardEnded {
+  position: relative;
+  border-color: var(--gc-border);
+}
+
+.cardEnded .leftBox,
+.cardEnded .rightBox {
+  transition: filter 0.22s ease;
+}
+
+/* 기본 상태: 흐리게 (우측 상단 '해제'를 누르면 원래 카드로 돌아온다) */
+.cardDimmed .leftBox,
+.cardDimmed .rightBox {
+  filter: grayscale(0.7) opacity(0.45);
+}
+
+/* 흐린 화면 위에 얹히는 글씨 — 카드 정중앙, 판매 종료 / 줄바꿈 / 판매 기간 */
+.saleEndedOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.saleEndedTitle {
+  color: var(--gc-text);
+  font-size: clamp(1.05rem, 3vw, 1.4rem);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-shadow: 0 1px 4px var(--gc-bg), 0 0 14px var(--gc-bg), 0 0 24px var(--gc-bg);
+}
+
+.saleEndedPeriodText {
+  color: var(--gc-text-secondary);
+  font-size: clamp(0.7rem, 1.8vw, 0.8rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 4px var(--gc-bg), 0 0 12px var(--gc-bg), 0 0 20px var(--gc-bg);
+}
+
+/* 우측 상단 해제/복원 버튼 — 판매 종료 카드에서만 뜬다 */
+.saleRevealBtn {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  z-index: 5;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--gc-text-muted);
+  border-radius: 999px;
+  background: var(--gc-bg);
+  color: var(--gc-text-secondary);
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.5;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.saleRevealBtn:hover {
+  background: var(--gc-text-secondary);
+  color: var(--gc-bg);
+}
+
 /* ─── 왼쪽 박스: 아이템 ─── */
 .leftBox {
   padding: 1.5rem;

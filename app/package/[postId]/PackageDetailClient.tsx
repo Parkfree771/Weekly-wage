@@ -10,7 +10,9 @@ import {
   togglePackageLike,
   checkPackageLike,
   deletePackagePost,
+  updatePackagePost,
 } from '@/lib/package-service';
+import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
 import type { PackagePost, PackageType, PackageItem } from '@/types/package';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import {
@@ -356,6 +358,29 @@ export default function PackageDetailPage({ initialPost }: Props) {
     }
   };
 
+  // 판매 종료 직접 처리 (작성자 본인 + 관리자). 표시만 바꾸고 글·계산·시세 연동은 그대로 둔다.
+  const [saleUpdating, setSaleUpdating] = useState(false);
+  const handleToggleSaleClosed = async () => {
+    if (!post || saleUpdating) return;
+    const next = !post.saleClosed;
+    if (next && !confirm('판매 종료로 표시할까요? 글은 그대로 남고 시세·계산도 계속 동작합니다.')) return;
+    setSaleUpdating(true);
+    try {
+      await updatePackagePost(postId, { saleClosed: next });
+      setPost({ ...post, saleClosed: next });
+      // ISR 캐시된 상세 페이지 즉시 재생성 (다른 방문자에게도 바로 반영)
+      fetch('/api/package/revalidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId }),
+      }).catch(() => {});
+    } catch (err) {
+      console.error('판매 종료 처리 실패:', err);
+    } finally {
+      setSaleUpdating(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
@@ -371,6 +396,28 @@ export default function PackageDetailPage({ initialPost }: Props) {
       console.error('삭제 실패:', err);
     }
   };
+
+  // 판매 상태 표시 — 종료여도 상세·시세·계산은 전부 그대로 동작한다 (과거 패키지 비교용)
+  const saleEnded = isSaleEnded(post);
+  const salePeriod = formatSalePeriod(post);
+  const saleBadge = saleEnded ? (
+    <span className={styles.saleEndedBadge}>
+      판매 종료{salePeriod ? ` · ${salePeriod}` : ''}
+    </span>
+  ) : salePeriod ? (
+    <span className={styles.salePeriodBadge}>판매기간 {salePeriod}</span>
+  ) : null;
+  // 기간이 지나 자동 종료된 글은 여기서 되돌리지 않는다 (기간 변경은 수정 페이지에서)
+  const saleToggleBtn =
+    isOwner && (!saleEnded || post?.saleClosed === true) ? (
+      <button
+        className={styles.saleToggleBtn}
+        onClick={handleToggleSaleClosed}
+        disabled={saleUpdating}
+      >
+        {post?.saleClosed === true ? '판매 재개' : '판매 종료'}
+      </button>
+    ) : null;
 
   // 가챠 cleanup
   useEffect(() => {
@@ -747,6 +794,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                 {post.title}
               </h1>
             </div>
+            {saleBadge && <div className={styles.saleBadgeRow}>{saleBadge}</div>}
             <span className={styles.detailDate}>{formatDate(post.createdAt)}</span>
           </div>
 
@@ -992,6 +1040,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
             </div>
             {isOwner && (
               <div className={styles.resultActionsRight}>
+                {saleToggleBtn}
                 <Link href={`/package/edit/${postId}`} className={styles.editBtn}>
                   수정
                 </Link>
@@ -1041,6 +1090,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                     {post.selectableCount}선택
                   </span>
                 )}
+                {saleBadge}
               </div>
               <h1 className={styles.resultTitle}>{post.title}</h1>
 
@@ -1148,6 +1198,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                 </div>
                 {isOwner && (
                   <div className={styles.resultActionsRight}>
+                    {saleToggleBtn}
                     <Link href={`/package/edit/${postId}`} className={styles.editBtn}>
                       수정
                     </Link>

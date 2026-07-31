@@ -36,6 +36,9 @@ const getPost = cache(async (postId: string): Promise<PackagePost | null> => {
       id: snap.id,
       createdAt: toISO(data.createdAt),
       updatedAt: toISO(data.updatedAt),
+      // 판매 기간도 Timestamp — 클라이언트 컴포넌트로 넘기려면 직렬화 가능한 형태여야 한다
+      saleStartAt: toISO(data.saleStartAt),
+      saleEndAt: toISO(data.saleEndAt),
     } as PackagePost;
   } catch {
     return null;

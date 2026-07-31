@@ -51,6 +51,11 @@ export type PackagePost = {
   // 환율 (등록 시 입력값)
   goldPerWon?: number;
 
+  // 판매 기간 (선택 — 상시 판매 패키지는 비워둔다)
+  saleStartAt?: Timestamp | Date | string | null; // 판매 시작 일시
+  saleEndAt?: Timestamp | Date | string | null;   // 판매 종료 일시 — 이 시각이 지나면 자동으로 판매 종료 표시
+  saleClosed?: boolean;                    // 작성자/관리자가 직접 처리한 판매 종료 (기간과 무관)
+
   // 통계
   viewCount: number;
   likeCount: number;

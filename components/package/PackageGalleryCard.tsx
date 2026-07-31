@@ -16,6 +16,7 @@ import {
   getProcessedGemBoxUnitPrice,
 } from '@/lib/package-shared';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
+import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
 import styles from './PackageGalleryCard.module.css';
 
 type Props = {
@@ -92,6 +93,8 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
     ? Math.round(100 / post.goldPerWon)
     : 0;
   const [wonPer100Gold, setWonPer100Gold] = useState<number>(defaultWon);
+  // 판매 종료 카드는 기본이 흐린 상태 — 우측 상단 버튼으로 해제하면 그대로 비교할 수 있다
+  const [saleRevealed, setSaleRevealed] = useState(false);
   // N선택 패키지는 시세 로드 후 아래 useEffect에서 최고가 N개를 확정한다
   // (마운트 시점엔 latestPrices가 비어 있어 goldOverride 티켓만 값이 잡히는 오선택이 났었음)
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>(() => {
@@ -428,13 +431,40 @@ export default function PackageGalleryCard({ post, latestPrices }: Props) {
   const bundleGold = isBonusPkg ? totalGold * 3 + bonusTotalGold : totalGold * getCount;
   const bundleBenefit = bundleCash > 0 ? ((bundleGold - bundleCash) / bundleCash) * 100 : 0;
 
+  // 판매 종료 — 표시만 비활성 톤으로 내린다. 시세 연동·계산·상세 이동은 그대로 동작한다.
+  const saleEnded = isSaleEnded(post);
+  const salePeriod = formatSalePeriod(post);
+  const dimmed = saleEnded && !saleRevealed;
+
   return (
-    <article className={styles.galleryCard} onClick={() => router.push(`/package/${post.id}`)} style={{ cursor: 'pointer' }}>
+    <article
+      className={`${styles.galleryCard} ${saleEnded ? styles.cardEnded : ''} ${dimmed ? styles.cardDimmed : ''}`}
+      onClick={() => router.push(`/package/${post.id}`)}
+      style={{ cursor: 'pointer' }}
+    >
+      {/* 흐린 화면 위에 얹히는 글씨 — 판매 종료 / 줄 내려서 판매 기간 (카드 중앙) */}
+      {dimmed && (
+        <div className={styles.saleEndedOverlay}>
+          <span className={styles.saleEndedTitle}>판매 종료</span>
+          {salePeriod && <span className={styles.saleEndedPeriodText}>{salePeriod}</span>}
+        </div>
+      )}
+      {/* 우측 상단 해제 버튼 — 비교하려고 잠깐 원래 카드로 보기 */}
+      {saleEnded && (
+        <button
+          type="button"
+          className={styles.saleRevealBtn}
+          onClick={(e) => { e.stopPropagation(); setSaleRevealed((v) => !v); }}
+          title={salePeriod ? `판매기간 ${salePeriod}` : '판매 종료'}
+        >
+          {saleRevealed ? '복원' : '해제'}
+        </button>
+      )}
       {/* 왼쪽: 아이템 목록 (배경 이미지) */}
       <div className={styles.leftBox}>
         <div className={styles.leftHeader}>
           <h3 className={styles.cardTitle}>{post.title}</h3>
-          {post.isNewRelease && isNewPost(post.createdAt) && (
+          {post.isNewRelease && !saleEnded && isNewPost(post.createdAt) && (
             <span className={`${styles.cardBadge} ${styles.badgeNew}`}>NEW</span>
           )}
           <span className={`${styles.cardBadge} ${getBadgeClass(post.packageType)}`}>

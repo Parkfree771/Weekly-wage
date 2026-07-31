@@ -26,6 +26,7 @@ import {
   calculateGachaExpectedValue,
   pickTopNCandidateIds,
 } from '@/lib/package-shared';
+import { fromDatetimeLocalValue, toDatetimeLocalValue } from '@/lib/package-sale';
 import styles from '../../package.module.css';
 
 let editCustomCounter = 0;
@@ -148,6 +149,10 @@ export default function PackageEditPage() {
   const [officialGold, setOfficialGold] = useState<number>(0);
   const [selectableCount, setSelectableCount] = useState<number>(0);
   const [isNewRelease, setIsNewRelease] = useState<boolean>(false); // 신규 출시 — 갤러리 NEW 배지 (30일)
+  // 판매 기간 (선택 — 상시 판매 패키지는 비워두면 된다)
+  const [saleStartInput, setSaleStartInput] = useState<string>('');
+  const [saleEndInput, setSaleEndInput] = useState<string>('');
+  const [saleClosed, setSaleClosed] = useState<boolean>(false); // 기간과 무관하게 직접 판매 종료 처리
   const [checkedItemIds, setCheckedItemIds] = useState<Set<string>>(new Set());
   const [gachaProbabilities, setGachaProbabilities] = useState<Record<string, number>>({});
   const [addTarget, setAddTarget] = useState<'main' | 'bonus'>('main');
@@ -190,6 +195,9 @@ export default function PackageEditPage() {
           setSelectableCount(post.selectableCount);
         }
         if (post.isNewRelease) setIsNewRelease(true);
+        setSaleStartInput(toDatetimeLocalValue(post.saleStartAt));
+        setSaleEndInput(toDatetimeLocalValue(post.saleEndAt));
+        setSaleClosed(post.saleClosed === true);
         editCustomCounter = 0;
         const mappedMain = mapItemsToAdded(post.items);
         const mappedBonus = mapItemsToAdded(post.bonusItems || []).map((a) => ({ ...a, isBonus: true }));
@@ -745,6 +753,12 @@ export default function PackageEditPage() {
     if (priceCurrency === 'cash' && royalCrystalPrice <= 0) errors.price = '현금 가격을 입력해주세요.';
     if (priceCurrency === 'blueCrystal' && blueCrystalPrice <= 0) errors.price = '블루크리스탈 가격을 입력해주세요.';
     if (goldPerWon <= 0) errors.rate = '환율을 입력해주세요.';
+    // 판매 기간은 선택 입력 — 둘 다 넣었을 때만 순서를 검사한다
+    const saleStartDate = fromDatetimeLocalValue(saleStartInput);
+    const saleEndDate = fromDatetimeLocalValue(saleEndInput);
+    if (saleStartDate && saleEndDate && saleEndDate.getTime() <= saleStartDate.getTime()) {
+      errors.salePeriod = '판매 종료 일시는 시작 일시보다 뒤여야 합니다.';
+    }
     if (packageType === '가챠') {
       const probSum = addedItems.reduce((s, a) => s + (gachaProbabilities[a.id] || 0), 0);
       if (Math.abs(probSum - 100) >= 0.1) errors.prob = '확률 합계가 100%여야 합니다.';
@@ -905,6 +919,10 @@ export default function PackageEditPage() {
         ...(goldPerWon > 0 ? { goldPerWon } : { goldPerWon: 0 }),
         selectableCount: selectableCount > 0 ? selectableCount : 0,
         isNewRelease,
+        // 비우면 null 로 저장해 기간을 지운다 (상시 판매로 되돌리기)
+        saleStartAt: saleStartDate,
+        saleEndAt: saleEndDate,
+        saleClosed,
         bonusItems,
       });
 
@@ -1050,6 +1068,29 @@ export default function PackageEditPage() {
                       onChange={(e) => setIsNewRelease(e.target.checked)} />
                     신규 출시 패키지 (갤러리에 30일간 NEW 배지)
                   </label>
+                </div>
+                <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
+                  <label className={styles.formLabel}>판매 기간 (선택)</label>
+                  <div className={styles.salePeriodRow}>
+                    <input type="datetime-local" className={styles.salePeriodInput}
+                      value={saleStartInput}
+                      onChange={(e) => { setSaleStartInput(e.target.value); if (fieldErrors.salePeriod) setFieldErrors((p) => { const n = { ...p }; delete n.salePeriod; return n; }); }}
+                      aria-label="판매 시작 일시" />
+                    <span className={styles.salePeriodSep}>~</span>
+                    <input type="datetime-local" className={styles.salePeriodInput}
+                      value={saleEndInput}
+                      onChange={(e) => { setSaleEndInput(e.target.value); if (fieldErrors.salePeriod) setFieldErrors((p) => { const n = { ...p }; delete n.salePeriod; return n; }); }}
+                      aria-label="판매 종료 일시" />
+                  </div>
+                  <p className={styles.salePeriodHint}>
+                    종료 일시가 지나면 갤러리에서 자동으로 판매 종료로 표시됩니다. 상시 판매 패키지는 비워두세요.
+                  </p>
+                  <label className={styles.saleClosedToggle}>
+                    <input type="checkbox" checked={saleClosed}
+                      onChange={(e) => setSaleClosed(e.target.checked)} />
+                    판매 종료 처리 (기간과 무관하게 즉시 종료로 표시)
+                  </label>
+                  {fieldErrors.salePeriod && <p className={styles.fieldErrorMsg}>{fieldErrors.salePeriod}</p>}
                 </div>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>패키지 가격 *</label>
