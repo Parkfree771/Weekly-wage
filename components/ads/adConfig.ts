@@ -44,8 +44,35 @@ export const ADFIT_ENABLED = true;
 // 들어가고(애드핏은 1페이지 1단위가 원칙) (2) 리포트가 합산돼 어느 자리가 수익이
 // 나는지 구분할 수 없다.
 export const ADFIT_UNITS = {
-  mobileInContent: { unit: 'DAN-bo9jwUZBhdAH4HWn', width: 320, height: 100 }, // 모바일 본문
+  // 모바일 본문 320×100. 현재 미사용 — 본문 광고는 320×50 띠배너로 바꿔
+  // ADFIT_INCONTENT_UNITS 로 옮겼다. 규격을 되돌릴 때를 위해 ID 는 남겨둔다.
+  mobileInContent: { unit: 'DAN-bo9jwUZBhdAH4HWn', width: 320, height: 100 },
   mobileDrawer: { unit: 'DAN-5AUDzC6VzTXU6X8H', width: 320, height: 100 },    // 모바일 햄버거 드로어
   sidebarLeft: { unit: 'DAN-LhB3sf1lcaZ0pCFD', width: 160, height: 600 },     // PC 레일 좌
   sidebarRight: { unit: 'DAN-cf5UrXPfQYUZYdhv', width: 160, height: 600 },    // PC 레일 우
 };
+
+// 한 페이지에 인-콘텐츠 광고가 여러 번 들어가는 자리(패키지 갤러리: 카드 2개마다 1개)용.
+// 노출 순서대로 앞에서부터 하나씩 꺼내 쓴다.
+//
+// 반드시 자리마다 다른 단위여야 한다. 같은 단위 ID 를 한 페이지에 여러 번 넣으면 애드핏이
+// 첫 자리만 채우고 나머지 <ins> 는 display:none 으로 남긴다 — "두어 개만 나오고 그 뒤로는
+// 안 나온다" 는 증상이 정확히 이것이다.
+//
+// 배열 길이 = 그 페이지에서 실제로 나갈 수 있는 광고 개수다. 단위가 모자라면 남는 자리는
+// 아예 렌더하지 않는다(빈 박스가 생기는 것보다 낫다).
+//
+// 목표 구성: 320×50 띠배너 3개 (카드 2개 → 광고 → 3개 → 광고 → 3개 → 광고).
+// 지금은 1개라 첫 자리만 나가고, 2·3번 자리는 렌더 자체를 건너뛴다(빈 박스 없음).
+//
+// width/height 는 "콘솔에 등록된 규격"을 그대로 적는 것이지 여기서 정하는 값이 아니다.
+// 단위를 추가하면 아래 주석을 풀고 ID 를 채우기만 하면 된다.
+//
+// MOBILE_AD_ZOOM_COMPENSATE 역보정은 그대로 둘 것. 모바일 뷰포트가 0.8 로 축소 렌더돼서
+// 빼면 320×50 이 화면에서 256×40 으로 나간다
+// (2026-07-28 애드핏 심사 보류 사유가 정확히 이것 — 320×100 이 256×80 으로 나갔다).
+export const ADFIT_INCONTENT_UNITS = [
+  { unit: 'DAN-Dh2QTY00kZEzZjcQ', width: 320, height: 50 },
+  { unit: 'DAN-gceZS4W9pO1EXNBI', width: 320, height: 50 },
+  { unit: 'DAN-4kNsokjK16GLvNCx', width: 320, height: 50 },
+];

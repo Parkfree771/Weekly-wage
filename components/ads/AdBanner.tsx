@@ -4,7 +4,10 @@ import { usePathname } from 'next/navigation';
 import AdPlaceholder from './AdPlaceholder';
 import AdUnit from './AdUnit';
 import AdFitUnit from './AdFitUnit';
-import { AD_PREVIEW, MOBILE_INCONTENT, ADFIT_ENABLED, ADFIT_UNITS, MOBILE_AD_ZOOM_COMPENSATE } from './adConfig';
+import {
+  AD_PREVIEW, MOBILE_INCONTENT, ADFIT_ENABLED, ADFIT_UNITS,
+  ADFIT_INCONTENT_UNITS, MOBILE_AD_ZOOM_COMPENSATE,
+} from './adConfig';
 
 interface AdBannerProps {
   slot: string;
@@ -14,15 +17,31 @@ interface AdBannerProps {
    * (본문 광고와 드로어 광고는 드로어를 열면 한 페이지에 같이 존재한다).
    */
   placement?: 'inContent' | 'drawer';
+  /**
+   * 한 페이지에 인-콘텐츠 광고가 여러 개 들어갈 때의 순번(0부터).
+   * 넘기면 ADFIT_INCONTENT_UNITS(320×50 띠배너)에서 그 번째 단위를 꺼내 쓰고,
+   * 단위가 모자라면 그 자리는 렌더하지 않는다.
+   *
+   * 넘기지 않으면 기존 단일 광고 단위(320×100)를 쓴다 — 페이지에 광고가 하나뿐이면
+   * 같은 단위가 중복될 일이 없으므로 규격을 바꿀 이유도 없다.
+   */
+  index?: number;
 }
 
-export default function AdBanner({ slot, className, placement = 'inContent' }: AdBannerProps) {
+export default function AdBanner({ slot, className, placement = 'inContent', index }: AdBannerProps) {
   const pathname = usePathname();
 
   // 모바일 인-콘텐츠 끔 → 모바일은 하단 앵커만 사용
   if (!MOBILE_INCONTENT) return null;
 
-  const adfit = placement === 'drawer' ? ADFIT_UNITS.mobileDrawer : ADFIT_UNITS.mobileInContent;
+  // index 를 넘긴 자리(= 한 페이지에 광고가 여럿인 곳)만 띠배너 배열에서 꺼낸다.
+  // 순번만큼 단위를 못 받으면 그 자리는 통째로 비운다 — 같은 단위를 재사용하면
+  // 애드핏이 채우지 않아 빈 자리만 남는다.
+  const adfit =
+    placement === 'drawer' ? ADFIT_UNITS.mobileDrawer
+      : index === undefined ? ADFIT_UNITS.mobileInContent
+        : ADFIT_INCONTENT_UNITS[index];
+  if (!adfit) return null;
 
   // 미리보기 모드: 실제 광고 대신 자리(크기)만 표시.
   // 애드핏은 고정 규격이라 실제로 차지할 320×100 을 그대로 그린다.
