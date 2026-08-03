@@ -7,12 +7,10 @@ import { Container } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdmin } from '@/lib/admin';
 import {
-  togglePackageLike,
-  checkPackageLike,
   deletePackagePost,
   updatePackagePost,
 } from '@/lib/package-service';
-import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
+import { isSaleEnded, formatSaleEndShort, formatSalePeriodDateOnly } from '@/lib/package-sale';
 import type { PackagePost, PackageType, PackageItem } from '@/types/package';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import {
@@ -36,6 +34,9 @@ import {
   groupMultiResults,
 } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
+import AdFitUnit from '@/components/ads/AdFitUnit';
+import AdPlaceholder from '@/components/ads/AdPlaceholder';
+import { AD_PREVIEW, ADFIT_ENABLED, ADFIT_UNITS } from '@/components/ads/adConfig';
 import CommentSection from '@/components/package/CommentSection';
 import styles from '../package.module.css';
 
@@ -69,6 +70,30 @@ function shortenItemName(name: string): string {
   return ITEM_SHORT_NAMES[name] || name;
 }
 
+// 젬 선택지 효과 축약. 긴 쪽부터 치환해야 "아군 피해 강화" 가 "피해" 규칙에 먼저 걸리지 않는다.
+const GEM_EFFECT_SHORT: [string, string][] = [
+  ['아군 공격 강화', '아공강'],
+  ['아군 피해 강화', '아피강'],
+  ['보스 피해', '보피'],
+  ['추가 피해', '추피'],
+  ['낙인력', '낙인'],
+];
+
+/**
+ * 젬 선택지 이름 축약 — "공격형 질서의 젬 : 불변 (보스 피해/추가 피해)" → "불변 (보피/추피)".
+ * 선택지가 12개라 드롭다운으로 렌더되는데, 원문은 폭에 못 들어가 등급(불변/견고…)조차 잘린다.
+ * 이름은 게시물 문서에 저장된 값이라 원본 목록을 고쳐도 기존 글에는 반영되지 않으므로 여기서 줄인다.
+ */
+function shortenGemChoiceName(name: string): string {
+  const matched = name.match(/젬\s*:\s*(.+)$/);
+  if (!matched) return name;
+  let rest = matched[1];
+  for (const [long, short] of GEM_EFFECT_SHORT) {
+    rest = rest.split(long).join(short);
+  }
+  return rest;
+}
+
 function formatDate(timestamp: any): string {
   if (!timestamp) return '';
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -84,6 +109,71 @@ function getTypeBadgeClass(type: PackageType): string {
   if (type === '3+보너스') return styles.typeBadge31;
   if (type === '가챠') return styles.typeBadgeGacha;
   return styles.typeBadgeNormal;
+}
+
+/**
+ * PC 좌측 칼럼(340px) 계산 결과 아래 250×250 애드핏.
+ * 모바일에서는 .sideAdSlot 이 display:none 이라 렌더돼도 보이지 않는다.
+ * key={postId}: 글 사이를 클라이언트 이동해도 애드핏 스캔이 다시 돌게 한다.
+ */
+function SideSquareAd({ postId }: { postId: string }) {
+  const adfit = ADFIT_UNITS.packageDetailSquare;
+
+  if (AD_PREVIEW) {
+    return (
+      <AdPlaceholder
+        className={styles.sideAdSlot}
+        label="광고 · 패키지 상세 좌측"
+        sub={`애드핏 ${adfit.width}×${adfit.height}\n${adfit.unit}`}
+        style={{ height: `${adfit.height}px`, whiteSpace: 'pre-line' }}
+      />
+    );
+  }
+
+  if (!ADFIT_ENABLED || !adfit.unit) return null;
+
+  return (
+    <div className={styles.sideAdSlot}>
+      <AdFitUnit key={postId} unit={adfit.unit} width={adfit.width} height={adfit.height} />
+    </div>
+  );
+}
+
+/** 패키지 가격 — 블크 결제 패키지는 블크로 표기 (갤러리 카드·앱 상세와 동일) */
+function PriceValue({ post }: { post: PackagePost }) {
+  if (post.priceCurrency === 'blueCrystal' && post.blueCrystalPrice) {
+    return (
+      <span className={styles.resultRowValue}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img loading="lazy" decoding="async" src="/blue.webp" alt="블루 크리스탈" className={styles.goldIconInline} />
+        {formatNumber(post.blueCrystalPrice)}
+      </span>
+    );
+  }
+  return (
+    <span className={styles.resultRowValue}>{formatNumber(post.royalCrystalPrice)}원</span>
+  );
+}
+
+/** 골드 값 — 갤러리 카드와 같은 형식 ("= [골드아이콘] 42,000") */
+function GoldValue({ v }: { v: number }) {
+  return (
+    <span className={styles.resultRowValueGold}>
+      ={' '}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.goldIconInline} />
+      {formatNumber(v)}
+    </span>
+  );
+}
+
+/** 이득률 배지 — 갤러리 카드의 사선컷 칩과 같은 형태 */
+function BenefitBadge({ v }: { v: number }) {
+  return (
+    <span className={`${styles.resultBenefitBadge} ${v >= 0 ? styles.resultBenefitUp : styles.resultBenefitDown}`}>
+      {v >= 0 ? '+' : ''}{v.toFixed(1)}%
+    </span>
+  );
 }
 
 /** 보너스/일반 구성품 공용 골드 가치 계산 (choiceBox·crystal·goldOverride·시세 아이템 지원) */
@@ -157,8 +247,6 @@ export default function PackageDetailPage({ initialPost }: Props) {
   const { user, userProfile } = useAuth();
 
   const [post, setPost] = useState<PackagePost | null>(initialPost);
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
   const [choiceSelections, setChoiceSelections] = useState<Record<number, string>>({});
   const [choiceBoxSelections, setChoiceBoxSelections] = useState<Record<number, string[]>>({});
@@ -200,7 +288,6 @@ export default function PackageDetailPage({ initialPost }: Props) {
           // 클라이언트 내비게이션으로 다른 글에 진입한 경우 post 상태 동기화
           // (useState 초기값은 최초 마운트에만 반영되므로 여기서 반드시 갱신)
           setPost(data);
-          setLikeCount(data.likeCount || 0);
           const initial: Record<number, string> = {};
           const initialChecked: Record<number, boolean> = {};
           const initialChoiceBox: Record<number, string[]> = {};
@@ -342,22 +429,6 @@ export default function PackageDetailPage({ initialPost }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestPrices, post?.id]);
 
-  useEffect(() => {
-    if (!user || !postId) return;
-    checkPackageLike(postId, user.uid).then(setLiked).catch(() => {});
-  }, [user, postId]);
-
-  const handleLike = async () => {
-    if (!user || !postId) return;
-    try {
-      const nowLiked = await togglePackageLike(postId, user.uid);
-      setLiked(nowLiked);
-      setLikeCount((prev) => prev + (nowLiked ? 1 : -1));
-    } catch (err) {
-      console.error('좋아요 실패:', err);
-    }
-  };
-
   // 판매 종료 직접 처리 (작성자 본인 + 관리자). 표시만 바꾸고 글·계산·시세 연동은 그대로 둔다.
   const [saleUpdating, setSaleUpdating] = useState(false);
   const handleToggleSaleClosed = async () => {
@@ -399,13 +470,15 @@ export default function PackageDetailPage({ initialPost }: Props) {
 
   // 판매 상태 표시 — 종료여도 상세·시세·계산은 전부 그대로 동작한다 (과거 패키지 비교용)
   const saleEnded = isSaleEnded(post);
-  const salePeriod = formatSalePeriod(post);
+  // 배지는 상태만 짧게 (진행중이면 마감일까지). 전체 기간은 아래 메타 줄로 내려 배지가 길어지지 않게 한다.
+  const salePeriodFull = formatSalePeriodDateOnly(post);
+  const saleEndShort = formatSaleEndShort(post);
   const saleBadge = saleEnded ? (
-    <span className={styles.saleEndedBadge}>
-      판매 종료{salePeriod ? ` · ${salePeriod}` : ''}
-    </span>
-  ) : salePeriod ? (
-    <span className={styles.salePeriodBadge}>판매기간 {salePeriod}</span>
+    <span className={styles.saleEndedBadge}>판매 종료</span>
+  ) : saleEndShort ? (
+    <span className={styles.salePeriodBadge}>~{saleEndShort} 판매</span>
+  ) : salePeriodFull ? (
+    <span className={styles.salePeriodBadge}>판매중</span>
   ) : null;
   // 기간이 지나 자동 종료된 글은 여기서 되돌리지 않는다 (기간 변경은 수정 페이지에서)
   const saleToggleBtn =
@@ -777,68 +850,137 @@ export default function PackageDetailPage({ initialPost }: Props) {
     const wonGold = winnerIdx >= 0 ? gachaItemGolds[winnerIdx] : 0;
     const wonBenefit = gachaCashGold > 0 ? ((wonGold - gachaCashGold) / gachaCashGold) * 100 : 0;
 
+    // 기대 효율 — 갤러리 카드의 가챠 표기와 같은 기준 (기대값 대비 현금 골드)
+    const expectedBenefit = gachaCashGold > 0
+      ? ((expectedGold - gachaCashGold) / gachaCashGold) * 100
+      : 0;
+
     return (
-      <Container fluid style={{ maxWidth: '900px' }}>
+      <Container fluid style={{ maxWidth: '1100px' }}>
         <div className={styles.detailWrapper}>
           <Link href="/package" className={styles.backLink}>
             &#8592; 목록으로 돌아가기
           </Link>
 
-          {/* 헤더 */}
+          {/* 헤더 — 일반 상세와 같은 구조 (뱃지 줄 · 제목 · 메타) */}
           <div className={styles.detailHeader}>
-            <div className={styles.detailHeaderTop}>
-              <h1 className={styles.detailTitle}>
-                <span className={`${styles.typeBadge} ${styles.typeBadgeGacha}`} style={{ marginRight: '0.5rem' }}>
-                  가챠
-                </span>
-                {post.title}
-              </h1>
+            <div className={styles.detailBadgeRow}>
+              <span className={`${styles.typeBadge} ${styles.typeBadgeGacha}`}>가챠</span>
+              {saleBadge}
             </div>
-            {saleBadge && <div className={styles.saleBadgeRow}>{saleBadge}</div>}
-            <span className={styles.detailDate}>{formatDate(post.createdAt)}</span>
+            <h1 className={styles.detailTitle}>{post.title}</h1>
+            <div className={styles.detailMetaRow}>
+              <span>{formatDate(post.createdAt)}</span>
+              {salePeriodFull && <span>판매 {salePeriodFull}</span>}
+              <span className={styles.viewCountText}>조회 {post.viewCount || 0}</span>
+            </div>
           </div>
 
-          {/* 환율 + 기대값 */}
-          <div className={styles.gachaExpectedRow}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span className={styles.gachaExpectedLabel}>환율</span>
-              <div className={styles.resultRateInput}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img loading="lazy" decoding="async" src="/gold.webp" alt="" className={styles.resultRateIcon} />
-                <span className={styles.resultRateFixed}>100</span>
-                <span className={styles.resultRateSep}>:</span>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img loading="lazy" decoding="async" src="/royal.webp" alt="" className={styles.resultRateIcon} />
-                <input
-                  type="number"
-                  className={styles.resultRateNumber}
-                  value={detailWonPer100Gold || ''}
-                  onChange={(e) => setDetailWonPer100Gold(parseInt(e.target.value) || 0)}
-                  placeholder="32"
-                  min={1}
-                />
+          <div className={styles.detailSplitRow}>
+            {/* 왼쪽: 계산 결과 */}
+            <div className={styles.resultPanel}>
+              <div className={styles.detailCard}>
+                <h2 className={styles.detailCardHeader}>계산 결과</h2>
+
+                <div className={styles.resultRow}>
+                  <span className={styles.resultRowLabel}>가챠 가격</span>
+                  <PriceValue post={post} />
+                </div>
+
+                {detailGoldPerWon > 0 && (
+                  <div className={styles.resultRow}>
+                    <span className={styles.resultCashNum}>
+                      {formatNumber(post.royalCrystalPrice)}원
+                    </span>
+                    <GoldValue v={gachaCashGold} />
+                  </div>
+                )}
+
+                <div className={styles.resultRow}>
+                  <span className={styles.resultRowLabel}>
+                    {hasExcluded ? '기대값 (제외 반영)' : '기대값'}
+                  </span>
+                  <GoldValue v={expectedGold} />
+                </div>
+
+                {post.royalCrystalPrice > 0 && (
+                  <div className={styles.resultRow}>
+                    <span className={styles.resultRowLabel}>원당 골드</span>
+                    <span className={styles.gachaExpectedEfficiency}>
+                      {formatNumber(expectedGold / post.royalCrystalPrice)} G/원
+                    </span>
+                  </div>
+                )}
+
+                {detailGoldPerWon > 0 && (
+                  <div className={styles.resultRow}>
+                    <span className={styles.resultRowLabel}>기대 효율</span>
+                    <BenefitBadge v={expectedBenefit} />
+                  </div>
+                )}
+
+                {/* 환율 — 결과 수치와 섞이지 않게 따로 상자로 분리 */}
+                <div className={styles.resultRateBox}>
+                  <span className={styles.resultRateBoxLabel}>환율</span>
+                  <div className={styles.resultRateInput}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.resultRateIcon} />
+                    <span className={styles.resultRateFixed}>100</span>
+                    <span className={styles.resultRateSep}>:</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img loading="lazy" decoding="async" src="/royal.webp" alt="로얄 크리스탈" className={styles.resultRateIcon} />
+                    <input
+                      type="number"
+                      className={styles.resultRateNumber}
+                      value={detailWonPer100Gold || ''}
+                      onChange={(e) => setDetailWonPer100Gold(parseInt(e.target.value) || 0)}
+                      placeholder="32"
+                      min={1}
+                      aria-label="100골드당 원화 환율"
+                    />
+                  </div>
+                </div>
+
+                {isOwner && (
+                  <div className={styles.resultActions}>
+                    <div className={styles.resultActionsRight}>
+                      {saleToggleBtn}
+                      <Link href={`/package/edit/${postId}`} className={styles.editBtn}>
+                        수정
+                      </Link>
+                      <button className={styles.deleteBtn} onClick={handleDelete}>
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
+                  같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
+              <div className="d-block d-md-none my-2">
+                <AdBanner slot="8616653628" index={0} />
+              </div>
+
+              {/* PC 좌측 250×250 (모바일에서는 CSS 로 숨김) */}
+              <SideSquareAd postId={postId} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <span className={styles.gachaExpectedLabel}>{hasExcluded ? '기대값 (제외 반영)' : '기대값'}</span>
-              <span className={styles.gachaExpectedGold}>{formatNumber(expectedGold)} G</span>
-              {post.royalCrystalPrice > 0 && (
-                <span className={styles.gachaExpectedEfficiency}>
-                  ({formatNumber(expectedGold / post.royalCrystalPrice)} G/원)
-                </span>
+
+            {/* 오른쪽: 아이템 구성 + 가챠 시뮬 */}
+            <section className={`${styles.itemCardsSection} ${styles.detailCard}`}>
+              <h2 className={styles.detailCardHeader}>
+                아이템 구성 ({gachaItems.length}종)
+              </h2>
+
+              {/* 제외 안내 */}
+              {gachaPhase === 'idle' && (
+                <p className={styles.gachaExcludeHint}>
+                  아이템을 클릭하면 기대값 계산에서 제외됩니다 (확률은 유지)
+                </p>
               )}
-            </div>
-          </div>
 
-          {/* 제외 안내 */}
-          {gachaPhase === 'idle' && (
-            <p className={styles.gachaExcludeHint}>
-              아이템을 클릭하면 기대값 계산에서 제외됩니다 (확률은 유지)
-            </p>
-          )}
-
-          {/* 아이템 그리드 */}
-          <div className={styles.gachaGrid}>
+              {/* 아이템 그리드 */}
+              <div className={styles.gachaGrid}>
             {gachaItems.map((item, idx) => {
               const gold = gachaItemGolds[idx];
               const revealedSlice = multiResults.slice(0, multiRevealCount);
@@ -903,19 +1045,19 @@ export default function PackageDetailPage({ initialPost }: Props) {
                 </div>
               );
             })}
-          </div>
+              </div>
 
-          {/* 가챠 버튼 (idle 일 때만) */}
-          {gachaPhase === 'idle' && (
-            <div className={styles.gachaBtnGroup}>
-              <button className={styles.gachaButton} onClick={startGacha}>
-                가챠!
-              </button>
-              <button className={`${styles.gachaButton} ${styles.gachaBtnMulti}`} onClick={startGachaMulti}>
-                10회 가챠!
-              </button>
-            </div>
-          )}
+              {/* 가챠 버튼 (idle 일 때만) */}
+              {gachaPhase === 'idle' && (
+                <div className={styles.gachaBtnGroup}>
+                  <button className={styles.gachaButton} onClick={startGacha}>
+                    가챠!
+                  </button>
+                  <button className={`${styles.gachaButton} ${styles.gachaBtnMulti}`} onClick={startGachaMulti}>
+                    10회 가챠!
+                  </button>
+                </div>
+              )}
 
           {/* 1회 결과 */}
           {gachaPhase === 'result' && gachaMode === 'single' && wonItem && (
@@ -1022,33 +1164,12 @@ export default function PackageDetailPage({ initialPost }: Props) {
               </div>
             );
           })()}
+            </section>
 
-          {/* 액션 */}
-          <div className={styles.detailActions}>
-            <div className={styles.detailActionsLeft}>
-              <button
-                className={`${styles.likeBtn} ${liked ? styles.likeBtnActive : ''}`}
-                onClick={handleLike}
-                disabled={!user}
-                title={user ? '좋아요' : '로그인 후 이용 가능'}
-              >
-                {liked ? '\u2665' : '\u2661'} {likeCount}
-              </button>
-              <span className={styles.viewCountText}>
-                {'\uD83D\uDC41'} {post.viewCount || 0}
-              </span>
+            {/* 모바일 띠배너 — 아이템 구성 아래 (index 1: 위 자리와 다른 단위) */}
+            <div className="d-block d-md-none my-2">
+              <AdBanner slot="8616653628" index={1} />
             </div>
-            {isOwner && (
-              <div className={styles.resultActionsRight}>
-                {saleToggleBtn}
-                <Link href={`/package/edit/${postId}`} className={styles.editBtn}>
-                  수정
-                </Link>
-                <button className={styles.deleteBtn} onClick={handleDelete}>
-                  삭제
-                </button>
-              </div>
-            )}
           </div>
 
           {/* 댓글 */}
@@ -1073,67 +1194,94 @@ export default function PackageDetailPage({ initialPost }: Props) {
   return (
     <Container fluid style={{ maxWidth: '1100px' }}>
       <div className={styles.detailWrapper}>
+        <Link href="/package" className={styles.backLink}>
+          &#8592; 목록으로 돌아가기
+        </Link>
+
+        {/* 헤더 — 뱃지 + 제목. 좌우 분할 위에 전체 폭으로 둔다 (가챠 상세와 같은 구조) */}
+        <div className={styles.detailHeader}>
+          <div className={styles.detailBadgeRow}>
+            <span className={`${styles.typeBadge} ${getTypeBadgeClass(post.packageType)}`}>
+              {post.packageType}
+            </span>
+            {/* 앞 피연산자를 숫자로 두면 selectableCount 가 0 일 때 React 가 그 0 을 그대로 그린다 */}
+            {(post.selectableCount ?? 0) > 0 && (
+              <span className={`${styles.typeBadge} ${styles.typeBadgeSelect}`}>
+                {post.selectableCount}선택
+              </span>
+            )}
+            {saleBadge}
+          </div>
+          <h1 className={styles.detailTitle}>{post.title}</h1>
+          {/* 메타 — 앱 상세와 같은 자리(제목 아래 한 줄). 계산 결과 카드 안에 또 넣지 않는다 */}
+          <div className={styles.detailMetaRow}>
+            <span>{formatDate(post.createdAt)}</span>
+            {salePeriodFull && <span>판매 {salePeriodFull}</span>}
+            <span className={styles.viewCountText}>조회 {post.viewCount || 0}</span>
+          </div>
+        </div>
+
         <div className={styles.detailSplitRow}>
-          {/* 왼쪽: 요약 카드 */}
+          {/* 왼쪽: 계산 결과 */}
           <div className={styles.resultPanel}>
-            <Link href="/package" className={styles.backLink}>
-              &#8592; 목록으로 돌아가기
-            </Link>
-            <div className={styles.resultBox}>
-              {/* 뱃지 + 제목 */}
-              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span className={`${styles.typeBadge} ${getTypeBadgeClass(post.packageType)}`}>
-                  {post.packageType}
-                </span>
-                {post.selectableCount && post.selectableCount > 0 && (
-                  <span className={`${styles.typeBadge} ${styles.typeBadgeSelect}`}>
-                    {post.selectableCount}선택
-                  </span>
-                )}
-                {saleBadge}
-              </div>
-              <h1 className={styles.resultTitle}>{post.title}</h1>
-
-              <div className={styles.resultDivider} />
-
-              {/* 패키지 가격 */}
+            <div className={styles.detailCard}>
+              <h2 className={styles.detailCardHeader}>계산 결과</h2>
+              {/* 핵심 수치 — 갤러리 카드와 같은 순서·형식으로 읽히게 맞췄다.
+                  가격 → 골드 환산 → 구성품 가치 → 이득률. 환율은 아래 별도 상자로 뺐다. */}
               <div className={styles.resultRow}>
                 <span className={styles.resultRowLabel}>패키지 가격</span>
-                <span className={styles.resultRowValue}>
-                  {formatNumber(post.royalCrystalPrice)}원
-                </span>
+                <PriceValue post={post} />
               </div>
 
-              {/* 총 골드 가치 */}
-              <div className={styles.resultRow}>
-                <span className={styles.resultRowLabel}>총 골드 가치</span>
-                <span className={styles.resultRowValueGold}>
-                  {formatNumber(totalGold)} G
-                </span>
-              </div>
-
-              {/* N+1 / 3+보너스 보정 */}
-              {post.packageType !== '일반' && (
+              {/* 환산 줄: 30,000원 = [골드] 37,400 — 라벨 없이 좌우를 맞대 비교되게 둔다 */}
+              {detailGoldPerWon > 0 && (
                 <div className={styles.resultRow}>
-                  <span className={styles.resultRowLabel}>{post.packageType} 보정</span>
-                  <span className={styles.resultRowValueGold}>
-                    {formatNumber(bundleGold)} G
+                  <span className={styles.resultCashNum}>
+                    {formatNumber(post.royalCrystalPrice)}원
                   </span>
+                  <GoldValue v={cashGold} />
                 </div>
               )}
 
-              <div className={styles.resultDivider} />
-
-              {/* 환율 */}
               <div className={styles.resultRow}>
-                <span className={styles.resultRowLabel}>환율</span>
+                <span className={styles.resultRowLabel}>구성품 가치</span>
+                <GoldValue v={totalGold} />
+              </div>
+
+              {detailGoldPerWon > 0 && (
+                <div className={styles.resultRow}>
+                  <span className={styles.resultRowLabel}>1개 구매</span>
+                  <BenefitBadge v={singleBenefit} />
+                </div>
+              )}
+
+              {/* N+1 / 3+보너스 구간 */}
+              {post.packageType !== '일반' && (
+                <>
+                  <div className={styles.resultDivider} />
+                  <div className={styles.resultRow}>
+                    <span className={styles.resultRowLabel}>{post.packageType} 보정</span>
+                    <GoldValue v={bundleGold} />
+                  </div>
+                  {detailGoldPerWon > 0 && (
+                    <div className={styles.resultRow}>
+                      <span className={styles.resultRowLabel}>{post.packageType} 구매</span>
+                      <BenefitBadge v={bundleBenefit} />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* 환율 — 결과 수치와 섞이지 않게 따로 상자로 분리 */}
+              <div className={styles.resultRateBox}>
+                <span className={styles.resultRateBoxLabel}>환율</span>
                 <div className={styles.resultRateInput}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img loading="lazy" decoding="async" src="/gold.webp" alt="" className={styles.resultRateIcon} />
+                  <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.resultRateIcon} />
                   <span className={styles.resultRateFixed}>100</span>
                   <span className={styles.resultRateSep}>:</span>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img loading="lazy" decoding="async" src="/royal.webp" alt="" className={styles.resultRateIcon} />
+                  <img loading="lazy" decoding="async" src="/royal.webp" alt="로얄 크리스탈" className={styles.resultRateIcon} />
                   <input
                     type="number"
                     className={styles.resultRateNumber}
@@ -1141,62 +1289,13 @@ export default function PackageDetailPage({ initialPost }: Props) {
                     onChange={(e) => setDetailWonPer100Gold(parseInt(e.target.value) || 0)}
                     placeholder="32"
                     min={1}
+                    aria-label="100골드당 원화 환율"
                   />
                 </div>
               </div>
 
-              {/* 로크로 골드 구매 시 */}
-              {detailGoldPerWon > 0 && (
-                <div className={styles.resultRow}>
-                  <span className={styles.resultRowLabel}>로크 골드 구매 시</span>
-                  <span className={styles.resultRowValue}>
-                    {formatNumber(cashGold)} G
-                  </span>
-                </div>
-              )}
-
-              {/* 이득률 */}
-              {detailGoldPerWon > 0 && (
-                <>
-                  <div className={styles.resultDivider} />
-                  <div className={styles.resultRow}>
-                    <span className={styles.resultRowLabel}>1개 구매</span>
-                    <span className={`${styles.resultBenefitNum} ${singleBenefit >= 0 ? styles.benefitUp : styles.benefitDown}`}>
-                      {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
-                    </span>
-                  </div>
-                  {post.packageType !== '일반' && (
-                    <div className={styles.resultRow}>
-                      <span className={styles.resultRowLabel}>{post.packageType} 구매</span>
-                      <span className={`${styles.resultBenefitNum} ${bundleBenefit >= 0 ? styles.benefitUp : styles.benefitDown}`}>
-                        {bundleBenefit >= 0 ? '+' : ''}{bundleBenefit.toFixed(1)}%
-                      </span>
-                    </div>
-                  )}
-                </>
-              )}
-
-              <div className={styles.resultDivider} />
-
-              {/* 메타 + 액션 */}
-              <div className={styles.resultMeta}>
-                <span className={styles.resultMetaDate}>{formatDate(post.createdAt)}</span>
-              </div>
-              <div className={styles.resultActions}>
-                <div className={styles.resultActionsLeft}>
-                  <button
-                    className={`${styles.likeBtn} ${liked ? styles.likeBtnActive : ''}`}
-                    onClick={handleLike}
-                    disabled={!user}
-                    title={user ? '좋아요' : '로그인 후 이용 가능'}
-                  >
-                    {liked ? '\u2665' : '\u2661'} {likeCount}
-                  </button>
-                  <span className={styles.viewCountText}>
-                    {'\uD83D\uDC41'} {post.viewCount || 0}
-                  </span>
-                </div>
-                {isOwner && (
+              {isOwner && (
+                <div className={styles.resultActions}>
                   <div className={styles.resultActionsRight}>
                     {saleToggleBtn}
                     <Link href={`/package/edit/${postId}`} className={styles.editBtn}>
@@ -1206,14 +1305,23 @@ export default function PackageDetailPage({ initialPost }: Props) {
                       삭제
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
+
+            {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
+                같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
+            <div className="d-block d-md-none my-2">
+              <AdBanner slot="8616653628" index={0} />
+            </div>
+
+            {/* PC 좌측 250×250 (모바일에서는 CSS 로 숨김) */}
+            <SideSquareAd postId={postId} />
           </div>
 
           {/* 오른쪽: 아이템 카드 */}
-          <section className={styles.itemCardsSection}>
-            <h2 className={styles.sectionTitle}>
+          <section className={`${styles.itemCardsSection} ${styles.detailCard}`}>
+            <h2 className={styles.detailCardHeader}>
               아이템 구성 ({post.items.length}종)
             </h2>
             <div className={styles.itemCardsGrid}>
@@ -1306,7 +1414,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img loading="lazy" decoding="async" src={choice.icon} alt={choice.name} className={styles.itemCardChoiceBtnIcon} />
                             )}
-                            <span>{choice.name}</span>
+                            <span>{shortenGemChoiceName(choice.name)}</span>
                           </button>
                         ))}
                       </div>
@@ -1319,7 +1427,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                       >
                         {item.choiceOptions!.map((choice) => (
                           <option key={choice.itemId} value={choice.itemId}>
-                            {choice.name}
+                            {shortenGemChoiceName(choice.name)}
                           </option>
                         ))}
                       </select>
@@ -1365,6 +1473,11 @@ export default function PackageDetailPage({ initialPost }: Props) {
               })}
             </div>
           </section>
+
+          {/* 모바일 띠배너 — 아이템 구성 아래 (index 1: 위 자리와 다른 단위) */}
+          <div className="d-block d-md-none my-2">
+            <AdBanner slot="8616653628" index={1} />
+          </div>
         </div>
 
         {/* 구성품 상세 — 젬 상자류의 구성·계산 근거 (카드 안에 다 안 들어가는 정보를 여기에 풀어씀) */}
@@ -1409,8 +1522,8 @@ export default function PackageDetailPage({ initialPost }: Props) {
           pushGemRows(post.bonusItems || [], bonusChoiceSelections, 'gd-b-');
           if (rows.length === 0) return null;
           return (
-            <section className={styles.itemCardsSection}>
-              <h2 className={styles.sectionTitle}>구성품 상세</h2>
+            <section className={`${styles.itemCardsSection} ${styles.detailCard}`}>
+              <h2 className={styles.detailCardHeader}>구성품 상세</h2>
               <div className={styles.gemDetailList}>{rows}</div>
             </section>
           );
@@ -1418,9 +1531,10 @@ export default function PackageDetailPage({ initialPost }: Props) {
 
         {/* 보너스 구성품 (3+보너스 전용, 3회 구매 시 1회 지급) */}
         {post.packageType === '3+보너스' && post.bonusItems && post.bonusItems.length > 0 && (
-          <section className={styles.itemCardsSection}>
-            <h2 className={styles.sectionTitle}>
-              보너스 구성품 ({post.bonusItems.length}종, 3회 구매 시 1회 지급)
+          <section className={`${styles.itemCardsSection} ${styles.detailCard}`}>
+            <h2 className={styles.detailCardHeader}>
+              보너스 구성품 ({post.bonusItems.length}종)
+              <span className={styles.detailCardHeaderNote}>3회 구매 시 1회 지급</span>
             </h2>
             <div className={styles.itemCardsGrid}>
               {post.bonusItems.map((item, idx) => {
@@ -1484,7 +1598,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img loading="lazy" decoding="async" src={choice.icon} alt={choice.name} className={styles.itemCardChoiceBtnIcon} />
                             )}
-                            <span>{choice.name}</span>
+                            <span>{shortenGemChoiceName(choice.name)}</span>
                           </button>
                         ))}
                       </div>
@@ -1497,7 +1611,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                       >
                         {item.choiceOptions!.map((choice) => (
                           <option key={choice.itemId} value={choice.itemId}>
-                            {choice.name}
+                            {shortenGemChoiceName(choice.name)}
                           </option>
                         ))}
                       </select>

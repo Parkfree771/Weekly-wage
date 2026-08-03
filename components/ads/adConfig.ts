@@ -50,6 +50,8 @@ export const ADFIT_UNITS = {
   mobileDrawer: { unit: 'DAN-5AUDzC6VzTXU6X8H', width: 320, height: 100 },    // 모바일 햄버거 드로어
   sidebarLeft: { unit: 'DAN-LhB3sf1lcaZ0pCFD', width: 160, height: 600 },     // PC 레일 좌
   sidebarRight: { unit: 'DAN-cf5UrXPfQYUZYdhv', width: 160, height: 600 },    // PC 레일 우
+  // 패키지 상세 PC 좌측 칼럼(340px) — 계산 결과 카드 아래 남는 공간. 모바일에서는 렌더하지 않는다.
+  packageDetailSquare: { unit: 'DAN-9tfnO1mRCb1HDe0S', width: 250, height: 250 },
 };
 
 // 한 페이지에 인-콘텐츠 광고가 여러 번 들어가는 자리(패키지 갤러리: 카드 2개마다 1개)용.

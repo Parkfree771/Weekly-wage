@@ -30,6 +30,7 @@ import {
 } from '../../lib/wangapAverage';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import { OPT_MATERIAL_LIST, type OptMatKey } from './wangapShared';
+import AdBanner from '../ads/AdBanner';
 
 // 기본 재료 5종 (숨결 제외 — 숨결은 보조 재료 섹션에서 별도 표시)
 const BASE_MATERIAL_KEYS: OptMatKey[] = ['파괴석결정', '수호석결정', '위대한돌파석', '상급아비도스', '운명파편'];
@@ -520,6 +521,12 @@ export default function WangapAverageCalculator() {
             </div>
           </div>
         )}
+
+        {/* 모바일 띠배너 — 카드 사이(강화 여정 ↔ 예상 소모 재료). 같은 페이지의 다른 자리와
+            단위가 겹치면 애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
+        <div className="d-block d-lg-none my-2">
+          <AdBanner slot="8616653628" index={0} />
+        </div>
 
         {/* ===== 예상 소모 재료 (재련 평균 시뮬과 동일한 카드) ===== */}
         <Card className={styles.mainCard}>

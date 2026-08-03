@@ -34,11 +34,6 @@ export default function HellRewardPage() {
               </p>
             </div>
 
-            {/* 모바일 인-콘텐츠 광고 — 앱 지옥보상(콘텐츠 최상단)과 동일 위치 */}
-            <div className="d-block d-lg-none mb-3">
-              <AdBanner slot="8616653628" />
-            </div>
-
             <HellRewardCalculator />
 
             <GuideFaq
@@ -75,6 +70,11 @@ export default function HellRewardPage() {
               ]}
               faqs={faqData}
             />
+
+            {/* 모바일 인-콘텐츠 광고 — 페이지 최하단 (예전엔 콘텐츠 최상단이었다) */}
+            <div className="d-block d-lg-none mt-3">
+              <AdBanner slot="8616653628" />
+            </div>
           </Col>
         </Row>
       </Container>

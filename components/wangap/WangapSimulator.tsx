@@ -22,6 +22,7 @@ import {
   type WangapPromoMatKey,
 } from '../../lib/wangapData';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
+import AdBanner from '../ads/AdBanner';
 import {
   COST_ROWS,
   PRICED_COST_KEYS,
@@ -567,6 +568,12 @@ export default function WangapSimulator() {
             );
           })}
         </div>
+      </div>
+
+      {/* 모바일 띠배너 — 장비 선택 바로 아래. 같은 페이지의 다른 자리와 단위가 겹치면
+          애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
+      <div className="d-block d-lg-none my-2">
+        <AdBanner slot="8616653628" index={1} />
       </div>
 
       {/* 승급 재료 상세 */}

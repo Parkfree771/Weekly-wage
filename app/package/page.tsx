@@ -34,7 +34,7 @@ const clampRate = (v: number) => (v <= 0 ? 0 : Math.max(RATE_MIN, Math.min(RATE_
 // Firestore 재조회를 절대 일으키지 않는다 — 예전에 정렬을 서버 쿼리로 돌리다
 // 드롭다운을 건드릴 때마다 읽기가 한 페이지씩 더 나가서 뺐던 기능이라, 같은 실수를 막으려고
 // sortBy/typeFilter 는 fetchPosts 의 의존성에 넣지 않는다.
-type GallerySort = 'createdAt' | 'efficiency' | 'newRelease' | 'likeCount';
+type GallerySort = 'createdAt' | 'efficiency' | 'newRelease';
 type SaleFilter = 'all' | 'onSale' | 'ended';
 
 // 정렬과 판매 상태를 드롭다운 하나로 합쳤다. select 는 값이 하나뿐이라
@@ -48,7 +48,6 @@ const VIEW_OPTIONS: [GalleryView, string][] = [
   ['createdAt', '업로드순'],
   ['efficiency', '효율순'],
   ['newRelease', '신작순'],
-  ['likeCount', '인기순'],
   ['onSale', '판매중'],
   ['ended', '판매종료'],
 ];
@@ -137,10 +136,6 @@ export default function PackageGalleryPage() {
 
     // 업로드순은 Firestore 가 이미 그 순서로 내려준 것이라 다시 정렬할 필요가 없다
     if (sortBy === 'createdAt') return filtered;
-
-    if (sortBy === 'likeCount') {
-      return [...filtered].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    }
 
     // 신작순 — NEW 배지가 붙은 글(신규 출시 + 30일 이내 + 판매중)을 앞으로.
     // 같은 그룹 안에서는 들어온 순서(=업로드순)를 그대로 둔다.

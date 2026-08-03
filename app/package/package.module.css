@@ -491,10 +491,17 @@
 
   /* 입력칸은 오히려 키운다 — 여기가 실제로 손을 대는 곳이다.
      font-size 는 1rem(16px) 아래로 내리지 않는다: iOS Safari 가 입력 포커스 때
-     페이지를 자동 확대한다(viewport maximumScale:2 라 막혀 있지 않다). */
+     페이지를 자동 확대한다(viewport maximumScale:2 라 막혀 있지 않다).
+
+     세로: 32px 상자 안에 들어가도록 높이를 직접 고정한다. 기본값으로 두면
+     글꼴 line-height(normal) + 상하 패딩 + 테두리가 32px 를 넘겨 상자 밖으로 삐져나온다.
+     border-box 라 테두리·패딩이 24px 안에 포함된다. */
   .commonRateInput {
     width: 62px;
-    padding: 0.2rem 0.25rem;
+    height: 24px;
+    padding: 0 0.25rem;
+    line-height: 1;
+    box-sizing: border-box;
   }
 
   .commonRateUnit {
@@ -1290,10 +1297,12 @@
   margin-bottom: 1.5rem;
 }
 
-.detailHeaderTop {
+/* 제목 위 뱃지 줄 (타입 · 선택 · 판매 상태) */
+.detailBadgeRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem;
   margin-bottom: 0.5rem;
 }
 
@@ -1302,12 +1311,26 @@
   font-weight: 800;
   color: var(--text-primary);
   margin: 0;
-  word-break: break-word;
+  /* 헤더와 같은 이유 — 한글 제목이 어절 중간에서 끊기지 않게 */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 
 .detailDate {
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+/* 제목 아래 메타 한 줄 (등록일 · 판매기간 · 조회수) — 앱 상세와 같은 자리 */
+.detailMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.75rem;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* 패키지 타입 뱃지 */
@@ -1386,8 +1409,14 @@
 }
 
 /* ─── 아이템 카드 그리드 ─── */
+/* 카드 껍데기는 .detailCard 가 담당한다 (계산 결과와 동일).
+   분할 아래로 쌓이는 섹션들끼리 카드 간격이 필요해 margin 을 준다 */
 .itemCardsSection {
   margin-bottom: 0;
+}
+
+.detailSplitRow ~ .itemCardsSection {
+  margin-top: 1.25rem;
 }
 
 .itemCardsGrid {
@@ -1397,10 +1426,13 @@
   grid-auto-rows: 1fr;
 }
 
+/* 부모(.detailCard)와 같은 --card-bg 를 쓰면 개별 아이템이 묻힌다.
+   배경을 채우는 대신 테두리를 진하게 해서 구분한다 — --border-color(알파 0.12)는
+   카드 위에 얹으면 거의 안 보여서 같은 색조의 진한 값을 따로 쓴다. */
 .itemCard {
   position: relative;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  border: 2px solid rgba(59, 80, 181, 0.34);
   border-radius: 12px;
   padding: 1.25rem 1rem;
   display: flex;
@@ -1411,12 +1443,18 @@
   transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s, filter 0.2s;
 }
 
+/* 다크는 같은 알파로는 배경에 묻혀 조금 더 올린다 */
+:global([data-theme="dark"]) .itemCard {
+  border-color: rgba(130, 148, 230, 0.42);
+}
+
 .itemCard:hover {
   box-shadow: var(--shadow-md);
 }
 
+/* 선택형 아이템은 주황 테두리로 구분 — 기본 테두리가 진해진 만큼 같이 올린다 */
 .itemCardChoice {
-  border-color: rgba(249, 115, 22, 0.25);
+  border-color: rgba(249, 115, 22, 0.45);
 }
 
 /* 선택 상자(choiceBox): 후보가 많아 기본 셀(160px)에서 줄바꿈이 심하므로 2칸만큼만 확장 */
@@ -1659,8 +1697,24 @@
   top: 80px;
 }
 
-/* ─── 계산 결과 박스 ─── */
-.resultBox {
+/* 계산 결과 아래 남는 좌측 여백 — 250×250 애드핏.
+   높이를 고정하지 않는다: 안 채워지면 애드핏 ins 가 display:none 으로 남아 자리째 사라진다.
+   세로로 쌓이는 900px 이하에서는 남는 공간이 아니므로 숨긴다(아래 미디어쿼리). */
+.sideAdSlot {
+  width: 250px;
+  margin: 1rem auto 0;
+}
+
+/* body zoom 0.85(≥1024px)를 그대로 두면 250×250 이 화면에서 212×212 로 렌더돼 규격 미달이 된다.
+   PC 레일(AdLayout)·모바일 인-콘텐츠와 같은 zoom 역보정. */
+@media (min-width: 1024px) {
+  .sideAdSlot {
+    zoom: 1.1765;
+  }
+}
+
+/* ─── 상세 카드 (계산 결과 · 아이템 구성 · 보너스 구성품 공용) ─── */
+.detailCard {
   position: relative;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -1669,7 +1723,7 @@
   overflow: hidden;
 }
 
-.resultBox::before {
+.detailCard::before {
   content: '';
   position: absolute;
   top: 0;
@@ -1680,67 +1734,122 @@
   border-radius: 12px 12px 0 0;
 }
 
-
-.resultTitle {
-  font-size: clamp(1rem, 2.5vw, 1.2rem);
+/* 카드 헤더 — "계산 결과" / "아이템 구성 (10종)" */
+/* 밑줄을 카드 안쪽 폭 전체에 두면 바로 위 상단 그라데이션 바와 겹쳐
+   헤더가 별도 '제목 칸'처럼 갇혀 보인다 — 앱 상세처럼 선 없이 굵기와 여백으로만 구분한다 */
+.detailCardHeader {
+  font-size: 1.05rem;
   font-weight: 800;
   color: var(--text-primary);
-  margin: 0.5rem 0 0;
-  word-break: break-word;
-  line-height: 1.4;
+  margin: 0 0 0.9rem;
+  /* 한글은 기본값(break-all 유사)으로 두면 좁은 폭에서 단어 중간이 끊긴다.
+     keep-all 로 어절을 지키고, 한 어절이 폭을 넘길 때만 anywhere 로 흘린다 */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
 }
+
+/* 헤더 뒤 부연 문구 ("3회 구매 시 1회 지급") — 제목과 같은 굵기로 붙으면 길어져서 분리 */
+.detailCardHeaderNote {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  word-break: keep-all;
+}
+
 
 .resultDivider {
   border: none;
   border-top: 1px solid var(--border-color);
-  margin: 0.65rem 0;
+  margin: 0.9rem 0;
 }
 
-/* 행 공통 */
+/* 행 공통 — 좌측 패널에 여백이 남으므로 넉넉하게 */
 .resultRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.25rem 0;
+  gap: 0.5rem;
+  padding: 0.45rem 0;
 }
 
 .resultRowLabel {
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   font-weight: 500;
   color: var(--text-muted);
 }
 
+/* 숫자는 절대 줄바꿈되지 않게 한다 — 좁은 폭에서 "1,680,\n000" 처럼 끊기면 읽을 수 없다.
+   폭이 모자라면 왼쪽 라벨이 대신 줄바꿈된다. */
 .resultRowValue {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--text-primary);
   text-align: right;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .resultRowValueGold {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--color-accent);
   text-align: right;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.resultBenefitNum {
-  font-size: 1.05rem;
-  font-weight: 800;
+/* 골드 인라인 아이콘 */
+.goldIconInline {
+  width: 18px;
+  height: 18px;
+  vertical-align: -3px;
+  margin-right: 3px;
+}
+
+/* 환산 줄 왼쪽 현금 숫자 — 현금은 기본색 bold (골드 주황과 구분) */
+.resultCashNum {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 이득률 배지 — 갤러리 카드의 사선컷 칩과 동일 */
+.resultBenefitBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.9rem;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.resultBenefitUp {
+  background: #35815a;
+}
+
+.resultBenefitDown {
+  background: #a04a44;
 }
 
 /* 환율 입력 */
 .resultRateInput {
   display: flex;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.3rem;
   background: var(--input-bg);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 0.25rem 0.45rem;
+  border-radius: 7px;
+  padding: 0.35rem 0.6rem;
 }
 
 .resultRateInput:focus-within {
@@ -1748,31 +1857,31 @@
 }
 
 .resultRateIcon {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
   border-radius: 3px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .resultRateFixed {
-  font-size: 0.75rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--text-secondary);
 }
 
 .resultRateSep {
-  font-size: 0.75rem;
+  font-size: 0.88rem;
   font-weight: 800;
   color: var(--text-muted);
 }
 
 .resultRateNumber {
-  width: 36px;
+  width: 44px;
   background: transparent;
   border: none;
   color: var(--color-accent);
-  font-size: 0.75rem;
+  font-size: 0.88rem;
   font-weight: 700;
   text-align: center;
   outline: none;
@@ -1786,27 +1895,33 @@
   margin: 0;
 }
 
-/* 메타 + 액션 */
-.resultMeta {
-  padding: 0.1rem 0;
-}
-
-.resultMetaDate {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.resultActions {
+/* 환율 — 결과 수치와 섞이지 않게 분리한 상자.
+   flex-wrap: 폭이 모자라면 입력칸이 상자를 뚫는 대신 아랫줄로 내려간다 */
+.resultRateBox {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 0.35rem;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  margin-top: 1rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--card-body-bg-blue);
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
 }
 
-.resultActionsLeft {
+.resultRateBoxLabel {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* 작성자 액션 (판매 종료 · 수정 · 삭제) */
+.resultActions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  justify-content: flex-end;
+  padding-top: 0.75rem;
 }
 
 .resultActionsRight {
@@ -1927,47 +2042,6 @@
 }
 
 /* ─── 액션 바 ─── */
-.detailActions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 0;
-  border-top: 1px solid var(--border-color);
-}
-
-.detailActionsLeft {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.likeBtn {
-  background: none;
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 0.4rem 1rem;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.likeBtn:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
-.likeBtnActive {
-  background: rgba(249, 115, 22, 0.08);
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-  font-weight: 700;
-}
-
-.likeBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .viewCountText {
   font-size: 0.8rem;
   color: var(--text-muted);
@@ -2041,8 +2115,14 @@
     position: static;
   }
 
-  .resultBox {
+  /* 세로로 쌓이면 계산 결과 카드만 폭을 제한한다 (아이템 카드는 전체 폭 유지) */
+  .resultPanel .detailCard {
     max-width: 400px;
+  }
+
+  /* 쌓이는 순간 '남는 공간'이 사라지므로 광고 자리도 뺀다 */
+  .sideAdSlot {
+    display: none;
   }
 
   .backLink {
@@ -2076,112 +2156,101 @@
     margin-bottom: 0.3rem;
   }
 
-  /* 상세 페이지: 좌우 분할 복원 */
+  /* 상세 페이지: 모바일 앱 상세와 같은 세로 스택 (계산 결과 카드 → 아이템 목록) */
   .detailSplitRow {
-    grid-template-columns: 170px 1fr;
+    grid-template-columns: 1fr;
     gap: 0.5rem;
     align-items: start;
+  }
+
+  /* 분할 아래로 쌓이는 섹션 간격도 같은 리듬으로 */
+  .detailSplitRow ~ .itemCardsSection {
+    margin-top: 0.5rem;
+  }
+
+  .resultPanel .detailCard {
+    max-width: 100%;
   }
 
   .resultPanel {
     position: static;
   }
 
-  .resultBox {
-    padding: 0.6rem;
+  /* 세로 스택이라 계산 결과 카드가 전체 폭을 쓴다 — 예전 170px 칼럼용 축소값은 쓰지 않는다 */
+  .detailCard {
+    padding: 0.75rem;
     max-width: 100%;
     border-radius: 10px;
   }
 
-  .resultBox::before {
+  .detailCard::before {
     height: 3px;
   }
 
-  .resultTitle {
-    font-size: 0.75rem;
-    margin: 0.25rem 0 0;
-    line-height: 1.3;
+  .detailCardHeader {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
   }
 
-  .typeBadge {
-    font-size: 0.55rem;
-    padding: 0.1rem 0.3rem;
+  /* 좁은 폭에서는 부연 문구를 아랫줄로 내려 제목 줄이 끊기지 않게 한다 */
+  .detailCardHeaderNote {
+    display: block;
+    margin-left: 0;
+    margin-top: 0.15rem;
+    font-size: 0.72rem;
   }
+
+  /* 뱃지는 좁은 좌측 패널을 벗어나 전체 폭 헤더로 옮겨졌으므로 더 줄이지 않는다 */
 
   .resultDivider {
-    margin: 0.3rem 0;
+    margin: 0.5rem 0;
   }
 
   .resultRow {
-    padding: 0.12rem 0;
+    padding: 0.28rem 0;
   }
 
   .resultRowLabel {
-    font-size: 0.6rem;
+    font-size: 0.82rem;
   }
 
-  .resultRowValue {
-    font-size: 0.68rem;
+  .resultRowValue,
+  .resultRowValueGold,
+  .resultCashNum {
+    font-size: 0.98rem;
   }
 
-  .resultRowValueGold {
-    font-size: 0.68rem;
+  .goldIconInline {
+    width: 16px;
+    height: 16px;
+    vertical-align: -3px;
   }
 
-  .resultBenefitNum {
-    font-size: 0.78rem;
+  .resultBenefitBadge {
+    padding: 0.28rem 0.7rem;
+    font-size: 1rem;
+    clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
   }
 
-  .resultRateInput {
-    padding: 0.2rem 0.3rem;
-    gap: 0.15rem;
+  .resultRateBox {
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.65rem;
   }
 
-  .resultRateIcon {
-    width: 12px;
-    height: 12px;
+  .resultRateBoxLabel {
+    font-size: 0.82rem;
   }
 
-  .resultRateFixed {
-    font-size: 0.6rem;
-  }
-
-  .resultRateSep {
-    font-size: 0.6rem;
-  }
-
-  .resultRateNumber {
-    width: 28px;
-    font-size: 0.6rem;
-  }
-
-  .resultRow:has(.resultRateInput) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.15rem;
-  }
-
-  .resultRateInput {
-    width: 100%;
-  }
-
-  .resultMeta {
-    padding: 0;
-  }
-
-  .resultMetaDate {
-    font-size: 0.58rem;
+  .detailMetaRow {
+    font-size: 0.62rem;
+    gap: 0.1rem 0.5rem;
   }
 
   .resultActions {
     padding-top: 0.2rem;
     flex-wrap: wrap;
     gap: 0.25rem;
-  }
-
-  .likeBtn {
-    padding: 0.2rem 0.4rem;
-    font-size: 0.58rem;
   }
 
   .viewCountText {
@@ -2194,9 +2263,8 @@
     padding: 0.15rem 0.35rem;
   }
 
-  .itemCardsSection {
-    padding-top: 0;
-  }
+  /* 예전엔 카드가 아니라 맨 섹션이라 위 여백을 죽였는데, 지금은 .detailCard 라
+     padding-top:0 이면 헤더가 상단 그라데이션 바에 붙어버린다 — 카드 패딩을 그대로 쓴다 */
 
   .sectionTitle {
     font-size: 0.72rem;
@@ -2205,55 +2273,125 @@
     border-bottom-width: 1px;
   }
 
-  /* 아이템 카드: 3열 초소형 */
+  /* 아이템: 모바일 앱 상세와 같은 세로 리스트 (행 사이 구분선, 카드 테두리 없음) */
   .itemCardsGrid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.2rem;
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    gap: 0;
   }
 
+  /* 앱 상세와 같은 2줄 행 구조 — 단가는 이름 아래, 합계만 오른쪽 끝.
+     단가와 합계를 오른쪽에 나란히 두면 합계 폭이 행마다 달라 단가 위치가 밀린다.
+     .itemCardBottom 은 display:contents 로 껍데기만 없애 자식을 격자에 직접 배치한다.
+       [체크] [아이콘] 이름        합계
+                      단가×수량
+       [선택지 칩 ................ 전체 폭] */
   .itemCard {
-    padding: 0.3rem 0.2rem;
-    gap: 0.1rem;
-    border-radius: 6px;
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    column-gap: 0.5rem;
+    /* 이름과 바로 아래 개당 가치는 한 덩어리로 읽혀야 하므로 행 간격을 두지 않는다.
+       (아이콘이 두 행을 걸쳐 생기는 여유 공간은 align-self 로 위·아래 바깥으로 밀어낸다) */
+    row-gap: 0;
+    text-align: left;
+    /* 오른쪽 합계가 카드 테두리에 붙어 답답해 보이지 않게 좌우 여백을 준다 */
+    padding: 0.5rem 0.35rem;
+    background: none;
+    border: none;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .itemCard:last-child {
+    border-bottom: none;
+  }
+
+  .itemCard:hover {
+    box-shadow: none;
+  }
+
+  /* 선택 상자도 리스트에서는 한 행을 그대로 쓴다 */
+  .itemCardFull {
+    grid-column: auto;
+  }
+
+  /* 체크박스를 절대배치에서 빼내 행 맨 앞으로 */
+  .itemCardCheckLabel {
+    position: static;
+    top: auto;
+    right: auto;
+    grid-column: 1;
+    grid-row: 1 / span 2;
   }
 
   .itemCardIconWrap {
-    height: 22px;
+    width: auto;
+    height: auto;
+    grid-column: 2;
+    grid-row: 1 / span 2;
   }
 
   .bundleIconStack {
-    width: 36px;
-    height: 22px;
+    width: 46px;
+    height: 28px;
   }
 
   .bundleIconItem {
-    width: 20px;
-    height: 20px;
-    border-radius: 3px;
+    width: 27px;
+    height: 27px;
+    border-radius: 4px;
   }
 
-  .bundleIconItem:nth-child(2) { left: 14px; }
+  .bundleIconItem:nth-child(2) { left: 19px; }
 
   .itemCardIcon {
-    width: 20px;
-    height: 20px;
-    border-radius: 3px;
+    width: 38px;
+    height: 38px;
+    border-radius: 6px;
   }
 
   .itemCardName {
-    font-size: 0.48rem;
-    min-height: 1.2em;
-    line-height: 1.15;
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 0;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    align-self: end;
+  }
+
+  /* 껍데기를 없애 자식(단가·합계)을 .itemCard 격자에 직접 올린다 */
+  .itemCardBottom {
+    display: contents;
   }
 
   .itemCardPriceLine {
-    font-size: 0.42rem;
-    padding-bottom: 0.1rem;
+    grid-column: 3;
+    grid-row: 2;
+    font-size: 0.68rem;
+    line-height: 1.2;
+    padding-bottom: 0;
+    text-align: left;
+    align-self: start;
   }
 
   .itemCardSubtotal {
-    font-size: 0.5rem;
-    padding-top: 0.15rem;
+    grid-column: 4;
+    grid-row: 1 / span 2;
+    width: auto;
+    min-width: 4.4rem;
+    text-align: right;
+    font-size: 0.9rem;
+    padding-top: 0;
+    border-top: none;
+    align-self: center;
+    white-space: nowrap;
+  }
+
+  /* 선택지·후보 칩은 행 전체 폭을 쓰는 아랫줄로 */
+  .itemCardChoices,
+  .itemCardChoiceSelect {
+    grid-column: 1 / -1;
   }
 
   .gemDetailRow {
@@ -2270,8 +2408,8 @@
   }
 
   .itemCardCheckBox {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     border-radius: 3px;
   }
 
@@ -2810,35 +2948,13 @@
 }
 
 /* 가챠 기대값 표시 */
-.gachaExpectedRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  margin-bottom: 1rem;
-}
-
-.gachaExpectedLabel {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.gachaExpectedGold {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: var(--color-accent);
-  font-variant-numeric: tabular-nums;
-}
-
+/* 원당 골드 — 계산 결과 카드의 보조 지표 */
 .gachaExpectedEfficiency {
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--text-muted);
-  margin-left: 0.5rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .gachaExcludeHint {
@@ -2856,10 +2972,12 @@
   margin-bottom: 1.5rem;
 }
 
+/* 아이템 카드와 같은 방식 — 배경을 채우지 않고 테두리로 구분한다.
+   당첨/하이라이트/제외 상태의 배경·테두리는 아래에서 덮어쓴다 */
 .gachaItemCard {
   position: relative;
   background: var(--card-bg);
-  border: 2px solid var(--border-color);
+  border: 2px solid rgba(59, 80, 181, 0.34);
   border-radius: 12px;
   padding: 1rem 0.75rem;
   display: flex;
@@ -2868,6 +2986,11 @@
   gap: 0.35rem;
   text-align: center;
   transition: border-color 0.05s, background 0.05s, box-shadow 0.05s;
+}
+
+/* 다크는 같은 알파로는 배경에 묻혀 조금 더 올린다 */
+:global([data-theme="dark"]) .gachaItemCard {
+  border-color: rgba(130, 148, 230, 0.42);
 }
 
 .gachaItemCardHighlight {
@@ -3422,52 +3545,7 @@
     font-size: 1.1rem;
   }
 
-  .gachaExpectedRow {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.4rem;
-    padding: 0.6rem 0.75rem;
-  }
-
-  .gachaExpectedRow > div {
-    flex-wrap: nowrap;
-    white-space: nowrap;
-    min-width: 0;
-    width: 100%;
-  }
-
-  .gachaExpectedRow .resultRateInput {
-    padding: 0.2rem 0.3rem;
-    gap: 0.2rem;
-  }
-
-  .gachaExpectedRow .resultRateIcon {
-    width: 14px;
-    height: 14px;
-  }
-
-  .gachaExpectedRow .resultRateFixed {
-    font-size: 0.7rem;
-  }
-
-  .gachaExpectedRow .resultRateSep {
-    font-size: 0.7rem;
-  }
-
-  .gachaExpectedRow .resultRateNumber {
-    width: 32px;
-    font-size: 0.7rem;
-  }
-
-  .gachaExpectedLabel {
-    font-size: 0.75rem;
-  }
-
-  .gachaExpectedGold {
-    font-size: 1rem;
-  }
-
   .gachaExpectedEfficiency {
-    font-size: 0.7rem;
+    font-size: 0.82rem;
   }
 }

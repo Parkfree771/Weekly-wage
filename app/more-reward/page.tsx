@@ -414,6 +414,12 @@ function MoreRewardInner() {
           </div>
         </div>
 
+        {/* 모바일 띠배너 — 두 섹션 카드 사이. 아래 기존 광고(320×100)와 단위가 겹치면
+            애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
+        <div className="d-block d-lg-none my-2">
+          <AdBanner slot="8616653628" index={0} />
+        </div>
+
         {/* 레이드 클리어 보상 섹션 */}
         <div className={styles.sectionCard}>
           <div className={`${styles.sectionCardHeader} ${styles.sectionCardHeaderAccent}`}>레이드 클리어 보상</div>

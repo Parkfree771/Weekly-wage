@@ -22,6 +22,7 @@ import {
   type Equipment as EquipmentType,
 } from '../../lib/equipmentParser';
 import dynamic from 'next/dynamic';
+import AdBanner from '../ads/AdBanner';
 const RefiningStats = dynamic(() => import('./RefiningStats'), { ssr: false });
 
 type Equipment = EquipmentType;
@@ -720,6 +721,12 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                   ))
                 )}
             </div>
+          </div>
+
+          {/* 모바일 띠배너 — 장비 선택 바로 아래. 같은 페이지의 다른 자리와 단위가 겹치면
+              애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
+          <div className="d-block d-lg-none my-2">
+            <AdBanner slot="8616653628" index={1} />
           </div>
 
           {/* 시뮬레이터 - 3개의 상자 */}

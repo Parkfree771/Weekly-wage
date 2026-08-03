@@ -8,12 +8,10 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
-  setDoc,
   query,
   orderBy,
   limit as firestoreLimit,
   startAfter,
-  where,
   increment,
   serverTimestamp,
   Timestamp,
@@ -111,44 +109,6 @@ export async function updatePackagePost(
 /** 게시물 삭제 */
 export async function deletePackagePost(postId: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTION, postId));
-}
-
-// ─── 좋아요 ───
-
-/** 좋아요 토글 → true(추가됨) / false(제거됨) 반환 */
-export async function togglePackageLike(
-  postId: string,
-  uid: string,
-): Promise<boolean> {
-  const likeRef = doc(db, COLLECTION, postId, 'likes', uid);
-  const likeSnap = await getDoc(likeRef);
-
-  if (likeSnap.exists()) {
-    await deleteDoc(likeRef);
-    await updateDoc(doc(db, COLLECTION, postId), {
-      likeCount: increment(-1),
-    });
-    return false;
-  } else {
-    await setDoc(likeRef, {
-      uid,
-      createdAt: serverTimestamp(),
-    });
-    await updateDoc(doc(db, COLLECTION, postId), {
-      likeCount: increment(1),
-    });
-    return true;
-  }
-}
-
-/** 사용자가 해당 게시물을 좋아요했는지 확인 */
-export async function checkPackageLike(
-  postId: string,
-  uid: string,
-): Promise<boolean> {
-  const likeRef = doc(db, COLLECTION, postId, 'likes', uid);
-  const likeSnap = await getDoc(likeRef);
-  return likeSnap.exists();
 }
 
 // ─── 조회수 ───

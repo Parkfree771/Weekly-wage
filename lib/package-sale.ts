@@ -56,6 +56,27 @@ export function formatSalePeriod(post: SaleFields | null | undefined): string {
   return `~ ${formatDateTime(end!)}`;
 }
 
+/** 배지용 짧은 마감일 — "08.15". 연도·시각을 빼서 배지 한 칸에 들어간다 */
+export function formatSaleEndShort(post: SaleFields | null | undefined): string {
+  const d = toSaleDate(post?.saleEndAt);
+  if (!d) return '';
+  return `${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+}
+
+/**
+ * 날짜만 남긴 판매 기간 — "2026.06.01 ~ 2026.08.15".
+ * 배지에서 밀려난 전체 기간을 메타 줄에 작게 보여주는 용도라 시:분을 뺐다.
+ */
+export function formatSalePeriodDateOnly(post: SaleFields | null | undefined): string {
+  const start = toSaleDate(post?.saleStartAt);
+  const end = toSaleDate(post?.saleEndAt);
+  const fmt = (d: Date) => `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+  if (!start && !end) return '';
+  if (start && end) return `${fmt(start)} ~ ${fmt(end)}`;
+  if (start) return `${fmt(start)} ~`;
+  return `~ ${fmt(end!)}`;
+}
+
 // ─── 등록/수정 폼용 (input type="datetime-local") ───
 
 /** 저장값 → datetime-local 입력값 ("2026-01-01T00:00", 로컬 시간 기준) */

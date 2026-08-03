@@ -4,6 +4,18 @@
   border-radius: 16px;
 }
 
+/* 부트스트랩의 .modal-dialog 폭 제한은 @media(min-width:576px)부터 걸린다.
+   모바일 웹은 initialScale 0.8 때문에 CSS 레이아웃 폭이 약 469px(아이폰 미니)이라
+   576px 미만 → 제한이 풀려 대화상자가 화면 좌우를 꽉 채운다.
+   동의 항목이 많아 로그인·닉네임(320px)보다는 넓게 잡는다. */
+@media (max-width: 575.98px) {
+  .modal :global(.modal-content) {
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 .header {
   border-bottom: 1px solid var(--border-color);
   padding: 1.25rem 1.5rem;
