@@ -34,12 +34,34 @@ export function isSaleEnded(post: SaleFields | null | undefined): boolean {
   return !!end && end.getTime() <= Date.now();
 }
 
-function pad(n: number): string {
-  return String(n).padStart(2, '0');
+// ─── 한국 시간(KST) 고정 ───
+// 판매 기간은 로아 캐시샵 기준이라 "보는 사람의 시간대"가 아니라 항상 한국 시간이어야 한다.
+// getHours() 류 로컬 게터를 쓰면 상세 페이지 ISR(서버=UTC)이 그린 HTML 과 브라우저(KST)가
+// 서로 다른 날짜를 내놓는다 — KST 00:00~08:59 마감이 서버에서 하루 전으로 찍혔다.
+// 한국은 서머타임이 없어 오프셋이 항상 +09:00 이다.
+const KST_OFFSET = '+09:00';
+
+const kstFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Seoul',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23', // hour12:false 는 자정을 24 로 내놓는 구현이 있다
+});
+
+type KstParts = { y: string; mo: string; d: string; h: string; mi: string };
+
+function kstParts(date: Date): KstParts {
+  const p: Record<string, string> = {};
+  for (const { type, value } of kstFormatter.formatToParts(date)) p[type] = value;
+  return { y: p.year, mo: p.month, d: p.day, h: p.hour, mi: p.minute };
 }
 
 function formatDateTime(d: Date): string {
-  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const { y, mo, d: day, h, mi } = kstParts(d);
+  return `${y}.${mo}.${day} ${h}:${mi}`;
 }
 
 /**
@@ -60,7 +82,8 @@ export function formatSalePeriod(post: SaleFields | null | undefined): string {
 export function formatSaleEndShort(post: SaleFields | null | undefined): string {
   const d = toSaleDate(post?.saleEndAt);
   if (!d) return '';
-  return `${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+  const { mo, d: day } = kstParts(d);
+  return `${mo}.${day}`;
 }
 
 /**
@@ -70,7 +93,10 @@ export function formatSaleEndShort(post: SaleFields | null | undefined): string 
 export function formatSalePeriodDateOnly(post: SaleFields | null | undefined): string {
   const start = toSaleDate(post?.saleStartAt);
   const end = toSaleDate(post?.saleEndAt);
-  const fmt = (d: Date) => `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+  const fmt = (d: Date) => {
+    const { y, mo, d: day } = kstParts(d);
+    return `${y}.${mo}.${day}`;
+  };
   if (!start && !end) return '';
   if (start && end) return `${fmt(start)} ~ ${fmt(end)}`;
   if (start) return `${fmt(start)} ~`;
@@ -79,16 +105,23 @@ export function formatSalePeriodDateOnly(post: SaleFields | null | undefined): s
 
 // ─── 등록/수정 폼용 (input type="datetime-local") ───
 
-/** 저장값 → datetime-local 입력값 ("2026-01-01T00:00", 로컬 시간 기준) */
+/** 저장값 → datetime-local 입력값 ("2026-01-01T00:00", 한국 시간 기준) */
 export function toDatetimeLocalValue(value: any): string {
   const d = toSaleDate(value);
   if (!d) return '';
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const { y, mo, d: day, h, mi } = kstParts(d);
+  return `${y}-${mo}-${day}T${h}:${mi}`;
 }
 
-/** datetime-local 입력값 → Date (빈 값이면 null — Firestore 에 null 로 저장해 기간을 비운다) */
+/**
+ * datetime-local 입력값 → Date (빈 값이면 null — Firestore 에 null 로 저장해 기간을 비운다).
+ * 입력칸에 적은 값은 항상 한국 시간으로 읽는다 — 오프셋을 안 붙이면 new Date 가
+ * "실행한 기기의 로컬 시간"으로 해석해서, 해외/서버 시간대 기기로 등록하면 9시간 밀린다.
+ */
 export function fromDatetimeLocalValue(value: string): Date | null {
   if (!value) return null;
-  const d = new Date(value);
+  // 브라우저는 보통 "YYYY-MM-DDTHH:mm" 을 주지만 초까지 주는 경우도 있다
+  const normalized = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? `${value}:00` : value;
+  const d = new Date(`${normalized}${KST_OFFSET}`);
   return isNaN(d.getTime()) ? null : d;
 }

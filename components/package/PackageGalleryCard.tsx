@@ -521,7 +521,13 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
                     alt={item.name} className={styles.itemCellIcon}
                     style={(() => { const s = getGalleryIconSize(item.itemId); return s ? { width: s, height: s } : {}; })()} />
                 ) : (
-                  <div className={styles.itemCellPlaceholder}>기타</div>
+                  /* 기타(직접 입력) 항목 — 아이콘이 없다. 등록자가 넣은 축약 이름을 쓰고,
+                     안 넣었으면 풀네임을 그대로 흘려 CSS 로 자른다 (툴팁에는 항상 풀네임) */
+                  <div className={styles.itemCellPlaceholder} title={item.name}>
+                    <span className={styles.itemCellPlaceholderText}>
+                      {item.shortName || item.name || '기타'}
+                    </span>
+                  </div>
                 )}
                 {isGacha && (
                   <span className={styles.itemProbBadge}>{item.probability}%</span>

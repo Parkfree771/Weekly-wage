@@ -8,6 +8,7 @@ import { Timestamp } from 'firebase/firestore';
 export type PackageItem = {
   itemId: string;        // TRACKED_ITEMS의 id 또는 특수 식별자
   name: string;          // 아이템 이름
+  shortName?: string;    // 기타(직접 입력) 항목의 갤러리 표시용 축약 이름. 62px 셀에 들어가야 해서 따로 받는다. 상세는 항상 name 을 쓴다
   quantity: number;      // 수량
   icon?: string;         // 아이콘 경로
   goldOverride?: number; // 골드/고정가 아이템용 (시세 대신 이 값 사용)

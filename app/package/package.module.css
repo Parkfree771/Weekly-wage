@@ -1714,10 +1714,12 @@
 }
 
 /* ─── 상세 카드 (계산 결과 · 아이템 구성 · 보너스 구성품 공용) ─── */
+/* --border-color(알파 0.12) 1px 로는 카드 사이에 광고가 끼면 어디까지가 한 상자인지 구분이 안 된다.
+   색은 카드 헤더 바(::before 그라데이션 시작색)와 같은 --color-accent 로 맞춘다. */
 .detailCard {
   position: relative;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--color-accent);
   border-radius: 12px;
   padding: 1.25rem;
   overflow: hidden;
@@ -2807,6 +2809,18 @@
   flex: 1;
   min-width: 80px;
   max-width: 140px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  background: var(--card-bg);
+  color: var(--text-color);
+}
+
+/* 갤러리 카드 셀(62px)에 들어갈 축약 이름. 8자 제한이라 이름칸보다 좁게 둔다 */
+.customShortNameInput {
+  flex: 0 0 auto;
+  width: 84px;
   padding: 0.25rem 0.5rem;
   border: 1px solid var(--border-color);
   border-radius: 6px;

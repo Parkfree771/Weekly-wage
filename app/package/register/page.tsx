@@ -231,6 +231,7 @@ export default function PackageRegisterPage() {
       quantity: 1,
       isCustom: true,
       customName: '',
+      customShortName: '',
       customGoldPerUnit: 0,
       ...(packageType === '3+보너스' && addTarget === 'bonus' ? { isBonus: true } : {}),
     }]);
@@ -240,6 +241,14 @@ export default function PackageRegisterPage() {
     setAddedItems((prev) =>
       prev.map((a) =>
         a.id === itemId ? { ...a, customName: name } : a,
+      ),
+    );
+  };
+
+  const handleCustomShortNameChange = (itemId: string, shortName: string) => {
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId ? { ...a, customShortName: shortName } : a,
       ),
     );
   };
@@ -372,6 +381,12 @@ export default function PackageRegisterPage() {
               value={added.customName || ''}
               onChange={(e) => handleCustomNameChange(added.id, e.target.value)}
               placeholder="아이템 이름" maxLength={30} />
+            {/* 갤러리 셀은 62px 라 30자가 안 들어간다 — 거기 쓸 축약 이름을 따로 받는다 */}
+            <input type="text" className={styles.customShortNameInput}
+              value={added.customShortName || ''}
+              onChange={(e) => handleCustomShortNameChange(added.id, e.target.value)}
+              placeholder="갤러리 표시" maxLength={8}
+              title="갤러리 카드에 표시할 짧은 이름 (비우면 위 이름을 잘라서 표시)" />
             <input type="number" className={styles.quantityInput}
               value={added.customGoldPerUnit || ''}
               onChange={(e) => handleCustomGoldChange(added.id, parseInt(e.target.value) || 0)}
@@ -626,6 +641,7 @@ export default function PackageRegisterPage() {
             return {
               itemId: `custom_${added.templateId}`,
               name: added.customName || '기타',
+              ...(added.customShortName ? { shortName: added.customShortName } : {}),
               quantity: added.quantity,
               goldOverride: added.customGoldPerUnit || 0,
               ...(packageType === '가챠' ? { probability: gachaProbabilities[added.id] || 0 } : {}),

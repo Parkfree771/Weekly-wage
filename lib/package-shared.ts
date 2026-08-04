@@ -40,6 +40,7 @@ export type AddedItem = {
   innerQuantity?: number;
   isCustom?: boolean;
   customName?: string;
+  customShortName?: string; // 갤러리 셀(62px)용 축약 이름. 비우면 갤러리가 customName 을 잘라서 쓴다
   customGoldPerUnit?: number;
   bundleQuantities?: Record<string, number>; // bundle 타입: 각 아이템별 수량
   choiceQuantities?: Record<string, number>; // choice 타입: 선택지별 개수 (예: 파괴석 1000 / 수호석 5000처럼 선택지마다 다를 때). 미설정 시 quantity 사용
