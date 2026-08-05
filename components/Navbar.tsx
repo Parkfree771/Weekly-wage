@@ -52,7 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: '시뮬',
     colorClass: 'nav-refining',
     items: [
-      { href: '/refining', label: '재련 시뮬' },
+      { href: '/refining', label: '재련 시뮬', badge: 'NEW', badgeClass: 'nav-badge-wangap' },
       { href: '/wangap', label: '완갑 시뮬', badge: 'NEW', badgeClass: 'nav-badge-wangap' },
       { href: '/bracelet', label: '팔찌 시뮬' },
       { href: '/expedition-gold', label: '원정대 수급 골드 시뮬' },

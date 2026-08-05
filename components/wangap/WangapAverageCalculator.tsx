@@ -644,6 +644,7 @@ export default function WangapAverageCalculator() {
                     amount={Math.round(totals.실링 + growthOf('실링'))}
                     color="#9ca3af"
                     showCheckbox={false}
+                    reserveCostSpace
                     footer={renderGrowthToggle(growth.실링)}
                   />
                 </Col>

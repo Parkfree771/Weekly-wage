@@ -37,7 +37,7 @@ const refiningGuideSections = [
     heading: '책·숨결 보조재료, 어느 구간에 쓰는 게 효율적인가요',
     paragraphs: [
       '재봉술·야금술 업화(책)는 11~20단계 구간에서만 성공 확률을 2배로 올려주며, 21단계 이후 계승 전 구간에서는 책 효과가 아예 없습니다. 반대로 숨결(빙하의 숨결·용암의 숨결)은 전 구간에서 쓸 수 있지만, 확률 구간마다 최대로 쌓을 수 있는 개수와 개당 상승폭이 다르게 설계되어 있어 저확률 고레벨 구간일수록 더 촘촘하게 누적할 수 있습니다.',
-      '2026년 6월 24일 패치로 상급재련 확률이 완화되었고, 이어서 보조재료(숨결·책) 시세 연동 최적화가 업데이트되어 그날그날의 재료 가격을 반영한 최적 조합을 자동으로 계산해줍니다. 상급재련·평균 시뮬 탭 상단의 패치 배지에서 적용 여부를 바로 확인할 수 있습니다.',
+      '2026년 8월 5일 벨가르딘 업데이트로 완갑 장비가 추가되어, 캐릭터를 검색하면 완갑도 함께 잡히고 목표 단계까지의 재료·숨결을 같이 계산합니다. 또한 단계마다 1회 지불하는 장비 성장 비용(재련 경험치)이 파편·실링에 포함되도록 반영했고, 카드의 성장 포함/제외 버튼으로 순수 재련 비용만 따로 볼 수도 있습니다. 앞선 상급재련 확률 완화와 보조재료(숨결·책) 시세 연동 최적화도 그대로 적용되어 있습니다.',
     ],
   },
   {
@@ -310,11 +310,11 @@ export default function RefiningPage() {
             {/* 모드 선택 탭 */}
             {ModeSelector}
 
-            {/* 상급재련 완화 패치 배지 + 보조재료 최적화 업데이트 배지 (탭 버튼 바로 아래) */}
+            {/* 업데이트 배지 (탭 버튼 바로 아래) — 최신 2건만 노출 */}
             {(mode === 'average' || mode === 'advanced') && (
               <div className={`${styles.patchBadgeRow} ${styles.patchBadgeCol}`}>
-                <span className={styles.patchBadge}>2026.06.24 상급재련 완화 적용</span>
-                <span className={`${styles.patchBadge} ${styles.patchBadgeNew}`}>보조재료(숨결·책) 최적화 업데이트</span>
+                <span className={`${styles.patchBadge} ${styles.patchBadgeWangap}`}>완갑 장비 추가 업데이트</span>
+                <span className={`${styles.patchBadge} ${styles.patchBadgeGrowth}`}>성장 재료 포함 업데이트</span>
               </div>
             )}
 

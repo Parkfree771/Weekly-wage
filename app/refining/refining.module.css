@@ -87,7 +87,19 @@
   gap: 0.35rem;
 }
 
-/* 보조재료 최적화 배지 — 완화 배지와 구분(인디고) */
+/* 완갑 장비 추가 — 완갑 등급 계열 보라 */
+.patchBadgeWangap {
+  background-color: #9333ea;
+  box-shadow: 0 2px 6px rgba(147, 51, 234, 0.35);
+}
+
+/* 성장 재료 포함 — 성장 토글과 같은 초록 */
+.patchBadgeGrowth {
+  background-color: #10b981;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35);
+}
+
+/* (구) 보조재료 최적화 배지 */
 .patchBadgeNew {
   background-color: #4f46e5;
   box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);

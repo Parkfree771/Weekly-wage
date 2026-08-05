@@ -2756,7 +2756,7 @@ export default function RefiningCalculator({
                           )}
                           {(materials.실링 || 0) > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/shilling.webp" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false}
+                              <MaterialCard icon="/shilling.webp" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false} reserveCostSpace
                                 footer={(materials.성장실링 || 0) > 0 ? renderGrowthToggle(materials.성장실링 || 0) : undefined} />
                             </Col>
                           )}

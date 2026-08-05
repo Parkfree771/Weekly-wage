@@ -24,6 +24,7 @@ const MaterialCard = ({
   renderToggle,
   footer,
   tooltip,
+  reserveCostSpace,
 }: {
   icon: string;
   name: string;
@@ -40,6 +41,8 @@ const MaterialCard = ({
   renderToggle?: React.ReactNode;
   footer?: React.ReactNode;
   tooltip?: React.ReactNode;
+  /** 골드 환산이 없는 재료(실링 등)도 같은 줄의 다른 카드와 내부 높이를 맞추려면 true */
+  reserveCostSpace?: boolean;
 }) => (
   <div
     className={`${styles.materialCard} ${showEnableToggle && !isEnabled ? styles.materialCardDisabled : ''} ${showEnableToggle && isEnabled && !isBound ? styles.materialCardEnabled : ''} ${isBound ? styles.materialCardBound : ''}`}
@@ -90,12 +93,18 @@ const MaterialCard = ({
     <div className={`${styles.materialAmount} ${amount === 0 ? styles.materialAmountZero : ''}`} style={{ color: amount === 0 ? undefined : color }}>
       {amount.toLocaleString()}
     </div>
-    {cost !== undefined && (
+    {cost !== undefined ? (
       <div className={styles.materialCost}>
         <Image src="/gold.webp" alt="gold" width={10} height={10} style={{ marginRight: '2px' }} />
         {Math.round(isBound ? 0 : cost).toLocaleString()}
       </div>
-    )}
+    ) : reserveCostSpace ? (
+      // 골드 환산이 없는 재료 — 빈 자리만 차지시켜 같은 줄 카드와 내부 정렬을 맞춘다
+      <div className={styles.materialCost} aria-hidden="true" style={{ visibility: 'hidden' }}>
+        <Image src="/gold.webp" alt="" width={10} height={10} style={{ marginRight: '2px' }} />
+        0
+      </div>
+    ) : null}
     {tooltip && <div className={styles.materialTooltip}>{tooltip}</div>}
     {footer}
   </div>
