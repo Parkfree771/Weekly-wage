@@ -66,6 +66,9 @@ export default function WangapAverageCalculator() {
   const [lavaMode, setLavaMode] = useState<WangapBreathMode>('off');
   const [glacierMode, setGlacierMode] = useState<WangapBreathMode>('off');
 
+  // 장비 성장(재련 경험치) 비용을 총 소모 골드에 포함할지 — 단계마다 1회 고정 비용
+  const [includeGrowth, setIncludeGrowth] = useState(true);
+
   // === 귀속 (재련 재료 카드와 동일: 귀속 = 0골드) ===
   const [boundMaterials, setBoundMaterials] = useState<Record<OptMatKey, boolean>>(createBoundFlags);
 
@@ -211,16 +214,19 @@ export default function WangapAverageCalculator() {
   }, [promoRows, startGrade, startLevel, targetLevel]);
 
   // === 골드 환산 (귀속 = 0골드) ===
-  const amountOf = (key: OptMatKey): number => Math.round(totals[key]);
+  // 재련분 + 장비 성장분을 한 카드로 합쳐 보여준다 (재련 시뮬과 동일 방식).
+  // 성장분은 단계마다 1회 고정이라 토글로 뺄 수 있다.
+  const growthOf = (key: OptMatKey | '실링'): number =>
+    !includeGrowth ? 0 : key === '운명파편' ? growth.운명파편 : key === '실링' ? growth.실링 : 0;
+  const amountOf = (key: OptMatKey): number => Math.round(totals[key] + growthOf(key));
   const costOf = (key: OptMatKey): number => amountOf(key) * getUnitPrice(key);
 
   const pressGold = Math.round(totals.골드);
-  // 장비 성장 파편 골드 환산 — 강화 파편과 같은 시세·귀속 설정을 따름 (실링은 시세 없음)
-  const growthShardGold = boundMaterials.운명파편 ? 0 : Math.round(growth.운명파편 * getUnitPrice('운명파편'));
+  // 장비 성장 파편은 amountOf 에서 이미 파편 수량에 합쳐졌으므로 여기서 또 더하지 않는다
+  // (중복 합산 방지 — 성장 제외 토글도 amountOf 쪽에서 처리된다)
   const totalGold = Math.round(
     pressGold +
-    OPT_MATERIAL_LIST.reduce((sum, m) => (boundMaterials[m.key] ? sum : sum + costOf(m.key)), 0) +
-    growthShardGold
+    OPT_MATERIAL_LIST.reduce((sum, m) => (boundMaterials[m.key] ? sum : sum + costOf(m.key)), 0)
   );
 
   const showPromotion = promoRows.length > 0;
@@ -352,6 +358,21 @@ export default function WangapAverageCalculator() {
       </div>
     );
   };
+
+  // 장비 성장(재련 경험치) 포함/제외 토글 — 파편·실링 카드 하단 (재련 시뮬과 동일)
+  const renderGrowthToggle = (growthAmount: number) => (
+    <div className={styles.breathControls} onClick={e => e.stopPropagation()}>
+      <button
+        type="button"
+        className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${includeGrowth ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
+        onClick={() => setIncludeGrowth(v => !v)}
+        title={`장비 성장(재련 경험치) ${growthAmount.toLocaleString()} — 단계마다 1회 고정 비용`}
+        style={{ width: '100%' }}
+      >
+        성장 {includeGrowth ? '포함' : '제외'} {growthAmount.toLocaleString()}
+      </button>
+    </div>
+  );
 
   // 재료 카드 공통 props (귀속 토글)
   const matCardProps = (key: OptMatKey) => ({
@@ -612,11 +633,19 @@ export default function WangapAverageCalculator() {
                       amount={amountOf(key)}
                       color="#a855f7"
                       {...matCardProps(key)}
+                      footer={key === '운명파편' ? renderGrowthToggle(growth.운명파편) : undefined}
                     />
                   </Col>
                 ))}
                 <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                  <MaterialCard icon="/shilling.webp" name="실링" amount={Math.round(totals.실링)} color="#9ca3af" showCheckbox={false} />
+                  <MaterialCard
+                    icon="/shilling.webp"
+                    name="실링"
+                    amount={Math.round(totals.실링 + growthOf('실링'))}
+                    color="#9ca3af"
+                    showCheckbox={false}
+                    footer={renderGrowthToggle(growth.실링)}
+                  />
                 </Col>
               </Row>
             </div>
@@ -700,35 +729,6 @@ export default function WangapAverageCalculator() {
                 </div>
               </div>
             )}
-
-            {/* 4줄: 장비 성장 비용 — 단계마다 1회 고정 지불, 강화 재료와 별도 표기 */}
-            <div className={styles.materialsSection}>
-              <div className={styles.materialsSectionTitle}>
-                장비 성장 비용 (+{startLevel} → +{targetLevel})
-              </div>
-              <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
-                <Col xs={6} sm={5} md={3} style={{ minWidth: '0' }}>
-                  <MaterialCard
-                    icon={MATERIAL_META.운명파편.icon}
-                    name="운명의 파편"
-                    amount={growth.운명파편}
-                    color="#38bdf8"
-                    cost={growthShardGold}
-                  />
-                </Col>
-                <Col xs={6} sm={5} md={3} style={{ minWidth: '0' }}>
-                  <MaterialCard icon="/shilling.webp" name="실링" amount={growth.실링} color="#9ca3af" showCheckbox={false} />
-                </Col>
-              </Row>
-              <div style={{
-                marginTop: '0.5rem',
-                textAlign: 'center',
-                fontSize: isMobile ? '0.7rem' : '0.78rem',
-                color: 'var(--text-muted)',
-              }}>
-                강화를 시작하려면 단계마다 1회 지불하는 고정 비용입니다 — 시도 횟수와 무관 · 파편 골드 환산은 총 소모 골드에 포함
-              </div>
-            </div>
 
             {/* 5줄: 누르는 골드 + 총 소모 골드 */}
             <div className="mb-4">

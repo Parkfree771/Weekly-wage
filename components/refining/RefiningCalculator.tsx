@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { Form, Row, Col, Card, Badge } from 'react-bootstrap';
 import Image from 'next/image';
@@ -26,10 +26,13 @@ import {
   getBreathEffect,
   getSuccessionBreathEffect,
   getSuccessionBookBonus,
+  getGrowthCost,
   JANGIN_ACCUMULATE_DIVIDER,
   getBookBonusLines
 } from '../../lib/refiningData';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
+import { WANGAP_ITEM_IMAGES, type WangapGrade } from '../../lib/wangap-item-images';
+import { computeWangapAverage, type WangapBreathMode } from '../../lib/wangapAverage';
 import {
   calculateAdvancedRefiningMaterials,
   type AdvancedRefiningOptions as NewAdvancedRefiningOptions
@@ -55,6 +58,10 @@ type Materials = {
   용암: number; // 용암의 숨결 (무기) - 전체
   빙하_일반: number; // 빙하의 숨결 (일반 재련용)
   용암_일반: number; // 용암의 숨결 (일반 재련용)
+  빙하_완갑?: number; // 빙하의 숨결 (완갑용 — 완갑은 용/빙 둘 다 쓴다)
+  용암_완갑?: number; // 용암의 숨결 (완갑용)
+  성장파편?: number;  // 장비 성장(재련 경험치) 파편 — 표시·토글용으로 따로 보관
+  성장실링?: number;  // 장비 성장 실링
   빙하_상급: number; // 빙하의 숨결 (상급 재련용)
   용암_상급: number; // 용암의 숨결 (상급 재련용)
   방어구책1114?: number; // 재봉술 : 업화 [11-14]
@@ -107,6 +114,9 @@ type RefiningCalculatorProps = {
   characterInfo?: { name: string; itemLevel: string; image?: string } | null;
 };
 
+// 숨결 적용 대상: 방어구(빙하) / 무기(용암) / 완갑(용암·빙하 각각)
+type BreathKind = 'armor' | 'weapon' | 'wangapLava' | 'wangapGlacier';
+
 export default function RefiningCalculator({
   onSearchComplete,
   equipments: externalEquipments,
@@ -139,7 +149,8 @@ export default function RefiningCalculator({
 
   // 시작 단계 조정 (표 데이터 범위 내: 일반=계승전 10 / 계승후 11 ~ 25, 상급=0~40)
   const adjustStart = (eq: (typeof equipments)[number], kind: 'normal' | 'advanced', delta: number) => {
-    const normalMin = eq.isSuccession ? 11 : 10;
+    // 완갑은 0강부터 시작, 계승(전율) 11, 계승 전 10
+    const normalMin = eq.isWangap ? 0 : eq.isSuccession ? 11 : 10;
     const nextNormal = kind === 'normal'
       ? Math.min(Math.max(eq.currentLevel + delta, normalMin), 25)
       : eq.currentLevel;
@@ -173,10 +184,16 @@ export default function RefiningCalculator({
   // 부위별 목표 레벨 설정 (일반 강화 + 상급 재련 분리)
   const [targetLevels, setTargetLevels] = useState<Record<string, { normal: number | null, advanced: number | null }>>({});
 
+  // 장비 성장(재련 경험치) 비용을 합계에 포함할지 — 단계마다 1회 고정 비용
+  const [includeGrowth, setIncludeGrowth] = useState(true);
+
   // 추가 재료 옵션 (일반 강화용)
   const [materialOptions, setMaterialOptions] = useState({
     glacierBreath: { enabled: false, isBound: false, optimal: false },
     lavaBreath: { enabled: false, isBound: false, optimal: false },
+    // 완갑은 용암·빙하를 함께 써서 무기(용암)·방어구(빙하) 토글과 분리한다
+    wangapLava: { enabled: false, isBound: false, optimal: false },
+    wangapGlacier: { enabled: false, isBound: false, optimal: false },
     tailoring: { enabled: false, isBound: false },        // 재봉술 11~14
     tailoring1518: { enabled: false, isBound: false },    // 재봉술 15~18
     tailoring1920: { enabled: false, isBound: false },    // 재봉술 19~20
@@ -282,6 +299,8 @@ export default function RefiningCalculator({
       setMaterialOptions({
         glacierBreath: { enabled: false, isBound: false, optimal: false },
         lavaBreath: { enabled: false, isBound: false, optimal: false },
+        wangapLava: { enabled: false, isBound: false, optimal: false },
+        wangapGlacier: { enabled: false, isBound: false, optimal: false },
         tailoring: { enabled: false, isBound: false },
         tailoring1518: { enabled: false, isBound: false },
         tailoring1920: { enabled: false, isBound: false },
@@ -339,7 +358,7 @@ export default function RefiningCalculator({
     }
     // boundMaterials 의존 필수: 귀속 토글로 optimalBreathTable(최적 정책)이 바뀌면 수량도 다시 계산돼야 정확.
     // (optimalBreathTable은 이 effect보다 뒤에 선언되어 직접 못 넣지만, 그 입력을 전부 포함하므로 동일 효과)
-  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments, calcMode, marketPrices, boundMaterials]);
+  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments, calcMode, marketPrices, boundMaterials, includeGrowth]);
 
   // 비용 계산 로직 (useEffect로 분리)
   useEffect(() => {
@@ -372,6 +391,8 @@ export default function RefiningCalculator({
     costs['용암_일반'] = need(materials.용암_일반, '용암_일반') * (marketPrices['66111131'] || 0);
     costs['빙하_상급'] = need(materials.빙하_상급, '빙하_상급') * (marketPrices['66111132'] || 0);
     costs['용암_상급'] = need(materials.용암_상급, '용암_상급') * (marketPrices['66111131'] || 0);
+    costs['빙하_완갑'] = need(materials.빙하_완갑 || 0, '빙하_완갑') * (marketPrices['66111132'] || 0);
+    costs['용암_완갑'] = need(materials.용암_완갑 || 0, '용암_완갑') * (marketPrices['66111131'] || 0);
 
     // 일반 재련 책 비용 (단계별)
     costs['방어구책1114'] = need(materials.방어구책1114 || 0, '방어구책1114') * (marketPrices['66112546'] || 0);  // 재봉술 [11-14]
@@ -432,6 +453,14 @@ export default function RefiningCalculator({
     // 일반 재련 용암 숨결
     if (materialOptions.lavaBreath.enabled && !materialOptions.lavaBreath.isBound) {
       totalMaterialCost += costs['용암_일반'];
+    }
+
+    // 완갑 숨결 (용암·빙하 각각 별도 토글)
+    if (materialOptions.wangapLava.enabled && !materialOptions.wangapLava.isBound) {
+      totalMaterialCost += costs['용암_완갑'] || 0;
+    }
+    if (materialOptions.wangapGlacier.enabled && !materialOptions.wangapGlacier.isBound) {
+      totalMaterialCost += costs['빙하_완갑'] || 0;
     }
 
     // 상급 재련 용암 숨결 (일반턴/보너스턴)
@@ -670,6 +699,7 @@ export default function RefiningCalculator({
     const preWeapon = new Set<number>();
     equipments.forEach(eq => {
       if (eq.isEsther) return; // 에스더는 일반 재련 없음
+      if (eq.isWangap) return; // 완갑은 전용 계산 — 재련 최적 숨결 그룹에 섞지 않는다
       const t = targetLevels[eq.name];
       if (!t?.normal || t.normal <= eq.currentLevel) return;
       const set = eq.isSuccession
@@ -919,20 +949,40 @@ export default function RefiningCalculator({
   };
 
   // 숨결 3단 모드 (미사용/풀숨/최적)
-  const breathModeOf = (type: 'armor' | 'weapon'): 'off' | 'full' | 'optimal' => {
-    const o = type === 'armor' ? materialOptions.glacierBreath : materialOptions.lavaBreath;
+  // 숨결 종류: 방어구=빙하 / 무기=용암 / 완갑=용암·빙하 둘 다(전용 토글)
+  const breathOptionKey = (type: BreathKind) =>
+    type === 'armor' ? 'glacierBreath' : type === 'weapon' ? 'lavaBreath' : type;
+  const breathModeOf = (type: BreathKind): 'off' | 'full' | 'optimal' => {
+    const o = (materialOptions as any)[breathOptionKey(type)];
     return !o.enabled ? 'off' : (o.optimal ? 'optimal' : 'full');
   };
-  const setBreathMode = (type: 'armor' | 'weapon', mode: 'off' | 'full' | 'optimal') => {
-    if (mode === 'optimal') pendingBookSync.current[type] = true; // 권장 책 토글 1회 자동 세팅
-    const key = type === 'armor' ? 'glacierBreath' : 'lavaBreath';
+  const setBreathMode = (type: BreathKind, mode: 'off' | 'full' | 'optimal') => {
+    // 권장 책 토글 1회 자동 세팅 (완갑은 책이 없어 대상 아님)
+    if (mode === 'optimal' && (type === 'armor' || type === 'weapon')) pendingBookSync.current[type] = true;
+    const key = breathOptionKey(type);
     setMaterialOptions(p => ({ ...p, [key]: { ...(p as any)[key], enabled: mode !== 'off', optimal: mode === 'optimal' } }));
   };
   const calcModeLabel = calcMode === 'median' ? '중앙값' : calcMode === 'average' ? '평균값' : '장기백';
 
   // 숨결 컨트롤 (미사용/풀숨/최적) — 카드 내부 하단. 귀속은 카드 우상단 라벨(다른 재료와 동일)
   // 팝업은 "최적" 버튼을 감싼 래퍼에 붙어 바로 위로 뜬다.
-  const renderBreathControls = (type: 'armor' | 'weapon') => {
+  // 장비 성장(재련 경험치) 포함/제외 토글 — 파편·실링 카드 하단.
+  // 성장 비용은 단계마다 1회 고정이라 재련 시도분과 성격이 달라 따로 끌 수 있게 둔다.
+  const renderGrowthToggle = (growthAmount: number) => (
+    <div className={styles.breathControls} onClick={e => e.stopPropagation()}>
+      <button
+        type="button"
+        className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${includeGrowth ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
+        onClick={() => setIncludeGrowth(v => !v)}
+        title={`장비 성장(재련 경험치) ${growthAmount.toLocaleString()} — 단계마다 1회 고정 비용`}
+        style={{ width: '100%' }}
+      >
+        성장 {includeGrowth ? '포함' : '제외'} {growthAmount.toLocaleString()}
+      </button>
+    </div>
+  );
+
+  const renderBreathControls = (type: BreathKind) => {
     const mode = breathModeOf(type);
     return (
       <div className={styles.breathControls} onClick={e => e.stopPropagation()}>
@@ -960,12 +1010,19 @@ export default function RefiningCalculator({
               type="button"
               data-breath-opt-btn
               className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${mode === 'optimal' ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-              onClick={() => setOpenBreathPopup(o => (o === type ? null : type))}
-              title="시세 기준 최적 숨결 조합 (팝업에서 적용)"
+              onClick={() => {
+                // 완갑은 별도 계획 팝업이 없어 버튼으로 바로 최적 모드를 켠다
+                if (type === 'wangapLava' || type === 'wangapGlacier') {
+                  setBreathMode(type, mode === 'optimal' ? 'full' : 'optimal');
+                  return;
+                }
+                setOpenBreathPopup(o => (o === type ? null : type));
+              }}
+              title="시세 기준 최적 숨결 조합"
             >
               최적{mode === 'optimal' ? ' ▾' : ''}
             </button>
-            {renderBreathPopup(type)}
+            {(type === 'armor' || type === 'weapon') && renderBreathPopup(type)}
           </div>
         </div>
       </div>
@@ -1281,6 +1338,7 @@ export default function RefiningCalculator({
       needsGlacierAdvanced: false, // 상급 재련용 빙하
       needsLavaAdvanced: false, // 상급 재련용 용암
       needsArmorBook1014: false,
+      needsWangapBreath: false,
       needsArmorThrill1215: false,
       needsArmorThrill1619: false,
       needsWeaponThrill1215: false,
@@ -1309,6 +1367,7 @@ export default function RefiningCalculator({
     let needsGlacierAdvanced = false;
     let needsLavaAdvanced = false;
     let needsArmorBook1014 = false;
+    let needsWangapBreath = false;
     let needsArmorThrill1215 = false;
     let needsArmorThrill1619 = false;
     let needsWeaponThrill1215 = false;
@@ -1335,7 +1394,11 @@ export default function RefiningCalculator({
       if (targets.normal && targets.normal > eq.currentLevel) {
         hasNormalRefining = true;
 
-        if (eq.type === 'armor') {
+        // 완갑은 용암·빙하를 함께 쓰고 재련 책(업화/전율)은 쓰지 않는다.
+        // needsArmor/needsWeapon 은 상급 재련 UI 노출에도 쓰이므로 완갑은 건드리지 않는다.
+        if (eq.isWangap) {
+          needsWangapBreath = true;
+        } else if (eq.type === 'armor') {
           needsArmor = true;
           needsGlacierNormal = true;
 
@@ -1442,6 +1505,7 @@ export default function RefiningCalculator({
       needsGlacierAdvanced,
       needsLavaAdvanced,
       needsArmorBook1014,
+      needsWangapBreath,
       needsArmorThrill1215,
       needsArmorThrill1619,
       needsWeaponThrill1215,
@@ -1471,6 +1535,7 @@ export default function RefiningCalculator({
     let totalMaterials: Materials = {
       수호석: 0, 파괴석: 0, 돌파석: 0, 아비도스: 0, 운명파편: 0,
       누골: 0, 빙하: 0, 용암: 0, 빙하_일반: 0, 용암_일반: 0, 빙하_상급: 0, 용암_상급: 0,
+      빙하_완갑: 0, 용암_완갑: 0, 성장파편: 0, 성장실링: 0,
       방어구책1114: 0, 방어구책1518: 0, 방어구책1920: 0, 방어구책1920강: 0,
       무기책1114: 0, 무기책1518: 0, 무기책1920: 0, 무기책1920강: 0,
       방어구책1215: 0, 방어구책1619: 0, 무기책1215: 0, 무기책1619: 0,
@@ -1483,6 +1548,60 @@ export default function RefiningCalculator({
     toRefine.forEach(eq => {
       const targets = targetLevels[eq.name];
       if (!targets) return;
+
+      // 0. 완갑 — 무기/방어구와 재료 체계가 완전히 달라 전용 계산(lib/wangapAverage)을 그대로 쓴다.
+      //    숨결 토글은 용암/빙하 카드를 공유하고, 승급(해방) 재료는 택1이라 합계에 넣지 않는다.
+      if (eq.isWangap) {
+        if (!targets.normal || targets.normal <= eq.currentLevel) return;
+        const modeOf = (o: { enabled: boolean; optimal: boolean }): WangapBreathMode =>
+          !o.enabled ? 'off' : o.optimal ? 'optimal' : 'full';
+        const wr = computeWangapAverage({
+          startLevel: eq.currentLevel,
+          targetLevel: targets.normal,
+          startGrade: (eq.grade as WangapGrade) || '영웅',
+          mode: calcMode,
+          lavaMode: modeOf(materialOptions.wangapLava),
+          glacierMode: modeOf(materialOptions.wangapGlacier),
+          boundFlags: {
+            파괴석결정: !!boundMaterials['파괴석결정'],
+            수호석결정: !!boundMaterials['수호석결정'],
+            위대한돌파석: !!boundMaterials['위대한돌파석'],
+            상급아비도스: !!boundMaterials['상급아비도스'],
+            운명파편: !!boundMaterials['운명파편'],
+            용암: materialOptions.wangapLava.isBound,
+            빙하: materialOptions.wangapGlacier.isBound,
+          },
+          unitPrices: {
+            파괴석결정: (marketPrices['66102007'] || 0),
+            수호석결정: (marketPrices['66102107'] || 0),
+            위대한돌파석: (marketPrices['66110226'] || 0),
+            상급아비도스: (marketPrices['6861013'] || 0),
+            운명파편: (marketPrices['66130143'] || 0),
+            용암: (marketPrices['66111131'] || 0),
+            빙하: (marketPrices['66111132'] || 0),
+          },
+        });
+        const wt = wr.totals;
+        totalMaterials.파괴석결정 = (totalMaterials.파괴석결정 || 0) + wt.파괴석결정;
+        totalMaterials.수호석결정 = (totalMaterials.수호석결정 || 0) + wt.수호석결정;
+        totalMaterials.위대한돌파석 = (totalMaterials.위대한돌파석 || 0) + wt.위대한돌파석;
+        totalMaterials.상급아비도스 = (totalMaterials.상급아비도스 || 0) + wt.상급아비도스;
+        // 장비 성장(단계마다 1회 고정)은 따로 모아두고 토글 상태에 따라 합계에 넣는다
+        totalMaterials.성장파편 = (totalMaterials.성장파편 || 0) + wr.growth.운명파편;
+        totalMaterials.성장실링 = (totalMaterials.성장실링 || 0) + wr.growth.실링;
+        totalMaterials.운명파편 += wt.운명파편 + (includeGrowth ? wr.growth.운명파편 : 0);
+        totalMaterials.실링 = (totalMaterials.실링 || 0) + wt.실링 + (includeGrowth ? wr.growth.실링 : 0);
+        totalMaterials.누골 += wt.골드;
+        if (wt.용암 > 0) {
+          totalMaterials.용암 += wt.용암;
+          totalMaterials.용암_완갑 = (totalMaterials.용암_완갑 || 0) + wt.용암;
+        }
+        if (wt.빙하 > 0) {
+          totalMaterials.빙하 += wt.빙하;
+          totalMaterials.빙하_완갑 = (totalMaterials.빙하_완갑 || 0) + wt.빙하;
+        }
+        return;
+      }
 
       // 1. 일반 강화 재료 계산
       if (targets.normal && targets.normal > eq.currentLevel) {
@@ -1563,6 +1682,14 @@ export default function RefiningCalculator({
             totalMaterials.운명파편 += materialCostPerTry.운명파편 * avgTries;
             totalMaterials.실링 = (totalMaterials.실링 || 0) + (materialCostPerTry as any).실링 * avgTries;
             totalMaterials.누골 += materialCostPerTry.골드 * avgTries;
+            // 장비 성장(재련 경험치) — 단계마다 1회 고정, 시도 횟수와 무관
+            const growSucc = getGrowthCost(level, eq.type, true);
+            totalMaterials.성장파편 = (totalMaterials.성장파편 || 0) + growSucc.운명파편;
+            totalMaterials.성장실링 = (totalMaterials.성장실링 || 0) + growSucc.실링;
+            if (includeGrowth) {
+              totalMaterials.운명파편 += growSucc.운명파편;
+              totalMaterials.실링 = (totalMaterials.실링 || 0) + growSucc.실링;
+            }
           } else {
             // 계승 전 로직 (숨결 "최적" 모드 시 숨결 N회 + 책 여부를 시세 기준 정책으로 결정)
             const isArmorPre = eq.type === 'armor';
@@ -1660,6 +1787,14 @@ export default function RefiningCalculator({
             totalMaterials.아비도스 += materialCostPerTry.아비도스 * avgTries;
             totalMaterials.운명파편 += materialCostPerTry.운명파편 * avgTries;
             totalMaterials.실링 = (totalMaterials.실링 || 0) + (materialCostPerTry as any).실링 * avgTries;
+            // 장비 성장(재련 경험치) — 단계마다 1회 고정, 시도 횟수와 무관
+            const growPre = getGrowthCost(level, eq.type, false);
+            totalMaterials.성장파편 = (totalMaterials.성장파편 || 0) + growPre.운명파편;
+            totalMaterials.성장실링 = (totalMaterials.성장실링 || 0) + growPre.실링;
+            if (includeGrowth) {
+              totalMaterials.운명파편 += growPre.운명파편;
+              totalMaterials.실링 = (totalMaterials.실링 || 0) + growPre.실링;
+            }
             totalMaterials.누골 += materialCostPerTry.골드 * avgTries;
           }
         }
@@ -1746,6 +1881,7 @@ export default function RefiningCalculator({
     let baselineOffset = 0;
     let targetIncrease = 0;
     equipments.forEach(eq => {
+      if (eq.isWangap) return; // 완갑 강화는 아이템 레벨에 반영되지 않는다
       // 일반 강화: 1단계당 0.8333 / 상급 재련: 1단계당 0.16666
       baselineOffset += (eq.currentLevel - eq.origNormal) * 0.8333;
       baselineOffset += (eq.currentAdvancedLevel - eq.origAdvanced) * (0.8333 / 5);
@@ -1804,7 +1940,7 @@ export default function RefiningCalculator({
               {searched && equipments.length > 0 && characterInfo && (
                 <div className="mb-3">
                   <div className={styles.characterInfo}>
-                    <div className={styles.characterInfoInner}>
+                    <div className={`${styles.characterInfoInner} ${equipments.some(e => e.isWangap) ? styles.characterInfoInnerWithWangap : ''}`}>
                       {/* 캐릭터 이미지 */}
                       {characterInfo.image && (
                         <div className={styles.characterImageWrapper}>
@@ -1857,6 +1993,77 @@ export default function RefiningCalculator({
                           )}
                         </div>
                       </div>
+
+                      {/* 완갑 — 장비 목록과 재료 체계가 달라 캐릭터 정보 오른쪽 빈 공간에 따로 둔다 */}
+                      {(() => {
+                        const wg = equipments.find(e => e.isWangap);
+                        if (!wg) return null;
+                        const wgTarget = targetLevels['완갑']?.normal ?? null;
+                        return (
+                          <div className={styles.wangapPanel}>
+                            <span className={styles.wangapIcon} data-grade={wg.grade}>
+                              <span className={styles.wangapIconImg}>
+                                <Image
+                                  src={WANGAP_ITEM_IMAGES[wg.grade as WangapGrade] || WANGAP_ITEM_IMAGES['영웅']}
+                                  alt={`완갑 ${wg.grade}`}
+                                  fill
+                                  sizes="66px"
+                                  style={{ objectFit: 'cover' }}
+                                />
+                              </span>
+                              <span className={styles.wangapIconFrame}>
+                                <Image src="/wjsdbf3.webp" alt="" fill sizes="92px" style={{ objectFit: 'fill' }} unoptimized />
+                              </span>
+                            </span>
+                            <div className={styles.wangapPanelBody}>
+                              <div className={styles.wangapPanelTitle}>
+                                완갑 <span className={styles.wangapPanelGrade} data-grade={wg.grade}>{wg.grade}</span>
+                              </div>
+                              <div className={styles.wangapPanelRow}>
+                                <div className={`${styles.startStepper} ${isMobile ? styles.startStepperMobile : ''}`}>
+                                  <button
+                                    type="button"
+                                    className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
+                                    onClick={() => adjustStart(wg, 'normal', -1)}
+                                    disabled={wg.currentLevel <= 0}
+                                    aria-label="완갑 시작 단계 감소"
+                                  >
+                                    −
+                                  </button>
+                                  <Badge pill bg="" className={`${styles.levelBadgeWeapon} ${isMobile ? styles.levelBadgeMobile : ''}`}>
+                                    +{wg.currentLevel}
+                                  </Badge>
+                                  <button
+                                    type="button"
+                                    className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
+                                    onClick={() => adjustStart(wg, 'normal', 1)}
+                                    disabled={wg.currentLevel >= 25}
+                                    aria-label="완갑 시작 단계 증가"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                                <Form.Select
+                                  value={wgTarget ?? ''}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    setTargetLevels(prev => ({
+                                      ...prev,
+                                      ['완갑']: { ...(prev['완갑'] ?? { normal: null, advanced: null }), normal: value === '' ? null : Number(value) },
+                                    }));
+                                  }}
+                                  className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${wgTarget === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
+                                >
+                                  <option value="">목표</option>
+                                  {Array.from({ length: 25 - wg.currentLevel }, (_, i) => wg.currentLevel + i + 1).map(level => (
+                                    <option key={level} value={level}>+{level}</option>
+                                  ))}
+                                </Form.Select>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -1865,7 +2072,7 @@ export default function RefiningCalculator({
               {searched && equipments.length > 0 && (
               <>
               <Row className="g-3">
-                {equipments.map((eq, index) => {
+                {equipments.filter(eq => !eq.isWangap).map((eq, index) => {
                   const targets = targetLevels[eq.name] || { normal: null, advanced: null };
                   const isNormalChanged = targets.normal !== null && targets.normal > eq.currentLevel;
                   const isAdvancedChanged = targets.advanced !== null && targets.advanced > eq.currentAdvancedLevel;
@@ -1882,7 +2089,8 @@ export default function RefiningCalculator({
                     : (eq.isSuccession ? styles.equipmentCardSuccession : '');
 
                   return (
-                    <Col key={index} xs={4} sm={6} md={4} lg={2}>
+                    <Fragment key={index}>
+                    <Col xs={4} sm={6} md={4} lg={2}>
                       <div
                         className={`${styles.equipmentCard} ${isMobile ? styles.equipmentCardMobile : ''} ${isChanged && !eq.isEsther ? styles.equipmentCardChanged : ''} ${isChanged && isMobile && !eq.isEsther ? styles.equipmentCardMobileChanged : ''} ${isEquipmentDisabled ? styles.equipmentCardDisabled : ''} ${specialCardClass}`}
                         style={{
@@ -1891,7 +2099,7 @@ export default function RefiningCalculator({
                         }}
                       >
                         <div className="d-flex align-items-center" style={{ marginBottom: isMobile ? '0.3rem' : '0.5rem', gap: isMobile ? '0.4rem' : '0.6rem' }}>
-                          {/* 장비 아이콘 */}
+                          {/* 장비 아이콘 (완갑은 목록에서 제외 — 캐릭터 정보 옆 전용 패널에 표시) */}
                           {eq.icon && (
                             <div style={{
                               width: eq.isSuccession ? (isMobile ? '52px' : '68px') : (isMobile ? '36px' : '48px'),
@@ -2071,12 +2279,13 @@ export default function RefiningCalculator({
                                 className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${targets.normal === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
                               >
                                 <option value="">+{eq.currentLevel}</option>
-                                {Array.from({ length: (eq.isSuccession ? 25 : 26) - eq.currentLevel }, (_, i) => eq.currentLevel + i + 1).map(level => (
+                                {/* 일반 재련은 계승 전·후·완갑 모두 +25가 최대 */}
+                                {Array.from({ length: 25 - eq.currentLevel }, (_, i) => eq.currentLevel + i + 1).map(level => (
                                   <option key={level} value={level}>+{level}</option>
                                 ))}
                               </Form.Select>
-                              {/* 업화 장비만 상급 재련 가능 */}
-                              {!eq.isSuccession && (
+                              {/* 업화 장비만 상급 재련 가능 (완갑은 상급 재련 없음) */}
+                              {!eq.isSuccession && !eq.isWangap && (
                                 <Form.Select
                                   value={targets.advanced ?? ''}
                                   onChange={(e) => {
@@ -2102,6 +2311,7 @@ export default function RefiningCalculator({
                         </div>
                       </div>
                     </Col>
+                    </Fragment>
                   );
                 })}
               </Row>
@@ -2182,10 +2392,10 @@ export default function RefiningCalculator({
                       </div>
                       <div className={`${styles.bulkButtonGroup} ${isMobile ? styles.bulkButtonGroupMobile : ''}`}>
                         {(() => {
-                          // 모든 무기 필터링 (에스더 제외)
+                          // 모든 무기 필터링 (에스더·완갑 제외)
                           const weaponEquipments = equipments.filter(eq =>
                             eq.type === 'weapon' &&
-                            !eq.isEsther
+                            !eq.isEsther && !eq.isWangap
                           );
                           const minWeaponLevel = weaponEquipments.length > 0
                             ? Math.min(...weaponEquipments.map(eq => eq.currentLevel))
@@ -2194,10 +2404,10 @@ export default function RefiningCalculator({
                           const maxLevel = 25;
                           return Array.from({ length: maxLevel - startLevel + 1 }, (_, i) => i + startLevel);
                         })().map(level => {
-                          // 모든 무기 체크 (에스더 제외)
+                          // 모든 무기 체크 (에스더·완갑 제외)
                           const hasWeapon = equipments.some(eq =>
                             eq.type === 'weapon' &&
-                            !eq.isEsther &&
+                            !eq.isEsther && !eq.isWangap &&
                             eq.currentLevel < level
                           );
                           const isSelected = selectedWeaponBulkLevel.normal === level;
@@ -2210,8 +2420,8 @@ export default function RefiningCalculator({
                                 if (isSelected) {
                                   const newTargets = { ...targetLevels };
                                   equipments.forEach(eq => {
-                                    // 모든 무기 대상 (에스더 제외)
-                                    if (eq.type === 'weapon' && !eq.isEsther) {
+                                    // 모든 무기 대상 (에스더·완갑 제외)
+                                    if (eq.type === 'weapon' && !eq.isEsther && !eq.isWangap) {
                                       newTargets[eq.name] = { ...newTargets[eq.name], normal: null };
                                     }
                                   });
@@ -2221,8 +2431,8 @@ export default function RefiningCalculator({
                                   // 새로운 목표 설정
                                   const newTargets = { ...targetLevels };
                                   equipments.forEach(eq => {
-                                    // 모든 무기 대상 (에스더 제외)
-                                    if (eq.type === 'weapon' && !eq.isEsther && eq.currentLevel < level) {
+                                    // 모든 무기 대상 (에스더·완갑 제외)
+                                    if (eq.type === 'weapon' && !eq.isEsther && !eq.isWangap && eq.currentLevel < level) {
                                       newTargets[eq.name] = { ...newTargets[eq.name], normal: level };
                                     }
                                   });
@@ -2240,8 +2450,41 @@ export default function RefiningCalculator({
                       </div>
                     </div>
 
-                    {/* 상급재련 섹션 - 업화 장비에만 적용 (전율 장비는 상급 재련 없음) */}
-                    {equipments.some(eq => !eq.isSuccession && !eq.isEsther) && (
+                    {/* 완갑 일괄 설정 — 완갑을 보유한 캐릭터만 표시 (0강부터 시작) */}
+                    {equipments.some(eq => eq.isWangap) && (
+                    <div style={{ marginBottom: isMobile ? '0.6rem' : '1rem' }}>
+                      <div className={`${styles.bulkSettingLabel} ${isMobile ? styles.bulkSettingLabelMobile : ''}`}>
+                        완갑
+                      </div>
+                      <div className={`${styles.bulkButtonGroup} ${isMobile ? styles.bulkButtonGroupMobile : ''}`}>
+                        {/* 등급 경계만 빠른 선택 — 세부 단계는 완갑 패널의 드롭다운에서 고른다 */}
+                        {(() => {
+                          const wg = equipments.find(eq => eq.isWangap);
+                          return [10, 15, 20, 25].filter(level => level > (wg?.currentLevel ?? 0));
+                        })().map(level => {
+                          const isSelected = (targetLevels['완갑']?.normal ?? null) === level;
+                          return (
+                            <button
+                              key={level}
+                              onClick={() => {
+                                const next = isSelected ? null : level;
+                                setTargetLevels(prev => ({
+                                  ...prev,
+                                  ['완갑']: { ...(prev['완갑'] ?? { normal: null, advanced: null }), normal: next },
+                                }));
+                              }}
+                              className={`${styles.bulkButton} ${isMobile ? styles.bulkButtonMobile : ''} ${isSelected ? styles.bulkButtonWangapSelected : ''}`}
+                            >
+                              +{level}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    )}
+
+                    {/* 상급재련 섹션 - 업화 장비에만 적용 (전율·완갑은 상급 재련 없음) */}
+                    {equipments.some(eq => !eq.isSuccession && !eq.isEsther && !eq.isWangap) && (
                     <>
                     {/* 상급재련 헤더 */}
                     {!isMobile && (
@@ -2356,7 +2599,7 @@ export default function RefiningCalculator({
                         }}>
                           {[10, 20, 30, 40].map(level => {
                             // 계승 전 무기(업화)만 필터링 (에스더 제외)
-                            const weaponEquipments = equipments.filter(eq => eq.type === 'weapon' && !eq.isSuccession && !eq.isEsther);
+                            const weaponEquipments = equipments.filter(eq => eq.type === 'weapon' && !eq.isSuccession && !eq.isEsther && !eq.isWangap);
                             const hasWeapon = weaponEquipments.length > 0;
                             const minAdvancedLevel = hasWeapon ? Math.min(...weaponEquipments.map(eq => eq.currentAdvancedLevel)) : 0;
                             const canSelect = hasWeapon && level > minAdvancedLevel;
@@ -2373,7 +2616,7 @@ export default function RefiningCalculator({
                                     const newTargets = { ...targetLevels };
                                     equipments.forEach(eq => {
                                       // 계승 전 무기(업화)만 대상 (에스더 제외)
-                                      if (eq.type === 'weapon' && !eq.isSuccession && !eq.isEsther) {
+                                      if (eq.type === 'weapon' && !eq.isSuccession && !eq.isEsther && !eq.isWangap) {
                                         newTargets[eq.name] = { ...newTargets[eq.name], advanced: null };
                                       }
                                     });
@@ -2384,7 +2627,7 @@ export default function RefiningCalculator({
                                     const newTargets = { ...targetLevels };
                                     equipments.forEach(eq => {
                                       // 계승 전 무기(업화)만 대상 (에스더 제외)
-                                      if (eq.type === 'weapon' && !eq.isSuccession && !eq.isEsther && level > eq.currentAdvancedLevel) {
+                                      if (eq.type === 'weapon' && !eq.isSuccession && !eq.isEsther && !eq.isWangap && level > eq.currentAdvancedLevel) {
                                         newTargets[eq.name] = { ...newTargets[eq.name], advanced: level };
                                       }
                                     });
@@ -2503,22 +2746,28 @@ export default function RefiningCalculator({
                               <MaterialCard icon="/abidos-fusion2.webp?v=3" name="상급아비도스" amount={materials.상급아비도스 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['상급아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['상급아비도스']} />
                             </Col>
                           )}
-                          {/* 공통 재료 */}
-                          {materials.운명파편 > 0 && (
-                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} />
-                            </Col>
-                          )}
-                          {(materials.실링 || 0) > 0 && (
-                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/shilling.webp" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false} />
-                            </Col>
-                          )}
                         </Row>
+                        {/* 공통 재료(파편·실링) — 성장 토글이 붙어 카드 높이가 달라서 별도 줄로 분리 */}
+                        {(materials.운명파편 > 0 || (materials.실링 || 0) > 0) && (
+                          <Row className={`${isMobile ? 'g-2' : 'g-3'} justify-content-center ${styles.commonMaterialRow}`}>
+                            {materials.운명파편 > 0 && (
+                              <Col xs={6} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                                <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']}
+                                  footer={(materials.성장파편 || 0) > 0 ? renderGrowthToggle(materials.성장파편 || 0) : undefined} />
+                              </Col>
+                            )}
+                            {(materials.실링 || 0) > 0 && (
+                              <Col xs={6} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                                <MaterialCard icon="/shilling.webp" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false}
+                                  footer={(materials.성장실링 || 0) > 0 ? renderGrowthToggle(materials.성장실링 || 0) : undefined} />
+                              </Col>
+                            )}
+                          </Row>
+                        )}
                       </div>
 
                       {/* 일반 재련 추가 재료 (업화 장비) */}
-                      {requiredMats.hasNormalRefining && (requiredMats.needsGlacierNormal || requiredMats.needsLavaNormal) && (
+                      {requiredMats.hasNormalRefining && (requiredMats.needsGlacierNormal || requiredMats.needsLavaNormal || requiredMats.needsWangapBreath) && (
                         <div className={styles.materialsSection}>
                           <div className={styles.materialsSectionTitle}>
                             일반 재련 추가 재료
@@ -2785,6 +3034,37 @@ export default function RefiningCalculator({
                                   />
                                 </Col>
                               )}
+                            </Row>
+                          )}
+                          {/* 완갑 줄: 완갑은 용암·빙하를 함께 써서 무기/방어구 숨결과 분리한다 */}
+                          {requiredMats.needsWangapBreath && (
+                            <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
+                              <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
+                                <MaterialCard
+                                  icon="/breath-lava.webp"
+                                  name="용암의 숨결 (완갑)"
+                                  amount={materials.용암_완갑 || 0}
+                                  color="#34d399"
+                                  cost={results.materialCosts['용암_완갑'] || 0}
+                                  showCheckbox={true}
+                                  isBound={materialOptions.wangapLava.isBound}
+                                  onBoundChange={() => setMaterialOptions(p => ({...p, wangapLava: {...p.wangapLava, isBound: !p.wangapLava.isBound}}))}
+                                  footer={renderBreathControls('wangapLava')}
+                                />
+                              </Col>
+                              <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
+                                <MaterialCard
+                                  icon="/breath-glacier.webp"
+                                  name="빙하의 숨결 (완갑)"
+                                  amount={materials.빙하_완갑 || 0}
+                                  color="#34d399"
+                                  cost={results.materialCosts['빙하_완갑'] || 0}
+                                  showCheckbox={true}
+                                  isBound={materialOptions.wangapGlacier.isBound}
+                                  onBoundChange={() => setMaterialOptions(p => ({...p, wangapGlacier: {...p.wangapGlacier, isBound: !p.wangapGlacier.isBound}}))}
+                                  footer={renderBreathControls('wangapGlacier')}
+                                />
+                              </Col>
                             </Row>
                           )}
                         </div>

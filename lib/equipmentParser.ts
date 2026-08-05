@@ -21,6 +21,9 @@ export type Equipment = {
   isEsther: boolean; // 에스더 장비 여부 (최상위 장비, 재련 불가)
   originalName?: string; // 원본 장비 이름 (예: +25 운명의 전율 장갑)
   icon?: string; // 장비 아이콘 URL
+  // 완갑(완전 갑주) 여부 — 무기/방어구와 재료 체계가 완전히 달라 별도 계산(lib/wangapAverage)을 탄다.
+  // 아이콘도 API 이미지가 아니라 등급별 자체 이미지(WANGAP_ITEM_IMAGES)를 쓴다.
+  isWangap?: boolean;
 };
 
 // 장비 타입 매핑
@@ -149,11 +152,44 @@ export function isEstherEquipment(grade: string): boolean {
 }
 
 // API 응답을 재련 시뮬레이터용 장비 정보로 변환
-export function parseEquipmentData(equipmentResponse: EquipmentAPIResponse[]): Equipment[] {
+// 완갑이 열리는 최소 아이템 레벨 — 이 이상이면 API 응답에 없어도 0강으로 노출한다
+export const WANGAP_MIN_ITEM_LEVEL = 1750;
+
+/**
+ * @param characterItemLevel 캐릭터 평균 아이템 레벨 (예: "1,752.50").
+ *   1750 이상인데 API 응답에 완갑이 없으면 아직 획득 전으로 보고 0강 영웅으로 채워 넣는다.
+ */
+export function parseEquipmentData(
+  equipmentResponse: EquipmentAPIResponse[],
+  characterItemLevel?: string | number,
+): Equipment[] {
   const equipments: Equipment[] = [];
   const processedTypes = new Set<string>(); // 중복 방지
 
   for (const item of equipmentResponse) {
+    // ── 완갑 ──
+    // 일반 장비와 달리 아이템 레벨이 없고 0강부터 시작하므로 아래 공통 검사보다 먼저 처리한다.
+    // 강화 단계는 이름 접두 "+N"(0강이면 접두 자체가 없음), 등급(영웅/전설/유물/고대)이 강화 구간을 결정한다.
+    if (item.Type === '완갑') {
+      if (processedTypes.has('완갑')) continue;
+      processedTypes.add('완갑');
+      const m = (item.Name || '').match(/^\+(\d+)/);
+      equipments.push({
+        name: '완갑',
+        type: 'weapon', // 편의상 값만 채운다 — 실제 계산은 isWangap 분기로 갈린다
+        currentLevel: m ? parseInt(m[1], 10) : 0,
+        currentAdvancedLevel: 0, // 완갑은 상급 재련 없음
+        itemLevel: 0,
+        grade: item.Grade,
+        isSuccession: false,
+        isEsther: false,
+        isWangap: true,
+        originalName: item.Name,
+        icon: item.Icon,
+      });
+      continue;
+    }
+
     // 에스더 장비 여부 확인
     const isEsther = isEstherEquipment(item.Grade);
 
@@ -219,6 +255,27 @@ export function parseEquipmentData(equipmentResponse: EquipmentAPIResponse[]): E
       originalName: item.Name,
       icon: item.Icon,
     });
+  }
+
+  // 완갑은 1750부터 열린다. 아직 안 낀 캐릭터는 API에 항목 자체가 없으므로 0강으로 채워 준다.
+  if (!equipments.some(eq => eq.isWangap)) {
+    const lv = typeof characterItemLevel === 'string'
+      ? parseFloat(characterItemLevel.replace(/,/g, ''))
+      : characterItemLevel;
+    if (lv != null && !isNaN(lv) && lv >= WANGAP_MIN_ITEM_LEVEL) {
+      equipments.push({
+        name: '완갑',
+        type: 'weapon',
+        currentLevel: 0,
+        currentAdvancedLevel: 0,
+        itemLevel: 0,
+        grade: '영웅',
+        isSuccession: false,
+        isEsther: false,
+        isWangap: true,
+        originalName: '운명의 전율 완갑',
+      });
+    }
   }
 
   return equipments;

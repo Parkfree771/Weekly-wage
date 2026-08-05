@@ -118,7 +118,11 @@ export default function RefiningPage() {
         throw new Error('장비 정보를 찾을 수 없습니다.');
       }
 
-      const parsedEquipments = parseEquipmentData(data.equipment as EquipmentAPIResponse[]);
+      // 완갑은 1750부터 열려서, API에 안 와도 레벨이 되면 0강으로 노출한다
+      const parsedEquipments = parseEquipmentData(
+        data.equipment as EquipmentAPIResponse[],
+        data.profile?.ItemAvgLevel,
+      );
 
       if (parsedEquipments.length === 0) {
         throw new Error('1640 레벨(+11) 이상의 장비가 없습니다.');

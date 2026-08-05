@@ -200,3 +200,65 @@ export const getBookBonusLines = (itemId: string): string[] | null => {
   if (!info) return null;
   return info.map(e => `목표 ${e.targets}단계: 성공 확률 +${parseFloat((e.bonus * 100).toFixed(2))}%`);
 };
+
+// ========================================
+// 장비 성장 비용 (재련 경험치)
+// 키 = 현재 단계. 그 단계에서 경험치를 채워야 다음 단계로 재련할 수 있다.
+// (완갑 WANGAP_GROWTH_COSTS 와 같은 성격이지만 표가 별개다)
+//
+// 출처: 2026-08-05 로스트아크 공식 장비 API 툴팁의 "현재 단계 재련 경험치" Progress.maximum
+//       — 캐릭터 약 500명을 훑어 단계별로 수집·교차 검증했다. 인게임 확인치와도 일치
+//       (방어구 전율 13단계 41,000 / 14단계 46,000).
+// 실링은 전 구간 파편 × 10 (완갑·인게임 확인치 모두 동일 비율).
+// 무기 = 방어구 × 5/3 이 전 구간에서 성립한다.
+// ========================================
+
+// 실링 = 파편 × 10
+export const GROWTH_SHILLING_PER_SHARD = 10;
+
+// 계승 전(업화) — 무기
+export const WEAPON_GROWTH_SHARDS: { [level: number]: number } = {
+  10: 21000, 11: 23000, 12: 33000, 13: 38000, 14: 43000,
+  15: 49000, 16: 66000, 17: 75000, 18: 85000, 19: 106000,
+  20: 120000, 21: 135000, 22: 152000, 23: 170000,
+  // 24단계는 계승 전 장비를 여기까지 올린 표본이 없어 미수집 —
+  // 전 구간에서 성립하는 무기 = 방어구 × 5/3 비율로 채운 추정치(114,000 × 5/3)
+  24: 190000,
+};
+
+// 계승 전(업화) — 방어구
+export const ARMOR_GROWTH_SHARDS: { [level: number]: number } = {
+  10: 12000, 11: 13000, 12: 19000, 13: 22000, 14: 25000,
+  15: 29000, 16: 39000, 17: 45000, 18: 51000, 19: 63000,
+  20: 72000, 21: 81000, 22: 91000, 23: 102000, 24: 114000,
+};
+
+// 계승 후(전율) — 무기
+export const SUCCESSION_WEAPON_GROWTH_SHARDS: { [level: number]: number } = {
+  11: 57000, 12: 63000, 13: 70000, 14: 76000, 15: 83000,
+  16: 90000, 17: 98000, 18: 105000, 19: 112000, 20: 120000,
+  21: 128000, 22: 136000, 23: 144000, 24: 152000,
+};
+
+// 계승 후(전율) — 방어구
+export const SUCCESSION_ARMOR_GROWTH_SHARDS: { [level: number]: number } = {
+  11: 34000, 12: 38000, 13: 41000, 14: 46000, 15: 49000,
+  16: 54000, 17: 58000, 18: 63000, 19: 67000, 20: 72000,
+  21: 77000, 22: 81000, 23: 86000, 24: 91000,
+};
+
+/**
+ * 한 단계(level → level+1) 강화를 위해 채워야 하는 성장 비용.
+ * 재련 시도 횟수와 무관한 단계당 1회 고정 비용이다.
+ */
+export const getGrowthCost = (
+  level: number,
+  type: 'armor' | 'weapon',
+  isSuccession: boolean,
+): { 운명파편: number; 실링: number } => {
+  const table = isSuccession
+    ? (type === 'armor' ? SUCCESSION_ARMOR_GROWTH_SHARDS : SUCCESSION_WEAPON_GROWTH_SHARDS)
+    : (type === 'armor' ? ARMOR_GROWTH_SHARDS : WEAPON_GROWTH_SHARDS);
+  const shards = table[level] ?? 0;
+  return { 운명파편: shards, 실링: shards * GROWTH_SHILLING_PER_SHARD };
+};
