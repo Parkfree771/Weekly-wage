@@ -149,6 +149,26 @@ export const getBookType = (level: number): '1114' | '1518' | '1920' | null => {
 };
 
 // ========================================
+// 계승 후(세르카 장비) 전용 책 — 야금술/재봉술 : 전율
+// 2026-08-05 벨가르딘 업데이트. 계승 전용 "업화" 책과 달리 계승 후 장비에만 쓸 수 있다.
+// 효과는 업화와 같은 규칙 = 기본 확률만큼 가산(확률 2배).
+//   전율 [12-15] → 도전 단계 12·13 +5%p, 14·15 +4%p  (현재 레벨 11~14)
+//   전율 [16-19] → 도전 단계 16 +4%p, 17~19 +3%p      (현재 레벨 15~18)
+// 도전 단계 20 이상(현재 19+)은 책이 없다.
+// ========================================
+
+// 책 종류 (키 = 현재 레벨). 도전 단계 = 현재 레벨 + 1
+export const getSuccessionBookType = (level: number): '1215' | '1619' | null => {
+  if (level >= 11 && level <= 14) return '1215';
+  if (level >= 15 && level <= 18) return '1619';
+  return null;
+};
+
+// 책 사용 시 가산되는 확률 (없으면 0)
+export const getSuccessionBookBonus = (level: number): number =>
+  getSuccessionBookType(level) ? (SUCCESSION_BASE_PROBABILITY[level] ?? 0) : 0;
+
+// ========================================
 // 책별 성공 확률 증가량 (거래소 아이템 ID 기준)
 // 가격 시세·평균 시뮬 호버 툴팁 표시용
 // 일반 책 = 기본확률 +100% 가산, 강화 책 = 일반 책의 2배 가산
@@ -166,6 +186,12 @@ export const BOOK_PROBABILITY_BONUS: Record<string, { targets: string; bonus: nu
   // 강화 야금술 : 업화 [19-20] / 강화 재봉술 : 업화 [19-20]
   '66112555': [{ targets: '19', bonus: 0.06 }, { targets: '20', bonus: 0.03 }],
   '66112556': [{ targets: '19', bonus: 0.06 }, { targets: '20', bonus: 0.03 }],
+  // 야금술 : 전율 [12-15] / 재봉술 : 전율 [12-15] — 계승 후(세르카 장비) 전용
+  '66112561': [{ targets: '12~13', bonus: 0.05 }, { targets: '14~15', bonus: 0.04 }],
+  '66112564': [{ targets: '12~13', bonus: 0.05 }, { targets: '14~15', bonus: 0.04 }],
+  // 야금술 : 전율 [16-19] / 재봉술 : 전율 [16-19] — 계승 후(세르카 장비) 전용
+  '66112562': [{ targets: '16', bonus: 0.04 }, { targets: '17~19', bonus: 0.03 }],
+  '66112565': [{ targets: '16', bonus: 0.04 }, { targets: '17~19', bonus: 0.03 }],
 };
 
 // 책 확률 증가량을 표시용 문자열 배열로 변환 (책이 아니면 null)

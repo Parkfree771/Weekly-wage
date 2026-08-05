@@ -131,14 +131,67 @@ const SUCCESSION_CASE_2_PITY_TRIES: { [level: number]: number } = {
   23: 110, 24: 110, // 0.5% + 숨결
 };
 
+// ── 계승 후 - 책(전율) 사용 ──
+// 전율 책은 계승 후 전용이고 효과는 기본 확률만큼 가산(2배). 책이 없는 레벨(19+)은
+// 책 미사용 표와 같은 값이 들어가 자동으로 무효 처리된다.
+// 아래 수치는 기존 표를 재현한 것과 동일한 DP(실패 시 +기본10%·2배 상한, 장인 ÷2.15)로 생성.
+
+// 계승 후 - 책 O 숨결 X (평균)
+const SUCCESSION_CASE_3_AVG_TRIES: { [level: number]: number } = {
+  11: 7.52, 12: 7.52, 13: 9.03, 14: 9.03, 15: 9.03, 16: 11.59, 17: 11.59, 18: 11.59,
+  19: 32.36, 20: 32.36, 21: 47.15, 22: 47.15, 23: 91.32, 24: 91.32,
+};
+
+// 계승 후 - 책 O 숨결 O (평균)
+const SUCCESSION_CASE_4_AVG_TRIES: { [level: number]: number } = {
+  11: 5.58, 12: 5.58, 13: 6.72, 14: 6.72, 15: 6.72, 16: 8.70, 17: 8.70, 18: 8.70,
+  19: 21.57, 20: 21.57, 21: 31.46, 22: 31.46, 23: 45.74, 24: 45.74,
+};
+
+// 계승 후 - 책 O 숨결 X (중앙값)
+const SUCCESSION_CASE_3_MEDIAN_TRIES: { [level: number]: number } = {
+  11: 6, 12: 6, 13: 8, 14: 8, 15: 8, 16: 10, 17: 10, 18: 10,
+  19: 26, 20: 26, 21: 38, 22: 38, 23: 72, 24: 72,
+};
+
+// 계승 후 - 책 O 숨결 O (중앙값)
+const SUCCESSION_CASE_4_MEDIAN_TRIES: { [level: number]: number } = {
+  11: 5, 12: 5, 13: 6, 14: 6, 15: 6, 16: 7, 17: 7, 18: 7,
+  19: 17, 20: 17, 21: 25, 22: 25, 23: 36, 24: 36,
+};
+
+// 계승 후 - 책 O 숨결 X (장기백)
+const SUCCESSION_CASE_3_PITY_TRIES: { [level: number]: number } = {
+  11: 18, 12: 18, 13: 21, 14: 21, 15: 21, 16: 27, 17: 27, 18: 27,
+  19: 76, 20: 76, 21: 112, 22: 112, 23: 219, 24: 219,
+};
+
+// 계승 후 - 책 O 숨결 O (장기백)
+const SUCCESSION_CASE_4_PITY_TRIES: { [level: number]: number } = {
+  11: 14, 12: 14, 13: 16, 14: 16, 15: 16, 16: 21, 17: 21, 18: 21,
+  19: 51, 20: 51, 21: 75, 22: 75, 23: 110, 24: 110,
+};
+
 /**
  * 계승 후 시도 횟수 조회 (모드별)
+ * useBook = 전율 책 사용 여부 (계승 후 전용, 도전 단계 12~19에서만 효과)
  */
-export const getSuccessionTries = (level: number, useBreath: boolean, mode: CalcMode = 'median'): number => {
-  if (useBreath) {
+export const getSuccessionTries = (level: number, useBreath: boolean, useBook: boolean = false, mode: CalcMode = 'median'): number => {
+  // 전율 책은 현재 레벨 11~18(도전 12~19)에만 존재
+  const effectiveBook = useBook && level >= 11 && level <= 18;
+
+  if (useBreath && effectiveBook) {
+    if (mode === 'pity') return SUCCESSION_CASE_4_PITY_TRIES[level] || 0;
+    if (mode === 'average') return SUCCESSION_CASE_4_AVG_TRIES[level] || 0;
+    return SUCCESSION_CASE_4_MEDIAN_TRIES[level] || 0;
+  } else if (useBreath) {
     if (mode === 'pity') return SUCCESSION_CASE_2_PITY_TRIES[level] || 0;
     if (mode === 'average') return SUCCESSION_CASE_2_AVG_TRIES[level] || 0;
     return SUCCESSION_CASE_2_MEDIAN_TRIES[level] || 0;
+  } else if (effectiveBook) {
+    if (mode === 'pity') return SUCCESSION_CASE_3_PITY_TRIES[level] || 0;
+    if (mode === 'average') return SUCCESSION_CASE_3_AVG_TRIES[level] || 0;
+    return SUCCESSION_CASE_3_MEDIAN_TRIES[level] || 0;
   } else {
     if (mode === 'pity') return SUCCESSION_CASE_1_PITY_TRIES[level] || 0;
     if (mode === 'average') return SUCCESSION_CASE_1_AVG_TRIES[level] || 0;
@@ -148,7 +201,7 @@ export const getSuccessionTries = (level: number, useBreath: boolean, mode: Calc
 
 /** @deprecated getSuccessionTries 사용 권장 */
 export const getSuccessionAverageTries = (level: number, useBreath: boolean): number => {
-  return getSuccessionTries(level, useBreath, 'average');
+  return getSuccessionTries(level, useBreath, false, 'average');
 };
 
 // ========================================
