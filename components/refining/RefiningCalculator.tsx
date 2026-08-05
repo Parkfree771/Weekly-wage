@@ -969,15 +969,15 @@ export default function RefiningCalculator({
   // 장비 성장(재련 경험치) 포함/제외 토글 — 파편·실링 카드 하단.
   // 성장 비용은 단계마다 1회 고정이라 재련 시도분과 성격이 달라 따로 끌 수 있게 둔다.
   const renderGrowthToggle = (growthAmount: number) => (
-    <div className={styles.breathControls} onClick={e => e.stopPropagation()}>
+    <div className={styles.growthToggleWrap} onClick={e => e.stopPropagation()}>
       <button
         type="button"
-        className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${includeGrowth ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
+        className={`${styles.growthToggleBtn} ${includeGrowth ? styles.growthToggleOn : styles.growthToggleOff}`}
         onClick={() => setIncludeGrowth(v => !v)}
         title={`장비 성장(재련 경험치) ${growthAmount.toLocaleString()} — 단계마다 1회 고정 비용`}
-        style={{ width: '100%' }}
       >
-        성장 {includeGrowth ? '포함' : '제외'} {growthAmount.toLocaleString()}
+        성장 {includeGrowth ? '포함' : '제외'}
+        <span className={styles.growthToggleAmt}>{growthAmount.toLocaleString()}</span>
       </button>
     </div>
   );
@@ -2746,24 +2746,21 @@ export default function RefiningCalculator({
                               <MaterialCard icon="/abidos-fusion2.webp?v=3" name="상급아비도스" amount={materials.상급아비도스 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['상급아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['상급아비도스']} />
                             </Col>
                           )}
+                          {/* 공통 재료(파편·실링) — 스톤과 같은 크기·같은 줄.
+                              카드는 height:100% 라 같은 줄 안에서는 성장 토글이 붙어도 높이가 맞는다 */}
+                          {materials.운명파편 > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']}
+                                footer={(materials.성장파편 || 0) > 0 ? renderGrowthToggle(materials.성장파편 || 0) : undefined} />
+                            </Col>
+                          )}
+                          {(materials.실링 || 0) > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/shilling.webp" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false}
+                                footer={(materials.성장실링 || 0) > 0 ? renderGrowthToggle(materials.성장실링 || 0) : undefined} />
+                            </Col>
+                          )}
                         </Row>
-                        {/* 공통 재료(파편·실링) — 성장 토글이 붙어 카드 높이가 달라서 별도 줄로 분리 */}
-                        {(materials.운명파편 > 0 || (materials.실링 || 0) > 0) && (
-                          <Row className={`${isMobile ? 'g-2' : 'g-3'} justify-content-center ${styles.commonMaterialRow}`}>
-                            {materials.운명파편 > 0 && (
-                              <Col xs={6} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']}
-                                  footer={(materials.성장파편 || 0) > 0 ? renderGrowthToggle(materials.성장파편 || 0) : undefined} />
-                              </Col>
-                            )}
-                            {(materials.실링 || 0) > 0 && (
-                              <Col xs={6} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                                <MaterialCard icon="/shilling.webp" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false}
-                                  footer={(materials.성장실링 || 0) > 0 ? renderGrowthToggle(materials.성장실링 || 0) : undefined} />
-                              </Col>
-                            )}
-                          </Row>
-                        )}
                       </div>
 
                       {/* 일반 재련 추가 재료 (업화 장비) */}
