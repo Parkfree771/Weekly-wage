@@ -688,8 +688,10 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
   };
 
   // 에스더 장비 제외, 업화/전율 모두 표시 (업화 먼저, 전율 나중)
+  // 완갑은 전용 페이지(/wangap)에 실제 시뮬이 따로 있어 여기 목록에는 넣지 않는다
+  // (재련 평균 시뮬에는 포함 — 견적은 한 번에 보는 게 맞다)
   const filteredEquipments = equipments
-    .filter(eq => !eq.isEsther)
+    .filter(eq => !eq.isEsther && !eq.isWangap)
     .sort((a, b) => {
       // 업화(계승 전)를 먼저, 전율(계승 후)를 나중에
       if (a.isSuccession !== b.isSuccession) return a.isSuccession ? 1 : -1;

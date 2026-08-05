@@ -1940,7 +1940,7 @@ export default function RefiningCalculator({
               {searched && equipments.length > 0 && characterInfo && (
                 <div className="mb-3">
                   <div className={styles.characterInfo}>
-                    <div className={`${styles.characterInfoInner} ${equipments.some(e => e.isWangap) ? styles.characterInfoInnerWithWangap : ''}`}>
+                    <div className={styles.characterInfoInner}>
                       {/* 캐릭터 이미지 */}
                       {characterInfo.image && (
                         <div className={styles.characterImageWrapper}>
@@ -1994,80 +1994,97 @@ export default function RefiningCalculator({
                         </div>
                       </div>
 
-                      {/* 완갑 — 장비 목록과 재료 체계가 달라 캐릭터 정보 오른쪽 빈 공간에 따로 둔다 */}
-                      {(() => {
-                        const wg = equipments.find(e => e.isWangap);
-                        if (!wg) return null;
-                        const wgTarget = targetLevels['완갑']?.normal ?? null;
-                        return (
-                          <div className={styles.wangapPanel}>
-                            <span className={styles.wangapIcon} data-grade={wg.grade}>
-                              <span className={styles.wangapIconImg}>
-                                <Image
-                                  src={WANGAP_ITEM_IMAGES[wg.grade as WangapGrade] || WANGAP_ITEM_IMAGES['영웅']}
-                                  alt={`완갑 ${wg.grade}`}
-                                  fill
-                                  sizes="66px"
-                                  style={{ objectFit: 'cover' }}
-                                />
-                              </span>
-                              <span className={styles.wangapIconFrame}>
-                                <Image src="/wjsdbf3.webp" alt="" fill sizes="92px" style={{ objectFit: 'fill' }} unoptimized />
-                              </span>
-                            </span>
-                            <div className={styles.wangapPanelBody}>
-                              <div className={styles.wangapPanelTitle}>
-                                완갑 <span className={styles.wangapPanelGrade} data-grade={wg.grade}>{wg.grade}</span>
-                              </div>
-                              <div className={styles.wangapPanelRow}>
-                                <div className={`${styles.startStepper} ${isMobile ? styles.startStepperMobile : ''}`}>
-                                  <button
-                                    type="button"
-                                    className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
-                                    onClick={() => adjustStart(wg, 'normal', -1)}
-                                    disabled={wg.currentLevel <= 0}
-                                    aria-label="완갑 시작 단계 감소"
-                                  >
-                                    −
-                                  </button>
-                                  <Badge pill bg="" className={`${styles.levelBadgeWeapon} ${isMobile ? styles.levelBadgeMobile : ''}`}>
-                                    +{wg.currentLevel}
-                                  </Badge>
-                                  <button
-                                    type="button"
-                                    className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
-                                    onClick={() => adjustStart(wg, 'normal', 1)}
-                                    disabled={wg.currentLevel >= 25}
-                                    aria-label="완갑 시작 단계 증가"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                                <Form.Select
-                                  value={wgTarget ?? ''}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    setTargetLevels(prev => ({
-                                      ...prev,
-                                      ['완갑']: { ...(prev['완갑'] ?? { normal: null, advanced: null }), normal: value === '' ? null : Number(value) },
-                                    }));
-                                  }}
-                                  className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${wgTarget === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
-                                >
-                                  <option value="">목표</option>
-                                  {Array.from({ length: 25 - wg.currentLevel }, (_, i) => wg.currentLevel + i + 1).map(level => (
-                                    <option key={level} value={level}>+{level}</option>
-                                  ))}
-                                </Form.Select>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()}
                     </div>
                   </div>
                 </div>
               )}
+
+              {/* 완갑 — 재료 체계가 달라 장비 그리드와 분리한다.
+                  좁은 우측 칸에 끼워 넣으면 상자만 늘어나고 안이 비어 보여서 카드 아래 전체 폭으로 뺐다 */}
+              {searched && (() => {
+                const wg = equipments.find(e => e.isWangap);
+                if (!wg) return null;
+                const wgTarget = targetLevels['완갑']?.normal ?? null;
+                const setWgTarget = (next: number | null) => setTargetLevels(prev => ({
+                  ...prev,
+                  ['완갑']: { ...(prev['완갑'] ?? { normal: null, advanced: null }), normal: next },
+                }));
+                return (
+                  <div className={styles.wangapPanel}>
+                    <span className={styles.wangapIcon} data-grade={wg.grade}>
+                      <span className={styles.wangapIconImg}>
+                        <Image
+                          src={WANGAP_ITEM_IMAGES[wg.grade as WangapGrade] || WANGAP_ITEM_IMAGES['영웅']}
+                          alt={`완갑 ${wg.grade}`}
+                          fill
+                          sizes="66px"
+                          style={{ objectFit: 'cover' }}
+                        />
+                      </span>
+                      <span className={styles.wangapIconFrame}>
+                        <Image src="/wjsdbf3.webp" alt="" fill sizes="92px" style={{ objectFit: 'fill' }} unoptimized />
+                      </span>
+                    </span>
+                    <div className={styles.wangapPanelName}>
+                      <span className={styles.wangapPanelTitle}>완갑</span>
+                      <span className={styles.wangapPanelGrade} data-grade={wg.grade}>{wg.grade}</span>
+                    </div>
+                    {/* 현재 → 목표. 장비 카드와 같은 스테퍼 모양이라 조작 방법이 바로 읽힌다 */}
+                    <div className={styles.wangapPanelSteps}>
+                      <div className={`${styles.startStepper} ${isMobile ? styles.startStepperMobile : ''}`}>
+                        <button
+                          type="button"
+                          className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
+                          onClick={() => adjustStart(wg, 'normal', -1)}
+                          disabled={wg.currentLevel <= 0}
+                          aria-label="완갑 현재 단계 감소"
+                        >
+                          −
+                        </button>
+                        <Badge pill bg="" className={`${styles.levelBadgeWeapon} ${isMobile ? styles.levelBadgeMobile : ''}`}>
+                          +{wg.currentLevel}
+                        </Badge>
+                        <button
+                          type="button"
+                          className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
+                          onClick={() => adjustStart(wg, 'normal', 1)}
+                          disabled={wg.currentLevel >= 25}
+                          aria-label="완갑 현재 단계 증가"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <span className={styles.wangapPanelArrow}>→</span>
+                      <div className={`${styles.startStepper} ${isMobile ? styles.startStepperMobile : ''}`}>
+                        <button
+                          type="button"
+                          className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
+                          onClick={() => {
+                            const cur = wgTarget ?? wg.currentLevel + 1;
+                            setWgTarget(cur - 1 <= wg.currentLevel ? null : cur - 1);
+                          }}
+                          disabled={wgTarget === null}
+                          aria-label="완갑 목표 단계 감소"
+                        >
+                          −
+                        </button>
+                        <Badge pill bg="" className={`${styles.wangapTargetBadge} ${wgTarget === null ? styles.wangapTargetBadgeEmpty : ''} ${isMobile ? styles.levelBadgeMobile : ''}`}>
+                          {wgTarget ? `+${wgTarget}` : '목표'}
+                        </Badge>
+                        <button
+                          type="button"
+                          className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
+                          onClick={() => setWgTarget(Math.min((wgTarget ?? wg.currentLevel) + 1, 25))}
+                          disabled={(wgTarget ?? wg.currentLevel) >= 25}
+                          aria-label="완갑 목표 단계 증가"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {searched && equipments.length > 0 && (
               <>

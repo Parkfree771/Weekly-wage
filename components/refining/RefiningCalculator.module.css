@@ -240,23 +240,21 @@
 
 .characterInfoInner {
   display: grid;
-  /* 기본은 이미지 | 상세 2열. 완갑이 있을 때만 3열로 늘린다
-     (3열로 고정하면 완갑 없는 캐릭터에서 오른쪽에 빈 gap이 생긴다) */
   grid-template-columns: auto 1fr;
-  gap: clamp(1.2rem, 3vw, 2rem);
-  padding: clamp(1.2rem, 2.8vw, 1.6rem);
-  align-items: center;
-}
-
-/* 완갑 패널이 있을 때만 3열 */
-.characterInfoInnerWithWangap {
-  grid-template-columns: auto 1fr auto;
+  gap: clamp(1rem, 2.4vw, 1.5rem);
+  padding: clamp(1rem, 2.2vw, 1.25rem);
+  /* stretch: 이미지가 우측 컬럼(이름+레벨) 높이를 그대로 따라가 좌측을 꽉 채운다.
+     center 로 두면 우측이 길어질수록 이미지만 가운데 떠 보인다 (앱과 동일) */
+  align-items: stretch;
 }
 
 .characterImageWrapper {
   position: relative;
   width: clamp(90px, 16vw, 140px);
-  height: clamp(90px, 16vw, 140px);
+  /* 높이는 행 높이를 따라간다. min-height 로 최소 크기만 보장 */
+  height: auto;
+  align-self: stretch;
+  min-height: clamp(90px, 16vw, 140px);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--shadow-md);
@@ -281,7 +279,8 @@
 .characterDetails {
   display: flex;
   flex-direction: column;
-  gap: clamp(0.75rem, 1.5vw, 1rem);
+  justify-content: center;
+  gap: clamp(0.55rem, 1.2vw, 0.8rem);
   min-width: 0;
 }
 
@@ -376,7 +375,7 @@
 @media (max-width: 576px) {
   .characterImageWrapper {
     width: 80px;
-    height: 80px;
+    min-height: 80px;
     border-radius: 12px;
     border-width: 2px;
   }
@@ -2110,35 +2109,32 @@ button.bulkButton:disabled,
 }
 
 /* ==========================================================================
-   완갑 패널 — 캐릭터 정보 카드 오른쪽 빈 공간에 두는 전용 블록
-   장비 목록과 재료 체계가 달라 카드 형식을 따르지 않는다.
-   아이콘은 등급별 자체 이미지 + 세르카 프레임(완갑 시뮬과 동일 실측 비율).
-   프레임이 아이콘 박스 밖으로 나가므로 여백을 따로 확보해 글자와 겹치지 않게 한다.
+   완갑 — 캐릭터 카드 아래 전체 폭 한 줄.
+   좁은 우측 칸에 끼워 넣으면 상자만 늘어나고 안이 비어 보여서 독립 줄로 뺐다.
+   조작부는 장비 카드와 같은 스테퍼(startStepper)를 그대로 써서 방식이 바로 읽히게 한다.
    ========================================================================== */
 
 .wangapPanel {
   display: flex;
   align-items: center;
   gap: 0.9rem;
-  padding: 0.7rem 0.9rem;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.9rem;
   border-radius: 12px;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  flex-shrink: 0;
 }
 
-/* 아이콘 박스 — 프레임 블리드(상하 21.5% / 좌 21% / 우 25.6%)만큼 바깥 여백 확보 */
 .wangapIcon {
   position: relative;
-  width: 60px;
-  height: 60px;
+  width: 54px;
+  height: 54px;
   flex-shrink: 0;
   display: block;
   overflow: visible;
-  margin: 14px 16px 14px 13px;
+  margin: 13px 15px 13px 12px;
 }
 
-/* 완갑 이미지가 배경(등급색)을 자체 포함 — 개구부+블리드를 cover로 채운다 */
 .wangapIconImg {
   position: absolute;
   inset: -4%;
@@ -2156,53 +2152,95 @@ button.bulkButton:disabled,
   z-index: 1;
 }
 
-.wangapPanelBody {
+.wangapPanelName {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.1rem;
   min-width: 0;
+  /* 폭이 모자라면 스테퍼보다 이름이 먼저 줄어든다 */
+  flex-shrink: 1;
+  overflow: hidden;
 }
 
 .wangapPanelTitle {
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
 }
 
 .wangapPanelGrade {
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  margin-left: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.wangapPanelGrade[data-grade='영웅']  { color: #ce43fc; }
-.wangapPanelGrade[data-grade='전설']  { color: #f9ae00; }
-.wangapPanelGrade[data-grade='유물']  { color: #fa5d00; }
-.wangapPanelGrade[data-grade='고대']  { color: #dcc999; }
+.wangapPanelGrade[data-grade='영웅'] { color: #ce43fc; }
+.wangapPanelGrade[data-grade='전설'] { color: #f9ae00; }
+.wangapPanelGrade[data-grade='유물'] { color: #fa5d00; }
+.wangapPanelGrade[data-grade='고대'] { color: #dcc999; }
 
-.wangapPanelRow {
+/* 현재 → 목표 스테퍼 묶음 — 남는 폭은 여기서 흡수한다 */
+.wangapPanelSteps {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
+  margin-left: auto;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
-/* 좁은 화면에서는 캐릭터 정보 아래로 내려가 가로 전체를 쓴다 */
-@media (max-width: 991px) {
-  .wangapPanel {
-    grid-column: 1 / -1;
-    width: 100%;
-  }
+.wangapPanelArrow {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* 목표 배지 — 정해지기 전엔 회색으로 비활성 느낌 */
+.wangapTargetBadge {
+  background-color: #16a34a !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+.wangapTargetBadgeEmpty {
+  background-color: var(--border-color) !important;
+  color: var(--text-muted) !important;
 }
 
 @media (max-width: 576px) {
-  .wangapIcon {
-    width: 50px;
-    height: 50px;
-    margin: 12px 14px 12px 11px;
+  .wangapPanel {
+    gap: 0.6rem;
+    padding: 0.5rem 0.6rem;
   }
-  .wangapPanel { padding: 0.6rem 0.7rem; gap: 0.7rem; }
+  .wangapIcon {
+    width: 44px;
+    height: 44px;
+    margin: 11px 12px 11px 10px;
+  }
+  .wangapPanelSteps {
+    gap: 0.35rem;
+  }
+}
+
+/* 아이폰 SE(320px)·갤럭시 폴드 커버처럼 아주 좁은 화면 —
+   아이콘과 여백을 한 단계 더 줄여 현재→목표가 두 줄로 접히지 않게 한다 */
+@media (max-width: 400px) {
+  .wangapPanel {
+    gap: 0.5rem;
+    padding: 0.45rem 0.5rem;
+  }
+  .wangapIcon {
+    width: 38px;
+    height: 38px;
+    margin: 9px 9px 9px 8px;
+  }
+  .wangapPanelTitle { font-size: 0.82rem; }
+  .wangapPanelGrade { font-size: 0.7rem; }
+  .wangapPanelSteps { gap: 0.25rem; }
+  .wangapPanelArrow { font-size: 0.8rem; }
 }
 
 
