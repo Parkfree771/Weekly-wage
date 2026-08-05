@@ -16,7 +16,7 @@ const ALL_RAIDS = RAID_TABLE.map((entry) => ({
 }));
 
 // 비활성화 레이드 (데이터·이미지는 유지, 계산에서만 제외).
-// 벨가르딘은 2026-08-05 출시 전이지만 미리 활성화했다 (수치는 역산 기준, 출시 후 확정치로 갱신).
+// 벨가르딘은 2026-08-05 출시 당일 인게임 확정치 반영 완료 (rewardTable.ts).
 const DISABLED_RAID_NAMES = new Set<string>([]);
 
 // 출시 예정(비활성) 레이드 그룹별 안내 문구

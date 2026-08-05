@@ -14,8 +14,7 @@
 // 코어·고통의 가시·은총의 파편·승급 재료는 클리어와 더보기가 같은 수량.
 // 벨가르딘 승급 재료(사령의 잔영·죽음의 손)는 2026-07-29 공식 수치 — 모든 난이도 동일하게
 // 1관문 12개 / 2관문 18개, 더보기까지 하면 주 60개 (lib/wangapData.ts 의 승급 비용과 짝).
-// 벨가르딘은 더보기 재련 재료가 미공개(moreDataIncomplete) — raidRewards 파생에서 제외되어
-// 더보기 효율 페이지에 '보상 미정'으로 뜬다. 출시 후 more 에 재련 재료만 채우고 플래그를 지우면 된다.
+// 벨가르딘 전 수치는 2026-08-05 출시 당일 인게임 확인 값 (코어는 더보기도 클리어와 동일 수량).
 
 export const MATERIAL_IDS = {
   // 기존 재료 (운명)
@@ -108,40 +107,85 @@ export const RAID_TABLE: RaidTableEntry[] = [
   {
     name: '벨가르딘 나메', group: '벨가르딘', level: 1780, image: '/belgardin2.webp',
     excelName: '벨가르딘', difficulty: '나이트메어',
-    moreDataIncomplete: true,
     gates: [
       { gate: 1, gold: 30000, boundGold: 0, moreGold: 9600,
-        clear: [m('HAND_OF_DEATH', 12), m('CERKA_CORE', 4)],
-        more: [m('HAND_OF_DEATH', 12), m('CERKA_CORE', 4)] },
+        clear: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 565), m('FATE_GUARDIAN_STONE_CRYSTAL', 1130),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 12), m('FATE_FRAGMENT', 12550),
+          m('HAND_OF_DEATH', 12), m('CERKA_CORE', 4),
+        ],
+        more: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 1300), m('FATE_GUARDIAN_STONE_CRYSTAL', 2600),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 49), m('FATE_FRAGMENT', 26220),
+          m('HAND_OF_DEATH', 12), m('CERKA_CORE', 4),
+        ] },
       { gate: 2, gold: 45000, boundGold: 0, moreGold: 14400,
-        clear: [m('HAND_OF_DEATH', 18), m('CERKA_CORE', 4)],
-        more: [m('HAND_OF_DEATH', 18), m('CERKA_CORE', 4)] },
+        clear: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 690), m('FATE_GUARDIAN_STONE_CRYSTAL', 1380),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 18), m('FATE_FRAGMENT', 15180),
+          m('HAND_OF_DEATH', 18), m('CERKA_CORE', 4),
+        ],
+        more: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 1980), m('FATE_GUARDIAN_STONE_CRYSTAL', 3960),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 83), m('FATE_FRAGMENT', 44440),
+          m('HAND_OF_DEATH', 18), m('CERKA_CORE', 4),
+        ] },
     ],
   },
   {
     name: '벨가르딘 하드', group: '벨가르딘', level: 1770, image: '/belgardin2.webp',
     excelName: '벨가르딘', difficulty: '하드',
-    moreDataIncomplete: true,
     gates: [
       { gate: 1, gold: 25000, boundGold: 0, moreGold: 8000,
-        clear: [m('HAND_OF_DEATH', 12), m('CERKA_CORE', 3)],
-        more: [m('HAND_OF_DEATH', 12), m('CERKA_CORE', 3)] },
+        clear: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 490), m('FATE_GUARDIAN_STONE_CRYSTAL', 980),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 10), m('FATE_FRAGMENT', 10920),
+          m('HAND_OF_DEATH', 12), m('CERKA_CORE', 3),
+        ],
+        more: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 1130), m('FATE_GUARDIAN_STONE_CRYSTAL', 2260),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 43), m('FATE_FRAGMENT', 22800),
+          m('HAND_OF_DEATH', 12), m('CERKA_CORE', 3),
+        ] },
       { gate: 2, gold: 37000, boundGold: 0, moreGold: 11840,
-        clear: [m('HAND_OF_DEATH', 18), m('CERKA_CORE', 3)],
-        more: [m('HAND_OF_DEATH', 18), m('CERKA_CORE', 3)] },
+        clear: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 600), m('FATE_GUARDIAN_STONE_CRYSTAL', 1200),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 15), m('FATE_FRAGMENT', 13200),
+          m('HAND_OF_DEATH', 18), m('CERKA_CORE', 3),
+        ],
+        more: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 1720), m('FATE_GUARDIAN_STONE_CRYSTAL', 3440),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 72), m('FATE_FRAGMENT', 38640),
+          m('HAND_OF_DEATH', 18), m('CERKA_CORE', 3),
+        ] },
     ],
   },
   {
     name: '벨가르딘 노말', group: '벨가르딘', level: 1750, image: '/belgardin2.webp',
     excelName: '벨가르딘', difficulty: '노말',
-    moreDataIncomplete: true,
     gates: [
       { gate: 1, gold: 20000, boundGold: 0, moreGold: 6400,
-        clear: [m('WRAITH_ECHO', 12), m('CERKA_CORE', 3)],
-        more: [m('WRAITH_ECHO', 12), m('CERKA_CORE', 3)] },
+        clear: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 405), m('FATE_GUARDIAN_STONE_CRYSTAL', 810),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 8), m('FATE_FRAGMENT', 9100),
+          m('WRAITH_ECHO', 12), m('CERKA_CORE', 3),
+        ],
+        more: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 860), m('FATE_GUARDIAN_STONE_CRYSTAL', 1720),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 36), m('FATE_FRAGMENT', 19000),
+          m('WRAITH_ECHO', 12), m('CERKA_CORE', 3),
+        ] },
       { gate: 2, gold: 30000, boundGold: 0, moreGold: 9600,
-        clear: [m('WRAITH_ECHO', 18), m('CERKA_CORE', 3)],
-        more: [m('WRAITH_ECHO', 18), m('CERKA_CORE', 3)] },
+        clear: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 500), m('FATE_GUARDIAN_STONE_CRYSTAL', 1000),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 12), m('FATE_FRAGMENT', 11000),
+          m('WRAITH_ECHO', 18), m('CERKA_CORE', 3),
+        ],
+        more: [
+          m('FATE_DESTRUCTION_STONE_CRYSTAL', 1430), m('FATE_GUARDIAN_STONE_CRYSTAL', 2860),
+          m('GREAT_FATE_BREAKTHROUGH_STONE', 60), m('FATE_FRAGMENT', 32200),
+          m('WRAITH_ECHO', 18), m('CERKA_CORE', 3),
+        ] },
     ],
   },
   {
