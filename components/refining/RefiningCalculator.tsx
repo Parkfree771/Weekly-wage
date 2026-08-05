@@ -2789,7 +2789,7 @@ export default function RefiningCalculator({
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/tailoring-thrill.webp"
-                                    name="재봉술: 전율(12~15) 방어구"
+                                    name="재봉술 전율 12-15"
                                     amount={materials.방어구책1215 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1215'] || 0}
@@ -2808,7 +2808,7 @@ export default function RefiningCalculator({
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/tailoring-thrill.webp"
-                                    name="재봉술: 전율(16~19) 방어구"
+                                    name="재봉술 전율 16-19"
                                     amount={materials.방어구책1619 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1619'] || 0}
@@ -2921,7 +2921,7 @@ export default function RefiningCalculator({
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/metallurgy-thrill.webp"
-                                    name="야금술: 전율(12~15) 무기"
+                                    name="야금술 전율 12-15"
                                     amount={materials.무기책1215 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1215'] || 0}
@@ -2940,7 +2940,7 @@ export default function RefiningCalculator({
                                 <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                   <MaterialCard
                                     icon="/metallurgy-thrill.webp"
-                                    name="야금술: 전율(16~19) 무기"
+                                    name="야금술 전율 16-19"
                                     amount={materials.무기책1619 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1619'] || 0}

@@ -16,6 +16,7 @@ import {
   getBookEffect,
   getBookType,
   getSuccessionBookType,
+  getGrowthCost,
   JANGIN_ACCUMULATE_DIVIDER
 } from '../../lib/refiningData';
 import { MATERIAL_BUNDLE_SIZES, MATERIAL_IDS } from '../../data/raidRewards';
@@ -123,6 +124,10 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
   const [currentLevel, setCurrentLevel] = useState<number>(11);
   const [jangin, setJangin] = useState<number>(0);
   const [currentProbBonus, setCurrentProbBonus] = useState<number>(0);
+  // 장비 성장(재련 경험치) 누적 — 단계 최초 도전 시 1회 지불 (시도 횟수와 무관)
+  const [growthCost, setGrowthCost] = useState({ 파편: 0, 실링: 0 });
+  // 성장 비용을 지불한 최고 단계 — 이보다 높은 단계를 처음 도전할 때만 차감
+  const grownMaxRef = useRef<number>(-1);
   const [useBreath, setUseBreath] = useState<boolean>(false);
   const [useBook, setUseBook] = useState<boolean>(false);
   const [attemptHistory, setAttemptHistory] = useState<RefiningAttempt[]>([]);
@@ -135,13 +140,14 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
   const [autoTargetLevel, setAutoTargetLevel] = useState(0);
   const [autoSettings, setAutoSettings] = useState({
     useBreath: false,
+    useBook: false,
     speed: 1000,
   });
   const autoIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const latestStateRef = useRef({
     currentLevel: 11,
     autoTargetLevel: 0,
-    autoSettings: { useBreath: false, speed: 1000 },
+    autoSettings: { useBreath: false, useBook: false, speed: 1000 },
   });
   const attemptRefiningRef = useRef<() => void>(() => {});
   const levelUpCooldownRef = useRef(false); // 레벨업 후 상태 안정화 대기
@@ -160,7 +166,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     수호석: true, 파괴석: true, 돌파석: true, 아비도스: true, 운명파편: true, 골드: true,
     빙하: true, 용암: true, 수호석결정: true, 파괴석결정: true, 위대한돌파석: true, 상급아비도스: true,
     야금술1114: true, 야금술1518: true, 야금술1920: true, 재봉술1114: true, 재봉술1518: true, 재봉술1920: true,
-    야금술1215: true, 야금술1619: true, 재봉술1215: true, 재봉술1619: true,
+    야금술1215: true, 야금술1619: true, 재봉술1215: true, 재봉술1619: true, 성장파편: true,
   });
   const toggleGoldInclude = (key: string) => {
     setGoldIncludeMap(prev => ({ ...prev, [key]: !prev[key] }));
@@ -198,8 +204,9 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
   // 자동강화 Effect
   useEffect(() => {
     if (isAutoMode && selectedEquipment && autoTargetLevel > 0) {
-      // 초기 숨결 설정
+      // 초기 숨결·책 설정
       setUseBreath(autoSettings.useBreath);
+      setUseBook(autoSettings.useBook);
 
       autoIntervalRef.current = setInterval(() => {
         const state = latestStateRef.current;
@@ -207,6 +214,7 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
         // 목표 레벨 도달 체크
         if (state.currentLevel >= state.autoTargetLevel) {
           setUseBreath(false);
+          setUseBook(false);
           setIsAutoMode(false);
           return;
         }
@@ -214,8 +222,9 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
         // 레벨업 직후 쿨다운 중이면 스킵 (상태 안정화 대기)
         if (levelUpCooldownRef.current) return;
 
-        // 숨결 설정 적용
+        // 숨결·책 설정 적용 (책은 지원 구간에서만 실제로 소모된다)
         setUseBreath(state.autoSettings.useBreath);
+        setUseBook(state.autoSettings.useBook);
 
         // 강화 시도
         setTimeout(() => {
@@ -284,6 +293,8 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     // 장비 변경 시 장인의 기운과 확률 보너스 초기화 (누적 비용은 유지)
     setJangin(0);
     setCurrentProbBonus(0);
+    setGrowthCost({ 파편: 0, 실링: 0 });
+    grownMaxRef.current = -1;
     // 레벨별 추적 초기화 (장비 변경 시 이전 장비 비용이 섞이지 않도록)
     setLevelAttempts(0);
     setLevelCost({
@@ -303,6 +314,8 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     }
     setJangin(0);
     setCurrentProbBonus(0);
+    setGrowthCost({ 파편: 0, 실링: 0 });
+    grownMaxRef.current = -1;
     setUseBreath(false);
     setUseBook(false);
     setAttemptHistory([]);
@@ -356,6 +369,8 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     // 시작 단계 변경 시 현재 강화 진행 상태 초기화 (누적 비용은 유지)
     setJangin(0);
     setCurrentProbBonus(0);
+    setGrowthCost({ 파편: 0, 실링: 0 });
+    grownMaxRef.current = -1;
     setUseBreath(false);
     setUseBook(false);
     setLevelAttempts(0);
@@ -390,6 +405,16 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
   // 해당 현재 레벨에서 책을 쓸 수 있는가 (계승 전 업화 11~20 / 계승 후 전율 12~19, 타겟 기준)
   const canUseBookAt = (level: number): boolean =>
     isSuccessionMode ? level + 1 >= 12 && level + 1 <= 19 : level + 1 >= 11 && level + 1 <= 20;
+
+  // 책 이름 — 구간을 16-19 형태로 표기 (자동강화 설정·토글 공용)
+  const bookLabel = (level: number): string | null => {
+    if (!selectedEquipment) return null;
+    const t = isSuccessionMode ? getSuccessionBookType(level) : getBookType(level + 1);
+    if (!t) return null;
+    const range = t.slice(0, 2) + '-' + t.slice(2);
+    const name = selectedEquipment.type === 'weapon' ? '야금술' : '재봉술';
+    return name + (isSuccessionMode ? ' 전율' : '') + ' [' + range + ']';
+  };
 
   const calculateFinalProb = (): number => {
     const baseProb = getBaseProb(currentLevel);
@@ -457,6 +482,15 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
       setUsedBookThisLevel(true);
       newBookCount = bookCountThisLevel + 1;
       setBookCountThisLevel(newBookCount);
+    }
+
+    // 장비 성장(재련 경험치) — 이 단계를 처음 도전할 때 1회 지불
+    if (currentLevel > grownMaxRef.current) {
+      grownMaxRef.current = currentLevel;
+      const grow = getGrowthCost(currentLevel, selectedEquipment.type, isSuccessionMode);
+      if (grow.운명파편 > 0) {
+        setGrowthCost(prev => ({ 파편: prev.파편 + grow.운명파편, 실링: prev.실링 + grow.실링 }));
+      }
     }
 
     // 재료 비용 누적 (전체 누적 + 레벨별 누적)
@@ -566,6 +600,8 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
       setCurrentLevel(newLevel);
       setJangin(0);
       setCurrentProbBonus(0);
+    setGrowthCost({ 파편: 0, 실링: 0 });
+    grownMaxRef.current = -1;
       setItemLevelIncrease(prev => prev + (5 / 6)); // 1강당 0.83333 레벨 증가
 
       // 자동강화 중 레벨업 시 상태 안정화 대기
@@ -637,6 +673,8 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     if (goldIncludeMap['야금술1619']) total += accumulatedCost.야금술1619 * (marketPrices['66112562'] || 0);
     if (goldIncludeMap['재봉술1215']) total += accumulatedCost.재봉술1215 * (marketPrices['66112564'] || 0);
     if (goldIncludeMap['재봉술1619']) total += accumulatedCost.재봉술1619 * (marketPrices['66112565'] || 0);
+    // 장비 성장 파편 — 강화 파편과 같은 시세로 환산 (성장 실링은 시세 없음)
+    if (goldIncludeMap['성장파편']) total += growthCost.파편 * ((marketPrices['66130143'] || 0) / 3000);
     if (goldIncludeMap['재봉술1518']) total += accumulatedCost.재봉술1518 * (marketPrices['66112552'] || 0);
     if (goldIncludeMap['재봉술1920']) total += accumulatedCost.재봉술1920 * (marketPrices['66112554'] || 0);
     return Math.round(total);
@@ -1057,6 +1095,16 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                                     />
                                     숨결 (풀숨)
                                   </label>
+                                  {bookLabel(currentLevel) && (
+                                    <label className={styles.autoDropdownCheckbox}>
+                                      <input
+                                        type="checkbox"
+                                        checked={autoSettings.useBook}
+                                        onChange={(e) => setAutoSettings({ ...autoSettings, useBook: e.target.checked })}
+                                      />
+                                      {bookLabel(currentLevel)}
+                                    </label>
+                                  )}
                                 </div>
                               </div>
 
@@ -1262,6 +1310,23 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
                             </div>
                           )}
                         </>
+                      )}
+                      {/* 장비 성장(재련 경험치) — 단계마다 1회 고정, 시도 횟수와 무관 */}
+                      {growthCost.파편 > 0 && (
+                        <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('성장파편')}>
+                          <input type="checkbox" className={styles.materialCheckbox} checked={goldIncludeMap['성장파편']} onChange={() => toggleGoldInclude('성장파편')} onClick={(e) => e.stopPropagation()} />
+                          <Image src="/destiny-shard-bag-large5.webp" alt="성장 파편" width={28} height={28} />
+                          <span className={styles.materialName}>성장 파편</span>
+                          <span className={styles.materialAmount}>{growthCost.파편.toLocaleString()}</span>
+                          <span className={`${styles.materialGold} ${!goldIncludeMap['성장파편'] ? styles.materialGoldExcluded : ''}`}>{getMaterialGoldCost('운명파편', growthCost.파편).toLocaleString()}G</span>
+                        </div>
+                      )}
+                      {growthCost.실링 > 0 && (
+                        <div className={styles.totalMaterialItem}>
+                          <Image src="/shilling.webp" alt="성장 실링" width={28} height={28} />
+                          <span className={styles.materialName}>성장 실링</span>
+                          <span className={styles.materialAmount}>{growthCost.실링.toLocaleString()}</span>
+                        </div>
                       )}
                       {accumulatedCost.운명파편 > 0 && (
                         <div className={`${styles.totalMaterialItem} ${styles.totalMaterialItemCheckable}`} onClick={() => toggleGoldInclude('운명파편')}>

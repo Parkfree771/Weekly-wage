@@ -313,8 +313,9 @@ export default function RefiningPage() {
             {/* 업데이트 배지 (탭 버튼 바로 아래) — 최신 2건만 노출 */}
             {(mode === 'average' || mode === 'advanced') && (
               <div className={`${styles.patchBadgeRow} ${styles.patchBadgeCol}`}>
-                <span className={`${styles.patchBadge} ${styles.patchBadgeWangap}`}>완갑 장비 추가 업데이트</span>
-                <span className={`${styles.patchBadge} ${styles.patchBadgeGrowth}`}>성장 재료 포함 업데이트</span>
+                <span className={`${styles.patchBadge} ${styles.patchBadgeWangap}`}>26.08.05 완갑 장비 추가</span>
+                <span className={`${styles.patchBadge} ${styles.patchBadgeThrill}`}>26.08.05 세르카 장비 야금술·재봉술 추가</span>
+                <span className={`${styles.patchBadge} ${styles.patchBadgeGrowth}`}>26.08.05 성장 재료 포함</span>
               </div>
             )}
 
