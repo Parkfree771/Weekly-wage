@@ -11,12 +11,14 @@ export {
   RAID_CARD_IMAGES,
   findTier,
   eventTierOf,
+  sandTierOf,
   getSandMaterials,
   type ContentMaterial,
   type ContentMaterial as Material,
   type ContentTier,
   type EventContent,
   type EventTierKey,
+  type SandTierKey,
   type SandRow,
 } from '@/data/rewardTable';
 

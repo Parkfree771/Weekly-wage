@@ -16,7 +16,7 @@ import {
 // 콘텐츠 수치는 전부 단일 원본 테이블에서 가져온다 (직접 하드코딩 금지)
 import {
   EVENT_CONTENTS, GUARDIAN_TIERS, RAID_CARD_IMAGES, RIFT_TIERS, SAND_TABLE,
-  eventTierOf, findTier, type SandRow,
+  eventTierOf, sandTierOf, findTier, type SandRow,
 } from '@/data/rewardTable';
 import { getCurrentGuardian } from '@/lib/daily-content';
 
@@ -83,7 +83,7 @@ export const COMMON_CONTENT_MATERIALS_BY_LEVEL: Record<string, Record<string, Co
 type SandReward = SandRow;
 
 export function getSandOfTimeRewards(itemLevel: number): SandReward[] {
-  return SAND_TABLE[eventTierOf(itemLevel)];
+  return SAND_TABLE[sandTierOf(itemLevel)];
 }
 
 // ─── 가디언 토벌 로테이션 ─── (단일 원본 테이블 기반, lib/daily-content 와 같은 함수)

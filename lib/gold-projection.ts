@@ -10,6 +10,7 @@ import {
   GUARDIAN_TIERS,
   RIFT_TIERS,
   eventTierOf,
+  sandTierOf,
   findTier,
   getSandMaterials,
   type ContentMaterial as DailyMaterial,
@@ -237,7 +238,7 @@ export function charContentRewards(itemLevel: number, isRepresentative: boolean)
   const guardian = guardianTier ? contentMaterials(guardianTier.materials, GUARDIAN_RUNS_PER_WEEK) : {};
   const sand =
     itemLevel >= EVENT_MIN_LEVEL
-      ? contentMaterials(getSandMaterials(eventTierOf(itemLevel), SAND_ENHANCE_LEVEL), 1)
+      ? contentMaterials(getSandMaterials(sandTierOf(itemLevel), SAND_ENHANCE_LEVEL), 1)
       : {};
 
   let event: MaterialCounts = {};
@@ -262,7 +263,7 @@ export function charContentRewards(itemLevel: number, isRepresentative: boolean)
     labels: {
       rift: riftTier?.label ?? '',
       guardian: guardianTier?.label ?? '',
-      sand: itemLevel >= EVENT_MIN_LEVEL ? eventTier : '',
+      sand: itemLevel >= EVENT_MIN_LEVEL ? sandTierOf(itemLevel) : '',
       event: isRepresentative && itemLevel >= EVENT_MIN_LEVEL ? eventTier : '',
     },
   };

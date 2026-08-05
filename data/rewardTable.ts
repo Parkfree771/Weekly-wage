@@ -728,6 +728,7 @@ const IMG = {
   glacier: '/breath-glacier5.webp',
   gold: '/gold.webp',
   blessing: '/cjstkd.webp',
+  shilling: '/shilling.webp',
 };
 
 const mat = (image: string, label: string, short: string, amount: number): ContentMaterial =>
@@ -735,6 +736,15 @@ const mat = (image: string, label: string, short: string, amount: number): Conte
 
 // ── 균열 / 전선 (카오스 던전) — 1회(휴게 미적용) 기준, 레벨 내림차순 ──
 export const RIFT_TIERS: ContentTier[] = [
+  // 1770: 2026-08-05 실측 평균. 파괴석 결정은 시트 평균(411.1)이 휴게 판 기록 오류로 낮게 잡혀
+  // 휴게 없는 2판 실측(558, 수호석 증가율 +30%와도 일치)으로 보정했다. 실링은 시세 없음(0골드 환산).
+  { minLevel: 1770, label: '1770 균열', materials: [
+    mat(IMG.destructionCrystal, '파괴석 결정', '파괴석 결정', 558),
+    mat(IMG.guardianCrystal, '수호석 결정', '수호석 결정', 1532),
+    mat(IMG.greatBreakthrough, '위대한 돌파석', '위대한 돌파석', 23.8),
+    mat(IMG.fragment, '운명의 파편', '파편', 60164.5),
+    mat(IMG.shilling, '실링', '실링', 216124.3),
+  ] },
   { minLevel: 1750, label: '1750 균열', materials: [
     mat(IMG.destructionCrystal, '파괴석 결정', '파괴석 결정', 438.8),
     mat(IMG.guardianCrystal, '수호석 결정', '수호석 결정', 1177.5),
@@ -769,6 +779,11 @@ export const RIFT_TIERS: ContentTier[] = [
 
 // ── 가디언 토벌 — 1회 기준 ──
 export const GUARDIAN_TIERS: ContentTier[] = [
+  // 1770: 2026-08-05 휴게 기준 2레벨 보석 11개·실링 122,989 관측 → 1회 기준 ÷2 (보석은 1레벨 ×3 환산)
+  { minLevel: 1770, label: '1770 가토', materials: [
+    mat(IMG.gem, '1레벨 보석', '1레벨 보석', 16.5),
+    mat(IMG.shilling, '실링', '실링', 61494.5),
+  ] },
   { minLevel: 1750, label: '1750 가토', materials: [mat(IMG.gem, '1레벨 보석', '1레벨 보석', 11.8)] },
   { minLevel: 1730, label: '1730 가토', materials: [mat(IMG.gem, '1레벨 보석', '1레벨 보석', 10.5)] },
   { minLevel: 1720, label: '1720 가토', materials: [mat(IMG.gem, '1레벨 보석', '1레벨 보석', 6.4)] },
@@ -842,11 +857,22 @@ export const EVENT_CONTENTS: EventContent[] = [
 ];
 
 // ── 할의 모래시계 — 주 1회, 보상강화 0(기본)~5 ──
-// 2026-07-27 인게임 확인: 두 티어 모두 값 = 0단계값 × (단계+1), 전 항목 1750 = 1730 × 1.2.
-// 보석은 지급 등급이 달라(1730=2레벨, 1750=3레벨) 1레벨 환산 배수를 따로 둔다.
+// 인게임 확인: 모든 티어에서 값 = 0단계값 × (단계+1). 1730·1750은 2026-07-27 전 단계 대조,
+// 1770은 2026-08-05 5단계 관측값(3레벨 보석 42·위돌 90·용숨 84·빙숨 84)을 ÷6 역산해 채웠다.
+// 보석은 지급 등급이 달라(1730=2레벨, 1750·1770=3레벨) 1레벨 환산 배수를 따로 둔다.
+// 모래시계는 1770 티어가 따로 있어 필보·카게의 EventTierKey 와 키를 분리한다.
 export type SandRow = { gems: number; stones: number; lavaBreath: number; glacierBreath: number };
+export type SandTierKey = EventTierKey | '1770';
 
-export const SAND_TABLE: Record<EventTierKey, SandRow[]> = {
+export const SAND_TABLE: Record<SandTierKey, SandRow[]> = {
+  '1770': [
+    { gems: 7, stones: 15, lavaBreath: 14, glacierBreath: 14 },
+    { gems: 14, stones: 30, lavaBreath: 28, glacierBreath: 28 },
+    { gems: 21, stones: 45, lavaBreath: 42, glacierBreath: 42 },
+    { gems: 28, stones: 60, lavaBreath: 56, glacierBreath: 56 },
+    { gems: 35, stones: 75, lavaBreath: 70, glacierBreath: 70 },
+    { gems: 42, stones: 90, lavaBreath: 84, glacierBreath: 84 },
+  ],
   '1750': [
     { gems: 6, stones: 12, lavaBreath: 12, glacierBreath: 12 },
     { gems: 12, stones: 24, lavaBreath: 24, glacierBreath: 24 },
@@ -865,8 +891,8 @@ export const SAND_TABLE: Record<EventTierKey, SandRow[]> = {
   ],
 };
 
-// 모래시계 보석 1레벨 환산 배수 (1730=2레벨 ×3, 1750=3레벨 ×9)
-export const SAND_GEM_TO_LV1: Record<EventTierKey, number> = { '1730': 3, '1750': 9 };
+// 모래시계 보석 1레벨 환산 배수 (1730=2레벨 ×3, 1750·1770=3레벨 ×9)
+export const SAND_GEM_TO_LV1: Record<SandTierKey, number> = { '1730': 3, '1750': 9, '1770': 9 };
 
 // 거래소에 상장되지 않아 시세 추적이 안 되는 재화의 고정 단가.
 // 시세가 붙는 재화는 PriceContext 에서 실시간으로 가져오고, 여기 있는 것만 고정값을 쓴다.
@@ -919,8 +945,11 @@ export function findTier(tiers: ContentTier[], level: number): ContentTier | nul
 
 export const eventTierOf = (level: number): EventTierKey => (level >= 1750 ? '1750' : '1730');
 
+// 모래시계 전용 티어 (1770 티어가 있음 — 필보·카게는 1750 이 최고 티어라 eventTierOf 를 쓴다)
+export const sandTierOf = (level: number): SandTierKey => (level >= 1770 ? '1770' : eventTierOf(level));
+
 // 모래시계 1회 보상 (보석은 1레벨 환산). 단계는 0~5.
-export function getSandMaterials(tier: EventTierKey, enhance: number): ContentMaterial[] {
+export function getSandMaterials(tier: SandTierKey, enhance: number): ContentMaterial[] {
   const row = SAND_TABLE[tier][Math.max(0, Math.min(5, enhance))];
   return [
     mat(IMG.gem, '1레벨 보석', '보석', row.gems * SAND_GEM_TO_LV1[tier]),

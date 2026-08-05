@@ -178,6 +178,8 @@ export const COMMON_CONTENT_MATERIALS_BY_LEVEL: Record<string, Record<string, Co
 
 export type SandReward = { gems: number; stones: number; lavaBreath: number; glacierBreath: number };
 
+export const SAND_OF_TIME_REWARDS_1770: SandReward[] = ${j(T.SAND_TABLE['1770'], null, 2)};
+
 export const SAND_OF_TIME_REWARDS_1750: SandReward[] = ${j(T.SAND_TABLE['1750'], null, 2)};
 
 export const SAND_OF_TIME_REWARDS_1730: SandReward[] = ${j(T.SAND_TABLE['1730'], null, 2)};
