@@ -57,8 +57,16 @@ const SeeMoreCalculator: React.FC = () => {
   }>({});
 
   // Context에서 가격 데이터 가져오기
-  // 은총의 파편·고통의 가시 환산 단가는 PriceContext 가 실시간 시세로 계산해 준다
-  const { unitPrices, graceUnitPrice, thornUnitPrice, loading } = usePriceData();
+  // 은총의 파편·고통의 가시·사령의 잔영·죽음의 손 환산 단가는 PriceContext 가 실시간 시세로 계산해 준다
+  const { unitPrices, graceUnitPrice, thornUnitPrice, wraithEchoUnitPrice, handOfDeathUnitPrice, loading } = usePriceData();
+
+  // 거래소 미상장 재화의 환산 단가 (없으면 undefined → 가치 계산 제외)
+  const convertedUnitPrices: Record<string, number> = useMemo(() => ({
+    '은총의 파편': graceUnitPrice,
+    '고통의 가시': thornUnitPrice,
+    '사령의 잔영': wraithEchoUnitPrice,
+    '죽음의 손': handOfDeathUnitPrice,
+  }), [graceUnitPrice, thornUnitPrice, wraithEchoUnitPrice, handOfDeathUnitPrice]);
 
   const handleRaidSelect = (raidName: string) => {
     setSelectedRaid(selectedRaid === raidName ? null : raidName);
@@ -102,10 +110,9 @@ const SeeMoreCalculator: React.FC = () => {
     Object.entries(groupedRewards).forEach(([raidName, rewards]) => {
       newProfitData[raidName] = rewards.map(reward => {
         const materialsWithPrices = reward.materials.map(material => {
-          const isGrace = material.itemName === '은총의 파편';
-          const isThorn = material.itemName === '고통의 가시';
-          const unitPrice = isGrace ? graceUnitPrice : isThorn ? thornUnitPrice : (unitPrices[material.itemId] || 0);
-          const totalPrice = (material.itemId === 0 && !isGrace && !isThorn) ? 0 : unitPrice * material.amount;
+          const converted = convertedUnitPrices[material.itemName];
+          const unitPrice = converted !== undefined ? converted : (unitPrices[material.itemId] || 0);
+          const totalPrice = (material.itemId === 0 && converted === undefined) ? 0 : unitPrice * material.amount;
 
           return {
             ...material,
@@ -132,7 +139,7 @@ const SeeMoreCalculator: React.FC = () => {
     });
 
     return newProfitData;
-  }, [unitPrices, graceUnitPrice, thornUnitPrice]);
+  }, [unitPrices, convertedUnitPrices]);
 
   // 재료 체크 상태 초기화 (레이드 선택 시 또는 profitData 변경 시)
   useEffect(() => {
@@ -336,10 +343,10 @@ const SeeMoreCalculator: React.FC = () => {
                           {material.amount === 0 ? '?' : material.amount.toLocaleString()}
                         </td>
                         <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellPrice}`}>
-                          {material.itemId === 0 && material.itemName !== '은총의 파편' && material.itemName !== '고통의 가시' ? '-' : (material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4))}
+                          {material.itemId === 0 && convertedUnitPrices[material.itemName] === undefined ? '-' : (material.unitPrice >= 1 ? material.unitPrice.toLocaleString() : material.unitPrice.toFixed(4))}
                         </td>
                         <td className={`${styles.tableCell} ${styles.tableCellRight} ${styles.tableCellTotal}`}>
-                          {material.itemId === 0 && material.itemName !== '은총의 파편' && material.itemName !== '고통의 가시' ? '-' : Math.round(material.totalPrice).toLocaleString()}
+                          {material.itemId === 0 && convertedUnitPrices[material.itemName] === undefined ? '-' : Math.round(material.totalPrice).toLocaleString()}
                         </td>
                       </tr>
                     );

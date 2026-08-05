@@ -98,18 +98,17 @@ export const WANGAP_GROWTH_COSTS: { [level: number]: WangapGrowthCost } = {
 
 export type WangapBreathEffect = { lavaMax: number; glacierMax: number; per: number };
 
-// 숨결 규칙 — 재련 실제 시뮬(lib/refiningData 숨결 테이블)의 확률 구간별 규칙을 그대로 따르되,
-// 완갑은 용암·빙하 두 숨결이 함께 들어가므로 구간 "총 개수"를 반반으로 쪼개 배분한다
-// (홀수 총량이면 용암이 1개 더). 개당 상승폭(per)은 재련과 동일.
-// 구간 매핑: 10%·5%·1.5% = 재련 동일 구간 / 3% = 계승 후 규칙(25개·0.12%)
-//           15% = 재련에 없는 구간 → "풀숨 = 기본 확률만큼 추가(2배)" 공통 규칙에 맞춰 20개·개당 0.75%
+// 숨결 규칙 — 2026-08-05 15% 구간 인게임 확인(용숨·빙숨 각 20개, 개당 0.375%p)으로 도출:
+// 완갑은 재련 구간의 최대 개수를 용암·빙하 "각각"에 적용(총 2배)하고 개당 상승폭은 재련의 절반.
+// → 풀숨 총 상승폭은 재련과 동일하게 "기본 확률만큼 추가(2배)" 규칙 유지.
+// 15% 는 확정치, 나머지 구간은 같은 패턴으로 추산(재련 계승 후 테이블 ×2 개수·÷2 상승폭).
 // 검산: 전 구간 total × per = 기본 확률 (풀숨 시 15→30%, 10→20%, 5→10%, 3→6%, 1.5→3%)
 const WANGAP_BREATH_TOTALS: { [prob: number]: { total: number; per: number } } = {
-  0.15: { total: 20, per: 0.0075 },
-  0.10: { total: 20, per: 0.005 },
-  0.05: { total: 20, per: 0.0025 },
-  0.03: { total: 25, per: 0.0012 },
-  0.015: { total: 25, per: 0.0006 },
+  0.15: { total: 40, per: 0.00375 },
+  0.10: { total: 40, per: 0.0025 },
+  0.05: { total: 40, per: 0.00125 },
+  0.03: { total: 50, per: 0.0006 },
+  0.015: { total: 50, per: 0.0003 },
 };
 
 export const getWangapBreathEffect = (baseProb: number): WangapBreathEffect => {

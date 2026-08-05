@@ -11,6 +11,8 @@ import styles from '../refining/RefiningCalculator.module.css';
 import MaterialCard from '../refining/MaterialCard';
 import {
   WANGAP_MAX_LEVEL,
+  WANGAP_BASE_PROBABILITY,
+  getWangapBreathEffect,
   WANGAP_MATERIAL_IDS,
   WANGAP_PROMOTION_COSTS,
   WANGAP_PROMO_MATERIALS,
@@ -240,9 +242,36 @@ export default function WangapAverageCalculator() {
   const planLabel = (row: WangapAvgEnhanceRow) => {
     if (row.plan.length === 0) return '노숨';
     if (row.planKind === 'none') return '노숨';
-    if (row.planKind === 'full') return '풀숨';
+    // 풀숨도 실제 개수를 병기 — 구간마다 최대치가 다르다 (영웅~유물 20·20, 고대 25·25)
+    if (row.planKind === 'full') return `풀숨 용${row.plan[0].lava}·빙${row.plan[0].glacier}`;
     return row.plan.map((s, i) => segLabel(s, i === row.plan.length - 1)).join(' / ');
   };
+
+  // 1회차 기준 성공 확률 표기 — 숨결을 넣으면 "기본%→적용%"로 효과를 바로 보여준다
+  const fmtPct = (p: number) => `${parseFloat((p * 100).toFixed(2))}%`;
+  const probLabel = (row: WangapAvgEnhanceRow) => {
+    const base = WANGAP_BASE_PROBABILITY[row.level] ?? 0;
+    const first = row.plan[0];
+    const n = first ? first.lava + first.glacier : 0;
+    if (n === 0) return fmtPct(base);
+    return `${fmtPct(base)}→${fmtPct(Math.min(base + n * getWangapBreathEffect(base).per, 1))}`;
+  };
+
+  // 같은 계획이 이어지는 단계는 한 칩으로 묶는다 (+0~+9 풀숨 ×10줄 반복 방지)
+  const planGroups = useMemo(() => {
+    const groups: Array<{ from: number; to: number; sig: string; row: WangapAvgEnhanceRow }> = [];
+    enhanceRows.forEach(row => {
+      const sig = JSON.stringify([
+        WANGAP_BASE_PROBABILITY[row.level] ?? 0,
+        row.planKind,
+        row.plan.map(s => [s.from, s.to, s.lava, s.glacier]),
+      ]);
+      const last = groups[groups.length - 1];
+      if (last && last.sig === sig && last.to === row.level - 1) last.to = row.level;
+      else groups.push({ from: row.level, to: row.level, sig, row });
+    });
+    return groups;
+  }, [enhanceRows]);
 
   const planChipCls = (kind: WangapAvgEnhanceRow['planKind']) =>
     kind === 'none' ? styles.breathChipNone : kind === 'full' ? styles.breathChipFull : styles.breathChipPartial;
@@ -261,14 +290,27 @@ export default function WangapAverageCalculator() {
         {enhanceRows.length === 0 ? (
           <div className={styles.breathPopupEmpty}>목표 단계를 먼저 설정하세요</div>
         ) : (
-          <div className={styles.breathPopupLine}>
-            {enhanceRows.map(row => (
-              <span key={row.level} className={`${styles.breathChip} ${planChipCls(row.planKind)}`}>
-                <span className={styles.breathChipLv}>+{row.level}→{row.level + 1}</span>
-                <span className={styles.breathChipVal}>{planLabel(row)}</span>
-              </span>
-            ))}
-          </div>
+          <>
+            {/* 구간 전체 예상 소모 요약 — 계산 모드 기준, 재료 카드 수치와 동일 */}
+            <div className={wg.breathPopupSummary}>
+              예상 소모 — 용암 <b>{amountOf('용암').toLocaleString()}</b>개 · 빙하 <b>{amountOf('빙하').toLocaleString()}</b>개
+            </div>
+            <div className={styles.breathPopupLine}>
+              {planGroups.map(g => (
+                <span key={g.from} className={`${styles.breathChip} ${planChipCls(g.row.planKind)}`}>
+                  <span className={styles.breathChipLv}>
+                    {g.from === g.to ? `+${g.from}→${g.from + 1}` : `+${g.from}~+${g.to}`}
+                  </span>
+                  <span className={styles.breathChipVal}>{planLabel(g.row)}</span>
+                  <span className={wg.breathChipProb}>{probLabel(g.row)}</span>
+                </span>
+              ))}
+            </div>
+            <div className={wg.breathPopupNote}>
+              묶인 구간(+a~+b)은 각 단계에 같은 계획 적용 · 회차는 그 단계의 시도 순서 · 확률은 1회차
+              기준(실패 누적 시 상승) · 장인의 기운 100% 회차는 확정 성공이라 숨결을 넣지 않습니다
+            </div>
+          </>
         )}
       </div>
     );

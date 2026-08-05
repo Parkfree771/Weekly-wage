@@ -44,7 +44,7 @@ export default function MoreRewardPage() {
 type CheckType = 'basic' | 'more';
 
 function MoreRewardInner() {
-  const { unitPrices, graceUnitPrice, thornUnitPrice, loading } = usePriceData();
+  const { unitPrices, graceUnitPrice, thornUnitPrice, wraithEchoUnitPrice, handOfDeathUnitPrice, loading } = usePriceData();
   // 두 섹션(더보기 손익 계산 / 레이드 클리어 보상)은 각자 독립적으로 펼침 상태를 가진다.
   const [openEff, setOpenEff] = useState<string | null>(null);
   const [openClear, setOpenClear] = useState<string | null>(null);
@@ -56,15 +56,22 @@ function MoreRewardInner() {
     setPriceDate(`${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`);
   }, []);
 
-  // 은총의 파편·고통의 가시는 거래소 미상장이지만 교환 상자 구성품 시세로 환산한 값이 있다
-  // (성당·세르카 페이지와 동일). 코어·승급 재료는 환산 기준이 없어 0으로 둔다.
+  // 은총의 파편·고통의 가시·사령의 잔영·죽음의 손은 거래소 미상장이지만 교환 상자
+  // 구성품 시세로 환산한 값이 있다 (성당·세르카·벨가르딘 페이지와 동일).
+  // 코어는 환산 기준이 없어 0으로 둔다.
+  const convertedUnitPrices: Record<string, number> = {
+    '은총의 파편': graceUnitPrice,
+    '고통의 가시': thornUnitPrice,
+    '사령의 잔영': wraithEchoUnitPrice,
+    '죽음의 손': handOfDeathUnitPrice,
+  };
   const unitPriceOf = (m: MaterialReward): number => {
-    if (m.itemName === '은총의 파편') return graceUnitPrice;
-    if (m.itemName === '고통의 가시') return thornUnitPrice;
+    const converted = convertedUnitPrices[m.itemName];
+    if (converted !== undefined) return converted;
     return m.itemId !== 0 ? unitPrices[m.itemId] || 0 : 0;
   };
   const isPriced = (m: MaterialReward) =>
-    m.itemId !== 0 || m.itemName === '은총의 파편' || m.itemName === '고통의 가시';
+    m.itemId !== 0 || convertedUnitPrices[m.itemName] !== undefined;
 
   const valueOf = (materials: MaterialReward[]): number =>
     materials.reduce((sum, m) => sum + unitPriceOf(m) * m.amount, 0);
@@ -87,7 +94,7 @@ function MoreRewardInner() {
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unitPrices, graceUnitPrice, thornUnitPrice]);
+  }, [unitPrices, graceUnitPrice, thornUnitPrice, wraithEchoUnitPrice, handOfDeathUnitPrice]);
 
   // 하단 카드: 클리어 골드 + 기본 재료 가치 + 더보기 재료 가치 - 더보기 비용 (더보기 포함 총 가치)
   const clearSummaries = useMemo(() => {
@@ -103,7 +110,7 @@ function MoreRewardInner() {
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unitPrices, graceUnitPrice, thornUnitPrice]);
+  }, [unitPrices, graceUnitPrice, thornUnitPrice, wraithEchoUnitPrice, handOfDeathUnitPrice]);
 
   // 재료 체크 상태: raid × 구분(기본/더보기) × 관문 × 재료명 단위 (itemId 0인 재료가 여럿이라 itemName으로 구분)
   const [materialChecks, setMaterialChecks] = useState<Record<string, boolean>>({});

@@ -2145,3 +2145,30 @@
     font-size: 0.54rem;
   }
 }
+
+/* ── 평균 시뮬 최적 숨결 팝업 보강 — 요약 줄 · 확률 보조 표기 · 설명 각주 ── */
+.breathPopupSummary {
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.breathPopupSummary b {
+  color: #10b981;
+  font-weight: 800;
+}
+
+/* 칩 안 성공 확률(1회차 기준) — 값 라벨보다 한 톤 낮게 */
+.breathChipProb {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.breathPopupNote {
+  margin-top: 10px;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
