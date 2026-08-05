@@ -2172,3 +2172,16 @@
   line-height: 1.5;
   color: var(--text-muted);
 }
+
+/* 예상 소모 재료 카드 전용 — 숨결 "최적" 팝업이 카드 위 경계를 넘어가므로 클리핑 해제.
+   mainCard(RefiningCalculator.module.css)의 overflow:hidden 을 이기려고 클래스 중복으로 특이도만 올림.
+   overflow:hidden 이 하던 헤더 모서리 라운딩은 카드 헤더에 직접 준다 (카드 radius 12px - 테두리 2px). */
+.popupOverflowCard.popupOverflowCard {
+  overflow: visible;
+}
+.popupOverflowCard > :global(.card-header) {
+  border-radius: 10px 10px 0 0;
+}
+.popupOverflowCard > :global(.card-body) {
+  border-radius: 0 0 10px 10px;
+}

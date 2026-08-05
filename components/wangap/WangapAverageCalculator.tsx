@@ -571,7 +571,8 @@ export default function WangapAverageCalculator() {
         </div>
 
         {/* ===== 예상 소모 재료 (재련 평균 시뮬과 동일한 카드) ===== */}
-        <Card className={styles.mainCard}>
+        {/* popupOverflowCard: 숨결 "최적" 팝업이 카드 위 경계를 넘어가므로 이 카드만 클리핑 해제 */}
+        <Card className={`${styles.mainCard} ${wg.popupOverflowCard}`}>
           <Card.Header className={styles.cardHeaderAlt}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
               <h5 className={`mb-0 ${styles.cardTitle}`}>
