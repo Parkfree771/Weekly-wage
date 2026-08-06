@@ -310,12 +310,11 @@ export default function RefiningPage() {
             {/* 모드 선택 탭 */}
             {ModeSelector}
 
-            {/* 업데이트 배지 (탭 버튼 바로 아래) — 최신 2건만 노출 */}
+            {/* 업데이트 배지 (탭 버튼 바로 아래) — 패치 날짜당 1개, 최신 순 (쌓이면 오래된 것부터 제거) */}
             {(mode === 'average' || mode === 'advanced') && (
               <div className={`${styles.patchBadgeRow} ${styles.patchBadgeCol}`}>
-                <span className={`${styles.patchBadge} ${styles.patchBadgeWangap}`}>26.08.05 완갑 장비 추가</span>
-                <span className={`${styles.patchBadge} ${styles.patchBadgeThrill}`}>26.08.05 세르카 장비 야금술·재봉술 추가</span>
-                <span className={`${styles.patchBadge} ${styles.patchBadgeGrowth}`}>26.08.05 성장 재료 포함</span>
+                <span className={`${styles.patchBadge} ${styles.patchBadgeLatest}`}>26.08.06 특수 재련(특재) 추가</span>
+                <span className={styles.patchBadge}>26.08.05 벨가르딘 업데이트 — 완갑 · 전율 책 · 성장 비용</span>
               </div>
             )}
 
