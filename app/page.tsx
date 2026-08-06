@@ -94,6 +94,7 @@ export default function Home() {
             <div className="mt-3">
               <h1 className="h4 mb-2">로아로골 - 로스트아크 주간 골드 계산기 &amp; 시세 정보</h1>
               <div className="d-flex flex-wrap gap-2">
+                <Link href="/package" className="btn btn-sm btn-outline-primary">패키지 효율 계산기</Link>
                 <Link href="/weekly-gold" className="btn btn-sm btn-outline-primary">주간 골드 계산기</Link>
                 <Link href="/refining" className="btn btn-sm btn-outline-primary">재련 계산기</Link>
                 <Link href="/hell-reward" className="btn btn-sm btn-outline-primary">지옥의 나락 보상</Link>
@@ -108,10 +109,21 @@ export default function Home() {
           relatedGuides={['/guide/beginner-gold', '/guide/weekly-gold', '/guide/market-price']}
           guideTitle="로아로골 이용 가이드"
           intro={[
-            '로아로골은 로스트아크 원정대의 주간 레이드 골드 수익을 자동으로 계산하고, 거래소·경매장 실시간 시세를 한눈에 보여주는 무료 계산기 모음 사이트입니다. 벨가르딘, 지평의 성당, 세르카, 카제로스 등 최신 레이드의 클리어 골드와 더보기(모험의 서약) 손익을 캐릭터별로 자동 계산하며, T4 재련 비용 시뮬레이터, 지옥의 나락 보상 계산기, 생활의 달인 손익 계산, 아크그리드 팔찌·각인 조합 조회 등 원정대 운영에 필요한 도구를 한 곳에서 제공합니다.',
+            '로아로골은 로스트아크 캐시샵 패키지 효율을 실시간 시세로 계산하고, 원정대의 주간 레이드 골드 수익과 거래소·경매장 시세를 한눈에 보여주는 무료 계산기 모음 사이트입니다. 패키지에 담긴 재료의 골드 가치를 실시간 거래소 가격으로 환산해 가격 대비 효율을 바로 비교할 수 있으며, 벨가르딘, 지평의 성당, 세르카, 카제로스 등 최신 레이드의 클리어 골드와 더보기(모험의 서약) 손익, T4 재련 비용 시뮬레이터, 지옥의 나락 보상 계산기, 생활의 달인 손익 계산, 아크그리드 팔찌·각인 조합 조회 등 원정대 운영에 필요한 도구를 한 곳에서 제공합니다.',
             '모든 시세 데이터는 로스트아크 공식 Open API를 매시 정각 자동 조회해 갱신하며, 캐릭터 정보 역시 수동 입력이 아닌 공식 API 응답을 그대로 사용합니다. 회원가입 없이 캐릭터명만 입력하면 바로 결과를 확인할 수 있습니다.',
           ]}
           sections={[
+            {
+              heading: '패키지 효율 실시간 계산',
+              paragraphs: [
+                '캐시샵 패키지에 포함된 재료·아이템의 골드 가치를 실시간 거래소 시세로 환산해, 판매 가격 대비 효율을 즉시 비교합니다. PC방 패키지와 로열 크리스탈 기준 가치도 함께 확인할 수 있습니다.',
+              ],
+              bullets: [
+                '패키지 구성품 골드 가치를 실시간 시세로 자동 환산',
+                '가격 대비 효율(%)로 살 만한 패키지인지 즉시 판단',
+                '신규 패키지 출시 시 빠르게 반영',
+              ],
+            },
             {
               heading: '주간 골드 · 더보기 계산',
               paragraphs: [

@@ -12,7 +12,7 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/refining',           changeFrequency: 'weekly',  priority: 0.8 },
   { path: '/wangap',             changeFrequency: 'weekly',  priority: 0.8 },
   { path: '/life-master',        changeFrequency: 'daily',   priority: 0.8 },
-  { path: '/package',            changeFrequency: 'daily',   priority: 0.8 },
+  { path: '/package',            changeFrequency: 'daily',   priority: 0.9 },
   { path: '/bracelet',           changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/expedition-gold',    changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/cathedral',          changeFrequency: 'weekly',  priority: 0.7 },
