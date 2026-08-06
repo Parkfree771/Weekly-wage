@@ -32,6 +32,9 @@ import {
   pickTopNCandidateIds,
   calculateGachaItemGold,
   groupMultiResults,
+  isRiftRunId,
+  getRiftRunLevel,
+  getRiftRunBreakdown,
 } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
 import AdFitUnit from '@/components/ads/AdFitUnit';
@@ -723,6 +726,15 @@ export default function PackageDetailPage({ initialPost }: Props) {
     return item;
   };
 
+  // 공명의 기운/휴게 물약: 마우스 올리면 균열 1회 보상 기댓값 계산 근거를 툴팁으로 표시
+  const riftRunTooltip = (selId: string): string => {
+    const level = getRiftRunLevel(selId);
+    const bd = getRiftRunBreakdown(level, latestPrices);
+    return `${level} 균열 1회 보상 기댓값\n${bd.materials
+      .map((m) => `${m.label} ${formatNumber(m.amount)}개 × ${formatNumber(m.unitPrice)}G = ${formatNumber(m.subtotal)}G`)
+      .join('\n')}\n합계 ${formatNumber(bd.total)}G\n(실링·젬·편린·할모시 보상강화 기댓값 미포함)`;
+  };
+
   const detailGoldPerWon = detailWonPer100Gold > 0 ? 100 / detailWonPer100Gold : 0;
 
   // 환율 기반 bcRate (100 블크 = 2750 로크)
@@ -1339,6 +1351,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                   : getItemUnitPrice(effectiveItemId, latestPrices);
                 const subtotal = itemSubtotals[idx] || 0;
                 const hasChoices = item.choiceOptions && item.choiceOptions.length > 0;
+                const isRiftRun = !!hasChoices && isRiftRunId(item.choiceOptions![0].itemId);
                 const hasChoiceBox = !!(item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0);
                 const choiceBoxSelected = choiceBoxSelections[idx] ?? item.choiceBoxSelectedIds ?? [];
                 const effectiveQty = getEffectiveQty(item, choiceSelections[idx]);
@@ -1349,6 +1362,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                   <div
                     key={idx}
                     className={`${styles.itemCard} ${(hasChoices || hasChoiceBox) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
+                    title={isRiftRun ? riftRunTooltip(effectiveItemId) : undefined}
                   >
                     <label className={styles.itemCardCheckLabel} onClick={(e) => e.stopPropagation()}>
                       <input
@@ -1397,7 +1411,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                         : `${shortenItemName(effective.name)} ×${effectiveQty.toLocaleString()}`}
                     </div>
 
-                    {hasChoices && item.choiceOptions!.length <= 3 && (
+                    {hasChoices && item.choiceOptions!.length <= 3 && !isRiftRun && (
                       <div className={styles.itemCardChoices}>
                         {item.choiceOptions!.map((choice) => (
                           <button
@@ -1419,7 +1433,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                         ))}
                       </div>
                     )}
-                    {hasChoices && item.choiceOptions!.length > 3 && (
+                    {hasChoices && (item.choiceOptions!.length > 3 || isRiftRun) && (
                       <select
                         className={styles.itemCardChoiceSelect}
                         value={choiceSelections[idx] || item.itemId}
@@ -1480,7 +1494,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
           </div>
         </div>
 
-        {/* 구성품 상세 — 젬 상자류의 구성·계산 근거 (카드 안에 다 안 들어가는 정보를 여기에 풀어씀) */}
+        {/* 구성품 상세 — 젬 상자류·균열 환산 아이템(공명의 기운/휴게 물약)의 구성·계산 근거 (카드 안에 다 안 들어가는 정보를 여기에 풀어씀) */}
         {(() => {
           const rows: ReactNode[] = [];
           const pushGemRows = (items: PackageItem[], selections: Record<number, string>, keyPrefix: string) => {
@@ -1515,6 +1529,23 @@ export default function PackageDetailPage({ initialPost }: Props) {
                     </div>
                   </div>,
                 );
+              } else if (item.choiceOptions && item.choiceOptions.length > 0 && isRiftRunId(item.choiceOptions[0].itemId)) {
+                // 공명의 기운 / 휴게 물약 — 선택된 레벨의 균열 1회 보상 기댓값 분해
+                const selId = selections[idx] || item.itemId;
+                const level = getRiftRunLevel(selId);
+                const bd = getRiftRunBreakdown(level, latestPrices);
+                const baseName = item.name.replace(/\s*\[\d+\]\s*$/, '');
+                rows.push(
+                  <div key={`${keyPrefix}${idx}`} className={styles.gemDetailRow}>
+                    <div className={styles.gemDetailTitle}>{baseName} ×{item.quantity.toLocaleString()}</div>
+                    <div className={styles.gemDetailLine}>
+                      선택: {level} 균열 — 균열 1회 클리어 보상 기댓값(실측 평균 수급량 × 거래소 시세)으로 환산
+                    </div>
+                    <div className={styles.gemDetailLine}>
+                      계산: {bd.materials.map((m) => `${m.label} ${formatNumber(m.amount)}개 × ${formatNumber(m.unitPrice)}G`).join(' + ')} = <strong>{formatNumber(bd.total)}G</strong> (실링·젬·편린·할모시 보상강화 기댓값 미포함)
+                    </div>
+                  </div>,
+                );
               }
             });
           };
@@ -1539,6 +1570,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
             <div className={styles.itemCardsGrid}>
               {post.bonusItems.map((item, idx) => {
                 const hasChoices = !!(item.choiceOptions && item.choiceOptions.length > 0);
+                const isRiftRun = hasChoices && isRiftRunId(item.choiceOptions![0].itemId);
                 const hasChoiceBox = !!(item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0);
                 const choiceBoxSelected = bonusChoiceBoxSelections[idx] ?? item.choiceBoxSelectedIds ?? [];
                 const effectiveChoiceId = bonusChoiceSelections[idx] || item.itemId;
@@ -1552,6 +1584,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                   <div
                     key={idx}
                     className={`${styles.itemCard} ${(hasChoices || hasChoiceBox) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''}`}
+                    title={isRiftRun ? riftRunTooltip(effectiveChoiceId) : undefined}
                   >
                     <div className={styles.itemCardIconWrap}>
                       {item.bundleItems && item.bundleItems.length > 0 ? (
@@ -1585,7 +1618,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                         : `${shortenItemName(effectiveChoice?.name || item.name)} ×${effectiveQty.toLocaleString()}`}
                     </div>
 
-                    {hasChoices && item.choiceOptions!.length <= 3 && (
+                    {hasChoices && item.choiceOptions!.length <= 3 && !isRiftRun && (
                       <div className={styles.itemCardChoices}>
                         {item.choiceOptions!.map((choice) => (
                           <button
@@ -1603,7 +1636,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                         ))}
                       </div>
                     )}
-                    {hasChoices && item.choiceOptions!.length > 3 && (
+                    {hasChoices && (item.choiceOptions!.length > 3 || isRiftRun) && (
                       <select
                         className={styles.itemCardChoiceSelect}
                         value={effectiveChoiceId}

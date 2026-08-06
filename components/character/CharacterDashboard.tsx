@@ -49,6 +49,30 @@ function ringedIconStyle(grade: string): React.CSSProperties {
   return { ...iconStyle(grade), borderColor: getGradeColor(grade) };
 }
 
+// 연마 효과 축약 표기 (모바일 — 긴 옵션명 잘림 방지). 긴 키워드부터 치환한다.
+const GRIND_ABBR: [string, string][] = [
+  ['세레나데, 신앙, 조화 게이지 획득량', '아덴 획득'],
+  ['아군 공격력 강화 효과', '아공강'],
+  ['아군 피해량 강화 효과', '아피강'],
+  ['상태이상 공격 지속시간', '상태이상'],
+  ['전투 중 생명력 회복량', '전투 생회'],
+  ['파티원 회복 효과', '파티 회복'],
+  ['파티원 회복', '파티 회복'],
+  ['치명타 적중률', '치적'],
+  ['치명타 피해', '치피'],
+  ['적에게 주는 피해', '적주피'],
+  ['무기 공격력', '무공'],
+  ['추가 피해', '추피'],
+  ['최대 생명력', '최생'],
+  ['최대 마나', '최마'],
+];
+const abbrGrindText = (text: string): string => {
+  for (const [full, short] of GRIND_ABBR) {
+    if (text.includes(full)) return text.replace(full, short);
+  }
+  return text;
+};
+
 // 완갑 아이콘은 API 아이콘 대신 완갑 시뮬과 같은 자체 이미지(등급별)를 쓴다.
 const WANGAP_GRADES: WangapGrade[] = ['영웅', '전설', '유물', '고대'];
 const wangapIcon = (grade: string): string =>
@@ -843,20 +867,38 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                     const nameOnly = eq.name.replace(/^\+\d+\s*/, '');
                     const isWeapon = eq.type === '무기';
                     const isWangap = eq.type === '완갑';
+                    // 세르카 전율(계승) 장비 — 재련 시뮬 카드와 동일하게 임의 배경 + 세르카 프레임
+                    const isThrill = !isWangap && nameOnly.includes('전율');
                     // 완갑은 API 아이콘 대신 등급별 자체 이미지 사용
                     const iconSrc = isWangap ? wangapIcon(eq.grade) : eq.icon;
                     return (
                       <div key={i} className={styles.itemRow}>
                         {iconSrc && (
-                          // 완갑 이미지는 자체 배경이 있어서 테두리·배경을 덧입히지 않는다
-                          isWangap || hasOwnBackground(eq.grade)
+                          (isThrill || isWangap) ? (
+                            // 전율: 투명 배경이라 무기 빨강·방어구 파랑→검정 그라데이션을 깔고 프레임을 겹친다
+                            // 완갑: 자체 배경 이미지 위에 완갑 평균 시뮬처럼 세르카 프레임만 겹친다
+                            <span className={styles.thrillIcon}>
+                              <span className={`${styles.thrillIconBg} ${isWangap ? styles.thrillIconBgWangap : isWeapon ? styles.thrillIconBgWeapon : styles.thrillIconBgArmor}`}>
+                                <img loading="lazy" decoding="async" src={iconSrc} alt={eq.type}
+                                  className={isWangap ? styles.thrillIconWangapImg : styles.thrillIconImg} />
+                              </span>
+                              {/* 하의만 프레임을 아주 살짝 오른쪽으로 보정 */}
+                              <span className={`${styles.thrillIconFrame} ${eq.type === '하의' ? styles.thrillIconFramePants : ''}`}>
+                                <img loading="lazy" decoding="async" src="/wjsdbf3.webp" alt="" className={styles.thrillIconFrameImg} />
+                              </span>
+                            </span>
+                          ) :
+                          hasOwnBackground(eq.grade)
                             ? <img loading="lazy" decoding="async" src={iconSrc} alt={eq.type} className={styles.itemIconPlain} />
                             : <img loading="lazy" decoding="async" src={iconSrc} alt={eq.type} className={styles.itemIcon} style={iconStyle(eq.grade)} />
                         )}
                         <div className={styles.itemBody}>
                           <div className={styles.itemNameRow}>
                             <span className={`${styles.enhBadge} ${isWeapon ? styles.enhBadgeWeapon : styles.enhBadgeArmor}`}>+{enhLv}</span>
-                            <span className={styles.itemName} style={{ color: getGradeColor(eq.grade) }}>{nameOnly}</span>
+                            {/* 모바일은 폭이 좁아 "운명의 전율 투구"가 잘린다 — 전율 장비는 "전율 투구"식 축약 표기 */}
+                            <span className={styles.itemName} style={{ color: getGradeColor(eq.grade) }}>
+                              {isThrill && isMobile ? `전율 ${eq.type}` : nameOnly}
+                            </span>
                             {eq.transcendence > 0 && <span className={styles.tag}>초월 {eq.transcendence}</span>}
                           </div>
                           {/* 완갑은 품질이 없다 — 품질값이 있을 때만 게이지 노출 */}
@@ -899,13 +941,14 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
                               : '';
                             return (
                               <div key={`s${j}`} className={styles.statLine}>
-                                <GrindingEffect text={s} grade={statGrade} />
+                                <GrindingEffect text={isMobile ? abbrGrindText(s) : s} grade={statGrade} />
                               </div>
                             );
                           })}
+                          {/* 모바일은 옵션명 축약 (치명타 적중률→치적, 아군 공격력 강화 효과→아공강 등) */}
                           {acc.grindingEffects.map((eff, j) => (
                             <div key={`g${j}`} className={styles.statLine}>
-                              <GrindingEffect text={eff.text} grade={eff.grade} />
+                              <GrindingEffect text={isMobile ? abbrGrindText(eff.text) : eff.text} grade={eff.grade} />
                             </div>
                           ))}
                         </div>

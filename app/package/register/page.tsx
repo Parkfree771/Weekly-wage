@@ -461,7 +461,7 @@ export default function PackageRegisterPage() {
           <button type="button" className={styles.removeItemBtn}
             onClick={() => handleRemoveItem(added.id)} title="제거">&times;</button>
         </div>
-        {template.type === 'choice' && template.choices && template.choices.length <= 3 && (
+        {template.type === 'choice' && template.choices && template.choices.length <= 3 && !template.choiceDropdown && (
           <div className={styles.choiceBranch}>
             {template.choices.map((choice) => {
               const isSelected = added.selectedChoiceId === choice.itemId;
@@ -499,7 +499,7 @@ export default function PackageRegisterPage() {
             })}
           </div>
         )}
-        {template.type === 'choice' && template.choices && template.choices.length > 3 && (
+        {template.type === 'choice' && template.choices && (template.choices.length > 3 || template.choiceDropdown) && (
           <div className={styles.choiceDropdown}>
             <select className={styles.choiceSelect} value={added.selectedChoiceId || ''}
               onChange={(e) => handleChoiceChange(added.id, e.target.value)}>

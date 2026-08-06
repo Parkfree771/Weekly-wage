@@ -60,6 +60,7 @@ const EVENTS: EventInfo[] = [
   { date: '2026-04-22', label: '익스 1막' },
   { date: '2026-05-20', label: '익스 2막' },
   { date: '2026-06-20', label: '로아온 썸머' },
+  { date: '2026-08-05', label: '벨가르딘' },
 ];
 
 // 수요일 점 색상 (PriceComparisonStats 통계바 우측 보색과 일치)

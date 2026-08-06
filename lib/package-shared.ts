@@ -1,5 +1,6 @@
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import { isSaleEnded, toSaleDate } from '@/lib/package-sale';
+import { RIFT_TIERS } from '@/data/rewardTable';
 import type { PackagePost } from '@/types/package';
 
 // ─── 선택지 옵션 ───
@@ -22,6 +23,7 @@ export type TemplateItem = {
   name: string;
   type: 'simple' | 'choice' | 'gold' | 'fixed' | 'crystal' | 'expected' | 'bundle' | 'choiceBox';
   itemId?: string;
+  choiceDropdown?: boolean; // choice 선택지가 3개 이하라도 버튼 대신 드롭다운으로 렌더링
   choices?: ChoiceOption[];
   fixedGold?: number;
   crystalPerUnit?: number;
@@ -544,6 +546,33 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     type: 'crystal',
     crystalPerUnit: 60, // 60 블루 크리스탈
   },
+  // ── 공명의 기운 / 휴게 물약 — 둘 다 "균열 1회 클리어 증가분"이라 가치가 같다 ──
+  // 가상 itemId(rift-run-레벨)는 getItemUnitPrice 에서 RIFT_TIERS 수급량 × 시세로 환산.
+  // 1730/1750/1770 레벨 선택, 기본 선택은 최고가(=1770)라 자연히 1770이 기본이 된다.
+  {
+    id: 'resonance-energy',
+    icon: '/resonance-energy.webp',
+    name: '공명의 기운',
+    type: 'choice',
+    choiceDropdown: true,
+    choices: [
+      { itemId: 'rift-run-1770', name: '공명의 기운 [1770]', icon: '/resonance-energy.webp' },
+      { itemId: 'rift-run-1750', name: '공명의 기운 [1750]', icon: '/resonance-energy.webp' },
+      { itemId: 'rift-run-1730', name: '공명의 기운 [1730]', icon: '/resonance-energy.webp' },
+    ],
+  },
+  {
+    id: 'rest-potion',
+    icon: '/rest-potion.webp',
+    name: '휴게 물약',
+    type: 'choice',
+    choiceDropdown: true,
+    choices: [
+      { itemId: 'rift-run-1770', name: '휴게 물약 [1770]', icon: '/rest-potion.webp' },
+      { itemId: 'rift-run-1750', name: '휴게 물약 [1750]', icon: '/rest-potion.webp' },
+      { itemId: 'rift-run-1730', name: '휴게 물약 [1730]', icon: '/rest-potion.webp' },
+    ],
+  },
   // ── 기타 ──
   {
     id: 'leap-essence',
@@ -674,6 +703,7 @@ export const ICON_SIZE_CATALOG: Record<string, number> = {
   'lava-breath': 65, 'glacier-breath': 65, 'breath-choice': 65,
   'superior-abidos': 65, 'abidos-fusion': 65,
   'gem-fear-8': 65, 'gem-radiance-7': 65, 'azena-blessing': 65,
+  'resonance-energy': 65, 'rest-potion': 65,
 };
 export const ICON_SIZE_BOX: Record<string, number> = {};
 
@@ -725,7 +755,53 @@ export function formatNumber(n: number): string {
   return Math.round(n).toLocaleString('ko-KR');
 }
 
+// ── 공명의 기운 / 휴게 물약: "균열 1회 클리어 증가분" 가치 ──
+// rewardTable의 RIFT_TIERS(1회·휴게 미적용 실측 수급량) × 거래소 시세로 환산한다.
+// 두 아이템은 같은 가상 itemId(rift-run-레벨)를 공유하므로 가격도 항상 동일하다.
+export const RIFT_RUN_ITEM_PREFIX = 'rift-run-';
+const RIFT_MATERIAL_ITEM_ID: Record<string, string> = {
+  '파괴석 결정': '66102007',
+  '수호석 결정': '66102107',
+  '위대한 돌파석': '66110226',
+  '운명의 파편': '66130143',
+  // 실링: 시세 없음 → 0골드 환산 (제외)
+};
+
+export function isRiftRunId(itemId: string): boolean {
+  return itemId.startsWith(RIFT_RUN_ITEM_PREFIX);
+}
+
+/** 'rift-run-1770' → 1770 */
+export function getRiftRunLevel(itemId: string): number {
+  return parseInt(itemId.slice(RIFT_RUN_ITEM_PREFIX.length), 10);
+}
+
+export type RiftRunBreakdown = {
+  materials: { label: string; amount: number; unitPrice: number; subtotal: number }[];
+  total: number;
+};
+
+/** 균열 1회 클리어 보상 기댓값의 재료별 분해 (상세 페이지 계산 근거 표시용) */
+export function getRiftRunBreakdown(level: number, prices: Record<string, number>): RiftRunBreakdown {
+  const tier = RIFT_TIERS.find((t) => t.minLevel === level);
+  const materials = (tier?.materials || [])
+    .filter((m) => RIFT_MATERIAL_ITEM_ID[m.label])
+    .map((m) => {
+      const unitPrice = getItemUnitPrice(RIFT_MATERIAL_ITEM_ID[m.label], prices);
+      return { label: m.label, amount: m.amount, unitPrice, subtotal: unitPrice * m.amount };
+    });
+  return { materials, total: materials.reduce((s, m) => s + m.subtotal, 0) };
+}
+
+/** 균열 1회 클리어 가치 = Σ(수급량 × 개당 시세) */
+export function getRiftRunGold(level: number, prices: Record<string, number>): number {
+  return getRiftRunBreakdown(level, prices).total;
+}
+
 export function getItemUnitPrice(itemId: string, prices: Record<string, number>): number {
+  if (itemId.startsWith(RIFT_RUN_ITEM_PREFIX)) {
+    return getRiftRunGold(parseInt(itemId.slice(RIFT_RUN_ITEM_PREFIX.length), 10), prices);
+  }
   const raw = prices[itemId] || 0;
   const bundle = PRICE_BUNDLE_SIZE[itemId] || 1;
   return raw / bundle;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, Fragment } from 'react';
 import { createPortal } from 'react-dom';
-import { Row, Col, Card } from 'react-bootstrap';
+import { Row, Col, Card, Form } from 'react-bootstrap';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
 // 장비 선택 패널은 실제 시뮬과 동일한 스타일, 계산기 본문은 재련 평균 시뮬과 동일한 스타일 사용
@@ -28,10 +28,18 @@ import {
   type WangapBreathMode,
   type WangapAvgPromotionRow,
   type WangapAvgEnhanceRow,
+  type WangapAvgRow,
   type WangapBreathPlanSegment,
 } from '../../lib/wangapAverage';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import { OPT_MATERIAL_LIST, type OptMatKey } from './wangapShared';
+import {
+  buildSpecialPlan,
+  getSpecialRefineInfo,
+  getSpecialTries,
+  type SpecialCandidate,
+  type SpecialPlan,
+} from '../../lib/specialRefining';
 import AdBanner from '../ads/AdBanner';
 
 // 기본 재료 5종 (숨결 제외 — 숨결은 보조 재료 섹션에서 별도 표시)
@@ -68,6 +76,11 @@ export default function WangapAverageCalculator() {
 
   // 장비 성장(재련 경험치) 비용을 총 소모 골드에 포함할지 — 단계마다 1회 고정 비용
   const [includeGrowth, setIncludeGrowth] = useState(true);
+
+  // === 특수 재련 (특재) — 재료·골드 없이 특재돌만 소모(고정 확률). 보유 돌을 효율 순 자동 배분 ===
+  const [useSpecial, setUseSpecial] = useState(false);
+  const [specialStones, setSpecialStones] = useState(0);
+  const [openSpecialPopup, setOpenSpecialPopup] = useState(false);
 
   // === 귀속 (재련 재료 카드와 동일: 귀속 = 0골드) ===
   const [boundMaterials, setBoundMaterials] = useState<Record<OptMatKey, boolean>>(createBoundFlags);
@@ -167,25 +180,84 @@ export default function WangapAverageCalculator() {
     setTargetLevel(nv);
   };
 
+  const unitPricesAll = useMemo(() => Object.fromEntries(
+    OPT_MATERIAL_LIST.map(m => {
+      const itemId = WANGAP_MATERIAL_IDS[m.key];
+      return [m.key, itemId ? (marketPrices[String(itemId)] || 0) : 0];
+    })
+  ) as Record<OptMatKey, number>, [marketPrices]);
+
+  // === 특재 배분 계획 — 단계별 일반 강화 기대 비용(귀속 제외 실구매)을 "돌 1개당 절약 골드"로
+  //     정렬해 보유 돌 범위에서 그리디 배분 (재련 평균 시뮬과 동일 로직) ===
+  const specialPlan = useMemo<SpecialPlan | null>(() => {
+    if (!useSpecial || specialStones <= 0) return null;
+    const cands: SpecialCandidate[] = [];
+    for (let L = startLevel; L < targetLevel; L++) {
+      const wr = computeWangapAverage({
+        startLevel: L,
+        targetLevel: L + 1,
+        startGrade,
+        mode: calcMode,
+        lavaMode,
+        glacierMode,
+        boundFlags: boundMaterials,
+        unitPrices: unitPricesAll,
+      });
+      // 성장 비용은 방식과 무관하게 지불하므로 절약 비교에서 제외 (totals에는 미포함)
+      const cost = wr.totals.골드 + OPT_MATERIAL_LIST.reduce(
+        (sum, m) => boundMaterials[m.key] ? sum : sum + (wr.totals as any)[m.key] * unitPricesAll[m.key],
+        0,
+      );
+      cands.push({ key: `완갑:${L}`, equipName: '완갑', kind: 'wangap', level: L, normalCostGold: cost });
+    }
+    return buildSpecialPlan(cands, specialStones, calcMode);
+  }, [useSpecial, specialStones, startLevel, targetLevel, startGrade, calcMode, lavaMode, glacierMode, boundMaterials, unitPricesAll]);
+
   // === 기대값 계산 (조건이 바뀌면 즉시 재계산) ===
-  const result = useMemo(() => {
-    const unitPrices = Object.fromEntries(
-      OPT_MATERIAL_LIST.map(m => {
-        const itemId = WANGAP_MATERIAL_IDS[m.key];
-        return [m.key, itemId ? (marketPrices[String(itemId)] || 0) : 0];
-      })
-    ) as Record<OptMatKey, number>;
-    return computeWangapAverage({
-      startLevel,
-      targetLevel,
-      startGrade,
+  // 특재 배분 단계가 있으면 단계별로 쪼개 합산한다 — computeWangapAverage는 단계 가산적이라
+  // 구간 호출과 결과가 같고, 배분 단계만 강화 재료 대신 특재돌 소모로 대체된다.
+  const { result, specialStonesUsed } = useMemo(() => {
+    const params = (from: number, to: number, grade: WangapGrade) => ({
+      startLevel: from,
+      targetLevel: to,
+      startGrade: grade,
       mode: calcMode,
       lavaMode,
       glacierMode,
       boundFlags: boundMaterials,
-      unitPrices,
+      unitPrices: unitPricesAll,
     });
-  }, [startLevel, targetLevel, startGrade, calcMode, lavaMode, glacierMode, boundMaterials, marketPrices]);
+    if (!specialPlan || specialPlan.chosen.length === 0) {
+      return { result: computeWangapAverage(params(startLevel, targetLevel, startGrade)), specialStonesUsed: 0 };
+    }
+    const totals = {
+      파괴석결정: 0, 수호석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 운명파편: 0,
+      실링: 0, 골드: 0, 용암: 0, 빙하: 0,
+    };
+    const rows: WangapAvgRow[] = [];
+    const growthAcc = { 운명파편: 0, 실링: 0 };
+    let totalTries = 0;
+    let stones = 0;
+    let curGrade: WangapGrade = startGrade;
+    for (let L = startLevel; L < targetLevel; L++) {
+      const wr = computeWangapAverage(params(L, L + 1, curGrade));
+      const promos = wr.rows.filter((r): r is WangapAvgPromotionRow => r.type === 'promotion');
+      if (promos.length > 0) curGrade = promos[promos.length - 1].to;
+      growthAcc.운명파편 += wr.growth.운명파편;
+      growthAcc.실링 += wr.growth.실링;
+      if (specialPlan.chosenKeys.has(`완갑:${L}`)) {
+        // 특재 단계 — 승급·성장은 그대로, 강화 재료·숨결 계획은 제외하고 특재돌만 소모
+        rows.push(...promos);
+        const sp = getSpecialRefineInfo('wangap', L);
+        if (sp) stones += sp.stonesPerTry * getSpecialTries(sp.prob, calcMode);
+      } else {
+        rows.push(...wr.rows);
+        (Object.keys(totals) as Array<keyof typeof totals>).forEach(k => { totals[k] += wr.totals[k]; });
+        totalTries += wr.totalTries;
+      }
+    }
+    return { result: { rows, totals, totalTries, growth: growthAcc }, specialStonesUsed: stones };
+  }, [startLevel, targetLevel, startGrade, calcMode, lavaMode, glacierMode, boundMaterials, unitPricesAll, specialPlan]);
 
   const { totals, growth } = result;
 
@@ -622,6 +694,75 @@ export default function WangapAverageCalculator() {
             </div>
           </Card.Header>
           <Card.Body className={styles.cardBody} style={{ padding: isMobile ? '0.75rem 0.5rem' : undefined }}>
+            {/* 특수 재련 (특재) — 재련 평균 시뮬과 동일한 바. 보유 돌을 절약 골드 큰 단계부터 자동 배분 */}
+            <div className={styles.specialBar}>
+              <div className={styles.specialBarHead}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/special-refine-stone.webp" alt="특재돌" className={styles.specialIcon} />
+                <span className={styles.specialTitle}>특수 재련</span>
+                <Form.Check
+                  type="switch"
+                  id="wangap-special-refine-toggle"
+                  checked={useSpecial}
+                  onChange={(e) => setUseSpecial(e.target.checked)}
+                />
+                {useSpecial && (
+                  <>
+                    <span className={styles.specialLabel}>보유 특재돌</span>
+                    <input
+                      type="number"
+                      min={0}
+                      className={styles.specialInput}
+                      value={specialStones || ''}
+                      placeholder="0"
+                      onChange={(e) => setSpecialStones(Math.max(0, parseInt(e.target.value) || 0))}
+                    />
+                  </>
+                )}
+              </div>
+              {useSpecial && !specialPlan && (
+                <div className={styles.specialHint}>
+                  보유 특재돌 개수를 입력하면 절약 골드가 큰 단계부터 자동 배분합니다.
+                </div>
+              )}
+              {useSpecial && specialPlan && specialPlan.chosen.length === 0 && (
+                <div className={styles.specialHint}>
+                  보유 돌이 추천 단계의 기대 소모량보다 적어 배분할 단계가 없습니다.
+                </div>
+              )}
+              {useSpecial && specialPlan && specialPlan.chosen.length > 0 && (
+                <div className={styles.specialSummary}>
+                  <span>
+                    추천 {specialPlan.chosen.length}단계 · 기대 돌 {Math.round(specialPlan.usedStones).toLocaleString()}개 ·
+                    일반 강화 대비 절약 약 {Math.round(specialPlan.savedGold).toLocaleString()}G
+                  </span>
+                  <button type="button" className={styles.specialPlanBtn} onClick={() => setOpenSpecialPopup(v => !v)}>
+                    {openSpecialPopup ? '배분 닫기' : '배분 보기'}
+                  </button>
+                </div>
+              )}
+              {useSpecial && openSpecialPopup && specialPlan && specialPlan.chosen.length > 0 && (
+                <div className={styles.specialPlanList}>
+                  {specialPlan.chosen.map(s => (
+                    <div key={s.key} className={styles.specialPlanRow}>
+                      <span className={styles.specialPlanName}>+{s.level}→{s.level + 1}</span>
+                      <span className={styles.specialPlanMeta}>
+                        {(s.prob * 100).toFixed(1).replace(/\.0$/, '')}% · 회당 {s.stonesPerTry}개 ·
+                        기대 {Math.round(s.expectedStones).toLocaleString()}개 · 절약 {Math.round(s.normalCostGold).toLocaleString()}G
+                      </span>
+                    </div>
+                  ))}
+                  {(() => {
+                    const next = specialPlan.ranked.find(r => !specialPlan.chosenKeys.has(r.key));
+                    return next ? (
+                      <div className={styles.specialPlanNext}>
+                        다음 순위: +{next.level}→{next.level + 1} — 기대 돌 {Math.round(next.expectedStones).toLocaleString()}개 필요 (돌 1개당 절약 {Math.round(next.goldPerStone).toLocaleString()}G)
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              )}
+            </div>
             {/* 1줄: 기본 재료 5종 + 실링 */}
             <div className={styles.materialsSection}>
               <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
@@ -637,6 +778,18 @@ export default function WangapAverageCalculator() {
                     />
                   </Col>
                 ))}
+                {specialStonesUsed > 0 && (
+                  <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                    <MaterialCard
+                      icon="/special-refine-stone.webp"
+                      name="특재돌"
+                      amount={Math.round(specialStonesUsed)}
+                      color="#d946ef"
+                      showCheckbox={false}
+                      reserveCostSpace
+                    />
+                  </Col>
+                )}
                 <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
                   <MaterialCard
                     icon="/shilling.webp"

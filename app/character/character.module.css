@@ -809,6 +809,74 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 }
 
+/* ── 세르카 전율(계승) 장비 아이콘 — 재련 시뮬 카드와 동일 구조.
+   API 아이콘이 투명 배경이라 임의 배경(무기 빨강·방어구 파랑→검정)을 깔고 세르카 프레임을 겹친다.
+   프레임 오버행이 %라 --item-icon 기준으로 그대로 스케일된다.
+   컨테이너를 0.72배로 줄이고 여백으로 채워 프레임 포함 시각 크기가 다른 아이콘(--item-icon)과 같다 ── */
+.thrillIcon {
+  position: relative;
+  width: calc(var(--item-icon, 52px) * 0.72);
+  height: calc(var(--item-icon, 52px) * 0.72);
+  flex-shrink: 0;
+  display: block;
+  overflow: visible;
+  margin: calc(var(--item-icon, 52px) * 0.14) calc(var(--item-icon, 52px) * 0.2)
+          calc(var(--item-icon, 52px) * 0.14) calc(var(--item-icon, 52px) * 0.12);
+}
+
+.thrillIconBg {
+  position: absolute;
+  inset: -8% -9% -5% -5%;
+  border-radius: 6px;
+  z-index: 0;
+}
+
+.thrillIconBgArmor { background: linear-gradient(135deg, #1d4ed8 0%, #0a101f 75%); }
+.thrillIconBgWeapon { background: linear-gradient(135deg, #b91c1c 0%, #170808 75%); }
+
+.thrillIconImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.thrillIconFrame {
+  position: absolute;
+  top: -21.5%;
+  bottom: -21.5%;
+  left: -21%;
+  right: -25.6%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.thrillIconFrameImg {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+/* 하의만 프레임을 아주 살짝 오른쪽으로 (아이콘 그래픽 무게중심 보정) */
+.thrillIconFramePants {
+  transform: translateX(1px);
+}
+
+/* 완갑 — 자체 배경 이미지라 그라데이션 없이 완갑 평균 시뮬과 같은 -4% 커버 */
+.thrillIconBgWangap {
+  inset: -4%;
+}
+
+.thrillIconWangapImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
 
 .itemBody {
   flex: 1;

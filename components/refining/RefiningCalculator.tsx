@@ -34,6 +34,13 @@ import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import { WANGAP_ITEM_IMAGES, type WangapGrade } from '../../lib/wangap-item-images';
 import { computeWangapAverage, type WangapBreathMode } from '../../lib/wangapAverage';
 import {
+  buildSpecialPlan,
+  getSpecialRefineInfo,
+  getSpecialTries,
+  type SpecialCandidate,
+  type SpecialPlan,
+} from '../../lib/specialRefining';
+import {
   calculateAdvancedRefiningMaterials,
   type AdvancedRefiningOptions as NewAdvancedRefiningOptions
 } from '../../lib/advancedRefiningData';
@@ -90,6 +97,7 @@ type Materials = {
   위대한돌파석?: number; // 위대한 명예의 돌파석 (계승)
   상급아비도스?: number; // 상급 아비도스 융화 재료 (계승)
   실링?: number; // 실링 (계승 귀속 재화)
+  특재돌?: number; // 특수 재련 돌 (귀속, 특재 배분 단계에서만 소모)
 };
 
 
@@ -104,6 +112,112 @@ const bookBonusTooltip = (itemId: string): React.ReactNode => {
     </>
   );
 };
+
+// ─── 배지 필 드롭다운 ───
+// 네이티브 셀렉트 크롬 대신 배지(pill) 디자인에서 그대로 이어지는 커스텀 메뉴.
+// equipmentCard가 overflow hidden이라 메뉴는 포털(fixed)로 띄우고, 바깥 클릭·스크롤 시 닫는다.
+type PillOption = { value: string; label: string };
+
+function PillDropdown({
+  value,
+  options,
+  onSelect,
+  display,
+  pillClass,
+  menuClass,
+  mobile,
+  disabled,
+  ariaLabel,
+}: {
+  value: string;
+  options: PillOption[];
+  onSelect: (v: string) => void;
+  display: string;
+  pillClass: string;
+  menuClass: string;
+  mobile: boolean;
+  disabled?: boolean;
+  ariaLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number; width: number } | null>(null);
+
+  const openMenu = () => {
+    if (disabled) return;
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const spaceBelow = window.innerHeight - r.bottom;
+    // 아래 공간이 부족하면 위로 펼친다 (메뉴 최대 높이 240px + 여유)
+    if (spaceBelow < 260 && r.top > spaceBelow) {
+      setPos({ left: r.left, bottom: window.innerHeight - r.top + 4, width: Math.max(r.width, 76) });
+    } else {
+      setPos({ left: r.left, top: r.bottom + 4, width: Math.max(r.width, 76) });
+    }
+    setOpen(true);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    // 열리면 현재 값이 보이도록 스크롤
+    menuRef.current?.querySelector(`.${styles.pillMenuItemActive}`)?.scrollIntoView({ block: 'center' });
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (menuRef.current?.contains(t) || btnRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    const close = () => setOpen(false);
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        type="button"
+        ref={btnRef}
+        className={`${styles.pillSelect} ${mobile ? styles.pillSelectMobile : ''} ${pillClass}`}
+        onClick={() => (open ? setOpen(false) : openMenu())}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        aria-expanded={open}
+      >
+        {display}
+        <span className={styles.pillCaret}>▾</span>
+      </button>
+      {open && pos && createPortal(
+        <div
+          ref={menuRef}
+          className={`${styles.pillMenu} ${menuClass}`}
+          style={{ left: pos.left, top: pos.top, bottom: pos.bottom, minWidth: pos.width }}
+          role="listbox"
+          aria-label={ariaLabel}
+        >
+          {options.map(o => (
+            <button
+              key={o.value}
+              type="button"
+              role="option"
+              aria-selected={o.value === value}
+              className={`${styles.pillMenuItem} ${o.value === value ? styles.pillMenuItemActive : ''}`}
+              onClick={() => { onSelect(o.value); setOpen(false); }}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>,
+        document.body,
+      )}
+    </>
+  );
+}
 
 type RefiningMode = 'normal' | 'succession';
 
@@ -162,6 +276,21 @@ export default function RefiningCalculator({
       [eq.name]: { normal: nextNormal, advanced: nextAdvanced },
     }));
     // 시작 단계가 바뀌면 해당 종류의 목표는 초기화 (목표 <= 시작 방지)
+    setTargetLevels(prev => ({
+      ...prev,
+      [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), [kind]: null },
+    }));
+  };
+
+  // 시작 단계 직접 선택 (장비 카드 현재 드롭다운) — adjustStart와 동일한 규칙 + 목표 초기화
+  const setStart = (eq: (typeof equipments)[number], kind: 'normal' | 'advanced', value: number) => {
+    setStartOverrides(prev => ({
+      ...prev,
+      [eq.name]: {
+        normal: kind === 'normal' ? value : eq.currentLevel,
+        advanced: kind === 'advanced' ? value : eq.currentAdvancedLevel,
+      },
+    }));
     setTargetLevels(prev => ({
       ...prev,
       [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), [kind]: null },
@@ -251,6 +380,10 @@ export default function RefiningCalculator({
 
   // 계산 모드 (중앙값/평균값/장기백)
   const [calcMode, setCalcMode] = useState<CalcMode>('median');
+
+  // 특수 재련 (특재) — 계승 후·완갑 전용. 보유 특재돌을 효율 순으로 자동 배분한다.
+  const [useSpecial, setUseSpecial] = useState(false);
+  const [specialStones, setSpecialStones] = useState(0);
 
   // 계산 결과 상태 (비용 포함)
   const [results, setResults] = useState<{ totalGold: number; materialCosts: Record<string, number> }>({
@@ -357,8 +490,8 @@ export default function RefiningCalculator({
       setMaterials(null);
     }
     // boundMaterials 의존 필수: 귀속 토글로 optimalBreathTable(최적 정책)이 바뀌면 수량도 다시 계산돼야 정확.
-    // (optimalBreathTable은 이 effect보다 뒤에 선언되어 직접 못 넣지만, 그 입력을 전부 포함하므로 동일 효과)
-  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments, calcMode, marketPrices, boundMaterials, includeGrowth]);
+    // (optimalBreathTable·specialPlan은 이 effect보다 뒤에 선언되어 직접 못 넣지만, 그 입력을 전부 포함하므로 동일 효과)
+  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments, calcMode, marketPrices, boundMaterials, includeGrowth, useSpecial, specialStones]);
 
   // 비용 계산 로직 (useEffect로 분리)
   useEffect(() => {
@@ -715,6 +848,110 @@ export default function RefiningCalculator({
       preWeapon: sorted(preWeapon),
     };
   }, [equipments, targetLevels]);
+
+  // === 특수 재련 (특재) 배분 계획 ===
+  // 목표 구간의 모든 단계(계승 후 무기/방어구 부위별 + 완갑)를 "돌 1개당 절약 골드" 내림차순으로
+  // 정렬해 보유 특재돌 범위에서 그리디 배분한다. 단계별 일반 재련 기대 비용은
+  // calculateMaterials와 동일한 경로(최적 숨결 정책/책 토글/귀속/계산 모드)로 산출해 일관성을 지킨다.
+  // 계승 전 장비는 특재 불가라 후보에서 제외.
+  const specialPlan = useMemo<SpecialPlan | null>(() => {
+    if (!useSpecial || specialStones <= 0 || !searched) return null;
+    const mp = (id: string) => marketPrices[id] || 0;
+    const bnd = (key: string) => !!boundMaterials[key];
+    const cands: SpecialCandidate[] = [];
+    equipments.forEach(eq => {
+      const t = targetLevels[eq.name];
+      if (!t?.normal || t.normal <= eq.currentLevel) return;
+      if (eq.isEsther) return;
+      if (eq.isWangap) {
+        const modeOf = (o: { enabled: boolean; optimal: boolean }): WangapBreathMode =>
+          !o.enabled ? 'off' : o.optimal ? 'optimal' : 'full';
+        for (let L = eq.currentLevel; L < t.normal; L++) {
+          const wr = computeWangapAverage({
+            startLevel: L,
+            targetLevel: L + 1,
+            startGrade: (eq.grade as WangapGrade) || '영웅',
+            mode: calcMode,
+            lavaMode: modeOf(materialOptions.wangapLava),
+            glacierMode: modeOf(materialOptions.wangapGlacier),
+            boundFlags: {
+              파괴석결정: bnd('파괴석결정'), 수호석결정: bnd('수호석결정'),
+              위대한돌파석: bnd('위대한돌파석'), 상급아비도스: bnd('상급아비도스'),
+              운명파편: bnd('운명파편'),
+              용암: materialOptions.wangapLava.isBound,
+              빙하: materialOptions.wangapGlacier.isBound,
+            },
+            unitPrices: {
+              파괴석결정: mp('66102007'), 수호석결정: mp('66102107'),
+              위대한돌파석: mp('66110226'), 상급아비도스: mp('6861013'),
+              운명파편: mp('66130143'), 용암: mp('66111131'), 빙하: mp('66111132'),
+            },
+          });
+          // 성장 비용은 재련 방식과 무관하게 지불하므로 절약 비교에서 제외 (totals에는 미포함)
+          const cost =
+            (bnd('파괴석결정') ? 0 : wr.totals.파괴석결정 * mp('66102007'))
+            + (bnd('수호석결정') ? 0 : wr.totals.수호석결정 * mp('66102107'))
+            + (bnd('위대한돌파석') ? 0 : wr.totals.위대한돌파석 * mp('66110226'))
+            + (bnd('상급아비도스') ? 0 : wr.totals.상급아비도스 * mp('6861013'))
+            + (bnd('운명파편') ? 0 : wr.totals.운명파편 * mp('66130143'))
+            + wr.totals.골드
+            + (materialOptions.wangapLava.isBound ? 0 : wr.totals.용암 * mp('66111131'))
+            + (materialOptions.wangapGlacier.isBound ? 0 : wr.totals.빙하 * mp('66111132'));
+          cands.push({ key: `${eq.name}:${L}`, equipName: eq.name, kind: 'wangap', level: L, normalCostGold: cost });
+        }
+        return;
+      }
+      if (!eq.isSuccession) return; // 계승 전은 특재 불가
+      const isArmor = eq.type === 'armor';
+      for (let L = eq.currentLevel; L < t.normal; L++) {
+        const baseProb = SUCCESSION_BASE_PROBABILITY[L];
+        if (!baseProb) continue;
+        const nextLevel = L + 1;
+        const mc = isArmor ? SUCCESSION_ARMOR_MATERIAL_COSTS[nextLevel] : SUCCESSION_WEAPON_MATERIAL_COSTS[nextLevel];
+        if (!mc) continue;
+        const breathOpt = isArmor ? materialOptions.glacierBreath : materialOptions.lavaBreath;
+        const useBreath = breathOpt.enabled;
+        const useOptimal = useBreath && breathOpt.optimal;
+        // 전율 책 토글·시세 (calculateMaterials와 동일 규칙)
+        let useThrill = false; let thrillBound = false; let thrillPrice = 0;
+        if (nextLevel >= 12 && nextLevel <= 15) {
+          const o = isArmor ? materialOptions.tailoring1215 : materialOptions.metallurgy1215;
+          useThrill = o.enabled; thrillBound = o.isBound;
+          thrillPrice = mp(isArmor ? '66112564' : '66112561');
+        } else if (nextLevel >= 16 && nextLevel <= 19) {
+          const o = isArmor ? materialOptions.tailoring1619 : materialOptions.metallurgy1619;
+          useThrill = o.enabled; thrillBound = o.isBound;
+          thrillPrice = mp(isArmor ? '66112565' : '66112562');
+        }
+        const succVariants = useOptimal
+          ? (isArmor ? optimalBreathTable.armor : optimalBreathTable.weapon)[L]
+          : undefined;
+        let tries: number; let breaths: number; let bookUsed: boolean;
+        if (succVariants) {
+          const pol = useThrill ? succVariants.on : succVariants.off;
+          tries = pol.tries; breaths = pol.breaths; bookUsed = pol.useBook;
+        } else {
+          tries = getSuccessionTries(L, useBreath, useThrill, calcMode);
+          breaths = useBreath ? getSuccessionBreathEffect(baseProb).max * tries : 0;
+          bookUsed = useThrill && L >= 11 && L <= 18; // getSuccessionTries의 effectiveBook 조건과 동일
+        }
+        if (tries <= 0) continue;
+        const stonePart = isArmor
+          ? (bnd('수호석결정') ? 0 : (mc as any).수호석결정 * mp('66102107'))
+          : (bnd('파괴석결정') ? 0 : (mc as any).파괴석결정 * mp('66102007'));
+        const perTry = stonePart
+          + (bnd('위대한돌파석') ? 0 : (mc as any).위대한돌파석 * mp('66110226'))
+          + (bnd('상급아비도스') ? 0 : (mc as any).상급아비도스 * mp('6861013'))
+          + (bnd('운명파편') ? 0 : mc.운명파편 * mp('66130143'))
+          + mc.골드
+          + (bookUsed ? (thrillBound ? 0 : thrillPrice) : 0);
+        const breathPrice = breathOpt.isBound ? 0 : mp(isArmor ? '66111132' : '66111131');
+        const cost = tries * perTry + breaths * breathPrice;
+        cands.push({ key: `${eq.name}:${L}`, equipName: eq.name, kind: isArmor ? 'armor' : 'weapon', level: L, normalCostGold: cost });
+      }
+    });
+    return buildSpecialPlan(cands, specialStones, calcMode);
+  }, [useSpecial, specialStones, searched, equipments, targetLevels, calcMode, marketPrices, boundMaterials, materialOptions, optimalBreathTable]);
 
   // "최적" 클릭 시 1회: 정책이 권장하는 책 토글을 자동으로 켜준다 (권장 안 하면 끔).
   // 이후에는 사용자가 자유롭게 켜고 끌 수 있고, 계산은 토글 상태를 조건으로 숨결만 다시 최적화한다.
@@ -1543,6 +1780,7 @@ export default function RefiningCalculator({
       야금술1단: 0, 야금술2단: 0, 야금술3단: 0, 야금술4단: 0,
       // 계승 재료
       수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0,
+      특재돌: 0,
     };
 
     toRefine.forEach(eq => {
@@ -1555,9 +1793,9 @@ export default function RefiningCalculator({
         if (!targets.normal || targets.normal <= eq.currentLevel) return;
         const modeOf = (o: { enabled: boolean; optimal: boolean }): WangapBreathMode =>
           !o.enabled ? 'off' : o.optimal ? 'optimal' : 'full';
-        const wr = computeWangapAverage({
-          startLevel: eq.currentLevel,
-          targetLevel: targets.normal,
+        const runWangap = (from: number, to: number) => computeWangapAverage({
+          startLevel: from,
+          targetLevel: to,
           startGrade: (eq.grade as WangapGrade) || '영웅',
           mode: calcMode,
           lavaMode: modeOf(materialOptions.wangapLava),
@@ -1581,24 +1819,41 @@ export default function RefiningCalculator({
             빙하: (marketPrices['66111132'] || 0),
           },
         });
-        const wt = wr.totals;
-        totalMaterials.파괴석결정 = (totalMaterials.파괴석결정 || 0) + wt.파괴석결정;
-        totalMaterials.수호석결정 = (totalMaterials.수호석결정 || 0) + wt.수호석결정;
-        totalMaterials.위대한돌파석 = (totalMaterials.위대한돌파석 || 0) + wt.위대한돌파석;
-        totalMaterials.상급아비도스 = (totalMaterials.상급아비도스 || 0) + wt.상급아비도스;
-        // 장비 성장(단계마다 1회 고정)은 따로 모아두고 토글 상태에 따라 합계에 넣는다
-        totalMaterials.성장파편 = (totalMaterials.성장파편 || 0) + wr.growth.운명파편;
-        totalMaterials.성장실링 = (totalMaterials.성장실링 || 0) + wr.growth.실링;
-        totalMaterials.운명파편 += wt.운명파편 + (includeGrowth ? wr.growth.운명파편 : 0);
-        totalMaterials.실링 = (totalMaterials.실링 || 0) + wt.실링 + (includeGrowth ? wr.growth.실링 : 0);
-        totalMaterials.누골 += wt.골드;
-        if (wt.용암 > 0) {
-          totalMaterials.용암 += wt.용암;
-          totalMaterials.용암_완갑 = (totalMaterials.용암_완갑 || 0) + wt.용암;
-        }
-        if (wt.빙하 > 0) {
-          totalMaterials.빙하 += wt.빙하;
-          totalMaterials.빙하_완갑 = (totalMaterials.빙하_완갑 || 0) + wt.빙하;
+        // 특재 배분 단계는 강화 재료 대신 특재돌만 소모한다 (성장 비용은 방식과 무관하게 지불).
+        // computeWangapAverage는 단계 가산적이라 단계별로 쪼개 합산해도 구간 호출과 결과가 같다.
+        for (let L = eq.currentLevel; L < targets.normal; L++) {
+          const wr = runWangap(L, L + 1);
+          if (specialPlan?.chosenKeys.has(`${eq.name}:${L}`)) {
+            const spInfo = getSpecialRefineInfo('wangap', L);
+            if (spInfo) {
+              totalMaterials.특재돌 = (totalMaterials.특재돌 || 0)
+                + spInfo.stonesPerTry * getSpecialTries(spInfo.prob, calcMode);
+            }
+          } else {
+            const wt = wr.totals;
+            totalMaterials.파괴석결정 = (totalMaterials.파괴석결정 || 0) + wt.파괴석결정;
+            totalMaterials.수호석결정 = (totalMaterials.수호석결정 || 0) + wt.수호석결정;
+            totalMaterials.위대한돌파석 = (totalMaterials.위대한돌파석 || 0) + wt.위대한돌파석;
+            totalMaterials.상급아비도스 = (totalMaterials.상급아비도스 || 0) + wt.상급아비도스;
+            totalMaterials.운명파편 += wt.운명파편;
+            totalMaterials.실링 = (totalMaterials.실링 || 0) + wt.실링;
+            totalMaterials.누골 += wt.골드;
+            if (wt.용암 > 0) {
+              totalMaterials.용암 += wt.용암;
+              totalMaterials.용암_완갑 = (totalMaterials.용암_완갑 || 0) + wt.용암;
+            }
+            if (wt.빙하 > 0) {
+              totalMaterials.빙하 += wt.빙하;
+              totalMaterials.빙하_완갑 = (totalMaterials.빙하_완갑 || 0) + wt.빙하;
+            }
+          }
+          // 장비 성장(단계마다 1회 고정)은 따로 모아두고 토글 상태에 따라 합계에 넣는다
+          totalMaterials.성장파편 = (totalMaterials.성장파편 || 0) + wr.growth.운명파편;
+          totalMaterials.성장실링 = (totalMaterials.성장실링 || 0) + wr.growth.실링;
+          if (includeGrowth) {
+            totalMaterials.운명파편 += wr.growth.운명파편;
+            totalMaterials.실링 = (totalMaterials.실링 || 0) + wr.growth.실링;
+          }
         }
         return;
       }
@@ -1614,6 +1869,23 @@ export default function RefiningCalculator({
             // 계승은 11~24 레벨 데이터 있음 (11→12 ~ 24→25)
             const baseProb = SUCCESSION_BASE_PROBABILITY[level];
             if (!baseProb) continue;
+
+            // 특재 배분 단계 — 강화 재료 대신 특재돌만 소모. 성장 비용은 방식과 무관하게 지불.
+            if (specialPlan?.chosenKeys.has(`${eq.name}:${level}`)) {
+              const spInfo = getSpecialRefineInfo(eq.type === 'armor' ? 'armor' : 'weapon', level);
+              if (spInfo) {
+                totalMaterials.특재돌 = (totalMaterials.특재돌 || 0)
+                  + spInfo.stonesPerTry * getSpecialTries(spInfo.prob, calcMode);
+                const growSp = getGrowthCost(level, eq.type, true);
+                totalMaterials.성장파편 = (totalMaterials.성장파편 || 0) + growSp.운명파편;
+                totalMaterials.성장실링 = (totalMaterials.성장실링 || 0) + growSp.실링;
+                if (includeGrowth) {
+                  totalMaterials.운명파편 += growSp.운명파편;
+                  totalMaterials.실링 = (totalMaterials.실링 || 0) + growSp.실링;
+                }
+                continue;
+              }
+            }
 
             // 숨결 옵션 (미사용/풀숨/최적)
             const isArmor = eq.type === 'armor';
@@ -1999,97 +2271,11 @@ export default function RefiningCalculator({
                 </div>
               )}
 
-              {/* 완갑 — 재료 체계가 달라 장비 그리드와 분리한다.
-                  좁은 우측 칸에 끼워 넣으면 상자만 늘어나고 안이 비어 보여서 카드 아래 전체 폭으로 뺐다 */}
-              {searched && (() => {
-                const wg = equipments.find(e => e.isWangap);
-                if (!wg) return null;
-                const wgTarget = targetLevels['완갑']?.normal ?? null;
-                const setWgTarget = (next: number | null) => setTargetLevels(prev => ({
-                  ...prev,
-                  ['완갑']: { ...(prev['완갑'] ?? { normal: null, advanced: null }), normal: next },
-                }));
-                return (
-                  <div className={styles.wangapPanel}>
-                    <span className={styles.wangapIcon} data-grade={wg.grade}>
-                      <span className={styles.wangapIconImg}>
-                        <Image
-                          src={WANGAP_ITEM_IMAGES[wg.grade as WangapGrade] || WANGAP_ITEM_IMAGES['영웅']}
-                          alt={`완갑 ${wg.grade}`}
-                          fill
-                          sizes="66px"
-                          style={{ objectFit: 'cover' }}
-                        />
-                      </span>
-                      <span className={styles.wangapIconFrame}>
-                        <Image src="/wjsdbf3.webp" alt="" fill sizes="92px" style={{ objectFit: 'fill' }} unoptimized />
-                      </span>
-                    </span>
-                    <div className={styles.wangapPanelName}>
-                      <span className={styles.wangapPanelTitle}>완갑</span>
-                      <span className={styles.wangapPanelGrade} data-grade={wg.grade}>{wg.grade}</span>
-                    </div>
-                    {/* 현재 → 목표. 장비 카드와 같은 스테퍼 모양이라 조작 방법이 바로 읽힌다 */}
-                    <div className={styles.wangapPanelSteps}>
-                      <div className={`${styles.startStepper} ${isMobile ? styles.startStepperMobile : ''}`}>
-                        <button
-                          type="button"
-                          className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
-                          onClick={() => adjustStart(wg, 'normal', -1)}
-                          disabled={wg.currentLevel <= 0}
-                          aria-label="완갑 현재 단계 감소"
-                        >
-                          −
-                        </button>
-                        <Badge pill bg="" className={`${styles.levelBadgeWeapon} ${isMobile ? styles.levelBadgeMobile : ''}`}>
-                          +{wg.currentLevel}
-                        </Badge>
-                        <button
-                          type="button"
-                          className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
-                          onClick={() => adjustStart(wg, 'normal', 1)}
-                          disabled={wg.currentLevel >= 25}
-                          aria-label="완갑 현재 단계 증가"
-                        >
-                          +
-                        </button>
-                      </div>
-                      <span className={styles.wangapPanelArrow}>→</span>
-                      <div className={`${styles.startStepper} ${isMobile ? styles.startStepperMobile : ''}`}>
-                        <button
-                          type="button"
-                          className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
-                          onClick={() => {
-                            const cur = wgTarget ?? wg.currentLevel + 1;
-                            setWgTarget(cur - 1 <= wg.currentLevel ? null : cur - 1);
-                          }}
-                          disabled={wgTarget === null}
-                          aria-label="완갑 목표 단계 감소"
-                        >
-                          −
-                        </button>
-                        <Badge pill bg="" className={`${styles.wangapTargetBadge} ${wgTarget === null ? styles.wangapTargetBadgeEmpty : ''} ${isMobile ? styles.levelBadgeMobile : ''}`}>
-                          {wgTarget ? `+${wgTarget}` : '목표'}
-                        </Badge>
-                        <button
-                          type="button"
-                          className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
-                          onClick={() => setWgTarget(Math.min((wgTarget ?? wg.currentLevel) + 1, 25))}
-                          disabled={(wgTarget ?? wg.currentLevel) >= 25}
-                          aria-label="완갑 목표 단계 증가"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
               {searched && equipments.length > 0 && (
               <>
               <Row className="g-3">
-                {equipments.filter(eq => !eq.isWangap).map((eq, index) => {
+                {/* 완갑도 데스크톱·모바일 모두 다른 장비와 같은 그리드 카드 (배지색만 보라) */}
+                {equipments.map((eq, index) => {
                   const targets = targetLevels[eq.name] || { normal: null, advanced: null };
                   const isNormalChanged = targets.normal !== null && targets.normal > eq.currentLevel;
                   const isAdvancedChanged = targets.advanced !== null && targets.advanced > eq.currentAdvancedLevel;
@@ -2116,55 +2302,66 @@ export default function RefiningCalculator({
                         }}
                       >
                         <div className="d-flex align-items-center" style={{ marginBottom: isMobile ? '0.3rem' : '0.5rem', gap: isMobile ? '0.4rem' : '0.6rem' }}>
-                          {/* 장비 아이콘 (완갑은 목록에서 제외 — 캐릭터 정보 옆 전용 패널에 표시) */}
-                          {eq.icon && (
+                          {/* 장비 아이콘 — 완갑은 전용 패널과 동일한 구조(이미지 inset -4% + 프레임 비대칭 오버행)로
+                              배경과 테두리 사이 공간 없이 렌더링. 프레임 두께가 전율 프레임 사용법과 달라 재사용 금지 */}
+                          {eq.isWangap ? (
+                            <span className={`${styles.wangapIcon} ${styles.wangapIconCard}`} data-grade={eq.grade}>
+                              <span className={styles.wangapIconImg}>
+                                <Image
+                                  src={WANGAP_ITEM_IMAGES[eq.grade as WangapGrade] || WANGAP_ITEM_IMAGES['영웅']}
+                                  alt={`완갑 ${eq.grade}`}
+                                  fill
+                                  sizes="66px"
+                                  style={{ objectFit: 'cover' }}
+                                />
+                              </span>
+                              <span className={styles.wangapIconFrame}>
+                                <Image src="/wjsdbf3.webp" alt="" fill sizes="92px" style={{ objectFit: 'fill' }} unoptimized />
+                              </span>
+                            </span>
+                          ) : eq.isSuccession && eq.icon ? (
+                            /* 전율 장비 — API 아이콘이 투명 배경이라 완갑과 같은 구조로:
+                               임의 배경(방어구 파랑·무기 빨강 → 검정 그라데이션)을 깔고
+                               세르카 프레임을 완갑과 동일한 오버행 수치로 맞춘다 */
+                            <span className={`${styles.wangapIcon} ${styles.wangapIconCard}`}>
+                              <span className={eq.type === 'weapon' ? styles.succIconBgWeapon : styles.succIconBgArmor}>
+                                <Image
+                                  src={eq.icon}
+                                  alt={eq.name}
+                                  fill
+                                  sizes="66px"
+                                  className={styles.succIconImg}
+                                  style={{ objectFit: 'contain' }}
+                                  unoptimized
+                                />
+                              </span>
+                              {/* 방어구(투구·견갑·상의·하의·장갑)만 데스크톱에서 프레임을 살짝 오른쪽으로 */}
+                              <span className={`${styles.wangapIconFrame} ${eq.type === 'armor' ? styles.succIconFrameArmor : ''}`}>
+                                <Image src="/wjsdbf3.webp" alt="" fill sizes="92px" style={{ objectFit: 'fill' }} unoptimized />
+                              </span>
+                            </span>
+                          ) : eq.icon && (
                             <div style={{
-                              width: eq.isSuccession ? (isMobile ? '52px' : '68px') : (isMobile ? '36px' : '48px'),
-                              height: eq.isSuccession ? (isMobile ? '52px' : '68px') : (isMobile ? '36px' : '48px'),
+                              width: isMobile ? '36px' : '48px',
+                              height: isMobile ? '36px' : '48px',
                               flexShrink: 0,
                               position: 'relative',
-                              marginLeft: eq.isSuccession ? (isMobile ? '-4px' : '-6px') : 0,
-                              marginRight: eq.isSuccession ? (isMobile ? '-4px' : '-6px') : 0,
                             }}>
                               <Image
                                 src={eq.icon}
                                 alt={eq.name}
                                 width={isMobile ? 36 : 48}
                                 height={isMobile ? 36 : 48}
-                                style={{
-                                  objectFit: 'contain',
-                                  position: eq.isSuccession ? 'absolute' : 'relative',
-                                  top: eq.isSuccession ? '50%' : undefined,
-                                  left: eq.isSuccession ? '50%' : undefined,
-                                  transform: eq.isSuccession ? 'translate(-50%, -50%)' : undefined,
-                                }}
+                                style={{ objectFit: 'contain' }}
                                 unoptimized
                               />
-                              {/* 전율 장비 테두리 이미지 */}
-                              {eq.isSuccession && (
-                                <Image
-                                  src="/wjsdbf3.webp"
-                                  alt=""
-                                  width={isMobile ? 52 : 68}
-                                  height={isMobile ? 52 : 68}
-                                  style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    pointerEvents: 'none',
-                                  }}
-                                  unoptimized
-                                />
-                              )}
                             </div>
                           )}
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.15rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
                               <span className={`${styles.equipmentName} ${isMobile ? styles.equipmentNameMobile : ''}`}>
                                 {eq.name}
                               </span>
-                            </div>
-                            <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
                               {/* 에스더는 일반 재련이 없어 조정 불가 - 정보용 배지만 표시 */}
                               {eq.isEsther && (
                                 <Badge
@@ -2175,155 +2372,110 @@ export default function RefiningCalculator({
                                   +{eq.currentLevel}
                                 </Badge>
                               )}
-                              {/* 일반 재련 시작 단계 스템퍼 (에스더는 일반 재련 없음) */}
-                              {!eq.isEsther && (
-                                <div className={`${styles.startStepper} ${isMobile ? styles.startStepperMobile : ''}`}>
-                                  <button
-                                    type="button"
-                                    className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
-                                    onClick={() => adjustStart(eq, 'normal', -1)}
-                                    disabled={eq.currentLevel <= (eq.isSuccession ? 11 : 10)}
-                                    aria-label="일반 시작 단계 감소"
-                                  >
-                                    −
-                                  </button>
-                                  <Badge
-                                    pill
-                                    bg=""
-                                    className={`${eq.type === 'weapon' ? styles.levelBadgeWeapon : styles.levelBadgeArmor} ${isMobile ? styles.levelBadgeMobile : ''}`}
-                                  >
-                                    +{eq.currentLevel}
-                                  </Badge>
-                                  <button
-                                    type="button"
-                                    className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
-                                    onClick={() => adjustStart(eq, 'normal', 1)}
-                                    disabled={eq.currentLevel >= 25}
-                                    aria-label="일반 시작 단계 증가"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              )}
-                              {/* 상급 재련 시작 단계 스템퍼 (에스더 또는 상급 보유 업화 장비) */}
-                              {(eq.isEsther || (!eq.isSuccession && eq.origAdvanced > 0)) && (
-                                <div className={`${styles.startStepper} ${isMobile ? styles.startStepperMobile : ''}`}>
-                                  <button
-                                    type="button"
-                                    className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
-                                    onClick={() => adjustStart(eq, 'advanced', -1)}
-                                    disabled={eq.currentAdvancedLevel <= 0}
-                                    aria-label="상급 시작 단계 감소"
-                                  >
-                                    −
-                                  </button>
-                                  <Badge
-                                    pill
-                                    bg=""
-                                    className={`${styles.advancedLevelBadge} ${isMobile ? styles.advancedLevelBadgeMobile : ''}`}
-                                  >
-                                    상+{eq.currentAdvancedLevel}
-                                  </Badge>
-                                  <button
-                                    type="button"
-                                    className={`${styles.startStepperBtn} ${isMobile ? styles.startStepperBtnMobile : ''}`}
-                                    onClick={() => adjustStart(eq, 'advanced', 1)}
-                                    disabled={eq.currentAdvancedLevel >= 40}
-                                    aria-label="상급 시작 단계 증가"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              )}
                             </div>
                           </div>
                         </div>
+                        {/* 현재 → 목표 (스테퍼 대신 배지 필 드롭다운 — 좁은 카드·모바일에서 조작이 편하다) */}
                         <div style={{
                           display: 'flex',
-                          gap: isMobile ? '0.15rem' : '0.3rem',
+                          gap: isMobile ? '0.2rem' : '0.3rem',
                           flexDirection: 'column',
-                          minHeight: eq.isSuccession
-                            ? (isMobile ? '24px' : '32px')
-                            : (isMobile ? '50px' : '68px'),
+                          minHeight: (eq.isSuccession || eq.isWangap)
+                            ? (isMobile ? '22px' : '26px')
+                            : (isMobile ? '46px' : '56px'),
                           justifyContent: 'flex-start'
                         }}>
-                          {eq.isEsther ? (
-                            <>
-                              <div style={{
-                                textAlign: 'center',
-                                padding: isMobile ? '0.25rem' : '0.35rem',
-                                background: 'linear-gradient(135deg, rgba(61, 210, 204, 0.1), rgba(20, 184, 166, 0.1))',
-                                borderRadius: '6px',
-                                fontSize: isMobile ? '0.5rem' : '0.65rem',
-                                color: '#14b8a6',
-                                fontWeight: 600,
-                              }}>
-                                최상위 장비
-                              </div>
-                              {/* 에스더 장비는 상급 재련만 가능 */}
-                              <Form.Select
-                                value={targets.advanced ?? ''}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  setTargetLevels(prev => ({
-                                    ...prev,
-                                    [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), advanced: value === '' ? null : Number(value) }
-                                  }));
-                                }}
-                                disabled={eq.currentAdvancedLevel >= 40}
-                                className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${targets.advanced === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
-                              >
-                                <option value="">상급</option>
-                                {[10, 20, 30, 40]
-                                  .filter(level => level > eq.currentAdvancedLevel)
-                                  .map(level => (
-                                    <option key={level} value={level}>+{level}</option>
-                                  ))}
-                              </Form.Select>
-                            </>
-                          ) : (
-                            <>
-                              <Form.Select
-                                value={targets.normal ?? ''}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  setTargetLevels(prev => ({
-                                    ...prev,
-                                    [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), normal: value === '' ? null : Number(value) }
-                                  }));
-                                }}
-                                disabled={isEquipmentDisabled}
-                                className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${targets.normal === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
-                              >
-                                <option value="">+{eq.currentLevel}</option>
-                                {/* 일반 재련은 계승 전·후·완갑 모두 +25가 최대 */}
-                                {Array.from({ length: 25 - eq.currentLevel }, (_, i) => eq.currentLevel + i + 1).map(level => (
-                                  <option key={level} value={level}>+{level}</option>
-                                ))}
-                              </Form.Select>
-                              {/* 업화 장비만 상급 재련 가능 (완갑은 상급 재련 없음) */}
-                              {!eq.isSuccession && !eq.isWangap && (
-                                <Form.Select
-                                  value={targets.advanced ?? ''}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
+                          {eq.isEsther && (
+                            <div style={{
+                              textAlign: 'center',
+                              padding: isMobile ? '0.25rem' : '0.35rem',
+                              background: 'linear-gradient(135deg, rgba(61, 210, 204, 0.1), rgba(20, 184, 166, 0.1))',
+                              borderRadius: '6px',
+                              fontSize: isMobile ? '0.5rem' : '0.65rem',
+                              color: '#14b8a6',
+                              fontWeight: 600,
+                            }}>
+                              최상위 장비
+                            </div>
+                          )}
+                          {/* 일반 재련: [현재 배지 필] → [목표 배지 필] (에스더는 일반 재련 없음) */}
+                          {!eq.isEsther && (() => {
+                            const normalMin = eq.isWangap ? 0 : eq.isSuccession ? 11 : 10;
+                            return (
+                              <div className={styles.levelRow}>
+                                <PillDropdown
+                                  value={String(eq.currentLevel)}
+                                  display={`+${eq.currentLevel}`}
+                                  options={Array.from({ length: 25 - normalMin + 1 }, (_, i) => normalMin + i)
+                                    .map(level => ({ value: String(level), label: `+${level}` }))}
+                                  onSelect={(v) => setStart(eq, 'normal', Number(v))}
+                                  pillClass={eq.isWangap ? styles.pillSelectWangap : eq.type === 'weapon' ? styles.pillSelectWeapon : styles.pillSelectArmor}
+                                  menuClass={eq.isWangap ? styles.pillMenuWangap : eq.type === 'weapon' ? styles.pillMenuWeapon : styles.pillMenuArmor}
+                                  mobile={isMobile}
+                                  ariaLabel={`${eq.name} 현재 단계`}
+                                />
+                                <span className={styles.levelRowArrow}>→</span>
+                                <PillDropdown
+                                  value={targets.normal === null ? '' : String(targets.normal)}
+                                  display={targets.normal === null ? '목표' : `+${targets.normal}`}
+                                  options={[
+                                    { value: '', label: '해제' },
+                                    /* 일반 재련은 계승 전·후·완갑 모두 +25가 최대 */
+                                    ...Array.from({ length: 25 - eq.currentLevel }, (_, i) => eq.currentLevel + i + 1)
+                                      .map(level => ({ value: String(level), label: `+${level}` })),
+                                  ]}
+                                  onSelect={(v) => {
                                     setTargetLevels(prev => ({
                                       ...prev,
-                                      [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), advanced: value === '' ? null : Number(value) }
+                                      [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), normal: v === '' ? null : Number(v) }
                                     }));
                                   }}
-                                  disabled={eq.currentAdvancedLevel >= 40}
-                                  className={`${styles.equipmentSelect} ${isMobile ? styles.equipmentSelectMobile : ''} ${targets.advanced === null ? styles.equipmentSelectEmpty : styles.equipmentSelectSelected}`}
-                                >
-                                  <option value="">상급</option>
-                                  {[10, 20, 30, 40]
+                                  pillClass={targets.normal === null ? styles.pillSelectEmpty : styles.pillSelectTarget}
+                                  menuClass={styles.pillMenuTarget}
+                                  mobile={isMobile}
+                                  disabled={isEquipmentDisabled}
+                                  ariaLabel={`${eq.name} 목표 단계`}
+                                />
+                              </div>
+                            );
+                          })()}
+                          {/* 상급 재련: [상+N 필] → [목표 필] (에스더·업화 전용, 전율·완갑은 상급 재련 없음) */}
+                          {(eq.isEsther || (!eq.isSuccession && !eq.isWangap)) && (
+                            <div className={styles.levelRow}>
+                              <PillDropdown
+                                value={String(eq.currentAdvancedLevel)}
+                                display={`상+${eq.currentAdvancedLevel}`}
+                                options={Array.from({ length: 41 }, (_, i) => i)
+                                  .map(level => ({ value: String(level), label: `상+${level}` }))}
+                                onSelect={(v) => setStart(eq, 'advanced', Number(v))}
+                                pillClass={styles.pillSelectAdvanced}
+                                menuClass={styles.pillMenuAdvanced}
+                                mobile={isMobile}
+                                ariaLabel={`${eq.name} 상급 현재 단계`}
+                              />
+                              <span className={styles.levelRowArrow}>→</span>
+                              <PillDropdown
+                                value={targets.advanced === null ? '' : String(targets.advanced)}
+                                display={targets.advanced === null ? '목표' : `상+${targets.advanced}`}
+                                options={[
+                                  { value: '', label: '해제' },
+                                  ...[10, 20, 30, 40]
                                     .filter(level => level > eq.currentAdvancedLevel)
-                                    .map(level => (
-                                      <option key={level} value={level}>+{level}</option>
-                                    ))}
-                                </Form.Select>
-                              )}
-                            </>
+                                    .map(level => ({ value: String(level), label: `상+${level}` })),
+                                ]}
+                                onSelect={(v) => {
+                                  setTargetLevels(prev => ({
+                                    ...prev,
+                                    [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), advanced: v === '' ? null : Number(v) }
+                                  }));
+                                }}
+                                pillClass={targets.advanced === null ? styles.pillSelectEmpty : styles.pillSelectTarget}
+                                menuClass={styles.pillMenuTarget}
+                                mobile={isMobile}
+                                disabled={eq.currentAdvancedLevel >= 40}
+                                ariaLabel={`${eq.name} 상급 목표 단계`}
+                              />
+                            </div>
                           )}
                         </div>
                       </div>
@@ -3359,13 +3511,44 @@ export default function RefiningCalculator({
                         </div>
                       )}
 
-                      {/* 6줄: 누르는 골드 + 총 소모 골드 - 2개 */}
+                      {/* 6줄: 특수 재련 + 누르는 골드 + 총 소모 골드 - 3칸 */}
                       <div className="mb-4">
                         <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
-                          <Col xs={6} sm={6} md={6} style={{ minWidth: '0' }}>
+                          {/* 특수 재련 — 사용 토글 + 보유 특재돌 입력, 수량은 배분된 기대 소모 */}
+                          <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
+                            <MaterialCard
+                              icon="/special-refine-stone.webp"
+                              name="특재돌"
+                              amount={materials.특재돌 || 0}
+                              color="#d946ef"
+                              footer={(
+                                <div className={styles.specialCardControls}>
+                                  <Form.Check
+                                    type="switch"
+                                    id="special-refine-toggle"
+                                    label="특수 재련"
+                                    checked={useSpecial}
+                                    onChange={(e) => setUseSpecial(e.target.checked)}
+                                    className={styles.specialCardSwitch}
+                                  />
+                                  {useSpecial && (
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      className={styles.specialInput}
+                                      value={specialStones || ''}
+                                      placeholder="보유 개수"
+                                      onChange={(e) => setSpecialStones(Math.max(0, parseInt(e.target.value) || 0))}
+                                    />
+                                  )}
+                                </div>
+                              )}
+                            />
+                          </Col>
+                          <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                             <MaterialCard icon="/gold.webp" name="누르는 골드" amount={materials.누골} color="#f59e0b" />
                           </Col>
-                          <Col xs={6} sm={6} md={6} style={{ minWidth: '0' }}>
+                          <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                             <MaterialCard
                               icon="/gold.webp"
                               name="총 소모 골드"
@@ -3381,6 +3564,56 @@ export default function RefiningCalculator({
                           </Col>
                         </Row>
                       </div>
+
+                      {/* 특수 재련 배분 분석 — 팝업 없이 상시 표시 */}
+                      {useSpecial && (
+                        <div className={`${styles.specialBar} mb-4`}>
+                          {!specialPlan && (
+                            <div className={styles.specialHint}>
+                              보유 특재돌 개수를 입력하면 절약 골드가 큰 단계부터 자동 배분합니다. (대상: 계승 후 무기·방어구, 완갑)
+                            </div>
+                          )}
+                          {specialPlan && specialPlan.chosen.length === 0 && (
+                            <div className={styles.specialHint}>
+                              보유 돌이 추천 단계의 기대 소모량보다 적어 배분할 단계가 없습니다. (대상: 계승 후 무기·방어구, 완갑)
+                            </div>
+                          )}
+                          {specialPlan && specialPlan.chosen.length > 0 && (
+                            <>
+                              <div className={styles.specialSummary}>
+                                <span>
+                                  특재 추천 {specialPlan.chosen.length}단계 · 기대 돌 {Math.round(specialPlan.usedStones).toLocaleString()}개 ·
+                                  일반 재련 대비 절약 약 {Math.round(specialPlan.savedGold).toLocaleString()}G
+                                </span>
+                              </div>
+                              {/* 우선순위 표 — 내용 폭만 차지하는 정렬 그리드 (돌 1개당 절약 골드 내림차순) */}
+                              <div className={styles.specialPlanTable}>
+                                <div className={styles.specialPlanHead}>
+                                  <span>순위</span><span>단계</span><span>확률</span><span>회당 돌</span><span>기대 돌</span><span>절약 골드</span>
+                                </div>
+                                {specialPlan.chosen.map((s, i) => (
+                                  <div key={s.key} className={styles.specialPlanTr}>
+                                    <span><span className={styles.specialPlanRank}>{i + 1}</span></span>
+                                    <span className={styles.specialPlanName}>{s.equipName} +{s.level}→{s.level + 1}</span>
+                                    <span>{parseFloat((s.prob * 100).toFixed(2))}%</span>
+                                    <span>{s.stonesPerTry}개</span>
+                                    <span>{Math.round(s.expectedStones).toLocaleString()}개</span>
+                                    <span className={styles.specialPlanGold}>{Math.round(s.normalCostGold).toLocaleString()}G</span>
+                                  </div>
+                                ))}
+                              </div>
+                              {(() => {
+                                const next = specialPlan.ranked.find(r => !specialPlan.chosenKeys.has(r.key));
+                                return next ? (
+                                  <div className={styles.specialPlanNext}>
+                                    다음 순위: {next.equipName} +{next.level}→{next.level + 1} — 기대 돌 {Math.round(next.expectedStones).toLocaleString()}개 필요 (돌 1개당 절약 {Math.round(next.goldPerStone).toLocaleString()}G)
+                                  </div>
+                                ) : null;
+                              })()}
+                            </>
+                          )}
+                        </div>
+                      )}
 
                       {/* 안내 메시지 */}
                       <div className={styles.infoMessage}>
