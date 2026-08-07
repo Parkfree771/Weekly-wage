@@ -1,0 +1,428 @@
+/* 아제나의 축복 상세 — 커스텀 설정 패널·구성 아코디언 전용 스타일.
+   카드 껍데기·계산 결과·환율 상자는 app/package/package.module.css 를 그대로 재사용하고,
+   여기에는 이 페이지에만 있는 컨트롤과 아코디언만 둔다. */
+
+/* ─── 내 플레이 설정 ─── */
+.controlGroup {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.controlGroup:first-of-type {
+  padding-top: 0;
+}
+
+.controlGroup:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.controlLabelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.controlLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.controlHint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.segRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.segBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.segBtnActive {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.segBtnIcon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+/* 수량 입력 (공명·휴게·PC방) */
+.countRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.countBtn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.countInput {
+  width: 64px;
+  height: 28px;
+  padding: 0 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-primary);
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* 브라우저 기본 숫자 스피너 제거 — 증감은 양옆 − + 버튼으로 */
+.countInput::-webkit-outer-spin-button,
+.countInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.countInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.countUnit {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* ─── 구성 가치 아코디언 ─── */
+.accList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accItem {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.accItemOpen {
+  border-color: var(--color-primary);
+}
+
+/* 헤더 줄 — 아이콘 · 이름/부제 · 소계 · 셰브런 */
+.accHead {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.accIcon {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* 편린 아트처럼 꽉 찬 이미지는 둥근 썸네일로 */
+.accIconArt {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.accTitleWrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.accTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.accSub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accGold {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.accChev {
+  width: 12px;
+  height: 8px;
+  stroke: var(--text-muted);
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.accBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px 12px;
+}
+
+/* 확률·가치 행 (갤러리 카드 팝업과 같은 문법) */
+.probRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 9px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.probPct {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.probGold {
+  margin-left: auto;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 선택 가능한 행 (일일 상자 내용물) */
+.optRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.optRowActive {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.optRowActive .probPct,
+.optRowActive .probGold {
+  color: #fff;
+}
+
+.optIcon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* 재련 재료 상자 블록 — 헤더(확률·가치) + 내용물 아이콘 줄 */
+.boxBlock {
+  padding: 7px 9px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.boxBlockHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.boxBlockHead .probGold {
+  margin-left: auto;
+}
+
+/* 내용물 아이콘 줄 — 티어에 따라 결정/일반 재료 이미지가 바뀐다 */
+.matRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.matChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px 2px 3px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+}
+
+.matIcon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.matQty {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* 섹션 안 설명·수식 한 줄 */
+.accNote {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  padding: 2px 1px;
+}
+
+/* 섹션 하단 요약 (기댓값 × 개수) */
+.accFoot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 2px 0;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* 합계 줄 */
+.grandTotalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.grandTotalLabel {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.grandTotalValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.goldIcon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+/* ─── 모바일 ─── */
+@media (max-width: 576px) {
+  .accHead {
+    gap: 8px;
+    padding: 9px 10px;
+  }
+
+  .accIcon,
+  .accIconArt {
+    width: 30px;
+    height: 30px;
+  }
+
+  .accTitle {
+    font-size: 0.8rem;
+  }
+
+  .accGold {
+    font-size: 0.8rem;
+  }
+
+  .accBody {
+    padding: 0 10px 10px;
+  }
+
+  .probRow,
+  .optRow {
+    font-size: 0.72rem;
+    padding: 5px 8px;
+  }
+
+  .segBtn {
+    font-size: 0.74rem;
+    padding: 5px 8px;
+  }
+}

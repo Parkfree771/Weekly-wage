@@ -198,7 +198,17 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
 
   const handleGemEnter = (e: React.MouseEvent<HTMLDivElement>, gem: GemInfo) => {
     const r = e.currentTarget.getBoundingClientRect();
-    setHoveredGem({ gem, x: r.left + r.width / 2, y: r.top });
+    // 사이트 보기 배율(html zoom)·body zoom(0.85)이 걸려 있으면 fixed 좌표도 그 배율로
+    // 다시 스케일되므로, 포털이 붙는 body까지의 누적 zoom으로 나눠 시각 좌표에 맞춘다.
+    // (예전 CSS 역줌 방식은 body 0.85만 보정하고 사용자 보기 배율은 못 따라갔다)
+    let zoom = 1;
+    let node: Element | null = document.body;
+    while (node) {
+      const z = parseFloat(getComputedStyle(node).zoom || '1');
+      if (!isNaN(z) && z > 0) zoom *= z;
+      node = node.parentElement;
+    }
+    setHoveredGem({ gem, x: (r.left + r.width / 2) / zoom, y: r.top / zoom });
   };
   const handleGemLeave = () => setHoveredGem(null);
 
@@ -1201,7 +1211,6 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
           const gc = isAtk ? '#ef4444' : '#3b82f6';
           return (
             <div
-              className={styles.gemTooltipZoomFix}
               style={{
                 position: 'fixed',
                 left: x,
@@ -1212,7 +1221,6 @@ export default function CharacterDashboard({ data, onCharacterSelect }: Props) {
               }}
             >
               <div
-                className={styles.gemTooltipZoomInner}
                 style={{
                   width: 400,
                   maxWidth: 'calc(100vw - 24px)',

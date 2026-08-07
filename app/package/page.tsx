@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
+import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryCard';
 import { getPackagePosts } from '@/lib/package-service';
 import { calculatePostEfficiency, isNewReleasePost } from '@/lib/package-shared';
 import { isSaleEnded } from '@/lib/package-sale';
@@ -275,6 +276,13 @@ export default function PackageGalleryPage() {
               </div>
             ) : (
               <div className={styles.galleryGrid}>
+                {/* 아제나의 축복 — 코드로 박아둔 공식 패키지. 판매종료 필터에서만 숨긴다 */}
+                {saleFilter !== 'ended' && (
+                  <AzenaBlessingGalleryCard
+                    latestPrices={latestPrices}
+                    commonWonPer100Gold={commonWonPer100Gold}
+                  />
+                )}
                 {visiblePosts.map((post, index) => {
                   // 자리 순번 = 애드핏 단위 순번. 마지막 카드 뒤에는 붙이지 않는다.
                   const adSlotIndex = AD_AFTER_CARD_INDEX.indexOf(index);

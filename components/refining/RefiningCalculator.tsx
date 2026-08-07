@@ -148,12 +148,22 @@ function PillDropdown({
     if (disabled) return;
     const r = btnRef.current?.getBoundingClientRect();
     if (!r) return;
+    // 사이트 보기 배율(html zoom)·body zoom(0.85)이 걸려 있으면 fixed 좌표도 그 배율로
+    // 다시 스케일되므로, 포털이 붙는 body까지의 누적 zoom으로 나눠 시각 좌표에 맞춘다.
+    // (rect는 배율이 반영된 시각 px, fixed 요소의 left/top은 zoom배로 다시 늘어나는 CSS px)
+    let zoom = 1;
+    let node: Element | null = document.body;
+    while (node) {
+      const z = parseFloat(getComputedStyle(node).zoom || '1');
+      if (!isNaN(z) && z > 0) zoom *= z;
+      node = node.parentElement;
+    }
     const spaceBelow = window.innerHeight - r.bottom;
-    // 아래 공간이 부족하면 위로 펼친다 (메뉴 최대 높이 240px + 여유)
-    if (spaceBelow < 260 && r.top > spaceBelow) {
-      setPos({ left: r.left, bottom: window.innerHeight - r.top + 4, width: Math.max(r.width, 76) });
+    // 아래 공간이 부족하면 위로 펼친다 (메뉴 최대 높이 240px + 여유 — 시각 크기는 배율만큼 스케일)
+    if (spaceBelow < 260 * zoom && r.top > spaceBelow) {
+      setPos({ left: r.left / zoom, bottom: (window.innerHeight - r.top) / zoom + 4, width: Math.max(r.width / zoom, 76) });
     } else {
-      setPos({ left: r.left, top: r.bottom + 4, width: Math.max(r.width, 76) });
+      setPos({ left: r.left / zoom, top: r.bottom / zoom + 4, width: Math.max(r.width / zoom, 76) });
     }
     setOpen(true);
   };
