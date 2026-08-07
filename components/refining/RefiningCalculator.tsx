@@ -2883,15 +2883,15 @@ export default function RefiningCalculator({
                       {/* 1줄: 기본 재료 - 업화/전율 장비 재료 모두 표시 (해당하는 것만) */}
                       <div className={styles.materialsSection}>
                         <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
-                          {/* 업화 장비 재료 (일반 재련) */}
-                          {materials.수호석 > 0 && (
-                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-guardian-stone.webp" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
-                            </Col>
-                          )}
+                          {/* 업화 장비 재료 (일반 재련) — 파괴석 먼저, 수호석 다음 */}
                           {materials.파괴석 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
                               <MaterialCard icon="/destiny-destruction-stone.webp" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} />
+                            </Col>
+                          )}
+                          {materials.수호석 > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-guardian-stone.webp" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
                             </Col>
                           )}
                           {materials.돌파석 > 0 && (
@@ -2904,15 +2904,15 @@ export default function RefiningCalculator({
                               <MaterialCard icon="/abidos-fusion.webp?v=4" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} />
                             </Col>
                           )}
-                          {/* 전율 장비 재료 (계승 재련) */}
-                          {(materials.수호석결정 || 0) > 0 && (
-                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-guardian-stone2.webp?v=3" name="수호석결정" amount={materials.수호석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['수호석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석결정']} />
-                            </Col>
-                          )}
+                          {/* 전율 장비 재료 (계승 재련) — 파괴석 결정 먼저, 수호석 결정 다음 */}
                           {(materials.파괴석결정 || 0) > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
                               <MaterialCard icon="/destiny-destruction-stone2.webp?v=3" name="파괴석결정" amount={materials.파괴석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['파괴석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석결정']} />
+                            </Col>
+                          )}
+                          {(materials.수호석결정 || 0) > 0 && (
+                            <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
+                              <MaterialCard icon="/destiny-guardian-stone2.webp?v=3" name="수호석결정" amount={materials.수호석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['수호석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석결정']} />
                             </Col>
                           )}
                           {(materials.위대한돌파석 || 0) > 0 && (

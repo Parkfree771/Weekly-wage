@@ -80,7 +80,6 @@ export default function WangapAverageCalculator() {
   // === 특수 재련 (특재) — 재료·골드 없이 특재돌만 소모(고정 확률). 보유 돌을 효율 순 자동 배분 ===
   const [useSpecial, setUseSpecial] = useState(false);
   const [specialStones, setSpecialStones] = useState(0);
-  const [openSpecialPopup, setOpenSpecialPopup] = useState(false);
 
   // === 귀속 (재련 재료 카드와 동일: 귀속 = 0골드) ===
   const [boundMaterials, setBoundMaterials] = useState<Record<OptMatKey, boolean>>(createBoundFlags);
@@ -694,75 +693,6 @@ export default function WangapAverageCalculator() {
             </div>
           </Card.Header>
           <Card.Body className={styles.cardBody} style={{ padding: isMobile ? '0.75rem 0.5rem' : undefined }}>
-            {/* 특수 재련 (특재) — 재련 평균 시뮬과 동일한 바. 보유 돌을 절약 골드 큰 단계부터 자동 배분 */}
-            <div className={styles.specialBar}>
-              <div className={styles.specialBarHead}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/special-refine-stone.webp" alt="특재돌" className={styles.specialIcon} />
-                <span className={styles.specialTitle}>특수 재련</span>
-                <Form.Check
-                  type="switch"
-                  id="wangap-special-refine-toggle"
-                  checked={useSpecial}
-                  onChange={(e) => setUseSpecial(e.target.checked)}
-                />
-                {useSpecial && (
-                  <>
-                    <span className={styles.specialLabel}>보유 특재돌</span>
-                    <input
-                      type="number"
-                      min={0}
-                      className={styles.specialInput}
-                      value={specialStones || ''}
-                      placeholder="0"
-                      onChange={(e) => setSpecialStones(Math.max(0, parseInt(e.target.value) || 0))}
-                    />
-                  </>
-                )}
-              </div>
-              {useSpecial && !specialPlan && (
-                <div className={styles.specialHint}>
-                  보유 특재돌 개수를 입력하면 절약 골드가 큰 단계부터 자동 배분합니다.
-                </div>
-              )}
-              {useSpecial && specialPlan && specialPlan.chosen.length === 0 && (
-                <div className={styles.specialHint}>
-                  보유 돌이 추천 단계의 기대 소모량보다 적어 배분할 단계가 없습니다.
-                </div>
-              )}
-              {useSpecial && specialPlan && specialPlan.chosen.length > 0 && (
-                <div className={styles.specialSummary}>
-                  <span>
-                    추천 {specialPlan.chosen.length}단계 · 기대 돌 {Math.round(specialPlan.usedStones).toLocaleString()}개 ·
-                    일반 강화 대비 절약 약 {Math.round(specialPlan.savedGold).toLocaleString()}G
-                  </span>
-                  <button type="button" className={styles.specialPlanBtn} onClick={() => setOpenSpecialPopup(v => !v)}>
-                    {openSpecialPopup ? '배분 닫기' : '배분 보기'}
-                  </button>
-                </div>
-              )}
-              {useSpecial && openSpecialPopup && specialPlan && specialPlan.chosen.length > 0 && (
-                <div className={styles.specialPlanList}>
-                  {specialPlan.chosen.map(s => (
-                    <div key={s.key} className={styles.specialPlanRow}>
-                      <span className={styles.specialPlanName}>+{s.level}→{s.level + 1}</span>
-                      <span className={styles.specialPlanMeta}>
-                        {(s.prob * 100).toFixed(1).replace(/\.0$/, '')}% · 회당 {s.stonesPerTry}개 ·
-                        기대 {Math.round(s.expectedStones).toLocaleString()}개 · 절약 {Math.round(s.normalCostGold).toLocaleString()}G
-                      </span>
-                    </div>
-                  ))}
-                  {(() => {
-                    const next = specialPlan.ranked.find(r => !specialPlan.chosenKeys.has(r.key));
-                    return next ? (
-                      <div className={styles.specialPlanNext}>
-                        다음 순위: +{next.level}→{next.level + 1} — 기대 돌 {Math.round(next.expectedStones).toLocaleString()}개 필요 (돌 1개당 절약 {Math.round(next.goldPerStone).toLocaleString()}G)
-                      </div>
-                    ) : null;
-                  })()}
-                </div>
-              )}
-            </div>
             {/* 1줄: 기본 재료 5종 + 실링 */}
             <div className={styles.materialsSection}>
               <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
@@ -778,18 +708,6 @@ export default function WangapAverageCalculator() {
                     />
                   </Col>
                 ))}
-                {specialStonesUsed > 0 && (
-                  <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                    <MaterialCard
-                      icon="/special-refine-stone.webp"
-                      name="특재돌"
-                      amount={Math.round(specialStonesUsed)}
-                      color="#d946ef"
-                      showCheckbox={false}
-                      reserveCostSpace
-                    />
-                  </Col>
-                )}
                 <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
                   <MaterialCard
                     icon="/shilling.webp"
@@ -884,13 +802,44 @@ export default function WangapAverageCalculator() {
               </div>
             )}
 
-            {/* 5줄: 누르는 골드 + 총 소모 골드 */}
+            {/* 5줄: 특수 재련 + 누르는 골드 + 총 소모 골드 - 3칸 (재련 평균 시뮬과 동일 배치) */}
             <div className="mb-4">
               <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
-                <Col xs={6} sm={6} md={6} style={{ minWidth: '0' }}>
+                {/* 특수 재련 — 사용 토글 + 보유 특재돌 입력, 수량은 배분된 기대 소모 */}
+                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
+                  <MaterialCard
+                    icon="/special-refine-stone.webp"
+                    name="특재돌"
+                    amount={Math.round(specialStonesUsed)}
+                    color="#d946ef"
+                    footer={(
+                      <div className={styles.specialCardControls}>
+                        <Form.Check
+                          type="switch"
+                          id="wangap-special-refine-toggle"
+                          label="특수 재련"
+                          checked={useSpecial}
+                          onChange={(e) => setUseSpecial(e.target.checked)}
+                          className={styles.specialCardSwitch}
+                        />
+                        {useSpecial && (
+                          <input
+                            type="number"
+                            min={0}
+                            className={styles.specialInput}
+                            value={specialStones || ''}
+                            placeholder="보유 개수"
+                            onChange={(e) => setSpecialStones(Math.max(0, parseInt(e.target.value) || 0))}
+                          />
+                        )}
+                      </div>
+                    )}
+                  />
+                </Col>
+                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                   <MaterialCard icon="/gold.webp" name="누르는 골드" amount={pressGold} color="#f59e0b" />
                 </Col>
-                <Col xs={6} sm={6} md={6} style={{ minWidth: '0' }}>
+                <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                   <MaterialCard
                     icon="/gold.webp"
                     name="총 소모 골드"
@@ -906,6 +855,56 @@ export default function WangapAverageCalculator() {
                 </Col>
               </Row>
             </div>
+
+            {/* 특수 재련 배분 분석 — 팝업 없이 상시 표시 (재련 평균 시뮬과 동일) */}
+            {useSpecial && (
+              <div className={`${styles.specialBar} mb-4`}>
+                {!specialPlan && (
+                  <div className={styles.specialHint}>
+                    보유 특재돌 개수를 입력하면 절약 골드가 큰 단계부터 자동 배분합니다.
+                  </div>
+                )}
+                {specialPlan && specialPlan.chosen.length === 0 && (
+                  <div className={styles.specialHint}>
+                    보유 돌이 추천 단계의 기대 소모량보다 적어 배분할 단계가 없습니다.
+                  </div>
+                )}
+                {specialPlan && specialPlan.chosen.length > 0 && (
+                  <>
+                    <div className={styles.specialSummary}>
+                      <span>
+                        특재 추천 {specialPlan.chosen.length}단계 · 기대 돌 {Math.round(specialPlan.usedStones).toLocaleString()}개 ·
+                        일반 강화 대비 절약 약 {Math.round(specialPlan.savedGold).toLocaleString()}G
+                      </span>
+                    </div>
+                    {/* 우선순위 표 — 내용 폭만 차지하는 정렬 그리드 (돌 1개당 절약 골드 내림차순) */}
+                    <div className={styles.specialPlanTable}>
+                      <div className={styles.specialPlanHead}>
+                        <span>순위</span><span>단계</span><span>확률</span><span>회당 돌</span><span>기대 돌</span><span>절약 골드</span>
+                      </div>
+                      {specialPlan.chosen.map((s, i) => (
+                        <div key={s.key} className={styles.specialPlanTr}>
+                          <span><span className={styles.specialPlanRank}>{i + 1}</span></span>
+                          <span className={styles.specialPlanName}>{s.equipName} +{s.level}→{s.level + 1}</span>
+                          <span>{parseFloat((s.prob * 100).toFixed(2))}%</span>
+                          <span>{s.stonesPerTry}개</span>
+                          <span>{Math.round(s.expectedStones).toLocaleString()}개</span>
+                          <span className={styles.specialPlanGold}>{Math.round(s.normalCostGold).toLocaleString()}G</span>
+                        </div>
+                      ))}
+                    </div>
+                    {(() => {
+                      const next = specialPlan.ranked.find(r => !specialPlan.chosenKeys.has(r.key));
+                      return next ? (
+                        <div className={styles.specialPlanNext}>
+                          다음 순위: {next.equipName} +{next.level}→{next.level + 1} — 기대 돌 {Math.round(next.expectedStones).toLocaleString()}개 필요 (돌 1개당 절약 {Math.round(next.goldPerStone).toLocaleString()}G)
+                        </div>
+                      ) : null;
+                    })()}
+                  </>
+                )}
+              </div>
+            )}
 
             {/* 안내 메시지 */}
             <div className={styles.infoMessage}>
