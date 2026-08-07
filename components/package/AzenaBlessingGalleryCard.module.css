@@ -1,150 +1,49 @@
 /* 아제나의 축복 갤러리 카드 — 카드 안 커스텀 컨트롤 전용.
    카드 프레임·셀·수치 줄은 PackageGalleryCard.module.css 를 그대로 재사용하고,
-   여기에는 아제나 카드에만 있는 소형 입력(주 클리어·공명·휴게·PC방)만 둔다. */
+   여기에는 아제나 카드에만 있는 것(티어 토글·공명/휴게/PC방 입력·상자 아이콘)만 둔다. */
 
-/* 아이템 목록 아래 — 작성자·날짜 메타 대신 들어가는 커스텀 스트립.
-   공간을 3등분해 항목이 균일하게 자리잡는다 (한 줄 고정) */
-.customStrip {
-  margin-top: auto;
-  padding-top: 8px;
+/* 계산 결과 아래 — 내 플레이 커스텀 3줄 (공명의 기운 / 휴게 물약 / PC방).
+   결과 줄과 같은 [라벨 왼쪽 · 값 오른쪽] 형식이라 위 수치들과 자연스럽게 이어진다 */
+.customRows {
   display: flex;
-  flex-wrap: nowrap;
-  align-items: flex-end;
-}
-
-/* 항목: 위에 아이콘(또는 라벨), 아래에 − 입력 + 줄 — 2단 세로 배치, 3등분 균등 폭 */
-.customItem {
-  flex: 1 1 0;
-  min-width: 0;
-  display: inline-flex;
   flex-direction: column;
-  align-items: center;
-  gap: 3px;
+  gap: 5px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
 }
 
-/* 윗줄 슬롯 높이 통일 — 아이콘(26px)과 글자 라벨(PC방)의 기준선을 맞춘다 */
-.miniTop {
-  height: 26px;
+.customRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+/* 왼쪽 라벨 — 아이콘(공명·휴게) 또는 글자(PC방).
+   좁아지면 라벨만 줄어들고 ± 입력은 그대로 유지되도록 여기서만 줄인다 */
+.customRowLabel {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.customRowText {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .miniRow {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-}
-
-/* ─── 아제나의 축복이 깃든 선택 상자 — 클릭하면 그리드 안에서 내용물이 펼쳐진다 ─── */
-.boxCellOpen {
-  border-color: var(--color-primary);
-}
-
-/* 상자 우상단 ×28 수량 배지 — 셰브런 칩과 같은 반투명 다크 톤 (원색 배지는 정신없어서 제외) */
-.boxQtyBadge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  padding: 0 4px;
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: #fff;
-  background: rgba(12, 16, 38, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 5px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-}
-
-/* 하단 중앙 열림/닫힘 칩 — 반투명 유리 느낌의 미니 배지 + SVG 셰브런 */
-.boxChevron {
-  position: absolute;
-  bottom: 3px;
-  left: 50%;
-  margin-left: -9px;
-  width: 18px;
-  height: 11px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(12, 16, 38, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-  pointer-events: none;
-}
-
-.boxChevronIcon {
-  width: 9px;
-  height: 6px;
-  stroke: #fff;
-  fill: none;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* 상자 위로 세로로 떠오르는 내용물 오버레이 — 카드 overflow에 안 잘리게 body 포털로 렌더 */
-.boxBackdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1050;
-}
-
-.boxPopup {
-  position: fixed;
-  z-index: 1051;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 230px;
-  padding: 8px;
-  background: var(--card-bg);
-  border: 1px solid var(--color-primary);
-  border-radius: 10px;
-  box-shadow: var(--shadow-lg);
-}
-
-.boxPopupTitle {
-  padding: 0 2px 4px;
-  font-size: 0.74rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-.boxOption {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 8px;
-  font-size: 0.76rem;
-  font-weight: 600;
-  text-align: left;
-  color: var(--text-secondary);
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.boxOptionActive {
-  color: #fff;
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.boxOptionIcon {
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
-}
-
-.boxOptionGold {
-  margin-left: auto;
-  font-size: 0.74rem;
-  font-weight: 800;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ─── 아이템 레벨 토글 (1730↑ / 1730↓) — 헤더 우측의 세그먼트 버튼 ─── */
@@ -188,41 +87,6 @@
   font-weight: 900;
 }
 
-/* 랜덤 상자 팝업 — 클릭 선택이 아닌 정보 행 */
-.boxInfoRow {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  padding: 4px 8px;
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-}
-
-.boxInfoProb {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  white-space: nowrap;
-}
-
-/* 팝업 하단 기댓값 요약 */
-.boxPopupFooter {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 2px;
-  padding: 6px 2px 0;
-  border-top: 1px solid var(--border-color);
-  font-size: 0.74rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
 /* 상자 아이콘 — 기본(42px)보다 크게. 이중 클래스로 특이도를 올려
    모바일의 .itemCellIcon 78% !important 강제보다 우선하게 한다 */
 .boxImg.boxImg {
@@ -230,11 +94,13 @@
   height: 58px;
 }
 
-/* ─── 축복의 편린 셀 — 전용 아트 이미지를 셀에 꽉 차게 앉힌다 ─── */
+/* ─── 축복의 편린 셀 — 전용 아트 이미지를 셀에 꽉 차게 앉힌다 ───
+   반경은 항상 [셀 반경 − 테두리 1px] 이어야 모서리가 정확히 맞물린다.
+   더 크면 모서리에서 셀 배경이 비치고, 더 작으면 테두리 안쪽에 틈이 생긴다 */
 .fragWrap {
   position: absolute;
   inset: 0;
-  border-radius: 9px;
+  border-radius: 9px; /* 셀 10px − 테두리 1px */
   overflow: hidden;
   pointer-events: none;
 }
@@ -252,27 +118,19 @@
   white-space: nowrap;
 }
 
-/* PC방처럼 아이콘 없이 글자만 있는 라벨 — 굵게 강조 */
-.miniLabelStrong {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
 /* 공명의 기운·휴게 물약 아이콘 라벨 */
 .miniIcon {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .miniInput {
-  width: 30px;
-  height: 22px;
+  width: 36px;
+  height: 26px;
   padding: 0 2px;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 800;
   text-align: center;
   color: var(--text-primary);
@@ -296,13 +154,13 @@
 }
 
 .miniBtn {
-  width: 20px;
-  height: 22px;
+  width: 24px;
+  height: 26px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 800;
   line-height: 1;
   color: var(--text-primary);
@@ -313,11 +171,50 @@
   flex-shrink: 0;
 }
 
-/* ─── 모바일 — 커스텀 스트립이 한 줄에 들어가게 축소, 배지·상자 크기 보정 ─── */
+/* ─── 태블릿 — 결과 칸이 240px 로 좁아지므로 커스텀 3줄을 한 단계 축소 ─── */
+@media (max-width: 768px) {
+  .customRowText {
+    font-size: 0.72rem;
+  }
+
+  .miniIcon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .miniInput {
+    width: 32px;
+    height: 24px;
+    font-size: 0.74rem;
+  }
+
+  .miniBtn {
+    width: 22px;
+    height: 24px;
+    font-size: 0.8rem;
+  }
+}
+
+/* ─── 모바일 — 결과 칸(최소 170px)에 아이콘·이름·± 입력을 한 줄로 넣기 위해 전부 축소 ─── */
 @media (max-width: 576px) {
-  .customStrip {
+  .customRows {
     gap: 3px;
+    margin-top: 3px;
     padding-top: 6px;
+  }
+
+  /* 결과 칸이 좁아 이름·아이콘·입력이 한 줄에 겨우 들어간다 — 전부 한 단계 더 축소하고,
+     그래도 모자라면 이름만 말줄임 처리된다 (± 입력은 flex-shrink:0 이라 안 줄어든다) */
+  .customRow {
+    gap: 4px;
+  }
+
+  .customRowLabel {
+    gap: 4px;
+  }
+
+  .customRowText {
+    font-size: 0.58rem;
   }
 
   .miniRow {
@@ -325,39 +222,24 @@
   }
 
   .miniBtn {
-    width: 16px;
-    height: 18px;
-    font-size: 0.64rem;
+    width: 17px;
+    height: 20px;
+    font-size: 0.68rem;
     border-width: 1px;
     border-radius: 5px;
   }
 
   .miniInput {
     width: 24px;
-    height: 18px;
-    font-size: 0.62rem;
+    height: 20px;
+    font-size: 0.66rem;
     border-width: 1px;
     border-radius: 5px;
   }
 
-  .miniTop {
-    height: 20px;
-  }
-
   .miniIcon {
-    width: 20px;
-    height: 20px;
-  }
-
-  .miniLabelStrong {
-    font-size: 0.6rem;
-  }
-
-  /* ×28 배지 — 모바일에서 살짝 축소 */
-  .boxQtyBadge {
-    padding: 0 3px;
-    font-size: 0.52rem;
-    border-radius: 4px;
+    width: 19px;
+    height: 19px;
   }
 
   /* 1730 티어 토글 — 제목이 잘리지 않게 축소 */
@@ -370,16 +252,9 @@
     font-size: 0.58rem;
   }
 
-  .boxChevron {
-    width: 15px;
-    height: 9px;
-    margin-left: -7.5px;
-    bottom: 2px;
-  }
-
-  .boxChevronIcon {
-    width: 7px;
-    height: 5px;
+  /* 편린 아트 — 모바일은 셀 반경이 6px 이라 안쪽 반경도 5px 로 맞춘다 */
+  .fragWrap {
+    border-radius: 5px;
   }
 
   /* 상자 이미지 — 모바일 셀에서도 꽉 차게.
