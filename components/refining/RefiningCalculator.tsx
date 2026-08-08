@@ -177,14 +177,24 @@ function PillDropdown({
       if (menuRef.current?.contains(t) || btnRef.current?.contains(t)) return;
       setOpen(false);
     };
-    const close = () => setOpen(false);
+    // 스크롤로 닫는 건 "페이지가 움직여 메뉴가 버튼에서 떨어질 때"가 목적이다.
+    // capture 로 받으면 메뉴 자신의 스크롤(목록이 240px 를 넘으면 생긴다)까지 잡혀서,
+    // 목표 단계처럼 항목이 많은 메뉴는 손가락으로 굴리는 순간 닫혀 고를 수가 없었다.
+    const onScroll = (e: Event) => {
+      const t = e.target as Node | null;
+      if (t && menuRef.current && (t === menuRef.current || menuRef.current.contains(t))) return;
+      setOpen(false);
+    };
+    // 모바일은 스크롤할 때 주소창이 접혔다 펴지며 resize 가 뜬다(높이만 바뀜) — 그때는 닫지 않는다
+    const startW = window.innerWidth;
+    const onResize = () => { if (window.innerWidth !== startW) setOpen(false); };
     document.addEventListener('mousedown', onDown);
-    window.addEventListener('scroll', close, true);
-    window.addEventListener('resize', close);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
     return () => {
       document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('scroll', close, true);
-      window.removeEventListener('resize', close);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
     };
   }, [open]);
 
