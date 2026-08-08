@@ -46,8 +46,8 @@ function formatShortDate(timestamp: any): string {
 
 // 갤러리 카드 아이콘 크기 오버라이드 (기본 42px, 셀 62px 고정)
 const GALLERY_ICON_SIZE: Record<string, number> = {
-  'fixed_gold-input': 30,
-  'fixed_hell-heroic-ticket': 58,
+  // 골드 코인·용숨/빙숨·지옥 영웅 티켓은 인라인 px 대신 getIconTweakClass 의 클래스로 잡는다
+  // (모바일 셀은 비율 % 라 px 로는 못 맞춘다)
   'crystal_pheon': 54,
   'expected_gem-choice': 54,
   'expected_gem-hero-random': 54,
@@ -68,6 +68,18 @@ function getGalleryIconSize(itemId: string): number | undefined {
 function getDisplayIcon(icon: string): string {
   if (/gem-(order|chaos)-/.test(icon)) return '/gem-hero.webp';
   return icon;
+}
+
+/**
+ * 그림이 꽉 찬 아이콘은 줄이고(골드 코인·용숨/빙숨), 여백이 많은 아이콘은 키워(지옥 영웅 티켓)
+ * 셀 안에서 아이템끼리 크기가 고르게 보이게 맞춘다.
+ * 인라인 px 이 아니라 클래스로 잡는 이유: 모바일 셀은 크기가 화면 폭에 따라 달라져 % 로만 맞출 수 있다.
+ */
+function getIconTweakClass(itemId: string, icon: string): string {
+  if (itemId === 'fixed_gold-input') return styles.itemCellIconGold;
+  if (itemId === 'fixed_hell-heroic-ticket') return styles.itemCellIconHell;
+  if (/breath-(lava|glacier)/.test(icon)) return styles.itemCellIconBreath;
+  return '';
 }
 
 // 이득률 % — 매트 단색 + 양 모서리 컷 칩 (이득 초록 / 손해 빨강)
@@ -436,10 +448,21 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
   const salePeriod = formatSalePeriod(post);
   const dimmed = saleEnded && !saleRevealed;
 
+  /**
+   * 카드 아무 데나 누르면 상세로 가되, 조작 영역은 예외로 둔다.
+   * 버튼·입력 자체뿐 아니라 그 둘레(가챠 버튼 사이 여백, 환율 상자 바깥 등)도 data-nonav 로 묶어
+   * 살짝 빗나간 터치가 상세 이동으로 새지 않게 한다.
+   */
+  const handleCardClick = (e: React.MouseEvent) => {
+    const t = e.target as HTMLElement;
+    if (t.closest('[data-nonav], button, input, select, textarea, label, a')) return;
+    router.push(`/package/${post.id}`);
+  };
+
   return (
     <article
       className={`${styles.galleryCard} ${saleEnded ? styles.cardEnded : ''} ${dimmed ? styles.cardDimmed : ''}`}
-      onClick={() => router.push(`/package/${post.id}`)}
+      onClick={handleCardClick}
       style={{ cursor: 'pointer' }}
     >
       {/* 흐린 화면 위에 얹히는 글씨 — 판매 종료 / 줄 내려서 판매 기간 (카드 중앙) */}
@@ -518,7 +541,8 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img loading="lazy" decoding="async"
                     src={getDisplayIcon(item.icon)}
-                    alt={item.name} className={styles.itemCellIcon}
+                    alt={item.name}
+                    className={`${styles.itemCellIcon} ${getIconTweakClass(item.itemId, getDisplayIcon(item.icon))}`}
                     style={(() => { const s = getGalleryIconSize(item.itemId); return s ? { width: s, height: s } : {}; })()} />
                 ) : (
                   /* 기타(직접 입력) 항목 — 아이콘이 없다. 등록자가 넣은 축약 이름을 쓰고,
@@ -658,7 +682,7 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
                 const wonGold = gachaItemGolds[winOrigIdx];
                 const benefit = cashGold > 0 ? ((wonGold - cashGold) / cashGold) * 100 : 0;
                 return (
-                <div className={styles.gachaResultArea} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.gachaResultArea} data-nonav>
                   <div className={styles.gachaResultRow}>
                     <span className={styles.gachaResultName}>
                       {post.items[winOrigIdx].name}
@@ -676,7 +700,7 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
 
               {/* 10회 스피닝 진행 표시 */}
               {gachaPhase === 'spinning' && gachaMode === 'multi' && multiRevealCount > 0 && (
-                <div className={styles.gachaResultArea} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.gachaResultArea} data-nonav>
                   <div className={styles.gachaMultiTitle}>{multiRevealCount}/10</div>
                 </div>
               )}
@@ -687,7 +711,7 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
                 const totalCash = cashGold * 10;
                 const multiBenefit = totalCash > 0 ? ((totalWonGold - totalCash) / totalCash) * 100 : 0;
                 return (
-                  <div className={styles.gachaResultArea} onClick={(e) => e.stopPropagation()}>
+                  <div className={styles.gachaResultArea} data-nonav>
                     <div className={styles.gachaResultRow}>
                       <span className={styles.gachaResultName}>10회 결과</span>
                       <span className={styles.gachaResultGold}>{formatNumber(totalWonGold)}G</span>
@@ -702,7 +726,7 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
 
               {/* 버튼 (idle 일 때만) */}
               {gachaPhase === 'idle' && (
-                <div className={styles.gachaBtnGroup}>
+                <div className={styles.gachaBtnGroup} data-nonav>
                   <button className={styles.gachaBtn} onClick={handleGacha}>
                     가챠
                   </button>
@@ -716,9 +740,9 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
 
         </div>
 
-        {/* 하단 한 줄: 환율 입력(좌) │ 상세보기(우) — 위 결과와는 가로선, 둘 사이는 세로선 */}
-        <div className={styles.bottomRow}>
-          <div className={styles.bottomRate} onClick={(e) => e.stopPropagation()}>
+        {/* 하단 한 줄: 환율 입력 (카드 아무 데나 누르면 상세로 가므로 상세보기 버튼은 두지 않는다) */}
+        <div className={styles.bottomRow} data-nonav>
+          <div className={styles.bottomRate}>
             <div className={styles.rateRow}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.rateIconGold} />
@@ -736,9 +760,6 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
                 aria-label="100골드당 원화 환율"
               />
             </div>
-          </div>
-          <div className={styles.detailLink}>
-            상세보기 &#8594;
           </div>
         </div>
       </div>

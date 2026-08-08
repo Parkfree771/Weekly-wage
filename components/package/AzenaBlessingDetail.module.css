@@ -1,110 +1,198 @@
-/* 아제나의 축복 상세 — 커스텀 설정 패널·구성 아코디언 전용 스타일.
-   카드 껍데기·계산 결과·환율 상자는 app/package/package.module.css 를 그대로 재사용하고,
-   여기에는 이 페이지에만 있는 컨트롤과 아코디언만 둔다. */
+/* 아제나의 축복 상세 — 설정 바·아이템 카드 팝업 전용 스타일.
+   카드 껍데기·계산 결과·환율 상자·아이템 카드 격자는 app/package/package.module.css 를
+   그대로 재사용하고(다른 패키지 상세와 같은 모양), 여기에는 이 페이지에만 있는
+   설정 바와 드롭다운 팝업만 둔다. */
 
-/* ─── 내 플레이 설정 ─── */
-.controlGroup {
-  padding: 12px 0;
+/* ─── 제목 아래 소개 문단 ─── */
+.intro {
+  margin: 0.6rem 0 0;
+  max-width: 62ch;
+  font-size: 0.84rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+/* ─── 자주 묻는 질문 ─── */
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.faqItem {
+  padding-bottom: 0.9rem;
   border-bottom: 1px solid var(--border-color);
 }
 
-.controlGroup:first-of-type {
-  padding-top: 0;
-}
-
-.controlGroup:last-child {
-  border-bottom: none;
+.faqItem:last-child {
   padding-bottom: 0;
+  border-bottom: none;
 }
 
-.controlLabelRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.controlLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
+.faqQ {
+  margin: 0 0 0.35rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--text-primary);
+  word-break: keep-all;
 }
 
-.controlHint {
-  font-size: 0.72rem;
-  color: var(--text-muted);
+.faqA {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  word-break: keep-all;
 }
 
-.segRow {
+/* ─── 내 플레이 설정 ─── */
+/* 상자 안에 상자를 겹치지 않는다: 바깥 상자 하나 + 조작부(세그먼트·스테퍼)만 테두리를 갖고,
+   각 항목은 라벨 + 조작부로만 둔다. 행은 얇은 구분선으로 나눈다. */
+.setBar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  padding: 0 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
 }
 
-.segBtn {
+.setRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 9px 0;
+}
+
+/* 2행(공명·휴게·PC방)은 폭을 고르게 나눠 갖는다 */
+.setRow + .setRow {
+  border-top: 1px solid var(--border-color);
+  justify-content: space-between;
+}
+
+.setField {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.setLabel {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: var(--text-secondary);
-  background: var(--input-bg);
+  white-space: nowrap;
+}
+
+/* PC방 — 아이템 아이콘이 없는 항목이라 대문자·굵기로 무게를 맞춘다 */
+.setLabelPc {
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+/* 공명·휴게 아이콘 자리를 대신하는 이모지 — 아이콘(24px)과 비슷한 크기로 */
+.setEmoji {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.setIcon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+/* 설정 바 아래 한 줄 설명 */
+.setNote {
+  margin: 6px 2px 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+/* 1730 이상/이하 — 테두리 하나로 묶은 세그먼트 */
+.seg {
+  display: inline-flex;
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
+  overflow: hidden;
+}
+
+.segBtn {
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
   cursor: pointer;
+  white-space: nowrap;
+}
+
+.segBtn + .segBtn {
+  border-left: 1px solid var(--border-color);
 }
 
 .segBtnActive {
   color: #fff;
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--color-accent);
 }
 
-.segBtnIcon {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
+/* 화살표는 굵기(font-weight)가 잘 먹지 않는 글리프라 획을 직접 덧그려 두껍게 만든다 */
+.segArrow {
+  -webkit-text-stroke: 0.7px currentColor;
+  paint-order: stroke fill;
 }
 
-/* 수량 입력 (공명·휴게·PC방) */
-.countRow {
-  display: flex;
+/* 수량 입력 — − 숫자 + 를 테두리 하나에 담는다 */
+.stepper {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .countBtn {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
+  font-size: 1.15rem;
   font-weight: 700;
+  line-height: 1;
   color: var(--text-secondary);
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background: none;
+  border: none;
   cursor: pointer;
 }
 
+.countBtn:hover {
+  color: var(--color-accent);
+  background: var(--input-bg);
+}
+
 .countInput {
-  width: 64px;
-  height: 28px;
-  padding: 0 8px;
-  font-size: 0.85rem;
-  font-weight: 700;
+  width: 58px;
+  height: 36px;
+  padding: 0 2px;
+  font-size: 1rem;
+  font-weight: 800;
   text-align: center;
   color: var(--text-primary);
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  border-radius: 0;
   appearance: textfield;
   -moz-appearance: textfield;
 }
@@ -118,160 +206,207 @@
 
 .countInput:focus {
   outline: none;
-  border-color: var(--color-primary);
-}
-
-.countUnit {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-/* ─── 구성 가치 아코디언 ─── */
-.accList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.accItem {
   background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  overflow: hidden;
 }
 
-.accItemOpen {
-  border-color: var(--color-primary);
-}
-
-/* 헤더 줄 — 아이콘 · 이름/부제 · 소계 · 셰브런 */
-.accHead {
-  width: 100%;
+/* ─── 아이템 구성 소제목 ─── */
+.itemsHead {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  background: none;
-  border: none;
-  text-align: left;
-  cursor: pointer;
-}
-
-.accIcon {
-  width: 34px;
-  height: 34px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-/* 편린 아트처럼 꽉 찬 이미지는 둥근 썸네일로 */
-.accIconArt {
-  width: 34px;
-  height: 34px;
-  object-fit: cover;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-
-.accTitleWrap {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.accTitle {
-  font-size: 0.85rem;
-  font-weight: 700;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.95rem;
+  font-weight: 800;
   color: var(--text-primary);
 }
 
-.accSub {
-  font-size: 0.7rem;
+.itemsHeadNote {
+  font-size: 0.72rem;
+  font-weight: 600;
   color: var(--text-muted);
+}
+
+/* 편린처럼 꽉 찬 아트 이미지는 잘라서 채운다 */
+.artIcon {
+  object-fit: cover;
+}
+
+/* 아이템 아이콘 — 상자 아트에 맞춰 전체적으로 키운다 (공용 상세는 56px).
+   자식 선택자라 공용 .itemCardIcon 규칙보다 특이도가 높아 순서와 무관하게 이긴다 */
+.itemsGrid > div > div:first-child {
+  height: 96px;
+}
+
+.itemsGrid img {
+  width: 80px;
+  height: 80px;
+}
+
+/* 축복 상자 2종 — 목록의 주인공이라 한 단계 더 크게.
+   그림이 정사각형을 꽉 채우는 아트라 모서리를 조금 더 둥글린다 */
+.boxIcon.boxIcon {
+  width: 92px;
+  height: 92px;
+  border-radius: 12px;
+}
+
+/* ─── 카드 안 드롭다운 버튼 ─── */
+.popWrap {
+  /* .itemCardChoices(세로 flex, width:100%) 위에 얹는다 */
+  margin-top: 0.1rem;
+}
+
+.popBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.28rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--text-secondary);
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.popBtn:hover {
+  border-color: rgba(249, 115, 22, 0.4);
+}
+
+/* 선택형(일일 상자)은 현재 고른 값이 곧 라벨이라 강조한다 */
+.popBtnActive {
+  color: var(--text-primary);
+  background: rgba(249, 115, 22, 0.08);
+  border-color: var(--color-accent);
+  font-weight: 700;
+}
+
+.popBtnOpen {
+  border-color: var(--color-accent);
+}
+
+.popBtnLabel {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.accGold {
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: var(--color-primary);
-  white-space: nowrap;
-}
-
-.accChev {
-  width: 12px;
-  height: 8px;
-  stroke: var(--text-muted);
-  fill: none;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.popCaret {
+  font-size: 0.6rem;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
-.accBody {
+/* ─── 팝업 본체 (body 포털 · fixed 좌표는 JS에서 zoom 보정) ─── */
+.pop {
+  position: fixed;
+  z-index: 1051;
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  padding: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--color-accent);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+}
+
+.popTitle {
+  padding: 0 2px 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.popBody {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 0 12px 12px;
+  overflow-y: auto;
 }
 
-/* 확률·가치 행 (갤러리 카드 팝업과 같은 문법) */
-.probRow {
+/* 확률·가치 행 */
+.popRow {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  padding: 5px 9px;
-  font-size: 0.76rem;
+  padding: 5px 8px;
+  font-size: 0.74rem;
   font-weight: 600;
   color: var(--text-secondary);
-  background: var(--card-bg);
+  background: var(--input-bg);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 7px;
 }
 
-.probPct {
-  font-size: 0.7rem;
+.popPct {
+  font-size: 0.68rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-accent);
   white-space: nowrap;
 }
 
-.probGold {
+.popGold {
   margin-left: auto;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+/* 설명·수식 한 줄 */
+.popNote {
+  padding: 2px 2px;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* 하단 요약 (기댓값 × 개수) */
+.popFoot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 6px 2px 0;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-primary);
 }
 
 /* 선택 가능한 행 (일일 상자 내용물) */
 .optRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 9px;
-  font-size: 0.78rem;
+  gap: 7px;
+  padding: 5px 8px;
+  font-size: 0.76rem;
   font-weight: 600;
   text-align: left;
   color: var(--text-secondary);
-  background: var(--card-bg);
+  background: var(--input-bg);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 7px;
   cursor: pointer;
 }
 
 .optRowActive {
   color: #fff;
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
-.optRowActive .probPct,
-.optRowActive .probGold {
+.optRowActive .popGold {
   color: #fff;
 }
 
@@ -284,85 +419,60 @@
 
 /* 재련 재료 상자 블록 — 헤더(확률·가치) + 내용물 아이콘 줄 */
 .boxBlock {
-  padding: 7px 9px;
-  background: var(--card-bg);
+  padding: 6px 8px;
+  background: var(--input-bg);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 7px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .boxBlockHead {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 600;
   color: var(--text-secondary);
-}
-
-.boxBlockHead .probGold {
-  margin-left: auto;
 }
 
 /* 내용물 아이콘 줄 — 티어에 따라 결정/일반 재료 이미지가 바뀐다 */
 .matRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .matChip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 7px 2px 3px;
-  background: var(--input-bg);
+  gap: 3px;
+  padding: 2px 6px 2px 3px;
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 7px;
+  border-radius: 6px;
 }
 
 .matIcon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
 }
 
 .matQty {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--text-secondary);
 }
 
-/* 섹션 안 설명·수식 한 줄 */
-.accNote {
-  font-size: 0.72rem;
-  line-height: 1.5;
-  color: var(--text-muted);
-  padding: 2px 1px;
-}
-
-/* 섹션 하단 요약 (기댓값 × 개수) */
-.accFoot {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 2px 0;
-  border-top: 1px solid var(--border-color);
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-/* 합계 줄 */
+/* ─── 합계 줄 ─── */
 .grandTotalRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 12px;
   padding: 10px 12px;
   background: var(--input-bg);
   border: 1px solid var(--border-color);
@@ -381,7 +491,7 @@
   gap: 5px;
   font-size: 1rem;
   font-weight: 800;
-  color: var(--color-primary);
+  color: var(--color-accent);
 }
 
 .goldIcon {
@@ -390,39 +500,169 @@
   object-fit: contain;
 }
 
-/* ─── 모바일 ─── */
+/* ─── 모바일 — 아이템 카드는 다른 상세와 같은 세로 리스트(package.module.css)를 따르고,
+       여기서는 설정 바와 팝업만 좁은 폭에 맞춘다 ─── */
 @media (max-width: 576px) {
-  .accHead {
-    gap: 8px;
-    padding: 9px 10px;
+  .setBar {
+    padding: 0 10px;
   }
 
-  .accIcon,
-  .accIconArt {
-    width: 30px;
-    height: 30px;
+  .setRow {
+    gap: 8px 10px;
+    padding: 8px 0;
   }
 
-  .accTitle {
-    font-size: 0.8rem;
+  /* 좁은 폭에서 셋을 나란히 두면 ± 버튼이 다시 작아지므로 항목마다 한 줄 —
+     라벨은 왼쪽, 큼직한 스테퍼는 오른쪽 끝에 붙인다 */
+  .setField {
+    flex: 1 0 100%;
+    justify-content: space-between;
   }
 
-  .accGold {
-    font-size: 0.8rem;
+  .setLabel {
+    font-size: 0.88rem;
   }
 
-  .accBody {
-    padding: 0 10px 10px;
+  .setIcon {
+    width: 26px;
+    height: 26px;
   }
 
-  .probRow,
-  .optRow {
-    font-size: 0.72rem;
-    padding: 5px 8px;
+  /* 티어 토글은 한 줄을 꽉 채워 반씩 나눠 갖는다 */
+  .seg {
+    flex: 1 0 100%;
   }
 
   .segBtn {
-    font-size: 0.74rem;
-    padding: 5px 8px;
+    flex: 1;
+    padding: 11px 10px;
+    font-size: 0.86rem;
+  }
+
+  .countBtn {
+    width: 46px;
+    height: 44px;
+    font-size: 1.25rem;
+  }
+
+  .countInput {
+    width: 70px;
+    height: 44px;
+    font-size: 1.05rem;
+  }
+
+  .setNote {
+    font-size: 0.68rem;
+  }
+
+  .itemsHead {
+    margin: 0.75rem 0 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  .intro {
+    font-size: 0.78rem;
+    line-height: 1.65;
+  }
+
+  .faqList {
+    gap: 0.7rem;
+  }
+
+  .faqItem {
+    padding-bottom: 0.7rem;
+  }
+
+  .faqQ {
+    font-size: 0.85rem;
+  }
+
+  .faqA {
+    font-size: 0.78rem;
+    line-height: 1.7;
+  }
+
+  /* 아이템 목록 — 다른 상세는 [줄 사이 구분선] 리스트지만, 이 페이지는 항목마다 드롭다운 줄이
+     하나 더 붙어서 구분선·버튼 테두리가 겹쳐 어지러웠다.
+     구분선을 없애고 항목 하나를 옅은 상자로 묶어 경계를 상자 하나로만 준다.
+     (자식 선택자라 공용 .itemCard 규칙보다 특이도가 높아 순서와 무관하게 이긴다) */
+  .itemsGrid {
+    gap: 0.5rem;
+  }
+
+  /* 리스트 행에서는 아이콘 칸이 행 높이를 따라가므로 고정 높이를 풀고 이미지만 키운다 (공용 38px) */
+  .itemsGrid > div > div:first-child {
+    height: auto;
+  }
+
+  .itemsGrid img {
+    width: 56px;
+    height: 56px;
+  }
+
+  .boxIcon.boxIcon {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+  }
+
+  .itemsGrid > div,
+  /* 공용 규칙의 .itemCard:last-child{border-bottom:none} 보다 특이도를 높여 마지막 상자도 닫는다 */
+  .itemsGrid > div:last-child {
+    padding: 0.55rem 0.65rem;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    column-gap: 0.6rem;
+  }
+
+  /* 리스트 행에서는 드롭다운 버튼이 전체 폭 아랫줄로 내려간다 (.itemCardChoices 규칙) */
+  .popWrap {
+    margin-top: 0.4rem;
+  }
+
+  /* 상자 안에 또 상자를 만들지 않는다 — 테두리 없이 글자 + 셰브런만 */
+  .popBtn {
+    padding: 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    background: none;
+    border: none;
+    border-radius: 0;
+  }
+
+  .popBtnActive,
+  .popBtnOpen {
+    background: none;
+    border: none;
+  }
+
+  .popCaret {
+    color: var(--color-accent);
+  }
+
+  .pop {
+    max-height: 60vh;
+    padding: 7px;
+  }
+
+  .popRow,
+  .optRow {
+    font-size: 0.7rem;
+    padding: 4px 7px;
+  }
+
+  .grandTotalRow {
+    margin-top: 10px;
+    padding: 8px 10px;
+  }
+
+  .grandTotalLabel {
+    font-size: 0.82rem;
+  }
+
+  .grandTotalValue {
+    font-size: 0.95rem;
   }
 }

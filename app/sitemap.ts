@@ -13,6 +13,9 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/wangap',             changeFrequency: 'weekly',  priority: 0.8 },
   { path: '/life-master',        changeFrequency: 'daily',   priority: 0.8 },
   { path: '/package',            changeFrequency: 'daily',   priority: 0.9 },
+  // 아제나의 축복 — 유저 글이 아니라 코드로 박아둔 상시 판매 패키지라 URL 이 계속 유지된다.
+  // (유저가 올린 패키지 글은 판매가 끝나면 사라지므로 사이트맵에 넣지 않는다)
+  { path: '/package/azena-blessing', changeFrequency: 'daily', priority: 0.9 },
   { path: '/bracelet',           changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/expedition-gold',    changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/cathedral',          changeFrequency: 'weekly',  priority: 0.7 },

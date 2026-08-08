@@ -9,6 +9,44 @@ import { calcEngravingExpectedValue } from '@/lib/hell-reward-calc';
 
 export const AZENA_POST_ID = 'azena-blessing';
 export const AZENA_TITLE = '아제나의 축복 [28일]';
+/** 갤러리 카드 아트 위처럼 좁은 자리에서 쓰는 짧은 이름 (기간 표기 제외) */
+export const AZENA_SHORT_TITLE = '아제나의 축복';
+
+// ─── 상세 페이지 본문·검색 노출용 텍스트 ───
+// 상시 판매 패키지라 이 페이지는 계속 유지된다. 검색(로아 아제나의 축복 …)으로 들어온
+// 사람이 바로 답을 얻도록 본문에 글을 두고, 같은 내용을 FAQPage 구조화 데이터로도 내보낸다.
+// (구조화 데이터는 화면에 보이는 내용과 같아야 한다 — 한쪽만 고치지 말 것)
+
+/** 제목 아래 한 줄 — 사람들이 실제로 검색하는 말(아제나의 축복 효율)을 그대로 둔다.
+    설명하는 문장이 아니라 무엇을 보는 페이지인지 알려주는 표시. 자세한 설명은 아래 FAQ 가 맡는다 */
+export const AZENA_INTRO = '아제나의 축복 효율 · 28일 기대값 · 실시간 시세 기준';
+
+export const AZENA_FAQ: { q: string; a: string }[] = [
+  {
+    q: '아제나의 축복은 사는 게 이득인가요?',
+    a: '이 페이지 상단의 기대 효율이 그 답입니다. 28일 동안 받는 구성품(도약의 정수 28개, 선택 상자 28개, 천상 도전권 4회, 축복의 편린, 레이드 보너스 상자, 전용 버프)을 모두 거래소 실시간 시세로 환산해 합산한 뒤, 결제 금액을 골드로 바꾼 값과 비교합니다. 기대 효율이 양수면 시세 기준으로 이득입니다. 다만 편린과 보너스 상자는 확률형이라 결과는 사람마다 달라지며, 여기 나오는 값은 기대값(평균)입니다.',
+  },
+  {
+    q: '아제나의 축복 가격은 얼마인가요?',
+    a: '7,700 로열 크리스탈이며 현금으로는 7,700원입니다. 캐릭터당 적용되는 28일 기간제 상품이라, 여러 캐릭터에 쓰려면 캐릭터마다 따로 구매해야 합니다.',
+  },
+  {
+    q: '축복의 편린은 어떻게 얻고 무엇이 나오나요?',
+    a: '카오스 던전(균열)과 가디언 토벌을 1판 돌 때마다 7.5% 확률로 나옵니다. 편린에서는 1만~30만 골드 더미, 유물 각인서 주머니(랜덤·선택), 전설 카드 팩이 확률에 따라 나옵니다. 이 페이지에서는 28일 기본 판수에 공명의 기운·휴게 물약·PC방 이용으로 늘어나는 추가 판수를 더해 기대 개수를 구하고, 편린 1개의 기대 가치를 곱해 계산합니다.',
+  },
+  {
+    q: '1730 이상과 이하는 무엇이 달라지나요?',
+    a: '일일 선택 상자의 융화 재료와 레이드 보너스 상자의 재련 재료 구성이 달라집니다. 1730 이상은 상급 아비도스 융화 재료 10개와 계승 재료(운명의 파편·위대한 돌파석·수호석 결정·파괴석 결정) 상자를, 1730 이하는 아비도스 융화 재료 20개와 일반 운명 재료 상자를 받습니다. 설정에서 본인 구간을 고르면 그 구성의 시세로 다시 계산됩니다.',
+  },
+  {
+    q: '공명의 기운과 휴게 물약, PC방은 왜 입력하나요?',
+    a: '편린은 균열·가디언 토벌 판수에 비례해서 나오기 때문입니다. 공명의 기운과 휴게 물약은 1개당 1판, PC방은 이용한 날마다 2판이 늘어납니다. 평소 쓰는 만큼 입력하면 편린 기대 개수와 28일 총 기대값이 그만큼 올라갑니다. PC방은 하루 한 번만 세므로 최대 28일까지 입력됩니다.',
+  },
+  {
+    q: '전용 버프는 어떻게 골드로 환산하나요?',
+    a: '아제나의 축복 버프는 힘·민첩·지능 6,000, 생명력 12,000, 자원 회복 24%를 주는데 요리 효과와 중복되지 않습니다. 그래서 레이드마다 먹던 명인의 허브 스테이크를 대신 아낀다고 보고, 주 3개씩 4주치를 아끼는 가치로 환산합니다.',
+  },
+];
 export const AZENA_ROYAL_CRYSTAL = 7700; // 판매가 7,700 로열 크리스탈
 export const AZENA_PRICE_WON = 7700;     // 현금가 7,700원
 export const AZENA_DAYS = 28;
@@ -30,7 +68,7 @@ export type AzenaOptions = {
   weeklyRaidClears: number;      // 엔드 컨텐츠 1관문 주간 클리어 수 (0~3) → 보너스 상자 개수
   resonanceCount: number;        // 공명의 기운 사용 개수 (28일 총합, 균열 +1회씩)
   restPotionCount: number;       // 휴게 물약 사용 개수 (균열 +1회씩)
-  pcRoomVisits: number;          // PC방 방문 횟수 (방문당 균열 +2회)
+  pcRoomVisits: number;          // PC방 방문 일수 0~28 (방문일마다 균열 +2회)
 };
 
 export const AZENA_DEFAULT_OPTIONS: AzenaOptions = {
@@ -313,10 +351,12 @@ export function calcAzenaBreakdown(
 
   // 3. 축복의 편린
   const baseRuns = FRAGMENT_BASE_RIFT_RUNS + FRAGMENT_BASE_GUARDIAN_RUNS;
+  // PC방은 하루 1회만 세므로 28일을 넘을 수 없다 (입력칸에도 같은 상한이 걸려 있지만
+  // 계산 쪽에서도 막아 어디서 값이 들어오든 28일 기준을 넘지 않게 한다)
   const extraRuns =
     Math.max(0, options.resonanceCount) +
     Math.max(0, options.restPotionCount) +
-    Math.max(0, options.pcRoomVisits) * 2;
+    Math.min(AZENA_DAYS, Math.max(0, options.pcRoomVisits)) * 2;
   const totalRuns = baseRuns + extraRuns;
   const expectedCount = totalRuns * FRAGMENT_DROP_RATE;
   const perFragment = getAzenaFragmentEV(prices);

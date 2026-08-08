@@ -39,11 +39,74 @@
   text-overflow: ellipsis;
 }
 
+/* ± 입력 — 상세 페이지 스테퍼와 같은 형태: 테두리 하나에 − 숫자 + 를 담는다 */
 .miniRow {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
   flex-shrink: 0;
+  background: var(--gc-input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* ─── 축복 아트 — 왼쪽 칸을 헤더까지 통째로 채운다 ───
+   패딩·간격을 없애 카드 모서리까지 아트가 붙고, 제목·토글은 아트 위에 얹는다.
+   (카드가 radius 12px + overflow:hidden 이라 모서리는 카드 곡선대로 잘린다) */
+.leftBoxArt {
+  padding: 0;
+  gap: 0;
+}
+
+.hero {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 170px;
+  overflow: hidden;
+}
+
+.heroImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.heroHeader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 0.9rem;
+}
+
+/* 제목은 <a> 를 품는다 — 색·밑줄은 제목 그대로 두고 링크 역할만 남긴다 */
+.heroTitleLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.heroTitleLink:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+.heroTitle {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ─── 아이템 레벨 토글 (1730↑ / 1730↓) — 헤더 우측의 세그먼트 버튼 ─── */
@@ -53,17 +116,19 @@
   flex-shrink: 0;
 }
 
+/* 아트 위에 얹히므로 테마 색 대신 흰 글자 + 반투명 검정 바탕으로 읽힌다 */
 .tierBtn {
   display: inline-flex;
   align-items: center;
   gap: 1px;
-  padding: 2px 7px;
-  font-size: 0.68rem;
+  padding: 4px 11px;
+  font-size: 0.76rem;
   font-weight: 800;
-  line-height: 1.2;
-  color: var(--text-secondary);
-  background: var(--gc-input-bg);
-  border: 1px solid var(--border-color);
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(0, 0, 0, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
   cursor: pointer;
 }
 
@@ -76,46 +141,26 @@
   border-left: none;
 }
 
-.tierBtnActive {
+.tierBtn:hover {
   color: #fff;
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: rgba(0, 0, 0, 0.6);
 }
 
+/* 선택된 쪽만 흰 판으로 채워 아트 위에서도 한눈에 구분된다 */
+.tierBtnActive,
+.tierBtnActive:hover {
+  color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.95);
+  text-shadow: none;
+}
+
+/* 화살표는 굵기(font-weight)가 잘 먹지 않는 글리프라 획을 직접 덧그려 두껍게 만든다 */
 .tierArrow {
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   font-weight: 900;
-}
-
-/* 상자 아이콘 — 기본(42px)보다 크게. 이중 클래스로 특이도를 올려
-   모바일의 .itemCellIcon 78% !important 강제보다 우선하게 한다 */
-.boxImg.boxImg {
-  width: 64px;
-  height: 58px;
-}
-
-/* ─── 축복의 편린 셀 — 전용 아트 이미지를 셀에 꽉 차게 앉힌다 ───
-   반경은 항상 [셀 반경 − 테두리 1px] 이어야 모서리가 정확히 맞물린다.
-   더 크면 모서리에서 셀 배경이 비치고, 더 작으면 테두리 안쪽에 틈이 생긴다 */
-.fragWrap {
-  position: absolute;
-  inset: 0;
-  border-radius: 9px; /* 셀 10px − 테두리 1px */
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.fragImg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.miniLabel {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  white-space: nowrap;
+  -webkit-text-stroke: 0.7px currentColor;
+  paint-order: stroke fill;
 }
 
 /* 공명의 기운·휴게 물약 아이콘 라벨 */
@@ -126,17 +171,28 @@
   flex-shrink: 0;
 }
 
+/* PC방 자리표시 이모지 — 위 아이콘과 같은 폭을 차지하게 맞춘다 */
+.pcEmoji {
+  width: 28px;
+  font-size: 1.15rem;
+  line-height: 1;
+  text-align: center;
+  flex-shrink: 0;
+}
+
 .miniInput {
-  width: 36px;
+  width: 38px;
   height: 26px;
   padding: 0 2px;
   font-size: 0.8rem;
   font-weight: 800;
   text-align: center;
   color: var(--text-primary);
-  background: var(--gc-input-bg);
-  border: 1.5px solid var(--text-muted);
-  border-radius: 6px;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  border-radius: 0;
   appearance: textfield;
   -moz-appearance: textfield;
 }
@@ -150,25 +206,30 @@
 
 .miniInput:focus {
   outline: none;
-  border-color: var(--color-primary);
+  background: var(--card-bg);
 }
 
 .miniBtn {
-  width: 24px;
+  width: 26px;
   height: 26px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   font-weight: 800;
   line-height: 1;
   color: var(--text-primary);
-  background: var(--gc-input-bg);
-  border: 1.5px solid var(--text-muted);
-  border-radius: 6px;
+  background: none;
+  border: none;
+  border-radius: 0;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+.miniBtn:hover {
+  color: var(--color-primary);
+  background: var(--card-bg);
 }
 
 /* ─── 태블릿 — 결과 칸이 240px 로 좁아지므로 커스텀 3줄을 한 단계 축소 ─── */
@@ -182,6 +243,11 @@
     height: 24px;
   }
 
+  .pcEmoji {
+    width: 24px;
+    font-size: 1rem;
+  }
+
   .miniInput {
     width: 32px;
     height: 24px;
@@ -189,9 +255,17 @@
   }
 
   .miniBtn {
-    width: 22px;
+    width: 23px;
     height: 24px;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .hero {
+    min-height: 150px;
+  }
+
+  .heroHeader {
+    padding: 0.6rem 0.7rem;
   }
 }
 
@@ -218,23 +292,19 @@
   }
 
   .miniRow {
-    gap: 2px;
+    border-radius: 6px;
   }
 
   .miniBtn {
-    width: 17px;
+    width: 19px;
     height: 20px;
-    font-size: 0.68rem;
-    border-width: 1px;
-    border-radius: 5px;
+    font-size: 0.72rem;
   }
 
   .miniInput {
-    width: 24px;
+    width: 26px;
     height: 20px;
     font-size: 0.66rem;
-    border-width: 1px;
-    border-radius: 5px;
   }
 
   .miniIcon {
@@ -242,26 +312,32 @@
     height: 19px;
   }
 
-  /* 1730 티어 토글 — 제목이 잘리지 않게 축소 */
+  .pcEmoji {
+    width: 19px;
+    font-size: 0.8rem;
+  }
+
+  /* 1730 티어 토글 — 제목이 잘리지 않는 선에서만 줄인다 */
   .tierBtn {
-    padding: 1px 4px;
-    font-size: 0.56rem;
+    padding: 3px 7px;
+    font-size: 0.64rem;
   }
 
   .tierArrow {
-    font-size: 0.58rem;
+    font-size: 0.66rem;
   }
 
-  /* 편린 아트 — 모바일은 셀 반경이 6px 이라 안쪽 반경도 5px 로 맞춘다 */
-  .fragWrap {
-    border-radius: 5px;
+  /* 축복 아트 — 넓어진 칸(공용 .galleryCard 비율 조정)에 맞춰 세로도 같이 키운다 */
+  .hero {
+    min-height: 132px;
   }
 
-  /* 상자 이미지 — 모바일 셀에서도 꽉 차게.
-     공용 .itemCellIcon 78% !important 강제를 이기려면 !important + 이중 클래스가 필요하다 */
-  .boxImg.boxImg {
-    width: 92% !important;
-    height: 86% !important;
+  .heroHeader {
+    padding: 0.45rem 0.5rem;
+  }
+
+  .heroTitle {
+    font-size: 0.75rem;
   }
 }
 

@@ -5,7 +5,7 @@ import { SITE_URL } from '@/lib/site-config';
 import type { PackagePost } from '@/types/package';
 import PackageDetailPage from './PackageDetailClient';
 import AzenaBlessingDetail from '@/components/package/AzenaBlessingDetail';
-import { AZENA_POST_ID, AZENA_TITLE } from '@/lib/azena-blessing';
+import { AZENA_POST_ID, AZENA_TITLE, AZENA_FAQ } from '@/lib/azena-blessing';
 
 // ISR: 상세 페이지 렌더(+ Firestore 읽기)를 5분간 재사용해 조회 폭주를 CDN이 흡수.
 // 수정·삭제는 /api/package/revalidate 호출로 즉시 반영된다.
@@ -50,18 +50,39 @@ const getPost = cache(async (postId: string): Promise<PackagePost | null> => {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { postId } = await params;
 
-  // 아제나의 축복 — Firestore 글이 아니라 코드에 박아둔 공식 패키지 (조회 없이 바로 응답)
+  // 아제나의 축복 — Firestore 글이 아니라 코드에 박아둔 공식 패키지 (조회 없이 바로 응답).
+  // 상시 판매라 이 URL 은 계속 유지되므로 검색 유입을 노리고 메타데이터를 따로 짠다.
+  // 제목은 template('로아로골 | %s') 을 쓰지 않고 absolute 로 고정 — 찾는 말(아제나의 축복)을
+  // 맨 앞에 두어야 검색 결과에서 잘리지 않는다.
   if (postId === AZENA_POST_ID) {
-    const title = `${AZENA_TITLE} 효율 계산기 - 로스트아크 패키지 효율`;
+    const title = '아제나의 축복 효율 계산기 - 로아 28일 패키지 이득 | 로아로골';
     const description =
-      '아제나의 축복 [28일]이 실제로 이득인지 계산해 보세요. 일일 선택 상자·축복의 편린·엔드 컨텐츠 보너스 상자를 실시간 시세로 환산하고, 공명의 기운·휴게 물약·PC방 이용까지 내 플레이에 맞춰 커스텀할 수 있습니다.';
+      // 검색 결과에 잘리지 않게 앞쪽에 핵심어(효율·28일 기대값·편린 기댓값)를 모은다
+      '아제나의 축복 효율 — 28일 기대값을 실시간 시세로 계산합니다. 축복의 편린 기댓값·확률표, 축복이 깃든 상자 내용물까지 골드로 환산. 1730 구간과 공명의 기운·휴게 물약·PC방 횟수에 맞춰 이득률을 바로 확인하세요.';
     const url = `${SITE_URL}/package/${AZENA_POST_ID}`;
+    const ogImage = `${SITE_URL}/og-azena-blessing.jpg`;
     return {
-      title,
+      title: { absolute: title },
       description,
-      keywords: '아제나의 축복, 아제나의 축복 효율, 로아 패키지, 로스트아크 패키지 효율, 로아로골',
-      openGraph: { title: `로아로골 | ${AZENA_TITLE}`, description, url, siteName: '로아로골', locale: 'ko_KR', type: 'article' },
-      twitter: { card: 'summary', title: `로아로골 | ${AZENA_TITLE}`, description },
+      keywords:
+        '아제나의 축복, 로아 아제나의 축복, 아제나의 축복 효율, 아제나의 축복 가격, 아제나의 축복 이득, 아제나의 축복 28일, 로스트아크 아제나의 축복, 아제나의 축복 계산기, ' +
+        '축복의 편린, 축복의 편린 기댓값, 축복의 편린 확률, 편린 드랍률, 아제나의 축복이 깃든 상자, 아제나의 축복이 깃든 선택 상자, 축복의 재련 재료 상자, ' +
+        '아제나의 축복 1730, 아제나의 축복 공명의 기운, 아제나의 축복 휴게 물약, 아제나의 축복 전용 버프, 로아 패키지 효율, 로스트아크 패키지 효율, 로아로골',
+      openGraph: {
+        title: '아제나의 축복 효율 계산기 - 로아 28일 패키지 이득',
+        description,
+        url,
+        siteName: '로아로골',
+        locale: 'ko_KR',
+        type: 'website',
+        images: [{ url: ogImage, width: 1200, height: 630, alt: '아제나의 축복 효율 계산기' }],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: '아제나의 축복 효율 계산기 - 로아 28일 패키지 이득',
+        description,
+        images: [ogImage],
+      },
       alternates: { canonical: url },
     };
   }
@@ -104,7 +125,69 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Page({ params }: Props) {
   const { postId } = await params;
 
-  if (postId === AZENA_POST_ID) return <AzenaBlessingDetail />;
+  if (postId === AZENA_POST_ID) {
+    const url = `${SITE_URL}/package/${AZENA_POST_ID}`;
+    return (
+      <>
+        <AzenaBlessingDetail />
+        {/* 구조화 데이터 — 사이트의 다른 계산기(WebApplication + FAQPage)와 같은 형식.
+            FAQ 답변은 화면에 그대로 보이는 글(AZENA_FAQ)과 동일해야 한다 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebApplication',
+              name: '아제나의 축복 효율 계산기',
+              url,
+              description:
+                '로스트아크 아제나의 축복(28일) 패키지의 구성품을 거래소 실시간 시세로 환산해 28일 기대값과 결제 금액 대비 기대 효율을 계산합니다.',
+              applicationCategory: 'GameApplication',
+              operatingSystem: 'Any',
+              inLanguage: 'ko-KR',
+              isPartOf: { '@type': 'WebSite', name: '로아로골', url: SITE_URL },
+              offers: { '@type': 'Offer', price: '0', priceCurrency: 'KRW' },
+              featureList: [
+                '아제나의 축복 28일 구성품 실시간 시세 환산',
+                '결제 금액(7,700원) 대비 기대 효율 계산',
+                '아이템 레벨 1730 이상/이하별 융화·재련 재료 구성 반영',
+                '공명의 기운·휴게 물약·PC방 이용 횟수에 따른 축복의 편린 기대 개수 계산',
+                '일일 선택 상자 내용물 직접 선택 및 확률·상자 내용물 상세 표시',
+              ],
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: AZENA_FAQ.map((item) => ({
+                '@type': 'Question',
+                name: item.q,
+                acceptedAnswer: { '@type': 'Answer', text: item.a },
+              })),
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: '로아로골', item: SITE_URL },
+                { '@type': 'ListItem', position: 2, name: '패키지 효율', item: `${SITE_URL}/package` },
+                { '@type': 'ListItem', position: 3, name: AZENA_TITLE, item: url },
+              ],
+            }),
+          }}
+        />
+      </>
+    );
+  }
 
   const post = await getPost(postId);
 
