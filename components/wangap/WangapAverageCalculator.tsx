@@ -35,6 +35,7 @@ import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import { OPT_MATERIAL_LIST, type OptMatKey } from './wangapShared';
 import {
   buildSpecialPlan,
+  buildSpecialPlanFromKeys,
   getSpecialRefineInfo,
   getSpecialTries,
   type SpecialCandidate,
@@ -80,6 +81,8 @@ export default function WangapAverageCalculator() {
   // === 특수 재련 (특재) — 재료·골드 없이 특재돌만 소모(고정 확률). 보유 돌을 효율 순 자동 배분 ===
   const [useSpecial, setUseSpecial] = useState(false);
   const [specialStones, setSpecialStones] = useState(0);
+  // 우선순위 표에서 사용자가 직접 고른 단계. null = 자동 배분 그대로 사용
+  const [specialManualKeys, setSpecialManualKeys] = useState<Set<string> | null>(null);
 
   // === 귀속 (재련 재료 카드와 동일: 귀속 = 0골드) ===
   const [boundMaterials, setBoundMaterials] = useState<Record<OptMatKey, boolean>>(createBoundFlags);
@@ -189,7 +192,9 @@ export default function WangapAverageCalculator() {
   // === 특재 배분 계획 — 단계별 일반 강화 기대 비용(귀속 제외 실구매)을 "돌 1개당 절약 골드"로
   //     정렬해 보유 돌 범위에서 그리디 배분 (재련 평균 시뮬과 동일 로직) ===
   const specialPlan = useMemo<SpecialPlan | null>(() => {
-    if (!useSpecial || specialStones <= 0) return null;
+    // 수동 선택 중이면 보유 개수 없이도 계산한다 (자동 배분만 보유량을 필요로 함)
+    if (!useSpecial) return null;
+    if (!specialManualKeys && specialStones <= 0) return null;
     const cands: SpecialCandidate[] = [];
     for (let L = startLevel; L < targetLevel; L++) {
       const wr = computeWangapAverage({
@@ -209,13 +214,25 @@ export default function WangapAverageCalculator() {
       );
       cands.push({ key: `완갑:${L}`, equipName: '완갑', kind: 'wangap', level: L, normalCostGold: cost });
     }
-    return buildSpecialPlan(cands, specialStones, calcMode);
-  }, [useSpecial, specialStones, startLevel, targetLevel, startGrade, calcMode, lavaMode, glacierMode, boundMaterials, unitPricesAll]);
+    // 체크박스를 한 번이라도 만졌으면 그 선택을 그대로 쓰고, 아니면 보유 돌 기준 자동 배분
+    return specialManualKeys
+      ? buildSpecialPlanFromKeys(cands, specialManualKeys, calcMode)
+      : buildSpecialPlan(cands, specialStones, calcMode);
+  }, [useSpecial, specialStones, specialManualKeys, startLevel, targetLevel, startGrade, calcMode, lavaMode, glacierMode, boundMaterials, unitPricesAll]);
+
+  // 우선순위 표 체크박스 토글 — 첫 토글 때 현재(자동) 선택을 그대로 복사해 수동 모드로 넘어간다
+  const toggleSpecialStage = (key: string) => {
+    setSpecialManualKeys(prev => {
+      const next = new Set(prev ?? specialPlan?.chosenKeys ?? []);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
 
   // === 기대값 계산 (조건이 바뀌면 즉시 재계산) ===
   // 특재 배분 단계가 있으면 단계별로 쪼개 합산한다 — computeWangapAverage는 단계 가산적이라
   // 구간 호출과 결과가 같고, 배분 단계만 강화 재료 대신 특재돌 소모로 대체된다.
-  const { result, specialStonesUsed } = useMemo(() => {
+  const { result, specialStonesUsed, savedTotals } = useMemo(() => {
     const params = (from: number, to: number, grade: WangapGrade) => ({
       startLevel: from,
       targetLevel: to,
@@ -227,12 +244,18 @@ export default function WangapAverageCalculator() {
       unitPrices: unitPricesAll,
     });
     if (!specialPlan || specialPlan.chosen.length === 0) {
-      return { result: computeWangapAverage(params(startLevel, targetLevel, startGrade)), specialStonesUsed: 0 };
+      return {
+        result: computeWangapAverage(params(startLevel, targetLevel, startGrade)),
+        specialStonesUsed: 0,
+        savedTotals: null,
+      };
     }
     const totals = {
       파괴석결정: 0, 수호석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 운명파편: 0,
       실링: 0, 골드: 0, 용암: 0, 빙하: 0,
     };
+    // 특재 단계에서 아낀 재료 — 카드에 "원래 N개 → −절약" 을 보여주기 위한 값. 합계에는 포함하지 않는다
+    const savedTotals = { ...totals };
     const rows: WangapAvgRow[] = [];
     const growthAcc = { 운명파편: 0, 실링: 0 };
     let totalTries = 0;
@@ -245,17 +268,19 @@ export default function WangapAverageCalculator() {
       growthAcc.운명파편 += wr.growth.운명파편;
       growthAcc.실링 += wr.growth.실링;
       if (specialPlan.chosenKeys.has(`완갑:${L}`)) {
-        // 특재 단계 — 승급·성장은 그대로, 강화 재료·숨결 계획은 제외하고 특재돌만 소모
+        // 특재 단계 — 승급·성장은 그대로, 강화 재료·숨결 계획은 제외하고 특재돌만 소모.
+        // 빠진 재료는 savedTotals에 모아 카드에 절약분으로 보여준다.
         rows.push(...promos);
         const sp = getSpecialRefineInfo('wangap', L);
         if (sp) stones += sp.stonesPerTry * getSpecialTries(sp.prob, calcMode);
+        (Object.keys(savedTotals) as Array<keyof typeof savedTotals>).forEach(k => { savedTotals[k] += wr.totals[k]; });
       } else {
         rows.push(...wr.rows);
         (Object.keys(totals) as Array<keyof typeof totals>).forEach(k => { totals[k] += wr.totals[k]; });
         totalTries += wr.totalTries;
       }
     }
-    return { result: { rows, totals, totalTries, growth: growthAcc }, specialStonesUsed: stones };
+    return { result: { rows, totals, totalTries, growth: growthAcc }, specialStonesUsed: stones, savedTotals };
   }, [startLevel, targetLevel, startGrade, calcMode, lavaMode, glacierMode, boundMaterials, unitPricesAll, specialPlan]);
 
   const { totals, growth } = result;
@@ -291,6 +316,11 @@ export default function WangapAverageCalculator() {
     !includeGrowth ? 0 : key === '운명파편' ? growth.운명파편 : key === '실링' ? growth.실링 : 0;
   const amountOf = (key: OptMatKey): number => Math.round(totals[key] + growthOf(key));
   const costOf = (key: OptMatKey): number => amountOf(key) * getUnitPrice(key);
+  // 특재로 아낀 수량 — 카드에 "원래값 −절약" 줄로 표시 (없으면 undefined → 줄 자체가 안 붙는다)
+  const savedOf = (key: OptMatKey | '실링' | '골드'): number | undefined => {
+    const v = savedTotals ? Math.round(savedTotals[key]) : 0;
+    return v > 0 ? v : undefined;
+  };
 
   const pressGold = Math.round(totals.골드);
   // 장비 성장 파편은 amountOf 에서 이미 파편 수량에 합쳐졌으므로 여기서 또 더하지 않는다
@@ -704,6 +734,7 @@ export default function WangapAverageCalculator() {
                       amount={amountOf(key)}
                       color="#a855f7"
                       {...matCardProps(key)}
+                      saved={savedOf(key)}
                       footer={key === '운명파편' ? renderGrowthToggle(growth.운명파편) : undefined}
                     />
                   </Col>
@@ -716,6 +747,7 @@ export default function WangapAverageCalculator() {
                     color="#9ca3af"
                     showCheckbox={false}
                     reserveCostSpace
+                    saved={savedOf('실링')}
                     footer={renderGrowthToggle(growth.실링)}
                   />
                 </Col>
@@ -735,6 +767,7 @@ export default function WangapAverageCalculator() {
                     amount={amountOf('용암')}
                     color="#34d399"
                     {...matCardProps('용암')}
+                    saved={savedOf('용암')}
                     footer={renderBreathModeControl('lava')}
                   />
                 </Col>
@@ -745,6 +778,7 @@ export default function WangapAverageCalculator() {
                     amount={amountOf('빙하')}
                     color="#34d399"
                     {...matCardProps('빙하')}
+                    saved={savedOf('빙하')}
                     footer={renderBreathModeControl('glacier')}
                   />
                 </Col>
@@ -837,7 +871,7 @@ export default function WangapAverageCalculator() {
                   />
                 </Col>
                 <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
-                  <MaterialCard icon="/gold.webp" name="누르는 골드" amount={pressGold} color="#f59e0b" />
+                  <MaterialCard icon="/gold.webp" name="누르는 골드" amount={pressGold} color="#f59e0b" saved={savedOf('골드')} />
                 </Col>
                 <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                   <MaterialCard
@@ -864,43 +898,78 @@ export default function WangapAverageCalculator() {
                     보유 특재돌 개수를 입력하면 절약 골드가 큰 단계부터 자동 배분합니다.
                   </div>
                 )}
-                {specialPlan && specialPlan.chosen.length === 0 && (
+                {specialPlan && specialPlan.ranked.length === 0 && (
                   <div className={styles.specialHint}>
-                    보유 돌이 추천 단계의 기대 소모량보다 적어 배분할 단계가 없습니다.
+                    특재를 쓸 수 있는 단계가 없습니다.
                   </div>
                 )}
-                {specialPlan && specialPlan.chosen.length > 0 && (
+                {specialPlan && specialPlan.ranked.length > 0 && (
                   <>
                     <div className={styles.specialSummary}>
                       <span>
-                        특재 추천 {specialPlan.chosen.length}단계 · 기대 돌 {Math.round(specialPlan.usedStones).toLocaleString()}개 ·
-                        일반 강화 대비 절약 약 {Math.round(specialPlan.savedGold).toLocaleString()}G
+                        {specialManualKeys ? '직접 선택' : '자동 배분'} {specialPlan.chosen.length}단계 ·
+                        {' '}기대 돌 <span className={specialPlan.usedStones > specialStones ? styles.specialOver : undefined}>
+                          {Math.round(specialPlan.usedStones).toLocaleString()}개
+                        </span>
+                        {specialStones > 0 && ` / 보유 ${specialStones.toLocaleString()}개`} ·
+                        {' '}일반 강화 대비 절약 약 {Math.round(specialPlan.savedGold).toLocaleString()}G
                       </span>
+                      {specialManualKeys && (
+                        <button
+                          type="button"
+                          className={styles.specialPlanBtn}
+                          onClick={() => setSpecialManualKeys(null)}
+                        >
+                          자동 배분으로 되돌리기
+                        </button>
+                      )}
                     </div>
-                    {/* 우선순위 표 — 내용 폭만 차지하는 정렬 그리드 (돌 1개당 절약 골드 내림차순) */}
+                    {specialPlan.usedStones > specialStones && (
+                      <div className={styles.specialPlanNext}>
+                        선택한 단계의 기대 소모가 보유 개수를 {Math.round(specialPlan.usedStones - specialStones).toLocaleString()}개 초과합니다.
+                      </div>
+                    )}
+                    {/* 우선순위 표 — 돌 1개당 절약 골드 내림차순. 체크로 직접 넣고 뺄 수 있다 */}
                     <div className={styles.specialPlanTable}>
                       <div className={styles.specialPlanHead}>
-                        <span>순위</span><span>단계</span><span>확률</span><span>회당 돌</span><span>기대 돌</span><span>절약 골드</span>
+                        <span>사용</span><span>순위</span><span>단계</span><span>확률</span><span>회당 돌</span><span>기대 돌</span><span>절약 골드</span>
                       </div>
-                      {specialPlan.chosen.map((s, i) => (
-                        <div key={s.key} className={styles.specialPlanTr}>
-                          <span><span className={styles.specialPlanRank}>{i + 1}</span></span>
-                          <span className={styles.specialPlanName}>{s.equipName} +{s.level}→{s.level + 1}</span>
-                          <span>{parseFloat((s.prob * 100).toFixed(2))}%</span>
-                          <span>{s.stonesPerTry}개</span>
-                          <span>{Math.round(s.expectedStones).toLocaleString()}개</span>
-                          <span className={styles.specialPlanGold}>{Math.round(s.normalCostGold).toLocaleString()}G</span>
-                        </div>
-                      ))}
+                      {specialPlan.ranked.map((s, i) => {
+                        const on = specialPlan.chosenKeys.has(s.key);
+                        return (
+                          <div
+                            key={s.key}
+                            className={`${styles.specialPlanTr} ${on ? '' : styles.specialPlanTrOff}`}
+                            onClick={() => toggleSpecialStage(s.key)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSpecialStage(s.key); }
+                            }}
+                          >
+                            <span>
+                              <input
+                                type="checkbox"
+                                className={styles.specialPlanCheck}
+                                checked={on}
+                                onChange={() => toggleSpecialStage(s.key)}
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label={`+${s.level}→${s.level + 1} 특수 재련 사용`}
+                              />
+                            </span>
+                            <span><span className={styles.specialPlanRank}>{i + 1}</span></span>
+                            <span className={styles.specialPlanName}>{s.equipName} +{s.level}→{s.level + 1}</span>
+                            <span>{parseFloat((s.prob * 100).toFixed(2))}%</span>
+                            <span>{s.stonesPerTry}개</span>
+                            <span>{Math.round(s.expectedStones).toLocaleString()}개</span>
+                            <span className={styles.specialPlanGold}>{Math.round(s.normalCostGold).toLocaleString()}G</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                    {(() => {
-                      const next = specialPlan.ranked.find(r => !specialPlan.chosenKeys.has(r.key));
-                      return next ? (
-                        <div className={styles.specialPlanNext}>
-                          다음 순위: {next.equipName} +{next.level}→{next.level + 1} — 기대 돌 {Math.round(next.expectedStones).toLocaleString()}개 필요 (돌 1개당 절약 {Math.round(next.goldPerStone).toLocaleString()}G)
-                        </div>
-                      ) : null;
-                    })()}
+                    <div className={styles.specialPlanNext}>
+                      체크한 단계만 특재로 진행합니다. 순위는 돌 1개당 절약 골드 기준이며, 계산 모드를 바꾸면 순위도 다시 매겨집니다.
+                    </div>
                   </>
                 )}
               </div>

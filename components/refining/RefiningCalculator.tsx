@@ -6,7 +6,7 @@ import { Form, Row, Col, Card, Badge } from 'react-bootstrap';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
 import { getTries, getSuccessionTries, type CalcMode } from '../../lib/refiningSimulationData';
-import { optimalBreath, optimalBreathWithBook, triesForFixedBookPolicy, type OptimalPolicy, type PreSuccessionPolicy } from '../../lib/optimalBreath';
+import { optimalBreathWithBook, triesForFixedBookPolicy, type OptimalPolicy, type PreSuccessionPolicy } from '../../lib/optimalBreath';
 
 // 계승 전 최적 정책: rec(책 종류·여부도 자유 최적화 — 토글 자동 세팅용),
 // on/off(책 토글 상태를 조건으로 한 숨결 최적화 — 실제 계산·표시용),
@@ -27,7 +27,6 @@ import {
   getSuccessionBreathEffect,
   getSuccessionBookBonus,
   getGrowthCost,
-  JANGIN_ACCUMULATE_DIVIDER,
   getBookBonusLines
 } from '../../lib/refiningData';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
@@ -35,6 +34,7 @@ import { WANGAP_ITEM_IMAGES, type WangapGrade } from '../../lib/wangap-item-imag
 import { computeWangapAverage, type WangapBreathMode } from '../../lib/wangapAverage';
 import {
   buildSpecialPlan,
+  buildSpecialPlanFromKeys,
   getSpecialRefineInfo,
   getSpecialTries,
   type SpecialCandidate,
@@ -98,6 +98,8 @@ type Materials = {
   상급아비도스?: number; // 상급 아비도스 융화 재료 (계승)
   실링?: number; // 실링 (계승 귀속 재화)
   특재돌?: number; // 특수 재련 돌 (귀속, 특재 배분 단계에서만 소모)
+  /** 특재로 아낀 재료량 — 키는 위 필드명과 동일. 카드에 "원래 N개 → −절약" 을 보여주기 위한 값이며 합계에는 포함되지 않는다 */
+  특재절약?: Record<string, number>;
 };
 
 
@@ -404,6 +406,8 @@ export default function RefiningCalculator({
   // 특수 재련 (특재) — 계승 후·완갑 전용. 보유 특재돌을 효율 순으로 자동 배분한다.
   const [useSpecial, setUseSpecial] = useState(false);
   const [specialStones, setSpecialStones] = useState(0);
+  // 우선순위 표에서 사용자가 직접 고른 단계. null = 자동 배분 그대로 사용
+  const [specialManualKeys, setSpecialManualKeys] = useState<Set<string> | null>(null);
 
   // 계산 결과 상태 (비용 포함)
   const [results, setResults] = useState<{ totalGold: number; materialCosts: Record<string, number> }>({
@@ -511,7 +515,7 @@ export default function RefiningCalculator({
     }
     // boundMaterials 의존 필수: 귀속 토글로 optimalBreathTable(최적 정책)이 바뀌면 수량도 다시 계산돼야 정확.
     // (optimalBreathTable·specialPlan은 이 effect보다 뒤에 선언되어 직접 못 넣지만, 그 입력을 전부 포함하므로 동일 효과)
-  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments, calcMode, marketPrices, boundMaterials, includeGrowth, useSpecial, specialStones]);
+  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments, calcMode, marketPrices, boundMaterials, includeGrowth, useSpecial, specialStones, specialManualKeys]);
 
   // 비용 계산 로직 (useEffect로 분리)
   useEffect(() => {
@@ -875,7 +879,9 @@ export default function RefiningCalculator({
   // calculateMaterials와 동일한 경로(최적 숨결 정책/책 토글/귀속/계산 모드)로 산출해 일관성을 지킨다.
   // 계승 전 장비는 특재 불가라 후보에서 제외.
   const specialPlan = useMemo<SpecialPlan | null>(() => {
-    if (!useSpecial || specialStones <= 0 || !searched) return null;
+    // 수동 선택 중이면 보유 개수 없이도 계산한다 (자동 배분만 보유량을 필요로 함)
+    if (!useSpecial || !searched) return null;
+    if (!specialManualKeys && specialStones <= 0) return null;
     const mp = (id: string) => marketPrices[id] || 0;
     const bnd = (key: string) => !!boundMaterials[key];
     const cands: SpecialCandidate[] = [];
@@ -970,8 +976,20 @@ export default function RefiningCalculator({
         cands.push({ key: `${eq.name}:${L}`, equipName: eq.name, kind: isArmor ? 'armor' : 'weapon', level: L, normalCostGold: cost });
       }
     });
-    return buildSpecialPlan(cands, specialStones, calcMode);
-  }, [useSpecial, specialStones, searched, equipments, targetLevels, calcMode, marketPrices, boundMaterials, materialOptions, optimalBreathTable]);
+    // 체크박스를 한 번이라도 만졌으면 그 선택을 그대로 쓰고, 아니면 보유 돌 기준 자동 배분
+    return specialManualKeys
+      ? buildSpecialPlanFromKeys(cands, specialManualKeys, calcMode)
+      : buildSpecialPlan(cands, specialStones, calcMode);
+  }, [useSpecial, specialStones, specialManualKeys, searched, equipments, targetLevels, calcMode, marketPrices, boundMaterials, materialOptions, optimalBreathTable]);
+
+  // 우선순위 표 체크박스 토글 — 첫 토글 때 현재(자동) 선택을 그대로 복사해 수동 모드로 넘어간다
+  const toggleSpecialStage = (key: string) => {
+    setSpecialManualKeys(prev => {
+      const next = new Set(prev ?? specialPlan?.chosenKeys ?? []);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
 
   // "최적" 클릭 시 1회: 정책이 권장하는 책 토글을 자동으로 켜준다 (권장 안 하면 끔).
   // 이후에는 사용자가 자유롭게 켜고 끌 수 있고, 계산은 토글 상태를 조건으로 숨결만 다시 최적화한다.
@@ -1803,6 +1821,17 @@ export default function RefiningCalculator({
       특재돌: 0,
     };
 
+    // 특재로 아낀 재료 — 특재 배분 단계의 재료 계산 결과를 합계 대신 여기에 쌓는다.
+    // (카드에 "원래 N개 → −절약" 을 보여주기 위한 값. 실제 소모는 특재돌뿐)
+    const savedMaterials: Record<string, number> = {};
+    const counts = totalMaterials as unknown as Record<string, number>; // 수량 필드 전용 뷰 (특재절약 제외)
+    const addTotal = (key: string, v: number) => {
+      counts[key] = (counts[key] || 0) + v;
+    };
+    const addSaved = (key: string, v: number) => {
+      savedMaterials[key] = (savedMaterials[key] || 0) + v;
+    };
+
     toRefine.forEach(eq => {
       const targets = targetLevels[eq.name];
       if (!targets) return;
@@ -1843,28 +1872,33 @@ export default function RefiningCalculator({
         // computeWangapAverage는 단계 가산적이라 단계별로 쪼개 합산해도 구간 호출과 결과가 같다.
         for (let L = eq.currentLevel; L < targets.normal; L++) {
           const wr = runWangap(L, L + 1);
+          let isSpecialStage = false;
           if (specialPlan?.chosenKeys.has(`${eq.name}:${L}`)) {
             const spInfo = getSpecialRefineInfo('wangap', L);
             if (spInfo) {
+              isSpecialStage = true;
               totalMaterials.특재돌 = (totalMaterials.특재돌 || 0)
                 + spInfo.stonesPerTry * getSpecialTries(spInfo.prob, calcMode);
             }
-          } else {
+          }
+          // 특재 단계도 재료 계산은 그대로 돌리되, 합계 대신 savedMaterials(절약분)로 보낸다
+          const add = isSpecialStage ? addSaved : addTotal;
+          {
             const wt = wr.totals;
-            totalMaterials.파괴석결정 = (totalMaterials.파괴석결정 || 0) + wt.파괴석결정;
-            totalMaterials.수호석결정 = (totalMaterials.수호석결정 || 0) + wt.수호석결정;
-            totalMaterials.위대한돌파석 = (totalMaterials.위대한돌파석 || 0) + wt.위대한돌파석;
-            totalMaterials.상급아비도스 = (totalMaterials.상급아비도스 || 0) + wt.상급아비도스;
-            totalMaterials.운명파편 += wt.운명파편;
-            totalMaterials.실링 = (totalMaterials.실링 || 0) + wt.실링;
-            totalMaterials.누골 += wt.골드;
+            add('파괴석결정', wt.파괴석결정);
+            add('수호석결정', wt.수호석결정);
+            add('위대한돌파석', wt.위대한돌파석);
+            add('상급아비도스', wt.상급아비도스);
+            add('운명파편', wt.운명파편);
+            add('실링', wt.실링);
+            add('누골', wt.골드);
             if (wt.용암 > 0) {
-              totalMaterials.용암 += wt.용암;
-              totalMaterials.용암_완갑 = (totalMaterials.용암_완갑 || 0) + wt.용암;
+              add('용암', wt.용암);
+              add('용암_완갑', wt.용암);
             }
             if (wt.빙하 > 0) {
-              totalMaterials.빙하 += wt.빙하;
-              totalMaterials.빙하_완갑 = (totalMaterials.빙하_완갑 || 0) + wt.빙하;
+              add('빙하', wt.빙하);
+              add('빙하_완갑', wt.빙하);
             }
           }
           // 장비 성장(단계마다 1회 고정)은 따로 모아두고 토글 상태에 따라 합계에 넣는다
@@ -1891,21 +1925,17 @@ export default function RefiningCalculator({
             if (!baseProb) continue;
 
             // 특재 배분 단계 — 강화 재료 대신 특재돌만 소모. 성장 비용은 방식과 무관하게 지불.
+            // 재료 계산은 아래에서 그대로 돌리되, 합계 대신 savedMaterials(절약분)로 보낸다.
+            let isSpecialStage = false;
             if (specialPlan?.chosenKeys.has(`${eq.name}:${level}`)) {
               const spInfo = getSpecialRefineInfo(eq.type === 'armor' ? 'armor' : 'weapon', level);
               if (spInfo) {
+                isSpecialStage = true;
                 totalMaterials.특재돌 = (totalMaterials.특재돌 || 0)
                   + spInfo.stonesPerTry * getSpecialTries(spInfo.prob, calcMode);
-                const growSp = getGrowthCost(level, eq.type, true);
-                totalMaterials.성장파편 = (totalMaterials.성장파편 || 0) + growSp.운명파편;
-                totalMaterials.성장실링 = (totalMaterials.성장실링 || 0) + growSp.실링;
-                if (includeGrowth) {
-                  totalMaterials.운명파편 += growSp.운명파편;
-                  totalMaterials.실링 = (totalMaterials.실링 || 0) + growSp.실링;
-                }
-                continue;
               }
             }
+            const add = isSpecialStage ? addSaved : addTotal;
 
             // 숨결 옵션 (미사용/풀숨/최적)
             const isArmor = eq.type === 'armor';
@@ -1953,27 +1983,27 @@ export default function RefiningCalculator({
             if (avgTries === 0) continue;
 
             if (isArmor) {
-              totalMaterials.수호석결정 = (totalMaterials.수호석결정 || 0) + (materialCostPerTry as any).수호석결정 * avgTries;
+              add('수호석결정', (materialCostPerTry as any).수호석결정 * avgTries);
               if (breathCount > 0) {
-                totalMaterials.빙하 += breathCount;
-                totalMaterials.빙하_일반 += breathCount;
+                add('빙하', breathCount);
+                add('빙하_일반', breathCount);
               }
-              if (useThrill && thrillType === '1215') totalMaterials.방어구책1215 = (totalMaterials.방어구책1215 || 0) + avgTries;
-              if (useThrill && thrillType === '1619') totalMaterials.방어구책1619 = (totalMaterials.방어구책1619 || 0) + avgTries;
+              if (useThrill && thrillType === '1215') add('방어구책1215', avgTries);
+              if (useThrill && thrillType === '1619') add('방어구책1619', avgTries);
             } else {
-              totalMaterials.파괴석결정 = (totalMaterials.파괴석결정 || 0) + (materialCostPerTry as any).파괴석결정 * avgTries;
+              add('파괴석결정', (materialCostPerTry as any).파괴석결정 * avgTries);
               if (breathCount > 0) {
-                totalMaterials.용암 += breathCount;
-                totalMaterials.용암_일반 += breathCount;
+                add('용암', breathCount);
+                add('용암_일반', breathCount);
               }
-              if (useThrill && thrillType === '1215') totalMaterials.무기책1215 = (totalMaterials.무기책1215 || 0) + avgTries;
-              if (useThrill && thrillType === '1619') totalMaterials.무기책1619 = (totalMaterials.무기책1619 || 0) + avgTries;
+              if (useThrill && thrillType === '1215') add('무기책1215', avgTries);
+              if (useThrill && thrillType === '1619') add('무기책1619', avgTries);
             }
-            totalMaterials.위대한돌파석 = (totalMaterials.위대한돌파석 || 0) + (materialCostPerTry as any).위대한돌파석 * avgTries;
-            totalMaterials.상급아비도스 = (totalMaterials.상급아비도스 || 0) + (materialCostPerTry as any).상급아비도스 * avgTries;
-            totalMaterials.운명파편 += materialCostPerTry.운명파편 * avgTries;
-            totalMaterials.실링 = (totalMaterials.실링 || 0) + (materialCostPerTry as any).실링 * avgTries;
-            totalMaterials.누골 += materialCostPerTry.골드 * avgTries;
+            add('위대한돌파석', (materialCostPerTry as any).위대한돌파석 * avgTries);
+            add('상급아비도스', (materialCostPerTry as any).상급아비도스 * avgTries);
+            add('운명파편', materialCostPerTry.운명파편 * avgTries);
+            add('실링', (materialCostPerTry as any).실링 * avgTries);
+            add('누골', materialCostPerTry.골드 * avgTries);
             // 장비 성장(재련 경험치) — 단계마다 1회 고정, 시도 횟수와 무관
             const growSucc = getGrowthCost(level, eq.type, true);
             totalMaterials.성장파편 = (totalMaterials.성장파편 || 0) + growSucc.운명파편;
@@ -2151,10 +2181,17 @@ export default function RefiningCalculator({
     });
 
     // 반올림 처리
-    Object.keys(totalMaterials).forEach(keyStr => {
-      const key = keyStr as keyof Materials;
-      totalMaterials[key] = Math.round(totalMaterials[key] || 0);
+    Object.keys(counts).forEach(key => {
+      counts[key] = Math.round(counts[key] || 0);
     });
+
+    // 절약분은 위 반올림 루프(숫자 전용)가 끝난 뒤에 붙인다
+    const savedRounded: Record<string, number> = {};
+    Object.keys(savedMaterials).forEach(key => {
+      const v = Math.round(savedMaterials[key]);
+      if (v > 0) savedRounded[key] = v;
+    });
+    if (Object.keys(savedRounded).length > 0) totalMaterials.특재절약 = savedRounded;
 
     return totalMaterials;
   };
@@ -2887,6 +2924,8 @@ export default function RefiningCalculator({
               }}>
                 {(() => {
                   const requiredMats = analyzeRequiredMaterials();
+                  // 특재로 아낀 수량 — 해당 재료 카드에 "원래값 −절약" 줄로 표시
+                  const savedOf = (key: string) => materials.특재절약?.[key];
 
                   return (
                     <>
@@ -2915,37 +2954,38 @@ export default function RefiningCalculator({
                             </Col>
                           )}
                           {/* 전율 장비 재료 (계승 재련) — 파괴석 결정 먼저, 수호석 결정 다음 */}
-                          {(materials.파괴석결정 || 0) > 0 && (
+                          {/* 특재가 구간 전체를 덮으면 수량이 0이 된다 — 절약분이 있으면 카드를 남겨 "원래 N개" 를 보여준다 */}
+                          {((materials.파괴석결정 || 0) > 0 || (savedOf('파괴석결정') || 0) > 0) && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-destruction-stone2.webp?v=3" name="파괴석결정" amount={materials.파괴석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['파괴석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석결정']} />
+                              <MaterialCard icon="/destiny-destruction-stone2.webp?v=3" name="파괴석결정" amount={materials.파괴석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['파괴석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석결정']} saved={savedOf('파괴석결정')} />
                             </Col>
                           )}
-                          {(materials.수호석결정 || 0) > 0 && (
+                          {((materials.수호석결정 || 0) > 0 || (savedOf('수호석결정') || 0) > 0) && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-guardian-stone2.webp?v=3" name="수호석결정" amount={materials.수호석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['수호석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석결정']} />
+                              <MaterialCard icon="/destiny-guardian-stone2.webp?v=3" name="수호석결정" amount={materials.수호석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['수호석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석결정']} saved={savedOf('수호석결정')} />
                             </Col>
                           )}
-                          {(materials.위대한돌파석 || 0) > 0 && (
+                          {((materials.위대한돌파석 || 0) > 0 || (savedOf('위대한돌파석') || 0) > 0) && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-breakthrough-stone2.webp?v=3" name="위대한돌파석" amount={materials.위대한돌파석 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['위대한돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['위대한돌파석']} />
+                              <MaterialCard icon="/destiny-breakthrough-stone2.webp?v=3" name="위대한돌파석" amount={materials.위대한돌파석 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['위대한돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['위대한돌파석']} saved={savedOf('위대한돌파석')} />
                             </Col>
                           )}
-                          {(materials.상급아비도스 || 0) > 0 && (
+                          {((materials.상급아비도스 || 0) > 0 || (savedOf('상급아비도스') || 0) > 0) && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/abidos-fusion2.webp?v=3" name="상급아비도스" amount={materials.상급아비도스 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['상급아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['상급아비도스']} />
+                              <MaterialCard icon="/abidos-fusion2.webp?v=3" name="상급아비도스" amount={materials.상급아비도스 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['상급아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['상급아비도스']} saved={savedOf('상급아비도스')} />
                             </Col>
                           )}
                           {/* 공통 재료(파편·실링) — 스톤과 같은 크기·같은 줄.
                               카드는 height:100% 라 같은 줄 안에서는 성장 토글이 붙어도 높이가 맞는다 */}
                           {materials.운명파편 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']}
+                              <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} saved={savedOf('운명파편')}
                                 footer={(materials.성장파편 || 0) > 0 ? renderGrowthToggle(materials.성장파편 || 0) : undefined} />
                             </Col>
                           )}
                           {(materials.실링 || 0) > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/shilling.webp" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false} reserveCostSpace
+                              <MaterialCard icon="/shilling.webp" name="실링" amount={materials.실링 || 0} color="#9ca3af" showCheckbox={false} reserveCostSpace saved={savedOf('실링')}
                                 footer={(materials.성장실링 || 0) > 0 ? renderGrowthToggle(materials.성장실링 || 0) : undefined} />
                             </Col>
                           )}
@@ -2968,6 +3008,7 @@ export default function RefiningCalculator({
                                   amount={materials.빙하_일반}
                                   color="#34d399"
                                   cost={results.materialCosts['빙하_일반']}
+                                  saved={savedOf('빙하_일반')}
                                   showCheckbox={true}
                                   isBound={materialOptions.glacierBreath.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, glacierBreath: {...p.glacierBreath, isBound: !p.glacierBreath.isBound}}))}
@@ -2982,6 +3023,7 @@ export default function RefiningCalculator({
                                     amount={materials.방어구책1215 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1215'] || 0}
+                                    saved={savedOf('방어구책1215')}
                                     tooltip={bookBonusTooltip('66112564')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring1215.enabled}
@@ -3001,6 +3043,7 @@ export default function RefiningCalculator({
                                     amount={materials.방어구책1619 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1619'] || 0}
+                                    saved={savedOf('방어구책1619')}
                                     tooltip={bookBonusTooltip('66112565')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring1619.enabled}
@@ -3100,6 +3143,7 @@ export default function RefiningCalculator({
                                   amount={materials.용암_일반}
                                   color="#34d399"
                                   cost={results.materialCosts['용암_일반']}
+                                  saved={savedOf('용암_일반')}
                                   showCheckbox={true}
                                   isBound={materialOptions.lavaBreath.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, lavaBreath: {...p.lavaBreath, isBound: !p.lavaBreath.isBound}}))}
@@ -3114,6 +3158,7 @@ export default function RefiningCalculator({
                                     amount={materials.무기책1215 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1215'] || 0}
+                                    saved={savedOf('무기책1215')}
                                     tooltip={bookBonusTooltip('66112561')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy1215.enabled}
@@ -3133,6 +3178,7 @@ export default function RefiningCalculator({
                                     amount={materials.무기책1619 || 0}
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1619'] || 0}
+                                    saved={savedOf('무기책1619')}
                                     tooltip={bookBonusTooltip('66112562')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy1619.enabled}
@@ -3232,6 +3278,7 @@ export default function RefiningCalculator({
                                   amount={materials.용암_완갑 || 0}
                                   color="#34d399"
                                   cost={results.materialCosts['용암_완갑'] || 0}
+                                  saved={savedOf('용암_완갑')}
                                   showCheckbox={true}
                                   isBound={materialOptions.wangapLava.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, wangapLava: {...p.wangapLava, isBound: !p.wangapLava.isBound}}))}
@@ -3245,6 +3292,7 @@ export default function RefiningCalculator({
                                   amount={materials.빙하_완갑 || 0}
                                   color="#34d399"
                                   cost={results.materialCosts['빙하_완갑'] || 0}
+                                  saved={savedOf('빙하_완갑')}
                                   showCheckbox={true}
                                   isBound={materialOptions.wangapGlacier.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, wangapGlacier: {...p.wangapGlacier, isBound: !p.wangapGlacier.isBound}}))}
@@ -3566,7 +3614,7 @@ export default function RefiningCalculator({
                             />
                           </Col>
                           <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
-                            <MaterialCard icon="/gold.webp" name="누르는 골드" amount={materials.누골} color="#f59e0b" />
+                            <MaterialCard icon="/gold.webp" name="누르는 골드" amount={materials.누골} color="#f59e0b" saved={savedOf('누골')} />
                           </Col>
                           <Col xs={4} sm={4} md={4} style={{ minWidth: '0' }}>
                             <MaterialCard
@@ -3593,43 +3641,78 @@ export default function RefiningCalculator({
                               보유 특재돌 개수를 입력하면 절약 골드가 큰 단계부터 자동 배분합니다. (대상: 계승 후 무기·방어구, 완갑)
                             </div>
                           )}
-                          {specialPlan && specialPlan.chosen.length === 0 && (
+                          {specialPlan && specialPlan.ranked.length === 0 && (
                             <div className={styles.specialHint}>
-                              보유 돌이 추천 단계의 기대 소모량보다 적어 배분할 단계가 없습니다. (대상: 계승 후 무기·방어구, 완갑)
+                              특재를 쓸 수 있는 단계가 없습니다. (대상: 계승 후 무기·방어구, 완갑)
                             </div>
                           )}
-                          {specialPlan && specialPlan.chosen.length > 0 && (
+                          {specialPlan && specialPlan.ranked.length > 0 && (
                             <>
                               <div className={styles.specialSummary}>
                                 <span>
-                                  특재 추천 {specialPlan.chosen.length}단계 · 기대 돌 {Math.round(specialPlan.usedStones).toLocaleString()}개 ·
-                                  일반 재련 대비 절약 약 {Math.round(specialPlan.savedGold).toLocaleString()}G
+                                  {specialManualKeys ? '직접 선택' : '자동 배분'} {specialPlan.chosen.length}단계 ·
+                                  {' '}기대 돌 <span className={specialPlan.usedStones > specialStones ? styles.specialOver : undefined}>
+                                    {Math.round(specialPlan.usedStones).toLocaleString()}개
+                                  </span>
+                                  {specialStones > 0 && ` / 보유 ${specialStones.toLocaleString()}개`} ·
+                                  {' '}일반 재련 대비 절약 약 {Math.round(specialPlan.savedGold).toLocaleString()}G
                                 </span>
+                                {specialManualKeys && (
+                                  <button
+                                    type="button"
+                                    className={styles.specialPlanBtn}
+                                    onClick={() => setSpecialManualKeys(null)}
+                                  >
+                                    자동 배분으로 되돌리기
+                                  </button>
+                                )}
                               </div>
-                              {/* 우선순위 표 — 내용 폭만 차지하는 정렬 그리드 (돌 1개당 절약 골드 내림차순) */}
+                              {specialPlan.usedStones > specialStones && (
+                                <div className={styles.specialPlanNext}>
+                                  선택한 단계의 기대 소모가 보유 개수를 {Math.round(specialPlan.usedStones - specialStones).toLocaleString()}개 초과합니다.
+                                </div>
+                              )}
+                              {/* 우선순위 표 — 돌 1개당 절약 골드 내림차순. 체크로 직접 넣고 뺄 수 있다 */}
                               <div className={styles.specialPlanTable}>
                                 <div className={styles.specialPlanHead}>
-                                  <span>순위</span><span>단계</span><span>확률</span><span>회당 돌</span><span>기대 돌</span><span>절약 골드</span>
+                                  <span>사용</span><span>순위</span><span>단계</span><span>확률</span><span>회당 돌</span><span>기대 돌</span><span>절약 골드</span>
                                 </div>
-                                {specialPlan.chosen.map((s, i) => (
-                                  <div key={s.key} className={styles.specialPlanTr}>
-                                    <span><span className={styles.specialPlanRank}>{i + 1}</span></span>
-                                    <span className={styles.specialPlanName}>{s.equipName} +{s.level}→{s.level + 1}</span>
-                                    <span>{parseFloat((s.prob * 100).toFixed(2))}%</span>
-                                    <span>{s.stonesPerTry}개</span>
-                                    <span>{Math.round(s.expectedStones).toLocaleString()}개</span>
-                                    <span className={styles.specialPlanGold}>{Math.round(s.normalCostGold).toLocaleString()}G</span>
-                                  </div>
-                                ))}
+                                {specialPlan.ranked.map((s, i) => {
+                                  const on = specialPlan.chosenKeys.has(s.key);
+                                  return (
+                                    <div
+                                      key={s.key}
+                                      className={`${styles.specialPlanTr} ${on ? '' : styles.specialPlanTrOff}`}
+                                      onClick={() => toggleSpecialStage(s.key)}
+                                      role="button"
+                                      tabIndex={0}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSpecialStage(s.key); }
+                                      }}
+                                    >
+                                      <span>
+                                        <input
+                                          type="checkbox"
+                                          className={styles.specialPlanCheck}
+                                          checked={on}
+                                          onChange={() => toggleSpecialStage(s.key)}
+                                          onClick={(e) => e.stopPropagation()}
+                                          aria-label={`${s.equipName} +${s.level}→${s.level + 1} 특수 재련 사용`}
+                                        />
+                                      </span>
+                                      <span><span className={styles.specialPlanRank}>{i + 1}</span></span>
+                                      <span className={styles.specialPlanName}>{s.equipName} +{s.level}→{s.level + 1}</span>
+                                      <span>{parseFloat((s.prob * 100).toFixed(2))}%</span>
+                                      <span>{s.stonesPerTry}개</span>
+                                      <span>{Math.round(s.expectedStones).toLocaleString()}개</span>
+                                      <span className={styles.specialPlanGold}>{Math.round(s.normalCostGold).toLocaleString()}G</span>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                              {(() => {
-                                const next = specialPlan.ranked.find(r => !specialPlan.chosenKeys.has(r.key));
-                                return next ? (
-                                  <div className={styles.specialPlanNext}>
-                                    다음 순위: {next.equipName} +{next.level}→{next.level + 1} — 기대 돌 {Math.round(next.expectedStones).toLocaleString()}개 필요 (돌 1개당 절약 {Math.round(next.goldPerStone).toLocaleString()}G)
-                                  </div>
-                                ) : null;
-                              })()}
+                              <div className={styles.specialPlanNext}>
+                                체크한 단계만 특재로 진행합니다. 순위는 돌 1개당 절약 골드 기준이며, 계산 모드를 바꾸면 순위도 다시 매겨집니다.
+                              </div>
                             </>
                           )}
                         </div>

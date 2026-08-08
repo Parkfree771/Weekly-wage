@@ -7,6 +7,7 @@ import { Container } from 'react-bootstrap';
 import { formatNumber } from '@/lib/package-shared';
 import {
   AZENA_TITLE,
+  AZENA_POST_ID,
   AZENA_PRICE_WON,
   AZENA_ROYAL_CRYSTAL,
   AZENA_DAYS,
@@ -34,6 +35,8 @@ import {
   getAzenaRefineBoxContents,
   type AzenaOptions,
 } from '@/lib/azena-blessing';
+import AdBanner from '@/components/ads/AdBanner';
+import SideSquareAd from '@/components/package/SideSquareAd';
 import styles from '@/app/package/package.module.css';
 import az from './AzenaBlessingDetail.module.css';
 
@@ -309,6 +312,15 @@ export default function AzenaBlessingDetail() {
                 </div>
               </div>
             </div>
+
+            {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
+                같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
+            <div className="d-block d-md-none my-2">
+              <AdBanner slot="8616653628" index={0} />
+            </div>
+
+            {/* PC 좌측 250×250 (모바일에서는 CSS 로 숨김) */}
+            <SideSquareAd postId={AZENA_POST_ID} />
           </div>
 
           {/* 오른쪽: 내 플레이 설정 + 아이템 구성 (한 카드) */}

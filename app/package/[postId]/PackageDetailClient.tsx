@@ -15,7 +15,6 @@ import type { PackagePost, PackageType, PackageItem } from '@/types/package';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import {
   formatNumber,
-  PRICE_BUNDLE_SIZE,
   CRYSTAL_PER_UNIT_FALLBACK,
   getItemUnitPrice,
   getFixedGemSelectUnitPrice,
@@ -37,9 +36,7 @@ import {
   getRiftRunBreakdown,
 } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
-import AdFitUnit from '@/components/ads/AdFitUnit';
-import AdPlaceholder from '@/components/ads/AdPlaceholder';
-import { AD_PREVIEW, ADFIT_ENABLED, ADFIT_UNITS } from '@/components/ads/adConfig';
+import SideSquareAd from '@/components/package/SideSquareAd';
 import CommentSection from '@/components/package/CommentSection';
 import styles from '../package.module.css';
 
@@ -112,34 +109,6 @@ function getTypeBadgeClass(type: PackageType): string {
   if (type === '3+보너스') return styles.typeBadge31;
   if (type === '가챠') return styles.typeBadgeGacha;
   return styles.typeBadgeNormal;
-}
-
-/**
- * PC 좌측 칼럼(340px) 계산 결과 아래 250×250 애드핏.
- * 모바일에서는 .sideAdSlot 이 display:none 이라 렌더돼도 보이지 않는다.
- * key={postId}: 글 사이를 클라이언트 이동해도 애드핏 스캔이 다시 돌게 한다.
- */
-function SideSquareAd({ postId }: { postId: string }) {
-  const adfit = ADFIT_UNITS.packageDetailSquare;
-
-  if (AD_PREVIEW) {
-    return (
-      <AdPlaceholder
-        className={styles.sideAdSlot}
-        label="광고 · 패키지 상세 좌측"
-        sub={`애드핏 ${adfit.width}×${adfit.height}\n${adfit.unit}`}
-        style={{ height: `${adfit.height}px`, whiteSpace: 'pre-line' }}
-      />
-    );
-  }
-
-  if (!ADFIT_ENABLED || !adfit.unit) return null;
-
-  return (
-    <div className={styles.sideAdSlot}>
-      <AdFitUnit key={postId} unit={adfit.unit} width={adfit.width} height={adfit.height} />
-    </div>
-  );
 }
 
 /** 패키지 가격 — 블크 결제 패키지는 블크로 표기 (갤러리 카드·앱 상세와 동일) */

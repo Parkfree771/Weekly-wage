@@ -121,3 +121,23 @@ export function buildSpecialPlan(
     savedGold,
   };
 }
+
+/**
+ * 사용자가 직접 고른 단계로 플랜을 만든다 (자동 배분 결과를 체크박스로 수정한 경우).
+ * 보유 돌 한도를 넘겨도 그대로 반영한다 — 넘겼는지는 호출부가 usedStones로 판단해 표시한다.
+ */
+export function buildSpecialPlanFromKeys(
+  candidates: SpecialCandidate[],
+  selectedKeys: Set<string>,
+  mode: CalcMode,
+): SpecialPlan {
+  const ranked = rankSpecialStages(candidates, mode);
+  const chosen = ranked.filter((r) => selectedKeys.has(r.key));
+  return {
+    ranked,
+    chosen,
+    chosenKeys: new Set(chosen.map((c) => c.key)),
+    usedStones: chosen.reduce((s, c) => s + c.expectedStones, 0),
+    savedGold: chosen.reduce((s, c) => s + c.normalCostGold, 0),
+  };
+}

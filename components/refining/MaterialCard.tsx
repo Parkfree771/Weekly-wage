@@ -25,6 +25,7 @@ const MaterialCard = ({
   footer,
   tooltip,
   reserveCostSpace,
+  saved,
 }: {
   icon: string;
   name: string;
@@ -43,6 +44,8 @@ const MaterialCard = ({
   tooltip?: React.ReactNode;
   /** 골드 환산이 없는 재료(실링 등)도 같은 줄의 다른 카드와 내부 높이를 맞추려면 true */
   reserveCostSpace?: boolean;
+  /** 특수 재련으로 아낀 수량 — 주면 수량 아래에 "원래값 → −절약" 줄이 붙는다 */
+  saved?: number;
 }) => (
   <div
     className={`${styles.materialCard} ${showEnableToggle && !isEnabled ? styles.materialCardDisabled : ''} ${showEnableToggle && isEnabled && !isBound ? styles.materialCardEnabled : ''} ${isBound ? styles.materialCardBound : ''}`}
@@ -90,9 +93,26 @@ const MaterialCard = ({
     <div className={styles.materialName}>
       {name}
     </div>
-    <div className={`${styles.materialAmount} ${amount === 0 ? styles.materialAmountZero : ''}`} style={{ color: amount === 0 ? undefined : color }}>
-      {amount.toLocaleString()}
+    {/* 특재 절약이 있으면 "원래값(취소선) → 실제 소모" 한 줄로, 없으면 수량만 */}
+    <div
+      className={`${styles.materialAmount} ${amount === 0 ? styles.materialAmountZero : ''} ${saved ? styles.materialAmountSaved : ''}`}
+      style={{ color: amount === 0 ? undefined : color }}
+      title={saved ? `특수 재련 적용: 원래 ${(amount + saved).toLocaleString()}개 → ${amount.toLocaleString()}개 (${saved.toLocaleString()}개 절약)` : undefined}
+    >
+      {saved ? (
+        <>
+          <span className={styles.materialAmountBefore}>{(amount + saved).toLocaleString()}</span>
+          <span className={styles.materialAmountArrow} aria-hidden="true">→</span>
+        </>
+      ) : null}
+      <span>{amount.toLocaleString()}</span>
     </div>
+    {saved !== undefined && saved > 0 && (
+      <div className={styles.materialSaved}>
+        <Image src="/special-refine-stone.webp" alt="특수 재련" width={12} height={12} className={styles.materialSavedIcon} />
+        <span className={styles.materialSavedDelta}>{saved.toLocaleString()}개 절약</span>
+      </div>
+    )}
     {cost !== undefined ? (
       <div className={styles.materialCost}>
         <Image src="/gold.webp" alt="gold" width={10} height={10} style={{ marginRight: '2px' }} />
