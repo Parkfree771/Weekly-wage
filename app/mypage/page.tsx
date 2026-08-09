@@ -2153,7 +2153,7 @@ export default function MyPage() {
                                   <div className={styles.commonCardBg} style={{ background: content.color }}><CardBgImage src={content.image} alt={content.name} className={styles.raidImage} /></div>
                                   <div className={styles.raidOverlay} />
                                   <div className={styles.raidInfo}>
-                                    <span className={styles.raidName}>{content.shortName}</span>
+                                    <span className={styles.raidName}>{content.level} {content.shortName}</span>
                                     {content.gold > 0 && <span className={styles.raidLevel}>{content.gold.toLocaleString()}G</span>}
                                   </div>
                                   {checked && <div className={styles.raidCheck}>✓</div>}
@@ -2363,7 +2363,7 @@ export default function MyPage() {
                         )}
                         {hasChaos && (
                           <div className={styles.sideMaterialRow}>
-                            <span className={styles.sideMaterialLabel}>{char.itemLevel >= 1730 ? '균열' : '전선'}</span>
+                            <span className={styles.sideMaterialLabel}>{getChaosDungeonLabel(char.itemLevel) || (char.itemLevel >= 1730 ? '균열' : '전선')}</span>
                             <div className={styles.sideMaterialItems}>
                               {chaosReward.materials.map((mat, mi) => (
                                 <div key={mi} className={styles.sideMaterialItem}>
@@ -2379,7 +2379,7 @@ export default function MyPage() {
                         )}
                         {hasGuardian && (
                           <div className={styles.sideMaterialRow}>
-                            <span className={styles.sideMaterialLabel}>가토</span>
+                            <span className={styles.sideMaterialLabel}>{getGuardianRaidLabel(char.itemLevel) || '가토'}</span>
                             <div className={styles.sideMaterialItems}>
                               {guardianReward.materials.map((mat, mi) => (
                                 <div key={mi} className={styles.sideMaterialItem}>
@@ -2401,7 +2401,7 @@ export default function MyPage() {
                           const gem1Equiv = stReward.gems * SAND_GEM_TO_LV1[eventTierOf(char.itemLevel)]; // 1730=2레벨 ×3, 1750·1770=3레벨 ×9
                           return (
                             <div className={styles.sideMaterialRow}>
-                              <span className={styles.sideMaterialLabel}>모래</span>
+                              <span className={styles.sideMaterialLabel}>{eventTierOf(char.itemLevel)} 모래</span>
                               <div className={styles.sideMaterialItems}>
                                 <div className={styles.sideMaterialItem}>
                                   <StaticIcon src="/1fpqrjqghk.webp" alt="보석" width={20} height={20} className={styles.matIcon2} />
@@ -2465,7 +2465,7 @@ export default function MyPage() {
                           const nonGoldRewards = rewards.filter(r => r.image !== '/gold.webp');
                           return (
                             <div key={content.name} className={styles.sideMaterialRow}>
-                              <span className={styles.sideMaterialLabel}>{content.shortName}</span>
+                              <span className={styles.sideMaterialLabel}>{content.level} {content.shortName}</span>
                               <div className={styles.sideMaterialItems}>
                                 {nonGoldRewards.map((r, ri) => (
                                   <div key={ri} className={styles.sideMaterialItem}>
