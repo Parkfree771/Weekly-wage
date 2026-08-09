@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, Suspense } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { preconnect } from 'react-dom';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Container } from 'react-bootstrap';
@@ -40,11 +40,17 @@ export default function CharacterPageClient({ initialRanking = [] }: { initialRa
   preconnect('https://cdn-lostark.game.onstove.com');
   preconnect('https://img.lostark.co.kr');
 
-  return (
-    <Suspense fallback={null}>
-      <CharacterPageInner initialRanking={initialRanking} />
-    </Suspense>
-  );
+  return <CharacterPageInner initialRanking={initialRanking} />;
+}
+
+// useSearchParams() 는 프리렌더 때 그 컴포넌트 아래를 SSR 결과에서 통째로 들어낸다.
+// 페이지 전체를 Suspense 로 감싸고 있었던 탓에 h1·본문·FAQ·랭킹이 HTML 에 하나도 안 실려
+// 크롤러가 "로딩 중"만 보고 갔다. URL 을 읽는 부분만 잘라 Suspense 안에 가둔다.
+function NameParamBridge({ onChange }: { onChange: (name: string) => void }) {
+  const searchParams = useSearchParams();
+  const name = searchParams?.get('name')?.trim() ?? '';
+  useEffect(() => { onChange(name); }, [name, onChange]);
+  return null;
 }
 
 const REFRESH_COOLDOWN_MS = 30_000;
@@ -88,9 +94,11 @@ function CharacterPageInner({ initialRanking }: { initialRanking: RankingEntry[]
 
   // URL ?name= 을 화면의 단일 진실 소스로 사용.
   // name 있으면 해당 캐릭터 표시, 없으면(뒤로가기로 /character 복귀 등) 결과 정리 → 랭킹 화면.
-  const searchParams = useSearchParams();
+  // null = 아직 브리지가 URL 을 못 넘겨준 상태 (첫 렌더에 결과를 잘못 지우지 않도록 구분)
+  const [nameParam, setNameParam] = useState<string | null>(null);
+  const handleNameParam = useCallback((name: string) => setNameParam(name), []);
   useEffect(() => {
-    const nameParam = searchParams?.get('name')?.trim();
+    if (nameParam === null) return;
     if (nameParam) {
       const cached = charCacheRef.current.get(nameParam);
       if (cached) {
@@ -111,7 +119,7 @@ function CharacterPageInner({ initialRanking }: { initialRanking: RankingEntry[]
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [nameParam]);
 
   // 랭킹 화면으로 복귀 시 직전 스크롤 위치 복원 (제스처 뒤로가기 대응).
   // display:none→block 레이아웃 지연·Next 자동 스크롤(top)에 밀리지 않도록
@@ -280,6 +288,9 @@ function CharacterPageInner({ initialRanking }: { initialRanking: RankingEntry[]
 
   return (
     <Container fluid className={styles.pageContainer}>
+      <Suspense fallback={null}>
+        <NameParamBridge onChange={handleNameParam} />
+      </Suspense>
       <div className="text-center mb-4">
         <h1
           className={styles.pageTitle}
