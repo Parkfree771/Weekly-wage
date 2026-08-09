@@ -3,6 +3,7 @@
 // 체크하는 순간 게임일(06시 기준) 날짜별 로그를 남겨 달력에서 과거 기록을 볼 수 있게 한다.
 // 저장: 로컬(localStorage) 원본 + users/{uid}.appActivityLog 클라우드 백업 (앱과 동일 pack 포맷 → 웹·앱 공유)
 import { getThisWeekWednesday6AM } from '@/types/user';
+import { eventTierOf, type EventTierKey } from '@/data/rewardTable';
 
 export type ActivityKind = 'raid' | 'daily' | 'weekly' | 'common';
 
@@ -15,9 +16,9 @@ export type ActivityEntry = {
    * 체크 값 — 종류별 인코딩 (월간 정산이 골드/재료를 정확히 역산할 수 있도록 토글 상태를 담는다)
    * · daily: 1 일반 / 2 휴게 / 3 PC방 / 4 PC방+휴게
    * · raid: 1 + (골드 미획득이면 +2) + (더보기면 +4)  — 구버전 1 = 골드 획득·더보기 없음
-   * · weekly(모래시계): 2 + 보상강화레벨(0~5) + (1750 티어면 +8)  — 구버전 1 = 레벨0·티어 추정
+   * · weekly(모래시계): 2 + 보상강화레벨(0~5) + 티어 플래그(1750=+8, 1770=+16)  — 구버전 1 = 레벨0·티어 추정
    * · weekly(낙원): 1
-   * · common(카게/필보): 2 = 1730 티어, 3 = 1750 티어  — 구버전 1 = 현재 레벨로 추정
+   * · common(카게/필보): 2 = 1730 티어, 3 = 1750 티어, 4 = 1770 티어  — 구버전 1 = 현재 레벨로 추정
    */
   value: number;
 };
@@ -31,22 +32,33 @@ export function decodeRaidLogValue(value: number): { noGold: boolean; more: bool
   return { noGold: (value & 2) !== 0, more: (value & 4) !== 0 };
 }
 
-export function encodeSandLogValue(level: number, is1750: boolean): number {
-  return 2 + Math.min(5, Math.max(0, level)) + (is1750 ? 8 : 0);
+// 모래시계·공통 모두 아이템 레벨을 그대로 받아 그때그때 티어를 다시 계산한다.
+// (레벨이 오르면 이번 주 기록도 syncLogWithState 가 새 티어로 갱신한다)
+const SAND_TIER_FLAG: Record<EventTierKey, number> = { '1730': 0, '1750': 8, '1770': 16 };
+
+export function encodeSandLogValue(level: number, itemLevel: number): number {
+  return 2 + Math.min(5, Math.max(0, level)) + SAND_TIER_FLAG[eventTierOf(itemLevel)];
 }
-export function decodeSandLogValue(value: number, fallbackMaxLevel: number): { level: number; is1750: boolean } {
-  if (value <= 1) return { level: 0, is1750: fallbackMaxLevel >= 1750 }; // 구버전 기록
+export function decodeSandLogValue(value: number, fallbackMaxLevel: number): { level: number; tier: EventTierKey } {
+  if (value <= 1) return { level: 0, tier: eventTierOf(fallbackMaxLevel) }; // 구버전 기록
   const raw = value - 2;
-  return { level: Math.min(5, raw & 7), is1750: raw >= 8 };
+  return { level: Math.min(5, raw & 7), tier: raw >= 16 ? '1770' : raw >= 8 ? '1750' : '1730' };
 }
 
-export function encodeCommonLogValue(is1750: boolean): number {
-  return is1750 ? 3 : 2;
+// 카게/필보 티어 ↔ 저장값. 기존 2·3 의 의미는 그대로 두고 4(1770)만 덧붙였다 —
+// 4를 모르는 구버전 앱은 `value >= 3` 규칙에 걸려 1750 티어로 읽으므로 값이 조금 낮게 잡힐 뿐 깨지지 않는다.
+const COMMON_TIER_VALUE: Record<EventTierKey, number> = { '1730': 2, '1750': 3, '1770': 4 };
+
+export function encodeCommonLogValue(itemLevel: number): number {
+  return COMMON_TIER_VALUE[eventTierOf(itemLevel)];
 }
-/** @returns 1750 티어 여부 */
-export function decodeCommonLogValue(value: number, fallbackMaxLevel: number): boolean {
-  if (value >= 2) return value >= 3;
-  return fallbackMaxLevel >= 1750; // 구버전 기록
+/** @returns 기록 당시의 카게/필보 티어 */
+export function decodeCommonLogValue(value: number, fallbackMaxLevel: number): EventTierKey {
+  if (value >= 4) return '1770';
+  if (value === 3) return '1750';
+  if (value === 2) return '1730';
+  // 구버전 기록(1) — 현재 원정대 레벨로 추정
+  return fallbackMaxLevel >= 1770 ? '1770' : fallbackMaxLevel >= 1750 ? '1750' : '1730';
 }
 
 /** dateKey(YYYY-MM-DD, 게임일 = KST 06시 경계) → entryId → entry */

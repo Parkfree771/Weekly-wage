@@ -107,6 +107,7 @@ import {
   getChaosDailyReward, getGuardianDailyReward,
   COMMON_CONTENT_MATERIALS_BY_LEVEL,
 } from '@/lib/weekly-rewards';
+import { eventTierOf, SAND_GEM_TO_LV1 } from '@/data/rewardTable';
 import dynamic from 'next/dynamic';
 const WeeklyGoldChart = dynamic(() => import('@/components/WeeklyGoldChart'), { ssr: false });
 const HomeworkCalendar = dynamic(() => import('@/components/HomeworkCalendar'), { ssr: false });
@@ -620,11 +621,11 @@ export default function MyPage() {
     const profChars = userProfile.characters || [];
     if (!characters.every(c => profChars.some(pc => pc.name === c.name))) return;
     setActivityLog(prev => {
-      const next = syncLogWithState(prev, { characters, weeklyChecklist, commonContent });
+      const next = syncLogWithState(prev, { characters, weeklyChecklist, commonContent, representativeChar });
       if (next !== prev) persistActivityLog(next);
       return next;
     });
-  }, [activityLogLoaded, isDemo, user, userProfile, activeExpedition, characters, weeklyChecklist, commonContent]);
+  }, [activityLogLoaded, isDemo, user, userProfile, activeExpedition, characters, weeklyChecklist, commonContent, representativeChar]);
 
   // 데모 모드 데이터 초기화
   const demoInitialized = useRef(false);
@@ -1133,7 +1134,7 @@ export default function MyPage() {
           label: field === 'sandOfTime' ? '모래시계' : '낙원',
           image: field === 'sandOfTime' ? '/gkf.webp' : '/skrdnjs.webp',
           charName, kind: 'weekly',
-          value: field === 'sandOfTime' ? encodeSandLogValue(cs?.sandOfTimeLevel || 0, lvl >= 1750) : 1,
+          value: field === 'sandOfTime' ? encodeSandLogValue(cs?.sandOfTimeLevel || 0, lvl) : 1,
         }));
       } else {
         applyActivityLog(log => withActivityRemovedThisWeek(log, actId));
@@ -1210,7 +1211,7 @@ export default function MyPage() {
         log, todayGameDateKey(), `common|${contentName}`,
         willCheck ? {
           label: content?.shortName || contentName, image: content?.image, kind: 'common',
-          value: encodeCommonLogValue(maxCharLevel >= 1750),
+          value: encodeCommonLogValue(representativeLevel),
         } : null,
       ));
     }
@@ -1424,11 +1425,18 @@ export default function MyPage() {
     return Math.max(...characters.map(c => c.itemLevel));
   }, [characters]);
 
-  // 레벨 기반 공통 컨텐츠
-  const COMMON_CONTENTS = useMemo(() => getCommonContents(maxCharLevel), [maxCharLevel]);
+  // 카게·필보는 대표 캐릭터가 도는 원정대 공통 콘텐츠라 티어를 대표 캐릭터 레벨로 잡는다.
+  // (원정대 최고 레벨로 잡으면 대표가 최고 레벨이 아닐 때 보상이 과대 계산된다 — gold-projection 과 같은 기준)
+  const representativeLevel = useMemo(
+    () => characters.find(c => c.name === representativeChar)?.itemLevel ?? maxCharLevel,
+    [characters, representativeChar, maxCharLevel],
+  );
 
-  // 카오스게이트 레벨 티어
-  const chaosGateLevelTier = maxCharLevel >= 1750 ? '1750' : '1730';
+  // 레벨 기반 공통 컨텐츠
+  const COMMON_CONTENTS = useMemo(() => getCommonContents(representativeLevel), [representativeLevel]);
+
+  // 카오스게이트·필드보스 레벨 티어 (1730 / 1750 / 1770)
+  const chaosGateLevelTier = eventTierOf(representativeLevel);
 
   // 총 골드 계산 (useMemo로 값 캐싱 — 매 렌더마다 재계산 방지)
   const totalGoldSplit = useMemo(() => {
@@ -2127,7 +2135,7 @@ export default function MyPage() {
                             </div>
                             <div className={styles.raidInfo}>
                               <span className={styles.raidName}>모래시계</span>
-                              <span className={styles.raidLevel}>Lv.{char.itemLevel >= 1750 ? '1750' : '1730'}</span>
+                              <span className={styles.raidLevel}>Lv.{eventTierOf(char.itemLevel)}</span>
                             </div>
                             {charState.sandOfTime && <div className={styles.raidCheck}>✓</div>}
                           </div>
@@ -2296,7 +2304,9 @@ export default function MyPage() {
                       }
                     });
 
-                    const hasCommonChecked = charIdx === 0 && Object.values(commonContent.checks).some(v => v);
+                    // 카게·필보는 대표 캐릭터가 도는 콘텐츠라 수급량도 대표 칸에 붙인다 (카드 노출 칸과 일치)
+                    const isRepChar = char.name === representativeChar;
+                    const hasCommonChecked = isRepChar && Object.values(commonContent.checks).some(v => v);
                     const hasSandReward = charState.sandOfTime;
                     const hasAny = hasDailyMats || raidMats.length > 0 || hasCommonChecked || hasSandReward;
 
@@ -2312,14 +2322,14 @@ export default function MyPage() {
                       const stLv = charState.sandOfTimeLevel || 0;
                       const stReward = getSandOfTimeRewards(char.itemLevel)[stLv];
                       if (stReward && (stReward.gems !== 0 || stReward.stones !== 0)) {
-                        addMatTotal('/1fpqrjqghk.webp', char.itemLevel >= 1750 ? stReward.gems * 9 : stReward.gems * 3);
+                        addMatTotal('/1fpqrjqghk.webp', stReward.gems * SAND_GEM_TO_LV1[eventTierOf(char.itemLevel)]);
                         addMatTotal('/top-destiny-breakthrough-stone5.webp', stReward.stones);
                         addMatTotal('/breath-lava5.webp', stReward.lavaBreath);
                         addMatTotal('/breath-glacier5.webp', stReward.glacierBreath);
                       }
                     }
                     raidMats.forEach(({ materials }) => materials.forEach(mat => addMatTotal(mat.image, mat.amount)));
-                    if (charIdx === 0) {
+                    if (isRepChar) {
                       COMMON_CONTENTS.forEach(content => {
                         const checkedCount = Object.entries(commonContent.checks)
                           .filter(([k, v]) => k.endsWith(`-${content.name}`) && v === true).length;
@@ -2388,7 +2398,7 @@ export default function MyPage() {
                           const rewards = getSandOfTimeRewards(char.itemLevel);
                           const stReward = rewards[stLv];
                           if (!stReward || (stReward.gems === 0 && stReward.stones === 0)) return null;
-                          const gem1Equiv = char.itemLevel >= 1750 ? stReward.gems * 9 : stReward.gems * 3; // 3레벨×9, 2레벨×3
+                          const gem1Equiv = stReward.gems * SAND_GEM_TO_LV1[eventTierOf(char.itemLevel)]; // 1730=2레벨 ×3, 1750·1770=3레벨 ×9
                           return (
                             <div className={styles.sideMaterialRow}>
                               <span className={styles.sideMaterialLabel}>모래</span>
@@ -2443,8 +2453,8 @@ export default function MyPage() {
                             </div>
                           </div>
                         ))}
-                        {/* 공통 컨텐츠 재화 (원정대 최고 캐릭터만) */}
-                        {charIdx === 0 && COMMON_CONTENTS.map(content => {
+                        {/* 공통 컨텐츠 재화 (대표 캐릭터만 — 카드가 노출되는 칸과 같다) */}
+                        {isRepChar && COMMON_CONTENTS.map(content => {
                           const checkedCount = Object.entries(commonContent.checks)
                             .filter(([k, v]) => k.endsWith(`-${content.name}`) && v === true).length;
                           if (checkedCount === 0) return null;

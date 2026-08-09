@@ -736,20 +736,21 @@ const mat = (image: string, label: string, short: string, amount: number): Conte
 
 // ── 균열 / 전선 (카오스 던전) — 1회(휴게 미적용) 기준, 레벨 내림차순 ──
 export const RIFT_TIERS: ContentTier[] = [
-  // 1770: 2026-08-05 실측 평균. 파괴석 결정은 시트 평균(411.1)이 휴게 판 기록 오류로 낮게 잡혀
-  // 휴게 없는 2판 실측(558, 수호석 증가율 +30%와도 일치)으로 보정했다. 실링은 시세 없음(0골드 환산).
+  // 1770: 2026-08-09 재정리한 표본 평균으로 교체. 직전 08-05 값(파괴석 결정 558)은 시트 평균이
+  // 휴게 판 기록 오류로 낮게 잡혀 2판만으로 보정했던 추정치였다. 실링은 시세 없음(0골드 환산).
   { minLevel: 1770, label: '1770 균열', materials: [
-    mat(IMG.destructionCrystal, '파괴석 결정', '파괴석 결정', 558),
-    mat(IMG.guardianCrystal, '수호석 결정', '수호석 결정', 1532),
-    mat(IMG.greatBreakthrough, '위대한 돌파석', '위대한 돌파석', 23.8),
-    mat(IMG.fragment, '운명의 파편', '파편', 60164.5),
-    mat(IMG.shilling, '실링', '실링', 216124.3),
+    mat(IMG.destructionCrystal, '파괴석 결정', '파괴석 결정', 463.7),
+    mat(IMG.guardianCrystal, '수호석 결정', '수호석 결정', 1477.9),
+    mat(IMG.greatBreakthrough, '위대한 돌파석', '위대한 돌파석', 27.3),
+    mat(IMG.fragment, '운명의 파편', '파편', 59777.7),
+    mat(IMG.shilling, '실링', '실링', 221768.8),
   ] },
+  // 1750: 2026-08-09 재정리한 표본 평균(파괴석 결정은 49판 실측, 표본표준편차 약 124 → 평균의 95% 구간 ±35)
   { minLevel: 1750, label: '1750 균열', materials: [
-    mat(IMG.destructionCrystal, '파괴석 결정', '파괴석 결정', 438.8),
-    mat(IMG.guardianCrystal, '수호석 결정', '수호석 결정', 1177.5),
-    mat(IMG.greatBreakthrough, '위대한 돌파석', '위대한 돌파석', 18.8),
-    mat(IMG.fragment, '운명의 파편', '파편', 54412.6),
+    mat(IMG.destructionCrystal, '파괴석 결정', '파괴석 결정', 417.9),
+    mat(IMG.guardianCrystal, '수호석 결정', '수호석 결정', 1178.7),
+    mat(IMG.greatBreakthrough, '위대한 돌파석', '위대한 돌파석', 19.7),
+    mat(IMG.fragment, '운명의 파편', '파편', 55730.5),
   ] },
   { minLevel: 1730, label: '1730 균열', materials: [
     mat(IMG.destructionCrystal, '파괴석 결정', '파괴석 결정', 361.5),
@@ -779,10 +780,10 @@ export const RIFT_TIERS: ContentTier[] = [
 
 // ── 가디언 토벌 — 1회 기준 ──
 export const GUARDIAN_TIERS: ContentTier[] = [
-  // 1770: 2026-08-05 휴게 기준 2레벨 보석 11개·실링 122,989 관측 → 1회 기준 ÷2 (보석은 1레벨 ×3 환산)
+  // 1770: 2026-08-09 재정리한 표본 평균. 지급은 2레벨 보석이라 1회 5.4개 → 1레벨 ×3 환산 16.2.
   { minLevel: 1770, label: '1770 가토', materials: [
-    mat(IMG.gem, '1레벨 보석', '1레벨 보석', 16.5),
-    mat(IMG.shilling, '실링', '실링', 61494.5),
+    mat(IMG.gem, '1레벨 보석', '1레벨 보석', 16.2),
+    mat(IMG.shilling, '실링', '실링', 58376.9),
   ] },
   { minLevel: 1750, label: '1750 가토', materials: [mat(IMG.gem, '1레벨 보석', '1레벨 보석', 11.8)] },
   { minLevel: 1730, label: '1730 가토', materials: [mat(IMG.gem, '1레벨 보석', '1레벨 보석', 10.5)] },
@@ -792,7 +793,10 @@ export const GUARDIAN_TIERS: ContentTier[] = [
 ];
 
 // ── 카오스 게이트 / 필드보스 — 원정대 공통(1캐릭만), 1회 기준 + 주간 발생 요일 ──
-export type EventTierKey = '1730' | '1750';
+export type EventTierKey = '1730' | '1750' | '1770';
+
+// 티어 전체를 훑어야 하는 소비처(주간 보상표·앱 생성 스크립트)가 쓰는 목록 — 티어를 늘리면 여기도 늘린다
+export const EVENT_TIER_KEYS: readonly EventTierKey[] = ['1730', '1750', '1770'];
 
 export type EventContent = {
   key: string;
@@ -811,7 +815,7 @@ export const EVENT_CONTENTS: EventContent[] = [
   {
     key: 'boss', name: '필드보스', shortName: '필보', image: '/field-boss.webp',
     color: '#b91c1c', perWeek: 3, days: [2, 5, 0],
-    gold: { '1730': 0, '1750': 0 },
+    gold: { '1730': 0, '1750': 0, '1770': 0 },
     byTier: {
       '1730': [
         mat(IMG.destructionCrystal, '파괴석 결정', '파결', 486.3),
@@ -831,12 +835,22 @@ export const EVENT_CONTENTS: EventContent[] = [
         mat(IMG.gem, '1레벨 보석', '보석', 21),
         mat(IMG.blessing, '천상 입장권', '천상',0.5),
       ],
+      // 1770: 2026-08-09 실측. 용숨·빙숨·보석·천상은 1750과 동일하고 재련 재료만 늘었다.
+      '1770': [
+        mat(IMG.destructionCrystal, '파괴석 결정', '파결', 997.5),
+        mat(IMG.guardianCrystal, '수호석 결정', '수결', 2922.5),
+        mat(IMG.greatBreakthrough, '위대한 돌파석', '위돌', 59.5),
+        mat(IMG.lava, '용숨', '용숨', 3),
+        mat(IMG.glacier, '빙숨', '빙숨', 3),
+        mat(IMG.gem, '1레벨 보석', '보석', 21),
+        mat(IMG.blessing, '천상 입장권', '천상',0.5),
+      ],
     },
   },
   {
     key: 'gate', name: '카오스 게이트', shortName: '카게', image: '/chaos-gate.webp',
     color: '#6b21a8', perWeek: 4, days: [1, 4, 6, 0],
-    gold: { '1730': 3500, '1750': 5000 },
+    gold: { '1730': 3500, '1750': 5000, '1770': 7000 },
     byTier: {
       '1730': [
         mat(IMG.lava, '용숨', '용숨', 6),
@@ -852,6 +866,14 @@ export const EVENT_CONTENTS: EventContent[] = [
         mat(IMG.fragment, '운명의 파편', '운파', 13500),
         mat(IMG.gem, '1레벨 보석', '보석', 7),
       ],
+      // 1770: 2026-08-09 실측. gold 필드(귀속골드 7000)와 아래 귀속골드 mat 은 같은 값을 유지해야 한다.
+      '1770': [
+        mat(IMG.lava, '용숨', '용숨', 8),
+        mat(IMG.glacier, '빙숨', '빙숨', 8),
+        mat(IMG.gold, '귀속골드', '귀속골드', 7000),
+        mat(IMG.fragment, '운명의 파편', '운파', 15000),
+        mat(IMG.gem, '1레벨 보석', '보석', 8),
+      ],
     },
   },
 ];
@@ -860,9 +882,9 @@ export const EVENT_CONTENTS: EventContent[] = [
 // 인게임 확인: 모든 티어에서 값 = 0단계값 × (단계+1). 1730·1750은 2026-07-27 전 단계 대조,
 // 1770은 2026-08-05 5단계 관측값(3레벨 보석 42·위돌 90·용숨 84·빙숨 84)을 ÷6 역산해 채웠다.
 // 보석은 지급 등급이 달라(1730=2레벨, 1750·1770=3레벨) 1레벨 환산 배수를 따로 둔다.
-// 모래시계는 1770 티어가 따로 있어 필보·카게의 EventTierKey 와 키를 분리한다.
 export type SandRow = { gems: number; stones: number; lavaBreath: number; glacierBreath: number };
-export type SandTierKey = EventTierKey | '1770';
+// 필보·카게와 티어 구간이 같아졌다 (별칭 유지 — 소비처가 이 이름으로 import 한다)
+export type SandTierKey = EventTierKey;
 
 export const SAND_TABLE: Record<SandTierKey, SandRow[]> = {
   '1770': [
@@ -943,10 +965,11 @@ export function findTier(tiers: ContentTier[], level: number): ContentTier | nul
   return tiers.find(t => level >= t.minLevel) ?? null;
 }
 
-export const eventTierOf = (level: number): EventTierKey => (level >= 1750 ? '1750' : '1730');
+export const eventTierOf = (level: number): EventTierKey =>
+  level >= 1770 ? '1770' : level >= 1750 ? '1750' : '1730';
 
-// 모래시계 전용 티어 (1770 티어가 있음 — 필보·카게는 1750 이 최고 티어라 eventTierOf 를 쓴다)
-export const sandTierOf = (level: number): SandTierKey => (level >= 1770 ? '1770' : eventTierOf(level));
+// 모래시계도 티어 구간이 같다 (별칭 유지 — 소비처가 이 이름으로 import 한다)
+export const sandTierOf = (level: number): SandTierKey => eventTierOf(level);
 
 // 모래시계 1회 보상 (보석은 1레벨 환산). 단계는 0~5.
 export function getSandMaterials(tier: SandTierKey, enhance: number): ContentMaterial[] {

@@ -15,8 +15,8 @@ import {
 } from '@/lib/activity-log';
 // 콘텐츠 수치는 전부 단일 원본 테이블에서 가져온다 (직접 하드코딩 금지)
 import {
-  EVENT_CONTENTS, GUARDIAN_TIERS, RAID_CARD_IMAGES, RIFT_TIERS, SAND_TABLE,
-  eventTierOf, sandTierOf, findTier, type SandRow,
+  EVENT_CONTENTS, EVENT_TIER_KEYS, GUARDIAN_TIERS, RAID_CARD_IMAGES, RIFT_TIERS, SAND_TABLE,
+  SAND_GEM_TO_LV1, eventTierOf, sandTierOf, findTier, type SandRow,
 } from '@/data/rewardTable';
 import { getCurrentGuardian } from '@/lib/daily-content';
 
@@ -70,7 +70,7 @@ export const COMMON_CONTENT_MATERIALS_BY_LEVEL: Record<string, Record<string, Co
     EVENT_CONTENTS.map(c => [
       c.name,
       Object.fromEntries(
-        (['1730', '1750'] as const).map(tier => [
+        EVENT_TIER_KEYS.map(tier => [
           tier,
           c.byTier[tier].map(m => ({ image: m.image, label: m.short, amount: m.amount })),
         ]),
@@ -212,15 +212,15 @@ export function valueActivityEntry(
     };
   }
   if (id.startsWith('weekly|') && id.endsWith('|sandOfTime')) {
-    const { level, is1750 } = decodeSandLogValue(entry.value, maxLevel);
-    const reward = getSandOfTimeRewards(is1750 ? 1750 : 1730)[level];
+    const { level, tier } = decodeSandLogValue(entry.value, maxLevel);
+    const reward = SAND_TABLE[tier][level];
     if (!reward) return null;
     return {
       goldFree: 0,
       goldBound: 0,
       mats: [
-        // 보석은 1레벨 환산 (1750+ ×9, 미만 ×3 — 주간 수급량과 동일)
-        { image: '/1fpqrjqghk.webp', amount: is1750 ? reward.gems * 9 : reward.gems * 3 },
+        // 보석은 1레벨 환산 (1730=2레벨 ×3, 1750·1770=3레벨 ×9 — 주간 수급량과 동일)
+        { image: '/1fpqrjqghk.webp', amount: reward.gems * SAND_GEM_TO_LV1[tier] },
         { image: '/top-destiny-breakthrough-stone5.webp', amount: reward.stones },
         { image: '/breath-lava5.webp', amount: reward.lavaBreath },
         { image: '/breath-glacier5.webp', amount: reward.glacierBreath },
@@ -229,7 +229,7 @@ export function valueActivityEntry(
   }
   if (id.startsWith('common|')) {
     const name = id.slice('common|'.length);
-    const tier = decodeCommonLogValue(entry.value, maxLevel) ? '1750' : '1730';
+    const tier = decodeCommonLogValue(entry.value, maxLevel);
     const rewards = COMMON_CONTENT_MATERIALS_BY_LEVEL[name]?.[tier];
     if (!rewards || rewards.length === 0) return null;
     const goldRow = rewards.find(r => r.image === '/gold.webp');
@@ -254,6 +254,8 @@ export type ActivitySyncState = {
   characters: Character[];
   weeklyChecklist: WeeklyChecklist;
   commonContent?: CommonContentState;
+  /** 카게·필보 티어 기준이 되는 대표 캐릭터 이름. 없으면 원정대 최고 레벨로 잡는다 */
+  representativeChar?: string;
 };
 
 export function syncLogWithState(log: ActivityLog, state: ActivitySyncState): ActivityLog {
@@ -328,7 +330,7 @@ export function syncLogWithState(log: ActivityLog, state: ActivitySyncState): Ac
         const dayKey = weekKeys.find(k => !!next[k]?.[id]) || todayKey;
         setIfDiff(dayKey, id, {
           label: '모래시계', image: '/gkf.webp', charName: char.name, kind: 'weekly',
-          value: encodeSandLogValue(cs.sandOfTimeLevel || 0, lvl >= 1750),
+          value: encodeSandLogValue(cs.sandOfTimeLevel || 0, lvl),
         });
       } else {
         removeInWeek(id);
@@ -348,7 +350,11 @@ export function syncLogWithState(log: ActivityLog, state: ActivitySyncState): Ac
   // 공통 컨텐츠 — key `${jsDay}-${이름}` → 이번 주 해당 요일 날짜로 기록, 해제분은 정리
   const JS_TO_WEEK: Record<number, number> = { 3: 0, 4: 1, 5: 2, 6: 3, 0: 4, 1: 5, 2: 6 };
   const maxLevel = state.characters.reduce((m, c) => Math.max(m, c.itemLevel), 0);
-  const commonDefs = getCommonContents(maxLevel);
+  // 카게·필보는 대표 캐릭터가 도는 콘텐츠라 대표 레벨로 티어를 잡는다 (mypage 표시와 같은 기준).
+  // 대표를 못 찾으면 종전대로 원정대 최고 레벨.
+  const commonLevel =
+    state.characters.find(c => c.name === state.representativeChar)?.itemLevel ?? maxLevel;
+  const commonDefs = getCommonContents(commonLevel);
   const checkedPairs = new Set<string>();
   Object.entries(state.commonContent?.checks || {}).forEach(([key, v]) => {
     if (v !== true) return;
@@ -362,7 +368,7 @@ export function syncLogWithState(log: ActivityLog, state: ActivitySyncState): Ac
     checkedPairs.add(`${weekKeys[wIdx]}|${id}`);
     setIfDiff(weekKeys[wIdx], id, {
       label: def?.shortName || name, image: def?.image, kind: 'common',
-      value: encodeCommonLogValue(maxLevel >= 1750),
+      value: encodeCommonLogValue(commonLevel),
     });
   });
   weekKeys.forEach(k => {

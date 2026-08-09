@@ -91,7 +91,7 @@ try {
   );
 
   // ── 콘텐츠 ──
-  const tiers = ['1730', '1750'];
+  const tiers = T.EVENT_TIER_KEYS;
   const commonDefs = {};
   const commonMats = {};
   for (const c of T.EVENT_CONTENTS) {
