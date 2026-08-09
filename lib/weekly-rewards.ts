@@ -106,6 +106,11 @@ export function getChaosTierLabel(itemLevel: number): string {
   return String(findTier(RIFT_TIERS, itemLevel)?.minLevel ?? 1640);
 }
 
+// 가토 카드의 Lv. 배지용 티어 하한. 가토는 티어마다 보상이 달라 카드에 레벨이 보여야 한다.
+export function getGuardianTierLabel(itemLevel: number): string {
+  return String(findTier(GUARDIAN_TIERS, itemLevel)?.minLevel ?? 1640);
+}
+
 type DailyRewardDef = { minLevel: number; materials: { image: string; alt: string; daily: number }[] };
 
 const toDaily = (tiers: typeof RIFT_TIERS): DailyRewardDef[] =>

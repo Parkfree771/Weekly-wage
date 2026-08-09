@@ -103,7 +103,7 @@ import {
 import {
   syncLogWithState, RAID_CARD_IMAGES, getRaidDifficultyLabel,
   getCommonContents, getSandOfTimeRewards, getCurrentGuardian,
-  getChaosDungeonLabel, getGuardianRaidLabel, getChaosTierLabel,
+  getChaosDungeonLabel, getGuardianRaidLabel, getChaosTierLabel, getGuardianTierLabel,
   getChaosDailyReward, getGuardianDailyReward,
   COMMON_CONTENT_MATERIALS_BY_LEVEL,
 } from '@/lib/weekly-rewards';
@@ -2106,6 +2106,7 @@ export default function MyPage() {
                             <div className={styles.raidInfo}>
                               <span className={styles.raidName}>{guardian.name}</span>
                               {guardian.element && <span className={styles.raidDifficulty}>{guardian.element}</span>}
+                              <span className={styles.raidLevel}>Lv.{getGuardianTierLabel(char.itemLevel)}</span>
                             </div>
                             <div className={styles.dailyCardLegend}>
                               <div className={styles.dailyLegendGrid}>
