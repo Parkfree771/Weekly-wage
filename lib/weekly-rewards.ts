@@ -100,6 +100,12 @@ export function getGuardianRaidLabel(itemLevel: number): string {
   return findTier(GUARDIAN_TIERS, itemLevel)?.label ?? '';
 }
 
+// 균열/전선 카드의 Lv. 배지용 티어 하한 (앱 getChaosTierLabel 과 동일).
+// 티어를 늘릴 때 카드가 따라오도록 RIFT_TIERS 에서 뽑는다 — 하드코딩 금지.
+export function getChaosTierLabel(itemLevel: number): string {
+  return String(findTier(RIFT_TIERS, itemLevel)?.minLevel ?? 1640);
+}
+
 type DailyRewardDef = { minLevel: number; materials: { image: string; alt: string; daily: number }[] };
 
 const toDaily = (tiers: typeof RIFT_TIERS): DailyRewardDef[] =>
