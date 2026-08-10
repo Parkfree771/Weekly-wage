@@ -315,7 +315,7 @@ export default function AzenaBlessingDetail() {
 
             {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
                 같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
-            <div className="d-block d-md-none my-2">
+            <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
               <AdBanner slot="8616653628" index={0} />
             </div>
 
@@ -615,6 +615,11 @@ export default function AzenaBlessingDetail() {
               </span>
             </div>
           </section>
+        </div>
+
+        {/* 모바일 띠배너 — FAQ 위 (index 1: 계산 결과 아래 자리와 다른 단위) */}
+        <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
+          <AdBanner slot="8616653628" index={1} />
         </div>
 
         {/* 자주 묻는 질문 — 검색으로 들어온 사람이 바로 답을 얻는 자리.

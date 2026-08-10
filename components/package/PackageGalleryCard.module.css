@@ -20,6 +20,13 @@
 
   border: 1.5px solid var(--color-primary);
   box-shadow: var(--gc-shadow);
+
+  /* 화면 밖 카드는 레이아웃·페인트를 통째로 건너뛴다 — "더 보기"로 카드가 수백 장
+     쌓여도 스크롤·리렌더 비용이 화면에 보이는 카드 수에만 비례한다.
+     intrinsic-size 의 auto 는 한 번 그려진 실제 높이를 기억하므로 뒤의 값(대략치)은
+     첫 렌더 전 스크롤바 자리 계산에만 쓰인다. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 18rem;
 }
 
 /* ─── 판매 종료 ───
@@ -231,6 +238,11 @@
   font-weight: 600;
   color: var(--gc-text-muted);
   margin-top: -0.3rem;
+}
+
+/* 컷 기준이 데스크톱(15개)과 모바일(8개)로 달라 문구를 두 개 두고 폭으로 골라 보여준다 */
+.moreTextMobile {
+  display: none;
 }
 
 .itemCell {
@@ -854,6 +866,11 @@
      남는 폭은 전부 아이템 쪽으로 보낸다 (셀·아트가 그만큼 커진다) */
   .galleryCard {
     grid-template-columns: minmax(0, 1fr) minmax(154px, 0.72fr);
+    /* 기본 카드 크기 — 구성품 1~2줄에 결과도 간결한 패키지도 이 높이는 유지한다.
+       내용이 더 많으면(3+1·아이템 많은 카드) 그만큼 더 커진다.
+       카드가 늘어나면 왼쪽 메타(margin-top:auto)와 오른쪽 환율칸이 바닥에 붙어
+       빈 공간이 가운데로 흡수된다. */
+    min-height: 14.5rem;
   }
 
   /* 왼쪽 박스: 축소 */
@@ -873,10 +890,10 @@
     padding: 0.1rem 0.35rem;
   }
 
-  /* 한 줄 4개 — 4열 균등이라 아이템이 2개여도 셀 크기는 동일(늘어나지 않음) */
+  /* 한 줄 5개 — 균등 열이라 아이템이 2개여도 셀 크기는 동일(늘어나지 않음) */
   .itemGrid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 4px;
     max-height: none;
     overflow: hidden;
@@ -910,6 +927,20 @@
 
   .itemCellHidden {
     display: none;
+  }
+
+  /* 아이템은 2줄(10개)까지만 — 카드 높이가 아이템 수에 끌려가 카드마다 키가
+     달라지는 걸 막는다. 가챠 카드는 룰렛 칸이라 itemGridCapped 를 안 받아 다 보인다. */
+  .itemGridCapped .itemCell:nth-child(n+11) {
+    display: none;
+  }
+
+  .moreTextDesktop {
+    display: none;
+  }
+
+  .moreTextMobile {
+    display: inline;
   }
 
   .moreText {
@@ -954,7 +985,7 @@
     font-size: 0.58rem;
   }
 
-  /* 오른쪽 박스: 축소 + border-left 유지 */
+  /* 오른쪽 박스: 축소 + border-left 유지 (최소 높이는 .galleryCard 가 카드째로 잡는다) */
   .rightBox {
     padding: 0.65rem;
     border-top: none;

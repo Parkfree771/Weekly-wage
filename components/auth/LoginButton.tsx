@@ -9,6 +9,18 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import styles from './LoginButton.module.css';
 
+// Google 공식 'G' 로고 — Google 로그인 버튼용
+function GoogleLogo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+    </svg>
+  );
+}
+
 // Apple 공식 로고 (흰색) — Apple 로그인 버튼용
 function AppleLogo() {
   return (
@@ -18,23 +30,27 @@ function AppleLogo() {
   );
 }
 
-export default function LoginButton() {
+// variant
+// - 'default': 데스크톱 — 로그인 버튼 → 방식 선택 모달 (Google / Apple)
+// - 'split': 모바일 메뉴 — 숙제 체크·문의하기 줄처럼 Google/Apple 버튼이 한 줄을 반반 채운다
+export default function LoginButton({ variant = 'default' }: { variant?: 'default' | 'split' }) {
   const router = useRouter();
   const { user, userProfile, loading, signInWithGoogle, signInWithApple, signOut, deleteAccount } = useAuth();
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loggingInProvider, setLoggingInProvider] = useState<'google' | 'apple' | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const isLoggingIn = loggingInProvider !== null;
 
   const handleLogin = async (provider: 'google' | 'apple') => {
-    setIsLoggingIn(true);
+    setLoggingInProvider(provider);
     try {
       await (provider === 'apple' ? signInWithApple() : signInWithGoogle());
       setShowLoginModal(false);
     } catch (err) {
       console.error('로그인 오류:', err);
     } finally {
-      setIsLoggingIn(false);
+      setLoggingInProvider(null);
     }
   };
 
@@ -73,8 +89,33 @@ export default function LoginButton() {
     );
   }
 
-  // 로그인되지 않은 상태 — 로그인 방식 선택 모달 (Google / Apple)
+  // 로그인되지 않은 상태
   if (!user) {
+    // 모바일 메뉴 — 한 줄 반반 분할 (왼쪽 Google 공식 라이트 / 오른쪽 Apple 공식 블랙, 바로 로그인)
+    if (variant === 'split') {
+      return (
+        <div className={styles.splitLogin} role="group" aria-label="로그인">
+          <button
+            onClick={() => handleLogin('google')}
+            disabled={isLoggingIn}
+            className={`${styles.splitHalf} ${styles.splitGoogle}`}
+            aria-label="Google로 로그인"
+          >
+            {loggingInProvider === 'google' ? <Spinner animation="border" size="sm" /> : (<><GoogleLogo /><span>Google</span></>)}
+          </button>
+          <button
+            onClick={() => handleLogin('apple')}
+            disabled={isLoggingIn}
+            className={`${styles.splitHalf} ${styles.splitApple}`}
+            aria-label="Apple로 로그인"
+          >
+            {loggingInProvider === 'apple' ? <Spinner animation="border" size="sm" /> : (<><AppleLogo /><span>Apple</span></>)}
+          </button>
+        </div>
+      );
+    }
+
+    // 데스크톱 — 로그인 버튼 → 방식 선택 모달 (Google / Apple)
     return (
       <>
         <button
@@ -104,12 +145,7 @@ export default function LoginButton() {
                 disabled={isLoggingIn}
                 className={`${styles.providerButton} ${styles.providerGoogle}`}
               >
-                <svg width="18" height="18" viewBox="0 0 48 48" className={styles.googleIcon}>
-                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                </svg>
+                <GoogleLogo />
                 <span>Google로 계속하기</span>
               </button>
               <button

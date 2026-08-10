@@ -14,6 +14,8 @@ import { optimalBreathWithBook, triesForFixedBookPolicy, type OptimalPolicy, typ
 type PreOptVariants = { rec: PreSuccessionPolicy; on: PreSuccessionPolicy; off: PreSuccessionPolicy; onEnhanced?: PreSuccessionPolicy };
 import { computeOptimalAdvancedPlan, advComboLabel, type AdvStageNum } from '../../lib/optimalAdvancedRefining';
 import styles from './RefiningCalculator.module.css';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 // 재료 카드 컴포넌트 — MaterialCard.tsx로 분리 (완갑 평균 시뮬과 공용)
 import MaterialCard from './MaterialCard';
 import {
@@ -2240,7 +2242,8 @@ export default function RefiningCalculator({
   return (
     <div className={styles.container}>
       {/* 장비 정보 및 목표 레벨 설정 */}
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: 'clamp(0.25rem, 2vw, 1rem)', marginTop: 'clamp(1rem, 3vw, 1.5rem)' }}>
+      {/* marginTop 없음 — 탭 아래 간격은 tabContainer 의 margin-bottom 하나로만 잡는다 */}
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: 'clamp(0.25rem, 2vw, 1rem)' }}>
         <>
           {/* 캐릭터 정보 헤더 */}
           {/* 부위별 목표 레벨 설정 */}
@@ -2376,21 +2379,24 @@ export default function RefiningCalculator({
                                 <Image src="/wjsdbf3.webp" alt="" fill sizes="92px" style={{ objectFit: 'fill' }} unoptimized />
                               </span>
                             </span>
-                          ) : eq.isSuccession && eq.icon ? (
+                          ) : eq.isSuccession ? (
                             /* 전율 장비 — API 아이콘이 투명 배경이라 완갑과 같은 구조로:
                                임의 배경(방어구 파랑·무기 빨강 → 검정 그라데이션)을 깔고
-                               세르카 프레임을 완갑과 동일한 오버행 수치로 맞춘다 */
+                               세르카 프레임을 완갑과 동일한 오버행 수치로 맞춘다.
+                               아이콘이 없는 기본 장비(검색 전)는 배경·프레임만 그대로 두고 이미지만 비운다 */
                             <span className={`${styles.wangapIcon} ${styles.wangapIconCard}`}>
                               <span className={eq.type === 'weapon' ? styles.succIconBgWeapon : styles.succIconBgArmor}>
-                                <Image
-                                  src={eq.icon}
-                                  alt={eq.name}
-                                  fill
-                                  sizes="66px"
-                                  className={styles.succIconImg}
-                                  style={{ objectFit: 'contain' }}
-                                  unoptimized
-                                />
+                                {eq.icon && (
+                                  <Image
+                                    src={eq.icon}
+                                    alt={eq.name}
+                                    fill
+                                    sizes="66px"
+                                    className={styles.succIconImg}
+                                    style={{ objectFit: 'contain' }}
+                                    unoptimized
+                                  />
+                                )}
                               </span>
                               {/* 방어구(투구·견갑·상의·하의·장갑)만 데스크톱에서 프레임을 살짝 오른쪽으로 */}
                               <span className={`${styles.wangapIconFrame} ${eq.type === 'armor' ? styles.succIconFrameArmor : ''}`}>
@@ -2889,8 +2895,12 @@ export default function RefiningCalculator({
             <AdBanner slot="8616653628" index={0} />
           </div>
 
+          {/* 데스크톱 728×90 — 목표 카드 아래 (갤러리 하단과 공용 단위, 페이지가 달라 중복 아님) */}
+          <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+
           {/* 재료 소모량 표시 */}
           {searched && equipments.length > 0 && materials && (
+            <>
             <Card className={styles.mainCard}>
               <Card.Header className={styles.cardHeaderAlt}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -2995,12 +3005,11 @@ export default function RefiningCalculator({
                       {/* 일반 재련 추가 재료 (업화 장비) */}
                       {requiredMats.hasNormalRefining && (requiredMats.needsGlacierNormal || requiredMats.needsLavaNormal || requiredMats.needsWangapBreath) && (
                         <div className={styles.materialsSection}>
-                          <div className={styles.materialsSectionTitle}>
-                            일반 재련 추가 재료
-                          </div>
-                          {/* 2줄: 빙하의 숨결 + 책 3종 - 4개 */}
+                          {/* 2줄: 방어구 — 빙하의 숨결 + 책 3종 */}
                           {requiredMats.needsGlacierNormal && (
-                            <Row className={isMobile ? 'g-2 justify-content-center mb-3' : 'g-3 justify-content-center mb-3'}>
+                            <>
+                            <div className={styles.materialsGroupLabel}>방어구</div>
+                            <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
                               <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                 <MaterialCard
                                   icon="/breath-glacier.webp"
@@ -3132,9 +3141,13 @@ export default function RefiningCalculator({
                                 </Col>
                               )}
                             </Row>
+                            </>
                           )}
-                          {/* 3줄: 용암의 숨결 + 책 3종 - 4개 */}
+                          {/* 3줄: 무기 — 용암의 숨결 + 책 3종 */}
                           {requiredMats.needsLavaNormal && (
+                            <>
+                            {requiredMats.needsGlacierNormal && <div className={styles.materialsGroupDivider} />}
+                            <div className={styles.materialsGroupLabel}>무기</div>
                             <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
                               <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                 <MaterialCard
@@ -3267,9 +3280,13 @@ export default function RefiningCalculator({
                                 </Col>
                               )}
                             </Row>
+                            </>
                           )}
                           {/* 완갑 줄: 완갑은 용암·빙하를 함께 써서 무기/방어구 숨결과 분리한다 */}
                           {requiredMats.needsWangapBreath && (
+                            <>
+                            {(requiredMats.needsGlacierNormal || requiredMats.needsLavaNormal) && <div className={styles.materialsGroupDivider} />}
+                            <div className={styles.materialsGroupLabel}>완갑</div>
                             <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
                               <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
                                 <MaterialCard
@@ -3300,6 +3317,7 @@ export default function RefiningCalculator({
                                 />
                               </Col>
                             </Row>
+                            </>
                           )}
                         </div>
                       )}
@@ -3732,6 +3750,11 @@ export default function RefiningCalculator({
                 })()}
               </Card.Body>
             </Card>
+
+            {/* 데스크톱 728×90 — 결과 카드 아래. 목표 아래 자리와 같은 페이지라 별도 단위 필수
+                (refiningResultDesktop — 미발급 동안은 자리째 렌더 안 됨) */}
+            <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
+            </>
           )}
         </>
       </div>

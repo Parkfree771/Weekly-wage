@@ -236,59 +236,6 @@
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
-/* 갤러리 환율 컨트롤 */
-.galleryRateControl {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0.35rem 0.65rem;
-}
-
-.galleryRateControl:focus-within {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
-}
-
-.galleryRateFixed {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-.galleryRateSep {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: var(--text-muted);
-}
-
-.galleryRateInput {
-  width: 52px;
-  background: transparent;
-  border: none;
-  color: var(--color-accent);
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-align: center;
-  outline: none;
-  padding: 0;
-  -moz-appearance: textfield;
-}
-
-.galleryRateInput::placeholder {
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-.galleryRateInput::-webkit-outer-spin-button,
-.galleryRateInput::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
 .registerLink {
   grid-column: 3;
   justify-self: end;
@@ -396,33 +343,109 @@
   font-size: 0.85rem;
 }
 
-/* 더보기 버튼 */
-.loadMoreWrap {
-  text-align: center;
+/* 페이지네이션 — 이전 | 1 2 3 … | 다음.
+   커서가 없는 페이지(방문한 끝 + 2 이후)는 disabled 로 흐려진다 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   margin-top: 2rem;
 }
 
-.loadMoreBtn {
+.pageBtn {
+  min-width: 38px;
+  padding: 0.45rem 0.7rem;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 0.6rem 2rem;
-  font-size: 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
+  font-variant-numeric: tabular-nums;
 }
 
-.loadMoreBtn:hover {
+.pageBtn:hover:not(:disabled) {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.pageBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pageBtnActive {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+/* 현재 페이지 버튼은 다시 눌러도 아무 일 없지만(handlePageChange 가 무시) 흐려지면 안 된다 */
+.pageBtnActive:hover:not(:disabled) {
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+.pageGap {
+  padding: 0 0.15rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+/* 모바일 인-콘텐츠 광고 자리 — 카드 사이에 그대로 끼우면 카드처럼 읽혀서,
+   위아래 여백과 "광고" 라벨로 목록 흐름에서 분리한다.
+   테두리·배경 박스는 두지 않는다: 애드핏이 안 채우면 ins 가 display:none 으로 남는데,
+   그때 빈 박스가 광고 자리였다고 광고보다 더 크게 티를 낸다. */
+.mobileAdSlot {
+  grid-column: 1 / -1;
+  /* 320×50 띠배너는 납작해서 카드 사이에 그냥 끼우면 눌린 것처럼 보인다 —
+     위아래 텀을 넉넉히 줘서 광고가 제 규격대로 놓인 독립 구역으로 읽히게 한다.
+     배너 자체 크기(320×50)는 애드핏 콘솔에 등록된 규격이라 CSS 로는 못 바꾼다.
+     line-height 0: ins 는 인라인이라 기준선 아래 여백이 배너 밑에 붙는데,
+     zoom 1.25 역보정까지 받아 광고가 위로 치우쳐 보인다 — 줄상자 여백을 없애 정중앙에 둔다. */
+  padding: 0.95rem 0;
+  line-height: 0;
+  text-align: center;
+}
+
+/* 카드 사이 광고 전용 광학 보정 — 갤러리 카드 그림자(--shadow-md, 0 4px 12px)가 아래로만
+   지면서 광고 위쪽 여백을 시각적으로 잡아먹어, 수치상 정중앙인데도 광고가 위로 붙어 보인다.
+   위 패딩을 4px 늘리고 아래를 그만큼 줄여 "보이는 중앙"을 맞춘다 (슬롯 총 높이는 동일).
+   그림자 없는 상세 페이지 광고에는 붙이지 말 것. */
+.betweenCardsAd {
+  padding-top: 1.2rem;
+  padding-bottom: 0.7rem;
+}
+
+/* 페이지 버튼 아래 광고(모바일 320×100) — 버튼에 딱 붙지 않게 여백을 더 준다 */
+.belowPagerAd {
+  margin-top: 1.5rem;
+}
+
+/* 데스크톱 갤러리 하단 728×90 — 페이지 버튼과 간격을 두고 정중앙.
+   line-height 0: ins 인라인 기준선 여백 제거 (모바일 자리와 같은 이유) */
+.desktopAdSlot {
+  margin-top: 2.25rem;
+  text-align: center;
+  line-height: 0;
+}
+
+/* body zoom 0.85(≥1024px) 역보정 — 그대로 두면 728×90 이 화면에서 619×77 로 나가
+   규격 미달이 된다. PC 레일·상세 사각형과 같은 방식. */
+@media (min-width: 1024px) {
+  .desktopAdSlot {
+    zoom: 1.1765;
+  }
 }
 
 /* 반응형 - 갤러리 */
 @media (max-width: 768px) {
   .galleryGrid {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 1.25rem;
   }
 }
 
@@ -523,7 +546,7 @@
 
   .galleryGrid {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 1.25rem;
   }
 }
 

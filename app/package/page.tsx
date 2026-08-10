@@ -5,23 +5,51 @@ import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
 import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryCard';
-import { getPackagePosts } from '@/lib/package-service';
+import { getPackagePosts, getPackagePostCount } from '@/lib/package-service';
 import { calculatePostEfficiency, isNewReleasePost } from '@/lib/package-shared';
 import { isSaleEnded } from '@/lib/package-sale';
-import { useAuth } from '@/contexts/AuthContext';
 import type { PackagePost } from '@/types/package';
 import AdBanner from '@/components/ads/AdBanner';
+import AdFitUnit from '@/components/ads/AdFitUnit';
+import { ADFIT_ENABLED, ADFIT_UNITS } from '@/components/ads/adConfig';
 import GuideFaq from '@/components/common/GuideFaq';
 import { faqData } from './faq-data';
 import styles from './package.module.css';
 
-const PAGE_SIZE = 16;
+// 페이지당 카드 6장 고정 — 1페이지는 아제나 카드 + 글 5개, 2페이지부터는 글 6개.
+// 커서 페이지네이션이라 페이지마다 limit 이 달라도 문제없다 (커서 = 직전 페이지 마지막 문서)
+const PAGE_SIZE_FIRST = 5;
+const PAGE_SIZE_REST = 6;
+const pageSizeOf = (n: number) => (n === 1 ? PAGE_SIZE_FIRST : PAGE_SIZE_REST);
 
-// 모바일 인-콘텐츠 광고를 끼워 넣을 자리 — "이 인덱스의 카드 뒤"에 하나씩.
-// 카드 2개 → 광고 → 카드 3개 → 광고 → 카드 3개 → 광고.
-// 자리 순번이 곧 애드핏 단위 순번(ADFIT_INCONTENT_UNITS)이다. 단위가 모자란 뒤쪽 자리는
-// AdBanner 가 스스로 렌더를 건너뛴다.
-const AD_AFTER_CARD_INDEX = [1, 4, 7];
+// 모바일 인-콘텐츠 광고를 끼워 넣을 자리 — "이 인덱스의 글 카드 뒤"에 하나씩.
+// 아제나 카드는 1페이지에만 나온다 (매 페이지 반복하면 페이지가 바뀐 게 안 보인다).
+// 1페이지: 아제나 → 광고(단위0) → 글 2개 → 광고(단위1) → 글 2개 → 광고(단위2) → 글 1개
+// 2페이지~: 글 1개 → 광고(단위0) → 글 2개 → 광고(단위1) → 글 2개 → 광고(단위2) → 글 1개
+// 공통 하단: 페이지 버튼 → 320×100 광고(구 단일 단위).
+// 동시 게재 최대 4개 — 애드핏 정책 상한("4개 초과 금지")에 맞춘 배치라 더 늘리면 안 된다.
+// 페이지를 넘기면 이전 광고 DOM 이 사라지고 새로 로드되므로 페이지 수만큼 노출이 늘어난다.
+// 단위가 모자란 자리는 AdBanner 가 스스로 렌더를 건너뛴다.
+const AD_AFTER_CARD_INDEX_PAGE1 = [1, 3];
+const AD_AFTER_CARD_INDEX_REST = [0, 2, 4];
+
+// 페이지 번호 목록 — 많아지면 [1 … 4 5 6 … 20] 처럼 현재 페이지 주변만 남기고 접는다
+function buildPageList(current: number, total: number): (number | 'gap')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const uniq = [...new Set([1, current - 1, current, current + 1, total])]
+    .filter((n) => n >= 1 && n <= total)
+    .sort((a, b) => a - b);
+  const out: (number | 'gap')[] = [];
+  uniq.forEach((n, i) => {
+    if (i > 0) {
+      const prev = uniq[i - 1];
+      if (n - prev === 2) out.push(prev + 1);
+      else if (n - prev > 2) out.push('gap');
+    }
+    out.push(n);
+  });
+  return out;
+}
 
 // 공통 환율(100골드당 원) 입력 범위. 기본값은 두지 않는다 —
 // 비어 있으면 미적용이고, 각 카드가 등록 시점 환율을 그대로 쓴다.
@@ -34,7 +62,7 @@ const clampRate = (v: number) => (v <= 0 ? 0 : Math.max(RATE_MIN, Math.min(RATE_
 // 전부 이미 불러온 posts 배열 위에서만 도는 화면 기준 기능이다.
 // Firestore 재조회를 절대 일으키지 않는다 — 예전에 정렬을 서버 쿼리로 돌리다
 // 드롭다운을 건드릴 때마다 읽기가 한 페이지씩 더 나가서 뺐던 기능이라, 같은 실수를 막으려고
-// sortBy/typeFilter 는 fetchPosts 의 의존성에 넣지 않는다.
+// sortBy/typeFilter 는 goToPage 의 의존성에 넣지 않는다.
 type GallerySort = 'createdAt' | 'efficiency' | 'newRelease';
 type SaleFilter = 'all' | 'onSale' | 'ended';
 
@@ -58,12 +86,16 @@ const isSaleView = (v: GalleryView): v is Exclude<SaleFilter, 'all'> =>
   (SALE_VIEWS as string[]).includes(v);
 
 export default function PackageGalleryPage() {
-  const { user } = useAuth();
   const [posts, setPosts] = useState<PackagePost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const lastDocRef = useRef<any>(null);
-  const [hasMore, setHasMore] = useState(true);
+  // 페이지 번호 방식. Firestore 는 offset 점프가 안 돼 커서로만 다음 페이지를 연다 —
+  // 방문한 페이지는 캐시에 담아 재조회 없이 오가고, 안 가본 곳은 "방문한 끝 + 1"까지만 열린다.
+  // 진입 시 읽기는 1페이지 5개뿐이고, 다른 페이지는 처음 넘어갈 때 한 번씩만 읽는다.
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const pageCacheRef = useRef<Map<number, PackagePost[]>>(new Map());
+  // n페이지 마지막 문서 커서 = n+1페이지 조회의 시작점
+  const cursorsRef = useRef<Map<number, any>>(new Map());
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
   // 갤러리 공통 환율(100골드당 원). 0 이면 미적용 — 각 카드가 등록 시점 환율을 그대로 쓴다.
   // 값이 들어오면 모든 카드가 이 값으로 맞춰지고, 이후 카드별 개별 수정은 그대로 가능하다.
@@ -87,44 +119,53 @@ export default function PackageGalleryPage() {
       .catch((err) => console.error('가격 데이터 로딩 실패:', err));
   }, []);
 
-  const fetchPosts = useCallback(
-    async (isLoadMore = false) => {
-      if (isLoadMore) {
-        setLoadingMore(true);
-      } else {
-        setLoading(true);
-      }
+  const goToPage = useCallback(async (n: number) => {
+    const cached = pageCacheRef.current.get(n);
+    if (cached) {
+      setPage(n);
+      setPosts(cached);
+      return;
+    }
 
-      try {
-        const result = await getPackagePosts({
-          sortBy: 'createdAt',
-          limit: PAGE_SIZE,
-          startAfterDoc: isLoadMore ? lastDocRef.current : undefined,
-        });
+    // 커서가 없는 페이지(중간 건너뛰기)는 UI 에서 비활성이지만, 혹시 들어와도 조용히 무시
+    const cursor = n === 1 ? undefined : cursorsRef.current.get(n - 1);
+    if (n !== 1 && !cursor) return;
 
-        if (isLoadMore) {
-          setPosts((prev) => [...prev, ...result.posts]);
-        } else {
-          setPosts(result.posts);
-        }
-
-        lastDocRef.current = result.lastDoc;
-        setHasMore(result.posts.length === PAGE_SIZE);
-      } catch (err) {
-        console.error('게시물 로딩 실패:', err);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-      }
-    },
+    setLoading(true);
+    try {
+      const result = await getPackagePosts({
+        sortBy: 'createdAt',
+        limit: pageSizeOf(n),
+        startAfterDoc: cursor,
+      });
+      pageCacheRef.current.set(n, result.posts);
+      cursorsRef.current.set(n, result.lastDoc);
+      setPage(n);
+      setPosts(result.posts);
+    } catch (err) {
+      console.error('게시물 로딩 실패:', err);
+    } finally {
+      setLoading(false);
+    }
     // latestPrices는 카드 표시용일 뿐 조회 조건이 아니다.
     // deps에 넣으면 시세 응답 직후 재조회가 일어나 방문당 읽기가 2배가 된다.
-    [],
-  );
+  }, []);
 
   useEffect(() => {
-    fetchPosts(false);
-  }, [fetchPosts]);
+    goToPage(1);
+    // 전체 페이지 수 표시용. count 집계는 문서를 읽어오지 않아 비용이 거의 없고,
+    // 실패해도 이전/다음 버튼만으로 정상 동작한다.
+    getPackagePostCount()
+      .then(setTotalCount)
+      .catch(() => setTotalCount(null));
+  }, [goToPage]);
+
+  // 사용자가 페이지를 넘길 때 — 목록 맨 위로 되돌린다 (첫 로딩에는 안 탄다)
+  const handlePageChange = (n: number) => {
+    if (n === page || loading) return;
+    goToPage(n);
+    window.scrollTo({ top: 0 });
+  };
 
   // 이미 받아둔 posts 위에서만 도는 정렬·필터. 여기서 네트워크를 타는 건 아무것도 없다.
   const visiblePosts = useMemo(() => {
@@ -159,8 +200,18 @@ export default function PackageGalleryPage() {
   // 정렬·필터는 "지금 불러온 목록" 안에서만 도므로, 범위를 숨기지 않고 그대로 알려준다
   const isNarrowed = saleFilter !== 'all';
 
+  // 1페이지는 5개, 나머지는 6개씩이라 전체 페이지 수도 그 기준으로 나눈다
+  const totalPages = totalCount != null
+    ? totalCount <= PAGE_SIZE_FIRST
+      ? 1
+      : 1 + Math.ceil((totalCount - PAGE_SIZE_FIRST) / PAGE_SIZE_REST)
+    : null;
+  // 커서 확보 범위: 방문한 페이지 + 그 다음 한 페이지까지만 이동 가능
+  const maxLoaded = pageCacheRef.current.size > 0 ? Math.max(...pageCacheRef.current.keys()) : 0;
+  const hasNext = totalPages != null ? page < totalPages : posts.length === pageSizeOf(page);
+
   const renderSkeletons = () =>
-    Array.from({ length: 8 }).map((_, i) => (
+    Array.from({ length: 6 }).map((_, i) => (
       <div key={i} className={styles.skeletonCard}>
         <div className={`${styles.skeletonBadge} ${styles.skeletonPulse}`} />
         <div className={`${styles.skeletonLine} ${styles.skeletonPulse}`} />
@@ -269,23 +320,34 @@ export default function PackageGalleryPage() {
               <div className={styles.emptyState}>
                 <p className={styles.emptyText}>조건에 맞는 패키지가 없습니다</p>
                 <p className={styles.emptySubtext}>
-                  {hasMore
-                    ? '아래 "더 보기"로 목록을 더 불러오거나, 드롭다운을 "업로드순"으로 바꿔보세요'
+                  {hasNext
+                    ? '다음 페이지를 넘겨보거나, 드롭다운을 "업로드순"으로 바꿔보세요'
                     : '드롭다운을 "업로드순"으로 바꿔보세요'}
                 </p>
               </div>
             ) : (
               <div className={styles.galleryGrid}>
-                {/* 아제나의 축복 — 코드로 박아둔 공식 패키지. 판매종료 필터에서만 숨긴다 */}
-                {saleFilter !== 'ended' && (
-                  <AzenaBlessingGalleryCard
-                    latestPrices={latestPrices}
-                    commonWonPer100Gold={commonWonPer100Gold}
-                  />
+                {/* 아제나의 축복 — 코드로 박아둔 공식 패키지. 1페이지 첫 칸에만 둔다
+                    (매 페이지 반복하면 페이지를 넘겨도 첫 칸이 그대로라 바뀐 게 안 보인다).
+                    바로 뒤가 첫 광고 자리(단위 0번) — 아제나가 빠지는 2페이지부터는
+                    글 카드 사이 광고가 단위 0번부터 쓴다. */}
+                {saleFilter !== 'ended' && page === 1 && (
+                  <>
+                    <AzenaBlessingGalleryCard
+                      latestPrices={latestPrices}
+                      commonWonPer100Gold={commonWonPer100Gold}
+                    />
+                    <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.betweenCardsAd}`}>
+                      <AdBanner slot="8616653628" index={0} />
+                    </div>
+                  </>
                 )}
                 {visiblePosts.map((post, index) => {
-                  // 자리 순번 = 애드핏 단위 순번. 마지막 카드 뒤에는 붙이지 않는다.
-                  const adSlotIndex = AD_AFTER_CARD_INDEX.indexOf(index);
+                  // 마지막 카드 뒤에는 붙이지 않는다. 1페이지는 아제나 뒤 광고가 단위 0번을
+                  // 먼저 쓰므로 여기 자리들은 1번부터, 2페이지부터는 0번부터 받는다.
+                  const adAfterIndex = page === 1 ? AD_AFTER_CARD_INDEX_PAGE1 : AD_AFTER_CARD_INDEX_REST;
+                  const adUnitOffset = page === 1 ? 1 : 0;
+                  const adSlotIndex = adAfterIndex.indexOf(index);
                   const showAd = adSlotIndex !== -1 && index < visiblePosts.length - 1;
                   return (
                     <React.Fragment key={post.id}>
@@ -297,8 +359,8 @@ export default function PackageGalleryPage() {
                       {/* 모바일 전용(d-md-none). 자리마다 다른 애드핏 단위를 받는다 —
                           같은 단위를 반복하면 애드핏이 첫 자리만 채우고 나머지는 안 나온다. */}
                       {showAd && (
-                        <div className="d-block d-md-none" style={{ gridColumn: '1 / -1' }}>
-                          <AdBanner slot="8616653628" index={adSlotIndex} />
+                        <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.betweenCardsAd}`}>
+                          <AdBanner slot="8616653628" index={adSlotIndex + adUnitOffset} />
                         </div>
                       )}
                     </React.Fragment>
@@ -307,15 +369,62 @@ export default function PackageGalleryPage() {
               </div>
             )}
 
-            {hasMore && (
-              <div className={styles.loadMoreWrap}>
+            {((totalPages ?? 1) > 1 || page > 1 || hasNext) && (
+              <nav className={styles.pagination} aria-label="페이지 이동">
                 <button
-                  className={styles.loadMoreBtn}
-                  onClick={() => fetchPosts(true)}
-                  disabled={loadingMore}
+                  type="button"
+                  className={styles.pageBtn}
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1 || loading}
                 >
-                  {loadingMore ? '불러오는 중...' : '더 보기'}
+                  이전
                 </button>
+                {/* count 실패 시(totalPages null) 번호는 방문한 범위까지만 그린다 */}
+                {buildPageList(page, totalPages ?? maxLoaded).map((p, i) =>
+                  p === 'gap' ? (
+                    <span key={`gap-${i}`} className={styles.pageGap}>…</span>
+                  ) : (
+                    <button
+                      type="button"
+                      key={p}
+                      className={`${styles.pageBtn} ${p === page ? styles.pageBtnActive : ''}`}
+                      onClick={() => handlePageChange(p)}
+                      // Firestore 커서 특성상 "방문한 끝 + 1"까지만 열린다 — 그 너머는 중간을
+                      // 전부 읽어야 갈 수 있어 비활성으로 막는다
+                      disabled={loading || (!pageCacheRef.current.has(p) && p > maxLoaded + 1)}
+                    >
+                      {p}
+                    </button>
+                  ),
+                )}
+                <button
+                  type="button"
+                  className={styles.pageBtn}
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={!hasNext || loading}
+                >
+                  다음
+                </button>
+              </nav>
+            )}
+
+            {/* 페이지 버튼 아래 320×100 — index 없이 호출하면 단일 인-콘텐츠 단위를 쓴다.
+                key={page}: 페이지를 넘길 때마다 새 광고를 받는다 (가운데 띠배너들은 글 목록이
+                갈리면서 저절로 리마운트되지만 이 자리는 페이지 버튼처럼 남는 요소라 직접 갈아줘야 한다) */}
+            <div key={`ad-bottom-${page}`} className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.belowPagerAd}`}>
+              <AdBanner slot="8616653628" />
+            </div>
+
+            {/* 데스크톱 — 페이지 버튼 아래 728×90 가로 배너 (모바일은 위 320×100 이 담당).
+                단위 미발급 동안(unit 빈 문자열) 자리째 렌더하지 않는다. key={page}: 페이지마다 새 광고 */}
+            {ADFIT_ENABLED && ADFIT_UNITS.galleryBottomDesktop.unit && (
+              <div className={`d-none d-md-block ${styles.desktopAdSlot}`}>
+                <AdFitUnit
+                  key={`ad-bottom-desktop-${page}`}
+                  unit={ADFIT_UNITS.galleryBottomDesktop.unit}
+                  width={ADFIT_UNITS.galleryBottomDesktop.width}
+                  height={ADFIT_UNITS.galleryBottomDesktop.height}
+                />
               </div>
             )}
           </>
@@ -350,7 +459,7 @@ export default function PackageGalleryPage() {
               heading: '목록 정렬과 필터',
               paragraphs: [
                 '게시물은 기본적으로 업로드순(최근에 등록된 순서)으로 표시되며, 상단 왼쪽 드롭다운 하나로 보기 방식을 바꿀 수 있습니다. "정렬" 항목에서 "효율순"은 방금 설명한 총 골드 가치 대비 결제 금액 기준으로 이득이 큰 패키지부터, "신작순"은 신규 출시로 등록된 지 30일이 지나지 않은 판매중 패키지(NEW 배지가 붙은 글)부터, "인기순"은 다른 이용자들의 좋아요가 많은 게시물부터 보여줍니다. "판매 상태" 항목에서 "판매중" 또는 "판매종료"를 고르면 해당 상태의 패키지만 골라서 볼 수 있습니다.',
-                '정렬과 필터는 지금 화면에 불러와 둔 게시물 안에서 즉시 다시 계산됩니다. 목록을 더 넓게 두고 비교하고 싶다면 아래 "더 보기"로 게시물을 더 불러온 뒤 정렬하면 됩니다. 각 카드에 표시되는 이득률은 실시간 시세 기준으로 계산되므로, 같은 패키지라도 등록 시점과 지금 보는 시점의 값이 달라질 수 있습니다.',
+                '정렬과 필터는 지금 보고 있는 페이지의 게시물 안에서 즉시 다시 계산됩니다. 지난 게시물은 목록 아래 페이지 번호로 넘겨서 확인할 수 있습니다. 각 카드에 표시되는 이득률은 실시간 시세 기준으로 계산되므로, 같은 패키지라도 등록 시점과 지금 보는 시점의 값이 달라질 수 있습니다.',
                 '공통 환율을 입력해 둔 상태에서 "효율순"을 고르면 모든 게시물이 같은 환율로 환산되므로, 정렬 순서가 각 카드에 찍히는 이득률 순서와 정확히 일치합니다. 공통 환율 없이 정렬하면 게시물마다 등록 당시 환율이 달라 순서가 카드의 이득률과 어긋나 보일 수 있습니다.',
               ],
             },

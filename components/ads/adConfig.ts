@@ -44,14 +44,25 @@ export const ADFIT_ENABLED = true;
 // 들어가고(애드핏은 1페이지 1단위가 원칙) (2) 리포트가 합산돼 어느 자리가 수익이
 // 나는지 구분할 수 없다.
 export const ADFIT_UNITS = {
-  // 모바일 본문 320×100. 현재 미사용 — 본문 광고는 320×50 띠배너로 바꿔
-  // ADFIT_INCONTENT_UNITS 로 옮겼다. 규격을 되돌릴 때를 위해 ID 는 남겨둔다.
+  // 모바일 본문 320×100 — index 없이 AdBanner 를 부르는 모든 자리에서 쓰는 단일 단위
+  // (홈·계산기류 본문, 패키지 갤러리 페이지 버튼 아래 등. 페이지당 한 번만 불러야 한다).
+  // 한 페이지에 광고가 여러 개인 자리는 320×50 띠배너 ADFIT_INCONTENT_UNITS 를 index 로 받는다.
   mobileInContent: { unit: 'DAN-bo9jwUZBhdAH4HWn', width: 320, height: 100 },
-  mobileDrawer: { unit: 'DAN-5AUDzC6VzTXU6X8H', width: 320, height: 100 },    // 모바일 햄버거 드로어
+  // 모바일 햄버거 드로어용으로 발급했지만 현재 렌더하는 곳 없음(미사용).
+  // 갤러리가 동시 게재 4개(정책 상한)를 꽉 채워서, 이 단위를 살리려면 다른 광고를 빼야 한다.
+  mobileDrawer: { unit: 'DAN-5AUDzC6VzTXU6X8H', width: 320, height: 100 },
   sidebarLeft: { unit: 'DAN-LhB3sf1lcaZ0pCFD', width: 160, height: 600 },     // PC 레일 좌
   sidebarRight: { unit: 'DAN-cf5UrXPfQYUZYdhv', width: 160, height: 600 },    // PC 레일 우
   // 패키지 상세 PC 좌측 칼럼(340px) — 계산 결과 카드 아래 남는 공간. 모바일에서는 렌더하지 않는다.
   packageDetailSquare: { unit: 'DAN-9tfnO1mRCb1HDe0S', width: 250, height: 250 },
+  // 데스크톱 728×90 가로 배너 "목표 아래" 공용 — 패키지 갤러리(페이지 버튼 아래) ·
+  // 재련 평균 시뮬(목표 카드 아래) · 완갑 평균 시뮬(여정 카드 아래) ·
+  // 더보기 효율(두 섹션 카드 사이).
+  // 페이지가 달라 같은 단위를 써도 되지만 리포트는 네 자리 합산으로 나온다.
+  galleryBottomDesktop: { unit: 'DAN-Lhv3yJ7AdoJ1LBwZ', width: 728, height: 90 },
+  // 데스크톱 728×90 "결과 아래" 공용 — 재련·완갑 평균 시뮬의 예상 소모 재료 카드 아래.
+  // 같은 페이지의 목표 아래 자리와 함께 나가므로 별도 단위다 (같은 단위 반복이면 첫 자리만 채워짐).
+  refiningResultDesktop: { unit: 'DAN-XWlARWwdT4rTl87p', width: 728, height: 90 },
 };
 
 // 한 페이지에 인-콘텐츠 광고가 여러 번 들어가는 자리(패키지 갤러리: 카드 2개마다 1개)용.

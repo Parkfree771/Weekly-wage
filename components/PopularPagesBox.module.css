@@ -1,0 +1,106 @@
+/* 인기 페이지 바로가기 카드 (모바일 드로어) — 상단 그라데이션 바(패키지 상세 카드와 같은 장치)와
+   순위 배지로 "인기 순위" 성격을 드러낸다. 드로어 폭(약 248px)에 맞춰 늘어난다. */
+.card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.7rem 0.5rem 0.55rem;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 상단 포인트 바 — 대표색에서 포인트색으로 흐르는 그라데이션 */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.35rem;
+}
+
+/* 로티 불꽃 컨테이너 — 크기는 FireLottie 가 인라인으로 잡는다 */
+.titleIcon {
+  flex-shrink: 0;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.28rem 0.4rem;
+  border-radius: 8px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.link:hover {
+  background: var(--color-primary-light);
+  color: var(--text-primary);
+}
+
+/* 순위 배지 — 1위만 포인트색으로 세우고 나머지는 대표색 톤 */
+.rank {
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.64rem;
+  font-weight: 800;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.rankTop {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 현재 보고 있는 페이지 — 파란 채움, 배지는 반투명 흰 톤으로 반전 */
+.linkActive {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.linkActive:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.linkActive .rank {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.linkActive .rankTop {
+  background: var(--color-accent);
+}

@@ -10,6 +10,8 @@ import { raidClearRewards } from '@/data/raidClearRewards';
 import { PriceProvider, usePriceData } from '@/contexts/PriceContext';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import { faqData } from './faq-data';
 import styles from './more-reward.module.css';
 
@@ -426,6 +428,10 @@ function MoreRewardInner() {
         <div className="d-block d-lg-none my-2">
           <AdBanner slot="8616653628" index={0} />
         </div>
+
+        {/* 데스크톱 728×90 — 두 섹션 카드 사이. 이 페이지의 유일한 데스크톱 애드핏 자리라
+            공용 단위(galleryBottomDesktop)를 재사용한다 (리포트는 다른 페이지와 합산). */}
+        <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
 
         {/* 레이드 클리어 보상 섹션 */}
         <div className={styles.sectionCard}>

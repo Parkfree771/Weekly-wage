@@ -939,7 +939,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
 
               {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
                   같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
-              <div className="d-block d-md-none my-2">
+              <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
                 <AdBanner slot="8616653628" index={0} />
               </div>
 
@@ -1148,7 +1148,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
             </section>
 
             {/* 모바일 띠배너 — 아이템 구성 아래 (index 1: 위 자리와 다른 단위) */}
-            <div className="d-block d-md-none my-2">
+            <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
               <AdBanner slot="8616653628" index={1} />
             </div>
           </div>
@@ -1164,7 +1164,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
             }
           />
 
-          <div className="d-block d-md-none my-3">
+          <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
             <AdBanner slot="8616653628" />
           </div>
         </div>
@@ -1292,7 +1292,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
 
             {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
                 같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
-            <div className="d-block d-md-none my-2">
+            <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
               <AdBanner slot="8616653628" index={0} />
             </div>
 
@@ -1458,7 +1458,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
           </section>
 
           {/* 모바일 띠배너 — 아이템 구성 아래 (index 1: 위 자리와 다른 단위) */}
-          <div className="d-block d-md-none my-2">
+          <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
             <AdBanner slot="8616653628" index={1} />
           </div>
         </div>
@@ -1673,7 +1673,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
         )}
 
         {/* 모바일 하단 광고 */}
-        <div className="d-block d-md-none my-3">
+        <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
           <AdBanner slot="8616653628" />
         </div>
       </div>

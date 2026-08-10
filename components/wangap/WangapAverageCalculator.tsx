@@ -42,6 +42,8 @@ import {
   type SpecialPlan,
 } from '../../lib/specialRefining';
 import AdBanner from '../ads/AdBanner';
+import DesktopBannerAd from '../ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '../ads/adConfig';
 
 // 기본 재료 5종 (숨결 제외 — 숨결은 보조 재료 섹션에서 별도 표시)
 const BASE_MATERIAL_KEYS: OptMatKey[] = ['파괴석결정', '수호석결정', '위대한돌파석', '상급아비도스', '운명파편'];
@@ -147,6 +149,13 @@ export default function WangapAverageCalculator() {
     const nv = Math.min(Math.max(startLevel + delta, startMin), startMax);
     setStartLevel(nv);
     if (targetLevel <= nv) setTargetLevel(Math.min(nv + 1, WANGAP_MAX_LEVEL));
+  };
+
+  // 빠른 선택으로 현재 단계를 승급 경계로 바로 지정 — 스테퍼와 같은 규칙으로
+  // 목표가 시작 이하로 밀리면 한 칸 위로 딸려 올라간다
+  const quickSetStart = (level: number) => {
+    setStartLevel(level);
+    if (targetLevel <= level) setTargetLevel(Math.min(level + 1, WANGAP_MAX_LEVEL));
   };
 
   const adjustTarget = (delta: number) => {
@@ -491,14 +500,16 @@ export default function WangapAverageCalculator() {
         {/* mainCard의 min-height(400px)는 결과 카드용 — 설정 카드는 내용만큼만 */}
         <Card className={styles.mainCard} style={{ minHeight: 'auto' }}>
           <Card.Body className={styles.cardBody} style={{ padding: isMobile ? '0.85rem 0.6rem' : '1.1rem 1.5rem' }}>
+            {/* alignItems center: 스테퍼 아래 빠른 선택이 붙어 열이 높아져서,
+                바닥 정렬이면 가운데 화살표가 버튼 줄에 걸린다 */}
             <div style={{
               display: 'flex',
               flexWrap: 'wrap',
-              alignItems: 'flex-end',
+              alignItems: 'center',
               justifyContent: 'center',
               gap: isMobile ? '0.6rem 0.75rem' : '0.85rem 1.25rem',
             }}>
-              {/* 현재 단계 (± 스테퍼 + 직접 입력) */}
+              {/* 현재 단계 (± 스테퍼 + 직접 입력 + 아래 빠른 선택) */}
               <div style={{ textAlign: 'center' }}>
                 <div className={`${styles.bulkSettingLabel} ${isMobile ? styles.bulkSettingLabelMobile : ''}`}>
                   현재 단계
@@ -537,9 +548,21 @@ export default function WangapAverageCalculator() {
                     +
                   </button>
                 </div>
+                {/* 현재 빠른 선택 — 스테퍼 바로 아래라 어느 쪽 값인지 바로 읽힌다 */}
+                <div className={wg.quickGrid}>
+                  {[0, 10, 15, 20].map(level => (
+                    <button
+                      key={level}
+                      onClick={() => quickSetStart(level)}
+                      className={`${styles.bulkButton} ${startLevel === level ? styles.bulkButtonSelected : ''}`}
+                    >
+                      +{level}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <span className={wg.listArrow} aria-hidden="true" style={{ marginBottom: '0.4rem' }}>→</span>
+              <span className={wg.listArrow} aria-hidden="true">→</span>
 
               {/* 목표 단계 (현재와 동일한 디자인) */}
               <div style={{ textAlign: 'center' }}>
@@ -580,18 +603,8 @@ export default function WangapAverageCalculator() {
                     +
                   </button>
                 </div>
-              </div>
-
-              {/* 목표 빠른 선택 (승급 경계 단위) — 모바일에서는 스테퍼 아래 별도 줄로 */}
-              <div style={{ textAlign: 'center', flexBasis: isMobile ? '100%' : undefined }}>
-                <div className={`${styles.bulkSettingLabel} ${isMobile ? styles.bulkSettingLabelMobile : ''}`}>
-                  빠른 선택
-                </div>
-                {/* 버튼이 3개뿐이라 모바일에서도 축소판 대신 기본 크기 유지 (터치 타깃 확보) */}
-                <div
-                  className={styles.bulkButtonGroup}
-                  style={{ justifyContent: 'center' }}
-                >
+                {/* 목표 빠른 선택 (승급 경계 단위) — 현재 단계보다 높은 경계만 */}
+                <div className={wg.quickGrid}>
                   {[10, 15, 20, 25].filter(level => level > startLevel).map(level => (
                     <button
                       key={level}
@@ -691,6 +704,9 @@ export default function WangapAverageCalculator() {
         <div className="d-block d-lg-none my-2">
           <AdBanner slot="8616653628" index={0} />
         </div>
+
+        {/* 데스크톱 728×90 — 여정(목표) 카드 아래. 재련 목표 아래와 같은 단위지만 페이지가 달라 중복 아님 */}
+        <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
 
         {/* ===== 예상 소모 재료 (재련 평균 시뮬과 동일한 카드) ===== */}
         {/* popupOverflowCard: 숨결 "최적" 팝업이 카드 위 경계를 넘어가므로 이 카드만 클리핑 해제 */}
@@ -986,6 +1002,16 @@ export default function WangapAverageCalculator() {
             </div>
           </Card.Body>
         </Card>
+
+        {/* 모바일 띠배너 — 결과 카드 아래. index 2 인 이유: 완갑 페이지는 평균·실제 시뮬이
+            동시에 마운트되는데 index 0 은 위 여정 아래, index 1 은 실제 시뮬(WangapSimulator)이
+            이미 쓴다 — 같은 단위가 한 페이지에 겹치면 애드핏이 첫 자리만 채운다 */}
+        <div className="d-block d-lg-none my-2">
+          <AdBanner slot="8616653628" index={2} />
+        </div>
+
+        {/* 데스크톱 728×90 — 결과 카드 아래. 같은 페이지의 목표 아래 자리와 다른 단위 필수 */}
+        <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
       </div>
 
     </div>

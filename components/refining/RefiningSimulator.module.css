@@ -15,8 +15,10 @@
 }
 
 .searchInner {
-  margin-bottom: 0.5rem;
-  max-width: 700px;
+  /* 아래 간격은 폼(mb-2) 하나로만 잡는다 — 검색창·탭·카드 사이 여백이 겹겹이 쌓이면 산만하다 */
+  margin-bottom: 0;
+  /* 캐릭터명 한 줄 입력이라 700px 는 과하게 넓다 — 버튼 포함 500px 면 충분 */
+  max-width: 500px;
   width: 100%;
 }
 

@@ -7,18 +7,21 @@
   margin: 0 auto 1rem auto;
 }
 
+/* 재련 페이지 탭과 동일 디자인 유지 — 비활성도 카드 배경 + 옅은 그림자로 세운다
+   (투명 배경 + 알파 12% 테두리로는 페이지 배경에 묻혀 안 보인다) */
 .tabButton {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0.6rem 1.2rem;
-  border-radius: 20px;
+  border-radius: 10px;
   cursor: pointer;
-  background-color: transparent;
-  border: 2px solid var(--border-color);
+  background-color: var(--card-bg);
+  border: 1.5px solid var(--border-color);
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
 }
 
 .tabButton:hover {

@@ -1274,7 +1274,6 @@ html, body {
   color: var(--text-primary);
   text-decoration: none;
 }
-
 /* Offcanvas hover - Unified Blue */
 .navbar-offcanvas-link:hover {
   background-color: var(--color-primary-light);

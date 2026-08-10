@@ -4,7 +4,7 @@
   gap: 4px;
 }
 
-/* Google 공식 스타일 버튼 */
+/* 데스크톱 로그인 버튼 — 모달을 여는 단일 버튼 */
 .googleButton {
   display: flex;
   align-items: center;
@@ -23,10 +23,6 @@
 .googleButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-.googleIcon {
-  flex-shrink: 0;
 }
 
 /* 로그인 선택 모달 안 공급자 버튼 (전체 폭) */
@@ -91,6 +87,54 @@
 .consentNote a {
   color: var(--text-secondary);
   text-decoration: underline;
+}
+
+/* 모바일 메뉴 분할 로그인 — 숙제 체크·문의하기 줄처럼 한 줄을 반반 채운다
+   왼쪽 Google(공식 라이트: 흰 배경) / 오른쪽 Apple(공식 블랙: 검정 배경) */
+.splitLogin {
+  display: flex;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+/* 크기·폰트는 위 줄의 숙제 체크·문의하기(.navbar-feedback-btn + py-2)와 동일하게 맞춘다 */
+.splitHalf {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+/* 로고가 글자 줄높이(18px)를 넘지 않게 — 버튼 높이가 윗줄과 어긋나는 원인 제거 */
+.splitHalf svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.splitHalf:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.splitGoogle {
+  background-color: #fff;
+  border: 1px solid #747775;
+  color: #1f1f1f;
+}
+
+.splitApple {
+  background-color: #000;
+  border: 1px solid #000;
+  color: #fff;
 }
 
 .userDropdown {

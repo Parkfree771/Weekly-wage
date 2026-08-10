@@ -8,11 +8,11 @@ import GuideFaq from '@/components/common/GuideFaq';
 import { faqData } from './faq-data';
 import styles from './wangap.module.css';
 
-// 평균 시뮬 / 실제 시뮬 (기본 = 실제 시뮬)
+// 평균 시뮬 / 실제 시뮬 (기본 = 평균 시뮬, 재련 페이지와 동일)
 type WangapMode = 'average' | 'real';
 
 export default function WangapPage() {
-  const [mode, setMode] = useState<WangapMode>('real');
+  const [mode, setMode] = useState<WangapMode>('average');
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>

@@ -500,7 +500,7 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
           )}
         </div>
 
-        <div className={styles.itemGrid}>
+        <div className={`${styles.itemGrid} ${isGacha ? '' : styles.itemGridCapped}`}>
           {(isGacha ? gachaDisplayOrder : post.items.map((_, i) => i)).map((idx, renderIdx) => {
             const item = post.items[idx];
             const displayIdx = isGacha ? gachaDisplayOrder.indexOf(idx) : idx;
@@ -574,7 +574,11 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
           })}
         </div>
         {post.items.length > 15 && (
-          <span className={styles.moreText}>...외 {post.items.length - 15}개 아이템</span>
+          <span className={`${styles.moreText} ${styles.moreTextDesktop}`}>...외 {post.items.length - 15}개 아이템</span>
+        )}
+        {/* 모바일은 2줄(10개)까지만 보인다 — 가챠는 룰렛 칸이라 자르지 않는다 */}
+        {!isGacha && post.items.length > 10 && (
+          <span className={`${styles.moreText} ${styles.moreTextMobile}`}>...외 {post.items.length - 10}개 아이템</span>
         )}
 
         <div className={styles.leftMeta}>

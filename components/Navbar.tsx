@@ -10,12 +10,15 @@ import LoginButton from './auth/LoginButton';
 import ZoomControl from './ZoomControl';
 import InquiryButton from './InquiryButton';
 import AppSidebarPromo from './AppSidebarPromo';
+import PopularPagesBox from './PopularPagesBox';
+import FireLottie from './FireLottie';
 
 type NavItem = {
   href: string;
   label: string;
   badge?: string;
   badgeClass?: string; // 전용 배지 스타일 (미지정 시 badge 텍스트 기준 기본 스타일)
+  popular?: boolean;   // 인기 페이지 — 라벨 옆에 불꽃 로티 표시 (호버 시 "인기 페이지" 툴팁)
 };
 
 type NavGroup = {
@@ -32,7 +35,7 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-weekly',
     items: [
       { href: '/life-master', label: '생활 제작' },
-      { href: '/package', label: '패키지 효율' },
+      { href: '/package', label: '패키지 효율', popular: true },
       { href: '/more-reward', label: '더보기 효율 & 레이드 보상 정리' },
       { href: '/hell-reward', label: '지옥 보상' },
     ],
@@ -45,15 +48,15 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/cathedral', label: '지평의 성당' },
       { href: '/cerka', label: '세르카' },
       { href: '/extreme', label: '익스트림' },
-      { href: '/belgardin', label: '벨가르딘', badge: 'NEW', badgeClass: 'nav-badge-wangap' },
+      { href: '/belgardin', label: '벨가르딘' },
     ],
   },
   {
     label: '시뮬',
     colorClass: 'nav-refining',
     items: [
-      { href: '/refining', label: '재련 시뮬', badge: 'NEW', badgeClass: 'nav-badge-wangap' },
-      { href: '/wangap', label: '완갑 시뮬', badge: 'NEW', badgeClass: 'nav-badge-wangap' },
+      { href: '/refining', label: '재련 시뮬', popular: true },
+      { href: '/wangap', label: '완갑 시뮬', popular: true },
       { href: '/bracelet', label: '팔찌 시뮬' },
       { href: '/expedition-gold', label: '원정대 수급 골드 시뮬' },
     ],
@@ -193,6 +196,10 @@ export default function Navbar() {
                 >
                   {group.label}
                   {(() => { const b = getGroupBadge(group); return b?.badge ? <span className={badgeClass(b.badge, b.badgeClass)}>{b.badge}</span> : null; })()}
+                  {/* 그룹 안에 인기 페이지가 있으면 헤더에도 불꽃 — 펼치기 전에도 보이게 */}
+                  {group.items.some((i) => i.popular) && (
+                    <FireLottie size={15} title="인기 페이지" className="ms-1" />
+                  )}
                   <svg width="10" height="10" viewBox="0 0 10 10" style={{ marginLeft: '4px', opacity: 0.6 }}>
                     <path d="M2 4L5 7L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -211,6 +218,7 @@ export default function Navbar() {
                     >
                       {item.label}
                       {item.badge && <span className={badgeClass(item.badge, item.badgeClass)}>{item.badge}</span>}
+                      {item.popular && <FireLottie size={14} title="인기 페이지" className="ms-1" />}
                     </Link>
                   ))}
                 </div>
@@ -220,29 +228,8 @@ export default function Navbar() {
           </Nav>
         </div>
 
-        {/* 모바일 버튼들 */}
+        {/* 모바일 버튼들 — 문의하기·홈은 메뉴(계정 섹션)·로고와 중복이라 제거, 다크모드만 유지 */}
         <div className="d-flex align-items-center gap-2 d-lg-none">
-          <InquiryButton className="navbar-theme-toggle">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-              <path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10" />
-              <path d="M3 7l9 6l9 -6" />
-            </svg>
-          </InquiryButton>
-          <Link
-            href="/"
-            className="navbar-theme-toggle"
-            style={{ textDecoration: 'none' }}
-            aria-label="홈으로 이동"
-          >
-            <Image
-              src="/home.webp"
-              alt="홈"
-              width={20}
-              height={20}
-              style={{ borderRadius: '4px' }}
-            />
-          </Link>
           <button
             className="navbar-theme-toggle"
             onClick={toggleTheme}
@@ -281,6 +268,7 @@ export default function Navbar() {
             prefetch={false}
           >
             숙제 체크
+            <FireLottie size={14} title="인기 페이지" className="ms-1" />
           </Link>
           <div
             className="nav-dropdown-wrapper settings-dropdown-wrapper"
@@ -443,6 +431,7 @@ export default function Navbar() {
                         >
                           {item.label}
                           {item.badge && <span className={badgeClass(item.badge, item.badgeClass)}>{item.badge}</span>}
+                          {item.popular && <FireLottie size={15} title="인기 페이지" className="ms-1" />}
                         </Link>
                       ))}
                     </div>
@@ -451,20 +440,30 @@ export default function Navbar() {
                 )
               ))}
             </Nav>
-            {/* ── 계정: 숙제 체크 + 로그인 ── */}
+            {/* ── 인기 페이지 — 순위 배지 + 불꽃 카드 (링크를 누르면 드로어를 닫는다) ── */}
             <div className="navbar-offcanvas-section">
-              <div className="navbar-offcanvas-group-label">계정</div>
-              {/* 위 데스크톱 버튼과 같은 이유로 prefetch 끔 (오프캔버스가 열리면 링크가 보여 프리페치가 돈다) */}
-              <Link
-                href="/mypage"
-                className={`navbar-offcanvas-link ${isActive('/mypage') ? 'active' : ''}`}
-                onClick={handleClose}
-                prefetch={false}
-              >
-                숙제 체크
-              </Link>
+              <PopularPagesBox onNavigate={handleClose} />
+            </div>
+
+            {/* ── 숙제 체크·문의하기 + Google/Apple 로그인 — 2×2 같은 크기 버튼 ── */}
+            <div className="navbar-offcanvas-section">
+              <div className="d-flex gap-2">
+                {/* 위 데스크톱 버튼과 같은 이유로 prefetch 끔 (오프캔버스가 열리면 링크가 보여 프리페치가 돈다) */}
+                <Link
+                  href="/mypage"
+                  className="navbar-feedback-btn navbar-app-btn flex-fill text-center py-2"
+                  onClick={handleClose}
+                  prefetch={false}
+                >
+                  숙제 체크
+                </Link>
+                <InquiryButton className="navbar-feedback-btn navbar-app-btn flex-fill text-center py-2">
+                  문의하기
+                </InquiryButton>
+              </div>
+              {/* 비로그인 시 Google/Apple 반반 분할 — 위 숙제 체크·문의하기 줄과 같은 한 줄 채움 */}
               <div className="d-flex justify-content-center mt-2">
-                <LoginButton />
+                <LoginButton variant="split" />
               </div>
             </div>
 

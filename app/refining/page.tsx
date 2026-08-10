@@ -63,25 +63,50 @@ const AdvancedRefiningSimulator = dynamic(() => import('@/components/refining/Ad
   loading: () => <div style={{ minHeight: '400px' }} />,
 });
 
-// 오늘 날짜를 "YYYY년 M월 D일 평균 거래가" 형식으로 반환
-const getTodayPriceDate = () => {
-  const now = new Date();
-  return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 평균 거래가`;
-};
-
 // 3개 탭으로 통합: 평균 시뮬 / 실제 시뮬 / 상급 재련
 type RefiningMode = 'average' | 'normal' | 'advanced';
+
+// 검색 전 기본 표시 — 전율(계승) +11 6부위 + 완갑 0강, 현재 레벨 1730.
+// 첫 방문에 빈 화면 대신 검색 후와 같은 UI 가 바로 나오도록 초기 상태를 채워 둔다.
+// 실제 캐릭터를 검색하면 통째로 교체된다. API 아이콘 URL 이 없으므로 전율 카드의
+// 아이콘 자리는 배경·프레임만 나온다 (RefiningCalculator 쪽에서 처리).
+const DEFAULT_EQUIPMENTS: Equipment[] = [
+  ...(['무기', '투구', '견갑', '상의', '하의', '장갑'] as const).map((name): Equipment => ({
+    name,
+    type: name === '무기' ? 'weapon' : 'armor',
+    currentLevel: 11,
+    currentAdvancedLevel: 0,
+    itemLevel: 1700,
+    grade: '고대',
+    isSuccession: true,
+    isEsther: false,
+    originalName: `+11 운명의 전율 ${name}`,
+  })),
+  {
+    name: '완갑',
+    type: 'weapon', // 편의상 값만 채운다 — 실제 계산은 isWangap 분기로 갈린다 (equipmentParser 와 동일)
+    currentLevel: 0,
+    currentAdvancedLevel: 0,
+    itemLevel: 0,
+    grade: '영웅',
+    isSuccession: false,
+    isEsther: false,
+    isWangap: true,
+    originalName: '운명의 전율 완갑',
+  },
+];
+const DEFAULT_CHARACTER_INFO = { name: '기본 장비', itemLevel: '1,730.00' };
 
 export default function RefiningPage() {
   const [mode, setMode] = useState<RefiningMode>('average');
 
-  // === 공유 검색 상태 ===
+  // === 공유 검색 상태 === (기본값 채움 — 검색하면 실제 캐릭터 데이터로 교체)
   const [characterName, setCharacterName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [equipments, setEquipments] = useState<Equipment[]>([]);
-  const [searched, setSearched] = useState(false);
-  const [characterInfo, setCharacterInfo] = useState<{ name: string; itemLevel: string; image?: string } | null>(null);
+  const [equipments, setEquipments] = useState<Equipment[]>(DEFAULT_EQUIPMENTS);
+  const [searched, setSearched] = useState(true);
+  const [characterInfo, setCharacterInfo] = useState<{ name: string; itemLevel: string; image?: string } | null>(DEFAULT_CHARACTER_INFO);
 
   // 자동완성
   const { history, addToHistory, getSuggestions } = useSearchHistory();
@@ -228,7 +253,7 @@ export default function RefiningPage() {
         <Row className="justify-content-center">
           <Col xl={12} lg={12} md={12}>
             {/* 간소화된 헤더 */}
-            <div className="text-center mb-3" style={{ marginTop: 0 }}>
+            <div className="text-center mb-2" style={{ marginTop: 0 }}>
               <h1
                 style={{
                   fontSize: 'clamp(1.3rem, 3vw, 1.6rem)',
@@ -238,16 +263,12 @@ export default function RefiningPage() {
                   marginBottom: '0.5rem'
                 }}
               >
-                T4 재련 비용
+                재련 시뮬레이터
               </h1>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-                목표 레벨까지 필요한 재료와 골드를 계산해보세요
-              </p>
-
               {/* SEO noscript */}
               <noscript>
                 <div style={{padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px', margin: '1rem 0'}}>
-                  <h2>로스트아크 T4 재련 비용 계산기</h2>
+                  <h2>로스트아크 재련 시뮬레이터 - 재련 비용 계산기</h2>
                   <p>T4 장비 재련에 필요한 재료와 골드를 정확하게 계산합니다.</p>
                 </div>
               </noscript>
@@ -299,24 +320,11 @@ export default function RefiningPage() {
                     <div className={searchStyles.errorMessage}>{error}</div>
                   </div>
                 )}
-                <div className={searchStyles.lastUpdated}>
-                  <small className={searchStyles.lastUpdatedText}>
-                    {getTodayPriceDate()} | 실시간 시세와 차이가 있을 수 있습니다
-                  </small>
-                </div>
               </Form>
             </div>
 
             {/* 모드 선택 탭 */}
             {ModeSelector}
-
-            {/* 업데이트 배지 (탭 버튼 바로 아래) — 패치 날짜당 1개, 최신 순 (쌓이면 오래된 것부터 제거) */}
-            {(mode === 'average' || mode === 'advanced') && (
-              <div className={`${styles.patchBadgeRow} ${styles.patchBadgeCol}`}>
-                <span className={`${styles.patchBadge} ${styles.patchBadgeLatest}`}>26.08.06 특수 재련(특재) 추가</span>
-                <span className={styles.patchBadge}>26.08.05 벨가르딘 업데이트 — 완갑 · 전율 책 · 성장 비용</span>
-              </div>
-            )}
 
             {/* 컨텐츠 영역 */}
             <div className={styles.contentArea}>

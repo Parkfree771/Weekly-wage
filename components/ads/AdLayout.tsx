@@ -28,7 +28,9 @@ function getPageConfig(pathname: string): PageConfig {
   // 내려서 시작하면 최소 여백으로 강제 보정되며 왼쪽과 어긋나므로 0으로 최대한 당겨둠.
   if (pathname === '/') return { contentWidth: 1400, adTop: 212, appPromoTop: 0 };
   // adTop 200 = "검색창" 상자 상단과 나란히(직접 요청으로 기존 110에서 크게 내림).
-  if (pathname === '/refining') return { contentWidth: 1400, adTop: 200 };
+  // appPromoTop 0 = 도킹 모드로 전환 — 왼쪽 인기 페이지 박스·오른쪽 앱 프로모를 레일 위에 얹고
+  // 광고는 그 아래로. (예전엔 튜닝값이 없어 광고가 뜨면 프로모를 아예 숨겼다)
+  if (pathname === '/refining') return { contentWidth: 1400, adTop: 200, appPromoTop: 0 };
   // adTop 409 = "완갑 강화" 박스(시뮬레이터 stageCol) 상단과 나란히(왼쪽 광고 기준).
   // appPromoTop 148 = 그 위 "장비 선택" 패널 상단과 나란히. 오른쪽 광고는 프로모 아래
   // 실측 간격(dockedAdMarginTop)으로 왼쪽 광고와 정확히 같은 높이에 맞춰짐.
@@ -255,6 +257,7 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
     railsVisible ? { maxWidth: `${contentWidth + AD_EXTRA}px` } : {};
 
   // 도킹형 프로모 칸. 오른쪽은 실제 프로모, 왼쪽은 같은 높이의 보이지 않는 복제본이다.
+  // (인기 페이지 박스를 잠깐 뒀었지만 상단 네비 불꽃 배지로 대체되어 원래 방식으로 복귀)
   //
   // 예전엔 왼쪽 sticky top 을 52+adTop 으로 따로 잡아 정지 상태 높이만 맞췄는데,
   // 오른쪽은 기본값(top:56)이라 스크롤하면 오른쪽이 먼저 붙고 왼쪽은 한참 뒤에 붙어 어긋났다.
