@@ -3,13 +3,14 @@ import { getCharacterFromDb, upsertCharacter, isParsedCacheShape } from '@/lib/c
 import { parseCharacterData } from '@/lib/characterData';
 import { characterCdnTag, purgeCharacterCdn } from '@/lib/purge-cdn';
 
-// 일반 조회는 CDN이 흡수(캐릭터당 5분). 같은 캐릭터를 여러 명이 봐도 DB 왕복은 5분에 1회.
-// refresh=1(갱신 버튼)은 no-store + 태그 퍼지로 즉시 최신이 반영된다.
+// 일반 조회는 CDN이 흡수(캐릭터당 24시간, durable). 원본이 Neon DB 캐시라 TTL을 늘려도
+// 신선도 손실이 없다 — DB 는 미스/갱신 때만 갱신되고, refresh=1(갱신 버튼)이
+// no-store + 태그 퍼지로 CDN 을 즉시 무효화하므로 갱신 반영도 그대로 즉시다.
 function cdnCacheHeaders(...names: string[]): Record<string, string> {
   const tags = Array.from(new Set(names.filter(Boolean).map(characterCdnTag)));
   return {
     'Cache-Control': 'public, max-age=0, must-revalidate',
-    'Netlify-CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+    'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=86400, stale-while-revalidate=86400',
     'Netlify-Vary': 'query',
     'Netlify-Cache-Tag': tags.join(','),
   };

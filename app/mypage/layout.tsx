@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
 import { faqData } from './faq-data';
 
-// 매 요청마다 동적 SSR. 시간 의존 렌더(getCurrentGameDayIdx 등) 의 하이드레이션 미스매치 방지.
-export const dynamic = 'force-dynamic';
+// 시간 의존 렌더(오늘 요일 배지·공통 컨텐츠 활성화)는 전부 마운트 후 상태(gameDayOfWeek)로만
+// 그리므로 HTML 이 날짜와 무관하다 → 정적 프리렌더 + CDN 캐시 가능 (방문당 함수 호출 제거).
 
 export const metadata: Metadata = {
   title: '숙제 체크',

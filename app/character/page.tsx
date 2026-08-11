@@ -4,7 +4,7 @@ import type { RankingEntry } from '@/components/character/CharacterRanking';
 
 // 랭킹 첫 페이지를 서버에서 미리 조회해 HTML에 포함 — JS 로드·하이드레이션·API 왕복을
 // 기다리지 않고 첫 페인트에 랭킹이 바로 그려진다. 5분마다 백그라운드 재생성(ISR).
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export default async function CharacterPage() {
   let initialRanking: RankingEntry[] = [];

@@ -3330,3 +3330,9 @@
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
+
+/* 공통 컨텐츠(카게·필보) — 오늘이 아닌 요일: 상시 노출하되 체크 불가 */
+.commonInactive {
+  opacity: 0.45;
+  cursor: default;
+}

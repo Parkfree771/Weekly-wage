@@ -153,17 +153,18 @@ const WEEKLY_DAY_MAP: Record<number, number> = { 3: 0, 4: 1, 5: 2, 6: 3, 0: 4, 1
 
 const EMPTY_DAILY: DailyContentState = { checks: new Array(7).fill(0) };
 
-// KST 06:00 기준 현재 게임 요일의 주간 인덱스 (0=수 ~ 6=화)
-function getCurrentGameDayIdx(): number {
+// KST 06:00 기준 현재 게임 요일 (JS getDay 기준 0=일 ~ 6=토). 06시 이전은 전날로 취급.
+// SSR HTML 이 날짜와 무관해야 페이지를 CDN 캐시할 수 있으므로,
+// 렌더에서 직접 부르지 말고 마운트 후 상태(gameDayOfWeek)를 통해서만 쓴다.
+function getGameDayOfWeek(): number {
   const now = new Date();
   const kstOffset = 9 * 60 * 60 * 1000;
   const kst = new Date(now.getTime() + kstOffset);
   let gameDay = kst.getUTCDay(); // 0=일 ~ 6=토
-  // 06시 이전이면 전날로 취급
   if (kst.getUTCHours() < 6) {
     gameDay = (gameDay + 6) % 7;
   }
-  return WEEKLY_DAY_MAP[gameDay];
+  return gameDay;
 }
 
 // 현재 휴식게이지 계산 (지나간 미체크 날 +10 자동 누적)
@@ -193,6 +194,11 @@ export default function MyPage() {
   const [weeklyChecklist, setWeeklyChecklist] = useState<WeeklyChecklist>(DEMO_WEEKLY_CHECKLIST);
   const [weeklyGoldHistory, setWeeklyGoldHistory] = useState<WeeklyGoldRecord[]>(DEMO_GOLD_HISTORY);
   const [commonContent, setCommonContent] = useState<CommonContentState>(DEMO_COMMON_CONTENT);
+
+  // 게임 요일 (KST 06시 경계) — SSR/캐시 HTML 은 null 로 날짜 무관하게 렌더되고,
+  // 마운트 후 채워지면 오늘 배지·공통 컨텐츠 활성화가 붙는다.
+  const [gameDayOfWeek, setGameDayOfWeek] = useState<number | null>(null);
+  useEffect(() => { setGameDayOfWeek(getGameDayOfWeek()); }, []);
 
   // 데모 로그인 유도 모달
   const [demoLoginPrompt, setDemoLoginPrompt] = useState(false);
@@ -1204,7 +1210,7 @@ export default function MyPage() {
     const key = `${day}-${contentName}`;
     const content = COMMON_CONTENTS.find(c => c.name === contentName);
 
-    // 달력 기록 — 공통 컨텐츠 카드는 오늘 것만 노출되므로 오늘 날짜로 기록. 멱등. (앱 동일)
+    // 달력 기록 — 공통 컨텐츠 카드는 오늘 것만 체크 가능하므로 오늘 날짜로 기록. 멱등. (앱 동일)
     if (canLogActivity) {
       const willCheck = !(commonContent.checks[key] === true);
       applyActivityLog(log => withActivity(
@@ -2070,10 +2076,10 @@ export default function MyPage() {
                       // 균열/전선
                       row2Cards.push({ id: 'chaos', render: () => {
                         const chaosState: DailyContentState = charState.chaosDungeon && typeof charState.chaosDungeon === 'object' ? charState.chaosDungeon as DailyContentState : EMPTY_DAILY;
-                        const gameDayIdx = getCurrentGameDayIdx();
-                        const chaosVal = typeof chaosState.checks[gameDayIdx] === 'number' ? chaosState.checks[gameDayIdx] : (chaosState.checks[gameDayIdx] ? 1 : 0);
+                        const gameDayIdx = gameDayOfWeek === null ? null : WEEKLY_DAY_MAP[gameDayOfWeek];
+                        const chaosVal = gameDayIdx === null ? 0 : (typeof chaosState.checks[gameDayIdx] === 'number' ? chaosState.checks[gameDayIdx] : (chaosState.checks[gameDayIdx] ? 1 : 0));
                         return (
-                          <div className={`${styles.raidCard} ${chaosVal > 0 ? MULTI_CARD_COLORS[chaosVal] : ''}`} onClick={() => toggleDailyCheck(char.name, 'chaosDungeon', gameDayIdx)}>
+                          <div className={`${styles.raidCard} ${chaosVal > 0 ? MULTI_CARD_COLORS[chaosVal] : ''}`} onClick={() => { if (gameDayIdx === null) return; toggleDailyCheck(char.name, 'chaosDungeon', gameDayIdx); }}>
                             <CardBgImage src={char.itemLevel >= 1730 ? '/zkejs.webp' : '/wjstjs.webp'} alt="" className={styles.raidImage} />
                             <div className={styles.raidOverlay} />
                             <div className={styles.raidInfo}>
@@ -2096,11 +2102,11 @@ export default function MyPage() {
                       // 가토
                       row2Cards.push({ id: 'guardian', render: () => {
                         const guardianState: DailyContentState = charState.guardianRaid && typeof charState.guardianRaid === 'object' ? charState.guardianRaid as DailyContentState : EMPTY_DAILY;
-                        const gameDayIdx = getCurrentGameDayIdx();
-                        const guardVal = typeof guardianState.checks[gameDayIdx] === 'number' ? guardianState.checks[gameDayIdx] : (guardianState.checks[gameDayIdx] ? 1 : 0);
+                        const gameDayIdx = gameDayOfWeek === null ? null : WEEKLY_DAY_MAP[gameDayOfWeek];
+                        const guardVal = gameDayIdx === null ? 0 : (typeof guardianState.checks[gameDayIdx] === 'number' ? guardianState.checks[gameDayIdx] : (guardianState.checks[gameDayIdx] ? 1 : 0));
                         const guardian = getCurrentGuardian(char.itemLevel);
                         return (
-                          <div className={`${styles.raidCard} ${guardVal > 0 ? MULTI_CARD_COLORS[guardVal] : ''}`} onClick={() => toggleDailyCheck(char.name, 'guardianRaid', gameDayIdx)}>
+                          <div className={`${styles.raidCard} ${guardVal > 0 ? MULTI_CARD_COLORS[guardVal] : ''}`} onClick={() => { if (gameDayIdx === null) return; toggleDailyCheck(char.name, 'guardianRaid', gameDayIdx); }}>
                             {guardian.image ? <CardBgImage src={guardian.image} alt={guardian.name} className={styles.raidImage} /> : <div className={styles.guardianCardPlaceholder} />}
                             <div className={styles.raidOverlay} />
                             <div className={styles.raidInfo}>
@@ -2141,16 +2147,31 @@ export default function MyPage() {
                             {charState.sandOfTime && <div className={styles.raidCheck}>✓</div>}
                           </div>
                         )});
-                        // 대표: 공통 컨텐츠 (낙원보다 먼저)
+                        // 낙원 (1730+)
+                        row2Cards.push({ id: 'paradise', render: () => (
+                          <div className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`} onClick={() => toggleExtra(char.name, 'paradise')}>
+                            <CardBgImage src="/skrdnjs.webp" alt="낙원" className={styles.raidImage} />
+                            <div className={styles.raidOverlay} />
+                            <div className={styles.raidInfo}><span className={styles.raidName}>낙원</span></div>
+                            {charState.paradise && <div className={styles.raidCheck}>✓</div>}
+                          </div>
+                        )});
+                        // 대표: 공통 컨텐츠 (카게·필보) — 요일 무관 상시 노출, 오늘(06시 경계)이 아니면 체크 불가.
+                        // 오늘 여부는 마운트 후 상태로만 판정해 SSR HTML 이 날짜와 무관하게 유지된다 (CDN 캐시 전제).
+                        // 표시 순서: 낙원 → 카게 → 필보.
                         if (char.name === representativeChar) {
-                          const { dayOfWeek } = getKSTWeekInfo();
-                          const todayContents = COMMON_CONTENTS.filter(c => c.days.includes(dayOfWeek));
-                          todayContents.forEach(content => {
+                          const commonOrder = ['카게', '필보'];
+                          const orderedCommons = [...COMMON_CONTENTS].sort((a, b) => {
+                            const ai = commonOrder.indexOf(a.shortName);
+                            const bi = commonOrder.indexOf(b.shortName);
+                            return (ai === -1 ? commonOrder.length : ai) - (bi === -1 ? commonOrder.length : bi);
+                          });
+                          orderedCommons.forEach(content => {
                             row2Cards.push({ id: `common-${content.name}`, render: () => {
-                              const key = `${dayOfWeek}-${content.name}`;
-                              const checked = commonContent.checks[key] === true;
+                              const isToday = gameDayOfWeek !== null && content.days.includes(gameDayOfWeek);
+                              const checked = isToday && commonContent.checks[`${gameDayOfWeek}-${content.name}`] === true;
                               return (
-                                <div className={`${styles.raidCard} ${checked ? styles.raidChecked : ''}`} onClick={() => toggleCommonContent(dayOfWeek, content.name)}>
+                                <div className={`${styles.raidCard} ${checked ? styles.raidChecked : ''} ${isToday ? '' : styles.commonInactive}`} onClick={() => { if (!isToday || gameDayOfWeek === null) return; toggleCommonContent(gameDayOfWeek, content.name); }}>
                                   <div className={styles.commonCardBg} style={{ background: content.color }}><CardBgImage src={content.image} alt={content.name} className={styles.raidImage} /></div>
                                   <div className={styles.raidOverlay} />
                                   <div className={styles.raidInfo}>
@@ -2163,15 +2184,6 @@ export default function MyPage() {
                             }});
                           });
                         }
-                        // 낙원 (1730+)
-                        row2Cards.push({ id: 'paradise', render: () => (
-                          <div className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`} onClick={() => toggleExtra(char.name, 'paradise')}>
-                            <CardBgImage src="/skrdnjs.webp" alt="낙원" className={styles.raidImage} />
-                            <div className={styles.raidOverlay} />
-                            <div className={styles.raidInfo}><span className={styles.raidName}>낙원</span></div>
-                            {charState.paradise && <div className={styles.raidCheck}>✓</div>}
-                          </div>
-                        )});
                       } else {
                         row2Cards.push({ id: 'paradise', render: () => (
                           <div className={`${styles.raidCard} ${charState.paradise ? styles.raidChecked : ''}`} onClick={() => toggleExtra(char.name, 'paradise')}>

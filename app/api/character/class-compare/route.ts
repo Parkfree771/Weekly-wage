@@ -212,11 +212,11 @@ export async function GET(request: Request) {
       className,
       specs: [buildSpec(rule.withId, true), buildSpec(rule.elseId, false)],
     });
-    // 직업별 캐시 키 분리. 집계 통계라 실시간성이 덜 중요 — 30분 엣지 캐시 + 만료 후 하루까지
+    // 직업별 캐시 키 분리. 집계 통계라 실시간성이 덜 중요 — 24시간 캐시 + 만료 후 하루까지
     // 옛 응답 즉시 반환·백그라운드 갱신(SWR). durable: 엣지 노드 공유 캐시로 콜드 미스 최소화
     res.headers.set('Netlify-Vary', 'query');
-    res.headers.set('Netlify-CDN-Cache-Control', 'public, durable, s-maxage=1800, stale-while-revalidate=86400');
-    res.headers.set('Cache-Control', 'public, max-age=0, s-maxage=1800, stale-while-revalidate=86400');
+    res.headers.set('Netlify-CDN-Cache-Control', 'public, durable, s-maxage=86400, stale-while-revalidate=86400');
+    res.headers.set('Cache-Control', 'public, max-age=0, s-maxage=86400, stale-while-revalidate=86400');
     return res;
   } catch (err: any) {
     // eslint-disable-next-line no-console
