@@ -1204,6 +1204,11 @@ html, body {
   opacity: 0.88;
 }
 
+/* 숙제 체크 버튼 위 불꽃 — 주 색상 배경에 묻히지 않게 밝기·채도 올리고 옅은 글로우 */
+.navbar-fire-bright {
+  filter: brightness(1.35) saturate(1.5) drop-shadow(0 0 4px rgba(255, 200, 80, 0.9));
+}
+
 [data-theme="dark"] .navbar-app-btn {
   color: #fff;
   background: var(--color-primary);

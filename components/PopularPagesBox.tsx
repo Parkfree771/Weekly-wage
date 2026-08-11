@@ -23,7 +23,7 @@ export default function PopularPagesBox({ onNavigate }: { onNavigate?: () => voi
   return (
     <nav className={styles.card} aria-label="인기 페이지 바로가기">
       <div className={styles.title}>
-        <FireLottie size={20} className={styles.titleIcon} />
+        <FireLottie size={38} className={styles.titleIcon} />
         인기 페이지
       </div>
       {POPULAR_PAGES.map((p, i) => {
