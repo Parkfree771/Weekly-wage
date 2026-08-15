@@ -136,6 +136,29 @@ function getAllRaidGroups(itemLevel: number) {
   return groups;
 }
 
+// 그룹의 전체 난이도 (레벨 필터 없음) — 카드 레이드 편집 구성에서는 캐릭터 레벨과
+// 무관하게 사용자가 지정한 난이도를 그대로 보여줘야 한다
+function getAllDifficulties(groupName: string) {
+  return raids
+    .filter(raid => getRaidGroupName(raid.name) === groupName)
+    .sort((a, b) => b.level - a.level);
+}
+
+// 카드 레이드 편집 모달용 전체 그룹 목록 (데이터 순서 = 높은 레벨 순)
+type RaidDef = (typeof raids)[number];
+const RAID_EDIT_GROUPS: { group: string; entries: RaidDef[] }[] = (() => {
+  const m = new Map<string, RaidDef[]>();
+  raids.forEach(r => {
+    const g = getRaidGroupName(r.name);
+    if (!m.has(g)) m.set(g, []);
+    m.get(g)!.push(r);
+  });
+  return Array.from(m.entries()).map(([group, entries]) => ({
+    group,
+    entries: [...entries].sort((a, b) => b.level - a.level),
+  }));
+})();
+
 // 출시 예정(비활성) 레이드 그룹 — 레이드 목록에 비활성 카드로만 노출 (골드/코어 계산 제외)
 const UPCOMING_RAID_GROUPS = Array.from(
   upcomingRaids.reduce((m, r) => {
@@ -289,6 +312,105 @@ export default function MyPage() {
       return next;
     });
   }, []);
+
+  // 캐릭터별 카드 레이드 구성 (표시 레이드·난이도·순서) — 기기 저장(localStorage), DB 미저장
+  const [cardRaidConfig, setCardRaidConfig] = useState<Record<string, string[]>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const saved = localStorage.getItem('mypage-cardRaids');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+  // 캐릭터별 2줄(일일·주간) 구성 — 동일하게 기기 저장
+  const [cardRow2Config, setCardRow2Config] = useState<Record<string, string[]>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const saved = localStorage.getItem('mypage-cardRow2');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+  const [raidEditChar, setRaidEditChar] = useState<Character | null>(null);
+  const [raidEditList, setRaidEditList] = useState<string[]>([]);
+  const [row2EditList, setRow2EditList] = useState<string[]>([]);
+
+  const persistCardRaidConfig = (charName: string, raidNames: string[] | null) => {
+    setCardRaidConfig(prev => {
+      const next = { ...prev };
+      if (raidNames === null) delete next[charName];
+      else next[charName] = raidNames;
+      try { localStorage.setItem('mypage-cardRaids', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  const persistCardRow2Config = (charName: string, ids: string[] | null) => {
+    setCardRow2Config(prev => {
+      const next = { ...prev };
+      if (ids === null) delete next[charName];
+      else next[charName] = ids;
+      try { localStorage.setItem('mypage-cardRow2', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  // 캐릭터의 2줄 구성 가능 항목 — 카드 row2Cards 구성 규칙과 동일해야 한다
+  const getRow2Defs = (char: Character): { id: string; label: string }[] => {
+    const defs: { id: string; label: string }[] = [
+      { id: 'chaos', label: char.itemLevel >= 1730 ? '균열' : '전선' },
+      { id: 'guardian', label: '가토' },
+    ];
+    if (char.itemLevel >= 1730) {
+      defs.push({ id: 'sand', label: '할모시' });
+      defs.push({ id: 'paradise', label: '낙원' });
+      if (char.name === representativeChar) {
+        const order = ['카게', '필보'];
+        [...COMMON_CONTENTS]
+          .sort((a, b) => {
+            const ai = order.indexOf(a.shortName);
+            const bi = order.indexOf(b.shortName);
+            return (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi);
+          })
+          .forEach(c => defs.push({ id: `common-${c.name}`, label: c.shortName }));
+      }
+    } else {
+      defs.push({ id: 'paradise', label: '낙원' });
+    }
+    return defs;
+  };
+
+  // 레벨 자동 구성 (카드 기본 노출 규칙과 동일: 체크된 난이도 > 톱니 선택 > 최고 난이도)
+  const buildAutoRaidList = (char: Character): string[] => {
+    const charState = weeklyChecklist[char.name];
+    return getAllRaidGroups(char.itemLevel)
+      .map(g => {
+        const diffs = getAvailableDifficulties(g, char.itemLevel);
+        const checked = diffs.find(d => charState?.raids?.[d.name]?.some(v => v));
+        const overrideName = charState?.raidDifficultyOverride?.[g];
+        const chosen = checked || diffs.find(d => d.name === overrideName) || diffs[0];
+        return chosen?.name || '';
+      })
+      .filter(Boolean);
+  };
+
+  const openRaidEditor = (char: Character) => {
+    const existing = cardRaidConfig[char.name]?.filter(n => raidMap.has(n));
+    setRaidEditList(existing?.length ? existing : buildAutoRaidList(char));
+    const availableRow2 = getRow2Defs(char).map(d => d.id);
+    const existingRow2 = cardRow2Config[char.name]?.filter(id => availableRow2.includes(id));
+    setRow2EditList(existingRow2?.length ? existingRow2 : availableRow2);
+    setRaidEditChar(char);
+  };
+
+  // 편집 변경은 즉시 저장·카드 반영
+  const applyRaidEditList = (charName: string, next: string[]) => {
+    setRaidEditList(next);
+    persistCardRaidConfig(charName, next);
+  };
+
+  const applyRow2EditList = (charName: string, next: string[]) => {
+    setRow2EditList(next);
+    persistCardRow2Config(charName, next);
+  };
 
   // 일일 컨텐츠 휴게 설정 열림 (charName-field)
   // 데스크톱 여부 (레이드 표시 개수 분기)
@@ -1776,10 +1898,15 @@ export default function MyPage() {
 
             // 체크된 레이드 목록
             const checkedRaids = getCheckedRaids(char.name);
-            const allRaidGroups = [
-              ...getAllRaidGroups(char.itemLevel),
-              ...UPCOMING_RAID_GROUPS.map(u => u.group),
-            ];
+            // 카드 레이드 편집(기기 저장)이 있으면 그 구성·순서를 그대로 쓴다
+            const customRaids = (cardRaidConfig[char.name] || []).filter(n => raidMap.has(n));
+            const hasCustomRaids = customRaids.length > 0;
+            const allRaidGroups = hasCustomRaids
+              ? customRaids.map(n => getRaidGroupName(n)).filter((g, i, arr) => arr.indexOf(g) === i)
+              : [
+                  ...getAllRaidGroups(char.itemLevel),
+                  ...UPCOMING_RAID_GROUPS.map(u => u.group),
+                ];
 
             // 재화 데이터
             const chaosReward = getChaosDailyReward(char.itemLevel);
@@ -1788,6 +1915,9 @@ export default function MyPage() {
             const guardianChecks = charState.guardianRaid?.checks.reduce((s, v) => s + (typeof v === 'number' ? v : (v ? 1 : 0)), 0) || 0;
             const hasChaos = chaosReward && chaosChecks > 0;
             const hasGuardian = guardianReward && guardianChecks > 0;
+            // 1640~1679: 체크는 됐지만 수급 티어 표(최저 1680)에 데이터가 없음 → '데이터 없음'으로 표기
+            const chaosNoData = !chaosReward && chaosChecks > 0;
+            const guardianNoData = !guardianReward && guardianChecks > 0;
 
             // 일일 컨텐츠 렌더 함수 (데스크톱: 오른쪽 상자, 모바일: 카드 내부)
             const MULTI_COLORS = ['', styles.dailyX1, styles.dailyX2, styles.dailyX3, styles.dailyX4];
@@ -1836,10 +1966,20 @@ export default function MyPage() {
                 className={styles.cardWrapper}
                 ref={el => { charCardRefs.current[char.name] = el; }}
               >
-              <div className={`${styles.characterCard} ${!isDesktop && char.itemLevel >= 1680 ? styles.characterCardMergedBottom : ''}`}>
+              <div className={`${styles.characterCard} ${!isDesktop && char.itemLevel >= 1640 ? styles.characterCardMergedBottom : ''}`}>
                 {/* 카드 헤더: 닉네임 + 갱신버튼 + 레벨 */}
                 <div className={styles.cardHeader}>
-                  <span className={styles.characterName}>{char.name}{char.name === representativeChar && <span className={styles.repBadge}>대표</span>}</span>
+                  <span className={styles.characterName}>
+                    {char.name}
+                    {char.name === representativeChar && <span className={styles.repBadge}>대표</span>}
+                    <button
+                      className={`${styles.refreshBtn} ${styles.cardGearBtn}`}
+                      onClick={() => openRaidEditor(char)}
+                      title="카드에 표시할 레이드·난이도·순서 편집"
+                    >
+                      ⚙
+                    </button>
+                  </span>
                   <div className={styles.headerRight}>
                     {!isDemo && activeExpedition === 1 && (
                       <button
@@ -1896,8 +2036,9 @@ export default function MyPage() {
                   <div className={styles.cardRight}>
                     {/* 1줄: 레이드 4개 + 넘기기 버튼 */}
                     {(() => {
-                      const startIdx = raidScrollIndex[char.name] || 0;
                       const raidCount = isDesktop ? 4 : 3;
+                      // 편집으로 목록이 줄면 스크롤 위치가 범위를 넘을 수 있어 클램프
+                      const startIdx = Math.min(raidScrollIndex[char.name] || 0, Math.max(0, allRaidGroups.length - raidCount));
                       const visibleRaids: { raid: typeof raids[0] | null; groupName: string; upcoming?: { label: string; image: string } }[] = [];
 
                       // 현재 보여줄 레이드 계산
@@ -1911,15 +2052,22 @@ export default function MyPage() {
                             visibleRaids.push({ raid: null, groupName, upcoming: { label: upcomingInfo.label, image: upcomingInfo.image } });
                             continue;
                           }
-                          const difficulties = getAvailableDifficulties(groupName, char.itemLevel);
+                          // 편집 구성이 있으면 레벨 필터 없이 전체 난이도에서 찾는다
+                          const difficulties = hasCustomRaids
+                            ? getAllDifficulties(groupName)
+                            : getAvailableDifficulties(groupName, char.itemLevel);
                           const checkedRaid = difficulties.find(d =>
                             charState.raids[d.name]?.some(v => v),
                           );
+                          const customName = hasCustomRaids
+                            ? customRaids.find(n => getRaidGroupName(n) === groupName)
+                            : undefined;
+                          const customRaid = customName ? difficulties.find(d => d.name === customName) : null;
                           const overrideName = charState.raidDifficultyOverride?.[groupName];
                           const overrideRaid = overrideName
                             ? difficulties.find(d => d.name === overrideName)
                             : null;
-                          const selectedRaid = checkedRaid || overrideRaid || difficulties[0];
+                          const selectedRaid = checkedRaid || customRaid || overrideRaid || difficulties[0];
                           visibleRaids.push({ raid: selectedRaid || null, groupName });
                         } else {
                           visibleRaids.push({ raid: null, groupName: '' });
@@ -1966,7 +2114,9 @@ export default function MyPage() {
                                 );
                               }
 
-                              const difficulties = getAvailableDifficulties(groupName, char.itemLevel);
+                              const difficulties = hasCustomRaids
+                                ? getAllDifficulties(groupName)
+                                : getAvailableDifficulties(groupName, char.itemLevel);
                               const difficulty = raid.name.startsWith(groupName) ? raid.name.slice(groupName.length).trim() : '';
                               const groupImage = raidGroupImages[groupName] || raid.image;
                               const newLabel = getRaidNewLabel(groupName);
@@ -2036,6 +2186,12 @@ export default function MyPage() {
                                             key={diff.name}
                                             className={`${styles.difficultyOption} ${isSelected ? styles.selected : ''}`}
                                             onClick={() => {
+                                              // 편집 구성이 있으면 카드 톱니로 바꾼 난이도도 구성에 반영 (자리 유지)
+                                              if (hasCustomRaids) {
+                                                persistCardRaidConfig(char.name, customRaids.map(n =>
+                                                  getRaidGroupName(n) === groupName ? diff.name : n,
+                                                ));
+                                              }
                                               changeRaidDifficulty(char.name, raid.name, diff.name);
                                               setDifficultyOpenKey(null);
                                             }}
@@ -2195,13 +2351,19 @@ export default function MyPage() {
                         )});
                       }
 
-                      const r2Start = row2ScrollIndex[char.name] || 0;
+                      // 2줄 편집 구성(기기 저장)이 있으면 그 구성·순서로 표시
+                      const row2Cfg = cardRow2Config[char.name];
+                      const row2Final = row2Cfg?.length
+                        ? row2Cfg.map(id => row2Cards.find(c => c.id === id)).filter((c): c is Row2Card => !!c)
+                        : row2Cards;
+
                       const r2Count = isDesktop ? 4 : 3;
-                      const visibleR2 = row2Cards.slice(r2Start, r2Start + r2Count);
+                      const r2Start = Math.min(row2ScrollIndex[char.name] || 0, Math.max(0, row2Final.length - r2Count));
+                      const visibleR2 = row2Final.slice(r2Start, r2Start + r2Count);
                       // 빈 슬롯 채우기
                       while (visibleR2.length < r2Count) visibleR2.push({ id: `empty-${visibleR2.length}`, render: () => <div className={`${styles.raidCard} ${styles.raidEmpty}`}><div className={styles.emptySlot}>-</div></div> });
                       const canR2Left = r2Start > 0;
-                      const canR2Right = r2Start + r2Count < row2Cards.length;
+                      const canR2Right = r2Start + r2Count < row2Final.length;
 
                       return (
                         <div className={styles.raidRowWrapper}>
@@ -2216,17 +2378,18 @@ export default function MyPage() {
                   </div>
                 </div>
                 {/* 카드 푸터: 균열 + 가토 */}
-                {char.itemLevel >= 1680 && (
+                {char.itemLevel >= 1640 && (
                   <div className={styles.cardFooter}>
-                    {renderDailySide(getChaosDungeonLabel(char.itemLevel), 'chaosDungeon', styles.footerDaily)}
-                    {renderDailySide(getGuardianRaidLabel(char.itemLevel), 'guardianRaid', styles.footerDaily)}
+                    {/* 1640~1679는 수급 티어 표(RIFT/GUARDIAN_TIERS 최저 1680)에 없어 라벨이 빈 문자열 → 폴백 */}
+                    {renderDailySide(getChaosDungeonLabel(char.itemLevel) || '전선', 'chaosDungeon', styles.footerDaily)}
+                    {renderDailySide(getGuardianRaidLabel(char.itemLevel) || '가디언 토벌', 'guardianRaid', styles.footerDaily)}
                   </div>
                 )}
               </div>
 
               {/* 수급량 + 골드 상자 — 데스크톱은 오른쪽 사이드 컬럼, 모바일은 카드 하단에
                   접이식(기본 접힘)으로 표시(앱과 동일 UX). */}
-              {char.itemLevel >= 1680 && (
+              {char.itemLevel >= 1640 && (
                 <div className={isDesktop ? styles.dailySideBox : styles.mobileMatsBox}>
                   {!isDesktop && (
                     <button
@@ -2321,7 +2484,7 @@ export default function MyPage() {
                     const isRepChar = char.name === representativeChar;
                     const hasCommonChecked = isRepChar && Object.values(commonContent.checks).some(v => v);
                     const hasSandReward = charState.sandOfTime;
-                    const hasAny = hasDailyMats || raidMats.length > 0 || hasCommonChecked || hasSandReward;
+                    const hasAny = hasDailyMats || chaosNoData || guardianNoData || raidMats.length > 0 || hasCommonChecked || hasSandReward;
 
                     // 재료 합산 (앱과 동일 — 골드 제외, 아이콘별 전체 합계를 맨 위 한 줄로 요약)
                     const matTotalsMap = new Map<string, number>();
@@ -2404,6 +2567,18 @@ export default function MyPage() {
                                 </div>
                               ))}
                             </div>
+                          </div>
+                        )}
+                        {chaosNoData && (
+                          <div className={styles.sideMaterialRow}>
+                            <span className={styles.sideMaterialLabel}>{getChaosDungeonLabel(char.itemLevel) || '전선'}</span>
+                            <span className={styles.sideMatNoData}>데이터 없음</span>
+                          </div>
+                        )}
+                        {guardianNoData && (
+                          <div className={styles.sideMaterialRow}>
+                            <span className={styles.sideMaterialLabel}>{getGuardianRaidLabel(char.itemLevel) || '가토'}</span>
+                            <span className={styles.sideMatNoData}>데이터 없음</span>
                           </div>
                         )}
                         {charState.sandOfTime && (() => {
@@ -2551,6 +2726,11 @@ export default function MyPage() {
                   </div>
                 </div>
               )}
+              {/* 1640 미만: 수급량 상자가 없으면 flex 래퍼에서 카드가 전폭으로 늘어나
+                  raidCard(aspect-ratio:1)까지 커진다 → 같은 폭을 차지하는 투명 자리채움으로 방지 */}
+              {char.itemLevel < 1640 && isDesktop && (
+                <div className={styles.dailySideBox} aria-hidden="true" style={{ visibility: 'hidden' }} />
+              )}
               </div>
               {/* 모바일 인-콘텐츠 광고 — 앱 주간숙제(캐릭터 2개마다 1개, 1개뿐이면 그 아래)와 동일 */}
               {(charIdx % 2 === 1 || displayCharacters.length === 1) && (
@@ -2595,6 +2775,162 @@ export default function MyPage() {
             <p>아바타 변경이 안될 시 인게임에서 아바타 해제 → 영지 이동 → 아바타 재장착 → 영지 밖 이동 후 다시 시도해주세요.</p>
           </div>
         )}
+
+        {/* 카드 편집 모달 — 1줄(레이드)·2줄(일일·주간) 구성·순서, 이 기기에만 저장 */}
+        {raidEditChar && (() => {
+          const visibleCount = isDesktop ? 4 : 3;
+          const row2Defs = getRow2Defs(raidEditChar);
+
+          // 슬롯 스트립 공용 렌더 — 앞 visibleCount개는 카드에 바로 보임, 이후는 ‹ ›로 넘겨서
+          const renderSlots = (
+            list: string[],
+            apply: (next: string[]) => void,
+            labelOf: (n: string) => { name: string; sub?: string },
+          ) => (
+            <div className={styles.raidEditStrip}>
+              {list.map((name, i) => {
+                const { name: main, sub } = labelOf(name);
+                return (
+                  <Fragment key={name}>
+                    <div className={`${styles.raidEditSlot} ${i < visibleCount ? styles.raidEditSlotVisible : ''}`}>
+                      <span className={styles.raidEditSlotNum}>{i + 1}</span>
+                      <span className={styles.raidEditSlotName}>{main}</span>
+                      <span className={styles.raidEditSlotDiff}>{sub || ''}</span>
+                      <span className={styles.raidEditSlotBtns}>
+                        <button
+                          disabled={i === 0}
+                          onClick={() => {
+                            const next = [...list];
+                            [next[i - 1], next[i]] = [next[i], next[i - 1]];
+                            apply(next);
+                          }}
+                        >
+                          ‹
+                        </button>
+                        <button
+                          disabled={i === list.length - 1}
+                          onClick={() => {
+                            const next = [...list];
+                            [next[i + 1], next[i]] = [next[i], next[i + 1]];
+                            apply(next);
+                          }}
+                        >
+                          ›
+                        </button>
+                        <button onClick={() => apply(list.filter(n => n !== name))}>×</button>
+                      </span>
+                    </div>
+                  </Fragment>
+                );
+              })}
+              {list.length === 0 && <div className={styles.raidEditEmpty}>선택된 항목이 없습니다</div>}
+            </div>
+          );
+
+          return (
+            <Modal show onHide={() => setRaidEditChar(null)} centered scrollable>
+              <Modal.Header closeButton>
+                <Modal.Title as="div" className={styles.raidEditTitle}>{raidEditChar.name} 카드 편집</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                <div className={styles.raidEditHint}>
+                  번호 순서대로 카드에 표시됩니다. 색 테두리 항목({visibleCount}개)은 카드에 바로 보이고,
+                  나머지는 카드에서 ‹ ›로 넘겨 봅니다. 변경은 즉시 반영되며 이 기기에만 저장됩니다.
+                </div>
+
+                {/* ── 1줄: 레이드 ── */}
+                <div className={styles.raidEditSectionTitle}>
+                  <span className={styles.raidEditRowBadge}>1줄</span> 레이드
+                </div>
+                {renderSlots(
+                  raidEditList,
+                  next => applyRaidEditList(raidEditChar.name, next),
+                  n => {
+                    const diff = getRaidDifficultyLabel(n);
+                    return { name: getRaidGroupName(n), sub: diff === n ? undefined : diff };
+                  },
+                )}
+                <div className={styles.raidEditListTitle}>레이드 추가 · 난이도 변경</div>
+                <div className={styles.raidEditGroupList}>
+                  {RAID_EDIT_GROUPS.map(({ group, entries }) => {
+                    const selectedName = raidEditList.find(n => getRaidGroupName(n) === group);
+                    return (
+                      <div key={group} className={styles.raidEditGroupRow}>
+                        <span className={styles.raidEditGroupName}>{group}</span>
+                        <div className={styles.raidEditDiffs}>
+                          {entries.map(r => {
+                            const diffLabel = getRaidDifficultyLabel(r.name);
+                            const active = selectedName === r.name;
+                            return (
+                              <button
+                                key={r.name}
+                                className={`${styles.raidEditDiffBtn} ${active ? styles.raidEditDiffActive : ''}`}
+                                onClick={() => {
+                                  let next: string[];
+                                  if (active) next = raidEditList.filter(n => n !== r.name);
+                                  else if (selectedName) next = raidEditList.map(n => (n === selectedName ? r.name : n));
+                                  else next = [...raidEditList, r.name];
+                                  applyRaidEditList(raidEditChar.name, next);
+                                }}
+                              >
+                                {diffLabel === r.name ? '단일' : diffLabel} <span className={styles.raidEditDiffLv}>{r.level}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ── 2줄: 일일·주간 ── */}
+                <div className={styles.raidEditSectionDivider} />
+                <div className={styles.raidEditSectionTitle}>
+                  <span className={styles.raidEditRowBadge}>2줄</span> 일일·주간
+                </div>
+                {renderSlots(
+                  row2EditList,
+                  next => applyRow2EditList(raidEditChar.name, next),
+                  id => ({ name: row2Defs.find(d => d.id === id)?.label || id }),
+                )}
+                <div className={styles.raidEditListTitle}>항목 추가 · 제거</div>
+                <div className={styles.raidEditDiffs}>
+                  {row2Defs.map(d => {
+                    const active = row2EditList.includes(d.id);
+                    return (
+                      <button
+                        key={d.id}
+                        className={`${styles.raidEditDiffBtn} ${active ? styles.raidEditDiffActive : ''}`}
+                        onClick={() =>
+                          applyRow2EditList(
+                            raidEditChar.name,
+                            active ? row2EditList.filter(x => x !== d.id) : [...row2EditList, d.id],
+                          )
+                        }
+                      >
+                        {d.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Modal.Body>
+              <Modal.Footer>
+                <button
+                  className={styles.raidEditResetBtn}
+                  onClick={() => {
+                    persistCardRaidConfig(raidEditChar.name, null);
+                    persistCardRow2Config(raidEditChar.name, null);
+                    setRaidEditList(buildAutoRaidList(raidEditChar));
+                    setRow2EditList(getRow2Defs(raidEditChar).map(d => d.id));
+                  }}
+                >
+                  기본 구성으로 되돌리기
+                </button>
+                <Button size="sm" variant="primary" onClick={() => setRaidEditChar(null)}>완료</Button>
+              </Modal.Footer>
+            </Modal>
+          );
+        })()}
 
         {/* 숙제 기록 달력 (원정대 1 — 앱과 동일 기록 공유) */}
         {!isDemo && activeExpedition === 1 && characters.length > 0 && calendarOpen && (
