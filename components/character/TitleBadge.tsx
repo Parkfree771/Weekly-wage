@@ -5,6 +5,7 @@ import styles from './TitleBadge.module.css';
 export type TitleCategory =
   | 'kazeroth' | 'kamen' | 'esther' | 'abyss'
   | 'dolores'  | 'frost' | 'eclipse' | 'flame'
+  | 'death'    | 'croche'
   | 'default';
 
 export function getTitleCategory(title: string | null | undefined): TitleCategory {
@@ -17,6 +18,8 @@ export function getTitleCategory(title: string | null | undefined): TitleCategor
   if (title === '혹한의 군주')   return 'frost';
   if (title === '이클립스')     return 'eclipse';
   if (title === '홍염의 군주')   return 'flame';
+  if (title === '죽음을 부르는 자') return 'death';
+  if (title === '크로체')       return 'croche';
   return 'default';
 }
 
@@ -29,6 +32,9 @@ const ICONS: Record<TitleCategory, string | null> = {
   eclipse:  '/images/titles/eclipse.webp',
   flame:    '/images/titles/flame.webp',
   esther:   '/images/titles/esther.webp',
+  death:    '/images/titles/death.webp',
+  // 크로체 로고 파일이 준비되면 '/images/titles/croche.webp' 로 연결
+  croche:   null,
   default:  null,
 };
 
@@ -42,6 +48,8 @@ function getColorClass(cat: TitleCategory): string {
     case 'eclipse':  return styles.titleColorEclipse;
     case 'flame':    return styles.titleColorFlame;
     case 'esther':   return styles.titleColorEsther;
+    case 'death':    return styles.titleColorDeath;
+    case 'croche':   return styles.titleColorCroche;
     default:         return styles.titleBadgeDefault;
   }
 }
@@ -63,7 +71,7 @@ export default function TitleBadge({ title, fontSize }: Props) {
         // eslint-disable-next-line @next/next/no-img-element
         <img loading="lazy" decoding="async" src={icon} alt="" className={styles.titleIcon} />
       )}
-      <span className={`${styles.titleBadge} ${colorCls}`} data-text={title}>
+      <span className={`${styles.titleBadge} ${colorCls}`}>
         {title}
       </span>
     </span>

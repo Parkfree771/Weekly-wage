@@ -50,9 +50,13 @@ function MiniCount({
       <input
         type="number"
         className={az.miniInput}
-        value={value}
+        // 0 은 실제 값 대신 placeholder 로 보여준다 — 탭하고 바로 숫자를 치면
+        // 0 을 지울 필요 없이 그대로 입력된다 (0이 아닌 값은 포커스 시 전체 선택으로 대체)
+        value={value === 0 ? '' : value}
+        placeholder="0"
         min={0}
         max={max}
+        onFocus={(e) => e.target.select()}
         onChange={(e) => onChange(clamp(parseInt(e.target.value) || 0))}
         aria-label={ariaLabel}
       />
@@ -107,6 +111,10 @@ export default function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100
   const handleCardClick = (e: React.MouseEvent) => {
     const t = e.target as HTMLElement;
     if (t.closest('[data-nonav], button, input, select, textarea, label, a')) return;
+    // 카드 안 입력칸에 포커스가 살아 있는 동안의 탭은 이동이 아니라 입력 종료(키보드 닫기)로
+    // 본다 — 모바일에서 키보드가 화면을 밀어 지연 클릭이 카드 본체에 떨어지는 경우 포함
+    const active = document.activeElement;
+    if (active instanceof HTMLInputElement && e.currentTarget.contains(active)) return;
     router.push(`/package/${AZENA_POST_ID}`);
   };
 

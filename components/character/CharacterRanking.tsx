@@ -151,6 +151,8 @@ const PAGE_STEP = 30;
 
 // 칭호 필터 옵션 (label = UI 표시, value = SQL ILIKE 매칭용)
 const TITLE_FILTER_OPTIONS: { label: string; value: string }[] = [
+  { label: '죽음을 부르는 자', value: '죽음을 부르는 자' },
+  { label: '크로체',         value: '크로체' },
   { label: '혹한의 군주',     value: '혹한의 군주' },
   { label: '홍염의 군주',     value: '홍염의 군주' },
   { label: '심연의 군주',     value: '심연의 군주' },

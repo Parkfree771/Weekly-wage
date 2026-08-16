@@ -30,6 +30,11 @@
   height: 1.25em;
 }
 
+/* 죽음을 부르는 자: 문장(紋章)이 옆으로 넓어 살짝만 축소 */
+.titleIcon[src*="death"] {
+  height: 1.5em;
+}
+
 .titleBadge {
   display: inline-block;
   font-size: 0.88rem;
@@ -55,102 +60,37 @@
 .titleColorFrost    { color: #2563eb !important; }
 .titleColorEclipse  { color: #d97706 !important; }
 .titleColorFlame    { color: #f59e0b !important; }
+/* 1780 레이드 칭호 — 크로체는 어두운 주황 매트 (죽음을 부르는 자는 아래 메탈 샤인 그룹) */
+.titleColorCroche   { color: #c2410c !important; }
 
 /* ─────────────────────────────────────────────────────────
-   0.01% 희귀 칭호 (카제로스 · 카멘 · 에스더) — 메탈 샤인 한방향 흐름
+   0.01% 희귀 칭호 (카제로스 · 카멘 · 에스더 · 죽음을 부르는 자)
+   — 단색 + 어두운 오프셋 그림자만으로 각인 느낌. 그라데이션·애니메이션 없음
    ───────────────────────────────────────────────────────── */
-.titleColorKazeroth,
-.titleColorKamen,
-.titleColorEsther {
-  position: relative;
-  color: transparent !important;
-  -webkit-text-stroke: 0 !important;
-}
-
-.titleColorKazeroth::before,
-.titleColorKamen::before,
-.titleColorEsther::before,
-.titleColorKazeroth::after,
-.titleColorKamen::after,
-.titleColorEsther::after {
-  content: attr(data-text);
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  white-space: nowrap;
-  font: inherit;
-  letter-spacing: inherit;
-}
-
-.titleColorKazeroth::before {
-  color: #4c1d95;
+.titleColorKazeroth {
+  color: #9333ea !important;
   text-shadow:
     1px 1px 0 #2e1065,
-    2px 2px 0 rgba(46, 16, 101, 0.45);
-  z-index: 0;
+    2px 2px 0 rgba(46, 16, 101, 0.5);
 }
-.titleColorKamen::before {
-  color: #7f1d1d;
+
+.titleColorKamen {
+  color: #dc2626 !important;
   text-shadow:
     1px 1px 0 #450a0a,
-    2px 2px 0 rgba(69, 10, 10, 0.45);
-  z-index: 0;
+    2px 2px 0 rgba(69, 10, 10, 0.5);
 }
-.titleColorEsther::before {
-  color: #115e59;
+
+.titleColorEsther {
+  color: #14b8a6 !important;
   text-shadow:
-    1px 1px 0 #0f3a36,
-    2px 2px 0 rgba(15, 58, 54, 0.45);
-  z-index: 0;
+    1px 1px 0 #042f2e,
+    2px 2px 0 rgba(4, 47, 46, 0.5);
 }
 
-.titleColorKazeroth::after,
-.titleColorKamen::after,
-.titleColorEsther::after {
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: titleShine 12s linear infinite;
-  z-index: 1;
-  will-change: background-position;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-.titleColorKazeroth::after {
-  background-image: linear-gradient(
-    110deg,
-    #6b21a8 0%, #9333ea 25%, #d8b4fe 50%, #9333ea 75%, #6b21a8 100%
-  );
-}
-
-.titleColorKamen::after {
-  background-image: linear-gradient(
-    110deg,
-    #991b1b 0%, #dc2626 25%, #fca5a5 50%, #dc2626 75%, #991b1b 100%
-  );
-}
-
-.titleColorEsther::after {
-  background-image: linear-gradient(
-    110deg,
-    #0f766e 0%, #14b8a6 25%, #99f6e4 50%, #14b8a6 75%, #0f766e 100%
-  );
-}
-
-@keyframes titleShine {
-  0%   { background-position: 0% 0; }
-  100% { background-position: -200% 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .titleColorKazeroth::after,
-  .titleColorKamen::after,
-  .titleColorEsther::after {
-    animation: none;
-  }
+.titleColorDeath {
+  color: #c2410c !important;
+  text-shadow:
+    1px 1px 0 #431407,
+    2px 2px 0 rgba(67, 20, 7, 0.5);
 }

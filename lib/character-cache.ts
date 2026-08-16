@@ -5,9 +5,19 @@ import { coreNumberFor } from './arkgrid-cores';
 import { coreIconFor } from './core-icon';
 
 // 칭호 필터 최소 아이템레벨. 칭호는 한 번 획득하면 저렙 부캐도 달 수 있어
-// 통계가 오염되므로, 아래 칭호로 필터할 때만 이 레벨 이상으로 집계한다.
-const TITLE_MIN_ITEM_LEVEL = 1770;
-const TITLES_REQUIRE_MIN_LEVEL = new Set<string>(['혹한의 군주', '홍염의 군주']);
+// 통계가 오염되므로, 아래 칭호로 필터할 때만 해당 레벨 이상으로 집계한다.
+const TITLE_MIN_LEVEL_BY_TITLE: Record<string, number> = {
+  '혹한의 군주': 1770,
+  '홍염의 군주': 1770,
+  '죽음을 부르는 자': 1780,
+  '크로체': 1780,
+};
+
+// 칭호별 레벨 하한 SQL 조각 — 값이 코드 상수라 인터폴레이션 안전
+function titleFloorSql(titleQuery: string | null): string {
+  const min = titleQuery ? TITLE_MIN_LEVEL_BY_TITLE[titleQuery] : undefined;
+  return min ? ` AND item_level >= ${min}` : '';
+}
 
 // 서포터(역할) 판별 SQL — 사전계산 spec_id 컬럼 기반 (data JSONB 파싱 없음).
 // 서포터 = 서포터 스펙 id 4종 중 하나. 딜러 = NOT 서포터 (spec_id NULL 포함).
@@ -41,6 +51,8 @@ const ACCUMULATED_TITLES_EXACT = new Set<string>([
   '이클립스',
   '에스더의 결속자',
   '에스더의 후계자',
+  '죽음을 부르는 자',
+  '크로체',
 ]);
 
 // 누적 대상 칭호 (포함 매칭) - "카멘 the 1st", "카제로스 the 2nd" 등 시리즈
@@ -304,11 +316,9 @@ export async function listRanking(opts: ListRankingOptions = {}): Promise<Rankin
   }
   if (titlePattern) {
     params.push(titlePattern);
-    // 누적 칭호(titles_history) 기준 매칭. 혹한/홍염의 군주만 부캐 오염 방지를 위해
-    // 아이템레벨 floor 유지 (1770은 상수 → 인터폴레이션 안전).
-    const titleFloor = titleQuery && TITLES_REQUIRE_MIN_LEVEL.has(titleQuery)
-      ? ` AND item_level >= ${TITLE_MIN_ITEM_LEVEL}` : '';
-    conditions.push(`${titlesHistoryMatchExpr(params.length)}${titleFloor}`);
+    // 누적 칭호(titles_history) 기준 매칭. 부캐 오염 방지를 위해
+    // 칭호별 아이템레벨 floor 유지 (TITLE_MIN_LEVEL_BY_TITLE).
+    conditions.push(`${titlesHistoryMatchExpr(params.length)}${titleFloorSql(titleQuery)}`);
   }
   if (ancientCount !== null) {
     params.push(ancientCount);
@@ -436,9 +446,7 @@ export async function getRankingStats(opts: ListRankingOptions = {}): Promise<Ra
   }
   if (titlePattern) {
     params.push(titlePattern);
-    const titleFloor = titleQuery && TITLES_REQUIRE_MIN_LEVEL.has(titleQuery)
-      ? ` AND item_level >= ${TITLE_MIN_ITEM_LEVEL}` : '';
-    frags.push({ key: 'title', expr: `${titlesHistoryMatchExpr(params.length)}${titleFloor}` });
+    frags.push({ key: 'title', expr: `${titlesHistoryMatchExpr(params.length)}${titleFloorSql(titleQuery)}` });
   }
   if (ancientCount !== null) {
     params.push(ancientCount);
