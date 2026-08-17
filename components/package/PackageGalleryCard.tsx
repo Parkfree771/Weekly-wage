@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { memo, useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PackagePost, PackageItem, PackageType } from '@/types/package';
 import {
@@ -91,13 +91,36 @@ function BenefitPct({ v }: { v: number }) {
   );
 }
 
-export default function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Props) {
+// memo: 갤러리 페이지 최상위 state(공통 환율 타이핑 등)가 바뀔 때 prop 이 그대로인 카드까지
+// 전부 리렌더되는 것을 막는다 — post/latestPrices 는 참조가 안정적이라 memo 가 실제로 먹힌다
+function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Props) {
   const router = useRouter();
 
   const defaultWon = post.goldPerWon && post.goldPerWon > 0
-    ? Math.round(100 / post.goldPerWon)
+    ? Math.round(1000 / post.goldPerWon) / 10
     : 0;
-  const [wonPer100Gold, setWonPer100Gold] = useState<number>(commonWonPer100Gold || defaultWon);
+  // 환율 입력은 문자열로 든다 — number state 면 "16." 같은 타이핑 중간 상태가 지워져 소수(16.5) 입력이 안 된다
+  const [rateText, setRateText] = useState<string>(() => {
+    const v = commonWonPer100Gold || defaultWon;
+    return v > 0 ? String(v) : '';
+  });
+  // 블크 시세(100블크당 골드) — 환율과 양방향 동기화 (100블크 = 2750원 고정)
+  const [bcText, setBcText] = useState<string>(() => {
+    const v = commonWonPer100Gold || defaultWon;
+    return v > 0 ? String(Math.round(275000 / v)) : '';
+  });
+  const wonPer100Gold = parseFloat(rateText) || 0;
+
+  const handleRateInput = (v: string) => {
+    setRateText(v);
+    const w = parseFloat(v) || 0;
+    setBcText(w > 0 ? String(Math.round(275000 / w)) : '');
+  };
+  const handleBcInput = (v: string) => {
+    setBcText(v);
+    const b = parseFloat(v) || 0;
+    setRateText(b > 0 ? String(Math.round(2750000 / b) / 10) : '');
+  };
   // 판매 종료 카드는 기본이 흐린 상태 — 우측 상단 버튼으로 해제하면 그대로 비교할 수 있다
   const [saleRevealed, setSaleRevealed] = useState(false);
 
@@ -105,7 +128,9 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
   // 적용 후 아래 입력칸으로 개별 수정하는 건 그대로 되고, 공통 환율을 다시 건드릴 때까지 유지된다.
   // 0(미적용)으로 되돌리면 등록 시점 환율로 복귀.
   useEffect(() => {
-    setWonPer100Gold(commonWonPer100Gold > 0 ? commonWonPer100Gold : defaultWon);
+    const v = commonWonPer100Gold > 0 ? commonWonPer100Gold : defaultWon;
+    setRateText(v > 0 ? String(v) : '');
+    setBcText(v > 0 ? String(Math.round(275000 / v)) : '');
   }, [commonWonPer100Gold, defaultWon]);
   // N선택 패키지는 시세 로드 후 아래 useEffect에서 최고가 N개를 확정한다
   // (마운트 시점엔 latestPrices가 비어 있어 goldOverride 티켓만 값이 잡히는 오선택이 났었음)
@@ -757,11 +782,30 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
               <input
                 type="number"
                 className={styles.rateInput}
-                value={wonPer100Gold || ''}
-                onChange={(e) => setWonPer100Gold(parseInt(e.target.value) || 0)}
+                value={rateText}
+                onChange={(e) => handleRateInput(e.target.value)}
                 placeholder="32"
                 min={1}
+                step="any"
                 aria-label="100골드당 원화 환율"
+              />
+            </div>
+            <div className={styles.rateRow}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img loading="lazy" decoding="async" src="/blue.webp" alt="블루 크리스탈" className={styles.rateIconBlue} />
+              <span className={styles.rateFixed}>100</span>
+              <span className={styles.rateSep}>=</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.rateIconPad} />
+              <input
+                type="number"
+                className={styles.rateInput}
+                value={bcText}
+                onChange={(e) => handleBcInput(e.target.value)}
+                placeholder="16500"
+                min={1}
+                step="any"
+                aria-label="블루 크리스탈 100개당 골드"
               />
             </div>
           </div>
@@ -770,3 +814,5 @@ export default function PackageGalleryCard({ post, latestPrices, commonWonPer100
     </article>
   );
 }
+
+export default memo(PackageGalleryCard);

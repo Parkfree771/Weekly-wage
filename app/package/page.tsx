@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, useDeferredValue } from 'react';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
 import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryCard';
 import { getPackagePosts, getPackagePostCount } from '@/lib/package-service';
+import { fetchLatestPrices } from '@/lib/price-history-client';
 import { calculatePostEfficiency, isNewReleasePost } from '@/lib/package-shared';
 import { isSaleEnded } from '@/lib/package-sale';
 import type { PackagePost } from '@/types/package';
 import AdBanner from '@/components/ads/AdBanner';
 import AdFitUnit from '@/components/ads/AdFitUnit';
+import useIsMobileViewport from '@/components/ads/useIsMobileViewport';
 import { ADFIT_ENABLED, ADFIT_UNITS } from '@/components/ads/adConfig';
 import GuideFaq from '@/components/common/GuideFaq';
 import { faqData } from './faq-data';
@@ -58,6 +60,14 @@ const RATE_MAX = 999;
 
 const clampRate = (v: number) => (v <= 0 ? 0 : Math.max(RATE_MIN, Math.min(RATE_MAX, v)));
 
+// 모듈 스코프 페이지 캐시 — 갤러리 ↔ 상세 왕복으로 컴포넌트가 언마운트돼도 조회 결과를 유지해
+// Firestore 재조회를 막는다. 새 글 등록 직후 낡은 목록이 보이지 않게 TTL 을 두고 통째로 비운다.
+const PAGE_CACHE_TTL_MS = 60_000;
+const modulePageCache = new Map<number, PackagePost[]>();
+const moduleCursors = new Map<number, any>();
+let modulePageCacheAt = 0;
+let moduleTotalCount: number | null = null;
+
 // ─── 정렬·필터 ───
 // 전부 이미 불러온 posts 배열 위에서만 도는 화면 기준 기능이다.
 // Firestore 재조회를 절대 일으키지 않는다 — 예전에 정렬을 서버 쿼리로 돌리다
@@ -92,35 +102,60 @@ export default function PackageGalleryPage() {
   // 방문한 페이지는 캐시에 담아 재조회 없이 오가고, 안 가본 곳은 "방문한 끝 + 1"까지만 열린다.
   // 진입 시 읽기는 1페이지 5개뿐이고, 다른 페이지는 처음 넘어갈 때 한 번씩만 읽는다.
   const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState<number | null>(null);
-  const pageCacheRef = useRef<Map<number, PackagePost[]>>(new Map());
-  // n페이지 마지막 문서 커서 = n+1페이지 조회의 시작점
-  const cursorsRef = useRef<Map<number, any>>(new Map());
+  const [totalCount, setTotalCount] = useState<number | null>(moduleTotalCount);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
   // 갤러리 공통 환율(100골드당 원). 0 이면 미적용 — 각 카드가 등록 시점 환율을 그대로 쓴다.
   // 값이 들어오면 모든 카드가 이 값으로 맞춰지고, 이후 카드별 개별 수정은 그대로 가능하다.
-  const [commonWonPer100Gold, setCommonWonPer100Gold] = useState<number>(0);
+  // 입력은 문자열로 든다 — number state 면 "16." 같은 타이핑 중간 상태가 지워져 소수(16.5) 입력이 안 된다.
+  const [commonRateText, setCommonRateText] = useState<string>('');
+  // 블크 시세(100블크당 골드) — 환율과 양방향 동기화 (100블크 = 2750원 고정)
+  const [commonBcText, setCommonBcText] = useState<string>('');
+  const commonWonPer100Gold = clampRate(parseFloat(commonRateText) || 0);
+  // 카드 6장 재계산·재정렬은 키 입력보다 한 박자 늦게 — 입력칸 반응성은 유지하고 무거운 작업만 미룬다
+  const deferredCommonRate = useDeferredValue(commonWonPer100Gold);
+  // 하단 데스크톱 배너의 뷰포트 판정 (d-md-block 과 같은 768px 기준)
+  const isMobileMd = useIsMobileViewport(767.98);
+
+  const handleCommonRateInput = (v: string) => {
+    setCommonRateText(v);
+    const w = parseFloat(v) || 0;
+    setCommonBcText(w > 0 ? String(Math.round(275000 / w)) : '');
+  };
+  const handleCommonBcInput = (v: string) => {
+    setCommonBcText(v);
+    const b = parseFloat(v) || 0;
+    setCommonRateText(b > 0 ? String(Math.round(2750000 / b) / 10) : '');
+  };
   // 화면 기준 정렬·필터 (Firestore 재조회 없음)
   const [view, setView] = useState<GalleryView>('createdAt');
   const sortBy: GallerySort = isSaleView(view) ? 'createdAt' : view;
   const saleFilter: SaleFilter = isSaleView(view) ? view : 'all';
 
   // 기본값이 없으므로 비어 있을 때 +는 최솟값부터 시작하고, −는 아무 일도 하지 않는다
-  const stepCommonRate = (delta: number) =>
-    setCommonWonPer100Gold((prev) => {
-      if (prev <= 0) return delta > 0 ? RATE_MIN : 0;
-      return clampRate(prev + delta);
-    });
+  const stepCommonRate = (delta: number) => {
+    const cur = clampRate(parseFloat(commonRateText) || 0);
+    const next = cur <= 0
+      ? (delta > 0 ? RATE_MIN : 0)
+      : clampRate(Math.round((cur + delta) * 10) / 10);
+    setCommonRateText(next > 0 ? String(next) : '');
+    setCommonBcText(next > 0 ? String(Math.round(275000 / next)) : '');
+  };
 
   useEffect(() => {
-    fetch('/api/price-data/latest')
-      .then((res) => res.json())
+    // fetchLatestPrices 는 모듈 메모리 캐시가 있어 갤러리 ↔ 상세 왕복 시 재요청이 없다
+    fetchLatestPrices()
       .then((data) => setLatestPrices(data))
       .catch((err) => console.error('가격 데이터 로딩 실패:', err));
   }, []);
 
   const goToPage = useCallback(async (n: number) => {
-    const cached = pageCacheRef.current.get(n);
+    // TTL 이 지난 모듈 캐시는 통째로 비운다 — 새 글 등록 직후 낡은 목록이 계속 보이지 않게
+    if (Date.now() - modulePageCacheAt > PAGE_CACHE_TTL_MS) {
+      modulePageCache.clear();
+      moduleCursors.clear();
+      moduleTotalCount = null;
+    }
+    const cached = modulePageCache.get(n);
     if (cached) {
       setPage(n);
       setPosts(cached);
@@ -128,7 +163,7 @@ export default function PackageGalleryPage() {
     }
 
     // 커서가 없는 페이지(중간 건너뛰기)는 UI 에서 비활성이지만, 혹시 들어와도 조용히 무시
-    const cursor = n === 1 ? undefined : cursorsRef.current.get(n - 1);
+    const cursor = n === 1 ? undefined : moduleCursors.get(n - 1);
     if (n !== 1 && !cursor) return;
 
     setLoading(true);
@@ -138,8 +173,9 @@ export default function PackageGalleryPage() {
         limit: pageSizeOf(n),
         startAfterDoc: cursor,
       });
-      pageCacheRef.current.set(n, result.posts);
-      cursorsRef.current.set(n, result.lastDoc);
+      if (modulePageCache.size === 0) modulePageCacheAt = Date.now();
+      modulePageCache.set(n, result.posts);
+      moduleCursors.set(n, result.lastDoc);
       setPage(n);
       setPosts(result.posts);
     } catch (err) {
@@ -154,9 +190,13 @@ export default function PackageGalleryPage() {
   useEffect(() => {
     goToPage(1);
     // 전체 페이지 수 표시용. count 집계는 문서를 읽어오지 않아 비용이 거의 없고,
-    // 실패해도 이전/다음 버튼만으로 정상 동작한다.
+    // 실패해도 이전/다음 버튼만으로 정상 동작한다. 모듈 캐시가 살아 있으면 재호출도 생략.
+    if (moduleTotalCount != null) {
+      setTotalCount(moduleTotalCount);
+      return;
+    }
     getPackagePostCount()
-      .then(setTotalCount)
+      .then((c) => { moduleTotalCount = c; setTotalCount(c); })
       .catch(() => setTotalCount(null));
   }, [goToPage]);
 
@@ -189,13 +229,13 @@ export default function PackageGalleryPage() {
 
     // 효율순 — 시세가 도착하기 전엔 전부 0이 나와 순서가 무의미하므로 원래 순서를 유지한다
     if (Object.keys(latestPrices).length === 0) return filtered;
-    const rateOverride = commonWonPer100Gold > 0 ? 100 / commonWonPer100Gold : 0;
+    const rateOverride = deferredCommonRate > 0 ? 100 / deferredCommonRate : 0;
     return [...filtered].sort(
       (a, b) =>
         calculatePostEfficiency(b, latestPrices, rateOverride) -
         calculatePostEfficiency(a, latestPrices, rateOverride),
     );
-  }, [posts, saleFilter, sortBy, latestPrices, commonWonPer100Gold]);
+  }, [posts, saleFilter, sortBy, latestPrices, deferredCommonRate]);
 
   // 정렬·필터는 "지금 불러온 목록" 안에서만 도므로, 범위를 숨기지 않고 그대로 알려준다
   const isNarrowed = saleFilter !== 'all';
@@ -207,7 +247,7 @@ export default function PackageGalleryPage() {
       : 1 + Math.ceil((totalCount - PAGE_SIZE_FIRST) / PAGE_SIZE_REST)
     : null;
   // 커서 확보 범위: 방문한 페이지 + 그 다음 한 페이지까지만 이동 가능
-  const maxLoaded = pageCacheRef.current.size > 0 ? Math.max(...pageCacheRef.current.keys()) : 0;
+  const maxLoaded = modulePageCache.size > 0 ? Math.max(...modulePageCache.keys()) : 0;
   const hasNext = totalPages != null ? page < totalPages : posts.length === pageSizeOf(page);
 
   const renderSkeletons = () =>
@@ -249,54 +289,71 @@ export default function PackageGalleryPage() {
             )}
           </div>
           <div className={styles.commonRate}>
-            <div className={styles.commonRateRow}>
-              <button
-                type="button"
-                className={styles.commonRateStep}
-                onClick={() => stepCommonRate(-1)}
-                aria-label="공통 환율 1원 낮추기"
-              >
-                −
-              </button>
-              <div className={styles.commonRateBox}>
+            <div className={styles.commonRateGroup}>
+              <div className={styles.commonRateRow}>
+                <button
+                  type="button"
+                  className={styles.commonRateStep}
+                  onClick={() => stepCommonRate(-1)}
+                  aria-label="공통 환율 1원 낮추기"
+                >
+                  −
+                </button>
+                <div className={styles.commonRateBox}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/gold.webp" alt="골드" className={styles.commonRateIcon} loading="lazy" decoding="async" />
+                  <span className={styles.commonRateFixed}>100</span>
+                  <span className={styles.commonRateSep}>:</span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/royal.webp" alt="로얄" className={styles.commonRateIconRoyal} loading="lazy" decoding="async" />
+                  <input
+                    type="number"
+                    className={styles.commonRateInput}
+                    value={commonRateText}
+                    onChange={(e) => handleCommonRateInput(e.target.value)}
+                    min={RATE_MIN}
+                    max={RATE_MAX}
+                    step="any"
+                    aria-label="갤러리 공통 환율 (100골드당 원화)"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className={styles.commonRateStep}
+                  onClick={() => stepCommonRate(1)}
+                  aria-label="공통 환율 1원 올리기"
+                >
+                  +
+                </button>
+              </div>
+              <div className={styles.commonRateRowBc}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/gold.webp" alt="골드" className={styles.commonRateIcon} loading="lazy" decoding="async" />
+                <img src="/blue.webp" alt="블루 크리스탈" className={styles.commonRateIcon} loading="lazy" decoding="async" />
                 <span className={styles.commonRateFixed}>100</span>
-                <span className={styles.commonRateSep}>:</span>
+                <span className={styles.commonRateSep}>=</span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/royal.webp" alt="로얄" className={styles.commonRateIcon} loading="lazy" decoding="async" />
+                <img src="/gold.webp" alt="골드" className={styles.commonRateIconPad} loading="lazy" decoding="async" />
                 <input
                   type="number"
                   className={styles.commonRateInput}
-                  value={commonWonPer100Gold || ''}
-                  onChange={(e) => setCommonWonPer100Gold(clampRate(parseInt(e.target.value) || 0))}
-                  min={RATE_MIN}
-                  max={RATE_MAX}
-                  aria-label="갤러리 공통 환율 (100골드당 원화)"
+                  value={commonBcText}
+                  onChange={(e) => handleCommonBcInput(e.target.value)}
+                  min={1}
+                  step="any"
+                  aria-label="블루 크리스탈 100개당 골드"
                 />
-                <span className={styles.commonRateUnit}>원</span>
               </div>
-              <button
-                type="button"
-                className={styles.commonRateStep}
-                onClick={() => stepCommonRate(1)}
-                aria-label="공통 환율 1원 올리기"
-              >
-                +
-              </button>
-            </div>
-            <div className={styles.commonRateBelow}>
-              <span className={styles.commonRateLabel}>
-                {commonWonPer100Gold > 0 ? '공통 환율 적용 중' : '공통 환율 — 입력하면 전체 카드에 적용'}
-              </span>
               {commonWonPer100Gold > 0 && (
-                <button
-                  type="button"
-                  className={styles.commonRateReset}
-                  onClick={() => setCommonWonPer100Gold(0)}
-                >
-                  해제
-                </button>
+                <div className={styles.commonRateStatus}>
+                  <span className={styles.commonRateStatusLabel}>공통 환율 적용 중</span>
+                  <button
+                    type="button"
+                    className={styles.commonRateClear}
+                    onClick={() => { setCommonRateText(''); setCommonBcText(''); }}
+                  >
+                    해제
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -335,7 +392,7 @@ export default function PackageGalleryPage() {
                   <>
                     <AzenaBlessingGalleryCard
                       latestPrices={latestPrices}
-                      commonWonPer100Gold={commonWonPer100Gold}
+                      commonWonPer100Gold={deferredCommonRate}
                     />
                     <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.betweenCardsAd}`}>
                       <AdBanner slot="8616653628" index={0} />
@@ -354,7 +411,7 @@ export default function PackageGalleryPage() {
                       <PackageGalleryCard
                         post={post}
                         latestPrices={latestPrices}
-                        commonWonPer100Gold={commonWonPer100Gold}
+                        commonWonPer100Gold={deferredCommonRate}
                       />
                       {/* 모바일 전용(d-md-none). 자리마다 다른 애드핏 단위를 받는다 —
                           같은 단위를 반복하면 애드핏이 첫 자리만 채우고 나머지는 안 나온다. */}
@@ -391,7 +448,7 @@ export default function PackageGalleryPage() {
                       onClick={() => handlePageChange(p)}
                       // Firestore 커서 특성상 "방문한 끝 + 1"까지만 열린다 — 그 너머는 중간을
                       // 전부 읽어야 갈 수 있어 비활성으로 막는다
-                      disabled={loading || (!pageCacheRef.current.has(p) && p > maxLoaded + 1)}
+                      disabled={loading || (!modulePageCache.has(p) && p > maxLoaded + 1)}
                     >
                       {p}
                     </button>
@@ -416,8 +473,9 @@ export default function PackageGalleryPage() {
             </div>
 
             {/* 데스크톱 — 페이지 버튼 아래 728×90 가로 배너 (모바일은 위 320×100 이 담당).
-                단위 미발급 동안(unit 빈 문자열) 자리째 렌더하지 않는다. key={page}: 페이지마다 새 광고 */}
-            {ADFIT_ENABLED && ADFIT_UNITS.galleryBottomDesktop.unit && (
+                단위 미발급 동안(unit 빈 문자열) 자리째 렌더하지 않는다. key={page}: 페이지마다 새 광고.
+                d-md-block 으로 숨겨도 모바일에서 마운트·요청은 나가므로 뷰포트(≥768)가 확인될 때만 렌더 */}
+            {ADFIT_ENABLED && ADFIT_UNITS.galleryBottomDesktop.unit && isMobileMd === false && (
               <div className={`d-none d-md-block ${styles.desktopAdSlot}`}>
                 <AdFitUnit
                   key={`ad-bottom-desktop-${page}`}

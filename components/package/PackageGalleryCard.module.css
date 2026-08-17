@@ -392,9 +392,11 @@
   margin-top: auto;
 }
 
+/* 닉네임은 잘리지 않게 여유를 넉넉히 둔다 — 스토브 닉네임 최대 길이(12자)까지 그대로 표시.
+   ellipsis 는 그 이상인 비정상 값에 대한 안전장치로만 남긴다 */
 .metaAuthor {
   color: var(--gc-text-secondary);
-  max-width: 6.5em;
+  max-width: 13em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -520,13 +522,17 @@
 }
 
 /* 환율: 연한 입력 박스 */
+/* 환율 상자 — 여기가 카드에서 실제로 손대는 곳이라 테두리를 갤러리 공통 환율과 같은
+   포인트색으로 살짝 세워 눈에 띄게 한다 */
 .bottomRate {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.2rem;
   background: var(--gc-input-bg);
-  border: 1px solid var(--gc-border);
+  border: 1.5px solid var(--color-primary);
   border-radius: 9px;
   padding: 0.35rem 0.4rem;
 }
@@ -549,10 +555,37 @@
   height: 22px;
 }
 
+/* 두 줄의 밑줄 길이를 똑같이 — 블크 5자리(16500)도 들어가는 폭으로 통일 */
 .bottomRate .rateInput {
-  width: 34px;
-  border-bottom: 1px solid var(--gc-border);
+  width: 44px;
+  border-bottom: 1px solid var(--gc-text-muted);
 }
+
+/* 블크 시세 입력줄 아이콘 — 환율 줄의 골드 아이콘과 같은 크기로 맞춘다 */
+.rateIconBlue {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.bottomRate .rateIconBlue {
+  width: 16px;
+  height: 16px;
+}
+
+/* 아랫줄 골드 아이콘 — 윗줄 로얄 슬롯(22px)과 같은 폭을 차지하되 그림은 16px 로 유지해
+   두 줄의 입력칸 시작 위치가 정확히 겹치게 한다 */
+.bottomRate .rateIconPad {
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  box-sizing: border-box;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 
 /* 결과 % 배지 — 매트 단색 + 양 모서리 컷(게임 스탯 칩 느낌). 그라데이션 없음 */
 .benefitBadge {
@@ -606,7 +639,11 @@
   color: var(--gc-text);
 }
 
+/* 구분자(: / =)는 글자 폭이 달라 고정 폭 가운데 정렬로 두 줄의 열을 맞춘다 */
 .rateSep {
+  display: inline-block;
+  width: 0.8em;
+  text-align: center;
   font-size: 0.8rem;
   font-weight: 800;
   color: var(--gc-text-muted);
@@ -1047,13 +1084,24 @@
   }
 
   .bottomRate .rateInput {
-    width: 24px;
+    width: 36px;
     font-size: 0.7rem;
   }
 
   .bottomRate .rateFixed,
   .bottomRate .rateSep {
     font-size: 0.7rem;
+  }
+
+  .bottomRate .rateIconBlue {
+    width: 12px;
+    height: 12px;
+  }
+
+  .bottomRate .rateIconPad {
+    width: 16px;
+    height: 16px;
+    padding: 2px;
   }
 
   .gachaBtn {

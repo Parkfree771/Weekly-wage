@@ -1,16 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdmin } from '@/lib/admin';
-import {
-  deletePackagePost,
-  updatePackagePost,
-} from '@/lib/package-service';
+// package-service(firestore ~250KB)는 작성자 전용 수정/삭제에서만 쓴다 —
+// 정적 import 하면 모든 익명 방문자가 상세 첫 로드에 firestore 를 내려받는다 → 핸들러 안 동적 import
 import { isSaleEnded, formatSaleEndShort, formatSalePeriodDateOnly } from '@/lib/package-sale';
+import { fetchLatestPrices } from '@/lib/price-history-client';
 import type { PackagePost, PackageType, PackageItem } from '@/types/package';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import {
@@ -37,8 +36,19 @@ import {
 } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
 import SideSquareAd from '@/components/package/SideSquareAd';
-import CommentSection from '@/components/package/CommentSection';
+import dynamic from 'next/dynamic';
 import styles from '../package.module.css';
+
+// 댓글은 firestore 를 정적으로 물고 있다 — dynamic 으로 별도 청크로 밀어내
+// 상세 첫 로드 JS 에서 firestore 를 완전히 뺀다 (댓글 자체도 접힌 하단 콘텐츠)
+const CommentSection = dynamic(() => import('@/components/package/CommentSection'), {
+  ssr: false,
+  loading: () => (
+    <div style={{ padding: '1rem 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+      댓글 불러오는 중...
+    </div>
+  ),
+});
 
 const ITEM_SHORT_NAMES: Record<string, string> = {
   '운명의 파괴석 결정': '운파결',
@@ -225,7 +235,22 @@ export default function PackageDetailPage({ initialPost }: Props) {
   const [bonusChoiceSelections, setBonusChoiceSelections] = useState<Record<number, string>>({});
   const [bonusChoiceBoxSelections, setBonusChoiceBoxSelections] = useState<Record<number, string[]>>({});
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
-  const [detailWonPer100Gold, setDetailWonPer100Gold] = useState<number>(0);
+  // 환율 입력은 문자열로 든다 — number state 면 "16." 같은 타이핑 중간 상태가 지워져 소수(16.5) 입력이 안 된다
+  const [detailRateText, setDetailRateText] = useState<string>('');
+  // 블크 시세(100블크당 골드) — 환율과 양방향 동기화 (100블크 = 2750원 고정이라 한쪽이 정해지면 다른 쪽도 정해진다)
+  const [detailBcText, setDetailBcText] = useState<string>('');
+  const detailWonPer100Gold = parseFloat(detailRateText) || 0;
+
+  const handleRateInput = (v: string) => {
+    setDetailRateText(v);
+    const w = parseFloat(v) || 0;
+    setDetailBcText(w > 0 ? String(Math.round(275000 / w)) : '');
+  };
+  const handleBcInput = (v: string) => {
+    setDetailBcText(v);
+    const b = parseFloat(v) || 0;
+    setDetailRateText(b > 0 ? String(Math.round(2750000 / b) / 10) : '');
+  };
 
   // 가챠 state
   const [gachaPhase, setGachaPhase] = useState<'idle' | 'spinning' | 'result'>('idle');
@@ -242,10 +267,17 @@ export default function PackageDetailPage({ initialPost }: Props) {
   const isOwner = user && post && (user.uid === post.authorUid || isAdmin(user.email));
 
   useEffect(() => {
-    fetch('/api/price-data/latest')
-      .then((res) => res.json())
+    // fetchLatestPrices 는 모듈 메모리 캐시가 있어 갤러리 ↔ 상세 왕복 시 재요청이 없다
+    fetchLatestPrices()
       .then((data) => setLatestPrices(data))
       .catch((err) => console.error('가격 데이터 로딩 실패:', err));
+  }, []);
+
+  // 참조를 고정해 환율 타이핑 등 부모 리렌더마다 CommentSection(memo)이 다시 그려지지 않게 한다
+  const handleCommentCountChange = useCallback((delta: number) => {
+    setPost((prev) =>
+      prev ? { ...prev, commentCount: (prev.commentCount || 0) + delta } : null,
+    );
   }, []);
 
   // 조회수 중복 전송 방지 — postId 기준 (같은 컴포넌트 인스턴스로 다른 글에 진입해도 각각 집계)
@@ -298,7 +330,9 @@ export default function PackageDetailPage({ initialPost }: Props) {
           setBonusChoiceBoxSelections(bonusInitialChoiceBox);
           setCheckedItems(initialChecked);
           if (data.goldPerWon && data.goldPerWon > 0) {
-            setDetailWonPer100Gold(Math.round(100 / data.goldPerWon));
+            const won = Math.round(1000 / data.goldPerWon) / 10;
+            setDetailRateText(String(won));
+            setDetailBcText(won > 0 ? String(Math.round(275000 / won)) : '');
           }
           if (viewCountedFor.current !== postId) {
             viewCountedFor.current = postId;
@@ -409,6 +443,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
     if (next && !confirm('판매 종료로 표시할까요? 글은 그대로 남고 시세·계산도 계속 동작합니다.')) return;
     setSaleUpdating(true);
     try {
+      const { updatePackagePost } = await import('@/lib/package-service');
       await updatePackagePost(postId, { saleClosed: next });
       setPost({ ...post, saleClosed: next });
       // ISR 캐시된 상세 페이지 즉시 재생성 (다른 방문자에게도 바로 반영)
@@ -427,6 +462,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
   const handleDelete = async () => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
+      const { deletePackagePost } = await import('@/lib/package-service');
       await deletePackagePost(postId);
       // ISR 캐시된 상세 페이지 즉시 무효화 (다른 방문자에게 삭제된 글이 남지 않도록)
       fetch('/api/package/revalidate', {
@@ -706,8 +742,22 @@ export default function PackageDetailPage({ initialPost }: Props) {
 
   const detailGoldPerWon = detailWonPer100Gold > 0 ? 100 / detailWonPer100Gold : 0;
 
+  // 시세 도착 전에는 구성품 가치가 전부 0 → 이득률이 정확히 -100% 로 그려진다.
+  // 잘못된 빨간 배지를 먼저 보여주지 않도록, 이득률 줄은 시세가 온 뒤에만 렌더한다.
+  const pricesReady = Object.keys(latestPrices).length > 0;
+
   // 환율 기반 bcRate (100 블크 = 2750 로크)
   const bcRate = detailGoldPerWon > 0 ? detailGoldPerWon * 2750 : 0;
+
+  // 가챠 아이템별 골드 — 가챠 애니메이션이 35ms 마다 setState 를 걸어 렌더가 잦으므로
+  // 시세·환율이 그대로면 재계산하지 않게 memo 로 고정한다
+  const gachaItemGoldsMemo = useMemo(() => {
+    if (!post || post.packageType !== '가챠') return [] as number[];
+    const rate = detailGoldPerWon > 0 ? detailGoldPerWon * 2750 : 0;
+    return post.items.map((item) =>
+      calculateGachaItemGold(item, latestPrices, detailGoldPerWon, rate),
+    );
+  }, [post, latestPrices, detailGoldPerWon]);
 
   // goldOverride 아이템의 실제 단가 (환율 변경 시 재계산)
   const getCrystalAdjustedUnit = (item: PackageItem): number => {
@@ -817,10 +867,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
   // 가챠 전용 렌더링
   if (post.packageType === '가챠') {
     const gachaItems = post.items;
-    const gachaBcRate = detailGoldPerWon > 0 ? detailGoldPerWon * 2750 : 0;
-    const gachaItemGolds = gachaItems.map((item) =>
-      calculateGachaItemGold(item, latestPrices, detailGoldPerWon, gachaBcRate),
-    );
+    const gachaItemGolds = gachaItemGoldsMemo;
     // 제외 아이템 반영 기대값: 제외된 아이템은 골드 0으로 계산
     const expectedGold = gachaItems.reduce(
       (s, item, i) => s + (gachaExcluded[i] ? 0 : gachaItemGolds[i]) * ((item.probability || 0) / 100), 0,
@@ -893,7 +940,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                   </div>
                 )}
 
-                {detailGoldPerWon > 0 && (
+                {detailGoldPerWon > 0 && pricesReady && (
                   <div className={styles.resultRow}>
                     <span className={styles.resultRowLabel}>기대 효율</span>
                     <BenefitBadge v={expectedBenefit} />
@@ -913,12 +960,33 @@ export default function PackageDetailPage({ initialPost }: Props) {
                     <input
                       type="number"
                       className={styles.resultRateNumber}
-                      value={detailWonPer100Gold || ''}
-                      onChange={(e) => setDetailWonPer100Gold(parseInt(e.target.value) || 0)}
+                      value={detailRateText}
+                      onChange={(e) => handleRateInput(e.target.value)}
                       placeholder="32"
                       min={1}
+                      step="any"
                       aria-label="100골드당 원화 환율"
                     />
+                  </div>
+                  <div className={styles.resultRateBcRow}>
+                    <div className={styles.resultRateInput}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img loading="lazy" decoding="async" src="/blue.webp" alt="블루 크리스탈" className={styles.resultRateIcon} />
+                      <span className={styles.resultRateFixed}>100</span>
+                      <span className={styles.resultRateSep}>=</span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.resultRateIcon} />
+                      <input
+                        type="number"
+                        className={styles.resultRateNumber}
+                        value={detailBcText}
+                        onChange={(e) => handleBcInput(e.target.value)}
+                        placeholder="16500"
+                        min={1}
+                        step="any"
+                        aria-label="블루 크리스탈 100개당 골드"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -1157,11 +1225,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
           <CommentSection
             postId={postId}
             commentCount={post.commentCount || 0}
-            onCommentCountChange={(delta) =>
-              setPost((prev) =>
-                prev ? { ...prev, commentCount: (prev.commentCount || 0) + delta } : null,
-              )
-            }
+            onCommentCountChange={handleCommentCountChange}
           />
 
           <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
@@ -1229,7 +1293,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                 <GoldValue v={totalGold} />
               </div>
 
-              {detailGoldPerWon > 0 && (
+              {detailGoldPerWon > 0 && pricesReady && (
                 <div className={styles.resultRow}>
                   <span className={styles.resultRowLabel}>1개 구매</span>
                   <BenefitBadge v={singleBenefit} />
@@ -1244,7 +1308,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                     <span className={styles.resultRowLabel}>{post.packageType} 보정</span>
                     <GoldValue v={bundleGold} />
                   </div>
-                  {detailGoldPerWon > 0 && (
+                  {detailGoldPerWon > 0 && pricesReady && (
                     <div className={styles.resultRow}>
                       <span className={styles.resultRowLabel}>{post.packageType} 구매</span>
                       <BenefitBadge v={bundleBenefit} />
@@ -1266,12 +1330,33 @@ export default function PackageDetailPage({ initialPost }: Props) {
                   <input
                     type="number"
                     className={styles.resultRateNumber}
-                    value={detailWonPer100Gold || ''}
-                    onChange={(e) => setDetailWonPer100Gold(parseInt(e.target.value) || 0)}
+                    value={detailRateText}
+                    onChange={(e) => handleRateInput(e.target.value)}
                     placeholder="32"
                     min={1}
+                    step="any"
                     aria-label="100골드당 원화 환율"
                   />
+                </div>
+                <div className={styles.resultRateBcRow}>
+                  <div className={styles.resultRateInput}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img loading="lazy" decoding="async" src="/blue.webp" alt="블루 크리스탈" className={styles.resultRateIcon} />
+                    <span className={styles.resultRateFixed}>100</span>
+                    <span className={styles.resultRateSep}>=</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.resultRateIcon} />
+                    <input
+                      type="number"
+                      className={styles.resultRateNumber}
+                      value={detailBcText}
+                      onChange={(e) => handleBcInput(e.target.value)}
+                      placeholder="16500"
+                      min={1}
+                      step="any"
+                      aria-label="블루 크리스탈 100개당 골드"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1664,11 +1749,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
           <CommentSection
             postId={postId}
             commentCount={post.commentCount || 0}
-            onCommentCountChange={(delta) =>
-              setPost((prev) =>
-                prev ? { ...prev, commentCount: (prev.commentCount || 0) + delta } : null,
-              )
-            }
+            onCommentCountChange={handleCommentCountChange}
           />
         )}
 

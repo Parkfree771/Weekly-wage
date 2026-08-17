@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { memo, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { formatNumber } from '@/lib/package-shared';
@@ -79,15 +79,35 @@ function MiniCount({
  * 왼쪽은 아이템 셀 목록 대신 축복 본체 이미지 하나만 두고, 구성품·수량·확률·상자 내용물은
  * /package/azena-blessing 에서 본다.
  */
-export default function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Props) {
+// memo: 갤러리 페이지 최상위 state(공통 환율 타이핑 등)가 바뀔 때 prop 이 그대로면 리렌더를 막는다
+function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Props) {
   const router = useRouter();
-  const [wonPer100Gold, setWonPer100Gold] = useState<number>(
-    commonWonPer100Gold || AZENA_DEFAULT_WON_PER_100_GOLD,
+  // 환율 입력은 문자열로 든다 — number state 면 "16." 같은 타이핑 중간 상태가 지워져 소수(16.5) 입력이 안 된다
+  const [rateText, setRateText] = useState<string>(
+    String(commonWonPer100Gold || AZENA_DEFAULT_WON_PER_100_GOLD),
   );
+  // 블크 시세(100블크당 골드) — 환율과 양방향 동기화 (100블크 = 2750원 고정)
+  const [bcText, setBcText] = useState<string>(
+    String(Math.round(275000 / (commonWonPer100Gold || AZENA_DEFAULT_WON_PER_100_GOLD))),
+  );
+  const wonPer100Gold = parseFloat(rateText) || 0;
   const [options, setOptions] = useState<AzenaOptions>(AZENA_DEFAULT_OPTIONS);
 
+  const handleRateInput = (v: string) => {
+    setRateText(v);
+    const w = parseFloat(v) || 0;
+    setBcText(w > 0 ? String(Math.round(275000 / w)) : '');
+  };
+  const handleBcInput = (v: string) => {
+    setBcText(v);
+    const b = parseFloat(v) || 0;
+    setRateText(b > 0 ? String(Math.round(2750000 / b) / 10) : '');
+  };
+
   useEffect(() => {
-    setWonPer100Gold(commonWonPer100Gold > 0 ? commonWonPer100Gold : AZENA_DEFAULT_WON_PER_100_GOLD);
+    const v = commonWonPer100Gold > 0 ? commonWonPer100Gold : AZENA_DEFAULT_WON_PER_100_GOLD;
+    setRateText(String(v));
+    setBcText(String(Math.round(275000 / v)));
   }, [commonWonPer100Gold]);
 
   const goldPerWon = wonPer100Gold > 0 ? 100 / wonPer100Gold : 0;
@@ -128,9 +148,11 @@ export default function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100
           아이템 셀 목록은 두지 않는다 — 구성품·수량·확률은 상세에서 본다 */}
       <div className={`${styles.leftBox} ${az.leftBoxArt}`}>
         <div className={az.hero}>
+          {/* 1페이지 첫 칸의 최대 면적 이미지 = LCP 후보 — lazy 로 두면 요청이 레이아웃 확정 뒤로 밀린다 */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            loading="lazy"
+            loading="eager"
+            fetchPriority="high"
             decoding="async"
             src="/azena-blessing-art.webp"
             alt={AZENA_TITLE}
@@ -262,11 +284,30 @@ export default function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100
               <input
                 type="number"
                 className={styles.rateInput}
-                value={wonPer100Gold || ''}
-                onChange={(e) => setWonPer100Gold(parseInt(e.target.value) || 0)}
+                value={rateText}
+                onChange={(e) => handleRateInput(e.target.value)}
                 placeholder="15"
                 min={1}
+                step="any"
                 aria-label="100골드당 원화 환율"
+              />
+            </div>
+            <div className={styles.rateRow}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img loading="lazy" decoding="async" src="/blue.webp" alt="블루 크리스탈" className={styles.rateIconBlue} />
+              <span className={styles.rateFixed}>100</span>
+              <span className={styles.rateSep}>=</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.rateIconPad} />
+              <input
+                type="number"
+                className={styles.rateInput}
+                value={bcText}
+                onChange={(e) => handleBcInput(e.target.value)}
+                placeholder="16500"
+                min={1}
+                step="any"
+                aria-label="블루 크리스탈 100개당 골드"
               />
             </div>
           </div>
@@ -275,3 +316,5 @@ export default function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100
     </article>
   );
 }
+
+export default memo(AzenaBlessingGalleryCard);

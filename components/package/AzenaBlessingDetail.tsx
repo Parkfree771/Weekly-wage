@@ -35,6 +35,7 @@ import {
   getAzenaRefineBoxContents,
   type AzenaOptions,
 } from '@/lib/azena-blessing';
+import { fetchLatestPrices } from '@/lib/price-history-client';
 import AdBanner from '@/components/ads/AdBanner';
 import SideSquareAd from '@/components/package/SideSquareAd';
 import styles from '@/app/package/package.module.css';
@@ -213,12 +214,29 @@ function CountControl({
 
 export default function AzenaBlessingDetail() {
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
-  const [wonPer100Gold, setWonPer100Gold] = useState<number>(AZENA_DEFAULT_WON_PER_100_GOLD);
+  // 환율 입력은 문자열로 든다 — number state 면 "16." 같은 타이핑 중간 상태가 지워져 소수(16.5) 입력이 안 된다
+  const [rateText, setRateText] = useState<string>(String(AZENA_DEFAULT_WON_PER_100_GOLD));
+  // 블크 시세(100블크당 골드) — 환율과 양방향 동기화 (100블크 = 2750원 고정)
+  const [bcText, setBcText] = useState<string>(
+    String(Math.round(275000 / AZENA_DEFAULT_WON_PER_100_GOLD)),
+  );
+  const wonPer100Gold = parseFloat(rateText) || 0;
+
+  const handleRateInput = (v: string) => {
+    setRateText(v);
+    const w = parseFloat(v) || 0;
+    setBcText(w > 0 ? String(Math.round(275000 / w)) : '');
+  };
+  const handleBcInput = (v: string) => {
+    setBcText(v);
+    const b = parseFloat(v) || 0;
+    setRateText(b > 0 ? String(Math.round(2750000 / b) / 10) : '');
+  };
   const [options, setOptions] = useState<AzenaOptions>(AZENA_DEFAULT_OPTIONS);
 
   useEffect(() => {
-    fetch('/api/price-data/latest')
-      .then((res) => res.json())
+    // fetchLatestPrices 는 모듈 메모리 캐시가 있어 갤러리 ↔ 상세 왕복 시 재요청이 없다
+    fetchLatestPrices()
       .then((data) => setLatestPrices(data))
       .catch((err) => console.error('가격 데이터 로딩 실패:', err));
   }, []);
@@ -303,12 +321,33 @@ export default function AzenaBlessingDetail() {
                   <input
                     type="number"
                     className={styles.resultRateNumber}
-                    value={wonPer100Gold || ''}
-                    onChange={(e) => setWonPer100Gold(parseInt(e.target.value) || 0)}
+                    value={rateText}
+                    onChange={(e) => handleRateInput(e.target.value)}
                     placeholder="15"
                     min={1}
+                    step="any"
                     aria-label="100골드당 원화 환율"
                   />
+                </div>
+                <div className={styles.resultRateBcRow}>
+                  <div className={styles.resultRateInput}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img loading="lazy" decoding="async" src="/blue.webp" alt="블루 크리스탈" className={styles.resultRateIcon} />
+                    <span className={styles.resultRateFixed}>100</span>
+                    <span className={styles.resultRateSep}>=</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.resultRateIcon} />
+                    <input
+                      type="number"
+                      className={styles.resultRateNumber}
+                      value={bcText}
+                      onChange={(e) => handleBcInput(e.target.value)}
+                      placeholder="16500"
+                      min={1}
+                      step="any"
+                      aria-label="블루 크리스탈 100개당 골드"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

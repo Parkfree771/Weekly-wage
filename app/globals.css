@@ -1204,9 +1204,11 @@ html, body {
   opacity: 0.88;
 }
 
-/* 숙제 체크 버튼 위 불꽃 — 주 색상 배경에 묻히지 않게 밝기·채도 올리고 옅은 글로우 */
+/* 숙제 체크 버튼 위 불꽃 — 글로우는 애니메이션과 겹쳐 정신없어서 뺐다.
+   대신 색을 주황→골드 쪽으로 틀어 파란 버튼(--color-primary) 위에서
+   보색 대비로 또렷하게 보이게 한다 (불꽃 내부의 명암 그라데이션은 유지). */
 .navbar-fire-bright {
-  filter: brightness(1.35) saturate(1.5) drop-shadow(0 0 4px rgba(255, 200, 80, 0.9));
+  filter: hue-rotate(18deg) saturate(1.25) brightness(1.2);
 }
 
 [data-theme="dark"] .navbar-app-btn {

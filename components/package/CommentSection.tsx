@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { memo, useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdmin } from '@/lib/admin';
 import {
@@ -44,7 +44,9 @@ function tsToMs(ts: any): number {
   return new Date(ts).getTime();
 }
 
-export default function CommentSection({ postId, commentCount, onCommentCountChange }: Props) {
+// memo: 부모(상세)의 환율 타이핑·가챠 애니메이션 등 무관한 리렌더마다
+// 댓글 트리(최대 200개) JSX 를 다시 만드는 것을 막는다 — 콜백 prop 은 부모가 useCallback 으로 고정
+function CommentSection({ postId, commentCount, onCommentCountChange }: Props) {
   const { user, userProfile } = useAuth();
   const [comments, setComments] = useState<PackageComment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -407,3 +409,5 @@ export default function CommentSection({ postId, commentCount, onCommentCountCha
     </section>
   );
 }
+
+export default memo(CommentSection);

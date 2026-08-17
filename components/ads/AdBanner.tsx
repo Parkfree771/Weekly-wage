@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import AdPlaceholder from './AdPlaceholder';
 import AdUnit from './AdUnit';
 import AdFitUnit from './AdFitUnit';
+import useIsMobileViewport from './useIsMobileViewport';
 import {
   AD_PREVIEW, MOBILE_INCONTENT, ADFIT_ENABLED, ADFIT_UNITS,
   ADFIT_INCONTENT_UNITS, MOBILE_AD_ZOOM_COMPENSATE,
@@ -30,6 +31,7 @@ interface AdBannerProps {
 
 export default function AdBanner({ slot, className, placement = 'inContent', index }: AdBannerProps) {
   const pathname = usePathname();
+  const isMobile = useIsMobileViewport();
 
   // 모바일 인-콘텐츠 끔 → 모바일은 하단 앵커만 사용
   if (!MOBILE_INCONTENT) return null;
@@ -61,13 +63,21 @@ export default function AdBanner({ slot, className, placement = 'inContent', ind
     );
   }
 
+  // 이 컴포넌트의 실 광고는 전부 모바일 자리(d-md-none 또는 d-lg-none)다 — 데스크톱에서는
+  // CSS 로 숨겨질 뿐 마운트는 되어 스크립트 실행·광고 요청이 나가므로, 992px 미만이 확인될 때만
+  // 렌더한다. (992 는 사용처 중 가장 넓은 숨김 기준(d-lg-none)에 맞춘 값 — 더 좁으면 노출 손실)
+  if (!isMobile) return null;
+
   // 애드핏 우선 — 애드센스는 미승인 상태라 켜져 있어도 채워지지 않는다.
   // key={pathname}: 페이지 이동마다 새 인스턴스 → 애드핏 스크립트가 다시 스캔한다.
   if (ADFIT_ENABLED && adfit.unit) {
     // zoom 역보정 — 뷰포트가 0.8 로 축소 렌더되므로 그냥 두면 320×100 이 화면에서 256×80 이 된다.
     // 컨테이너에 1/0.8 을 걸어 실제 화면 px 를 선언한 규격 그대로 복원한다(데스크톱 레일과 동일 방식).
+    // minHeight: 광고가 채워지는 순간 0 → 규격 높이로 늘며 아래 콘텐츠를 밀던 CLS 를 없앤다
+    // (zoom 컨테이너 안이라 규격 px 그대로 적으면 화면 px 도 광고와 같이 보정된다).
+    // 미충전이면 그 높이만큼 빈 공간이 남는 트레이드오프 — 밀림 제거를 우선한 선택.
     return (
-      <div className={className} style={{ zoom: MOBILE_AD_ZOOM_COMPENSATE }}>
+      <div className={className} style={{ zoom: MOBILE_AD_ZOOM_COMPENSATE, minHeight: adfit.height }}>
         <AdFitUnit
           key={pathname}
           unit={adfit.unit}
