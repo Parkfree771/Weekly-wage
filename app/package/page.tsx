@@ -126,6 +126,10 @@ export default function PackageGalleryPage() {
     const b = parseFloat(v) || 0;
     setCommonRateText(b > 0 ? String(Math.round(2750000 / b) / 10) : '');
   };
+  // 두 입력칸은 항상 같은 폭을 쓴다 — 폭이 갈리면 위·아래 줄의 밑줄 길이와 열 정렬이 어긋난다.
+  // 블크 골드값은 환율이 낮을수록 자릿수가 늘어나서(16.5원 → 16666골드) 고정 폭이면 뒷자리가 잘린다.
+  const rateInputWidth = `calc(${Math.max(5, commonRateText.length, commonBcText.length)}ch + 0.5rem)`;
+
   // 화면 기준 정렬·필터 (Firestore 재조회 없음)
   const [view, setView] = useState<GalleryView>('createdAt');
   const sortBy: GallerySort = isSaleView(view) ? 'createdAt' : view;
@@ -159,6 +163,9 @@ export default function PackageGalleryPage() {
     if (cached) {
       setPage(n);
       setPosts(cached);
+      // loading 은 마운트마다 true 로 시작한다 — 캐시 히트로 조회를 건너뛸 때도 반드시 내려야
+      // 재진입 시 스켈레톤이 그대로 남는다
+      setLoading(false);
       return;
     }
 
@@ -309,6 +316,7 @@ export default function PackageGalleryPage() {
                   <input
                     type="number"
                     className={styles.commonRateInput}
+                    style={{ width: rateInputWidth }}
                     value={commonRateText}
                     onChange={(e) => handleCommonRateInput(e.target.value)}
                     min={RATE_MIN}
@@ -336,6 +344,7 @@ export default function PackageGalleryPage() {
                 <input
                   type="number"
                   className={styles.commonRateInput}
+                  style={{ width: rateInputWidth }}
                   value={commonBcText}
                   onChange={(e) => handleCommonBcInput(e.target.value)}
                   min={1}

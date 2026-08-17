@@ -145,9 +145,10 @@
 }
 
 /* 값이 비어 있어도 "여기 쓰는 칸"으로 읽혀야 한다 — 상자를 겹치는 대신 밑줄로 표시한다.
-   포커스하면 밑줄이 포인트색으로 바뀌어 지금 고치는 칸이 어디인지 보인다 */
+   포커스하면 밑줄이 포인트색으로 바뀌어 지금 고치는 칸이 어디인지 보인다.
+   width 는 page.tsx 에서 값의 자릿수에 맞춰 인라인으로 준다 (블크 골드값이 5~6자리까지 간다) */
 .commonRateInput {
-  width: 52px;
+  box-sizing: border-box;
   padding: 0.1rem 0.15rem;
   border: none;
   border-bottom: 2px solid var(--text-muted);
@@ -497,12 +498,14 @@
 
 @media (max-width: 576px) {
   /* 셋을 한 줄에 세운다 — [필터] [− 100 : N원 +] [+ 등록하기].
-     가운데만 1fr 이라 환율이 남는 폭을 먹고 좌우 버튼은 양 끝에 붙는다.
      환율 상자가 두세 줄로 높아져서 start 로 두면 좌우의 필터·등록하기가 위에 떠 보인다 —
      데스크톱과 같게 아래 끝선(카드 쪽)에 맞춘다.
-     414px 폭에 다 넣으려면 여유가 없어서 아래로 전부 한 단계씩 줄인다. */
+     414px 폭에 다 넣으려면 여유가 없어서 아래로 전부 한 단계씩 줄인다.
+     환율 칸은 max-content — 1fr 로 두면 자릿수가 늘어난 만큼 폭을 못 받고
+     .commonRateGroup 의 overflow:hidden 에 뒷자리가 잘린다.
+     대신 왼쪽 필터 칸을 minmax(0,auto) 로 열어 줄어드는 쪽을 그쪽이 맡는다. */
   .controls {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: minmax(0, auto) max-content auto;
     align-items: end;
     gap: 0.35rem;
   }
@@ -594,7 +597,6 @@
      세로: 32px 줄 안에 들어가도록 높이를 직접 고정한다. 기본값으로 두면
      글꼴 line-height(normal) + 상하 패딩이 32px 를 넘겨 줄 밖으로 삐져나온다. */
   .commonRateInput {
-    width: 52px;
     height: 24px;
     padding: 0 0.2rem;
     line-height: 1;

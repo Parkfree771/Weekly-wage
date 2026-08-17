@@ -62,3 +62,6 @@ nul
 
 # 내부 문서
 DATA_COLLECTION.md
+
+# Local Netlify folder
+.netlify
