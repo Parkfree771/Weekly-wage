@@ -15,6 +15,7 @@ import type { PackageItem, PackagePost, PackageType, PriceCurrency } from '@/typ
 import {
   type AddedItem,
   type ChoiceBoxCandidate,
+  type ProbBoxCandidate,
   type TemplateItem,
   TEMPLATE_ITEMS,
   TEMPLATES_MAP,
@@ -26,10 +27,11 @@ import {
   formatNumber,
   getItemUnitPrice,
   getFixedGemSelectUnitPrice,
+  getProbBoxExpectedGold,
   getUnitPrice,
   pickTopNCandidateIds,
 } from '@/lib/package-shared';
-import { fromDatetimeLocalValue, toDatetimeLocalValue } from '@/lib/package-sale';
+import { fromDatetimeLocalValue, toDatetimeLocalValue, fromSaleEndDateValue, toDateOnlyValue } from '@/lib/package-sale';
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import styles from '@/app/package/package.module.css';
 
@@ -43,6 +45,7 @@ export type PackageFormInitial = {
   blueCrystalPrice: number;
   officialGold: number;
   selectableCount: number;
+  bonusSelectableCount: number;
   isNewRelease: boolean;
   saleStartInput: string;
   saleEndInput: string;
@@ -64,6 +67,7 @@ export type PackageFormSubmitData = {
   bonusItems: PackageItem[];
   goldPerWon: number;
   selectableCount: number;
+  bonusSelectableCount: number;
   isNewRelease: boolean;
   saleStartAt: Date | null;
   saleEndAt: Date | null;
@@ -134,6 +138,17 @@ function mapOneItem(item: PackageItem, ctx: MapCtx): AddedItem | null {
       choiceBoxSelectedIds: item.choiceBoxSelectedIds || [],
     };
   }
+  // Prob box (등록자가 담은 아이템·확률로 기댓값을 계산하는 상자)
+  if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
+    return {
+      id: `loaded-${n}-custom-prob-box`,
+      templateId: 'custom-prob-box',
+      quantity: item.quantity || 1,
+      isProbBox: true,
+      probBoxName: item.name,
+      probBoxCandidates: item.probBoxCandidates,
+    };
+  }
   // Choice type (has choiceOptions)
   if (item.choiceOptions && item.choiceOptions.length > 0) {
     const template = TEMPLATE_ITEMS.find(
@@ -198,9 +213,10 @@ export function postToFormInitial(post: PackagePost): PackageFormInitial {
     blueCrystalPrice: isBc ? post.blueCrystalPrice! : 0,
     officialGold: post.goldPerWon && post.goldPerWon > 0 ? Math.round(post.goldPerWon * 2750) : 0,
     selectableCount: post.selectableCount && post.selectableCount > 0 ? post.selectableCount : 0,
+    bonusSelectableCount: post.bonusSelectableCount && post.bonusSelectableCount > 0 ? post.bonusSelectableCount : 0,
     isNewRelease: !!post.isNewRelease,
     saleStartInput: toDatetimeLocalValue(post.saleStartAt),
-    saleEndInput: toDatetimeLocalValue(post.saleEndAt),
+    saleEndInput: toDateOnlyValue(post.saleEndAt),
     saleClosed: post.saleClosed === true,
     addedItems: [...main, ...bonus],
     gachaProbabilities: post.packageType === '가챠' ? probs : {},
@@ -238,6 +254,8 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   // 공식 거래: 2750 RC(=2750원) = 100 BC = ?골드 (RC/BC 고정)
   const [officialGold, setOfficialGold] = useState<number>(initial?.officialGold ?? 0);
   const [selectableCount, setSelectableCount] = useState<number>(initial?.selectableCount ?? 0);
+  // '3+보너스' 전용: 보너스 구성품 중 N개 선택 (0 = 전체 지급)
+  const [bonusSelectableCount, setBonusSelectableCount] = useState<number>(initial?.bonusSelectableCount ?? 0);
   const [isNewRelease, setIsNewRelease] = useState<boolean>(initial?.isNewRelease ?? false); // 갤러리 NEW 배지 (30일)
   // 판매 기간 (선택 — 상시 판매 패키지는 비워두면 된다)
   const [saleStartInput, setSaleStartInput] = useState<string>(initial?.saleStartInput ?? '');
@@ -308,6 +326,10 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
       newItem.choiceBoxCandidates = [];
       newItem.choiceBoxPickCount = 1;
       newItem.choiceBoxSelectedIds = [];
+    }
+    if (template.type === 'probBox') {
+      newItem.isProbBox = true;
+      newItem.probBoxCandidates = [];
     }
     setAddedItems((prev) => [...prev, newItem]);
   };
@@ -385,6 +407,76 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
           choiceBoxSelectedIds: pickTopNCandidateIds(candidates, a.choiceBoxPickCount || 1, latestPrices),
         };
       }),
+    );
+  };
+
+  // ── 확률 상자 핸들러 ──
+  const probBoxCandidateCounterRef = useRef(0);
+
+  const handleProbBoxNameChange = (itemId: string, name: string) => {
+    setAddedItems((prev) =>
+      prev.map((a) => (a.id === itemId ? { ...a, probBoxName: name } : a)),
+    );
+  };
+
+  const handleProbBoxAddCandidate = (itemId: string, candidateTemplateId: string) => {
+    const candidateTemplate = TEMPLATES_MAP[candidateTemplateId];
+    if (!candidateTemplate || !candidateTemplate.itemId) return;
+    probBoxCandidateCounterRef.current += 1;
+    const newCandidate: ProbBoxCandidate = {
+      id: `pcand_${probBoxCandidateCounterRef.current}`,
+      name: candidateTemplate.name,
+      icon: candidateTemplate.icon,
+      itemId: candidateTemplate.itemId,
+      quantity: 1,
+      probability: 0,
+    };
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId
+          ? { ...a, probBoxCandidates: [...(a.probBoxCandidates || []), newCandidate] }
+          : a,
+      ),
+    );
+  };
+
+  const handleProbBoxRemoveCandidate = (itemId: string, candidateId: string) => {
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId
+          ? { ...a, probBoxCandidates: (a.probBoxCandidates || []).filter((c) => c.id !== candidateId) }
+          : a,
+      ),
+    );
+  };
+
+  const handleProbBoxCandidateQuantityChange = (itemId: string, candidateId: string, qty: number) => {
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId
+          ? {
+              ...a,
+              probBoxCandidates: (a.probBoxCandidates || []).map((c) =>
+                c.id === candidateId ? { ...c, quantity: Math.max(1, qty) } : c,
+              ),
+            }
+          : a,
+      ),
+    );
+  };
+
+  const handleProbBoxCandidateProbChange = (itemId: string, candidateId: string, prob: number) => {
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId
+          ? {
+              ...a,
+              probBoxCandidates: (a.probBoxCandidates || []).map((c) =>
+                c.id === candidateId ? { ...c, probability: Math.min(100, Math.max(0, prob)) } : c,
+              ),
+            }
+          : a,
+      ),
     );
   };
 
@@ -518,11 +610,19 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     });
   }, [addedItems, latestPrices, goldPerWon, officialGold]);
 
-  // selectableCount > 0일 때 가장 비싼 N개 자동 선택 (보너스 구성품은 N선택 대상에서 제외, 항상 포함)
+  // selectableCount > 0일 때 가장 비싼 N개 자동 선택.
+  // 보너스 구성품은 확정 구성품과 별도로, bonusSelectableCount > 0이면 보너스끼리 최고가 N개만 선택된다.
   useEffect(() => {
     const mainEntries = addedItems.map((a, idx) => ({ a, idx })).filter(({ a }) => !a.isBonus);
+    const bonusEntries = addedItems.map((a, idx) => ({ a, idx })).filter(({ a }) => a.isBonus);
     const newChecked = new Set<string>();
-    addedItems.forEach((a) => { if (a.isBonus) newChecked.add(a.id); });
+    if (bonusSelectableCount <= 0 || bonusEntries.length === 0) {
+      bonusEntries.forEach(({ a }) => newChecked.add(a.id));
+    } else {
+      const withValue = bonusEntries.map(({ a, idx }) => ({ id: a.id, value: itemSubtotals[idx] || 0 }));
+      withValue.sort((x, y) => y.value - x.value);
+      withValue.slice(0, bonusSelectableCount).forEach((v) => newChecked.add(v.id));
+    }
     if (selectableCount <= 0 || mainEntries.length === 0) {
       mainEntries.forEach(({ a }) => newChecked.add(a.id));
     } else {
@@ -535,7 +635,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
       if (prev.size === newChecked.size && [...newChecked].every((id) => prev.has(id))) return prev;
       return newChecked;
     });
-  }, [addedItems, itemSubtotals, selectableCount]);
+  }, [addedItems, itemSubtotals, selectableCount, bonusSelectableCount]);
 
   // 총 골드 계산 (확정 구성품은 체크된 것만, 순수 1개 구매 기준 — 보너스 미반영)
   const totalGoldValue = useMemo(() => {
@@ -547,10 +647,13 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   }, [addedItems, itemSubtotals, selectableCount, checkedItemIds]);
 
   const bonusGoldValue = useMemo(() => {
-    return addedItems.reduce((sum, added, idx) => (
-      added.isBonus ? sum + (itemSubtotals[idx] || 0) : sum
-    ), 0);
-  }, [addedItems, itemSubtotals]);
+    return addedItems.reduce((sum, added, idx) => {
+      if (!added.isBonus) return sum;
+      // 보너스 택N: 선택된(최고가 N개) 보너스만 합산
+      if (bonusSelectableCount > 0 && !checkedItemIds.has(added.id)) return sum;
+      return sum + (itemSubtotals[idx] || 0);
+    }, 0);
+  }, [addedItems, itemSubtotals, bonusSelectableCount, checkedItemIds]);
 
   const multiplier = packageType === '3+1' ? 4 / 3 : packageType === '2+1' ? 3 / 2 : 1;
   const adjustedValue = totalGoldValue * multiplier;
@@ -580,7 +683,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
       const cSubtotal = (added.customGoldPerUnit || 0) * added.quantity;
       const isChecked = checkedItemIds.has(added.id);
       return (
-        <div key={added.id} className={`${styles.packageBoxItem} ${!added.isBonus && selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
+        <div key={added.id} className={`${styles.packageBoxItem} ${(added.isBonus ? bonusSelectableCount > 0 : selectableCount > 0) && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
           <div className={styles.customItemRow}>
             <input type="text" className={styles.customNameInput}
               value={added.customName || ''}
@@ -626,7 +729,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     const subtotal = unitPrice * qty * inner;
     const isChecked = checkedItemIds.has(added.id);
     return (
-      <div key={added.id} className={`${styles.packageBoxItem} ${!added.isBonus && selectableCount > 0 && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
+      <div key={added.id} className={`${styles.packageBoxItem} ${(added.isBonus ? bonusSelectableCount > 0 : selectableCount > 0) && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
         <div className={styles.packageBoxItemMain}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img loading="lazy" decoding="async" src={template.icon} alt={template.name}
@@ -637,7 +740,9 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
             }}
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           <span className={styles.packageBoxItemName}>
-            {template.type === 'choiceBox' ? (added.choiceBoxName?.trim() || template.name) : template.name}
+            {template.type === 'choiceBox' ? (added.choiceBoxName?.trim() || template.name)
+              : template.type === 'probBox' ? (added.probBoxName?.trim() || template.name)
+              : template.name}
           </span>
           {template.type === 'gold' ? (
             <input type="number" className={styles.quantityInput}
@@ -801,6 +906,64 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
             </div>
           </div>
         )}
+        {template.type === 'probBox' && (
+          <div className={styles.bundleContentsRow}>
+            <div className={styles.innerQuantityRow}>
+              <span className={styles.innerQuantityLabel}>상자 이름</span>
+              <input type="text" className={styles.customNameInput}
+                value={added.probBoxName ?? ''}
+                onChange={(e) => handleProbBoxNameChange(added.id, e.target.value)}
+                placeholder={template.name} maxLength={30} />
+            </div>
+            {(added.probBoxCandidates || []).map((cand) => {
+              const candUnit = cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0);
+              return (
+                <div key={cand.id} className={styles.innerQuantityRow}>
+                  {cand.icon && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} style={{ width: 20, height: 20 }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  )}
+                  <span className={styles.innerQuantityLabel}>{cand.name}</span>
+                  <input type="number" className={styles.quantityInput}
+                    value={cand.quantity}
+                    onChange={(e) => handleProbBoxCandidateQuantityChange(added.id, cand.id, parseInt(e.target.value) || 1)}
+                    min={1} style={{ width: '60px' }} title="개수" />
+                  <span className={styles.innerQuantityLabel}>개</span>
+                  <input type="number" className={styles.gachaProbInput}
+                    value={cand.probability || ''}
+                    onChange={(e) => handleProbBoxCandidateProbChange(added.id, cand.id, parseFloat(e.target.value) || 0)}
+                    placeholder="%" min={0} max={100} step={0.1} title="등장 확률 (%)" />
+                  <span className={styles.gachaProbUnit}>%</span>
+                  <span className={styles.innerQuantityLabel}>{formatNumber(candUnit * cand.quantity)}G</span>
+                  <button type="button" className={styles.removeItemBtn}
+                    onClick={() => handleProbBoxRemoveCandidate(added.id, cand.id)} title="아이템 제거">&times;</button>
+                </div>
+              );
+            })}
+            {(added.probBoxCandidates || []).length > 0 && (() => {
+              const probSum = (added.probBoxCandidates || []).reduce((s, c) => s + (c.probability || 0), 0);
+              const isOk = Math.abs(probSum - 100) < 0.01;
+              return (
+                <div className={`${styles.gachaProbSum} ${isOk ? styles.gachaProbSumOk : styles.gachaProbSumError}`}>
+                  확률 합계: {probSum.toFixed(1)}% {isOk ? `· 기댓값 ${formatNumber(getProbBoxExpectedGold(added.probBoxCandidates, latestPrices))}G` : '(100%가 되어야 합니다)'}
+                </div>
+              );
+            })()}
+            <div className={styles.choiceDropdown}>
+              <select className={styles.choiceSelect} value=""
+                onChange={(e) => {
+                  if (e.target.value) handleProbBoxAddCandidate(added.id, e.target.value);
+                  e.target.value = '';
+                }}>
+                <option value="">+ 확률 아이템 추가</option>
+                {TEMPLATE_ITEMS.filter((t) => t.type === 'simple').map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
         {template.type === 'fixed' && (template.fixedGold ?? 0) > 0 &&
           !DYNAMIC_TICKET_IDS.has(template.id) && (
           <div className={styles.fixedPriceBadge}>{formatNumber(template.fixedGold || 0)}G</div>
@@ -822,7 +985,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     if (goldPerWon <= 0) errors.rate = '환율을 입력해주세요.';
     // 판매 기간은 선택 입력 — 둘 다 넣었을 때만 순서를 검사한다
     const saleStartDate = fromDatetimeLocalValue(saleStartInput);
-    const saleEndDate = fromDatetimeLocalValue(saleEndInput);
+    const saleEndDate = fromSaleEndDateValue(saleEndInput); // 날짜만 받고 시각은 오전 6시(KST) 고정
     if (saleStartDate && saleEndDate && saleEndDate.getTime() <= saleStartDate.getTime()) {
       errors.salePeriod = '판매 종료 일시는 시작 일시보다 뒤여야 합니다.';
     }
@@ -831,6 +994,21 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
       const probSum = addedItems.filter((a) => !a.isBonus)
         .reduce((s, a) => s + (gachaProbabilities[a.id] || 0), 0);
       if (Math.abs(probSum - 100) >= 0.1) errors.prob = '확률 합계가 100%여야 합니다.';
+    }
+    // 확률 상자: 아이템이 1개 이상 담겨 있고 확률 합계가 100%여야 한다
+    for (const a of addedItems) {
+      if (!a.isProbBox) continue;
+      const cands = a.probBoxCandidates || [];
+      const boxName = a.probBoxName?.trim() || '확률 상자';
+      if (cands.length === 0) {
+        errors.probBox = `${boxName}에 아이템을 1개 이상 담아주세요.`;
+        break;
+      }
+      const sum = cands.reduce((s, c) => s + (c.probability || 0), 0);
+      if (Math.abs(sum - 100) >= 0.1) {
+        errors.probBox = `${boxName}의 확률 합계가 100%여야 합니다. (현재 ${sum.toFixed(1)}%)`;
+        break;
+      }
     }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -955,6 +1133,14 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               choiceBoxPickCount: added.choiceBoxPickCount || 1,
               choiceBoxSelectedIds: added.choiceBoxSelectedIds || [],
             };
+          case 'probBox':
+            return {
+              itemId: `probbox_${added.id}`,
+              name: added.probBoxName?.trim() || template.name,
+              quantity: added.quantity || 1,
+              icon: template.icon,
+              probBoxCandidates: added.probBoxCandidates || [],
+            };
           default:
             return null;
         }
@@ -985,6 +1171,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
         bonusItems,
         goldPerWon,
         selectableCount,
+        bonusSelectableCount: packageType === '3+보너스' ? bonusSelectableCount : 0,
         isNewRelease,
         saleStartAt: saleStartDate,
         saleEndAt: saleEndDate,
@@ -1022,7 +1209,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                   {addedItems.filter((a) => !a.isBonus).map(renderAddedRow)}
                   {packageType === '3+보너스' && addedItems.some((a) => a.isBonus) && (
                     <div style={{ padding: '0.6rem 0.2rem 0.3rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', borderTop: '1px dashed var(--border-color)', marginTop: '0.3rem' }}>
-                      보너스 구성품 (3회 구매 시 1회 지급)
+                      보너스 구성품 (3회 구매 시 1회 지급{bonusSelectableCount > 0 ? ` · ${bonusSelectableCount}개 선택` : ''})
                     </div>
                   )}
                   {packageType === '3+보너스' && addedItems.filter((a) => a.isBonus).map(renderAddedRow)}
@@ -1081,6 +1268,22 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                 </div>
               </div>
               )}
+              {packageType === '3+보너스' && (
+              <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
+                <label className={styles.formLabel} htmlFor="pkg-bonus-selectable">보너스 N선택 (0=전체)</label>
+                <div className={styles.selectableCountRow}>
+                  <input id="pkg-bonus-selectable" type="number" className={styles.selectableCountInput}
+                    value={bonusSelectableCount || ''}
+                    onChange={(e) => setBonusSelectableCount(parseInt(e.target.value) || 0)}
+                    placeholder="0" min={0} />
+                  {bonusSelectableCount > 0 && (
+                    <span className={styles.selectableCountHint}>
+                      보너스 {addedItems.filter((a) => a.isBonus).length}개 중 {bonusSelectableCount}개 선택
+                    </span>
+                  )}
+                </div>
+              </div>
+              )}
               <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
                 <label className={styles.formLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', marginBottom: 0 }}>
                   <input type="checkbox" checked={isNewRelease}
@@ -1096,13 +1299,13 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                     onChange={(e) => { setSaleStartInput(e.target.value); if (fieldErrors.salePeriod) setFieldErrors((p) => { const n = { ...p }; delete n.salePeriod; return n; }); }}
                     aria-label="판매 시작 일시" />
                   <span className={styles.salePeriodSep}>~</span>
-                  <input type="datetime-local" className={styles.salePeriodInput}
+                  <input type="date" className={styles.salePeriodInput}
                     value={saleEndInput}
                     onChange={(e) => { setSaleEndInput(e.target.value); if (fieldErrors.salePeriod) setFieldErrors((p) => { const n = { ...p }; delete n.salePeriod; return n; }); }}
-                    aria-label="판매 종료 일시" />
+                    aria-label="판매 종료일 (오전 6시 종료)" />
                 </div>
                 <p className={styles.salePeriodHint}>
-                  종료 일시가 지나면 갤러리에서 자동으로 판매 종료로 표시됩니다. 상시 판매 패키지는 비워두세요.
+                  종료는 날짜만 고르면 그 날 오전 6시로 저장됩니다. 지나면 갤러리에서 자동으로 판매 종료로 표시되며, 상시 판매 패키지는 비워두세요.
                 </p>
                 {isEdit && (
                   <label className={styles.saleClosedToggle}>

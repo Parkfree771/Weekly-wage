@@ -191,14 +191,25 @@
   color: #f87171;
 }
 
-/* 신규 출시 NEW 배지 — 등록일 30일 이내 + isNewRelease 체크된 글만 */
+/* 신규 출시 NEW — 제목 앞에 오는 강조 배지 (등록일 30일 이내 + isNewRelease 체크된 글만).
+   솔리드 그라데이션이라 라이트/다크 공용. 블러 그림자는 뿌옇게 번져 보여서 뺐다. */
 .badgeNew {
-  background: rgba(16, 185, 129, 0.1);
-  color: #059669;
+  flex-shrink: 0;
+  padding: 0.22rem 0.6rem 0.24rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  border-radius: 6px;
 }
 
-:global([data-theme="dark"]) .badgeNew {
-  color: #34d399;
+/* 배지 줄 — 계산 결과 박스 최상단 (제목 줄에서 옮겨온 타입·N선택 배지) */
+.rightBadgeRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3rem;
 }
 
 /* 가챠 확률 뱃지 */
@@ -925,6 +936,12 @@
   .cardBadge {
     font-size: 0.55rem;
     padding: 0.1rem 0.35rem;
+  }
+
+  /* NEW 배지: 축소 */
+  .badgeNew {
+    font-size: 0.62rem;
+    padding: 0.16rem 0.45rem 0.18rem;
   }
 
   /* 한 줄 5개 — 균등 열이라 아이템이 2개여도 셀 크기는 동일(늘어나지 않음) */

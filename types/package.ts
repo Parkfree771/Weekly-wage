@@ -20,6 +20,8 @@ export type PackageItem = {
   choiceBoxCandidates?: { id: string; name: string; icon?: string; itemId?: string; goldPerUnit?: number; quantity: number }[]; // goldPerUnit: itemId 없는 커스텀 후보용
   choiceBoxPickCount?: number; // 택N
   choiceBoxSelectedIds?: string[]; // 실제 가치 계산에 포함되는 후보 id들 (길이 = pickCount)
+  // 확률 상자 (등록자가 담은 아이템·확률로 기댓값 = Σ(시세 × 수량 × 확률/100) 을 계산하는 상자)
+  probBoxCandidates?: { id: string; name: string; icon?: string; itemId?: string; goldPerUnit?: number; quantity: number; probability: number }[];
 };
 
 // ─── 게시물 ───
@@ -48,6 +50,7 @@ export type PackagePost = {
   selectableCount?: number; // 0 또는 미설정 = 전체, N = N개 선택
   isNewRelease?: boolean; // 신규 출시 패키지 — 갤러리 카드 NEW 배지 (등록일로부터 30일 지나면 자동 소멸)
   bonusItems?: PackageItem[]; // '3+보너스' 전용: 3개 구매 시 1회만 지급되는 특별 보상
+  bonusSelectableCount?: number; // '3+보너스' 전용: 보너스 구성품 중 N개 선택 (0 또는 미설정 = 전체 지급)
 
   // 환율 (등록 시 입력값)
   goldPerWon?: number;

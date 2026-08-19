@@ -35,6 +35,7 @@ export default function PackageRegisterPage() {
       ...(data.saleStartAt ? { saleStartAt: data.saleStartAt } : {}),
       ...(data.saleEndAt ? { saleEndAt: data.saleEndAt } : {}),
       ...(data.bonusItems.length > 0 ? { bonusItems: data.bonusItems } : {}),
+      ...(data.bonusSelectableCount > 0 ? { bonusSelectableCount: data.bonusSelectableCount } : {}),
     };
 
     // package-service(firestore ~250KB)는 제출 시점에만 필요하다 — 정적 import 하면 첫 로드 청크에 실린다

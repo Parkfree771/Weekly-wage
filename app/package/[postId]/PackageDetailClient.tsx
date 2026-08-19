@@ -27,6 +27,7 @@ import {
   getChoiceBoxGold,
   getChoiceBoxBestGold,
   getChoiceBestValue,
+  getProbBoxExpectedGold,
   pickTopNCandidateIds,
   calculateGachaItemGold,
   groupMultiResults,
@@ -171,6 +172,9 @@ function getPackageItemGold(
     const selected = selectedChoiceBoxIds ?? item.choiceBoxSelectedIds;
     return getChoiceBoxGold(item.choiceBoxCandidates, selected, prices) * item.quantity;
   }
+  if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
+    return getProbBoxExpectedGold(item.probBoxCandidates, prices) * item.quantity;
+  }
   if (item.itemId === 'fixed_hell-legendary-ticket')
     return (bcRate > 0 ? calcTicketAverage('hell', 7, prices, bcRate) : (item.goldOverride || 0)) * item.quantity;
   if (item.itemId === 'fixed_hell-heroic-ticket')
@@ -235,6 +239,8 @@ export default function PackageDetailPage({ initialPost }: Props) {
   const [bonusChoiceSelections, setBonusChoiceSelections] = useState<Record<number, string>>({});
   const [bonusChoiceBoxSelections, setBonusChoiceBoxSelections] = useState<Record<number, string[]>>({});
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
+  // '3+보너스' 보너스 택N: 뷰어가 고른 보너스 구성품 (bonusSelectableCount > 0 일 때만 사용)
+  const [bonusCheckedItems, setBonusCheckedItems] = useState<Record<number, boolean>>({});
   // 환율 입력은 문자열로 든다 — number state 면 "16." 같은 타이핑 중간 상태가 지워져 소수(16.5) 입력이 안 된다
   const [detailRateText, setDetailRateText] = useState<string>('');
   // 블크 시세(100블크당 골드) — 환율과 양방향 동기화 (100블크 = 2750원 고정이라 한쪽이 정해지면 다른 쪽도 정해진다)
@@ -308,6 +314,9 @@ export default function PackageDetailPage({ initialPost }: Props) {
           });
           const bonusInitial: Record<number, string> = {};
           const bonusInitialChoiceBox: Record<number, string[]> = {};
+          const bonusInitialChecked: Record<number, boolean> = {};
+          // 보너스 택N: 시세 로드 후 재계산 effect가 최고가 N개를 확정한다 (메인 N선택과 동일한 원칙)
+          const bonusSelectable = !!(data.bonusSelectableCount && data.bonusSelectableCount > 0);
           (data.bonusItems || []).forEach((item, idx) => {
             if (item.choiceOptions && item.choiceOptions.length > 0) {
               bonusInitial[idx] = item.itemId;
@@ -317,6 +326,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                 ? item.choiceBoxSelectedIds
                 : item.choiceBoxCandidates.slice(0, item.choiceBoxPickCount || 1).map((c) => c.id);
             }
+            bonusInitialChecked[idx] = !bonusSelectable;
           });
           // N선택: 시세 로드 후 재계산 effect가 최고가 N개를 확정 (시세 없는 시점의 goldOverride 기반 오선택 방지)
           if (data.selectableCount && data.selectableCount > 0) {
@@ -329,6 +339,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
           setBonusChoiceSelections(bonusInitial);
           setBonusChoiceBoxSelections(bonusInitialChoiceBox);
           setCheckedItems(initialChecked);
+          setBonusCheckedItems(bonusInitialChecked);
           if (data.goldPerWon && data.goldPerWon > 0) {
             const won = Math.round(1000 / data.goldPerWon) / 10;
             setDetailRateText(String(won));
@@ -411,6 +422,10 @@ export default function PackageDetailPage({ initialPost }: Props) {
         const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
         return { idx, value: getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity };
       }
+      // 확률 상자: 현재 시세 기준 기댓값
+      if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
+        return { idx, value: getProbBoxExpectedGold(item.probBoxCandidates, latestPrices) * item.quantity };
+      }
       if (item.goldOverride != null) {
         // 티켓(지옥 보상 평균)·가공 젬·크리스탈 전부 표시 소계와 동일한 동적 단가로 비교
         return { idx, value: getCrystalAdjustedUnit(item) * item.quantity };
@@ -432,6 +447,25 @@ export default function PackageDetailPage({ initialPost }: Props) {
       newChecked[v.idx] = true;
     });
     setCheckedItems(newChecked);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestPrices, post?.id]);
+
+  // 시세 로드 후 보너스 택N 재계산 — 최고가 N개를 기본 선택 (이후 뷰어가 직접 변경 가능)
+  useEffect(() => {
+    if (!post || !post.bonusSelectableCount || post.bonusSelectableCount <= 0) return;
+    if (!post.bonusItems || post.bonusItems.length === 0) return;
+    if (Object.keys(latestPrices).length === 0) return;
+    const withValue = post.bonusItems.map((item, idx) => ({
+      idx,
+      value: getPackageItemGold(item, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections[idx], bonusChoiceBoxSelections[idx]),
+    }));
+    withValue.sort((a, b) => b.value - a.value);
+    const newChecked: Record<number, boolean> = {};
+    post.bonusItems.forEach((_, idx) => { newChecked[idx] = false; });
+    withValue.slice(0, post.bonusSelectableCount).forEach((v) => {
+      newChecked[v.idx] = true;
+    });
+    setBonusCheckedItems(newChecked);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestPrices, post?.id]);
 
@@ -716,6 +750,31 @@ export default function PackageDetailPage({ initialPost }: Props) {
     });
   };
 
+  // 보너스 택N 토글 — N개 초과 선택 시 체크된 것 중 가장 싼 보너스를 밀어낸다 (메인 N선택과 동일)
+  const handleBonusToggleCheck = (idx: number) => {
+    const sc = post?.bonusSelectableCount || 0;
+    if (sc <= 0) return;
+    setBonusCheckedItems((prev) => {
+      const isChecked = prev[idx] !== false;
+      if (isChecked) {
+        return { ...prev, [idx]: false };
+      }
+      const checkedCount = Object.values(prev).filter((v) => v !== false).length;
+      if (checkedCount >= sc) {
+        let minIdx = -1;
+        let minValue = Infinity;
+        Object.entries(prev).forEach(([i, checked]) => {
+          if (checked !== false) {
+            const val = bonusItemSubtotals[+i] || 0;
+            if (val < minValue) { minValue = val; minIdx = +i; }
+          }
+        });
+        if (minIdx >= 0) return { ...prev, [minIdx]: false, [idx]: true };
+      }
+      return { ...prev, [idx]: true };
+    });
+  };
+
   const getEffectiveItem = (item: PackageItem, idx: number) => {
     if (!item.choiceOptions || !item.choiceOptions.length) return item;
     const selectedId = choiceSelections[idx] || item.itemId;
@@ -801,6 +860,13 @@ export default function PackageDetailPage({ initialPost }: Props) {
         if (checkedItems[idx] !== false) total += sub;
         return;
       }
+      // 확률 상자: 시세 × 확률 기댓값
+      if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
+        const sub = getProbBoxExpectedGold(item.probBoxCandidates, latestPrices) * item.quantity;
+        subtotals.push(sub);
+        if (checkedItems[idx] !== false) total += sub;
+        return;
+      }
       let effectiveItemId = item.itemId;
       if (item.choiceOptions && item.choiceOptions.length > 0) {
         effectiveItemId = choiceSelections[idx] || item.itemId;
@@ -832,8 +898,13 @@ export default function PackageDetailPage({ initialPost }: Props) {
     const subtotals = post.bonusItems.map((item, idx) =>
       getPackageItemGold(item, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections[idx], bonusChoiceBoxSelections[idx]),
     );
-    return { bonusTotalGold: subtotals.reduce((s, v) => s + v, 0), bonusItemSubtotals: subtotals };
-  }, [post, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections, bonusChoiceBoxSelections]);
+    // 보너스 택N: 뷰어가 체크한 보너스만 합산 (미설정이면 전체)
+    const bonusSelectable = (post.bonusSelectableCount || 0) > 0;
+    const total = subtotals.reduce((s, v, idx) => (
+      bonusSelectable && bonusCheckedItems[idx] === false ? s : s + v
+    ), 0);
+    return { bonusTotalGold: total, bonusItemSubtotals: subtotals };
+  }, [post, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections, bonusChoiceBoxSelections, bonusCheckedItems]);
 
   if (!post) {
     return (
@@ -1408,6 +1479,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                 const isRiftRun = !!hasChoices && isRiftRunId(item.choiceOptions![0].itemId);
                 const hasChoiceBox = !!(item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0);
                 const choiceBoxSelected = choiceBoxSelections[idx] ?? item.choiceBoxSelectedIds ?? [];
+                const hasProbBox = !!(item.probBoxCandidates && item.probBoxCandidates.length > 0);
                 const effectiveQty = getEffectiveQty(item, choiceSelections[idx]);
 
                 const isChecked = checkedItems[idx] !== false;
@@ -1415,7 +1487,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                 return (
                   <div
                     key={idx}
-                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
+                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox) ? styles.itemCardChoice : ''} ${(hasChoiceBox || hasProbBox) ? styles.itemCardFull : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
                     title={isRiftRun ? riftRunTooltip(effectiveItemId) : undefined}
                   >
                     <label className={styles.itemCardCheckLabel} onClick={(e) => e.stopPropagation()}>
@@ -1460,6 +1532,8 @@ export default function PackageDetailPage({ initialPost }: Props) {
                           ))
                         : hasChoiceBox
                         ? `${item.name} (최대 ${item.choiceBoxPickCount || 1}개 선택)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
+                        : hasProbBox
+                        ? `${item.name} (확률 기댓값)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
                         : item.icon === FIXED_GEM_SELECT_ICON && hasChoices
                         ? `고정형 영웅 젬 선택 상자 ×${effectiveQty.toLocaleString()}`
                         : `${shortenItemName(effective.name)} ×${effectiveQty.toLocaleString()}`}
@@ -1524,12 +1598,34 @@ export default function PackageDetailPage({ initialPost }: Props) {
                       </div>
                     )}
 
+                    {hasProbBox && (
+                      <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
+                        {item.probBoxCandidates!.map((cand) => {
+                          const candPrice = (cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0)) * cand.quantity;
+                          return (
+                            <div key={cand.id} className={styles.itemCardChoiceBtn}>
+                              {cand.icon && (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} className={styles.itemCardChoiceBtnIcon} />
+                              )}
+                              <span>{cand.name} ×{cand.quantity} · {cand.probability}% ({formatNumber(candPrice)}G)</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
                     <div className={styles.itemCardBottom}>
-                      {!hasChoiceBox && (
+                      {!hasChoiceBox && !hasProbBox && (
                         <div className={styles.itemCardPriceLine}>
                           {`${formatNumber(unitPrice)}G`}
                           {' x '}
                           {effectiveQty}개
+                        </div>
+                      )}
+                      {hasProbBox && (
+                        <div className={styles.itemCardPriceLine}>
+                          기댓값 = Σ(시세 × 개수 × 확률)
                         </div>
                       )}
                       <div className={styles.itemCardSubtotal}>
@@ -1619,7 +1715,9 @@ export default function PackageDetailPage({ initialPost }: Props) {
           <section className={`${styles.itemCardsSection} ${styles.detailCard}`}>
             <h2 className={styles.detailCardHeader}>
               보너스 구성품 ({post.bonusItems.length}종)
-              <span className={styles.detailCardHeaderNote}>3회 구매 시 1회 지급</span>
+              <span className={styles.detailCardHeaderNote}>
+                3회 구매 시 1회 지급{(post.bonusSelectableCount || 0) > 0 ? ` · ${post.bonusSelectableCount}개 선택` : ''}
+              </span>
             </h2>
             <div className={styles.itemCardsGrid}>
               {post.bonusItems.map((item, idx) => {
@@ -1627,19 +1725,39 @@ export default function PackageDetailPage({ initialPost }: Props) {
                 const isRiftRun = hasChoices && isRiftRunId(item.choiceOptions![0].itemId);
                 const hasChoiceBox = !!(item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0);
                 const choiceBoxSelected = bonusChoiceBoxSelections[idx] ?? item.choiceBoxSelectedIds ?? [];
+                const hasProbBox = !!(item.probBoxCandidates && item.probBoxCandidates.length > 0);
                 const effectiveChoiceId = bonusChoiceSelections[idx] || item.itemId;
                 const effectiveChoice = hasChoices
                   ? item.choiceOptions!.find((c) => c.itemId === effectiveChoiceId)
                   : null;
                 const gold = bonusItemSubtotals[idx] || 0;
                 const effectiveQty = item.quantity * (effectiveChoice?.quantity ?? 1);
+                const bonusSelectable = (post.bonusSelectableCount || 0) > 0;
+                const isBonusChecked = bonusCheckedItems[idx] !== false;
 
                 return (
                   <div
                     key={idx}
-                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''}`}
+                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox) ? styles.itemCardChoice : ''} ${(hasChoiceBox || hasProbBox) ? styles.itemCardFull : ''} ${bonusSelectable && !isBonusChecked ? styles.itemCardUnchecked : ''}`}
                     title={isRiftRun ? riftRunTooltip(effectiveChoiceId) : undefined}
                   >
+                    {bonusSelectable && (
+                      <label className={styles.itemCardCheckLabel} onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isBonusChecked}
+                          onChange={() => handleBonusToggleCheck(idx)}
+                          className={styles.itemCardCheckInput}
+                        />
+                        <span className={styles.itemCardCheckBox}>
+                          {isBonusChecked && (
+                            <svg viewBox="0 0 12 10" className={styles.itemCardCheckIcon}>
+                              <polyline points="1.5 5 4.5 8 10.5 2" />
+                            </svg>
+                          )}
+                        </span>
+                      </label>
+                    )}
                     <div className={styles.itemCardIconWrap}>
                       {item.bundleItems && item.bundleItems.length > 0 ? (
                         <div className={styles.bundleIconStack}>
@@ -1667,6 +1785,8 @@ export default function PackageDetailPage({ initialPost }: Props) {
                           ))
                         : hasChoiceBox
                         ? `${item.name} (최대 ${item.choiceBoxPickCount || 1}개 선택)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
+                        : hasProbBox
+                        ? `${item.name} (확률 기댓값)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
                         : item.icon === FIXED_GEM_SELECT_ICON && hasChoices
                         ? `고정형 영웅 젬 선택 상자 ×${effectiveQty.toLocaleString()}`
                         : `${shortenItemName(effectiveChoice?.name || item.name)} ×${effectiveQty.toLocaleString()}`}
@@ -1727,10 +1847,32 @@ export default function PackageDetailPage({ initialPost }: Props) {
                       </div>
                     )}
 
+                    {hasProbBox && (
+                      <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
+                        {item.probBoxCandidates!.map((cand) => {
+                          const candPrice = (cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0)) * cand.quantity;
+                          return (
+                            <div key={cand.id} className={styles.itemCardChoiceBtn}>
+                              {cand.icon && (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} className={styles.itemCardChoiceBtnIcon} />
+                              )}
+                              <span>{cand.name} ×{cand.quantity} · {cand.probability}% ({formatNumber(candPrice)}G)</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
                     <div className={styles.itemCardBottom}>
-                      {!hasChoiceBox && (
+                      {!hasChoiceBox && !hasProbBox && (
                         <div className={styles.itemCardPriceLine}>
                           {effectiveQty}개
+                        </div>
+                      )}
+                      {hasProbBox && (
+                        <div className={styles.itemCardPriceLine}>
+                          기댓값 = Σ(시세 × 개수 × 확률)
                         </div>
                       )}
                       <div className={styles.itemCardSubtotal}>

@@ -62,6 +62,7 @@ export default function PackageEditPage() {
       saleEndAt: data.saleEndAt,
       saleClosed: data.saleClosed,
       bonusItems: data.bonusItems,
+      bonusSelectableCount: data.bonusSelectableCount > 0 ? data.bonusSelectableCount : 0,
     });
 
     // ISR 캐시된 상세 페이지를 즉시 재생성 (완료를 기다려야 이동 후 최신이 보인다)

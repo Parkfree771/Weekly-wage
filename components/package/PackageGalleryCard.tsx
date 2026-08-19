@@ -10,6 +10,7 @@ import {
   calculateGachaItemGold,
   getChoiceBoxBestGold,
   getChoiceBestValue,
+  getProbBoxExpectedGold,
   getFixedGemSelectBestUnitPrice,
   FIXED_GEM_SELECT_ICON,
   PROCESSED_GEM_BOX_GEM,
@@ -168,6 +169,10 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
         // 현재 시세 상위 N개 조합 (저장된 선택은 등록 시점 시세라 역전될 수 있음)
         const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
         return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
+      }
+      // 확률 상자: 현재 시세 기준 기댓값
+      if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
+        return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices) * item.quantity;
       }
       if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
         return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
@@ -420,38 +425,48 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
   };
 
   // '3+보너스' 전용: 3회 구매 시 1회 지급되는 보너스 구성품 가치 (3으로 나눠 1회 구매당 가치로 환산)
+  // 보너스 택N이면 최고가 N개만 합산 (뷰어가 최고가 조합을 고른다고 가정)
   const bonusTotalGold = useMemo(() => {
     if (post.packageType !== '3+보너스' || !post.bonusItems || post.bonusItems.length === 0) return 0;
-    return post.bonusItems.reduce((sum, item) => {
+    const values = post.bonusItems.map((item) => {
       if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
         // 현재 시세 상위 N개 조합 (저장된 선택은 등록 시점 시세라 역전될 수 있음)
         const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
-        return sum + getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
+        return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
+      }
+      // 확률 상자: 현재 시세 기준 기댓값
+      if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
+        return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices) * item.quantity;
       }
       if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
-        return sum + item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
+        return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
       }
       if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
         const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
-        if (fallback) return sum + fallback * goldPerWon * 27.5 * item.quantity;
+        if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
       }
       if (item.goldOverride != null) {
         const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
-        return sum + dynamicUnit * item.quantity;
+        return dynamicUnit * item.quantity;
       }
       // choice 타입: 현재 시세 최고가 선택지 기준
       if (item.choiceOptions && item.choiceOptions.length > 0) {
         if (item.icon === FIXED_GEM_SELECT_ICON) {
           const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
-          return sum + getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
+          return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
         }
-        return sum + getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity;
+        return getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity;
       }
       const raw = latestPrices[item.itemId] || 0;
       const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-      return sum + (raw / bundle) * item.quantity;
-    }, 0);
-  }, [post.packageType, post.bonusItems, latestPrices, goldPerWon]);
+      return (raw / bundle) * item.quantity;
+    });
+    if (post.bonusSelectableCount && post.bonusSelectableCount > 0) {
+      const sorted = [...values].sort((a, b) => b - a);
+      return sorted.slice(0, post.bonusSelectableCount).reduce((s, v) => s + v, 0);
+    }
+    return values.reduce((s, v) => s + v, 0);
+  }, [post.packageType, post.bonusItems, post.bonusSelectableCount, latestPrices, goldPerWon]);
 
   const cashGold = post.royalCrystalPrice * goldPerWon;
   const isBundle = post.packageType === '3+1' || post.packageType === '2+1';
@@ -511,18 +526,11 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
       {/* 왼쪽: 아이템 목록 (배경 이미지) */}
       <div className={styles.leftBox}>
         <div className={styles.leftHeader}>
-          <h3 className={styles.cardTitle}>{post.title}</h3>
+          {/* 신규 출시 NEW — 제목 앞 강조 배지 (판매 종료되면 isNewReleasePost 가 false 라 안 뜬다) */}
           {isNewReleasePost(post) && (
-            <span className={`${styles.cardBadge} ${styles.badgeNew}`}>NEW</span>
+            <span className={styles.badgeNew}>NEW</span>
           )}
-          <span className={`${styles.cardBadge} ${getBadgeClass(post.packageType)}`}>
-            {post.packageType}
-          </span>
-          {post.selectableCount != null && post.selectableCount > 0 && (
-            <span className={`${styles.cardBadge} ${styles.badgeSelect}`}>
-              {post.selectableCount}선택
-            </span>
-          )}
+          <h3 className={styles.cardTitle}>{post.title}</h3>
         </div>
 
         <div className={`${styles.itemGrid} ${isGacha ? '' : styles.itemGridCapped}`}>
@@ -624,6 +632,17 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
       {/* 오른쪽: 계산 결과 */}
       <div className={styles.rightBox}>
         <div className={styles.rightTop}>
+          {/* 타입·N선택 배지 — 제목 줄에서 옮겨와 계산 결과 최상단에 표시 */}
+          <div className={styles.rightBadgeRow}>
+            <span className={`${styles.cardBadge} ${getBadgeClass(post.packageType)}`}>
+              {post.packageType}
+            </span>
+            {post.selectableCount != null && post.selectableCount > 0 && (
+              <span className={`${styles.cardBadge} ${styles.badgeSelect}`}>
+                {post.selectableCount}선택
+              </span>
+            )}
+          </div>
           {/* 패키지 가격 */}
           <div className={styles.resultRow}>
             <span className={styles.resultLabel}>패키지 가격</span>

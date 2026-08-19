@@ -21,7 +21,7 @@ export type TemplateItem = {
   id: string;
   icon: string;
   name: string;
-  type: 'simple' | 'choice' | 'gold' | 'fixed' | 'crystal' | 'expected' | 'bundle' | 'choiceBox';
+  type: 'simple' | 'choice' | 'gold' | 'fixed' | 'crystal' | 'expected' | 'bundle' | 'choiceBox' | 'probBox';
   itemId?: string;
   choiceDropdown?: boolean; // choice 선택지가 3개 이하라도 버튼 대신 드롭다운으로 렌더링
   choices?: ChoiceOption[];
@@ -52,6 +52,10 @@ export type AddedItem = {
   choiceBoxCandidates?: ChoiceBoxCandidate[];
   choiceBoxPickCount?: number;
   choiceBoxSelectedIds?: string[];
+  // 확률 상자 (등록자가 아이템과 확률을 직접 담고, 시세 × 확률로 기댓값을 계산하는 상자)
+  isProbBox?: boolean;
+  probBoxName?: string; // 등록자가 직접 정하는 상자 이름 (비우면 템플릿 기본 이름 사용)
+  probBoxCandidates?: ProbBoxCandidate[];
   // '3+보너스' 패키지 전용: 3개 구매 시 1회만 지급되는 보너스 구성품 여부
   isBonus?: boolean;
 };
@@ -64,6 +68,28 @@ export type ChoiceBoxCandidate = {
   goldPerUnit?: number; // 커스텀 아이템인 경우 개당 골드 (itemId 없을 때 사용)
   quantity: number;
 };
+
+export type ProbBoxCandidate = {
+  id: string; // 후보 인스턴스 고유 ID
+  name: string;
+  icon?: string;
+  itemId?: string; // 시세 추적 아이템인 경우 (TRACKED_ITEMS id)
+  goldPerUnit?: number; // 커스텀 아이템인 경우 개당 골드 (itemId 없을 때 사용)
+  quantity: number;
+  probability: number; // 0~100 (%)
+};
+
+/** 확률 상자 1개 기댓값 = Σ(개당 시세 × 수량 × 확률/100) — 폼·갤러리·상세 전부 여기로 계산 */
+export function getProbBoxExpectedGold(
+  candidates: ProbBoxCandidate[] | undefined,
+  prices: Record<string, number>,
+): number {
+  if (!candidates || candidates.length === 0) return 0;
+  return candidates.reduce((sum, c) => {
+    const unit = c.itemId ? getItemUnitPrice(c.itemId, prices) : (c.goldPerUnit || 0);
+    return sum + unit * c.quantity * ((c.probability || 0) / 100);
+  }, 0);
+}
 
 /** 선택 상자: 선택된 후보들의 가치 합산 (등록/수정 폼과 저장된 게시물 양쪽에서 재사용) */
 export function getChoiceBoxGold(
@@ -178,6 +204,14 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     icon: '/magic-reagent-select.webp',
     name: '선택 상자',
     type: 'choiceBox',
+  },
+  // ── 확률 상자 (직접 구성) ──
+  {
+    // 등록자가 시세 아이템과 확률(%)을 직접 담고, 시세 × 확률 기댓값으로 계산하는 상자
+    id: 'custom-prob-box',
+    icon: '/prob-box-art.webp',
+    name: '확률 상자',
+    type: 'probBox',
   },
   // ── 돌파석 ──
   {
@@ -954,6 +988,8 @@ export function getUnitPrice(
       }, 0);
     case 'choiceBox':
       return getChoiceBoxGold(added.choiceBoxCandidates, added.choiceBoxSelectedIds, prices);
+    case 'probBox':
+      return getProbBoxExpectedGold(added.probBoxCandidates, prices);
     default:
       return 0;
   }
@@ -978,6 +1014,10 @@ export function calculateGachaItemGold(
   if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
     const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
     return getChoiceBoxBestGold(item.choiceBoxCandidates, n, prices) * item.quantity;
+  }
+  // 확률 상자 → 현재 시세 기준 기댓값
+  if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
+    return getProbBoxExpectedGold(item.probBoxCandidates, prices) * item.quantity;
   }
   // 묶음 주머니 → 내부 아이템 시세 합산 × 주머니 수량
   if (item.bundleItems && item.bundleItems.length > 0) {
@@ -1106,6 +1146,9 @@ export function calculatePostEfficiency(
       const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
       return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
     }
+    if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
+      return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices) * item.quantity;
+    }
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
       return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
     }
@@ -1140,8 +1183,16 @@ export function calculatePostEfficiency(
   }
 
   // '3+보너스': 3개 구매 시 1회만 지급되는 고정 보상. 3개 단위로 균등 배분해 개당 효율에 반영.
+  // 보너스 택N이면 보너스 중 최고가 N개만 합산 (뷰어가 최고가 조합을 고른다고 가정).
   if (post.packageType === '3+보너스') {
-    const bonusGold = (post.bonusItems || []).reduce((s, item) => s + itemValue(item), 0);
+    const bonusValues = (post.bonusItems || []).map(itemValue);
+    let bonusGold: number;
+    if (post.bonusSelectableCount && post.bonusSelectableCount > 0) {
+      const sorted = [...bonusValues].sort((a, b) => b - a);
+      bonusGold = sorted.slice(0, post.bonusSelectableCount).reduce((s, v) => s + v, 0);
+    } else {
+      bonusGold = bonusValues.reduce((s, v) => s + v, 0);
+    }
     const adjustedTotalGold = totalGold + bonusGold / 3;
     return post.royalCrystalPrice > 0 ? adjustedTotalGold / post.royalCrystalPrice : 0;
   }
