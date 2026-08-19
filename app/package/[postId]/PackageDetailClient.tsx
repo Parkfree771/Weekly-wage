@@ -27,6 +27,7 @@ import {
   getChoiceBoxGold,
   getChoiceBoxBestGold,
   getChoiceBestValue,
+  getProbBoxCandidateUnit,
   getProbBoxExpectedGold,
   pickTopNCandidateIds,
   calculateGachaItemGold,
@@ -173,7 +174,7 @@ function getPackageItemGold(
     return getChoiceBoxGold(item.choiceBoxCandidates, selected, prices) * item.quantity;
   }
   if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-    return getProbBoxExpectedGold(item.probBoxCandidates, prices) * item.quantity;
+    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate) * item.quantity;
   }
   if (item.itemId === 'fixed_hell-legendary-ticket')
     return (bcRate > 0 ? calcTicketAverage('hell', 7, prices, bcRate) : (item.goldOverride || 0)) * item.quantity;
@@ -424,7 +425,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
       }
       // 확률 상자: 현재 시세 기준 기댓값
       if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        return { idx, value: getProbBoxExpectedGold(item.probBoxCandidates, latestPrices) * item.quantity };
+        return { idx, value: getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity };
       }
       if (item.goldOverride != null) {
         // 티켓(지옥 보상 평균)·가공 젬·크리스탈 전부 표시 소계와 동일한 동적 단가로 비교
@@ -862,7 +863,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
       }
       // 확률 상자: 시세 × 확률 기댓값
       if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        const sub = getProbBoxExpectedGold(item.probBoxCandidates, latestPrices) * item.quantity;
+        const sub = getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity;
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
         return;
@@ -1601,7 +1602,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                     {hasProbBox && (
                       <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
                         {item.probBoxCandidates!.map((cand) => {
-                          const candPrice = (cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0)) * cand.quantity;
+                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate) * cand.quantity;
                           return (
                             <div key={cand.id} className={styles.itemCardChoiceBtn}>
                               {cand.icon && (
@@ -1850,7 +1851,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                     {hasProbBox && (
                       <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
                         {item.probBoxCandidates!.map((cand) => {
-                          const candPrice = (cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0)) * cand.quantity;
+                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate) * cand.quantity;
                           return (
                             <div key={cand.id} className={styles.itemCardChoiceBtn}>
                               {cand.icon && (

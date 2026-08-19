@@ -2882,6 +2882,44 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* 확률 상자 담기 모드 — 목록 상단 안내 배너 */
+.probBoxCatchBanner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.probBoxCatchDone {
+  margin-left: auto;
+  padding: 0.25rem 0.7rem;
+  border: none;
+  border-radius: 6px;
+  background: #059669;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.probBoxCatchDone:hover {
+  background: #047857;
+}
+
+/* 담기 모드 중 상자에 못 들어가는 아이템(시세 아이템이 아닌 것)은 흐리게 + 클릭 차단 */
+.availableItemDisabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 .availableItemCustom {
   border: 2px dashed var(--border-color);
   background: transparent;

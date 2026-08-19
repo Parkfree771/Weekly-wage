@@ -164,15 +164,16 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
 
   // 아이템별 소계 (N선택 토글 로직용)
   const itemSubtotals = useMemo(() => {
+    const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
     return post.items.map((item) => {
       if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
         // 현재 시세 상위 N개 조합 (저장된 선택은 등록 시점 시세라 역전될 수 있음)
         const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
         return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
       }
-      // 확률 상자: 현재 시세 기준 기댓값
+      // 확률 상자: 현재 시세 기준 기댓값 (티켓 후보는 bcRate 로 동적 단가)
       if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices) * item.quantity;
+        return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity;
       }
       if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
         return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
@@ -428,15 +429,16 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
   // 보너스 택N이면 최고가 N개만 합산 (뷰어가 최고가 조합을 고른다고 가정)
   const bonusTotalGold = useMemo(() => {
     if (post.packageType !== '3+보너스' || !post.bonusItems || post.bonusItems.length === 0) return 0;
+    const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
     const values = post.bonusItems.map((item) => {
       if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
         // 현재 시세 상위 N개 조합 (저장된 선택은 등록 시점 시세라 역전될 수 있음)
         const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
         return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
       }
-      // 확률 상자: 현재 시세 기준 기댓값
+      // 확률 상자: 현재 시세 기준 기댓값 (티켓 후보는 bcRate 로 동적 단가)
       if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices) * item.quantity;
+        return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity;
       }
       if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
         return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;

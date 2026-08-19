@@ -73,21 +73,49 @@ export type ProbBoxCandidate = {
   id: string; // 후보 인스턴스 고유 ID
   name: string;
   icon?: string;
-  itemId?: string; // 시세 추적 아이템인 경우 (TRACKED_ITEMS id)
-  goldPerUnit?: number; // 커스텀 아이템인 경우 개당 골드 (itemId 없을 때 사용)
+  itemId?: string; // 시세 추적 아이템(TRACKED_ITEMS id) 또는 'fixed_{템플릿id}' (티켓 등 fixed 타입)
+  goldPerUnit?: number; // fixed 후보의 정적 골드 폴백 / 커스텀 아이템 개당 골드 (itemId 없을 때 사용)
   quantity: number;
   probability: number; // 0~100 (%)
 };
+
+/**
+ * 확률 상자 후보 1개의 개당 골드.
+ * 시세 아이템은 현재 시세, 'fixed_' 후보 중 티켓·유물코어·가공젬은 사이트 공통 동적 단가
+ * (지옥 보상 평균 등, bcRate = 100블크당 골드), 그 외 fixed 는 goldPerUnit(등록 시점 고정가).
+ */
+export function getProbBoxCandidateUnit(
+  cand: ProbBoxCandidate,
+  prices: Record<string, number>,
+  bcRate: number = 0,
+): number {
+  if (!cand.itemId) return cand.goldPerUnit || 0;
+  if (cand.itemId.startsWith('fixed_')) {
+    const hasPrices = Object.keys(prices).length > 0;
+    if (hasPrices && bcRate > 0) {
+      if (cand.itemId === 'fixed_hell-legendary-ticket') return calcTicketAverage('hell', 7, prices, bcRate);
+      if (cand.itemId === 'fixed_hell-heroic-ticket') return calcTicketAverage('hell', 6, prices, bcRate);
+      if (cand.itemId === 'fixed_naraka-legendary-ticket') return calcTicketAverage('narak', 2, prices, bcRate);
+      if (cand.itemId === 'fixed_cube-ticket') return calcTicketAverage('hell', 6, prices, bcRate) / 6;
+    }
+    if (hasPrices) {
+      if (cand.itemId === 'fixed_relic-core') return getRelicCoreSelectPrice(prices);
+      if (PROCESSED_GEM_BOX_GEM[cand.itemId]) return getProcessedGemBoxUnitPrice(cand.itemId, prices);
+    }
+    return cand.goldPerUnit || 0;
+  }
+  return getItemUnitPrice(cand.itemId, prices);
+}
 
 /** 확률 상자 1개 기댓값 = Σ(개당 시세 × 수량 × 확률/100) — 폼·갤러리·상세 전부 여기로 계산 */
 export function getProbBoxExpectedGold(
   candidates: ProbBoxCandidate[] | undefined,
   prices: Record<string, number>,
+  bcRate: number = 0,
 ): number {
   if (!candidates || candidates.length === 0) return 0;
   return candidates.reduce((sum, c) => {
-    const unit = c.itemId ? getItemUnitPrice(c.itemId, prices) : (c.goldPerUnit || 0);
-    return sum + unit * c.quantity * ((c.probability || 0) / 100);
+    return sum + getProbBoxCandidateUnit(c, prices, bcRate) * c.quantity * ((c.probability || 0) / 100);
   }, 0);
 }
 
@@ -989,7 +1017,8 @@ export function getUnitPrice(
     case 'choiceBox':
       return getChoiceBoxGold(added.choiceBoxCandidates, added.choiceBoxSelectedIds, prices);
     case 'probBox':
-      return getProbBoxExpectedGold(added.probBoxCandidates, prices);
+      // 티켓류 후보의 동적 단가용 bcRate — fixed 케이스와 같은 기본값 사용
+      return getProbBoxExpectedGold(added.probBoxCandidates, prices, officialGoldRate || 8500);
     default:
       return 0;
   }
@@ -1017,7 +1046,7 @@ export function calculateGachaItemGold(
   }
   // 확률 상자 → 현재 시세 기준 기댓값
   if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-    return getProbBoxExpectedGold(item.probBoxCandidates, prices) * item.quantity;
+    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate) * item.quantity;
   }
   // 묶음 주머니 → 내부 아이템 시세 합산 × 주머니 수량
   if (item.bundleItems && item.bundleItems.length > 0) {
@@ -1147,7 +1176,7 @@ export function calculatePostEfficiency(
       return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
     }
     if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-      return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices) * item.quantity;
+      return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity;
     }
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
       return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;

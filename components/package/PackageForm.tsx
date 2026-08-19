@@ -27,6 +27,7 @@ import {
   formatNumber,
   getItemUnitPrice,
   getFixedGemSelectUnitPrice,
+  getProbBoxCandidateUnit,
   getProbBoxExpectedGold,
   getUnitPrice,
   pickTopNCandidateIds,
@@ -267,6 +268,8 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   );
   // '3+보너스' 패키지 전용: 아이템 클릭 시 확정 구성품/보너스 구성품 중 어디에 추가할지
   const [addTarget, setAddTarget] = useState<'main' | 'bonus'>('main');
+  // 확률 상자 "담기 모드": 켜져 있으면 아래 아이템 목록 클릭이 새 구성품 추가 대신 이 상자의 후보로 들어간다
+  const [probBoxTargetId, setProbBoxTargetId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -295,6 +298,14 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   const handleAddItem = (templateId: string) => {
     const template = TEMPLATES_MAP[templateId];
     if (!template) return;
+
+    // 확률 상자 담기 모드: 시세·고정가(티켓 등) 아이템 클릭은 상자 후보로 들어간다 (그 외 타입은 무시 — 목록에서 흐려짐)
+    if (probBoxTargetId) {
+      if (template.type === 'simple' || template.type === 'fixed') {
+        handleProbBoxAddCandidate(probBoxTargetId, templateId);
+      }
+      return;
+    }
 
     itemCounterRef.current += 1;
     const newItem: AddedItem = { id: `${templateId}_${itemCounterRef.current}`, templateId, quantity: 1 };
@@ -421,13 +432,25 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
 
   const handleProbBoxAddCandidate = (itemId: string, candidateTemplateId: string) => {
     const candidateTemplate = TEMPLATES_MAP[candidateTemplateId];
-    if (!candidateTemplate || !candidateTemplate.itemId) return;
+    if (!candidateTemplate) return;
+    // 시세 아이템은 itemId 그대로, fixed(티켓 등)는 'fixed_{id}' — 동적 단가는 getProbBoxCandidateUnit 이 해석
+    let candItemId: string;
+    let goldPerUnit: number | undefined;
+    if (candidateTemplate.type === 'simple' && candidateTemplate.itemId) {
+      candItemId = candidateTemplate.itemId;
+    } else if (candidateTemplate.type === 'fixed') {
+      candItemId = `fixed_${candidateTemplate.id}`;
+      goldPerUnit = candidateTemplate.fixedGold || 0; // 시세·환율 없을 때 폴백
+    } else {
+      return;
+    }
     probBoxCandidateCounterRef.current += 1;
     const newCandidate: ProbBoxCandidate = {
       id: `pcand_${probBoxCandidateCounterRef.current}`,
       name: candidateTemplate.name,
       icon: candidateTemplate.icon,
-      itemId: candidateTemplate.itemId,
+      itemId: candItemId,
+      ...(goldPerUnit != null ? { goldPerUnit } : {}),
       quantity: 1,
       probability: 0,
     };
@@ -489,6 +512,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   };
 
   const handleRemoveItem = (itemId: string) => {
+    if (itemId === probBoxTargetId) setProbBoxTargetId(null); // 담기 중이던 상자가 지워지면 모드 해제
     setAddedItems((prev) => prev.filter((a) => a.id !== itemId));
   };
 
@@ -509,6 +533,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   };
 
   const handleAddCustomItem = () => {
+    if (probBoxTargetId) return; // 담기 모드 중에는 커스텀 항목 추가로 새지 않게
     customCounterRef.current += 1;
     const cid = `custom-${customCounterRef.current}`;
     setAddedItems((prev) => [...prev, {
@@ -916,7 +941,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                 placeholder={template.name} maxLength={30} />
             </div>
             {(added.probBoxCandidates || []).map((cand) => {
-              const candUnit = cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0);
+              const candUnit = getProbBoxCandidateUnit(cand, latestPrices, officialGold || 8500);
               return (
                 <div key={cand.id} className={styles.innerQuantityRow}>
                   {cand.icon && (
@@ -946,21 +971,16 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               const isOk = Math.abs(probSum - 100) < 0.01;
               return (
                 <div className={`${styles.gachaProbSum} ${isOk ? styles.gachaProbSumOk : styles.gachaProbSumError}`}>
-                  확률 합계: {probSum.toFixed(1)}% {isOk ? `· 기댓값 ${formatNumber(getProbBoxExpectedGold(added.probBoxCandidates, latestPrices))}G` : '(100%가 되어야 합니다)'}
+                  확률 합계: {probSum.toFixed(1)}% {isOk ? `· 기댓값 ${formatNumber(getProbBoxExpectedGold(added.probBoxCandidates, latestPrices, officialGold || 8500))}G` : '(100%가 되어야 합니다)'}
                 </div>
               );
             })()}
-            <div className={styles.choiceDropdown}>
-              <select className={styles.choiceSelect} value=""
-                onChange={(e) => {
-                  if (e.target.value) handleProbBoxAddCandidate(added.id, e.target.value);
-                  e.target.value = '';
-                }}>
-                <option value="">+ 확률 아이템 추가</option>
-                {TEMPLATE_ITEMS.filter((t) => t.type === 'simple').map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
+            <div className={styles.innerQuantityRow}>
+              <button type="button"
+                className={`${styles.typeButton} ${probBoxTargetId === added.id ? styles.typeButtonActive : ''}`}
+                onClick={() => setProbBoxTargetId(probBoxTargetId === added.id ? null : added.id)}>
+                {probBoxTargetId === added.id ? '담기 완료' : '+ 아래 아이템 목록에서 담기'}
+              </button>
             </div>
           </div>
         )}
@@ -1407,6 +1427,17 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
         {/* 아이템 추가 그리드 */}
         <div className={styles.availableSection}>
           <h2 className={styles.sectionTitle}>아이템 추가</h2>
+          {probBoxTargetId && (() => {
+            const targetBox = addedItems.find((a) => a.id === probBoxTargetId);
+            const targetName = targetBox?.probBoxName?.trim() || '확률 상자';
+            return (
+              <div className={styles.probBoxCatchBanner}>
+                <strong>{targetName}</strong>에 담는 중 — 아래에서 아이템을 클릭하면 상자에 추가됩니다
+                <button type="button" className={styles.probBoxCatchDone}
+                  onClick={() => setProbBoxTargetId(null)}>담기 완료</button>
+              </div>
+            );
+          })()}
           {packageType === '3+보너스' && (
             <div className={styles.typeButtonRow} style={{ marginBottom: '0.6rem' }}>
               <button type="button"
@@ -1419,10 +1450,17 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
           )}
           <div className={styles.availableGrid}>
             {TEMPLATE_ITEMS.map((template) => {
-              const addedCount = addedCountByTemplate[template.id] || 0;
+              // 담기 모드: 시세·고정가 아이템만 클릭 가능. 강조·카운트도 (전체 추가 수 대신) 대상 상자에 담긴 수 기준
+              const targetBox = probBoxTargetId ? addedItems.find((a) => a.id === probBoxTargetId) : null;
+              const candItemId = template.type === 'fixed' ? `fixed_${template.id}` : template.itemId;
+              const candCount = targetBox
+                ? (targetBox.probBoxCandidates || []).filter((c) => c.itemId === candItemId).length
+                : 0;
+              const disabledForProbBox = !!probBoxTargetId && template.type !== 'simple' && template.type !== 'fixed';
+              const addedCount = probBoxTargetId ? candCount : (addedCountByTemplate[template.id] || 0);
               return (
                 <button key={template.id} type="button"
-                  className={`${styles.availableItem} ${addedCount > 0 ? styles.availableItemAdded : ''}`}
+                  className={`${styles.availableItem} ${addedCount > 0 ? styles.availableItemAdded : ''} ${disabledForProbBox ? styles.availableItemDisabled : ''}`}
                   onClick={() => handleAddItem(template.id)}>
                   <div className={styles.availableItemIconWrap}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1434,7 +1472,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                         ...(ICON_SCALE[template.id] ? { transform: ICON_SCALE[template.id] } : {}),
                       }}
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    {addedCount > 1 && (
+                    {(probBoxTargetId ? addedCount > 0 : addedCount > 1) && (
                       <span className={styles.availableItemCount}>{addedCount}</span>
                     )}
                   </div>
@@ -1443,7 +1481,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               );
             })}
             <button type="button"
-              className={`${styles.availableItem} ${styles.availableItemCustom}`}
+              className={`${styles.availableItem} ${styles.availableItemCustom} ${probBoxTargetId ? styles.availableItemDisabled : ''}`}
               onClick={handleAddCustomItem}>
               <span className={styles.availableItemCustomPlus}>+</span>
               <span className={styles.availableItemName}>기타 항목 추가</span>
