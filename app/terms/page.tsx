@@ -119,7 +119,7 @@ export default function TermsOfService() {
                 <h2 className="h5 text-success mb-3">제11조 (서비스 이용료)</h2>
                 <p>
                   본 서비스는 모든 사용자에게 무료로 제공됩니다. 단, 서비스 운영을 위해
-                  Google AdSense 광고가 게재되며, 이는 서비스 유지 및 개선을 위한 수익원으로 사용됩니다.
+                  카카오 애드핏 및 Google AdSense 광고가 게재되며, 이는 서비스 유지 및 개선을 위한 수익원으로 사용됩니다.
                 </p>
                 <ul>
                   <li>모든 계산 기능은 무료로 제공됩니다</li>

@@ -195,7 +195,7 @@ export default function AboutPage() {
                   <li>로스트아크 커뮤니티 활성화에 기여</li>
                 </ul>
                 <p className="small text-muted">
-                  서비스 운영 비용 충당을 위해 Google AdSense 광고를 게재하고 있습니다.
+                  서비스 운영 비용 충당을 위해 카카오 애드핏 및 Google AdSense 광고를 게재하고 있습니다.
                   광고 수익은 서버 비용 및 서비스 개선에 사용됩니다.
                 </p>
               </section>

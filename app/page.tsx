@@ -58,7 +58,8 @@ const PriceChartProvider = dynamic(
 
 
 export default function Home() {
-  const [showIntro, setShowIntro] = useState(false);
+  // 기본 펼침 — 홈의 유일한 h1이 이 블록 안에 있어, 접혀 있으면 크롤러·심사자에게 h1 없는 페이지가 된다
+  const [showIntro, setShowIntro] = useState(true);
 
   // 가격 히스토리 preload — 메인 시세 차트 전용이라 루트 레이아웃이 아닌 여기서만.
   // fetch URL과 정확히 일치해야 브라우저가 preload를 재사용함(price-history-client.ts).
@@ -99,7 +100,6 @@ export default function Home() {
                 <Link href="/refining" className="btn btn-sm btn-outline-primary">재련 계산기</Link>
                 <Link href="/hell-reward" className="btn btn-sm btn-outline-primary">지옥의 나락 보상</Link>
                 <Link href="/life-master" className="btn btn-sm btn-outline-primary">생활의 달인</Link>
-                <Link href="/character" className="btn btn-sm btn-outline-primary">캐릭터 검색</Link>
               </div>
             </div>
           </Collapse>

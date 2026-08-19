@@ -191,7 +191,7 @@ export default function PrivacyPolicy() {
                   <p className="mb-2"><strong>2. 웹사이트 이용 데이터:</strong></p>
                   <ul className="mb-3">
                     <li>Google Analytics를 통한 방문자 통계 (페이지 조회수, 방문 시간 등)</li>
-                    <li>Google AdSense를 통한 광고 표시 및 클릭 데이터</li>
+                    <li>Google AdSense 및 카카오 애드핏을 통한 광고 표시 및 클릭 데이터</li>
                   </ul>
                   <p className="small text-muted mb-0">
                     ※ 비로그인 사용자의 경우, 캐릭터 검색 정보는 서버에 저장되지 않으며

@@ -78,6 +78,18 @@ type Character = {
   itemLevel: number;
 };
 
+// 검색 전에도 주간 골드 계산 결과 화면을 그대로 보여주기 위한 예시 원정대.
+// (원정대 수급 골드 페이지의 데모와 같은 방식 — 검색하면 실제 원정대로 대체된다)
+// 레벨을 레이드 입장 구간에 걸쳐 흩어 두어야 캐릭터마다 다른 레이드 카드가 나온다.
+const DEMO_CHARACTERS: Character[] = [
+  { characterName: '디스트로이어', itemLevel: 1770 },
+  { characterName: '기상술사', itemLevel: 1750 },
+  { characterName: '슬레이어', itemLevel: 1730 },
+  { characterName: '바드', itemLevel: 1710 },
+  { characterName: '창술사', itemLevel: 1700 },
+  { characterName: '홀리나이트', itemLevel: 1680 },
+];
+
 export default function WeeklyGoldPage() {
   const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
   const [searched, setSearched] = useState(false);
@@ -166,23 +178,6 @@ export default function WeeklyGoldPage() {
                 원정대 주간 골드 수익과 더보기 보상 손익을 계산해보세요
               </p>
 
-              {/* SEO를 위한 정적 콘텐츠 */}
-             <noscript>
-  <div style={{/*...*/}}>
-    {/* 제목 변경 */}
-    <h2>성당 레이드 보상 및 주간 골드 계산기</h2>
-    {/* 설명 변경 */}
-    <p>성당(1700~1750) 포함 원정대 캐릭터들의 주간 골드 수익을 자동으로 계산하고...</p>
-                  <h3>주요 기능</h3>
-                  <ul>
-                    <li>캐릭터명 입력만으로 원정대 전체 주간 골드 수익 자동 계산</li>
-                    <li>에스더 무기, 아브렐슈드, 카양겔, 쿠크세이튼 등 모든 레이드 지원</li>
-                    <li>더보기 보상 손익 실시간 분석 (실화, 명돌, 파괴강석, 수호강석 등)</li>
-                    <li>거래소 가격 매시간 자동 업데이트</li>
-                  </ul>
-                  <p>이 페이지는 JavaScript가 필요합니다. 브라우저에서 JavaScript를 활성화해주세요.</p>
-                </div>
-              </noscript>
             </div>
 
             {/* 캐릭터 검색 */}
@@ -191,20 +186,22 @@ export default function WeeklyGoldPage() {
               onSearch={handleSearch}
               searched={searched}
               autoSearchName={autoSearchName}
+              demoCharacters={DEMO_CHARACTERS}
             />
 
             {!searched && (
               <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.1rem 0 0' }}>
-                검색해서 원정대 주간 골드 수급 확인하기
+                예시 원정대입니다. 레이드 관문을 눌러보세요 — 검색하면 내 원정대로 바뀝니다
               </p>
             )}
 
             {/* 가격 데이터 공유를 위한 Provider - RaidCalculator도 포함 */}
             <PriceProvider>
-              {/* 검색 후 원정대 주급 계산기 */}
-              {searched && selectedCharacters.length > 0 && (
+              {/* 원정대 주급 계산기 — 검색 전에는 예시 원정대로 결과 화면을 미리 보여준다
+                  (저장 버튼은 실제 검색 후에만 노출해 예시 상태가 저장되지 않게 한다) */}
+              {selectedCharacters.length > 0 && (
                 <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
-                  <RaidCalculator selectedCharacters={selectedCharacters} onGateSelectionChange={handleGateSelectionChange} onSaveReady={handleSaveReady} searchName={autoSearchName} showSave={true} />
+                  <RaidCalculator selectedCharacters={selectedCharacters} onGateSelectionChange={handleGateSelectionChange} onSaveReady={handleSaveReady} searchName={autoSearchName} showSave={searched} />
                 </div>
               )}
 

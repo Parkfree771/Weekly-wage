@@ -265,13 +265,6 @@ export default function RefiningPage() {
               >
                 재련 시뮬레이터
               </h1>
-              {/* SEO noscript */}
-              <noscript>
-                <div style={{padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '8px', margin: '1rem 0'}}>
-                  <h2>로스트아크 재련 시뮬레이터 - 재련 비용 계산기</h2>
-                  <p>T4 장비 재련에 필요한 재료와 골드를 정확하게 계산합니다.</p>
-                </div>
-              </noscript>
             </div>
 
             {/* 공유 검색 폼 */}

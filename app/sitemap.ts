@@ -27,7 +27,6 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/cerka',              changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/belgardin',          changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/engraving',          changeFrequency: 'weekly',  priority: 0.7 },
-  { path: '/character',          changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/app',                changeFrequency: 'monthly', priority: 0.6 },
   { path: '/hell-reward',        changeFrequency: 'weekly',  priority: 0.6 },
   { path: '/guide',              changeFrequency: 'weekly',  priority: 0.7 },

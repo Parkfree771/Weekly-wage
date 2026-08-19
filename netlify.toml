@@ -18,6 +18,18 @@
   status = 301
   force = true
 
+# 캐릭터 조회 페이지 제거(2026-08-19)에 따른 구 URL 인계 — 404 대신 홈으로 301.
+# 색인·백링크가 남아 있는 동안 크롤러에 죽은 링크 신호를 주지 않기 위함.
+[[redirects]]
+  from = "/character"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/character/*"
+  to = "/"
+  status = 301
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 

@@ -65,7 +65,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: '조회',
     colorClass: 'nav-character',
     items: [
-      { href: '/character', label: '캐릭터 조회' },
       { href: '/engraving', label: '직업별 각인' },
     ],
   },
@@ -115,7 +114,6 @@ export default function Navbar() {
                       href === '/cathedral' ? 'nav-weekly' :
                       href === '/cerka' ? 'nav-weekly' :
                       href === '/extreme' ? 'nav-extreme' :
-                      href === '/character' ? 'nav-character' :
                       href === '/engraving' ? 'nav-character' : 'nav-weekly';
     const activeClass = isActive(href) ? 'active' : '';
     return `${pageClass} ${activeClass}`.trim();

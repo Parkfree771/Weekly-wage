@@ -44,7 +44,6 @@ function getPageConfig(pathname: string): PageConfig {
   if (pathname === '/life-master') return { contentWidth: 1200, adTop: 200 };
   // adTop 300 = 원정대 탭·주간 수급 요약을 지나 첫 번째 캐릭터 카드 상단과 나란히(기존 130에서 크게 내림).
   if (pathname === '/mypage') return { contentWidth: 1600, adTop: 300 };
-  if (pathname === '/character') return { contentWidth: 1400, adTop: 90 };
   // adTop 230 = 세르카·익스트림과 동일 값으로 통일(175는 부족했음).
   if (pathname === '/cathedral') return { contentWidth: 1200, adTop: 230 };
   if (pathname === '/cerka') return { contentWidth: 1200, adTop: 230 };
@@ -121,10 +120,8 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   const shellRef = useRef<HTMLDivElement>(null);
   const dockedPromoRef = useRef<HTMLDivElement>(null);
 
-  // 사이드 레일 비활성 — 자체 사이드바가 있어 좌우 레일과 충돌하는 페이지 + 등록/수정 폼 화면.
-  // - /character: 오른쪽에 필터 통계 사이드바를 자체 배치
+  // 사이드 레일 비활성 — 등록/수정 폼 화면.
   const railsDisabled =
-    pathname === '/character' ||
     pathname === '/package/register' || pathname.startsWith('/package/edit');
 
   useEffect(() => {

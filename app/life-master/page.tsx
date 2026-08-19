@@ -28,13 +28,6 @@ export default function LifeMasterPage() {
                 아비도스 융화재료 제작 손익 계산
               </p>
 
-              {/* SEO noscript */}
-              <noscript>
-                <div style={{padding: '2rem', backgroundColor: 'var(--card-bg)', borderRadius: '12px', margin: '1rem 0'}}>
-                  <h2>생활 제작 계산기</h2>
-                  <p>로스트아크 아비도스 융화재료 제작 손익을 계산합니다.</p>
-                </div>
-              </noscript>
             </div>
 
 

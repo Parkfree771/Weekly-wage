@@ -46,7 +46,9 @@ export default function GuideFaq({
   faqTitle = '자주 묻는 질문',
   relatedGuides,
 }: GuideFaqProps) {
-  const [open, setOpen] = useState(false);
+  // 기본 펼침 — 애드센스 심사·크롤러가 보는 첫 화면에 본문이 그대로 노출되어야 한다.
+  // (기본 접힘이던 시절 "가치가 별로 없는 콘텐츠"로 반복 반려됨 — 접기는 사용자가 원할 때만)
+  const [open, setOpen] = useState(true);
 
   const hasGuide = !!(intro?.length || sections?.length);
   const hasFaq = !!faqs?.length;
