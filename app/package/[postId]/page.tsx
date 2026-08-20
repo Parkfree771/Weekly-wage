@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { Metadata } from 'next';
 import { getAdminFirestore } from '@/lib/firebase-admin';
-import { SITE_URL } from '@/lib/site-config';
+import { SITE_URL, INDEX_USER_PACKAGE_POSTS } from '@/lib/site-config';
 import type { PackagePost } from '@/types/package';
 import PackageDetailPage from './PackageDetailClient';
 import AzenaBlessingDetail from '@/components/package/AzenaBlessingDetail';
@@ -119,6 +119,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: url,
     },
+    // 이 페이지 본문은 제목·가격·구성품 이름이 전부고, 골드값은 클라이언트에서 채워지므로
+    // 봇이 받는 HTML 에는 0G 로 남는다. 같은 템플릿의 얇은 페이지가 무더기로 색인되지 않게 막는다.
+    // follow 는 남겨 글 안의 내부 링크(가이드·계산기)는 그대로 전달한다.
+    robots: INDEX_USER_PACKAGE_POSTS ? undefined : { index: false, follow: true },
   };
 }
 

@@ -1036,13 +1036,6 @@
   color: var(--text-muted);
 }
 
-.salePeriodHint {
-  margin: 0.35rem 0 0;
-  font-size: 0.75rem;
-  line-height: 1.4;
-  color: var(--text-muted);
-}
-
 /* 수정 페이지: 판매 종료 직접 처리 */
 .saleClosedToggle {
   display: inline-flex;

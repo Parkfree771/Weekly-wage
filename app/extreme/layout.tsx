@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { SITE_URL } from '@/lib/site-config'
+import { SITE_URL, isNoindexed } from '@/lib/site-config'
 import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/extreme',
   },
+  // 출시(2026-09-23) 전까지 본문이 'COMING SOON' 뿐이라 색인에서 뺀다.
+  // follow 는 남겨 이 페이지가 거는 내부 링크는 그대로 전달한다.
+  robots: isNoindexed('/extreme') ? { index: false, follow: true } : undefined,
 }
 
 const webPageJsonLd = {

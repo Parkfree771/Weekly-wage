@@ -105,6 +105,100 @@ export default function MarketPriceGuidePage() {
             <li><strong>여러 아이템 비교:</strong> 로아로골의 오늘의 시세에서 여러 재련 재료의 가격 변동을 동시에 비교할 수 있습니다.</li>
           </ul>
 
+          <h2>묶음 단위 — 시세를 개당 값으로 바꾸기</h2>
+          <p>
+            거래소 시세를 볼 때 가장 많이 하는 실수가 <strong>묶음 가격을 개당 가격으로 착각</strong>하는
+            것입니다. 재련 재료 상당수는 낱개가 아니라 묶음 단위로 호가가 매겨집니다.
+            같은 화면에 뜬 두 숫자가 실제로는 100배 차이일 수 있습니다.
+          </p>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>아이템</th>
+                <th>묶음 단위</th>
+                <th>개당 단가</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>운명의 파괴석 / 수호석</td>
+                <td>100개</td>
+                <td>표시가 ÷ 100</td>
+              </tr>
+              <tr>
+                <td>운명의 파괴석 결정 / 수호석 결정</td>
+                <td>100개</td>
+                <td>표시가 ÷ 100</td>
+              </tr>
+              <tr>
+                <td>운명의 파편 주머니(대)</td>
+                <td>3,000개</td>
+                <td>표시가 ÷ 3,000</td>
+              </tr>
+              <tr>
+                <td>돌파석 · 융화 재료 · 숨결 · 각인서</td>
+                <td>1개</td>
+                <td>표시가 그대로</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            로아로골의 계산기들은 이 변환을 자동으로 처리합니다. 재련 비용이나 패키지 효율에서
+            보이는 골드 값은 전부 개당 단가로 정규화한 뒤 수량을 곱한 결과입니다.
+          </p>
+
+          <h2>로아로골이 추적하는 시세 범위</h2>
+          <p>
+            모든 아이템의 시세를 다 받아오지는 않습니다. 계산기에서 실제로 쓰이는 항목만
+            추려 <strong>거래소 50종 + 경매장 17종, 총 67종</strong>을 매시간 수집합니다.
+            거래소(market)와 경매장(auction)은 API가 다르고 호가 구조도 달라 따로 관리합니다.
+          </p>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>구분</th>
+                <th>대표 항목</th>
+                <th>쓰이는 곳</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>재련 재료</td>
+                <td>파괴석·수호석·결정, 돌파석, 운명의 파편</td>
+                <td>재련 시뮬, 패키지 효율, 더보기 손익</td>
+              </tr>
+              <tr>
+                <td>재련 보조 재료</td>
+                <td>야금술·재봉술(업화·전율), 장인의 야금술·재봉술, 숨결</td>
+                <td>재련 시뮬, 상급 재련 최적화</td>
+              </tr>
+              <tr>
+                <td>생활·융화</td>
+                <td>아비도스 융화 재료, 상급 아비도스, 생활 재료</td>
+                <td>생활의 달인, 더보기 손익</td>
+              </tr>
+              <tr>
+                <td>경매장</td>
+                <td>각인서, 보석, 어빌리티스톤</td>
+                <td>지옥 보상, 각인 조회</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2>갱신 주기와 데이터 출처</h2>
+          <p>
+            시세는 로스트아크 <strong>공식 Open API</strong>를 <strong>매시 정각</strong>에 자동
+            조회해 갱신합니다. 수동 입력이나 크롤링이 아니라 공식 응답을 그대로 저장하므로,
+            게임 내 거래소 화면과 최대 1시간까지 시차가 날 수 있습니다.
+            시세가 급하게 움직이는 업데이트 직후에는 이 시차를 감안해서 보는 것이 좋습니다.
+          </p>
+          <p>
+            차트에 쓰이는 과거 데이터도 같은 방식으로 시간 단위로 쌓입니다.
+            그래서 &quot;패치 직후 며칠간 얼마나 올랐다가 얼마나 빠졌는지&quot; 같은 패턴을
+            눈으로 확인할 수 있습니다. 아래 매매 타이밍 팁은 이 차트를 보면서 판단하는 것을
+            전제로 합니다.
+          </p>
+
           <div className={styles.tipBox}>
             <p>
               <strong>TIP:</strong> 로아로골 메인 페이지에서 주요 재련 재료의 실시간 시세와
@@ -138,7 +232,7 @@ export default function MarketPriceGuidePage() {
             "headline": "거래소 시세 활용 가이드 - 시세 차트 보는 법",
             "description": "로스트아크 거래소 시세 변동 패턴, 매매 타이밍, 로아로골 시세 차트 활용법을 알려드립니다.",
             "datePublished": "2026-02-06",
-            "dateModified": "2026-07-18",
+            "dateModified": "2026-08-20",
             "author": { "@type": "Organization", "name": "로아로골" },
             "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
             "mainEntityOfPage": `${SITE_URL}/guide/market-price`

@@ -94,6 +94,92 @@ export default function HellRewardGuidePage() {
             가늠하는 참고 지표로 활용하는 것이 적절합니다.
           </p>
 
+          <h2>가격 산정 방식 정리</h2>
+          <p>
+            위에서 설명한 세 가지 산정 방식을 대표 항목과 함께 표로 정리하면 다음과 같습니다.
+            어떤 보상이 어떤 근거로 계산됐는지 알면, 계산기가 내놓은 기댓값을 어디까지
+            믿어야 할지 판단할 수 있습니다.
+          </p>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>산정 방식</th>
+                <th>대표 항목</th>
+                <th>근거</th>
+                <th>신뢰도</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>실시간 시세</td>
+                <td>파괴석·수호석 결정, 위대한 돌파석, 상급 아비도스, 숨결, 귀속 각인서, 귀속 보석</td>
+                <td>거래소·경매장 현재가</td>
+                <td>높음</td>
+              </tr>
+              <tr>
+                <td>고정가</td>
+                <td>천상 도전권, 전설 카드팩, 정련된 운명·혼돈의 돌</td>
+                <td>게임 내 기준가</td>
+                <td>보통</td>
+              </tr>
+              <tr>
+                <td>환율 환산</td>
+                <td>어빌리티스톤(9페온 상당), 팔찌</td>
+                <td>블루·로얄 크리스탈 환율</td>
+                <td>환율에 좌우됨</td>
+              </tr>
+              <tr>
+                <td>비용 역산</td>
+                <td>특수재련 재료</td>
+                <td>일반재련 동일 결과 비용 ÷ 중앙값 시행 횟수 ÷ 50</td>
+                <td>추정치</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            신뢰도가 &quot;높음&quot;인 항목만으로도 대략의 손익 판단은 가능합니다.
+            환율 환산과 비용 역산 항목은 전제(환율·재련 확률)가 바뀌면 값이 함께 움직이므로,
+            이 둘이 기댓값의 큰 비중을 차지할 때는 숫자를 절대적으로 받아들이지 않는 편이 좋습니다.
+          </p>
+
+          <h2>진행도 구간과 보상 증가</h2>
+          <p>
+            계산기는 진행도 0~100을 11개 구간으로 나눠 보여줍니다. 구간이 올라가면 보상 항목의
+            종류가 늘어나는 것이 아니라 <strong>같은 항목의 수량이 늘어나는</strong> 구조가 기본이고,
+            천상 도전권·귀속 보석·전설 카드팩처럼 높은 구간에서만 새로 등장하는 항목이 일부 있습니다.
+          </p>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>구간</th>
+                <th>특징</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>0~29</td>
+                <td>기본 재련 재료 위주. 수량이 적어 기댓값 상승 폭도 완만합니다.</td>
+              </tr>
+              <tr>
+                <td>30~69</td>
+                <td>재료 수량이 본격적으로 늘어나는 구간. 골드 가치 상승이 가장 가파릅니다.</td>
+              </tr>
+              <tr>
+                <td>70~99</td>
+                <td>고가 항목(귀속 보석·전설 카드팩 등)이 등장하기 시작합니다.</td>
+              </tr>
+              <tr>
+                <td>100</td>
+                <td>모든 항목이 최대 수량. 천상 도전권 등 최상위 보상이 포함됩니다.</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            어디까지 밀지 정할 때는 &quot;구간을 하나 올리는 데 드는 시간&quot; 대비
+            &quot;기댓값 증가분&quot;을 보면 됩니다. 계산기에서 두 구간을 번갈아 선택해
+            기댓값 차이를 확인하는 것이 가장 빠릅니다.
+          </p>
+
           <div className={styles.tipBox}>
             <p>
               <strong>TIP:</strong> 지옥·나락을 어느 단계까지 밀지 고민된다면, 로아로골 지옥 보상
@@ -119,7 +205,7 @@ export default function HellRewardGuidePage() {
             "headline": "지옥·나락 보상 가이드 - 골드 가치 환산 원리",
             "description": "지옥과 나락의 보상 차이, 단계별 보상 구조, 거래 불가 재화의 골드 가치 환산 방식을 설명합니다.",
             "datePublished": "2026-07-18",
-            "dateModified": "2026-07-18",
+            "dateModified": "2026-08-20",
             "author": { "@type": "Organization", "name": "로아로골" },
             "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
             "mainEntityOfPage": `${SITE_URL}/guide/hell-reward`

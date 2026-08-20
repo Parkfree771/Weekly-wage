@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
 import styles from '../guide.module.css';
+import { raids } from '@/data/raids';
 
 export const metadata: Metadata = {
   title: '초보자를 위한 골드 수급 가이드',
@@ -135,6 +136,61 @@ export default function BeginnerGoldGuidePage() {
             <li>각 캐릭터의 아이템 레벨을 레이드 입장 레벨에 맞춰 효율적으로 올리세요.</li>
           </ul>
 
+          <h2>레이드별 클리어 골드 한눈에</h2>
+          <p>
+            어느 레이드부터 들어갈 수 있고 한 주에 얼마가 들어오는지 감을 잡는 게 먼저입니다.
+            아래 표는 로아로골 계산기가 쓰는 것과 같은 데이터입니다.
+            <strong>총 골드</strong>는 모든 관문을 클리어했을 때 받는 합계이고,
+            그중 <strong>귀속</strong>은 거래소에서 쓸 수 없고 더보기 비용 등에 먼저 차감되는 몫입니다.
+          </p>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>레이드</th>
+                <th>요구 레벨</th>
+                <th>관문</th>
+                <th>총 클리어 골드</th>
+                <th>그중 귀속</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...raids]
+                .sort((a, b) => a.level - b.level)
+                .map((r) => {
+                  const gold = r.gates.reduce((s, g) => s + g.gold, 0);
+                  const bound = r.gates.reduce((s, g) => s + g.boundGold, 0);
+                  return (
+                    <tr key={r.name}>
+                      <td>{r.name}</td>
+                      <td>{r.level.toLocaleString()}</td>
+                      <td>{r.gates.length}관문</td>
+                      <td>{gold.toLocaleString()} G</td>
+                      <td>{bound.toLocaleString()} G</td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+          <p>
+            표를 보면 알 수 있듯 요구 레벨이 오를수록 골드가 계단식으로 뜁니다.
+            그래서 초반에는 <strong>골드를 모으는 것보다 다음 레벨 구간에 들어가는 것</strong>이
+            훨씬 큰 수익 개선입니다. 아래 &quot;골드 사용 우선순위&quot;에서 재련을 앞에 둔 이유이기도 합니다.
+          </p>
+
+          <h2>귀속 골드와 유통 골드를 구분해야 하는 이유</h2>
+          <p>
+            클리어 골드는 전부 같은 골드가 아닙니다. <strong>유통 골드</strong>는 거래소에서
+            재료를 사거나 다른 캐릭터로 옮길 수 있지만, <strong>귀속 골드</strong>는 해당 원정대 안에서
+            소모만 가능합니다. 더보기 보상을 구매할 때는 귀속 골드가 먼저 차감되고 모자란 만큼만
+            유통 골드에서 빠져나갑니다.
+          </p>
+          <p>
+            그래서 &quot;이번 주에 골드를 얼마 벌었나&quot;를 유통 골드 기준으로만 세면 실제보다 적게 보이고,
+            총합으로만 세면 실제로 쓸 수 있는 돈보다 많게 보입니다.
+            로아로골 숙제 체크는 이 둘을 나눠서 집계하므로, 재료를 사려고 모으는 중이라면
+            유통 골드 쪽 숫자를 기준으로 계획하세요.
+          </p>
+
           <div className={styles.tipBox}>
             <p>
               <strong>TIP:</strong> 로아로골의 주간 골드 계산기에 캐릭터명을 입력하면
@@ -160,7 +216,7 @@ export default function BeginnerGoldGuidePage() {
             "headline": "초보자를 위한 골드 수급 가이드",
             "description": "로스트아크를 시작한 초보자가 알아야 할 골드 획득 방법, 우선순위, 효율적인 캐릭터 육성법을 소개합니다.",
             "datePublished": "2026-02-06",
-            "dateModified": "2026-07-18",
+            "dateModified": "2026-08-20",
             "author": { "@type": "Organization", "name": "로아로골" },
             "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
             "mainEntityOfPage": `${SITE_URL}/guide/beginner-gold`

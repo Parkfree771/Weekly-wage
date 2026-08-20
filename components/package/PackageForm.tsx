@@ -1324,9 +1324,6 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                     onChange={(e) => { setSaleEndInput(e.target.value); if (fieldErrors.salePeriod) setFieldErrors((p) => { const n = { ...p }; delete n.salePeriod; return n; }); }}
                     aria-label="판매 종료일 (오전 6시 종료)" />
                 </div>
-                <p className={styles.salePeriodHint}>
-                  종료는 날짜만 고르면 그 날 오전 6시로 저장됩니다. 지나면 갤러리에서 자동으로 판매 종료로 표시되며, 상시 판매 패키지는 비워두세요.
-                </p>
                 {isEdit && (
                   <label className={styles.saleClosedToggle}>
                     <input type="checkbox" checked={saleClosed}

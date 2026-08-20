@@ -62,6 +62,8 @@ export const guides: Guide[] = [
     summary: '패키지 이득률 계산 원리, 3+1·2+1 묶음 계산법, 가챠 기대값, 크리스탈 환율 적용까지 패키지 구매 판단 기준을 정리했습니다.',
     category: '패키지',
     date: '2026-07-18',
+    /** 마지막 수정일 (JSON-LD dateModified) */
+    updated: '2026-08-20',
     href: '/guide/package-efficiency',
   },
   {
@@ -70,6 +72,8 @@ export const guides: Guide[] = [
     summary: '지옥과 나락의 보상 차이, 단계별 보상 구조, 거래 불가 재화의 골드 가치 환산 방식을 설명합니다.',
     category: '지옥',
     date: '2026-07-18',
+    /** 마지막 수정일 (JSON-LD dateModified) */
+    updated: '2026-08-20',
     href: '/guide/hell-reward',
   },
   {
@@ -78,7 +82,7 @@ export const guides: Guide[] = [
     summary: '로스트아크를 시작한 초보자가 알아야 할 골드 획득 방법, 우선순위, 효율적인 캐릭터 육성법을 소개합니다.',
     category: '초보자',
     date: '2026-02-06',
-    updated: '2026-07-18',
+    updated: '2026-08-20',
     href: '/guide/beginner-gold',
   },
   {
@@ -87,7 +91,7 @@ export const guides: Guide[] = [
     summary: '로스트아크 거래소 시세 변동 패턴, 매매 타이밍, 로아로골 시세 차트 활용법을 알려드립니다.',
     category: '거래소',
     date: '2026-02-06',
-    updated: '2026-07-18',
+    updated: '2026-08-20',
     href: '/guide/market-price',
   },
 ];

@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { SITE_URL } from '@/lib/site-config';
+import { SITE_URL, isNoindexed } from '@/lib/site-config';
 import { faqData } from './faq-data';
 
 // 시간 의존 렌더(오늘 요일 배지·공통 컨텐츠 활성화)는 전부 마운트 후 상태(gameDayOfWeek)로만
@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/mypage',
   },
+  // 로그인해야 내용이 채워지는 개인화 페이지라 색인에서 뺀다.
+  // follow 는 남겨 이 페이지가 거는 내부 링크는 그대로 전달한다.
+  robots: isNoindexed('/mypage') ? { index: false, follow: true } : undefined,
 };
 
 const faqJsonLd = {

@@ -12,6 +12,7 @@ import InquiryButton from './InquiryButton';
 import AppSidebarPromo from './AppSidebarPromo';
 import PopularPagesBox from './PopularPagesBox';
 import FireLottie from './FireLottie';
+import { NAV_HIDDEN_PATHS } from '@/lib/site-config';
 
 type NavItem = {
   href: string;
@@ -69,6 +70,14 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+/**
+ * 실제로 그리는 메뉴. 항목 자체는 위 NAV_GROUPS 에 그대로 두고 여기서만 걸러낸다 —
+ * 되돌릴 때 site-config 의 NAV_HIDDEN_PATHS 만 비우면 메뉴가 그대로 돌아온다.
+ */
+const VISIBLE_NAV_GROUPS: NavGroup[] = NAV_GROUPS
+  .map((g) => ({ ...g, items: g.items.filter((i) => !NAV_HIDDEN_PATHS.includes(i.href)) }))
+  .filter((g) => g.items.length > 0);
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -169,7 +178,7 @@ export default function Navbar() {
           {/* 데스크톱 메뉴 */}
           <Nav className="d-none d-lg-flex align-items-center gap-2 ms-4">
             {/* 드롭다운 그룹 + 직접 링크(href 있는 그룹) */}
-            {NAV_GROUPS.map((group) => (
+            {VISIBLE_NAV_GROUPS.map((group) => (
               group.href ? (
                 <Link
                   key={group.label}
@@ -374,7 +383,7 @@ export default function Navbar() {
             {/* ── 메뉴 ── */}
             <div className="navbar-offcanvas-group-label">메뉴</div>
             <Nav className="flex-column gap-2">
-              {NAV_GROUPS.map((group) => (
+              {VISIBLE_NAV_GROUPS.map((group) => (
                 group.href ? (
                   <Link
                     key={group.label}

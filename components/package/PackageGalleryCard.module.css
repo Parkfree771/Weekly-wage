@@ -275,6 +275,122 @@
   filter: none;
 }
 
+/* ─── 보너스 구성품 (3+보너스 전용) ───
+   확정 구성품 바로 밑에 붙이지 않고 카드 아래 남는 자리로 내려 붙인다(margin-top:auto).
+   셀 크기는 확정 구성품과 똑같이 두고(줄이면 뭐가 들었는지 안 보인다),
+   머리 띠가 달린 별도 판으로 묶어 '덤'이라는 걸 구분한다. 최대 2줄까지 보인다.
+
+   색은 사이트 60-30-10 의 10% 액센트(--color-accent)를 그대로 쓴다 —
+   구성품 체크박스가 이미 이 색이라 카드 안에서 따로 놀지 않는다.
+   rgba() 로 농도를 조절해야 해서 채널값을 변수로 들고 있는다. */
+.bonusBlock {
+  --bonus-rgb: 232, 114, 42; /* #e8722a = 라이트 --color-accent */
+  --bonus-strong: #c2551a;   /* 옅은 띠 위에서 읽히는 진한 쪽 (--color-accent-dark 계열) */
+
+  margin-top: auto;
+  border: 1px solid rgba(var(--bonus-rgb), 0.32);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--gc-item-bg);
+}
+
+:global([data-theme="dark"]) .bonusBlock {
+  --bonus-rgb: 212, 165, 74; /* #D4A54A = 다크 --color-accent */
+  --bonus-strong: #e8c06a;   /* --gradient-text-orange 다크 끝 색 */
+}
+
+/* 보너스 판이 아래를 차지하면 메타 줄의 margin-top:auto 와 남는 자리를 나눠 갖게 된다 —
+   보너스 판만 내리고 메타는 그 바로 밑에 붙도록 여기서 auto 를 끈다 */
+.leftMetaTight {
+  margin-top: 0;
+}
+
+/* 머리 띠 — 오른쪽 끝까지 액센트 톤을 남긴다.
+   투명에 가깝게 빼면 끝쪽이 판 배경(푸른 회색)으로 비쳐서 띠가 도중에 끊긴 것처럼 보인다. */
+.bonusBar {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.5rem;
+  background: linear-gradient(90deg, rgba(var(--bonus-rgb), 0.22), rgba(var(--bonus-rgb), 0.12));
+  border-bottom: 1px solid rgba(var(--bonus-rgb), 0.22);
+}
+
+.bonusBarTitle {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--bonus-strong);
+}
+
+.bonusBarNote {
+  min-width: 0;
+  font-size: 0.63rem;
+  font-weight: 600;
+  color: var(--gc-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 고른 보너스로 얹히는 골드 — 선택을 바꾸면 여기 숫자가 바로 따라간다 */
+.bonusBarGold {
+  margin-left: auto;
+  padding-left: 0.35rem;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+/* 확정 구성품과 같이 한 줄에 5개. 판 안쪽은 확정 구성품 그리드보다 padding 만큼 좁아서
+   flex-wrap 으로 두면 폭에 따라 4개만 들어가기도 한다 — 열 수를 5로 못박는다.
+   minmax(0, 62px) 라 자리가 넉넉하면 확정 구성품과 같은 62px, 좁으면 셀이 같이 줄어든다. */
+.bonusGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 62px));
+  justify-content: flex-start;
+  align-content: flex-start;
+  gap: 0.35rem;
+  padding: 0.45rem;
+  max-height: 144px; /* 62px x 2행 + gap + 위아래 padding */
+  overflow: hidden;
+}
+
+/* 확정 구성품 셀과 같은 모양. 크기는 위 격자의 열 폭을 따라간다 */
+.bonusCell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  cursor: pointer;
+  border-radius: 10px;
+  border: 1px solid rgba(var(--bonus-rgb), 0.38);
+  background: var(--gc-bg);
+  transition: opacity 0.12s ease, filter 0.12s ease;
+}
+
+/* 안 고른 보너스 — 흑백으로 죽여서 '안 받는 것'이 한눈에 보이게 (확정 구성품과 다른 규칙) */
+.bonusCellOff {
+  opacity: 0.3;
+  filter: grayscale(1);
+  border-color: var(--gc-item-border);
+}
+
+.bonusCellOff:hover {
+  opacity: 0.6;
+}
+
+/* 고른 표시는 확정 구성품과 같은 체크박스(.itemCheckBoxChecked)를 그대로 쓴다 — 색도 --color-accent 로 같다 */
+.bonusCell:hover .itemCheckBox {
+  border-color: var(--color-accent);
+}
+
 /* 체크박스 (아이콘 우상단 오버레이) */
 .itemCheckBox {
   position: absolute;
@@ -986,6 +1102,45 @@
   /* 아이템은 2줄(10개)까지만 — 카드 높이가 아이템 수에 끌려가 카드마다 키가
      달라지는 걸 막는다. 가챠 카드는 룰렛 칸이라 itemGridCapped 를 안 받아 다 보인다. */
   .itemGridCapped .itemCell:nth-child(n+11) {
+    display: none;
+  }
+
+  /* 보너스 판 — 모바일도 확정 구성품과 같은 5열 균등 그리드를 쓴다 (셀 크기 동일) */
+  .bonusBlock {
+    border-radius: 9px;
+  }
+
+  .bonusBar {
+    gap: 0.25rem;
+    padding: 0.25rem 0.4rem;
+  }
+
+  .bonusBarTitle {
+    font-size: 0.6rem;
+  }
+
+  .bonusBarNote {
+    font-size: 0.55rem;
+  }
+
+  .bonusBarGold {
+    font-size: 0.6rem;
+  }
+
+  /* 확정 구성품과 같은 5열 균등 — 열 상한(62px)을 풀어 셀이 화면 폭을 따라 커지게 둔다 */
+  .bonusGrid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding: 5px;
+    max-height: none;
+  }
+
+  .bonusCell {
+    border-radius: 6px;
+  }
+
+  /* 보너스도 2줄(10개)까지만 — 카드 키가 보너스 수에 끌려가는 걸 막는다 */
+  .bonusGrid .bonusCell:nth-child(n+11) {
     display: none;
   }
 

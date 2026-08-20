@@ -83,6 +83,41 @@ function getIconTweakClass(itemId: string, icon: string): string {
   return '';
 }
 
+/** 셀 안 그림 — 확정 구성품·보너스 구성품 공용 (묶음 아이콘 / 단일 아이콘 / 기타 텍스트) */
+function ItemCellVisual({ item }: { item: PackageItem }) {
+  if (item.bundleItems && item.bundleItems.length > 0) {
+    return (
+      <div className={styles.bundleIconStack}>
+        {item.bundleItems.map((bi, biIdx) => (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img loading="lazy" decoding="async" key={biIdx} src={bi.icon} alt={bi.name} className={styles.bundleIconItem}
+            style={{ zIndex: item.bundleItems!.length - biIdx }} />
+        ))}
+      </div>
+    );
+  }
+  if (item.icon) {
+    const size = getGalleryIconSize(item.itemId);
+    return (
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img loading="lazy" decoding="async"
+        src={getDisplayIcon(item.icon)}
+        alt={item.name}
+        className={`${styles.itemCellIcon} ${getIconTweakClass(item.itemId, getDisplayIcon(item.icon))}`}
+        style={size ? { width: size, height: size } : {}} />
+    );
+  }
+  /* 기타(직접 입력) 항목 — 아이콘이 없다. 등록자가 넣은 축약 이름을 쓰고,
+     안 넣었으면 풀네임을 그대로 흘려 CSS 로 자른다 (툴팁에는 항상 풀네임) */
+  return (
+    <div className={styles.itemCellPlaceholder} title={item.name}>
+      <span className={styles.itemCellPlaceholderText}>
+        {item.shortName || item.name || '기타'}
+      </span>
+    </div>
+  );
+}
+
 // 이득률 % — 매트 단색 + 양 모서리 컷 칩 (이득 초록 / 손해 빨강)
 function BenefitPct({ v }: { v: number }) {
   return (
@@ -162,44 +197,56 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
     return fallback;
   };
 
-  // 아이템별 소계 (N선택 토글 로직용)
-  const itemSubtotals = useMemo(() => {
+  /** 구성품 1개의 골드 가치 — 확정 구성품·보너스 구성품 공용 */
+  const calcItemGold = (item: PackageItem): number => {
     const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
-    return post.items.map((item) => {
-      if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
-        // 현재 시세 상위 N개 조합 (저장된 선택은 등록 시점 시세라 역전될 수 있음)
-        const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
-        return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
+    if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
+      // 현재 시세 상위 N개 조합 (저장된 선택은 등록 시점 시세라 역전될 수 있음)
+      const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
+      return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
+    }
+    // 확률 상자: 현재 시세 기준 기댓값 (티켓 후보는 bcRate 로 동적 단가)
+    if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
+      return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity;
+    }
+    if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
+      return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
+    }
+    // 기존 패키지 하위 호환
+    if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
+      const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
+      if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
+    }
+    if (item.goldOverride != null) {
+      const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
+      return dynamicUnit * item.quantity;
+    }
+    // choice 타입: 현재 시세 최고가 선택지 기준 (item.quantity = 박스 개수)
+    if (item.choiceOptions && item.choiceOptions.length > 0) {
+      if (item.icon === FIXED_GEM_SELECT_ICON) {
+        const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
+        return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
       }
-      // 확률 상자: 현재 시세 기준 기댓값 (티켓 후보는 bcRate 로 동적 단가)
-      if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity;
-      }
-      if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
-        return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
-      }
-      // 기존 패키지 하위 호환
-      if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
-        const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
-        if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
-      }
-      if (item.goldOverride != null) {
-        const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
-        return dynamicUnit * item.quantity;
-      }
-      // choice 타입: 현재 시세 최고가 선택지 기준 (item.quantity = 박스 개수)
-      if (item.choiceOptions && item.choiceOptions.length > 0) {
-        if (item.icon === FIXED_GEM_SELECT_ICON) {
-          const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
-          return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
-        }
-        return getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity;
-      }
-      const raw = latestPrices[item.itemId] || 0;
-      const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-      return (raw / bundle) * item.quantity;
-    });
-  }, [post.items, latestPrices, goldPerWon]);
+      return getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity;
+    }
+    const raw = latestPrices[item.itemId] || 0;
+    const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
+    return (raw / bundle) * item.quantity;
+  };
+
+  // 아이템별 소계 (N선택 토글 로직용)
+  const itemSubtotals = useMemo(
+    () => post.items.map(calcItemGold),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [post.items, latestPrices, goldPerWon],
+  );
+
+  // 보너스 구성품 소계 (보너스 택N 토글 로직용)
+  const bonusItemSubtotals = useMemo(
+    () => (post.bonusItems || []).map(calcItemGold),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [post.bonusItems, latestPrices, goldPerWon],
+  );
 
   // 시세 로드 후 N선택 재계산 — 표시 소계(itemSubtotals)와 동일한 값 기준 (티켓은 지옥 보상 평균 연동).
   // useState 초기값은 시세 도착 전(빈 prices)에 계산되어 goldOverride 티켓만 값이 잡히는 문제가 있어 여기서 확정한다.
@@ -233,6 +280,57 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
           Object.entries(prev).forEach(([i, checked]) => {
             if (checked !== false) {
               const val = itemSubtotals[+i] || 0;
+              if (val < minValue) { minValue = val; minIdx = +i; }
+            }
+          });
+          if (minIdx >= 0) return { ...prev, [minIdx]: false, [idx]: true };
+        }
+      }
+      return { ...prev, [idx]: true };
+    });
+  };
+
+  /* 보너스 구성품 택N — 확정 구성품 N선택과 같은 원칙.
+     시세 로드 전에는 값을 몰라 최고가 N개를 못 고르므로, 아래 effect 에서 확정한다. */
+  const [bonusChecked, setBonusChecked] = useState<Record<number, boolean>>(() => {
+    const initial: Record<number, boolean> = {};
+    const selectable = !!(post.bonusSelectableCount && post.bonusSelectableCount > 0);
+    (post.bonusItems || []).forEach((_, idx) => { initial[idx] = !selectable; });
+    return initial;
+  });
+
+  const bonusAutoPickedRef = useRef(false);
+  useEffect(() => {
+    const sc = post.bonusSelectableCount || 0;
+    if (sc <= 0) return;
+    if (!post.bonusItems || post.bonusItems.length === 0) return;
+    if (Object.keys(latestPrices).length === 0) return;
+    if (bonusAutoPickedRef.current) return;
+    bonusAutoPickedRef.current = true;
+    const withValue = bonusItemSubtotals.map((value, idx) => ({ idx, value }));
+    withValue.sort((a, b) => b.value - a.value);
+    const next: Record<number, boolean> = {};
+    post.bonusItems.forEach((_, idx) => { next[idx] = false; });
+    withValue.slice(0, sc).forEach((v) => { next[v.idx] = true; });
+    setBonusChecked(next);
+  }, [latestPrices, bonusItemSubtotals, post.bonusItems, post.bonusSelectableCount]);
+
+  // 보너스 택N 토글 — N개 초과 선택 시 체크된 것 중 가장 싼 보너스를 밀어낸다 (메인 N선택과 동일)
+  const handleBonusToggleCheck = (idx: number) => {
+    const sc = post.bonusSelectableCount || 0;
+    setBonusChecked((prev) => {
+      const isChecked = prev[idx] !== false;
+      if (isChecked) {
+        return { ...prev, [idx]: false };
+      }
+      if (sc > 0) {
+        const checkedCount = Object.values(prev).filter((v) => v !== false).length;
+        if (checkedCount >= sc) {
+          let minIdx = -1;
+          let minValue = Infinity;
+          Object.entries(prev).forEach(([i, checked]) => {
+            if (checked !== false) {
+              const val = bonusItemSubtotals[+i] || 0;
               if (val < minValue) { minValue = val; minIdx = +i; }
             }
           });
@@ -425,54 +523,19 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
     setMultiHighlights([]);
   };
 
-  // '3+보너스' 전용: 3회 구매 시 1회 지급되는 보너스 구성품 가치 (3으로 나눠 1회 구매당 가치로 환산)
-  // 보너스 택N이면 최고가 N개만 합산 (뷰어가 최고가 조합을 고른다고 가정)
+  // '3+보너스' 전용: 3회 구매 시 1회 지급되는 보너스 구성품 가치.
+  // 카드에서 켜 둔 보너스만 합산한다 (택N 이면 시세 기준 최고가 N개가 기본으로 켜져 있다).
   const bonusTotalGold = useMemo(() => {
     if (post.packageType !== '3+보너스' || !post.bonusItems || post.bonusItems.length === 0) return 0;
-    const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
-    const values = post.bonusItems.map((item) => {
-      if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
-        // 현재 시세 상위 N개 조합 (저장된 선택은 등록 시점 시세라 역전될 수 있음)
-        const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
-        return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
-      }
-      // 확률 상자: 현재 시세 기준 기댓값 (티켓 후보는 bcRate 로 동적 단가)
-      if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity;
-      }
-      if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
-        return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
-      }
-      if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
-        const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
-        if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
-      }
-      if (item.goldOverride != null) {
-        const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
-        return dynamicUnit * item.quantity;
-      }
-      // choice 타입: 현재 시세 최고가 선택지 기준
-      if (item.choiceOptions && item.choiceOptions.length > 0) {
-        if (item.icon === FIXED_GEM_SELECT_ICON) {
-          const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
-          return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
-        }
-        return getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity;
-      }
-      const raw = latestPrices[item.itemId] || 0;
-      const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-      return (raw / bundle) * item.quantity;
-    });
-    if (post.bonusSelectableCount && post.bonusSelectableCount > 0) {
-      const sorted = [...values].sort((a, b) => b - a);
-      return sorted.slice(0, post.bonusSelectableCount).reduce((s, v) => s + v, 0);
-    }
-    return values.reduce((s, v) => s + v, 0);
-  }, [post.packageType, post.bonusItems, post.bonusSelectableCount, latestPrices, goldPerWon]);
+    return bonusItemSubtotals.reduce((sum, v, idx) => (bonusChecked[idx] === false ? sum : sum + v), 0);
+  }, [post.packageType, post.bonusItems, bonusItemSubtotals, bonusChecked]);
 
   const cashGold = post.royalCrystalPrice * goldPerWon;
   const isBundle = post.packageType === '3+1' || post.packageType === '2+1';
   const isBonusPkg = post.packageType === '3+보너스';
+  // 보너스 판을 카드 아래 남는 자리로 내리면 메타 줄의 margin-top:auto 와 자리를 나눠 갖게 되므로
+  // 이 플래그로 메타 줄의 auto 를 끈다
+  const showBonus = isBonusPkg && !!post.bonusItems && post.bonusItems.length > 0;
 
   // '1개 구매'는 보너스 가정 없이 순수 1회 구매 기준 (3+1/2+1과 동일한 원칙)
   const effectiveGold = isGacha ? gachaExpectedGold : totalGold;
@@ -564,30 +627,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
                   handleToggleCheck(idx);
                 }}
               >
-                {item.bundleItems && item.bundleItems.length > 0 ? (
-                  <div className={styles.bundleIconStack}>
-                    {item.bundleItems.map((bi, biIdx) => (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img loading="lazy" decoding="async" key={biIdx} src={bi.icon} alt={bi.name} className={styles.bundleIconItem}
-                        style={{ zIndex: item.bundleItems!.length - biIdx }} />
-                    ))}
-                  </div>
-                ) : item.icon ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img loading="lazy" decoding="async"
-                    src={getDisplayIcon(item.icon)}
-                    alt={item.name}
-                    className={`${styles.itemCellIcon} ${getIconTweakClass(item.itemId, getDisplayIcon(item.icon))}`}
-                    style={(() => { const s = getGalleryIconSize(item.itemId); return s ? { width: s, height: s } : {}; })()} />
-                ) : (
-                  /* 기타(직접 입력) 항목 — 아이콘이 없다. 등록자가 넣은 축약 이름을 쓰고,
-                     안 넣었으면 풀네임을 그대로 흘려 CSS 로 자른다 (툴팁에는 항상 풀네임) */
-                  <div className={styles.itemCellPlaceholder} title={item.name}>
-                    <span className={styles.itemCellPlaceholderText}>
-                      {item.shortName || item.name || '기타'}
-                    </span>
-                  </div>
-                )}
+                <ItemCellVisual item={item} />
                 {isGacha && (
                   <span className={styles.itemProbBadge}>{item.probability}%</span>
                 )}
@@ -616,7 +656,47 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
           <span className={`${styles.moreText} ${styles.moreTextMobile}`}>...외 {post.items.length - 10}개 아이템</span>
         )}
 
-        <div className={styles.leftMeta}>
+        {/* 보너스 구성품 — 3회 구매 시 1회 지급.
+            카드 아래 남는 자리로 내려 붙이고(.bonusBlock margin-top:auto), 금색 띠 머리말이 달린
+            별도 판으로 묶어 확정 구성품과 구분한다. 셀 크기는 확정 구성품과 똑같이 둔다.
+            고른 것만 살리고 안 고른 건 흑백으로 죽여 '안 받는 것'이 한눈에 보이게 한다. */}
+        {showBonus && post.bonusItems && (
+          <div className={styles.bonusBlock}>
+            <div className={styles.bonusBar}>
+              <span className={styles.bonusBarTitle}>보너스</span>
+              <span className={styles.bonusBarNote}>
+                3회 구매 시 1회{(post.bonusSelectableCount || 0) > 0 ? ` · ${post.bonusSelectableCount}개 선택` : ''}
+              </span>
+              {bonusTotalGold > 0 && (
+                <span className={styles.bonusBarGold}>+{formatNumber(bonusTotalGold)}G</span>
+              )}
+            </div>
+            <div className={styles.bonusGrid}>
+              {post.bonusItems.map((item, idx) => {
+                const isChecked = bonusChecked[idx] !== false;
+                return (
+                  <div
+                    key={idx}
+                    className={`${styles.bonusCell} ${isChecked ? '' : styles.bonusCellOff}`}
+                    onClick={(e) => { e.stopPropagation(); handleBonusToggleCheck(idx); }}
+                    title={item.name}
+                  >
+                    <ItemCellVisual item={item} />
+                    <span className={`${styles.itemCheckBox} ${isChecked ? styles.itemCheckBoxChecked : ''}`}>
+                      {isChecked && (
+                        <svg viewBox="0 0 12 10" className={styles.itemCheckIcon}>
+                          <polyline points="1.5 5 4.5 8 10.5 2" />
+                        </svg>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className={`${styles.leftMeta} ${showBonus ? styles.leftMetaTight : ''}`}>
           <div className={styles.metaLeft}>
             <span className={styles.metaAuthor}>{post.authorName || '익명'}</span>
             <span>
