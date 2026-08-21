@@ -6,8 +6,7 @@ import { ENGRAVING_BUILDS } from '@/lib/engraving-builds.generated';
 import { ENGRAVING_OVERRIDES, type EngSlot } from '@/lib/engraving-overrides';
 import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import ClassIcon from '@/components/tier/ClassIcon';
-import { useNewbieRec } from '@/components/newbie/useNewbieRec';
-import NewbieRecSidebar from '@/components/newbie/NewbieRecSidebar';
+import EngravingCorrectionBox from '@/components/engraving/EngravingCorrectionBox';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
@@ -248,9 +247,6 @@ export default function EngravingPage() {
   // 겹침 순위에서 선택한 각인들 — 카드의 해당 각인 칸에 테두리만 표시 (필터링은 안 함, 중복 선택 가능)
   const [highlights, setHighlights] = useState<Set<string>>(new Set());
 
-  // 뉴비 추천 직업 투표 (사이드바 + 카드 선택 연동)
-  const nr = useNewbieRec();
-
 
   // 칩 클릭: 해제 → 포함 → 제외 → 해제 순환
   const cycleFilter = (name: string) => {
@@ -454,9 +450,12 @@ export default function EngravingPage() {
         </div>
       </div>
 
-      {/* 결과 — 가나다순 평면 그리드 (+ 뉴비 추천 사이드바를 그리드 시작점에 정렬) */}
+      {/* 결과 — 가나다순 평면 그리드 (+ 좌우 사이드바를 그리드 시작점에 정렬) */}
       <div className={styles.results}>
-        <NewbieRecSidebar nr={nr} />
+        {/* 오른쪽: 각인 정정 요청 — 익명, 관리자 의견함(/api/feedback)으로 전송 */}
+        <aside className={styles.rightSidebar}>
+          <EngravingCorrectionBox />
+        </aside>
 
         {/* 왼쪽: 표시 중인 직업들의 각인 겹침 순위 (절대배치 — 레이아웃 안 밈) */}
         <aside className={styles.engSidebar} aria-label="유각 겹침 순위">
@@ -510,29 +509,8 @@ export default function EngravingPage() {
             const slots = SORTED_SLOTS[spec.id];
             const stat = BUILDS[spec.id].stat;
             const styleLabel = STYLE_LABEL[styleOf(spec.id)];
-            const picked = nr.selected.has(spec.id);
             return (
-              <div
-                key={spec.id}
-                className={`${styles.card} ${
-                  nr.votingMode ? styles.cardSelectable : ''
-                } ${picked ? styles.cardSelected : ''}`}
-                onClick={nr.votingMode ? () => nr.toggle(spec.id) : undefined}
-                role={nr.votingMode ? 'button' : undefined}
-                aria-pressed={nr.votingMode ? picked : undefined}
-              >
-                {nr.votingMode && (
-                  <span className={styles.cardCheck} aria-hidden>
-                    {picked && (
-                      <svg viewBox="0 0 20 20" width="13" height="13">
-                        <path
-                          d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0l-3.5-3.5a1 1 0 111.4-1.4l2.8 2.79 6.8-6.79a1 1 0 011.4 0z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                    )}
-                  </span>
-                )}
+              <div key={spec.id} className={styles.card}>
                 <div className={styles.cardHead}>
                   <ClassIcon name={spec.name} src={spec.icon} size={42} />
                   <span className={styles.cardName}>{spec.name}</span>

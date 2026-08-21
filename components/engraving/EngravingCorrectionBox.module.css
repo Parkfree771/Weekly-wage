@@ -1,6 +1,5 @@
-/* 뉴비 추천 박스(.box)와 동일한 카드 톤. 사이드바 하단에 간격 두고 배치. */
+/* 왼쪽 유각 겹침 순위 박스와 동일한 카드 톤. 오른쪽 사이드바 최상단에 배치. */
 .box {
-  margin-top: 0.8rem;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 14px;

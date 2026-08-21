@@ -294,14 +294,14 @@
   border-color: var(--loss-color);
 }
 
-/* ── 결과 영역 (뉴비 추천 사이드바의 기준 컨테이너) ── */
+/* ── 결과 영역 (좌우 사이드바의 기준 컨테이너) ── */
 .results {
   position: relative;
 }
 
 /* ── 왼쪽 유각 겹침 순위 사이드바 ──
-   오른쪽 뉴비 추천과 동일한 절대배치 방식: 콘텐츠 왼쪽 여백에 띄워
-   레이아웃을 절대 밀지 않고, 들어갈 폭이 없으면 숨김. */
+   콘텐츠 왼쪽 여백에 절대배치로 띄워 레이아웃을 절대 밀지 않고,
+   들어갈 폭이 없으면 숨김. */
 .engSidebar {
   position: absolute;
   top: 0;
@@ -310,8 +310,20 @@
   display: none;
 }
 
+/* ── 오른쪽 각인 정정 요청 사이드바 ── (왼쪽과 동일한 절대배치)
+   ※ body zoom(0.85)으로 콘텐츠가 작아진 만큼 기준폭도 비례해 낮춤(1680×0.85≈1428).
+      CSS zoom은 미디어쿼리 기준폭을 안 바꾸므로 여기서 직접 보정해야 함. */
+.rightSidebar {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 1rem);
+  width: 250px;
+  display: none;
+}
+
 @media (min-width: 1428px) {
-  .engSidebar {
+  .engSidebar,
+  .rightSidebar {
     display: block;
   }
 }
@@ -453,51 +465,6 @@
   transform: translateY(-2px);
 }
 
-/* ── 뉴비 추천 투표 모드 ── */
-/* 투표 중: 비활성처럼 보이지 않게 평소 카드 그대로 두고,
-   '고를 수 있음'은 우상단 체크박스로 표시 (선택은 카드 클릭) */
-.cardSelectable {
-  cursor: pointer;
-  /* 체크박스 자리 확보 — 직업명이 동그라미와 겹치지 않게 */
-  padding-right: 2.6rem;
-}
-
-.cardSelectable:hover {
-  transform: none;
-  border-color: var(--color-primary);
-}
-
-/* 선택됨: 메인 컬러 테두리 + 연한 배경으로 확실히 '켜짐' 표시 */
-.cardSelected {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
-  box-shadow: 0 0 0 1px var(--color-primary) inset;
-}
-
-.cardCheck {
-  position: absolute;
-  top: 0.7rem;
-  right: 0.7rem;
-  width: 1.4rem;
-  height: 1.4rem;
-  border-radius: 50%;
-  border: 2px solid var(--border-color);
-  background: var(--card-bg);
-  display: grid;
-  place-items: center;
-  color: #fff;
-  transition: border-color 0.12s ease, background 0.12s ease;
-}
-
-/* 선택 가능 상태에서 카드에 호버하면 체크박스도 메인 컬러로 반응 */
-.cardSelectable:hover .cardCheck {
-  border-color: var(--color-primary);
-}
-
-.cardSelected .cardCheck {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-}
 
 .cardHead {
   display: flex;
