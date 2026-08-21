@@ -15,6 +15,7 @@ import AdFitUnit from '@/components/ads/AdFitUnit';
 import useIsMobileViewport from '@/components/ads/useIsMobileViewport';
 import { ADFIT_ENABLED, ADFIT_UNITS } from '@/components/ads/adConfig';
 import GuideFaq from '@/components/common/GuideFaq';
+import PackageEfficiencyGuideBody from '@/components/guide/PackageEfficiencyGuideBody';
 import { faqData } from './faq-data';
 import styles from './package.module.css';
 
@@ -498,7 +499,8 @@ export default function PackageGalleryPage() {
         )}
 
         <GuideFaq
-          relatedGuides={['/guide/package-efficiency']}
+          relatedGuides={['/guide/market-price']}
+          article={<PackageEfficiencyGuideBody />}
           guideTitle="패키지 효율 게시판 이용 가이드"
           sections={[
             {

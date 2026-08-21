@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Accordion, Collapse } from 'react-bootstrap';
-import { guides } from '@/data/guides';
+import { guides, relatedPages } from '@/data/guides';
+import styles from './GuideFaq.module.css';
 
 export interface GuideSection {
   /** 소제목 (h3) */
@@ -31,11 +32,18 @@ interface GuideFaqProps {
   /** FAQ 영역 상단 제목. 기본값 "자주 묻는 질문" */
   faqTitle?: string;
   /**
-   * 관련 가이드 글 경로 (data/guides.ts 의 href). 접기 영역 *밖에* 항상 노출된다.
-   * 가이드 글은 /guide 인덱스에서만 연결되면 크롤링 우선순위가 밀리므로,
-   * 도구 페이지에서 해당 글로 내려가는 링크를 하나씩 만들어 준다.
+   * 관련 페이지 경로. data/guides.ts 의 `guides`(가이드 글) 에서 먼저 찾고,
+   * 없으면 `relatedPages`(도구 페이지) 에서 찾는다. 접기 영역 *밖에* 항상 노출된다.
+   * /guide 인덱스에서만 연결되면 크롤링 우선순위가 밀리므로, 도구 페이지에서
+   * 해당 문서로 내려가는 링크를 하나씩 만들어 준다.
    */
   relatedGuides?: string[];
+  /**
+   * 통합된 가이드 본문 (components/guide/*GuideBody).
+   * 2026-08-21 에 /guide 하위 글 6편을 각 도구 페이지로 합치면서 생긴 자리다.
+   * 접기 영역 *안*이지만 기본 펼침이라 SSR HTML 에 그대로 들어간다.
+   */
+  article?: ReactNode;
 }
 
 export default function GuideFaq({
@@ -45,15 +53,16 @@ export default function GuideFaq({
   guideTitle = '이용 가이드',
   faqTitle = '자주 묻는 질문',
   relatedGuides,
+  article,
 }: GuideFaqProps) {
   // 기본 펼침 — 애드센스 심사·크롤러가 보는 첫 화면에 본문이 그대로 노출되어야 한다.
   // (기본 접힘이던 시절 "가치가 별로 없는 콘텐츠"로 반복 반려됨 — 접기는 사용자가 원할 때만)
   const [open, setOpen] = useState(true);
 
-  const hasGuide = !!(intro?.length || sections?.length);
+  const hasGuide = !!(intro?.length || sections?.length || article);
   const hasFaq = !!faqs?.length;
   const related = (relatedGuides ?? [])
-    .map((href) => guides.find((g) => g.href === href))
+    .map((href) => guides.find((g) => g.href === href) ?? relatedPages.find((g) => g.href === href))
     .filter((g): g is (typeof guides)[number] => !!g);
 
   if (!hasGuide && !hasFaq && related.length === 0) return null;
@@ -61,14 +70,17 @@ export default function GuideFaq({
   return (
     <div className="mt-5">
       {related.length > 0 && (
-        <div className="mb-2 small" style={{ color: 'var(--text-muted)' }}>
-          <span className="me-1">관련 가이드:</span>
-          {related.map((g, i) => (
-            <span key={g.href}>
-              {i > 0 && <span className="mx-1">·</span>}
-              <Link href={g.href} style={{ color: 'var(--text-muted)' }}>{g.title}</Link>
-            </span>
-          ))}
+        <div className={styles.related}>
+          <div className={styles.relatedHead}>함께 보면 좋은 페이지</div>
+          <div className={styles.relatedGrid}>
+            {related.map((g) => (
+              <Link key={g.href} href={g.href} className={styles.card}>
+                <span className={styles.cardCategory}>{g.category}</span>
+                <div className={styles.cardTitle}>{g.title}</div>
+                <p className={styles.cardSummary}>{g.summary}</p>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
       {(hasGuide || hasFaq) && (
@@ -111,6 +123,8 @@ export default function GuideFaq({
               ))}
             </section>
           )}
+
+          {article && <div className={styles.article}>{article}</div>}
 
           {hasFaq && (
             <section>

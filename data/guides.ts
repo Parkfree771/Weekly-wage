@@ -12,15 +12,6 @@ export interface Guide {
 
 export const guides: Guide[] = [
   {
-    slug: 'weekly-gold',
-    title: '로스트아크 주간 골드 수익 완벽 가이드',
-    summary: '캐릭터별 주간 골드 획득 제한, 귀속 골드 구조, 레이드별 보상, 골드 수익 극대화 전략까지 한눈에 정리했습니다.',
-    category: '골드',
-    date: '2026-02-06',
-    updated: '2026-07-18',
-    href: '/guide/weekly-gold',
-  },
-  {
     slug: 'raid-rewards',
     title: '로스트아크 레이드 보상 총정리 (2026)',
     summary: '벨가르딘, 성당, 세르카, 종막부터 서막까지 모든 레이드의 관문별 클리어 골드와 더보기 보상을 한눈에 비교합니다.',
@@ -28,53 +19,6 @@ export const guides: Guide[] = [
     date: '2026-02-06',
     updated: '2026-07-18',
     href: '/guide/raid-rewards',
-  },
-  {
-    slug: 'more-reward',
-    title: '더보기 보상 손익 판단 가이드 - 언제 사야 이득일까',
-    summary: '더보기 보상의 구조, 귀속 골드 우선 차감 원리, 시세 기반 손익 계산법과 레이드별 더보기 비용·보상 재료 표를 정리했습니다.',
-    category: '골드',
-    date: '2026-07-18',
-    updated: '2026-07-29',
-    href: '/guide/more-reward',
-  },
-  {
-    slug: 'refining',
-    title: 'T4 재련 완벽 가이드 - 확률 구조와 비용 절약 전략',
-    summary: 'T4 재련 단계별 확률표와 재료 소모표, 장인의 기운 계산식, 재련 책과 숨결 활용법, 상급 재련과의 차이를 상세히 설명합니다.',
-    category: '재련',
-    date: '2026-02-06',
-    updated: '2026-07-29',
-    href: '/guide/refining',
-  },
-  {
-    slug: 'life-content',
-    title: '생활 콘텐츠 수익 가이드 - 융화재료 제작과 효율 분석',
-    summary: '생활 콘텐츠의 수익 구조와 아비도스 융화재료 제작 레시피 표, 생활의 가루 교환 비율표까지 분석합니다.',
-    category: '생활',
-    date: '2026-02-06',
-    updated: '2026-07-29',
-    href: '/guide/life-content',
-  },
-  {
-    slug: 'package-efficiency',
-    title: '패키지 효율 계산 가이드 - 현질 전에 확인할 것들',
-    summary: '패키지 이득률 계산 원리, 3+1·2+1 묶음 계산법, 가챠 기대값, 크리스탈 환율 적용까지 패키지 구매 판단 기준을 정리했습니다.',
-    category: '패키지',
-    date: '2026-07-18',
-    /** 마지막 수정일 (JSON-LD dateModified) */
-    updated: '2026-08-20',
-    href: '/guide/package-efficiency',
-  },
-  {
-    slug: 'hell-reward',
-    title: '지옥·나락 보상 가이드 - 골드 가치 환산 원리',
-    summary: '지옥과 나락의 보상 차이, 단계별 보상 구조, 거래 불가 재화의 골드 가치 환산 방식을 설명합니다.',
-    category: '지옥',
-    date: '2026-07-18',
-    /** 마지막 수정일 (JSON-LD dateModified) */
-    updated: '2026-08-20',
-    href: '/guide/hell-reward',
   },
   {
     slug: 'beginner-gold',
@@ -93,5 +37,48 @@ export const guides: Guide[] = [
     date: '2026-02-06',
     updated: '2026-08-20',
     href: '/guide/market-price',
+  },
+];
+
+/**
+ * 관련 링크로 걸 수 있는 "도구 페이지" 목록.
+ *
+ * 2026-08-21 에 가이드 글 6편을 각각 대응하는 도구 페이지 본문으로 통합했다.
+ * (예: /guide/refining -> /refining 하단 가이드 영역). 통합 뒤에도 다른 페이지에서
+ * "관련: 재련 시뮬레이터" 처럼 걸 수 있어야 해서, 가이드와 같은 모양의 항목으로 등록해 둔다.
+ * GuideFaq 의 relatedGuides 는 guides 에서 먼저 찾고, 없으면 여기서 찾는다.
+ */
+export const relatedPages: Guide[] = [
+  {
+    slug: 'refining-tool',
+    title: 'T4 재련 시뮬레이터',
+    summary: '재련 확률·장인의 기운 구조와 예상 비용을 직접 돌려보고, 단계별 확률표와 재료 소모표를 확인할 수 있습니다.',
+    category: '재련',
+    date: '2026-02-06',
+    href: '/refining',
+  },
+  {
+    slug: 'weekly-gold-tool',
+    title: '주간 골드 계산기',
+    summary: '캐릭터별 주간 골드 획득 제한과 귀속 골드 구조, 레이드별 보상까지 한 번에 계산합니다.',
+    category: '골드',
+    date: '2026-02-06',
+    href: '/weekly-gold',
+  },
+  {
+    slug: 'wangap-tool',
+    title: '상급 재련(완갑) 시뮬레이터',
+    summary: '상급 재련의 선조의 가호·축복 누적 구조를 그대로 반영해 목표 단계까지의 예상 재료와 골드를 계산합니다.',
+    category: '재련',
+    date: '2026-02-06',
+    href: '/wangap',
+  },
+  {
+    slug: 'more-reward-tool',
+    title: '더보기 손익 계산기',
+    summary: '더보기 보상의 구조와 귀속 골드 우선 차감 원리, 시세 기반 손익을 레이드별로 비교합니다.',
+    category: '골드',
+    date: '2026-07-18',
+    href: '/more-reward',
   },
 ];

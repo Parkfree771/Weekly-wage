@@ -3,6 +3,7 @@
 import { Container, Row, Col } from 'react-bootstrap';
 import LifeCraftCalculator from '@/components/life-master/LifeCraftCalculator';
 import GuideFaq from '@/components/common/GuideFaq';
+import LifeContentGuideBody from '@/components/guide/LifeContentGuideBody';
 import { faqData } from './faq-data';
 
 export default function LifeMasterPage() {
@@ -36,7 +37,8 @@ export default function LifeMasterPage() {
 
             {/* 이용 가이드 + FAQ */}
             <GuideFaq
-              relatedGuides={['/guide/life-content']}
+              relatedGuides={['/guide/market-price']}
+              article={<LifeContentGuideBody />}
               guideTitle="아비도스 융화재료 제작 가이드"
               sections={[
                 {

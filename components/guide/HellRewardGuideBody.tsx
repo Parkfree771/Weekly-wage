@@ -1,31 +1,12 @@
-import Link from 'next/link';
-import { Metadata } from 'next';
-import { SITE_URL } from '@/lib/site-config';
-import styles from '../guide.module.css';
+import styles from '@/app/guide/guide.module.css';
 
-export const metadata: Metadata = {
-  title: '지옥·나락 보상 가이드 - 골드 가치 환산 원리',
-  description:
-    '로스트아크 지옥과 나락의 보상 차이, 단계별 보상 구조, 어빌리티스톤·특수재련 재료 같은 거래 불가 재화의 골드 가치 환산 방식을 상세히 설명합니다.',
-  keywords:
-    '로아 지옥 보상, 로아 나락 보상, 로아 지옥의 나락, 지옥 보상 계산, 로아 특수재련, 로아 어빌리티스톤, 로아 페온 환산, 로스트아크 지옥',
-  alternates: { canonical: '/guide/hell-reward' },
-};
-
-export default function HellRewardGuidePage() {
+/**
+ * HellRewardGuideBody 가이드 본문.
+ * /guide/hell-reward 를 도구 페이지로 통합(2026-08-21)하면서 본문 JSX 를 그대로 옮긴 것.
+ * 원문 수정 없이 위치만 이동했다 — 문단·표를 지우면 색인된 콘텐츠가 사라진다.
+ */
+export default function HellRewardGuideBody() {
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
-      <div className={styles.guideContainer} style={{ marginTop: '1.5rem' }}>
-        <Link href="/guide" className={styles.backLink}>
-          &larr; 가이드 목록
-        </Link>
-
-        <div className={styles.articleHeader}>
-          <span className={styles.articleCategory}>지옥</span>
-          <h1 className={styles.articleTitle}>지옥·나락 보상 가이드 - 골드 가치 환산 원리</h1>
-          <span className={styles.articleDate}>2026년 7월 18일 작성</span>
-        </div>
-
         <div className={styles.articleBody}>
           <h2>지옥과 나락, 무엇이 다른가?</h2>
           <p>
@@ -187,31 +168,6 @@ export default function HellRewardGuidePage() {
               자동 갱신됩니다.
             </p>
           </div>
-
-          <div className={styles.guideCta}>
-            <p>단계별 지옥·나락 보상의 골드 가치를 직접 비교해보세요.</p>
-            <Link href="/hell-reward" className={styles.guideCtaLink}>
-              지옥 보상 계산기 바로가기
-            </Link>
-          </div>
         </div>
-      </div>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            "headline": "지옥·나락 보상 가이드 - 골드 가치 환산 원리",
-            "description": "지옥과 나락의 보상 차이, 단계별 보상 구조, 거래 불가 재화의 골드 가치 환산 방식을 설명합니다.",
-            "datePublished": "2026-07-18",
-            "dateModified": "2026-08-20",
-            "author": { "@type": "Organization", "name": "로아로골" },
-            "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
-            "mainEntityOfPage": `${SITE_URL}/guide/hell-reward`
-          })
-        }}
-      />
-    </div>
   );
 }

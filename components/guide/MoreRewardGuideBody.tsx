@@ -1,32 +1,13 @@
-import Link from 'next/link';
-import { Metadata } from 'next';
-import { SITE_URL } from '@/lib/site-config';
 import { RAID_TABLE } from '@/data/rewardTable';
-import styles from '../guide.module.css';
+import styles from '@/app/guide/guide.module.css';
 
-export const metadata: Metadata = {
-  title: '더보기 보상 손익 판단 가이드 - 언제 사야 이득일까',
-  description:
-    '로스트아크 더보기 보상 완벽 가이드. 더보기 손익 계산 공식, 귀속 골드 우선 차감 원리, 레이드별 더보기 우선순위, 거래 불가 재료의 가치 판단까지 정리했습니다.',
-  keywords:
-    '로아 더보기, 로아 더보기 효율, 로아 더보기 손익, 로아 더보기 계산, 레이드 더보기, 더보기 골드, 로아 더보기 가격, 로스트아크 더보기 보상',
-  alternates: { canonical: '/guide/more-reward' },
-};
-
-export default function MoreRewardGuidePage() {
+/**
+ * MoreRewardGuideBody 가이드 본문.
+ * /guide/more-reward 를 도구 페이지로 통합(2026-08-21)하면서 본문 JSX 를 그대로 옮긴 것.
+ * 원문 수정 없이 위치만 이동했다 — 문단·표를 지우면 색인된 콘텐츠가 사라진다.
+ */
+export default function MoreRewardGuideBody() {
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
-      <div className={styles.guideContainer} style={{ marginTop: '1.5rem' }}>
-        <Link href="/guide" className={styles.backLink}>
-          &larr; 가이드 목록
-        </Link>
-
-        <div className={styles.articleHeader}>
-          <span className={styles.articleCategory}>골드</span>
-          <h1 className={styles.articleTitle}>더보기 보상 손익 판단 가이드 - 언제 사야 이득일까</h1>
-          <span className={styles.articleDate}>2026년 7월 18일 작성 · 2026년 7월 29일 업데이트</span>
-        </div>
-
         <div className={styles.articleBody}>
           <h2>더보기 보상이란?</h2>
           <p>
@@ -129,31 +110,6 @@ export default function MoreRewardGuidePage() {
               레이드 한 번에 재료가 총 얼마나 나오는지도 함께 확인할 수 있습니다.
             </p>
           </div>
-
-          <div className={styles.guideCta}>
-            <p>오늘 시세 기준으로 어떤 레이드의 더보기가 이득인지 바로 확인해보세요.</p>
-            <Link href="/more-reward" className={styles.guideCtaLink}>
-              더보기 효율 계산기 바로가기
-            </Link>
-          </div>
         </div>
-      </div>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            "headline": "더보기 보상 손익 판단 가이드 - 언제 사야 이득일까",
-            "description": "더보기 보상의 구조, 귀속 골드 우선 차감 원리, 시세 기반 손익 계산법과 레이드별 우선순위 판단 기준을 설명합니다.",
-            "datePublished": "2026-07-18",
-            "dateModified": "2026-07-29",
-            "author": { "@type": "Organization", "name": "로아로골" },
-            "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
-            "mainEntityOfPage": `${SITE_URL}/guide/more-reward`
-          })
-        }}
-      />
-    </div>
   );
 }

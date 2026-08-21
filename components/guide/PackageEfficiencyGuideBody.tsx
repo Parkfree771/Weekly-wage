@@ -1,31 +1,12 @@
-import Link from 'next/link';
-import { Metadata } from 'next';
-import { SITE_URL } from '@/lib/site-config';
-import styles from '../guide.module.css';
+import styles from '@/app/guide/guide.module.css';
 
-export const metadata: Metadata = {
-  title: '패키지 효율 계산 가이드 - 현질 전에 확인할 것들',
-  description:
-    '로스트아크 패키지 효율 계산 완벽 가이드. 패키지 이득률 계산 원리, 3+1·2+1 묶음 계산법, 가챠 패키지 기대값, 크리스탈 환율 적용, 선택형 패키지 판단 기준을 정리했습니다.',
-  keywords:
-    '로아 패키지 효율, 로아 패키지 계산, 로아 패키지 추천, 로아 현질 효율, 로아 3+1 패키지, 로아 가챠 패키지, 로얄 크리스탈 환율, 로스트아크 패키지',
-  alternates: { canonical: '/guide/package-efficiency' },
-};
-
-export default function PackageEfficiencyGuidePage() {
+/**
+ * PackageEfficiencyGuideBody 가이드 본문.
+ * /guide/package-efficiency 를 도구 페이지로 통합(2026-08-21)하면서 본문 JSX 를 그대로 옮긴 것.
+ * 원문 수정 없이 위치만 이동했다 — 문단·표를 지우면 색인된 콘텐츠가 사라진다.
+ */
+export default function PackageEfficiencyGuideBody() {
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
-      <div className={styles.guideContainer} style={{ marginTop: '1.5rem' }}>
-        <Link href="/guide" className={styles.backLink}>
-          &larr; 가이드 목록
-        </Link>
-
-        <div className={styles.articleHeader}>
-          <span className={styles.articleCategory}>패키지</span>
-          <h1 className={styles.articleTitle}>패키지 효율 계산 가이드 - 현질 전에 확인할 것들</h1>
-          <span className={styles.articleDate}>2026년 7월 18일 작성</span>
-        </div>
-
         <div className={styles.articleBody}>
           <h2>패키지 효율이란?</h2>
           <p>
@@ -210,31 +191,6 @@ export default function PackageEfficiencyGuidePage() {
               로그인하면 새 패키지를 직접 등록할 수도 있습니다.
             </p>
           </div>
-
-          <div className={styles.guideCta}>
-            <p>지금 판매 중인 패키지들의 실시간 이득률을 확인해보세요.</p>
-            <Link href="/package" className={styles.guideCtaLink}>
-              패키지 효율 계산기 바로가기
-            </Link>
-          </div>
         </div>
-      </div>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            "headline": "패키지 효율 계산 가이드 - 현질 전에 확인할 것들",
-            "description": "패키지 이득률 계산 원리, 3+1·2+1 묶음 계산법, 가챠 기대값, 크리스탈 환율 적용까지 패키지 구매 판단 기준을 정리했습니다.",
-            "datePublished": "2026-07-18",
-            "dateModified": "2026-08-20",
-            "author": { "@type": "Organization", "name": "로아로골" },
-            "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
-            "mainEntityOfPage": `${SITE_URL}/guide/package-efficiency`
-          })
-        }}
-      />
-    </div>
   );
 }

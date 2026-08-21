@@ -10,6 +10,7 @@ import { PriceProvider } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
 import type { CharacterGoldCalc } from '@/components/RaidCalculator';
 import GuideFaq from '@/components/common/GuideFaq';
+import WeeklyGoldGuideBody from '@/components/guide/WeeklyGoldGuideBody';
 import { faqData } from './faq-data';
 import styles from './weekly-gold.module.css';
 
@@ -222,7 +223,8 @@ export default function WeeklyGoldPage() {
 
               <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
                 <GuideFaq
-                  relatedGuides={['/guide/weekly-gold', '/guide/raid-rewards']}
+                  relatedGuides={['/guide/raid-rewards', '/more-reward']}
+                  article={<WeeklyGoldGuideBody />}
                   sections={weeklyGoldGuideSections}
                   faqs={faqData}
                 />

@@ -1,32 +1,13 @@
-import Link from 'next/link';
-import { Metadata } from 'next';
 import { raids, upcomingRaids } from '@/data/raids';
-import { SITE_URL } from '@/lib/site-config';
-import styles from '../guide.module.css';
+import styles from '@/app/guide/guide.module.css';
 
-export const metadata: Metadata = {
-  title: '로스트아크 주간 골드 수익 완벽 가이드',
-  description:
-    '로스트아크 주간 골드 시스템 완벽 정리. 캐릭터별 골드 획득 제한, 귀속 골드 구조, 레이드별 보상 비교, 더보기 효율, 골드 수익 극대화 전략까지 한눈에 알아보세요.',
-  keywords:
-    '로아 주간 골드, 로아 골드 가이드, 로아 주급, 로아 레이드 골드, 로아 더보기, 로아 골드 제한, 로아 귀속 골드, 로스트아크 골드 수익',
-  alternates: { canonical: '/guide/weekly-gold' },
-};
-
-export default function WeeklyGoldGuidePage() {
+/**
+ * WeeklyGoldGuideBody 가이드 본문.
+ * /guide/weekly-gold 를 도구 페이지로 통합(2026-08-21)하면서 본문 JSX 를 그대로 옮긴 것.
+ * 원문 수정 없이 위치만 이동했다 — 문단·표를 지우면 색인된 콘텐츠가 사라진다.
+ */
+export default function WeeklyGoldGuideBody() {
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
-      <div className={styles.guideContainer} style={{ marginTop: '1.5rem' }}>
-        <Link href="/guide" className={styles.backLink}>
-          &larr; 가이드 목록
-        </Link>
-
-        <div className={styles.articleHeader}>
-          <span className={styles.articleCategory}>골드</span>
-          <h1 className={styles.articleTitle}>로스트아크 주간 골드 수익 완벽 가이드</h1>
-          <span className={styles.articleDate}>2026년 2월 6일 작성 · 2026년 7월 18일 업데이트</span>
-        </div>
-
         <div className={styles.articleBody}>
           <h2>주간 골드란?</h2>
           <p>
@@ -166,31 +147,6 @@ export default function WeeklyGoldGuidePage() {
             거래소 시세는 매일 변동하므로, 매주 레이드 전에 더보기 효율을 확인하는 습관을 들이세요.
             특히 재련 재료 시세가 급등할 때는 더보기를 선택하는 것이 훨씬 유리할 수 있습니다.
           </p>
-
-          <div className={styles.guideCta}>
-            <p>로아로골 주간 골드 계산기로 내 원정대의 주간 수익을 확인해보세요.</p>
-            <Link href="/weekly-gold" className={styles.guideCtaLink}>
-              주간 골드 계산기 바로가기
-            </Link>
-          </div>
         </div>
-      </div>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            "headline": "로스트아크 주간 골드 수익 완벽 가이드",
-            "description": "캐릭터별 주간 골드 획득 제한, 귀속 골드 구조, 레이드별 보상, 골드 수익 극대화 전략까지 한눈에 정리했습니다.",
-            "datePublished": "2026-02-06",
-            "dateModified": "2026-07-18",
-            "author": { "@type": "Organization", "name": "로아로골" },
-            "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
-            "mainEntityOfPage": `${SITE_URL}/guide/weekly-gold`
-          })
-        }}
-      />
-    </div>
   );
 }

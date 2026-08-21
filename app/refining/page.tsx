@@ -13,6 +13,7 @@ import RefiningCalculator from '@/components/refining/RefiningCalculator';
 import dynamic from 'next/dynamic';
 import AdBanner from '@/components/ads/AdBanner';
 import GuideFaq from '@/components/common/GuideFaq';
+import RefiningGuideBody from '@/components/guide/RefiningGuideBody';
 import { faqData } from './faq-data';
 import styles from './refining.module.css';
 import searchStyles from '@/components/refining/RefiningSimulator.module.css';
@@ -358,7 +359,8 @@ export default function RefiningPage() {
 
             <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
               <GuideFaq
-                relatedGuides={['/guide/refining']}
+                relatedGuides={['/wangap']}
+                article={<RefiningGuideBody />}
                 sections={refiningGuideSections}
                 faqs={faqData}
               />

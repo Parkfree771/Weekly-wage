@@ -9,6 +9,7 @@ import { raidRewards, type MaterialReward } from '@/data/raidRewards';
 import { raidClearRewards } from '@/data/raidClearRewards';
 import { PriceProvider, usePriceData } from '@/contexts/PriceContext';
 import GuideFaq from '@/components/common/GuideFaq';
+import MoreRewardGuideBody from '@/components/guide/MoreRewardGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
 import { ADFIT_UNITS } from '@/components/ads/adConfig';
@@ -494,7 +495,8 @@ function MoreRewardInner() {
         </div>
 
         <GuideFaq
-          relatedGuides={['/guide/more-reward', '/guide/raid-rewards']}
+          relatedGuides={['/guide/raid-rewards', '/weekly-gold']}
+          article={<MoreRewardGuideBody />}
           guideTitle="더보기 효율 이용 가이드"
           sections={[
             {

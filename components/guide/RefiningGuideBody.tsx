@@ -1,6 +1,3 @@
-import Link from 'next/link';
-import { Metadata } from 'next';
-import { SITE_URL } from '@/lib/site-config';
 import {
   BASE_PROBABILITY,
   SUCCESSION_BASE_PROBABILITY,
@@ -11,36 +8,20 @@ import {
   SUCCESSION_WEAPON_MATERIAL_COSTS,
   SUCCESSION_ARMOR_MATERIAL_COSTS,
 } from '@/lib/refiningData';
-import styles from '../guide.module.css';
+import styles from '@/app/guide/guide.module.css';
 
 // 표 렌더링용 — 수치 원본은 lib/refiningData.ts (시뮬레이터와 동일한 단일 원본)
 const PROB_LEVELS = Object.keys(BASE_PROBABILITY).map(Number).sort((a, b) => a - b);
 const BREATH_PROBS = [0.10, 0.05, 0.04, 0.03, 0.015, 0.01, 0.005];
 const pct = (p: number) => `${parseFloat((p * 100).toFixed(2))}%`;
 
-export const metadata: Metadata = {
-  title: 'T4 재련 완벽 가이드 - 확률 구조와 비용 절약 전략',
-  description:
-    '로스트아크 T4 재련 완벽 가이드. 일반 재련 확률 구조, 장인의 기운 계산식, 재련 책과 숨결 활용법, 상급 재련과의 차이, 계승 시스템까지 상세히 설명합니다.',
-  keywords:
-    '로아 재련, 로아 T4 재련, 로아 재련 비용, 로아 장인의 기운, 로아 장기백, 로아 상급재련, 로아 일반재련, 로아 재련 확률, 로아 재련 재료, 로아 계승, 로스트아크 재련 가이드',
-  alternates: { canonical: '/guide/refining' },
-};
-
-export default function RefiningGuidePage() {
+/**
+ * RefiningGuideBody 가이드 본문.
+ * /guide/refining 를 도구 페이지로 통합(2026-08-21)하면서 본문 JSX 를 그대로 옮긴 것.
+ * 원문 수정 없이 위치만 이동했다 — 문단·표를 지우면 색인된 콘텐츠가 사라진다.
+ */
+export default function RefiningGuideBody() {
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
-      <div className={styles.guideContainer} style={{ marginTop: '1.5rem' }}>
-        <Link href="/guide" className={styles.backLink}>
-          &larr; 가이드 목록
-        </Link>
-
-        <div className={styles.articleHeader}>
-          <span className={styles.articleCategory}>재련</span>
-          <h1 className={styles.articleTitle}>T4 재련 완벽 가이드 - 확률 구조와 비용 절약 전략</h1>
-          <span className={styles.articleDate}>2026년 2월 6일 작성 · 2026년 7월 29일 업데이트</span>
-        </div>
-
         <div className={styles.articleBody}>
           <h2>T4 재련 시스템 개요</h2>
           <p>
@@ -306,31 +287,6 @@ export default function RefiningGuidePage() {
               시뮬레이션을 체험할 수 있습니다. 실제 재련 전에 예상 비용과 장기백 횟수를 확인해보세요.
             </p>
           </div>
-
-          <div className={styles.guideCta}>
-            <p>로아로골 재련 시뮬레이터로 내 장비의 재련 비용을 정확히 계산해보세요.</p>
-            <Link href="/refining" className={styles.guideCtaLink}>
-              재련 시뮬레이터 바로가기
-            </Link>
-          </div>
         </div>
-      </div>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            "headline": "T4 재련 완벽 가이드 - 확률 구조와 비용 절약 전략",
-            "description": "T4 일반 재련의 확률 구조, 장인의 기운 계산식, 재련 책과 숨결 활용법, 상급 재련과의 차이를 상세히 설명합니다.",
-            "datePublished": "2026-02-06",
-            "dateModified": "2026-07-29",
-            "author": { "@type": "Organization", "name": "로아로골" },
-            "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
-            "mainEntityOfPage": `${SITE_URL}/guide/refining`
-          })
-        }}
-      />
-    </div>
   );
 }

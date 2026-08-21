@@ -1,31 +1,12 @@
-import Link from 'next/link';
-import { Metadata } from 'next';
-import { SITE_URL } from '@/lib/site-config';
-import styles from '../guide.module.css';
+import styles from '@/app/guide/guide.module.css';
 
-export const metadata: Metadata = {
-  title: '생활 콘텐츠 수익 가이드 - 융화재료 제작과 효율 분석',
-  description:
-    '로스트아크 생활 콘텐츠 수익 완벽 가이드. 벌목, 채광, 고고학 등 생활 콘텐츠 종류와 아비도스 융화재료 제작 레시피, 생활의 가루 교환 비율, 수익 계산법을 알아보세요.',
-  keywords:
-    '로아 생활 콘텐츠, 로아 벌목, 로아 채광, 로아 고고학, 로아 융화재료, 로아 아비도스, 로아 생활의 가루, 로아 생활 수익, 로스트아크 생활 가이드',
-  alternates: { canonical: '/guide/life-content' },
-};
-
-export default function LifeContentGuidePage() {
+/**
+ * LifeContentGuideBody 가이드 본문.
+ * /guide/life-content 를 도구 페이지로 통합(2026-08-21)하면서 본문 JSX 를 그대로 옮긴 것.
+ * 원문 수정 없이 위치만 이동했다 — 문단·표를 지우면 색인된 콘텐츠가 사라진다.
+ */
+export default function LifeContentGuideBody() {
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
-      <div className={styles.guideContainer} style={{ marginTop: '1.5rem' }}>
-        <Link href="/guide" className={styles.backLink}>
-          &larr; 가이드 목록
-        </Link>
-
-        <div className={styles.articleHeader}>
-          <span className={styles.articleCategory}>생활</span>
-          <h1 className={styles.articleTitle}>생활 콘텐츠 수익 가이드 - 융화재료 제작과 효율 분석</h1>
-          <span className={styles.articleDate}>2026년 2월 6일 작성 · 2026년 7월 29일 업데이트</span>
-        </div>
-
         <div className={styles.articleBody}>
           <h2>생활 콘텐츠란?</h2>
           <p>
@@ -187,31 +168,6 @@ export default function LifeContentGuidePage() {
               시뮬레이션해줍니다. 제작 전에 반드시 확인하여 손해를 방지하세요.
             </p>
           </div>
-
-          <div className={styles.guideCta}>
-            <p>로아로골 생활 제작 계산기로 현재 제작 손익을 확인하세요.</p>
-            <Link href="/life-master" className={styles.guideCtaLink}>
-              생활 제작 계산기 바로가기
-            </Link>
-          </div>
         </div>
-      </div>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            "headline": "생활 콘텐츠 수익 가이드 - 융화재료 제작과 효율 분석",
-            "description": "생활 콘텐츠의 수익 구조와 아비도스 융화재료 제작 손익, 생활의 가루 교환 비율까지 분석합니다.",
-            "datePublished": "2026-02-06",
-            "dateModified": "2026-07-29",
-            "author": { "@type": "Organization", "name": "로아로골" },
-            "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
-            "mainEntityOfPage": `${SITE_URL}/guide/life-content`
-          })
-        }}
-      />
-    </div>
   );
 }

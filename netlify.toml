@@ -30,6 +30,48 @@
   to = "/"
   status = 301
 
+# 직업 티어표 제거(2026-08-19)에 따른 구 URL 인계. /tier 는 색인된 상태에서 페이지만
+# 사라져 404 가 나고 있었다 — 성격이 가장 가까운 직업 각인 페이지로 넘긴다.
+[[redirects]]
+  from = "/tier"
+  to = "/engraving"
+  status = 301
+
+# ─── 가이드 글 -> 도구 페이지 통합 (2026-08-21) ───
+# 같은 주제가 도구 페이지와 가이드 페이지로 이중 색인되어 서로 순위를 갉아먹고 있었다.
+# (예: /refining 5,677뷰 vs /guide/refining 45뷰 — 구글이 이미 도구 페이지를 택했다)
+# 본문 JSX 는 components/guide/*GuideBody 로 그대로 옮겨 도구 페이지 하단에 렌더된다.
+# 콘텐츠가 사라진 게 아니라 위치만 옮긴 것이므로 404 가 아니라 301 이어야 한다.
+[[redirects]]
+  from = "/guide/refining"
+  to = "/refining"
+  status = 301
+
+[[redirects]]
+  from = "/guide/weekly-gold"
+  to = "/weekly-gold"
+  status = 301
+
+[[redirects]]
+  from = "/guide/package-efficiency"
+  to = "/package"
+  status = 301
+
+[[redirects]]
+  from = "/guide/more-reward"
+  to = "/more-reward"
+  status = 301
+
+[[redirects]]
+  from = "/guide/hell-reward"
+  to = "/hell-reward"
+  status = 301
+
+[[redirects]]
+  from = "/guide/life-content"
+  to = "/life-master"
+  status = 301
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 

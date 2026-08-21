@@ -176,7 +176,7 @@ export default function ExpeditionGoldPage() {
             {/* 이용 가이드 · FAQ — 검색 여부와 무관하게 항상 노출 */}
             <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
               <GuideFaq
-                relatedGuides={['/guide/weekly-gold', '/guide/raid-rewards']}
+                relatedGuides={['/weekly-gold', '/guide/raid-rewards']}
                 sections={expeditionGoldGuideSections}
                 faqs={faqData}
               />

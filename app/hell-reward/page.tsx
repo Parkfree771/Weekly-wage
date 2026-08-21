@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { Container, Row, Col } from 'react-bootstrap';
 import GuideFaq from '@/components/common/GuideFaq';
+import HellRewardGuideBody from '@/components/guide/HellRewardGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
 
@@ -37,7 +38,8 @@ export default function HellRewardPage() {
             <HellRewardCalculator />
 
             <GuideFaq
-              relatedGuides={['/guide/hell-reward']}
+              relatedGuides={['/guide/raid-rewards']}
+              article={<HellRewardGuideBody />}
               guideTitle="지옥·나락 보상 이용 가이드"
               sections={[
                 {
