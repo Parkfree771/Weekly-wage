@@ -8,6 +8,12 @@ export async function GET(request: Request) {
   // 명시적 갱신(마이페이지 갱신·캐릭터 등록 등): 응답을 캐시하지 않아 항상 최신을 보장.
   // 호출부가 캐시버스터를 기억할 필요 없도록 라우트 계약으로 처리한다.
   const refresh = searchParams.get('refresh') === '1';
+  // 아바타·보석은 재련 시뮬의 전투력 계산에서만 필요해서, 요청한 호출부에만 붙인다.
+  //   아바타 = 주스탯 %,  보석 = 기본 공격력 % (완갑 등급이 바뀔 때 약분되지 않는다)
+  // 대신 그 호출부는 siblings 를 안 쓰므로 skipSiblings 로 빼서 외부 API 호출 수를 아낀다.
+  const withAvatars = searchParams.get('avatars') === '1';
+  const withGems = searchParams.get('gems') === '1';
+  const skipSiblings = searchParams.get('siblings') === '0';
 
   if (!characterName) {
     return NextResponse.json({ message: '캐릭터명을 입력해주세요.' }, { status: 400 });
@@ -22,6 +28,8 @@ export async function GET(request: Request) {
   const profileUrl = `https://developer-lostark.game.onstove.com/armories/characters/${encodedCharacterName}/profiles`;
   const siblingsUrl = `https://developer-lostark.game.onstove.com/characters/${encodedCharacterName}/siblings`;
   const equipmentUrl = `https://developer-lostark.game.onstove.com/armories/characters/${encodedCharacterName}/equipment`;
+  const avatarsUrl = `https://developer-lostark.game.onstove.com/armories/characters/${encodedCharacterName}/avatars`;
+  const gemsUrl = `https://developer-lostark.game.onstove.com/armories/characters/${encodedCharacterName}/gems`;
 
   const options = {
     headers: {
@@ -32,38 +40,46 @@ export async function GET(request: Request) {
 
   try {
     // 프로필 정보, 형제 캐릭터 정보, 장비 정보를 동시에 요청합니다.
-    const [profileResponse, siblingsResponse, equipmentResponse] = await Promise.all([
+    const [profileResponse, siblingsResponse, equipmentResponse, avatarsResponse, gemsResponse] = await Promise.all([
       fetch(profileUrl, options),
-      fetch(siblingsUrl, options),
+      skipSiblings ? Promise.resolve(null) : fetch(siblingsUrl, options),
       fetch(equipmentUrl, options),
+      withAvatars ? fetch(avatarsUrl, options) : Promise.resolve(null),
+      withGems ? fetch(gemsUrl, options) : Promise.resolve(null),
     ]);
 
-    if (!profileResponse.ok || !siblingsResponse.ok || !equipmentResponse.ok) {
-      const errorStatus = !profileResponse.ok ? profileResponse.status :
-                          !siblingsResponse.ok ? siblingsResponse.status :
-                          equipmentResponse.status;
+    const siblingsFailed = !skipSiblings && !siblingsResponse!.ok;
+    if (!profileResponse.ok || siblingsFailed || !equipmentResponse.ok) {
       const errorResponse = !profileResponse.ok ? profileResponse :
-                            !siblingsResponse.ok ? siblingsResponse :
+                            siblingsFailed ? siblingsResponse! :
                             equipmentResponse;
       const errorData = await errorResponse.json().catch(() => ({}));
 
       return NextResponse.json(
         { message: errorData?.Message || '캐릭터 정보를 가져오는 데 실패했습니다.' },
-        { status: errorStatus }
+        { status: errorResponse.status }
       );
     }
 
     // 세 데이터를 합쳐서 클라이언트에 전달합니다.
     const [profileData, siblingsData, equipmentData] = await Promise.all([
       profileResponse.json(),
-      siblingsResponse.json(),
+      siblingsResponse ? siblingsResponse.json() : Promise.resolve(null),
       equipmentResponse.json(),
+    ]);
+
+    // 아바타·보석은 없어도 계산이 되는 보조 정보라, 실패해도 본 응답을 막지 않는다.
+    const [avatarsData, gemsData] = await Promise.all([
+      avatarsResponse?.ok ? avatarsResponse.json().catch(() => null) : Promise.resolve(null),
+      gemsResponse?.ok ? gemsResponse.json().catch(() => null) : Promise.resolve(null),
     ]);
 
     const responseData = {
       profile: profileData,
       siblings: siblingsData,
       equipment: equipmentData,
+      ...(withAvatars ? { avatars: avatarsData } : {}),
+      ...(withGems ? { gems: gemsData } : {}),
     };
 
     // 같은 캐릭터를 짧은 시간 안에 여러 사용자가 조회하면 CDN이 흡수한다.

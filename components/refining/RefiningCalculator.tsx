@@ -7,6 +7,18 @@ import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
 import { getTries, getSuccessionTries, type CalcMode } from '../../lib/refiningSimulationData';
 import { optimalBreathWithBook, triesForFixedBookPolicy, type OptimalPolicy, type PreSuccessionPolicy } from '../../lib/optimalBreath';
+import {
+  addDelta,
+  calcCombatPowerGain,
+  EMPTY_DELTA,
+  getWangapStat,
+  mainStatDelta,
+  shiftCombatPowerBase,
+  SUCCESSION_MAIN_STAT,
+  wangapGradeAt,
+  type CombatPowerBase,
+  type StatDelta,
+} from '../../lib/combatPower';
 
 // 계승 전 최적 정책: rec(책 종류·여부도 자유 최적화 — 토글 자동 세팅용),
 // on/off(책 토글 상태를 조건으로 한 숨결 최적화 — 실제 계산·표시용),
@@ -250,6 +262,8 @@ type RefiningCalculatorProps = {
   equipments?: Equipment[];
   searched?: boolean;
   characterInfo?: { name: string; itemLevel: string; image?: string } | null;
+  /** 전투력 상승량 계산 기준값. 실제 캐릭터를 검색했을 때만 들어온다 */
+  combatPowerBase?: CombatPowerBase | null;
 };
 
 // 숨결 적용 대상: 방어구(빙하) / 무기(용암) / 완갑(용암·빙하 각각)
@@ -260,6 +274,7 @@ export default function RefiningCalculator({
   equipments: externalEquipments,
   searched: externalSearched,
   characterInfo: externalCharacterInfo,
+  combatPowerBase,
 }: RefiningCalculatorProps) {
   const { theme } = useTheme();
 
@@ -2235,6 +2250,76 @@ export default function RefiningCalculator({
     };
   }, [characterInfo, equipments, targetLevels]);
 
+  // 목표 단계까지 갔을 때의 전투력 상승량
+  // 재련이 바꾸는 건 힘민지(방어구)와 무기 공격력(무기)뿐이고, 나머지 곱연산 요소는
+  // 증감 비율에서 약분되므로 계산에 필요 없다. 자세한 근거는 lib/combatPower 주석 참고.
+  const combatPowerSummary = useMemo(() => {
+    if (!combatPowerBase) return null;
+
+    // 시작 단계를 직접 조정한 만큼 기준을 옮긴다 (아이템 레벨의 baselineOffset과 같은 개념)
+    let baseline = EMPTY_DELTA;
+    // 목표까지의 증가분
+    let target = EMPTY_DELTA;
+    // 계산에 넣지 못한 목표가 있는지 (상급 재련 · 계승 전 장비 · 표가 없는 완갑 구간)
+    let hasExcluded = false;
+
+    // 완갑은 한 단계에 주스탯·무기공격력·기본공격력(고정값/%)이 같이 움직인다
+    const wangapDelta = (grade: string, from: number, to: number): StatDelta | null => {
+      const a = getWangapStat(grade, from);
+      const b = getWangapStat(wangapGradeAt(grade, to), to);
+      if (!a || !b) return null;
+      return {
+        stat: b.stat - a.stat,
+        weaponAtk: b.atk - a.atk,
+        baseAtkFlat: b.baFlat - a.baFlat,
+        baseAtkPct: b.baPct - a.baPct,
+      };
+    };
+
+    equipments.forEach(eq => {
+      const targets = targetLevels[eq.name];
+      const wantsNormal = !!targets?.normal && targets.normal > eq.currentLevel;
+      const wantsAdvanced = !!targets?.advanced && targets.advanced > eq.currentAdvancedLevel;
+
+      if (eq.isWangap) {
+        const rewind = wangapDelta(eq.grade, eq.origNormal, eq.currentLevel);
+        const gain = wantsNormal ? wangapDelta(eq.grade, eq.currentLevel, targets!.normal!) : EMPTY_DELTA;
+        // 유물·고대 구간은 아직 표가 없다 (해방 재료 병목으로 실측 불가)
+        if (!rewind || !gain) {
+          hasExcluded = true;
+          return;
+        }
+        baseline = addDelta(baseline, rewind);
+        target = addDelta(target, gain);
+        return;
+      }
+
+      // 계승 후(운명의 전율) 일반 재련만 스탯 표가 있다
+      if (!SUCCESSION_MAIN_STAT[eq.name] || !eq.isSuccession) {
+        if (wantsNormal || wantsAdvanced) hasExcluded = true;
+        return;
+      }
+      if (wantsAdvanced) hasExcluded = true;
+
+      const key = eq.name === '무기' ? 'weaponAtk' : 'stat';
+      const rewind = mainStatDelta(eq.name, eq.origNormal, eq.currentLevel);
+      const gain = wantsNormal ? mainStatDelta(eq.name, eq.currentLevel, targets!.normal!) : 0;
+
+      baseline = addDelta(baseline, { ...EMPTY_DELTA, [key]: rewind });
+      target = addDelta(target, { ...EMPTY_DELTA, [key]: gain });
+    });
+
+    const base = shiftCombatPowerBase(combatPowerBase, baseline);
+    const increase = calcCombatPowerGain(base, target);
+
+    return {
+      current: base.combatPower,
+      expected: base.combatPower + increase,
+      increase,
+      hasExcluded,
+    };
+  }, [combatPowerBase, equipments, targetLevels]);
+
   // 아이템 레벨 표시용 포맷 (쉼표 + 소수점 2자리)
   const formatItemLevel = (n: number): string =>
     n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2324,6 +2409,42 @@ export default function RefiningCalculator({
                             </div>
                           )}
                         </div>
+
+                        {/* 전투력 — 계승 후 장비의 일반 재련만 반영된다 */}
+                        {combatPowerSummary && (
+                          <>
+                            <div className={styles.characterLevelGrid}>
+                              <div className={styles.levelBox}>
+                                <div className={styles.levelLabel}>Combat Power</div>
+                                <div className={styles.characterLevel}>
+                                  {formatItemLevel(combatPowerSummary.current)}
+                                </div>
+                              </div>
+
+                              {combatPowerSummary.increase > 0 && (
+                                <div className={styles.levelArrow}>→</div>
+                              )}
+
+                              {combatPowerSummary.increase > 0 && (
+                                <div className={styles.levelBox}>
+                                  <div className={styles.levelLabel}>Expected Power</div>
+                                  <div className={styles.expectedLevel}>
+                                    {formatItemLevel(combatPowerSummary.expected)}
+                                    <span className={styles.levelBadge}>
+                                      +{combatPowerSummary.increase.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {combatPowerSummary.hasExcluded && (
+                              <div className={styles.combatPowerNote}>
+                                전투력은 계승 후 장비의 일반 재련과 완갑 15강까지만 반영됩니다 (상급 재련 제외)
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
 
                     </div>
