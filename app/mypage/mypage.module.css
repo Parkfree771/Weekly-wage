@@ -22,67 +22,95 @@
 }
 
 /* 페이지 헤더 */
-.pageHeader {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.pageTitle {
-  font-size: clamp(1.3rem, 3vw, 1.6rem);
-  font-weight: 700;
-  margin: 0;
-  color: var(--text-primary);
-  text-align: center;
+/* 화면에서만 감추는 제목 — 레이아웃 자리를 전혀 차지하지 않으면서
+   스크린리더와 문서 개요(h1)에는 남는다. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* 앱 다운로드 가로 배너 (숙제 체크 페이지 전용 — 제목 아래, 1~2줄) */
-.appBanner {
+/* 앱 다운로드 배지 — 모바일 전용 줄. 정식 규격(2줄) 배지를 가운데 정렬해 확실히 보이게 한다. */
+.storeBadgeRow {
   display: flex;
-  align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px 18px;
-  max-width: 640px;
-  margin: 0 auto 22px;
-  padding: 10px 16px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(99, 102, 241, 0.14) 100%);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  gap: 10px;
+  margin: 0 0 14px;
 }
 
-.appBannerInfo {
+/* ── 모바일 원정대 선택 토글 (1/2/3 을 가로 나열하지 않고 하나로 접는다) ── */
+.expSelect {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.expSelectBtn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  text-decoration: none;
-}
-
-.appBannerIcon {
-  display: inline-flex;
-  border-radius: 7px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.appBannerText {
-  font-size: 0.88rem;
-  line-height: 1.35;
-  color: var(--text-secondary);
-}
-
-.appBannerText strong {
-  color: var(--color-primary);
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 13px;
   font-weight: 700;
+  color: #fff;
+  background: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  white-space: nowrap;
 }
 
-.appBannerBadges {
+.expSelectBtn .tabBadge {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.expSelectCaret {
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* 펼침 목록 — 버튼 바로 아래. body zoom 은 1024px 이상에서만 걸리고 이 토글은 모바일 전용이라
+   absolute 좌표가 어긋날 일이 없다. */
+.expSelectMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 1020;
+  min-width: 100%;
   display: flex;
-  gap: 8px;
-  flex-shrink: 0;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-lg);
+}
+
+.expSelectItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.expSelectItemOn {
+  color: #fff;
+  background: var(--color-primary);
 }
 
 .headerRight {
@@ -92,12 +120,22 @@
   flex-wrap: wrap;
 }
 
-/* 원정대 행 (탭 + 버튼) */
+/* 원정대 행 — 아래 .cardWrapper(캐릭터 카드 + 주간 수급량 상자)와 같은 2열 구조·같은 gap.
+   이래야 버튼은 카드 오른쪽 변에, 레벨 바는 주간 수급량 상자 위에 딱 맞는다. */
 .expeditionRow {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+/* 왼쪽 열 — .cardWrapper .characterCard 와 동일한 flex:2 */
+.expeditionMain {
+  flex: 2;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
   gap: 12px;
 }
 
@@ -108,9 +146,68 @@
   flex-shrink: 0;
 }
 
+
+/* 오른쪽 끝 — 보석 누적 바 + 이번 주 예상 골드 */
+.expeditionRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* 데스크톱 — 골드(유통/귀속) 바 + 누적 보석 바를 한 줄에 나란히.
+   캐릭터 등록 버튼 왼쪽에 놓이고, 골드 기록 차트 팝오버의 기준 상자이기도 하다(position: relative). */
+.levelBars {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  /* .dailySideBox 와 동일 — 주간 수급량 상자 위에 폭이 정확히 맞는다 */
+  flex: 1.2;
+  min-width: 360px;
+  max-width: 480px;
+}
+
+/* 두 바가 정확히 같은 폭 (팝오버는 absolute 라 대상이 아니다) */
+.levelBars > .rowLevelBar {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* 행에 얹는 레벨 바 — 카드 아래 전체 폭 배치본보다 납작하게.
+   아이콘 크기는 LevelBar.module.css 의 .compact 규칙이 맡는다. */
+.rowLevelBar {
+  margin-bottom: 0;
+  gap: 8px;
+}
+
+
+/* 골드 기록 차트 팝오버 — 골드 바 바로 아래에 펼친다.
+   position: fixed 가 아니라 absolute 인 이유: 데스크톱은 body{zoom:0.85}가 걸려 있어서
+   fixed 는 뷰포트와 어긋나 엉뚱한 곳에 뜬다(모달·툴팁에서 반복 확인된 문제). */
+.chartPopover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1020;
+  width: 720px;
+  max-width: 90vw;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-xl);
+}
+
 @media (max-width: 768px) {
   .expeditionRow {
     flex-wrap: wrap;
+  }
+}
+
+/* 모바일은 오른쪽 열(레벨 바)이 렌더되지 않으므로 왼쪽 열이 행 전체를 쓴다 */
+@media (max-width: 900px) {
+  .expeditionMain {
+    flex: 1 1 100%;
   }
 }
 
@@ -123,8 +220,8 @@
 
 .expeditionTab {
   position: relative;
-  padding: 10px 24px;
-  font-size: 14px;
+  padding: 8px 18px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
   background: transparent;
@@ -212,8 +309,8 @@
 }
 
 .registerBtn {
-  padding: 8px 16px;
-  font-size: 13px;
+  padding: 6px 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: #fff;
   background: var(--color-primary);
@@ -225,8 +322,8 @@
 
 /* 원정대 편집 버튼 */
 .editBtn {
-  padding: 8px 16px;
-  font-size: 13px;
+  padding: 6px 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--color-primary);
   background: transparent;
@@ -238,8 +335,8 @@
 
 /* 저장 버튼 */
 .saveButton {
-  padding: 8px 16px;
-  font-size: 13px;
+  padding: 6px 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--text-muted);
   background: var(--card-bg);
@@ -258,46 +355,6 @@
   color: #fff;
   background: var(--color-accent);
   border-color: var(--color-accent);
-}
-
-/* 총 골드 배지 */
-.totalGoldBadge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-}
-
-.totalGoldBadge .goldLabel {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.totalGoldBadge .goldAmount {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--brand-primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.totalGoldBadge .goldSplit {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding-left: 8px;
-  border-left: 1px solid var(--border-color);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-secondary);
-}
-
-.totalGoldBadge .goldSplitItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
 }
 
 /* 카드 공통 스타일 */
@@ -2271,6 +2328,28 @@
     width: 90px;
     min-height: 100px;
   }
+
+
+  /* 등록·편집·스토어 배지가 한 줄에 다 안 들어가면 잘리지 말고 다음 줄로 */
+  .expeditionBtns {
+    flex-wrap: wrap;
+  }
+
+  /* 저장 버튼 — 모바일에선 우하단 고정. 카드가 길어 스크롤을 내려도 바로 저장할 수 있게.
+     단 "저장할 변경사항이 있을 때(.hasChanges)"만 띄운다. 항상 떠 있으면 스크롤 중
+     본문 인-콘텐츠 광고(320×100) 위를 상시로 덮게 되는데, 광고를 가리는 고정 요소는
+     애드센스·애드핏 정책상 문제가 된다. 누를 일이 없을 땐 원래대로 줄 안에 있는다.
+     z-index는 부트스트랩 모달(1055)보다 낮게 둬서 모달 위로 뜨지 않도록 한다. */
+  .saveButton.hasChanges {
+    position: fixed;
+    right: 14px;
+    bottom: 18px;
+    z-index: 1030;
+    padding: 12px 22px;
+    font-size: 14px;
+    border-radius: 999px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  }
 }
 
 /* 모바일 반응형 */
@@ -2293,8 +2372,8 @@
 
   .characterImage,
   .characterPlaceholder {
-    width: 75px;
-    min-height: 90px;
+    width: 84px;
+    min-height: 110px;
   }
 
   .checkOverlay {
@@ -2307,11 +2386,6 @@
 }
 
 @media (max-width: 480px) {
-  .characterImage,
-  .characterPlaceholder {
-    width: 60px;
-    min-height: 75px;
-  }
 
   .dailyRow {
     padding: 6px 8px;
@@ -2380,11 +2454,13 @@
     gap: 8px;
   }
 
+  /* 가로만 줄인다 — object-fit: cover 라 비율은 그대로고 좌우만 덜 잘라 보여준다.
+     여기서 줄인 폭은 옆의 레이드 카드 6개(.raidCard { flex: 1 })가 그대로 나눠 갖는다. */
   .characterImage,
   .characterPlaceholder {
-    width: 110px;
-    min-height: 120px;
-    font-size: 36px;
+    width: 76px;
+    min-height: 118px;
+    font-size: 28px;
   }
 
   .itemRow {
@@ -3271,6 +3347,9 @@
 .rosterCell {
   flex: 1;
   min-width: 0;
+  /* 6열 기준 폭이 상한 — 캐릭터가 2명뿐인 비로그인 데모에서 셀이 늘어나
+     aspect-ratio 때문에 썸네일이 통째로 확대돼 보이던 것 방지 */
+  max-width: calc((100% - 20px) / 6);
   border: none;
   background: transparent;
   padding: 0;

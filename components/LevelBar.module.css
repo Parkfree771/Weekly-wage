@@ -1,0 +1,238 @@
+/* 게이지 바 공용 스타일 — 보석 누적(GemEvolutionCard)·이번 주 골드 유통/귀속(GoldSplitBar) 이 함께 쓴다.
+   앱 GemEvolutionCard 의 StyleSheet 미러. 앱 수치를 그대로 옮기되 폰트만 웹 기준이다. */
+
+/* 납작 변형 — 아이콘(과 합계)을 바 옆이 아니라 바 "위"로 올린다.
+   원정대 행처럼 가로가 좁고 세로 여유가 있는 자리에서 쓴다.
+   DOM 은 track → 아이콘 순이라 order 로 뒤집는다(마크업은 두 배치가 공유). */
+.compact {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+}
+
+/* 아이콘 크기는 여기서 정한다 — 쓰는 쪽(mypage)에서 img 를 통째로 잡으면
+   보석과 동전을 따로 조절할 수 없다. */
+.compact .gemBox img,
+.compact .parkedBox img {
+  width: 30px;
+  height: 30px;
+}
+
+.compact .goldTotal img {
+  width: 20px;
+  height: 20px;
+}
+
+.compact .track {
+  order: 2;
+  flex: 1 0 100%;
+  height: 20px;
+}
+
+.compact .gemBox,
+.compact .parkedBox,
+.compact .goldTotal {
+  order: 1;
+}
+
+/* 위로 올라간 줄은 가로로 눕는다 — 아이콘 옆에 Lv / 합계 */
+.compact .gemBox {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.compact .lvTxt {
+  margin-top: 0;
+}
+
+.compact .parkedBox {
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+  margin-left: 2px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+
+/* 매트한 게이지 바 — 그라데이션 없이 단색 */
+.track {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  /* 흰 카드·밝은 페이지 배경 위에서 바가 배경에 묻히지 않도록 한 단계 더 진한 회청색.
+     --card-body-bg(#f4f5fb)는 배경과 거의 같아 빈 구간이 안 보였다. */
+  background: #dde2f1;
+}
+
+[data-theme="dark"] .track {
+  background: #39415c;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 12px;
+  background: var(--color-primary);
+}
+
+/* ── 유통/귀속 분리 바 (GoldSplitBar) — 레벨 없이 항상 꽉 찬 바를 두 색으로 나눈다 ── */
+.splitRow {
+  display: flex;
+  height: 100%;
+}
+
+.splitSeg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  color: #fff;
+}
+
+/* 단색 매트 — 그라데이션 없이. 유통은 채도 높은 금색, 글자는 흰색(요청).
+   흰 글자는 이 바탕에서 대비가 낮아 굵게(800) 유지해야 읽힌다. */
+.segFree {
+  background: #f0b429;
+  color: #fff;
+}
+
+/* 귀속 골드 — 사이트 전역 자홍(BOUND_GOLD_TEXT #e879f9) 계열에서 흰 글자가 읽히는 만큼만 어둡게 */
+.segBound {
+  background: #c026d3;
+  color: #fff;
+}
+
+/* 합계 — 동전 + 총합. 바가 비율을, 여기가 절대값을 담당한다 */
+.goldTotal {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.goldTotalNum {
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.emptyBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* 눌러서 차트를 여는 바 — 버튼이지만 생김새는 일반 바와 같게 */
+.rowButton {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.barTxt {
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 채워진 폭만큼의 오버레이 — 오른쪽 정렬이라 글자가 채움 끝에 붙는다 */
+.earnedInside {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 9px;
+  pointer-events: none;
+  color: #fff;
+}
+
+/* 채움이 좁아 글자가 안 들어가면 채움 끝 바로 오른쪽에 */
+.earnedOutside {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  color: var(--text-secondary);
+}
+
+.neededBox {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.onFill {
+  color: #fff;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.gemBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* 박제된 10레벨 보석 — 앱과 같이 살짝 겹쳐 쌓는다 */
+.parkedBox {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: -4px;
+}
+
+.lvTxt {
+  display: block;
+  margin-top: 1px;
+  font-size: 9.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.parkedBadge {
+  position: absolute;
+  right: -3px;
+  top: 26px;
+  border-radius: 7px;
+  padding: 1px 4.5px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}

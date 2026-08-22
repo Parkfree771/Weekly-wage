@@ -260,7 +260,6 @@ export default function BelgardinPage() {
                 marginBottom: '0.5rem'
               }}>
                 벨가르딘
-                <span className="nav-badge-wangap">NEW</span>
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 벨가르딘 난이도별 클리어 보상과 상점

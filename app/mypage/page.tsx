@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'rea
 import { Container, Card, Button, Form, Spinner, Alert, Modal, Row, Col } from 'react-bootstrap';
 import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
-import Link from 'next/link';
 import { AppleStoreBadge, GooglePlayBadge } from '@/components/StoreBadges';
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-download-config';
 import { memo } from 'react';
@@ -27,6 +26,8 @@ import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service
 import NicknameModal from '@/components/auth/NicknameModal';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
+import GemEvolutionCard from '@/components/GemEvolutionCard';
+import GoldSplitBar from '@/components/GoldSplitBar';
 import { faqData } from './faq-data';
 import { raids, upcomingRaids, getRaidNewLabel } from '@/data/raids';
 import { raidClearRewards } from '@/data/raidClearRewards';
@@ -105,7 +106,7 @@ import {
   getCommonContents, getSandOfTimeRewards, getCurrentGuardian,
   getChaosDungeonLabel, getGuardianRaidLabel, getChaosTierLabel, getGuardianTierLabel,
   getChaosDailyReward, getGuardianDailyReward,
-  COMMON_CONTENT_MATERIALS_BY_LEVEL,
+  COMMON_CONTENT_MATERIALS_BY_LEVEL, valueActivityEntry,
 } from '@/lib/weekly-rewards';
 import { eventTierOf, SAND_GEM_TO_LV1 } from '@/data/rewardTable';
 import dynamic from 'next/dynamic';
@@ -1553,6 +1554,21 @@ export default function MyPage() {
     return Math.max(...characters.map(c => c.itemLevel));
   }, [characters]);
 
+  // 원정대 누적 보석(1레벨 환산) — 활동 로그에서 보석 아이템만 합산 (앱 WeeklyScreen.totalGems 와 동일).
+  // 앱은 300일 지난 달을 월 단위로 떼어 둔 아카이브 요약(archiveIndex)도 더하지만,
+  // 웹은 아직 그 하위 컬렉션을 쓰지 않으므로 메인 로그만 집계한다.
+  const totalGems = useMemo(() => {
+    let sum = 0;
+    Object.values(activityLog).forEach(day => {
+      Object.entries(day).forEach(([id, e]) => {
+        valueActivityEntry(id, e, maxCharLevel)?.mats.forEach(m => {
+          if (m.image === '/1fpqrjqghk.webp') sum += m.amount;
+        });
+      });
+    });
+    return sum;
+  }, [activityLog, maxCharLevel]);
+
   // 카게·필보는 대표 캐릭터가 도는 원정대 공통 콘텐츠라 티어를 대표 캐릭터 레벨로 잡는다.
   // (원정대 최고 레벨로 잡으면 대표가 최고 레벨이 아닐 때 보상이 과대 계산된다 — gold-projection 과 같은 기준)
   const representativeLevel = useMemo(
@@ -1597,6 +1613,44 @@ export default function MyPage() {
 
   const totalGold = totalGoldSplit.total;
 
+  // 모바일 원정대 선택 토글 — 1/2/3 을 가로로 늘어놓지 않고 버튼 하나로 접는다.
+  const [expSelectOpen, setExpSelectOpen] = useState(false);
+  const expSelectRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!expSelectOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (expSelectRef.current?.contains(e.target as Node)) return;
+      setExpSelectOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setExpSelectOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [expSelectOpen]);
+
+  // 골드 레벨 바를 누르면 열리는 골드 기록 차트 팝오버 (데스크톱 전용).
+  // 바깥을 누르거나 ESC 를 누르면 닫히고, 팝오버 안쪽 클릭은 그대로 통과시킨다.
+  const [goldChartOpen, setGoldChartOpen] = useState(false);
+  const goldChartWrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!goldChartOpen) return;
+    const onDown = (e: MouseEvent) => {
+      // 래퍼(= 바 + 팝오버) 안쪽이면 무시 — 차트 조작이 닫힘으로 먹히지 않게 한다
+      if (goldChartWrapRef.current?.contains(e.target as Node)) return;
+      setGoldChartOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setGoldChartOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [goldChartOpen]);
+
   // 주간 재화 합산 데이터 (레이드 + 카던 + 가토)
   // itemId → 이미지/이름 직접 매핑 (카던 짧은 이름 문제 방지)
   const itemIdInfoRef: Record<number, { name: string; image: string }> = {
@@ -1637,28 +1691,140 @@ export default function MyPage() {
     setExpandedCards(prev => ({ ...prev, [charName]: !prev[charName] }));
   };
 
+  // 원정대 탭 + 등록·편집·저장 — 데스크톱과 모바일에서 놓이는 자리가 달라 노드로 만들어 재사용한다.
+  const expeditionRowNode = (
+    <div className={styles.expeditionRow}>
+      {/* 왼쪽 열 — 캐릭터 카드와 같은 폭(flex:2). 버튼은 이 열의 오른쪽 끝, 즉 카드 오른쪽 변에 맞는다 */}
+      <div className={styles.expeditionMain}>
+      {isDesktop ? (
+      <div className={styles.expeditionTabs}>
+      {isDemo ? (
+        <button className={`${styles.expeditionTab} ${styles.activeTab}`}>
+          원정대 1
+          <span className={styles.tabBadge}>({characters.length})</span>
+        </button>
+      ) : ([1, 2, 3] as const).map(idx => {
+        const expData = getExpeditionData(userProfile, idx);
+        const hasData = expData.chars.length > 0;
+        return (
+          <button
+            key={idx}
+            className={`${styles.expeditionTab} ${activeExpedition === idx ? styles.activeTab : ''}`}
+            onClick={() => switchExpedition(idx)}
+          >
+            원정대 {idx}
+            {hasData && <span className={styles.tabBadge}>({expData.chars.length})</span>}
+          </button>
+        );
+      })}
+      </div>
+      ) : (
+      /* 모바일 — 1/2/3 을 가로로 늘어놓지 않고 현재 원정대 버튼 하나로 접는다. 기본은 원정대 1 */
+      <div className={styles.expSelect} ref={expSelectRef}>
+        <button
+          type="button"
+          className={styles.expSelectBtn}
+          onClick={() => !isDemo && setExpSelectOpen(o => !o)}
+          aria-expanded={expSelectOpen}
+          aria-haspopup={!isDemo || undefined}
+        >
+          <span>원정대 {isDemo ? 1 : activeExpedition}</span>
+          <span className={styles.tabBadge}>({characters.length})</span>
+          {!isDemo && <span className={styles.expSelectCaret} aria-hidden="true">▾</span>}
+        </button>
+        {expSelectOpen && !isDemo && (
+          <div className={styles.expSelectMenu} role="menu">
+            {([1, 2, 3] as const).map(idx => {
+              const expData = getExpeditionData(userProfile, idx);
+              const hasData = expData.chars.length > 0;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  role="menuitem"
+                  className={`${styles.expSelectItem} ${activeExpedition === idx ? styles.expSelectItemOn : ''}`}
+                  onClick={() => { switchExpedition(idx); setExpSelectOpen(false); }}
+                >
+                  원정대 {idx}
+                  {hasData && <span className={styles.tabBadge}>({expData.chars.length})</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      )}
+
+      {/* 오른쪽 — 레벨 바 2개(데스크톱) + 스토어 배지(모바일) + 캐릭터 등록·편집·저장 */}
+      <div className={styles.expeditionRight}>
+        {/* 누적 골드 · 누적 보석 — 캐릭터 등록 버튼 왼쪽에 나란히.
+            골드 바를 누르면 아래로 골드 기록 차트 팝오버가 열린다. */}
+        <div className={styles.expeditionBtns}>
+        {isDemo ? (
+          <>
+            <button className={styles.registerBtn} onClick={() => setDemoLoginPrompt(true)}>
+              + 캐릭터 등록
+            </button>
+            <button
+              className={`${styles.saveButton} ${hasChanges ? styles.hasChanges : ''}`}
+              onClick={() => setDemoLoginPrompt(true)}
+            >
+              저장
+            </button>
+          </>
+        ) : (
+          <>
+            <button className={styles.registerBtn} onClick={() => setShowRegisterModal(true)}>
+              + 캐릭터 등록
+            </button>
+            {characters.length > 0 && (
+              <button className={styles.editBtn} onClick={openEditModal}>편집</button>
+            )}
+            <button
+              className={`${styles.saveButton} ${hasChanges ? styles.hasChanges : ''}`}
+              onClick={handleSave}
+              disabled={!hasChanges || isSaving}
+            >
+              {isSaving ? <Spinner animation="border" size="sm" /> : '저장'}
+            </button>
+          </>
+        )}
+      </div>
+      </div>
+      </div>
+
+      {/* 오른쪽 열 — 캐릭터 카드 옆 "주간 수급량" 상자와 같은 폭.
+          골드 바를 누르면 이 열 아래로 골드 기록 차트 팝오버가 열린다. */}
+      {isDesktop && characters.length > 0 && (
+        <div className={styles.levelBars} ref={goldChartWrapRef}>
+          {totalGems > 0 && <GemEvolutionCard total={totalGems} className={styles.rowLevelBar} compact />}
+          <GoldSplitBar
+            free={totalGoldSplit.free}
+            bound={totalGoldSplit.bound}
+            className={styles.rowLevelBar}
+            compact
+            onClick={() => setGoldChartOpen(o => !o)}
+            expanded={goldChartOpen}
+          />
+          {goldChartOpen && (
+            <div className={styles.chartPopover}>
+              <WeeklyGoldChart
+                history={weeklyGoldHistory}
+                currentWeek={{ total: totalGold, free: totalGoldSplit.free, bound: totalGoldSplit.bound }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className={styles.pageWrapper}>
       <Container fluid className={styles.container}>
-        <div className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>숙제 체크</h1>
-        </div>
-
-        {/* 앱 다운로드 가로 배너 — 이 페이지 전용(제목 아래). 앵커 중첩 방지로 안내는 Link, 배지는 각자 <a> */}
-        <div className={styles.appBanner}>
-          <Link href="/app" className={styles.appBannerInfo}>
-            <span className={styles.appBannerIcon}>
-              <NextImage src="/icon.png" alt="로아로골 앱" width={30} height={30} />
-            </span>
-            <span className={styles.appBannerText}>
-              <strong>J들은 이런 거 좋아함</strong>
-            </span>
-          </Link>
-          <span className={styles.appBannerBadges}>
-            <AppleStoreBadge href={APP_STORE_URL} compact />
-            <GooglePlayBadge href={PLAY_STORE_URL} compact />
-          </span>
-        </div>
+        {/* 제목은 화면에서 빼고 문서 구조용으로만 남긴다 — 배너를 걷어낸 뒤 제목만 덩그러니 떠 있었다.
+            /mypage 는 noindex 라(lib/site-config.ts NOINDEX_PATHS) 색인 측면 손실은 없다. */}
+        <h1 className={styles.srOnly}>숙제 체크</h1>
 
         {/* 데모 안내 */}
         {isDemo && (
@@ -1719,86 +1885,17 @@ export default function MyPage() {
           </Modal.Body>
         </Modal>
 
-        {/* 원정대 탭 + 버튼 */}
-        <div className={styles.expeditionRow}>
-          <div className={styles.expeditionTabs}>
-          {isDemo ? (
-            <button className={`${styles.expeditionTab} ${styles.activeTab}`}>
-              원정대 1
-              <span className={styles.tabBadge}>({characters.length})</span>
-            </button>
-          ) : ([1, 2, 3] as const).map(idx => {
-            const expData = getExpeditionData(userProfile, idx);
-            const hasData = expData.chars.length > 0;
-            return (
-              <button
-                key={idx}
-                className={`${styles.expeditionTab} ${activeExpedition === idx ? styles.activeTab : ''}`}
-                onClick={() => switchExpedition(idx)}
-              >
-                원정대 {idx}
-                {hasData && <span className={styles.tabBadge}>({expData.chars.length})</span>}
-              </button>
-            );
-          })}
+        {/* 앱 다운로드 — 모바일 전용 줄(원정대 행 위). 데스크톱은 사이드바 프로모(AdLayout)가 맡는다.
+            행 안에 끼워 넣으면 눌리고 잘려서 안 보이므로 정식 규격 배지로 따로 뺀다. */}
+        {!isDesktop && (
+          <div className={styles.storeBadgeRow}>
+            <AppleStoreBadge href={APP_STORE_URL} />
+            <GooglePlayBadge href={PLAY_STORE_URL} />
           </div>
-          <div className={styles.expeditionBtns}>
-            {isDemo ? (
-              <>
-                <button className={styles.registerBtn} onClick={() => setDemoLoginPrompt(true)}>
-                  + 캐릭터 등록
-                </button>
-                <button
-                  className={`${styles.saveButton} ${hasChanges ? styles.hasChanges : ''}`}
-                  onClick={() => setDemoLoginPrompt(true)}
-                >
-                  저장
-                </button>
-              </>
-            ) : (
-              <>
-                <button className={styles.registerBtn} onClick={() => setShowRegisterModal(true)}>
-                  + 캐릭터 등록
-                </button>
-                {characters.length > 0 && (
-                  <button className={styles.editBtn} onClick={openEditModal}>편집</button>
-                )}
-                {activeExpedition === 1 && characters.length > 0 && (
-                  <button
-                    className={styles.editBtn}
-                    onClick={() => { setCalendarChar(null); setCalendarOpen(true); }}
-                    title="숙제 기록 달력 — 날짜별 기록·골드·재료 정산"
-                  >
-                    달력
-                  </button>
-                )}
-                <button
-                  className={`${styles.saveButton} ${hasChanges ? styles.hasChanges : ''}`}
-                  onClick={handleSave}
-                  disabled={!hasChanges || isSaving}
-                >
-                  {isSaving ? <Spinner animation="border" size="sm" /> : '저장'}
-                </button>
-              </>
-            )}
-            <div className={styles.totalGoldBadge}>
-              <span className={styles.goldLabel}>이번 주 예상</span>
-              <span className={styles.goldAmount}>{totalGold.toLocaleString()}G</span>
-              {totalGoldSplit.bound > 0 && (
-                <span className={styles.goldSplit}>
-                  <span className={styles.goldSplitItem} title="일반 골드">
-                    <Image src="/gold.webp" alt="일반" width={12} height={12} style={{ borderRadius: '2px' }} />
-                    <span>{totalGoldSplit.free.toLocaleString()}</span>
-                  </span>
-                  <span className={styles.goldSplitItem} title="귀속 골드" style={{ color: BOUND_GOLD_TEXT }}>
-                    <Image src="/gold.webp" alt="귀속" width={12} height={12} style={{ borderRadius: '2px', filter: BOUND_GOLD_FILTER }} />
-                    <span>{totalGoldSplit.bound.toLocaleString()}</span>
-                  </span>
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+        )}
+
+        {/* 원정대 탭 + 버튼 — 모바일은 배지 줄 아래, 데스크톱은 차트 아래(첫 캐릭터 카드 바로 위) */}
+        {!isDesktop && expeditionRowNode}
 
         {saveMessage && (
           <Alert variant={saveMessage.type === 'success' ? 'success' : 'danger'} className="mb-3">
@@ -1867,6 +1964,13 @@ export default function MyPage() {
             </div>
           )
         )}
+
+        {/* 보석 진화 — 앱과 같은 자리(차트 카드와 첫 캐릭터 카드 사이). 기록이 있어야 의미가 있으므로 0이면 감춘다 */}
+        {!isDesktop && characters.length > 0 && totalGems > 0 && <GemEvolutionCard total={totalGems} />}
+
+
+        {/* 데스크톱은 여기 — 차트 바로 아래, 첫 캐릭터 카드 바로 위 */}
+        {isDesktop && expeditionRowNode}
 
         {/* 캐릭터 카드 그리드 (1열) */}
         <div className={styles.cardGrid}>
@@ -2756,14 +2860,6 @@ export default function MyPage() {
           </div>
         )}
 
-
-        {/* 주간 골드 차트 — 데스크톱은 원래 위치(맨 아래) 유지 */}
-        {isDesktop && characters.length > 0 && (
-          <WeeklyGoldChart
-            history={weeklyGoldHistory}
-            currentWeek={{ total: totalGold, free: totalGoldSplit.free, bound: totalGoldSplit.bound }}
-          />
-        )}
 
         {/* 안내 문구 */}
         {characters.length > 0 && !isDemo && (

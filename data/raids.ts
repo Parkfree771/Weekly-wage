@@ -23,9 +23,7 @@ const DISABLED_RAID_NAMES = new Set<string>([]);
 const RAID_RELEASE_LABELS: Record<string, string> = {};
 
 // 신규 레이드 배지 — 그룹명 → 배지 문구. 출시 후 해당 항목만 지우면 배지가 사라진다.
-const RAID_NEW_LABELS: Record<string, string> = {
-  '벨가르딘': 'NEW · 8/5',
-};
+const RAID_NEW_LABELS: Record<string, string> = {};
 
 // 레이드명(또는 그룹명)에 붙일 신규 배지 문구. 없으면 undefined.
 export function getRaidNewLabel(raidName: string): string | undefined {

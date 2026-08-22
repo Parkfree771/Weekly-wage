@@ -160,6 +160,17 @@ export default function PriceComparisonStats() {
 
   if (!stats || filteredHistory.length === 0) return null;
 
+  // 현재가 라벨은 left:{위치}% + translateX(-50%) 로 점 위에 얹히는데,
+  // 위치가 0%(최저) / 100%(최고) 에 닿으면 라벨 절반이 카드 밖으로 나가고
+  // 카드에 overflow:hidden 이 걸려 있어 숫자가 잘렸다.
+  // → 가장자리 EDGE(%) 구간에서만 정렬 기준을 가운데(-50%)에서 끝(0% / -100%)으로 옮긴다.
+  //   가운데 구간(EDGE~100-EDGE)은 기존과 완전히 동일하게 점 위 정중앙에 붙는다.
+  const EDGE = 14;
+  const labelShift = (pos: number) =>
+    pos <= EDGE ? (pos / EDGE) * 50
+      : pos >= 100 - EDGE ? 50 + ((pos - (100 - EDGE)) / EDGE) * 50
+        : 50;
+
   // 점 색상은 카테고리 색상 사용
   const dotColor = categoryColor;
 
@@ -187,7 +198,7 @@ export default function PriceComparisonStats() {
               style={{
                 position: 'absolute',
                 left: `${stats.pricePosition}%`,
-                transform: 'translateX(-50%)',
+                transform: `translateX(-${labelShift(stats.pricePosition)}%)`,
                 top: '0',
                 textAlign: 'center',
                 cursor: 'pointer',
@@ -216,7 +227,9 @@ export default function PriceComparisonStats() {
                 <div style={{
                   position: 'absolute',
                   top: '50%',
-                  left: `${stats.pricePosition}%`,
+                  // 최저(0%)·최고(100%) 에서 점 절반이 카드 밖으로 나가 잘리던 것 방지.
+                  // 중심이 가장자리에서 반폭(테두리 링 포함 ≈ 11px)보다 가까워지지 않게 묶는다.
+                  left: `clamp(11px, ${stats.pricePosition}%, calc(100% - 11px))`,
                   transform: 'translate(-50%, -50%)',
                   width: '18px',
                   height: '18px',
@@ -319,7 +332,7 @@ export default function PriceComparisonStats() {
               style={{
                 position: 'absolute',
                 left: `${stats.pricePosition}%`,
-                transform: 'translateX(-50%)',
+                transform: `translateX(-${labelShift(stats.pricePosition)}%)`,
                 top: '0',
                 textAlign: 'center',
                 cursor: 'pointer',
@@ -348,7 +361,8 @@ export default function PriceComparisonStats() {
                 <div style={{
                   position: 'absolute',
                   top: '50%',
-                  left: `${stats.pricePosition}%`,
+                  // 데스크톱과 같은 이유 — 점(14px)+링 기준 반폭 ≈ 9px
+                  left: `clamp(9px, ${stats.pricePosition}%, calc(100% - 9px))`,
                   transform: 'translate(-50%, -50%)',
                   width: '14px',
                   height: '14px',
