@@ -9,8 +9,6 @@ const PRELOAD_IMAGES = [
   '/home.webp',
   '/icon-moon.svg',
   '/icon-sun.svg',
-  '/up.png',
-  '/down.png',
   '/gold.webp',
 
   // 지옥 시뮬레이터 키 이미지

@@ -35,15 +35,23 @@ const DEMO_SEEDS: Array<{ id: string; factor: number; qty: number }> = [
   { id: 'auction_gem_fear_10', factor: 0.88, qty: 1 },  // 10겁화 — 고가 단일
 ];
 
+// 모바일에서 접는 열 — 폰 폭에 7열은 안 들어간다. 수량만 빼서 종목명 아래로 내리고
+// 매입가·현재가는 열로 남긴다(가격 비교가 이 표의 핵심이라 접으면 안 된다).
+const DESK_ONLY_COLS = new Set(['qty']);
+
 // 거래소 판매 수수료 — 판매가의 5% 를 떼고 정산된다
 const FEE = 0.05;
 
 const itemById = new Map(PRICE_ITEMS.map(i => [i.id, i]));
 
-// 골드 아이콘 — 숫자 옆에 붙이는 작은 표식
-function Gold({ size = 13 }: { size?: number }) {
+// 골드 아이콘 — 금액 숫자 앞에 붙이는 작은 표식
+function Gold({ size = 12 }: { size?: number }) {
   return <NextImage src="/gold.webp" alt="" width={size} height={size} className={styles.goldIcon} unoptimized />;
 }
+
+// 금액 칸 — 골드로 매겨진 값에는 전부 아이콘을 붙인다(수량·수익률은 골드가 아니라 안 붙인다)
+const goldVal = (text: string) => <><Gold />{text}</>;
+
 // 금액(총액·손익·수수료) — 소수점 없이. 62,623.5 처럼 끝자리가 붙으면 표가 지저분해진다.
 const gold = (n: number) => Math.round(n).toLocaleString();
 
@@ -238,40 +246,41 @@ export default function BuyOrderBoard() {
 
   // 보유 줄의 값 — 관련 있는 둘을 한 열에 위아래로 묶는다.
   // 열을 9개로 펼치면 1,061,000 같은 값이 눌려서 잘린다. 4쌍으로 묶으면 열이 절반이라 여유가 생긴다.
-  // 데스크톱 헤더·본문, 모바일 라벨이 모두 이 정의 하나를 쓴다(narrow = 모바일에도 노출).
+  // 짝은 요약(합계 줄)과 동일하다 — 위아래 같은 자리가 같은 항목이어야 표와 합계가 한 눈에 대응된다.
+  // 헤더·합계·종목 줄이 모두 이 정의 하나를 쓴다. 모바일은 앞 두 묶음(수량·단가)만 접는다.
   const holdGroups = (r: (typeof rows)[number]) => [
     {
       key: 'qty',
       rows: [
-        { label: '수량', node: r.qty.toLocaleString(), tone: '', narrow: true, big: false },
+        { label: '수량', node: r.qty.toLocaleString(), tone: '', big: false },
       ],
     },
     {
       key: 'price',
       rows: [
-        { label: '매입가', node: unit(r.order.price), tone: '', narrow: true, big: false },
-        { label: '현재가', node: r.has ? unit(r.current!) : '—', tone: tone(r.diff), narrow: true, big: false },
+        { label: '매입가', node: goldVal(unit(r.order.price)), tone: '', big: false },
+        { label: '현재가', node: r.has ? goldVal(unit(r.current!)) : '—', tone: tone(r.diff), big: false },
       ],
     },
     {
       key: 'amount',
       rows: [
-        { label: '매입금액', node: gold(r.cost), tone: '', narrow: false, big: false },
-        { label: '평가금액', node: r.has ? gold(r.sale) : '—', tone: '', narrow: false, big: false },
-      ],
-    },
-    {
-      key: 'fee',
-      rows: [
-        { label: `수수료 ${FEE * 100}%`, node: r.has ? `−${gold(r.fee)}` : '—', tone: '', narrow: false, big: false },
-        { label: '총 이득', node: r.has ? `${sign(r.net)}${gold(r.net)}` : '—', tone: tone(r.net), narrow: true, big: false },
+        { label: '매입금액', node: goldVal(gold(r.cost)), tone: '', big: false },
+        { label: '평가금액', node: r.has ? goldVal(gold(r.sale)) : '—', tone: '', big: false },
       ],
     },
     {
       key: 'gain',
       rows: [
-        { label: '평가손익', node: r.has ? `${sign(r.gain)}${gold(r.gain)}` : '—', tone: tone(r.diff), narrow: false, big: false },
-        { label: '수익률', node: r.has ? `${sign(r.diff)}${r.pct.toFixed(1)}%` : '—', tone: tone(r.diff), narrow: false, big: true },
+        { label: '차익', node: r.has ? goldVal(`${sign(r.gain)}${gold(r.gain)}`) : '—', tone: tone(r.diff), big: false },
+        { label: '수수료 뺀 차익', node: r.has ? goldVal(`${sign(r.net)}${gold(r.net)}`) : '—', tone: tone(r.net), big: false },
+      ],
+    },
+    {
+      key: 'fee',
+      rows: [
+        { label: `수수료 ${FEE * 100}%`, node: r.has ? goldVal(`−${gold(r.fee)}`) : '—', tone: '', big: false },
+        { label: '수익률', node: r.has ? `${sign(r.diff)}${r.pct.toFixed(1)}%` : '—', tone: tone(r.diff), big: true },
       ],
     },
   ];
@@ -326,130 +335,123 @@ export default function BuyOrderBoard() {
               onChange={e => setQuery(e.target.value)}
             />
           </div>
-          {priceList()}
+          {/* 카드가 오른쪽 높이에 맞춰 늘어나므로, 목록을 감싼 칸이 남는 높이를 전부 먹는다 */}
+          <div className={styles.tilesWrap}>{priceList()}</div>
         </div>
       )}
 
       {/* ── 오른쪽: 내 종목 수익률 ── */}
       <div className={`${styles.card} shadow-hard`}>
         <div className={styles.head}>
-          <h2 className={styles.title}>내 종목</h2>
+          <h2 className={styles.title}>
+            내 종목
+            {/* 담은 종목이 없으면 아래 줄은 전부 예시 데이터(DEMO_SEEDS)다 — 실제 내 기록으로 오해하지 않게 */}
+            {isGhost && <em className={styles.demoTag}>예시</em>}
+          </h2>
           {user && dirty && (
             <button type="button" className={styles.saveBtn} onClick={save} disabled={saving}>
               {saving ? '…' : '저장'}
             </button>
           )}
+          {/* 로그인 배지 — 제목과 같은 줄 오른쪽 끝 */}
+          {!user && (
+            <div className={styles.loginCta}>
+              <span className={styles.loginCtaBtns}>
+                <button type="button" className={styles.loginBtn} onClick={signInWithGoogle}>
+                  <svg width="14" height="14" viewBox="0 0 48 48" aria-hidden="true">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                  </svg>
+                  Google
+                </button>
+                <button type="button" className={styles.loginBtn} onClick={signInWithApple}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+                    <path d="M16.365 1.43c0 1.14-.462 2.033-1.11 2.72-.7.744-1.85 1.32-2.79 1.24-.13-1.09.45-2.24 1.09-2.95.71-.8 1.96-1.4 2.81-1.01Zm4.14 16.53c-.55 1.26-.81 1.83-1.52 2.94-.99 1.55-2.39 3.48-4.12 3.5-1.53.02-1.93-.99-4.01-.98-2.08.01-2.52.99-4.05.97-1.73-.02-3.06-1.75-4.05-3.3C-.4 16.86-.66 12 1.05 9.4c1.16-1.78 2.99-2.82 4.71-2.82 1.75 0 2.85 1 4.3 1 1.4 0 2.26-1 4.3-1 1.53 0 3.15.83 4.3 2.27-3.78 2.07-3.17 7.46 1.6 8.68-.24.65-.5 1.3-.71 1.4Z"/>
+                  </svg>
+                  Apple
+                </button>
+              </span>
+            </div>
+          )}
         </div>
-
-        {/* 요약 — 큰 줄에 결론(수익률·실수령), 아래 작은 줄에 근거(평가 − 수수료).
-            수수료는 "판매 대금 전체"의 5% 라 평가손익보다 클 수 있어 각 항에 이름을 붙인다. */}
-        {summary.count > 0 && (
-          <div className={styles.sum}>
-            {/* 열 하나에 위아래로 한 쌍 — 매수↔평가금액, 수수료↔총이득, 평가손익↔수익률 */}
-            <div className={styles.cell}>
-              <span className={styles.cellLabel}>매수금액</span>
-              <span className={styles.cellVal}>{gold(summary.cost)}</span>
-            </div>
-            <div className={styles.cell}>
-              <span className={styles.cellLabel}>평가금액</span>
-              <span className={styles.cellVal}>{gold(summary.sale)}</span>
-            </div>
-
-            <div className={styles.cell}>
-              <span className={styles.cellLabel}>수수료 {FEE * 100}%</span>
-              <span className={styles.cellVal}>−{gold(summary.fee)}</span>
-            </div>
-            <div className={styles.cell}>
-              <span className={styles.cellLabel}>총 이득</span>
-              <span className={`${styles.cellStrong} ${tone(summary.net)}`}>
-                <Gold size={14} />{sign(summary.net)}{gold(summary.net)}
-              </span>
-            </div>
-
-            <div className={styles.cell}>
-              <span className={styles.cellLabel}>평가손익</span>
-              <span className={`${styles.cellVal} ${tone(summary.gain)}`}>
-                {sign(summary.gain)}{gold(summary.gain)}
-              </span>
-            </div>
-            <div className={styles.cell}>
-              <span className={styles.cellLabel}>수익률</span>
-              <span className={`${styles.cellStrong} ${tone(summary.gain)}`}>
-                {sign(summary.gain)}{summary.pct.toFixed(1)}%
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* 로그인 유도 — 데스크톱·모바일 모두 이 카드 하나만 있으므로 여기 두면 레이아웃이 갈라지지 않는다 */}
-        {!user && (
-          <div className={styles.loginCta}>
-            <span className={styles.loginCtaText}>로그인하면 내 매수가로 바뀝니다</span>
-            <span className={styles.loginCtaBtns}>
-              <button type="button" className={styles.loginBtn} onClick={signInWithGoogle}>
-                <svg width="14" height="14" viewBox="0 0 48 48" aria-hidden="true">
-                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                </svg>
-                Google
-              </button>
-              <button type="button" className={`${styles.loginBtn} ${styles.loginBtnApple}`} onClick={signInWithApple}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
-                  <path d="M16.365 1.43c0 1.14-.462 2.033-1.11 2.72-.7.744-1.85 1.32-2.79 1.24-.13-1.09.45-2.24 1.09-2.95.71-.8 1.96-1.4 2.81-1.01Zm4.14 16.53c-.55 1.26-.81 1.83-1.52 2.94-.99 1.55-2.39 3.48-4.12 3.5-1.53.02-1.93-.99-4.01-.98-2.08.01-2.52.99-4.05.97-1.73-.02-3.06-1.75-4.05-3.3C-.4 16.86-.66 12 1.05 9.4c1.16-1.78 2.99-2.82 4.71-2.82 1.75 0 2.85 1 4.3 1 1.4 0 2.26-1 4.3-1 1.53 0 3.15.83 4.3 2.27-3.78 2.07-3.17 7.46 1.6 8.68-.24.65-.5 1.3-.71 1.4Z"/>
-                </svg>
-                Apple
-              </button>
-            </span>
-          </div>
-        )}
 
         {saveError && <div className={styles.saveError}>저장 실패 · {saveError}</div>}
 
         <div className={styles.listWrap}>
           <div className={styles.list}>
-            {/* 데스크톱 — 라벨을 맨 위 헤더 한 줄로 빼고, 종목은 한 줄씩. 줄마다 라벨을 반복하면
-                같은 글자가 종목 수만큼 찍혀 공백만 늘어난다. */}
-            {!isMobile && rows.length > 0 && (
-              <div className={styles.headRow}>
-                <span />
-                {holdGroups(rows[0]).map(g => (
-                  <span key={g.key} className={styles.headCell}>
-                    {g.rows.map(x => <em key={x.label} className={styles.headLabel}>{x.label}</em>)}
-                  </span>
-                ))}
-                <span />
+            {/* 라벨은 맨 위 헤더 한 줄로 빼고, 종목은 한 줄씩. 줄마다 라벨을 반복하면
+                같은 글자가 종목 수만큼 찍혀 공백만 늘어난다.
+                헤더와 합계는 목록을 스크롤해도 따라다니게 위에 붙여 둔다.
+                모바일도 같은 표를 쓰고 수량·단가 열만 접는다 — 합계와 종목 줄이 같은 자리에 선다. */}
+            {rows.length > 0 && (
+              <div className={styles.stickyTop}>
+                <div className={styles.headRow}>
+                  <span />
+                  {holdGroups(rows[0]).map(g => (
+                    <span key={g.key} className={`${styles.headCell} ${DESK_ONLY_COLS.has(g.key) ? styles.colDeskOnly : ''}`}>
+                      {g.rows.map(x => <em key={x.label} className={styles.headLabel}>{x.label}</em>)}
+                    </span>
+                  ))}
+                  <span />
+                </div>
+
+                {/* 합계 — 라벨은 위 헤더가 이미 달고 있으므로 값만 같은 열에 세운다 */}
+                {summary.count > 0 && (
+                  <div className={styles.sumRow}>
+                    <span className={styles.sumName}>
+                      합계<em className={styles.sumCount}>{summary.count}종목</em>
+                    </span>
+                    {/* 빈 자리 — 수량(모바일에선 접힘) · 매입가/현재가(합계엔 단가가 없다).
+                        종목 줄과 열 수가 같아야 아래 값들이 같은 자리에 선다. */}
+                    <span className={styles.colDeskOnly} />
+                    <span />
+                    <span className={styles.groupCell}>
+                      <b className={styles.sumVal}>{goldVal(gold(summary.cost))}</b>
+                      <b className={styles.sumVal}>{goldVal(gold(summary.sale))}</b>
+                    </span>
+                    <span className={styles.groupCell}>
+                      <b className={`${styles.sumVal} ${tone(summary.gain)}`}>
+                        {goldVal(`${sign(summary.gain)}${gold(summary.gain)}`)}
+                      </b>
+                      <b className={`${styles.sumValBig} ${tone(summary.net)}`}>
+                        {goldVal(`${sign(summary.net)}${gold(summary.net)}`)}
+                      </b>
+                    </span>
+                    <span className={styles.groupCell}>
+                      <b className={styles.sumVal}>{goldVal(`−${gold(summary.fee)}`)}</b>
+                      <b className={`${styles.sumValBig} ${tone(summary.gain)}`}>
+                        {sign(summary.gain)}{summary.pct.toFixed(1)}%
+                      </b>
+                    </span>
+                    <span />
+                  </div>
+                )}
               </div>
             )}
 
             {rows.map(r => {
               const edit = editingId === r.id;
-              const gainNode = r.has && (
-                <span className={`${styles.gainLine} ${tone(r.diff)}`}>
-                  {sign(r.gain)}{gold(r.gain)}
-                  <em className={styles.gainPct}>{sign(r.diff)}{r.pct.toFixed(1)}%</em>
-                </span>
-              );
               const actionNode = user && !isGhost && (
                 edit
                   ? <button type="button" className={styles.removeBtn} onClick={() => remove(r.id)} aria-label="빼기">×</button>
                   : <button type="button" className={styles.editBtn} onClick={() => setEditingId(r.id)} aria-label="수정">✎</button>
               );
-              const nameNode = (
-                <span className={styles.nameCell}>
-                  <NextImage src={r.item!.icon} alt="" width={22} height={22} className={styles.icon} unoptimized />
-                  <span className={styles.name}><PriceItemName item={r.item!} /></span>
-                </span>
-              );
 
-              // ── 데스크톱: 한 줄 ──
-              if (!isMobile) {
-                return (
-                  <div key={r.id} className={styles.holdRow}>
-                    {nameNode}
-                    {edit ? (
-                      <div className={styles.editSpan}>
+              return (
+                <div key={r.id} className={styles.holdRow}>
+                  <span className={styles.nameCell}>
+                    <NextImage src={r.item!.icon} alt="" width={22} height={22} className={styles.icon} unoptimized />
+                    <span className={styles.nameBox}>
+                      <span className={styles.name}><PriceItemName item={r.item!} /></span>
+                      {/* 모바일은 수량 열을 접으므로 그 값을 이름 아래로 내린다 */}
+                      {isMobile && <em className={styles.nameSub}>{r.qty.toLocaleString()}개</em>}
+                    </span>
+                  </span>
+
+                  {edit ? (
+                    <div className={styles.editSpan}>
                       <div className={styles.inputs}>
                         <label className={styles.field}>
                           <span className={styles.fieldLabel}>
@@ -486,80 +488,19 @@ export default function BuyOrderBoard() {
                         </label>
                         <button type="button" className={styles.doneBtn} onClick={() => setEditingId(null)}>완료</button>
                       </div>
-                      </div>
-                    ) : (
-                      <>
-                        {holdGroups(r).map(g => (
-                          <span key={g.key} className={styles.groupCell}>
-                            {g.rows.map(x => (
-                              <b key={x.label} className={`${styles.miniVal} ${x.big ? styles.miniValBig : ''} ${x.tone}`}>
-                                {x.node}
-                              </b>
-                            ))}
-                          </span>
-                        ))}
-                      </>
-                    )}
-                    {actionNode}
-                  </div>
-                );
-              }
-
-              // ── 모바일: 종목명·손익 줄 + 라벨 붙은 칸 줄 (2줄) ──
-              return (
-                <div key={r.id} className={styles.holdRowM}>
-                  <div className={styles.rowTop}>
-                    {nameNode}
-                    {!edit && gainNode}
-                    {actionNode}
-                  </div>
-                  {edit ? (
-                    <div className={styles.inputs}>
-                      <label className={styles.field}>
-                        <span className={styles.fieldLabel}>
-                          매입가{r.bundle > 1 && <em className={styles.fieldHint}>{r.bundle}개</em>}
-                        </span>
-                        <input
-                          type="number" className={styles.input} min={0} step="any" autoFocus
-                          value={r.order.price || ''}
-                          onChange={e => patch(r.id, { price: parseFloat(e.target.value) || 0 })}
-                        />
-                      </label>
-                      <span className={styles.op}>×</span>
-                      <label className={styles.field}>
-                        <span className={styles.fieldLabel}>수량</span>
-                        <input
-                          type="number" className={styles.input} min={1} step={1}
-                          value={r.order.qty ?? 1}
-                          onChange={e => patch(r.id, { qty: parseInt(e.target.value, 10) || 1 })}
-                        />
-                      </label>
-                      <span className={styles.op}>=</span>
-                      <label className={styles.field}>
-                        <span className={styles.fieldLabel}>매입금액</span>
-                        {/* 금액을 치면 수량을 역산한다 — 총 얼마 썼는지만 기억날 때가 더 많다 */}
-                        <input
-                          type="number" className={styles.input} min={0} step="any"
-                          value={Math.round(r.cost) || ''}
-                          onChange={e => {
-                            const amount = parseFloat(e.target.value) || 0;
-                            const each = r.order.price / r.bundle;
-                            if (each > 0) patch(r.id, { qty: Math.max(1, Math.round(amount / each)) });
-                          }}
-                        />
-                      </label>
-                      <button type="button" className={styles.doneBtn} onClick={() => setEditingId(null)}>완료</button>
                     </div>
                   ) : (
-                    <div className={styles.cells}>
-                      {holdGroups(r).flatMap(g => g.rows).filter(x => x.narrow).map(x => (
-                        <span key={x.label} className={styles.miniCell}>
-                          <em className={styles.miniLabel}>{x.label}</em>
-                          <b className={`${styles.miniVal} ${x.tone}`}>{x.node}</b>
-                        </span>
-                      ))}
-                    </div>
+                    holdGroups(r).map(g => (
+                      <span key={g.key} className={`${styles.groupCell} ${DESK_ONLY_COLS.has(g.key) ? styles.colDeskOnly : ''}`}>
+                        {g.rows.map(x => (
+                          <b key={x.label} className={`${styles.miniVal} ${x.big ? styles.miniValBig : ''} ${x.tone}`}>
+                            {x.node}
+                          </b>
+                        ))}
+                      </span>
+                    ))
                   )}
+                  {actionNode}
                 </div>
               );
             })}
@@ -567,8 +508,10 @@ export default function BuyOrderBoard() {
 
         </div>
 
-        {/* 모바일 — 시세 목록은 카드로 두지 않고 바텀시트로 올린다 */}
-        {isMobile && user && (
+        {/* 모바일 — 시세 목록은 카드로 두지 않고 바텀시트로 올린다.
+            로그아웃이어도 띄운다: 데스크톱은 왼쪽 시세 카드가 늘 떠 있는데
+            모바일만 버튼을 감추면 시세를 볼 길 자체가 없어진다(담기는 로그인 후에만 된다). */}
+        {isMobile && (
           <button
             type="button"
             className={styles.sheetBtn}

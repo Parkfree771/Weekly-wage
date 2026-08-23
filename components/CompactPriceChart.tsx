@@ -6,6 +6,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { TrackedItem, ItemCategory } from '@/lib/items-to-track';
 import { PriceContext } from './PriceComparisonStats';
 import { ColoredItemName } from '@/lib/components/ColoredItemName';
+import TrendArrow from './TrendArrow';
 import type { TooltipProps, CustomDotProps } from '@/types/recharts';
 
 // 커스텀 가격선 localStorage 키
@@ -685,11 +686,11 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums'
               }}>
                 <Image src={selectedItem?.icon || ''} alt="" width={22} height={22} style={{ borderRadius: '4px' }} />
-                <span style={{ fontSize: '18px', fontWeight: '800', color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
+                <span style={{ fontSize: '18px', fontWeight: '800', color: priceDiff >= 0 ? 'var(--price-up)' : 'var(--price-down)' }}>
                   {priceDiff >= 0 ? '>' : '<'}
                 </span>
                 <Image src={comparisonData?.normalIcon || ''} alt="" width={22} height={22} style={{ borderRadius: '4px' }} />
-                <span style={{ fontSize: '18px', fontWeight: '800', color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
+                <span style={{ fontSize: '18px', fontWeight: '800', color: priceDiff >= 0 ? 'var(--price-up)' : 'var(--price-down)' }}>
                   {priceDiff >= 0 ? '+' : ''}{priceDiffPercent.toFixed(1)}%
                 </span>
               </div>
@@ -753,11 +754,11 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums'
               }}>
                 <Image src={selectedItem?.icon || ''} alt="" width={16} height={16} style={{ borderRadius: '3px' }} />
-                <span style={{ fontSize: '14px', fontWeight: '800', color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
+                <span style={{ fontSize: '14px', fontWeight: '800', color: priceDiff >= 0 ? 'var(--price-up)' : 'var(--price-down)' }}>
                   {priceDiff >= 0 ? '>' : '<'}
                 </span>
                 <Image src={comparisonData?.normalIcon || ''} alt="" width={16} height={16} style={{ borderRadius: '3px' }} />
-                <span style={{ fontSize: '14px', fontWeight: '800', color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
+                <span style={{ fontSize: '14px', fontWeight: '800', color: priceDiff >= 0 ? 'var(--price-up)' : 'var(--price-down)' }}>
                   {priceDiff >= 0 ? '+' : ''}{priceDiffPercent.toFixed(1)}%
                 </span>
               </div>
@@ -1302,14 +1303,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               <div className="font-numeric" style={{ fontSize: '1.5rem', fontWeight: '700', color: chartColor }}>
                 {formatTooltipPrice(stats.current)}
               </div>
-              <div className="font-numeric" style={{ fontSize: '1.4rem', fontWeight: '600', color: changeRate >= 0 ? '#ef4444' : '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-                <Image
-                  src={changeRate >= 0 ? '/up.png' : '/down.png'}
-                  alt={changeRate >= 0 ? 'up' : 'down'}
-                  width={20}
-                  height={20}
-                  style={{ objectFit: 'contain' }}
-                />
+              <div className="font-numeric" style={{ fontSize: '1.4rem', fontWeight: '800', color: changeRate >= 0 ? 'var(--price-up)' : 'var(--price-down)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                <TrendArrow up={changeRate >= 0} size={20} />
                 {Math.abs(changeRate).toFixed(1)}%
               </div>
             </div>
@@ -1587,14 +1582,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               <div className="font-numeric" style={{ fontSize: '1rem', fontWeight: '700', color: chartColor, whiteSpace: 'nowrap' }}>
                 {formatTooltipPrice(stats.current)}
               </div>
-              <div className="font-numeric" style={{ fontSize: '1rem', fontWeight: '600', color: changeRate >= 0 ? '#ef4444' : '#3b82f6', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px' }}>
-                <Image
-                  src={changeRate >= 0 ? '/up.png' : '/down.png'}
-                  alt={changeRate >= 0 ? 'up' : 'down'}
-                  width={16}
-                  height={16}
-                  style={{ objectFit: 'contain' }}
-                />
+              <div className="font-numeric" style={{ fontSize: '1rem', fontWeight: '800', color: changeRate >= 0 ? 'var(--price-up)' : 'var(--price-down)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px' }}>
+                <TrendArrow up={changeRate >= 0} size={16} />
                 {Math.abs(changeRate).toFixed(1)}%
               </div>
             </div>

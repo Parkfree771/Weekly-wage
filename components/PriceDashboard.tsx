@@ -8,6 +8,7 @@ import { PriceContext } from './PriceComparisonStats';
 import { PRICE_ITEMS as DASHBOARD_ITEMS } from '@/data/priceItems';
 // 악세 등급 글자 색은 매수가 보드와 같은 컴포넌트를 쓴다 (팔레트가 갈라지면 같은 종목이 화면마다 다른 색이 된다)
 import PriceItemName from './PriceItemName';
+import TrendArrow from './TrendArrow';
 
 const STORAGE_KEY = 'priceDashboardConfig';
 
@@ -404,8 +405,8 @@ export default function PriceDashboard() {
                   className="price-change"
                   style={{
                     fontSize: '0.8rem',
-                    fontWeight: 600,
-                    color: changeClass === 'up' ? '#ef4444' : changeClass === 'down' ? '#3b82f6' : 'var(--text-muted)',
+                    fontWeight: 800,
+                    color: changeClass === 'up' ? 'var(--price-up)' : changeClass === 'down' ? 'var(--price-down)' : 'var(--text-muted)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -413,12 +414,7 @@ export default function PriceDashboard() {
                   }}
                 >
                   {priceData?.change !== 0 && (
-                    <Image
-                      src={priceData?.change > 0 ? '/up.png' : '/down.png'}
-                      alt=""
-                      width={14}
-                      height={14}
-                    />
+                    <TrendArrow up={priceData?.change > 0} size={14} />
                   )}
                   {priceData?.change === 0 && '─'}
                   {Math.abs(priceData?.change || 0).toFixed(1)}%

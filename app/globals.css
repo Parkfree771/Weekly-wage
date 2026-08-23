@@ -84,6 +84,12 @@
   --color-warning-light: rgba(245, 158, 11, 0.1);
   --color-info: #3b82f6;
   --color-info-light: rgba(59, 130, 246, 0.1);
+
+  /* 시세 등락 — 상승 초록 / 하락 빨강.
+     패키지 효율 배지(이득 초록 / 손해 빨강)와 같은 규칙으로 사이트 전체를 맞춘다.
+     별칭이라 다크 모드에서 --color-success/danger 가 바뀌면 같이 따라간다. */
+  --price-up: var(--color-success);
+  --price-down: var(--color-danger);
   --color-gold: #c8a84e;
   --color-gold-light: rgba(200, 168, 78, 0.1);
   --color-purple: #a855f7;

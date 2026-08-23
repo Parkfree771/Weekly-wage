@@ -7,6 +7,8 @@ import { Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Customized } from 'recharts';
 import { TrackedItem, SUCCESSION_TO_NORMAL_MATERIAL_MAP, SUCCESSION_MATERIAL_START_DATE } from '@/lib/items-to-track';
 import { ColoredItemName } from '@/lib/components/ColoredItemName';
+import { trendColor } from '@/lib/trend-colors';
+import TrendArrow from './TrendArrow';
 import type { CustomizedProps } from '@/types/recharts';
 
 type PriceEntry = {
@@ -355,18 +357,13 @@ function MiniPriceChartInner({ item, categoryStyle, isSelected, onClick, slotInd
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <div style={{
               fontSize: isMobile ? '0.55rem' : '0.7rem',
-              fontWeight: 600,
-              color: changeRate >= 0 ? '#ef4444' : '#3b82f6',
+              fontWeight: 800,
+              color: changeRate >= 0 ? 'var(--price-up)' : 'var(--price-down)',
               display: 'flex',
               alignItems: 'center',
               gap: '2px'
             }}>
-              <Image
-                src={changeRate >= 0 ? '/up.png' : '/down.png'}
-                alt={changeRate >= 0 ? 'up' : 'down'}
-                width={isMobile ? 8 : 10}
-                height={isMobile ? 8 : 10}
-              />
+              <TrendArrow up={changeRate >= 0} size={isMobile ? 9 : 11} />
               {Math.abs(changeRate).toFixed(1)}%
             </div>
           </div>
@@ -445,7 +442,7 @@ function MiniPriceChartInner({ item, categoryStyle, isSelected, onClick, slotInd
                             ×5: {compPrice.toLocaleString()} G
                           </div>
                           {priceDiff !== null && (
-                            <div style={{ fontWeight: 700, color: priceDiff >= 0 ? '#ef4444' : '#3b82f6' }}>
+                            <div style={{ fontWeight: 700, color: priceDiff >= 0 ? 'var(--price-up)' : 'var(--price-down)' }}>
                               {priceDiff >= 0 ? '+' : ''}{priceDiff.toLocaleString()} G
                             </div>
                           )}
@@ -499,7 +496,7 @@ function MiniPriceChartInner({ item, categoryStyle, isSelected, onClick, slotInd
                     const yMain = yAxis.scale(mainPrice);
                     const yComp = yAxis.scale(compPrice);
                     const priceDiff = mainPrice - compPrice;
-                    const diffColor = priceDiff >= 0 ? '#ef4444' : '#3b82f6';
+                    const diffColor = trendColor(priceDiff >= 0, theme === 'dark');
                     const yMid = (yMain + yComp) / 2;
 
                     return (

@@ -24,12 +24,12 @@
 }
 
 .titleHigher {
-  color: #dc2626;
+  color: var(--price-up);
   font-weight: 900;
 }
 
 .titleLower {
-  color: #2563eb;
+  color: var(--price-down);
   font-weight: 900;
 }
 
@@ -86,11 +86,11 @@
 }
 
 .sectionHigher {
-  border-color: #dc2626;
+  border-color: var(--price-up);
 }
 
 .sectionLower {
-  border-color: #2563eb;
+  border-color: var(--price-down);
 }
 
 .sectionTitle {
@@ -140,11 +140,11 @@
 }
 
 .iconHigher {
-  border-color: #dc2626;
+  border-color: var(--price-up);
 }
 
 .iconLower {
-  border-color: #2563eb;
+  border-color: var(--price-down);
 }
 
 .itemImage {
@@ -164,11 +164,11 @@
 }
 
 .badgeHigher {
-  background-color: #dc2626;
+  background-color: var(--price-up);
 }
 
 .badgeLower {
-  background-color: #2563eb;
+  background-color: var(--price-down);
 }
 
 .itemName {
