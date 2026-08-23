@@ -808,14 +808,10 @@ export const ICON_SCALE: Record<string, string> = {
   'weapon-quality': 'translateY(-7px) scale(0.93)',
 };
 
-// 묶음 단위 (API 가격이 이 수량 기준)
-export const PRICE_BUNDLE_SIZE: Record<string, number> = {
-  '66102006': 100,   // 운명의 파괴석 (100개 단위)
-  '66102106': 100,   // 운명의 수호석 (100개 단위)
-  '66102007': 100,   // 운명의 파괴석 결정 (100개 단위)
-  '66102107': 100,   // 운명의 수호석 결정 (100개 단위)
-  '66130143': 3000,  // 운명의 파편 (3000개 단위)
-};
+// 묶음 단위 (API 가격이 이 수량 기준) — 원본은 data/priceItems.ts.
+// 시세 화면들도 같은 표를 써야 해서 데이터 쪽으로 옮기고 여기선 재수출만 한다.
+import { PRICE_BUNDLE_SIZE } from '@/data/priceItems';
+export { PRICE_BUNDLE_SIZE };
 
 // 기존 패키지 하위 호환: crystalPerUnit 없는 구 데이터용 폴백
 export const CRYSTAL_PER_UNIT_FALLBACK: Record<string, number> = {

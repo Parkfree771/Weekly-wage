@@ -354,6 +354,13 @@
   gap: 0.4rem;
 }
 
+/* 전투력 계산에서 빠진 목표(완갑·상급 재련)가 있을 때의 안내 */
+.combatPowerNote {
+  font-size: clamp(0.68rem, 1.4vw, 0.78rem);
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 .levelBadge {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;

@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import { SITE_URL } from '@/lib/site-config';
 import { faqData } from './faq-data';
 
 export const metadata: Metadata = {

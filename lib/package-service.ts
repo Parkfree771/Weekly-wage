@@ -15,7 +15,6 @@ import {
   getCountFromServer,
   increment,
   serverTimestamp,
-  Timestamp,
   DocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from './firebase-firestore';

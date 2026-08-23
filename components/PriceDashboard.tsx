@@ -5,90 +5,13 @@ import Image from 'next/image';
 import { Spinner } from 'react-bootstrap';
 import { PriceContext } from './PriceComparisonStats';
 
-type PriceItem = {
-  id: string;
-  name: string;
-  shortName: string;
-  icon: string;
-};
-
-// 거래소 + 경매장 아이템 표시
-const DASHBOARD_ITEMS: PriceItem[] = [
-  // 계승 재련 재료
-  { id: '66150010', name: '에스더의 기운', shortName: '에스더', icon: '/dptmej.webp' },
-  { id: '66102007', name: '운명의 파괴석 결정', shortName: '파괴석 결정', icon: '/destiny-destruction-stone2.webp?v=3' },
-  { id: '66102107', name: '운명의 수호석 결정', shortName: '수호석 결정', icon: '/destiny-guardian-stone2.webp?v=3' },
-  { id: '66110226', name: '위대한 운명의 돌파석', shortName: '위대한 돌파석', icon: '/destiny-breakthrough-stone2.webp?v=3' },
-  { id: '6861013', name: '상급 아비도스 융화 재료', shortName: '상비도스', icon: '/top-abidos-fusion5.webp' },
-  // 일반 재련 재료
-  { id: '66102006', name: '운명의 파괴석', shortName: '파괴석', icon: '/destiny-destruction-stone5.webp' },
-  { id: '66102106', name: '운명의 수호석', shortName: '수호석', icon: '/destiny-guardian-stone5.webp' },
-  { id: '66110225', name: '운명의 돌파석', shortName: '돌파석', icon: '/destiny-breakthrough-stone5.webp' },
-  { id: '6861012', name: '아비도스 융화 재료', shortName: '아비도스', icon: '/abidos-fusion5.webp?v=4' },
-  { id: '66130143', name: '운명의 파편 주머니(대)', shortName: '운파', icon: '/destiny-shard-bag-large5.webp' },
-  // 재련 추가 재료
-  { id: '66111131', name: '용암의 숨결', shortName: '용암의 숨결', icon: '/breath-lava5.webp' },
-  { id: '66111132', name: '빙하의 숨결', shortName: '빙하의 숨결', icon: '/breath-glacier5.webp' },
-  // 유물 각인서 (거래소) - 전체
-  { id: '65203905', name: '아드레날린', shortName: '아드레날린', icon: '/engraving.webp' },
-  { id: '65200505', name: '원한', shortName: '원한', icon: '/engraving.webp' },
-  { id: '65203305', name: '돌격대장', shortName: '돌격대장', icon: '/engraving.webp' },
-  { id: '65201005', name: '예리한 둔기', shortName: '예리한 둔기', icon: '/engraving.webp' },
-  { id: '65203505', name: '질량 증가', shortName: '질량 증가', icon: '/engraving.webp' },
-  { id: '65202805', name: '저주받은 인형', shortName: '저주받은 인형', icon: '/engraving.webp' },
-  { id: '65203005', name: '기습의 대가', shortName: '기습의 대가', icon: '/engraving.webp' },
-  { id: '65203705', name: '타격의 대가', shortName: '타격의 대가', icon: '/engraving.webp' },
-  { id: '65203405', name: '각성', shortName: '각성', icon: '/engraving.webp' },
-  { id: '65204105', name: '전문의', shortName: '전문의', icon: '/engraving.webp' },
-  { id: '65200605', name: '슈퍼차지', shortName: '슈퍼차지', icon: '/engraving.webp' },
-  { id: '65201505', name: '결투의 대가', shortName: '결투의 대가', icon: '/engraving.webp' },
-  // 보석 (경매장)
-  { id: 'auction_gem_fear_8', name: '8레벨 겁화의 보석', shortName: '8겁화', icon: '/gem-fear-8.webp' },
-  { id: 'auction_gem_fear_9', name: '9레벨 겁화의 보석', shortName: '9겁화', icon: '/gem-fear-8.webp' },
-  { id: 'auction_gem_fear_10', name: '10레벨 겁화의 보석', shortName: '10겁화', icon: '/gem-fear-10.webp' },
-  { id: 'auction_gem_flame_10', name: '10레벨 작열의 보석', shortName: '10작열', icon: '/gem-flame-10.webp' },
-  // 악세서리 - 딜러 (경매장)
-  { id: 'auction_necklace_ancient_refine3', name: '고대 목걸이 적주피(상)/추피(중)', shortName: '목걸이 상중', icon: '/ancient-necklace.webp' },
-  { id: 'auction_necklace_ancient_refine3_high', name: '고대 목걸이 적주피(상)/추피(상)', shortName: '목걸이 상상', icon: '/ancient-necklace.webp' },
-  { id: 'auction_ring_ancient_refine3', name: '고대 반지 치피(상)/치적(중)', shortName: '반지 상중', icon: '/ancient-ring.webp' },
-  { id: 'auction_ring_ancient_refine3_high', name: '고대 반지 치피(상)/치적(상)', shortName: '반지 상상', icon: '/ancient-ring.webp' },
-  { id: 'auction_earring_ancient_refine3', name: '고대 귀걸이 공%(상)/무공%(중)', shortName: '귀걸이 상중', icon: '/ancient-earring.webp' },
-  { id: 'auction_earring_ancient_refine3_high', name: '고대 귀걸이 공%(상)/무공%(상)', shortName: '귀걸이 상상', icon: '/ancient-earring.webp' },
-  // 악세서리 - 서포터 (경매장)
-  { id: 'auction_necklace_support_refine3', name: '고대 목걸이 낙인력(상)/게이지(중)', shortName: '서폿목 상중', icon: '/ancient-necklace.webp' },
-  { id: 'auction_necklace_support_refine3_high', name: '고대 목걸이 낙인력(상)/게이지(상)', shortName: '서폿목 상상', icon: '/ancient-necklace.webp' },
-  { id: 'auction_ring_support_refine3', name: '고대 반지 아피강(상)/아공강(중)', shortName: '서폿반 상중', icon: '/ancient-ring.webp' },
-  { id: 'auction_ring_support_refine3_high', name: '고대 반지 아공강(상)/아피강(상)', shortName: '서폿반 상상', icon: '/ancient-ring.webp' },
-  // 팔찌 (경매장)
-  { id: 'auction_bracelet_spec_crit', name: '특화 100+ / 치명 100+', shortName: '특치', icon: '/vkfwl.webp' },
-  { id: 'auction_bracelet_crit_swift', name: '치명 100+ / 신속 100+', shortName: '치신', icon: '/vkfwl.webp' },
-  { id: 'auction_bracelet_spec_swift', name: '특화 100+ / 신속 100+', shortName: '특신', icon: '/vkfwl.webp' },
-];
+import { PRICE_ITEMS as DASHBOARD_ITEMS } from '@/data/priceItems';
+// 악세 등급 글자 색은 매수가 보드와 같은 컴포넌트를 쓴다 (팔레트가 갈라지면 같은 종목이 화면마다 다른 색이 된다)
+import PriceItemName from './PriceItemName';
+import TrendArrow from './TrendArrow';
 
 const STORAGE_KEY = 'priceDashboardConfig';
 
-// 악세 shortName 등급 글자 색상 (카테고리 차트 renderAccessoryItemName과 동일 팔레트)
-const GRADE_CHAR_COLORS: Record<string, string> = {
-  '상': '#fbbf24',
-  '중': '#a855f7',
-  '하': '#3b82f6',
-};
-
-// 악세 아이템 이름 끝의 등급 글자("상중"/"상상")에 고유색 적용
-const renderShortName = (item: PriceItem) => {
-  const isAccessory = item.id.startsWith('auction_necklace') || item.id.startsWith('auction_ring') || item.id.startsWith('auction_earring');
-  if (!isAccessory) return item.shortName;
-  const m = item.shortName.match(/^(.*?)([상중하]+)$/);
-  if (!m) return item.shortName;
-  return (
-    <>
-      {m[1]}
-      {m[2].split('').map((ch, i) => (
-        <span key={i} style={{ color: GRADE_CHAR_COLORS[ch], fontWeight: 700 }}>{ch}</span>
-      ))}
-    </>
-  );
-};
 
 // 선택된 아이템 ID 목록 (순서대로)
 type DashboardConfig = {
@@ -467,7 +390,7 @@ export default function PriceDashboard() {
                   lineHeight: 1.2,
                   whiteSpace: 'nowrap'
                 }}>
-                  {renderShortName(item)}
+                  <PriceItemName item={item} />
                 </span>
                 <span className="price-value" style={{
                   fontSize: '0.95rem',
@@ -482,8 +405,8 @@ export default function PriceDashboard() {
                   className="price-change"
                   style={{
                     fontSize: '0.8rem',
-                    fontWeight: 600,
-                    color: changeClass === 'up' ? '#ef4444' : changeClass === 'down' ? '#3b82f6' : 'var(--text-muted)',
+                    fontWeight: 800,
+                    color: changeClass === 'up' ? 'var(--price-up)' : changeClass === 'down' ? 'var(--price-down)' : 'var(--text-muted)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -491,12 +414,7 @@ export default function PriceDashboard() {
                   }}
                 >
                   {priceData?.change !== 0 && (
-                    <Image
-                      src={priceData?.change > 0 ? '/up.png' : '/down.png'}
-                      alt=""
-                      width={14}
-                      height={14}
-                    />
+                    <TrendArrow up={priceData?.change > 0} size={14} />
                   )}
                   {priceData?.change === 0 && '─'}
                   {Math.abs(priceData?.change || 0).toFixed(1)}%
@@ -647,7 +565,7 @@ export default function PriceDashboard() {
                         lineHeight: 1.2,
                         wordBreak: 'keep-all',
                       }}>
-                        {renderShortName(item)}
+                        <PriceItemName item={item} />
                       </span>
                     </div>
                   );

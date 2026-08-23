@@ -255,11 +255,6 @@ const CAL_SHOP_ITEMS: CalShopItem[] = SHOP_ITEMS
   }));
 
 // 교환 체크된 아이템의 은총 소비를 반영하여, 각 아이템의 필요 주차 계산
-function calcWeekNeeded(item: CalShopItem, perWeek: number, consumedGrace: number): number {
-  if (item.graceCost === 0) return 1;
-  const needed = item.graceCost + consumedGrace;
-  return Math.ceil(needed / perWeek);
-}
 
 type CalendarWeek = {
   week: number;

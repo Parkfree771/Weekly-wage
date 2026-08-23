@@ -97,6 +97,13 @@ export type ExpeditionData = {
   lastWeeklyReset?: string;
 };
 
+// 매수가 한 건 — 아이템 하나에 대한 내 평단
+export type BuyOrder = {
+  price: number;   // 개당 매수가 (G) — 시세와 같은 개당 기준
+  qty?: number;    // 수량 (개수. 없으면 1)
+  at?: string;     // 마지막 수정 시각 (ISO)
+};
+
 // 사용자 프로필
 export type UserProfile = {
   uid: string;
@@ -122,6 +129,9 @@ export type UserProfile = {
   expedition3?: ExpeditionData;
   // 숙제 활동 달력 백업 (앱과 공유 — packActivityLog 압축 문자열, lib/activity-log.ts)
   appActivityLog?: string;
+  // 시세 매수가 — 아이템 코드 → 내가 산 가격(개당). 홈 매수가 보드가 현재가와 비교해 손익을 낸다.
+  // 게임 내부는 최저가로 체결되지만 우리 시세는 거래 평균가라 자동 채움 없이 직접 입력·수정한다.
+  buyOrders?: Record<string, BuyOrder>;
   // UI 설정
   uiSettings?: {
     priceOrder?: string[];

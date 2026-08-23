@@ -7,6 +7,8 @@ import { Container, Collapse } from 'react-bootstrap';
 import Link from 'next/link';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import styles from './page.module.css';
 
 const HOME_FAQS = [
@@ -36,6 +38,9 @@ const PriceDashboard = dynamic(() => import('@/components/PriceDashboard'), {
   loading: () => <div style={{ minHeight: '320px' }} />,
   ssr: false
 });
+
+// 매수가 보드 — 로그인 사용자의 평단 대비 손익. 데이터는 브라우저↔Firestore 직결이라 서버 함수 부담 없음.
+const BuyOrderBoard = dynamic(() => import('@/components/BuyOrderBoard'), { ssr: false });
 
 const PriceComparisonStats = dynamic(() => import('@/components/PriceComparisonStats'), {
   loading: () => (
@@ -75,9 +80,23 @@ export default function Home() {
           <PriceComparisonStats />
         </PriceChartProvider>
 
+        {/* 데스크톱 728×90 — 통계 바와 매수가 보드 사이. 콘텐츠가 바뀌는 경계라 자연스럽다.
+            홈에서는 galleryBottomDesktop 을 여기서만 쓰므로 한 페이지 한 단위 원칙에 어긋나지 않는다. */}
+        <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+
         {/* 모바일 인-콘텐츠 광고 — 앱 홈(통계 바 아래)과 동일 위치 */}
         <div className="d-block d-lg-none my-3">
           <AdBanner slot="8616653628" />
+        </div>
+
+        {/* 내 매수가 — 통계 바 아래, 사이트 소개 위 */}
+        <BuyOrderBoard />
+
+        {/* 모바일 인-콘텐츠 광고 2 — 매수가 보드 아래.
+            index 를 줘야 320×50 띠배너 배열에서 다른 단위를 꺼낸다.
+            같은 단위를 한 페이지에 두 번 넣으면 애드핏이 첫 자리만 채운다. */}
+        <div className="d-block d-lg-none my-3">
+          <AdBanner slot="8616653628" index={0} />
         </div>
 
         {/* 애드센스 콘텐츠 보강용 소개 텍스트 — 항상 하단 배치, 기본 접힘 */}

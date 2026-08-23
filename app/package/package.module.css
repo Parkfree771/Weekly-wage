@@ -4,6 +4,18 @@
   --pkg-primary: var(--color-primary);
   --pkg-primary-light: var(--color-primary-light);
   --pkg-primary-dark: var(--color-primary-dark);
+
+  /* 효율 배지 색 — 기준 토글이 이 두 변수를 바꾸고, 카드의 이득/손해 배지가 그대로 따라간다.
+     평균가(기본)는 차분한 매트, 실시간은 같은 색상을 선명하게 올린 값.
+     색상(초록=이득 / 빨강=손해)은 유지하고 채도만 올린다 — 색을 바꾸면 이득·손해가 헷갈린다. */
+  --benefit-up: #35815a;
+  --benefit-down: #a04a44;
+}
+
+/* 실시간 최저가 기준 — 토글 채움색과 모든 카드 효율 배지가 한꺼번에 선명해진다 */
+.pageWrapper[data-basis='live'] {
+  --benefit-up: #0ea86a;
+  --benefit-down: #d8453b;
 }
 
 /* 헤더 */
@@ -67,18 +79,6 @@
   height: 40px;
 }
 
-/* 아랫줄: 블크 시세 입력 — 위 환율 줄과 얇은 구분선으로 나눈다.
-   윗줄과 같은 세로 그리드에 서도록 높이·간격을 똑같이 맞추고,
-   왼쪽 여백은 윗줄의 − 버튼(38px) + 박스 패딩(0.7rem)만큼 밀어 아이콘 열이 정렬되게 한다 */
-.commonRateRowBc {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  height: 40px;
-  padding: 0 0.7rem 0 calc(38px + 0.7rem);
-  border-top: 1px solid var(--border-color);
-}
-
 /* ± — 테두리 없이 칸만 나눠 갖는다 */
 .commonRateStep {
   width: 38px;
@@ -116,16 +116,6 @@
 .commonRateIconRoyal {
   width: 26px;
   height: 26px;
-  object-fit: contain;
-}
-
-/* 아랫줄 골드 아이콘 — 윗줄 로얄 슬롯(26px)과 같은 폭을 차지하되 그림은 20px 로 유지해
-   두 줄의 입력칸 시작 위치가 정확히 겹치게 한다 */
-.commonRateIconPad {
-  width: 26px;
-  height: 26px;
-  padding: 3px;
-  box-sizing: border-box;
   object-fit: contain;
 }
 
@@ -207,7 +197,6 @@
   background: var(--color-primary-light);
 }
 
-
 /* 정렬·필터 — 컨트롤 바 왼쪽 칸 (가운데는 공통 환율, 오른쪽은 등록하기) */
 .filterRow {
   grid-column: 1;
@@ -234,9 +223,144 @@
   color: var(--color-primary);
 }
 
-/* --border-color 는 알파 12% 라 흰 배경에서 테두리가 거의 안 보인다. 컨트롤 바에
-   남은 유일한 필터라 대표색 테두리 + 연한 대표색 배경으로 확실히 세운다.
-   네이티브 화살표도 흐려서 appearance:none 후 직접 그린다. */
+/* 최저가 배지 — 옆 셀렉트·등록 버튼과 같은 시각 언어(테두리 상자, radius 8px).
+   꺼짐은 테두리만, 켜짐은 단색 채움(그라데이션 없음). 말풍선 기준점이라 position:relative. */
+.liveBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 32px;
+  padding: 0 0.7rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 최저가 적용 중 — 카드 효율 배지와 같은 변수로 채워 둘이 함께 움직인다 */
+.liveBtnOn {
+  background: var(--benefit-up);
+  border-color: var(--benefit-up);
+  color: #fff;
+}
+
+/* 눌린 동안에도 흐려지지 않는다 — 도는 아이콘이 진행을 말한다 */
+.liveBtn:disabled {
+  cursor: wait;
+  opacity: 1;
+}
+
+.liveBtn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* 글자보다 크게 — "누르면 다시 가져온다" 를 이 아이콘 혼자 말한다 */
+.liveIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* 불러오는 동안 제자리 회전. 크기 고정 박스 안에서만 돌아 줄이 밀리지 않는다 */
+.liveSpinning .liveIcon {
+  animation: basisSpin 0.9s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes basisSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* 상태 점 — 꺼져 있으면 평균가 기준, 켜지면 실시간 최저가 기준.
+   켜졌을 때 색은 카드 효율 배지와 같은 변수라 둘이 함께 움직인다. */
+.liveDot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--text-disabled);
+}
+
+.liveBtnOn .liveDot {
+  background: #fff;
+}
+
+/* 설명 말풍선 — 마우스가 있는 환경에서만. 터치에서는 탭이 곧 동작이라 띄우지 않는다.
+   position:absolute 라 뜨고 질 때 줄이 밀리지 않는다(고정 자리 없음). */
+.basisTip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 9px);
+  z-index: 20;
+  width: max-content;
+  max-width: 62vw;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--card-bg);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  text-align: left;
+  white-space: normal;
+  cursor: default;
+}
+
+/* 버튼이 컨트롤 바 오른쪽 끝이라 왼쪽으로 펼친다 — 오른쪽으로 열면 화면 밖으로 나간다 */
+.basisTip {
+  right: 0;
+}
+
+/* 말풍선 꼭지 */
+.basisTip::before {
+  content: '';
+  position: absolute;
+  right: 14px;
+  bottom: 100%;
+  border: 6px solid transparent;
+  border-bottom-color: var(--border-color);
+}
+
+.basisTipHead {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+@media (hover: hover) {
+  .liveBtn:hover .basisTip,
+  .liveBtn:focus-visible .basisTip {
+    display: block;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .liveBtn {
+    height: 28px;
+    padding: 0 0.45rem;
+    gap: 0.28rem;
+    font-size: 0.73rem;
+  }
+
+  .liveIcon {
+    width: 15px;
+    height: 15px;
+  }
+}
+
 .filterSelect {
   appearance: none;
   -webkit-appearance: none;
@@ -273,9 +397,18 @@
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
-.registerLink {
+/* 컨트롤 바 오른쪽 묶음 — 기준 토글 + 등록하기 */
+.rightControls {
   grid-column: 3;
   justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.registerLink {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -366,12 +499,6 @@
   text-align: center;
   padding: 3rem 1rem;
   color: var(--text-muted);
-}
-
-.emptyIcon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  opacity: 0.4;
 }
 
 .emptyText {
@@ -504,8 +631,10 @@
      환율 칸은 max-content — 1fr 로 두면 자릿수가 늘어난 만큼 폭을 못 받고
      .commonRateGroup 의 overflow:hidden 에 뒷자리가 잘린다.
      대신 왼쪽 필터 칸을 minmax(0,auto) 로 열어 줄어드는 쪽을 그쪽이 맡는다. */
+  /* 양옆을 같은 몫(minmax(0,1fr))으로 두면 가운데 환율 칸이 화면 정중앙에 선다.
+     min 을 0 으로 열어야 왼쪽 셀렉트가 줄어들며 자리를 내준다 — auto 면 안 줄어 밀린다. */
   .controls {
-    grid-template-columns: minmax(0, auto) max-content auto;
+    grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
     align-items: end;
     gap: 0.35rem;
   }
@@ -522,22 +651,32 @@
     gap: 0.2rem;
   }
 
-  .registerLink {
+  /* 등록하기를 숨겨 비운 3번째 칸을 갱신 버튼이 그대로 차지한다.
+     묶음(.rightControls)을 풀어야 버튼이 그리드 칸에 직접 설 수 있다. */
+  .rightControls {
+    display: contents;
+  }
+
+  .liveBtn {
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
-    padding: 0.35rem 0.6rem;
-    font-size: 0.75rem;
+  }
+
+  /* 등록하기는 폰에서 숨긴다 — 한 줄에 정렬·환율·기준 토글까지 넣을 폭이 없다.
+     등록은 네비게이션으로도 갈 수 있고, 폰에서 새 패키지를 올리는 일 자체가 드물다. */
+  .registerLink {
+    display: none;
   }
 
   /* 드롭다운 하나뿐이라 늘리지 않는다 — 폭을 다 먹으면 입력 요소처럼 보인다 */
   .filterRow select {
     flex: 0 1 auto;
     min-width: 0;
-    font-size: 0.75rem;
-    padding: 0.35rem 1.35rem 0.35rem 0.5rem;
-    background-position: right 0.4rem center;
-    background-size: 9px 6px;
+    font-size: 0.72rem;
+    padding: 0.35rem 1.1rem 0.35rem 0.35rem;
+    background-position: right 0.3rem center;
+    background-size: 8px 5px;
   }
 
   .filterCount {
@@ -553,26 +692,14 @@
     height: 32px;
   }
 
-  .commonRateRowBc {
-    height: 32px;
-    padding: 0 0.4rem 0 calc(30px + 0.4rem);
-    gap: 0.22rem;
-  }
-
   .commonRateIconRoyal {
-    width: 22px;
-    height: 22px;
-  }
-
-  .commonRateIconPad {
-    width: 22px;
-    height: 22px;
-    padding: 2.5px;
+    width: 19px;
+    height: 19px;
   }
 
   .commonRateStep {
-    width: 30px;
-    font-size: 1.15rem;
+    width: 26px;
+    font-size: 1.1rem;
   }
 
   .commonRateBox {
@@ -581,8 +708,8 @@
   }
 
   .commonRateIcon {
-    width: 17px;
-    height: 17px;
+    width: 15px;
+    height: 15px;
   }
 
   .commonRateFixed,
@@ -614,11 +741,6 @@
   padding: clamp(1rem, 3vw, 2rem) 0;
 }
 
-/* 아이템 선택 영역 */
-.itemSelectSection {
-  margin-bottom: 1.5rem;
-}
-
 .sectionTitle {
   font-size: 1rem;
   font-weight: 700;
@@ -626,118 +748,6 @@
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid var(--border-color);
-}
-
-.categoryGroup {
-  margin-bottom: 1rem;
-}
-
-.categoryLabel {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-  padding: 0.3rem 0.6rem;
-  background: var(--pkg-primary-light);
-  border-radius: 6px;
-  display: inline-block;
-}
-
-.itemCheckList {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 0.4rem;
-}
-
-.itemCheckItem {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.6rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.82rem;
-  color: var(--text-primary);
-}
-
-.itemCheckItem:hover {
-  background: var(--pkg-primary-light);
-}
-
-.itemCheckItem input[type="checkbox"] {
-  accent-color: var(--color-accent);
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.itemCheckIcon {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.itemCheckName {
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.itemCheckPrice {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-/* 선택된 아이템 패키지 구성 */
-.selectedItems {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-}
-
-.selectedItemRow {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.selectedItemRow:last-child {
-  border-bottom: none;
-}
-
-.selectedItemIcon {
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.selectedItemName {
-  flex: 1;
-  font-size: 0.82rem;
-  color: var(--text-primary);
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.selectedItemPrice {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  flex-shrink: 0;
-  min-width: 60px;
-  text-align: right;
 }
 
 .quantityInput {
@@ -771,52 +781,6 @@
   color: var(--color-danger);
 }
 
-/* 보너스 아이템 토글 */
-.bonusToggleBtn {
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  border: 1.5px solid var(--border-color);
-  background: var(--input-bg);
-  color: var(--text-muted);
-  font-size: 0.7rem;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.bonusToggleBtn:hover {
-  border-color: var(--color-info);
-  color: var(--color-info);
-}
-
-.bonusToggleBtnActive {
-  background: var(--color-info);
-  border-color: var(--color-info);
-  color: #fff;
-}
-
-.bonusToggleBtnActive:hover {
-  background: var(--color-info);
-  border-color: var(--color-info);
-}
-
-.packageBoxItemBonus {
-  opacity: 0.6;
-}
-
-.selectedItemSubtotal {
-  font-size: 0.75rem;
-  color: var(--color-accent);
-  font-weight: 600;
-  flex-shrink: 0;
-  min-width: 70px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
 /* 좌우 분할: 패키지 구성 / 패키지 정보+환율 */
 .topSplitRow {
   display: grid;
@@ -838,22 +802,6 @@
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-}
-
-.formRow {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.formGroupFlex {
-  flex: 1;
-  min-width: 0;
-}
-
-.formGroupSmall {
-  width: 110px;
-  flex-shrink: 0;
 }
 
 .formGroup {
@@ -1245,46 +1193,12 @@
   color: var(--text-muted);
 }
 
-.ratioUnit {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-/* 공식 거래 입력 */
-.officialRateGrid {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-
-.officialRateItem {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
 .officialRateIcon {
   width: 28px;
   height: 28px;
   border-radius: 5px;
   object-fit: contain;
   flex-shrink: 0;
-}
-
-.officialRateLabel {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-.officialRateEquals {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--text-muted);
 }
 
 /* 등록 버튼 */
@@ -1399,11 +1313,6 @@
   line-height: 1.35;
 }
 
-.detailDate {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
 /* 제목 아래 메타 한 줄 (등록일 · 판매기간 · 조회수) — 앱 상세와 같은 자리 */
 .detailMetaRow {
   display: flex;
@@ -1424,14 +1333,6 @@
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-}
-
-/* 판매 상태 배지 (상세) — 종료여도 계산·시세 연동은 그대로 동작한다 */
-.saleBadgeRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
 }
 
 .saleEndedBadge {
@@ -1843,7 +1744,6 @@
   word-break: keep-all;
 }
 
-
 .resultDivider {
   border: none;
   border-top: 1px solid var(--border-color);
@@ -2033,109 +1933,6 @@
 
 .benefitDown {
   color: var(--color-danger);
-}
-
-/* ─── 환율 바 ─── */
-.rateBar {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-
-.rateBarLabel {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-.rateBarToggle {
-  display: flex;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.rateBarBtn {
-  padding: 0.25rem 0.6rem;
-  border: none;
-  background: var(--input-bg);
-  color: var(--text-secondary);
-  font-size: 0.72rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.rateBarBtn:not(:last-child) {
-  border-right: 1px solid var(--border-color);
-}
-
-.rateBarBtnActive {
-  background: var(--color-accent);
-  color: #fff;
-}
-
-.rateBarInput {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.rateBarIcon {
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  object-fit: contain;
-}
-
-.rateBarFixed {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-.rateBarSep {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: var(--text-muted);
-}
-
-.rateBarNumberInput {
-  width: 70px;
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  color: var(--text-primary);
-  padding: 0.3rem 0.4rem;
-  font-size: 0.82rem;
-  text-align: center;
-}
-
-.rateBarNumberInput:focus {
-  border-color: var(--color-accent);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
-}
-
-@media (max-width: 576px) {
-  .rateBar {
-    gap: 0.5rem;
-    padding: 0.6rem 0.75rem;
-  }
-
-  .rateBarLabel {
-    width: 100%;
-  }
 }
 
 /* ─── 액션 바 ─── */
@@ -2539,20 +2336,6 @@
   .itemCardBottom {
     margin-top: auto;
   }
-
-  .itemCheckList {
-    grid-template-columns: 1fr;
-  }
-
-  .selectedItemRow {
-    flex-wrap: wrap;
-    gap: 0.35rem;
-  }
-
-  .selectedItemName {
-    flex-basis: 100%;
-    order: -1;
-  }
 }
 
 /* ─── 패키지 박스 (등록 페이지 좌측) ─── */
@@ -2568,7 +2351,6 @@
   max-height: 520px;
   overflow: hidden;
 }
-
 
 .packageBoxScroll {
   flex: 1;
@@ -3021,15 +2803,6 @@
     padding: 1rem;
   }
 
-  .formRow {
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-
-  .formGroupSmall {
-    width: 100%;
-  }
-
   .formSection,
   .rateSection {
     padding: 1rem;
@@ -3039,15 +2812,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
-  }
-
-  .officialRateGrid {
-    flex-direction: column;
-    gap: 0.3rem;
-  }
-
-  .officialRateEquals {
-    display: none;
   }
 
   .availableGrid {
@@ -3316,11 +3080,6 @@
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
-}
-
-.gachaButtonSpinning {
-  animation: gachaPulse 0.5s ease-in-out infinite;
-  pointer-events: none;
 }
 
 @keyframes gachaPulse {

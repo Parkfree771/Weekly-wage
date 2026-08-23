@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, Table, Spinner, Form } from 'react-bootstrap';
 import { raids } from '@/data/raids';
-import { raidRewards, MATERIAL_IDS, MATERIAL_BUNDLE_SIZES } from '@/data/raidRewards';
+import { raidRewards } from '@/data/raidRewards';
 import { usePriceData } from '@/contexts/PriceContext';
 import styles from './CerkaRewardInfo.module.css';
 

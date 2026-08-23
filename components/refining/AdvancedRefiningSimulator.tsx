@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { useTheme } from '../ThemeProvider';
 import styles from './RefiningSimulator.module.css';
 import {
   EXP_PER_LEVEL,
@@ -84,7 +83,6 @@ const gradeColors: Record<SuccessGrade, string> = {
 };
 
 export default function AdvancedRefiningSimulator({ onSearchComplete, equipments: externalEquipments, searched: externalSearched, characterInfo: externalCharacterInfo }: AdvancedRefiningSimulatorProps) {
-  const { theme } = useTheme();
 
   // 상급 재련은 업화 장비만 (계승/에스더 제외)
   const equipments = (externalEquipments || []).filter(eq => !eq.isSuccession && !eq.isEsther);
@@ -401,7 +399,6 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, equipments
     setNextTurnFree(false);
 
     // 재료 비용 계산 전에 현재 보조재료 상태 저장
-    const currentMaterialCombo = getMaterialCombo();
 
     calculateMaterialCost(isFree);
 

@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { Spinner } from 'react-bootstrap';
-import { useTheme } from '@/components/ThemeProvider';
 import AdBanner from '@/components/ads/AdBanner';
 import styles from './LifeCraftCalculator.module.css';
 
@@ -48,18 +47,6 @@ const MATERIALS = {
 };
 
 // 교환 비율
-const EXCHANGE_RATES = {
-  // 직접 교환
-  SOFT_TO_NORMAL: 2,      // 부드러운 1개 → 목재 2개 (25→50)
-  STURDY_TO_NORMAL: 10,   // 튼튼한 1개 → 목재 10개 (5→50)
-  // 가루 변환
-  NORMAL_TO_GARU: 0.8,    // 목재 1개 → 가루 0.8개 (100→80)
-  SOFT_TO_GARU: 1.6,      // 부드러운 1개 → 가루 1.6개 (50→80)
-  // 가루 → 재료
-  GARU_TO_SOFT: 0.5,      // 가루 1개 → 부드러운 0.5개 (100→50)
-  GARU_TO_STURDY: 0.1,    // 가루 1개 → 튼튼한 0.1개 (100→10)
-  GARU_TO_ABIDOS: 0.1,    // 가루 1개 → 아비도스 0.1개 (100→10)
-};
 
 const SALE_FEE_PERCENT = 5;
 const REFRESH_COOLDOWN_MS = 10 * 60 * 1000; // 10분
@@ -69,7 +56,6 @@ type CraftMode = 'buy' | 'owned';
 type MaterialPrices = { [key: string]: number };
 
 export default function LifeCraftCalculator() {
-  const { theme } = useTheme();
 
   // 상태
   const [selectedItem, setSelectedItem] = useState<ItemType>('premium');
@@ -95,7 +81,7 @@ export default function LifeCraftCalculator() {
   });
   const [customFusionPrice, setCustomFusionPrice] = useState<number | null>(null);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [priceDate, setPriceDate] = useState<string>('갱신 버튼을 눌러주세요');
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
