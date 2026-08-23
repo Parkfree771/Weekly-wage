@@ -3,7 +3,7 @@ import React, { useMemo, useCallback, useContext, useState, useEffect } from 're
 import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
-import { TrackedItem, ItemCategory } from '@/lib/items-to-track';
+import { TrackedItem } from '@/lib/items-to-track';
 import { PriceContext } from './PriceComparisonStats';
 import { ColoredItemName } from '@/lib/components/ColoredItemName';
 import TrendArrow from './TrendArrow';
@@ -362,24 +362,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     ? (categoryStyle?.darkThemeColor || '#8ab4f8')
     : (categoryStyle?.darkColor || '#16a34a');
 
-  const statBoxStyles = {
-    min: {
-        light: { bg: '#f3f4f6', border: '#4b5563', text: '#1f2937' },
-        dark: { bg: '#2d3748', border: '#9ca3af', text: '#e5e7eb' }
-    },
-    max: {
-        light: { bg: '#f3f4f6', border: '#4b5563', text: '#1f2937' },
-        dark: { bg: '#2d3748', border: '#9ca3af', text: '#e5e7eb' }
-    },
-    avg: {
-        light: { bg: '#f3f4f6', border: '#4b5563', text: '#1f2937' },
-        dark: { bg: '#2d3748', border: '#9ca3af', text: '#e5e7eb' }
-    }
-  };
 
-  const minStyle = theme === 'dark' ? statBoxStyles.min.dark : statBoxStyles.min.light;
-  const maxStyle = theme === 'dark' ? statBoxStyles.max.dark : statBoxStyles.max.light;
-  const avgStyle = theme === 'dark' ? statBoxStyles.avg.dark : statBoxStyles.avg.light;
 
   // filteredHistory는 이제 Context에서 가져옴 (Provider에서 필터링)
 

@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { Row, Col, Spinner } from 'react-bootstrap';
-import { raids } from '@/data/raids';
 import { BOUND_GOLD_FILTER, BOUND_GOLD_TEXT, type CharacterGoldCalc } from './RaidCalculator';
 import { raidClearRewards } from '@/data/raidClearRewards';
 import { raidRewards, MATERIAL_IDS } from '@/data/raidRewards';

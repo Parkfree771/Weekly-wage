@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react';
-import { Container, Card, Button, Form, Spinner, Alert, Modal, Row, Col } from 'react-bootstrap';
-import { useRouter } from 'next/navigation';
+import { Container, Card, Button, Form, Spinner, Alert, Modal } from 'react-bootstrap';
 import NextImage from 'next/image';
 import { AppleStoreBadge, GooglePlayBadge } from '@/components/StoreBadges';
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-download-config';
@@ -21,7 +20,7 @@ const CardBgImage = memo(function CardBgImage({ src, alt, className }: { src: st
 // 하위 호환용 alias
 const Image = NextImage;
 import { useAuth } from '@/contexts/AuthContext';
-import { registerCharacter, refreshCharacter, updateCharacterImages } from '@/lib/user-service';
+import { refreshCharacter, updateCharacterImages } from '@/lib/user-service';
 import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service';
 import NicknameModal from '@/components/auth/NicknameModal';
 import GuideFaq from '@/components/common/GuideFaq';
@@ -81,8 +80,6 @@ import {
   WeeklyGoldRecord,
   CommonContentState,
   DailyContentState,
-  ExpeditionData,
-  getTop3RaidGroups,
   getRaidGroupName,
   raidGroupImages,
   raidGroupShortNames,
@@ -169,7 +166,6 @@ const UPCOMING_RAID_GROUPS = Array.from(
   }, new Map<string, { label: string; image: string }>())
 ).map(([group, info]) => ({ group, label: info.label, image: info.image }));
 
-const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 const WEEKLY_DAY_LABELS = ['수', '목', '금', '토', '일', '월', '화'];
 
 // JS dayOfWeek → 주간 인덱스 (수=0 ~ 화=6)
@@ -203,7 +199,6 @@ function getKSTWeekInfo() {
 }
 
 export default function MyPage() {
-  const router = useRouter();
   const { user, userProfile, loading, refreshUserProfile, signInWithGoogle, signInWithApple, setNickname: updateNickname } = useAuth();
 
   // 데모 모드 (비로그인 시)
@@ -273,7 +268,7 @@ export default function MyPage() {
   const [lastRefreshTime, setLastRefreshTime] = useState<Record<string, number>>({});
 
   // 레이드 확장 패널 열린 캐릭터
-  const [expandedRaidChar, setExpandedRaidChar] = useState<string | null>(null);
+  const [, setExpandedRaidChar] = useState<string | null>(null);
 
 
 
@@ -443,11 +438,11 @@ export default function MyPage() {
 
 
   // 닉네임 변경
-  const [editingNickname, setEditingNickname] = useState(false);
+  const [, setEditingNickname] = useState(false);
   const [newNickname, setNewNickname] = useState('');
   const [nicknameStatus, setNicknameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
-  const [nicknameMessage, setNicknameMessage] = useState('');
-  const [isSavingNickname, setIsSavingNickname] = useState(false);
+  const [, setNicknameMessage] = useState('');
+  const [, setIsSavingNickname] = useState(false);
   const nicknameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 원정대별 데이터 추출 헬퍼
@@ -502,7 +497,7 @@ export default function MyPage() {
           const userRef = doc(db, 'users', uid);
           const prefix = expIdx === 1 ? '' : expIdx === 2 ? 'expedition2.' : 'expedition3.';
           await updateDoc(userRef, { [`${prefix}characters`]: cleanChars });
-        } catch (e) { /* 실패해도 무시 - 다음 저장 시 정리됨 */ }
+        } catch { /* 실패해도 무시 - 다음 저장 시 정리됨 */ }
       })();
     }
 
@@ -533,7 +528,7 @@ export default function MyPage() {
             const userRef = doc(db, 'users', uid);
             const prefix = activeExpedition === 1 ? '' : activeExpedition === 2 ? 'expedition2.' : 'expedition3.';
             await updateDoc(userRef, { [`${prefix}allCharacters`]: cleanAll });
-          } catch (e) { /* 다음 저장 시 정리됨 */ }
+          } catch { /* 다음 저장 시 정리됨 */ }
         })();
       }
     } else {
@@ -605,7 +600,7 @@ export default function MyPage() {
             const userRef = doc(db, 'users', uid);
             const prefix = activeExpedition === 1 ? '' : activeExpedition === 2 ? 'expedition2.' : 'expedition3.';
             await updateDoc(userRef, { [`${prefix}allCharacters`]: cleanAll });
-          } catch (e) { /* 다음 저장 시 정리됨 */ }
+          } catch { /* 다음 저장 시 정리됨 */ }
         })();
       }
     } else {
@@ -860,21 +855,6 @@ export default function MyPage() {
   }, [newNickname, userProfile?.nickname]);
 
   // 닉네임 변경 저장
-  const handleSaveNickname = async () => {
-    if (nicknameStatus !== 'available') return;
-    setIsSavingNickname(true);
-    try {
-      await updateNickname(newNickname);
-      setEditingNickname(false);
-      setNewNickname('');
-      setNicknameStatus('idle');
-      setNicknameMessage('');
-    } catch (err: any) {
-      setNicknameMessage(err.message || '닉네임 변경에 실패했습니다.');
-      setNicknameStatus('invalid');
-    }
-    setIsSavingNickname(false);
-  };
 
   // 원정대 검색 (1단계)
   const handleSearchSiblings = async () => {
@@ -929,7 +909,7 @@ export default function MyPage() {
       setSelectedCharOrder(top6Names);
       setSelectedRepChar(top6Names[0] || '');
       setRegisterStep(2);
-    } catch (error) {
+    } catch {
       setRegisterError('검색 중 오류가 발생했습니다.');
     }
 
@@ -1004,7 +984,7 @@ export default function MyPage() {
       closeRegisterModal();
       imageLoadAttempted.current = false;
       await refreshUserProfile();
-    } catch (error) {
+    } catch {
       setRegisterError('등록에 실패했습니다.');
     }
 
@@ -1469,29 +1449,8 @@ export default function MyPage() {
   };
 
   // 체크된 레이드 중 골드 수령 개수 계산
-  const getGoldReceiveCount = (charName: string): number => {
-    const charState = weeklyChecklist[charName];
-    if (!charState) return 0;
-    return Object.entries(charState.raids).filter(([raidName, gates]) => {
-      const isChecked = gates.some(v => v);
-      const receiveGold = charState.raidGoldReceive?.[raidName] !== false;
-      return isChecked && receiveGold;
-    }).length;
-  };
 
   // 체크된 레이드 목록 가져오기
-  const getCheckedRaids = (charName: string) => {
-    const charState = weeklyChecklist[charName];
-    if (!charState) return [];
-
-    return Object.entries(charState.raids)
-      .filter(([_, gates]) => gates.some(v => v))
-      .map(([raidName]) => {
-        const raid = raidMap.get(raidName);
-        return raid ? { name: raidName, raid } : null;
-      })
-      .filter(Boolean) as { name: string; raid: typeof raids[0] }[];
-  };
 
   // 저장 (캐릭터 정보 + 주간 체크리스트)
   const handleSave = async () => {
@@ -1687,9 +1646,6 @@ export default function MyPage() {
   const displayCharacters = showAllCharacters ? characters : characters.slice(0, 6);
 
   // 캐릭터별 일일 컨텐츠 펼침/닫힘
-  const toggleDailyExpand = (charName: string) => {
-    setExpandedCards(prev => ({ ...prev, [charName]: !prev[charName] }));
-  };
 
   // 원정대 탭 + 등록·편집·저장 — 데스크톱과 모바일에서 놓이는 자리가 달라 노드로 만들어 재사용한다.
   const expeditionRowNode = (
@@ -1977,7 +1933,6 @@ export default function MyPage() {
           {displayCharacters
             .map((char, charIdx) => {
             const charState = weeklyChecklist[char.name] || createEmptyWeeklyState(char.itemLevel);
-            const top3Raids = getTop3RaidGroups(char.itemLevel);
 
             // 캐릭터별 골드 계산 (일반/귀속 분리)
             const raidSplit = calcCharRaidGoldSplit(charState);
@@ -2001,7 +1956,6 @@ export default function MyPage() {
             }
 
             // 체크된 레이드 목록
-            const checkedRaids = getCheckedRaids(char.name);
             // 카드 레이드 편집(기기 저장)이 있으면 그 구성·순서를 그대로 쓴다
             const customRaids = (cardRaidConfig[char.name] || []).filter(n => raidMap.has(n));
             const hasCustomRaids = customRaids.length > 0;
@@ -2026,7 +1980,6 @@ export default function MyPage() {
             // 일일 컨텐츠 렌더 함수 (데스크톱: 오른쪽 상자, 모바일: 카드 내부)
             const MULTI_COLORS = ['', styles.dailyX1, styles.dailyX2, styles.dailyX3, styles.dailyX4];
             const MULTI_CARD_COLORS = ['', styles.dailyCardX1, styles.dailyCardX2, styles.dailyCardX3, styles.dailyCardX4];
-            const MULTI_LABELS = ['', '일반', '휴게', 'PC방', 'PC방+휴게'];
             const renderDailySide = (
               label: string,
               field: 'chaosDungeon' | 'guardianRaid',

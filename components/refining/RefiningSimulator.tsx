@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { useTheme } from '../ThemeProvider';
 import styles from './RefiningSimulator.module.css';
 import {
   BASE_PROBABILITY,
@@ -13,7 +12,6 @@ import {
   SUCCESSION_WEAPON_MATERIAL_COSTS,
   getBreathEffect,
   getSuccessionBreathEffect,
-  getBookEffect,
   getBookType,
   getSuccessionBookType,
   getGrowthCost,
@@ -107,7 +105,6 @@ interface AccumulatedCost {
 }
 
 export default function RefiningSimulator({ onSearchComplete, refiningType = 'normal', showStats = true, equipments: externalEquipments, searched: externalSearched, characterInfo: externalCharacterInfo }: RefiningSimulatorProps) {
-  const { theme } = useTheme();
 
   // 외부에서 전달받은 props 사용
   const equipments = externalEquipments || [];
@@ -179,9 +176,9 @@ export default function RefiningSimulator({ onSearchComplete, refiningType = 'no
     수호석결정: 0, 파괴석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 실링: 0,
     야금술1114: 0, 야금술1518: 0, 야금술1920: 0, 재봉술1114: 0, 재봉술1518: 0, 재봉술1920: 0, 야금술1215: 0, 야금술1619: 0, 재봉술1215: 0, 재봉술1619: 0
   });
-  const [usedBreathThisLevel, setUsedBreathThisLevel] = useState(false);
+  const [, setUsedBreathThisLevel] = useState(false);
   const [breathCountThisLevel, setBreathCountThisLevel] = useState(0);  // 숨결 사용 횟수
-  const [usedBookThisLevel, setUsedBookThisLevel] = useState(false);
+  const [, setUsedBookThisLevel] = useState(false);
   const [bookCountThisLevel, setBookCountThisLevel] = useState(0);  // 책 사용 횟수
 
   // 거래소 가격

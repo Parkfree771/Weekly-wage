@@ -14,9 +14,7 @@ import {
 import styles from './RefiningStats.module.css';
 import {
   getStatsData,
-  getStatsDataForRange,
   BreathFilterType,
-  StatsData,
   MaterialStats,
 } from '../../lib/refiningStatsData';
 import { MATERIAL_IDS, MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';

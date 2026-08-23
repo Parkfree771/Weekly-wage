@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
-import Link from 'next/link';
 import { Container, Row, Col } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
@@ -49,9 +47,6 @@ const weeklyGoldGuideSections = [
 
 const STORAGE_KEY = 'weekly-gold-settings';
 
-const MaterialSummary = dynamic(() => import('@/components/MaterialSummary'), {
-  loading: () => null
-});
 
 // Dynamic imports로 코드 분할 (CLS 방지를 위해 최소 높이 지정)
 const RaidCalculator = dynamic(() => import('@/components/RaidCalculator'), {
@@ -94,13 +89,12 @@ const DEMO_CHARACTERS: Character[] = [
 export default function WeeklyGoldPage() {
   const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
   const [searched, setSearched] = useState(false);
-  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
-  const [gateSelection, setGateSelection] = useState<{[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}>({});
-  const [characterCalc, setCharacterCalc] = useState<{[char: string]: CharacterGoldCalc}>({});
+  const [, setIsMobile] = useState<boolean | undefined>(undefined);
+  const [, setGateSelection] = useState<{[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}>({});
+  const [, setCharacterCalc] = useState<{[char: string]: CharacterGoldCalc}>({});
   const [autoSearchName, setAutoSearchName] = useState<string | undefined>(undefined);
-  const [searchedName, setSearchedName] = useState<string>('');
   const saveFnRef = useRef<(() => boolean) | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const [, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleGateSelectionChange = useCallback((gs: {[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}, cc: {[char: string]: CharacterGoldCalc}) => {
@@ -133,25 +127,11 @@ export default function WeeklyGoldPage() {
     setSearched(true);
   };
 
-  const handleReset = () => {
-    setSearched(false);
-    setSelectedCharacters([]);
-  };
 
   const handleSaveReady = useCallback((fn: () => boolean) => {
     saveFnRef.current = fn;
   }, []);
 
-  const handleSave = useCallback(() => {
-    if (saveFnRef.current) {
-      const success = saveFnRef.current();
-      if (success) {
-        setSaveStatus('saved');
-        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
-      }
-    }
-  }, []);
 
   // cleanup timer
   useEffect(() => {

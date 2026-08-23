@@ -1,4 +1,4 @@
-import { SUCCESSION_BASE_PROBABILITY, getBreathEffect, getSuccessionBreathEffect } from './refiningData';
+import { getSuccessionBreathEffect } from './refiningData';
 
 const JANGIN_ACCUMULATE_DIVIDER = 2.15;
 
@@ -58,13 +58,6 @@ function simulateSuccessionRefining(baseProb: number, useBreath: boolean): numbe
  * @param iterations 시뮬레이션 반복 횟수
  * @returns 평균 시도 횟수
  */
-function calculateSuccessionAvgTries(baseProb: number, useBreath: boolean, iterations: number = 100000): number {
-  let totalTries = 0;
-  for (let i = 0; i < iterations; i++) {
-    totalTries += simulateSuccessionRefining(baseProb, useBreath);
-  }
-  return totalTries / iterations;
-}
 
 // ========================================
 // 계승 후 시뮬레이션 결과 데이터 (사전 계산됨)

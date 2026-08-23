@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Form, Button, InputGroup, Row, Col, Card } from 'react-bootstrap';
+import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { useSearchHistory } from '@/lib/useSearchHistory';
 
 type Sibling = {

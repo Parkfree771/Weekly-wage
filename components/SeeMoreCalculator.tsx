@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
-import { Card, Badge, Button, Row, Col, Table, Spinner, Form } from 'react-bootstrap';
+import { Card, Badge, Table, Spinner, Form } from 'react-bootstrap';
 import { raids } from '@/data/raids';
-import { raidRewards, MaterialReward, MATERIAL_IDS, MATERIAL_NAMES, MATERIAL_BUNDLE_SIZES } from '@/data/raidRewards';
+import { raidRewards, MaterialReward } from '@/data/raidRewards';
 import { usePriceData } from '@/contexts/PriceContext';
 import styles from './SeeMoreCalculator.module.css';
 

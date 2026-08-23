@@ -59,7 +59,6 @@ import {
   type AdvancedRefiningOptions as NewAdvancedRefiningOptions
 } from '../../lib/advancedRefiningData';
 import {
-  getGradeColor,
   type Equipment as EquipmentType,
 } from '../../lib/equipmentParser';
 import AdBanner from '../ads/AdBanner';
@@ -255,7 +254,6 @@ function PillDropdown({
   );
 }
 
-type RefiningMode = 'normal' | 'succession';
 
 type RefiningCalculatorProps = {
   onSearchComplete?: (searched: boolean) => void;
@@ -2214,7 +2212,6 @@ export default function RefiningCalculator({
   };
 
 
-  const equipmentsToRefine = searched ? getEquipmentsToRefine() : [];
 
   // 시작 단계 override + 목표를 반영한 현재/예상 아이템 레벨 계산
   // - baselineOffset: 시작 단계를 원본과 다르게 조정한 만큼 현재 아이템레벨 보정
@@ -2461,7 +2458,6 @@ export default function RefiningCalculator({
                   const isNormalChanged = targets.normal !== null && targets.normal > eq.currentLevel;
                   const isAdvancedChanged = targets.advanced !== null && targets.advanced > eq.currentAdvancedLevel;
                   const isChanged = isNormalChanged || isAdvancedChanged;
-                  const gradeColor = getGradeColor(eq.grade);
 
                   // 모든 장비 활성화 (업화/전율 구분 없이)
                   // 에스더 장비도 상급 재련 가능

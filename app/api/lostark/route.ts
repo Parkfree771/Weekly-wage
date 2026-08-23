@@ -103,7 +103,7 @@ export async function GET(request: Request) {
       },
     });
 
-  } catch (error: any) {
+  } catch {
     return NextResponse.json({ message: 'API 요청 중 알 수 없는 오류가 발생했습니다.' }, { status: 500 });
   }
 }

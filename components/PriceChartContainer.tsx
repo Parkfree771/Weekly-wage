@@ -45,12 +45,6 @@ const renderAccessoryItemName = (name: string, category: ItemCategory) => {
 };
 
 // 가격 포맷팅 함수
-const formatPrice = (price: number) => {
-  if (price >= 100) {
-    return Math.round(price).toLocaleString('ko-KR');
-  }
-  return price.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-};
 
 // 차트 설정 localStorage 키
 const CHART_CONFIG_KEY = 'chartConfig';
@@ -136,7 +130,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   const [chartConfig, setChartConfig] = useState<ChartConfig>(getDefaultChartConfig());
   const [showChartSettings, setShowChartSettings] = useState(false);
   const [tempChartConfig, setTempChartConfig] = useState<ChartConfig>(getDefaultChartConfig());
-  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
+  const [, setIsConfigLoaded] = useState(false);
 
   // 차트 설정 불러오기 (초기 로드 - 한 번만 실행)
   useEffect(() => {
