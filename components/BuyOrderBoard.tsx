@@ -348,14 +348,24 @@ export default function BuyOrderBoard() {
             {/* 담은 종목이 없으면 아래 줄은 전부 예시 데이터(DEMO_SEEDS)다 — 실제 내 기록으로 오해하지 않게 */}
             {isGhost && <em className={styles.demoTag}>예시</em>}
           </h2>
-          {user && dirty && (
-            <button type="button" className={styles.saveBtn} onClick={save} disabled={saving}>
-              {saving ? '…' : '저장'}
-            </button>
-          )}
-          {/* 로그인 배지 — 제목과 같은 줄 오른쪽 끝 */}
-          {!user && (
-            <div className={styles.loginCta}>
+          {/* 저장 버튼·계정 표시는 한 덩어리로 묶어 제목 반대쪽 끝에 붙인다.
+              각자 margin-left:auto 를 주면 flex 가 남은 공간을 나눠 저장 버튼이 가운데로 뜬다. */}
+          <div className={styles.headRight}>
+            {user && dirty && (
+              <button type="button" className={styles.saveBtn} onClick={save} disabled={saving}>
+                {saving ? '…' : '저장'}
+              </button>
+            )}
+            {/* 로그인 상태 표시 — 로그인했는데 아무 표시가 없으면
+                지금 이 계정에 저장되는 중인지 알 길이 없다 */}
+            {user && (
+              <span className={styles.userChip}>
+                <i className={styles.userDot} />
+                {userProfile?.nickname || '로그인됨'}
+              </span>
+            )}
+            {/* 로그인 배지 */}
+            {!user && (
               <span className={styles.loginCtaBtns}>
                 <button type="button" className={styles.loginBtn} onClick={signInWithGoogle}>
                   <svg width="14" height="14" viewBox="0 0 48 48" aria-hidden="true">
@@ -373,8 +383,8 @@ export default function BuyOrderBoard() {
                   Apple
                 </button>
               </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {saveError && <div className={styles.saveError}>저장 실패 · {saveError}</div>}

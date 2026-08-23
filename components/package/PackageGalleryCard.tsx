@@ -19,6 +19,7 @@ import {
 } from '@/lib/package-shared';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
+import TrendArrow from '@/components/TrendArrow';
 import styles from './PackageGalleryCard.module.css';
 
 type Props = {
@@ -26,6 +27,11 @@ type Props = {
   latestPrices: Record<string, number>;
   /** 갤러리 상단에서 지정한 공통 환율(100골드당 원). 0 이면 미적용. */
   commonWonPer100Gold?: number;
+  /**
+   * 비교 기준이 되는 평균가 시세. "시세 갱신" 으로 latestPrices 가 실시간 최저가로
+   * 덮인 동안에만 넘어오고, 그때 효율 옆에 평균가 대비 변동폭이 붙는다.
+   */
+  basePrices?: Record<string, number>;
 };
 
 function getBadgeClass(type: PackageType): string {
@@ -127,9 +133,21 @@ function BenefitPct({ v }: { v: number }) {
   );
 }
 
+// 평균가 대비 변동폭 — 효율 칩 옆에 붙는 작은 화살표 + 숫자(%p).
+// 시세 갱신을 눌렀을 때만 나타나므로, 이게 뜬다는 것 자체가 "갱신됐다" 는 신호다.
+function BenefitDelta({ d }: { d: number }) {
+  const up = d > 0;
+  return (
+    <span className={`${styles.benefitDelta} ${up ? styles.benefitDeltaUp : styles.benefitDeltaDown}`}>
+      <TrendArrow up={up} size={11} />
+      {Math.abs(d).toFixed(1)}
+    </span>
+  );
+}
+
 // memo: 갤러리 페이지 최상위 state(공통 환율 타이핑 등)가 바뀔 때 prop 이 그대로인 카드까지
 // 전부 리렌더되는 것을 막는다 — post/latestPrices 는 참조가 안정적이라 memo 가 실제로 먹힌다
-function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Props) {
+function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, basePrices }: Props) {
   const router = useRouter();
 
   const defaultWon = post.goldPerWon && post.goldPerWon > 0
@@ -180,34 +198,43 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
   const goldPerWon = wonPer100Gold > 0 ? 100 / wonPer100Gold : 0;
 
   // 티켓 동적 시세 계산 (시세 변동 시 자동 반영)
-  const getTicketDynamicUnit = (itemId: string, fallback: number): number => {
+  // 시세맵은 calcItemGold 에서 그대로 흘려받는다 — 평균가 기준으로 다시 돌릴 때
+  // 이 함수만 실시간 시세를 보면 비교값에 두 시세가 섞인다.
+  const getTicketDynamicUnit = (
+    itemId: string,
+    fallback: number,
+    prices: Record<string, number> = latestPrices,
+  ): number => {
     const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
-    if (PROCESSED_GEM_BOX_GEM[itemId] && Object.keys(latestPrices).length > 0)
-      return getProcessedGemBoxUnitPrice(itemId, latestPrices);
-    if (bcRate > 0 && Object.keys(latestPrices).length > 0) {
+    if (PROCESSED_GEM_BOX_GEM[itemId] && Object.keys(prices).length > 0)
+      return getProcessedGemBoxUnitPrice(itemId, prices);
+    if (bcRate > 0 && Object.keys(prices).length > 0) {
       if (itemId === 'fixed_hell-legendary-ticket')
-        return calcTicketAverage('hell', 7, latestPrices, bcRate);
+        return calcTicketAverage('hell', 7, prices, bcRate);
       if (itemId === 'fixed_hell-heroic-ticket')
-        return calcTicketAverage('hell', 6, latestPrices, bcRate);
+        return calcTicketAverage('hell', 6, prices, bcRate);
       if (itemId === 'fixed_naraka-legendary-ticket')
-        return calcTicketAverage('narak', 2, latestPrices, bcRate);
+        return calcTicketAverage('narak', 2, prices, bcRate);
       if (itemId === 'fixed_cube-ticket')
-        return calcTicketAverage('hell', 6, latestPrices, bcRate) / 6;
+        return calcTicketAverage('hell', 6, prices, bcRate) / 6;
     }
     return fallback;
   };
 
-  /** 구성품 1개의 골드 가치 — 확정 구성품·보너스 구성품 공용 */
-  const calcItemGold = (item: PackageItem): number => {
+  /**
+   * 구성품 1개의 골드 가치 — 확정 구성품·보너스 구성품 공용.
+   * 시세맵을 인자로 받는다: 같은 계산을 평균가 기준으로 한 번 더 돌려 변동폭을 낸다.
+   */
+  const calcItemGold = (item: PackageItem, prices: Record<string, number> = latestPrices): number => {
     const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
     if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
       // 현재 시세 상위 N개 조합 (저장된 선택은 등록 시점 시세라 역전될 수 있음)
       const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
-      return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
+      return getChoiceBoxBestGold(item.choiceBoxCandidates, n, prices) * item.quantity;
     }
     // 확률 상자: 현재 시세 기준 기댓값 (티켓 후보는 bcRate 로 동적 단가)
     if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-      return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity;
+      return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate) * item.quantity;
     }
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
       return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
@@ -218,32 +245,32 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
       if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
     }
     if (item.goldOverride != null) {
-      const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride);
+      const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride, prices);
       return dynamicUnit * item.quantity;
     }
     // choice 타입: 현재 시세 최고가 선택지 기준 (item.quantity = 박스 개수)
     if (item.choiceOptions && item.choiceOptions.length > 0) {
       if (item.icon === FIXED_GEM_SELECT_ICON) {
         const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
-        return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
+        return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, prices, goldPerWon) * qty;
       }
-      return getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity;
+      return getChoiceBestValue(item.choiceOptions, item.itemId, prices) * item.quantity;
     }
-    const raw = latestPrices[item.itemId] || 0;
+    const raw = prices[item.itemId] || 0;
     const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
     return (raw / bundle) * item.quantity;
   };
 
   // 아이템별 소계 (N선택 토글 로직용)
   const itemSubtotals = useMemo(
-    () => post.items.map(calcItemGold),
+    () => post.items.map(item => calcItemGold(item)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [post.items, latestPrices, goldPerWon],
   );
 
   // 보너스 구성품 소계 (보너스 택N 토글 로직용)
   const bonusItemSubtotals = useMemo(
-    () => (post.bonusItems || []).map(calcItemGold),
+    () => (post.bonusItems || []).map(item => calcItemGold(item)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [post.bonusItems, latestPrices, goldPerWon],
   );
@@ -540,6 +567,24 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
     return bonusItemSubtotals.reduce((sum, v, idx) => (bonusChecked[idx] === false ? sum : sum + v), 0);
   }, [post.packageType, post.bonusItems, bonusItemSubtotals, bonusChecked]);
 
+  // 평균가 기준 효율 — 같은 calcItemGold·같은 체크 상태로 시세맵만 갈아서 한 번 더 돌린다.
+  // 계산 경로를 공유하므로 "표시값과 비교값이 다른 로직" 으로 어긋날 일이 없다.
+  const baseEffectiveGold = useMemo(() => {
+    if (!basePrices) return null;
+    if (isGacha) {
+      const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
+      return post.items.reduce((sum, item, idx) => {
+        if (checkedItems[idx] === false) return sum;
+        return sum + calculateGachaItemGold(item, basePrices, goldPerWon, bcRate) * ((item.probability || 0) / 100);
+      }, 0);
+    }
+    return post.items.reduce((sum, item, idx) => {
+      if (checkedItems[idx] === false) return sum;
+      return sum + calcItemGold(item, basePrices);
+    }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [basePrices, post.items, checkedItems, isGacha, goldPerWon]);
+
   const cashGold = post.royalCrystalPrice * goldPerWon;
   const isBundle = post.packageType === '3+1' || post.packageType === '2+1';
   const isBonusPkg = post.packageType === '3+보너스';
@@ -550,6 +595,13 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
   // '1개 구매'는 보너스 가정 없이 순수 1회 구매 기준 (3+1/2+1과 동일한 원칙)
   const effectiveGold = isGacha ? gachaExpectedGold : totalGold;
   const singleBenefit = cashGold > 0 ? ((effectiveGold - cashGold) / cashGold) * 100 : 0;
+  // 평균가 대비 변동폭(%p). 0.1%p 미만은 표시하지 않는다 — 안 움직인 카드까지 화살표가 붙으면
+  // "갱신됐다" 가 아니라 "원래 그렇다" 로 읽혀 신호가 죽는다.
+  const benefitDelta = (() => {
+    if (baseEffectiveGold === null || cashGold <= 0) return null;
+    const d = singleBenefit - ((baseEffectiveGold - cashGold) / cashGold) * 100;
+    return Math.abs(d) < 0.1 ? null : d;
+  })();
 
   const buyCount = post.packageType === '3+1' ? 3 : post.packageType === '2+1' ? 2 : isBonusPkg ? 3 : 1;
   const getCount = post.packageType === '3+1' ? 4 : post.packageType === '2+1' ? 3 : 1;
@@ -779,6 +831,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
           {goldPerWon > 0 && !isGacha && (
             <div className={styles.resultRow}>
               <span className={styles.resultLabel}>1개 구매</span>
+              {benefitDelta !== null && <BenefitDelta d={benefitDelta} />}
               <BenefitPct v={singleBenefit} />
             </div>
           )}
@@ -787,6 +840,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
           {goldPerWon > 0 && isGacha && (
             <div className={styles.resultRow}>
               <span className={styles.resultLabel}>기대 효율</span>
+              {benefitDelta !== null && <BenefitDelta d={benefitDelta} />}
               <BenefitPct v={singleBenefit} />
             </div>
           )}

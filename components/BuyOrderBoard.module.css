@@ -69,7 +69,6 @@
 }
 
 .saveBtn {
-  margin-left: auto;
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 700;
@@ -756,11 +755,39 @@
 
 /* ── 로그인 유도 · 저장 실패 알림 ── */
 /* 제목 줄 오른쪽 끝에 붙는다 */
-.loginCta {
+/* 제목 반대쪽 끝 묶음 — 저장 버튼과 계정 표시(또는 로그인 배지)가 여기 들어간다 */
+.headRight {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-left: auto;
+}
+
+/* 로그인 상태 칩 — 닉네임 한 줄 */
+.userChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  max-width: 42vw;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+}
+
+/* 접속 표시 점 — 초록은 "지금 이 계정으로 저장된다"는 신호 */
+.userDot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #22c55e;
 }
 
 .loginCtaBtns {

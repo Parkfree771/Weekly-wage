@@ -506,7 +506,6 @@
   overflow-wrap: anywhere;
 }
 
-
 /* ─── 하단 메타 ─── */
 .leftMeta {
   display: flex;
@@ -620,15 +619,6 @@
   margin: 0.75rem 0;
 }
 
-/* ─── 환율 입력 ─── */
-.rateHint {
-  font-size: 0.6rem;
-  color: var(--gc-text-muted);
-  font-weight: 500;
-  text-align: right;
-  margin-top: -0.2rem;
-}
-
 .rateRow {
   display: flex;
   align-items: center;
@@ -713,7 +703,6 @@
   flex-shrink: 0;
 }
 
-
 /* 결과 % 배지 — 매트 단색 + 양 모서리 컷(게임 스탯 칩 느낌). 그라데이션 없음 */
 .benefitBadge {
   display: inline-flex;
@@ -731,14 +720,35 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
+/* 평균가 대비 변동폭 — 효율 칩 왼쪽. 칩이 아니라 맨 글자로 둬서 칩(효율)이 계속 주인공이게 한다 */
+.benefitDelta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-right: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.benefitDeltaUp {
+  color: var(--price-up);
+}
+
+.benefitDeltaDown {
+  color: var(--price-down);
+}
+
+/* 색은 갤러리 래퍼(package.module.css .pageWrapper)가 시세 기준에 따라 정한다 —
+   평균가는 차분한 매트, 실시간은 같은 색상을 선명하게. 폴백은 평균가 톤. */
 .benefitBadgeUp {
-  background: #35815a;
+  background: var(--benefit-up, #35815a);
 }
 
 .benefitBadgeDown {
-  background: #a04a44;
+  background: var(--benefit-down, #a04a44);
 }
-
 
 .rateRow:focus-within {
   border-color: var(--color-accent);
@@ -798,48 +808,6 @@
 .rateInput::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
-}
-
-/* ─── 이득률 ─── */
-.benefitArea {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.benefitLine {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.4rem;
-}
-
-.benefitLabel {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--gc-text-secondary);
-}
-
-.benefitValue {
-  font-size: 1.15rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-
-.benefitPositive {
-  color: #16a34a;
-}
-
-:global([data-theme="dark"]) .benefitPositive {
-  color: #4ade80;
-}
-
-.benefitNegative {
-  color: var(--color-danger);
-}
-
-:global([data-theme="dark"]) .benefitNegative {
-  color: #f87171;
 }
 
 /* ─── 가챠 아이템 셀 상태 ─── */
@@ -913,10 +881,6 @@
   transform: none;
 }
 
-.gachaBtnSpinning {
-  animation: gachaCardPulse 0.5s ease-in-out infinite;
-}
-
 @keyframes gachaCardPulse {
   0%, 100% { box-shadow: var(--shadow-sm); }
   50% { box-shadow: var(--shadow-md); }
@@ -962,11 +926,6 @@
   color: var(--color-accent);
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
-}
-
-.gachaResultBenefit {
-  font-size: 0.78rem;
-  font-weight: 800;
 }
 
 .gachaReroll {
@@ -1287,10 +1246,6 @@
   }
 
   .gachaResultGold {
-    font-size: 0.65rem;
-  }
-
-  .gachaResultBenefit {
     font-size: 0.65rem;
   }
 

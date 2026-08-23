@@ -5,15 +5,16 @@ import { NextResponse } from 'next/server';
 // 기존 수집 파이프라인(cron collect-prices → latest_prices.json, 거래 평균가·1시간)과
 // 완전히 독립이다: 아무것도 저장하지 않고, 로아 검색 API 의 CurrentMinPrice 를
 // 그대로 응답한다. 공유 지점은 CDN durable 캐시 하나 —
-// TTL(120초) 안에는 몇 명이 누르든 함수 실행이 1회를 넘지 않는다.
+// TTL(300초) 안에는 몇 명이 누르든 함수 실행이 1회를 넘지 않는다.
 //
 // 단위 규약: 검색 API 의 CurrentMinPrice 는 인게임 거래소 표시가와 같은 "묶음 가격"이다
 // (실측: 파괴석 결정 Bundle=100 → 100개 묶음 가격, 주머니·책·각인서 Bundle=1 → 개당).
 // latest_prices.json 도 같은 규약이라 환산 없이 그대로 덮어쓸 수 있다 —
 // getItemUnitPrice() 의 PRICE_BUNDLE_SIZE 나눗셈이 양쪽에 동일하게 적용된다.
 //
-// API 키: 랭킹 시드 수집 때 받아 둔 전용 키(LOSTARK_IMPORT_API_KEY)를 쓴다.
-// 분당 100회 리밋이 키 단위라, 정시에 수십 건을 버스트하는 cron 수집과 쿼터가 안 겹친다.
+// API 키: 이 라우트 전용 키(LOSTARK_LIVE_API_KEY)를 쓴다.
+// 분당 100회 리밋이 키 단위라, 정시에 수십 건을 버스트하는 cron 수집(LOSTARK_API_KEY)과
+// 쿼터가 안 겹친다. 전용 키가 없는 환경에서는 수집용 키로 폴백한다.
 
 const API_BASE = 'https://developer-lostark.game.onstove.com';
 
@@ -78,7 +79,14 @@ const AUCTION_ITEMS: { id: string; searchName: string }[] = [
   { id: 'auction_gem_fear_8', searchName: '8레벨 겁화의 보석' },
 ];
 
-async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 8000): Promise<Response> {
+// 함수 전체 예산. Netlify 함수 기본 실행 제한이 10초라, 그 안에서 확실히 끝내야 한다.
+// 이 시각을 넘기면 남은 배치를 시작하지 않고 가진 것만 응답한다 —
+// 마지막 배치가 최대 REQ_TIMEOUT_MS 를 더 쓰므로 둘의 합이 10초 아래여야 한다.
+const BUDGET_MS = 6000;
+// 개별 요청 상한. 길게 잡으면 느린 한 건이 예산을 통째로 먹는다.
+const REQ_TIMEOUT_MS = 3000;
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = REQ_TIMEOUT_MS): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -135,46 +143,68 @@ async function searchAuctionMin(
   return price > 0 ? price : null;
 }
 
-// N개씩 끊어 병렬 실행 — 전 건 동시 발사는 로아 API 가 429 를 줄 수 있다
-async function inBatches<T, R>(items: T[], size: number, fn: (t: T) => Promise<R>): Promise<R[]> {
+// N개씩 끊어 병렬 실행 — 전 건 동시 발사는 로아 API 가 429 를 줄 수 있다.
+// deadline 을 넘기면 남은 배치는 요청하지 않고 skipped 로 채운다.
+// 건너뛴 것도 결과 배열에 남겨야 missed 집계와 "절반 미만" 판정이 정확해진다.
+async function inBatches<T, R>(
+  items: T[],
+  size: number,
+  fn: (t: T) => Promise<R>,
+  deadline: number,
+  skipped: (t: T) => R,
+): Promise<R[]> {
   const out: R[] = [];
   for (let i = 0; i < items.length; i += size) {
-    out.push(...(await Promise.all(items.slice(i, i + size).map(fn))));
+    const slice = items.slice(i, i + size);
+    if (Date.now() >= deadline) {
+      out.push(...slice.map(skipped));
+      continue;
+    }
+    out.push(...(await Promise.all(slice.map(fn))));
   }
   return out;
 }
 
 export async function GET() {
-  const apiKey = process.env.LOSTARK_IMPORT_API_KEY || process.env.LOSTARK_API_KEY;
+  const apiKey = process.env.LOSTARK_LIVE_API_KEY || process.env.LOSTARK_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'API 키가 없습니다' }, { status: 500 });
   }
 
   const prices: Record<string, number> = {};
   const missed: string[] = [];
+  const deadline = Date.now() + BUDGET_MS;
+  const skipped = (item: { id: string }) => ({ id: item.id, price: null });
 
-  const marketResults = await inBatches(MARKET_ITEMS, 8, async (item) => {
-    try {
-      return { id: item.id, price: await searchMarketMin(item, apiKey) };
-    } catch {
-      return { id: item.id, price: null };
-    }
-  });
-  const auctionResults = await inBatches(AUCTION_ITEMS, 2, async (item) => {
-    try {
-      return { id: item.id, price: await searchAuctionMin(item, apiKey) };
-    } catch {
-      return { id: item.id, price: null };
-    }
-  });
+  // 거래소와 경매장을 동시에 돌린다. 순차로 두면 거래소가 예산을 다 쓴 뒤
+  // 경매장 1건이 통째로 굶는다. 동시 요청은 12+1 건이라 429 걱정도 없다.
+  const [marketResults, auctionResults] = await Promise.all([
+    inBatches(MARKET_ITEMS, 12, async (item) => {
+      try {
+        return { id: item.id, price: await searchMarketMin(item, apiKey) };
+      } catch {
+        return { id: item.id, price: null };
+      }
+    }, deadline, skipped),
+    inBatches(AUCTION_ITEMS, 2, async (item) => {
+      try {
+        return { id: item.id, price: await searchAuctionMin(item, apiKey) };
+      } catch {
+        return { id: item.id, price: null };
+      }
+    }, deadline, skipped),
+  ]);
 
   for (const r of [...marketResults, ...auctionResults]) {
     if (r.price !== null) prices[r.id] = r.price;
     else missed.push(r.id);
   }
 
-  // 절반도 못 가져왔으면 캐시에 실어 두지 않는다 — 다음 요청이 다시 시도하게
-  if (Object.keys(prices).length < (MARKET_ITEMS.length + AUCTION_ITEMS.length) / 2) {
+  // 한 건도 못 가져왔을 때만 실패로 본다(키 만료·API 장애 등 계통 문제).
+  // 일부 결손은 실패가 아니다 — 가져온 것만 덮이고 나머지는 클라이언트에서
+  // latest_prices.json 의 거래 평균가가 그대로 남는다(effectivePrices 의 스프레드 병합).
+  // 이 응답은 캐시에 싣지 않아 다음 클릭이 곧바로 다시 시도한다.
+  if (Object.keys(prices).length === 0) {
     return NextResponse.json(
       { error: '시세 조회 실패', missed },
       { status: 502, headers: { 'Cache-Control': 'no-store' } },
@@ -186,8 +216,11 @@ export async function GET() {
     {
       headers: {
         // durable: 전 세계 공유 캐시 — TTL 안에는 몇 명이 누르든 함수 실행 1회.
-        // 브라우저 캐시는 0 — 버튼이 항상 CDN 까지는 가야 "N초 전" 시각이 정직하다.
-        'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=120, stale-while-revalidate=600',
+        // 300초는 기본값인 거래 평균가(1시간 주기)보다 12배 신선하면서 함수 호출을 60% 줄인다.
+        // 클라이언트 쿨다운(LIVE_COOLDOWN_MS)과 같은 값이어야 한다 — 쿨다운이 더 짧으면
+        // 아직 신선한 캐시를 다시 받아 "눌렀는데 아무 변화 없음" 으로 보인다.
+        // 브라우저 캐시는 0 — 버튼이 항상 CDN 까지는 가야 한다.
+        'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=300, stale-while-revalidate=600',
         'Cache-Control': 'public, max-age=0, must-revalidate',
       },
     },
