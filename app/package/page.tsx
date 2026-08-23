@@ -8,6 +8,7 @@ import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryC
 import { getPackagePosts, getPackagePostCount } from '@/lib/package-service';
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import { calculatePostEfficiency, isNewReleasePost } from '@/lib/package-shared';
+import RefreshLottie from '@/components/RefreshLottie';
 import { isSaleEnded } from '@/lib/package-sale';
 import type { PackagePost } from '@/types/package';
 import AdBanner from '@/components/ads/AdBanner';
@@ -73,6 +74,12 @@ let moduleTotalCount: number | null = null;
 // 전부 이미 불러온 posts 배열 위에서만 도는 화면 기준 기능이다.
 // Firestore 재조회를 절대 일으키지 않는다 — 예전에 정렬을 서버 쿼리로 돌리다
 // 드롭다운을 건드릴 때마다 읽기가 한 페이지씩 더 나가서 뺐던 기능이라, 같은 실수를 막으려고
+// 실시간 최저가(시세 갱신 버튼) — 페이지 왕복에도 유지되게 모듈에 둔다.
+// 서버가 durable 캐시(120초)로 전 유저 공유라, 여기 쿨다운은 "무의미한 재요청"만 막는다.
+let moduleLivePrices: Record<string, number> | null = null;
+let moduleLiveAt = 0; // ms
+const LIVE_COOLDOWN_MS = 120_000;
+
 // sortBy/typeFilter 는 goToPage 의 의존성에 넣지 않는다.
 type GallerySort = 'createdAt' | 'efficiency' | 'newRelease';
 type SaleFilter = 'all' | 'onSale' | 'ended';
@@ -105,6 +112,45 @@ export default function PackageGalleryPage() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState<number | null>(moduleTotalCount);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
+  // 실시간 최저가 — 갱신 버튼을 누른 뒤에만 채워진다. 평균가(latestPrices) 위에 덮어쓴다.
+  const [livePrices, setLivePrices] = useState<Record<string, number> | null>(moduleLivePrices);
+  const [liveAt, setLiveAt] = useState<number>(moduleLiveAt);
+  const [liveLoading, setLiveLoading] = useState(false);
+  // "N분 전" 표시가 시간을 따라가게 하는 틱 — 갱신된 적 있을 때만 돈다
+  const [, setLiveTick] = useState(0);
+  useEffect(() => {
+    if (!liveAt) return;
+    const t = setInterval(() => setLiveTick(v => v + 1), 30_000);
+    return () => clearInterval(t);
+  }, [liveAt]);
+
+  const refreshLivePrices = useCallback(async () => {
+    if (liveLoading || Date.now() - moduleLiveAt < LIVE_COOLDOWN_MS) return;
+    setLiveLoading(true);
+    try {
+      const res = await fetch('/api/market/live-prices');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data?.prices && Object.keys(data.prices).length > 0) {
+        moduleLivePrices = data.prices;
+        // 쿨다운은 서버 수집 시각 기준 — CDN 캐시를 받은 경우 남은 TTL 만큼만 기다리게 된다
+        moduleLiveAt = Date.parse(data.fetchedAt) || Date.now();
+        setLivePrices(moduleLivePrices);
+        setLiveAt(moduleLiveAt);
+      }
+    } catch (err) {
+      console.error('실시간 시세 갱신 실패:', err);
+    } finally {
+      setLiveLoading(false);
+    }
+  }, [liveLoading]);
+
+  // 카드·정렬이 실제로 쓰는 가격 — 갱신 전에는 평균가 그대로, 갱신 후에는 최저가가 덮는다
+  const effectivePrices = useMemo(
+    () => (livePrices ? { ...latestPrices, ...livePrices } : latestPrices),
+    [latestPrices, livePrices],
+  );
+
   // 갤러리 공통 환율(100골드당 원). 0 이면 미적용 — 각 카드가 등록 시점 환율을 그대로 쓴다.
   // 값이 들어오면 모든 카드가 이 값으로 맞춰지고, 이후 카드별 개별 수정은 그대로 가능하다.
   // 입력은 문자열로 든다 — number state 면 "16." 같은 타이핑 중간 상태가 지워져 소수(16.5) 입력이 안 된다.
@@ -236,14 +282,14 @@ export default function PackageGalleryPage() {
     }
 
     // 효율순 — 시세가 도착하기 전엔 전부 0이 나와 순서가 무의미하므로 원래 순서를 유지한다
-    if (Object.keys(latestPrices).length === 0) return filtered;
+    if (Object.keys(effectivePrices).length === 0) return filtered;
     const rateOverride = deferredCommonRate > 0 ? 100 / deferredCommonRate : 0;
     return [...filtered].sort(
       (a, b) =>
-        calculatePostEfficiency(b, latestPrices, rateOverride) -
-        calculatePostEfficiency(a, latestPrices, rateOverride),
+        calculatePostEfficiency(b, effectivePrices, rateOverride) -
+        calculatePostEfficiency(a, effectivePrices, rateOverride),
     );
-  }, [posts, saleFilter, sortBy, latestPrices, deferredCommonRate]);
+  }, [posts, saleFilter, sortBy, effectivePrices, deferredCommonRate]);
 
   // 정렬·필터는 "지금 불러온 목록" 안에서만 도므로, 범위를 숨기지 않고 그대로 알려준다
   const isNarrowed = saleFilter !== 'all';
@@ -295,6 +341,31 @@ export default function PackageGalleryPage() {
                 {posts.length}개 중 {visiblePosts.length}개
               </span>
             )}
+            {/* 실시간 최저가 갱신 — 전 유저 공유 캐시(120초)라 그 안의 재클릭은 보내지 않는다 */}
+            <button
+              type="button"
+              className={`${styles.liveRefreshBtn} ${liveLoading ? styles.liveRefreshLoading : ''}`}
+              onClick={refreshLivePrices}
+              disabled={liveLoading}
+              aria-busy={liveLoading}
+              aria-label="시세 갱신"
+              title="거래소 현재 최저가로 다시 계산합니다 (기본은 1시간 주기 평균가)"
+            >
+              <RefreshLottie spinning={liveLoading} size={18} />
+              {/* 불러오는 2~3초가 멈춘 것처럼 보이면 사용자가 연타하거나 떠난다 — 문구로 상태를 못박는다.
+                  모바일은 폭이 없어 글자를 접고 로티 회전 + 맥동만 남긴다(CSS). */}
+              <span className={styles.liveRefreshLabel}>
+                {liveLoading ? '시세 불러오는 중' : '시세 갱신'}
+              </span>
+              {!liveLoading && liveAt > 0 && (
+                <em className={styles.liveRefreshAt}>
+                  {(() => {
+                    const m = Math.floor((Date.now() - liveAt) / 60_000);
+                    return m < 1 ? '방금' : `${m}분 전`;
+                  })()}
+                </em>
+              )}
+            </button>
           </div>
           <div className={styles.commonRate}>
             <div className={styles.commonRateGroup}>
@@ -372,6 +443,16 @@ export default function PackageGalleryPage() {
           </Link>
         </div>
 
+        {/* 시세 기준 안내 — 갱신 전에는 두 시세의 차이를, 갱신 후에는 현재 기준을 한 줄로 */}
+        <p className={styles.liveHint}>
+          {livePrices
+            ? (() => {
+                const m = Math.floor((Date.now() - liveAt) / 60_000);
+                return `지금 거래소 최저가 기준으로 계산 중 · ${m < 1 ? '방금' : `${m}분 전`} 갱신`;
+              })()
+            : '시세는 1시간 주기 거래 평균가 기준 — 시세 갱신을 누르면 지금 거래소 최저가로 다시 계산됩니다'}
+        </p>
+
         {loading ? (
           <div className={styles.galleryGrid}>{renderSkeletons()}</div>
         ) : posts.length === 0 ? (
@@ -401,7 +482,7 @@ export default function PackageGalleryPage() {
                 {saleFilter !== 'ended' && page === 1 && (
                   <>
                     <AzenaBlessingGalleryCard
-                      latestPrices={latestPrices}
+                      latestPrices={effectivePrices}
                       commonWonPer100Gold={deferredCommonRate}
                     />
                     <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.betweenCardsAd}`}>
@@ -420,7 +501,7 @@ export default function PackageGalleryPage() {
                     <React.Fragment key={post.id}>
                       <PackageGalleryCard
                         post={post}
-                        latestPrices={latestPrices}
+                        latestPrices={effectivePrices}
                         commonWonPer100Gold={deferredCommonRate}
                       />
                       {/* 모바일 전용(d-md-none). 자리마다 다른 애드핏 단위를 받는다 —

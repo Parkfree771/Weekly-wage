@@ -250,22 +250,28 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
 
   // 시세 로드 후 N선택 재계산 — 표시 소계(itemSubtotals)와 동일한 값 기준 (티켓은 지옥 보상 평균 연동).
   // useState 초기값은 시세 도착 전(빈 prices)에 계산되어 goldOverride 티켓만 값이 잡히는 문제가 있어 여기서 확정한다.
-  const autoPickedRef = useRef(false);
+  // 사용자가 손으로 고르기 전까지는 시세를 따라간다 — "시세 갱신"으로 최저가가 덮이면
+  // 최고가 N개가 뒤집힐 수 있는데, 1회 확정으로 두면 선택만 낡은 시세 기준으로 남는다.
+  const userPickedRef = useRef(false);
   useEffect(() => {
     const sc = post.selectableCount || 0;
     if (sc <= 0) return;
     if (Object.keys(latestPrices).length === 0) return;
-    if (autoPickedRef.current) return;
-    autoPickedRef.current = true;
+    if (userPickedRef.current) return;
     const withValue = itemSubtotals.map((value, idx) => ({ idx, value }));
     withValue.sort((a, b) => b.value - a.value);
     const next: Record<number, boolean> = {};
     post.items.forEach((_, idx) => { next[idx] = false; });
     withValue.slice(0, sc).forEach((v) => { next[v.idx] = true; });
-    setCheckedItems(next);
+    // 같은 선택이면 setState 를 건너뛴다 — 시세 참조가 바뀔 때마다 불필요한 리렌더를 막는다
+    setCheckedItems((prev) => {
+      const same = post.items.every((_, idx) => (prev[idx] !== false) === (next[idx] !== false));
+      return same ? prev : next;
+    });
   }, [latestPrices, itemSubtotals, post.items, post.selectableCount]);
 
   const handleToggleCheck = (idx: number) => {
+    userPickedRef.current = true;
     const sc = post.selectableCount || 0;
     setCheckedItems((prev) => {
       const isChecked = prev[idx] !== false;
@@ -299,24 +305,28 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0 }: Pro
     return initial;
   });
 
-  const bonusAutoPickedRef = useRef(false);
+  // 본품과 같은 원칙 — 사용자 개입 전까지는 시세 갱신을 따라 최고가 N개를 재선정한다
+  const bonusUserPickedRef = useRef(false);
   useEffect(() => {
     const sc = post.bonusSelectableCount || 0;
     if (sc <= 0) return;
     if (!post.bonusItems || post.bonusItems.length === 0) return;
     if (Object.keys(latestPrices).length === 0) return;
-    if (bonusAutoPickedRef.current) return;
-    bonusAutoPickedRef.current = true;
+    if (bonusUserPickedRef.current) return;
     const withValue = bonusItemSubtotals.map((value, idx) => ({ idx, value }));
     withValue.sort((a, b) => b.value - a.value);
     const next: Record<number, boolean> = {};
     post.bonusItems.forEach((_, idx) => { next[idx] = false; });
     withValue.slice(0, sc).forEach((v) => { next[v.idx] = true; });
-    setBonusChecked(next);
+    setBonusChecked((prev) => {
+      const same = (post.bonusItems || []).every((_, idx) => (prev[idx] !== false) === (next[idx] !== false));
+      return same ? prev : next;
+    });
   }, [latestPrices, bonusItemSubtotals, post.bonusItems, post.bonusSelectableCount]);
 
   // 보너스 택N 토글 — N개 초과 선택 시 체크된 것 중 가장 싼 보너스를 밀어낸다 (메인 N선택과 동일)
   const handleBonusToggleCheck = (idx: number) => {
+    bonusUserPickedRef.current = true;
     const sc = post.bonusSelectableCount || 0;
     setBonusChecked((prev) => {
       const isChecked = prev[idx] !== false;
