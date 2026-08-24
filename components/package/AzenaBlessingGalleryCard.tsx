@@ -73,7 +73,7 @@ function MiniCount({
 }
 
 /**
- * 아제나의 축복 고정 카드 — 갤러리 최상단에 항상 표시되는 공식 패키지.
+ * 아제나의 축복 카드 — 갤러리 드롭다운 옆 칩을 누르면 팝업으로 뜨는 공식 패키지.
  * 큰 틀(프레임·수치 배치·환율 입력)은 일반 카드와 동일하고, 이 카드에만 헤더의 1730 티어
  * 토글과 결과 아래 공명·휴게·PC방 입력이 붙는다. 레이드는 주 3회 고정.
  * 왼쪽은 아이템 셀 목록 대신 축복 본체 이미지 하나만 두고, 구성품·수량·확률·상자 내용물은
@@ -148,7 +148,7 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
           아이템 셀 목록은 두지 않는다 — 구성품·수량·확률은 상세에서 본다 */}
       <div className={`${styles.leftBox} ${az.leftBoxArt}`}>
         <div className={az.hero}>
-          {/* 1페이지 첫 칸의 최대 면적 이미지 = LCP 후보 — lazy 로 두면 요청이 레이아웃 확정 뒤로 밀린다 */}
+          {/* 팝업이 열릴 때 마운트되므로 바로 요청한다 — lazy 로 두면 레이아웃 확정 뒤로 밀린다 */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             loading="eager"

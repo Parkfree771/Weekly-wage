@@ -107,6 +107,9 @@ const APP_PROMO_PAGES = new Set(['/', '/refining', '/wangap', '/package', '/mypa
 // 어깨를 맞춰야 하면 getPageConfig에서 appPromoTop으로 오버라이드(예: /wangap, /package)
 const APP_PROMO_TOP = 66;
 
+/** 왼쪽 레일 프로모 자리에 페이지가 포털로 위젯을 얹을 때 쓰는 타깃 id (도킹 모드에서만 존재) */
+export const LEFT_RAIL_SLOT_ID = 'left-rail-promo-slot';
+
 export default function AdLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const pageConfig = getPageConfig(pathname);
@@ -262,10 +265,16 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   // 예전엔 왼쪽 sticky top 을 52+adTop 으로 따로 잡아 정지 상태 높이만 맞췄는데,
   // 오른쪽은 기본값(top:56)이라 스크롤하면 오른쪽이 먼저 붙고 왼쪽은 한참 뒤에 붙어 어긋났다.
   // 좌우를 "같은 구조 · 같은 sticky 기준점"으로 만들면 보정 없이 항상 같이 움직인다.
+  // 왼쪽은 오른쪽 프로모와 같은 높이를 잡기 위한 숨김 복제본. 그 위에 페이지가 포털로
+  // 자기 위젯을 얹을 수 있게 절대 배치 슬롯(LEFT_RAIL_SLOT_ID)을 겹쳐 둔다 — 크기는 그대로,
+  // visibility 만 다시 켜서 자식만 보이게 한다. (현재 /package 의 아제나 타일이 쓴다)
   const renderPromoSlot = (side: 'left' | 'right') => (
     <div
       ref={side === 'right' ? dockedPromoRef : undefined}
-      style={{ marginTop: `${appPromoTop}px`, ...(side === 'left' ? { visibility: 'hidden' as const } : null) }}
+      style={{
+        marginTop: `${appPromoTop}px`,
+        ...(side === 'left' ? { visibility: 'hidden' as const, position: 'relative' as const } : null),
+      }}
       aria-hidden={side === 'left' || undefined}
     >
       {desktopZoomActive ? (
@@ -274,6 +283,13 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
         </div>
       ) : (
         <AppSidebarPromo />
+      )}
+      {side === 'left' && (
+        <div
+          id={LEFT_RAIL_SLOT_ID}
+          aria-hidden={false}
+          style={{ position: 'absolute', inset: 0, visibility: 'visible' }}
+        />
       )}
     </div>
   );

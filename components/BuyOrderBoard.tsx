@@ -390,7 +390,8 @@ export default function BuyOrderBoard() {
         {saveError && <div className={styles.saveError}>저장 실패 · {saveError}</div>}
 
         <div className={styles.listWrap}>
-          <div className={styles.list}>
+          {/* 로그아웃·예시 상태엔 줄 끝 수정 버튼이 없다 — 그 열을 빼서 숫자를 오른쪽 끝까지 붙인다 */}
+          <div className={`${styles.list} ${!user || isGhost ? styles.listNoAction : ''}`}>
             {/* 라벨은 맨 위 헤더 한 줄로 빼고, 종목은 한 줄씩. 줄마다 라벨을 반복하면
                 같은 글자가 종목 수만큼 찍혀 공백만 늘어난다.
                 헤더와 합계는 목록을 스크롤해도 따라다니게 위에 붙여 둔다.

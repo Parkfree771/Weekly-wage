@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
@@ -8,33 +9,36 @@ import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryC
 import { getPackagePosts, getPackagePostCount } from '@/lib/package-service';
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import { calculatePostEfficiency, isNewReleasePost } from '@/lib/package-shared';
+import {
+  AZENA_PRICE_WON,
+  AZENA_SHORT_TITLE,
+  AZENA_DEFAULT_OPTIONS,
+  AZENA_DEFAULT_WON_PER_100_GOLD,
+  calcAzenaBreakdown,
+} from '@/lib/azena-blessing';
 import { isSaleEnded } from '@/lib/package-sale';
 import type { PackagePost } from '@/types/package';
 import AdBanner from '@/components/ads/AdBanner';
 import AdFitUnit from '@/components/ads/AdFitUnit';
 import useIsMobileViewport from '@/components/ads/useIsMobileViewport';
+import { LEFT_RAIL_SLOT_ID } from '@/components/ads/AdLayout';
 import { ADFIT_ENABLED, ADFIT_UNITS } from '@/components/ads/adConfig';
 import GuideFaq from '@/components/common/GuideFaq';
 import PackageEfficiencyGuideBody from '@/components/guide/PackageEfficiencyGuideBody';
 import { faqData } from './faq-data';
 import styles from './package.module.css';
 
-// 페이지당 카드 6장 고정 — 1페이지는 아제나 카드 + 글 5개, 2페이지부터는 글 6개.
-// 커서 페이지네이션이라 페이지마다 limit 이 달라도 문제없다 (커서 = 직전 페이지 마지막 문서)
-const PAGE_SIZE_FIRST = 5;
-const PAGE_SIZE_REST = 6;
-const pageSizeOf = (n: number) => (n === 1 ? PAGE_SIZE_FIRST : PAGE_SIZE_REST);
+// 페이지당 글 6개 고정. 아제나 카드는 갤러리 칸을 차지하지 않는다 —
+// 드롭다운 옆 칩(아이콘 + 효율)으로 접어 두고, 누르면 팝업으로 카드를 띄운다.
+const PAGE_SIZE = 6;
 
 // 모바일 인-콘텐츠 광고를 끼워 넣을 자리 — "이 인덱스의 글 카드 뒤"에 하나씩.
-// 아제나 카드는 1페이지에만 나온다 (매 페이지 반복하면 페이지가 바뀐 게 안 보인다).
-// 1페이지: 아제나 → 광고(단위0) → 글 2개 → 광고(단위1) → 글 2개 → 광고(단위2) → 글 1개
-// 2페이지~: 글 1개 → 광고(단위0) → 글 2개 → 광고(단위1) → 글 2개 → 광고(단위2) → 글 1개
+// 글 1개 → 광고(단위0) → 글 2개 → 광고(단위1) → 글 2개 → 광고(단위2) → 글 1개
 // 공통 하단: 페이지 버튼 → 320×100 광고(구 단일 단위).
 // 동시 게재 최대 4개 — 애드핏 정책 상한("4개 초과 금지")에 맞춘 배치라 더 늘리면 안 된다.
 // 페이지를 넘기면 이전 광고 DOM 이 사라지고 새로 로드되므로 페이지 수만큼 노출이 늘어난다.
 // 단위가 모자란 자리는 AdBanner 가 스스로 렌더를 건너뛴다.
-const AD_AFTER_CARD_INDEX_PAGE1 = [1, 3];
-const AD_AFTER_CARD_INDEX_REST = [0, 2, 4];
+const AD_AFTER_CARD_INDEX = [0, 2, 4];
 
 // 페이지 번호 목록 — 많아지면 [1 … 4 5 6 … 20] 처럼 현재 페이지 주변만 남기고 접는다
 function buildPageList(current: number, total: number): (number | 'gap')[] {
@@ -207,7 +211,7 @@ export default function PackageGalleryPage() {
     try {
       const result = await getPackagePosts({
         sortBy: 'createdAt',
-        limit: pageSizeOf(n),
+        limit: PAGE_SIZE,
         startAfterDoc: cursor,
       });
       if (modulePageCache.size === 0) modulePageCacheAt = Date.now();
@@ -277,15 +281,47 @@ export default function PackageGalleryPage() {
   // 정렬·필터는 "지금 불러온 목록" 안에서만 도므로, 범위를 숨기지 않고 그대로 알려준다
   const isNarrowed = saleFilter !== 'all';
 
-  // 1페이지는 5개, 나머지는 6개씩이라 전체 페이지 수도 그 기준으로 나눈다
-  const totalPages = totalCount != null
-    ? totalCount <= PAGE_SIZE_FIRST
-      ? 1
-      : 1 + Math.ceil((totalCount - PAGE_SIZE_FIRST) / PAGE_SIZE_REST)
-    : null;
+  const totalPages = totalCount != null ? Math.max(1, Math.ceil(totalCount / PAGE_SIZE)) : null;
   // 커서 확보 범위: 방문한 페이지 + 그 다음 한 페이지까지만 이동 가능
   const maxLoaded = modulePageCache.size > 0 ? Math.max(...modulePageCache.keys()) : 0;
-  const hasNext = totalPages != null ? page < totalPages : posts.length === pageSizeOf(page);
+  const hasNext = totalPages != null ? page < totalPages : posts.length === PAGE_SIZE;
+
+  // 아제나 칩 효율 — 카드와 같은 계산식, 옵션은 기본값. 공통 환율이 비어 있으면 기본 환율.
+  const azenaBenefit = useMemo(() => {
+    const won = deferredCommonRate > 0 ? deferredCommonRate : AZENA_DEFAULT_WON_PER_100_GOLD;
+    const goldPerWon = 100 / won;
+    const { totalGold } = calcAzenaBreakdown(effectivePrices, goldPerWon, AZENA_DEFAULT_OPTIONS);
+    const cashGold = AZENA_PRICE_WON * goldPerWon;
+    return cashGold > 0 ? ((totalGold - cashGold) / cashGold) * 100 : 0;
+  }, [effectivePrices, deferredCommonRate]);
+
+  // 아제나 팝업 — ESC 로 닫고, 열린 동안 뒤 페이지 스크롤을 잠근다
+  const [azenaOpen, setAzenaOpen] = useState(false);
+
+  // 왼쪽 사이드 레일의 빈 프로모 자리(AdLayout 이 도킹 모드에서만 만든다). 있으면 세로 타일을
+  // 그 자리에 포털로 띄우고, 없으면(좁은 화면·모바일) 드롭다운 옆 아이콘으로 대신한다.
+  // 레일은 뷰포트 폭에 따라 생겼다 사라지므로 DOM 변화를 지켜본다.
+  const [railSlot, setRailSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const find = () => setRailSlot(document.getElementById(LEFT_RAIL_SLOT_ID));
+    find();
+    const mo = new MutationObserver(find);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, []);
+  const azenaBenefitText = `${azenaBenefit >= 0 ? '+' : ''}${azenaBenefit.toFixed(1)}%`;
+  const azenaBenefitClass = azenaBenefit >= 0 ? styles.azenaChipUp : styles.azenaChipDown;
+  useEffect(() => {
+    if (!azenaOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setAzenaOpen(false); };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [azenaOpen]);
 
   const renderSkeletons = () =>
     Array.from({ length: 6 }).map((_, i) => (
@@ -322,6 +358,38 @@ export default function PackageGalleryPage() {
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
+            {!railSlot && isMobileMd === false && (
+              <button
+                type="button"
+                className={`${styles.azenaChip} ${azenaOpen ? styles.azenaChipOpen : ''}`}
+                onClick={() => setAzenaOpen((v) => !v)}
+                aria-expanded={azenaOpen}
+                aria-label={`${AZENA_SHORT_TITLE} 효율 보기`}
+                title={AZENA_SHORT_TITLE}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/azena-icon.webp" alt="" width={44} height={44} className={styles.azenaChipIcon} />
+                <span className={azenaBenefitClass}>{azenaBenefitText}</span>
+              </button>
+            )}
+            {railSlot && createPortal(
+              <button
+                type="button"
+                className={`${styles.azenaTile} ${azenaOpen ? styles.azenaTileOpen : ''}`}
+                /* 포털이라 .pageWrapper 밖 — 효율 색 변수를 스스로 받으려고 basis 를 같이 단다 */
+                data-basis={livePrices ? 'live' : 'avg'}
+                onClick={() => setAzenaOpen((v) => !v)}
+                aria-expanded={azenaOpen}
+                aria-label={`${AZENA_SHORT_TITLE} 효율 보기`}
+                title={AZENA_SHORT_TITLE}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/azena-icon.webp" alt="" width={110} height={110} className={styles.azenaTileIcon} />
+                <span className={styles.azenaTileName}>{AZENA_SHORT_TITLE}</span>
+                <span className={`${styles.azenaTileRate} ${azenaBenefitClass}`}>{azenaBenefitText}</span>
+              </button>,
+              railSlot,
+            )}
             {isNarrowed && (
               <span className={styles.filterCount}>
                 {posts.length}개 중 {visiblePosts.length}개
@@ -447,27 +515,9 @@ export default function PackageGalleryPage() {
               </div>
             ) : (
               <div className={styles.galleryGrid}>
-                {/* 아제나의 축복 — 코드로 박아둔 공식 패키지. 1페이지 첫 칸에만 둔다
-                    (매 페이지 반복하면 페이지를 넘겨도 첫 칸이 그대로라 바뀐 게 안 보인다).
-                    바로 뒤가 첫 광고 자리(단위 0번) — 아제나가 빠지는 2페이지부터는
-                    글 카드 사이 광고가 단위 0번부터 쓴다. */}
-                {saleFilter !== 'ended' && page === 1 && (
-                  <>
-                    <AzenaBlessingGalleryCard
-                      latestPrices={effectivePrices}
-                      commonWonPer100Gold={deferredCommonRate}
-                    />
-                    <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.betweenCardsAd}`}>
-                      <AdBanner slot="8616653628" index={0} />
-                    </div>
-                  </>
-                )}
                 {visiblePosts.map((post, index) => {
-                  // 마지막 카드 뒤에는 붙이지 않는다. 1페이지는 아제나 뒤 광고가 단위 0번을
-                  // 먼저 쓰므로 여기 자리들은 1번부터, 2페이지부터는 0번부터 받는다.
-                  const adAfterIndex = page === 1 ? AD_AFTER_CARD_INDEX_PAGE1 : AD_AFTER_CARD_INDEX_REST;
-                  const adUnitOffset = page === 1 ? 1 : 0;
-                  const adSlotIndex = adAfterIndex.indexOf(index);
+                  // 마지막 카드 뒤에는 붙이지 않는다.
+                  const adSlotIndex = AD_AFTER_CARD_INDEX.indexOf(index);
                   const showAd = adSlotIndex !== -1 && index < visiblePosts.length - 1;
                   return (
                     <React.Fragment key={post.id}>
@@ -482,12 +532,47 @@ export default function PackageGalleryPage() {
                           같은 단위를 반복하면 애드핏이 첫 자리만 채우고 나머지는 안 나온다. */}
                       {showAd && (
                         <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.betweenCardsAd}`}>
-                          <AdBanner slot="8616653628" index={adSlotIndex + adUnitOffset} />
+                          <AdBanner slot="8616653628" index={adSlotIndex} />
                         </div>
                       )}
                     </React.Fragment>
                   );
                 })}
+              </div>
+            )}
+
+            {/* 모바일 — 사이드 레일이 없으니 오른쪽 아래(하단 앵커 광고 위)에 떠 있는 버튼으로 둔다.
+                팝업이 열린 동안엔 오버레이 뒤로 숨겨 겹치지 않게 한다 */}
+            {isMobileMd === true && !azenaOpen && (
+              <button
+                type="button"
+                className={styles.azenaFab}
+                onClick={() => setAzenaOpen(true)}
+                aria-label={`${AZENA_SHORT_TITLE} 효율 보기`}
+                title={AZENA_SHORT_TITLE}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/azena-icon.webp" alt="" width={68} height={68} className={styles.azenaFabIcon} />
+                <span className={`${styles.azenaFabRate} ${azenaBenefitClass}`}>{azenaBenefitText}</span>
+              </button>
+            )}
+
+            {/* 아제나 팝업 — 갤러리 카드를 그대로 화면 위에 띄운다. 바깥·ESC 로 닫고,
+                카드 본체를 누르면 카드 자체 로직으로 상세(/package/azena-blessing)로 간다 */}
+            {azenaOpen && (
+              <div
+                className={styles.azenaOverlay}
+                onClick={(e) => { if (e.target === e.currentTarget) setAzenaOpen(false); }}
+                role="dialog"
+                aria-modal="true"
+                aria-label={AZENA_SHORT_TITLE}
+              >
+                <div className={styles.azenaPopup}>
+                  <AzenaBlessingGalleryCard
+                    latestPrices={effectivePrices}
+                    commonWonPer100Gold={deferredCommonRate}
+                  />
+                </div>
               </div>
             )}
 

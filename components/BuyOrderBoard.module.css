@@ -171,26 +171,26 @@
   position: absolute;
   inset: 0;
   /* 아이콘·글자를 키운 만큼 칸 폭도 한 단계 넓혀야 이름이 덜 잘린다 */
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   gap: 14px 6px;
 }
 
 /* 바텀시트보다 칸이 넓으므로 데스크톱만 한 단계 크게 (모바일 시트는 그대로) */
 .tilesWrap .tileIcon {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
 }
 
 .tilesWrap .tileName {
-  font-size: 0.73rem;
+  font-size: 0.86rem;
 }
 
 .tilesWrap .tilePrice {
-  font-size: 0.85rem;
+  font-size: 1rem;
 }
 
 .tilesWrap .tileChg {
-  font-size: 0.74rem;
+  font-size: 0.86rem;
 }
 
 /* 상자 없이 아이콘과 숫자만. 칸을 그리는 대신 격자 간격으로 구분한다 */
@@ -233,7 +233,7 @@
 /* 축약명 — 칸 폭을 넘으면 자른다(전체 이름은 툴팁에) */
 .tileName {
   max-width: 100%;
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-primary);
   opacity: 0.7;
@@ -243,7 +243,7 @@
 }
 
 .tilePrice {
-  font-size: 0.76rem;
+  font-size: 0.92rem;
   font-weight: 800;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
@@ -251,7 +251,7 @@
 }
 
 .tileChg {
-  font-size: 0.68rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-primary);
   opacity: 0.55;
@@ -348,11 +348,16 @@
   text-overflow: ellipsis;
 }
 
-/* 수익률·수수료 뺀 차익 — 이 줄의 결론이라 다른 칸보다 굵다 */
+/* 수익률·수수료 뺀 차익 — 이 줄의 결론이라 다른 칸보다 굵다.
+   크기는 다른 값과 같게 둔다(크게 하면 좁은 칸에서 잘린다) — 굵기로만 구분 */
+.miniVal,
+.sumVal {
+  font-weight: 700;
+}
+
 .miniValBig,
-.sumVal,
 .sumValBig {
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .nameCell {
@@ -459,7 +464,7 @@
   }
 
   .headLabel {
-    font-size: 0.65rem;
+    font-size: 0.78rem;
   }
 
   .nameCell {
@@ -467,36 +472,50 @@
   }
 
   .icon {
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
   }
 
   .name {
-    font-size: 0.86rem;
+    font-size: 0.92rem;
   }
 
   .miniVal {
-    font-size: 0.82rem;
+    font-size: 1rem;
   }
 
   .miniValBig {
-    font-size: 1.04rem;
+    font-size: 1rem;
   }
 
   .sumName {
-    font-size: 0.86rem;
+    font-size: 1.02rem;
   }
 
   .sumCount {
-    font-size: 0.68rem;
+    font-size: 0.82rem;
   }
 
   .sumVal {
-    font-size: 0.86rem;
+    font-size: 1rem;
   }
 
   .sumValBig {
-    font-size: 1.02rem;
+    font-size: 1rem;
+  }
+
+  /* 버튼 열이 없을 때 — 마지막 22px 칸을 빼고 값 칸이 끝까지 간다 */
+  .listNoAction .headRow,
+  .listNoAction .sumRow,
+  .listNoAction .holdRow {
+    grid-template-columns:
+      minmax(72px, 1.14fr)
+      minmax(0, 0.62fr)
+      minmax(0, 0.8fr)
+      minmax(0, 1.15fr)
+      minmax(0, 1.05fr)
+      minmax(0, 1fr);
+    padding-right: 8px;
   }
 
   /* 편집 중에는 값 칸 자리를 입력이 통째로 쓴다 (종목명·버튼은 그대로) */
@@ -515,30 +534,43 @@
   .headRow,
   .sumRow,
   .holdRow {
+    /* 종목명 칸은 아이콘+짧은 이름이라 남던 폭을 금액 칸(특히 차익 열)으로 돌린다 */
     grid-template-columns:
-      minmax(0, 1.3fr)
-      minmax(0, 0.82fr)
-      minmax(0, 1.02fr)
-      minmax(0, 1.02fr)
-      minmax(0, 0.88fr)
-      22px;
+      minmax(0, 0.92fr)
+      minmax(0, 0.84fr)
+      minmax(0, 1.12fr)
+      minmax(0, 1.22fr)
+      minmax(0, 0.94fr)
+      20px;
     gap: 5px;
   }
 
+  .listNoAction .headRow,
+  .listNoAction .sumRow,
+  .listNoAction .holdRow {
+    grid-template-columns:
+      minmax(0, 0.92fr)
+      minmax(0, 0.84fr)
+      minmax(0, 1.12fr)
+      minmax(0, 1.22fr)
+      minmax(0, 0.94fr);
+    padding-right: 6px;
+  }
+
   .headRow {
-    padding: 0 2px 4px;
+    padding: 0 0 4px;
   }
 
   .sumRow {
-    padding: 6px 2px 7px;
+    padding: 6px 0 7px;
   }
 
   .holdRow {
-    padding: 7px 2px;
+    padding: 7px 0;
   }
 
   .headLabel {
-    font-size: 0.52rem;
+    font-size: 0.66rem;
   }
 
   .nameCell {
@@ -546,40 +578,40 @@
   }
 
   .icon {
-    width: 22px;
-    height: 22px;
+    width: 26px;
+    height: 26px;
   }
 
   .name {
-    font-size: 0.7rem;
+    font-size: 0.76rem;
   }
 
   .nameSub {
-    font-size: 0.55rem;
+    font-size: 0.7rem;
   }
 
   .miniVal,
   .sumVal {
-    font-size: 0.62rem;
+    font-size: 0.8rem;
   }
 
   .miniValBig,
   .sumValBig {
-    font-size: 0.78rem;
+    font-size: 0.8rem;
   }
 
   .sumName {
-    font-size: 0.72rem;
+    font-size: 0.88rem;
   }
 
   .sumCount {
-    font-size: 0.56rem;
+    font-size: 0.7rem;
   }
 
   /* 골드 아이콘 — 칸이 좁아 숫자를 밀어내므로 한 단계 줄인다 */
   .goldIcon {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     vertical-align: -1px;
     margin-right: 1px;
   }
@@ -726,11 +758,27 @@
   .card {
     border-color: rgba(59, 80, 181, 0.3);
     box-shadow: 0 0 0 1px rgba(59, 80, 181, 0.06), 0 2px 8px rgba(59, 80, 181, 0.12);
+    /* 폭이 없으니 카드 좌우 여백을 줄여 표를 끝까지 붙인다 */
+    padding-left: 8px;
+    padding-right: 4px;
+  }
+
+  /* 스크롤은 되지만 막대는 그리지 않는다 — 그 폭까지 표에 준다 */
+  .list {
+    padding-right: 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .list::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   .wrap {
     grid-template-columns: minmax(0, 1fr);
-    margin-top: 12px;
+    margin-top: 6px;
   }
 
   /* 목록 높이를 화면에 맞춰 줄인다 — 세로로 너무 길어지면 안 된다.
@@ -744,8 +792,9 @@
 
 /* 작은 폰 — 줄이 넘쳐 뭉개지지 않게 치수를 한 단계 줄인다 */
 @media (max-width: 520px) {
+  /* 좌우는 위 860px 블록 값을 유지한다 — 여기서 10px 로 되돌리면 표가 끝까지 못 간다 */
   .card {
-    padding: 10px 10px 12px;
+    padding: 10px 4px 12px 8px;
   }
 
   .input {

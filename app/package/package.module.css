@@ -3455,3 +3455,166 @@
     font-size: 0.82rem;
   }
 }
+
+/* ─── 아제나의 축복 칩 + 팝업 ───
+   드롭다운 옆 칩은 셀렉트와 같은 시각 언어(테두리 상자, radius 8px, 같은 높이).
+   아이콘 + 효율만 보이고, 누르면 갤러리 카드가 팝업으로 뜬다. */
+.azenaChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.azenaChip:hover .azenaChipIcon,
+.azenaChipOpen .azenaChipIcon {
+  transform: scale(1.06);
+}
+
+.azenaChip:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.azenaChipIcon {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
+  transition: transform 0.15s ease;
+}
+
+.azenaChipUp { color: var(--benefit-up); }
+.azenaChipDown { color: var(--benefit-down); }
+
+/* 왼쪽 레일 세로 타일 — 프로모 자리(160×약166)를 꽉 채운다. 배지 틀 없이 아이콘·이름·효율만. */
+.azenaTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  /* .pageWrapper 와 같은 효율 색 — 포털이라 상속을 못 받아 여기서 다시 정의한다 */
+  --benefit-up: #35815a;
+  --benefit-down: #a04a44;
+}
+
+.azenaTile[data-basis='live'] {
+  --benefit-up: #0ea86a;
+  --benefit-down: #d8453b;
+}
+
+.azenaTileIcon {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  display: block;
+  transition: transform 0.15s ease;
+}
+
+.azenaTile:hover .azenaTileIcon,
+.azenaTileOpen .azenaTileIcon {
+  transform: scale(1.05);
+}
+
+.azenaTile:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.azenaTileName {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.azenaTileRate {
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+/* 모바일 플로팅 버튼 — 오른쪽 아래, 하단 앵커 광고가 있으면 그 위로.
+   아이콘은 틀 없이 그림자만, 효율 숫자는 배경이 뭐든 읽히게 불투명 알약을 깔고 아이콘 아래에 살짝 겹친다. */
+.azenaFab {
+  position: fixed;
+  right: 10px;
+  bottom: calc(var(--mobile-anchor-h, 0px) + 14px);
+  z-index: 1040;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.azenaFabIcon {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.45));
+}
+
+.azenaFabRate {
+  margin-top: 2px;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: var(--card-bg);
+  border: 1.5px solid currentColor;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  font-size: 0.92rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.azenaOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.55);
+  overscroll-behavior: contain;
+}
+
+/* 카드 자체 폭 규칙(갤러리 칸 minmax 520px)을 그대로 따른다 — 좁은 화면은 카드가 알아서 접힌다 */
+.azenaPopup {
+  width: min(100%, 720px);
+  max-height: 100%;
+  overflow-y: auto;
+  border-radius: 12px;
+}
+
+@media (max-width: 767.98px) {
+  .azenaOverlay {
+    padding: 0.5rem;
+  }
+}

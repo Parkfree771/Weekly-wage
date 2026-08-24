@@ -84,8 +84,9 @@ export default function Home() {
             홈에서는 galleryBottomDesktop 을 여기서만 쓰므로 한 페이지 한 단위 원칙에 어긋나지 않는다. */}
         <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
 
-        {/* 모바일 인-콘텐츠 광고 — 앱 홈(통계 바 아래)과 동일 위치 */}
-        <div className="d-block d-lg-none my-3">
+        {/* 모바일 인-콘텐츠 광고 — 앱 홈(통계 바 아래)과 동일 위치.
+            아래 보드가 자기 위 여백(12px)을 갖고 있어 위쪽을 더 줘야 광고가 둘 사이 가운데 온다 */}
+        <div className="d-block d-lg-none" style={{ marginTop: 36, marginBottom: 4 }}>
           <AdBanner slot="8616653628" />
         </div>
 
