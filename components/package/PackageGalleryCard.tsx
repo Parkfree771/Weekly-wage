@@ -20,6 +20,7 @@ import {
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
 import TrendArrow from '@/components/TrendArrow';
+import ReactionLottie from '@/components/package/ReactionLottie';
 import styles from './PackageGalleryCard.module.css';
 
 type Props = {
@@ -147,6 +148,66 @@ function BenefitDelta({ d }: { d: number }) {
 
 // memo: 갤러리 페이지 최상위 state(공통 환율 타이핑 등)가 바뀔 때 prop 이 그대로인 카드까지
 // 전부 리렌더되는 것을 막는다 — post/latestPrices 는 참조가 안정적이라 memo 가 실제로 먹힌다
+// 반응(쏘쏘·오) — 예시 단계라 DB 없이 글 id 에서 정해지는 고정 숫자를 보여주고,
+// 누르면 이 화면 안에서만 +1/−1 된다(둘 중 하나만 선택). 마음에 들면 Firestore 로 옮긴다.
+// 순서 고정: 따봉 → 흠. title 은 마우스 올렸을 때 뜨는 말풍선
+const REACTIONS = [
+  { key: 'like', label: '따봉', tip: '대재학', path: '/lottie/react-like.json' },
+  { key: 'soso', label: '흠', tip: '흠', path: '/lottie/react-soso.json' },
+] as const;
+type ReactionKey = (typeof REACTIONS)[number]['key'];
+
+// 로티 색 통일 — "노란 이모지" 한 가지 톤. 선은 카드 글자색(라이트 남색 / 다크 밝은색), 채움은 전부 이모지 노랑.
+// 따봉(wired 267)·흠(wired 2340)·조회수(doodle 586) 세 파일의 원본색을 모두 같은 두 값으로 모은다.
+const EMOJI_YELLOW = '#ffc738';
+// 26px 로 줄이면 원본 선이 실처럼 얇아져 표정이 안 읽힌다 — 선만 1.6배 굵힌다
+const REACTION_STROKE = 1.6;
+const REACTION_RECOLOR: Record<string, string> = {
+  // 선
+  'rgb(18,19,49)': 'var(--gc-text)',        // wired 계열
+  'rgb(42,48,107)': 'var(--gc-text)',       // doodle 계열
+  'stroke:rgb(230,142,110)': 'var(--gc-text)', // doodle 살구 보조선
+  'fill:rgb(230,142,110)': EMOJI_YELLOW,       // doodle 살구 채움(볼·강조)
+  // 채움
+  'rgb(255,199,56)': EMOJI_YELLOW,          // 흠 얼굴
+  'rgb(44,165,141)': EMOJI_YELLOW,          // 따봉 엄지
+  'rgb(249,201,192)': EMOJI_YELLOW,         // 따봉 손
+  'rgb(255,0,0)': EMOJI_YELLOW,             // 조회수 그림 강조
+  'rgb(67,67,67)': 'var(--gc-text-secondary)', // 조회수 그림 진회색
+};
+
+const seedCount = (id: string, salt: number) => {
+  let h = salt;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return h % 40;
+};
+
+function ReactionBar({ postId }: { postId: string }) {
+  const [picked, setPicked] = useState<ReactionKey | null>(null);
+  return (
+    <div className={styles.reactions} data-nonav>
+      {REACTIONS.map((r, i) => {
+        const on = picked === r.key;
+        const count = seedCount(postId, i + 7) + (on ? 1 : 0);
+        return (
+          <button
+            key={r.key}
+            type="button"
+            className={`${styles.reactionBtn} ${on ? styles.reactionBtnOn : ''}`}
+            onClick={() => setPicked((p) => (p === r.key ? null : r.key))}
+            aria-pressed={on}
+            aria-label={`${r.label} ${count}`}
+            title={r.tip}
+          >
+            <ReactionLottie path={r.path} size={26} loop recolor={REACTION_RECOLOR} strokeScale={REACTION_STROKE} />
+            <span className={styles.reactionCount}>{count}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, basePrices }: Props) {
   const router = useRouter();
 
@@ -759,17 +820,20 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
         )}
 
         <div className={`${styles.leftMeta} ${showBonus ? styles.leftMetaTight : ''}`}>
+          {/* 왼쪽: 따봉 · 흠 · 조회수 (로티 세 개, 같은 노란 이모지 톤). 반응은 예시(DB 미연결), 카드 클릭 이동 제외 */}
           <div className={styles.metaLeft}>
-            <span className={styles.metaAuthor}>{post.authorName || '익명'}</span>
-            <span>
-              <svg viewBox="0 0 20 14" className={styles.metaViewIcon}>
-                <path d="M1 7C1 7 4.5 1.5 10 1.5C15.5 1.5 19 7 19 7C19 7 15.5 12.5 10 12.5C4.5 12.5 1 7 1 7Z" />
-                <circle cx="10" cy="7" r="2.5" />
-              </svg>
-              {post.viewCount || 0}
+            <ReactionBar postId={post.id} />
+            {/* 조회수 — 반응 버튼과 같은 알약 생김새(누를 수는 없다) */}
+            <span className={`${styles.reactionBtn} ${styles.metaViews}`} title="조회수">
+              <ReactionLottie path="/lottie/meta-views.json" size={26} recolor={REACTION_RECOLOR} strokeScale={REACTION_STROKE} />
+              <span className={styles.reactionCount}>{post.viewCount || 0}</span>
             </span>
           </div>
-          <span className={styles.metaDate}>{formatShortDate(post.createdAt)}</span>
+          {/* 오른쪽: 작성자 · 날짜 — 글자만 */}
+          <div className={styles.metaRight}>
+            <span className={styles.metaAuthor}>{post.authorName || '익명'}</span>
+            <span className={styles.metaDate}>{formatShortDate(post.createdAt)}</span>
+          </div>
         </div>
       </div>
 

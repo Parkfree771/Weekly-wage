@@ -528,17 +528,6 @@
   white-space: nowrap;
 }
 
-.metaViewIcon {
-  width: 12px;
-  height: 9px;
-  margin-right: 3px;
-  vertical-align: -1px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
 
 .metaLeft {
   display: flex;
@@ -701,6 +690,66 @@
   box-sizing: border-box;
   object-fit: contain;
   flex-shrink: 0;
+}
+
+/* 하단 메타 줄: [따봉 · 흠 · 조회수(로티)] ………… [작성자 · 날짜]. 로티 셋은 같은 노란 이모지 톤, 오른쪽은 글자만 */
+/* 조회수 알약 — .reactionBtn 과 같은 틀, 버튼이 아니라 호버 테두리만 없앤다 */
+.metaViews {
+  cursor: default;
+}
+
+.metaViews:hover {
+  border-color: transparent;
+}
+
+.metaRight {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.reactions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+/* 왼쪽 묶음 간격 — 따봉·흠·조회수 알약이 같은 간격으로 */
+.metaLeft {
+  gap: 0.3rem;
+}
+
+.reactionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.05rem 0.5rem 0.05rem 0.15rem;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background: var(--gc-input-bg);
+  color: var(--gc-text-secondary);
+  font-size: 0.86rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.reactionBtn:hover {
+  border-color: var(--gc-border);
+}
+
+.reactionBtnOn {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.reactionCount {
+  min-width: 1.2em;
+  text-align: left;
 }
 
 /* 결과 % 배지 — 매트 단색 + 양 모서리 컷(게임 스탯 칩 느낌). 그라데이션 없음 */
