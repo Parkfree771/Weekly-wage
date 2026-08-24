@@ -25,6 +25,8 @@ import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service
 import NicknameModal from '@/components/auth/NicknameModal';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import GemEvolutionCard from '@/components/GemEvolutionCard';
 import GoldSplitBar from '@/components/GoldSplitBar';
 import { faqData } from './faq-data';
@@ -1781,6 +1783,13 @@ export default function MyPage() {
         {/* 제목은 화면에서 빼고 문서 구조용으로만 남긴다 — 배너를 걷어낸 뒤 제목만 덩그러니 떠 있었다.
             /mypage 는 noindex 라(lib/site-config.ts NOINDEX_PATHS) 색인 측면 손실은 없다. */}
         <h1 className={styles.srOnly}>숙제 체크</h1>
+
+        {/* 데스크톱 728×90 — 네비 바로 아래에 콘텐츠가 붙어 있던 자리에 여유를 두고 넣는다.
+            모바일은 해당 없음(DesktopBannerAd 가 lg 미만에서 자체 숨김, 래퍼 여백도 CSS 에서 lg 이상만).
+            이 자리 높이만큼 사이드 레일 기준값(AdLayout /mypage adTop·appPromoTop)도 함께 내렸다. */}
+        <div className={styles.topAd}>
+          <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+        </div>
 
         {/* 데모 안내 */}
         {isDemo && (

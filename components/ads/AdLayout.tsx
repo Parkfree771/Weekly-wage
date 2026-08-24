@@ -46,7 +46,8 @@ function getPageConfig(pathname: string): PageConfig {
   // appPromoTop 110 = 도킹형에서 광고 상단을 기존 adTop(300)에 그대로 유지시키는 값.
   // 도킹되면 광고 세로 위치는 adTop 이 아니라 appPromoTop + 프로모높이(≈166) + PROMO_AD_GAP(24)
   // 로 정해지므로 300 - 190 = 110. (광고가 위아래로 움직이면 이 값만 조정하면 된다)
-  if (pathname === '/mypage') return { contentWidth: 1600, adTop: 300, appPromoTop: 110 };
+  // 2026-08-24: 상단 728×90 배너 자리(패딩 16+12 + 슬롯 마진 19×2 + 배너 106 ≈ 172px)만큼 둘 다 내림.
+  if (pathname === '/mypage') return { contentWidth: 1600, adTop: 472, appPromoTop: 282 };
   // adTop 230 = 세르카·익스트림과 동일 값으로 통일(175는 부족했음).
   if (pathname === '/cathedral') return { contentWidth: 1200, adTop: 230 };
   if (pathname === '/cerka') return { contentWidth: 1200, adTop: 230 };
