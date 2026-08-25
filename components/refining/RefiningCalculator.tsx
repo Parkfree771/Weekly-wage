@@ -2281,7 +2281,7 @@ export default function RefiningCalculator({
       if (eq.isWangap) {
         const rewind = wangapDelta(eq.grade, eq.origNormal, eq.currentLevel);
         const gain = wantsNormal ? wangapDelta(eq.grade, eq.currentLevel, targets!.normal!) : EMPTY_DELTA;
-        // 유물·고대 구간은 아직 표가 없다 (해방 재료 병목으로 실측 불가)
+        // 표에 없는 (등급, 단계) 조합이면 계산에서 뺀다
         if (!rewind || !gain) {
           hasExcluded = true;
           return;
@@ -2437,7 +2437,7 @@ export default function RefiningCalculator({
 
                             {combatPowerSummary.hasExcluded && (
                               <div className={styles.combatPowerNote}>
-                                전투력은 계승 후 장비의 일반 재련과 완갑 15강까지만 반영됩니다 (상급 재련 제외)
+                                전투력은 계승 후 장비와 완갑의 일반 재련만 반영됩니다 (상급 재련 제외)
                               </div>
                             )}
                           </>
