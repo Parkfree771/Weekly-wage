@@ -79,7 +79,8 @@ const ReactionLottie = forwardRef<ReactionLottieHandle, Props>(function Reaction
       ref={boxRef}
       className={className}
       aria-hidden="true"
-      style={{ width: size, height: size, display: 'inline-flex', flexShrink: 0 }}
+      // 크기는 변수로 둔다 — 부모 CSS(모바일 축소 등)가 --rl-size 로 덮어쓸 수 있다
+      style={{ '--rl-size': size + 'px', width: 'var(--rl-size)', height: 'var(--rl-size)', display: 'inline-flex', flexShrink: 0 } as React.CSSProperties}
     />
   );
 });

@@ -154,6 +154,12 @@
   border: 2px solid var(--color-primary);
 }
 
+/* 캐릭터 그림은 세로 초상 — 위쪽(얼굴)에 맞춰 자른다 */
+.profileImageChar {
+  object-fit: cover;
+  object-position: 50% 10%;
+}
+
 .profilePlaceholder {
   width: 32px;
   height: 32px;

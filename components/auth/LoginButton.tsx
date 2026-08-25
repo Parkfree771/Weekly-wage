@@ -168,7 +168,10 @@ export default function LoginButton({ variant = 'default' }: { variant?: 'defaul
     );
   }
 
-  // 로그인된 상태
+  // 로그인된 상태 — 대표 캐릭터(없으면 첫 캐릭터) 그림이 있으면 그걸, 아니면 구글 사진
+  const chars = userProfile?.characters ?? [];
+  const mainChar = chars.find((c) => c.name === userProfile?.mainCharacter) ?? chars[0];
+  const avatarSrc = mainChar?.imageUrl || user.photoURL;
   return (
     <Dropdown align="end">
       <Dropdown.Toggle
@@ -176,13 +179,15 @@ export default function LoginButton({ variant = 'default' }: { variant?: 'defaul
         id="user-dropdown"
         className={styles.userDropdown}
       >
-        {user.photoURL ? (
+        {/* 원정대를 등록했으면 대표 캐릭터 그림(로아 API), 아니면 구글 사진. 세로 초상이라 얼굴 쪽을 잘라 보인다 */}
+        {avatarSrc ? (
           <Image
-            src={user.photoURL}
+            src={avatarSrc}
             alt="프로필"
             width={32}
             height={32}
-            className={styles.profileImage}
+            unoptimized={avatarSrc !== user.photoURL}
+            className={avatarSrc !== user.photoURL ? `${styles.profileImage} ${styles.profileImageChar}` : styles.profileImage}
           />
         ) : (
           <div className={styles.profilePlaceholder}>

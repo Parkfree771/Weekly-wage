@@ -30,6 +30,7 @@ import {
   calcBoxRewardGold,
   getRewardData,
   getBaseRewardRows,
+  TICKET_TIER_LABELS as TIER_LABELS,
 } from '@/lib/hell-reward-calc';
 
 type ModeType = 'hell' | 'narak';
@@ -86,7 +87,6 @@ const DISPLAY_NAMES: Record<string, string> = {
   '돌파석': '위대한 운명의 돌파석',
 };
 
-const TIER_LABELS = ['0~9', '10~19', '20~29', '30~39', '40~49', '50~59', '60~69', '70~79', '80~89', '90~99', '100'];
 
 export default function HellRewardCalculator() {
   const [mode, setMode] = useState<ModeType>('hell');
@@ -94,7 +94,7 @@ export default function HellRewardCalculator() {
   const [expandedReward, setExpandedReward] = useState<string | null>(null);
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [priceLoading, setPriceLoading] = useState(true);
-  const [exchangeRate, setExchangeRate] = useState<number>(15278); // 100골드 = 18원 (100:18)
+  const [exchangeRate, setExchangeRate] = useState<number>(18333); // 100골드 = 15원 (100:15) — 275000/15
   const [excludeAbilityStone, setExcludeAbilityStone] = useState<boolean>(true);
 
   useEffect(() => {
@@ -343,7 +343,7 @@ export default function HellRewardCalculator() {
               className={styles.exchangeInput}
               value={exchangeRate || ''}
               onChange={(e) => setExchangeRate(Number(e.target.value) || 0)}
-              placeholder="15278"
+              placeholder="18333"
               min={0}
             />
           </div>
@@ -362,7 +362,7 @@ export default function HellRewardCalculator() {
                 const v = Number(e.target.value) || 0;
                 setExchangeRate(v > 0 ? Math.round(275000 / v) : 0);
               }}
-              placeholder="18"
+              placeholder="15"
               min={0}
             />
           </div>

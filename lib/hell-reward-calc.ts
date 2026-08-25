@@ -308,6 +308,35 @@ export function calcBoxRewardGold(
   return Math.floor(parseRewardValue(rawVal) * getUnitPrice(mapping.id, mapping.bundle, prices));
 }
 
+// 단계(0~10) → 층 라벨. 지옥 보상 페이지와 패키지 상세의 층 선택이 같은 표를 쓴다
+export const TICKET_TIER_LABELS = ['0~9', '10~19', '20~29', '30~39', '40~49', '50~59', '60~69', '70~79', '80~89', '90~99', '100'];
+
+// 패키지 티켓 평가에 쓰는 층(단계). 갤러리 카드·효율순 정렬은 항상 기본값이고,
+// 상세 페이지에서만 사용자가 바꿀 수 있다(localStorage 에 기억).
+// 큐브 티켓은 "6장 = 영웅 지옥 티켓 1장" 교환이라 영웅 층을 따른다.
+export type TicketTiers = { hellLegendary: number; hellHeroic: number; narakLegendary: number };
+export const DEFAULT_TICKET_TIERS: TicketTiers = { hellLegendary: 7, hellHeroic: 6, narakLegendary: 2 };
+
+/** 패키지 아이템 ID(fixed_…)가 지옥/나락/큐브 티켓이면 1장 가치, 아니면 null */
+export function calcTicketUnitByItemId(
+  itemId: string,
+  prices: Record<string, number>,
+  bcRate: number,
+  tiers: TicketTiers = DEFAULT_TICKET_TIERS,
+): number | null {
+  switch (itemId) {
+    case 'fixed_hell-legendary-ticket': return calcTicketAverage('hell', tiers.hellLegendary, prices, bcRate);
+    case 'fixed_hell-heroic-ticket': return calcTicketAverage('hell', tiers.hellHeroic, prices, bcRate);
+    case 'fixed_naraka-legendary-ticket': return calcTicketAverage('narak', tiers.narakLegendary, prices, bcRate);
+    case 'fixed_cube-ticket': return calcTicketAverage('hell', tiers.hellHeroic, prices, bcRate) / 6;
+    default: return null;
+  }
+}
+
+export const isTicketItemId = (itemId: string): boolean =>
+  itemId === 'fixed_hell-legendary-ticket' || itemId === 'fixed_hell-heroic-ticket' ||
+  itemId === 'fixed_naraka-legendary-ticket' || itemId === 'fixed_cube-ticket';
+
 // 티켓(열쇠) 평균 골드 가치
 export function calcTicketAverage(
   mode: 'hell' | 'narak',

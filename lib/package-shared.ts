@@ -1,4 +1,4 @@
-import { calcTicketAverage } from '@/lib/hell-reward-calc';
+import { calcTicketUnitByItemId, DEFAULT_TICKET_TIERS, type TicketTiers } from '@/lib/hell-reward-calc';
 import { isSaleEnded, toSaleDate } from '@/lib/package-sale';
 import { RIFT_TIERS } from '@/data/rewardTable';
 import type { PackagePost } from '@/types/package';
@@ -88,15 +88,14 @@ export function getProbBoxCandidateUnit(
   cand: ProbBoxCandidate,
   prices: Record<string, number>,
   bcRate: number = 0,
+  tiers: TicketTiers = DEFAULT_TICKET_TIERS,
 ): number {
   if (!cand.itemId) return cand.goldPerUnit || 0;
   if (cand.itemId.startsWith('fixed_')) {
     const hasPrices = Object.keys(prices).length > 0;
     if (hasPrices && bcRate > 0) {
-      if (cand.itemId === 'fixed_hell-legendary-ticket') return calcTicketAverage('hell', 7, prices, bcRate);
-      if (cand.itemId === 'fixed_hell-heroic-ticket') return calcTicketAverage('hell', 6, prices, bcRate);
-      if (cand.itemId === 'fixed_naraka-legendary-ticket') return calcTicketAverage('narak', 2, prices, bcRate);
-      if (cand.itemId === 'fixed_cube-ticket') return calcTicketAverage('hell', 6, prices, bcRate) / 6;
+      const ticket = calcTicketUnitByItemId(cand.itemId, prices, bcRate, tiers);
+      if (ticket !== null) return ticket;
     }
     if (hasPrices) {
       if (cand.itemId === 'fixed_relic-core') return getRelicCoreSelectPrice(prices);
@@ -112,10 +111,11 @@ export function getProbBoxExpectedGold(
   candidates: ProbBoxCandidate[] | undefined,
   prices: Record<string, number>,
   bcRate: number = 0,
+  tiers: TicketTiers = DEFAULT_TICKET_TIERS,
 ): number {
   if (!candidates || candidates.length === 0) return 0;
   return candidates.reduce((sum, c) => {
-    return sum + getProbBoxCandidateUnit(c, prices, bcRate) * c.quantity * ((c.probability || 0) / 100);
+    return sum + getProbBoxCandidateUnit(c, prices, bcRate, tiers) * c.quantity * ((c.probability || 0) / 100);
   }, 0);
 }
 
@@ -1016,14 +1016,8 @@ export function getUnitPrice(
       return added.goldAmount || 0;
     case 'fixed': {
       const bcRate = officialGoldRate || 8500;
-      if (template.id === 'hell-legendary-ticket')
-        return calcTicketAverage('hell', 7, prices, bcRate);
-      if (template.id === 'hell-heroic-ticket')
-        return calcTicketAverage('hell', 6, prices, bcRate);
-      if (template.id === 'naraka-legendary-ticket')
-        return calcTicketAverage('narak', 2, prices, bcRate);
-      if (template.id === 'cube-ticket')
-        return calcTicketAverage('hell', 6, prices, bcRate) / 6; // 큐브 티켓 6장 = 영웅 지옥 티켓 1장 교환
+      const ticket = calcTicketUnitByItemId('fixed_' + template.id, prices, bcRate);
+      if (ticket !== null) return ticket;
       if (template.id === 'relic-core')
         return getRelicCoreSelectPrice(prices);
       if (PROCESSED_GEM_BOX_GEM[`fixed_${template.id}`])
@@ -1057,6 +1051,7 @@ export function calculateGachaItemGold(
   prices: Record<string, number>,
   goldPerWon: number,
   bcRate: number,
+  tiers: TicketTiers = DEFAULT_TICKET_TIERS,
 ): number {
   // 크리스탈 기반 아이템
   if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
@@ -1073,7 +1068,7 @@ export function calculateGachaItemGold(
   }
   // 확률 상자 → 현재 시세 기준 기댓값
   if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate) * item.quantity;
+    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, tiers) * item.quantity;
   }
   // 묶음 주머니 → 내부 아이템 시세 합산 × 주머니 수량
   if (item.bundleItems && item.bundleItems.length > 0) {
@@ -1099,14 +1094,8 @@ export function calculateGachaItemGold(
     if (PROCESSED_GEM_BOX_GEM[item.itemId] && Object.keys(prices).length > 0)
       return getProcessedGemBoxUnitPrice(item.itemId, prices) * item.quantity;
     if (bcRate > 0) {
-      if (item.itemId === 'fixed_hell-legendary-ticket')
-        return calcTicketAverage('hell', 7, prices, bcRate) * item.quantity;
-      if (item.itemId === 'fixed_hell-heroic-ticket')
-        return calcTicketAverage('hell', 6, prices, bcRate) * item.quantity;
-      if (item.itemId === 'fixed_naraka-legendary-ticket')
-        return calcTicketAverage('narak', 2, prices, bcRate) * item.quantity;
-      if (item.itemId === 'fixed_cube-ticket')
-        return (calcTicketAverage('hell', 6, prices, bcRate) / 6) * item.quantity;
+      const ticket = calcTicketUnitByItemId(item.itemId, prices, bcRate, tiers);
+      if (ticket !== null) return ticket * item.quantity;
     }
     return item.goldOverride * item.quantity;
   }
@@ -1184,14 +1173,8 @@ export function calculatePostEfficiency(
     if (PROCESSED_GEM_BOX_GEM[itemId] && hasPrices)
       return getProcessedGemBoxUnitPrice(itemId, latestPrices);
     if (bcRate > 0 && hasPrices) {
-      if (itemId === 'fixed_hell-legendary-ticket')
-        return calcTicketAverage('hell', 7, latestPrices, bcRate);
-      if (itemId === 'fixed_hell-heroic-ticket')
-        return calcTicketAverage('hell', 6, latestPrices, bcRate);
-      if (itemId === 'fixed_naraka-legendary-ticket')
-        return calcTicketAverage('narak', 2, latestPrices, bcRate);
-      if (itemId === 'fixed_cube-ticket')
-        return calcTicketAverage('hell', 6, latestPrices, bcRate) / 6;
+      const ticket = calcTicketUnitByItemId(itemId, latestPrices, bcRate);
+      if (ticket !== null) return ticket;
     }
     return fallback;
   };

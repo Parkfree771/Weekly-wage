@@ -1,0 +1,50 @@
+/* 따봉·흠 알약 — 갤러리 카드 안에서는 --gc-* 변수, 상세(카드 밖)에서는 전역 변수로 떨어진다 */
+.reactions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.reactionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.05rem 0.5rem 0.05rem 0.15rem;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background: var(--gc-input-bg, var(--input-bg));
+  color: var(--gc-text-secondary, var(--text-secondary));
+  font-size: 0.86rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.reactionBtn:hover {
+  border-color: var(--gc-border, var(--border-color));
+}
+
+.reactionBtnOn {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.reactionLabel {
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.reactionCount {
+  min-width: 1.2em;
+  text-align: left;
+}
+
+/* 모바일: 로티 살짝 축소 (ReactionLottie 가 --rl-size 로 크기를 받는다) */
+@media (max-width: 768px) {
+  .reactionBtn > span[aria-hidden] {
+    --rl-size: 20px;
+  }
+}

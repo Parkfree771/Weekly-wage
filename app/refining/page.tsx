@@ -271,7 +271,7 @@ export default function RefiningPage() {
                   fontWeight: 700,
                   color: 'var(--text-primary)',
                   marginTop: 0,
-                  marginBottom: '0.5rem'
+                  marginBottom: '0.85rem'
                 }}
               >
                 재련 시뮬레이터
@@ -282,7 +282,8 @@ export default function RefiningPage() {
             <div style={{ maxWidth: '2000px', margin: '0 auto' }}>
               <Form onSubmit={handleSearch} className="mb-2">
                 <div className={searchStyles.searchWrapper}>
-                  <div className={searchStyles.searchInner}>
+                  {/* 제목 가운데와 눈으로 맞춰 보면 검색창이 살짝 왼쪽으로 보여 6px 만 오른쪽으로 민다 */}
+                  <div className={searchStyles.searchInner} style={{ position: 'relative', left: 6 }}>
                     <div className={searchStyles.searchInputGroup}>
                       <div style={{ position: 'relative', flex: 1 }}>
                         <Form.Control

@@ -1322,3 +1322,13 @@
     left: -4px;
   }
 }
+
+/* 모바일: 반응 로티 살짝 축소, 작성자·날짜는 공간이 없어 두 줄로 */
+@media (max-width: 768px) {
+  .metaRight {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.05rem;
+    line-height: 1.2;
+  }
+}

@@ -5,158 +5,110 @@
   border-top: 1px solid var(--border-color);
 }
 
-.commentHeader {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 1.25rem;
+/* 머리 띠 — 왼쪽 "댓글 N", 오른쪽 따봉·흠. 작성 폼과 같은 카드 톤의 한 상자로 묶는다 */
+.headerRow {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.55rem 0.9rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.commentHeader {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  line-height: 1;
 }
 
 .commentCount {
   color: var(--color-accent);
 }
 
-/* ─── 작성 폼 ─── */
-.commentForm {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
+.headerReactions {
+  gap: 0.4rem;
 }
 
-.commentTextarea {
-  width: 100%;
-  min-height: 80px;
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0.75rem;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-family: inherit;
-  resize: vertical;
-}
-
-.commentTextarea:focus {
-  border-color: var(--color-accent);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
-}
-
-.commentTextarea::placeholder {
-  color: var(--text-muted);
-}
-
-.commentFormActions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.75rem;
-}
-
-.charCount {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.charCountOver {
-  color: var(--color-danger);
-}
-
-.submitBtn {
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 0.5rem 1.25rem;
-  font-size: 0.88rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.submitBtn:hover:not(:disabled) {
-  background: var(--color-accent-dark);
-}
-
-.submitBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ─── 로그인 안내 ─── */
-.loginPrompt {
-  background: rgba(249, 115, 22, 0.06);
-  border: 1px solid rgba(249, 115, 22, 0.2);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-/* ─── 댓글 목록 ─── */
-.commentList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-/* ─── 댓글 카드 ─── */
-.commentCard {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 1rem;
-}
-
-.cardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.6rem;
-}
-
-.authorSection {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
+/* ─── 아바타 — 닉네임 첫 글자, 닉네임으로 정한 색상각(--avatar-hue) ─── */
 .avatar {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  object-fit: cover;
-}
-
-.avatarDefault {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: rgba(249, 115, 22, 0.12);
+  background: hsl(var(--avatar-hue, 24) 70% 92%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-accent);
-  font-weight: 700;
+  color: hsl(var(--avatar-hue, 24) 60% 38%);
+  font-weight: 800;
   font-size: 0.9rem;
   flex-shrink: 0;
+  user-select: none;
 }
 
-.authorInfo {
+.avatarSmall {
+  width: 26px;
+  height: 26px;
+  font-size: 0.74rem;
+}
+
+/* 대표 캐릭터 그림 — 세로 초상이라 얼굴(위쪽)에 맞춰 자른다 */
+.avatarImg {
+  object-fit: cover;
+  object-position: 50% 10%;
+  background: var(--input-bg);
+}
+
+:global([data-theme="dark"]) .avatar {
+  background: hsl(var(--avatar-hue, 24) 40% 24%);
+  color: hsl(var(--avatar-hue, 24) 80% 78%);
+}
+
+/* ─── 목록 / 스레드 ─── */
+.commentList {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+}
+
+/* 스레드 하나 = 부모 + 답글 묶음. 사이에 얇은 구분선 */
+.thread {
+  padding: 0.9rem 0.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.thread:last-child {
+  border-bottom: none;
+}
+
+/* 댓글 한 개: 아바타 | 본문 열 */
+.comment {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+
+.commentBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin-bottom: 0.2rem;
 }
 
 .authorName {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.86rem;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -166,193 +118,206 @@
 }
 
 .edited {
-  color: var(--text-muted);
   font-size: 0.68rem;
-  margin-left: 0.3rem;
+  color: var(--text-muted);
 }
 
-/* ─── 수정/삭제 버튼 ─── */
-.actions {
-  display: flex;
-  gap: 0.35rem;
-  flex-shrink: 0;
-}
-
-.editBtn,
-.deleteBtn {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 0.2rem 0.55rem;
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.editBtn:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
-.deleteBtn:hover {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-}
-
-/* ─── 댓글 내용 ─── */
 .content {
+  margin: 0;
   font-size: 0.9rem;
   color: var(--text-primary);
-  line-height: 1.6;
+  line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-/* ─── 수정 모드 ─── */
-.editTextarea {
-  width: 100%;
-  min-height: 60px;
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0.75rem;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-family: inherit;
-  resize: vertical;
+/* 액션 줄 — 밑줄 없는 글자 버튼들. 평소엔 흐리고 스레드에 마우스를 올리면 진해진다 */
+.actionRow {
+  display: flex;
+  gap: 0.9rem;
+  margin-top: 0.3rem;
 }
 
+.textBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.textBtn:hover {
+  color: var(--color-accent);
+}
+
+.textBtnDanger:hover {
+  color: var(--color-danger);
+}
+
+/* 답글 묶음 — 부모 아바타 가운데에서 내려오는 세로 줄 아래에 들여쓴다 */
+.replies {
+  margin-top: 0.6rem;
+  margin-left: 16px;              /* 부모 아바타(34px) 가운데 */
+  padding-left: calc(0.7rem + 17px); /* 줄 ~ 답글 아바타 사이 */
+  border-left: 2px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.commentReply .content {
+  font-size: 0.86rem;
+}
+
+.moreBtn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.moreBtn:hover {
+  text-decoration: underline;
+}
+
+/* ─── 입력 (댓글 폼 · 답글 폼 · 수정) ─── */
+.commentForm {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-top: 1rem;
+}
+
+.replyForm {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  margin-top: 0.2rem;
+}
+
+.replyFormBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.commentTextarea,
+.replyTextarea,
+.editTextarea {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 2.6rem;
+}
+
+.replyTextarea,
+.editTextarea {
+  font-size: 0.86rem;
+}
+
+.commentTextarea:focus,
+.replyTextarea:focus,
 .editTextarea:focus {
   border-color: var(--color-accent);
   outline: none;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
-.editActions {
-  display: flex;
-  gap: 0.4rem;
-  justify-content: flex-end;
-  margin-top: 0.5rem;
-}
-
-.cancelBtn {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 0.3rem 0.8rem;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.cancelBtn:hover {
-  border-color: var(--text-primary);
-  color: var(--text-primary);
-}
-
-.saveBtn {
-  background: var(--color-accent);
-  border: 1px solid var(--color-accent);
-  border-radius: 10px;
-  padding: 0.3rem 0.8rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #fff;
-  cursor: pointer;
-}
-
-.saveBtn:hover:not(:disabled) {
-  background: var(--color-accent-dark);
-}
-
-.saveBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ─── 답글 ─── */
-.replyToolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.5rem;
-}
-
-.replyBtn {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 0.2rem 0.6rem;
-  font-size: 0.74rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.replyBtn:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
-.replyForm {
-  margin-top: 0.6rem;
-  padding: 0.75rem;
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-}
-
-.replyTextarea {
-  width: 100%;
-  min-height: 60px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0.6rem;
-  color: var(--text-primary);
-  font-size: 0.88rem;
-  font-family: inherit;
-  resize: vertical;
-}
-
-.replyTextarea:focus {
-  border-color: var(--color-accent);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
-}
-
+.commentTextarea::placeholder,
 .replyTextarea::placeholder {
   color: var(--text-muted);
 }
 
-.replyList {
-  margin-top: 0.75rem;
-  padding-left: 1.25rem;
-  border-left: 2px solid var(--border-color);
+.formActions,
+.editActions {
   display: flex;
-  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
   gap: 0.5rem;
+  margin-top: 0.45rem;
 }
 
-.replyCard {
-  background: var(--input-bg);
+.editBox {
+  margin-top: 0.2rem;
+}
+
+.charCount {
+  margin-right: auto;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.charCountOver {
+  color: var(--color-danger);
+}
+
+.primaryBtn {
+  background: var(--color-accent);
+  color: #fff;
+  border: 1px solid var(--color-accent);
+  border-radius: 10px;
+  padding: 0.4rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  background: var(--color-accent-dark);
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ghostBtn {
+  background: transparent;
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  padding: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
 }
 
-.replyCard .authorName {
-  font-size: 0.82rem;
+.ghostBtn:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
 }
 
-.replyCard .content {
-  font-size: 0.86rem;
-}
-
-/* ─── 빈/로딩 상태 ─── */
-.empty {
-  text-align: center;
-  padding: 2.5rem 1rem;
-  color: var(--text-muted);
-  font-size: 0.9rem;
+/* ─── 로그인 안내 ─── */
+.loginPrompt {
+  background: rgba(249, 115, 22, 0.06);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
 }
 
 .loading {
@@ -368,47 +333,46 @@
     padding-top: 1.25rem;
   }
 
-  .commentHeader {
-    font-size: 1rem;
-  }
-
-  .commentForm {
-    padding: 0.75rem;
-  }
-
-  .commentTextarea {
-    min-height: 70px;
-    font-size: 0.85rem;
-  }
-
-  .avatar,
-  .avatarDefault {
+  .avatar {
     width: 30px;
     height: 30px;
-    font-size: 0.78rem;
-  }
-
-  .commentCard {
-    padding: 0.75rem;
-  }
-
-  .authorName {
     font-size: 0.8rem;
   }
 
+  .avatarSmall {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+
+  .thread {
+    padding: 0.75rem 0;
+  }
+
+  .comment {
+    gap: 0.55rem;
+  }
+
   .content {
+    font-size: 0.86rem;
+  }
+
+  .commentReply .content {
+    font-size: 0.82rem;
+  }
+
+  /* 모바일: 아바타 30px → 줄 위치와 들여쓰기 축소 */
+  .replies {
+    margin-left: 14px;
+    padding-left: calc(0.55rem + 12px);
+  }
+
+  .commentForm {
+    padding: 0.7rem 0.75rem;
+  }
+
+  .commentTextarea,
+  .replyTextarea {
     font-size: 0.85rem;
-  }
-
-  .replyList {
-    padding-left: 0.75rem;
-  }
-
-  .replyCard {
-    padding: 0.6rem;
-  }
-
-  .replyForm {
-    padding: 0.6rem;
   }
 }

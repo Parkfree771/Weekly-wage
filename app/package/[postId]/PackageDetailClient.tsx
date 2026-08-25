@@ -11,7 +11,14 @@ import { isAdmin } from '@/lib/admin';
 import { isSaleEnded, formatSaleEndShort, formatSalePeriodDateOnly } from '@/lib/package-sale';
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import type { PackagePost, PackageType, PackageItem } from '@/types/package';
-import { calcTicketAverage } from '@/lib/hell-reward-calc';
+import {
+  calcTicketAverage,
+  calcTicketUnitByItemId,
+  isTicketItemId,
+  DEFAULT_TICKET_TIERS,
+  TICKET_TIER_LABELS,
+  type TicketTiers,
+} from '@/lib/hell-reward-calc';
 import {
   formatNumber,
   CRYSTAL_PER_UNIT_FALLBACK,
@@ -38,8 +45,10 @@ import {
 } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
 import SideSquareAd from '@/components/package/SideSquareAd';
+import TicketTierPicker from '@/components/package/TicketTierPicker';
 import dynamic from 'next/dynamic';
 import styles from '../package.module.css';
+import type { PackageComment } from '@/types/package';
 
 // 댓글은 firestore 를 정적으로 물고 있다 — dynamic 으로 별도 청크로 밀어내
 // 상세 첫 로드 JS 에서 firestore 를 완전히 뺀다 (댓글 자체도 접힌 하단 콘텐츠)
@@ -160,6 +169,30 @@ function BenefitBadge({ v }: { v: number }) {
   );
 }
 
+// 티켓 층 선택 — 글에 해당 티켓이 있을 때만 그 항목을 그린다. 큐브 티켓은 영웅 층을 따른다.
+const TICKET_TIERS_LS_KEY = 'pkgTicketTiers';
+const TICKET_TIER_KEY: Record<string, keyof TicketTiers> = {
+  'fixed_hell-legendary-ticket': 'hellLegendary',
+  'fixed_hell-heroic-ticket': 'hellHeroic',
+  'fixed_cube-ticket': 'hellHeroic',
+  'fixed_naraka-legendary-ticket': 'narakLegendary',
+};
+const isValidTier = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0 && (v as number) < TICKET_TIER_LABELS.length;
+function readTicketTiers(): TicketTiers {
+  try {
+    const raw = localStorage.getItem(TICKET_TIERS_LS_KEY);
+    if (!raw) return DEFAULT_TICKET_TIERS;
+    const o = JSON.parse(raw);
+    return {
+      hellLegendary: isValidTier(o?.hellLegendary) ? o.hellLegendary : DEFAULT_TICKET_TIERS.hellLegendary,
+      hellHeroic: isValidTier(o?.hellHeroic) ? o.hellHeroic : DEFAULT_TICKET_TIERS.hellHeroic,
+      narakLegendary: isValidTier(o?.narakLegendary) ? o.narakLegendary : DEFAULT_TICKET_TIERS.narakLegendary,
+    };
+  } catch {
+    return DEFAULT_TICKET_TIERS;
+  }
+}
+
 /** 보너스/일반 구성품 공용 골드 가치 계산 (choiceBox·crystal·goldOverride·시세 아이템 지원) */
 function getPackageItemGold(
   item: PackageItem,
@@ -168,22 +201,17 @@ function getPackageItemGold(
   bcRate: number,
   selectedChoiceItemId?: string,
   selectedChoiceBoxIds?: string[],
+  tiers: TicketTiers = DEFAULT_TICKET_TIERS,
 ): number {
   if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
     const selected = selectedChoiceBoxIds ?? item.choiceBoxSelectedIds;
     return getChoiceBoxGold(item.choiceBoxCandidates, selected, prices) * item.quantity;
   }
   if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate) * item.quantity;
+    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, tiers) * item.quantity;
   }
-  if (item.itemId === 'fixed_hell-legendary-ticket')
-    return (bcRate > 0 ? calcTicketAverage('hell', 7, prices, bcRate) : (item.goldOverride || 0)) * item.quantity;
-  if (item.itemId === 'fixed_hell-heroic-ticket')
-    return (bcRate > 0 ? calcTicketAverage('hell', 6, prices, bcRate) : (item.goldOverride || 0)) * item.quantity;
-  if (item.itemId === 'fixed_naraka-legendary-ticket')
-    return (bcRate > 0 ? calcTicketAverage('narak', 2, prices, bcRate) : (item.goldOverride || 0)) * item.quantity;
-  if (item.itemId === 'fixed_cube-ticket')
-    return (bcRate > 0 ? calcTicketAverage('hell', 6, prices, bcRate) / 6 : (item.goldOverride || 0)) * item.quantity;
+  if (isTicketItemId(item.itemId))
+    return (bcRate > 0 ? (calcTicketUnitByItemId(item.itemId, prices, bcRate, tiers) ?? 0) : (item.goldOverride || 0)) * item.quantity;
   if (PROCESSED_GEM_BOX_GEM[item.itemId])
     return (Object.keys(prices).length > 0 ? getProcessedGemBoxUnitPrice(item.itemId, prices) : (item.goldOverride || 0)) * item.quantity;
   if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
@@ -225,9 +253,11 @@ function getEffectiveQty(item: PackageItem, selectedChoiceItemId: string | undef
 type Props = {
   /** 서버에서 이미 읽어온 게시물. 클라이언트에서 같은 문서를 다시 읽지 않는다. */
   initialPost: PackagePost | null;
+  /** 서버(ISR)가 같이 읽은 댓글. null 이면 CommentSection 이 직접 읽는다 */
+  initialComments?: PackageComment[] | null;
 };
 
-export default function PackageDetailPage({ initialPost }: Props) {
+export default function PackageDetailPage({ initialPost, initialComments = null }: Props) {
   const params = useParams();
   const router = useRouter();
   const postId = params.postId as string;
@@ -247,6 +277,16 @@ export default function PackageDetailPage({ initialPost }: Props) {
   // 블크 시세(100블크당 골드) — 환율과 양방향 동기화 (100블크 = 2750원 고정이라 한쪽이 정해지면 다른 쪽도 정해진다)
   const [detailBcText, setDetailBcText] = useState<string>('');
   const detailWonPer100Gold = parseFloat(detailRateText) || 0;
+  // 티켓 층 — 기본은 갤러리와 같은 값. 서버 렌더와 첫 화면을 맞추려고 저장값은 마운트 뒤에 읽는다
+  const [ticketTiers, setTicketTiers] = useState<TicketTiers>(DEFAULT_TICKET_TIERS);
+  useEffect(() => { setTicketTiers(readTicketTiers()); }, []);
+  const updateTicketTier = (key: keyof TicketTiers, tier: number) => {
+    setTicketTiers((prev) => {
+      const next = { ...prev, [key]: tier };
+      try { localStorage.setItem(TICKET_TIERS_LS_KEY, JSON.stringify(next)); } catch { /* 사생활 모드 */ }
+      return next;
+    });
+  };
 
   const handleRateInput = (v: string) => {
     setDetailRateText(v);
@@ -425,7 +465,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
       }
       // 확률 상자: 현재 시세 기준 기댓값
       if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        return { idx, value: getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity };
+        return { idx, value: getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, ticketTiers) * item.quantity };
       }
       if (item.goldOverride != null) {
         // 티켓(지옥 보상 평균)·가공 젬·크리스탈 전부 표시 소계와 동일한 동적 단가로 비교
@@ -458,7 +498,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
     if (Object.keys(latestPrices).length === 0) return;
     const withValue = post.bonusItems.map((item, idx) => ({
       idx,
-      value: getPackageItemGold(item, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections[idx], bonusChoiceBoxSelections[idx]),
+      value: getPackageItemGold(item, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections[idx], bonusChoiceBoxSelections[idx], ticketTiers),
     }));
     withValue.sort((a, b) => b.value - a.value);
     const newChecked: Record<number, boolean> = {};
@@ -809,27 +849,46 @@ export default function PackageDetailPage({ initialPost }: Props) {
   // 환율 기반 bcRate (100 블크 = 2750 로크)
   const bcRate = detailGoldPerWon > 0 ? detailGoldPerWon * 2750 : 0;
 
+  // 층별 티켓 1장 가치 — 셀렉트 항목마다 가격을 같이 보여준다. 11층 × 3종, 시세·환율이 바뀔 때만 다시 센다
+  const ticketTierPrices = useMemo(() => {
+    const table = (mode: 'hell' | 'narak') =>
+      TICKET_TIER_LABELS.map((_, i) => (bcRate > 0 ? calcTicketAverage(mode, i, latestPrices, bcRate) : 0));
+    const hell = table('hell');
+    return { hellLegendary: hell, hellHeroic: hell, narakLegendary: table('narak') } as Record<keyof TicketTiers, number[]>;
+  }, [latestPrices, bcRate]);
+
+  // 티켓 아이템 카드 안 층 선택 — 티켓이 아니면 null. 큐브 티켓은 영웅 지옥 층을 같이 쓴다(1장 = 영웅 티켓 1/6)
+  const renderTicketTierSelect = (itemId: string, itemName: string) => {
+    const key = TICKET_TIER_KEY[itemId];
+    if (!key) return null;
+    const div = itemId === 'fixed_cube-ticket' ? 6 : 1;
+    return (
+      <TicketTierPicker
+        className={styles.itemCardTier}
+        labels={TICKET_TIER_LABELS}
+        prices={pricesReady ? ticketTierPrices[key].map((p) => p / div) : []}
+        value={ticketTiers[key]}
+        onChange={(t) => updateTicketTier(key, t)}
+        name={itemName}
+      />
+    );
+  };
+
   // 가챠 아이템별 골드 — 가챠 애니메이션이 35ms 마다 setState 를 걸어 렌더가 잦으므로
   // 시세·환율이 그대로면 재계산하지 않게 memo 로 고정한다
   const gachaItemGoldsMemo = useMemo(() => {
     if (!post || post.packageType !== '가챠') return [] as number[];
     const rate = detailGoldPerWon > 0 ? detailGoldPerWon * 2750 : 0;
     return post.items.map((item) =>
-      calculateGachaItemGold(item, latestPrices, detailGoldPerWon, rate),
+      calculateGachaItemGold(item, latestPrices, detailGoldPerWon, rate, ticketTiers),
     );
-  }, [post, latestPrices, detailGoldPerWon]);
+  }, [post, latestPrices, detailGoldPerWon, ticketTiers]);
 
   // goldOverride 아이템의 실제 단가 (환율 변경 시 재계산)
   const getCrystalAdjustedUnit = (item: PackageItem): number => {
-    // 티켓: 환율 기반 동적 계산
-    if (item.itemId === 'fixed_hell-legendary-ticket')
-      return bcRate > 0 ? calcTicketAverage('hell', 7, latestPrices, bcRate) : (item.goldOverride || 0);
-    if (item.itemId === 'fixed_hell-heroic-ticket')
-      return bcRate > 0 ? calcTicketAverage('hell', 6, latestPrices, bcRate) : (item.goldOverride || 0);
-    if (item.itemId === 'fixed_naraka-legendary-ticket')
-      return bcRate > 0 ? calcTicketAverage('narak', 2, latestPrices, bcRate) : (item.goldOverride || 0);
-    if (item.itemId === 'fixed_cube-ticket')
-      return bcRate > 0 ? calcTicketAverage('hell', 6, latestPrices, bcRate) / 6 : (item.goldOverride || 0);
+    // 티켓: 환율 기반 동적 계산 (층은 상세 페이지 선택값)
+    if (isTicketItemId(item.itemId))
+      return bcRate > 0 ? (calcTicketUnitByItemId(item.itemId, latestPrices, bcRate, ticketTiers) ?? 0) : (item.goldOverride || 0);
     // 가공 완료 젬 상자: 연결 젬 실시간 시세 + 8,100골드
     if (PROCESSED_GEM_BOX_GEM[item.itemId])
       return Object.keys(latestPrices).length > 0
@@ -863,7 +922,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
       }
       // 확률 상자: 시세 × 확률 기댓값
       if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        const sub = getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity;
+        const sub = getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, ticketTiers) * item.quantity;
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
         return;
@@ -888,8 +947,9 @@ export default function PackageDetailPage({ initialPost }: Props) {
       }
     });
     return { totalGold: total, itemSubtotals: subtotals };
+  // ticketTiers: 티켓 단가(getCrystalAdjustedUnit)가 층을 읽는다 — 빠지면 층을 바꿔도 소계가 안 움직인다
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [post, choiceSelections, choiceBoxSelections, latestPrices, checkedItems, detailGoldPerWon]);
+  }, [post, choiceSelections, choiceBoxSelections, latestPrices, checkedItems, detailGoldPerWon, ticketTiers]);
 
   // '3+보너스' 전용: 3회 구매 시 1회 지급되는 보너스 구성품 가치 (선택형 보너스는 뷰어의 선택에 따라 재계산)
   const { bonusTotalGold, bonusItemSubtotals } = useMemo(() => {
@@ -897,7 +957,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
       return { bonusTotalGold: 0, bonusItemSubtotals: [] as number[] };
     }
     const subtotals = post.bonusItems.map((item, idx) =>
-      getPackageItemGold(item, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections[idx], bonusChoiceBoxSelections[idx]),
+      getPackageItemGold(item, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections[idx], bonusChoiceBoxSelections[idx], ticketTiers),
     );
     // 보너스 택N: 뷰어가 체크한 보너스만 합산 (미설정이면 전체)
     const bonusSelectable = (post.bonusSelectableCount || 0) > 0;
@@ -905,7 +965,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
       bonusSelectable && bonusCheckedItems[idx] === false ? s : s + v
     ), 0);
     return { bonusTotalGold: total, bonusItemSubtotals: subtotals };
-  }, [post, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections, bonusChoiceBoxSelections, bonusCheckedItems]);
+  }, [post, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections, bonusChoiceBoxSelections, bonusCheckedItems, ticketTiers]);
 
   if (!post) {
     return (
@@ -1019,62 +1079,65 @@ export default function PackageDetailPage({ initialPost }: Props) {
                   </div>
                 )}
 
-                {/* 환율 — 결과 수치와 섞이지 않게 따로 상자로 분리 */}
-                <div className={styles.resultRateBox}>
-                  <span className={styles.resultRateBoxLabel}>환율</span>
-                  <div className={styles.resultRateInput}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.resultRateIcon} />
-                    <span className={styles.resultRateFixed}>100</span>
-                    <span className={styles.resultRateSep}>:</span>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img loading="lazy" decoding="async" src="/royal.webp" alt="로얄 크리스탈" className={styles.resultRateIcon} />
-                    <input
-                      type="number"
-                      className={styles.resultRateNumber}
-                      value={detailRateText}
-                      onChange={(e) => handleRateInput(e.target.value)}
-                      placeholder="32"
-                      min={1}
-                      step="any"
-                      aria-label="100골드당 원화 환율"
-                    />
-                  </div>
-                  <div className={styles.resultRateBcRow}>
+                {/* 환율 상자 + 작성자 버튼 — 모바일에서는 한 줄로 붙인다 */}
+                <div className={styles.resultFooter}>
+                  {/* 환율 — 결과 수치와 섞이지 않게 따로 상자로 분리 */}
+                  <div className={styles.resultRateBox}>
+                    <span className={styles.resultRateBoxLabel}>환율</span>
                     <div className={styles.resultRateInput}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img loading="lazy" decoding="async" src="/blue.webp" alt="블루 크리스탈" className={styles.resultRateIcon} />
-                      <span className={styles.resultRateFixed}>100</span>
-                      <span className={styles.resultRateSep}>=</span>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.resultRateIcon} />
+                      <span className={styles.resultRateFixed}>100</span>
+                      <span className={styles.resultRateSep}>:</span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img loading="lazy" decoding="async" src="/royal.webp" alt="로얄 크리스탈" className={styles.resultRateIcon} />
                       <input
                         type="number"
                         className={styles.resultRateNumber}
-                        value={detailBcText}
-                        onChange={(e) => handleBcInput(e.target.value)}
-                        placeholder="16500"
+                        value={detailRateText}
+                        onChange={(e) => handleRateInput(e.target.value)}
+                        placeholder="32"
                         min={1}
                         step="any"
-                        aria-label="블루 크리스탈 100개당 골드"
+                        aria-label="100골드당 원화 환율"
                       />
                     </div>
-                  </div>
-                </div>
-
-                {isOwner && (
-                  <div className={styles.resultActions}>
-                    <div className={styles.resultActionsRight}>
-                      {saleToggleBtn}
-                      <Link href={`/package/edit/${postId}`} className={styles.editBtn}>
-                        수정
-                      </Link>
-                      <button className={styles.deleteBtn} onClick={handleDelete}>
-                        삭제
-                      </button>
+                    <div className={styles.resultRateBcRow}>
+                      <div className={styles.resultRateInput}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img loading="lazy" decoding="async" src="/blue.webp" alt="블루 크리스탈" className={styles.resultRateIcon} />
+                        <span className={styles.resultRateFixed}>100</span>
+                        <span className={styles.resultRateSep}>=</span>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.resultRateIcon} />
+                        <input
+                          type="number"
+                          className={styles.resultRateNumber}
+                          value={detailBcText}
+                          onChange={(e) => handleBcInput(e.target.value)}
+                          placeholder="16500"
+                          min={1}
+                          step="any"
+                          aria-label="블루 크리스탈 100개당 골드"
+                        />
+                      </div>
                     </div>
                   </div>
-                )}
+
+                  {isOwner && (
+                    <div className={styles.resultActions}>
+                      <div className={styles.resultActionsRight}>
+                        {saleToggleBtn}
+                        <Link href={`/package/edit/${postId}`} className={styles.editBtn}>
+                          수정
+                        </Link>
+                        <button className={styles.deleteBtn} onClick={handleDelete}>
+                          삭제
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
@@ -1298,6 +1361,9 @@ export default function PackageDetailPage({ initialPost }: Props) {
             postId={postId}
             commentCount={post.commentCount || 0}
             onCommentCountChange={handleCommentCountChange}
+            initialComments={initialComments}
+            likeCount={post.likeCount || 0}
+            sosoCount={post.sosoCount || 0}
           />
 
           <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
@@ -1389,62 +1455,65 @@ export default function PackageDetailPage({ initialPost }: Props) {
                 </>
               )}
 
-              {/* 환율 — 결과 수치와 섞이지 않게 따로 상자로 분리 */}
-              <div className={styles.resultRateBox}>
-                <span className={styles.resultRateBoxLabel}>환율</span>
-                <div className={styles.resultRateInput}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.resultRateIcon} />
-                  <span className={styles.resultRateFixed}>100</span>
-                  <span className={styles.resultRateSep}>:</span>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img loading="lazy" decoding="async" src="/royal.webp" alt="로얄 크리스탈" className={styles.resultRateIcon} />
-                  <input
-                    type="number"
-                    className={styles.resultRateNumber}
-                    value={detailRateText}
-                    onChange={(e) => handleRateInput(e.target.value)}
-                    placeholder="32"
-                    min={1}
-                    step="any"
-                    aria-label="100골드당 원화 환율"
-                  />
-                </div>
-                <div className={styles.resultRateBcRow}>
+              {/* 환율 상자 + 작성자 버튼 — 모바일에서는 한 줄로 붙인다 */}
+              <div className={styles.resultFooter}>
+                {/* 환율 — 결과 수치와 섞이지 않게 따로 상자로 분리 */}
+                <div className={styles.resultRateBox}>
+                  <span className={styles.resultRateBoxLabel}>환율</span>
                   <div className={styles.resultRateInput}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img loading="lazy" decoding="async" src="/blue.webp" alt="블루 크리스탈" className={styles.resultRateIcon} />
-                    <span className={styles.resultRateFixed}>100</span>
-                    <span className={styles.resultRateSep}>=</span>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.resultRateIcon} />
+                    <span className={styles.resultRateFixed}>100</span>
+                    <span className={styles.resultRateSep}>:</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img loading="lazy" decoding="async" src="/royal.webp" alt="로얄 크리스탈" className={styles.resultRateIcon} />
                     <input
                       type="number"
                       className={styles.resultRateNumber}
-                      value={detailBcText}
-                      onChange={(e) => handleBcInput(e.target.value)}
-                      placeholder="16500"
+                      value={detailRateText}
+                      onChange={(e) => handleRateInput(e.target.value)}
+                      placeholder="32"
                       min={1}
                       step="any"
-                      aria-label="블루 크리스탈 100개당 골드"
+                      aria-label="100골드당 원화 환율"
                     />
                   </div>
-                </div>
-              </div>
-
-              {isOwner && (
-                <div className={styles.resultActions}>
-                  <div className={styles.resultActionsRight}>
-                    {saleToggleBtn}
-                    <Link href={`/package/edit/${postId}`} className={styles.editBtn}>
-                      수정
-                    </Link>
-                    <button className={styles.deleteBtn} onClick={handleDelete}>
-                      삭제
-                    </button>
+                  <div className={styles.resultRateBcRow}>
+                    <div className={styles.resultRateInput}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img loading="lazy" decoding="async" src="/blue.webp" alt="블루 크리스탈" className={styles.resultRateIcon} />
+                      <span className={styles.resultRateFixed}>100</span>
+                      <span className={styles.resultRateSep}>=</span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.resultRateIcon} />
+                      <input
+                        type="number"
+                        className={styles.resultRateNumber}
+                        value={detailBcText}
+                        onChange={(e) => handleBcInput(e.target.value)}
+                        placeholder="16500"
+                        min={1}
+                        step="any"
+                        aria-label="블루 크리스탈 100개당 골드"
+                      />
+                    </div>
                   </div>
                 </div>
-              )}
+
+                {isOwner && (
+                  <div className={styles.resultActions}>
+                    <div className={styles.resultActionsRight}>
+                      {saleToggleBtn}
+                      <Link href={`/package/edit/${postId}`} className={styles.editBtn}>
+                        수정
+                      </Link>
+                      <button className={styles.deleteBtn} onClick={handleDelete}>
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
@@ -1539,6 +1608,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                         ? `고정형 영웅 젬 선택 상자 ×${effectiveQty.toLocaleString()}`
                         : `${shortenItemName(effective.name)} ×${effectiveQty.toLocaleString()}`}
                     </div>
+                    {renderTicketTierSelect(item.itemId, item.name)}
 
                     {hasChoices && item.choiceOptions!.length <= 3 && !isRiftRun && (
                       <div className={styles.itemCardChoices}>
@@ -1602,7 +1672,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                     {hasProbBox && (
                       <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
                         {item.probBoxCandidates!.map((cand) => {
-                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate) * cand.quantity;
+                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers) * cand.quantity;
                           return (
                             <div key={cand.id} className={styles.itemCardChoiceBtn}>
                               {cand.icon && (
@@ -1792,6 +1862,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                         ? `고정형 영웅 젬 선택 상자 ×${effectiveQty.toLocaleString()}`
                         : `${shortenItemName(effectiveChoice?.name || item.name)} ×${effectiveQty.toLocaleString()}`}
                     </div>
+                    {renderTicketTierSelect(item.itemId, item.name)}
 
                     {hasChoices && item.choiceOptions!.length <= 3 && !isRiftRun && (
                       <div className={styles.itemCardChoices}>
@@ -1851,7 +1922,7 @@ export default function PackageDetailPage({ initialPost }: Props) {
                     {hasProbBox && (
                       <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
                         {item.probBoxCandidates!.map((cand) => {
-                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate) * cand.quantity;
+                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers) * cand.quantity;
                           return (
                             <div key={cand.id} className={styles.itemCardChoiceBtn}>
                               {cand.icon && (
@@ -1893,6 +1964,9 @@ export default function PackageDetailPage({ initialPost }: Props) {
             postId={postId}
             commentCount={post.commentCount || 0}
             onCommentCountChange={handleCommentCountChange}
+            initialComments={initialComments}
+            likeCount={post.likeCount || 0}
+            sosoCount={post.sosoCount || 0}
           />
         )}
 

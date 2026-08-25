@@ -543,7 +543,10 @@ export default function BuyOrderBoard() {
         scroll={true}
         style={{
           height: 'auto',
-          maxHeight: '58vh',
+          // 키보드가 올라온 동안엔 검색창 + 타일 한 줄 정도만 남긴다 — 시트 전체(58vh)를
+          // 키보드 위로 올리면 화면을 뚫고 올라가서, 입력 중엔 접었다가 내려가면 다시 편다
+          maxHeight: kbHeight > 0 ? '172px' : '58vh',
+          transition: 'max-height 0.25s ease, bottom 0.25s ease',
           // 하단 앵커 광고가 떠 있으면 그만큼 위로 올림 (AdLayout 이 이 변수를 설정)
           bottom: `calc(var(--mobile-anchor-h, 0px) + ${kbHeight}px)`,
           backgroundColor: 'var(--card-bg)',

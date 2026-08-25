@@ -1877,3 +1877,18 @@ html, body {
 
 
 
+
+/* ─── 요소 안 스크롤바 전부 숨김 (모바일·데스크톱) ───
+   가로 카테고리 스트립·드롭다운·표·목록 등 overflow 가 있는 모든 요소에서 스크롤 기능은 그대로 두고
+   막대만 보이지 않게 한다. 페이지 자체(html/body) 스크롤바는 건드리지 않는다.
+   각 모듈 CSS 에 남아 있는 얇은 스크롤바 스타일보다 우선하도록 !important. */
+html body * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html body *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}

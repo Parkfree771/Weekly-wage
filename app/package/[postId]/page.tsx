@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { Metadata } from 'next';
 import { getAdminFirestore } from '@/lib/firebase-admin';
 import { SITE_URL, INDEX_USER_PACKAGE_POSTS } from '@/lib/site-config';
-import type { PackagePost } from '@/types/package';
+import type { PackagePost, PackageComment } from '@/types/package';
 import PackageDetailPage from './PackageDetailClient';
 import AzenaBlessingDetail from '@/components/package/AzenaBlessingDetail';
 import { AZENA_POST_ID, AZENA_TITLE, AZENA_FAQ } from '@/lib/azena-blessing';
@@ -46,6 +46,31 @@ const getPost = cache(async (postId: string): Promise<PackagePost | null> => {
     return null;
   }
 });
+
+/**
+ * 댓글 — 글과 같이 ISR 로 5분 캐시. 방문자마다 클라이언트가 최대 200건을 읽던 것을 서버 1회로 줄인다.
+ * 댓글 작성·삭제 직후에는 클라이언트가 /api/package/revalidate 를 불러 바로 갱신한다.
+ * 실패하면 null — 클라이언트가 예전처럼 직접 읽는다.
+ */
+async function getComments(postId: string): Promise<PackageComment[] | null> {
+  try {
+    const db = getAdminFirestore();
+    const snap = await db
+      .collection('packagePosts').doc(postId).collection('comments')
+      .orderBy('createdAt', 'desc').limit(200).get();
+    return snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        ...data,
+        id: d.id,
+        createdAt: toISO(data.createdAt),
+        updatedAt: toISO(data.updatedAt),
+      } as PackageComment;
+    });
+  } catch {
+    return null;
+  }
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { postId } = await params;
@@ -194,6 +219,7 @@ export default async function Page({ params }: Props) {
   }
 
   const post = await getPost(postId);
+  const comments = post ? await getComments(postId) : null;
 
-  return <PackageDetailPage initialPost={post} />;
+  return <PackageDetailPage initialPost={post} initialComments={comments} />;
 }

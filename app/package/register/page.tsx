@@ -41,6 +41,12 @@ export default function PackageRegisterPage() {
     // package-service(firestore ~250KB)는 제출 시점에만 필요하다 — 정적 import 하면 첫 로드 청크에 실린다
     const { createPackagePost } = await import('@/lib/package-service');
     const postId = await createPackagePost(postData);
+    // ISR 캐시된 갤러리 1페이지를 즉시 재생성 — 기다리지 않으면 상세에서 갤러리로 돌아갔을 때 새 글이 없다
+    await fetch('/api/package/revalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postId }),
+    }).catch(() => {});
     router.push(`/package/${postId}`);
   };
 

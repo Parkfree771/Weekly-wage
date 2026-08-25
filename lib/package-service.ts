@@ -13,6 +13,7 @@ import {
   limit as firestoreLimit,
   startAfter,
   getCountFromServer,
+  Timestamp,
   increment,
   serverTimestamp,
   DocumentSnapshot,
@@ -59,7 +60,13 @@ export async function getPackagePosts(options: PackageListOptions): Promise<{
   const constraints: any[] = [orderBy(sortBy, 'desc')];
 
   if (startAfterDoc) {
-    constraints.push(startAfter(startAfterDoc));
+    // 서버(ISR)가 넘긴 1페이지 커서는 스냅샷이 아니라 createdAt 값이다 — startAfter 는 정렬 필드 값도 받는다.
+    // 정렬이 createdAt 하나뿐이라 값 하나로 위치가 정해진다.
+    const cursor =
+      typeof startAfterDoc.seconds === 'number' && typeof startAfterDoc.nanoseconds === 'number'
+        ? new Timestamp(startAfterDoc.seconds, startAfterDoc.nanoseconds)
+        : startAfterDoc;
+    constraints.push(startAfter(cursor));
   }
 
   constraints.push(firestoreLimit(pageSize));
