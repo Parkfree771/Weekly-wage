@@ -62,7 +62,8 @@ export type PackagePost = {
 
   // 통계
   viewCount: number;
-  likeCount: number;
+  likeCount: number;   // 따봉 수 — /api/package/react 가 increment 로만 바꾼다
+  sosoCount?: number;  // 흠 수 — 반응 기능 이전 글엔 필드가 없다(= 0 취급)
   commentCount: number;
 
   // 시간
@@ -71,7 +72,7 @@ export type PackagePost = {
 };
 
 /** 게시물 생성 시 전달 데이터 */
-export type PackagePostCreateData = Omit<PackagePost, 'id' | 'viewCount' | 'likeCount' | 'commentCount' | 'createdAt' | 'updatedAt'>;
+export type PackagePostCreateData = Omit<PackagePost, 'id' | 'viewCount' | 'likeCount' | 'sosoCount' | 'commentCount' | 'createdAt' | 'updatedAt'>;
 
 /** 좋아요 문서 */
 export type PackageLike = {

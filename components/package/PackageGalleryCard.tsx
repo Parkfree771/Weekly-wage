@@ -20,7 +20,7 @@ import {
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
 import TrendArrow from '@/components/TrendArrow';
-import ReactionLottie from '@/components/package/ReactionLottie';
+import ReactionLottie, { type ReactionLottieHandle } from '@/components/package/ReactionLottie';
 import styles from './PackageGalleryCard.module.css';
 
 type Props = {
@@ -148,8 +148,7 @@ function BenefitDelta({ d }: { d: number }) {
 
 // memo: 갤러리 페이지 최상위 state(공통 환율 타이핑 등)가 바뀔 때 prop 이 그대로인 카드까지
 // 전부 리렌더되는 것을 막는다 — post/latestPrices 는 참조가 안정적이라 memo 가 실제로 먹힌다
-// 반응(쏘쏘·오) — 예시 단계라 DB 없이 글 id 에서 정해지는 고정 숫자를 보여주고,
-// 누르면 이 화면 안에서만 +1/−1 된다(둘 중 하나만 선택). 마음에 들면 Firestore 로 옮긴다.
+// 반응(따봉·흠) — 비로그인 포함 1글 1표, 둘 중 하나만.
 // 순서 고정: 따봉 → 흠. title 은 마우스 올렸을 때 뜨는 말풍선
 const REACTIONS = [
   { key: 'like', label: '따봉', tip: '대재학', path: '/lottie/react-like.json' },
@@ -158,48 +157,165 @@ const REACTIONS = [
 type ReactionKey = (typeof REACTIONS)[number]['key'];
 
 // 로티 색 통일 — "노란 이모지" 한 가지 톤. 선은 카드 글자색(라이트 남색 / 다크 밝은색), 채움은 전부 이모지 노랑.
-// 따봉(wired 267)·흠(wired 2340)·조회수(doodle 586) 세 파일의 원본색을 모두 같은 두 값으로 모은다.
+// 따봉(wired 267)·흠(wired 2340) 두 파일의 원본색을 같은 두 값으로 모은다. 조회수 SVG 도 같은 값을 쓴다.
 const EMOJI_YELLOW = '#ffc738';
 // 26px 로 줄이면 원본 선이 실처럼 얇아져 표정이 안 읽힌다 — 선만 1.6배 굵힌다
 const REACTION_STROKE = 1.6;
 const REACTION_RECOLOR: Record<string, string> = {
   // 선
-  'rgb(18,19,49)': 'var(--gc-text)',        // wired 계열
-  'rgb(42,48,107)': 'var(--gc-text)',       // doodle 계열
-  'stroke:rgb(230,142,110)': 'var(--gc-text)', // doodle 살구 보조선
-  'fill:rgb(230,142,110)': EMOJI_YELLOW,       // doodle 살구 채움(볼·강조)
+  'rgb(18,19,49)': 'var(--gc-text)',
   // 채움
   'rgb(255,199,56)': EMOJI_YELLOW,          // 흠 얼굴
   'rgb(44,165,141)': EMOJI_YELLOW,          // 따봉 엄지
   'rgb(249,201,192)': EMOJI_YELLOW,         // 따봉 손
-  'rgb(255,0,0)': EMOJI_YELLOW,             // 조회수 그림 강조
-  'rgb(67,67,67)': 'var(--gc-text-secondary)', // 조회수 그림 진회색
 };
 
-const seedCount = (id: string, salt: number) => {
-  let h = salt;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return h % 40;
-};
+// 조회수 아이콘 — 누르는 게 아니라 움직일 이유가 없어 로티 대신 정지 SVG.
+// 반응 로티와 같은 톤(선 = 글자색, 채움 = 이모지 노랑, 선 굵기 비슷)으로 맞춘 눈 그림.
+function ViewsIcon() {
+  return (
+    <svg width={26} height={26} viewBox="0 0 26 26" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <path
+        d="M3 13c2.6-4.2 6-6.3 10-6.3s7.4 2.1 10 6.3c-2.6 4.2-6 6.3-10 6.3S5.6 17.2 3 13z"
+        fill={EMOJI_YELLOW}
+        stroke="var(--gc-text)"
+        strokeWidth={1.7}
+        strokeLinejoin="round"
+      />
+      <circle cx={13} cy={13} r={3.6} fill="var(--gc-text)" />
+      <circle cx={14.3} cy={11.7} r={1.1} fill="#fff" />
+    </svg>
+  );
+}
 
-function ReactionBar({ postId }: { postId: string }) {
-  const [picked, setPicked] = useState<ReactionKey | null>(null);
+// ─── 반응 저장 구조 ───
+// 카운트는 글 문서(likeCount/sosoCount)에 있어 갤러리가 글을 읽을 때 공짜로 따라온다(추가 읽기 0).
+// "내가 뭘 눌렀는지"는 서버에 묻지 않는다 — 화면용은 localStorage, 중복 방지용 진실은 서버의
+// httpOnly 쿠키(/api/package/react). 둘이 어긋나면(저장소만 지운 경우) 서버 응답의 prev/next 로
+// 화면 숫자를 되맞춘다.
+// 클릭은 즉시 화면에 반영하고, 연타가 멎은 뒤(REACT_FLUSH_MS) 최종 상태 한 번만 보낸다 —
+// "따봉→취소→따봉" 이 요청 1회·쓰기 0회가 된다.
+const LS_KEY = 'pkgRx';
+const REACT_FLUSH_MS = 600;
+type ReactionDelta = { like: number; soso: number };
+
+function readMyReactions(): Record<string, ReactionKey> {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+function writeMyReaction(postId: string, r: ReactionKey | null) {
+  try {
+    const all = readMyReactions();
+    if (r) all[postId] = r;
+    else delete all[postId];
+    localStorage.setItem(LS_KEY, JSON.stringify(all));
+  } catch {
+    /* 사생활 모드 등 — 화면 상태만으로 동작 */
+  }
+}
+// a 표에서 b 표로 바뀔 때 카운트 증감
+const reactionDiff = (a: ReactionKey | null, b: ReactionKey | null): ReactionDelta => ({
+  like: Number(b === 'like') - Number(a === 'like'),
+  soso: Number(b === 'soso') - Number(a === 'soso'),
+});
+
+function ReactionBar({ postId, likeCount, sosoCount }: { postId: string; likeCount: number; sosoCount: number }) {
+  // 카드는 글을 다 받은 뒤에만 그려지므로 초기값에서 localStorage 를 읽어도 SSR 불일치가 없다
+  const [mine, setMine] = useState<ReactionKey | null>(() =>
+    typeof window === 'undefined' ? null : readMyReactions()[postId] ?? null,
+  );
+  // 문서 카운트(내 이전 표까지 이미 포함) 위에 이 화면에서 바뀐 만큼만 더한다
+  const [delta, setDelta] = useState<ReactionDelta>({ like: 0, soso: 0 });
+  const mineRef = useRef(mine);
+  const syncedRef = useRef(mine); // 서버에 보냈다고 믿는 표
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+  const lottieRefs = useRef<Partial<Record<ReactionKey, ReactionLottieHandle | null>>>({});
+
+  const flush = () => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    const from = syncedRef.current;
+    const target = mineRef.current;
+    if (from === target) return;
+    syncedRef.current = target;
+    // keepalive — 페이지를 떠나는 중이어도 요청은 살아남는다
+    fetch('/api/package/react', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postId, reaction: target }),
+      keepalive: true,
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (!json?.ok || !mountedRef.current) return;
+        // 서버가 실제로 적용한 증감과 화면에 미리 반영한 증감이 다르면 그 차이만큼 되돌린다
+        const server = reactionDiff(json.prev, json.next);
+        const client = reactionDiff(from, target);
+        if (server.like !== client.like || server.soso !== client.soso) {
+          setDelta((d) => ({
+            like: d.like + server.like - client.like,
+            soso: d.soso + server.soso - client.soso,
+          }));
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      // 보내지 못한 표가 남아 있으면(페이지 이동·언마운트) 바로 보낸다
+      if (timerRef.current) flush();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleClick = (key: ReactionKey) => {
+    const prev = mineRef.current;
+    const next = prev === key ? null : key;
+    if (next) lottieRefs.current[key]?.play();
+    mineRef.current = next;
+    setMine(next);
+    const diff = reactionDiff(prev, next);
+    setDelta((d) => ({ like: d.like + diff.like, soso: d.soso + diff.soso }));
+    writeMyReaction(postId, next);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(flush, REACT_FLUSH_MS);
+  };
+
+  const counts: Record<ReactionKey, number> = {
+    like: Math.max(0, likeCount + delta.like),
+    soso: Math.max(0, sosoCount + delta.soso),
+  };
+
   return (
     <div className={styles.reactions} data-nonav>
-      {REACTIONS.map((r, i) => {
-        const on = picked === r.key;
-        const count = seedCount(postId, i + 7) + (on ? 1 : 0);
+      {REACTIONS.map((r) => {
+        const on = mine === r.key;
+        const count = counts[r.key];
         return (
           <button
             key={r.key}
             type="button"
             className={`${styles.reactionBtn} ${on ? styles.reactionBtnOn : ''}`}
-            onClick={() => setPicked((p) => (p === r.key ? null : r.key))}
+            onClick={() => handleClick(r.key)}
             aria-pressed={on}
             aria-label={`${r.label} ${count}`}
             title={r.tip}
           >
-            <ReactionLottie path={r.path} size={26} loop recolor={REACTION_RECOLOR} strokeScale={REACTION_STROKE} />
+            {/* 평소엔 첫 프레임에 멈춰 있고 누를 때만 한 번 재생 — 카드 여럿이 동시에 움직이지 않게 */}
+            <ReactionLottie
+              ref={(h) => { lottieRefs.current[r.key] = h; }}
+              path={r.path}
+              size={26}
+              recolor={REACTION_RECOLOR}
+              strokeScale={REACTION_STROKE}
+            />
             <span className={styles.reactionCount}>{count}</span>
           </button>
         );
@@ -820,12 +936,12 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
         )}
 
         <div className={`${styles.leftMeta} ${showBonus ? styles.leftMetaTight : ''}`}>
-          {/* 왼쪽: 따봉 · 흠 · 조회수 (로티 세 개, 같은 노란 이모지 톤). 반응은 예시(DB 미연결), 카드 클릭 이동 제외 */}
+          {/* 왼쪽: 따봉 · 흠 · 조회수 (로티 세 개, 같은 노란 이모지 톤). 카드 클릭 이동 제외 */}
           <div className={styles.metaLeft}>
-            <ReactionBar postId={post.id} />
+            <ReactionBar postId={post.id} likeCount={post.likeCount || 0} sosoCount={post.sosoCount || 0} />
             {/* 조회수 — 반응 버튼과 같은 알약 생김새(누를 수는 없다) */}
             <span className={`${styles.reactionBtn} ${styles.metaViews}`} title="조회수">
-              <ReactionLottie path="/lottie/meta-views.json" size={26} recolor={REACTION_RECOLOR} strokeScale={REACTION_STROKE} />
+              <ViewsIcon />
               <span className={styles.reactionCount}>{post.viewCount || 0}</span>
             </span>
           </div>

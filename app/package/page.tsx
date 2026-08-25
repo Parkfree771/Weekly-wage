@@ -84,7 +84,7 @@ let moduleLiveAt = 0; // ms
 const LIVE_COOLDOWN_MS = 300_000;   // 라우트의 CDN s-maxage 와 같은 값이어야 한다
 
 // sortBy/typeFilter 는 goToPage 의 의존성에 넣지 않는다.
-type GallerySort = 'createdAt' | 'efficiency' | 'newRelease';
+type GallerySort = 'createdAt' | 'efficiency' | 'newRelease' | 'likeCount';
 type SaleFilter = 'all' | 'onSale' | 'ended';
 
 // 정렬과 판매 상태를 드롭다운 하나로 합쳤다. select 는 값이 하나뿐이라
@@ -98,6 +98,7 @@ const VIEW_OPTIONS: [GalleryView, string][] = [
   ['createdAt', '업로드순'],
   ['efficiency', '효율순'],
   ['newRelease', '신작순'],
+  ['likeCount', '따봉순'],
   ['onSale', '판매중'],
   ['ended', '판매종료'],
 ];
@@ -266,6 +267,12 @@ export default function PackageGalleryPage() {
       return [...filtered].sort(
         (a, b) => Number(isNewReleasePost(b)) - Number(isNewReleasePost(a)),
       );
+    }
+
+    // 따봉순 — 불러온 목록 안에서 따봉 많은 글을 앞으로(같으면 업로드순 유지).
+    // 카드에서 방금 누른 표는 문서에 안 실려 있어 다음 조회(캐시 TTL 뒤)부터 순서에 반영된다.
+    if (sortBy === 'likeCount') {
+      return [...filtered].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
     }
 
     // 효율순 — 시세가 도착하기 전엔 전부 0이 나와 순서가 무의미하므로 원래 순서를 유지한다

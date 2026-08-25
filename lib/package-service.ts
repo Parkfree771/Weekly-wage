@@ -37,6 +37,7 @@ export async function createPackagePost(
     ...data,
     viewCount: 0,
     likeCount: 0,
+    sosoCount: 0,
     commentCount: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
