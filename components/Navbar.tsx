@@ -57,7 +57,7 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-refining',
     items: [
       { href: '/refining', label: '재련 시뮬', popular: true },
-      { href: '/wangap', label: '완갑 시뮬', popular: true },
+      { href: '/wangap', label: '완갑 시뮬' },
       { href: '/bracelet', label: '팔찌 시뮬' },
       { href: '/expedition-gold', label: '원정대 수급 골드 시뮬' },
     ],
@@ -203,10 +203,6 @@ export default function Navbar() {
                 >
                   {group.label}
                   {(() => { const b = getGroupBadge(group); return b?.badge ? <span className={badgeClass(b.badge, b.badgeClass)}>{b.badge}</span> : null; })()}
-                  {/* 그룹 안에 인기 페이지가 있으면 헤더에도 불꽃 — 펼치기 전에도 보이게 */}
-                  {group.items.some((i) => i.popular) && (
-                    <FireLottie size={28} title="인기 페이지" className="ms-1" />
-                  )}
                   <svg width="10" height="10" viewBox="0 0 10 10" style={{ marginLeft: '4px', opacity: 0.6 }}>
                     <path d="M2 4L5 7L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -275,7 +271,6 @@ export default function Navbar() {
             prefetch={false}
           >
             숙제 체크
-            <FireLottie size={18} title="인기 페이지" className="ms-1 navbar-fire-bright" />
           </Link>
           <div
             className="nav-dropdown-wrapper settings-dropdown-wrapper"
