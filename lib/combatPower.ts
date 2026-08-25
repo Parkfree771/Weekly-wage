@@ -41,10 +41,11 @@ export const MAX_REFINE_LEVEL = 25;
  *   baPct    기본 공격력 % (곱셈) — 등급으로만 정해진다
  *
  * 세 값이 서로 다른 단계에서 오르기 때문에 단계별로 전부 적어야 한다.
- * 출처: 라이브 API 툴팁 실측 (약 400캐릭터, 조합별 충돌 0건).
+ * 출처: 영웅~전설(0~15)은 라이브 API 툴팁 실측 (약 400캐릭터, 조합별 충돌 0건),
+ * 유물~고대(15~25)는 공식 수치표 (2026-08-25 반영).
  *
- * 유물(15~20)·고대(20~25)는 표가 없다. 해방 재료 병목으로 2026-08-21 기준 서버에
- * 도달한 캐릭터가 없어서 실측이 불가능했다. 등장하면 여기에 채우면 된다.
+ * 한 단계에 오르는 값은 5단계 주기로 [무공, 주스탯, 무공, 주스탯, 기본공격력 고정값]
+ * 순서를 그대로 반복한다. 해방(승급)은 단계를 그대로 둔 채 기본 공격력 %만 1 올린다.
  */
 export type WangapStat = { stat: number; atk: number; baFlat: number; baPct: number };
 
@@ -69,6 +70,20 @@ export const WANGAP_STAT: Record<string, WangapStat> = {
   '전설:13': { stat: 40962, atk: 14817, baFlat: 2030, baPct: 1 },
   '전설:14': { stat: 47268, atk: 14817, baFlat: 2030, baPct: 1 },
   '전설:15': { stat: 47268, atk: 14817, baFlat: 3690, baPct: 1 },
+  // 해방으로 유물이 되면 기본 공격력 %가 1 → 2로 오른다 (전설 15 → 유물 15)
+  '유물:15': { stat: 47268, atk: 14817, baFlat: 3690, baPct: 2 },
+  '유물:16': { stat: 47268, atk: 16778, baFlat: 3690, baPct: 2 },
+  '유물:17': { stat: 53682, atk: 16778, baFlat: 3690, baPct: 2 },
+  '유물:18': { stat: 53682, atk: 18794, baFlat: 3690, baPct: 2 },
+  '유물:19': { stat: 60216, atk: 18794, baFlat: 3690, baPct: 2 },
+  '유물:20': { stat: 60216, atk: 18794, baFlat: 5980, baPct: 2 },
+  // 해방으로 고대가 되면 기본 공격력 %가 2 → 3으로 오른다 (유물 20 → 고대 20)
+  '고대:20': { stat: 60216, atk: 18794, baFlat: 5980, baPct: 3 },
+  '고대:21': { stat: 60216, atk: 20832, baFlat: 5980, baPct: 3 },
+  '고대:22': { stat: 66888, atk: 20832, baFlat: 5980, baPct: 3 },
+  '고대:23': { stat: 66888, atk: 22940, baFlat: 5980, baPct: 3 },
+  '고대:24': { stat: 73710, atk: 22940, baFlat: 5980, baPct: 3 },
+  '고대:25': { stat: 73710, atk: 22940, baFlat: 9050, baPct: 3 },
 };
 
 /** 등급별 강화 구간 상한 (lib/wangapData 의 WANGAP_GRADE_RANGES 와 같은 값) */
