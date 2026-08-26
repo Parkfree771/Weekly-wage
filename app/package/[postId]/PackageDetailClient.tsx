@@ -406,11 +406,23 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
           }
           if (viewCountedFor.current !== postId) {
             viewCountedFor.current = postId;
+            // 응답 stats = 이 글의 최신 조회·따봉·흠(Neon). ISR 스냅샷 숫자를 덮어쓴다 — 추가 조회 없음
             fetch('/api/package/view', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ postId }),
-            }).catch(() => {});
+            })
+              .then((res) => (res.ok ? res.json() : null))
+              .then((json) => {
+                const st = json?.stats;
+                if (!st) return;
+                setPost((prev) =>
+                  prev && prev.id === postId
+                    ? { ...prev, viewCount: st.viewCount, likeCount: st.likeCount, sosoCount: st.sosoCount }
+                    : prev,
+                );
+              })
+              .catch(() => {});
           }
         }
       } catch (err) {

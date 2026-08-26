@@ -68,9 +68,11 @@ export type PackagePost = {
   saleClosed?: boolean;                    // 작성자/관리자가 직접 처리한 판매 종료 (기간과 무관)
 
   // 통계
+  // 조회·따봉·흠 — 2026-08-26부터 진실은 Neon package_stats(/api/package/stats). 문서 필드는
+  // 이관 시점 값으로 멈춰 있고 ISR 스냅샷의 초기값으로만 쓰인다. 화면은 stats 로 덮어쓴다.
   viewCount: number;
-  likeCount: number;   // 따봉 수 — /api/package/react 가 increment 로만 바꾼다
-  sosoCount?: number;  // 흠 수 — 반응 기능 이전 글엔 필드가 없다(= 0 취급)
+  likeCount: number;
+  sosoCount?: number;  // 반응 기능 이전 글엔 필드가 없다(= 0 취급)
   commentCount: number;
 
   // 시간

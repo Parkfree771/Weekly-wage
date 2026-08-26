@@ -11,6 +11,7 @@
     "sync:app:check": "node tools/sync-app-data.mjs --check"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@netlify/functions": "^5.1.2",
     "bootstrap": "^5.3.8",
     "critters": "^0.0.23",

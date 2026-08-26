@@ -391,7 +391,7 @@ function CommentSection({ postId, commentCount, onCommentCountChange, initialCom
         <h2 className={styles.commentHeader}>
           댓글 <span className={styles.commentCount}>{commentCount}</span>
         </h2>
-        <ReactionBar postId={postId} likeCount={likeCount} sosoCount={sosoCount} size={28} className={styles.headerReactions} />
+        <ReactionBar postId={postId} likeCount={likeCount} sosoCount={sosoCount} size={26} className={styles.headerReactions} />
       </div>
 
       {/* 댓글 목록 — 스레드: 부모 아래 답글이 세로 줄로 이어진다 */}

@@ -153,8 +153,8 @@ function BenefitDelta({ d }: { d: number }) {
 const VIEWS_STROKE = 2.4;
 function ViewsIcon() {
   return (
-    <svg width={26} height={26} viewBox="0 0 26 26" aria-hidden="true" style={{ flexShrink: 0 }}>
-      {/* 26px 상자는 로티와 같게 두고 그림만 안쪽으로 줄인다 — 알약 높이·정렬이 안 흔들린다 */}
+    <svg width={24} height={24} viewBox="0 0 26 26" aria-hidden="true" style={{ flexShrink: 0 }}>
+      {/* 24px 상자는 로티와 같게 두고 그림만 안쪽으로 줄인다 — 알약 높이·정렬이 안 흔들린다 */}
       <g transform="translate(13 13) scale(0.72) translate(-13 -13)">
       {/* 어깨 — 위가 열린 둥근 몸통 */}
       <path

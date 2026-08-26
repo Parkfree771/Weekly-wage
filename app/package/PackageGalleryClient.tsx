@@ -289,6 +289,33 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
     window.scrollTo({ top: 0 });
   };
 
+  // 상호작용 집계(조회·따봉·흠)는 Neon 에 있어 ISR 스냅샷 숫자가 낡아 있다 — 페이지의 글 ID 로
+  // /api/package/stats 를 한 번 불러 덮어쓴다. ID 를 정렬해 같은 페이지 방문자끼리 URL 이 같게
+  // (CDN 캐시 공유) 하고, 값이 실제로 바뀐 글만 갈아 끼워 불필요한 리렌더를 막는다.
+  const statsKey = posts.map((p) => p.id).filter(Boolean).sort().join(',');
+  useEffect(() => {
+    if (!statsKey) return;
+    let cancelled = false;
+    fetch(`/api/package/stats?ids=${encodeURIComponent(statsKey)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((stats: Record<string, { viewCount: number; likeCount: number; sosoCount: number }> | null) => {
+        if (cancelled || !stats) return;
+        setPosts((prev) => {
+          let changed = false;
+          const next = prev.map((p) => {
+            const st = stats[p.id];
+            if (!st) return p;
+            if ((p.viewCount || 0) === st.viewCount && (p.likeCount || 0) === st.likeCount && (p.sosoCount || 0) === st.sosoCount) return p;
+            changed = true;
+            return { ...p, viewCount: st.viewCount, likeCount: st.likeCount, sosoCount: st.sosoCount };
+          });
+          return changed ? next : prev;
+        });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [statsKey]);
+
   // 이미 받아둔 posts 위에서만 도는 정렬·필터. 여기서 네트워크를 타는 건 아무것도 없다.
   const visiblePosts = useMemo(() => {
     let filtered = posts;
@@ -310,7 +337,7 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
     }
 
     // 따봉순 — 불러온 목록 안에서 따봉 많은 글을 앞으로(같으면 업로드순 유지).
-    // 카드에서 방금 누른 표는 문서에 안 실려 있어 다음 조회(캐시 TTL 뒤)부터 순서에 반영된다.
+    // 숫자는 /api/package/stats 로 덮어쓴 최신값. 카드에서 방금 누른 표는 다음 조회부터 순서에 반영된다.
     if (sortBy === 'likeCount') {
       return [...filtered].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
     }

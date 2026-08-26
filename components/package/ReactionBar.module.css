@@ -20,7 +20,16 @@
   font-variant-numeric: tabular-nums;
   line-height: 1;
   cursor: pointer;
+  /* 탭이 "딱" 먹게 — 더블탭 확대 대기(300ms) 제거, 길게 눌러도 글자 선택 안 됨 */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
   transition: border-color 0.15s, color 0.15s;
+}
+
+/* 로티 SVG 가 클릭을 가로채지 않게 — 어디를 눌러도 버튼이 받는다 */
+.reactionBtn > span[aria-hidden] {
+  pointer-events: none;
 }
 
 .reactionBtn:hover {
@@ -45,6 +54,6 @@
 /* 모바일: 로티 살짝 축소 (ReactionLottie 가 --rl-size 로 크기를 받는다) */
 @media (max-width: 768px) {
   .reactionBtn > span[aria-hidden] {
-    --rl-size: 20px;
+    --rl-size: 18px;
   }
 }

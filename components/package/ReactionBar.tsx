@@ -3,10 +3,12 @@
 // 반응(따봉·흠) — 비로그인 포함 1글 1표, 둘 중 하나만. 갤러리 카드와 상세(댓글 위)가 같이 쓴다.
 //
 // 저장 구조:
-// 카운트는 글 문서(likeCount/sosoCount)에 있어 갤러리·상세가 글을 읽을 때 공짜로 따라온다(추가 읽기 0).
+// 카운트는 Neon package_stats(/api/package/stats, react 응답의 stats). 부모가 넘기는 likeCount/sosoCount 는
+// ISR 스냅샷 → 최신 집계 순으로 바뀔 수 있고, 여기서는 "가장 최근에 받은 서버 값(base)" 위에
+// "아직 서버에 안 보낸 내 표의 증감" 만 더해 그린다. 서버 값에는 이미 보낸 내 표가 들어 있으므로
+// 이 둘을 섞어도 이중 계산이 안 난다.
 // "내가 뭘 눌렀는지"는 서버에 묻지 않는다 — 화면용은 localStorage, 중복 방지용 진실은 서버의
-// httpOnly 쿠키(/api/package/react). 둘이 어긋나면(저장소만 지운 경우) 서버 응답의 prev/next 로
-// 화면 숫자를 되맞춘다.
+// httpOnly 쿠키(/api/package/react).
 // 클릭은 즉시 화면에 반영하고, 연타가 멎은 뒤(REACT_FLUSH_MS) 최종 상태 한 번만 보낸다 —
 // "따봉→취소→따봉" 이 요청 1회·쓰기 0회가 된다.
 
@@ -24,7 +26,7 @@ export type ReactionKey = (typeof REACTIONS)[number]['key'];
 // 로티 색 통일 — "노란 이모지" 한 가지 톤. 선은 글자색(라이트 남색 / 다크 밝은색), 채움은 전부 이모지 노랑.
 // 따봉(wired 267)·흠(wired 2340) 두 파일의 원본색을 같은 두 값으로 모은다.
 export const EMOJI_YELLOW = '#ffc738';
-// 26px 로 줄이면 원본 선이 실처럼 얇아져 표정이 안 읽힌다 — 선만 1.6배 굵힌다
+// 24px 로 줄이면 원본 선이 실처럼 얇아져 표정이 안 읽힌다 — 선만 1.6배 굵힌다
 const REACTION_STROKE = 1.6;
 const REACTION_RECOLOR: Record<string, string> = {
   // 선 — 카드 안에서는 --gc-text, 밖(상세)에서는 --text-primary
@@ -36,8 +38,9 @@ const REACTION_RECOLOR: Record<string, string> = {
 };
 
 const LS_KEY = 'pkgRx';
-const REACT_FLUSH_MS = 600;
+const REACT_FLUSH_MS = 250;
 type ReactionDelta = { like: number; soso: number };
+type Counts = { like: number; soso: number };
 
 function readMyReactions(): Record<string, ReactionKey> {
   try {
@@ -67,18 +70,21 @@ type Props = {
   postId: string;
   likeCount: number;
   sosoCount: number;
-  /** 로티 한 변(px). 기본 26 — 갤러리 카드 알약 크기 */
+  /** 로티 한 변(px). 기본 24 — 갤러리 카드 알약 크기 */
   size?: number;
   /** 알약 안에 "따봉"/"흠" 글자를 같이 쓴다 (상세처럼 여유가 있는 곳) */
   showLabels?: boolean;
   className?: string;
 };
 
-export default function ReactionBar({ postId, likeCount, sosoCount, size = 26, showLabels = false, className }: Props) {
+export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, showLabels = false, className }: Props) {
   // 상세는 SSR 이라 localStorage 를 초기값에서 읽으면 서버/클라 첫 화면이 어긋난다 — 마운트 뒤에 읽는다
   const [mine, setMine] = useState<ReactionKey | null>(null);
-  // 문서 카운트(내 이전 표까지 이미 포함) 위에 이 화면에서 바뀐 만큼만 더한다
-  const [delta, setDelta] = useState<ReactionDelta>({ like: 0, soso: 0 });
+  // 서버가 react 응답으로 준 최신 카운트 — 부모 prop 보다 새 값이라 그쪽을 우선한다.
+  // prop 이 바뀌면(갤러리가 /api/package/stats 로 덮어쓴 경우) 다시 prop 을 따른다.
+  const [serverCounts, setServerCounts] = useState<{ forProps: string; counts: Counts } | null>(null);
+  // 아직 서버에 반영 안 된 내 표의 증감 = diff(보낸 표, 지금 표). 서버 값 위에 이것만 더한다.
+  const [pending, setPending] = useState<ReactionDelta>({ like: 0, soso: 0 });
   const mineRef = useRef<ReactionKey | null>(null);
   const syncedRef = useRef<ReactionKey | null>(null); // 서버에 보냈다고 믿는 표
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,6 +97,7 @@ export default function ReactionBar({ postId, likeCount, sosoCount, size = 26, s
     const target = mineRef.current;
     if (from === target) return;
     syncedRef.current = target;
+    setPending(reactionDiff(target, mineRef.current));
     // keepalive — 페이지를 떠나는 중이어도 요청은 살아남는다
     fetch('/api/package/react', {
       method: 'POST',
@@ -101,14 +108,10 @@ export default function ReactionBar({ postId, likeCount, sosoCount, size = 26, s
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
         if (!json?.ok || !mountedRef.current) return;
-        // 서버가 실제로 적용한 증감과 화면에 미리 반영한 증감이 다르면 그 차이만큼 되돌린다
-        const server = reactionDiff(json.prev, json.next);
-        const client = reactionDiff(from, target);
-        if (server.like !== client.like || server.soso !== client.soso) {
-          setDelta((d) => ({
-            like: d.like + server.like - client.like,
-            soso: d.soso + server.soso - client.soso,
-          }));
+        // 서버 최신값으로 되맞춘다 — 내 표(target)까지 이미 들어 있는 숫자다
+        const st = json.stats;
+        if (st && typeof st.likeCount === 'number' && typeof st.sosoCount === 'number') {
+          setServerCounts({ forProps: `${likeCount}:${sosoCount}`, counts: { like: st.likeCount, soso: st.sosoCount } });
         }
       })
       .catch(() => {});
@@ -121,7 +124,8 @@ export default function ReactionBar({ postId, likeCount, sosoCount, size = 26, s
     mineRef.current = saved;
     syncedRef.current = saved;
     setMine(saved);
-    setDelta({ like: 0, soso: 0 });
+    setPending({ like: 0, soso: 0 });
+    setServerCounts(null);
     return () => {
       mountedRef.current = false;
       // 보내지 못한 표가 남아 있으면(페이지 이동·언마운트) 바로 보낸다
@@ -136,16 +140,20 @@ export default function ReactionBar({ postId, likeCount, sosoCount, size = 26, s
     if (next) lottieRefs.current[key]?.play();
     mineRef.current = next;
     setMine(next);
-    const diff = reactionDiff(prev, next);
-    setDelta((d) => ({ like: d.like + diff.like, soso: d.soso + diff.soso }));
+    setPending(reactionDiff(syncedRef.current, next));
     writeMyReaction(postId, next);
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(flush, REACT_FLUSH_MS);
   };
 
+  // 부모 prop 이 바뀌었으면 서버 응답값은 낡은 것 — prop 을 base 로 쓴다
+  const base: Counts =
+    serverCounts && serverCounts.forProps === `${likeCount}:${sosoCount}`
+      ? serverCounts.counts
+      : { like: likeCount, soso: sosoCount };
   const counts: Record<ReactionKey, number> = {
-    like: Math.max(0, likeCount + delta.like),
-    soso: Math.max(0, sosoCount + delta.soso),
+    like: Math.max(0, base.like + pending.like),
+    soso: Math.max(0, base.soso + pending.soso),
   };
 
   return (
