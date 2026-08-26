@@ -42,6 +42,7 @@ import {
   isRiftRunId,
   getRiftRunLevel,
   getRiftRunBreakdown,
+  type ProbBoxCandidate,
 } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
 import SideSquareAd from '@/components/package/SideSquareAd';
@@ -49,6 +50,23 @@ import TicketTierPicker from '@/components/package/TicketTierPicker';
 import dynamic from 'next/dynamic';
 import styles from '../package.module.css';
 import type { PackageComment } from '@/types/package';
+
+/**
+ * 확률 상자 후보의 표시 이름.
+ * 선택 상자 후보는 등록자가 지정한 선택지를, 묶음 주머니 후보는 내부 구성을 같이 보여준다
+ * (표시된 골드가 그 구성 기준이라 뭘로 계산했는지 보이게).
+ */
+function probBoxCandLabel(cand: ProbBoxCandidate): string {
+  if (cand.choiceOptions && cand.choiceOptions.length > 0) {
+    const picked = cand.choiceOptions.find((o) => o.itemId === cand.itemId) || cand.choiceOptions[0];
+    if (picked.name !== cand.name) return `${cand.name} — ${picked.name}`;
+  }
+  if (cand.bundleItems && cand.bundleItems.length > 0) {
+    const inner = cand.bundleItems.filter((b) => b.quantity > 0).map((b) => `${b.name} ${b.quantity}개`).join(' + ');
+    if (inner) return `${cand.name} (${inner})`;
+  }
+  return cand.name;
+}
 
 // 댓글은 firestore 를 정적으로 물고 있다 — dynamic 으로 별도 청크로 밀어내
 // 상세 첫 로드 JS 에서 firestore 를 완전히 뺀다 (댓글 자체도 접힌 하단 콘텐츠)
@@ -208,7 +226,7 @@ function getPackageItemGold(
     return getChoiceBoxGold(item.choiceBoxCandidates, selected, prices) * item.quantity;
   }
   if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, tiers) * item.quantity;
+    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, tiers, goldPerWon) * item.quantity;
   }
   if (isTicketItemId(item.itemId))
     return (bcRate > 0 ? (calcTicketUnitByItemId(item.itemId, prices, bcRate, tiers) ?? 0) : (item.goldOverride || 0)) * item.quantity;
@@ -465,7 +483,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       }
       // 확률 상자: 현재 시세 기준 기댓값
       if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        return { idx, value: getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, ticketTiers) * item.quantity };
+        return { idx, value: getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, ticketTiers, detailGoldPerWon) * item.quantity };
       }
       if (item.goldOverride != null) {
         // 티켓(지옥 보상 평균)·가공 젬·크리스탈 전부 표시 소계와 동일한 동적 단가로 비교
@@ -922,7 +940,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       }
       // 확률 상자: 시세 × 확률 기댓값
       if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        const sub = getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, ticketTiers) * item.quantity;
+        const sub = getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, ticketTiers, detailGoldPerWon) * item.quantity;
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
         return;
@@ -1672,14 +1690,14 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                     {hasProbBox && (
                       <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
                         {item.probBoxCandidates!.map((cand) => {
-                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers) * cand.quantity;
+                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers, detailGoldPerWon) * cand.quantity;
                           return (
                             <div key={cand.id} className={styles.itemCardChoiceBtn}>
                               {cand.icon && (
                                 /* eslint-disable-next-line @next/next/no-img-element */
                                 <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} className={styles.itemCardChoiceBtnIcon} />
                               )}
-                              <span>{cand.name} ×{cand.quantity} · {cand.probability}% ({formatNumber(candPrice)}G)</span>
+                              <span>{probBoxCandLabel(cand)} ×{cand.quantity} · {cand.probability}% ({formatNumber(candPrice)}G)</span>
                             </div>
                           );
                         })}
@@ -1922,14 +1940,14 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                     {hasProbBox && (
                       <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
                         {item.probBoxCandidates!.map((cand) => {
-                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers) * cand.quantity;
+                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers, detailGoldPerWon) * cand.quantity;
                           return (
                             <div key={cand.id} className={styles.itemCardChoiceBtn}>
                               {cand.icon && (
                                 /* eslint-disable-next-line @next/next/no-img-element */
                                 <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} className={styles.itemCardChoiceBtnIcon} />
                               )}
-                              <span>{cand.name} ×{cand.quantity} · {cand.probability}% ({formatNumber(candPrice)}G)</span>
+                              <span>{probBoxCandLabel(cand)} ×{cand.quantity} · {cand.probability}% ({formatNumber(candPrice)}G)</span>
                             </div>
                           );
                         })}

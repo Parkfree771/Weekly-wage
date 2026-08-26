@@ -75,6 +75,42 @@ export type PackageFormSubmitData = {
   saleClosed: boolean;
 };
 
+// 확률 상자에 담을 수 없는 템플릿 타입 — 상자 안에 상자를 넣는 건 지원하지 않는다.
+// 그 외 시세·고정가·블크·확률표·묶음·선택 아이템과 '기타 항목'은 전부 담을 수 있다.
+const PROB_BOX_EXCLUDED_TYPES = new Set<TemplateItem['type']>(['choiceBox', 'probBox']);
+
+/**
+ * 상자 후보 id 카운터의 시작값 — 수정 모드에서 이미 'cand_3' 까지 있는데 0부터 다시 세면
+ * 새로 담은 후보가 기존 후보와 같은 id 를 갖게 되어 삭제·수정이 둘 다에 먹힌다.
+ */
+function maxCandidateSeq(items: AddedItem[] | undefined, prefix: string): number {
+  let max = 0;
+  for (const a of items || []) {
+    const cands = prefix === 'cand_' ? a.choiceBoxCandidates : a.probBoxCandidates;
+    for (const c of cands || []) {
+      if (!c.id.startsWith(prefix)) continue;
+      const n = parseInt(c.id.slice(prefix.length), 10);
+      if (Number.isFinite(n) && n > max) max = n;
+    }
+  }
+  return max;
+}
+
+/** 확률 상자 후보가 이 템플릿에서 나온 것인지 — 아이템 목록 셀의 '담긴 개수' 배지용 */
+function probBoxCandFromTemplate(cand: ProbBoxCandidate, template: TemplateItem): boolean {
+  switch (template.type) {
+    case 'fixed': return cand.itemId === `fixed_${template.id}`;
+    case 'crystal': return cand.itemId === `crystal_${template.id}`;
+    case 'expected': return cand.itemId === `expected_${template.id}`;
+    case 'bundle': return cand.itemId === `bundle_${template.id}`;
+    // choice 는 itemId 가 고른 선택지로 바뀌니 상자 이름으로 센다 (공명의 기운/휴게 물약처럼 선택지가 같은 템플릿 구분)
+    case 'choice': return !!cand.choiceOptions?.length && cand.name === template.name;
+    // choiceOptions 가 있으면 itemId 는 고른 선택지라 같은 시세 아이템의 simple 템플릿과 겹친다
+    // (파괴/수호 결정 선택 → 66102007 = 파괴석 결정) — 선택 후보는 여기서 제외
+    default: return !!template.itemId && cand.itemId === template.itemId && !cand.choiceOptions?.length;
+  }
+}
+
 // ─── 저장된 PackageItem[] → 폼 상태 역매핑 ───
 
 type MapCtx = { itemCounter: number; customCounter: number };
@@ -299,9 +335,9 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     const template = TEMPLATES_MAP[templateId];
     if (!template) return;
 
-    // 확률 상자 담기 모드: 시세·고정가(티켓 등) 아이템 클릭은 상자 후보로 들어간다 (그 외 타입은 무시 — 목록에서 흐려짐)
+    // 확률 상자 담기 모드: 상자 자신(선택 상자·확률 상자)만 빼고 모든 아이템이 후보로 들어간다
     if (probBoxTargetId) {
-      if (template.type === 'simple' || template.type === 'fixed') {
+      if (!PROB_BOX_EXCLUDED_TYPES.has(template.type)) {
         handleProbBoxAddCandidate(probBoxTargetId, templateId);
       }
       return;
@@ -345,7 +381,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     setAddedItems((prev) => [...prev, newItem]);
   };
 
-  const choiceBoxCandidateCounterRef = useRef(0);
+  const choiceBoxCandidateCounterRef = useRef(maxCandidateSeq(initial?.addedItems, 'cand_'));
 
   const handleChoiceBoxPickCountChange = (itemId: string, pickCount: number) => {
     setAddedItems((prev) =>
@@ -422,7 +458,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   };
 
   // ── 확률 상자 핸들러 ──
-  const probBoxCandidateCounterRef = useRef(0);
+  const probBoxCandidateCounterRef = useRef(maxCandidateSeq(initial?.addedItems, 'pcand_'));
 
   const handleProbBoxNameChange = (itemId: string, name: string) => {
     setAddedItems((prev) =>
@@ -430,34 +466,130 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     );
   };
 
-  const handleProbBoxAddCandidate = (itemId: string, candidateTemplateId: string) => {
-    const candidateTemplate = TEMPLATES_MAP[candidateTemplateId];
-    if (!candidateTemplate) return;
-    // 시세 아이템은 itemId 그대로, fixed(티켓 등)는 'fixed_{id}' — 동적 단가는 getProbBoxCandidateUnit 이 해석
-    let candItemId: string;
-    let goldPerUnit: number | undefined;
-    if (candidateTemplate.type === 'simple' && candidateTemplate.itemId) {
-      candItemId = candidateTemplate.itemId;
-    } else if (candidateTemplate.type === 'fixed') {
-      candItemId = `fixed_${candidateTemplate.id}`;
-      goldPerUnit = candidateTemplate.fixedGold || 0; // 시세·환율 없을 때 폴백
-    } else {
-      return;
-    }
+  /** 후보 1개를 상자에 넣는다 (담기 모드에서 목록 클릭 / 기타 항목 추가 공용) */
+  const pushProbBoxCandidate = (boxId: string, make: (id: string) => ProbBoxCandidate) => {
     probBoxCandidateCounterRef.current += 1;
-    const newCandidate: ProbBoxCandidate = {
-      id: `pcand_${probBoxCandidateCounterRef.current}`,
-      name: candidateTemplate.name,
-      icon: candidateTemplate.icon,
-      itemId: candItemId,
-      ...(goldPerUnit != null ? { goldPerUnit } : {}),
-      quantity: 1,
-      probability: 0,
-    };
+    const newCandidate = make(`pcand_${probBoxCandidateCounterRef.current}`);
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === boxId
+          ? { ...a, probBoxCandidates: [...(a.probBoxCandidates || []), newCandidate] }
+          : a,
+      ),
+    );
+  };
+
+  // 템플릿 타입별로 계산에 필요한 데이터를 후보에 비정규화해 담는다.
+  // (itemId 규칙은 저장되는 PackageItem 과 동일 — 'fixed_'/'crystal_'/'expected_'/'bundle_' 접두사)
+  const handleProbBoxAddCandidate = (itemId: string, candidateTemplateId: string) => {
+    const t = TEMPLATES_MAP[candidateTemplateId];
+    if (!t || PROB_BOX_EXCLUDED_TYPES.has(t.type)) return;
+
+    const base = { name: t.name, icon: t.icon, quantity: 1, probability: 0 };
+    pushProbBoxCandidate(itemId, (id) => {
+      switch (t.type) {
+        case 'fixed':
+          // 티켓·유물코어·가공젬은 getProbBoxCandidateUnit 이 동적 단가로 풀고, 그 외는 goldPerUnit 고정가
+          return { id, ...base, itemId: `fixed_${t.id}`, goldPerUnit: t.fixedGold || 0 };
+        case 'crystal':
+          return { id, ...base, itemId: `crystal_${t.id}`, crystalPerUnit: t.crystalPerUnit || 0 };
+        case 'expected':
+          return { id, ...base, itemId: `expected_${t.id}`, expectedItems: t.expectedItems || [] };
+        case 'bundle':
+          // 내부 개수는 담은 뒤 상자 안에서 직접 입력한다 (기본 0)
+          return {
+            id, ...base, itemId: `bundle_${t.id}`,
+            bundleItems: (t.bundleContents || []).map((bc) => ({ ...bc, quantity: 0 })),
+          };
+        case 'choice': {
+          // 기본 선택은 시세상 최고가 선택지 (일반 아이템 추가와 같은 규칙)
+          const priceOf = (cid: string) => t.id === 'gem-hero-fixed-select'
+            ? getFixedGemSelectUnitPrice(cid, latestPrices, goldPerWon)
+            : getItemUnitPrice(cid, latestPrices);
+          const choices = t.choices || [];
+          const best = choices.reduce((max, c) => (priceOf(c.itemId) > priceOf(max.itemId) ? c : max), choices[0]);
+          return {
+            id, ...base,
+            itemId: best.itemId,
+            // icon 은 고정형 젬 상자 판별에 쓰이므로 선택지 아이콘이 없으면 키 자체를 넣지 않는다 (Firestore 는 undefined 를 거부)
+            choiceOptions: choices.map((c) => ({ itemId: c.itemId, name: c.name, ...(c.icon ? { icon: c.icon } : {}) })),
+          };
+        }
+        default: // simple — itemId 가 없는 타입은 개당 골드를 직접 적는 후보로
+          return t.itemId ? { id, ...base, itemId: t.itemId } : { id, ...base, goldPerUnit: 0 };
+      }
+    });
+  };
+
+  /** 담기 모드에서 '기타 항목 추가' — 이름·개당 골드를 직접 적는 후보 */
+  const handleProbBoxAddCustomCandidate = (boxId: string) => {
+    pushProbBoxCandidate(boxId, (id) => ({ id, name: '', quantity: 1, probability: 0, goldPerUnit: 0 }));
+  };
+
+  const handleProbBoxCandidateNameChange = (itemId: string, candidateId: string, name: string) => {
     setAddedItems((prev) =>
       prev.map((a) =>
         a.id === itemId
-          ? { ...a, probBoxCandidates: [...(a.probBoxCandidates || []), newCandidate] }
+          ? {
+              ...a,
+              probBoxCandidates: (a.probBoxCandidates || []).map((c) =>
+                c.id === candidateId ? { ...c, name } : c,
+              ),
+            }
+          : a,
+      ),
+    );
+  };
+
+  const handleProbBoxCandidateGoldChange = (itemId: string, candidateId: string, gold: number) => {
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId
+          ? {
+              ...a,
+              probBoxCandidates: (a.probBoxCandidates || []).map((c) =>
+                c.id === candidateId ? { ...c, goldPerUnit: Math.max(0, gold) } : c,
+              ),
+            }
+          : a,
+      ),
+    );
+  };
+
+  const handleProbBoxCandidateChoiceChange = (itemId: string, candidateId: string, choiceId: string) => {
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId
+          ? {
+              ...a,
+              probBoxCandidates: (a.probBoxCandidates || []).map((c) =>
+                c.id === candidateId ? { ...c, itemId: choiceId } : c,
+              ),
+            }
+          : a,
+      ),
+    );
+  };
+
+  const handleProbBoxCandidateBundleQtyChange = (
+    itemId: string, candidateId: string, contentItemId: string, qty: number,
+  ) => {
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId
+          ? {
+              ...a,
+              probBoxCandidates: (a.probBoxCandidates || []).map((c) =>
+                c.id === candidateId
+                  ? {
+                      ...c,
+                      bundleItems: (c.bundleItems || []).map((bi) =>
+                        bi.itemId === contentItemId ? { ...bi, quantity: Math.max(0, qty) } : bi,
+                      ),
+                    }
+                  : c,
+              ),
+            }
           : a,
       ),
     );
@@ -533,7 +665,8 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   };
 
   const handleAddCustomItem = () => {
-    if (probBoxTargetId) return; // 담기 모드 중에는 커스텀 항목 추가로 새지 않게
+    // 담기 모드 중이면 상자 밖이 아니라 상자 안의 후보로 들어간다
+    if (probBoxTargetId) { handleProbBoxAddCustomCandidate(probBoxTargetId); return; }
     customCounterRef.current += 1;
     const cid = `custom-${customCounterRef.current}`;
     setAddedItems((prev) => [...prev, {
@@ -941,28 +1074,73 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                 placeholder={template.name} maxLength={30} />
             </div>
             {(added.probBoxCandidates || []).map((cand) => {
-              const candUnit = getProbBoxCandidateUnit(cand, latestPrices, officialGold || 8500);
+              const candUnit = getProbBoxCandidateUnit(cand, latestPrices, officialGold || 8500, undefined, goldPerWon);
+              const isCustomCand = !cand.itemId && !cand.choiceOptions?.length;
               return (
-                <div key={cand.id} className={styles.innerQuantityRow}>
-                  {cand.icon && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} style={{ width: 20, height: 20 }}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                <div key={cand.id}>
+                  <div className={styles.innerQuantityRow}>
+                    {cand.icon && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} style={{ width: 20, height: 20 }}
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    )}
+                    {isCustomCand ? (
+                      <input type="text" className={styles.customNameInput}
+                        value={cand.name}
+                        onChange={(e) => handleProbBoxCandidateNameChange(added.id, cand.id, e.target.value)}
+                        placeholder="아이템 이름" maxLength={30} />
+                    ) : (
+                      <span className={styles.innerQuantityLabel}>{cand.name}</span>
+                    )}
+                    <input type="number" className={styles.quantityInput}
+                      value={cand.quantity}
+                      onChange={(e) => handleProbBoxCandidateQuantityChange(added.id, cand.id, parseInt(e.target.value) || 1)}
+                      min={1} style={{ width: '60px' }} title="개수" />
+                    <span className={styles.innerQuantityLabel}>개</span>
+                    <input type="number" className={styles.gachaProbInput}
+                      value={cand.probability || ''}
+                      onChange={(e) => handleProbBoxCandidateProbChange(added.id, cand.id, parseFloat(e.target.value) || 0)}
+                      placeholder="%" min={0} max={100} step={0.1} title="등장 확률 (%)" />
+                    <span className={styles.gachaProbUnit}>%</span>
+                    <span className={styles.innerQuantityLabel}>{formatNumber(candUnit * cand.quantity)}G</span>
+                    <button type="button" className={styles.removeItemBtn}
+                      onClick={() => handleProbBoxRemoveCandidate(added.id, cand.id)} title="아이템 제거">&times;</button>
+                  </div>
+                  {/* 선택 상자 후보: 어떤 선택지가 나오는지 지정 (시세는 그 선택지 기준으로 계산) */}
+                  {cand.choiceOptions && cand.choiceOptions.length > 0 && (
+                    <div className={styles.innerQuantityRow}>
+                      <span className={styles.innerQuantityLabel}>↳ 선택지</span>
+                      <select className={styles.choiceSelect}
+                        value={cand.itemId || cand.choiceOptions[0].itemId}
+                        onChange={(e) => handleProbBoxCandidateChoiceChange(added.id, cand.id, e.target.value)}>
+                        {cand.choiceOptions.map((opt) => (
+                          <option key={opt.itemId} value={opt.itemId}>{opt.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   )}
-                  <span className={styles.innerQuantityLabel}>{cand.name}</span>
-                  <input type="number" className={styles.quantityInput}
-                    value={cand.quantity}
-                    onChange={(e) => handleProbBoxCandidateQuantityChange(added.id, cand.id, parseInt(e.target.value) || 1)}
-                    min={1} style={{ width: '60px' }} title="개수" />
-                  <span className={styles.innerQuantityLabel}>개</span>
-                  <input type="number" className={styles.gachaProbInput}
-                    value={cand.probability || ''}
-                    onChange={(e) => handleProbBoxCandidateProbChange(added.id, cand.id, parseFloat(e.target.value) || 0)}
-                    placeholder="%" min={0} max={100} step={0.1} title="등장 확률 (%)" />
-                  <span className={styles.gachaProbUnit}>%</span>
-                  <span className={styles.innerQuantityLabel}>{formatNumber(candUnit * cand.quantity)}G</span>
-                  <button type="button" className={styles.removeItemBtn}
-                    onClick={() => handleProbBoxRemoveCandidate(added.id, cand.id)} title="아이템 제거">&times;</button>
+                  {/* 묶음 주머니 후보: 내부 아이템별 개수 */}
+                  {(cand.bundleItems || []).map((bi) => (
+                    <div key={bi.itemId} className={styles.innerQuantityRow}>
+                      <span className={styles.innerQuantityLabel}>↳ {bi.name}</span>
+                      <input type="number" className={styles.quantityInput}
+                        value={bi.quantity}
+                        onChange={(e) => handleProbBoxCandidateBundleQtyChange(added.id, cand.id, bi.itemId, parseInt(e.target.value) || 0)}
+                        min={0} style={{ width: '70px' }} />
+                      <span className={styles.innerQuantityLabel}>개</span>
+                    </div>
+                  ))}
+                  {/* 기타(직접 입력) 후보: 개당 골드 */}
+                  {isCustomCand && (
+                    <div className={styles.innerQuantityRow}>
+                      <span className={styles.innerQuantityLabel}>↳ 개당 골드</span>
+                      <input type="number" className={styles.quantityInput}
+                        value={cand.goldPerUnit || ''}
+                        onChange={(e) => handleProbBoxCandidateGoldChange(added.id, cand.id, parseFloat(e.target.value) || 0)}
+                        min={0} style={{ width: '100px' }} placeholder="0" />
+                      <span className={styles.innerQuantityLabel}>G</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -971,7 +1149,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               const isOk = Math.abs(probSum - 100) < 0.01;
               return (
                 <div className={`${styles.gachaProbSum} ${isOk ? styles.gachaProbSumOk : styles.gachaProbSumError}`}>
-                  확률 합계: {probSum.toFixed(1)}% {isOk ? `· 기댓값 ${formatNumber(getProbBoxExpectedGold(added.probBoxCandidates, latestPrices, officialGold || 8500))}G` : '(100%가 되어야 합니다)'}
+                  확률 합계: {probSum.toFixed(1)}% {isOk ? `· 기댓값 ${formatNumber(getProbBoxExpectedGold(added.probBoxCandidates, latestPrices, officialGold || 8500, undefined, goldPerWon))}G` : '(100%가 되어야 합니다)'}
                 </div>
               );
             })()}
@@ -1022,6 +1200,10 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
       const boxName = a.probBoxName?.trim() || '확률 상자';
       if (cands.length === 0) {
         errors.probBox = `${boxName}에 아이템을 1개 이상 담아주세요.`;
+        break;
+      }
+      if (cands.some((c) => !c.name.trim())) {
+        errors.probBox = `${boxName}에 담은 기타 항목의 이름을 입력해주세요.`;
         break;
       }
       const sum = cands.reduce((s, c) => s + (c.probability || 0), 0);
@@ -1447,13 +1629,13 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
           )}
           <div className={styles.availableGrid}>
             {TEMPLATE_ITEMS.map((template) => {
-              // 담기 모드: 시세·고정가 아이템만 클릭 가능. 강조·카운트도 (전체 추가 수 대신) 대상 상자에 담긴 수 기준
+              // 담기 모드: 상자(선택 상자·확률 상자)만 빼고 전부 클릭 가능.
+              // 강조·카운트도 (전체 추가 수 대신) 대상 상자에 담긴 수 기준
               const targetBox = probBoxTargetId ? addedItems.find((a) => a.id === probBoxTargetId) : null;
-              const candItemId = template.type === 'fixed' ? `fixed_${template.id}` : template.itemId;
               const candCount = targetBox
-                ? (targetBox.probBoxCandidates || []).filter((c) => c.itemId === candItemId).length
+                ? (targetBox.probBoxCandidates || []).filter((c) => probBoxCandFromTemplate(c, template)).length
                 : 0;
-              const disabledForProbBox = !!probBoxTargetId && template.type !== 'simple' && template.type !== 'fixed';
+              const disabledForProbBox = !!probBoxTargetId && PROB_BOX_EXCLUDED_TYPES.has(template.type);
               const addedCount = probBoxTargetId ? candCount : (addedCountByTemplate[template.id] || 0);
               return (
                 <button key={template.id} type="button"
@@ -1478,7 +1660,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               );
             })}
             <button type="button"
-              className={`${styles.availableItem} ${styles.availableItemCustom} ${probBoxTargetId ? styles.availableItemDisabled : ''}`}
+              className={`${styles.availableItem} ${styles.availableItemCustom}`}
               onClick={handleAddCustomItem}>
               <span className={styles.availableItemCustomPlus}>+</span>
               <span className={styles.availableItemName}>기타 항목 추가</span>

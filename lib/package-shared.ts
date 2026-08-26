@@ -73,23 +73,60 @@ export type ProbBoxCandidate = {
   id: string; // 후보 인스턴스 고유 ID
   name: string;
   icon?: string;
-  itemId?: string; // 시세 추적 아이템(TRACKED_ITEMS id) 또는 'fixed_{템플릿id}' (티켓 등 fixed 타입)
+  itemId?: string; // 시세 추적 아이템(TRACKED_ITEMS id) / 'fixed_{템플릿id}' / choice 후보의 선택된 선택지 id
   goldPerUnit?: number; // fixed 후보의 정적 골드 폴백 / 커스텀 아이템 개당 골드 (itemId 없을 때 사용)
   quantity: number;
   probability: number; // 0~100 (%)
+  // ── 시세·고정가 외 템플릿을 담을 때 쓰는 필드. PackageItem 과 같은 방식으로 비정규화 저장한다
+  //    (템플릿이 나중에 바뀌거나 사라져도 등록된 글의 계산이 깨지지 않게) ──
+  crystalPerUnit?: number; // crystal 후보: 개당 블루크리스탈 — 환율 바뀌면 같이 움직인다
+  expectedItems?: { itemId: string; probability: number }[]; // expected 후보: 내부 확률표 (probability 는 0~1)
+  bundleItems?: { itemId: string; name: string; icon?: string; quantity: number }[]; // bundle 후보: 주머니 내부 구성
+  choiceOptions?: { itemId: string; name: string; icon?: string; quantity?: number }[]; // choice 후보: 선택지 목록
 };
 
 /**
  * 확률 상자 후보 1개의 개당 골드.
  * 시세 아이템은 현재 시세, 'fixed_' 후보 중 티켓·유물코어·가공젬은 사이트 공통 동적 단가
  * (지옥 보상 평균 등, bcRate = 100블크당 골드), 그 외 fixed 는 goldPerUnit(등록 시점 고정가).
+ * 블크·확률표·묶음·선택 후보는 각 타입 규칙대로 현재 시세로 매번 다시 계산한다.
  */
 export function getProbBoxCandidateUnit(
   cand: ProbBoxCandidate,
   prices: Record<string, number>,
   bcRate: number = 0,
   tiers: TicketTiers = DEFAULT_TICKET_TIERS,
+  goldPerWon: number = 0,
 ): number {
+  // 블크 환율: 명시값 우선, 없으면 bcRate(100블크당 골드)에서 역산 (100 BC = 2750원)
+  const gpw = goldPerWon > 0 ? goldPerWon : bcRate > 0 ? bcRate / 2750 : 0;
+
+  // 블크 기반 (도약의 정수·페온·축복 등)
+  if (cand.crystalPerUnit && cand.crystalPerUnit > 0) return cand.crystalPerUnit * gpw * 27.5;
+
+  // 확률표 상자 (영웅 젬 랜덤 상자 등) — Σ(시세 × 확률)
+  if (cand.expectedItems && cand.expectedItems.length > 0) {
+    return cand.expectedItems.reduce(
+      (sum, ei) => sum + getItemUnitPrice(ei.itemId, prices) * ei.probability, 0);
+  }
+
+  // 묶음 주머니 — Σ(내부 아이템 시세 × 개수)
+  if (cand.bundleItems && cand.bundleItems.length > 0) {
+    return cand.bundleItems.reduce(
+      (sum, bi) => sum + getItemUnitPrice(bi.itemId, prices) * bi.quantity, 0);
+  }
+
+  // 선택 상자 — 등록자가 고른 선택지 기준 (선택지별 개수 반영).
+  // 확률 상자는 "이 확률로 이게 나온다"를 적는 곳이라, 다른 곳처럼 최고가로 덮어쓰지 않고 지정한 선택지를 그대로 쓴다.
+  if (cand.choiceOptions && cand.choiceOptions.length > 0) {
+    const picked = cand.itemId || cand.choiceOptions[0].itemId;
+    const qty = cand.choiceOptions.find((c) => c.itemId === picked)?.quantity ?? 1;
+    const unit = cand.icon === FIXED_GEM_SELECT_ICON
+      ? getFixedGemSelectUnitPrice(picked, prices, gpw)
+      : getItemUnitPrice(picked, prices);
+    return unit * qty;
+  }
+
   if (!cand.itemId) return cand.goldPerUnit || 0;
   if (cand.itemId.startsWith('fixed_')) {
     const hasPrices = Object.keys(prices).length > 0;
@@ -112,10 +149,11 @@ export function getProbBoxExpectedGold(
   prices: Record<string, number>,
   bcRate: number = 0,
   tiers: TicketTiers = DEFAULT_TICKET_TIERS,
+  goldPerWon: number = 0,
 ): number {
   if (!candidates || candidates.length === 0) return 0;
   return candidates.reduce((sum, c) => {
-    return sum + getProbBoxCandidateUnit(c, prices, bcRate, tiers) * c.quantity * ((c.probability || 0) / 100);
+    return sum + getProbBoxCandidateUnit(c, prices, bcRate, tiers, goldPerWon) * c.quantity * ((c.probability || 0) / 100);
   }, 0);
 }
 
@@ -1039,7 +1077,7 @@ export function getUnitPrice(
       return getChoiceBoxGold(added.choiceBoxCandidates, added.choiceBoxSelectedIds, prices);
     case 'probBox':
       // 티켓류 후보의 동적 단가용 bcRate — fixed 케이스와 같은 기본값 사용
-      return getProbBoxExpectedGold(added.probBoxCandidates, prices, officialGoldRate || 8500);
+      return getProbBoxExpectedGold(added.probBoxCandidates, prices, officialGoldRate || 8500, undefined, goldPerWon);
     default:
       return 0;
   }
@@ -1068,7 +1106,7 @@ export function calculateGachaItemGold(
   }
   // 확률 상자 → 현재 시세 기준 기댓값
   if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, tiers) * item.quantity;
+    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, tiers, goldPerWon) * item.quantity;
   }
   // 묶음 주머니 → 내부 아이템 시세 합산 × 주머니 수량
   if (item.bundleItems && item.bundleItems.length > 0) {
@@ -1186,7 +1224,7 @@ export function calculatePostEfficiency(
       return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
     }
     if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-      return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate) * item.quantity;
+      return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, undefined, goldPerWon) * item.quantity;
     }
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
       return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;

@@ -268,7 +268,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
     }
     // 확률 상자: 현재 시세 기준 기댓값 (티켓 후보는 bcRate 로 동적 단가)
     if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-      return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate) * item.quantity;
+      return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, undefined, goldPerWon) * item.quantity;
     }
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
       return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;

@@ -21,7 +21,14 @@ export type PackageItem = {
   choiceBoxPickCount?: number; // 택N
   choiceBoxSelectedIds?: string[]; // 실제 가치 계산에 포함되는 후보 id들 (길이 = pickCount)
   // 확률 상자 (등록자가 담은 아이템·확률로 기댓값 = Σ(시세 × 수량 × 확률/100) 을 계산하는 상자)
-  probBoxCandidates?: { id: string; name: string; icon?: string; itemId?: string; goldPerUnit?: number; quantity: number; probability: number }[];
+  probBoxCandidates?: {
+    id: string; name: string; icon?: string; itemId?: string; goldPerUnit?: number; quantity: number; probability: number;
+    // 시세·고정가 외 타입(블크·확률표·묶음·선택)을 담았을 때의 비정규화 데이터 — lib/package-shared.ts 의 ProbBoxCandidate 와 동일
+    crystalPerUnit?: number;
+    expectedItems?: { itemId: string; probability: number }[];
+    bundleItems?: { itemId: string; name: string; icon?: string; quantity: number }[];
+    choiceOptions?: { itemId: string; name: string; icon?: string; quantity?: number }[];
+  }[];
 };
 
 // ─── 게시물 ───
