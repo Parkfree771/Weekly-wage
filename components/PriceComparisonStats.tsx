@@ -2,6 +2,7 @@
 
 import { useMemo, createContext, useContext } from 'react';
 import { Card } from 'react-bootstrap';
+import type { TrackedItem } from '@/lib/items-to-track';
 
 type PriceEntry = {
   price: number;
@@ -22,6 +23,14 @@ type ReferenceLineType = 'min' | 'avg' | 'max' | 'current';
 
 type PriceContextType = {
   history: PriceEntry[];
+  selectedItem: TrackedItem | null;  // 지금 차트가 보고 있는 아이템 (아이콘·이름)
+  categoryLabel: string;             // 카테고리 라벨 — 특별 이벤트 점 색을 차트와 맞추는 열쇠
+  // 이벤트 기간 보기 — 이벤트 대비 카드에서 고른 이벤트로 차트 구간을 잡는다.
+  //   1개 고름 → 그 날 ~ 오늘 / 2개 고름 → 두 이벤트 사이. 고른 게 있으면 기간 버튼보다 이쪽이 이긴다.
+  // 3개째를 고르면 가장 먼저 고른 걸 놓아 준다 (항상 최대 2개, 막다른 상태가 없게).
+  eventSelection: string[];                        // 고른 이벤트 날짜들 (고른 순서, 최대 2개)
+  toggleEventSelection: (date: string) => void;
+  eventRangeActive: boolean;                       // 이벤트 구간이 적용 중인가 (기간 버튼 끄기용)
   filteredHistory: PriceEntry[];
   selectedPeriod: PeriodOption;
   setSelectedPeriod: (period: PeriodOption) => void;
@@ -45,6 +54,11 @@ type PriceContextType = {
 
 export const PriceContext = createContext<PriceContextType>({
   history: [],
+  selectedItem: null,
+  categoryLabel: '',
+  eventSelection: [],
+  toggleEventSelection: () => {},
+  eventRangeActive: false,
   filteredHistory: [],
   selectedPeriod: '1m',
   setSelectedPeriod: () => {},

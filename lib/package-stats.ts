@@ -11,7 +11,10 @@
 // - 행 수 = 글 수(투표자 저장 안 함). 1글 1표 진실은 그대로 httpOnly 쿠키.
 import { neon } from '@neondatabase/serverless';
 
-export type PackageStats = { viewCount: number; likeCount: number; sosoCount: number };
+// updatedAt = 이 행이 마지막으로 바뀐 시각(epoch ms). 클라이언트가 스냅샷의 신선도를 비교하는 데 쓴다 —
+// /api/package/stats 는 CDN 에 20초 캐시되므로, 방금 내 표가 반영된 값보다 낡은 응답이 나중에 도착할 수 있다.
+// 그때 이 값이 작으면 클라이언트가 버린다(내 표가 잠깐 사라졌다 돌아오는 현상 방지). 컬럼은 이미 있던 것 — 추가 쿼리 없음.
+export type PackageStats = { viewCount: number; likeCount: number; sosoCount: number; updatedAt: number };
 
 let client: ReturnType<typeof neon> | null = null;
 function sql() {
@@ -23,18 +26,19 @@ function sql() {
   return client;
 }
 
-type Row = { post_id: string; view_count: number; like_count: number; soso_count: number };
+type Row = { post_id: string; view_count: number; like_count: number; soso_count: number; updated_at: string };
 const toStats = (r: Row): PackageStats => ({
   viewCount: Number(r.view_count),
   likeCount: Number(r.like_count),
   sosoCount: Number(r.soso_count),
+  updatedAt: r.updated_at ? new Date(r.updated_at).getTime() : 0,
 });
 
 /** 여러 글의 집계를 한 번에. 행이 없는 글은 결과에서 빠진다(= 0 취급) */
 export async function readPackageStats(ids: string[]): Promise<Record<string, PackageStats>> {
   if (ids.length === 0) return {};
   const rows = (await sql()`
-    SELECT post_id, view_count, like_count, soso_count
+    SELECT post_id, view_count, like_count, soso_count, updated_at
     FROM package_stats
     WHERE post_id = ANY(${ids})
   `) as Row[];
@@ -56,7 +60,7 @@ export async function bumpPackageStats(
   const s = delta.soso ?? 0;
   if (v === 0 && l === 0 && s === 0) {
     const got = await readPackageStats([postId]);
-    return got[postId] ?? { viewCount: 0, likeCount: 0, sosoCount: 0 };
+    return got[postId] ?? { viewCount: 0, likeCount: 0, sosoCount: 0, updatedAt: 0 };
   }
   const rows = (await sql()`
     INSERT INTO package_stats (post_id, view_count, like_count, soso_count)
@@ -66,7 +70,7 @@ export async function bumpPackageStats(
       like_count = GREATEST(0, package_stats.like_count + ${l}),
       soso_count = GREATEST(0, package_stats.soso_count + ${s}),
       updated_at = now()
-    RETURNING post_id, view_count, like_count, soso_count
+    RETURNING post_id, view_count, like_count, soso_count, updated_at
   `) as Row[];
   return toStats(rows[0]);
 }

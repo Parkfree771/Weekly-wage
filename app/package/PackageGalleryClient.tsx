@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
+import { mergeKnownStats, recordManyStats, subscribeStats } from '@/lib/package-stats-client';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
@@ -28,6 +29,9 @@ import GuideFaq from '@/components/common/GuideFaq';
 import PackageEfficiencyGuideBody from '@/components/guide/PackageEfficiencyGuideBody';
 import { faqData } from './faq-data';
 import styles from './package.module.css';
+
+// 집계를 다시 받는 최소 간격 — /api/package/stats 의 CDN s-maxage 와 같은 값
+const STATS_REFRESH_MS = 20_000;
 
 // 페이지당 글 6개 고정. 아제나 카드는 갤러리 칸을 차지하지 않는다 —
 // 드롭다운 옆 칩(아이콘 + 효율)으로 접어 두고, 누르면 팝업으로 카드를 띄운다.
@@ -293,28 +297,43 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
   // /api/package/stats 를 한 번 불러 덮어쓴다. ID 를 정렬해 같은 페이지 방문자끼리 URL 이 같게
   // (CDN 캐시 공유) 하고, 값이 실제로 바뀐 글만 갈아 끼워 불필요한 리렌더를 막는다.
   const statsKey = posts.map((p) => p.id).filter(Boolean).sort().join(',');
+  // 탭으로 돌아왔을 때 다시 받기 위한 열쇠. 자리를 비운 사이 남이 누른 표가 그때 들어온다.
+  const [statsEpoch, setStatsEpoch] = useState(0);
   useEffect(() => {
     if (!statsKey) return;
     let cancelled = false;
     fetch(`/api/package/stats?ids=${encodeURIComponent(statsKey)}`)
       .then((res) => (res.ok ? res.json() : null))
-      .then((stats: Record<string, { viewCount: number; likeCount: number; sosoCount: number }> | null) => {
-        if (cancelled || !stats) return;
-        setPosts((prev) => {
-          let changed = false;
-          const next = prev.map((p) => {
-            const st = stats[p.id];
-            if (!st) return p;
-            if ((p.viewCount || 0) === st.viewCount && (p.likeCount || 0) === st.likeCount && (p.sosoCount || 0) === st.sosoCount) return p;
-            changed = true;
-            return { ...p, viewCount: st.viewCount, likeCount: st.likeCount, sosoCount: st.sosoCount };
-          });
-          return changed ? next : prev;
-        });
+      .then((stats: Record<string, unknown> | null) => {
+        if (cancelled) return;
+        // 세션 캐시를 거친다 — CDN 20초 캐시라 방금 올린 내 표보다 낡은 응답일 수 있고,
+        // 그런 값은 캐시가 버려서 화면 숫자가 되돌아가지 않는다.
+        recordManyStats(stats);
+        setPosts((prev) => mergeKnownStats(prev));
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [statsKey]);
+  }, [statsKey, statsEpoch]);
+
+  // 다른 탭에 갔다 돌아오면 집계를 한 번 다시 받는다 — "돌아왔더니 옛날 숫자" 를 없앤다.
+  // 간격은 CDN 캐시(s-maxage 20)와 같은 20초: 그보다 자주 물어봐야 같은 캐시가 나오므로 의미가 없다.
+  // 캐시가 살아 있으면 엣지가 받아내 Netlify 함수·Neon 쿼리는 그대로 0이다.
+  useEffect(() => {
+    let last = Date.now();
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      const now = Date.now();
+      if (now - last < STATS_REFRESH_MS) return;
+      last = now;
+      setStatsEpoch((e) => e + 1);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+
+  // 카드에서 표를 누르거나 상세를 열어 최신값이 올라오면(react·view 응답) 목록 숫자도 바로 따라간다.
+  // 메모리 이벤트라 요청 0 — 상세를 보고 목록으로 돌아왔을 때 숫자가 과거로 돌아가는 것도 이걸로 막힌다.
+  useEffect(() => subscribeStats(() => setPosts((prev) => mergeKnownStats(prev))), []);
 
   // 이미 받아둔 posts 위에서만 도는 정렬·필터. 여기서 네트워크를 타는 건 아무것도 없다.
   const visiblePosts = useMemo(() => {

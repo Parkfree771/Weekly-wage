@@ -141,7 +141,7 @@ export default function ItemSelector({
   onSelectSubCategory,
 }: ItemSelectorProps) {
   const { theme } = useTheme();
-  const { isGridView, onToggleGridView, selectedPeriod, setSelectedPeriod, openChartSettings } = useContext(PriceContext);
+  const { isGridView, onToggleGridView, selectedPeriod, setSelectedPeriod, openChartSettings, eventRangeActive } = useContext(PriceContext);
 
   // 기간 라벨 매핑
   const periodLabels: Record<PeriodOption, string> = {
@@ -497,7 +497,7 @@ export default function ItemSelector({
             {/* 기간 선택 버튼 - 모바일 */}
             <div style={{ display: 'flex', gap: '2px' }}>
               {(['1m', '2m', '3m', 'all'] as PeriodOption[]).map((period) => {
-                const isSelected = selectedPeriod === period;
+                const isSelected = !eventRangeActive && selectedPeriod === period;
                 const categoryStyle = CATEGORY_STYLES[bottomSheetCategory];
                 return (
                   <button

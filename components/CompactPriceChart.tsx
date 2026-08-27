@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
 import { TrackedItem } from '@/lib/items-to-track';
+import { PRICE_EVENTS, SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY } from '@/lib/price-events';
 import { PriceContext } from './PriceComparisonStats';
 import { ColoredItemName } from '@/lib/components/ColoredItemName';
 import TrendArrow from './TrendArrow';
@@ -45,24 +46,9 @@ type PriceEntry = {
   date?: string; // YYYY-MM-DD 형식
 };
 
-// 이벤트 정의
-type EventInfo = {
-  date: string; // YYYY-MM-DD 형식
-  label: string;
-  color?: string;
-};
-
-const EVENTS: EventInfo[] = [
-  { date: '2025-11-07', label: '7주년 라방' },
-  { date: '2025-12-07', label: '로아온' },
-  { date: '2025-12-10', label: '윈터' },
-  { date: '2026-01-07', label: '세르카' },
-  { date: '2026-03-18', label: '성당' },
-  { date: '2026-04-22', label: '익스 1막' },
-  { date: '2026-05-20', label: '익스 2막' },
-  { date: '2026-06-20', label: '로아온 썸머' },
-  { date: '2026-08-05', label: '벨가르딘' },
-];
+// 이벤트 정의 — 차트와 이벤트 대비 카드(PriceEventCompare)가 같은 점·같은 색을 써야 해서
+// 목록과 색은 lib/price-events.ts 한 곳에서 가져온다.
+const EVENTS = PRICE_EVENTS;
 
 // 수요일 점 색상 (PriceComparisonStats 통계바 우측 보색과 일치)
 const EVENT_DOT_COLOR_BY_CATEGORY: Record<string, string> = {
@@ -73,18 +59,6 @@ const EVENT_DOT_COLOR_BY_CATEGORY: Record<string, string> = {
   '악세': '#f97316',
   '팔찌': '#f97316',
   '보석': '#14b8a6',
-};
-
-// 특별 이벤트 점 색상 — 카테고리 선 색·수요일 보색과 모두 구분되는 제3의 강조색
-// (색상환에서 인접 두 색과 떨어진 위치 + 라이트/다크 모두 가시성 확보)
-const SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY: Record<string, string> = {
-  '재련 재료': '#ec4899',      // 핑크 (선=파랑, 보색=주황)
-  '젬': '#06b6d4',            // 사이언 (선=보라, 보색=골드)
-  '재련 추가 재료': '#8b5cf6', // 바이올렛 (선=초록, 보색=로즈)
-  '유물 각인서': '#a855f7',   // 퍼플 (선=빨강, 보색=청록)
-  '악세': '#f43f5e',          // 로즈 (선=청록, 보색=주황)
-  '팔찌': '#f43f5e',          // 로즈 (선=청록, 보색=주황 / 악세와 동일 정체성)
-  '보석': '#f59e0b',          // 앰버 (선=핑크, 보색=청록)
 };
 
 type CategoryStyle = {
@@ -105,6 +79,86 @@ type CompactPriceChartProps = {
 };
 
 type PeriodOption = '7d' | '1m' | '2m' | '3m' | '6m' | '1y' | 'all';
+
+/**
+ * 등락 한 덩어리 (라벨 + 화살표 + %). 전일 대비와 기간 변화율이 같은 줄에 나란히 서므로
+ * 어느 쪽 숫자인지 라벨이 반드시 붙어야 한다. 데스크톱·모바일이 크기만 다르고 모양은 같다.
+ */
+function RatePair({ label, rate, valueSize, arrowSize }: {
+  label: string;
+  rate: number;
+  valueSize: string;
+  arrowSize: number;
+}) {
+  const up = rate >= 0;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)' }}>{label}</span>
+      <span
+        className="font-numeric"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          fontSize: valueSize,
+          fontWeight: 800,
+          color: up ? 'var(--price-up)' : 'var(--price-down)',
+        }}
+      >
+        <TrendArrow up={up} size={arrowSize} />
+        {Math.abs(rate).toFixed(1)}%
+      </span>
+    </span>
+  );
+}
+
+/**
+ * 구간의 시작값 → 끝값. 구간이 오늘로 끝나지 않을 때 현재가 자리에 대신 선다.
+ * 사이 기호는 "A 에서 B 로 갔다"만 말하는 단순 오른쪽 화살표다 — 오르내림은 바로 아래 기간 변화율이
+ * 이미 화살표·색으로 말하므로 여기서 또 추세 화살표를 쓰면 겹쳐 읽힌다.
+ * 글자(→·~) 대신 SVG 인 이유는 폰트마다 글리프 높이가 달라 숫자와 기준선이 어긋나기 때문.
+ */
+function RangeEndpoints({ first, last, up, valueSize, arrowSize, color }: {
+  first: string;
+  last: string;
+  up: boolean;
+  valueSize: string;
+  arrowSize: number;
+  color: string;
+}) {
+  return (
+    <div
+      className="font-numeric"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: '5px',
+        fontSize: valueSize,
+        fontWeight: 700,
+        whiteSpace: 'nowrap',
+        lineHeight: 1.25,
+      }}
+    >
+      <span style={{ color: 'var(--text-muted)' }}>{first}</span>
+      <svg
+        viewBox="0 0 24 24"
+        width={arrowSize}
+        height={arrowSize}
+        fill="none"
+        stroke={up ? 'var(--price-up)' : 'var(--price-down)'}
+        strokeWidth={2.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        style={{ flexShrink: 0, display: 'block' }}
+      >
+        <path d="M3 12h15M12.5 5.5 19 12l-6.5 6.5" />
+      </svg>
+      <span style={{ color }}>{last}</span>
+    </div>
+  );
+}
 
 type YAxisStats = { min: number; max: number; avg: number } | null;
 type YAxisRange = { min: number; max: number } | null;
@@ -289,7 +343,11 @@ function buildYAxisConfig(stats: YAxisStats, comparisonRange: YAxisRange) {
 
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle, hidePeriodButtons = false }: CompactPriceChartProps) {
   const { theme } = useTheme();
-  const { selectedPeriod, setSelectedPeriod, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots, showWednesdayDots, toggleWednesdayDots, showRegularDots, toggleRegularDots, showComparisonLine, toggleComparisonLine } = useContext(PriceContext);
+  const { selectedPeriod, setSelectedPeriod, eventRangeActive, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots, showWednesdayDots, toggleWednesdayDots, showRegularDots, toggleRegularDots, showComparisonLine, toggleComparisonLine } = useContext(PriceContext);
+
+  // 이벤트 대비 카드로 구간을 잡은 동안에는 어떤 기간 버튼도 켜 두지 않는다 —
+  // 차트가 보여 주는 구간과 켜진 버튼이 다르면 무엇이 적용됐는지 알 수 없다.
+  const periodOn = (period: PeriodOption) => !eventRangeActive && selectedPeriod === period;
 
   // 모바일 감지 및 마운트 상태
   const [isMobile, setIsMobile] = useState(false);
@@ -361,6 +419,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const chartColor = theme === 'dark'
     ? (categoryStyle?.darkThemeColor || '#8ab4f8')
     : (categoryStyle?.darkColor || '#16a34a');
+
+  // 점 색 — 헤더 토글과 모바일 설정 팝업이 같은 색을 써야 해서 컴포넌트 스코프에 둔다
+  const wedDotColor = (categoryStyle?.label && EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#f97316';
+  const eventDotColor = (categoryStyle?.label && SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#ec4899';
 
 
 
@@ -604,12 +666,49 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
   const yAxisConfig = useMemo(() => buildYAxisConfig(stats, comparisonRange), [stats, comparisonRange]);
 
-  const changeRate = useMemo(() => {
-    if (chartData.length < 2) return 0;
-    const today = chartData[chartData.length - 1].가격;
-    const yesterday = chartData[chartData.length - 2].가격;
-    return ((today - yesterday) / yesterday) * 100;
-  }, [chartData]);
+  // 헤더의 현재가·전일 대비는 언제나 "오늘" 기준이다 — 기간을 과거 구간(이벤트 A~B)으로 잡아도
+  // 이 둘은 흔들리지 않는다. 기간에 따라 움직이는 건 아래 periodRate 하나뿐.
+  // 그래서 필터된 구간이 아니라 전체 history 를 본다(날짜별 마지막 값 = 차트가 점을 찍는 기준).
+  const todayStats = useMemo(() => {
+    if (!history || history.length === 0) return null;
+    const byDate = new Map<string, number>();
+    for (const e of history) byDate.set(e.date || e.timestamp.slice(0, 10), e.price);
+    const dates = [...byDate.keys()].sort();
+    if (dates.length === 0) return null;
+    const latest = dates[dates.length - 1];
+    const current = byDate.get(latest)!;
+    const prev = dates.length > 1 ? byDate.get(dates[dates.length - 2])! : current;
+    const [ly, lm, ld] = latest.split('-').map(Number);
+    return {
+      current,
+      changeRate: prev > 0 ? ((current - prev) / prev) * 100 : 0,
+      latestTime: Date.UTC(ly, lm - 1, ld),
+    };
+  }, [history]);
+
+  const changeRate = todayStats?.changeRate ?? 0;
+
+  // 지금 화면에 그려진 구간의 처음값·끝값·변화율.
+  // 기간 버튼, 이벤트 대비 카드가 잡아 준 구간, 드래그 줌 — 무엇으로 구간이 정해졌든
+  // 실제로 보이는 선(visibleData)을 기준으로 잡으므로 화면과 숫자가 어긋나지 않는다.
+  const rangeStats = useMemo(() => {
+    if (visibleData.length < 2) return null;
+    const first = visibleData[0].가격;
+    const last = visibleData[visibleData.length - 1].가격;
+    return {
+      first,
+      last,
+      rate: first > 0 ? ((last - first) / first) * 100 : 0,
+      endTime: visibleData[visibleData.length - 1].rawTime as number,
+    };
+  }, [visibleData]);
+
+  const periodRate = rangeStats?.rate ?? 0;
+
+  // 구간이 오늘까지인가. 아니면(이벤트 두 개 선택·중간 드래그 줌) 현재가·전일 대비는 뜻이 없다 —
+  // 그 자리에 구간의 시작값 → 끝값을 대신 보여준다.
+  const rangeEndsToday =
+    !rangeStats || !todayStats || rangeStats.endTime >= todayStats.latestTime;
 
   const averagePrice = useMemo(() => {
     if (filteredHistory.length === 0) return 0;
@@ -1203,10 +1302,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   style={{
                     padding: '4px 16px',
                     borderRadius: '10px',
-                    border: selectedPeriod === period ? `2px solid ${chartColor}` : '2px solid var(--border-color)',
-                    backgroundColor: selectedPeriod === period ? (theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4')) : 'var(--card-bg)',
-                    color: selectedPeriod === period ? chartColor : 'var(--text-secondary)',
-                    fontWeight: selectedPeriod === period ? '700' : '500',
+                    border: periodOn(period) ? `2px solid ${chartColor}` : '2px solid var(--border-color)',
+                    backgroundColor: periodOn(period) ? (theme === 'dark' ? (categoryStyle?.darkBg || '#3c4043') : (categoryStyle?.lightBg || '#f0fdf4')) : 'var(--card-bg)',
+                    color: periodOn(period) ? chartColor : 'var(--text-secondary)',
+                    fontWeight: periodOn(period) ? '700' : '500',
                     fontSize: '0.85rem',
                     cursor: 'pointer',
                     transition: 'all 0.25s ease',
@@ -1283,13 +1382,31 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
           {stats && (
             <div className="text-end" style={{ flex: '1' }}>
-              <div className="font-numeric" style={{ fontSize: '1.5rem', fontWeight: '700', color: chartColor }}>
-                {formatTooltipPrice(stats.current)}
-              </div>
-              <div className="font-numeric" style={{ fontSize: '1.4rem', fontWeight: '800', color: changeRate >= 0 ? 'var(--price-up)' : 'var(--price-down)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-                <TrendArrow up={changeRate >= 0} size={20} />
-                {Math.abs(changeRate).toFixed(1)}%
-              </div>
+              {rangeEndsToday ? (
+                <>
+                  <div className="font-numeric" style={{ fontSize: '1.5rem', fontWeight: '700', color: chartColor }}>
+                    {formatTooltipPrice(todayStats?.current ?? stats.current)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '14px', flexWrap: 'wrap' }}>
+                    <RatePair label="전일" rate={changeRate} valueSize="1.4rem" arrowSize={20} />
+                    <RatePair label="기간" rate={periodRate} valueSize="1.4rem" arrowSize={20} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <RangeEndpoints
+                    first={formatTooltipPrice(rangeStats!.first)}
+                    last={formatTooltipPrice(rangeStats!.last)}
+                    up={periodRate >= 0}
+                    valueSize="1.15rem"
+                    arrowSize={17}
+                    color={chartColor}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '2px' }}>
+                    <RatePair label="기간" rate={periodRate} valueSize="1.4rem" arrowSize={20} />
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -1350,93 +1467,9 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   </>
                 )}
               </div>
-              {/* 모바일 점 토글 (수요일 / 특별 이벤트 독립) */}
-              {(() => {
-                const wedColor = (categoryStyle?.label && EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#f97316';
-                const eventColor = (categoryStyle?.label && SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#ec4899';
-                const dotBtnStyle = {
-                  background: 'none',
-                  border: 'none',
-                  padding: '4px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                } as const;
-                return (
-                  <>
-                    <button
-                      onClick={toggleRegularDots}
-                      title={showRegularDots ? '일반 날짜 점 숨기기' : '일반 날짜 점 표시'}
-                      aria-pressed={showRegularDots}
-                      style={dotBtnStyle}
-                    >
-                      <span style={{
-                        display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%',
-                        backgroundColor: showRegularDots ? chartColor : 'transparent',
-                        border: `2px solid ${chartColor}`,
-                        boxShadow: showRegularDots ? `0 0 0 2px var(--card-bg)` : 'none',
-                      }} />
-                    </button>
-                    <button
-                      onClick={toggleWednesdayDots}
-                      title={showWednesdayDots ? '수요일 점 숨기기' : '수요일 점 표시'}
-                      aria-pressed={showWednesdayDots}
-                      style={dotBtnStyle}
-                    >
-                      <span style={{
-                        display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%',
-                        backgroundColor: showWednesdayDots ? wedColor : 'transparent',
-                        border: `2px solid ${wedColor}`,
-                        boxShadow: showWednesdayDots ? `0 0 0 2px var(--card-bg)` : 'none',
-                      }} />
-                    </button>
-                    <button
-                      onClick={toggleEventDots}
-                      title={showEventDots ? '특별 이벤트 점 숨기기' : '특별 이벤트 점 표시'}
-                      aria-pressed={showEventDots}
-                      style={dotBtnStyle}
-                    >
-                      <span style={{
-                        display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%',
-                        backgroundColor: showEventDots ? eventColor : 'transparent',
-                        border: `2px solid ${eventColor}`,
-                        boxShadow: showEventDots ? `0 0 0 2px var(--card-bg)` : 'none',
-                      }} />
-                    </button>
-                    {comparisonData && (
-                      <button
-                        onClick={toggleComparisonLine}
-                        title={showComparisonLine ? '×5 비교선 숨기기' : '×5 비교선 표시'}
-                        aria-pressed={showComparisonLine}
-                        style={dotBtnStyle}
-                      >
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-                          <Image
-                            src={comparisonData.normalIcon || ''}
-                            alt=""
-                            width={20}
-                            height={20}
-                            style={{
-                              borderRadius: '4px',
-                              border: showComparisonLine ? `2px solid ${comparisonColor}` : '2px solid transparent',
-                              filter: showComparisonLine ? 'none' : 'grayscale(100%)',
-                              opacity: showComparisonLine ? 1 : 0.35,
-                              transition: 'filter 0.2s, opacity 0.2s, border-color 0.2s',
-                            }}
-                          />
-                          <span style={{
-                            fontSize: '0.7rem', fontWeight: 800, color: comparisonColor,
-                            opacity: showComparisonLine ? 1 : 0.35,
-                            transition: 'opacity 0.2s',
-                          }}>×5</span>
-                        </span>
-                      </button>
-                    )}
-                  </>
-                );
-              })()}
-              {/* 모바일 가격선 설정 톱니바퀴 */}
+              {/* 점 표시·비교선 토글은 모바일에서 설정(톱니바퀴) 안으로 옮겼다 —
+                  헤더 한 줄에 현재가·전일·기간까지 같이 서면 자리가 안 난다 */}
+              {/* 모바일 차트 설정 톱니바퀴 */}
               <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowPriceInput(!showPriceInput)}
@@ -1448,9 +1481,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: currentCustomLines ? '#10b981' : 'var(--text-muted)',
+                  color: showPriceInput ? chartColor : 'var(--text-muted)',
                 }}
                 title="차트 설정"
+                aria-expanded={showPriceInput}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3"></circle>
@@ -1458,7 +1492,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 </svg>
               </button>
 
-              {/* 모바일 가격 입력 팝업 */}
+              {/* 모바일 차트 설정 팝업 — 점 표시·비교선. 가격선 입력은 데스크톱 전용 */}
               {showPriceInput && (
                 <div
                   style={{
@@ -1476,85 +1510,86 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '10px' }}>
-                    가격선 설정
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                    차트 설정
                   </div>
 
-                  <div style={{ marginBottom: '8px' }}>
-                    <label style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600, display: 'block', marginBottom: '3px' }}>
-                      판매가 (녹색)
-                    </label>
-                    <input
-                      type="number"
-                      value={tempSellPrice}
-                      onChange={(e) => setTempSellPrice(e.target.value)}
-                      placeholder="판매가"
+                  {/* 점 표시 · 비교선 — 누르는 즉시 저장된다(따로 저장 버튼 없음).
+                      가격선(판매가·구매가) 입력은 데스크톱 전용이라 여기 없다. */}
+                  {[
+                    { key: 'regular', label: '일반 날짜 점', on: showRegularDots, toggle: toggleRegularDots, color: chartColor },
+                    { key: 'wed', label: '수요일 점', on: showWednesdayDots, toggle: toggleWednesdayDots, color: wedDotColor },
+                    { key: 'event', label: '특별 이벤트 점', on: showEventDots, toggle: toggleEventDots, color: eventDotColor },
+                  ].map((row) => (
+                    <button
+                      key={row.key}
+                      onClick={row.toggle}
+                      aria-pressed={row.on}
                       style={{
                         width: '100%',
-                        padding: '6px 8px',
-                        borderRadius: '5px',
-                        border: '1px solid var(--border-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '7px 8px',
+                        marginBottom: '4px',
+                        borderRadius: '7px',
+                        border: `1px solid ${row.on ? row.color : 'var(--border-color)'}`,
                         backgroundColor: 'var(--bg-secondary)',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        textAlign: 'left',
                       }}
-                    />
-                  </div>
+                    >
+                      <span style={{
+                        display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', flexShrink: 0,
+                        backgroundColor: row.on ? row.color : 'transparent',
+                        border: `2px solid ${row.color}`,
+                      }} />
+                      <span style={{ flex: 1, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {row.label}
+                      </span>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: row.on ? row.color : 'var(--text-muted)' }}>
+                        {row.on ? '표시' : '숨김'}
+                      </span>
+                    </button>
+                  ))}
 
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ fontSize: '0.7rem', color: '#f59e0b', fontWeight: 600, display: 'block', marginBottom: '3px' }}>
-                      구매가 (주황)
-                    </label>
-                    <input
-                      type="number"
-                      value={tempBuyPrice}
-                      onChange={(e) => setTempBuyPrice(e.target.value)}
-                      placeholder="구매가"
+                  {comparisonData && (
+                    <button
+                      onClick={toggleComparisonLine}
+                      aria-pressed={showComparisonLine}
                       style={{
                         width: '100%',
-                        padding: '6px 8px',
-                        borderRadius: '5px',
-                        border: '1px solid var(--border-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '7px 8px',
+                        borderRadius: '7px',
+                        border: `1px solid ${showComparisonLine ? comparisonColor : 'var(--border-color)'}`,
                         backgroundColor: 'var(--bg-secondary)',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.8rem',
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button
-                      onClick={clearPriceLines}
-                      style={{
-                        flex: 1,
-                        padding: '6px',
-                        borderRadius: '5px',
-                        border: '1px solid var(--border-color)',
-                        backgroundColor: 'var(--card-bg)',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.75rem',
                         cursor: 'pointer',
+                        textAlign: 'left',
                       }}
                     >
-                      삭제
+                      <Image
+                        src={comparisonData.normalIcon || ''}
+                        alt=""
+                        width={18}
+                        height={18}
+                        style={{
+                          borderRadius: '4px',
+                          flexShrink: 0,
+                          filter: showComparisonLine ? 'none' : 'grayscale(100%)',
+                          opacity: showComparisonLine ? 1 : 0.4,
+                        }}
+                      />
+                      <span style={{ flex: 1, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        일반 재료 <span style={{ color: comparisonColor, fontWeight: 800 }}>×5</span> 비교선
+                      </span>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: showComparisonLine ? comparisonColor : 'var(--text-muted)' }}>
+                        {showComparisonLine ? '표시' : '숨김'}
+                      </span>
                     </button>
-                    <button
-                      onClick={savePriceLines}
-                      style={{
-                        flex: 1,
-                        padding: '6px',
-                        borderRadius: '5px',
-                        border: 'none',
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      저장
-                    </button>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1562,13 +1597,31 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           </div>
           {stats && (
             <div className="text-end">
-              <div className="font-numeric" style={{ fontSize: '1rem', fontWeight: '700', color: chartColor, whiteSpace: 'nowrap' }}>
-                {formatTooltipPrice(stats.current)}
-              </div>
-              <div className="font-numeric" style={{ fontSize: '1rem', fontWeight: '800', color: changeRate >= 0 ? 'var(--price-up)' : 'var(--price-down)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px' }}>
-                <TrendArrow up={changeRate >= 0} size={16} />
-                {Math.abs(changeRate).toFixed(1)}%
-              </div>
+              {rangeEndsToday ? (
+                <>
+                  <div className="font-numeric" style={{ fontSize: '1rem', fontWeight: '700', color: chartColor, whiteSpace: 'nowrap' }}>
+                    {formatTooltipPrice(todayStats?.current ?? stats.current)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '9px', whiteSpace: 'nowrap' }}>
+                    <RatePair label="전일" rate={changeRate} valueSize="0.95rem" arrowSize={15} />
+                    <RatePair label="기간" rate={periodRate} valueSize="0.95rem" arrowSize={15} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <RangeEndpoints
+                    first={formatTooltipPrice(rangeStats!.first)}
+                    last={formatTooltipPrice(rangeStats!.last)}
+                    up={periodRate >= 0}
+                    valueSize="0.78rem"
+                    arrowSize={13}
+                    color={chartColor}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    <RatePair label="기간" rate={periodRate} valueSize="0.95rem" arrowSize={15} />
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { publishStats } from '@/lib/package-stats-client';
 import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -416,6 +417,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
               .then((json) => {
                 const st = json?.stats;
                 if (!st) return;
+                // 세션 캐시에도 올린다 — 뒤로 가서 목록으로 돌아갔을 때 숫자가 되돌아가지 않게(요청 0)
+                publishStats(postId, st);
                 setPost((prev) =>
                   prev && prev.id === postId
                     ? { ...prev, viewCount: st.viewCount, likeCount: st.likeCount, sosoCount: st.sosoCount }

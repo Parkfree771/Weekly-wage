@@ -13,6 +13,7 @@
 // "따봉→취소→따봉" 이 요청 1회·쓰기 0회가 된다.
 
 import { useEffect, useRef, useState } from 'react';
+import { getStats, publishStats, subscribeStats } from '@/lib/package-stats-client';
 import ReactionLottie, { type ReactionLottieHandle } from '@/components/package/ReactionLottie';
 import styles from './ReactionBar.module.css';
 
@@ -80,9 +81,9 @@ type Props = {
 export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, showLabels = false, className }: Props) {
   // 상세는 SSR 이라 localStorage 를 초기값에서 읽으면 서버/클라 첫 화면이 어긋난다 — 마운트 뒤에 읽는다
   const [mine, setMine] = useState<ReactionKey | null>(null);
-  // 서버가 react 응답으로 준 최신 카운트 — 부모 prop 보다 새 값이라 그쪽을 우선한다.
-  // prop 이 바뀌면(갤러리가 /api/package/stats 로 덮어쓴 경우) 다시 prop 을 따른다.
-  const [serverCounts, setServerCounts] = useState<{ forProps: string; counts: Counts } | null>(null);
+  // 세션 캐시(package-stats-client)가 아는 최신 서버값. prop 은 ISR 스냅샷이거나 CDN 20초 캐시라
+  // 내 표가 빠진 낡은 값일 수 있어, 버전(updatedAt)이 더 새로운 쪽인 캐시를 우선한다.
+  const [known, setKnown] = useState<Counts | null>(null);
   // 아직 서버에 반영 안 된 내 표의 증감 = diff(보낸 표, 지금 표). 서버 값 위에 이것만 더한다.
   const [pending, setPending] = useState<ReactionDelta>({ like: 0, soso: 0 });
   const mineRef = useRef<ReactionKey | null>(null);
@@ -107,12 +108,10 @@ export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, s
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
-        if (!json?.ok || !mountedRef.current) return;
-        // 서버 최신값으로 되맞춘다 — 내 표(target)까지 이미 들어 있는 숫자다
-        const st = json.stats;
-        if (st && typeof st.likeCount === 'number' && typeof st.sosoCount === 'number') {
-          setServerCounts({ forProps: `${likeCount}:${sosoCount}`, counts: { like: st.likeCount, soso: st.sosoCount } });
-        }
+        if (!json?.ok) return;
+        // 서버 최신값 — 내 표(target)까지 이미 들어 있는 숫자다. 세션 캐시에 올려
+        // 이 글을 그리는 다른 곳(갤러리 카드·상세)도 같은 숫자를 즉시 쓰게 한다.
+        if (json.stats) publishStats(postId, json.stats);
       })
       .catch(() => {});
   };
@@ -125,9 +124,16 @@ export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, s
     syncedRef.current = saved;
     setMine(saved);
     setPending({ like: 0, soso: 0 });
-    setServerCounts(null);
+    const cached = getStats(postId);
+    setKnown(cached ? { like: cached.likeCount, soso: cached.sosoCount } : null);
+    // 다른 곳에서 같은 글의 값이 갱신되면(같은 글의 다른 ReactionBar, 상세의 조회수 요청) 같이 따라간다
+    const unsubscribe = subscribeStats((id, st) => {
+      if (id !== postId || !mountedRef.current) return;
+      setKnown({ like: st.likeCount, soso: st.sosoCount });
+    });
     return () => {
       mountedRef.current = false;
+      unsubscribe();
       // 보내지 못한 표가 남아 있으면(페이지 이동·언마운트) 바로 보낸다
       if (timerRef.current) flush();
     };
@@ -146,11 +152,9 @@ export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, s
     timerRef.current = setTimeout(flush, REACT_FLUSH_MS);
   };
 
-  // 부모 prop 이 바뀌었으면 서버 응답값은 낡은 것 — prop 을 base 로 쓴다
-  const base: Counts =
-    serverCounts && serverCounts.forProps === `${likeCount}:${sosoCount}`
-      ? serverCounts.counts
-      : { like: likeCount, soso: sosoCount };
+  // 세션 캐시가 아는 값이 있으면 그게 최신이다(낡은 스냅샷은 캐시가 이미 걸러냈다).
+  // 아직 아무것도 못 받았으면 prop(ISR 스냅샷)으로 그린다.
+  const base: Counts = known ?? { like: likeCount, soso: sosoCount };
   const counts: Record<ReactionKey, number> = {
     like: Math.max(0, base.like + pending.like),
     soso: Math.max(0, base.soso + pending.soso),

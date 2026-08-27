@@ -1,0 +1,531 @@
+/* 특별 이벤트 대비 현재가 카드.
+   사이트 공통 언어 — 1px 테두리 + 하드 엣지 입체 그림자, CSS 변수 색, 숫자는 .font-numeric.
+   --evt = 이벤트 고유색(이벤트 이름 · 선택 표시), --tone = 상승/하락 색.
+   미니차트는 이벤트 색이 아니라 --tone 을 쓴다 — 오른 구간은 초록, 내린 구간은 빨강으로
+   카드끼리 색 규칙이 같아야 여러 장을 나란히 두고 훑을 때 오르내림이 한 번에 읽힌다.
+
+   바탕에 색을 옅게 까는 방식은 쓰지 않는다. 배경은 카드색 그대로 두고,
+   색은 이름·곡선·숫자 같은 "의미 있는 자리"에만 얹는다.
+
+   줄당 카드 수: 데스크톱 6개, 모바일 3개. 카드 크기는 전부 같다
+   (열 너비 균등 + li 가 행 높이만큼 늘고 그 안 버튼이 100% 를 채운다).
+
+   가격은 "130만" 으로 줄이지 않고 3,480,312 까지 그대로 쓴다. 자릿수가 길어지는 아이템은
+   .list[data-wide] 가 붙어 숫자 글자만 한 단계 줄어든다 — 줄바꿈·잘림 없이 한 줄에 담기게. */
+
+.card {
+  max-width: 1400px;
+  margin: 12px auto 0;
+  padding: 10px 12px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+}
+
+/* ── 머리말 ── */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.headText {
+  min-width: 0;
+  flex: 1;
+}
+
+.title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.itemName {
+  margin-top: 1px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headNow {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.headNowLabel {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.headNowValue {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* ── 목록: 모바일 3열 / 데스크톱 6열 ── */
+
+.list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+/* li 는 행 높이만큼 늘어나고, 그 안의 버튼이 그 높이를 다 채운다 = 모든 카드 크기 동일 */
+.item {
+  display: flex;
+}
+
+.cell {
+  /* 변동 0(거의 없는 경우)일 때도 검정으로 떨어지지 않게 회색 계열을 기본으로 둔다 */
+  --tone: var(--text-muted);
+  display: grid;
+  width: 100%;
+  column-gap: 5px;
+  row-gap: 2px;
+  padding: 7px 7px 6px;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+
+  /* 양옆 열은 그림·체크 크기로 못 박는다. auto 로 두면 같은 열에 걸친 다른 줄(변화율 등)에 맞춰
+     열이 벌어지고, 그만큼 가운데 이름 칸이 줄어 "로아온 썸머" 가 말줄임 된다. */
+  grid-template-columns: 26px minmax(0, 1fr) 16px;
+  /* 모바일은 폭이 빠듯해 이름이 첫 줄을 통째로 쓰고 체크는 날짜 옆으로 내린다.
+     당시/현재도 세로로 쌓는다 — 300만대 값 두 개를 한 줄에 놓을 폭이 안 나온다. */
+  grid-template-areas:
+    "thumb name  name"
+    "thumb date  check"
+    "spark spark spark"
+    "cmp   cmp   cmp"
+    "foot  foot  foot";
+}
+
+.cell[data-dir="up"] {
+  --tone: var(--price-up);
+}
+
+.cell[data-dir="down"] {
+  --tone: var(--price-down);
+}
+
+/* 고른 카드 — 이벤트 색 테두리 */
+.cell[data-active] {
+  border-color: var(--evt);
+  box-shadow: inset 0 0 0 1px var(--evt);
+}
+
+/* ── 다중 선택 체크 ── */
+
+.check {
+  grid-area: check;
+  justify-self: end;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--bg-secondary);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.check svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: var(--card-bg);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.cell[data-active] .check {
+  border-color: var(--evt);
+  background: var(--evt);
+}
+
+.cell[data-active] .check svg {
+  opacity: 1;
+}
+
+/* ── 재료 그림 ── */
+
+.thumb {
+  grid-area: thumb;
+  align-self: center;
+  display: block;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.thumbImg {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+/* ── 이벤트 이름·날짜 ── */
+
+.name {
+  grid-area: name;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.25;
+  /* 이벤트마다 정해 둔 고유색 — 어느 이벤트인지 색으로 먼저 읽힌다 */
+  color: var(--evt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.date {
+  grid-area: date;
+  font-size: 0.56rem;
+  line-height: 1.2;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ── 당시 → 현재 ── */
+
+.compare {
+  grid-area: cmp;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.side {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sideLabel {
+  flex-shrink: 0;
+  font-size: 0.55rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--text-muted);
+}
+
+.sideValue {
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.list[data-wide] .sideValue {
+  font-size: 0.63rem;
+}
+
+.thenValue {
+  color: var(--text-muted);
+}
+
+.nowValue {
+  color: var(--text-primary);
+}
+
+/* 화살표는 상자 크기가 고정된 SVG — 글자 글리프처럼 기준선을 타지 않아 늘 가운데 맞는다.
+   모바일 타일은 당시/현재가 위아래로 쌓이고 라벨이 둘 다 붙어 있어 화살표 없이도 읽힌다. */
+.cmpArrow {
+  display: none;
+  flex-shrink: 0;
+  fill: none;
+  stroke: var(--tone);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── 미니 차트 (상승/하락 색) ── */
+
+.spark {
+  grid-area: spark;
+  align-self: center;
+  display: block;
+  width: 100%;
+  height: 26px;
+  margin: 1px 0;
+}
+
+.spark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.sparkLine {
+  fill: none;
+  stroke: var(--tone);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  /* viewBox 를 폭에 맞춰 늘리므로(preserveAspectRatio none) 선 굵기가 찌그러진다 — 그걸 막는다 */
+  vector-effect: non-scaling-stroke;
+}
+
+.sparkArea {
+  fill: var(--tone);
+  opacity: 0.15;
+  stroke: none;
+}
+
+/* ── 변동률 ── */
+
+/* 맨 아랫줄 — 왼쪽 차액, 오른쪽 변화율. 세 열을 통째로 쓴다(열 폭에 영향 없음) */
+.foot {
+  grid-area: foot;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* 변화율은 오른쪽 끝 — 바로 위 '현재' 값과 오른쪽 끝이 맞아 눈이 한 줄로 떨어진다 */
+.change {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--tone);
+  line-height: 1.15;
+}
+
+.percent {
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: var(--tone);
+  white-space: nowrap;
+}
+
+.delta {
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--tone);
+  opacity: 0.78;
+  white-space: nowrap;
+}
+
+/* ── 데스크톱: 한 줄에 6개 ── */
+
+@media (min-width: 768px) {
+  .card {
+    margin-top: 16px;
+    padding: 12px 16px 14px;
+    border-radius: 14px;
+  }
+
+  .title {
+    font-size: 1rem;
+  }
+
+  .itemName {
+    font-size: 0.78rem;
+  }
+
+  .headNowLabel {
+    font-size: 0.65rem;
+  }
+
+  .headNowValue {
+    font-size: 1.05rem;
+  }
+
+  /* 최대 폭(1400px)에서 정확히 6개가 한 줄에 들어가는 최소 폭.
+     창이 좁아지면 5·4개로 줄어든다 — 6개를 억지로 유지하면 긴 가격이 잘린다. */
+  .list {
+    margin-top: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 8px;
+  }
+
+  .cell {
+    padding: 9px 11px 8px;
+    column-gap: 9px;
+    row-gap: 4px;
+    /* 열 폭은 그림·체크 크기 그대로. 변화율은 아래 foot 이 세 열을 통째로 쓰므로
+       체크 열을 벌리지 않는다 → 이름 칸이 129px 확보되어 안 잘린다. */
+    grid-template-columns: 34px minmax(0, 1fr) 18px;
+    grid-template-areas:
+      "thumb name  check"
+      "thumb date  check"
+      "spark spark spark"
+      "cmp   cmp   cmp"
+      "foot  foot  foot";
+    /* 하드 엣지 입체 — 사이트의 .shadow-hard 를 타일 크기에 맞게 한 단만 */
+    box-shadow: 2px 2px 0 0 rgba(59, 80, 181, 0.14);
+  }
+
+  .cell:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 0 rgba(59, 80, 181, 0.22);
+  }
+
+  .cell:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 0 rgba(59, 80, 181, 0.16);
+  }
+
+  .cell[data-active] {
+    box-shadow: inset 0 0 0 1px var(--evt), 2px 2px 0 0 rgba(59, 80, 181, 0.14);
+  }
+
+  .check {
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+  }
+
+  .check svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* grid-template-areas 가 이미 이름·날짜 두 줄에 걸쳐 두므로 grid-row 를 따로 주지 않는다
+     (주면 영역 배치를 덮어써서 자동 배치로 떨어진다) */
+  .thumb {
+    align-self: center;
+  }
+
+  .thumbImg {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+
+  .name {
+    align-self: end;
+    font-size: 0.84rem;
+  }
+
+  .date {
+    align-self: start;
+    font-size: 0.62rem;
+  }
+
+  .spark {
+    height: 34px;
+    margin-top: 2px;
+  }
+
+  /* 타일은 폭이 있으니 "당시 / 현재" 를 양 끝에 세우고 라벨을 값 위로 올린다 —
+     어느 쪽이 언제 값인지 읽는 데 눈이 머물 필요가 없다 */
+  .compare {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding-top: 1px;
+  }
+
+  .side {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0;
+  }
+
+  .sideNow {
+    align-items: flex-end;
+  }
+
+  .sideLabel {
+    font-size: 0.62rem;
+  }
+
+  .sideValue {
+    font-size: 0.95rem;
+    line-height: 1.25;
+  }
+
+  /* 300만대까지 가는 아이템(보석·악세)은 한 단계 줄여 화살표까지 한 줄에 담는다 */
+  .list[data-wide] .sideValue {
+    font-size: 0.82rem;
+  }
+
+  .cmpArrow {
+    display: block;
+    width: 18px;
+    height: 18px;
+    align-self: flex-end;
+    margin-bottom: 2px;
+  }
+
+  .list[data-wide] .cmpArrow {
+    width: 15px;
+    height: 15px;
+  }
+
+
+  .percent {
+    font-size: 1.12rem;
+  }
+
+  .delta {
+    font-size: 0.66rem;
+    padding-bottom: 2px;
+  }
+}
+
+/* ── 다크 테마 ── */
+
+[data-theme="dark"] .cell {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .check {
+  background: var(--card-bg);
+}
+
+@media (min-width: 768px) {
+  [data-theme="dark"] .cell {
+    box-shadow: 2px 2px 0 0 rgba(107, 126, 214, 0.18);
+  }
+
+  [data-theme="dark"] .cell:hover {
+    box-shadow: 3px 3px 0 0 rgba(107, 126, 214, 0.28);
+  }
+
+  [data-theme="dark"] .cell:active {
+    box-shadow: 1px 1px 0 0 rgba(107, 126, 214, 0.2);
+  }
+
+  [data-theme="dark"] .cell[data-active] {
+    box-shadow: inset 0 0 0 1px var(--evt), 2px 2px 0 0 rgba(107, 126, 214, 0.18);
+  }
+}

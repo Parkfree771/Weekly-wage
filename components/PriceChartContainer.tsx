@@ -112,6 +112,27 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('1m');
+  // 이벤트 대비 카드에서 고른 이벤트(YYYY-MM-DD). 1개면 그 날~오늘, 2개면 두 이벤트 사이.
+  // 있으면 기간 버튼보다 우선한다.
+  const [eventSelection, setEventSelection] = useState<string[]>([]);
+
+  // 이벤트 고르기 — 이미 골랐으면 놓고, 아니면 더한다. 셋이 되면 가장 먼저 고른 걸 놓아
+  // 항상 최대 2개를 유지한다 (다 지우고 다시 고르라고 시키지 않는다).
+  const toggleEventSelection = useCallback((date: string) => {
+    setEventSelection(prev => {
+      if (prev.includes(date)) return prev.filter(d => d !== date);
+      const next = [...prev, date];
+      return next.length > 2 ? next.slice(next.length - 2) : next;
+    });
+  }, []);
+
+  // 고른 이벤트 → 실제 구간. 고른 순서와 상관없이 이른 날이 시작이다.
+  const eventRange = useMemo(() => {
+    if (eventSelection.length === 0) return null;
+    const sorted = [...eventSelection].sort();
+    return { start: sorted[0], end: sorted.length > 1 ? sorted[1] : null };
+  }, [eventSelection]);
+
 
   // 비교 차트 데이터 (계승 재료 ↔ 일반 재료)
   const [comparisonHistory, setComparisonHistory] = useState<PriceEntry[]>([]);
@@ -295,6 +316,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
 
   // 기간 필터링을 위한 cutoffDate 계산
   const cutoffDate = useMemo(() => {
+    if (eventRange) return new Date(`${eventRange.start}T00:00:00Z`);
     if (selectedPeriod === 'all') return null;
 
     const now = new Date();
@@ -321,28 +343,49 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
         break;
     }
     return cutoff;
-  }, [selectedPeriod]);
+  }, [selectedPeriod, eventRange]);
+
+  // 두 이벤트를 고른 경우의 끝 날짜(그 날 포함). 하나만 골랐거나 안 골랐으면 오늘까지다.
+  const endDate = useMemo(
+    () => (eventRange?.end ? new Date(`${eventRange.end}T23:59:59Z`) : null),
+    [eventRange],
+  );
+
+  // 기간 버튼을 누르면 이벤트 구간은 풀린다 — 둘이 동시에 켜져 있으면 무엇이 적용됐는지 알 수 없다
+  const handleSetPeriod = useCallback((period: PeriodOption) => {
+    setEventSelection([]);
+    setSelectedPeriod(period);
+  }, []);
+
+  // 아이템을 바꾸면 이벤트 구간을 푼다 — 새 아이템이 그 구간에 데이터가 없으면 빈 차트가 된다
+  useEffect(() => {
+    setEventSelection([]);
+  }, [selectedItem?.id]);
 
   const filteredHistory = useMemo(() => {
     if (history.length === 0) return [];
-    if (!cutoffDate) return history;
+    if (!cutoffDate && !endDate) return history;
 
     return history.filter(entry => {
       const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
-      return entryDate >= cutoffDate;
+      if (cutoffDate && entryDate < cutoffDate) return false;
+      if (endDate && entryDate > endDate) return false;
+      return true;
     });
-  }, [history, cutoffDate]);
+  }, [history, cutoffDate, endDate]);
 
   // 비교 히스토리도 동일하게 필터링
   const filteredComparisonHistory = useMemo(() => {
     if (comparisonHistory.length === 0) return [];
-    if (!cutoffDate) return comparisonHistory;
+    if (!cutoffDate && !endDate) return comparisonHistory;
 
     return comparisonHistory.filter(entry => {
       const entryDate = entry.date ? new Date(entry.date) : new Date(entry.timestamp);
-      return entryDate >= cutoffDate;
+      if (cutoffDate && entryDate < cutoffDate) return false;
+      if (endDate && entryDate > endDate) return false;
+      return true;
     });
-  }, [comparisonHistory, cutoffDate]);
+  }, [comparisonHistory, cutoffDate, endDate]);
 
   // 비교 데이터 객체
   const comparisonData = useMemo(() => {
@@ -512,7 +555,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   const categoryStyle = CATEGORY_STYLES[selectedCategory];
 
   return (
-    <PriceContext.Provider value={{ history, filteredHistory, selectedPeriod, setSelectedPeriod, comparisonData, isGridView, onToggleGridView: handleToggleGridView, activeReferenceLines, toggleReferenceLine, selectItemById, categoryColor: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor, openChartSettings, showEventDots: chartConfig.showEventDots, toggleEventDots, showWednesdayDots: chartConfig.showWednesdayDots, toggleWednesdayDots, showRegularDots: chartConfig.showRegularDots, toggleRegularDots, showComparisonLine: chartConfig.showComparisonLine, toggleComparisonLine }}>
+    <PriceContext.Provider value={{ history, selectedItem, categoryLabel: categoryStyle.label, eventSelection, toggleEventSelection, eventRangeActive: eventSelection.length > 0, filteredHistory, selectedPeriod, setSelectedPeriod: handleSetPeriod, comparisonData, isGridView, onToggleGridView: handleToggleGridView, activeReferenceLines, toggleReferenceLine, selectItemById, categoryColor: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor, openChartSettings, showEventDots: chartConfig.showEventDots, toggleEventDots, showWednesdayDots: chartConfig.showWednesdayDots, toggleWednesdayDots, showRegularDots: chartConfig.showRegularDots, toggleRegularDots, showComparisonLine: chartConfig.showComparisonLine, toggleComparisonLine }}>
       {dashboard}
       <div className="price-chart-container">
         {/* 데스크톱: 사이드바 레이아웃 */}
@@ -650,12 +693,12 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                       '1y': '1년',
                       'all': '전체'
                     };
-                    const isSelected = selectedPeriod === period;
+                    const isSelected = eventSelection.length === 0 && selectedPeriod === period;
                     return (
                       <button
                         key={period}
                         className="shadow-hard"
-                        onClick={() => setSelectedPeriod(period)}
+                        onClick={() => handleSetPeriod(period)}
                         style={{
                           padding: '8px 10px',
                           borderRadius: '8px',
