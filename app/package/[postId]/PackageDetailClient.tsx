@@ -11,6 +11,7 @@ import { isAdmin } from '@/lib/admin';
 // 정적 import 하면 모든 익명 방문자가 상세 첫 로드에 firestore 를 내려받는다 → 핸들러 안 동적 import
 import { isSaleEnded, formatSaleEndShort, formatSalePeriodDateOnly } from '@/lib/package-sale';
 import { fetchLatestPrices } from '@/lib/price-history-client';
+import { fetchLivePrices, getCachedLivePrices } from '@/lib/live-prices-client';
 import type { PackagePost, PackageType, PackageItem } from '@/types/package';
 import {
   calcTicketAverage,
@@ -35,6 +36,8 @@ import {
   getChoiceBoxGold,
   getChoiceBoxBestGold,
   getChoiceBestValue,
+  getExpectedBoxBreakdown,
+  getExpectedBoxUnitPrice,
   getProbBoxCandidateUnit,
   getProbBoxExpectedGold,
   pickTopNCandidateIds,
@@ -244,6 +247,9 @@ function getPackageItemGold(
     const perBundleValue = item.bundleItems.reduce((sum, bi) => sum + getItemUnitPrice(bi.itemId, prices) * bi.quantity, 0);
     return perBundleValue * item.quantity;
   }
+  // 확률표 상자(expected_): 현재 시세 기준 기댓값 재계산 (goldOverride 는 등록 시점 박제값)
+  const expectedUnit = getExpectedBoxUnitPrice(item.itemId, prices);
+  if (expectedUnit !== null) return expectedUnit * item.quantity;
   if (item.goldOverride != null) return item.goldOverride * item.quantity;
   if (item.choiceOptions && item.choiceOptions.length > 0) {
     // 선택된 선택지가 없으면 등록 시 저장된 기본(최고가) 선택지 사용
@@ -283,7 +289,17 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
   const { user, userProfile } = useAuth();
 
   const [post, setPost] = useState<PackagePost | null>(initialPost);
-  const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
+  // 1시간 거래 평균가 — 기본 시세
+  const [avgPrices, setAvgPrices] = useState<Record<string, number>>({});
+  // 실시간 최저가 — 갤러리와 모듈 캐시(lib/live-prices-client)를 공유해,
+  // 갤러리에서 최저가를 켠 채 들어오면 그대로 켜진 상태로 시작한다.
+  const [livePrices, setLivePrices] = useState<Record<string, number> | null>(getCachedLivePrices());
+  const [liveLoading, setLiveLoading] = useState(false);
+  // 이 화면의 모든 계산이 쓰는 시세 — 최저가가 켜져 있으면 평균가 위에 덮는다
+  const latestPrices = useMemo(
+    () => (livePrices ? { ...avgPrices, ...livePrices } : avgPrices),
+    [avgPrices, livePrices],
+  );
   const [choiceSelections, setChoiceSelections] = useState<Record<number, string>>({});
   const [choiceBoxSelections, setChoiceBoxSelections] = useState<Record<number, string[]>>({});
   const [bonusChoiceSelections, setBonusChoiceSelections] = useState<Record<number, string>>({});
@@ -335,9 +351,58 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
   useEffect(() => {
     // fetchLatestPrices 는 모듈 메모리 캐시가 있어 갤러리 ↔ 상세 왕복 시 재요청이 없다
     fetchLatestPrices()
-      .then((data) => setLatestPrices(data))
+      .then((data) => setAvgPrices(data))
       .catch((err) => console.error('가격 데이터 로딩 실패:', err));
   }, []);
+
+  // 최저가 버튼 — 갤러리와 같은 동작. 쿨다운 안이면 fetchLivePrices 가 캐시를 곧바로 돌려준다
+  const applyLivePrices = useCallback(async () => {
+    if (liveLoading) return;
+    setLiveLoading(true);
+    try {
+      const prices = await fetchLivePrices();
+      if (prices) setLivePrices(prices);
+    } catch (err) {
+      console.error('실시간 시세 갱신 실패:', err);
+    } finally {
+      setLiveLoading(false);
+    }
+  }, [liveLoading]);
+
+  // 헤더 오른쪽 위 최저가 버튼 — 가챠·일반 상세 두 헤더가 같이 쓴다 (갤러리 버튼과 동일 UI)
+  const renderLiveBtn = () => (
+    <button
+      type="button"
+      className={`${styles.liveBtn} ${styles.detailLiveBtn} ${livePrices ? styles.liveBtnOn : ''} ${liveLoading ? styles.liveSpinning : ''}`}
+      onClick={applyLivePrices}
+      disabled={liveLoading}
+      aria-label="거래소 최저가로 다시 계산"
+    >
+      <svg
+        className={styles.liveIcon}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M20.5 12a8.5 8.5 0 0 0-14.6-5.9L3 9" />
+        <path d="M3 3.5V9h5.5" />
+        <path d="M3.5 12a8.5 8.5 0 0 0 14.6 5.9L21 15" />
+        <path d="M21 20.5V15h-5.5" />
+      </svg>
+      최저가
+      <i className={styles.liveDot} />
+      <span className={styles.basisTip} aria-hidden="true">
+        <strong className={styles.basisTipHead}>
+          {livePrices ? '거래소 최저가로 계산 중' : '거래소 최저가'}
+        </strong>
+        {livePrices ? '누르면 다시 가져옵니다' : '기본은 1시간 거래 평균가'}
+      </span>
+    </button>
+  );
 
   // 참조를 고정해 환율 타이핑 등 부모 리렌더마다 CommentSection(memo)이 다시 그려지지 않게 한다
   const handleCommentCountChange = useCallback((delta: number) => {
@@ -919,6 +984,12 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
 
   // goldOverride 아이템의 실제 단가 (환율 변경 시 재계산)
   const getCrystalAdjustedUnit = (item: PackageItem): number => {
+    // 확률표 상자(expected_): 현재 시세 기준 기댓값 재계산 (goldOverride 는 등록 시점 박제값)
+    const expectedUnit = getExpectedBoxUnitPrice(item.itemId, latestPrices);
+    if (expectedUnit !== null) return expectedUnit;
+    // 묶음 주머니: 내부 아이템 시세 합산
+    if (item.bundleItems && item.bundleItems.length > 0)
+      return item.bundleItems.reduce((sum, bi) => sum + getItemUnitPrice(bi.itemId, latestPrices) * bi.quantity, 0);
     // 티켓: 환율 기반 동적 계산 (층은 상세 페이지 선택값)
     if (isTicketItemId(item.itemId))
       return bcRate > 0 ? (calcTicketUnitByItemId(item.itemId, latestPrices, bcRate, ticketTiers) ?? 0) : (item.goldOverride || 0);
@@ -1050,7 +1121,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
 
     return (
       <Container fluid style={{ maxWidth: '1100px' }}>
-        <div className={styles.detailWrapper}>
+        {/* data-basis: 최저가 적용 중이면 버튼 채움색이 갤러리와 같은 선명한 초록이 된다 */}
+        <div className={styles.detailWrapper} data-basis={livePrices ? 'live' : 'avg'}>
           <Link href="/package" className={styles.backLink}>
             &#8592; 목록으로 돌아가기
           </Link>
@@ -1060,6 +1132,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             <div className={styles.detailBadgeRow}>
               <span className={`${styles.typeBadge} ${styles.typeBadgeGacha}`}>가챠</span>
               {saleBadge}
+              {renderLiveBtn()}
             </div>
             <h1 className={styles.detailTitle}>{post.title}</h1>
             <div className={styles.detailMetaRow}>
@@ -1409,7 +1482,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
 
   return (
     <Container fluid style={{ maxWidth: '1100px' }}>
-      <div className={styles.detailWrapper}>
+      {/* data-basis: 최저가 적용 중이면 버튼 채움색이 갤러리와 같은 선명한 초록이 된다 */}
+      <div className={styles.detailWrapper} data-basis={livePrices ? 'live' : 'avg'}>
         <Link href="/package" className={styles.backLink}>
           &#8592; 목록으로 돌아가기
         </Link>
@@ -1427,6 +1501,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
               </span>
             )}
             {saleBadge}
+            {renderLiveBtn()}
           </div>
           <h1 className={styles.detailTitle}>{post.title}</h1>
           {/* 메타 — 앱 상세와 같은 자리(제목 아래 한 줄). 계산 결과 카드 안에 또 넣지 않는다 */}
@@ -1583,6 +1658,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 const hasChoiceBox = !!(item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0);
                 const choiceBoxSelected = choiceBoxSelections[idx] ?? item.choiceBoxSelectedIds ?? [];
                 const hasProbBox = !!(item.probBoxCandidates && item.probBoxCandidates.length > 0);
+                // 확률표 상자(영웅 젬 랜덤 상자 등): 내용물·확률·현재 시세를 확률 상자처럼 펼쳐 보여준다
+                const expectedRows = getExpectedBoxBreakdown(item.itemId, latestPrices);
                 const effectiveQty = getEffectiveQty(item, choiceSelections[idx]);
 
                 const isChecked = checkedItems[idx] !== false;
@@ -1590,7 +1667,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 return (
                   <div
                     key={idx}
-                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox) ? styles.itemCardChoice : ''} ${(hasChoiceBox || hasProbBox) ? styles.itemCardFull : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
+                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardChoice : ''} ${(hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardFull : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
                     title={isRiftRun ? riftRunTooltip(effectiveItemId) : undefined}
                   >
                     <label className={styles.itemCardCheckLabel} onClick={(e) => e.stopPropagation()}>
@@ -1719,9 +1796,24 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                       </div>
                     )}
 
+                    {expectedRows && (
+                      <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
+                        {expectedRows.map((row) => (
+                          <div key={row.itemId} className={styles.itemCardChoiceBtn}>
+                            {row.icon && (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img loading="lazy" decoding="async" src={row.icon} alt={row.name} className={styles.itemCardChoiceBtnIcon} />
+                            )}
+                            <span>{shortenGemChoiceName(row.name)} · {row.probabilityPct}% ({formatNumber(row.unit)}G)</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className={styles.itemCardBottom}>
                       {!hasChoiceBox && !hasProbBox && (
                         <div className={styles.itemCardPriceLine}>
+                          {expectedRows ? '기댓값 ' : ''}
                           {`${formatNumber(unitPrice)}G`}
                           {' x '}
                           {effectiveQty}개
@@ -1830,6 +1922,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 const hasChoiceBox = !!(item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0);
                 const choiceBoxSelected = bonusChoiceBoxSelections[idx] ?? item.choiceBoxSelectedIds ?? [];
                 const hasProbBox = !!(item.probBoxCandidates && item.probBoxCandidates.length > 0);
+                // 확률표 상자: 내용물·확률·현재 시세 내역 (메인 구성품 카드와 동일)
+                const expectedRows = getExpectedBoxBreakdown(item.itemId, latestPrices);
                 const effectiveChoiceId = bonusChoiceSelections[idx] || item.itemId;
                 const effectiveChoice = hasChoices
                   ? item.choiceOptions!.find((c) => c.itemId === effectiveChoiceId)
@@ -1842,7 +1936,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 return (
                   <div
                     key={idx}
-                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox) ? styles.itemCardChoice : ''} ${(hasChoiceBox || hasProbBox) ? styles.itemCardFull : ''} ${bonusSelectable && !isBonusChecked ? styles.itemCardUnchecked : ''}`}
+                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardChoice : ''} ${(hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardFull : ''} ${bonusSelectable && !isBonusChecked ? styles.itemCardUnchecked : ''}`}
                     title={isRiftRun ? riftRunTooltip(effectiveChoiceId) : undefined}
                   >
                     {bonusSelectable && (
@@ -1969,9 +2063,24 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                       </div>
                     )}
 
+                    {expectedRows && (
+                      <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
+                        {expectedRows.map((row) => (
+                          <div key={row.itemId} className={styles.itemCardChoiceBtn}>
+                            {row.icon && (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img loading="lazy" decoding="async" src={row.icon} alt={row.name} className={styles.itemCardChoiceBtnIcon} />
+                            )}
+                            <span>{shortenGemChoiceName(row.name)} · {row.probabilityPct}% ({formatNumber(row.unit)}G)</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className={styles.itemCardBottom}>
                       {!hasChoiceBox && !hasProbBox && (
                         <div className={styles.itemCardPriceLine}>
+                          {expectedRows ? `기댓값 ${formatNumber(getCrystalAdjustedUnit(item))}G x ` : ''}
                           {effectiveQty}개
                         </div>
                       )}

@@ -1,4 +1,5 @@
 import { calcTicketUnitByItemId, DEFAULT_TICKET_TIERS, type TicketTiers } from '@/lib/hell-reward-calc';
+import { TRACKED_ITEMS, type TrackedItem } from '@/lib/items-to-track';
 import { isSaleEnded, toSaleDate } from '@/lib/package-sale';
 import { RIFT_TIERS } from '@/data/rewardTable';
 import type { PackagePost } from '@/types/package';
@@ -809,6 +810,54 @@ export const TEMPLATES_MAP: Record<string, TemplateItem> = Object.fromEntries(
   TEMPLATE_ITEMS.map((t) => [t.id, t]),
 );
 
+/**
+ * 저장된 expected_ 아이템(영웅 젬 랜덤 상자 등)의 개당 기댓값을 현재 시세로 재계산.
+ * 등록 시 goldOverride 에 박제된 등록 시점 기댓값 대신 항상 이 값을 먼저 쓴다 —
+ * 템플릿이 사라졌거나 시세가 아직 안 왔으면 null 을 돌려주고 호출부가 goldOverride 로 폴백한다.
+ */
+export function getExpectedBoxUnitPrice(itemId: string, prices: Record<string, number>): number | null {
+  if (!itemId.startsWith('expected_')) return null;
+  if (Object.keys(prices).length === 0) return null;
+  const expectedItems = TEMPLATES_MAP[itemId.slice('expected_'.length)]?.expectedItems;
+  if (!expectedItems || expectedItems.length === 0) return null;
+  return expectedItems.reduce((sum, ei) => sum + getItemUnitPrice(ei.itemId, prices) * ei.probability, 0);
+}
+
+export type ExpectedBoxRow = {
+  itemId: string;
+  name: string;
+  icon?: string;
+  /** % 단위 (30, 1.5 등) */
+  probabilityPct: number;
+  /** 개당 현재 시세 */
+  unit: number;
+};
+
+// 이름·아이콘 조회용 — findItemById 는 호출마다 목록을 선형 탐색해서, 렌더마다 도는 내역 계산에는 Map 으로 한 번만 만든다
+const TRACKED_ITEMS_MAP: Map<string, TrackedItem> = new Map(TRACKED_ITEMS.map((t) => [t.id, t]));
+
+/**
+ * expected_ 상자의 내용물 내역 — 어떤 아이템이 몇 %로 나오고 지금 시세가 얼마인지.
+ * 상세 페이지 카드에 확률 상자(probBox)처럼 펼쳐 보여줄 때 쓴다.
+ * 이름·아이콘은 시세 추적 목록(TRACKED_ITEMS)에서 찾는다 — 없으면 내역을 만들지 않는다.
+ */
+export function getExpectedBoxBreakdown(itemId: string, prices: Record<string, number>): ExpectedBoxRow[] | null {
+  if (!itemId.startsWith('expected_')) return null;
+  const expectedItems = TEMPLATES_MAP[itemId.slice('expected_'.length)]?.expectedItems;
+  if (!expectedItems || expectedItems.length === 0) return null;
+  return expectedItems.map((ei) => {
+    const tracked = TRACKED_ITEMS_MAP.get(ei.itemId);
+    return {
+      itemId: ei.itemId,
+      name: tracked?.name || ei.itemId,
+      icon: tracked?.icon,
+      // 0.015 × 100 = 1.5000000000000002 같은 부동소수 찌꺼기 제거
+      probabilityPct: parseFloat((ei.probability * 100).toFixed(2)),
+      unit: getItemUnitPrice(ei.itemId, prices),
+    };
+  });
+}
+
 // 아이콘 크기 오버라이드 (catalog: 기본 90px, box: 기본 32px)
 export const ICON_SIZE_CATALOG: Record<string, number> = {
   'gold-input': 60,
@@ -1127,6 +1176,9 @@ export function calculateGachaItemGold(
     }
     return getChoiceBestValue(item.choiceOptions, item.itemId, prices) * item.quantity;
   }
+  // 확률표 상자(expected_) → 현재 시세 기준 기댓값 재계산 (goldOverride 는 등록 시점 박제값)
+  const expectedUnit = getExpectedBoxUnitPrice(item.itemId, prices);
+  if (expectedUnit !== null) return expectedUnit * item.quantity;
   // 동적 티켓
   if (item.goldOverride != null) {
     if (PROCESSED_GEM_BOX_GEM[item.itemId] && Object.keys(prices).length > 0)
@@ -1233,6 +1285,14 @@ export function calculatePostEfficiency(
       const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
       if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
     }
+    // 묶음 주머니 → 내부 아이템 시세 합산 (goldOverride 박제값 대신)
+    if (item.bundleItems && item.bundleItems.length > 0) {
+      return item.bundleItems.reduce(
+        (sum, bi) => sum + getItemUnitPrice(bi.itemId, latestPrices) * bi.quantity, 0) * item.quantity;
+    }
+    // 확률표 상자(expected_) → 현재 시세 기준 기댓값 재계산
+    const expectedUnit = getExpectedBoxUnitPrice(item.itemId, latestPrices);
+    if (expectedUnit !== null) return expectedUnit * item.quantity;
     if (item.goldOverride != null) {
       return getTicketUnit(item.itemId, item.goldOverride) * item.quantity;
     }

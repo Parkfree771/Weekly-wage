@@ -10,6 +10,7 @@ import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryC
 // package-service(→ Firestore SDK ~250KB)는 정적 import 하지 않는다 — 1페이지는 서버(ISR)가
 // 넘겨주므로 2페이지를 넘기거나 서버 조회가 실패했을 때만 지연 로드한다.
 import { fetchLatestPrices } from '@/lib/price-history-client';
+import { fetchLivePrices, getCachedLivePrices } from '@/lib/live-prices-client';
 import { calculatePostEfficiency, isNewReleasePost } from '@/lib/package-shared';
 import {
   AZENA_PRICE_WON,
@@ -82,11 +83,8 @@ let moduleTotalCount: number | null = null;
 // 전부 이미 불러온 posts 배열 위에서만 도는 화면 기준 기능이다.
 // Firestore 재조회를 절대 일으키지 않는다 — 예전에 정렬을 서버 쿼리로 돌리다
 // 드롭다운을 건드릴 때마다 읽기가 한 페이지씩 더 나가서 뺐던 기능이라, 같은 실수를 막으려고
-// 실시간 최저가(시세 갱신 버튼) — 페이지 왕복에도 유지되게 모듈에 둔다.
-// 서버가 durable 캐시(300초)로 전 유저 공유라, 여기 쿨다운은 "무의미한 재요청"만 막는다.
-let moduleLivePrices: Record<string, number> | null = null;
-let moduleLiveAt = 0; // ms
-const LIVE_COOLDOWN_MS = 300_000;   // 라우트의 CDN s-maxage 와 같은 값이어야 한다
+// 실시간 최저가(시세 갱신 버튼) — 캐시·쿨다운은 lib/live-prices-client 모듈에 있다.
+// 상세 페이지와 공유해, 여기서 켠 상태로 상세에 들어가면 그대로 켜져 보인다.
 
 // sortBy/typeFilter 는 goToPage 의 의존성에 넣지 않는다.
 type GallerySort = 'createdAt' | 'efficiency' | 'newRelease' | 'likeCount';
@@ -134,28 +132,16 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
   const [totalCount, setTotalCount] = useState<number | null>(initialTotalCount ?? moduleTotalCount);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
   // 실시간 최저가 — 갱신 버튼을 누른 뒤에만 채워진다. 평균가(latestPrices) 위에 덮어쓴다.
-  const [livePrices, setLivePrices] = useState<Record<string, number> | null>(moduleLivePrices);
+  const [livePrices, setLivePrices] = useState<Record<string, number> | null>(getCachedLivePrices());
   const [liveLoading, setLiveLoading] = useState(false);
 
   const applyLivePrices = useCallback(async () => {
     if (liveLoading) return;
-    // 캐시가 아직 신선하면 조회하지 않고 그대로 되살린다.
-    // 이 분기가 없으면 평균가 → 실시간 전환이 쿨다운 안에서 아무 반응 없는 버튼이 된다.
-    if (moduleLivePrices && Date.now() - moduleLiveAt < LIVE_COOLDOWN_MS) {
-      setLivePrices(moduleLivePrices);
-      return;
-    }
     setLiveLoading(true);
     try {
-      const res = await fetch('/api/market/live-prices');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (data?.prices && Object.keys(data.prices).length > 0) {
-        moduleLivePrices = data.prices;
-        // 쿨다운은 서버 수집 시각 기준 — CDN 캐시를 받은 경우 남은 TTL 만큼만 기다리게 된다
-        moduleLiveAt = Date.parse(data.fetchedAt) || Date.now();
-        setLivePrices(moduleLivePrices);
-      }
+      // 쿨다운 안이면 fetchLivePrices 가 조회 없이 캐시를 곧바로 돌려준다
+      const prices = await fetchLivePrices();
+      if (prices) setLivePrices(prices);
     } catch (err) {
       console.error('실시간 시세 갱신 실패:', err);
     } finally {
@@ -236,23 +222,34 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
       return;
     }
 
-    // 커서가 없는 페이지(중간 건너뛰기)는 UI 에서 비활성이지만, 혹시 들어와도 조용히 무시
-    const cursor = n === 1 ? undefined : moduleCursors.get(n - 1);
-    if (n !== 1 && !cursor) return;
-
     setLoading(true);
     try {
       const { getPackagePosts } = await import('@/lib/package-service');
-      const result = await getPackagePosts({
-        sortBy: 'createdAt',
-        limit: PAGE_SIZE,
-        startAfterDoc: cursor,
-      });
-      if (modulePageCache.size === 0) modulePageCacheAt = Date.now();
-      modulePageCache.set(n, result.posts);
-      moduleCursors.set(n, result.lastDoc);
-      setPage(n);
-      setPosts(result.posts);
+      // n-1 커서가 없으면(위 TTL 청소로 체인이 끊긴 경우 — 예: 2페이지에서 60초 뒤 3 클릭)
+      // 가장 가까운 커서 확보 지점부터 순차로 이어 읽어 체인을 복구한다.
+      // 예전엔 여기서 조용히 return 해 버튼이 무반응으로 갇혔다. UI 는 여전히
+      // "방문한 끝 + 1"까지만 열어 주므로 이 루프가 읽는 양은 방문했을 때와 같다.
+      let start = n;
+      while (start > 1 && !moduleCursors.get(start - 1)) start -= 1;
+      for (let p = start; p <= n; p += 1) {
+        const cursor = p === 1 ? undefined : moduleCursors.get(p - 1);
+        if (p !== 1 && !cursor) break; // 앞 페이지가 마지막 — n페이지는 존재하지 않는다
+        const result = await getPackagePosts({
+          sortBy: 'createdAt',
+          limit: PAGE_SIZE,
+          startAfterDoc: cursor,
+        });
+        // 빈 페이지는 캐시에 담지 않는다 — 글이 줄어 사라진 페이지가 빈 화면으로 열리지 않게
+        if (result.posts.length === 0 && p !== 1) break;
+        if (modulePageCache.size === 0) modulePageCacheAt = Date.now();
+        modulePageCache.set(p, result.posts);
+        moduleCursors.set(p, result.lastDoc);
+      }
+      const target = modulePageCache.get(n);
+      if (target) {
+        setPage(n);
+        setPosts(target);
+      }
     } catch (err) {
       console.error('게시물 로딩 실패:', err);
     } finally {

@@ -1271,6 +1271,16 @@
 /* ─── 상세 페이지 ─── */
 .detailWrapper {
   padding: clamp(1rem, 3vw, 2rem) 0;
+  /* 최저가 버튼(.liveBtnOn) 채움색 — .pageWrapper 와 같은 변수·같은 값.
+     갤러리 밖이라 상속이 안 돼 여기서 다시 정의한다 */
+  --benefit-up: #35815a;
+  --benefit-down: #a04a44;
+}
+
+/* 최저가 적용 중 — 갤러리 .pageWrapper[data-basis='live'] 와 같은 선명한 값 */
+.detailWrapper[data-basis='live'] {
+  --benefit-up: #0ea86a;
+  --benefit-down: #d8453b;
 }
 
 /* 뒤로가기 - sectionTitle 총 높이와 맞춤 */
@@ -1300,6 +1310,11 @@
   flex-wrap: wrap;
   gap: 0.4rem;
   margin-bottom: 0.5rem;
+}
+
+/* 상세 헤더 오른쪽 위 최저가 버튼 — 뱃지 줄 끝(오른쪽)으로 민다. 버튼 UI 는 갤러리 .liveBtn 그대로 */
+.detailLiveBtn {
+  margin-left: auto;
 }
 
 .detailTitle {

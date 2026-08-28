@@ -10,6 +10,8 @@ import {
   calculateGachaItemGold,
   getChoiceBoxBestGold,
   getChoiceBestValue,
+  getExpectedBoxUnitPrice,
+  getItemUnitPrice,
   getProbBoxExpectedGold,
   getFixedGemSelectBestUnitPrice,
   FIXED_GEM_SELECT_ICON,
@@ -278,6 +280,14 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
       const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
       if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
     }
+    // 묶음 주머니: 내부 아이템 시세 합산 (goldOverride 박제값 대신)
+    if (item.bundleItems && item.bundleItems.length > 0) {
+      return item.bundleItems.reduce(
+        (sum, bi) => sum + getItemUnitPrice(bi.itemId, prices) * bi.quantity, 0) * item.quantity;
+    }
+    // 확률표 상자(expected_): 현재 시세 기준 기댓값 재계산
+    const expectedUnit = getExpectedBoxUnitPrice(item.itemId, prices);
+    if (expectedUnit !== null) return expectedUnit * item.quantity;
     if (item.goldOverride != null) {
       const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride, prices);
       return dynamicUnit * item.quantity;
