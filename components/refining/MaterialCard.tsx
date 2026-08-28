@@ -26,6 +26,8 @@ const MaterialCard = ({
   tooltip,
   reserveCostSpace,
   saved,
+  owned,
+  onOwnedChange,
 }: {
   icon: string;
   name: string;
@@ -46,6 +48,10 @@ const MaterialCard = ({
   reserveCostSpace?: boolean;
   /** 특수 재련으로 아낀 수량 — 주면 수량 아래에 "원래값 → −절약" 줄이 붙는다 */
   saved?: number;
+  /** 보유 개수 — onOwnedChange와 함께 주면 "보유" 입력칸이 붙는다.
+      비용(cost)은 호출부가 부족분(필요량−보유) 기준으로 계산해 넘긴다 */
+  owned?: number;
+  onOwnedChange?: (value: number) => void;
 }) => (
   <div
     className={`${styles.materialCard} ${showEnableToggle && !isEnabled ? styles.materialCardDisabled : ''} ${showEnableToggle && isEnabled && !isBound ? styles.materialCardEnabled : ''} ${isBound ? styles.materialCardBound : ''}`}
@@ -113,6 +119,25 @@ const MaterialCard = ({
         <span className={styles.materialSavedDelta}>{saved.toLocaleString()}개 절약</span>
       </div>
     )}
+    {onOwnedChange && (
+      <div className={styles.materialOwnedRow} onClick={(e) => e.stopPropagation()}>
+        <span className={styles.materialOwnedLabel}>보유</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          className={styles.materialOwnedInput}
+          // 값 길이만큼만 차지 — 카드 한 줄을 통째로 먹지 않는다
+          style={{ width: `${Math.max(3.5, (owned ? owned.toLocaleString().length : 1) + 1)}ch` }}
+          value={owned ? owned.toLocaleString() : ''}
+          placeholder="0"
+          onChange={(e) => {
+            const n = parseInt(e.target.value.replace(/[^0-9]/g, ''), 10);
+            onOwnedChange(Number.isFinite(n) ? Math.min(n, 99_999_999) : 0);
+          }}
+          aria-label={`${name} 보유 개수`}
+        />
+      </div>
+    )}
     {cost !== undefined ? (
       <div className={styles.materialCost}>
         <Image src="/gold.webp" alt="gold" width={10} height={10} style={{ marginRight: '2px' }} />
@@ -126,7 +151,8 @@ const MaterialCard = ({
       </div>
     ) : null}
     {tooltip && <div className={styles.materialTooltip}>{tooltip}</div>}
-    {footer}
+    {/* footer(성장 토글·숨결 컨트롤 등)는 카드 하단에 고정 — 같은 줄의 다른 카드와 내용 라인이 맞는다 */}
+    {footer && <div className={styles.materialCardFooter}>{footer}</div>}
   </div>
 );
 

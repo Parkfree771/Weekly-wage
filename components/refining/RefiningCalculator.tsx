@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { Form, Row, Col, Card, Badge } from 'react-bootstrap';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
 import { getTries, getSuccessionTries, type CalcMode } from '../../lib/refiningSimulationData';
-import { optimalBreathWithBook, triesForFixedBookPolicy, type OptimalPolicy, type PreSuccessionPolicy } from '../../lib/optimalBreath';
+import { optimalBreathWithBook, triesForFixedBookPolicy, breathUsageCurve, usageAtPrice, type BreathCurvePoint, type OptimalPolicy, type PreSuccessionPolicy } from '../../lib/optimalBreath';
 import {
   addDelta,
   calcCombatPowerGain,
@@ -24,7 +24,16 @@ import {
 // on/off(책 토글 상태를 조건으로 한 숨결 최적화 — 실제 계산·표시용),
 // onEnhanced(강화 책 고정, 목표 19~20 전용)
 type PreOptVariants = { rec: PreSuccessionPolicy; on: PreSuccessionPolicy; off: PreSuccessionPolicy; onEnhanced?: PreSuccessionPolicy };
-import { computeOptimalAdvancedPlan, advComboLabel, type AdvStageNum } from '../../lib/optimalAdvancedRefining';
+import { computeOptimalAdvancedPlan, advComboLabel, ADV_STAGE_KEYS, type AdvStageNum } from '../../lib/optimalAdvancedRefining';
+import { WANGAP_BASE_PROBABILITY } from '../../lib/wangapData';
+import {
+  AVERAGE_TRIES_1_20,
+  AVERAGE_TRIES_21_40,
+  TURN_RATIO_1_20,
+  TURN_RATIO_21_40,
+  T4_ARMOR_MATERIALS,
+  T4_WEAPON_MATERIALS,
+} from '../../lib/advancedRefiningData';
 import styles from './RefiningCalculator.module.css';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
 import { ADFIT_UNITS } from '@/components/ads/adConfig';
@@ -45,7 +54,7 @@ import {
 } from '../../lib/refiningData';
 import { MATERIAL_BUNDLE_SIZES } from '../../data/raidRewards';
 import { WANGAP_ITEM_IMAGES, type WangapGrade } from '../../lib/wangap-item-images';
-import { computeWangapAverage, type WangapBreathMode } from '../../lib/wangapAverage';
+import { computeWangapAverage, type WangapBreathMode, type WangapAvgEnhanceRow } from '../../lib/wangapAverage';
 import {
   buildSpecialPlan,
   buildSpecialPlanFromKeys,
@@ -65,6 +74,32 @@ import AdBanner from '../ads/AdBanner';
 
 // 장비 정보는 이제 equipmentParser에서 import
 type Equipment = EquipmentType;
+
+// ── 보유 개수 ──
+// 보유 키 → 시세 아이템 id. 유효 단가(보유 커버리지 할인)를 만들 때 쓴다.
+// 빙하/용암은 일반·상급·완갑이 같은 풀을 공유하므로 보유 키도 하나다.
+const OWNED_PRICE_IDS: Record<string, string> = {
+  수호석: '66102106', 파괴석: '66102006', 돌파석: '66110225', 아비도스: '6861012', 운명파편: '66130143',
+  수호석결정: '66102107', 파괴석결정: '66102007', 위대한돌파석: '66110226', 상급아비도스: '6861013',
+  빙하: '66111132', 용암: '66111131',
+  방어구책1114: '66112546', 방어구책1518: '66112552', 방어구책1920: '66112554', 방어구책1920강: '66112556',
+  무기책1114: '66112543', 무기책1518: '66112551', 무기책1920: '66112553', 무기책1920강: '66112555',
+  방어구책1215: '66112564', 방어구책1619: '66112565', 무기책1215: '66112561', 무기책1619: '66112562',
+  재봉술1단: '66112712', 재봉술2단: '66112714', 재봉술3단: '66112716', 재봉술4단: '66112718',
+  야금술1단: '66112711', 야금술2단: '66112713', 야금술3단: '66112715', 야금술4단: '66112717',
+};
+
+// 자동 올귀속 대상 매핑 (계승 후 전용 기능이라 계승 재료·숨결·전율책만) —
+// boundMaterials 키와, 보유 키 하나가 대표하는 사용처별 isBound 플래그들
+const OWNED_BM_KEYS = ['수호석결정', '파괴석결정', '위대한돌파석', '상급아비도스', '운명파편'] as const;
+const OWNED_FLAG_MAP: Record<string, { mo: string[]; adv: string[] }> = {
+  빙하: { mo: ['glacierBreath', 'wangapGlacier'], adv: ['armorNormalBreath', 'armorBonusBreath'] },
+  용암: { mo: ['lavaBreath', 'wangapLava'], adv: ['weaponNormalBreath', 'weaponBonusBreath'] },
+  방어구책1215: { mo: ['tailoring1215'], adv: [] },
+  방어구책1619: { mo: ['tailoring1619'], adv: [] },
+  무기책1215: { mo: ['metallurgy1215'], adv: [] },
+  무기책1619: { mo: ['metallurgy1619'], adv: [] },
+};
 
 // 재료 정보
 type Materials = {
@@ -414,6 +449,58 @@ export default function RefiningCalculator({
     '아비도스': false,
   });
 
+  // ── 보유 개수 (재료·숨결·책) ──
+  // 최적화 반영 방식: 정책과 무관한 "풀사용 기준 필요량"(ownedFullNeeds) 대비 커버리지만큼
+  // 유효 단가를 깎는다(ownedEffPrices). 선택된 정책의 필요량(materials)은 절대 입력으로
+  // 쓰지 않는다 — 그걸 되먹이면 필요량↔가격 순환(2026-07-20 삭제된 owned 기능의 사고
+  // 원인)이 재발한다. 비용 합산은 부족분(필요량−보유) 기준 실지출.
+  //
+  // 반영 방식은 "명시적 적용": ownedMaterials 는 입력 버퍼일 뿐이고, 계산(유효단가·자동
+  // 귀속·부족분 차감)은 전부 스냅샷(appliedOwned)만 읽는다. 스냅샷은 각 줄의
+  // "보조재료 비용 최적화" 버튼을 누를 때 찍힌다 — 별도 적용 버튼 없음, 자동 갱신 없음.
+  // 입력을 고친 뒤에는 줄 최적화 버튼을 다시 눌러야 반영된다.
+  const [ownedMaterials, setOwnedMaterials] = useState<Record<string, number>>({});
+  const [appliedOwned, setAppliedOwned] = useState<Record<string, number>>({});
+  // 보유 입력이 바뀌면 적용돼 있던 최적화를 해제하고(다시 누르게), 귀속 자동 체크는 즉시 판정한다.
+  // 두 함수 모두 훨씬 아래에서 정의되므로(TDZ) ref 로 연결한다. 렌더마다 최신 함수가 대입된다.
+  const deactivateOptRef = useRef<() => void>(() => {});
+  const judgeAutoBoundsRef = useRef<(ownMap: Record<string, number>) => void>(() => {});
+
+  // 보유 기능 활성 조건: 모든 장비가 계승 완료(또는 완갑 — 1750+ 전용이라 계승 후로 취급).
+  // 계승 전 장비가 하나라도 있으면 상급재련이 섞여 커버리지·차감이 얽히므로 기능 전체를 끈다
+  // (입력 UI 숨김 + 유효단가 미적용 + 부족분 차감 미적용 + 자동 귀속 미작동).
+  // 입력값 자체는 상태·localStorage 에 남아 있어, 계승 캐릭터로 돌아오면 그대로 되살아난다.
+  const ownedFeatureActive = useMemo(
+    () => equipments.length > 0 && equipments.every(eq => eq.isWangap || eq.isSuccession),
+    [equipments],
+  );
+
+  // 보유 입력은 세션 한정(상태만) — 계산 모드 전환·재계산에는 유지되고 새로고침하면 비워진다.
+  // 과거 버전이 localStorage 에 남긴 값만 1회 청소한다 (더는 읽지도 쓰지도 않는다).
+  useEffect(() => {
+    try { localStorage.removeItem('refining-owned-materials'); } catch { /* 무시 */ }
+  }, []);
+
+  const handleOwnedChange = useCallback((key: string, value: number) => {
+    const next = { ...ownedMaterials };
+    if (value > 0) next[key] = value;
+    else delete next[key];
+    setOwnedMaterials(next);
+    // 보유가 바뀌면 적용돼 있던 최적화 해제 → 줄 버튼이 "적용" 상태로 돌아와 다시 누르게 된다
+    deactivateOptRef.current();
+    // 귀속 자동 체크는 즉시 — 지금 화면에 보이는 예상 개수와 비교해 바로 켜고/끈다
+    judgeAutoBoundsRef.current(next);
+  }, [ownedMaterials]);
+
+  /** MaterialCard 보유 입력 공용 props — 기능 비활성(계승 전 장비 존재) 시 입력칸 자체를 숨긴다 */
+  const ownedProps = (key: string) =>
+    ownedFeatureActive
+      ? {
+          owned: ownedMaterials[key] || 0,
+          onOwnedChange: (v: number) => handleOwnedChange(key, v),
+        }
+      : {};
+
 
   // 계산 모드 (중앙값/평균값/장기백)
   const [calcMode, setCalcMode] = useState<CalcMode>('median');
@@ -529,8 +616,10 @@ export default function RefiningCalculator({
       setMaterials(null);
     }
     // boundMaterials 의존 필수: 귀속 토글로 optimalBreathTable(최적 정책)이 바뀌면 수량도 다시 계산돼야 정확.
+    // appliedOwned 의존 필수: "보유 최적 적용" 클릭 → ownedEffPrices → 정책 변화 시 수량도 갱신 (ownedEffPrices 는
+    // 이 지점보다 뒤에 선언되어 직접 못 넣지만, 그 입력(appliedOwned + 이미 포함된 목표·시세·모드)을 전부 포함하므로 동일 효과)
     // (optimalBreathTable·specialPlan은 이 effect보다 뒤에 선언되어 직접 못 넣지만, 그 입력을 전부 포함하므로 동일 효과)
-  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments, calcMode, marketPrices, boundMaterials, includeGrowth, useSpecial, specialStones, specialManualKeys]);
+  }, [searched, targetLevels, materialOptions, advancedMaterialOptions, equipments, calcMode, marketPrices, boundMaterials, includeGrowth, useSpecial, specialStones, specialManualKeys, appliedOwned]);
 
   // 비용 계산 로직 (useEffect로 분리)
   useEffect(() => {
@@ -542,8 +631,20 @@ export default function RefiningCalculator({
     const costs: Record<string, number> = {};
     let totalMaterialCost = 0;
 
-    // 필요 개수 = 계산된 소모량 그대로. 귀속 재료는 아래 합산에서 통째로 제외된다.
-    const need = (amount: number, _key?: string) => amount;
+    // 필요 개수 = 소모량 − 보유량(부족분). 귀속 재료는 아래 합산에서 통째로 제외된다.
+    // 보유 풀은 호출 순서대로 차감된다 — 빙하/용암처럼 여러 카테고리(일반→상급→완갑)가
+    // 같은 키를 쓰는 경우 앞 카테고리부터 보유분을 소진한다.
+    // 기능 비활성(계승 전 장비 존재) 시에는 차감하지 않는다 — 입력값만 잠들어 있는 상태.
+    const ownedLeft: Record<string, number> = {};
+    if (ownedFeatureActive) {
+      Object.keys(appliedOwned).forEach(k => { ownedLeft[k] = Math.max(0, Math.floor(appliedOwned[k] || 0)); });
+    }
+    const need = (amount: number, key?: string) => {
+      if (!key) return amount;
+      const take = Math.min(ownedLeft[key] || 0, amount);
+      if (take > 0) ownedLeft[key] -= take;
+      return amount - take;
+    };
 
     // 개별 재료 비용 계산 (marketPrices는 이미 개당 가격으로 변환됨)
     costs['수호석'] = need(materials.수호석, '수호석') * (marketPrices['66102106'] || 0);
@@ -559,12 +660,20 @@ export default function RefiningCalculator({
     costs['상급아비도스'] = need(materials.상급아비도스 || 0, '상급아비도스') * (marketPrices['6861013'] || 0);
     costs['빙하'] = materials.빙하 * (marketPrices['66111132'] || 0);
     costs['용암'] = materials.용암 * (marketPrices['66111131'] || 0);
-    costs['빙하_일반'] = need(materials.빙하_일반, '빙하_일반') * (marketPrices['66111132'] || 0);
-    costs['용암_일반'] = need(materials.용암_일반, '용암_일반') * (marketPrices['66111131'] || 0);
-    costs['빙하_상급'] = need(materials.빙하_상급, '빙하_상급') * (marketPrices['66111132'] || 0);
-    costs['용암_상급'] = need(materials.용암_상급, '용암_상급') * (marketPrices['66111131'] || 0);
-    costs['빙하_완갑'] = need(materials.빙하_완갑 || 0, '빙하_완갑') * (marketPrices['66111132'] || 0);
-    costs['용암_완갑'] = need(materials.용암_완갑 || 0, '용암_완갑') * (marketPrices['66111131'] || 0);
+    // 숨결은 일반→상급→완갑 순으로 같은 보유 풀('빙하'/'용암')을 차감한다.
+    // 귀속(무료) 처리된 카테고리는 키를 넘기지 않아 풀을 낭비하지 않는다.
+    const ownedAdvGlacierBound =
+      (!advancedMaterialOptions.armorNormalBreath.enabled || advancedMaterialOptions.armorNormalBreath.isBound) &&
+      (!advancedMaterialOptions.armorBonusBreath.enabled || advancedMaterialOptions.armorBonusBreath.isBound);
+    const ownedAdvLavaBound =
+      (!advancedMaterialOptions.weaponNormalBreath.enabled || advancedMaterialOptions.weaponNormalBreath.isBound) &&
+      (!advancedMaterialOptions.weaponBonusBreath.enabled || advancedMaterialOptions.weaponBonusBreath.isBound);
+    costs['빙하_일반'] = need(materials.빙하_일반, materialOptions.glacierBreath.isBound ? undefined : '빙하') * (marketPrices['66111132'] || 0);
+    costs['용암_일반'] = need(materials.용암_일반, materialOptions.lavaBreath.isBound ? undefined : '용암') * (marketPrices['66111131'] || 0);
+    costs['빙하_상급'] = need(materials.빙하_상급, ownedAdvGlacierBound ? undefined : '빙하') * (marketPrices['66111132'] || 0);
+    costs['용암_상급'] = need(materials.용암_상급, ownedAdvLavaBound ? undefined : '용암') * (marketPrices['66111131'] || 0);
+    costs['빙하_완갑'] = need(materials.빙하_완갑 || 0, materialOptions.wangapGlacier.isBound ? undefined : '빙하') * (marketPrices['66111132'] || 0);
+    costs['용암_완갑'] = need(materials.용암_완갑 || 0, materialOptions.wangapLava.isBound ? undefined : '용암') * (marketPrices['66111131'] || 0);
 
     // 일반 재련 책 비용 (단계별)
     costs['방어구책1114'] = need(materials.방어구책1114 || 0, '방어구책1114') * (marketPrices['66112546'] || 0);  // 재봉술 [11-14]
@@ -714,7 +823,7 @@ export default function RefiningCalculator({
 
     setResults({ totalGold, materialCosts: costs });
 
-  }, [materials, marketPrices, boundMaterials, materialOptions, advancedMaterialOptions]);
+  }, [materials, marketPrices, boundMaterials, materialOptions, advancedMaterialOptions, appliedOwned, ownedFeatureActive]);
 
   // 거래소 가격 불러오기 (latest_prices.json 사용)
   useEffect(() => {
@@ -740,19 +849,454 @@ export default function RefiningCalculator({
     fetchMarketPrices();
   }, []);
 
-  // "최적 숨결/책" 단계별 정책 테이블 (모드 + 시세 + 귀속 기준)
+  // ── 보유 커버리지용 "풀사용 기준 필요량" ──
+  // 목표·계산모드·정적 테이블에서만 계산하는 상한값이다. 선택된 최적 정책(최적화의 출력)과
+  // 무관하므로 보유→가격→정책→필요량 어디에도 순환이 생기지 않는다.
+  // 기본 재료 = 노숨·노책 최대 시도수 기준, 숨결 = 풀숨 기준, 책 = 노숨+책 사용 시도수 기준.
+  // 상한(보수적)일수록 커버리지·할인이 작아져 "보유분 과대평가로 과소비 추천" 쪽 오차가 없다.
+  const ownedFullNeeds = useMemo(() => {
+    const needs: Record<string, number> = {};
+    const add = (k: string, v: number) => { if (v > 0) needs[k] = (needs[k] || 0) + v; };
+
+    equipments.forEach(eq => {
+      if (eq.isEsther) {
+        // 에스더: 상급재련만 — 아래 상급 블록에서 처리
+      } else if (eq.isWangap) {
+        // 완갑: 계승 크리스탈 재료·운명파편·숨결을 일반 재련과 "공유 소모"하므로 상한에 포함해야
+        // 커버리지가 과대(할인 과다·자동귀속 조기 발동)해지지 않는다.
+        // 재료 상한 = 노숨 실행(시도 최대), 숨결 상한 = 풀숨 실행(개수 최대). 성장 파편은 양쪽 동일.
+        const t = targetLevels[eq.name];
+        if (!t?.normal || t.normal <= eq.currentLevel) return;
+        const zeroBound = { 파괴석결정: false, 수호석결정: false, 위대한돌파석: false, 상급아비도스: false, 운명파편: false, 용암: false, 빙하: false };
+        const zeroPrice = { 파괴석결정: 0, 수호석결정: 0, 위대한돌파석: 0, 상급아비도스: 0, 운명파편: 0, 용암: 0, 빙하: 0 };
+        const grade = (eq.grade as WangapGrade) || '영웅';
+        for (let L = eq.currentLevel; L < t.normal; L++) {
+          if (!(WANGAP_BASE_PROBABILITY[L] ?? 0)) continue;
+          const run = (breath: WangapBreathMode) => computeWangapAverage({
+            startLevel: L, targetLevel: L + 1, startGrade: grade, mode: calcMode,
+            lavaMode: breath, glacierMode: breath, boundFlags: zeroBound, unitPrices: zeroPrice,
+          });
+          const noBreath = run('off');   // 시도 최대 → 재료 상한
+          const fullBreath = run('full'); // 숨결 개수 최대 → 숨결 상한
+          add('파괴석결정', noBreath.totals.파괴석결정);
+          add('수호석결정', noBreath.totals.수호석결정);
+          add('위대한돌파석', noBreath.totals.위대한돌파석);
+          add('상급아비도스', noBreath.totals.상급아비도스);
+          add('운명파편', noBreath.totals.운명파편 + (includeGrowth ? noBreath.growth.운명파편 : 0));
+          add('용암', fullBreath.totals.용암);
+          add('빙하', fullBreath.totals.빙하);
+        }
+        return;
+      }
+      const t = targetLevels[eq.name];
+      const isArmor = eq.type === 'armor';
+      // 일반 재련 (계승 전/후)
+      if (!eq.isEsther && t?.normal && t.normal > eq.currentLevel) {
+        for (let L = eq.currentLevel; L < t.normal; L++) {
+          const succ = eq.isSuccession;
+          const baseProb = succ ? SUCCESSION_BASE_PROBABILITY[L] : BASE_PROBABILITY[L];
+          if (!baseProb) continue;
+          const be = succ ? getSuccessionBreathEffect(baseProb) : getBreathEffect(baseProb);
+          const target = L + 1;
+          const cost = (succ
+            ? (isArmor ? SUCCESSION_ARMOR_MATERIAL_COSTS[target] : SUCCESSION_WEAPON_MATERIAL_COSTS[target])
+            : (isArmor ? ARMOR_MATERIAL_COSTS[target] : WEAPON_MATERIAL_COSTS[target])) as Record<string, number> | undefined;
+          if (!cost) continue;
+          const triesMax = triesForFixedBookPolicy(baseProb, be, false, 0, calcMode).tries;
+          add(isArmor ? '빙하' : '용암', triesForFixedBookPolicy(baseProb, be, true, 0, calcMode).breaths);
+          (['수호석', '파괴석', '돌파석', '아비도스', '운명파편', '수호석결정', '파괴석결정', '위대한돌파석', '상급아비도스'] as const)
+            .forEach(k => { if (cost[k]) add(k, cost[k] * triesMax); });
+          // 장비 성장(재련 경험치) 파편 — 단계마다 1회 고정 소모.
+          // 화면 계산·자동 귀속 문턱과 같은 규칙으로 "성장 포함" 토글을 따른다
+          if (includeGrowth) add('운명파편', getGrowthCost(L, eq.type, succ).운명파편);
+          // 책 상한: 매 시도 1권 → 노숨+책 사용 시의 시도수
+          if (succ) {
+            const p = getSuccessionBookBonus(L);
+            if (p > 0 && target >= 12 && target <= 19) {
+              add(`${isArmor ? '방어구책' : '무기책'}${target <= 15 ? '1215' : '1619'}`,
+                triesForFixedBookPolicy(baseProb, be, false, p, calcMode).tries);
+            }
+          } else if (target >= 11 && target <= 20) {
+            const pre = isArmor ? '방어구책' : '무기책';
+            const range = target <= 14 ? '1114' : target <= 18 ? '1518' : '1920';
+            add(`${pre}${range}`, triesForFixedBookPolicy(baseProb, be, false, baseProb, calcMode).tries);
+            if (range === '1920') {
+              add(`${pre}1920강`, triesForFixedBookPolicy(baseProb, be, false, baseProb * 2, calcMode).tries);
+            }
+          }
+        }
+      }
+      // 상급재련 — 구간 완주(10단계) 기준 상한 (부분 구간은 과대 = 보수적)
+      if (!eq.isSuccession && t?.advanced && t.advanced > eq.currentAdvancedLevel) {
+        const table = (isArmor ? T4_ARMOR_MATERIALS : T4_WEAPON_MATERIALS) as Record<string, Record<string, number>>;
+        for (let st = 1; st <= 4; st++) {
+          if (!(eq.currentAdvancedLevel < st * 10 && t.advanced > (st - 1) * 10)) continue;
+          const m = table[ADV_STAGE_KEYS[st as AdvStageNum]];
+          if (!m) continue;
+          const triesTable = (st <= 2 ? AVERAGE_TRIES_1_20 : AVERAGE_TRIES_21_40) as Record<string, number>;
+          const ratio = st <= 2 ? TURN_RATIO_1_20 : TURN_RATIO_21_40;
+          const triesMax = triesTable['none_none'] || 0;
+          (['수호석', '파괴석', '돌파석', '아비도스', '운명파편'] as const)
+            .forEach(k => { if (m[k]) add(k, m[k] * triesMax); });
+          add(isArmor ? '빙하' : '용암',
+            ((m.빙하 || m.용암) || 0) * (triesTable['both_both'] || triesMax) * (ratio.normal + ratio.bonus));
+          add(`${isArmor ? '재봉술' : '야금술'}${st}단`, triesMax * (ratio.normal + ratio.bonus));
+        }
+      }
+    });
+    return needs;
+  }, [equipments, targetLevels, calcMode, includeGrowth]);
+
+  // ── 공유 숨결 풀 시장청산가(λ) ──
+  // 빙하·용암은 방어구 부위들(일반 재련)과 완갑이 같은 보유 풀을 나눠 쓴다.
+  // "전 소비처의 최적 사용량 합 = 보유량"이 되는 내부 가격 λ를 이분 탐색으로 찾아
+  // 모든 소비처가 같은 λ로 최적화하게 하면, 가치(한계 절약)가 높은 단계부터 자동 배분되고
+  // 한쪽을 미사용으로 끄면 풀이 남은 소비처(다음 최선)로 흘러간다.
+  //   λ=0      : 전부 풀숨해도 보유가 남는다 → 공짜(귀속과 동일)
+  //   λ=시세   : 시세대로 사도 부족하다 → 한계 개당 비용 = 시세 (기존과 동일)
+  //   그 사이  : 보유가 애매하게 걸치는 구간 — λ가 배분을 결정한다
+  // 입력은 보유 스냅샷·시세·목표·토글뿐(최적화 출력 아님) → 순환 없음. 적용 클릭 시에만 재계산.
+  const breathPoolPrices = useMemo(() => {
+    if (!ownedFeatureActive) return null;
+    const owned빙하 = appliedOwned['빙하'] || 0;
+    const owned용암 = appliedOwned['용암'] || 0;
+    if (owned빙하 <= 0 && owned용암 <= 0) return null;
+    const mp = (id: string) => marketPrices[id] || 0;
+    const mkt빙하 = mp('66111132');
+    const mkt용암 = mp('66111131');
+    if (!(mkt빙하 > 0) && !(mkt용암 > 0)) return null;
+    // 실제 정책 테이블(optimalBreathTable)과 같은 입력을 쓰도록, 재료·책 가격은
+    // 이진(공짜/시세)이 아니라 ownedEffPrices 와 동일한 커버리지 비례 유효단가로 계산한다.
+    // 입력이 다르면 λ가 청산한 사용량과 테이블의 실제 소모가 어긋난다.
+    const covPrice = (id: string, key: string) => {
+      const raw = mp(id);
+      if (!(raw > 0)) return 0;
+      const own = appliedOwned[key] || 0;
+      if (own <= 0) return raw;
+      const full = ownedFullNeeds[key] || 0;
+      const coverage = full > 0 ? Math.min(1, own / full) : 1;
+      return raw * (1 - coverage);
+    };
+    const matPrice = (id: string, key: string) => (boundMaterials[key] ? 0 : covPrice(id, key));
+
+    // 일반 재련(계승 후) 소비처 곡선 — 같은 레벨은 곡선을 공유하고 부위 수만 곱한다
+    const buildCurves = (type: 'armor' | 'weapon'): { pts: BreathCurvePoint[]; mult: number }[] => {
+      const enabled = type === 'armor' ? materialOptions.glacierBreath.enabled : materialOptions.lavaBreath.enabled;
+      if (!enabled) return []; // 미사용 줄은 소비처에서 제외 → 풀이 다른 곳으로 흐른다
+      const isArmor = type === 'armor';
+      const multByLevel = new Map<number, number>();
+      equipments.forEach(eq => {
+        if (eq.isWangap || !eq.isSuccession || eq.type !== type) return;
+        const t = targetLevels[eq.name];
+        if (!t?.normal || t.normal <= eq.currentLevel) return;
+        for (let L = eq.currentLevel; L < t.normal; L++) {
+          multByLevel.set(L, (multByLevel.get(L) || 0) + 1);
+        }
+      });
+      const out: { pts: BreathCurvePoint[]; mult: number }[] = [];
+      multByLevel.forEach((mult, L) => {
+        const baseProb = SUCCESSION_BASE_PROBABILITY[L];
+        if (!baseProb) return;
+        const be = getSuccessionBreathEffect(baseProb);
+        const target = L + 1;
+        const cost = (isArmor ? SUCCESSION_ARMOR_MATERIAL_COSTS[target] : SUCCESSION_WEAPON_MATERIAL_COSTS[target]) as Record<string, number> | undefined;
+        if (!cost) return;
+        const stoneKey = isArmor ? '수호석결정' : '파괴석결정';
+        const mat =
+          (cost[stoneKey] || 0) * matPrice(isArmor ? '66102107' : '66102007', stoneKey) +
+          (cost.위대한돌파석 || 0) * matPrice('66110226', '위대한돌파석') +
+          (cost.상급아비도스 || 0) * matPrice('6861013', '상급아비도스') +
+          (cost.운명파편 || 0) * matPrice('66130143', '운명파편') +
+          (cost.골드 || 0);
+        if (!(mat > 0)) return;
+        const thrillProb = getSuccessionBookBonus(L);
+        const bookKey = `${isArmor ? '방어구책' : '무기책'}${target <= 15 ? '1215' : '1619'}`;
+        const bookBound = isArmor
+          ? (target <= 15 ? materialOptions.tailoring1215.isBound : materialOptions.tailoring1619.isBound)
+          : (target <= 15 ? materialOptions.metallurgy1215.isBound : materialOptions.metallurgy1619.isBound);
+        const bookGate = target >= 12 && target <= 19 ? mp(OWNED_PRICE_IDS[bookKey]) : 0;
+        const books = thrillProb > 0 && target >= 12 && target <= 19 && bookGate > 0
+          ? [{ id: 'thrill', prob: thrillProb, price: bookBound ? 0 : covPrice(OWNED_PRICE_IDS[bookKey], bookKey) }]
+          : [];
+        out.push({ pts: breathUsageCurve(baseProb, be, books, mat, calcMode), mult });
+      });
+      return out;
+    };
+    const armorCurves = buildCurves('armor');
+    const weaponCurves = buildCurves('weapon');
+
+    // 완갑 소비처 — 용암·빙하를 동시에 쓰므로 두 λ를 함께 넘겨 평가한다
+    const wangapTargets: { L: number; grade: WangapGrade }[] = [];
+    equipments.forEach(eq => {
+      if (!eq.isWangap) return;
+      const t = targetLevels[eq.name];
+      if (!t?.normal || t.normal <= eq.currentLevel) return;
+      for (let L = eq.currentLevel; L < t.normal; L++) {
+        if (WANGAP_BASE_PROBABILITY[L] ?? 0) wangapTargets.push({ L, grade: (eq.grade as WangapGrade) || '영웅' });
+      }
+    });
+    const wangapOn = materialOptions.wangapLava.enabled || materialOptions.wangapGlacier.enabled;
+    const wangapBound = {
+      파괴석결정: !!boundMaterials['파괴석결정'],
+      수호석결정: !!boundMaterials['수호석결정'],
+      위대한돌파석: !!boundMaterials['위대한돌파석'],
+      상급아비도스: !!boundMaterials['상급아비도스'],
+      운명파편: !!boundMaterials['운명파편'],
+      용암: false, 빙하: false,
+    };
+    const wangapUsage = (lavaP: number, glacierP: number): { lava: number; glacier: number } => {
+      if (!wangapOn || wangapTargets.length === 0) return { lava: 0, glacier: 0 };
+      let lava = 0, glacier = 0;
+      for (const w of wangapTargets) {
+        const wr = computeWangapAverage({
+          startLevel: w.L, targetLevel: w.L + 1, startGrade: w.grade, mode: calcMode,
+          lavaMode: materialOptions.wangapLava.enabled ? 'optimal' : 'off',
+          glacierMode: materialOptions.wangapGlacier.enabled ? 'optimal' : 'off',
+          boundFlags: wangapBound,
+          // 결정 재료도 커버리지 유효단가 — 일반 재련(정책 테이블)·실계산과 같은 경제로 평가해야
+          // λ가 청산한 사용량과 실제 소모가 일치한다
+          unitPrices: {
+            파괴석결정: covPrice('66102007', '파괴석결정'),
+            수호석결정: covPrice('66102107', '수호석결정'),
+            위대한돌파석: covPrice('66110226', '위대한돌파석'),
+            상급아비도스: covPrice('6861013', '상급아비도스'),
+            운명파편: covPrice('66130143', '운명파편'),
+            용암: lavaP, 빙하: glacierP,
+          },
+        });
+        lava += wr.totals.용암;
+        glacier += wr.totals.빙하;
+      }
+      return { lava, glacier };
+    };
+
+    // 한 풀의 청산가 — 사용량은 λ에 단조 감소이므로 이분 탐색
+    const clearPool = (
+      curves: { pts: BreathCurvePoint[]; mult: number }[],
+      owned: number, market: number, otherPrice: number, pool: 'lava' | 'glacier',
+    ): number => {
+      if (owned <= 0 || !(market > 0)) return market;
+      const usage = (price: number) =>
+        curves.reduce((s, c) => s + usageAtPrice(c.pts, price) * c.mult, 0) +
+        (pool === 'lava' ? wangapUsage(price, otherPrice).lava : wangapUsage(otherPrice, price).glacier);
+      if (usage(0) <= owned) return 0;
+      if (usage(market) >= owned) return market;
+      let lo = 0, hi = market;
+      for (let i = 0; i < 9; i++) {
+        const mid = (lo + hi) / 2;
+        if (usage(mid) > owned) lo = mid; else hi = mid;
+      }
+      return hi;
+    };
+    let priceGlacier = mkt빙하;
+    let priceLava = mkt용암;
+    // 완갑이 두 풀을 함께 쓰므로 서로의 λ를 고정해 두 번 왕복하면 충분히 수렴한다
+    for (let iter = 0; iter < 2; iter++) {
+      priceGlacier = clearPool(armorCurves, owned빙하, mkt빙하, priceLava, 'glacier');
+      priceLava = clearPool(weaponCurves, owned용암, mkt용암, priceGlacier, 'lava');
+    }
+    return { 빙하: priceGlacier, 용암: priceLava };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownedFeatureActive, appliedOwned, marketPrices, equipments, targetLevels, calcMode, boundMaterials, ownedFullNeeds,
+    materialOptions.glacierBreath.enabled, materialOptions.lavaBreath.enabled,
+    materialOptions.wangapLava.enabled, materialOptions.wangapGlacier.enabled,
+    materialOptions.tailoring1215.isBound, materialOptions.tailoring1619.isBound,
+    materialOptions.metallurgy1215.isBound, materialOptions.metallurgy1619.isBound]);
+
+  // 보유 커버리지 반영 유효 단가 — 최적화(정책 테이블·상급 최적 조합) 전용.
+  // 유효 단가 = 시세 × (1 − min(1, 보유/풀사용필요량)). 보유가 풀사용을 덮으면 0(귀속과 동일).
+  // 숨결(빙하·용암)만은 비례 할인 대신 공유 풀 시장청산가(breathPoolPrices)를 쓴다 — 배분까지 최적.
+  // 비용 합산·카드 표시는 이걸 쓰지 않고 부족분 × 원시 시세로 계산한다.
+  const ownedEffPrices = useMemo(() => {
+    // 계승 전 장비가 섞여 있으면 보유 기능 전체 비활성 — 원시 시세 그대로
+    if (!ownedFeatureActive) return marketPrices;
+    const keys = Object.keys(appliedOwned).filter(k => (appliedOwned[k] || 0) > 0 && OWNED_PRICE_IDS[k]);
+    if (keys.length === 0) return marketPrices;
+    const out = { ...marketPrices };
+    keys.forEach(k => {
+      const id = OWNED_PRICE_IDS[k];
+      if (!(out[id] > 0)) return;
+      const full = ownedFullNeeds[k] || 0;
+      // full=0 = 이번 목표에 아예 안 쓰이는 재료 — 단가가 어디에도 곱해지지 않으므로 0이어도 무해
+      const coverage = full > 0 ? Math.min(1, (appliedOwned[k] || 0) / full) : 1;
+      out[id] = out[id] * (1 - coverage);
+    });
+    // 숨결은 공유 풀 시장청산가로 덮어쓴다 — 방어구·완갑 배분이 λ 하나로 정해진다
+    if (breathPoolPrices) {
+      if ((appliedOwned['빙하'] || 0) > 0 && marketPrices['66111132'] > 0) out['66111132'] = breathPoolPrices.빙하;
+      if ((appliedOwned['용암'] || 0) > 0 && marketPrices['66111131'] > 0) out['66111131'] = breathPoolPrices.용암;
+    }
+    return out;
+  }, [marketPrices, ownedFullNeeds, appliedOwned, ownedFeatureActive, breathPoolPrices]);
+
+  // ── 자동 올귀속 판정 ──
+  // "보유 ≥ 화면 예상 소모량"이면 귀속을 켜고, 자동으로 켠 키(autoBoundOnRef)가 부족해지면 끈다.
+  // 사용자가 직접 만진 귀속은 건드리지 않는다. 두 경로에서 호출된다:
+  //   ① 보유 입력 즉시(handleOwnedChange) — 지금 화면에 보이는 숫자 기준으로 바로 체크
+  //   ② 줄 최적화 클릭 → materials 재계산 도착 시 1회 — 적용 후 숫자 기준으로 재판정
+  //     (숨결·책 예상량은 최적 적용 후에야 생기므로 ②가 그걸 마저 잡는다)
+  // 이벤트 시점 1회 판정이라 "체크 → 정책 변화 → 소모 증가 → 재해제" 진동이 없다.
+  const autoBoundOnRef = useRef<Set<string>>(new Set());
+  const judgeAutoBounds = useCallback((ownMap: Record<string, number>) => {
+    if (!ownedFeatureActive || !materials) return;
+    const auto = autoBoundOnRef.current;
+    const ownOf = (k: string) => ownMap[k] || 0;
+    // 화면 표시와 같은 기준: materials 의 예상 소모량 (성장 포함 토글·특재 절약이 반영된 값 그대로)
+    const needOf: Record<string, number> = {
+      수호석결정: materials.수호석결정 || 0,
+      파괴석결정: materials.파괴석결정 || 0,
+      위대한돌파석: materials.위대한돌파석 || 0,
+      상급아비도스: materials.상급아비도스 || 0,
+      운명파편: materials.운명파편 || 0,
+      빙하: materials.빙하 || 0, // 일반+상급+완갑 총합 (카드 합계와 동일)
+      용암: materials.용암 || 0,
+      방어구책1215: materials.방어구책1215 || 0,
+      방어구책1619: materials.방어구책1619 || 0,
+      무기책1215: materials.무기책1215 || 0,
+      무기책1619: materials.무기책1619 || 0,
+    };
+    // desired true = 보유 ≥ 예상(켠다), false = 자동으로 켰는데 부족해짐(끈다), null = 불개입
+    const decide = (key: string, cur: boolean): boolean | null => {
+      const need = needOf[key] || 0;
+      const own = ownOf(key);
+      if (need > 0 && own >= need) {
+        if (!cur) { auto.add(key); return true; }
+        return null;
+      }
+      if (auto.has(key)) {
+        auto.delete(key);
+        return cur ? false : null; // 사용자가 이미 껐다면 추적만 해제
+      }
+      return null;
+    };
+
+    // 계승 재료 (boundMaterials)
+    const bmUpdates: Record<string, boolean> = {};
+    OWNED_BM_KEYS.forEach(k => {
+      const d = decide(k, !!boundMaterials[k]);
+      if (d !== null) bmUpdates[k] = d;
+    });
+    if (Object.keys(bmUpdates).length > 0) setBoundMaterials(prev => ({ ...prev, ...bmUpdates }));
+
+    // 숨결·전율책 — 보유 키 하나가 여러 isBound 플래그를 대표한다 (빙하 = 일반+완갑+상급 양턴)
+    const moUpd: Record<string, boolean> = {};
+    const advUpd: Record<string, boolean> = {};
+    Object.entries(OWNED_FLAG_MAP).forEach(([key, m]) => {
+      const cur =
+        m.mo.every(k => (materialOptions as Record<string, { isBound: boolean }>)[k].isBound) &&
+        m.adv.every(k => (advancedMaterialOptions as Record<string, { isBound: boolean }>)[k].isBound);
+      const d = decide(key, cur);
+      if (d === null) return;
+      m.mo.forEach(k => { moUpd[k] = d; });
+      m.adv.forEach(k => { advUpd[k] = d; });
+    });
+    if (Object.keys(moUpd).length > 0) {
+      setMaterialOptions(prev => {
+        const next = { ...prev } as Record<string, { enabled: boolean; isBound: boolean; optimal?: boolean }>;
+        Object.entries(moUpd).forEach(([k, v]) => { next[k] = { ...next[k], isBound: v }; });
+        return next as typeof prev;
+      });
+    }
+    if (Object.keys(advUpd).length > 0) {
+      setAdvancedMaterialOptions(prev => {
+        const next = { ...prev } as Record<string, { enabled: boolean; isBound: boolean }>;
+        Object.entries(advUpd).forEach(([k, v]) => { next[k] = { ...next[k], isBound: v }; });
+        return next as typeof prev;
+      });
+    }
+  }, [ownedFeatureActive, materials, boundMaterials, materialOptions, advancedMaterialOptions]);
+  // 입력 핸들러(위쪽 선언)가 즉시 판정을 부를 수 있게 ref 로 연결 — 렌더마다 최신 함수 대입
+  judgeAutoBoundsRef.current = judgeAutoBounds;
+
+  // 원샷 플래그: 줄 최적화 클릭 → 스냅샷 반영 → materials 재계산 완료 → 1회 재판정.
+  // 클릭 "순간"의 materials 는 적용 전 정책 기준이라(예: 숨결 미사용이면 숨결 예상 0)
+  // 판정을 재계산 후로 미뤄야 "화면에 뜨는 바로 그 숫자"와 비교하게 된다.
+  const pendingAutoBoundRef = useRef(false);
+  const applyOwnedSnapshot = useCallback(() => {
+    setAppliedOwned({ ...ownedMaterials });
+    pendingAutoBoundRef.current = true;
+  }, [ownedMaterials]);
+  useEffect(() => {
+    if (!pendingAutoBoundRef.current) return;
+    pendingAutoBoundRef.current = false; // 1회 소모 — 판정이 낳는 재계산에는 다시 반응하지 않는다(진동 불가)
+    judgeAutoBounds({ ...ownedMaterials });
+    // 의존성은 materials 하나만 — 클릭 커밋(재계산 전, materials 가 아직 옛값)에 발화해
+    // 플래그를 미리 소모하지 않도록, "재계산된 materials 가 도착한" 커밋에서만 돈다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [materials]);
+
+  // 자동으로 켰던 귀속만 해제 (사용자가 직접 켠 귀속은 유지) — 초기화·자동 해제 공용
+  const releaseAutoBounds = useCallback(() => {
+    const auto = autoBoundOnRef.current;
+    if (auto.size === 0) return;
+    const bmOff: Record<string, boolean> = {};
+    const moOff: Record<string, boolean> = {};
+    const advOff: Record<string, boolean> = {};
+    auto.forEach(k => {
+      if ((OWNED_BM_KEYS as readonly string[]).includes(k)) bmOff[k] = false;
+      const m = OWNED_FLAG_MAP[k];
+      if (m) {
+        m.mo.forEach(f => { moOff[f] = false; });
+        m.adv.forEach(f => { advOff[f] = false; });
+      }
+    });
+    auto.clear();
+    if (Object.keys(bmOff).length > 0) setBoundMaterials(prev => ({ ...prev, ...bmOff }));
+    if (Object.keys(moOff).length > 0) {
+      setMaterialOptions(prev => {
+        const next = { ...prev } as Record<string, { enabled: boolean; isBound: boolean; optimal?: boolean }>;
+        Object.entries(moOff).forEach(([k, v]) => { next[k] = { ...next[k], isBound: v }; });
+        return next as typeof prev;
+      });
+    }
+    if (Object.keys(advOff).length > 0) {
+      setAdvancedMaterialOptions(prev => {
+        const next = { ...prev } as Record<string, { enabled: boolean; isBound: boolean }>;
+        Object.entries(advOff).forEach(([k, v]) => { next[k] = { ...next[k], isBound: v }; });
+        return next as typeof prev;
+      });
+    }
+  }, []);
+
+  // 초기화 — 보유 입력·적용 스냅샷과 최적 적용(일반 숨결·책 / 상급 / 완갑),
+  // 그리고 자동으로 켰던 귀속을 한 번에 해제한다 (사용자가 직접 켠 귀속은 유지).
+  const handleOwnedReset = useCallback(() => {
+    setOwnedMaterials({});
+    setAppliedOwned({});
+    releaseAutoBounds();
+    // 보조재료 사용 토글·최적 모드 전부 초기 상태(미사용)로 — 귀속 체크는 건드리지 않는다
+    setMaterialOptions(prev => {
+      const next = { ...prev } as Record<string, { enabled: boolean; isBound: boolean; optimal?: boolean }>;
+      Object.keys(next).forEach(k => {
+        next[k] = { ...next[k], enabled: false, ...('optimal' in next[k] ? { optimal: false } : {}) };
+      });
+      return next as typeof prev;
+    });
+    setAdvancedMaterialOptions(prev => {
+      const next = { ...prev } as Record<string, { enabled: boolean; isBound: boolean }>;
+      Object.keys(next).forEach(k => { next[k] = { ...next[k], enabled: false }; });
+      return next as typeof prev;
+    });
+    setAdvOptApplied({ armor: false, weapon: false });
+  }, [releaseAutoBounds]);
+
+  // "최적 숨결/책" 단계별 정책 테이블 (모드 + 시세 + 귀속 + 보유 커버리지 기준)
   // level 키 = 현재 레벨(L→L+1). armor/weapon 각각.
   // 귀속 체크된 재료·숨결·책은 실지출 0으로 취급해 사용 쪽으로 최적화된다 (골드(누골)는 항상 실지출).
-  // 보유 개수는 최적화에 반영하지 않는다(귀속 체크만) — 필요량 의존 순환/공유상태 오작동 방지.
+  // 보유 개수는 ownedEffPrices(풀사용 기준 커버리지 할인)로만 반영한다 — 선택된 정책의
+  // 필요량을 되먹이지 않으므로 순환이 없다.
   const optimalBreathTable = useMemo(() => {
     const armor: Record<number, PreOptVariants> = {};
     const weapon: Record<number, PreOptVariants> = {};
-    const mp = (id: string) => marketPrices[id] || 0;
+    const mp = (id: string) => ownedEffPrices[id] || 0; // 보유 커버리지 반영 유효 단가
+    const rawMp = (id: string) => marketPrices[id] || 0; // 시세 로딩 여부 판정용 원시 시세
     const bnd = (key: string) => !!boundMaterials[key]; // 귀속 재료 → 실지출 0
-    const glacierMkt = mp('66111132'); // 빙하 시세
-    const lavaMkt = mp('66111131');    // 용암 시세
-    const glacierP = materialOptions.glacierBreath.isBound ? 0 : glacierMkt;
-    const lavaP = materialOptions.lavaBreath.isBound ? 0 : lavaMkt;
+    // 로딩 게이트는 원시 시세로 — 유효 단가는 보유가 다 덮으면 0이 되는데,
+    // 그걸 게이트로 쓰면 "보유로 공짜"가 "시세 미로딩"으로 오인돼 후보에서 빠진다
+    const glacierMkt = rawMp('66111132');
+    const lavaMkt = rawMp('66111131');
+    const glacierP = materialOptions.glacierBreath.isBound ? 0 : mp('66111132');
+    const lavaP = materialOptions.lavaBreath.isBound ? 0 : mp('66111131');
     for (let L = 11; L <= 24; L++) {
       const baseProb = SUCCESSION_BASE_PROBABILITY[L];
       if (!baseProb) continue;
@@ -777,12 +1321,14 @@ export default function RefiningCalculator({
         : 0;
       // 전율 책(계승 후 전용, 도전 12~19) — 효과는 기본 확률만큼 가산(2배)
       const thrillProb = getSuccessionBookBonus(L);
+      const aThrillGate = target <= 15 ? rawMp('66112564') : target <= 19 ? rawMp('66112565') : 0;
+      const wThrillGate = target <= 15 ? rawMp('66112561') : target <= 19 ? rawMp('66112562') : 0;
       const aThrillMkt = target <= 15 ? mp('66112564') : target <= 19 ? mp('66112565') : 0;
       const wThrillMkt = target <= 15 ? mp('66112561') : target <= 19 ? mp('66112562') : 0;
       const aThrillBound = target <= 15 ? materialOptions.tailoring1215.isBound : materialOptions.tailoring1619.isBound;
       const wThrillBound = target <= 15 ? materialOptions.metallurgy1215.isBound : materialOptions.metallurgy1619.isBound;
-      const mkSuccVariants = (mat: number, breathP: number, bookMkt: number, bookBound: boolean): PreOptVariants | null => {
-        const books = thrillProb > 0 && bookMkt > 0 ? [{ id: 'thrill', prob: thrillProb, price: bookBound ? 0 : bookMkt }] : [];
+      const mkSuccVariants = (mat: number, breathP: number, bookGate: number, bookMkt: number, bookBound: boolean): PreOptVariants | null => {
+        const books = thrillProb > 0 && bookGate > 0 ? [{ id: 'thrill', prob: thrillProb, price: bookBound ? 0 : bookMkt }] : [];
         const rec = optimalBreathWithBook(baseProb, be, books, mat, breathP, calcMode, 'auto');
         const on = optimalBreathWithBook(baseProb, be, books, mat, breathP, calcMode, 'on');
         const off = optimalBreathWithBook(baseProb, be, [], mat, breathP, calcMode, 'off');
@@ -790,8 +1336,8 @@ export default function RefiningCalculator({
         return { rec, on, off };
       };
       // 숨결 시세 미로딩 시엔 정책을 만들지 않는다 → 호출부가 CASE 테이블 경로로 폴백
-      const sa = glacierMkt > 0 ? mkSuccVariants(aMat, glacierP, aThrillMkt, aThrillBound) : null;
-      const sw = lavaMkt > 0 ? mkSuccVariants(wMat, lavaP, wThrillMkt, wThrillBound) : null;
+      const sa = glacierMkt > 0 ? mkSuccVariants(aMat, glacierP, aThrillGate, aThrillMkt, aThrillBound) : null;
+      const sw = lavaMkt > 0 ? mkSuccVariants(wMat, lavaP, wThrillGate, wThrillMkt, wThrillBound) : null;
       if (sa) armor[L] = sa;
       if (sw) weapon[L] = sw;
     }
@@ -824,18 +1370,22 @@ export default function RefiningCalculator({
       // 강화 책: 목표 19~20 전용, 효과 = 기본확률 +200% 가산 (19단계 +6%, 20단계 +3%)
       const bookProb = target >= 11 && target <= 20 ? baseProb : 0;
       const hasEnhancedBook = target >= 19 && target <= 20;
+      const aBookGate = target <= 14 ? rawMp('66112546') : target <= 18 ? rawMp('66112552') : rawMp('66112554');
+      const wBookGate = target <= 14 ? rawMp('66112543') : target <= 18 ? rawMp('66112551') : rawMp('66112553');
       const aBookMkt = target <= 14 ? mp('66112546') : target <= 18 ? mp('66112552') : mp('66112554');
       const wBookMkt = target <= 14 ? mp('66112543') : target <= 18 ? mp('66112551') : mp('66112553');
       const aBookBound = target <= 14 ? materialOptions.tailoring.isBound : target <= 18 ? materialOptions.tailoring1518.isBound : materialOptions.tailoring1920.isBound;
       const wBookBound = target <= 14 ? materialOptions.metallurgy.isBound : target <= 18 ? materialOptions.metallurgy1518.isBound : materialOptions.metallurgy1920.isBound;
+      const aEnhGate = hasEnhancedBook ? rawMp('66112556') : 0;
+      const wEnhGate = hasEnhancedBook ? rawMp('66112555') : 0;
       const aEnhMkt = hasEnhancedBook ? mp('66112556') : 0;
       const wEnhMkt = hasEnhancedBook ? mp('66112555') : 0;
       const aEnhBound = materialOptions.tailoring1920Enhanced.isBound;
       const wEnhBound = materialOptions.metallurgy1920Enhanced.isBound;
-      const mkVariants = (mat: number, breathP: number, bookMkt: number, bookBound: boolean, enhMkt: number, enhBound: boolean): PreOptVariants | null => {
-        // 시세가 있는 책만 후보에 올리고, 귀속 책은 가격 0(공짜)으로 반영
-        const normalBooks = bookProb > 0 && bookMkt > 0 ? [{ id: 'normal', prob: bookProb, price: bookBound ? 0 : bookMkt }] : [];
-        const enhancedBooks = hasEnhancedBook && enhMkt > 0 ? [{ id: 'enhanced', prob: bookProb * 2, price: enhBound ? 0 : enhMkt }] : [];
+      const mkVariants = (mat: number, breathP: number, bookGate: number, bookMkt: number, bookBound: boolean, enhGate: number, enhMkt: number, enhBound: boolean): PreOptVariants | null => {
+        // 원시 시세가 있는 책만 후보에 올리고(로딩 게이트), 귀속 책은 가격 0(공짜)으로 반영
+        const normalBooks = bookProb > 0 && bookGate > 0 ? [{ id: 'normal', prob: bookProb, price: bookBound ? 0 : bookMkt }] : [];
+        const enhancedBooks = hasEnhancedBook && enhGate > 0 ? [{ id: 'enhanced', prob: bookProb * 2, price: enhBound ? 0 : enhMkt }] : [];
         const rec = optimalBreathWithBook(baseProb, be, [...normalBooks, ...enhancedBooks], mat, breathP, calcMode, 'auto');
         const on = optimalBreathWithBook(baseProb, be, normalBooks, mat, breathP, calcMode, 'on');
         const off = optimalBreathWithBook(baseProb, be, [], mat, breathP, calcMode, 'off');
@@ -844,8 +1394,8 @@ export default function RefiningCalculator({
         return { rec, on, off, ...(onEnhanced ? { onEnhanced } : {}) };
       };
       // 숨결 시세 미로딩 상태에서는 최적 정책 생략 (수동 CASE 테이블 경로 폴백)
-      const pa = glacierMkt > 0 ? mkVariants(aMat, glacierP, aBookMkt, aBookBound, aEnhMkt, aEnhBound) : null;
-      const pw = lavaMkt > 0 ? mkVariants(wMat, lavaP, wBookMkt, wBookBound, wEnhMkt, wEnhBound) : null;
+      const pa = glacierMkt > 0 ? mkVariants(aMat, glacierP, aBookGate, aBookMkt, aBookBound, aEnhGate, aEnhMkt, aEnhBound) : null;
+      const pw = lavaMkt > 0 ? mkVariants(wMat, lavaP, wBookGate, wBookMkt, wBookBound, wEnhGate, wEnhMkt, wEnhBound) : null;
       if (pa) preArmor[L] = pa;
       if (pw) preWeapon[L] = pw;
     }
@@ -853,8 +1403,9 @@ export default function RefiningCalculator({
     return { armor, weapon, preArmor, preWeapon };
     // 성능: materialOptions 객체 전체가 아니라 실제 사용하는 .isBound 값만 의존한다.
     // (사용 토글 .enabled 변경 시 ~수백만 연산의 테이블을 재계산하지 않도록)
+    // ownedEffPrices: 보유 커버리지 반영 유효 단가 — 적용 스냅샷(appliedOwned) 기반이라 타이핑 중엔 안 돈다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calcMode, marketPrices, boundMaterials,
+  }, [calcMode, marketPrices, ownedEffPrices, boundMaterials,
     materialOptions.glacierBreath.isBound, materialOptions.lavaBreath.isBound,
     materialOptions.tailoring.isBound, materialOptions.tailoring1518.isBound,
     materialOptions.tailoring1920.isBound, materialOptions.tailoring1920Enhanced.isBound,
@@ -1024,8 +1575,9 @@ export default function RefiningCalculator({
     materialOptions.metallurgy1920.isBound, materialOptions.metallurgy1920Enhanced.isBound,
     materialOptions.tailoring1215.isBound, materialOptions.tailoring1619.isBound,
     materialOptions.metallurgy1215.isBound, materialOptions.metallurgy1619.isBound,
-    refinedLevelsByType, calcMode, marketPrices,
-  ]), [boundMaterials, materialOptions, refinedLevelsByType, calcMode, marketPrices]);
+    // 보유 커버리지 반영 유효 단가 — 보유 개수 변경도 시세 변경과 동급으로 책 동기화를 재무장한다
+    refinedLevelsByType, calcMode, marketPrices, ownedEffPrices,
+  ]), [boundMaterials, materialOptions, refinedLevelsByType, calcMode, marketPrices, ownedEffPrices]);
 
   useEffect(() => {
     if (materialOptions.glacierBreath.enabled && materialOptions.glacierBreath.optimal) pendingBookSync.current.armor = true;
@@ -1137,7 +1689,8 @@ export default function RefiningCalculator({
   // 보유 개수는 반영하지 않는다(귀속 체크만) — 필요량↔가격 피드백 루프/타입 간 공유상태 오작동 방지.
   // buildPrices('armor')는 방어구 귀속만 참조하므로 무기 귀속 토글이 방어구 최적 조합을 바꾸지 않는다.
   const advOptimalPlan = useMemo(() => {
-    const mp = (id: string) => marketPrices[id] || 0;
+    // 보유 커버리지 반영 유효 단가 — 보유분이 풀사용 필요량을 덮으면 0(귀속과 동일 취급)
+    const mp = (id: string) => ownedEffPrices[id] || 0;
     const basePrice = (id: string, key: string) => (boundMaterials[key] ? 0 : mp(id));
 
     const bookIdMap: Record<'armor' | 'weapon', Record<AdvStageNum, string>> = {
@@ -1174,7 +1727,7 @@ export default function RefiningCalculator({
       armor: pricesLoaded ? computeOptimalAdvancedPlan('armor', advStagesByType.armor, buildPrices('armor')) : null,
       weapon: pricesLoaded ? computeOptimalAdvancedPlan('weapon', advStagesByType.weapon, buildPrices('weapon')) : null,
     };
-  }, [advStagesByType, marketPrices, boundMaterials, advancedMaterialOptions]);
+  }, [advStagesByType, marketPrices, ownedEffPrices, boundMaterials, advancedMaterialOptions]);
 
   const [openAdvOptPopup, setOpenAdvOptPopup] = useState<'armor' | 'weapon' | null>(null);
   // 최적화 적용 상태 — 적용 후에는 시세 변경으로 최적 조합이 바뀔 때마다 자동 재적용(일반 재련 최적화와 동일).
@@ -1218,6 +1771,19 @@ export default function RefiningCalculator({
     return () => document.removeEventListener('mousedown', onDown);
   }, [openAdvOptPopup]);
 
+  // 완갑 최적 숨결 내역 팝업 (단계별 용암·빙하 투입 계획)
+  const [openWangapPopup, setOpenWangapPopup] = useState(false);
+  useEffect(() => {
+    if (!openWangapPopup) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-wangap-opt-popup]') || t.closest('[data-wangap-opt-btn]')) return;
+      setOpenWangapPopup(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [openWangapPopup]);
+
   // 최적 조합을 기존 일반턴/선조턴 옵션에 적용 + 자동 재적용 모드 진입 (수동 토글 시 해제)
   const applyAdvOptimal = (type: 'armor' | 'weapon') => {
     const plan = advOptimalPlan[type];
@@ -1253,6 +1819,52 @@ export default function RefiningCalculator({
     setMaterialOptions(p => ({ ...p, [key]: { ...(p as any)[key], enabled: mode !== 'off', optimal: mode === 'optimal' } }));
   };
   const calcModeLabel = calcMode === 'median' ? '중앙값' : calcMode === 'average' ? '평균값' : '장기백';
+
+  // ── 적용된 최적화 전체 해제 ──
+  // 목표·시작 단계·보유 입력이 바뀌면 호출된다 — 적용돼 있던 최적화(일반 숨결·상급·완갑)가
+  // 풀려 줄 버튼이 "보조재료 비용 최적화" 상태로 돌아오고, 다시 눌러야 새 조건으로 계산된다.
+  // 각 setState 는 바뀔 게 없으면 prev 를 그대로 돌려줘 불필요한 리렌더가 없다.
+  const deactivateOptimizations = useCallback(() => {
+    setMaterialOptions(prev => {
+      const keys = ['glacierBreath', 'lavaBreath', 'wangapLava', 'wangapGlacier'] as const;
+      if (!keys.some(k => prev[k].enabled && prev[k].optimal)) return prev;
+      const next = { ...prev } as Record<string, { enabled: boolean; isBound: boolean; optimal?: boolean }>;
+      keys.forEach(k => {
+        if (next[k].optimal) next[k] = { ...next[k], enabled: false, optimal: false };
+      });
+      return next as typeof prev;
+    });
+    if (advOptApplied.armor || advOptApplied.weapon) {
+      setAdvancedMaterialOptions(prev => {
+        const next = { ...prev } as Record<string, { enabled: boolean; isBound: boolean }>;
+        (['armor', 'weapon'] as const).forEach(type => {
+          if (!advOptApplied[type]) return;
+          Object.keys(next).forEach(k => {
+            if (k.startsWith(type)) next[k] = { ...next[k], enabled: false };
+          });
+        });
+        return next as typeof prev;
+      });
+      setAdvOptApplied({ armor: false, weapon: false });
+    }
+    // 자동 귀속(autoBoundOnRef)은 여기서 풀지 않는다 — 보유 입력 중에도 호출되는데,
+    // 그때 다른 재료의 자동 체크까지 풀리면 안 된다. 귀속 재판정은 judgeAutoBounds 몫.
+    setAppliedOwned(prev => (Object.keys(prev).length > 0 ? {} : prev));
+  }, [advOptApplied]);
+  deactivateOptRef.current = deactivateOptimizations;
+
+  // 목표·시작 단계 변경 감시 — 마운트와 동일 참조는 건너뛴다.
+  // 목표가 바뀌면 예상 소모의 근거가 무너지므로 자동 귀속까지 함께 해제한다.
+  // 해제가 바꾸는 상태는 이 effect 의 의존성이 아니므로 루프가 없다.
+  const prevPlanRef = useRef<{ t: typeof targetLevels; e: typeof equipments } | null>(null);
+  useEffect(() => {
+    const prev = prevPlanRef.current;
+    prevPlanRef.current = { t: targetLevels, e: equipments };
+    if (!prev) return;
+    if (prev.t === targetLevels && prev.e === equipments) return;
+    deactivateOptimizations();
+    releaseAutoBounds();
+  }, [targetLevels, equipments, deactivateOptimizations, releaseAutoBounds]);
 
   // 숨결 컨트롤 (미사용/풀숨/최적) — 카드 내부 하단. 귀속은 카드 우상단 라벨(다른 재료와 동일)
   // 팝업은 "최적" 버튼을 감싼 래퍼에 붙어 바로 위로 뜬다.
@@ -1295,63 +1907,53 @@ export default function RefiningCalculator({
               풀숨
             </button>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 일반 재련 책 카드 하단 컨트롤 — 숨결 카드와 같은 2버튼(미사용|풀책) 구조로 일관성 유지.
+  // 책은 매 시도 1권이라 "풀책" = 사용. exclusiveWithKey를 주면 켜는 순간 반대쪽(일반/강화 등)을 자동으로 끈다.
+  const renderSimpleToggle = (
+    key: keyof typeof materialOptions,
+    exclusiveWithKey?: keyof typeof materialOptions
+  ) => {
+    const enabled = (materialOptions as any)[key].enabled as boolean;
+    const setEnabled = (next: boolean) => setMaterialOptions(p => ({
+      ...p,
+      [key]: { ...(p as any)[key], enabled: next },
+      ...(exclusiveWithKey && next ? { [exclusiveWithKey]: { ...(p as any)[exclusiveWithKey], enabled: false } } : {}),
+    }));
+    return (
+      <div className={styles.breathControls} onClick={e => e.stopPropagation()}>
+        <div className={styles.advTurnRow}>
           <div className={styles.advTurnItem}>
             <button
               type="button"
-              data-breath-opt-btn
-              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${mode === 'optimal' ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-              onClick={() => {
-                // 완갑은 별도 계획 팝업이 없어 버튼으로 바로 최적 모드를 켠다
-                if (type === 'wangapLava' || type === 'wangapGlacier') {
-                  setBreathMode(type, mode === 'optimal' ? 'full' : 'optimal');
-                  return;
-                }
-                setOpenBreathPopup(o => (o === type ? null : type));
-              }}
-              title="시세 기준 최적 숨결 조합"
+              onClick={() => setEnabled(false)}
+              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${!enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
             >
-              최적{mode === 'optimal' ? ' ▾' : ''}
+              미사용
             </button>
-            {(type === 'armor' || type === 'weapon') && renderBreathPopup(type)}
+          </div>
+          <div className={styles.advTurnItem}>
+            <button
+              type="button"
+              onClick={() => setEnabled(true)}
+              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
+            >
+              풀책
+            </button>
           </div>
         </div>
       </div>
     );
   };
 
-  // 일반 재련 책 카드 하단 컨트롤 — 사용/미사용 버튼 (상급재련 카드와 동일한 느낌).
-  // exclusiveWithKey를 주면 켜는 순간 반대쪽(일반/강화 등)을 자동으로 끈다.
-  const renderSimpleToggle = (
-    key: keyof typeof materialOptions,
-    exclusiveWithKey?: keyof typeof materialOptions
-  ) => (
-    <div className={styles.breathControls} onClick={e => e.stopPropagation()}>
-      <div className={styles.advTurnRow}>
-        <div className={styles.advTurnItem}>
-          <button
-            type="button"
-            onClick={() => setMaterialOptions(p => {
-              const nextEnabled = !(p as any)[key].enabled;
-              return {
-                ...p,
-                [key]: { ...(p as any)[key], enabled: nextEnabled },
-                ...(exclusiveWithKey && nextEnabled ? { [exclusiveWithKey]: { ...(p as any)[exclusiveWithKey], enabled: false } } : {}),
-              };
-            })}
-            className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${(materialOptions as any)[key].enabled ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-          >
-            {(materialOptions as any)[key].enabled ? '사용' : '미사용'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   // 최적 숨결 단계별 팝업 — 최적 버튼 바로 위(카드 안에서 나옴), 실제 강화 구간만·한 줄
   // 계승 전 장비가 있으면 "계승 전" 그룹도 함께 표시 (책 사용 여부 포함)
   const renderBreathPopup = (type: 'armor' | 'weapon') => {
     if (openBreathPopup !== type) return null;
-    const mode = breathModeOf(type);
     const isArmor = type === 'armor';
     const tbl = isArmor ? optimalBreathTable.armor : optimalBreathTable.weapon;
     const preTbl = isArmor ? optimalBreathTable.preArmor : optimalBreathTable.preWeapon;
@@ -1380,20 +1982,34 @@ export default function RefiningCalculator({
       }
       return preBookToggleOn(target) ? v.on : v.off;
     };
+    const breathIcon = isArmor ? '/breath-glacier.webp' : '/breath-lava.webp';
+    const breathIconName = isArmor ? '빙하의 숨결' : '용암의 숨결';
     const breathKindCls = (kind: OptimalPolicy['kind']) =>
-      kind === 'none' ? styles.breathChipNone : kind === 'full' ? styles.breathChipFull : styles.breathChipPartial;
+      kind === 'none' ? styles.breathRowNone : kind === 'full' ? styles.breathRowFull : styles.breathRowPartial;
+    // "1~N회차 풀숨" = 이 단계에서 처음 N번 시도까지만 풀숨, 그 뒤 시도는 노숨
     const breathLabel = (p: OptimalPolicy) =>
-      p.kind === 'none' ? '노숨' : p.kind === 'full' ? '풀숨' : `숨결 첫${p.optimalN}회`;
+      p.kind === 'none' ? '노숨' : p.kind === 'full' ? '풀숨' : `1~${p.optimalN}회차 풀숨`;
+    const renderBreathCell = (p: OptimalPolicy) => (
+      <span className={`${styles.breathRowCell} ${breathKindCls(p.kind)}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img loading="lazy" decoding="async" src={breathIcon} alt={breathIconName}
+          className={`${styles.breathRowIcon} ${p.kind === 'none' ? styles.breathRowIconOff : ''}`} />
+        {breathLabel(p)}
+      </span>
+    );
     // 책은 매 시도 1권 소모 → 권수(=시도 수)를 그대로 보여줘 재료 카드 합계와 이어지게 한다
-    const preLabel = (p: PreSuccessionPolicy) => {
-      if (!p.useBook) return breathLabel(p);
-      const name = p.bookId === 'enhanced' ? `강화 ${bookName}` : bookName;
+    const renderBookCell = (p: PreSuccessionPolicy, thrill: boolean) => {
+      if (!p.useBook) return <span className={`${styles.breathRowCell} ${styles.breathRowMuted}`}>책 안 씀</span>;
+      const icon = thrill
+        ? (isArmor ? '/tailoring-thrill.webp' : '/metallurgy-thrill.webp')
+        : (isArmor ? '/tailoring-karma.webp' : '/metallurgy-karma.webp');
+      const name = thrill ? `${bookName} 전율` : p.bookId === 'enhanced' ? `강화 ${bookName}` : bookName;
       return (
-        <>
-          <span className={styles.breathChipBookName}>{name} {Math.round(p.tries)}권</span>
-          {' · '}
-          {breathLabel(p)}
-        </>
+        <span className={`${styles.breathRowCell} ${styles.breathChipBookName}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img loading="lazy" decoding="async" src={icon} alt={name} className={styles.breathRowIcon} />
+          {name} {Math.round(p.tries)}권
+        </span>
       );
     };
     // 계승 후 전율 책 토글 (도전 단계 기준)
@@ -1401,16 +2017,6 @@ export default function RefiningCalculator({
       if (target < 12 || target > 19) return false;
       if (isArmor) return target <= 15 ? materialOptions.tailoring1215.enabled : materialOptions.tailoring1619.enabled;
       return target <= 15 ? materialOptions.metallurgy1215.enabled : materialOptions.metallurgy1619.enabled;
-    };
-    const succLabel = (p: PreSuccessionPolicy) => {
-      if (!p.useBook) return breathLabel(p);
-      return (
-        <>
-          <span className={styles.breathChipBookName}>{bookName} 전율 {Math.round(p.tries)}권</span>
-          {' · '}
-          {breathLabel(p)}
-        </>
-      );
     };
     const bothShown = levels.length > 0 && preLevels.length > 0;
     const popup = (
@@ -1426,16 +2032,17 @@ export default function RefiningCalculator({
             {preLevels.length > 0 && (
               <>
                 {bothShown && <div className={styles.breathPopupGroupLabel}>계승 전</div>}
-                <div className={styles.breathPopupLine}>
+                <div className={styles.breathRows}>
                   {preLevels.map(L => {
                     const v = preTbl[L];
                     if (!v) return null;
                     const p = pickPrePolicy(v, L + 1);
                     return (
-                      <span key={L} className={`${styles.breathChip} ${breathKindCls(p.kind)}`}>
-                        <span className={styles.breathChipLv}>+{L}→{L + 1}</span>
-                        <span className={styles.breathChipVal}>{preLabel(p)}</span>
-                      </span>
+                      <div key={L} className={styles.breathRow}>
+                        <span className={styles.breathRowLv}>+{L}→{L + 1}</span>
+                        {renderBreathCell(p)}
+                        {renderBookCell(p, false)}
+                      </div>
                     );
                   })}
                 </div>
@@ -1444,32 +2051,23 @@ export default function RefiningCalculator({
             {levels.length > 0 && (
               <>
                 {bothShown && <div className={styles.breathPopupGroupLabel}>계승 후</div>}
-                <div className={styles.breathPopupLine}>
+                <div className={styles.breathRows}>
                   {levels.map(L => {
                     const v = tbl[L];
                     if (!v) return null;
                     const p = succThrillToggleOn(L + 1) ? v.on : v.off;
                     return (
-                      <span key={L} className={`${styles.breathChip} ${breathKindCls(p.kind)}`}>
-                        <span className={styles.breathChipLv}>+{L}→{L + 1}</span>
-                        <span className={styles.breathChipVal}>{succLabel(p)}</span>
-                      </span>
+                      <div key={L} className={styles.breathRow}>
+                        <span className={styles.breathRowLv}>+{L}→{L + 1}</span>
+                        {renderBreathCell(p)}
+                        {renderBookCell(p, true)}
+                      </div>
                     );
                   })}
                 </div>
               </>
             )}
-            <div className={styles.advOptFooter}>
-              <span className={styles.advOptSummary} />
-              <button
-                type="button"
-                className={styles.advOptApply}
-                onClick={() => setBreathMode(type, 'optimal')}
-                disabled={mode === 'optimal'}
-              >
-                {mode === 'optimal' ? '적용됨 · 자동 갱신' : '적용'}
-              </button>
-            </div>
+            {/* 적용은 줄 제목의 "보조재료 비용 최적화" 버튼이 담당 — 팝업은 내역 표시 전용 */}
           </>
         )}
       </div>
@@ -1486,6 +2084,26 @@ export default function RefiningCalculator({
     const savePct = plan && plan.noneCost > 0
       ? Math.round((1 - plan.totalCost / plan.noneCost) * 100)
       : 0;
+    const isArmor = type === 'armor';
+    // 턴별 숨결·책 조합 — 실제 아이템 아이콘으로 뭘 쓰는지 바로 보이게 한다
+    const renderCombo = (breath: boolean, book: boolean, stage: AdvStageNum) => {
+      if (!breath && !book) return <span className={`${styles.breathRowCell} ${styles.breathRowMuted}`}>미사용</span>;
+      return (
+        <span className={`${styles.breathRowCell} ${styles.breathRowFull}`}>
+          {breath && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img loading="lazy" decoding="async" src={isArmor ? '/breath-glacier.webp' : '/breath-lava.webp'}
+              alt={isArmor ? '빙하의 숨결' : '용암의 숨결'} className={styles.breathRowIcon} />
+          )}
+          {book && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img loading="lazy" decoding="async" src={`/master-${isArmor ? 'tailoring' : 'metallurgy'}-${stage}.webp`}
+              alt={`장인의 ${isArmor ? '재봉술' : '야금술'} ${stage}단계`} className={styles.breathRowIcon} />
+          )}
+          {advComboLabel(breath, book)}
+        </span>
+      );
+    };
     const popup = (
           <div className={styles.advOptPopup} data-advopt-popup onClick={e => e.stopPropagation()}>
             <div className={styles.advOptPopupHeader}>
@@ -1501,24 +2119,27 @@ export default function RefiningCalculator({
               <div className={styles.breathPopupEmpty}>시세 불러오는 중...</div>
             ) : (
               <>
-                <div className={styles.advOptChipLine}>
+                <div className={styles.breathRows}>
                   {plan.stages.map(s => (
-                    <span key={s.stage} className={styles.advOptChip}>
-                      <span className={styles.advOptChipLv}>{(s.stage - 1) * 10}~{s.stage * 10}단계</span>
-                      <span className={styles.advOptChipTurn}>일반턴 <b className={styles.advOptChipVal}>{advComboLabel(plan.normalBreath, s.normalBook)}</b></span>
-                      <span className={styles.advOptChipDot}>·</span>
-                      <span className={styles.advOptChipTurn}>선조턴 <b className={styles.advOptChipVal}>{advComboLabel(plan.bonusBreath, s.bonusBook)}</b></span>
-                    </span>
+                    <div key={s.stage} className={styles.breathRow}>
+                      <span className={styles.breathRowLv}>{(s.stage - 1) * 10}~{s.stage * 10}단계</span>
+                      <span className={styles.breathRowCell}>
+                        <span className={styles.advOptChipTurn}>일반턴</span>
+                        {renderCombo(plan.normalBreath, s.normalBook, s.stage)}
+                      </span>
+                      <span className={styles.breathRowCell}>
+                        <span className={styles.advOptChipTurn}>선조턴</span>
+                        {renderCombo(plan.bonusBreath, s.bonusBook, s.stage)}
+                      </span>
+                    </div>
                   ))}
                 </div>
+                {/* 적용은 줄 제목의 "보조재료 비용 최적화" 버튼이 담당 — 팝업은 내역·비용 요약 전용 */}
                 <div className={styles.advOptFooter}>
                   <span className={styles.advOptSummary}>
                     <b className={styles.advOptGold}>{Math.round(plan.totalCost / 10000).toLocaleString()}만G</b>
                     {savePct > 0 && <em className={styles.advOptSave}> · 미사용 대비 -{savePct}%</em>}
                   </span>
-                  <button type="button" className={styles.advOptApply} onClick={() => applyAdvOptimal(type)} disabled={advOptApplied[type]}>
-                    {advOptApplied[type] ? '적용됨 · 자동 갱신' : '적용'}
-                  </button>
                 </div>
               </>
             )}
@@ -1529,11 +2150,10 @@ export default function RefiningCalculator({
   };
 
   // 상급재련 재료 카드 하단 컨트롤 — 일반턴/선조턴 사용 여부를 라벨+토글 버튼 쌍(이전 디자인 느낌)으로 각각 표시.
-  // 숨결 카드에는 optType을 넘겨 "최적화" 버튼(+팝업)도 같은 자리에 함께 배치한다.
+  // "최적화" 버튼(+팝업)은 카드에서 빼서 줄 제목(방어구/무기) 옆으로 옮겼다 — renderAdvOptButton.
   const renderAdvTurnToggle = (
     normalKey: keyof typeof advancedMaterialOptions,
     bonusKey: keyof typeof advancedMaterialOptions,
-    optType?: 'armor' | 'weapon'
   ) => {
     // 수동 토글 = 사용자가 직접 제어 → 해당 타입의 최적화 자동 재적용 해제
     const advType: 'armor' | 'weapon' = String(normalKey).startsWith('armor') ? 'armor' : 'weapon';
@@ -1564,23 +2184,239 @@ export default function RefiningCalculator({
             {advancedMaterialOptions[bonusKey].enabled ? '사용' : '미사용'}
           </button>
         </div>
-        {optType && (
-          <div className={`${styles.advTurnItem} ${styles.advTurnOptItem} ${isMobile ? styles.advTurnOptItemMobile : ''}`}>
-            <span className={`${styles.advTurnItemLabel} ${isMobile ? styles.advTurnItemLabelMobile : ''}`}>최적화</span>
-            <button
-              type="button"
-              data-advopt-btn
-              onClick={() => setOpenAdvOptPopup(o => (o === optType ? null : optType))}
-              className={`${styles.advancedToggleButton} ${isMobile ? styles.advancedToggleButtonMobile : ''} ${openAdvOptPopup === optType ? styles.advancedToggleButtonEnabled : styles.advancedToggleButtonDisabled}`}
-              title="시세 기준 최적 숨결·책 조합"
-            >
-              {openAdvOptPopup === optType ? '보는 중' : '확인'}
-            </button>
-            {renderAdvOptPopup(optType)}
+      </div>
+    </div>
+    );
+  };
+
+  // 알약 hover 로 내역 팝업 열기(데스크톱) — 적용중 상태에서 클릭은 해제라, 내역은 hover 로 본다.
+  // 버튼→팝업 사이 10px 틈을 지나는 동안 닫히지 않게 닫기는 200ms 유예 후 실행.
+  const hoverCloseTimers = useRef<Record<string, ReturnType<typeof setTimeout> | undefined>>({});
+  const hoverPopupOpen = (key: string, open: () => void) => {
+    if (isMobile) return;
+    const t = hoverCloseTimers.current[key];
+    if (t) clearTimeout(t);
+    hoverCloseTimers.current[key] = undefined;
+    open();
+  };
+  const hoverPopupClose = (key: string, close: () => void) => {
+    if (isMobile) return;
+    const t = hoverCloseTimers.current[key];
+    if (t) clearTimeout(t);
+    hoverCloseTimers.current[key] = setTimeout(close, 200);
+  };
+
+  // ── 줄 제목(방어구/무기/완갑) 옆 최적 적용 버튼 ──
+  // 액션형: 미적용 상태에서 누르면 바로 계산·적용하고 내역 팝업으로 결과를 보여준다.
+  // 수동으로 미사용/풀숨·일반턴/선조턴을 바꾸면 적용이 풀려 버튼이 "적용" 상태로 돌아온다.
+  // 적용중에 다시 누르면 내역 팝업만 토글. 줄 색 = 방어구 블루 / 무기 오렌지 / 완갑 퍼플.
+  const renderBreathOptButton = (type: 'armor' | 'weapon') => {
+    const applied = breathModeOf(type) === 'optimal';
+    const colorCls = type === 'armor' ? styles.groupOptArmor : styles.groupOptWeapon;
+    return (
+      <span
+        className={styles.groupOptWrap}
+        onClick={e => e.stopPropagation()}
+        onMouseEnter={() => hoverPopupOpen(type, () => setOpenBreathPopup(type))}
+        onMouseLeave={() => hoverPopupClose(type, () => setOpenBreathPopup(o => (o === type ? null : o)))}
+      >
+        <button
+          type="button"
+          data-breath-opt-btn
+          className={`${styles.groupOptBtn} ${colorCls} ${applied ? styles.groupOptBtnOn : ''}`}
+          onClick={() => {
+            if (!applied) {
+              applyOwnedSnapshot(); // 보유 입력 반영 + 화면 예상량 기준 자동 귀속
+              setBreathMode(type, 'optimal');
+              setOpenBreathPopup(type); // 적용 결과(단계별 조합)를 바로 보여준다
+            } else {
+              // 적용중 클릭 = 해제 → 미사용(숨결 0). 재적용하면 다시 계산·내역 표시
+              setBreathMode(type, 'off');
+              setOpenBreathPopup(o => (o === type ? null : o));
+            }
+          }}
+          title={applied ? '누르면 최적 적용을 해제합니다 (미사용으로)' : '시세·보유 기준 최적 숨결·책 조합을 계산해 적용합니다'}
+        >
+          {applied ? '✓ 최적화 적용중' : '보조재료 비용 최적화'}
+        </button>
+        {renderBreathPopup(type)}
+      </span>
+    );
+  };
+
+  const renderAdvOptButton = (type: 'armor' | 'weapon') => {
+    const applied = advOptApplied[type];
+    const colorCls = type === 'armor' ? styles.groupOptArmor : styles.groupOptWeapon;
+    return (
+      <span
+        className={styles.groupOptWrap}
+        onClick={e => e.stopPropagation()}
+        onMouseEnter={() => hoverPopupOpen(`adv-${type}`, () => setOpenAdvOptPopup(type))}
+        onMouseLeave={() => hoverPopupClose(`adv-${type}`, () => setOpenAdvOptPopup(o => (o === type ? null : o)))}
+      >
+        <button
+          type="button"
+          data-advopt-btn
+          className={`${styles.groupOptBtn} ${colorCls} ${applied ? styles.groupOptBtnOn : ''}`}
+          onClick={() => {
+            if (!applied) {
+              applyOwnedSnapshot();     // 보유 입력 반영 + 화면 예상량 기준 자동 귀속
+              applyAdvOptimal(type);    // 내부에서 팝업을 닫지만 아래가 같은 배치에서 다시 연다
+              setOpenAdvOptPopup(type); // 적용 결과(구간별 조합)를 바로 보여준다
+            } else {
+              // 적용중 클릭 = 해제 → 그 타입의 일반턴/선조턴 숨결·책 전부 미사용(0)
+              setAdvOptApplied(p => ({ ...p, [type]: false }));
+              setAdvancedMaterialOptions(prev => {
+                const next = { ...prev } as Record<string, { enabled: boolean; isBound: boolean }>;
+                Object.keys(next).forEach(k => {
+                  if (k.startsWith(type)) next[k] = { ...next[k], enabled: false };
+                });
+                return next as typeof prev;
+              });
+              setOpenAdvOptPopup(o => (o === type ? null : o));
+            }
+          }}
+          title={applied ? '누르면 최적화 적용을 해제합니다 (전부 미사용으로)' : '시세·보유 기준 최적 숨결·책 조합을 계산해 적용합니다'}
+        >
+          {applied ? '✓ 최적화 적용중' : '보조재료 비용 최적화'}
+        </button>
+        {renderAdvOptPopup(type)}
+      </span>
+    );
+  };
+
+  // 완갑 최적 숨결 내역 팝업 — 단계별로 용암·빙하를 몇 개 넣는지 (최적 정책 기준)
+  const renderWangapOptPopup = () => {
+    if (!openWangapPopup) return null;
+    const boundFlags = {
+      파괴석결정: !!boundMaterials['파괴석결정'],
+      수호석결정: !!boundMaterials['수호석결정'],
+      위대한돌파석: !!boundMaterials['위대한돌파석'],
+      상급아비도스: !!boundMaterials['상급아비도스'],
+      운명파편: !!boundMaterials['운명파편'],
+      용암: materialOptions.wangapLava.isBound,
+      빙하: materialOptions.wangapGlacier.isBound,
+    };
+    // 전 재료 유효단가 — 표시되는 계획이 실제 계산·배분(λ)과 일치해야 한다
+    const unitPrices = {
+      파괴석결정: (ownedEffPrices['66102007'] || 0),
+      수호석결정: (ownedEffPrices['66102107'] || 0),
+      위대한돌파석: (ownedEffPrices['66110226'] || 0),
+      상급아비도스: (ownedEffPrices['6861013'] || 0),
+      운명파편: (ownedEffPrices['66130143'] || 0),
+      용암: (ownedEffPrices['66111131'] || 0),
+      빙하: (ownedEffPrices['66111132'] || 0),
+    };
+    const rows: WangapAvgEnhanceRow[] = [];
+    equipments.forEach(eq => {
+      if (!eq.isWangap) return;
+      const t = targetLevels[eq.name];
+      if (!t?.normal || t.normal <= eq.currentLevel) return;
+      for (let L = eq.currentLevel; L < t.normal; L++) {
+        const wr = computeWangapAverage({
+          startLevel: L, targetLevel: L + 1, startGrade: (eq.grade as WangapGrade) || '영웅',
+          mode: calcMode, lavaMode: 'optimal', glacierMode: 'optimal', boundFlags, unitPrices,
+        });
+        const er = wr.rows.find(r => r.type === 'enhance') as WangapAvgEnhanceRow | undefined;
+        if (er) rows.push(er);
+      }
+    });
+    const kindCls = (kind: WangapAvgEnhanceRow['planKind']) =>
+      kind === 'none' ? styles.breathRowNone : kind === 'full' ? styles.breathRowFull : styles.breathRowPartial;
+    /* eslint-disable @next/next/no-img-element */
+    const segIcon = (kind: 'lava' | 'glacier') => (
+      <img loading="lazy" decoding="async"
+        src={kind === 'lava' ? '/breath-lava.webp' : '/breath-glacier.webp'}
+        alt={kind === 'lava' ? '용암의 숨결' : '빙하의 숨결'}
+        className={styles.breathRowIconSm} />
+    );
+    // 회차별 투입 계획 — 숨결을 실제로 넣는 구간만 아이콘으로, 안 넣는 꼬리 구간은 "이후 노숨" 한마디로
+    const renderPlan = (r: WangapAvgEnhanceRow) => {
+      if (r.planKind === 'none') return <span className={styles.breathRowMuted}>노숨</span>;
+      if (r.planKind === 'full') return <span className={styles.breathRowFull}>전 회차 풀숨</span>;
+      const active = r.plan.filter(s => s.lava > 0 || s.glacier > 0);
+      const hasTail = r.plan.some(s => s.lava === 0 && s.glacier === 0);
+      return (
+        <>
+          {active.map((s, i) => (
+            <span key={i} className={styles.wangapSeg}>
+              <b>{s.from}{s.to !== s.from ? `~${s.to}` : ''}회</b>
+              {s.lava > 0 && <>{segIcon('lava')}{s.lava}</>}
+              {s.glacier > 0 && <>{segIcon('glacier')}{s.glacier}</>}
+            </span>
+          ))}
+          {hasTail && <span className={styles.breathRowMuted}>이후 노숨</span>}
+        </>
+      );
+    };
+    const popup = (
+      <div className={styles.breathPopup} data-wangap-opt-popup onClick={e => e.stopPropagation()}>
+        <div className={styles.breathPopupHeader}>
+          <span className={styles.breathPopupTitle}>완갑 최적 숨결 <span className={styles.breathPopupSub}>{calcModeLabel}·시세연동</span></span>
+          <button type="button" className={styles.breathPopupClose} onClick={() => setOpenWangapPopup(false)}>✕</button>
+        </div>
+        {rows.length === 0 ? (
+          <div className={styles.breathPopupEmpty}>목표 단계를 먼저 설정하세요</div>
+        ) : (
+          <div className={styles.breathRows}>
+            {rows.map(r => (
+              <div key={r.level} className={styles.breathRow}>
+                <span className={styles.breathRowLv}>+{r.level}→{r.level + 1}</span>
+                <span className={`${styles.breathRowCell} ${kindCls(r.planKind)}`}>
+                  <img loading="lazy" decoding="async" src="/breath-lava.webp" alt="용암의 숨결" className={styles.breathRowIcon} />
+                  {Math.round(r.lava)}
+                  <span className={styles.wangapDot}>·</span>
+                  <img loading="lazy" decoding="async" src="/breath-glacier.webp" alt="빙하의 숨결" className={styles.breathRowIcon} />
+                  {Math.round(r.glacier)}
+                </span>
+                <span className={`${styles.breathRowCell} ${styles.wangapPlanCell}`}>
+                  {renderPlan(r)}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>
-    </div>
+    );
+    /* eslint-enable @next/next/no-img-element */
+    return isMobile ? createPortal(popup, document.body) : popup;
+  };
+
+  // 완갑 — 용암·빙하를 한 번에 최적 모드로 적용하고 단계별 투입 내역을 보여준다.
+  // 적용중 클릭 = 해제 → 미사용(숨결 0)
+  const renderWangapOptButton = () => {
+    const applied =
+      materialOptions.wangapLava.enabled && materialOptions.wangapLava.optimal &&
+      materialOptions.wangapGlacier.enabled && materialOptions.wangapGlacier.optimal;
+    return (
+      <span
+        className={styles.groupOptWrap}
+        onClick={e => e.stopPropagation()}
+        onMouseEnter={() => hoverPopupOpen('wangap', () => setOpenWangapPopup(true))}
+        onMouseLeave={() => hoverPopupClose('wangap', () => setOpenWangapPopup(false))}
+      >
+        <button
+          type="button"
+          data-wangap-opt-btn
+          className={`${styles.groupOptBtn} ${styles.groupOptWangap} ${applied ? styles.groupOptBtnOn : ''}`}
+          onClick={() => {
+            if (!applied) {
+              applyOwnedSnapshot(); // 보유 입력 반영 + 화면 예상량 기준 자동 귀속
+              setBreathMode('wangapLava', 'optimal');
+              setBreathMode('wangapGlacier', 'optimal');
+              setOpenWangapPopup(true); // 어디에 몇 개 넣는지 바로 보여준다
+            } else {
+              setBreathMode('wangapLava', 'off');
+              setBreathMode('wangapGlacier', 'off');
+              setOpenWangapPopup(false);
+            }
+          }}
+          title={applied ? '누르면 최적 적용을 해제합니다 (미사용으로)' : '용암·빙하 숨결을 시세 기준 최적 개수로 계산해 적용합니다'}
+        >
+          {applied ? '✓ 최적화 적용중' : '보조재료 비용 최적화'}
+        </button>
+        {renderWangapOptPopup()}
+      </span>
     );
   };
 
@@ -1873,14 +2709,15 @@ export default function RefiningCalculator({
             용암: materialOptions.wangapLava.isBound,
             빙하: materialOptions.wangapGlacier.isBound,
           },
+          // 전 재료 유효단가 — 일반 재련과 같은 경제(λ·커버리지 할인)로 최적화해야 배분이 성립한다
           unitPrices: {
-            파괴석결정: (marketPrices['66102007'] || 0),
-            수호석결정: (marketPrices['66102107'] || 0),
-            위대한돌파석: (marketPrices['66110226'] || 0),
-            상급아비도스: (marketPrices['6861013'] || 0),
-            운명파편: (marketPrices['66130143'] || 0),
-            용암: (marketPrices['66111131'] || 0),
-            빙하: (marketPrices['66111132'] || 0),
+            파괴석결정: (ownedEffPrices['66102007'] || 0),
+            수호석결정: (ownedEffPrices['66102107'] || 0),
+            위대한돌파석: (ownedEffPrices['66110226'] || 0),
+            상급아비도스: (ownedEffPrices['6861013'] || 0),
+            운명파편: (ownedEffPrices['66130143'] || 0),
+            용암: (ownedEffPrices['66111131'] || 0),
+            빙하: (ownedEffPrices['66111132'] || 0),
           },
         });
         // 특재 배분 단계는 강화 재료 대신 특재돌만 소모한다 (성장 비용은 방식과 무관하게 지불).
@@ -3024,6 +3861,24 @@ export default function RefiningCalculator({
                   <h5 className={`mb-0 ${styles.cardTitle}`}>
                     예상 소모 재료
                   </h5>
+                  {/* 모바일에서 버튼 묶음이 한 줄에 안 들어가면 줄바꿈되도록 wrap */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  {/* 보유 반영·자동 귀속은 각 줄의 "보조재료 비용 최적화" 버튼이 담당 — 여기엔 초기화만 둔다 */}
+                  {/* 초기화 — 보유 입력·적용과 최적 적용(일반·상급·완갑)을 한 번에 해제.
+                      해제할 것이 하나라도 있으면 보인다 */}
+                  {(Object.keys(ownedMaterials).length > 0 || Object.keys(appliedOwned).length > 0 ||
+                    breathModeOf('armor') === 'optimal' || breathModeOf('weapon') === 'optimal' ||
+                    breathModeOf('wangapLava') === 'optimal' || breathModeOf('wangapGlacier') === 'optimal' ||
+                    advOptApplied.armor || advOptApplied.weapon) && (
+                    <button
+                      type="button"
+                      className={styles.ownedResetBtn}
+                      onClick={handleOwnedReset}
+                      title="보유 입력과 최적 적용을 전부 해제합니다 (자동으로 켜진 귀속도 함께 풀립니다)"
+                    >
+                      초기화
+                    </button>
+                  )}
                   <div className={styles.calcModeSelector}>
                     <button
                       className={`${styles.calcModeBtn} ${calcMode === 'median' ? styles.calcModeBtnActive : ''}`}
@@ -3044,6 +3899,7 @@ export default function RefiningCalculator({
                       장기백
                     </button>
                   </div>
+                  </div>
                 </div>
               </Card.Header>
               <Card.Body className={styles.cardBody} style={{
@@ -3062,51 +3918,51 @@ export default function RefiningCalculator({
                           {/* 업화 장비 재료 (일반 재련) — 파괴석 먼저, 수호석 다음 */}
                           {materials.파괴석 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-destruction-stone.webp" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} />
+                              <MaterialCard icon="/destiny-destruction-stone.webp" name="파괴석" amount={materials.파괴석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['파괴석']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석']} {...ownedProps('파괴석')} />
                             </Col>
                           )}
                           {materials.수호석 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-guardian-stone.webp" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} />
+                              <MaterialCard icon="/destiny-guardian-stone.webp" name="수호석" amount={materials.수호석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['수호석']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석']} {...ownedProps('수호석')} />
                             </Col>
                           )}
                           {materials.돌파석 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-breakthrough-stone.webp" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} />
+                              <MaterialCard icon="/destiny-breakthrough-stone.webp" name="돌파석" amount={materials.돌파석} color="#818cf8" showCheckbox={true} isBound={boundMaterials['돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['돌파석']} {...ownedProps('돌파석')} />
                             </Col>
                           )}
                           {materials.아비도스 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/abidos-fusion.webp?v=4" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} />
+                              <MaterialCard icon="/abidos-fusion.webp?v=4" name="아비도스" amount={materials.아비도스} color="#818cf8" showCheckbox={true} isBound={boundMaterials['아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['아비도스']} {...ownedProps('아비도스')} />
                             </Col>
                           )}
                           {/* 전율 장비 재료 (계승 재련) — 파괴석 결정 먼저, 수호석 결정 다음 */}
                           {/* 특재가 구간 전체를 덮으면 수량이 0이 된다 — 절약분이 있으면 카드를 남겨 "원래 N개" 를 보여준다 */}
                           {((materials.파괴석결정 || 0) > 0 || (savedOf('파괴석결정') || 0) > 0) && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-destruction-stone2.webp?v=3" name="파괴석결정" amount={materials.파괴석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['파괴석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석결정']} saved={savedOf('파괴석결정')} />
+                              <MaterialCard icon="/destiny-destruction-stone2.webp?v=3" name="파괴석결정" amount={materials.파괴석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['파괴석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['파괴석결정']} saved={savedOf('파괴석결정')} {...ownedProps('파괴석결정')} />
                             </Col>
                           )}
                           {((materials.수호석결정 || 0) > 0 || (savedOf('수호석결정') || 0) > 0) && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-guardian-stone2.webp?v=3" name="수호석결정" amount={materials.수호석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['수호석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석결정']} saved={savedOf('수호석결정')} />
+                              <MaterialCard icon="/destiny-guardian-stone2.webp?v=3" name="수호석결정" amount={materials.수호석결정 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['수호석결정']} onBoundChange={handleBoundChange} cost={results.materialCosts['수호석결정']} saved={savedOf('수호석결정')} {...ownedProps('수호석결정')} />
                             </Col>
                           )}
                           {((materials.위대한돌파석 || 0) > 0 || (savedOf('위대한돌파석') || 0) > 0) && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-breakthrough-stone2.webp?v=3" name="위대한돌파석" amount={materials.위대한돌파석 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['위대한돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['위대한돌파석']} saved={savedOf('위대한돌파석')} />
+                              <MaterialCard icon="/destiny-breakthrough-stone2.webp?v=3" name="위대한돌파석" amount={materials.위대한돌파석 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['위대한돌파석']} onBoundChange={handleBoundChange} cost={results.materialCosts['위대한돌파석']} saved={savedOf('위대한돌파석')} {...ownedProps('위대한돌파석')} />
                             </Col>
                           )}
                           {((materials.상급아비도스 || 0) > 0 || (savedOf('상급아비도스') || 0) > 0) && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/abidos-fusion2.webp?v=3" name="상급아비도스" amount={materials.상급아비도스 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['상급아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['상급아비도스']} saved={savedOf('상급아비도스')} />
+                              <MaterialCard icon="/abidos-fusion2.webp?v=3" name="상급아비도스" amount={materials.상급아비도스 || 0} color="#a855f7" showCheckbox={true} isBound={boundMaterials['상급아비도스']} onBoundChange={handleBoundChange} cost={results.materialCosts['상급아비도스']} saved={savedOf('상급아비도스')} {...ownedProps('상급아비도스')} />
                             </Col>
                           )}
                           {/* 공통 재료(파편·실링) — 스톤과 같은 크기·같은 줄.
                               카드는 height:100% 라 같은 줄 안에서는 성장 토글이 붙어도 높이가 맞는다 */}
                           {materials.운명파편 > 0 && (
                             <Col xs={4} sm={4} md={4} lg={2} style={{ minWidth: '0' }}>
-                              <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} saved={savedOf('운명파편')}
+                              <MaterialCard icon="/destiny-shard-bag-large.webp" name="파편" amount={materials.운명파편} color="#818cf8" showCheckbox={true} isBound={boundMaterials['운명파편']} onBoundChange={handleBoundChange} cost={results.materialCosts['운명파편']} saved={savedOf('운명파편')} {...ownedProps('운명파편')}
                                 footer={(materials.성장파편 || 0) > 0 ? renderGrowthToggle(materials.성장파편 || 0) : undefined} />
                             </Col>
                           )}
@@ -3125,7 +3981,7 @@ export default function RefiningCalculator({
                           {/* 2줄: 방어구 — 빙하의 숨결 + 책 3종 */}
                           {requiredMats.needsGlacierNormal && (
                             <>
-                            <div className={styles.materialsGroupLabel}>방어구</div>
+                            <div className={`${styles.materialsGroupLabel} ${styles.groupLabelArmor}`}>방어구{renderBreathOptButton('armor')}</div>
                             <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
                               <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                 <MaterialCard
@@ -3135,6 +3991,7 @@ export default function RefiningCalculator({
                                   color="#34d399"
                                   cost={results.materialCosts['빙하_일반']}
                                   saved={savedOf('빙하_일반')}
+                                  {...ownedProps('빙하')}
                                   showCheckbox={true}
                                   isBound={materialOptions.glacierBreath.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, glacierBreath: {...p.glacierBreath, isBound: !p.glacierBreath.isBound}}))}
@@ -3150,6 +4007,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1215'] || 0}
                                     saved={savedOf('방어구책1215')}
+                                    {...ownedProps('방어구책1215')}
                                     tooltip={bookBonusTooltip('66112564')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring1215.enabled}
@@ -3170,6 +4028,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1619'] || 0}
                                     saved={savedOf('방어구책1619')}
+                                    {...ownedProps('방어구책1619')}
                                     tooltip={bookBonusTooltip('66112565')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring1619.enabled}
@@ -3190,6 +4049,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1114'] || 0}
                                     tooltip={bookBonusTooltip('66112546')}
+                                    {...ownedProps('방어구책1114')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring.enabled}
                                     onToggleEnabled={() => {}}
@@ -3209,6 +4069,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1518'] || 0}
                                     tooltip={bookBonusTooltip('66112552')}
+                                    {...ownedProps('방어구책1518')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring1518.enabled}
                                     onToggleEnabled={() => {}}
@@ -3228,6 +4089,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1920'] || 0}
                                     tooltip={bookBonusTooltip('66112554')}
+                                    {...ownedProps('방어구책1920')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring1920.enabled}
                                     onToggleEnabled={() => {}}
@@ -3247,6 +4109,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['방어구책1920강'] || 0}
                                     tooltip={bookBonusTooltip('66112556')}
+                                    {...ownedProps('방어구책1920강')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.tailoring1920Enhanced.enabled}
                                     onToggleEnabled={() => {}}
@@ -3263,8 +4126,7 @@ export default function RefiningCalculator({
                           {/* 3줄: 무기 — 용암의 숨결 + 책 3종 */}
                           {requiredMats.needsLavaNormal && (
                             <>
-                            {requiredMats.needsGlacierNormal && <div className={styles.materialsGroupDivider} />}
-                            <div className={styles.materialsGroupLabel}>무기</div>
+                            <div className={`${styles.materialsGroupLabel} ${styles.groupLabelWeapon}`}>무기{renderBreathOptButton('weapon')}</div>
                             <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
                               <Col xs={4} sm={4} md={3} style={{ minWidth: '0' }}>
                                 <MaterialCard
@@ -3274,6 +4136,7 @@ export default function RefiningCalculator({
                                   color="#34d399"
                                   cost={results.materialCosts['용암_일반']}
                                   saved={savedOf('용암_일반')}
+                                  {...ownedProps('용암')}
                                   showCheckbox={true}
                                   isBound={materialOptions.lavaBreath.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, lavaBreath: {...p.lavaBreath, isBound: !p.lavaBreath.isBound}}))}
@@ -3289,6 +4152,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1215'] || 0}
                                     saved={savedOf('무기책1215')}
+                                    {...ownedProps('무기책1215')}
                                     tooltip={bookBonusTooltip('66112561')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy1215.enabled}
@@ -3309,6 +4173,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1619'] || 0}
                                     saved={savedOf('무기책1619')}
+                                    {...ownedProps('무기책1619')}
                                     tooltip={bookBonusTooltip('66112562')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy1619.enabled}
@@ -3329,6 +4194,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1114'] || 0}
                                     tooltip={bookBonusTooltip('66112543')}
+                                    {...ownedProps('무기책1114')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy.enabled}
                                     onToggleEnabled={() => {}}
@@ -3348,6 +4214,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1518'] || 0}
                                     tooltip={bookBonusTooltip('66112551')}
+                                    {...ownedProps('무기책1518')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy1518.enabled}
                                     onToggleEnabled={() => {}}
@@ -3367,6 +4234,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1920'] || 0}
                                     tooltip={bookBonusTooltip('66112553')}
+                                    {...ownedProps('무기책1920')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy1920.enabled}
                                     onToggleEnabled={() => {}}
@@ -3386,6 +4254,7 @@ export default function RefiningCalculator({
                                     color="#34d399"
                                     cost={results.materialCosts['무기책1920강'] || 0}
                                     tooltip={bookBonusTooltip('66112555')}
+                                    {...ownedProps('무기책1920강')}
                                     showEnableToggle={false}
                                     isEnabled={materialOptions.metallurgy1920Enhanced.enabled}
                                     onToggleEnabled={() => {}}
@@ -3402,8 +4271,7 @@ export default function RefiningCalculator({
                           {/* 완갑 줄: 완갑은 용암·빙하를 함께 써서 무기/방어구 숨결과 분리한다 */}
                           {requiredMats.needsWangapBreath && (
                             <>
-                            {(requiredMats.needsGlacierNormal || requiredMats.needsLavaNormal) && <div className={styles.materialsGroupDivider} />}
-                            <div className={styles.materialsGroupLabel}>완갑</div>
+                            <div className={`${styles.materialsGroupLabel} ${styles.groupLabelWangap}`}>완갑{renderWangapOptButton()}</div>
                             <Row className={isMobile ? 'g-2 justify-content-center' : 'g-3 justify-content-center'}>
                               <Col xs={6} sm={4} md={3} style={{ minWidth: '0' }}>
                                 <MaterialCard
@@ -3413,6 +4281,7 @@ export default function RefiningCalculator({
                                   color="#34d399"
                                   cost={results.materialCosts['용암_완갑'] || 0}
                                   saved={savedOf('용암_완갑')}
+                                  {...ownedProps('용암')}
                                   showCheckbox={true}
                                   isBound={materialOptions.wangapLava.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, wangapLava: {...p.wangapLava, isBound: !p.wangapLava.isBound}}))}
@@ -3427,6 +4296,7 @@ export default function RefiningCalculator({
                                   color="#34d399"
                                   cost={results.materialCosts['빙하_완갑'] || 0}
                                   saved={savedOf('빙하_완갑')}
+                                  {...ownedProps('빙하')}
                                   showCheckbox={true}
                                   isBound={materialOptions.wangapGlacier.isBound}
                                   onBoundChange={() => setMaterialOptions(p => ({...p, wangapGlacier: {...p.wangapGlacier, isBound: !p.wangapGlacier.isBound}}))}
@@ -3446,8 +4316,8 @@ export default function RefiningCalculator({
                             상급 재련 추가 재료
                           </div>
                           {(requiredMats.needsAdvancedArmorBook1 || requiredMats.needsAdvancedArmorBook2 || requiredMats.needsAdvancedArmorBook3 || requiredMats.needsAdvancedArmorBook4) && (
-                            <div className="mb-2" style={{ fontSize: isMobile ? '0.85rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                              방어구
+                            <div className={styles.materialsGroupLabel}>
+                              방어구{renderAdvOptButton('armor')}
                             </div>
                           )}
                           {/* 4줄: 빙하의 숨결 + 장인의 재봉술 1,2,3,4단계 */}
@@ -3460,6 +4330,7 @@ export default function RefiningCalculator({
                                   amount={materials.빙하_상급}
                                   color="#a855f7"
                                   cost={results.materialCosts['빙하_상급']}
+                                  {...ownedProps('빙하')}
                                   showEnableToggle={false}
                                   isEnabled={advancedMaterialOptions.armorNormalBreath.enabled || advancedMaterialOptions.armorBonusBreath.enabled}
                                   onToggleEnabled={() => {}}
@@ -3473,7 +4344,7 @@ export default function RefiningCalculator({
                                       armorBonusBreath: {...p.armorBonusBreath, isBound: newBound}
                                     }));
                                   }}
-                                  footer={renderAdvTurnToggle('armorNormalBreath', 'armorBonusBreath', 'armor')}
+                                  footer={renderAdvTurnToggle('armorNormalBreath', 'armorBonusBreath')}
                                 />
                               </Col>
                               {requiredMats.needsAdvancedArmorBook1 && (
@@ -3484,6 +4355,7 @@ export default function RefiningCalculator({
                                     amount={materials.재봉술1단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['재봉술1단'] || 0}
+                                    {...ownedProps('재봉술1단')}
                                     showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.armorNormalBook1.enabled || advancedMaterialOptions.armorBonusBook1.enabled}
                                     onToggleEnabled={() => {}}
@@ -3509,6 +4381,7 @@ export default function RefiningCalculator({
                                     amount={materials.재봉술2단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['재봉술2단'] || 0}
+                                    {...ownedProps('재봉술2단')}
                                     showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.armorNormalBook2.enabled || advancedMaterialOptions.armorBonusBook2.enabled}
                                     onToggleEnabled={() => {}}
@@ -3534,6 +4407,7 @@ export default function RefiningCalculator({
                                     amount={materials.재봉술3단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['재봉술3단'] || 0}
+                                    {...ownedProps('재봉술3단')}
                                     showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.armorNormalBook3.enabled || advancedMaterialOptions.armorBonusBook3.enabled}
                                     onToggleEnabled={() => {}}
@@ -3559,6 +4433,7 @@ export default function RefiningCalculator({
                                     amount={materials.재봉술4단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['재봉술4단'] || 0}
+                                    {...ownedProps('재봉술4단')}
                                     showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.armorNormalBook4.enabled || advancedMaterialOptions.armorBonusBook4.enabled}
                                     onToggleEnabled={() => {}}
@@ -3579,8 +4454,8 @@ export default function RefiningCalculator({
                             </Row>
                           )}
                           {(requiredMats.needsAdvancedWeaponBook1 || requiredMats.needsAdvancedWeaponBook2 || requiredMats.needsAdvancedWeaponBook3 || requiredMats.needsAdvancedWeaponBook4) && (
-                            <div className="mb-2" style={{ fontSize: isMobile ? '0.85rem' : 'clamp(0.8rem, 1.7vw, 0.9rem)', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                              무기
+                            <div className={styles.materialsGroupLabel}>
+                              무기{renderAdvOptButton('weapon')}
                             </div>
                           )}
                           {/* 5줄: 용암의 숨결 + 장인의 야금술 1,2,3,4단계 */}
@@ -3593,6 +4468,7 @@ export default function RefiningCalculator({
                                   amount={materials.용암_상급}
                                   color="#a855f7"
                                   cost={results.materialCosts['용암_상급']}
+                                  {...ownedProps('용암')}
                                   showEnableToggle={false}
                                   isEnabled={advancedMaterialOptions.weaponNormalBreath.enabled || advancedMaterialOptions.weaponBonusBreath.enabled}
                                   onToggleEnabled={() => {}}
@@ -3606,7 +4482,7 @@ export default function RefiningCalculator({
                                       weaponBonusBreath: {...p.weaponBonusBreath, isBound: newBound}
                                     }));
                                   }}
-                                  footer={renderAdvTurnToggle('weaponNormalBreath', 'weaponBonusBreath', 'weapon')}
+                                  footer={renderAdvTurnToggle('weaponNormalBreath', 'weaponBonusBreath')}
                                 />
                               </Col>
                               {requiredMats.needsAdvancedWeaponBook1 && (
@@ -3617,6 +4493,7 @@ export default function RefiningCalculator({
                                     amount={materials.야금술1단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['야금술1단'] || 0}
+                                    {...ownedProps('야금술1단')}
                                     showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.weaponNormalBook1.enabled || advancedMaterialOptions.weaponBonusBook1.enabled}
                                     onToggleEnabled={() => {}}
@@ -3642,6 +4519,7 @@ export default function RefiningCalculator({
                                     amount={materials.야금술2단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['야금술2단'] || 0}
+                                    {...ownedProps('야금술2단')}
                                     showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.weaponNormalBook2.enabled || advancedMaterialOptions.weaponBonusBook2.enabled}
                                     onToggleEnabled={() => {}}
@@ -3667,6 +4545,7 @@ export default function RefiningCalculator({
                                     amount={materials.야금술3단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['야금술3단'] || 0}
+                                    {...ownedProps('야금술3단')}
                                     showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.weaponNormalBook3.enabled || advancedMaterialOptions.weaponBonusBook3.enabled}
                                     onToggleEnabled={() => {}}
@@ -3692,6 +4571,7 @@ export default function RefiningCalculator({
                                     amount={materials.야금술4단 || 0}
                                     color="#a855f7"
                                     cost={results.materialCosts['야금술4단'] || 0}
+                                    {...ownedProps('야금술4단')}
                                     showEnableToggle={false}
                                     isEnabled={advancedMaterialOptions.weaponNormalBook4.enabled || advancedMaterialOptions.weaponBonusBook4.enabled}
                                     onToggleEnabled={() => {}}

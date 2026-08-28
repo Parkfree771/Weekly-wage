@@ -163,6 +163,45 @@ export function optimalBreathWithBook(
 }
 
 /**
+ * 숨결 가격(λ)을 바꿔가며 재평가하기 위한 정책 후보 곡선.
+ * 각 (N, 책 선택) 조합의 {숨결 소모, 숨결 외 기대비용}을 담는다 — 곡선은 한 번만 만들고,
+ * 가격별 최적 정책은 usageAtPrice 의 O(후보 수) 스캔으로 구한다.
+ * 공유 숨결 풀(방어구 부위들·완갑)의 시장청산가 탐색용.
+ */
+export interface BreathCurvePoint { breaths: number; exCost: number }
+
+export function breathUsageCurve(
+  baseProb: number,
+  be: BreathEffect,
+  books: BookCandidate[],
+  matGoldPerTry: number,
+  mode: CalcMode,
+): BreathCurvePoint[] {
+  const choices: (BookCandidate | null)[] = [null, ...books.filter(b => b.prob > 0 && b.price >= 0)];
+  const pts: BreathCurvePoint[] = [];
+  for (const book of choices) {
+    const bp = book ? book.prob : 0;
+    const perTry = matGoldPerTry + (book ? book.price : 0);
+    for (let N = 0; N <= 250; N++) {
+      const m = metricsForN(baseProb, be, N, mode, bp);
+      pts.push({ breaths: m.breaths, exCost: m.tries * perTry });
+    }
+  }
+  return pts;
+}
+
+/** 숨결 개당 가격이 price 일 때의 최적 정책이 소모하는 숨결 수 (총비용 = exCost + breaths×price 최소점) */
+export function usageAtPrice(pts: BreathCurvePoint[], price: number): number {
+  let bestBreaths = 0;
+  let bestCost = Infinity;
+  for (const p of pts) {
+    const c = p.exCost + p.breaths * price;
+    if (c < bestCost - 1e-9) { bestCost = c; bestBreaths = p.breaths; }
+  }
+  return bestBreaths;
+}
+
+/**
  * 고정 정책(노숨 또는 풀숨 + 임의 책 가산 확률)의 대표 시도·숨결 수
  * CASE 테이블에 없는 조합(강화 책 등)을 수동 모드에서 계산할 때 사용
  */
