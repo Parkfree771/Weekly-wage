@@ -1332,3 +1332,161 @@
     line-height: 1.2;
   }
 }
+
+/* ─── 가치 추이 차트 (배지 버튼 + 카드 하단 패널) ─── */
+
+/* 추이 배지 — 타입 배지와 같은 크기 계열. 누를 수 있는 요소라 단색 매트 채움으로 구분한다 */
+.chartBadgeBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.15rem 0.5rem;
+  border: 0;
+  border-radius: 4px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+
+/* 열린 동안은 눌린 상태 — 한 단계 어두운 같은 계열 단색 */
+.chartBadgeBtnOpen {
+  background: var(--color-primary-dark);
+}
+
+.chartBadgeIcon {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 패널 — 좌/우 박스 아래에 카드 전체 폭으로 열린다.
+   카드마다 본문 높이가 달라도 이 패널은 항상 같은 자리·같은 폭·같은 높이라 일관적이다 */
+.chartPanel {
+  grid-column: 1 / -1;
+  padding: 0.7rem 1rem 0.6rem;
+  border-top: 1px solid var(--gc-border);
+  background: var(--gc-bg);
+  cursor: default;
+}
+
+/* 헤더 한 줄: 왼쪽 = 지표 제목·기준, 오른쪽 = 현재/최고/최저 요약 */
+.chartHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.chartTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gc-text);
+}
+
+.chartStats {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+.chartStatItem {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28rem;
+}
+
+.chartStatItem em {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--gc-text-muted);
+}
+
+.chartStatItem strong {
+  font-weight: 800;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* 첫 항목(현재)만 크게 — 요약의 주인공은 현재값이다 */
+.chartStatItem:first-child strong {
+  font-size: 0.95rem;
+}
+
+.chartBody {
+  width: 100%;
+}
+
+.chartEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 130px;
+  font-size: 0.82rem;
+  color: var(--gc-text-muted);
+}
+
+/* 툴팁 — 시세 차트 툴팁과 같은 문법 (카드 배경 + 라인색 테두리 + 진한 숫자) */
+.chartTooltip {
+  background: var(--card-bg);
+  border: 2px solid var(--color-primary);
+  border-radius: 8px;
+  padding: 0.45rem 0.65rem;
+  box-shadow: var(--shadow-md);
+}
+
+.chartTooltipDate {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 2px;
+}
+
+.chartTooltipValue {
+  font-size: 0.92rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.chartTooltipGold {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 767.98px) {
+  .chartBadgeBtn {
+    font-size: 0.55rem;
+    padding: 0.12rem 0.35rem;
+  }
+
+  .chartBadgeIcon {
+    width: 10px;
+    height: 10px;
+  }
+
+  .chartPanel {
+    padding: 0.55rem 0.6rem 0.5rem;
+  }
+
+  .chartStats {
+    gap: 0.6rem;
+  }
+}
