@@ -2,6 +2,7 @@
 
 import { memo, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { formatNumber } from '@/lib/package-shared';
 import {
@@ -17,6 +18,9 @@ import {
 } from '@/lib/azena-blessing';
 import styles from './PackageGalleryCard.module.css';
 import az from './AzenaBlessingGalleryCard.module.css';
+
+// 일반 카드와 같은 가치 추이 차트 — 열 때만 로드
+const PackageValueChart = dynamic(() => import('./PackageValueChart'), { ssr: false });
 
 type Props = {
   latestPrices: Record<string, number>;
@@ -112,6 +116,9 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
 
   const goldPerWon = wonPer100Gold > 0 ? 100 / wonPer100Gold : 0;
 
+  // 가치 추이 차트 — 일반 카드와 같은 토글·하단 패널 방식
+  const [chartOpen, setChartOpen] = useState(false);
+
   const breakdown = useMemo(
     () => calcAzenaBreakdown(latestPrices, goldPerWon, options),
     [latestPrices, goldPerWon, options],
@@ -193,6 +200,22 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
       {/* 오른쪽: 계산 결과 + 이 카드 전용 소형 커스텀 (일반 카드와 같은 줄 형식) */}
       <div className={styles.rightBox}>
         <div className={styles.rightTop}>
+          {/* 가치 추이 배지 — 일반 카드의 rightBadgeRow 와 같은 자리·같은 토글 */}
+          <div className={styles.rightBadgeRow}>
+            <button
+              type="button"
+              className={`${styles.chartBadgeBtn} ${chartOpen ? styles.chartBadgeBtnOpen : ''}`}
+              onClick={(e) => { e.stopPropagation(); setChartOpen((v) => !v); }}
+              aria-expanded={chartOpen}
+              aria-label="가치 추이 차트 열기/닫기"
+              title="가치 추이"
+            >
+              <svg viewBox="0 0 14 14" className={styles.chartBadgeIcon} aria-hidden="true">
+                <polyline points="1.5 11.5 5 6.5 8 8.5 12.5 2.5" />
+              </svg>
+              추이
+            </button>
+          </div>
           <div className={styles.resultRow}>
             <span className={styles.resultLabel}>패키지 가격</span>
             <span className={styles.resultValue}>{formatNumber(AZENA_PRICE_WON)}원</span>
@@ -313,6 +336,14 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
           </div>
         </div>
       </div>
+
+      {/* 가치 추이 패널 — 일반 카드와 동일하게 카드 하단 전체 폭으로 열린다.
+          환율·티어·공명·휴게·PC방 상태를 그대로 받아 오늘 점 = 카드 기대 효율과 일치한다 */}
+      {chartOpen && (
+        <div className={styles.chartPanel} data-nonav>
+          <PackageValueChart azenaOptions={options} latestPrices={latestPrices} goldPerWon={goldPerWon} />
+        </div>
+      )}
     </article>
   );
 }

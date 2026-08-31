@@ -1,6 +1,6 @@
 'use client';
 
-import { publishStats } from '@/lib/package-stats-client';
+import { publishStats, wasViewedRecently, markViewed } from '@/lib/package-stats-client';
 import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -470,7 +470,9 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             setDetailRateText(String(won));
             setDetailBcText(won > 0 ? String(Math.round(275000 / won)) : '');
           }
-          if (viewCountedFor.current !== postId) {
+          if (viewCountedFor.current !== postId && !wasViewedRecently(postId)) {
+            // 24시간 내 재방문이면 POST 자체를 생략한다 — 서버가 어차피 카운트하지 않는 요청이라
+            // 함수 호출·Neon 조회만 태운다. 그 방문의 숫자는 ISR 스냅샷 + 세션 캐시로 보인다.
             viewCountedFor.current = postId;
             // 응답 stats = 이 글의 최신 조회·따봉·흠(Neon). ISR 스냅샷 숫자를 덮어쓴다 — 추가 조회 없음
             fetch('/api/package/view', {
@@ -480,7 +482,10 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             })
               .then((res) => (res.ok ? res.json() : null))
               .then((json) => {
-                const st = json?.stats;
+                if (!json?.ok) return;
+                // 서버 쿠키와 같은 사실을 localStorage 에도 남긴다 — 다음 24시간 재방문의 POST 생략용
+                markViewed(postId);
+                const st = json.stats;
                 if (!st) return;
                 // 세션 캐시에도 올린다 — 뒤로 가서 목록으로 돌아갔을 때 숫자가 되돌아가지 않게(요청 0)
                 publishStats(postId, st);

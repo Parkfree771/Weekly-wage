@@ -81,7 +81,7 @@ type Props = {
 export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, showLabels = false, className }: Props) {
   // 상세는 SSR 이라 localStorage 를 초기값에서 읽으면 서버/클라 첫 화면이 어긋난다 — 마운트 뒤에 읽는다
   const [mine, setMine] = useState<ReactionKey | null>(null);
-  // 세션 캐시(package-stats-client)가 아는 최신 서버값. prop 은 ISR 스냅샷이거나 CDN 20초 캐시라
+  // 세션 캐시(package-stats-client)가 아는 최신 서버값. prop 은 ISR 스냅샷이거나 CDN 300초 캐시라
   // 내 표가 빠진 낡은 값일 수 있어, 버전(updatedAt)이 더 새로운 쪽인 캐시를 우선한다.
   const [known, setKnown] = useState<Counts | null>(null);
   // 아직 서버에 반영 안 된 내 표의 증감 = diff(보낸 표, 지금 표). 서버 값 위에 이것만 더한다.

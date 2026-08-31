@@ -3,7 +3,7 @@
 // 왜 필요한가:
 // 숫자가 화면에 닿는 경로가 셋이고 신선도가 제각각이다.
 //   1) ISR 스냅샷(갤러리·상세 HTML)      — 최대 5분 낡음
-//   2) GET /api/package/stats            — CDN 20초 공유 캐시라 최대 20초 낡음
+//   2) GET /api/package/stats            — CDN 300초 공유 캐시라 최대 5분 낡음
 //   3) POST /api/package/react · view    — 캐시 없음, 항상 최신 (내 표가 이미 들어 있다)
 // 아무 방어가 없으면 3번으로 올라간 내 표가 잠시 뒤 도착한 1·2번 응답에 덮여 숫자가 되돌아간다.
 // (누른 게 안 먹은 것처럼 보이는 그 현상)
@@ -92,4 +92,45 @@ export function publishStats(postId: string, raw: unknown): void {
   const st = store.get(postId);
   if (!st) return;
   for (const fn of listeners) fn(postId, st);
+}
+
+// ─── 조회 POST 생략 (재방문자) ───
+// 서버의 조회수 중복 방지 쿠키(pv)는 httpOnly 라 클라이언트가 못 읽는다. 그래서 같은 사실을
+// localStorage 에 병행 기록해 두고, 24시간 안에 이미 본 글이면 POST /api/package/view 를
+// 아예 보내지 않는다 — 어차피 카운트되지 않는 요청이라 함수 호출·Neon 조회만 태우기 때문.
+// 생략된 방문의 숫자는 ISR 스냅샷(최대 5분 낡음) + 세션 캐시로 보인다.
+// localStorage 를 못 쓰는 환경이면 그냥 보낸다 — 서버 쿠키가 최종 중복 방어다.
+const SEEN_KEY = 'pkg-viewed';
+const SEEN_TTL_MS = 24 * 60 * 60 * 1000; // 서버 쿠키 COOKIE_MAX_AGE(24h)와 같은 값
+const SEEN_MAX = 60; // 서버 쿠키 MAX_TRACKED 와 같은 값 — 비대화 방지
+
+function readSeen(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(SEEN_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, number>;
+    const now = Date.now();
+    const alive: Record<string, number> = {};
+    for (const [id, at] of Object.entries(parsed)) {
+      if (typeof at === 'number' && now - at < SEEN_TTL_MS) alive[id] = at;
+    }
+    return alive;
+  } catch {
+    return {};
+  }
+}
+
+export function wasViewedRecently(postId: string): boolean {
+  return postId in readSeen();
+}
+
+export function markViewed(postId: string): void {
+  try {
+    const seen = readSeen();
+    seen[postId] = Date.now();
+    const entries = Object.entries(seen).sort((a, b) => b[1] - a[1]).slice(0, SEEN_MAX);
+    localStorage.setItem(SEEN_KEY, JSON.stringify(Object.fromEntries(entries)));
+  } catch {
+    // 저장 실패는 무시 — 다음 방문에 POST 가 한 번 더 갈 뿐, 서버 쿠키가 중복 카운트를 막는다
+  }
 }

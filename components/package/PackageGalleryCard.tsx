@@ -2,6 +2,7 @@
 
 import { memo, useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import type { PackagePost, PackageItem, PackageType } from '@/types/package';
 import {
   formatNumber,
@@ -24,6 +25,9 @@ import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
 import TrendArrow from '@/components/TrendArrow';
 import ReactionBar, { EMOJI_YELLOW } from '@/components/package/ReactionBar';
 import styles from './PackageGalleryCard.module.css';
+
+// recharts(~100KB)는 차트를 실제로 열 때만 받는다 — 갤러리 첫 로드에 섞이지 않게 동적 로드
+const PackageValueChart = dynamic(() => import('./PackageValueChart'), { ssr: false });
 
 type Props = {
   post: PackagePost;
@@ -213,6 +217,10 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
   };
   // 판매 종료 카드는 기본이 흐린 상태 — 우측 상단 버튼으로 해제하면 그대로 비교할 수 있다
   const [saleRevealed, setSaleRevealed] = useState(false);
+
+  // 가치 추이 차트 — 출시일(판매 시작일) 또는 등록일 이후의 이득률 시계열.
+  // 팝업이 아니라 카드 하단에 전체 폭 패널이 열리는 방식 (추이 배지가 토글)
+  const [chartOpen, setChartOpen] = useState(false);
 
   // 갤러리 공통 환율이 바뀌면 이 카드도 따라간다.
   // 적용 후 아래 입력칸으로 개별 수정하는 건 그대로 되고, 공통 환율을 다시 건드릴 때까지 유지된다.
@@ -629,6 +637,19 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [basePrices, post.items, checkedItems, isGacha, goldPerWon]);
 
+  // 차트용 글 — 카드의 현재 체크 상태를 items 에 미리 걸러 담는다.
+  // calculatePostEfficiency 는 자체적으로 "최고가 N개"를 다시 고르므로, 사용자가 손으로 바꾼
+  // 선택을 반영하려면 체크된 것만 남기고 N선택을 해제해서 넘겨야 카드 숫자와 정확히 일치한다.
+  const chartPost = useMemo<PackagePost>(() => ({
+    ...post,
+    items: post.items.filter((_, idx) => checkedItems[idx] !== false),
+    selectableCount: 0,
+    bonusItems: post.bonusItems
+      ? post.bonusItems.filter((_, idx) => bonusChecked[idx] !== false)
+      : undefined,
+    bonusSelectableCount: 0,
+  }), [post, checkedItems, bonusChecked]);
+
   const cashGold = post.royalCrystalPrice * goldPerWon;
   const isBundle = post.packageType === '3+1' || post.packageType === '2+1';
   const isBonusPkg = post.packageType === '3+보너스';
@@ -833,6 +854,20 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                 {post.selectableCount}선택
               </span>
             )}
+            {/* 가치 추이 — 시세 변동에 따라 이 패키지의 이득률이 어떻게 움직였는지 (카드 하단 패널 토글) */}
+            <button
+              type="button"
+              className={`${styles.chartBadgeBtn} ${chartOpen ? styles.chartBadgeBtnOpen : ''}`}
+              onClick={(e) => { e.stopPropagation(); setChartOpen((v) => !v); }}
+              aria-expanded={chartOpen}
+              aria-label="가치 추이 차트 열기/닫기"
+              title="가치 추이"
+            >
+              <svg viewBox="0 0 14 14" className={styles.chartBadgeIcon} aria-hidden="true">
+                <polyline points="1.5 11.5 5 6.5 8 8.5 12.5 2.5" />
+              </svg>
+              추이
+            </button>
           </div>
           {/* 패키지 가격 */}
           <div className={styles.resultRow}>
@@ -1023,6 +1058,15 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
           </div>
         </div>
       </div>
+
+      {/* 가치 추이 패널 — 카드 하단 전체 폭으로 공간이 열리며 나온다.
+          카드마다 좌/우 박스 높이가 달라도 이 패널은 항상 같은 자리·같은 폭·같은 높이라 일관적이다.
+          data-nonav: 패널 안 클릭이 카드 상세 이동으로 새지 않게 한다 */}
+      {chartOpen && (
+        <div className={styles.chartPanel} data-nonav>
+          <PackageValueChart post={chartPost} latestPrices={latestPrices} goldPerWon={goldPerWon} />
+        </div>
+      )}
     </article>
   );
 }

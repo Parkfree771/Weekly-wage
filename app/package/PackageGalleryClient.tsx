@@ -31,8 +31,8 @@ import PackageEfficiencyGuideBody from '@/components/guide/PackageEfficiencyGuid
 import { faqData } from './faq-data';
 import styles from './package.module.css';
 
-// 집계를 다시 받는 최소 간격 — /api/package/stats 의 CDN s-maxage 와 같은 값
-const STATS_REFRESH_MS = 20_000;
+// 집계를 다시 받는 최소 간격 — /api/package/stats 의 CDN s-maxage(300초)와 같은 값
+const STATS_REFRESH_MS = 300_000;
 
 // 페이지당 글 6개 고정. 아제나 카드는 갤러리 칸을 차지하지 않는다 —
 // 드롭다운 옆 칩(아이콘 + 효율)으로 접어 두고, 누르면 팝업으로 카드를 띄운다.
@@ -303,7 +303,7 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
       .then((res) => (res.ok ? res.json() : null))
       .then((stats: Record<string, unknown> | null) => {
         if (cancelled) return;
-        // 세션 캐시를 거친다 — CDN 20초 캐시라 방금 올린 내 표보다 낡은 응답일 수 있고,
+        // 세션 캐시를 거친다 — CDN 300초 캐시라 방금 올린 내 표보다 낡은 응답일 수 있고,
         // 그런 값은 캐시가 버려서 화면 숫자가 되돌아가지 않는다.
         recordManyStats(stats);
         setPosts((prev) => mergeKnownStats(prev));
@@ -313,7 +313,7 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
   }, [statsKey, statsEpoch]);
 
   // 다른 탭에 갔다 돌아오면 집계를 한 번 다시 받는다 — "돌아왔더니 옛날 숫자" 를 없앤다.
-  // 간격은 CDN 캐시(s-maxage 20)와 같은 20초: 그보다 자주 물어봐야 같은 캐시가 나오므로 의미가 없다.
+  // 간격은 CDN 캐시(s-maxage 300)와 같은 300초: 그보다 자주 물어봐야 같은 캐시가 나오므로 의미가 없다.
   // 캐시가 살아 있으면 엣지가 받아내 Netlify 함수·Neon 쿼리는 그대로 0이다.
   useEffect(() => {
     let last = Date.now();
