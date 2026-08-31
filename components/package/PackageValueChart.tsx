@@ -22,18 +22,23 @@ import {
 } from 'recharts';
 import { useTheme } from '@/components/ThemeProvider';
 import type { PackagePost } from '@/types/package';
+import type { AzenaOptions } from '@/lib/azena-blessing';
 import { fetchPriceData } from '@/lib/price-history-client';
 import {
   buildPackageValueSeries,
+  buildAzenaValueSeries,
   type PackageValuePoint,
   type PriceHistoryData,
+  type ValueBasis,
 } from '@/lib/package-value-history';
 import { formatNumber } from '@/lib/package-shared';
 import styles from './PackageGalleryCard.module.css';
 
 type Props = {
   /** 카드의 현재 체크 상태가 반영된 글 (N선택·보너스 선택을 items 에 미리 걸러서 넘긴다) */
-  post: PackagePost;
+  post?: PackagePost;
+  /** 아제나의 축복 모드 — post 대신 카드의 현재 옵션(티어·공명·휴게·PC방)을 넘긴다 */
+  azenaOptions?: AzenaOptions;
   /** 카드가 지금 쓰는 시세(평균가 또는 최저가 덮인 상태) — 오늘 점이 카드 숫자와 일치해야 한다 */
   latestPrices: Record<string, number>;
   /** 카드가 지금 쓰는 환율 — 카드 입력칸·공통 환율을 그대로 따라간다 */
@@ -41,11 +46,17 @@ type Props = {
 };
 
 // 지표 라벨 — 카드에 찍히는 어느 숫자와 같은 기준인지 명시한다
-function metricLabel(post: PackagePost): string {
+function metricLabel(post?: PackagePost, basis: ValueBasis = 'bundle'): string {
+  if (!post) return '28일 기대값 이득률'; // 아제나 — 카드의 "기대 효율"과 같은 기준
   if (post.packageType === '가챠') return '기대값 이득률';
   if (post.packageType === '3+1' || post.packageType === '2+1' || post.packageType === '3+보너스')
-    return `${post.packageType} 구매 이득률`;
+    return basis === 'single' ? '1개 구매 이득률' : `${post.packageType} 구매 이득률`;
   return '1개 구매 이득률';
+}
+
+// 묶음/1개 기준 전환이 의미 있는 패키지 타입인지 (일반·가챠는 두 기준이 같다)
+function hasBundleBasis(post?: PackagePost): boolean {
+  return !!post && (post.packageType === '3+1' || post.packageType === '2+1' || post.packageType === '3+보너스');
 }
 
 const shortDate = (d: string) => {
@@ -90,10 +101,12 @@ function niceStep(raw: number): number {
   return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
 }
 
-export default function PackageValueChart({ post, latestPrices, goldPerWon }: Props) {
+export default function PackageValueChart({ post, azenaOptions, latestPrices, goldPerWon }: Props) {
   const { theme } = useTheme();
   const [priceHistory, setPriceHistory] = useState<PriceHistoryData | null>(null);
   const [failed, setFailed] = useState(false);
+  // 3+1/2+1/3+보너스: 묶음 구매 기준(기본·정렬과 동일) ↔ 1개 구매 기준 전환
+  const [basis, setBasis] = useState<ValueBasis>('bundle');
 
   // 메인 시세 차트와 같은 색 체계 (라이트 초록 / 다크 하늘)
   const chartColor = theme === 'dark' ? '#8ab4f8' : '#16a34a';
@@ -113,11 +126,13 @@ export default function PackageValueChart({ post, latestPrices, goldPerWon }: Pr
   }, []);
 
   // 환율·체크 상태·시세(최저가 갱신 포함)가 바뀌면 즉시 다시 계산 — 오늘 점은 항상 카드 숫자와 같다
-  const series = useMemo<PackageValuePoint[] | null>(
-    () =>
-      priceHistory ? buildPackageValueSeries(post, priceHistory, latestPrices, goldPerWon) : null,
-    [priceHistory, post, latestPrices, goldPerWon],
-  );
+  const series = useMemo<PackageValuePoint[] | null>(() => {
+    if (!priceHistory) return null;
+    if (post) return buildPackageValueSeries(post, priceHistory, latestPrices, goldPerWon, basis);
+    if (azenaOptions)
+      return buildAzenaValueSeries(priceHistory, latestPrices, goldPerWon, azenaOptions);
+    return null;
+  }, [priceHistory, post, azenaOptions, latestPrices, goldPerWon, basis]);
 
   // 이득률 축이 기본, 등록 환율이 없는 옛 글은 골드 축으로 대신 그린다
   const benefitMode = !!(series && series.length > 0 && series[0].benefitPct !== null);
@@ -210,7 +225,7 @@ export default function PackageValueChart({ post, latestPrices, goldPerWon }: Pr
   };
 
   // 카드마다 차트가 하나씩 열릴 수 있어 그라데이션 id 는 글마다 달라야 한다
-  const gradId = `pkgValueGrad-${post.id}`;
+  const gradId = `pkgValueGrad-${post?.id ?? 'azena-blessing'}`;
 
   return (
     <div>
@@ -218,7 +233,26 @@ export default function PackageValueChart({ post, latestPrices, goldPerWon }: Pr
           최고·평균·최저는 차트 오른쪽 여백에서 각 점선 y 위치에 붙어 따라다닌다 */}
       <div className={styles.chartHead}>
         <span className={styles.chartTitle}>
-          {benefitMode ? metricLabel(post) : '구성품 가치'} 추이
+          {benefitMode ? metricLabel(post, basis) : '구성품 가치'} 추이
+          {/* 묶음/1개 기준 전환 — 카드에 두 숫자(1개 구매·묶음 구매)가 다 있으므로 차트도 둘 다 보여준다 */}
+          {hasBundleBasis(post) && (
+            <span className={styles.chartBasisToggle} role="group" aria-label="이득률 기준 전환">
+              <button
+                type="button"
+                className={`${styles.chartBasisBtn} ${basis === 'bundle' ? styles.chartBasisBtnActive : ''}`}
+                onClick={() => setBasis('bundle')}
+              >
+                {post!.packageType}
+              </button>
+              <button
+                type="button"
+                className={`${styles.chartBasisBtn} ${basis === 'single' ? styles.chartBasisBtnActive : ''}`}
+                onClick={() => setBasis('single')}
+              >
+                1개
+              </button>
+            </span>
+          )}
         </span>
         {stats && (
           <div className={styles.chartStats}>
@@ -305,30 +339,32 @@ export default function PackageValueChart({ post, latestPrices, goldPerWon }: Pr
                   content={<ChartTooltip />}
                   cursor={{ stroke: chartColor, strokeWidth: 1.5, strokeDasharray: '5 5' }}
                 />
-                {/* 참조선 — 메인 차트와 같은 색 규칙: 최고 빨강 / 최저 파랑 / 평균 라인색.
+                {/* 참조선 — 이득률 차트라 사이트 손익 색 규칙을 따른다: 높을수록 좋음 =
+                    최고 초록(--price-up) / 최저 빨강(--price-down) / 평균 검정(--gc-text, 다크에선 밝은 글자색).
+                    (시세 차트의 "최고 빨강/최저 파랑"은 가격 문법이라 여기선 반대로 읽힌다)
                     값 라벨은 오른쪽 여백에서 각 선의 y 위치에 붙는다 */}
                 {stats && (
                   <>
                     <ReferenceLine
                       y={stats.max}
-                      stroke="#ef4444"
+                      stroke="var(--price-up)"
                       strokeDasharray="8 4"
                       strokeWidth={1.5}
-                      label={<RefLabel text="최고" value={fmtVal(stats.max)} color="#ef4444" />}
+                      label={<RefLabel text="최고" value={fmtVal(stats.max)} color="var(--price-up)" />}
                     />
                     <ReferenceLine
                       y={stats.avg}
-                      stroke={chartColor}
+                      stroke="var(--gc-text)"
                       strokeDasharray="5 5"
                       strokeWidth={1.5}
-                      label={<RefLabel text="평균" value={fmtVal(stats.avg)} color={chartColor} />}
+                      label={<RefLabel text="평균" value={fmtVal(stats.avg)} color="var(--gc-text)" />}
                     />
                     <ReferenceLine
                       y={stats.min}
-                      stroke="#3b82f6"
+                      stroke="var(--price-down)"
                       strokeDasharray="8 4"
                       strokeWidth={1.5}
-                      label={<RefLabel text="최저" value={fmtVal(stats.min)} color="#3b82f6" />}
+                      label={<RefLabel text="최저" value={fmtVal(stats.min)} color="var(--price-down)" />}
                     />
                   </>
                 )}

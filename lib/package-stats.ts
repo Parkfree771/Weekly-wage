@@ -12,7 +12,7 @@
 import { neon } from '@neondatabase/serverless';
 
 // updatedAt = 이 행이 마지막으로 바뀐 시각(epoch ms). 클라이언트가 스냅샷의 신선도를 비교하는 데 쓴다 —
-// /api/package/stats 는 CDN 에 20초 캐시되므로, 방금 내 표가 반영된 값보다 낡은 응답이 나중에 도착할 수 있다.
+// /api/package/stats 는 CDN 에 300초 캐시되므로, 방금 내 표가 반영된 값보다 낡은 응답이 나중에 도착할 수 있다.
 // 그때 이 값이 작으면 클라이언트가 버린다(내 표가 잠깐 사라졌다 돌아오는 현상 방지). 컬럼은 이미 있던 것 — 추가 쿼리 없음.
 export type PackageStats = { viewCount: number; likeCount: number; sosoCount: number; updatedAt: number };
 
