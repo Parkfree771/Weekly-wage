@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { Accordion, Collapse } from 'react-bootstrap';
 import { guides, relatedPages } from '@/data/guides';
 import styles from './GuideFaq.module.css';
 
@@ -33,7 +32,7 @@ interface GuideFaqProps {
   faqTitle?: string;
   /**
    * 관련 페이지 경로. data/guides.ts 의 `guides`(가이드 글) 에서 먼저 찾고,
-   * 없으면 `relatedPages`(도구 페이지) 에서 찾는다. 접기 영역 *밖에* 항상 노출된다.
+   * 없으면 `relatedPages`(도구 페이지) 에서 찾는다.
    * /guide 인덱스에서만 연결되면 크롤링 우선순위가 밀리므로, 도구 페이지에서
    * 해당 문서로 내려가는 링크를 하나씩 만들어 준다.
    */
@@ -41,11 +40,20 @@ interface GuideFaqProps {
   /**
    * 통합된 가이드 본문 (components/guide/*GuideBody).
    * 2026-08-21 에 /guide 하위 글 6편을 각 도구 페이지로 합치면서 생긴 자리다.
-   * 접기 영역 *안*이지만 기본 펼침이라 SSR HTML 에 그대로 들어간다.
    */
   article?: ReactNode;
 }
 
+/**
+ * 도구 페이지 하단 설명·FAQ 영역.
+ *
+ * 2026-09-04: 접기 버튼(Collapse)과 FAQ 아코디언을 제거했다.
+ * 애드센스 "가치가 별로 없는 콘텐츠" 반려가 반복된 원인 중 하나가
+ * 전 페이지가 똑같은 "이용 가이드 · 자주 묻는 질문 보기 ▾" 토글 프레임이었고,
+ * FAQ 답변은 아코디언에 숨어 심사자에게 질문 제목만 보였기 때문이다.
+ * 이제 본문·FAQ 답변이 항상 펼쳐진 일반 문서 형태로 렌더된다.
+ * 접기·아코디언 재도입 금지.
+ */
 export default function GuideFaq({
   intro,
   sections,
@@ -55,10 +63,6 @@ export default function GuideFaq({
   relatedGuides,
   article,
 }: GuideFaqProps) {
-  // 기본 펼침 — 애드센스 심사·크롤러가 보는 첫 화면에 본문이 그대로 노출되어야 한다.
-  // (기본 접힘이던 시절 "가치가 별로 없는 콘텐츠"로 반복 반려됨 — 접기는 사용자가 원할 때만)
-  const [open, setOpen] = useState(true);
-
   const hasGuide = !!(intro?.length || sections?.length || article);
   const hasFaq = !!faqs?.length;
   const related = (relatedGuides ?? [])
@@ -69,6 +73,50 @@ export default function GuideFaq({
 
   return (
     <div className="mt-5">
+      {hasGuide && (
+        <section className="mb-4">
+          <h2 className="h5 text-primary mb-3">{guideTitle}</h2>
+          {intro?.map((p, i) => (
+            <p key={i} className="mb-3">{p}</p>
+          ))}
+          {sections?.map((sec, i) => (
+            <div
+              key={i}
+              className="p-3 rounded mb-3"
+              style={{ backgroundColor: 'var(--card-body-bg-blue)' }}
+            >
+              <h3 className="h6 fw-semibold" style={{ color: 'var(--text-primary)' }}>{sec.heading}</h3>
+              {sec.paragraphs.map((p, j) => (
+                <p key={j} className="small mb-2">{p}</p>
+              ))}
+              {sec.bullets && (
+                <ul className="small mb-0">
+                  {sec.bullets.map((b, j) => (
+                    <li key={j}>{b}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {article && <div className={styles.article}>{article}</div>}
+
+      {hasFaq && (
+        <section className="mb-4">
+          <h2 className="h5 text-primary mb-3">{faqTitle}</h2>
+          <dl className={styles.faqList}>
+            {faqs!.map((item, i) => (
+              <div key={i} className={styles.faqItem}>
+                <dt className={styles.faqQ}>{item.q}</dt>
+                <dd className={styles.faqA}>{item.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
+
       {related.length > 0 && (
         <div className={styles.related}>
           <div className={styles.relatedHead}>함께 보면 좋은 페이지</div>
@@ -83,64 +131,6 @@ export default function GuideFaq({
           </div>
         </div>
       )}
-      {(hasGuide || hasFaq) && (
-      <button
-        type="button"
-        className="btn btn-link p-0 small text-decoration-none"
-        style={{ color: 'var(--text-muted)' }}
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        {hasGuide && hasFaq ? `${guideTitle} · ${faqTitle}` : hasGuide ? guideTitle : faqTitle} 보기 {open ? '▴' : '▾'}
-      </button>
-      )}
-      <Collapse in={open}>
-        <div className="mt-3">
-          {hasGuide && (
-            <section className="mb-4">
-              <h2 className="h5 text-primary mb-3">{guideTitle}</h2>
-              {intro?.map((p, i) => (
-                <p key={i} className="mb-3">{p}</p>
-              ))}
-              {sections?.map((sec, i) => (
-                <div
-                  key={i}
-                  className="p-3 rounded mb-3"
-                  style={{ backgroundColor: 'var(--card-body-bg-blue)' }}
-                >
-                  <h3 className="h6 fw-semibold" style={{ color: 'var(--text-primary)' }}>{sec.heading}</h3>
-                  {sec.paragraphs.map((p, j) => (
-                    <p key={j} className="small mb-2">{p}</p>
-                  ))}
-                  {sec.bullets && (
-                    <ul className="small mb-0">
-                      {sec.bullets.map((b, j) => (
-                        <li key={j}>{b}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </section>
-          )}
-
-          {article && <div className={styles.article}>{article}</div>}
-
-          {hasFaq && (
-            <section>
-              <h2 className="h5 text-primary mb-3">{faqTitle}</h2>
-              <Accordion alwaysOpen={false}>
-                {faqs!.map((item, i) => (
-                  <Accordion.Item eventKey={String(i)} key={i}>
-                    <Accordion.Header>{item.q}</Accordion.Header>
-                    <Accordion.Body className="small">{item.a}</Accordion.Body>
-                  </Accordion.Item>
-                ))}
-              </Accordion>
-            </section>
-          )}
-        </div>
-      </Collapse>
     </div>
   );
 }

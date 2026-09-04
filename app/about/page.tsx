@@ -19,9 +19,9 @@ export default function AboutPage() {
             <Card.Body className="p-4">
 
               <section className="mb-5">
-                <h2 className="h5 text-primary mb-3">로스트아크 골드 계산기란?</h2>
+                <h2 className="h5 text-primary mb-3">로아로골이란?</h2>
                 <p>
-                  <strong>로스트아크 골드 계산기</strong>는 로스트아크 플레이어들이 효율적으로 골드를 관리하고
+                  <strong>로아로골</strong>은 로스트아크 플레이어들이 효율적으로 골드를 관리하고
                   수익을 극대화할 수 있도록 도와주는 무료 웹 서비스입니다.
                 </p>
                 <p>
@@ -36,16 +36,18 @@ export default function AboutPage() {
               </section>
 
               <section className="mb-5">
-                <h2 className="h5 text-primary mb-3">개발자 소개</h2>
+                <h2 className="h5 text-primary mb-3">운영자 소개</h2>
                 <div className="bg-light p-4 rounded">
                   <p className="mb-3">
-                    안녕하세요. 로스트아크 골드 계산기를 개발하고 운영하고 있는 개발자입니다.
+                    안녕하세요. 로아로골을 혼자 개발하고 운영하는 개인 개발자입니다.
                   </p>
                   <ul className="mb-3">
                     <li><strong>로스트아크 플레이 경력:</strong> 2019년 오픈베타부터 현재까지 활발히 플레이 중</li>
                     <li><strong>주요 콘텐츠:</strong> 레이드, 재련, 생활 콘텐츠 전반에 걸친 경험 보유</li>
                     <li><strong>개발 배경:</strong> 직접 엑셀로 골드 계산을 하다가 불편함을 느껴 웹 서비스로 제작</li>
-                  </ul>
+                    <li><strong>서비스 개설:</strong> 2025년 10월 주간 골드 계산기로 시작, 이후 재련·패키지·레이드 보상 도구를 순차 추가</li>
+                    <li><strong>도메인:</strong> 2026년 4월 lostarkweeklygold.kr 에서 loalogol.kr 로 이전 (구 주소는 자동 이동)</li>
+                    <li><strong>운영 형태:</strong> 개인 1인 개발·운영, 데이터 갱신과 계산 로직 검증을 직접 수행</li>                  </ul>
                   <p className="mb-0 small text-muted">
                     플레이어로서 직접 느낀 불편함을 해결하고자 이 서비스를 만들었습니다.
                     로스트아크 커뮤니티에 조금이나마 기여하고 싶은 마음으로 무료로 운영하고 있습니다.
@@ -172,6 +174,12 @@ export default function AboutPage() {
                 <h2 className="h5 text-primary mb-3">업데이트 이력</h2>
                 <div className="bg-light p-3 rounded">
                   <ul className="mb-0 small">
+                    <li><strong>2026.08:</strong> 완갑 재련 보유 재료 기반 최적화, 패키지 가치 추이 차트 추가</li>
+                    <li><strong>2026.07:</strong> 완갑 재련 시뮬레이터 신규, 더보기 손익 계산기·원정대 수급 골드 시뮬 추가</li>
+                    <li><strong>2026.06:</strong> 숙제 계산(마이페이지) 추가, 내비게이션 개편</li>
+                    <li><strong>2026.04:</strong> 도메인 loalogol.kr 이전</li>
+                    <li><strong>2026.03:</strong> 지옥의 나락 보상 계산기, 지평의 성당 보상·은총의 파편 상점 페이지 추가</li>
+                    <li><strong>2026.02:</strong> 패키지 효율 게시판 오픈</li>
                     <li><strong>2026.02.01:</strong> 불괴, 불변 이미지 오류 수정</li>
                     <li><strong>2026.01:</strong> 세르카(1710) 레이드 보상 정보 추가, 더보기 효율 체크 기능 추가</li>
                     <li><strong>2026.01:</strong> 강화 실제 시뮬레이션 기능 추가</li>
@@ -205,7 +213,7 @@ export default function AboutPage() {
                 <div className="bg-light p-3 rounded">
                   <p className="mb-2">
                     기능 제안, 버그 신고, 데이터 오류 제보, 기타 문의사항이 있으시면
-                    <strong> 메인 페이지 하단의 문의하기 폼</strong>을 이용해 주세요.
+                    <strong> 모든 페이지 하단(푸터)의 문의하기 버튼</strong>을 이용해 주세요.
                   </p>
                   <ul className="mb-2 small">
                     <li><strong>기능 제안:</strong> 새로운 기능이나 개선 아이디어 환영합니다</li>

@@ -4,12 +4,12 @@ import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
   title: '팔찌 시뮬레이터',
-  description: '로스트아크 팔찌 시뮬레이터! 전투 특성을 선택하고 부여 효과를 시뮬레이션하세요. 잠금과 재변환으로 최적의 팔찌를 만들어보세요!',
+  description: '로스트아크 팔찌 부여 효과 시뮬레이터입니다. 전투 특성을 고르고 잠금과 재변환을 반복하며 원하는 옵션이 나올 때까지 실제 확률로 팔찌를 굴려볼 수 있습니다.',
   keywords: '로아로골, 로아 팔찌, 로아 팔찌 시뮬, 팔찌 부여효과, 팔찌 시뮬레이터, 로스트아크 팔찌, 팔찌 재변환',
   openGraph: {
     images: ['/og-image.png'],
     title: '로아로골 | 팔찌 시뮬레이터 - 로아 팔찌 부여효과',
-    description: '로스트아크 팔찌 시뮬레이터! 전투 특성을 선택하고 부여 효과를 시뮬레이션하세요.',
+    description: '로스트아크 팔찌 부여 효과를 실제 확률로 시뮬레이션하고 잠금·재변환 전략을 미리 시험해 봅니다.',
     url: '/bracelet',
     siteName: '로아로골',
     locale: 'ko_KR',

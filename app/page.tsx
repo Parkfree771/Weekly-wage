@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { preload } from 'react-dom';
-import { Container, Collapse } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
+import { guides } from '@/data/guides';
+import guideStyles from './guide/guide.module.css';
 import Link from 'next/link';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
@@ -66,9 +67,6 @@ const PriceChartProvider = dynamic(
 
 
 export default function Home() {
-  // 기본 펼침 — 홈의 유일한 h1이 이 블록 안에 있어, 접혀 있으면 크롤러·심사자에게 h1 없는 페이지가 된다
-  const [showIntro, setShowIntro] = useState(true);
-
   // 가격 히스토리 preload — 메인 시세 차트 전용이라 루트 레이아웃이 아닌 여기서만.
   // fetch URL과 정확히 일치해야 브라우저가 preload를 재사용함(price-history-client.ts).
   preload('/data/history_archive.json', { as: 'fetch', crossOrigin: 'anonymous' });
@@ -132,33 +130,41 @@ export default function Home() {
           <AdBanner slot="8616653628" index={0} />
         </div>
 
-        {/* 애드센스 콘텐츠 보강용 소개 텍스트 — 항상 하단 배치, 기본 접힘 */}
+        {/* 사이트 소개 — 홈의 유일한 h1. 2026-09-04 접기 토글 제거: 항상 노출 */}
         <div className="mt-4 mt-md-5">
-          <button
-            type="button"
-            className="btn btn-link p-0 small text-decoration-none"
-            style={{ color: 'var(--text-muted)' }}
-            onClick={() => setShowIntro((v) => !v)}
-            aria-expanded={showIntro}
-          >
-            사이트 소개 · 바로가기 보기 {showIntro ? '▴' : '▾'}
-          </button>
-          <Collapse in={showIntro}>
-            <div className="mt-3">
-              <h1 className="h4 mb-2">로아로골 - 로스트아크 주간 골드 계산기 &amp; 시세 정보</h1>
-              <div className="d-flex flex-wrap gap-2">
-                <Link href="/package" className="btn btn-sm btn-outline-primary">패키지 효율 계산기</Link>
-                <Link href="/weekly-gold" className="btn btn-sm btn-outline-primary">주간 골드 계산기</Link>
-                <Link href="/refining" className="btn btn-sm btn-outline-primary">재련 계산기</Link>
-                <Link href="/hell-reward" className="btn btn-sm btn-outline-primary">지옥의 나락 보상</Link>
-                <Link href="/life-master" className="btn btn-sm btn-outline-primary">생활의 달인</Link>
-              </div>
-            </div>
-          </Collapse>
+          <h1 className="h4 mb-2">로아로골 - 로스트아크 주간 골드 계산기 &amp; 시세 정보</h1>
+          <div className="d-flex flex-wrap gap-2">
+            <Link href="/package" className="btn btn-sm btn-outline-primary">패키지 효율 계산기</Link>
+            <Link href="/weekly-gold" className="btn btn-sm btn-outline-primary">주간 골드 계산기</Link>
+            <Link href="/refining" className="btn btn-sm btn-outline-primary">재련 계산기</Link>
+            <Link href="/hell-reward" className="btn btn-sm btn-outline-primary">지옥의 나락 보상</Link>
+            <Link href="/life-master" className="btn btn-sm btn-outline-primary">생활의 달인</Link>
+          </div>
         </div>
 
+        {/* 최근 글 — data/guides.ts 의 가이드 글을 최신 수정순으로. 글이 늘어나면 자동 반영 */}
+        <section className="mt-4">
+          <div className="d-flex align-items-baseline justify-content-between mb-2">
+            <h2 className="h5 mb-0">최근 글</h2>
+            <Link href="/guide" className="small text-decoration-none">가이드 전체 보기</Link>
+          </div>
+          <div className={guideStyles.guideGrid}>
+            {[...guides]
+              .sort((a, b) => (b.updated ?? b.date).localeCompare(a.updated ?? a.date))
+              .slice(0, 6)
+              .map((g) => (
+                <Link key={g.slug} href={g.href} className={guideStyles.guideCard}>
+                  <span className={guideStyles.guideCardCategory}>{g.category}</span>
+                  <h3 className={guideStyles.guideCardTitle}>{g.title}</h3>
+                  <p className={guideStyles.guideCardSummary}>{g.summary}</p>
+                  <span className={guideStyles.guideCardDate}>{g.updated ?? g.date} 업데이트</span>
+                </Link>
+              ))}
+          </div>
+        </section>
+
         <GuideFaq
-          relatedGuides={['/guide/beginner-gold', '/weekly-gold', '/guide/market-price']}
+          relatedGuides={['/weekly-gold', '/refining', '/wangap', '/more-reward']}
           guideTitle="로아로골 이용 가이드"
           intro={[
             '로아로골은 로스트아크 캐시샵 패키지 효율을 실시간 시세로 계산하고, 원정대의 주간 레이드 골드 수익과 거래소·경매장 시세를 한눈에 보여주는 무료 계산기 모음 사이트입니다. 패키지에 담긴 재료의 골드 가치를 실시간 거래소 가격으로 환산해 가격 대비 효율을 바로 비교할 수 있으며, 벨가르딘, 지평의 성당, 세르카, 카제로스 등 최신 레이드의 클리어 골드와 더보기(모험의 서약) 손익, T4 재련 비용 시뮬레이터, 지옥의 나락 보상 계산기, 생활의 달인 손익 계산, 아크그리드 팔찌·각인 조합 조회 등 원정대 운영에 필요한 도구를 한 곳에서 제공합니다.',

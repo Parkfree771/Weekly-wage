@@ -120,6 +120,14 @@ export default function PrivacyPolicy() {
                     <li>웹사이트 방문 통계 분석</li>
                     <li>광고 게재 및 효과 측정</li>
                   </ul>
+                  <h6 className="mt-3">제3자 광고 쿠키 (Google AdSense·카카오 애드핏)</h6>
+                  <p className="mb-2">
+                    본 사이트는 Google AdSense 와 카카오 애드핏을 통해 광고를 게재합니다. Google 을 포함한 제3자 광고 사업자는
+                    쿠키를 사용해 사용자의 본 사이트 및 다른 웹사이트 방문 기록을 바탕으로 관심사 기반 광고를 게재할 수 있습니다.
+                    Google 의 광고 쿠키 사용에 대한 자세한 내용은 Google 광고 정책(policies.google.com/technologies/ads)에서 확인할 수 있으며,
+                    사용자는 Google 광고 설정(adssettings.google.com)에서 개인 맞춤 광고를 해제하거나
+                    aboutads.info 에서 제3자 광고 사업자의 쿠키 사용을 거부할 수 있습니다.
+                  </p>
                 </div>
               </section>
 

@@ -72,3 +72,31 @@
 .article {
   margin-top: 1.25rem;
 }
+
+/* FAQ — 아코디언 대신 항상 펼쳐진 질문/답변 목록 (2026-09-04).
+   심사자·크롤러가 클릭 없이 답변까지 읽어야 한다. */
+.faqList {
+  margin: 0;
+}
+
+.faqItem {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  margin-bottom: 0.6rem;
+}
+
+.faqQ {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.35rem;
+}
+
+.faqA {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 0;
+}

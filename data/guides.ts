@@ -12,6 +12,30 @@ export interface Guide {
 
 export const guides: Guide[] = [
   {
+    slug: 'belgardin-rewards',
+    title: '벨가르딘 관문별 클리어 보상과 더보기 정리',
+    summary: '노말·하드·나이트메어 난이도별 관문 클리어 골드와 재료, 더보기 비용·보상, 승급 재료 주간 수급량을 표로 정리했습니다.',
+    category: '레이드',
+    date: '2026-08-05',
+    href: '/guide/belgardin-rewards',
+  },
+  {
+    slug: 'wangap-upgrade-schedule',
+    title: '완갑 주차별 승급 정리: 몇 주차에 전설·유물·고대가 되나',
+    summary: '죽음의 손 주 60개 수급 기준으로 첫 클리어 보상 유무에 따라 완갑이 몇 주차에 승급되는지 계산했습니다.',
+    category: '완갑',
+    date: '2026-07-29',
+    href: '/guide/wangap-upgrade-schedule',
+  },
+  {
+    slug: 'wangap-cost',
+    title: '벨가르딘 완갑 +0에서 +25까지 강화 비용 정리',
+    summary: '3단계 승급 구조와 +25까지 드는 재료·골드를 평균 시뮬과 실제 시뮬 결과로 항목별로 정리했습니다.',
+    category: '완갑',
+    date: '2026-07-29',
+    href: '/guide/wangap-cost',
+  },
+  {
     slug: 'raid-rewards',
     title: '로스트아크 레이드 보상 총정리 (2026)',
     summary: '벨가르딘, 성당, 세르카, 종막부터 서막까지 모든 레이드의 관문별 클리어 골드와 더보기 보상을 한눈에 비교합니다.',

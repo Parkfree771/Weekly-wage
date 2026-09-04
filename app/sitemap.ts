@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import { SITE_URL, isNoindexed } from '@/lib/site-config'
 import { guides } from '@/data/guides'
 
-// lastModified: 지정한 라우트만 그 날짜를 쓰고, 없으면 빌드 시각을 쓴다.
+// lastModified: 실제 수정일을 아는 라우트(가이드 글)만 넣고, 나머지는 생략한다.
 // 가이드 글은 실제 수정일(data/guides.ts)을 넣는다 — 전 URL에 매 빌드 시각을 박으면
 // "매번 전부 바뀌었다"는 신호가 되어 구글이 lastmod 자체를 신뢰하지 않는다.
 // priority 순서는 실제 트래픽 순이다 (패키지 효율 > 재련 시뮬 > 완갑 > 메인 > 숙제 체크).
@@ -42,7 +42,8 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const buildTime = new Date();
+  // lastModified 는 실제 수정일을 아는 라우트(가이드 글)에만 넣는다.
+  // 나머지에 빌드 시각을 박으면 배포마다 20개 URL 이 "전부 바뀜"으로 찍혀 구글이 lastmod 를 무시한다.
 
   // 색인에서 뺀 경로(NOINDEX_PATHS)는 사이트맵에서도 뺀다.
   // "사이트맵으로 색인을 요청하면서 페이지에는 noindex" 는 서로 어긋나는 신호다.
@@ -50,7 +51,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter(({ path }) => !isNoindexed(path || '/'))
     .map(({ path, changeFrequency, priority, lastModified }) => ({
       url: `${SITE_URL}${path}`,
-      lastModified: lastModified ? new Date(lastModified) : buildTime,
+      ...(lastModified ? { lastModified: new Date(lastModified) } : {}),
       changeFrequency,
       priority,
     }));

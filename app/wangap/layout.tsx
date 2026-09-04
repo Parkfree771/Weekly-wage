@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     images: ['/og-image.png'],
     title: '로아로골 | 완갑 재련 시뮬레이터 - 벨가르딘 완갑',
-    description: '벨가르딘 완갑 재련 시뮬! 영웅-전설-유물-고대 승급, 완갑 재련 견적·비용, 보조재료 최적화까지 미리 체험하세요.',
+    description: '벨가르딘 완갑 재련을 영웅부터 고대 승급까지 실제 확률로 시뮬레이션하고, 보유 재료 기준의 재련 견적과 보조 재료 최적 배분을 계산합니다.',
     url: '/wangap',
     siteName: '로아로골',
     locale: 'ko_KR',
