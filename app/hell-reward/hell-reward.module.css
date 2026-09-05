@@ -91,16 +91,9 @@
   align-items: stretch;
 }
 
-.heroWrap {
-  flex: 1.5;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  min-width: 0;
-}
-
 .heroCard {
-  flex: 1;
+  flex: 1.5;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 0.9rem;
@@ -153,11 +146,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 어빌리티스톤 제외 체크박스 */
+/* 어빌리티스톤 제외 체크박스 — 기댓값 카드 안 마지막 줄 */
 .stoneExcludeLabel {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  margin-top: 0.4rem;
   font-size: 0.74rem;
   color: var(--text-muted);
   cursor: pointer;
@@ -239,39 +233,6 @@
   font-size: 0.74rem;
   color: var(--text-muted);
   font-weight: 600;
-}
-
-/* ─── 층 기본 보상 바 — 총액 한 줄 ─── */
-
-.baseBar {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.6rem 1rem;
-  border-radius: 12px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-}
-
-.baseTitle {
-  flex: 1;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.baseTotal {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 1rem;
-  font-weight: 800;
-  color: #f59e0b;
-  font-variant-numeric: tabular-nums;
 }
 
 /* ─── 로딩 ─── */
@@ -678,14 +639,6 @@
 
   .heroValue {
     font-size: 1.25rem;
-  }
-
-  .baseBar {
-    padding: 0.55rem 0.85rem;
-  }
-
-  .baseTitle {
-    font-size: 0.78rem;
   }
 
   .sumCalc {

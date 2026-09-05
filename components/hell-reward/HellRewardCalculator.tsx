@@ -304,35 +304,33 @@ export default function HellRewardCalculator() {
       {/* 총 기댓값 + 환율 */}
       <div className={styles.infoRow}>
         {hasPrices && !priceLoading && (
-          <div className={styles.heroWrap}>
-            <div className={styles.heroCard}>
-              <NextImage src="/gold.webp" alt="골드" width={40} height={40} className={styles.heroIcon} />
-              <div className={styles.heroText}>
-                <span className={styles.heroLabel}>
-                  {selectedLevel} {mode === 'hell' ? '지옥' : '나락'} · {TIER_LABELS[selectedTier]}층 총 기댓값
-                </span>
-                <span className={styles.heroValue}>{totalGold.toLocaleString()} G</span>
-                <span className={styles.heroBreak}>
-                  {baseGold > 0 ? (
-                    <>= 기본 <b>{baseGold.toLocaleString()}</b> + 상자 평균 <b>{avgGold.toLocaleString()}</b> ({avgTargets.length}종)</>
-                  ) : (
-                    <>상자 보상 {avgTargets.length}종 평균</>
-                  )}
-                </span>
-              </div>
+          <div className={styles.heroCard}>
+            <NextImage src="/gold.webp" alt="골드" width={40} height={40} className={styles.heroIcon} />
+            <div className={styles.heroText}>
+              <span className={styles.heroLabel}>
+                {selectedLevel} {mode === 'hell' ? '지옥' : '나락'} · {TIER_LABELS[selectedTier]}층 총 기댓값
+              </span>
+              <span className={styles.heroValue}>{totalGold.toLocaleString()} G</span>
+              <span className={styles.heroBreak}>
+                {baseGold > 0 ? (
+                  <>= 기본 <b>{baseGold.toLocaleString()}</b> + 상자 평균 <b>{avgGold.toLocaleString()}</b> ({avgTargets.length}종)</>
+                ) : (
+                  <>상자 보상 {avgTargets.length}종 평균</>
+                )}
+              </span>
+              {hasAbilityStone && (
+                <label className={styles.stoneExcludeLabel}>
+                  <input
+                    type="checkbox"
+                    checked={excludeAbilityStone}
+                    onChange={(e) => setExcludeAbilityStone(e.target.checked)}
+                    className={styles.stoneExcludeCheck}
+                  />
+                  <span>어빌리티스톤 제외</span>
+                  <span className={styles.stoneExcludeHint}>페온 환산 가치가 커서 평균에서 기본 제외</span>
+                </label>
+              )}
             </div>
-            {hasAbilityStone && (
-              <label className={styles.stoneExcludeLabel}>
-                <input
-                  type="checkbox"
-                  checked={excludeAbilityStone}
-                  onChange={(e) => setExcludeAbilityStone(e.target.checked)}
-                  className={styles.stoneExcludeCheck}
-                />
-                <span>어빌리티스톤 제외</span>
-                <span className={styles.stoneExcludeHint}>페온 환산 가치가 커서 평균에서 기본 제외</span>
-              </label>
-            )}
           </div>
         )}
 
@@ -382,20 +380,7 @@ export default function HellRewardCalculator() {
         </div>
       </div>
 
-      {/* 층 기본 보상 — 아래 모든 항목 값에 이미 포함돼 있다. 여기서는 총액만 보여준다. */}
-      {!priceLoading && baseRows.length > 0 && (
-        <div className={styles.baseBar}>
-          <span className={styles.baseTitle}>
-            {TIER_LABELS[selectedTier]}층 기본 보상 · 모든 항목에 포함
-          </span>
-          <span className={styles.baseTotal}>
-            <NextImage src="/gold.webp" alt="" width={18} height={18} />
-            {baseGold.toLocaleString()}
-          </span>
-        </div>
-      )}
-
-      {/* 보상 카드 목록 */}
+      {/* 보상 카드 목록 — 층 기본 보상은 각 카드를 펼치면 합산 내역으로 보인다 */}
       {priceLoading ? (
         <div className={styles.loading}>시세 불러오는 중...</div>
       ) : !hasPrices ? (
