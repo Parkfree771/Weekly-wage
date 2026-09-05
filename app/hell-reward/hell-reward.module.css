@@ -77,21 +77,6 @@
   cursor: not-allowed;
 }
 
-/* 현재 보상 테이블의 시즌 표기 — 매트 단색 레드 + 흰 글씨 */
-.seasonBadge {
-  align-self: center;
-  flex-shrink: 0;
-  margin: 0 0.2rem 0 0.3rem;
-  padding: 0.24rem 0.55rem;
-  border-radius: 7px;
-  background: #dc2626;
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
 .segIcon {
   width: 24px;
   height: 24px;

@@ -87,9 +87,7 @@ const DISPLAY_NAMES: Record<string, string> = {
   '돌파석': '위대한 운명의 돌파석',
 };
 
-// 현재 보상 테이블(lib/hell-reward-calc)이 기준으로 삼는 시즌 — 레벨 트랙의 빨간 배지로 표시.
-// 시즌4 데이터가 확정되면 여기와 ITEM_LEVELS.available 만 갱신하면 된다.
-const CURRENT_SEASON = '시즌3';
+// 아이템 레벨 — 시즌4 데이터가 확정되면 lib/hell-reward-calc 에 레벨별 테이블을 넣고 available 만 켠다.
 const ITEM_LEVELS = [
   { level: 1730, available: false },
   { level: 1750, available: true },
@@ -277,7 +275,6 @@ export default function HellRewardCalculator() {
       {/* 아이템 레벨 + 콘텐츠 */}
       <div className={styles.controlsRow}>
         <div className={`${styles.segTrack} ${styles.segTrackLevel}`}>
-          <span className={styles.seasonBadge}>{CURRENT_SEASON}</span>
           {ITEM_LEVELS.map(({ level, available }) => (
             <button
               key={level}
