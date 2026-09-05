@@ -1,134 +1,135 @@
 /* ========================================
    지옥 보상 계산기 페이지
+   — 사이트 공통 디자인 시스템(토큰 카드 + 매트 단색 강조)을 따른다.
+   transition/transform·희미한 틴트 배경은 쓰지 않는다.
    ======================================== */
 
-/* 뉴모피즘 입체감 — 완갑/재련 시뮬과 같은 값을 쓴다 (사이트 공통 버튼 질감) */
 .wrap {
-  --nm: 5px 5px 10px rgba(0, 0, 0, 0.1), -5px -5px 10px rgba(255, 255, 255, 0.7);
-  --nm-hover: 7px 7px 14px rgba(0, 0, 0, 0.14), -7px -7px 14px rgba(255, 255, 255, 0.8);
-  --nm-in: inset 3px 3px 6px rgba(0, 0, 0, 0.13), inset -3px -3px 6px rgba(255, 255, 255, 0.7);
-  --nm-sm: 3px 3px 6px rgba(0, 0, 0, 0.09), -3px -3px 6px rgba(255, 255, 255, 0.65);
-  /* 이 페이지의 액센트 (인디고) */
-  --hr: #6366f1;
-  --hr-deep: #4f46e5;
-}
-
-[data-theme="dark"] .wrap {
-  --nm: 5px 5px 10px rgba(0, 0, 0, 0.5), -5px -5px 10px rgba(255, 255, 255, 0.03);
-  --nm-hover: 7px 7px 14px rgba(0, 0, 0, 0.6), -7px -7px 14px rgba(255, 255, 255, 0.04);
-  --nm-in: inset 3px 3px 6px rgba(0, 0, 0, 0.55), inset -3px -3px 6px rgba(255, 255, 255, 0.03);
-  --nm-sm: 3px 3px 6px rgba(0, 0, 0, 0.45), -3px -3px 6px rgba(255, 255, 255, 0.03);
-  --hr: #818cf8;
-  --hr-deep: #6366f1;
-}
-
-/* 시즌3 / 1750 콘텐츠 표기 배지 */
-.versionBadge {
   display: flex;
-  justify-content: center;
-  margin-bottom: 1.25rem;
+  flex-direction: column;
+  gap: 0.85rem;
 }
 
-/* 매트 단색 + 윗면 하이라이트 (그라데이션 없이 입체감만) */
-.versionBadgePill {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  padding: 0.5rem 1.5rem;
-  border-radius: 999px;
-  background: #4f46e5;
-  color: #fff;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
-    0 5px 14px rgba(79, 70, 229, 0.35);
+/* ─── 컨트롤 카드 (레벨 · 콘텐츠 · 단계) ─── */
+
+.controlCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
 }
 
-.versionBadgeNum {
-  font-size: 1.3rem;
+.ctrlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.ctrlLabel {
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
 }
 
-.versionBadgeLabel {
-  font-size: 0.82rem;
-  font-weight: 700;
-  opacity: 0.9;
-}
-
-/* 모드 선택 (지옥/나락) */
-.modeToggle {
+/* 아이템 레벨 탭 — 시즌4 대비. 데이터가 없는 레벨은 잠가둔다 */
+.levelTabs {
   display: flex;
-  gap: 0.75rem;
-  justify-content: center;
-  margin-bottom: 1.5rem;
+  gap: 0.5rem;
 }
 
-/* 눌리는 물리 버튼 느낌 — 평소엔 떠 있고(볼록), 선택하면 눌린다(오목) */
-.modeBtn {
+.levelTab {
   flex: 1;
-  max-width: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 0.8rem 1.5rem;
-  border: none;
-  border-radius: 14px;
+  gap: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
   background: var(--card-bg);
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.levelTabActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.levelTabDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 잠긴 레벨 표기 — 매트 단색 미니 태그 */
+.levelTabSoon {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 0.14rem 0.4rem;
+  border-radius: 5px;
+  background: #64748b;
+  color: #fff;
+}
+
+.levelTabSeason {
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+/* 콘텐츠 선택 (지옥/나락) */
+.modeToggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.modeBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.7rem 1rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  transition: box-shadow 0.18s ease, transform 0.18s ease, color 0.18s ease;
-  box-shadow: var(--nm);
-}
-
-.modeBtn:hover:not(.modeBtnActive) {
-  transform: translateY(-2px);
-  box-shadow: var(--nm-hover);
-  color: var(--text-primary);
-}
-
-.modeBtn:active {
-  transform: translateY(0);
-  box-shadow: var(--nm-in);
 }
 
 .modeBtnActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
   font-weight: 800;
-  color: var(--hr);
-  transform: translateY(1px);
-  box-shadow: var(--nm-in), 0 0 0 2px rgba(99, 102, 241, 0.35);
-}
-
-.modeBtnActive .modeBtnIcon {
-  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.5));
 }
 
 .modeBtnIcon {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
 }
 
 /* 단계 선택 칩 */
-.tierSelector {
-  margin-bottom: 1.5rem;
-}
-
-/* 트랙은 파인 홈(오목), 칩은 그 위에 얹힌 조각(볼록) */
 .tierTrack {
   display: flex;
-  gap: 6px;
-  padding: 7px;
-  background: var(--card-bg);
-  border-radius: 16px;
-  border: none;
+  gap: 5px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  box-shadow: var(--nm-in);
+  padding-bottom: 2px;
 }
 
 .tierTrack::-webkit-scrollbar {
@@ -140,185 +141,127 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 0.6rem 0;
-  min-width: 58px;
+  padding: 0.5rem 0;
+  min-width: 56px;
   flex: 1;
   background: var(--card-bg);
-  border: none;
-  border-radius: 11px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 9px;
   cursor: pointer;
-  transition: box-shadow 0.16s ease, transform 0.16s ease, background 0.16s ease, color 0.16s ease;
-  color: var(--text-muted);
-  box-shadow: var(--nm-sm);
+  color: var(--text-secondary);
 }
 
-.tierChip:hover:not(.tierChipActive) {
-  transform: translateY(-2px);
-  color: var(--text-primary);
-  box-shadow: var(--nm);
-}
-
-/* 선택된 단계 — 단색 인디고 + 윗면 하이라이트로 솟은 느낌 (사이트 매트 입체 배지 규칙) */
 .tierChipActive {
-  background: var(--hr-deep);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
-  transform: translateY(-3px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 5px 10px rgba(79, 70, 229, 0.4),
-    0 1px 0 rgba(0, 0, 0, 0.15);
-}
-
-.tierChipActive:hover {
-  background: var(--hr);
 }
 
 .tierChipNum {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 800;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .tierChipRange {
   font-size: 0.6rem;
   font-weight: 600;
-  opacity: 0.55;
+  opacity: 0.65;
   line-height: 1;
-}
-
-.tierChipActive .tierChipRange {
-  opacity: 0.85;
-}
-
-/* 환율 + 평균 배너 row */
-.infoRow {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  align-items: stretch;
-}
-
-/* 환율 입력 */
-.exchangeCard {
-  flex: 1;
-  background: var(--card-bg);
-  border: none;
-  border-radius: 14px;
-  padding: 0.85rem 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  box-shadow: var(--nm);
-}
-
-.exchangeRatioRow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.exchangeIcon {
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
-}
-
-.exchangeFixed {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.exchangeSep {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-.exchangeInput {
-  width: 80px;
-  padding: 0.35rem 0.5rem;
-  border: 1.5px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--card-body-bg-stone, rgba(0,0,0,0.02));
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-align: center;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.exchangeInput:focus {
-  border-color: #6366f1;
-}
-
-.exchangeResult {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-/* 평균 골드 배너 */
-.avgBanner {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.85rem 1.25rem;
-  background: var(--card-bg);
-  border: none;
-  border-radius: 14px;
-  box-shadow: var(--nm);
-}
-
-.avgBannerIcon {
-  flex-shrink: 0;
-}
-
-.avgBannerText {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.avgBannerLabel {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-.avgBannerValue {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #f59e0b;
-  line-height: 1.15;
-}
-
-.avgBannerCount {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  background: rgba(0, 0, 0, 0.05);
-  padding: 0.25rem 0.6rem;
-  border-radius: 10px;
   white-space: nowrap;
 }
 
-[data-theme="dark"] .avgBannerCount {
-  background: rgba(255, 255, 255, 0.08);
+.tierChipActive .tierChipRange {
+  opacity: 0.9;
 }
 
-/* 평균 배너 + 체크박스 래퍼 */
-.avgBannerWrap {
-  flex: 1;
+/* ─── 총 기댓값 히어로 + 환율 설정 ─── */
+
+.infoRow {
+  display: flex;
+  gap: 0.85rem;
+  align-items: stretch;
+}
+
+/* 총 기댓값 — 페이지에서 가장 눈에 띄어야 하는 숫자. 매트 프라이머리 카드 + 흰 글씨 */
+.heroWrap {
+  flex: 1.5;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.heroCard {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.heroIcon {
+  flex-shrink: 0;
+}
+
+.heroText {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.heroLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.heroValue {
+  font-size: 1.7rem;
+  font-weight: 900;
+  color: #ffd66e;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.heroBreak {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 2px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.heroBreak b {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.calcOp {
+  font-weight: 900;
+  padding: 0 1px;
+}
+
+/* 평균에 들어간 보상 종 수 — 히어로 안 매트 짙은 칩 */
+.heroCount {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--color-primary-dark);
+  padding: 0.3rem 0.65rem;
+  border-radius: 8px;
+  white-space: nowrap;
 }
 
 /* 어빌리티스톤 제외 체크박스 */
@@ -335,7 +278,7 @@
 .stoneExcludeCheck {
   width: 14px;
   height: 14px;
-  accent-color: #6366f1;
+  accent-color: var(--color-primary);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -346,29 +289,76 @@
   opacity: 0.7;
 }
 
-/* 총 기댓값 내역 (기본 보상 + 상자 평균) */
-.avgBannerBreak {
+/* 환율 설정 — 보조 설정이라 히어로보다 조용하게 */
+.exchangeCard {
+  flex: 1;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  padding: 0.75rem 1rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
-  margin-top: 2px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  white-space: nowrap;
+  justify-content: center;
+  gap: 0.45rem;
 }
 
-.avgBannerBreak b {
+.exchangeTitle {
+  font-size: 0.7rem;
   font-weight: 800;
-  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.exchangeRatioRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.exchangeIcon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.exchangeFixed {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
 
-/* 계산식 기호 (= + ×) — 숫자와 구분되게 액센트로 */
-.calcOp {
-  font-weight: 900;
-  color: var(--hr);
-  padding: 0 1px;
+.exchangeSep {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.exchangeInput {
+  width: 76px;
+  padding: 0.3rem 0.45rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+}
+
+.exchangeInput:focus {
+  border-color: var(--color-primary);
+}
+
+.exchangeResult {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  font-weight: 700;
 }
 
 /* ─── 층 기본 보상 바 ───
@@ -378,11 +368,11 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  margin-bottom: 0.85rem;
   padding: 0.6rem 0.9rem;
   border-radius: 12px;
   background: var(--card-bg);
-  box-shadow: var(--nm-sm);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
 }
 
 .baseTitle {
@@ -395,16 +385,14 @@
   white-space: nowrap;
 }
 
-/* 매트 단색 + 윗면 하이라이트 (사이트 공통 입체 배지 규칙) */
 .baseTag {
   padding: 0.16rem 0.55rem;
   border-radius: 6px;
-  background: var(--hr-deep);
+  background: var(--color-primary);
   color: #fff;
   font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .baseTotal {
@@ -417,7 +405,315 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ─── 펼쳤을 때 합산 내역 (상자 + 기본 = 합계) ─── */
+/* ─── 로딩 ─── */
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ─── 보상 카드 목록 ─── */
+
+.rewardList {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.rewardCard {
+  position: relative;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.rewardCardExpanded {
+  border: 1.5px solid var(--color-primary);
+}
+
+.rewardCardDisabled {
+  opacity: 0.35;
+}
+
+.rewardCardMain {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.15rem 1rem;
+  cursor: pointer;
+}
+
+/* 상대 가치 바 — 카드 하단 스트립. 최고가 항목 대비 비율만큼 채운다 (단색 매트) */
+.valueBar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  background: #f59e0b;
+}
+
+/* 순위 뱃지 — 매트 단색 */
+.rankBadge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #fff;
+  z-index: 1;
+}
+
+.rank1 {
+  background: #f59e0b;
+}
+
+.rank2 {
+  background: #64748b;
+}
+
+.rank3 {
+  background: #b45309;
+}
+
+/* 이미지 */
+.rewardImgWrap {
+  width: 68px;
+  height: 68px;
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.rewardImg {
+  width: 56px !important;
+  height: 56px !important;
+  object-fit: contain;
+}
+
+.rewardImgSmall .rewardImg {
+  width: 42px !important;
+  height: 42px !important;
+}
+
+/* 배경 없는 이미지 — 칸을 꽉 채워 크게 표시 */
+.rewardImgLarge .rewardImg {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 자체 배경(사각 타일)이 그려진 아이콘 — 칸을 꽉 채우고 칸의 둥근 모서리로 잘라내
+   사각 배경이 둥근 테두리 위로 튀어나오지 않게 한다. */
+.rewardImgFilled {
+  background: transparent;
+}
+
+.rewardImgFilled .rewardImg {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 12px;
+  object-fit: fill;
+}
+
+/* 정보 */
+.rewardInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rewardInfoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rewardName {
+  flex: 1;
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 가격 유형 뱃지 — 매트 단색 + 흰 글씨. 한눈에 산정 방식이 보이게 접힌 줄에 둔다 */
+.priceBadge {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 0.18rem 0.5rem;
+  border-radius: 6px;
+  line-height: 1.2;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  color: #fff;
+  border: none;
+}
+
+.priceBadge_live {
+  background: #16a34a;
+}
+
+.priceBadge_fixed {
+  background: #64748b;
+}
+
+.priceBadge_peon {
+  background: var(--color-primary);
+}
+
+.priceBadge_mixed {
+  background: #d97706;
+}
+
+/* 다크에서는 같은 색이 탁해 보여 한 단계 밝은 톤 */
+[data-theme="dark"] .priceBadge_live {
+  background: #22c55e;
+}
+
+[data-theme="dark"] .priceBadge_fixed {
+  background: #7c8ba1;
+}
+
+[data-theme="dark"] .priceBadge_mixed {
+  background: #f59e0b;
+}
+
+.rewardQtyGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.rewardQty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 영웅 젬 선택 상자 — 지금 최고가로 잡힌 젬 (시세가 뒤집히면 자동으로 바뀐다) */
+.gemPick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  padding: 0.12rem 0.4rem 0.12rem 0.22rem;
+  border-radius: 7px;
+  border: 1.5px solid var(--border-color);
+  background: var(--card-bg);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* 젬 아이콘은 자체 사각 배경이 있어 모서리를 깎는다 */
+.gemPickIcon {
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.gemPickTag {
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: 0.02em;
+}
+
+.rewardPriceSummary {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: pre-line;
+  flex-shrink: 0;
+  text-align: right;
+  line-height: 1.4;
+}
+
+/* 골드 가치 */
+.rewardGold {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #f59e0b;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.rewardUnavailable {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 1.3rem;
+}
+
+/* 펼침 아이콘 — 회전 transform 대신 글자 자체를 바꾼다 */
+.expandIcon {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ─── 상세 패널 ─── */
+
+.detail {
+  padding: 0.75rem 1rem;
+  border-top: 1.5px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.35rem 0;
+  gap: 0.75rem;
+}
+
+.detailRow:not(:last-child) {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detailLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.detailValue {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: right;
+  word-break: break-word;
+}
+
+/* ─── 펼쳤을 때 합산 내역 (기본 보상 + 상자 고유 = 합계) ─── */
 
 .sumBox {
   margin-top: 0.6rem;
@@ -461,7 +757,7 @@
   flex-shrink: 0;
   text-align: center;
   font-weight: 900;
-  color: var(--hr);
+  color: var(--color-primary);
 }
 
 .sumLabel {
@@ -475,12 +771,11 @@
   flex-shrink: 0;
   padding: 0.08rem 0.35rem;
   border-radius: 5px;
-  background: var(--hr-deep);
+  background: var(--color-primary);
   color: #fff;
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* 기본 보상 줄은 상자 몫보다 한 단계 죽인다 */
@@ -516,7 +811,7 @@
 .sumLineTotal {
   margin-top: 4px;
   padding-top: 5px;
-  border-top: 2px solid var(--hr);
+  border-top: 2px solid var(--color-primary);
   font-size: 0.95rem;
 }
 
@@ -531,378 +826,34 @@
   color: #f59e0b;
 }
 
-@media (max-width: 560px) {
-  .baseBar {
-    flex-wrap: wrap;
-  }
-
-  .sumCalc {
-    display: none;
-  }
-}
-
-/* 로딩 */
-.loading {
-  text-align: center;
-  padding: 3rem;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-/* 보상 카드 목록 */
-.rewardList {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.rewardCard {
-  background: var(--card-bg);
-  border: none;
-  border-radius: 14px;
-  overflow: hidden;
-  transition: box-shadow 0.16s ease, transform 0.16s ease;
-  box-shadow: var(--nm-sm);
-}
-
-.rewardCard:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--nm);
-}
-
-.rewardCardExpanded,
-.rewardCardExpanded:hover {
-  transform: none;
-  box-shadow: var(--nm), 0 0 0 2px rgba(99, 102, 241, 0.35);
-}
-
-.rewardCardDisabled {
-  opacity: 0.35;
-}
-
-.rewardCardMain {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.15rem;
-  cursor: pointer;
-  position: relative;
-}
-
-/* 순위 뱃지 */
-.rankBadge {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.6rem;
-  font-weight: 800;
-  color: #fff;
-  z-index: 1;
-}
-
-/* 순위도 그라데이션 대신 매트 단색 + 윗면 하이라이트로 통일 */
-.rankBadge {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 3px rgba(0, 0, 0, 0.25);
-}
-
-.rank1 {
-  background: #f59e0b;
-}
-
-.rank2 {
-  background: #64748b;
-}
-
-.rank3 {
-  background: #b45309;
-}
-
-/* 이미지 */
-.rewardImgWrap {
-  width: 72px;
-  height: 72px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.04);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-[data-theme="dark"] .rewardImgWrap {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.rewardImg {
-  width: 60px !important;
-  height: 60px !important;
-  object-fit: contain;
-}
-
-.rewardImgSmall {
-  width: 72px;
-  height: 72px;
-}
-
-.rewardImgSmall .rewardImg {
-  width: 44px !important;
-  height: 44px !important;
-}
-
-/* 배경 없는 이미지 — 칸을 꽉 채워 크게 표시 */
-.rewardImgLarge .rewardImg {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* 자체 배경(사각 타일)이 그려진 아이콘 — 칸을 꽉 채우고 칸의 둥근 모서리로 잘라내
-   사각 배경이 둥근 테두리 위로 튀어나오지 않게 한다. */
-.rewardImgFilled {
-  background: transparent;
-}
-
-[data-theme="dark"] .rewardImgFilled {
-  background: transparent;
-}
-
-.rewardImgFilled .rewardImg {
-  width: 100% !important;
-  height: 100% !important;
-  border-radius: 12px;
-  object-fit: fill;
-}
-
-/* 정보 */
-.rewardInfo {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.rewardName {
-  /* 이름이 남는 폭을 먹고, 배지는 오른쪽에 붙는다 */
-  flex: 1;
-  min-width: 0;
-  font-size: 1.02rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 가격 유형 뱃지 — 단색을 꽉 채우고 흰 글씨. 윗면 하이라이트로 입체감만 준다
-   (연한 톤 + 테두리는 멀리서 안 읽혀서 색으로 구분되게 바꿨다) */
-.priceBadge {
-  flex-shrink: 0;
-  font-size: 0.63rem;
-  font-weight: 800;
-  padding: 0.18rem 0.5rem;
-  border-radius: 6px;
-  line-height: 1.2;
-  white-space: nowrap;
-  letter-spacing: 0.02em;
-  color: #fff;
-  border: none;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), 0 1px 2px rgba(0, 0, 0, 0.18);
-}
-
-.priceBadge_live {
-  background: #16a34a;
-}
-
-.priceBadge_fixed {
-  background: #64748b;
-}
-
-.priceBadge_peon {
-  background: #4f46e5;
-}
-
-.priceBadge_mixed {
-  background: #d97706;
-}
-
-/* 다크에서는 같은 색이 탁해 보여 한 단계 밝은 톤 */
-[data-theme="dark"] .priceBadge_live {
-  background: #22c55e;
-}
-
-[data-theme="dark"] .priceBadge_fixed {
-  background: #7c8ba1;
-}
-
-[data-theme="dark"] .priceBadge_peon {
-  background: #6366f1;
-}
-
-[data-theme="dark"] .priceBadge_mixed {
-  background: #f59e0b;
-}
-
-.rewardInfoRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.rewardQtyGroup {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-width: 0;
-}
-
-.rewardQty {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-/* 영웅 젬 선택 상자 — 지금 최고가로 잡힌 젬 (시세가 뒤집히면 자동으로 바뀐다) */
-.gemPick {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex-shrink: 0;
-  padding: 0.12rem 0.4rem 0.12rem 0.22rem;
-  border-radius: 7px;
-  background: var(--card-bg);
-  box-shadow: var(--nm-sm);
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-/* 젬 아이콘은 자체 사각 배경이 있어 모서리를 깎는다 */
-.gemPickIcon {
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.gemPickTag {
-  font-size: 0.58rem;
-  font-weight: 800;
-  color: var(--hr);
-  letter-spacing: 0.02em;
-}
-
-.rewardPriceSummary {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  white-space: pre-line;
-  flex-shrink: 0;
-  text-align: right;
-  line-height: 1.4;
-}
-
-/* 골드 가치 */
-.rewardGold {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #f59e0b;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.rewardUnavailable {
-  color: var(--text-muted);
-  font-weight: 500;
-  font-size: 1.3rem;
-}
-
-/* 펼침 아이콘 */
-.expandIcon {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
-}
-
-.expandIconOpen {
-  transform: rotate(180deg);
-}
-
-/* 상세 패널 */
-.detail {
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--border-color);
-  background: rgba(99, 102, 241, 0.03);
-}
-
-[data-theme="dark"] .detail {
-  background: rgba(99, 102, 241, 0.05);
-}
-
-.detailRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 0.35rem 0;
-  gap: 0.75rem;
-}
-
-.detailRow:not(:last-child) {
-  border-bottom: 1px solid var(--border-color);
-}
-
-.detailLabel {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.detailValue {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  text-align: right;
-  word-break: break-word;
-}
-
-.detailGold {
-  font-size: 0.92rem;
-  font-weight: 800;
-  color: #f59e0b;
-}
-
-/* ---- 반응형: 768px ---- */
+/* ─── 반응형: 768px ─── */
 @media (max-width: 768px) {
-  .levelTab {
-    padding: 0.6rem 2rem;
-    font-size: 0.95rem;
+  .infoRow {
+    flex-direction: column;
+  }
+
+  .heroValue {
+    font-size: 1.4rem;
   }
 
   .modeBtn {
     font-size: 0.9rem;
-    padding: 0.65rem 1rem;
+    padding: 0.6rem 0.75rem;
   }
 
   .modeBtnIcon {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
+  }
+
+  .levelTab {
+    font-size: 0.92rem;
+    padding: 0.55rem 0.5rem;
   }
 
   .tierChip {
     min-width: 48px;
-    padding: 0.55rem 0;
+    padding: 0.45rem 0;
   }
 
   .tierChipNum {
@@ -913,22 +864,14 @@
     font-size: 0.52rem;
   }
 
-  .infoRow {
-    flex-direction: column;
-  }
-
-  .avgBannerValue {
-    font-size: 1.3rem;
-  }
-
   .rewardImgWrap {
-    width: 62px;
-    height: 62px;
+    width: 60px;
+    height: 60px;
   }
 
   .rewardImg {
-    width: 52px !important;
-    height: 52px !important;
+    width: 50px !important;
+    height: 50px !important;
   }
 
   .rewardName {
@@ -940,51 +883,68 @@
   }
 }
 
-/* ---- 반응형: 480px ---- */
+/* ─── 반응형: 480px ─── */
 @media (max-width: 480px) {
-  .levelTabs {
-    gap: 0.5rem;
+  .controlCard {
+    padding: 0.85rem 0.85rem;
+  }
+
+  .levelTabs,
+  .modeToggle {
+    gap: 0.4rem;
   }
 
   .levelTab {
-    padding: 0.55rem 1.5rem;
-    font-size: 0.88rem;
-  }
-
-  .modeToggle {
-    gap: 0.5rem;
+    font-size: 0.85rem;
+    gap: 0.3rem;
   }
 
   .modeBtn {
-    font-size: 0.82rem;
-    padding: 0.55rem 0.75rem;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.5rem;
   }
 
   .tierChip {
-    min-width: 38px;
+    min-width: 40px;
   }
 
   .tierChipNum {
     font-size: 0.85rem;
   }
 
+  .heroCard {
+    padding: 0.85rem 1rem;
+  }
+
+  .heroValue {
+    font-size: 1.25rem;
+  }
+
+  .baseBar {
+    flex-wrap: wrap;
+  }
+
+  .sumCalc {
+    display: none;
+  }
+
   .rewardCardMain {
-    padding: 0.8rem 0.85rem;
-    gap: 0.75rem;
+    padding: 0.75rem 0.85rem 0.9rem;
+    gap: 0.7rem;
   }
 
   .rewardImgWrap {
-    width: 54px;
-    height: 54px;
+    width: 52px;
+    height: 52px;
   }
 
   .rewardImg {
-    width: 44px !important;
-    height: 44px !important;
+    width: 42px !important;
+    height: 42px !important;
   }
 
   .rewardName {
-    font-size: 0.88rem;
+    font-size: 0.86rem;
   }
 
   .rewardGold {
@@ -998,9 +958,5 @@
 
   .rewardPriceSummary {
     font-size: 0.65rem;
-  }
-
-  .avgBannerValue {
-    font-size: 1.1rem;
   }
 }

@@ -87,9 +87,17 @@ const DISPLAY_NAMES: Record<string, string> = {
   '돌파석': '위대한 운명의 돌파석',
 };
 
+// 아이템 레벨 탭 — 시즌4에서 1770 등이 추가될 예정.
+// 보상 테이블이 확정되면 lib/hell-reward-calc 에 레벨별 데이터를 넣고 available 만 켠다.
+const ITEM_LEVELS = [
+  { level: 1770, season: '시즌4', available: false },
+  { level: 1750, season: '시즌3', available: true },
+  { level: 1730, season: '시즌4', available: false },
+] as const;
 
 export default function HellRewardCalculator() {
   const [mode, setMode] = useState<ModeType>('hell');
+  const [selectedLevel, setSelectedLevel] = useState<number>(1750);
   const [selectedTier, setSelectedTier] = useState<number>(6);
   const [expandedReward, setExpandedReward] = useState<string | null>(null);
   const [prices, setPrices] = useState<Record<string, number>>({});
@@ -152,6 +160,9 @@ export default function HellRewardCalculator() {
   })();
 
   const totalGold = baseGold + avgGold;
+
+  // 상대 가치 바 기준 — 지금 목록에서 가장 비싼 항목
+  const maxGoldValue = Math.max(0, ...sortedRewards.filter((r) => r.available).map((r) => r.goldValue));
 
   function fmtPrice(v: number): string {
     return v % 1 === 0 ? v.toLocaleString() : v.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -280,53 +291,111 @@ export default function HellRewardCalculator() {
 
   return (
     <div className={styles.wrap}>
-      {/* 시즌3 / 1750 표기 */}
-      <div className={styles.versionBadge}>
-        <span className={styles.versionBadgePill}>
-          <span className={styles.versionBadgeNum}>1750</span>
-          <span className={styles.versionBadgeLabel}>시즌3 지옥·나락 보상 계산</span>
-        </span>
-      </div>
+      {/* 레벨 · 콘텐츠 · 단계 — 계산 조건은 한 카드에 모아둔다 */}
+      <div className={styles.controlCard}>
+        <div className={styles.ctrlGroup}>
+          <span className={styles.ctrlLabel}>아이템 레벨</span>
+          <div className={styles.levelTabs}>
+            {ITEM_LEVELS.map(({ level, season, available }) => (
+              <button
+                key={level}
+                className={`${styles.levelTab} ${selectedLevel === level ? styles.levelTabActive : ''} ${!available ? styles.levelTabDisabled : ''}`}
+                disabled={!available}
+                onClick={() => { setSelectedLevel(level); setExpandedReward(null); }}
+              >
+                <span>{level}</span>
+                {available ? (
+                  <span className={styles.levelTabSeason}>{season}</span>
+                ) : (
+                  <span className={styles.levelTabSoon}>{season} 준비중</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {/* 모드 선택 */}
-      <div className={styles.modeToggle}>
-        <button
-          className={`${styles.modeBtn} ${mode === 'hell' ? styles.modeBtnActive : ''}`}
-          onClick={() => { setMode('hell'); setExpandedReward(null); }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/celtic_key_5.webp" alt="" className={styles.modeBtnIcon} />
-          <span>지옥</span>
-        </button>
-        <button
-          className={`${styles.modeBtn} ${mode === 'narak' ? styles.modeBtnActive : ''}`}
-          onClick={() => { setMode('narak'); setExpandedReward(null); }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/key_5.webp" alt="" className={styles.modeBtnIcon} />
-          <span>나락</span>
-        </button>
-      </div>
-
-      {/* 단계 선택 */}
-      <div className={styles.tierSelector}>
-        <div className={styles.tierTrack}>
-          {TIER_LABELS.map((label, idx) => (
+        <div className={styles.ctrlGroup}>
+          <span className={styles.ctrlLabel}>콘텐츠</span>
+          <div className={styles.modeToggle}>
             <button
-              key={idx}
-              className={`${styles.tierChip} ${selectedTier === idx ? styles.tierChipActive : ''}`}
-              onClick={() => { setSelectedTier(idx); setExpandedReward(null); }}
+              className={`${styles.modeBtn} ${mode === 'hell' ? styles.modeBtnActive : ''}`}
+              onClick={() => { setMode('hell'); setExpandedReward(null); }}
             >
-              <span className={styles.tierChipNum}>{idx}</span>
-              <span className={styles.tierChipRange}>{label}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/celtic_key_5.webp" alt="" className={styles.modeBtnIcon} />
+              <span>지옥</span>
             </button>
-          ))}
+            <button
+              className={`${styles.modeBtn} ${mode === 'narak' ? styles.modeBtnActive : ''}`}
+              onClick={() => { setMode('narak'); setExpandedReward(null); }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/key_5.webp" alt="" className={styles.modeBtnIcon} />
+              <span>나락</span>
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.ctrlGroup}>
+          <span className={styles.ctrlLabel}>단계 (층)</span>
+          <div className={styles.tierTrack}>
+            {TIER_LABELS.map((label, idx) => (
+              <button
+                key={idx}
+                className={`${styles.tierChip} ${selectedTier === idx ? styles.tierChipActive : ''}`}
+                onClick={() => { setSelectedTier(idx); setExpandedReward(null); }}
+              >
+                <span className={styles.tierChipNum}>{idx}</span>
+                <span className={styles.tierChipRange}>{label}층</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* 환율 + 평균 골드 */}
+      {/* 총 기댓값(주인공) + 환율 설정(보조) */}
       <div className={styles.infoRow}>
+        {hasPrices && !priceLoading && (
+          <div className={styles.heroWrap}>
+            <div className={styles.heroCard}>
+              <NextImage src="/gold.webp" alt="골드" width={40} height={40} className={styles.heroIcon} />
+              <div className={styles.heroText}>
+                <span className={styles.heroLabel}>{selectedLevel} · {mode === 'hell' ? '지옥' : '나락'} 단계 {selectedTier} 총 기댓값</span>
+                <span className={styles.heroValue}>{totalGold.toLocaleString()} G</span>
+                {baseGold > 0 && (
+                  <span className={styles.heroBreak}>
+                    <span className={styles.calcOp}>=</span>
+                    기본 <b>{baseGold.toLocaleString()}</b>
+                    <span className={styles.calcOp}>+</span>
+                    상자 평균 <b>{avgGold.toLocaleString()}</b>
+                  </span>
+                )}
+              </div>
+              <div className={styles.heroCount}>
+                {(() => {
+                  let available = sortedRewards.filter(r => r.available);
+                  if (excludeAbilityStone) available = available.filter(r => r.name !== '어빌리티스톤');
+                  return available.length;
+                })()}종 평균
+              </div>
+            </div>
+            {hasAbilityStone && (
+              <label className={styles.stoneExcludeLabel}>
+                <input
+                  type="checkbox"
+                  checked={excludeAbilityStone}
+                  onChange={(e) => setExcludeAbilityStone(e.target.checked)}
+                  className={styles.stoneExcludeCheck}
+                />
+                <span>어빌리티스톤 제외</span>
+                <span className={styles.stoneExcludeHint}>페온 가치로 인해 기댓값이 과도하게 높아 기본 제외됩니다. 포함하려면 체크 해제하세요.</span>
+              </label>
+            )}
+          </div>
+        )}
+
         <div className={styles.exchangeCard}>
+          <span className={styles.exchangeTitle}>환율 설정</span>
           <div className={styles.exchangeRatioRow}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src="/royal.webp" alt="" className={styles.exchangeIcon} />
@@ -370,45 +439,6 @@ export default function HellRewardCalculator() {
             페온 1개 = {Math.floor(peonGoldValue).toLocaleString()}골드
           </div>
         </div>
-
-        {hasPrices && !priceLoading && (
-          <div className={styles.avgBannerWrap}>
-            <div className={styles.avgBanner}>
-              <NextImage src="/gold.webp" alt="골드" width={36} height={36} className={styles.avgBannerIcon} />
-              <div className={styles.avgBannerText}>
-                <span className={styles.avgBannerLabel}>단계 {selectedTier} 총 기댓값</span>
-                <span className={styles.avgBannerValue}>{totalGold.toLocaleString()} G</span>
-                {baseGold > 0 && (
-                  <span className={styles.avgBannerBreak}>
-                    <span className={styles.calcOp}>=</span>
-                    기본 <b>{baseGold.toLocaleString()}</b>
-                    <span className={styles.calcOp}>+</span>
-                    상자 평균 <b>{avgGold.toLocaleString()}</b>
-                  </span>
-                )}
-              </div>
-              <div className={styles.avgBannerCount}>
-                {(() => {
-                  let available = sortedRewards.filter(r => r.available);
-                  if (excludeAbilityStone) available = available.filter(r => r.name !== '어빌리티스톤');
-                  return available.length;
-                })()}종
-              </div>
-            </div>
-            {hasAbilityStone && (
-              <label className={styles.stoneExcludeLabel}>
-                <input
-                  type="checkbox"
-                  checked={excludeAbilityStone}
-                  onChange={(e) => setExcludeAbilityStone(e.target.checked)}
-                  className={styles.stoneExcludeCheck}
-                />
-                <span>어빌리티스톤 제외</span>
-                <span className={styles.stoneExcludeHint}>페온 가치로 인해 기댓값이 과도하게 높아 기본 제외됩니다. 포함하려면 체크 해제하세요.</span>
-              </label>
-            )}
-          </div>
-        )}
       </div>
 
       {/* 층 기본 보상 — 아래 모든 항목 값에 이미 포함돼 있다. 여기서는 총액만 보여준다. */}
@@ -465,6 +495,11 @@ export default function HellRewardCalculator() {
                   <div className={styles.rewardInfo}>
                     <div className={styles.rewardInfoRow}>
                       <span className={styles.rewardName}>{getDisplayName(reward.name)}</span>
+                      {reward.available && (
+                        <span className={`${styles.priceBadge} ${styles[`priceBadge_${getPriceTag(reward.name, reward.rawVal)}`]}`}>
+                          {getPriceTagLabel(getPriceTag(reward.name, reward.rawVal))}
+                        </span>
+                      )}
                     </div>
                     <div className={styles.rewardInfoRow}>
                       <span className={styles.rewardQtyGroup}>
@@ -493,22 +528,20 @@ export default function HellRewardCalculator() {
                     )}
                   </div>
                   {reward.available && (
-                    <span className={`${styles.expandIcon} ${isExpanded ? styles.expandIconOpen : ''}`}>
-                      &#9662;
+                    <span className={styles.expandIcon}>
+                      {isExpanded ? '▴' : '▾'}
                     </span>
                   )}
                 </div>
+                {/* 상대 가치 바 — 1위 항목 대비 이 항목의 가치 비율. 펼치면 상세 패널이 바닥이라 숨긴다 */}
+                {reward.available && !isExpanded && maxGoldValue > 0 && (
+                  <div
+                    className={styles.valueBar}
+                    style={{ width: `${Math.max(2, Math.round((reward.goldValue / maxGoldValue) * 100))}%` }}
+                  />
+                )}
                 {isExpanded && (
                   <div className={styles.detail}>
-                    {/* 가격 기준 배지(실시간 시세·고정가·환율)는 접힌 줄을 어지럽혀서 여기로 내렸다 */}
-                    <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>가격 기준</span>
-                      <span className={styles.detailValue}>
-                        <span className={`${styles.priceBadge} ${styles[`priceBadge_${getPriceTag(reward.name, reward.rawVal)}`]}`}>
-                          {getPriceTagLabel(getPriceTag(reward.name, reward.rawVal))}
-                        </span>
-                      </span>
-                    </div>
                     <div className={styles.detailRow}>
                       <span className={styles.detailLabel}>수량</span>
                       <span className={styles.detailValue}>{reward.rawVal}</span>
