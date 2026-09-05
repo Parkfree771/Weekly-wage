@@ -186,22 +186,22 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.2rem;
+  gap: 0.35rem;
   background: var(--card-body-bg-blue);
   border: 1.5px solid var(--color-primary);
   border-radius: 9px;
-  padding: 0.35rem 0.4rem;
+  padding: 0.6rem 0.75rem;
 }
 
 .rateRow {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
 }
 
 .rateIconGold {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 3px;
   object-fit: contain;
   flex-shrink: 0;
@@ -209,34 +209,34 @@
 
 /* 로얄 크리스탈 아이콘 — 원본에 여백이 많아 같은 박스면 작아 보인다. 골드보다 키워서 시각 크기를 맞춘다 */
 .rateIconRoyal {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 5px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .rateIconBlue {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 3px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
-/* 아랫줄 골드 아이콘 — 윗줄 로얄 슬롯(22px)과 같은 폭을 차지하되 그림은 작게 유지해
+/* 아랫줄 골드 아이콘 — 윗줄 로얄 슬롯(28px)과 같은 폭을 차지하되 그림은 작게 유지해
    두 줄의 입력칸 시작 위치가 정확히 겹치게 한다 */
 .rateIconPad {
-  width: 22px;
-  height: 22px;
-  padding: 3px;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
   box-sizing: border-box;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .rateFixed {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -246,19 +246,19 @@
   display: inline-block;
   width: 0.8em;
   text-align: center;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: var(--text-muted);
 }
 
 /* 두 줄의 밑줄 길이를 똑같이 — 블크 5자리(18333)도 들어가는 폭으로 통일 */
 .rateInput {
-  width: 44px;
+  width: 58px;
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--text-muted);
   color: var(--color-accent);
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 700;
   text-align: center;
   outline: none;
@@ -279,7 +279,7 @@
 
 /* 역산된 페온 골드값 한 줄 */
 .rateHint {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--text-muted);
   white-space: nowrap;
