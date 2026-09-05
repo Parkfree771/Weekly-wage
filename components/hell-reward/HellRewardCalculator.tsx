@@ -98,7 +98,8 @@ export default function HellRewardCalculator() {
   const [expandedReward, setExpandedReward] = useState<string | null>(null);
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [priceLoading, setPriceLoading] = useState(true);
-  const [exchangeRate, setExchangeRate] = useState<number>(18333); // 100골드 = 15원 (100:15) — 275000/15
+  // 환율 입력은 패키지 효율과 같은 "골드 100 : 로얄 N원" 한 칸. 블크 골드값은 여기서 역산한다.
+  const [rateText, setRateText] = useState<string>('15');
   const [excludeAbilityStone, setExcludeAbilityStone] = useState<boolean>(true);
 
   useEffect(() => {
@@ -108,9 +109,14 @@ export default function HellRewardCalculator() {
       .finally(() => setPriceLoading(false));
   }, []);
 
+  const wonPer100Gold = Number(rateText) || 0;
+  const exchangeRate = wonPer100Gold > 0 ? Math.round(275000 / wonPer100Gold) : 0; // 블크 100당 골드
   const peonGoldValue = 8.5 * (exchangeRate / 100);
   const specialRefiningCost = calcSpecialRefiningUnitCost(prices);
-  const wonPer100Gold = exchangeRate > 0 ? Math.round(275000 / exchangeRate) : 0;
+
+  function stepRate(delta: number) {
+    setRateText(String(Math.max(1, (Number(rateText) || 0) + delta)));
+  }
 
   const rewardData = getRewardData(mode);
   const rewards = Object.keys(rewardData);
@@ -288,15 +294,16 @@ export default function HellRewardCalculator() {
         </div>
       </div>
 
-      {/* 단계(층) */}
+      {/* 단계 */}
       <div className={`${styles.segTrack} ${styles.segTrackScroll}`}>
         {TIER_LABELS.map((label, idx) => (
           <button
             key={idx}
+            title={`${label}층`}
             className={`${styles.segBtn} ${styles.tierBtn} ${selectedTier === idx ? styles.segBtnActive : ''}`}
             onClick={() => { setSelectedTier(idx); setExpandedReward(null); }}
           >
-            {label}층
+            {idx}
           </button>
         ))}
       </div>
@@ -305,18 +312,9 @@ export default function HellRewardCalculator() {
       <div className={styles.infoRow}>
         {hasPrices && !priceLoading && (
           <div className={styles.heroCard}>
-            <NextImage src="/gold.webp" alt="골드" width={40} height={40} className={styles.heroIcon} />
-            <div className={styles.heroText}>
+            <div className={styles.heroTop}>
               <span className={styles.heroLabel}>
-                {selectedLevel} {mode === 'hell' ? '지옥' : '나락'} · {TIER_LABELS[selectedTier]}층 총 기댓값
-              </span>
-              <span className={styles.heroValue}>{totalGold.toLocaleString()} G</span>
-              <span className={styles.heroBreak}>
-                {baseGold > 0 ? (
-                  <>= 기본 <b>{baseGold.toLocaleString()}</b> + 상자 평균 <b>{avgGold.toLocaleString()}</b> ({avgTargets.length}종)</>
-                ) : (
-                  <>상자 보상 {avgTargets.length}종 평균</>
-                )}
+                {selectedLevel} {mode === 'hell' ? '지옥' : '나락'} {selectedTier}단계 총 기댓값
               </span>
               {hasAbilityStone && (
                 <label className={styles.stoneExcludeLabel}>
@@ -327,55 +325,64 @@ export default function HellRewardCalculator() {
                     className={styles.stoneExcludeCheck}
                   />
                   <span>어빌리티스톤 제외</span>
-                  <span className={styles.stoneExcludeHint}>페온 환산 가치가 커서 평균에서 기본 제외</span>
                 </label>
               )}
             </div>
+            <span className={styles.heroValue}>
+              <NextImage src="/gold.webp" alt="골드" width={24} height={24} />
+              {totalGold.toLocaleString()} G
+            </span>
+            <span className={styles.heroBreak}>
+              {baseGold > 0 ? (
+                <>기본 <b>{baseGold.toLocaleString()}</b> + 상자 평균 <b>{avgGold.toLocaleString()}</b> ({avgTargets.length}종)</>
+              ) : (
+                <>상자 보상 {avgTargets.length}종 평균</>
+              )}
+            </span>
           </div>
         )}
 
+        {/* 환율 — 패키지 효율과 같은 입력 (골드 100 : 로얄 N원, ± 스테퍼 + 밑줄 입력) */}
         <div className={styles.exchangeCard}>
-          <div className={styles.exchangeRatioRow}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img loading="lazy" decoding="async" src="/royal.webp" alt="" className={styles.exchangeIcon} />
-            <span className={styles.exchangeFixed}>2750</span>
-            <span className={styles.exchangeSep}>=</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img loading="lazy" decoding="async" src="/blue.webp" alt="" className={styles.exchangeIcon} />
-            <span className={styles.exchangeFixed}>100</span>
-            <span className={styles.exchangeSep}>=</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img loading="lazy" decoding="async" src="/gold.webp" alt="" className={styles.exchangeIcon} />
-            <input
-              type="number"
-              className={styles.exchangeInput}
-              value={exchangeRate || ''}
-              onChange={(e) => setExchangeRate(Number(e.target.value) || 0)}
-              placeholder="18333"
-              min={0}
-            />
-          </div>
-          <div className={styles.exchangeRatioRow}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img loading="lazy" decoding="async" src="/gold.webp" alt="" className={styles.exchangeIcon} />
-            <span className={styles.exchangeFixed}>100</span>
-            <span className={styles.exchangeSep}>=</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img loading="lazy" decoding="async" src="/royal.webp" alt="" className={styles.exchangeIcon} />
-            <input
-              type="number"
-              className={styles.exchangeInput}
-              value={wonPer100Gold || ''}
-              onChange={(e) => {
-                const v = Number(e.target.value) || 0;
-                setExchangeRate(v > 0 ? Math.round(275000 / v) : 0);
-              }}
-              placeholder="15"
-              min={0}
-            />
-          </div>
-          <div className={styles.exchangeResult}>
-            페온 1개 = {Math.floor(peonGoldValue).toLocaleString()}골드
+          <div className={styles.rateGroup}>
+            <div className={styles.rateRow}>
+              <button
+                type="button"
+                className={styles.rateStep}
+                onClick={() => stepRate(-1)}
+                aria-label="환율 1원 낮추기"
+              >
+                −
+              </button>
+              <div className={styles.rateBox}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/gold.webp" alt="골드" className={styles.rateIcon} loading="lazy" decoding="async" />
+                <span className={styles.rateFixed}>100</span>
+                <span className={styles.rateSep}>:</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/royal.webp" alt="로얄" className={styles.rateIconRoyal} loading="lazy" decoding="async" />
+                <input
+                  type="number"
+                  className={styles.rateInput}
+                  value={rateText}
+                  onChange={(e) => setRateText(e.target.value)}
+                  min={1}
+                  step="any"
+                  aria-label="환율 (100골드당 원화)"
+                />
+              </div>
+              <button
+                type="button"
+                className={styles.rateStep}
+                onClick={() => stepRate(1)}
+                aria-label="환율 1원 올리기"
+              >
+                +
+              </button>
+            </div>
+            <div className={styles.rateStatus}>
+              블크 100 = {exchangeRate.toLocaleString()}G · 페온 1개 = {Math.floor(peonGoldValue).toLocaleString()}G
+            </div>
           </div>
         </div>
       </div>

@@ -78,9 +78,9 @@
 }
 
 .tierBtn {
-  min-width: 58px;
+  min-width: 42px;
   padding: 0.6rem 0.4rem;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
 }
 
 /* ─── 총 기댓값 + 환율 ─── */
@@ -95,8 +95,9 @@
   flex: 1.5;
   min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 0.9rem;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
   padding: 1rem 1.25rem;
   border-radius: 12px;
   background: var(--card-bg);
@@ -104,24 +105,27 @@
   box-shadow: var(--shadow-sm);
 }
 
-.heroIcon {
-  flex-shrink: 0;
-}
-
-.heroText {
+/* 라벨(왼쪽) + 어빌리티스톤 제외(오른쪽) 한 줄 */
+.heroTop {
   display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
 }
 
 .heroLabel {
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .heroValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   font-size: 1.7rem;
   font-weight: 900;
   color: #f59e0b;
@@ -131,7 +135,6 @@
 }
 
 .heroBreak {
-  margin-top: 1px;
   font-size: 0.74rem;
   font-weight: 600;
   color: var(--text-muted);
@@ -146,15 +149,17 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 어빌리티스톤 제외 체크박스 — 기댓값 카드 안 마지막 줄 */
+/* 어빌리티스톤 제외 체크박스 */
 .stoneExcludeLabel {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
+  gap: 0.35rem;
   font-size: 0.74rem;
+  font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .stoneExcludeCheck {
@@ -165,74 +170,127 @@
   flex-shrink: 0;
 }
 
-.stoneExcludeHint {
-  font-size: 0.68rem;
-  opacity: 0.7;
-}
+/* ─── 환율 — /package 공통 환율 입력과 같은 형태 ───
+   바깥 프라이머리 윤곽 하나 + 안쪽은 얇은 구분선만 (상자 안에 상자를 겹치지 않는다) */
 
-/* 환율 — 보조 설정 */
 .exchangeCard {
   flex: 1;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-  padding: 0.7rem 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
 }
 
-.exchangeRatioRow {
+.rateGroup {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  border: 1.5px solid var(--color-primary);
+  border-radius: 10px;
+  background: var(--card-bg);
+  overflow: hidden;
 }
 
-.exchangeIcon {
+.rateRow {
+  display: inline-flex;
+  align-items: stretch;
+  height: 40px;
+}
+
+/* ± — 테두리 없이 칸만 나눠 갖는다 */
+.rateStep {
+  width: 38px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--color-primary);
+  font-size: 1.3rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rateStep:hover {
+  background: var(--color-primary-light);
+}
+
+.rateBox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 0.7rem;
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+}
+
+.rateIcon {
   width: 20px;
   height: 20px;
   object-fit: contain;
 }
 
-.exchangeFixed {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
+/* 로얄 크리스탈 아이콘 — 원본에 여백이 많아 같은 박스면 작아 보인다. 골드보다 키워서 시각 크기를 맞춘다 */
+.rateIconRoyal {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
 }
 
-.exchangeSep {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-weight: 600;
+.rateFixed {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
 }
 
-.exchangeInput {
-  width: 74px;
-  padding: 0.3rem 0.45rem;
-  border: 1.5px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font-size: 0.88rem;
-  font-weight: 700;
+.rateSep {
+  width: 0.8em;
   text-align: center;
-  outline: none;
-}
-
-.exchangeInput:focus {
-  border-color: var(--color-primary);
-}
-
-.exchangeResult {
-  font-size: 0.74rem;
+  font-size: 0.95rem;
+  font-weight: 800;
   color: var(--text-muted);
-  font-weight: 600;
+}
+
+/* 값이 비어 있어도 "여기 쓰는 칸"으로 읽혀야 한다 — 상자를 겹치는 대신 밑줄로 표시한다 */
+.rateInput {
+  box-sizing: border-box;
+  width: 3.2em;
+  padding: 0.1rem 0.15rem;
+  border: none;
+  border-bottom: 2px solid var(--text-muted);
+  border-radius: 0;
+  background: none;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 800;
+  text-align: center;
+  cursor: text;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.rateInput::-webkit-outer-spin-button,
+.rateInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.rateInput:focus {
+  outline: none;
+  border-bottom-color: var(--color-accent);
+}
+
+/* 상자 맨 아래 상태 띠 — 역산된 블크·페온 골드값 */
+.rateStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.5rem;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ─── 로딩 ─── */
@@ -592,8 +650,8 @@
   }
 
   .tierBtn {
-    min-width: 50px;
-    font-size: 0.78rem;
+    min-width: 38px;
+    font-size: 0.9rem;
     padding: 0.55rem 0.3rem;
   }
 
@@ -629,8 +687,8 @@
   }
 
   .tierBtn {
-    min-width: 44px;
-    font-size: 0.72rem;
+    min-width: 34px;
+    font-size: 0.85rem;
   }
 
   .heroCard {
