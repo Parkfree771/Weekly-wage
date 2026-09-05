@@ -3,7 +3,7 @@
 import { memo, useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import type { PackagePost, PackageItem, PackageType } from '@/types/package';
+import type { PackagePost, PackageItem } from '@/types/package';
 import {
   formatNumber,
   PRICE_BUNDLE_SIZE,
@@ -19,11 +19,12 @@ import {
   PROCESSED_GEM_BOX_GEM,
   getProcessedGemBoxUnitPrice,
   isNewReleasePost,
+  getDisplayOrder,
 } from '@/lib/package-shared';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
 import TrendArrow from '@/components/TrendArrow';
-import ReactionBar, { EMOJI_YELLOW } from '@/components/package/ReactionBar';
+import ReactionBar from '@/components/package/ReactionBar';
 import styles from './PackageGalleryCard.module.css';
 
 // recharts(~100KB)는 차트를 실제로 열 때만 받는다 — 갤러리 첫 로드에 섞이지 않게 동적 로드
@@ -41,14 +42,6 @@ type Props = {
   basePrices?: Record<string, number>;
 };
 
-function getBadgeClass(type: PackageType): string {
-  if (type === '3+1') return styles.badge31;
-  if (type === '2+1') return styles.badge21;
-  if (type === '3+보너스') return styles.badge31;
-  if (type === '가챠') return styles.badgeGacha;
-  return styles.badgeNormal;
-}
-
 function formatShortDate(timestamp: any): string {
   if (!timestamp) return '';
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -58,18 +51,55 @@ function formatShortDate(timestamp: any): string {
   return `${y}.${m}.${d}`;
 }
 
-// 갤러리 카드 아이콘 크기 오버라이드 (기본 42px, 셀 62px 고정)
+/**
+ * 갤러리 카드 아이콘 크기 오버라이드 (기본 42px, 셀 62px 고정).
+ *
+ * 크기를 아이템마다 따로 잡는 이유는 원본 그림의 여백이 제각각이기 때문이다.
+ * 예를 들어 영웅 젬 상자 3종은 같은 계열인데 원본이 다르다:
+ *   고정형(/fixed-hero-gem-select.webp) 64x64  — 상자가 프레임을 꽉 채운다
+ *   선택·랜덤(/gem-hero.webp)          256x244 — 상자 + 젬 5개라 요소 하나하나가 작다
+ * 같은 px 로 그리면 고정형만 커 보이므로, 여백이 많은 쪽을 더 크게 그려 눈에 보이는 크기를 맞춘다.
+ *
+ * 골드 코인·용숨/빙숨·지옥 영웅 티켓은 인라인 px 대신 getIconTweakClass 의 클래스로 잡는다
+ * (모바일 셀은 비율 % 라 px 로는 못 맞춘다).
+ */
+/**
+ * 그림 파일로 잡는 크기 — itemId 보다 먼저 본다.
+ *
+ * 선택(choice) 타입은 itemId 가 "choice_<템플릿id>" 가 아니라 고른 선택지의 시세 id(67400003:atk 등)라,
+ * 어느 상자에서 나왔는지를 itemId 만으로는 구분할 수 없다. 상자 그림은 그대로 남으므로 그걸로 가른다.
+ * (영웅 젬 선택 상자와 고정형 선택 상자는 itemId 가 똑같이 674… 로 시작한다)
+ */
+const GALLERY_ICON_BY_ICON: Record<string, number> = {
+  // 고정형 영웅 젬 선택 상자 · 가공 완료 젬 상자 — 원본 64x64 로 상자가 프레임을 꽉 채운다.
+  // 그림 파일로 잡기 전에는 674… 규칙에 걸려 58px 로 그려지고 있었고, 그게 옆 상자들보다 커 보였다.
+  // 여기서 한 단계만 내린다.
+  '/fixed-hero-gem-select.webp': 48,
+};
+
 const GALLERY_ICON_SIZE: Record<string, number> = {
-  // 골드 코인·용숨/빙숨·지옥 영웅 티켓은 인라인 px 대신 getIconTweakClass 의 클래스로 잡는다
-  // (모바일 셀은 비율 % 라 px 로는 못 맞춘다)
   'crystal_pheon': 54,
-  'expected_gem-choice': 54,
-  'expected_gem-hero-random': 54,
+
+  // 영웅 젬 상자 계열 — 여백 많은 그림(256x244)이라 키워야 다른 상자와 비슷해 보인다
+  'expected_gem-hero-random': 58,         // 랜덤
+  'expected_gem-choice': 56,              // 영웅/희귀 (128x128)
+
+  // 티켓류 — 그림이 세로로 길고 둘레 여백이 있어 기본 42px 이면 작아 보인다
+  'fixed_celestial-ticket': 54,
+  'fixed_naraka-legendary-ticket': 54,
+  'fixed_hell-legendary-ticket': 54,
+  'fixed_cube-ticket': 54,
+  'fixed_gem-reset-ticket': 54,
 };
 const GALLERY_ICON_RE: [RegExp, number][] = [
-  [/^674/, 54], // 젬 선택 아이템 (영웅 젬 상자에서 선택된 젬)
+  [/^674/, 58],        // 젬 선택 아이템 (영웅 젬 상자에서 선택된 젬 — 그림은 gem-hero.webp)
+  [/^expected_/, 56],   // 확률표 상자(젬 랜덤 등) — 상자 그림은 대체로 둘레 여백이 있다
+  // 확률 상자(등록자가 아이템·확률을 직접 담는 상자). itemId 가 probbox_<런타임 id> 라 정규식으로 잡는다.
+  // 원본이 800x800 정사각인데 둘레 여백이 있어 기본 42px 이면 유독 작아 보인다.
+  [/^probbox_/, 56],
 ];
-function getGalleryIconSize(itemId: string): number | undefined {
+function getGalleryIconSize(itemId: string, icon: string): number | undefined {
+  if (GALLERY_ICON_BY_ICON[icon]) return GALLERY_ICON_BY_ICON[icon];
   if (GALLERY_ICON_SIZE[itemId]) return GALLERY_ICON_SIZE[itemId];
   for (const [re, size] of GALLERY_ICON_RE) {
     if (re.test(itemId)) return size;
@@ -110,7 +140,7 @@ function ItemCellVisual({ item }: { item: PackageItem }) {
     );
   }
   if (item.icon) {
-    const size = getGalleryIconSize(item.itemId);
+    const size = getGalleryIconSize(item.itemId, getDisplayIcon(item.icon));
     return (
       /* eslint-disable-next-line @next/next/no-img-element */
       <img loading="lazy" decoding="async"
@@ -131,8 +161,11 @@ function ItemCellVisual({ item }: { item: PackageItem }) {
   );
 }
 
-// 이득률 % — 매트 단색 + 양 모서리 컷 칩 (이득 초록 / 손해 빨강)
-function BenefitPct({ v }: { v: number }) {
+/**
+ * 이득률 — 카드에서 제일 먼저 읽혀야 하는 숫자.
+ * 아제나 카드(AzenaBlessingGalleryCard)도 이걸 그대로 쓴다 — 같은 숫자는 같은 모양이어야 한다.
+ */
+export function BenefitPct({ v }: { v: number }) {
   return (
     <span className={`${styles.benefitBadge} ${v >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
       {v >= 0 ? '+' : ''}{v.toFixed(1)}%
@@ -149,39 +182,6 @@ function BenefitDelta({ d }: { d: number }) {
       <TrendArrow up={up} size={11} />
       {Math.abs(d).toFixed(1)}
     </span>
-  );
-}
-
-// 조회수 아이콘 — 누르는 게 아니라 움직일 이유가 없어 로티 대신 정지 SVG.
-// 예전 로티(doodle 586)처럼 "사람" 실루엣 — 머리 + 어깨. 반응 로티와 같은 톤
-// (선 = 글자색, 채움 = 이모지 노랑). 선 굵기는 VIEWS_STROKE 하나로 조절한다.
-// 그림을 0.72 배로 줄이므로 선도 같이 얇아진다 — 화면상 1.7px 정도가 되게 미리 굵혀 둔다
-const VIEWS_STROKE = 2.4;
-function ViewsIcon() {
-  return (
-    <svg width={24} height={24} viewBox="0 0 26 26" aria-hidden="true" style={{ flexShrink: 0 }}>
-      {/* 24px 상자는 로티와 같게 두고 그림만 안쪽으로 줄인다 — 알약 높이·정렬이 안 흔들린다 */}
-      <g transform="translate(13 13) scale(0.72) translate(-13 -13)">
-      {/* 어깨 — 위가 열린 둥근 몸통 */}
-      <path
-        d="M4.5 22.5c0-5 3.8-8.3 8.5-8.3s8.5 3.3 8.5 8.3"
-        fill={EMOJI_YELLOW}
-        stroke="var(--gc-text)"
-        strokeWidth={VIEWS_STROKE}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* 머리 */}
-      <circle
-        cx={13}
-        cy={8.2}
-        r={4.6}
-        fill={EMOJI_YELLOW}
-        stroke="var(--gc-text)"
-        strokeWidth={VIEWS_STROKE}
-      />
-      </g>
-    </svg>
   );
 }
 
@@ -650,11 +650,17 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
     bonusSelectableCount: 0,
   }), [post, checkedItems, bonusChecked]);
 
+  // 구성품을 그릴 순서 — 등록 순서가 아니라 계열순(자세한 건 getDisplayOrder 주석).
+  // 가챠는 룰렛 칸이라 자체 순서(gachaDisplayOrder)를 쓰므로 여기 해당 없다.
+  const itemOrder = useMemo(() => getDisplayOrder(post.items), [post.items]);
+  const bonusOrder = useMemo(
+    () => (post.bonusItems ? getDisplayOrder(post.bonusItems) : []),
+    [post.bonusItems],
+  );
+
   const cashGold = post.royalCrystalPrice * goldPerWon;
   const isBundle = post.packageType === '3+1' || post.packageType === '2+1';
   const isBonusPkg = post.packageType === '3+보너스';
-  // 보너스 판을 카드 아래 남는 자리로 내리면 메타 줄의 margin-top:auto 와 자리를 나눠 갖게 되므로
-  // 이 플래그로 메타 줄의 auto 를 끈다
   const showBonus = isBonusPkg && !!post.bonusItems && post.bonusItems.length > 0;
 
   // '1개 구매'는 보너스 가정 없이 순수 1회 구매 기준 (3+1/2+1과 동일한 원칙)
@@ -693,40 +699,76 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
 
   return (
     <article
-      className={`${styles.galleryCard} ${saleEnded ? styles.cardEnded : ''} ${dimmed ? styles.cardDimmed : ''}`}
+      className={`${styles.galleryCard} ${styles.cardStd} ${saleEnded ? styles.cardEnded : ''} ${dimmed ? styles.cardDimmed : ''}`}
       onClick={handleCardClick}
       style={{ cursor: 'pointer' }}
     >
-      {/* 흐린 화면 위에 얹히는 글씨 — 판매 종료 / 줄 내려서 판매 기간 (카드 중앙) */}
+      {/* 판매 종료 안내 — 흐려진 가운데(구성품·계산 결과) 위에 얹힌다.
+          '해제'를 안내 바로 아래 둔 이유: 읽은 자리에서 곧바로 누르게 하려는 것이다.
+          예전처럼 머리 줄 구석에 있으면 안내와 조작이 카드 양 끝으로 갈라져 눈이 두 번 움직인다.
+          오버레이는 pointer-events:none 이라 아래 아이템 체크·환율 입력이 그대로 살아 있고,
+          버튼만 auto 로 되살려 받는다. */}
       {dimmed && (
         <div className={styles.saleEndedOverlay}>
           <span className={styles.saleEndedTitle}>판매 종료</span>
           {salePeriod && <span className={styles.saleEndedPeriodText}>{salePeriod}</span>}
+          <button
+            type="button"
+            className={`${styles.saleRevealBtn} ${styles.saleRevealBtnOverlay}`}
+            onClick={(e) => { e.stopPropagation(); setSaleRevealed(true); }}
+          >
+            해제
+          </button>
         </div>
       )}
-      {/* 우측 상단 해제 버튼 — 비교하려고 잠깐 원래 카드로 보기 */}
-      {saleEnded && (
-        <button
-          type="button"
-          className={styles.saleRevealBtn}
-          onClick={(e) => { e.stopPropagation(); setSaleRevealed((v) => !v); }}
-          title={salePeriod ? `판매기간 ${salePeriod}` : '판매 종료'}
-        >
-          {saleRevealed ? '복원' : '해제'}
-        </button>
-      )}
-      {/* 왼쪽: 아이템 목록 (배경 이미지) */}
-      <div className={styles.leftBox}>
-        <div className={styles.leftHeader}>
-          {/* 신규 출시 NEW — 제목 앞 강조 배지 (판매 종료되면 isNewReleasePost 가 false 라 안 뜬다) */}
-          {isNewReleasePost(post) && (
-            <span className={styles.badgeNew}>NEW</span>
-          )}
+      {/* ─── 머리 줄 — 카드 전체 폭 ───
+          왼쪽 NEW·제목, 오른쪽 조작(추이 · 판매 종료면 복원).
+          타입·N선택 배지는 두지 않는다 — 타입은 계산 결과의 "3+1 이득률" 라벨이 이미 말해 주고,
+          카드가 여러 장 늘어선 갤러리에서 배지 줄까지 반복되면 읽을 게 늘기만 했다.
+          NEW 만 남기되 상자 없이 글자로 둔다(신작순 정렬이 있어 실제로 찾는 표시다).
+          좌/우 박스 위에 얹으므로 제목이 아이템 칸 폭에 눌려 잘리지 않는다.
+          판매 종료 카드에서도 이 줄만은 흐려지지 않는다 — 뭐였는지는 읽히고, 내용만 죽인다. */}
+      <header className={styles.cardHead}>
+        <div className={styles.cardHeadLeft}>
+          {/* 신규 출시 NEW — 배지가 아니라 글자로만 (판매 종료되면 isNewReleasePost 가 false 라 안 뜬다) */}
+          {isNewReleasePost(post) && <span className={styles.badgeNew}>NEW</span>}
           <h3 className={styles.cardTitle}>{post.title}</h3>
         </div>
+        <div className={styles.cardHeadRight}>
+          {/* 가치 추이 — 시세 변동에 따라 이 패키지의 이득률이 어떻게 움직였는지 (카드 하단 패널 토글) */}
+          <button
+            type="button"
+            className={`${styles.chartBadgeBtn} ${chartOpen ? styles.chartBadgeBtnOpen : ''}`}
+            onClick={(e) => { e.stopPropagation(); setChartOpen((v) => !v); }}
+            aria-expanded={chartOpen}
+            aria-label="가치 추이 차트 열기/닫기"
+            title="가치 추이"
+          >
+            <svg viewBox="0 0 14 14" className={styles.chartBadgeIcon} aria-hidden="true">
+              <polyline points="1.5 11.5 5 6.5 8 8.5 12.5 2.5" />
+            </svg>
+            추이
+          </button>
+          {/* 복원 — 흐림을 푼 상태에서만 뜬다. 이때 카드는 평범한 카드처럼 보이므로
+              조작도 다른 배지들과 같은 머리 줄에 있는 게 맞다.
+              (흐린 상태의 '해제'는 가운데 안내 아래에 있다) */}
+          {saleEnded && saleRevealed && (
+            <button
+              type="button"
+              className={styles.saleRevealBtn}
+              onClick={(e) => { e.stopPropagation(); setSaleRevealed(false); }}
+              title={salePeriod ? `판매기간 ${salePeriod}` : '판매 종료'}
+            >
+              복원
+            </button>
+          )}
+        </div>
+      </header>
 
+      {/* 왼쪽: 아이템 목록 (배경 이미지) */}
+      <div className={styles.leftBox}>
         <div className={`${styles.itemGrid} ${isGacha ? '' : styles.itemGridCapped}`}>
-          {(isGacha ? gachaDisplayOrder : post.items.map((_, i) => i)).map((idx, renderIdx) => {
+          {(isGacha ? gachaDisplayOrder : itemOrder).map((idx, renderIdx) => {
             const item = post.items[idx];
             const displayIdx = isGacha ? gachaDisplayOrder.indexOf(idx) : idx;
             const isChecked = checkedItems[idx] !== false;
@@ -799,7 +841,8 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
               )}
             </div>
             <div className={styles.bonusGrid}>
-              {post.bonusItems.map((item, idx) => {
+              {bonusOrder.map((idx) => {
+                const item = post.bonusItems![idx];
                 const isChecked = bonusChecked[idx] !== false;
                 return (
                   <div
@@ -823,52 +866,11 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
           </div>
         )}
 
-        <div className={`${styles.leftMeta} ${showBonus ? styles.leftMetaTight : ''}`}>
-          {/* 왼쪽: 따봉 · 흠 · 조회수 (로티 세 개, 같은 노란 이모지 톤). 카드 클릭 이동 제외 */}
-          <div className={styles.metaLeft}>
-            <ReactionBar postId={post.id} likeCount={post.likeCount || 0} sosoCount={post.sosoCount || 0} />
-            {/* 조회수 — 반응 버튼과 같은 알약 생김새(누를 수는 없다) */}
-            <span className={`${styles.reactionBtn} ${styles.metaViews}`} title="조회수">
-              <ViewsIcon />
-              <span className={styles.reactionCount}>{post.viewCount || 0}</span>
-            </span>
-          </div>
-          {/* 오른쪽: 작성자 · 날짜 — 글자만 */}
-          <div className={styles.metaRight}>
-            <span className={styles.metaAuthor}>{post.authorName || '익명'}</span>
-            <span className={styles.metaDate}>{formatShortDate(post.createdAt)}</span>
-          </div>
-        </div>
       </div>
 
       {/* 오른쪽: 계산 결과 */}
       <div className={styles.rightBox}>
         <div className={styles.rightTop}>
-          {/* 타입·N선택 배지 — 제목 줄에서 옮겨와 계산 결과 최상단에 표시 */}
-          <div className={styles.rightBadgeRow}>
-            <span className={`${styles.cardBadge} ${getBadgeClass(post.packageType)}`}>
-              {post.packageType}
-            </span>
-            {post.selectableCount != null && post.selectableCount > 0 && (
-              <span className={`${styles.cardBadge} ${styles.badgeSelect}`}>
-                {post.selectableCount}선택
-              </span>
-            )}
-            {/* 가치 추이 — 시세 변동에 따라 이 패키지의 이득률이 어떻게 움직였는지 (카드 하단 패널 토글) */}
-            <button
-              type="button"
-              className={`${styles.chartBadgeBtn} ${chartOpen ? styles.chartBadgeBtnOpen : ''}`}
-              onClick={(e) => { e.stopPropagation(); setChartOpen((v) => !v); }}
-              aria-expanded={chartOpen}
-              aria-label="가치 추이 차트 열기/닫기"
-              title="가치 추이"
-            >
-              <svg viewBox="0 0 14 14" className={styles.chartBadgeIcon} aria-hidden="true">
-                <polyline points="1.5 11.5 5 6.5 8 8.5 12.5 2.5" />
-              </svg>
-              추이
-            </button>
-          </div>
           {/* 패키지 가격 */}
           <div className={styles.resultRow}>
             <span className={styles.resultLabel}>패키지 가격</span>
@@ -909,10 +911,10 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
             </span>
           </div>
 
-          {/* 1개 구매 결과 — 입체 텍스트 % (이득 초록 / 손해 빨강) */}
+          {/* 이득률 — 1개 구매 기준 (묶음 보정 없는 순수 1회) */}
           {goldPerWon > 0 && !isGacha && (
             <div className={styles.resultRow}>
-              <span className={styles.resultLabel}>1개 구매</span>
+              <span className={styles.resultLabel}>이득률</span>
               {benefitDelta !== null && <BenefitDelta d={benefitDelta} />}
               <BenefitPct v={singleBenefit} />
             </div>
@@ -942,7 +944,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
               </div>
               {goldPerWon > 0 && (
                 <div className={styles.resultRow}>
-                  <span className={styles.resultLabel}>{post.packageType} 구매</span>
+                  <span className={styles.resultLabel}>{post.packageType} 이득률</span>
                   <BenefitPct v={bundleBenefit} />
                 </div>
               )}
@@ -1059,8 +1061,23 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
         </div>
       </div>
 
-      {/* 가치 추이 패널 — 카드 하단 전체 폭으로 공간이 열리며 나온다.
-          카드마다 좌/우 박스 높이가 달라도 이 패널은 항상 같은 자리·같은 폭·같은 높이라 일관적이다.
+      {/* ─── 발 줄 — 카드 전체 폭 ───
+          왼쪽은 누를 수 있는 것(따봉·흠)만, 오른쪽은 읽기만 하는 것(조회·작성자·날짜).
+          알약 테두리를 반응 둘에만 남겨 "테두리가 있으면 누르는 것" 규칙이 카드 안에서 지켜진다.
+          반응 알약만 상세 이동에서 빠진다(ReactionBar 안의 data-nonav) — 나머지 여백은 카드와 같다 */}
+      <footer className={styles.cardFoot}>
+        <ReactionBar postId={post.id} likeCount={post.likeCount || 0} sosoCount={post.sosoCount || 0} />
+        <div className={styles.cardFootMeta}>
+          <span className={styles.metaViews}>조회 {formatNumber(post.viewCount || 0)}</span>
+          <span className={styles.metaAuthor}>{post.authorName || '익명'}</span>
+          <span className={styles.metaDate}>{formatShortDate(post.createdAt)}</span>
+        </div>
+      </footer>
+
+      {/* 가치 추이 패널 — 카드 아래로 공간이 열리며 나온다.
+          갤러리는 그리드라 한 행의 높이가 제일 높은 카드를 따르므로 옆 카드도 같이 길어지는데,
+          옆 카드는 내용을 위에 그대로 두고 남는 높이를 아래 빈자리로만 보여 준다
+          (.cardStd 의 "늘어나도 내용은 위에" 규칙).
           data-nonav: 패널 안 클릭이 카드 상세 이동으로 새지 않게 한다 */}
       {chartOpen && (
         <div className={styles.chartPanel} data-nonav>

@@ -9,7 +9,7 @@ import ConsoleFilter from '@/components/ConsoleFilter';
 import { SITE_URL } from '@/lib/site-config';
 import { MOBILE_VIEWPORT_SCALE } from '@/components/ads/adConfig';
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_KR, JetBrains_Mono } from "next/font/google";
+import { Noto_Sans_KR, JetBrains_Mono, Outfit } from "next/font/google";
 import Script from "next/script";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./globals.css";
@@ -29,6 +29,27 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
   preload: true,
   variable: "--font-mono",
+});
+
+/**
+ * 화면에서 크게 세우는 숫자 전용 (--font-num) — Outfit, SIL OFL 1.1 (상업용 무료).
+ *
+ * 본문(JetBrains Mono)은 코드용이라 굵게 키우면 획이 뭉개진다. 게다가 이 프로젝트가 받는
+ * 굵기는 700 까지인데 숫자 자리들이 800~900 을 쓰고 있어, 브라우저가 없는 굵기를 억지로
+ * 늘려 그리는 가짜 굵기 상태였다. Outfit 은 100~900 이 전부 진짜라 그 문제가 사라진다.
+ *
+ * weight 를 안 넘기는 이유: Outfit 은 가변 폰트라 이렇게 하면 파일 하나로 100~900 을 전부
+ * 덮는다. 굵기를 배열로 지정하면 굵기마다 정적 파일을 따로 받아 오히려 무거워진다.
+ *
+ * preload:true — 사이트 공통 .font-numeric(globals.css)이 이 서체를 쓰므로 시세·차트·계산기
+ * 어디를 열어도 첫 화면에 숫자가 나온다. 미리 받지 않으면 매 페이지마다 숫자가 본문 폰트로
+ * 잠깐 그려졌다 바뀐다(FOUT).
+ */
+const outfit = Outfit({
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  variable: "--font-num",
 });
 
 // 축소 렌더(0.8)는 유지한다. 대신 모바일 광고만 역배율로 되돌려 규격대로 노출시킨다
@@ -168,7 +189,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${notoSansKr.className} ${jetbrainsMono.variable}`}>
+      <body className={`${notoSansKr.className} ${jetbrainsMono.variable} ${outfit.variable}`}>
         <ThemeProvider>
           <ConsoleFilter />
           <AuthProvider>

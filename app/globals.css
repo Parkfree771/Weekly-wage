@@ -13,6 +13,15 @@
   --color-accent-light: rgba(232, 114, 42, 0.1);
   --color-accent-dark: #d4621e;
 
+  /* 골드 금액 글자색 — 액센트(주황)와 따로 둔다.
+     액센트는 판·테두리·버튼을 칠하는 색이라 글자로 쓰면 주황으로 읽히는데,
+     이 숫자는 "골드"라서 금색으로 읽혀야 한다.
+
+     밝은 배경에서는 코인(/gold.webp) 색을 그대로 못 쓴다 — 흰 바탕 대비 1.9:1 이라
+     글자가 아예 안 보인다. 금색 색상(hue 45도 근처)은 유지하고 밝기만
+     흰 바탕 대비 4.9:1 이 되는 데까지 내린 값이다. */
+  --gold-text: #8f6a00;
+
   /* Legacy brand aliases */
   --brand-hue: 228;
   --brand-saturation: 51%;
@@ -124,6 +133,9 @@
   --color-accent: #D4A54A;
   --color-accent-light: rgba(212, 165, 74, 0.15);
   --color-accent-dark: #c4952e;
+
+  /* 어두운 판 위에서는 코인 색을 그대로 올릴 수 있다 (카드 배경 대비 약 9.7:1) */
+  --gold-text: #f5c542;
 
   --brand-saturation: 45%;
   --brand-lightness: 63%;
@@ -1375,12 +1387,20 @@ html, body {
 }
 
 /* ==========================================================================
-   숫자 데이터용 유틸리티 — 모노스페이스 + tabular-nums (자릿수 정렬)
+   숫자 데이터용 유틸리티 — 사이트 전체 공통
+
+   서체는 Outfit(--font-num, app/layout.tsx 에서 선언). 본문 JetBrains Mono 는 코드용이라
+   시세·골드처럼 크게 세우는 숫자에는 획이 뻣뻣하고, 무엇보다 700 까지만 받아 두고 800~900 을
+   쓰던 자리들이 가짜 굵기로 그려지고 있었다. Outfit 은 100~900 이 전부 진짜다.
+
+   tabular-nums 는 그대로 둔다 — Outfit 은 비례 폭이라 시세 표·차트처럼 숫자가 세로로
+   줄 맞춰야 하는 곳에서는 이 선언이 자릿수 폭을 잡아 준다. 뒤에 --font-mono 를 남겨 둔 것도
+   같은 이유의 안전장치다(Outfit 이 아직 안 받아졌을 때 폭이 흔들리지 않게).
    ========================================================================== */
 
 .font-numeric,
 .font-numeric.font-numeric {
-  font-family: var(--font-mono), monospace !important;
+  font-family: var(--font-num), var(--font-mono), monospace !important;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
@@ -1388,7 +1408,7 @@ html, body {
 /* 대시보드/차트 숫자도 동일 */
 .price-dashboard-item .price-value,
 .price-dashboard-item .price-change {
-  font-family: var(--font-mono), monospace !important;
+  font-family: var(--font-num), var(--font-mono), monospace !important;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
@@ -1431,12 +1451,17 @@ html, body {
   flex-shrink: 0;
 }
 
+/* 레일과 콘텐츠 사이 간격. 레일(220px) 안에서 광고(160px)가 가운데 서므로
+   광고 가장자리부터 콘텐츠까지는 30px(레일 여백) + 아래 값이 된다.
+   이 값을 키워도 AdLayout 의 AD_EXTRA(456)는 그대로 둔다 — 껍데기 최대 폭이 고정이라
+   늘어난 간격만큼 가운데 콘텐츠가 좁아질 뿐, 레일이 뜨는 화면 폭 기준은 안 올라간다.
+   (AD_EXTRA 를 같이 올리면 좁은 데스크톱에서 레일이 아예 안 뜬다) */
 .side-rail-left {
-  margin-right: 8px;
+  margin-right: 26px;
 }
 
 .side-rail-right {
-  margin-left: 8px;
+  margin-left: 26px;
 }
 
 .side-rail-sticky {

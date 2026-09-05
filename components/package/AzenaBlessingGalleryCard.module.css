@@ -58,6 +58,16 @@
   gap: 0;
 }
 
+/* 아트 높이는 여기서 직접 잡는다.
+   일반 갤러리 카드는 제목·메타가 머리 줄/발 줄로 빠지면서 .leftBox 최소 높이를 190px 로
+   낮췄는데, 아제나 카드는 같은 .leftBox 를 쓰면서 그 두 줄이 없다 — 낮춘 만큼 아트가
+   그대로 깎인다. 그래서 예전 값(데스크톱 270px / 모바일 14.5rem)을 여기서 되돌린다.
+   클래스를 두 번 겹쳐 쓴 건 .leftBox 와 특정도를 벌려 두려는 것 —
+   둘 다 클래스 하나짜리라 CSS 번들에 실리는 순서에 따라 승부가 뒤집힐 수 있다. */
+.leftBoxArt.leftBoxArt {
+  min-height: 270px;
+}
+
 .hero {
   position: relative;
   flex: 1 1 auto;
@@ -271,6 +281,11 @@
 
 /* ─── 모바일 — 결과 칸(최소 170px)에 아이콘·이름·± 입력을 한 줄로 넣기 위해 전부 축소 ─── */
 @media (max-width: 576px) {
+  /* 예전에는 .galleryCard 의 min-height:14.5rem 이 이 칸을 늘려 줬다 */
+  .leftBoxArt.leftBoxArt {
+    min-height: 14.5rem;
+  }
+
   .customRows {
     gap: 3px;
     margin-top: 3px;

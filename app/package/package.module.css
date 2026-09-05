@@ -5,17 +5,51 @@
   --pkg-primary-light: var(--color-primary-light);
   --pkg-primary-dark: var(--color-primary-dark);
 
-  /* 효율 배지 색 — 기준 토글이 이 두 변수를 바꾸고, 카드의 이득/손해 배지가 그대로 따라간다.
+  /* 효율 색 — 기준 토글이 이 두 변수를 바꾸고, 최저가 버튼 채움과 카드 이득률이 함께 따라간다.
      평균가(기본)는 차분한 매트, 실시간은 같은 색상을 선명하게 올린 값.
      색상(초록=이득 / 빨강=손해)은 유지하고 채도만 올린다 — 색을 바꾸면 이득·손해가 헷갈린다. */
   --benefit-up: #35815a;
   --benefit-down: #a04a44;
+
+  /* 글자로 쓰는 이득률 — 위 두 값은 흰 글씨를 얹는 채움색이라 글자로 올리면 탁하다.
+     맨 글자로 읽혀야 하므로 흰 바탕에서 버티는 선까지만 밝힌다
+     (초록 4.1:1 / 빨강 4.6:1 — 이득률은 1.52rem 이라 큰 글자 기준 3:1 을 넉넉히 넘는다). */
+  --benefit-up-text: #2a8f5a;
+  --benefit-down-text: #c0453c;
+
+  /* 이득률에만 붙는 입체감 — 사이트 공통 언어(하드 엣지 오프셋 그림자, 블러 0)를
+     판이 아니라 글자에 적용한 것이다. PriceEventCompare 카드가 쓰는 `2px 2px 0 0` 과
+     같은 문법·같은 대각 방향이라 이 사이트에서 새 장치로 읽히지 않는다.
+
+     테두리처럼 글자를 둘러싸지 않고 오른쪽 아래 한 방향으로만 지므로,
+     "떠 있다"는 느낌만 남고 숫자 형태는 그대로 읽힌다.
+     색은 글자와 같은 계열의 어두운 쪽 — 회색 그림자를 쓰면 숫자가 탁해진다.
+     em 단위라 카드(1.42rem)와 모바일(1.14rem)에서 같은 비율로 따라간다. */
+  --benefit-up-lift: 0.055em 0.055em 0 rgba(15, 76, 45, 0.3);
+  --benefit-down-lift: 0.055em 0.055em 0 rgba(110, 26, 20, 0.3);
 }
 
-/* 실시간 최저가 기준 — 토글 채움색과 모든 카드 효율 배지가 한꺼번에 선명해진다 */
+/* 실시간 최저가 기준 — 토글 채움색과 모든 카드 이득률이 한꺼번에 선명해진다 */
 .pageWrapper[data-basis='live'] {
   --benefit-up: #0ea86a;
   --benefit-down: #d8453b;
+  --benefit-up-text: #0ea86a;
+  --benefit-down-text: #d8453b;
+}
+
+/* 다크는 어두운 판이라 밝은 쪽으로 띄운다.
+   그림자도 어두운 초록·빨강 대신 검정으로 바꾼다 — 어두운 판 위에서 어두운 색상 그림자는
+   배경에 묻혀 아무 효과가 없다. */
+:global([data-theme='dark']) .pageWrapper {
+  --benefit-up-text: #4ade80;
+  --benefit-down-text: #f87171;
+  --benefit-up-lift: 0.055em 0.055em 0 rgba(0, 0, 0, 0.5);
+  --benefit-down-lift: 0.055em 0.055em 0 rgba(0, 0, 0, 0.5);
+}
+
+:global([data-theme='dark']) .pageWrapper[data-basis='live'] {
+  --benefit-up-text: #34e89b;
+  --benefit-down-text: #ff7a6e;
 }
 
 /* 헤더 */
@@ -432,6 +466,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
   gap: 1.25rem;
+  /* align-items 는 그리드 기본값(stretch)을 그대로 둔다 —
+     3+1·3+보너스처럼 내용이 많아 길어진 카드에 옆 카드가 맞춰 서야 행이 가지런하다. */
 }
 
 /* 스켈레톤 */
@@ -1430,6 +1466,9 @@
    카드 위에 얹으면 거의 안 보여서 같은 색조의 진한 값을 따로 쓴다. */
 .itemCard {
   position: relative;
+  /* 그리드 아이템 기본값(min-width:auto)이면 안쪽에 줄바꿈 안 되는 글자가 있을 때
+     칸 폭을 넘어서까지 벌어진다 — 0 으로 눌러 두어야 이름이 … 로 잘리고 폭이 일정해진다 */
+  min-width: 0;
   background: var(--card-bg);
   border: 2px solid rgba(59, 80, 181, 0.34);
   border-radius: 12px;
@@ -1456,7 +1495,9 @@
   border-color: rgba(249, 115, 22, 0.45);
 }
 
-/* 선택 상자(choiceBox): 후보가 많아 기본 셀(160px)에서 줄바꿈이 심하므로 2칸만큼만 확장 */
+/* 선택 상자(choiceBox)만 2칸으로 확장한다 — 후보가 누를 수 있는 버튼이라 가로로 늘어놓아야
+   손댈 자리가 나온다. 확률 상자·확률표 상자는 읽기만 하는 목록이라 세로로 압축했고(.itemCardProbList),
+   그래서 다른 아이템 카드와 같은 한 칸 폭으로 되돌렸다. */
 .itemCardFull {
   grid-column: span 2;
 }
@@ -1465,6 +1506,141 @@
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+/* ─── 후보 목록 접기 ───
+   확률 상자·확률표 상자는 후보가 여럿이라 펼쳐 두면 이 카드만 세로로 길어져
+   아이템 격자에서 혼자 튄다. 기본은 접어 두어 다른 아이템 카드와 같은 높이로 두고,
+   보고 싶을 때만 연다. 기댓값·소계 같은 핵심 수치는 접힌 상태에서도 카드 아래에 그대로 있다. */
+.itemCardFold {
+  width: 100%;
+}
+
+.itemCardFoldHead {
+  display: flex; /* summary 를 flex 로 두면 브라우저 기본 삼각형 마커가 사라진다 */
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0;
+  list-style: none;
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.itemCardFoldHead::-webkit-details-marker {
+  display: none;
+}
+
+/* 접힘 머리에 늘어놓는 후보 아이콘 — 펼치지 않아도 무엇이 든 상자인지 알아보게 한다 */
+.itemCardFoldIcons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-width: 0;
+}
+
+.itemCardFoldIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* 다 못 보여준 나머지 개수 */
+.itemCardFoldMore {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 펼침 표시 — 아이콘 파일 없이 테두리로 그린 작은 삼각형 */
+.itemCardFoldHead::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  transition: transform 0.15s;
+}
+
+.itemCardFold[open] .itemCardFoldHead::after {
+  transform: rotate(180deg);
+}
+
+.itemCardFoldHead:hover {
+  color: var(--text-secondary);
+}
+
+.itemCardFold[open] .itemCardProbList {
+  margin-top: 0.3rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .itemCardFoldHead::after {
+    transition: none;
+  }
+}
+
+/* ─── 확률 상자·확률표 상자의 후보 목록 ───
+   아이템 카드는 폭이 160px 남짓인데 후보 한 줄에 이름·개수·확률·골드를 다 넣으면
+   가로로 넘쳐, wrap 으로 접히면서 줄마다 폭이 달라 들쭉날쭉해졌다.
+   이름 줄과 수치 줄로 나눠 세로로만 쌓고 이름은 넘치면 자른다(전체 이름은 title 에).
+   그래야 이 카드도 다른 아이템 카드와 같은 규격으로 남는다. */
+.itemCardProbList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.itemCardProbRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.4rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--input-bg);
+  text-align: left;
+  min-width: 0;
+}
+
+.itemCardProbText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.itemCardProbName {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemCardProbMeta {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 확률은 이 상자에서 제일 먼저 읽어야 하는 값이라 한 톤 세운다 */
+.itemCardProbPct {
+  color: var(--color-primary);
 }
 
 .itemCardChoicesWide .itemCardChoiceBtn {
@@ -1578,6 +1754,14 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   min-height: 2.2em;
+}
+
+/* 제목 아래 한 줄 — 계산 방식 같은 꼬리말. 제목이 두 줄 클램프라 같이 두면 이름이 잘린다 */
+.itemCardNameNote {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.2;
 }
 
 .itemCardBottom {
@@ -1783,9 +1967,21 @@
 
 /* 숫자는 절대 줄바꿈되지 않게 한다 — 좁은 폭에서 "1,680,\n000" 처럼 끊기면 읽을 수 없다.
    폭이 모자라면 왼쪽 라벨이 대신 줄바꿈된다. */
+/* ─── 숫자 폰트 (--font-num = Outfit, app/layout.tsx 에서 선언) ───
+   갤러리 카드와 같은 서체를 쓴다 — 카드에서 눌러 들어온 상세에서 같은 숫자가
+   다른 글씨로 보이면 안 된다. 굵기 기준도 카드 쪽 주석과 같다(900 대신 800). */
+.resultRowValue,
+.resultRowValueGold,
+.resultBenefitBadge,
+.gachaResultBenefit {
+  font-family: var(--font-num), var(--font-mono), 'Noto Sans KR', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
 .resultRowValue {
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -1794,8 +1990,8 @@
 
 .resultRowValueGold {
   font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--color-accent);
+  font-weight: 600;
+  color: var(--gold-text);
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -1803,9 +1999,9 @@
 
 /* 골드 인라인 아이콘 */
 .goldIconInline {
-  width: 18px;
-  height: 18px;
-  vertical-align: -3px;
+  width: 21px;
+  height: 21px;
+  vertical-align: -4px;
   margin-right: 3px;
 }
 
@@ -1823,12 +2019,10 @@
   display: inline-flex;
   align-items: center;
   padding: 0.35rem 0.9rem;
-  font-size: 1.15rem;
-  font-weight: 900;
+  font-size: 1.16rem;
+  font-weight: 700;
   color: #fff;
-  font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  letter-spacing: 0.3px;
   clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
@@ -2138,9 +2332,9 @@
   }
 
   .goldIconInline {
-    width: 16px;
-    height: 16px;
-    vertical-align: -3px;
+    width: 19px;
+    height: 19px;
+    vertical-align: -4px;
   }
 
   .resultBenefitBadge {
@@ -3227,8 +3421,8 @@
 }
 
 .gachaResultBenefit {
-  font-size: 1.15rem;
-  font-weight: 800;
+  font-size: 1.16rem;
+  font-weight: 700;
   margin-top: 0.25rem;
 }
 

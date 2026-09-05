@@ -23,6 +23,7 @@ import {
 } from '@/lib/hell-reward-calc';
 import {
   formatNumber,
+  getDisplayOrder,
   CRYSTAL_PER_UNIT_FALLBACK,
   getItemUnitPrice,
   getFixedGemSelectUnitPrice,
@@ -1546,7 +1547,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
 
               {detailGoldPerWon > 0 && pricesReady && (
                 <div className={styles.resultRow}>
-                  <span className={styles.resultRowLabel}>1개 구매</span>
+                  <span className={styles.resultRowLabel}>이득률</span>
                   <BenefitBadge v={singleBenefit} />
                 </div>
               )}
@@ -1561,7 +1562,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                   </div>
                   {detailGoldPerWon > 0 && pricesReady && (
                     <div className={styles.resultRow}>
-                      <span className={styles.resultRowLabel}>{post.packageType} 구매</span>
+                      <span className={styles.resultRowLabel}>{post.packageType} 이득률</span>
                       <BenefitBadge v={bundleBenefit} />
                     </div>
                   )}
@@ -1645,7 +1646,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
               아이템 구성 ({post.items.length}종)
             </h2>
             <div className={styles.itemCardsGrid}>
-              {post.items.map((item, idx) => {
+              {getDisplayOrder(post.items).map((idx) => {
+                const item = post.items[idx];
                 const effective = getEffectiveItem(item, idx);
                 const isFixed = item.goldOverride != null;
                 const effectiveItemId =
@@ -1672,7 +1674,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 return (
                   <div
                     key={idx}
-                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardChoice : ''} ${(hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardFull : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
+                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
                     title={isRiftRun ? riftRunTooltip(effectiveItemId) : undefined}
                   >
                     <label className={styles.itemCardCheckLabel} onClick={(e) => e.stopPropagation()}>
@@ -1718,11 +1720,14 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                         : hasChoiceBox
                         ? `${item.name} (최대 ${item.choiceBoxPickCount || 1}개 선택)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
                         : hasProbBox
-                        ? `${item.name} (확률 기댓값)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
+                        ? `${item.name}${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
                         : item.icon === FIXED_GEM_SELECT_ICON && hasChoices
                         ? `고정형 영웅 젬 선택 상자 ×${effectiveQty.toLocaleString()}`
                         : `${shortenItemName(effective.name)} ×${effectiveQty.toLocaleString()}`}
                     </div>
+                    {/* 계산 방식은 제목에 붙이지 않고 아래 줄로 내린다 — 제목이 두 줄 클램프라
+                        같은 줄에 두면 정작 상자 이름이 잘렸다 */}
+                    {hasProbBox && <div className={styles.itemCardNameNote}>확률 기댓값</div>}
                     {renderTicketTierSelect(item.itemId, item.name)}
 
                     {hasChoices && item.choiceOptions!.length <= 3 && !isRiftRun && (
@@ -1785,34 +1790,101 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                     )}
 
                     {hasProbBox && (
-                      <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
+                      <details className={styles.itemCardFold}>
+                        {/* 펼치지 않아도 "무엇이 든 상자인지" 보이게 후보 아이콘을 늘어놓는다.
+                            아이콘이 없는 후보만 있는 상자는 개수로 대신한다 */}
+                        <summary className={styles.itemCardFoldHead}>
+                          {(() => {
+                            const cands = item.probBoxCandidates!;
+                            const shown = cands.filter((c) => c.icon).slice(0, 5);
+                            if (shown.length === 0) return `후보 ${cands.length}개`;
+                            return (
+                              <span className={styles.itemCardFoldIcons}>
+                                {shown.map((c) => (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img key={c.id} loading="lazy" decoding="async" src={c.icon} alt={c.name} title={c.name} className={styles.itemCardFoldIcon} />
+                                ))}
+                                {cands.length > shown.length && (
+                                  <span className={styles.itemCardFoldMore}>+{cands.length - shown.length}</span>
+                                )}
+                              </span>
+                            );
+                          })()}
+                        </summary>
+                        <div className={styles.itemCardProbList}>
                         {item.probBoxCandidates!.map((cand) => {
                           const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers, detailGoldPerWon) * cand.quantity;
+                          const candLabel = probBoxCandLabel(cand);
                           return (
-                            <div key={cand.id} className={styles.itemCardChoiceBtn}>
+                            <div
+                              key={cand.id}
+                              className={styles.itemCardProbRow}
+                              title={`${candLabel} ×${cand.quantity} · ${cand.probability}% · ${formatNumber(candPrice)}G`}
+                            >
                               {cand.icon && (
                                 /* eslint-disable-next-line @next/next/no-img-element */
                                 <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} className={styles.itemCardChoiceBtnIcon} />
                               )}
-                              <span>{probBoxCandLabel(cand)} ×{cand.quantity} · {cand.probability}% ({formatNumber(candPrice)}G)</span>
+                              <span className={styles.itemCardProbText}>
+                                <span className={styles.itemCardProbName}>{candLabel} ×{cand.quantity}</span>
+                                <span className={styles.itemCardProbMeta}>
+                                  <span className={styles.itemCardProbPct}>{cand.probability}%</span>
+                                  {' · '}
+                                  {formatNumber(candPrice)}G
+                                </span>
+                              </span>
                             </div>
                           );
                         })}
-                      </div>
+                        </div>
+                      </details>
                     )}
 
                     {expectedRows && (
-                      <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
-                        {expectedRows.map((row) => (
-                          <div key={row.itemId} className={styles.itemCardChoiceBtn}>
-                            {row.icon && (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img loading="lazy" decoding="async" src={row.icon} alt={row.name} className={styles.itemCardChoiceBtnIcon} />
-                            )}
-                            <span>{shortenGemChoiceName(row.name)} · {row.probabilityPct}% ({formatNumber(row.unit)}G)</span>
-                          </div>
-                        ))}
-                      </div>
+                      <details className={styles.itemCardFold}>
+                        <summary className={styles.itemCardFoldHead}>
+                          {(() => {
+                            const shown = expectedRows.filter((r) => r.icon).slice(0, 5);
+                            if (shown.length === 0) return `구성 ${expectedRows.length}종`;
+                            return (
+                              <span className={styles.itemCardFoldIcons}>
+                                {shown.map((r) => (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img key={r.itemId} loading="lazy" decoding="async" src={r.icon} alt={r.name} title={r.name} className={styles.itemCardFoldIcon} />
+                                ))}
+                                {expectedRows.length > shown.length && (
+                                  <span className={styles.itemCardFoldMore}>+{expectedRows.length - shown.length}</span>
+                                )}
+                              </span>
+                            );
+                          })()}
+                        </summary>
+                        <div className={styles.itemCardProbList}>
+                        {expectedRows.map((row) => {
+                          const rowLabel = shortenGemChoiceName(row.name);
+                          return (
+                            <div
+                              key={row.itemId}
+                              className={styles.itemCardProbRow}
+                              title={`${rowLabel} · ${row.probabilityPct}% · ${formatNumber(row.unit)}G`}
+                            >
+                              {row.icon && (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img loading="lazy" decoding="async" src={row.icon} alt={row.name} className={styles.itemCardChoiceBtnIcon} />
+                              )}
+                              <span className={styles.itemCardProbText}>
+                                <span className={styles.itemCardProbName}>{rowLabel}</span>
+                                <span className={styles.itemCardProbMeta}>
+                                  <span className={styles.itemCardProbPct}>{row.probabilityPct}%</span>
+                                  {' · '}
+                                  {formatNumber(row.unit)}G
+                                </span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                        </div>
+                      </details>
                     )}
 
                     <div className={styles.itemCardBottom}>
@@ -1822,11 +1894,6 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                           {`${formatNumber(unitPrice)}G`}
                           {' x '}
                           {effectiveQty}개
-                        </div>
-                      )}
-                      {hasProbBox && (
-                        <div className={styles.itemCardPriceLine}>
-                          기댓값 = Σ(시세 × 개수 × 확률)
                         </div>
                       )}
                       <div className={styles.itemCardSubtotal}>
@@ -1941,7 +2008,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 return (
                   <div
                     key={idx}
-                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardChoice : ''} ${(hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardFull : ''} ${bonusSelectable && !isBonusChecked ? styles.itemCardUnchecked : ''}`}
+                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''} ${bonusSelectable && !isBonusChecked ? styles.itemCardUnchecked : ''}`}
                     title={isRiftRun ? riftRunTooltip(effectiveChoiceId) : undefined}
                   >
                     {bonusSelectable && (
@@ -1989,11 +2056,14 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                         : hasChoiceBox
                         ? `${item.name} (최대 ${item.choiceBoxPickCount || 1}개 선택)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
                         : hasProbBox
-                        ? `${item.name} (확률 기댓값)${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
+                        ? `${item.name}${item.quantity > 1 ? ` ×${item.quantity.toLocaleString()}` : ''}`
                         : item.icon === FIXED_GEM_SELECT_ICON && hasChoices
                         ? `고정형 영웅 젬 선택 상자 ×${effectiveQty.toLocaleString()}`
                         : `${shortenItemName(effectiveChoice?.name || item.name)} ×${effectiveQty.toLocaleString()}`}
                     </div>
+                    {/* 계산 방식은 제목에 붙이지 않고 아래 줄로 내린다 — 제목이 두 줄 클램프라
+                        같은 줄에 두면 정작 상자 이름이 잘렸다 */}
+                    {hasProbBox && <div className={styles.itemCardNameNote}>확률 기댓값</div>}
                     {renderTicketTierSelect(item.itemId, item.name)}
 
                     {hasChoices && item.choiceOptions!.length <= 3 && !isRiftRun && (
@@ -2052,34 +2122,101 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                     )}
 
                     {hasProbBox && (
-                      <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
+                      <details className={styles.itemCardFold}>
+                        {/* 펼치지 않아도 "무엇이 든 상자인지" 보이게 후보 아이콘을 늘어놓는다.
+                            아이콘이 없는 후보만 있는 상자는 개수로 대신한다 */}
+                        <summary className={styles.itemCardFoldHead}>
+                          {(() => {
+                            const cands = item.probBoxCandidates!;
+                            const shown = cands.filter((c) => c.icon).slice(0, 5);
+                            if (shown.length === 0) return `후보 ${cands.length}개`;
+                            return (
+                              <span className={styles.itemCardFoldIcons}>
+                                {shown.map((c) => (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img key={c.id} loading="lazy" decoding="async" src={c.icon} alt={c.name} title={c.name} className={styles.itemCardFoldIcon} />
+                                ))}
+                                {cands.length > shown.length && (
+                                  <span className={styles.itemCardFoldMore}>+{cands.length - shown.length}</span>
+                                )}
+                              </span>
+                            );
+                          })()}
+                        </summary>
+                        <div className={styles.itemCardProbList}>
                         {item.probBoxCandidates!.map((cand) => {
                           const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers, detailGoldPerWon) * cand.quantity;
+                          const candLabel = probBoxCandLabel(cand);
                           return (
-                            <div key={cand.id} className={styles.itemCardChoiceBtn}>
+                            <div
+                              key={cand.id}
+                              className={styles.itemCardProbRow}
+                              title={`${candLabel} ×${cand.quantity} · ${cand.probability}% · ${formatNumber(candPrice)}G`}
+                            >
                               {cand.icon && (
                                 /* eslint-disable-next-line @next/next/no-img-element */
                                 <img loading="lazy" decoding="async" src={cand.icon} alt={cand.name} className={styles.itemCardChoiceBtnIcon} />
                               )}
-                              <span>{probBoxCandLabel(cand)} ×{cand.quantity} · {cand.probability}% ({formatNumber(candPrice)}G)</span>
+                              <span className={styles.itemCardProbText}>
+                                <span className={styles.itemCardProbName}>{candLabel} ×{cand.quantity}</span>
+                                <span className={styles.itemCardProbMeta}>
+                                  <span className={styles.itemCardProbPct}>{cand.probability}%</span>
+                                  {' · '}
+                                  {formatNumber(candPrice)}G
+                                </span>
+                              </span>
                             </div>
                           );
                         })}
-                      </div>
+                        </div>
+                      </details>
                     )}
 
                     {expectedRows && (
-                      <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
-                        {expectedRows.map((row) => (
-                          <div key={row.itemId} className={styles.itemCardChoiceBtn}>
-                            {row.icon && (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img loading="lazy" decoding="async" src={row.icon} alt={row.name} className={styles.itemCardChoiceBtnIcon} />
-                            )}
-                            <span>{shortenGemChoiceName(row.name)} · {row.probabilityPct}% ({formatNumber(row.unit)}G)</span>
-                          </div>
-                        ))}
-                      </div>
+                      <details className={styles.itemCardFold}>
+                        <summary className={styles.itemCardFoldHead}>
+                          {(() => {
+                            const shown = expectedRows.filter((r) => r.icon).slice(0, 5);
+                            if (shown.length === 0) return `구성 ${expectedRows.length}종`;
+                            return (
+                              <span className={styles.itemCardFoldIcons}>
+                                {shown.map((r) => (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img key={r.itemId} loading="lazy" decoding="async" src={r.icon} alt={r.name} title={r.name} className={styles.itemCardFoldIcon} />
+                                ))}
+                                {expectedRows.length > shown.length && (
+                                  <span className={styles.itemCardFoldMore}>+{expectedRows.length - shown.length}</span>
+                                )}
+                              </span>
+                            );
+                          })()}
+                        </summary>
+                        <div className={styles.itemCardProbList}>
+                        {expectedRows.map((row) => {
+                          const rowLabel = shortenGemChoiceName(row.name);
+                          return (
+                            <div
+                              key={row.itemId}
+                              className={styles.itemCardProbRow}
+                              title={`${rowLabel} · ${row.probabilityPct}% · ${formatNumber(row.unit)}G`}
+                            >
+                              {row.icon && (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img loading="lazy" decoding="async" src={row.icon} alt={row.name} className={styles.itemCardChoiceBtnIcon} />
+                              )}
+                              <span className={styles.itemCardProbText}>
+                                <span className={styles.itemCardProbName}>{rowLabel}</span>
+                                <span className={styles.itemCardProbMeta}>
+                                  <span className={styles.itemCardProbPct}>{row.probabilityPct}%</span>
+                                  {' · '}
+                                  {formatNumber(row.unit)}G
+                                </span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                        </div>
+                      </details>
                     )}
 
                     <div className={styles.itemCardBottom}>
@@ -2087,11 +2224,6 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                         <div className={styles.itemCardPriceLine}>
                           {expectedRows ? `기댓값 ${formatNumber(getCrystalAdjustedUnit(item))}G x ` : ''}
                           {effectiveQty}개
-                        </div>
-                      )}
-                      {hasProbBox && (
-                        <div className={styles.itemCardPriceLine}>
-                          기댓값 = Σ(시세 × 개수 × 확률)
                         </div>
                       )}
                       <div className={styles.itemCardSubtotal}>

@@ -50,7 +50,7 @@ function metricLabel(post?: PackagePost, basis: ValueBasis = 'bundle'): string {
   if (!post) return '28일 기대값 이득률'; // 아제나 — 카드의 "기대 효율"과 같은 기준
   if (post.packageType === '가챠') return '기대값 이득률';
   if (post.packageType === '3+1' || post.packageType === '2+1' || post.packageType === '3+보너스')
-    return basis === 'single' ? '1개 구매 이득률' : `${post.packageType} 구매 이득률`;
+    return basis === 'single' ? '1개 구매 이득률' : `${post.packageType} 이득률`;
   return '1개 구매 이득률';
 }
 
@@ -341,15 +341,17 @@ export default function PackageValueChart({ post, azenaOptions, latestPrices, go
                 />
                 {/* 참조선 — 이득률 차트라 사이트 손익 색 규칙을 따른다: 높을수록 좋음 =
                     최고 초록(--price-up) / 최저 빨강(--price-down) / 평균 검정(--gc-text, 다크에선 밝은 글자색).
-                    (시세 차트의 "최고 빨강/최저 파랑"은 가격 문법이라 여기선 반대로 읽힌다)
-                    값 라벨은 오른쪽 여백에서 각 선의 y 위치에 붙는다 */}
+                    (시세 차트의 "최고 빨강/최저 파랑"은 가격 문법이라 여긴 반대로 읽힌다)
+
+                    최고·최저는 선을 긋지 않는다(stroke="none"). 값이 오른쪽 여백 라벨에 이미
+                    적혀 있어서 가로줄까지 그으면 격자·평균선과 겹쳐 차트만 복잡해진다.
+                    ReferenceLine 을 지우지 않고 남겨 둔 이유는 이것이 라벨의 y 좌표를 잡아 주기 때문 —
+                    빼면 최고·최저 숫자가 같이 사라진다. 실제 가로줄은 평균 하나만 남는다. */}
                 {stats && (
                   <>
                     <ReferenceLine
                       y={stats.max}
-                      stroke="var(--price-up)"
-                      strokeDasharray="8 4"
-                      strokeWidth={1.5}
+                      stroke="none"
                       label={<RefLabel text="최고" value={fmtVal(stats.max)} color="var(--price-up)" />}
                     />
                     <ReferenceLine
@@ -361,9 +363,7 @@ export default function PackageValueChart({ post, azenaOptions, latestPrices, go
                     />
                     <ReferenceLine
                       y={stats.min}
-                      stroke="var(--price-down)"
-                      strokeDasharray="8 4"
-                      strokeWidth={1.5}
+                      stroke="none"
                       label={<RefLabel text="최저" value={fmtVal(stats.min)} color="var(--price-down)" />}
                     />
                   </>

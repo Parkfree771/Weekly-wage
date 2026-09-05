@@ -16,6 +16,7 @@ import {
   calcAzenaBreakdown,
   type AzenaOptions,
 } from '@/lib/azena-blessing';
+import { BenefitPct } from './PackageGalleryCard';
 import styles from './PackageGalleryCard.module.css';
 import az from './AzenaBlessingGalleryCard.module.css';
 
@@ -246,9 +247,7 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
           {goldPerWon > 0 && (
             <div className={styles.resultRow}>
               <span className={styles.resultLabel}>기대 효율</span>
-              <span className={`${styles.benefitBadge} ${benefit >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
-                {benefit >= 0 ? '+' : ''}{benefit.toFixed(1)}%
-              </span>
+              <BenefitPct v={benefit} />
             </div>
           )}
 

@@ -6,6 +6,9 @@
   flex-shrink: 0;
 }
 
+/* 평소에는 상자 없이 그림 + 숫자만 둔다 — 카드 발 줄에 알약 여러 개가 늘어서 있으면
+   정작 봐야 할 효율 숫자보다 눈에 먼저 들어온다. 채움과 테두리는 "손댈 수 있다"는
+   신호(hover)와 "내가 눌렀다"는 상태(.reactionBtnOn)에만 쓴다. */
 .reactionBtn {
   display: inline-flex;
   align-items: center;
@@ -13,7 +16,7 @@
   padding: 0.05rem 0.5rem 0.05rem 0.15rem;
   border: 1.5px solid transparent;
   border-radius: 999px;
-  background: var(--gc-input-bg, var(--input-bg));
+  background: transparent;
   color: var(--gc-text-secondary, var(--text-secondary));
   font-size: 0.86rem;
   font-weight: 800;
@@ -24,7 +27,7 @@
   touch-action: manipulation;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: border-color 0.15s, color 0.15s;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
 }
 
 /* 로티 SVG 가 클릭을 가로채지 않게 — 어디를 눌러도 버튼이 받는다 */
@@ -33,10 +36,13 @@
 }
 
 .reactionBtn:hover {
+  background: var(--gc-input-bg, var(--input-bg));
   border-color: var(--gc-border, var(--border-color));
 }
 
+/* 내가 누른 표 — 카드 안에서 유일하게 포인트색 테두리가 채워진 알약이 된다 */
 .reactionBtnOn {
+  background: var(--gc-input-bg, var(--input-bg));
   border-color: var(--color-primary);
   color: var(--color-primary);
 }

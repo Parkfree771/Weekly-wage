@@ -858,13 +858,80 @@ export function getExpectedBoxBreakdown(itemId: string, prices: Record<string, n
   });
 }
 
+/* ─── 구성품 표시 순서 ───
+ * 등록자가 담은 순서와 상관없이 어느 글이든 같은 배열로 보여 준다.
+ * 순서 기준은 새 표를 만들지 않고 TEMPLATE_ITEMS 의 나열 순서를 그대로 쓴다 —
+ * 그 목록이 이미 재료 · 젬 · 유각 · 티켓 · 상자 · 재화처럼 계열별로 묶여 있어서,
+ * 따라가기만 하면 비슷한 것끼리 모이고 어느 카드를 봐도 같은 자리에 같은 계열이 온다.
+ * (순서표를 따로 두면 카탈로그에 아이템을 추가할 때마다 두 곳을 맞춰야 한다.)
+ *
+ * 저장된 데이터는 건드리지 않는다 — 그리는 순서만 바꾸므로 이미 올라온 글도 즉시 정돈되고,
+ * 수정 화면에서는 등록자가 담은 순서가 그대로 남는다.
+ */
+const TEMPLATE_RANK = new Map<string, number>();   // 템플릿 id → 카탈로그 순번
+const MARKET_ID_RANK = new Map<string, number>();  // 시세 itemId → 카탈로그 순번
+TEMPLATE_ITEMS.forEach((t, i) => {
+  if (!TEMPLATE_RANK.has(t.id)) TEMPLATE_RANK.set(t.id, i);
+  // simple 은 시세 itemId 를 그대로, choice 는 고른 선택지의 itemId 를 그대로 쓴다 —
+  // 접두사가 없으므로 원래 어느 템플릿에서 나왔는지 되짚을 표가 필요하다
+  if (t.itemId && !MARKET_ID_RANK.has(t.itemId)) MARKET_ID_RANK.set(t.itemId, i);
+  t.choices?.forEach((c) => {
+    const base = c.itemId.split(':')[0]; // 고정형 젬의 :atk/:sup 접미사 제거
+    if (!MARKET_ID_RANK.has(base)) MARKET_ID_RANK.set(base, i);
+  });
+});
+
+// 접두사가 붙는 형식들(gold_·fixed_ 등)은 뒤쪽이 템플릿 id 다.
+// choicebox_·probbox_ 는 뒤가 런타임 id 라 해당 템플릿으로 직접 이어 준다.
+const PREFIX_TEMPLATE: Record<string, string> = {
+  'choicebox_': 'custom-choice-box',
+  'probbox_': 'custom-prob-box',
+};
+const TEMPLATE_ID_PREFIXES = ['gold_', 'fixed_', 'crystal_', 'expected_', 'bundle_'];
+
+function itemCategoryRank(itemId: string): number {
+  const unknown = TEMPLATE_ITEMS.length;
+  if (!itemId) return unknown;
+  // 기타(직접 입력)는 계열이 없으므로 항상 맨 뒤
+  if (itemId.startsWith('custom_')) return unknown + 1;
+  for (const [prefix, templateId] of Object.entries(PREFIX_TEMPLATE)) {
+    if (itemId.startsWith(prefix)) return TEMPLATE_RANK.get(templateId) ?? unknown;
+  }
+  for (const prefix of TEMPLATE_ID_PREFIXES) {
+    if (itemId.startsWith(prefix)) {
+      return TEMPLATE_RANK.get(itemId.slice(prefix.length)) ?? unknown;
+    }
+  }
+  return MARKET_ID_RANK.get(itemId.split(':')[0]) ?? unknown;
+}
+
+/**
+ * 구성품을 계열끼리 묶어 그릴 순서(원본 인덱스 배열)를 낸다.
+ * 인덱스를 돌려주는 이유: 체크 상태·소계 같은 것들이 전부 원본 인덱스로 매여 있어서,
+ * 배열 자체를 재정렬하면 그 연결이 어긋난다. 같은 계열 안에서는 등록 순서를 유지한다.
+ */
+export function getDisplayOrder(items: { itemId: string }[]): number[] {
+  return items
+    .map((_, i) => i)
+    .sort((a, b) => {
+      const ra = itemCategoryRank(items[a].itemId);
+      const rb = itemCategoryRank(items[b].itemId);
+      return ra !== rb ? ra - rb : a - b;
+    });
+}
+
 // 아이콘 크기 오버라이드 (catalog: 기본 90px, box: 기본 32px)
+// 갤러리 카드와 같은 원칙 — 원본 그림의 여백이 제각각이라 같은 px 로 그리면 크기가 달라 보인다.
+// 여백이 많은 쪽(선택·랜덤 젬 상자 256x244)을 꽉 찬 쪽(고정형 64x64)보다 크게 잡아 맞춘다.
 export const ICON_SIZE_CATALOG: Record<string, number> = {
-  'gold-input': 60,
+  'gold-input': 74, // 바로 아래 실링(65)보다 작아서 눈에 띄게 작아 보였다
   'hell-heroic-ticket': 110,
+  'celestial-ticket': 110, 'naraka-legendary-ticket': 110,
+  'hell-legendary-ticket': 110, 'cube-ticket': 110, 'gem-reset-ticket': 110,
   'pheon': 110,
-  'gem-choice': 110, 'gem-hero': 110, 'gem-hero-random': 110,
-  'gem-order-processed': 110, 'gem-chaos-processed': 110, 'gem-hero-fixed-select': 110,
+  'gem-choice': 118, 'gem-hero': 122, 'gem-hero-random': 122,
+  // 고정형 계열은 원본이 64x64 로 프레임을 꽉 채워, 같은 값이면 제일 커 보인다 — 한 단계 내린다
+  'gem-order-processed': 100, 'gem-chaos-processed': 100, 'gem-hero-fixed-select': 100,
   'weapon-quality': 110, 'armor-quality': 110, 'karma-stone': 110,
   'shilling': 65, 'blue-crystal-input': 65,
   'master-tailoring-3': 65, 'master-tailoring-4': 65,
