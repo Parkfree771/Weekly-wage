@@ -87,13 +87,18 @@ const DISPLAY_NAMES: Record<string, string> = {
   '돌파석': '위대한 운명의 돌파석',
 };
 
-// 아이템 레벨 — 시즌4 개편 대비. 레벨별 보상 테이블이 확정되기 전까지는
-// 어떤 레벨을 골라도 lib/hell-reward-calc 의 현행(1750) 테이블로 계산한다.
-const ITEM_LEVELS = [1730, 1750, 1770];
+// 현재 보상 테이블(lib/hell-reward-calc)이 기준으로 삼는 시즌 — 레벨 트랙의 빨간 배지로 표시.
+// 시즌4 데이터가 확정되면 여기와 ITEM_LEVELS.available 만 갱신하면 된다.
+const CURRENT_SEASON = '시즌3';
+const ITEM_LEVELS = [
+  { level: 1730, available: false },
+  { level: 1750, available: true },
+  { level: 1770, available: false },
+];
 
 export default function HellRewardCalculator() {
   const [mode, setMode] = useState<ModeType>('hell');
-  const [selectedLevel, setSelectedLevel] = useState<number>(1770);
+  const [selectedLevel, setSelectedLevel] = useState<number>(1750);
   const [selectedTier, setSelectedTier] = useState<number>(6);
   const [expandedReward, setExpandedReward] = useState<string | null>(null);
   const [prices, setPrices] = useState<Record<string, number>>({});
@@ -272,10 +277,12 @@ export default function HellRewardCalculator() {
       {/* 아이템 레벨 + 콘텐츠 */}
       <div className={styles.controlsRow}>
         <div className={`${styles.segTrack} ${styles.segTrackLevel}`}>
-          {ITEM_LEVELS.map((level) => (
+          <span className={styles.seasonBadge}>{CURRENT_SEASON}</span>
+          {ITEM_LEVELS.map(({ level, available }) => (
             <button
               key={level}
-              className={`${styles.segBtn} ${selectedLevel === level ? styles.segBtnActive : ''}`}
+              className={`${styles.segBtn} ${selectedLevel === level ? styles.segBtnActive : ''} ${!available ? styles.segBtnDisabled : ''}`}
+              disabled={!available}
               onClick={() => { setSelectedLevel(level); setExpandedReward(null); }}
             >
               {level}
