@@ -28,7 +28,7 @@ export default function HellRewardPage() {
                   marginBottom: '0.5rem'
                 }}
               >
-                지옥 보상 시즌<span style={{ color: '#dc2626' }}>3</span>
+                시즌<span style={{ color: '#dc2626' }}>3</span> 지옥 보상
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 층수별 보상을 실시간 시세 기반으로 골드 가치를 계산합니다
