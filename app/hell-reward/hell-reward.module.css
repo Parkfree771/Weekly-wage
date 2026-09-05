@@ -170,100 +170,99 @@
   flex-shrink: 0;
 }
 
-/* ─── 환율 — /package 공통 환율 입력과 같은 형태 ───
-   바깥 프라이머리 윤곽 하나 + 안쪽은 얇은 구분선만 (상자 안에 상자를 겹치지 않는다) */
+/* ─── 환율 — /package 갤러리 카드 하단(.bottomRate)과 같은 두 줄 입력, 같은 크기 ─── */
 
 .exchangeCard {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
 }
 
-.rateGroup {
+.bottomRate {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  background: var(--card-body-bg-blue);
   border: 1.5px solid var(--color-primary);
-  border-radius: 10px;
-  background: var(--card-bg);
-  overflow: hidden;
+  border-radius: 9px;
+  padding: 0.35rem 0.4rem;
 }
 
 .rateRow {
-  display: inline-flex;
-  align-items: stretch;
-  height: 40px;
-}
-
-/* ± — 테두리 없이 칸만 나눠 갖는다 */
-.rateStep {
-  width: 38px;
-  flex-shrink: 0;
-  border: none;
-  border-radius: 0;
-  background: none;
-  color: var(--color-primary);
-  font-size: 1.3rem;
-  font-weight: 900;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.rateStep:hover {
-  background: var(--color-primary-light);
-}
-
-.rateBox {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0 0.7rem;
-  border-left: 1px solid var(--border-color);
-  border-right: 1px solid var(--border-color);
+  gap: 0.3rem;
 }
 
-.rateIcon {
-  width: 20px;
-  height: 20px;
+.rateIconGold {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 /* 로얄 크리스탈 아이콘 — 원본에 여백이 많아 같은 박스면 작아 보인다. 골드보다 키워서 시각 크기를 맞춘다 */
 .rateIconRoyal {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
   object-fit: contain;
+  flex-shrink: 0;
+}
+
+.rateIconBlue {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* 아랫줄 골드 아이콘 — 윗줄 로얄 슬롯(22px)과 같은 폭을 차지하되 그림은 작게 유지해
+   두 줄의 입력칸 시작 위치가 정확히 겹치게 한다 */
+.rateIconPad {
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  box-sizing: border-box;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .rateFixed {
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
+/* 구분자(: / =)는 글자 폭이 달라 고정 폭 가운데 정렬로 두 줄의 열을 맞춘다 */
 .rateSep {
+  display: inline-block;
   width: 0.8em;
   text-align: center;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   font-weight: 800;
   color: var(--text-muted);
 }
 
-/* 값이 비어 있어도 "여기 쓰는 칸"으로 읽혀야 한다 — 상자를 겹치는 대신 밑줄로 표시한다 */
+/* 두 줄의 밑줄 길이를 똑같이 — 블크 5자리(18333)도 들어가는 폭으로 통일 */
 .rateInput {
-  box-sizing: border-box;
-  width: 3.2em;
-  padding: 0.1rem 0.15rem;
+  width: 44px;
+  background: transparent;
   border: none;
-  border-bottom: 2px solid var(--text-muted);
-  border-radius: 0;
-  background: none;
-  color: var(--text-primary);
-  font-size: 1rem;
-  font-weight: 800;
+  border-bottom: 1px solid var(--text-muted);
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
   text-align: center;
-  cursor: text;
+  outline: none;
+  padding: 0;
   appearance: textfield;
   -moz-appearance: textfield;
 }
@@ -275,17 +274,11 @@
 }
 
 .rateInput:focus {
-  outline: none;
   border-bottom-color: var(--color-accent);
 }
 
-/* 상자 맨 아래 상태 띠 — 역산된 블크·페온 골드값 */
-.rateStatus {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.2rem 0.5rem;
-  border-top: 1px solid var(--border-color);
+/* 역산된 페온 골드값 한 줄 */
+.rateHint {
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-muted);

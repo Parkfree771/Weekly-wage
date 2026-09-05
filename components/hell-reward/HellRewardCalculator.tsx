@@ -98,8 +98,10 @@ export default function HellRewardCalculator() {
   const [expandedReward, setExpandedReward] = useState<string | null>(null);
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [priceLoading, setPriceLoading] = useState(true);
-  // 환율 입력은 패키지 효율과 같은 "골드 100 : 로얄 N원" 한 칸. 블크 골드값은 여기서 역산한다.
+  // 환율 — /package 갤러리 카드와 같은 두 줄 입력 (골드100:로얄N원 ↔ 블크100=골드N 양방향 동기화)
+  // 문자열로 드는 이유: number state 면 "16." 같은 타이핑 중간 상태가 지워져 소수 입력이 안 된다
   const [rateText, setRateText] = useState<string>('15');
+  const [bcText, setBcText] = useState<string>('18333');
   const [excludeAbilityStone, setExcludeAbilityStone] = useState<boolean>(true);
 
   useEffect(() => {
@@ -109,14 +111,20 @@ export default function HellRewardCalculator() {
       .finally(() => setPriceLoading(false));
   }, []);
 
-  const wonPer100Gold = Number(rateText) || 0;
-  const exchangeRate = wonPer100Gold > 0 ? Math.round(275000 / wonPer100Gold) : 0; // 블크 100당 골드
+  const exchangeRate = parseFloat(bcText) || 0; // 블크 100당 골드
   const peonGoldValue = 8.5 * (exchangeRate / 100);
   const specialRefiningCost = calcSpecialRefiningUnitCost(prices);
 
-  function stepRate(delta: number) {
-    setRateText(String(Math.max(1, (Number(rateText) || 0) + delta)));
-  }
+  const handleRateInput = (v: string) => {
+    setRateText(v);
+    const w = parseFloat(v) || 0;
+    setBcText(w > 0 ? String(Math.round(275000 / w)) : '');
+  };
+  const handleBcInput = (v: string) => {
+    setBcText(v);
+    const b = parseFloat(v) || 0;
+    setRateText(b > 0 ? String(Math.round(2750000 / b) / 10) : '');
+  };
 
   const rewardData = getRewardData(mode);
   const rewards = Object.keys(rewardData);
@@ -342,47 +350,46 @@ export default function HellRewardCalculator() {
           </div>
         )}
 
-        {/* 환율 — 패키지 효율과 같은 입력 (골드 100 : 로얄 N원, ± 스테퍼 + 밑줄 입력) */}
+        {/* 환율 — /package 갤러리 카드 하단과 똑같은 두 줄 입력 */}
         <div className={styles.exchangeCard}>
-          <div className={styles.rateGroup}>
+          <div className={styles.bottomRate}>
             <div className={styles.rateRow}>
-              <button
-                type="button"
-                className={styles.rateStep}
-                onClick={() => stepRate(-1)}
-                aria-label="환율 1원 낮추기"
-              >
-                −
-              </button>
-              <div className={styles.rateBox}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/gold.webp" alt="골드" className={styles.rateIcon} loading="lazy" decoding="async" />
-                <span className={styles.rateFixed}>100</span>
-                <span className={styles.rateSep}>:</span>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/royal.webp" alt="로얄" className={styles.rateIconRoyal} loading="lazy" decoding="async" />
-                <input
-                  type="number"
-                  className={styles.rateInput}
-                  value={rateText}
-                  onChange={(e) => setRateText(e.target.value)}
-                  min={1}
-                  step="any"
-                  aria-label="환율 (100골드당 원화)"
-                />
-              </div>
-              <button
-                type="button"
-                className={styles.rateStep}
-                onClick={() => stepRate(1)}
-                aria-label="환율 1원 올리기"
-              >
-                +
-              </button>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.rateIconGold} />
+              <span className={styles.rateFixed}>100</span>
+              <span className={styles.rateSep}>:</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img loading="lazy" decoding="async" src="/royal.webp" alt="로얄" className={styles.rateIconRoyal} />
+              <input
+                type="number"
+                className={styles.rateInput}
+                value={rateText}
+                onChange={(e) => handleRateInput(e.target.value)}
+                placeholder="15"
+                min={1}
+                step="any"
+                aria-label="100골드당 원화 환율"
+              />
             </div>
-            <div className={styles.rateStatus}>
-              블크 100 = {exchangeRate.toLocaleString()}G · 페온 1개 = {Math.floor(peonGoldValue).toLocaleString()}G
+            <div className={styles.rateRow}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img loading="lazy" decoding="async" src="/blue.webp" alt="블루 크리스탈" className={styles.rateIconBlue} />
+              <span className={styles.rateFixed}>100</span>
+              <span className={styles.rateSep}>=</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.rateIconPad} />
+              <input
+                type="number"
+                className={styles.rateInput}
+                value={bcText}
+                onChange={(e) => handleBcInput(e.target.value)}
+                placeholder="18333"
+                min={1}
+                step="any"
+                aria-label="블루 크리스탈 100개당 골드"
+              />
             </div>
+            <div className={styles.rateHint}>페온 1개 = {Math.floor(peonGoldValue).toLocaleString()}G</div>
           </div>
         </div>
       </div>
