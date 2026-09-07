@@ -913,7 +913,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
 
           {/* 이득률 — 1개 구매 기준 (묶음 보정 없는 순수 1회) */}
           {goldPerWon > 0 && !isGacha && (
-            <div className={styles.resultRow}>
+            <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
               <span className={styles.resultLabel}>이득률</span>
               {benefitDelta !== null && <BenefitDelta d={benefitDelta} />}
               <BenefitPct v={singleBenefit} />
@@ -922,7 +922,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
 
           {/* 가챠: 기대 효율 */}
           {goldPerWon > 0 && isGacha && (
-            <div className={styles.resultRow}>
+            <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
               <span className={styles.resultLabel}>기대 효율</span>
               {benefitDelta !== null && <BenefitDelta d={benefitDelta} />}
               <BenefitPct v={singleBenefit} />
@@ -943,7 +943,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                 </span>
               </div>
               {goldPerWon > 0 && (
-                <div className={styles.resultRow}>
+                <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
                   <span className={styles.resultLabel}>{post.packageType} 이득률</span>
                   <BenefitPct v={bundleBenefit} />
                 </div>

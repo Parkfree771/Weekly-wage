@@ -11,21 +11,35 @@
   gap: 0.75rem;
 }
 
+/* ─── 설정 패널 ───
+   레벨·콘텐츠·단계·기댓값·환율이 각각 따로 뜬 카드였을 때는 같은 흰 상자가 다섯 개 쌓여
+   배경과도, 서로도 구분이 되지 않았다. 전부 이 패널 하나에 담고,
+   안쪽 컨트롤은 카드가 아니라 한 단계 들어간 트랙(--bg-secondary)으로 처리한다.
+   화면에 남는 상자는 이 패널과 아래 보상 목록, 둘뿐이다. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.7rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
 /* ─── 컨트롤 — 레벨/콘텐츠 한 줄, 단계 한 줄. 전부 같은 트랙 패턴 ─── */
 
 .controlsRow {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 .segTrack {
   display: flex;
   gap: 4px;
   padding: 4px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
+  background: var(--bg-secondary);
+  border-radius: 11px;
 }
 
 .segTrackLevel {
@@ -91,10 +105,14 @@
 
 /* ─── 총 기댓값 + 환율 ─── */
 
+/* 패널 안에서 컨트롤 줄과 결과 줄을 가르는 실선 하나 — 상자를 하나 더 만들지 않는다 */
 .infoRow {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.7rem;
   align-items: stretch;
+  margin-top: 0.15rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .heroCard {
@@ -103,12 +121,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.35rem;
-  padding: 1rem 1.25rem;
-  border-radius: 12px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
+  gap: 0.3rem;
+  padding: 0 0.25rem;
 }
 
 /* 라벨(왼쪽) + 어빌리티스톤 제외(오른쪽) 한 줄 */
@@ -186,6 +200,7 @@
   justify-content: center;
 }
 
+/* 입력이 들어 있는 자리라 컨트롤 트랙과 같은 안쪽 표면으로 둔다 (파란 테두리 상자였던 것) */
 .bottomRate {
   flex: 1;
   display: flex;
@@ -193,10 +208,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  background: var(--card-body-bg-blue);
-  border: 1.5px solid var(--color-primary);
-  border-radius: 9px;
-  padding: 0.6rem 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 11px;
+  padding: 0.55rem 0.75rem;
 }
 
 .rateRow {
@@ -303,14 +317,11 @@
 
 /* ─── 보상 카드 목록 ─── */
 
+/* 앱 화면과 같은 형태 — 카드를 낱개로 띄우지 않고 하나의 목록 상자 안에 줄로 잇는다.
+   테두리·모서리·그림자는 이 상자만 갖고, 각 줄은 위쪽 실선으로만 구분한다. */
 .rewardList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.rewardCard {
-  position: relative;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -318,8 +329,16 @@
   box-shadow: var(--shadow-sm);
 }
 
+.rewardCard {
+  position: relative;
+}
+
+.rewardCard + .rewardCard {
+  border-top: 1px solid var(--border-color);
+}
+
 .rewardCardExpanded {
-  border-color: var(--color-primary);
+  background: rgba(245, 158, 11, 0.05);
 }
 
 .rewardCardDisabled {
@@ -334,14 +353,23 @@
   cursor: pointer;
 }
 
-/* 상대 가치 바 — 1위 항목 대비 비율. 카드 하단 얇은 스트립 (단색 매트) */
-.valueBar {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 3px;
-  background: #f59e0b;
+/* 순위 — 골드 가치 내림차순 등수. 1·2·3위만 색을 주고 나머지는 흐린 회색.
+   숫자 전용 서체(--font-num, Outfit)로 자릿수 폭을 맞춰 세로줄이 흔들리지 않게 한다. */
+.rank {
+  width: 22px;
+  flex-shrink: 0;
+  text-align: center;
+  font-family: var(--font-num), var(--font-mono), monospace;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
 }
+
+.rank1 { color: #f59e0b; }
+.rank2 { color: #94a3b8; }
+.rank3 { color: #b45309; }
 
 /* 이미지 */
 .rewardImgWrap {
@@ -705,6 +733,11 @@
   .rewardCardMain {
     padding: 0.7rem 0.85rem 0.8rem;
     gap: 0.7rem;
+  }
+
+  .rank {
+    width: 16px;
+    font-size: 0.85rem;
   }
 
   .rewardImgWrap {

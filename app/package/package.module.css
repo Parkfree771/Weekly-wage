@@ -24,7 +24,7 @@
      테두리처럼 글자를 둘러싸지 않고 오른쪽 아래 한 방향으로만 지므로,
      "떠 있다"는 느낌만 남고 숫자 형태는 그대로 읽힌다.
      색은 글자와 같은 계열의 어두운 쪽 — 회색 그림자를 쓰면 숫자가 탁해진다.
-     em 단위라 카드(1.42rem)와 모바일(1.14rem)에서 같은 비율로 따라간다. */
+     em 단위라 카드(1.62rem)와 모바일(1.3rem)에서 같은 비율로 따라간다. */
   --benefit-up-lift: 0.055em 0.055em 0 rgba(15, 76, 45, 0.3);
   --benefit-down-lift: 0.055em 0.055em 0 rgba(110, 26, 20, 0.3);
 }
@@ -1307,16 +1307,35 @@
 /* ─── 상세 페이지 ─── */
 .detailWrapper {
   padding: clamp(1rem, 3vw, 2rem) 0;
-  /* 최저가 버튼(.liveBtnOn) 채움색 — .pageWrapper 와 같은 변수·같은 값.
-     갤러리 밖이라 상속이 안 돼 여기서 다시 정의한다 */
+  /* 최저가 버튼(.liveBtnOn) 채움색 + 글자로 쓰는 이득률 색·입체감 —
+     .pageWrapper 와 같은 변수·같은 값. 갤러리 밖이라 상속이 안 돼 여기서 다시 정의한다.
+     카드에서 눌러 들어온 상세라 같은 숫자가 다른 모양으로 보이면 안 된다. */
   --benefit-up: #35815a;
   --benefit-down: #a04a44;
+  --benefit-up-text: #2a8f5a;
+  --benefit-down-text: #c0453c;
+  --benefit-up-lift: 0.055em 0.055em 0 rgba(15, 76, 45, 0.3);
+  --benefit-down-lift: 0.055em 0.055em 0 rgba(110, 26, 20, 0.3);
 }
 
 /* 최저가 적용 중 — 갤러리 .pageWrapper[data-basis='live'] 와 같은 선명한 값 */
 .detailWrapper[data-basis='live'] {
   --benefit-up: #0ea86a;
   --benefit-down: #d8453b;
+  --benefit-up-text: #0ea86a;
+  --benefit-down-text: #d8453b;
+}
+
+:global([data-theme='dark']) .detailWrapper {
+  --benefit-up-text: #4ade80;
+  --benefit-down-text: #f87171;
+  --benefit-up-lift: 0.055em 0.055em 0 rgba(0, 0, 0, 0.5);
+  --benefit-down-lift: 0.055em 0.055em 0 rgba(0, 0, 0, 0.5);
+}
+
+:global([data-theme='dark']) .detailWrapper[data-basis='live'] {
+  --benefit-up-text: #34e89b;
+  --benefit-down-text: #ff7a6e;
 }
 
 /* 뒤로가기 - sectionTitle 총 높이와 맞춤 */
@@ -1965,6 +1984,13 @@
   color: var(--text-muted);
 }
 
+/* 결론 줄(이득률) — 위의 가격·구성품 가치는 과정이고 이 줄이 답이다.
+   갤러리 카드 .resultRowKey 와 같은 규칙. */
+.resultRowKey .resultRowLabel {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
 /* 숫자는 절대 줄바꿈되지 않게 한다 — 좁은 폭에서 "1,680,\n000" 처럼 끊기면 읽을 수 없다.
    폭이 모자라면 왼쪽 라벨이 대신 줄바꿈된다. */
 /* ─── 숫자 폰트 (--font-num = Outfit, app/layout.tsx 에서 선언) ───
@@ -2015,24 +2041,26 @@
 }
 
 /* 이득률 배지 — 갤러리 카드의 사선컷 칩과 동일 */
+/* 이득률 — 갤러리 카드(.benefitBadge)와 같은 방식. 상자를 쓰지 않는다.
+   예전엔 여기만 채운 사선컷 칩이라, 카드에서 눌러 들어오면 같은 숫자가 다른 물건으로 보였다.
+   값 줄(1.1rem/600)보다 한 단계 크게, 색과 입체감만으로 세운다. */
 .resultBenefitBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.35rem 0.9rem;
-  font-size: 1.16rem;
-  font-weight: 700;
-  color: #fff;
+  font-size: 1.78rem;
+  font-weight: 800;
+  line-height: 1.1;
   white-space: nowrap;
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .resultBenefitUp {
-  background: #35815a;
+  color: var(--benefit-up-text, #35815a);
+  text-shadow: var(--benefit-up-lift, none);
 }
 
 .resultBenefitDown {
-  background: #a04a44;
+  color: var(--benefit-down-text, #a04a44);
+  text-shadow: var(--benefit-down-lift, none);
 }
 
 /* 환율 입력 */
@@ -2143,12 +2171,16 @@
   gap: 0.35rem;
 }
 
+/* 이득률 색 — 갤러리 카드와 같은 팔레트를 쓴다 (기준 토글에 따라 평균가/최저가 톤).
+   예전엔 사이트 공통 success/danger 였는데, 같은 숫자가 카드와 상세에서 다른 초록·빨강으로 보였다. */
 .benefitUp {
-  color: var(--color-success);
+  color: var(--benefit-up-text, var(--color-success));
+  text-shadow: var(--benefit-up-lift, none);
 }
 
 .benefitDown {
-  color: var(--color-danger);
+  color: var(--benefit-down-text, var(--color-danger));
+  text-shadow: var(--benefit-down-lift, none);
 }
 
 /* ─── 액션 바 ─── */
@@ -2338,9 +2370,7 @@
   }
 
   .resultBenefitBadge {
-    padding: 0.28rem 0.7rem;
-    font-size: 1rem;
-    clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+    font-size: 1.42rem;
   }
 
   .resultRateBox {
@@ -3420,9 +3450,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 가챠 결과 이득률 — 위 .resultBenefitBadge 와 같은 문법(맨 글자 + 색 + 입체감).
+   색은 .benefitUp/.benefitDown 이 얹는다. */
 .gachaResultBenefit {
-  font-size: 1.16rem;
-  font-weight: 700;
+  font-size: 1.44rem;
+  font-weight: 800;
+  line-height: 1.1;
   margin-top: 0.25rem;
 }
 

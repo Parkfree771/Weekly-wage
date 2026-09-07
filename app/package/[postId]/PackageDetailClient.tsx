@@ -183,7 +183,7 @@ function GoldValue({ v }: { v: number }) {
   );
 }
 
-/** 이득률 배지 — 갤러리 카드의 사선컷 칩과 같은 형태 */
+/** 이득률 — 갤러리 카드(BenefitPct)와 같은 형태. 상자 없이 색·크기·입체감만으로 세운다 */
 function BenefitBadge({ v }: { v: number }) {
   return (
     <span className={`${styles.resultBenefitBadge} ${v >= 0 ? styles.resultBenefitUp : styles.resultBenefitDown}`}>
@@ -1546,7 +1546,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
               </div>
 
               {detailGoldPerWon > 0 && pricesReady && (
-                <div className={styles.resultRow}>
+                <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
                   <span className={styles.resultRowLabel}>이득률</span>
                   <BenefitBadge v={singleBenefit} />
                 </div>
@@ -1561,7 +1561,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                     <GoldValue v={bundleGold} />
                   </div>
                   {detailGoldPerWon > 0 && pricesReady && (
-                    <div className={styles.resultRow}>
+                    <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
                       <span className={styles.resultRowLabel}>{post.packageType} 이득률</span>
                       <BenefitBadge v={bundleBenefit} />
                     </div>

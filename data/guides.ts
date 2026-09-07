@@ -12,6 +12,14 @@ export interface Guide {
 
 export const guides: Guide[] = [
   {
+    slug: 'package-value-formula',
+    title: '패키지 구성품 골드 환산 공식 정리: 이득률은 어떻게 계산되나',
+    summary: '환율과 블루 크리스탈 27.5원 계수, 묶음 시세 나누기, 상자별 기댓값, 시세가 없는 젬 상자·유물 코어·지옥 티켓을 대체 비용으로 역산하는 규칙까지 항목별로 정리했습니다.',
+    category: '패키지',
+    date: '2026-09-07',
+    href: '/guide/package-value-formula',
+  },
+  {
     slug: 'belgardin-rewards',
     title: '벨가르딘 관문별 클리어 보상과 더보기 정리',
     summary: '노말·하드·나이트메어 난이도별 관문 클리어 골드와 재료, 더보기 비용·보상, 승급 재료 주간 수급량을 표로 정리했습니다.',

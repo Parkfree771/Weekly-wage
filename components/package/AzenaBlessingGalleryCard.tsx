@@ -245,7 +245,7 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
           </div>
 
           {goldPerWon > 0 && (
-            <div className={styles.resultRow}>
+            <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
               <span className={styles.resultLabel}>기대 효율</span>
               <BenefitPct v={benefit} />
             </div>
