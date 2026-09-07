@@ -9,7 +9,7 @@ import { faqData } from './faq-data';
 export default function LifeMasterPage() {
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
-      <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
+      <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1500px', margin: '0 auto', padding: '0 2rem' }}>
         <Row className="justify-content-center">
           <Col xl={12} lg={12} md={12}>
             {/* 헤더 - 재련 페이지와 동일한 구조 */}

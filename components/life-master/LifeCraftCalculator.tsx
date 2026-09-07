@@ -46,7 +46,29 @@ const MATERIALS = {
   sturdy: { id: '6882302', name: '튼튼한 목재', icon: '/wood4.webp' },
 };
 
-// 교환 비율
+// 교환 비율 - 게임 내 교환 1회 단위 (교환창에 입력하는 숫자 = 교환 횟수)
+const EXCHANGE = {
+  sturdyToNormal: { from: 5, to: 50 },   // 튼튼한 목재 5 -> 목재 50
+  softToNormal: { from: 25, to: 50 },    // 부드러운 목재 25 -> 목재 50
+  normalToDust: { from: 100, to: 80 },   // 목재 100 -> 벌목의 가루 80
+  softToDust: { from: 50, to: 80 },      // 부드러운 목재 50 -> 벌목의 가루 80
+  dustToSoft: { from: 100, to: 50 },     // 가루 100 -> 부드러운 목재 50
+  dustToSturdy: { from: 100, to: 10 },   // 가루 100 -> 튼튼한 목재 10
+  dustToAbidos: { from: 100, to: 10 },   // 가루 100 -> 아비도스 목재 10
+} as const;
+
+const GARU = { name: '벌목의 가루', icon: '/rkfn.webp' };
+
+// 교환창에서 실제로 눌러야 하는 순서
+const EXCHANGE_STEPS = [
+  { key: 'sturdyToNormal', fromIcon: MATERIALS.sturdy.icon, fromLabel: MATERIALS.sturdy.name, toIcon: MATERIALS.normal.icon, toLabel: MATERIALS.normal.name, unit: EXCHANGE.sturdyToNormal },
+  { key: 'normalToDust', fromIcon: MATERIALS.normal.icon, fromLabel: MATERIALS.normal.name, toIcon: GARU.icon, toLabel: GARU.name, unit: EXCHANGE.normalToDust },
+  { key: 'softToDust', fromIcon: MATERIALS.soft.icon, fromLabel: MATERIALS.soft.name, toIcon: GARU.icon, toLabel: GARU.name, unit: EXCHANGE.softToDust },
+  { key: 'dustToAbidos', fromIcon: GARU.icon, fromLabel: GARU.name, toIcon: MATERIALS.abidos.icon, toLabel: MATERIALS.abidos.name, unit: EXCHANGE.dustToAbidos },
+  { key: 'dustToSoft', fromIcon: GARU.icon, fromLabel: GARU.name, toIcon: MATERIALS.soft.icon, toLabel: MATERIALS.soft.name, unit: EXCHANGE.dustToSoft },
+  { key: 'dustToSturdy', fromIcon: GARU.icon, fromLabel: GARU.name, toIcon: MATERIALS.sturdy.icon, toLabel: MATERIALS.sturdy.name, unit: EXCHANGE.dustToSturdy },
+  { key: 'softToNormal', fromIcon: MATERIALS.soft.icon, fromLabel: MATERIALS.soft.name, toIcon: MATERIALS.normal.icon, toLabel: MATERIALS.normal.name, unit: EXCHANGE.softToNormal },
+];
 
 const SALE_FEE_PERCENT = 5;
 const REFRESH_COOLDOWN_MS = 10 * 60 * 1000; // 10분
@@ -59,7 +81,7 @@ export default function LifeCraftCalculator() {
 
   // 상태
   const [selectedItem, setSelectedItem] = useState<ItemType>('premium');
-  const [craftMode, setCraftMode] = useState<CraftMode>('buy');
+  const [craftMode, setCraftMode] = useState<CraftMode>('owned');
   const [feeReduction, setFeeReduction] = useState<number>(0);
 
   // 보유 재료 (보유 모드용)
@@ -248,21 +270,16 @@ export default function LifeCraftCalculator() {
 
     let extraCrafts = 0;
     let extraDetail: {
-      sturdyConverted: number;
-      sturdyToNormal: number;
-      softToNormalConverted: number;
-      softToNormal: number;
-      normalToSoftConverted: number;
-      normalToSoft: number;
-      softUsedForGaru: number;
-      normalUsedForGaru: number;
-      garuFromSoft: number;
-      garuFromNormal: number;
-      totalGaru: number;
-      extraAbidos: number;
-      dustToSoft: number;
-      dustToTimber: number;
-      usedForCraft: { soft: number; normal: number };
+      hasExchange: boolean;
+      steps: {
+        key: string;
+        fromIcon: string;
+        fromLabel: string;
+        toIcon: string;
+        toLabel: string;
+        unit: { from: number; to: number };
+        times: number;
+      }[];
       finalLeftover: {
         abidos: number;
         soft: number;
@@ -272,8 +289,8 @@ export default function LifeCraftCalculator() {
       };
     } | null = null;
 
-    // 재료가 하나라도 있으면 계산
-    if (craftMode === 'owned' && (ownedAbidos > 0 || ownedSoft > 0 || ownedNormal > 0 || ownedSturdy > 0)) {
+    // 보유 모드면 입력 전에도 항상 계산 (재료 0이면 모든 수치가 0으로 나온다)
+    if (craftMode === 'owned') {
       const { materials } = currentItem;
       const COST_A = materials.abidos; // 43 (상급) or 33 (일반)
       const COST_S = materials.soft;   // 59 or 45
@@ -286,15 +303,13 @@ export default function LifeCraftCalculator() {
       let sturdy = ownedSturdy;
       let dust = 0;
 
-      // 변환 추적용
-      let totalSturdyConverted = 0;
-      let totalSturdyToTimber = 0;
-      let totalDirectSoftToTimber = 0; // 직접 부드러운 → 목재
-      let totalTimberToDust = 0;
-      let totalSoftToDust = 0;
-      let totalDustToAbydos = 0;
-      let totalDustToSoft = 0;
-      let totalDustToTimber = 0; // 가루 → 부드러운 → 목재 (100가루 → 100목재)
+      // 교환 횟수 추적 (게임 교환창에 입력하는 숫자)
+      let sturdyToNormalTimes = 0;
+      let softToNormalTimes = 0;
+      let normalToDustTimes = 0;
+      let softToDustTimes = 0;
+      let dustToSoftTimes = 0;
+      let dustToAbidosTimes = 0;
 
       let craftCount = 0;
       const MAX_ITERATIONS = 100000; // 무한루프 방지
@@ -305,36 +320,37 @@ export default function LifeCraftCalculator() {
         // Priority 1: 아비도스 목재 채우기 (목표: COST_A)
         if (abydos < COST_A) {
           const needed = COST_A - abydos;
-          const costInDust = needed * 10; // 아비도스 1개 = 가루 10개
+          // 교환은 1회 단위(가루 100 → 아비도스 10)로만 가능 → 올림
+          const times = Math.ceil(needed / EXCHANGE.dustToAbidos.to);
+          const costInDust = times * EXCHANGE.dustToAbidos.from;
 
           // 가루 부족 시 하위 재료 갈아서 가루 확보
           while (dust < costInDust) {
-            if (sturdy >= 5) {
-              // 튼튼한 → 목재 → 가루 (5튼튼한 → 50목재)
-              sturdy -= 5;
-              timber += 50;
-              totalSturdyConverted += 5;
-              totalSturdyToTimber += 50;
-            } else if (timber >= 100) {
-              // 목재 → 가루 (100목재 → 80가루)
-              timber -= 100;
-              dust += 80;
-              totalTimberToDust += 100;
-            } else if (soft >= 50) {
-              // 부드러운 → 가루 (50부드러운 → 80가루) - 최후의 수단
-              soft -= 50;
-              dust += 80;
-              totalSoftToDust += 50;
+            if (sturdy >= EXCHANGE.sturdyToNormal.from) {
+              // 튼튼한 → 목재 → 가루
+              sturdy -= EXCHANGE.sturdyToNormal.from;
+              timber += EXCHANGE.sturdyToNormal.to;
+              sturdyToNormalTimes++;
+            } else if (timber >= EXCHANGE.normalToDust.from) {
+              // 목재 → 가루
+              timber -= EXCHANGE.normalToDust.from;
+              dust += EXCHANGE.normalToDust.to;
+              normalToDustTimes++;
+            } else if (soft >= EXCHANGE.softToDust.from) {
+              // 부드러운 → 가루 - 최후의 수단
+              soft -= EXCHANGE.softToDust.from;
+              dust += EXCHANGE.softToDust.to;
+              softToDustTimes++;
             } else {
               break; // 더 이상 가루를 만들 재료 없음
             }
           }
 
-          // 가루가 충분하면 아비도스 구매
+          // 가루가 충분하면 아비도스 교환
           if (dust >= costInDust) {
             dust -= costInDust;
-            abydos += needed;
-            totalDustToAbydos += needed;
+            abydos += times * EXCHANGE.dustToAbidos.to;
+            dustToAbidosTimes += times;
           } else {
             canCraft = false;
           }
@@ -345,19 +361,20 @@ export default function LifeCraftCalculator() {
         // Priority 2: 부드러운 목재 채우기 (목표: COST_S)
         if (soft < COST_S) {
           const needed = COST_S - soft;
-          const costInDust = needed * 2; // 부드러운 1개 = 가루 2개 (100가루 = 50부드러운)
+          // 교환 1회 단위(가루 100 → 부드러운 50) → 올림
+          const times = Math.ceil(needed / EXCHANGE.dustToSoft.to);
+          const costInDust = times * EXCHANGE.dustToSoft.from;
 
           // 가루 부족 시 갈아서 확보 (단, soft 갈기는 제외)
           while (dust < costInDust) {
-            if (sturdy >= 5) {
-              sturdy -= 5;
-              timber += 50;
-              totalSturdyConverted += 5;
-              totalSturdyToTimber += 50;
-            } else if (timber >= 100) {
-              timber -= 100;
-              dust += 80;
-              totalTimberToDust += 100;
+            if (sturdy >= EXCHANGE.sturdyToNormal.from) {
+              sturdy -= EXCHANGE.sturdyToNormal.from;
+              timber += EXCHANGE.sturdyToNormal.to;
+              sturdyToNormalTimes++;
+            } else if (timber >= EXCHANGE.normalToDust.from) {
+              timber -= EXCHANGE.normalToDust.from;
+              dust += EXCHANGE.normalToDust.to;
+              normalToDustTimes++;
             } else {
               break;
             }
@@ -365,8 +382,8 @@ export default function LifeCraftCalculator() {
 
           if (dust >= costInDust) {
             dust -= costInDust;
-            soft += needed;
-            totalDustToSoft += needed;
+            soft += times * EXCHANGE.dustToSoft.to;
+            dustToSoftTimes += times;
           } else {
             canCraft = false;
           }
@@ -377,27 +394,28 @@ export default function LifeCraftCalculator() {
         // Priority 3: 일반 목재 채우기 (목표: COST_T)
         if (timber < COST_T) {
           // 3-1. 튼튼한 목재 사용 (1순위: 5개 → 50개)
-          while (timber < COST_T && sturdy >= 5) {
-            sturdy -= 5;
-            timber += 50;
-            totalSturdyConverted += 5;
-            totalSturdyToTimber += 50;
+          while (timber < COST_T && sturdy >= EXCHANGE.sturdyToNormal.from) {
+            sturdy -= EXCHANGE.sturdyToNormal.from;
+            timber += EXCHANGE.sturdyToNormal.to;
+            sturdyToNormalTimes++;
           }
 
           // 3-2. 부드러운 목재 여유분 사용 (2순위: 25개 → 50개)
           // 단, 부드러운 목재가 필요량(COST_S) 아래로 내려가면 안됨
-          while (timber < COST_T && soft >= (COST_S + 25)) {
-            soft -= 25;
-            timber += 50;
-            totalDirectSoftToTimber += 25;
+          while (timber < COST_T && soft >= (COST_S + EXCHANGE.softToNormal.from)) {
+            soft -= EXCHANGE.softToNormal.from;
+            timber += EXCHANGE.softToNormal.to;
+            softToNormalTimes++;
           }
 
-          // 3-3. 가루 사용 (최후 순위: 100가루 → 50부드러운 → 100목재)
+          // 3-3. 가루 사용 (최후 순위: 가루 100 → 부드러운 50 → 목재 100)
+          const softPerDust = EXCHANGE.dustToSoft.to / EXCHANGE.softToNormal.from; // 부드러운 50 = 목재 교환 2회
           while (timber < COST_T) {
-            if (dust >= 100) {
-              dust -= 100;
-              timber += 100; // 100가루 → 50부드러운 → 100목재
-              totalDustToTimber += 100;
+            if (dust >= EXCHANGE.dustToSoft.from) {
+              dust -= EXCHANGE.dustToSoft.from;
+              dustToSoftTimes++;
+              timber += softPerDust * EXCHANGE.softToNormal.to;
+              softToNormalTimes += softPerDust;
             } else {
               break;
             }
@@ -421,36 +439,35 @@ export default function LifeCraftCalculator() {
         }
       }
 
-      if (craftCount > 0) {
-        extraCrafts = craftCount;
-        extraDetail = {
-          sturdyConverted: totalSturdyConverted,
-          sturdyToNormal: totalSturdyToTimber,
-          softToNormalConverted: totalDirectSoftToTimber,
-          softToNormal: totalDirectSoftToTimber * 2, // 25개당 50목재
-          normalToSoftConverted: 0,
-          normalToSoft: 0,
-          softUsedForGaru: totalSoftToDust,
-          normalUsedForGaru: totalTimberToDust,
-          garuFromSoft: Math.floor(totalSoftToDust * 1.6), // 50 → 80
-          garuFromNormal: Math.floor(totalTimberToDust * 0.8), // 100 → 80
-          totalGaru: Math.floor(totalSoftToDust * 1.6) + Math.floor(totalTimberToDust * 0.8),
-          extraAbidos: totalDustToAbydos,
-          dustToSoft: totalDustToSoft,
-          dustToTimber: totalDustToTimber,
-          usedForCraft: {
-            soft: craftCount * COST_S,
-            normal: craftCount * COST_T,
-          },
-          finalLeftover: {
-            abidos: abydos,
-            soft: soft,
-            normal: timber,
-            sturdy: sturdy,
-            garu: dust,
-          }
-        };
-      }
+      extraCrafts = craftCount;
+
+      const timesByKey: Record<string, number> = {
+        sturdyToNormal: sturdyToNormalTimes,
+        normalToDust: normalToDustTimes,
+        softToDust: softToDustTimes,
+        dustToAbidos: dustToAbidosTimes,
+        dustToSoft: dustToSoftTimes,
+        dustToSturdy: 0, // 계산에는 쓰지 않지만 교환 목록에는 존재
+        softToNormal: softToNormalTimes,
+      };
+      const usedSteps = EXCHANGE_STEPS
+        .map(step => ({ ...step, times: timesByKey[step.key] ?? 0 }))
+        .filter(step => step.times > 0);
+
+      extraDetail = {
+        hasExchange: usedSteps.length > 0,
+        // 아직 교환할 게 없으면 전체 교환 목록을 0회로 보여준다 (기능 안내용)
+        steps: usedSteps.length > 0
+          ? usedSteps
+          : EXCHANGE_STEPS.map(step => ({ ...step, times: 0 })),
+        finalLeftover: {
+          abidos: abydos,
+          soft: soft,
+          normal: timber,
+          sturdy: sturdy,
+          garu: dust,
+        }
+      };
     }
 
     return {
@@ -561,7 +578,7 @@ export default function LifeCraftCalculator() {
           <div className={styles.itemInfo}>
             <h2 className={styles.itemName}>{currentItem.name} ×{currentItem.output}</h2>
             <div className={styles.itemPriceRow}>
-              <span className={styles.priceLabel}>판매가:</span>
+              <span className={styles.priceLabel}>개당 판매가:</span>
               <div className={styles.priceInputWrapper}>
                 <input
                   type="number"
@@ -575,6 +592,32 @@ export default function LifeCraftCalculator() {
                 <span className={styles.priceUnit}>G</span>
               </div>
             </div>
+          </div>
+
+          {/* 시세 갱신 */}
+          <div className={styles.refreshBar}>
+            <button
+              onClick={refreshPrices}
+              disabled={isRefreshing || (hasManualRefreshed && cooldownRemaining > 0)}
+              className={styles.refreshBarBtn}
+            >
+              {isRefreshing ? (
+                <Spinner animation="border" size="sm" />
+              ) : hasManualRefreshed && cooldownRemaining > 0 ? (
+                <>
+                  <span>갱신 대기</span>
+                  <span className={styles.cooldownTimer}>{formatCooldown(cooldownRemaining)}</span>
+                </>
+              ) : (
+                <>
+                  <Image src="/gold.webp" alt="골드" width={20} height={20} />
+                  <span>시세 갱신</span>
+                </>
+              )}
+            </button>
+            {priceDate && (
+              <span className={styles.refreshBarDate}>기준: {priceDate}</span>
+            )}
           </div>
         </div>
 
@@ -640,11 +683,9 @@ export default function LifeCraftCalculator() {
                 <span className={styles.requiredAmount}>/{currentItem.materials.normal}</span>
               </div>
             </div>
-            {maxCraftsFromOwned > 0 && (
-              <div className={styles.maxCrafts}>
-                최대 제작 가능: <span>{maxCraftsFromOwned}회</span> ({maxCraftsFromOwned * currentItem.output}개)
-              </div>
-            )}
+            <div className={styles.maxCrafts}>
+              최대 제작 가능: <span>{maxCraftsFromOwned}회</span> ({maxCraftsFromOwned * currentItem.output}개)
+            </div>
           </div>
         )}
 
@@ -784,7 +825,7 @@ export default function LifeCraftCalculator() {
         )}
 
         {/* 제작 결과 & 비용 계산 섹션 - 재료 보유 모드 */}
-        {craftMode === 'owned' && actualCraftCount > 0 && (
+        {craftMode === 'owned' && (
           <div className={styles.craftResultSection}>
             {/* 왼쪽: 제작 결과물 */}
             <div className={styles.craftResultLeft}>
@@ -859,41 +900,39 @@ export default function LifeCraftCalculator() {
         )}
 
         {/* 손익 결과 - 카드형 */}
-        {actualCraftCount > 0 && (
-          <div className={styles.resultSection}>
-            <div className={styles.priceCards}>
-              <div className={styles.priceCard}>
-                <span className={styles.cardLabel}>개당 제작 비용</span>
-                <div className={styles.cardValueRow}>
-                  <span className={styles.cardValue}>{calculations.costPerUnit.toFixed(1)}</span>
-                  <Image src="/gold.webp" alt="골드" width={18} height={18} />
-                </div>
+        <div className={styles.resultSection}>
+          <div className={styles.priceCards}>
+            <div className={styles.priceCard}>
+              <span className={styles.cardLabel}>개당 제작 비용</span>
+              <div className={styles.cardValueRow}>
+                <span className={styles.cardValue}>{calculations.costPerUnit.toFixed(1)}</span>
+                <Image src="/gold.webp" alt="골드" width={18} height={18} />
               </div>
-              <div className={styles.priceCard}>
-                <span className={styles.cardLabel}>개당 판매가</span>
-                <div className={styles.cardValueRow}>
-                  <span className={styles.cardValue}>{currentPrice.toLocaleString()}</span>
-                  <Image src="/gold.webp" alt="골드" width={18} height={18} />
-                </div>
-                <span className={styles.cardSub}>(5% 제외: {(currentPrice * 0.95).toFixed(1)})</span>
+            </div>
+            <div className={styles.priceCard}>
+              <span className={styles.cardLabel}>개당 판매가</span>
+              <div className={styles.cardValueRow}>
+                <span className={styles.cardValue}>{currentPrice.toLocaleString()}</span>
+                <Image src="/gold.webp" alt="골드" width={18} height={18} />
               </div>
-              <div className={styles.profitCardNew}>
-                <div className={`${styles.profitItem} ${calculations.directProfit >= 0 ? styles.profitBg : styles.lossBg}`}>
-                  <span className={styles.profitLabel}>직접사용</span>
-                  <span className={styles.profitPercent}>
-                    {calculations.directProfit >= 0 ? '+' : ''}{calculations.directProfitPercent.toFixed(1)}%
-                  </span>
-                </div>
-                <div className={`${styles.profitItem} ${calculations.saleProfit >= 0 ? styles.profitBg : styles.lossBg}`}>
-                  <span className={styles.profitLabel}>판매시</span>
-                  <span className={styles.profitPercent}>
-                    {calculations.saleProfit >= 0 ? '+' : ''}{calculations.saleProfitPercent.toFixed(1)}%
-                  </span>
-                </div>
+              <span className={styles.cardSub}>(5% 제외: {(currentPrice * 0.95).toFixed(1)})</span>
+            </div>
+            <div className={styles.profitCardNew}>
+              <div className={`${styles.profitItem} ${calculations.directProfit >= 0 ? styles.profitBg : styles.lossBg}`}>
+                <span className={styles.profitLabel}>직접사용</span>
+                <span className={styles.profitPercent}>
+                  {calculations.directProfit >= 0 ? '+' : ''}{calculations.directProfitPercent.toFixed(1)}%
+                </span>
+              </div>
+              <div className={`${styles.profitItem} ${calculations.saleProfit >= 0 ? styles.profitBg : styles.lossBg}`}>
+                <span className={styles.profitLabel}>판매시</span>
+                <span className={styles.profitPercent}>
+                  {calculations.saleProfit >= 0 ? '+' : ''}{calculations.saleProfitPercent.toFixed(1)}%
+                </span>
               </div>
             </div>
           </div>
-        )}
+        </div>
         </div>
 
         {/* 모바일 중간 광고 */}
@@ -903,36 +942,10 @@ export default function LifeCraftCalculator() {
 
         {/* 사이드바 */}
         <div className={styles.sidebar}>
-          {/* 시세 갱신 버튼 */}
-          <div className={styles.refreshCard}>
-            <button
-              onClick={refreshPrices}
-              disabled={isRefreshing || (hasManualRefreshed && cooldownRemaining > 0)}
-              className={styles.refreshBtnSidebar}
-            >
-              {isRefreshing ? (
-                <Spinner animation="border" size="sm" />
-              ) : hasManualRefreshed && cooldownRemaining > 0 ? (
-                <>
-                  <span>갱신 대기</span>
-                  <span className={styles.cooldownTimer}>{formatCooldown(cooldownRemaining)}</span>
-                </>
-              ) : (
-                <>
-                  <Image src="/gold.webp" alt="골드" width={20} height={20} />
-                  <span>시세 갱신</span>
-                </>
-              )}
-            </button>
-            {priceDate && (
-              <span className={styles.priceDateSidebar}>기준: {priceDate}</span>
-            )}
-          </div>
-
           {/* 가루 교환 최적화 */}
           <div className={styles.sidebarCard}>
             <div className={styles.sidebarHeader}>
-              <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
+              <Image src="/rkfn.webp" alt="가루" width={34} height={34} />
               <span>생활의 가루 최적화</span>
             </div>
 
@@ -947,7 +960,7 @@ export default function LifeCraftCalculator() {
                     className={`${styles.methodRow} ${idx === 0 ? styles.bestMethod : ''}`}
                   >
                     <div className={styles.methodInfo}>
-                      <Image src={method.icon} alt={method.name} width={28} height={28} />
+                      <Image src={method.icon} alt={method.name} width={40} height={40} />
                       <span className={styles.methodName}>{method.name}</span>
                     </div>
                     <span className={styles.methodCost}>
@@ -981,11 +994,13 @@ export default function LifeCraftCalculator() {
               <div className={styles.sidebarContent}>
                 <div className={styles.sidebarTitle}>남는 재료 활용</div>
 
-                {garuOptimization.extraCrafts > 0 && garuOptimization.extraDetail ? (
+                {garuOptimization.extraDetail && (
                   <>
-                    <div className={styles.extraBox}>
+                    <div className={`${styles.extraBox} ${garuOptimization.extraCrafts === 0 ? styles.extraBoxEmpty : ''}`}>
                       <div className={styles.extraTitle}>
-                        추가 {garuOptimization.extraCrafts}회 제작 가능!
+                        {garuOptimization.extraCrafts > 0
+                          ? `추가 ${garuOptimization.extraCrafts}회 제작 가능!`
+                          : '추가 제작 0회'}
                       </div>
                       <div className={styles.extraOutput}>
                         (+{garuOptimization.extraCrafts * currentItem.output}개)
@@ -993,93 +1008,36 @@ export default function LifeCraftCalculator() {
                     </div>
 
                     <div className={styles.exchangeSteps}>
-                      <div className={styles.stepTitle}>교환 과정</div>
+                      <div className={styles.stepTitle}>
+                        교환 과정
+                        <span className={styles.stepHint}>숫자 = 교환창 입력 횟수</span>
+                      </div>
 
-                      {/* 튼튼한 → 목재 변환 */}
-                      {garuOptimization.extraDetail.sturdyConverted > 0 && (
-                        <div className={styles.stepRow}>
-                          <Image src="/wood4.webp" alt="튼튼한" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.sturdyConverted}개</span>
-                          <span className={styles.arrow}>→</span>
-                          <Image src="/wood2.webp" alt="목재" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.sturdyToNormal}개</span>
+                      {garuOptimization.extraDetail.steps.map((step) => (
+                        <div key={step.key} className={styles.stepItem}>
+                          <div className={styles.stepRow}>
+                            <div className={styles.stepUnit}>
+                              <Image src={step.fromIcon} alt={step.fromLabel} width={40} height={40} />
+                              <span>{step.unit.from}</span>
+                              <span className={styles.arrow}>→</span>
+                              <Image src={step.toIcon} alt={step.toLabel} width={40} height={40} />
+                              <span>{step.unit.to}</span>
+                            </div>
+                            <span className={`${styles.stepTimes} ${step.times === 0 ? styles.stepTimesIdle : ''}`}>
+                              {step.times}회
+                            </span>
+                          </div>
+                          {step.times > 0 && (
+                            <div className={styles.stepSum}>
+                              총 {(step.unit.from * step.times).toLocaleString()} → {(step.unit.to * step.times).toLocaleString()}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      ))}
 
-                      {/* 부드러운 → 목재 변환 */}
-                      {garuOptimization.extraDetail.softToNormalConverted > 0 && (
-                        <div className={styles.stepRow}>
-                          <Image src="/wood3.webp" alt="부드러운" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.softToNormalConverted}개</span>
-                          <span className={styles.arrow}>→</span>
-                          <Image src="/wood2.webp" alt="목재" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.softToNormal}개</span>
-                        </div>
-                      )}
-
-                      {/* 목재 → 가루 → 부드러운 변환 */}
-                      {garuOptimization.extraDetail.normalToSoftConverted > 0 && (
-                        <div className={styles.stepRow}>
-                          <Image src="/wood2.webp" alt="목재" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.normalToSoftConverted}개</span>
-                          <span className={styles.arrow}>→</span>
-                          <Image src="/wood3.webp" alt="부드러운" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.normalToSoft}개</span>
-                        </div>
-                      )}
-
-                      {/* 부드러운 → 가루 변환 */}
-                      {garuOptimization.extraDetail.softUsedForGaru > 0 && (
-                        <div className={styles.stepRow}>
-                          <Image src="/wood3.webp" alt="부드러운" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.softUsedForGaru}개</span>
-                          <span className={styles.arrow}>→</span>
-                          <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.garuFromSoft}개</span>
-                        </div>
-                      )}
-
-                      {/* 목재 → 가루 변환 */}
-                      {garuOptimization.extraDetail.normalUsedForGaru > 0 && (
-                        <div className={styles.stepRow}>
-                          <Image src="/wood2.webp" alt="목재" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.normalUsedForGaru}개</span>
-                          <span className={styles.arrow}>→</span>
-                          <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.garuFromNormal}개</span>
-                        </div>
-                      )}
-
-                      {/* 가루 → 아비도스 변환 */}
-                      {garuOptimization.extraDetail.extraAbidos > 0 && (
-                        <div className={styles.stepRow}>
-                          <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.extraAbidos * 10}개</span>
-                          <span className={styles.arrow}>→</span>
-                          <Image src="/wood1.webp" alt="아비도스" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.extraAbidos}개</span>
-                        </div>
-                      )}
-
-                      {/* 가루 → 부드러운 변환 */}
-                      {garuOptimization.extraDetail.dustToSoft > 0 && (
-                        <div className={styles.stepRow}>
-                          <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.dustToSoft * 2}개</span>
-                          <span className={styles.arrow}>→</span>
-                          <Image src="/wood3.webp" alt="부드러운" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.dustToSoft}개</span>
-                        </div>
-                      )}
-
-                      {/* 가루 → 목재 변환 (via 부드러운) */}
-                      {garuOptimization.extraDetail.dustToTimber > 0 && (
-                        <div className={styles.stepRow}>
-                          <Image src="/rkfn.webp" alt="가루" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.dustToTimber}개</span>
-                          <span className={styles.arrow}>→</span>
-                          <Image src="/wood2.webp" alt="목재" width={24} height={24} />
-                          <span>{garuOptimization.extraDetail.dustToTimber}개</span>
+                      {!garuOptimization.extraDetail.hasExchange && (
+                        <div className={styles.stepEmpty}>
+                          보유 재료를 입력하면 필요한 교환 횟수가 채워집니다
                         </div>
                       )}
                     </div>
@@ -1087,6 +1045,7 @@ export default function LifeCraftCalculator() {
                     {/* 적용하기 버튼 */}
                     <button
                       onClick={() => setApplyExtraCrafts(!applyExtraCrafts)}
+                      disabled={garuOptimization.extraCrafts === 0}
                       className={`${styles.applyExtraBtn} ${applyExtraCrafts ? styles.applied : ''}`}
                     >
                       {applyExtraCrafts ? '적용 해제' : '계산에 적용하기'}
@@ -1102,31 +1061,31 @@ export default function LifeCraftCalculator() {
                             <div className={styles.leftoverItems}>
                               {garuOptimization.extraDetail.finalLeftover.abidos > 0 && (
                                 <div className={styles.leftoverItem}>
-                                  <Image src="/wood1.webp" alt="아비도스" width={20} height={20} />
+                                  <Image src="/wood1.webp" alt="아비도스" width={28} height={28} />
                                   <span>{garuOptimization.extraDetail.finalLeftover.abidos}</span>
                                 </div>
                               )}
                               {garuOptimization.extraDetail.finalLeftover.soft > 0 && (
                                 <div className={styles.leftoverItem}>
-                                  <Image src="/wood3.webp" alt="부드러운" width={20} height={20} />
+                                  <Image src="/wood3.webp" alt="부드러운" width={28} height={28} />
                                   <span>{garuOptimization.extraDetail.finalLeftover.soft}</span>
                                 </div>
                               )}
                               {garuOptimization.extraDetail.finalLeftover.normal > 0 && (
                                 <div className={styles.leftoverItem}>
-                                  <Image src="/wood2.webp" alt="목재" width={20} height={20} />
+                                  <Image src="/wood2.webp" alt="목재" width={28} height={28} />
                                   <span>{garuOptimization.extraDetail.finalLeftover.normal}</span>
                                 </div>
                               )}
                               {garuOptimization.extraDetail.finalLeftover.sturdy > 0 && (
                                 <div className={styles.leftoverItem}>
-                                  <Image src="/wood4.webp" alt="튼튼한" width={20} height={20} />
+                                  <Image src="/wood4.webp" alt="튼튼한" width={28} height={28} />
                                   <span>{garuOptimization.extraDetail.finalLeftover.sturdy}</span>
                                 </div>
                               )}
                               {garuOptimization.extraDetail.finalLeftover.garu > 0 && (
                                 <div className={styles.leftoverItem}>
-                                  <Image src="/rkfn.webp" alt="가루" width={20} height={20} />
+                                  <Image src="/rkfn.webp" alt="가루" width={28} height={28} />
                                   <span>{garuOptimization.extraDetail.finalLeftover.garu}</span>
                                 </div>
                               )}
@@ -1143,31 +1102,10 @@ export default function LifeCraftCalculator() {
                       </>
                     )}
                   </>
-                ) : maxCraftsFromOwned > 0 ? (
-                  <div className={styles.noExtraBox}>
-                    남는 재료로 추가 제작이 어렵습니다
-                  </div>
-                ) : (
-                  <div className={styles.noExtraBox}>
-                    보유 재료를 입력해주세요
-                  </div>
                 )}
               </div>
             )}
 
-            {/* 교환 비율 참고 */}
-            <div className={styles.exchangeRef}>
-              <div className={styles.refTitle}>직접 교환</div>
-              <div className={styles.refRow}>부드러운 25 → 목재 50</div>
-              <div className={styles.refRow}>튼튼한 5 → 목재 50</div>
-              <div className={styles.refTitle} style={{ marginTop: '8px' }}>가루 변환</div>
-              <div className={styles.refRow}>목재 100 → 가루 80</div>
-              <div className={styles.refRow}>부드러운 50 → 가루 80</div>
-              <div className={styles.refTitle} style={{ marginTop: '8px' }}>가루 → 재료</div>
-              <div className={styles.refRow}>가루 100 → 부드러운 50</div>
-              <div className={styles.refRow}>가루 100 → 튼튼한 10</div>
-              <div className={styles.refRow}>가루 100 → 아비도스 10</div>
-            </div>
           </div>
         </div>
       </div>

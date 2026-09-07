@@ -1,6 +1,6 @@
 /* 컨테이너 */
 .container {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 4px 20px;
 }
@@ -72,26 +72,30 @@
 }
 
 /* 사이드바 시세 갱신 */
-.refreshCard {
-  background: var(--card-bg);
-  border-radius: 10px;
-  border: 1px solid var(--border-color);
-  padding: 10px;
-  margin-bottom: 10px;
-  text-align: center;
+/* 시세 갱신 - 아이템 헤더 우측 */
+.refreshBar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
-@media (min-width: 768px) {
-  .refreshCard {
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 16px;
+@media (max-width: 767px) {
+  .refreshBar {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-left: 0;
   }
 }
 
-.refreshBtnSidebar {
-  width: 100%;
-  padding: 10px 16px;
+.refreshBarBtn {
+  flex-shrink: 0;
+  padding: 9px 18px;
   border-radius: 8px;
   border: 2px solid #10b981;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
@@ -108,20 +112,20 @@
 }
 
 @media (min-width: 768px) {
-  .refreshBtnSidebar {
-    padding: 12px 16px;
+  .refreshBarBtn {
+    padding: 10px 20px;
     border-radius: 10px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 }
 
-.refreshBtnSidebar:hover:not(:disabled) {
+.refreshBarBtn:hover:not(:disabled) {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.1) 100%);
   border-color: #059669;
   transform: translateY(-1px);
 }
 
-.refreshBtnSidebar:disabled {
+.refreshBarBtn:disabled {
   opacity: 0.8;
   cursor: not-allowed;
   border-color: var(--border-color);
@@ -141,17 +145,15 @@
   }
 }
 
-.priceDateSidebar {
-  display: block;
-  margin-top: 8px;
+.refreshBarDate {
   font-size: 0.7rem;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 @media (min-width: 768px) {
-  .priceDateSidebar {
-    margin-top: 10px;
-    font-size: 0.75rem;
+  .refreshBarDate {
+    font-size: 0.8rem;
   }
 }
 
@@ -203,6 +205,7 @@
 /* 아이템 헤더 */
 .itemHeader {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 16px;
   padding: 20px;
@@ -1183,7 +1186,13 @@
 
 @media (min-width: 768px) {
   .sidebar {
-    width: 280px;
+    width: 340px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .sidebar {
+    width: 400px;
   }
 }
 
@@ -1208,11 +1217,11 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 14px 16px;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, transparent 100%);
   border-bottom: 1px solid var(--border-color);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: #10b981;
   text-align: center;
 }
@@ -1220,8 +1229,8 @@
 @media (min-width: 768px) {
   .sidebarHeader {
     justify-content: flex-start;
-    padding: 14px 16px;
-    font-size: 0.9rem;
+    padding: 16px 18px;
+    font-size: 1.05rem;
     text-align: left;
   }
 }
@@ -1231,17 +1240,17 @@
 }
 
 .sidebarContent {
-  padding: 12px;
+  padding: 14px;
 }
 
 @media (min-width: 768px) {
   .sidebarContent {
-    padding: 16px;
+    padding: 18px;
   }
 }
 
 .sidebarTitle {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 10px;
@@ -1250,7 +1259,7 @@
 
 @media (min-width: 768px) {
   .sidebarTitle {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     margin-bottom: 12px;
     text-align: left;
   }
@@ -1262,7 +1271,7 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: var(--card-header-bg);
   border-radius: 8px;
   margin-bottom: 8px;
@@ -1281,26 +1290,26 @@
 
 .methodName {
   display: inline;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 @media (min-width: 768px) {
   .methodName {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
   }
 }
 
 .methodCost {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-secondary);
 }
 
 @media (min-width: 768px) {
   .methodCost {
-    font-size: 0.9rem;
+    font-size: 1.05rem;
   }
 }
 
@@ -1350,14 +1359,14 @@
 
 .savingsDetail {
   display: block;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: 6px;
 }
 
 @media (min-width: 768px) {
   .savingsDetail {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -1394,83 +1403,157 @@
 }
 
 .extraTitle {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #10b981;
 }
 
 @media (min-width: 768px) {
   .extraTitle {
-    font-size: 1rem;
+    font-size: 1.2rem;
   }
 }
 
 .extraOutput {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: #10b981;
 }
 
 @media (min-width: 768px) {
   .extraOutput {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
   }
 }
 
-.exchangeSteps {
-  padding: 12px;
+.extraBoxEmpty {
   background: var(--card-header-bg);
-  border-radius: 10px;
+}
+
+.extraBoxEmpty .extraTitle,
+.extraBoxEmpty .extraOutput {
+  color: var(--text-muted);
+}
+
+.exchangeSteps {
+  padding: 14px;
+  background: var(--card-header-bg);
+  border-radius: 12px;
+}
+
+@media (min-width: 768px) {
+  .exchangeSteps {
+    padding: 16px;
+  }
 }
 
 .stepTitle {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
 }
 
 @media (min-width: 768px) {
   .stepTitle {
-    font-size: 0.75rem;
+    font-size: 0.9rem;
   }
+}
+
+.stepHint {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.stepItem {
+  padding: 10px 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.stepItem:first-of-type {
+  border-top: none;
+  padding-top: 0;
 }
 
 .stepRow {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  justify-content: flex-start;
-  gap: 6px;
-  padding: 6px 0;
-  font-size: 0.75rem;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--text-primary);
+}
+
+.stepUnit {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepTimes {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #10b981;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepTimesIdle {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.stepSum {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 @media (min-width: 768px) {
   .stepRow {
-    font-size: 0.8rem;
+    font-size: 1.1rem;
+    gap: 10px;
   }
+
+  .stepUnit {
+    gap: 10px;
+  }
+
+  .stepTimes {
+    padding: 7px 14px;
+    font-size: 1.1rem;
+  }
+
+  .stepSum {
+    font-size: 0.85rem;
+  }
+}
+
+.stepEmpty {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .stepRow .arrow {
   color: #10b981;
   font-weight: 700;
-}
-
-.noExtraBox {
-  padding: 16px 12px;
-  background: var(--card-header-bg);
-  border-radius: 10px;
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-@media (min-width: 768px) {
-  .noExtraBox {
-    padding: 20px 14px;
-    font-size: 0.85rem;
-  }
 }
 
 /* 적용하기 버튼 */
@@ -1499,6 +1582,19 @@
 .applyExtraBtn:hover {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.1) 100%);
   transform: translateY(-1px);
+}
+
+.applyExtraBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: var(--border-color);
+  background: var(--card-header-bg);
+  color: var(--text-muted);
+}
+
+.applyExtraBtn:disabled:hover {
+  background: var(--card-header-bg);
+  transform: none;
 }
 
 .applyExtraBtn.applied {
@@ -1539,7 +1635,7 @@
 }
 
 .leftoverTitle {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 8px;
@@ -1554,15 +1650,15 @@
 .leftoverItem {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 8px;
+  padding: 6px 12px;
   background: var(--card-bg);
   border-radius: 6px;
   border: 1px solid var(--border-color);
 }
 
 .leftoverItem span {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -1571,46 +1667,6 @@
   font-size: 0.8rem;
   color: var(--text-muted);
   font-style: italic;
-}
-
-/* 교환 비율 참고 */
-.exchangeRef {
-  padding: 10px 12px;
-  border-top: 1px solid var(--border-color);
-  background: var(--card-header-bg);
-}
-
-@media (min-width: 768px) {
-  .exchangeRef {
-    padding: 12px 16px;
-  }
-}
-
-.refTitle {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
-
-@media (min-width: 768px) {
-  .refTitle {
-    font-size: 0.7rem;
-    margin-bottom: 6px;
-  }
-}
-
-.refRow {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  padding: 2px 0;
-}
-
-@media (min-width: 768px) {
-  .refRow {
-    font-size: 0.7rem;
-    padding: 2px 0;
-  }
 }
 
 /* 반응형 - 모바일 메인 카드만 조정 (사이드바는 아래에 전체 너비로) */
