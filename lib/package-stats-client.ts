@@ -94,6 +94,48 @@ export function publishStats(postId: string, raw: unknown): void {
   for (const fn of listeners) fn(postId, st);
 }
 
+/**
+ * 서버(ISR)가 내려준 집계를 세션 캐시에 심는다 — 조회는 0.
+ *
+ * 이걸 안 하면 캐시가 비어 있는 상태에서 도착한 GET /api/package/stats 응답(최대 5분 낡음)이
+ * 서버가 방금 렌더한 값보다 낡아도 그대로 화면에 얹혀 숫자가 뒤로 간다. 심어 두면 updatedAt
+ * 비교에 걸려 그 응답이 버려진다.
+ */
+export function seedStatsFromPosts(
+  posts: { id: string; viewCount?: number; likeCount?: number; sosoCount?: number; statsUpdatedAt?: number }[],
+): void {
+  for (const p of posts) {
+    // statsUpdatedAt 이 없으면 Neon 을 못 읽고 내려온 글(=Firestore 프리즈 값)이라 심지 않는다
+    if (!p.id || typeof p.statsUpdatedAt !== 'number') continue;
+    recordStats(p.id, {
+      viewCount: p.viewCount ?? 0,
+      likeCount: p.likeCount ?? 0,
+      sosoCount: p.sosoCount ?? 0,
+      updatedAt: p.statsUpdatedAt,
+    });
+  }
+}
+
+// ─── 최신 집계 받아오기 ───
+// GET /api/package/stats 한 번. 받은 값은 세션 캐시에 넣고 구독자(ReactionBar·갤러리 카드)에게 알린다.
+// ids 는 정렬해서 보낸다 — 같은 화면을 보는 사람끼리 URL 이 같아야 CDN 캐시를 공유한다.
+// 캐시버스팅 쿼리나 cache: 'no-store' 를 붙이지 말 것(요청에 no-cache 가 실려 엣지 캐시가 흘러간다).
+export async function fetchStats(ids: string[]): Promise<boolean> {
+  const key = [...new Set(ids.filter(Boolean))].sort().join(',');
+  if (!key) return false;
+  try {
+    const res = await fetch(`/api/package/stats?ids=${encodeURIComponent(key)}`);
+    if (!res.ok) return false;
+    const stats = (await res.json()) as Record<string, unknown> | null;
+    if (!stats || typeof stats !== 'object') return false;
+    // 낡은 스냅샷은 recordStats 가 알아서 버린다(updatedAt 비교)
+    for (const [id, st] of Object.entries(stats)) publishStats(id, st);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ─── 조회 POST 생략 (재방문자) ───
 // 서버의 조회수 중복 방지 쿠키(pv)는 httpOnly 라 클라이언트가 못 읽는다. 그래서 같은 사실을
 // localStorage 에 병행 기록해 두고, 24시간 안에 이미 본 글이면 POST /api/package/view 를

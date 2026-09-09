@@ -1,6 +1,6 @@
 'use client';
 
-import { publishStats, wasViewedRecently, markViewed } from '@/lib/package-stats-client';
+import { publishStats, fetchStats, seedStatsFromPosts, subscribeStats, wasViewedRecently, markViewed } from '@/lib/package-stats-client';
 import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -421,6 +421,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       try {
         const data = initialPost;
         if (data) {
+          // 서버(ISR)가 내려준 집계를 먼저 심는다 — 낡은 응답이 숫자를 뒤로 돌리지 못하게
+          seedStatsFromPosts([data]);
           // 클라이언트 내비게이션으로 다른 글에 진입한 경우 post 상태 동기화
           // (useState 초기값은 최초 마운트에만 반영되므로 여기서 반드시 갱신)
           setPost(data);
@@ -471,9 +473,13 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             setDetailRateText(String(won));
             setDetailBcText(won > 0 ? String(Math.round(275000 / won)) : '');
           }
-          if (viewCountedFor.current !== postId && !wasViewedRecently(postId)) {
-            // 24시간 내 재방문이면 POST 자체를 생략한다 — 서버가 어차피 카운트하지 않는 요청이라
-            // 함수 호출·Neon 조회만 태운다. 그 방문의 숫자는 ISR 스냅샷 + 세션 캐시로 보인다.
+          if (viewCountedFor.current !== postId && wasViewedRecently(postId)) {
+            // 24시간 내 재방문 — 조회 POST 는 생략한다(서버가 어차피 안 세는 요청이다).
+            // 대신 집계는 반드시 따로 받아온다. 예전엔 이 경우 최신값을 받을 길이 아예 없어서
+            // 재방문자는 ISR 스냅샷 숫자에 갇혔다(따봉을 눌러도 반영이 안 되는 것처럼 보인 원인).
+            viewCountedFor.current = postId;
+            fetchStats([postId]);
+          } else if (viewCountedFor.current !== postId) {
             viewCountedFor.current = postId;
             // 응답 stats = 이 글의 최신 조회·따봉·흠(Neon). ISR 스냅샷 숫자를 덮어쓴다 — 추가 조회 없음
             fetch('/api/package/view', {
@@ -506,6 +512,16 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, initialPost]);
+
+  // 집계가 갱신되면(내 표·조회 응답·재방문 조회) 화면의 조회수·반응 숫자도 같이 따라간다.
+  useEffect(() =>
+    subscribeStats((id, st) => {
+      setPost((prev) =>
+        prev && prev.id === id && (prev.viewCount !== st.viewCount || prev.likeCount !== st.likeCount || prev.sosoCount !== st.sosoCount)
+          ? { ...prev, viewCount: st.viewCount, likeCount: st.likeCount, sosoCount: st.sosoCount }
+          : prev,
+      );
+    }), []);
 
   // 선택형 아이템: 시세 로드 후 최고가 선택지로 자동 갱신 (등록 시점이 아닌 현재 시세 기준, 이후 뷰어가 직접 변경 가능)
   // 고정형 젬 상자뿐 아니라 일반 choice·선택 상자도 등록 후 시세가 역전되면 저장된 선택이 낮은 아이템일 수 있음

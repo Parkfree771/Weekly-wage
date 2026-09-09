@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
-import { mergeKnownStats, recordManyStats, subscribeStats } from '@/lib/package-stats-client';
+import { mergeKnownStats, fetchStats, seedStatsFromPosts, subscribeStats } from '@/lib/package-stats-client';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
@@ -31,7 +31,8 @@ import PackageEfficiencyGuideBody from '@/components/guide/PackageEfficiencyGuid
 import { faqData } from './faq-data';
 import styles from './package.module.css';
 
-// 집계를 다시 받는 최소 간격 — /api/package/stats 의 CDN s-maxage(300초)와 같은 값
+// 집계를 다시 받는 최소 간격 — /api/package/stats 의 CDN s-maxage(300초)와 같은 값.
+// 그보다 자주 물어봐야 같은 캐시가 나오므로 의미가 없다.
 const STATS_REFRESH_MS = 300_000;
 
 // 페이지당 글 6개 고정. 아제나 카드는 갤러리 칸을 차지하지 않는다 —
@@ -295,27 +296,22 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
   // /api/package/stats 를 한 번 불러 덮어쓴다. ID 를 정렬해 같은 페이지 방문자끼리 URL 이 같게
   // (CDN 캐시 공유) 하고, 값이 실제로 바뀐 글만 갈아 끼워 불필요한 리렌더를 막는다.
   const statsKey = posts.map((p) => p.id).filter(Boolean).sort().join(',');
-  // 탭으로 돌아왔을 때 다시 받기 위한 열쇠. 자리를 비운 사이 남이 누른 표가 그때 들어온다.
+  // 다시 받게 만드는 열쇠 — 탭 복귀가 이 값을 올린다.
   const [statsEpoch, setStatsEpoch] = useState(0);
   useEffect(() => {
     if (!statsKey) return;
     let cancelled = false;
-    fetch(`/api/package/stats?ids=${encodeURIComponent(statsKey)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((stats: Record<string, unknown> | null) => {
-        if (cancelled) return;
-        // 세션 캐시를 거친다 — CDN 300초 캐시라 방금 올린 내 표보다 낡은 응답일 수 있고,
-        // 그런 값은 캐시가 버려서 화면 숫자가 되돌아가지 않는다.
-        recordManyStats(stats);
-        setPosts((prev) => mergeKnownStats(prev));
-      })
-      .catch(() => {});
+    // 서버(ISR)가 내려준 값을 먼저 심는다 — 이보다 낡은 응답이 와도 숫자가 뒤로 가지 않는다.
+    seedStatsFromPosts(posts);
+    // 세션 캐시를 거친다 — 방금 올린 내 표보다 낡은 응답도 같은 이유로 버려진다.
+    fetchStats(statsKey.split(',')).then((got) => {
+      if (got && !cancelled) setPosts((prev) => mergeKnownStats(prev));
+    });
     return () => { cancelled = true; };
   }, [statsKey, statsEpoch]);
 
   // 다른 탭에 갔다 돌아오면 집계를 한 번 다시 받는다 — "돌아왔더니 옛날 숫자" 를 없앤다.
-  // 간격은 CDN 캐시(s-maxage 300)와 같은 300초: 그보다 자주 물어봐야 같은 캐시가 나오므로 의미가 없다.
-  // 캐시가 살아 있으면 엣지가 받아내 Netlify 함수·Neon 쿼리는 그대로 0이다.
+  // 주기 폴링은 하지 않는다(함수 호출을 늘리지 않는다). 첫 화면 숫자는 이미 서버(ISR)가 옳게 내려준다.
   useEffect(() => {
     let last = Date.now();
     const onVisible = () => {

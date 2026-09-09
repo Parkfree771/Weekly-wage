@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import { Metadata } from 'next';
 import { getAdminFirestore } from '@/lib/firebase-admin';
+import { applyStatsToPosts } from '@/lib/package-stats';
 import { SITE_URL, INDEX_USER_PACKAGE_POSTS } from '@/lib/site-config';
 import type { PackagePost, PackageComment } from '@/types/package';
 import PackageDetailPage from './PackageDetailClient';
@@ -220,6 +221,9 @@ export default async function Page({ params }: Props) {
 
   const post = await getPost(postId);
   const comments = post ? await getComments(postId) : null;
+  // 조회·따봉·흠만 Neon 최신값으로 갈아 끼운다(1행 조회). getPost 캐시 밖에서 하므로
+  // generateMetadata 쪽은 그대로다. 이게 없으면 재방문자는 이관 시점에 멈춘 숫자를 계속 본다.
+  const [postWithStats] = post ? await applyStatsToPosts([post]) : [null];
 
-  return <PackageDetailPage initialPost={post} initialComments={comments} />;
+  return <PackageDetailPage initialPost={postWithStats} initialComments={comments} />;
 }

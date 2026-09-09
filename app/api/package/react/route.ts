@@ -56,9 +56,11 @@ export async function POST(request: NextRequest) {
     const entries = parseCookie(request.cookies.get(COOKIE_NAME)?.value || '');
     const prev = entries.find(([id]) => id === postId)?.[1] ?? null;
 
-    // 이미 같은 표 — 쓰기 없음. 클라이언트는 prev/next 로 자기 화면 숫자를 맞춘다.
+    // 이미 같은 표 — 쓰기 없음. 다만 최신 카운트는 같이 준다(증감 0 이라 읽기 1회).
+    // 안 주면 클라이언트가 화면 숫자를 서버 값으로 되맞추지 못해 표가 안 먹은 것처럼 보인다.
     if (prev === next) {
-      return NextResponse.json({ ok: true, prev, next, changed: false });
+      const stats = await bumpPackageStats(postId, {});
+      return NextResponse.json({ ok: true, prev, next, changed: false, stats });
     }
 
     const delta = { like: 0, soso: 0 };

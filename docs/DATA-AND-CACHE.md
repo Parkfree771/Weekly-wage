@@ -38,6 +38,19 @@ DB를 어디에 두는지, 네트리파이 함수 호출을 어떻게 줄이는�
   "쓰기 응답에 최신값 동봉 + 세션 캐시(package-stats-client)" 패턴을 쓴다 — 내 행동은 즉시 보이고,
   남의 행동은 최대 5분 늦게 보이는 게 이 사이트의 표준 신선도다.
 
+### 숫자가 뒤로 가지 않게 하는 장치 (2026-09-09)
+
+TTL 300 은 그대로 두되, "따봉이 사라졌다 생기는" 문제는 캐시가 아니라 **값의 출처**가 원인이었다.
+
+1. **ISR 서버 페이지가 Neon 집계를 같이 읽어 내려보낸다** (`applyStatsToPosts`, 갤러리 6행·상세 1행).
+   Firestore 카운터는 2026-08-26 이관 시점에 멈춰 있어서, 이걸 안 하면 첫 화면이 몇 달 전 숫자로
+   떴다가 클라 조회가 도착할 때 확 바뀐다. **방문자당 조회는 0** — ISR 재생성 때만 돈다.
+2. **그 값의 `updatedAt` 도 같이 내려보내 세션 캐시에 심는다**(`statsUpdatedAt` → `seedStatsFromPosts`).
+   그래야 뒤늦게 도착한 낡은 CDN 응답(최대 5분 전)이 숫자를 뒤로 돌리지 못한다. 조회 0.
+3. **상세 재방문자 구멍 메움.** 24h 내 재방문은 view POST 를 생략하는데, 상세는 그 응답이 유일한
+   최신값 경로였다 → 재방문자는 낡은 숫자에 갇혀 있었다. 이제 생략할 때 stats 를 한 번 받는다.
+4. 주기 폴링은 두지 않는다. 재조회는 예전처럼 **탭 복귀 시 300초 간격** 한 번뿐이다.
+
 ## 3. 함수 호출 경로 전수표 (2026-08-31 기준)
 
 | 라우트 | 호출자·시점 | 호출량 통제 |
@@ -47,9 +60,9 @@ DB를 어디에 두는지, 네트리파이 함수 호출을 어떻게 줄이는�
 | GET /api/market/live-prices | 시세 갱신 버튼 | durable 300 + 클라 쿨다운 300초 (같은 값 유지 필수) |
 | POST /api/market/batch-prices | 생활 계산기 수동 갱신 버튼 | unstable_cache 300초, 마운트 시 자동 호출 없음 |
 | GET /api/lostark | 캐릭터 검색·시뮬 불러오기 | durable 120 + 캐릭터 태그, refresh=1은 퍼지 후 no-store |
-| GET /api/package/stats | 갤러리 마운트·탭 복귀 | durable 300, ids 정렬로 URL 통일, 복귀 재조회도 300초 간격 |
+| GET /api/package/stats | 갤러리 마운트·탭 복귀, 상세는 24h 재방문(view POST 생략분) | durable 300, ids 정렬로 URL 통일, 복귀 재조회도 300초 간격 |
 | POST /api/package/view | 상세 첫 방문 | **24h 내 재방문은 localStorage/AsyncStorage로 POST 생략** (서버 쿠키 pv와 병행). pv 쿠키는 항목별 타임스탬프 — 통째 TTL 갱신으로 단골의 재조회가 영원히 안 세지던 버그 수정(2026-08-31) |
-| POST /api/package/react | 따봉·흠 클릭 | 사용자 행동당 1회 — 응답에 최신 stats 동봉 |
+| POST /api/package/react | 따봉·흠 클릭 | 사용자 행동당 1회(250ms 디바운스) — 같은 표 재전송이어도 응답에 최신 stats 동봉 |
 | POST /api/package/revalidate | 글·댓글 쓰기 직후 | 쓰기 행동당 1회 |
 | POST /api/feedback | 문의·제보 제출 | 사용자 행동당 1회 |
 | /api/cron/* | GitHub Actions 시간당 3회 + heal 일 1회 | 월 ~2,300회, 무시 가능 |

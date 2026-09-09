@@ -1,4 +1,5 @@
 import { getAdminFirestore } from '@/lib/firebase-admin';
+import { applyStatsToPosts } from '@/lib/package-stats';
 import type { PackagePost } from '@/types/package';
 import PackageGalleryClient, { type GalleryCursor } from './PackageGalleryClient';
 
@@ -35,7 +36,7 @@ async function loadFirstPage(): Promise<FirstPage | null> {
       col.orderBy('createdAt', 'desc').limit(PAGE_SIZE).get(),
       col.count().get().catch(() => null),
     ]);
-    const posts = snap.docs.map((d) => {
+    const rawPosts = snap.docs.map((d) => {
       const data = d.data();
       return {
         ...data,
@@ -46,6 +47,10 @@ async function loadFirstPage(): Promise<FirstPage | null> {
         saleEndAt: toISO(data.saleEndAt),
       } as PackagePost;
     });
+    // 조회·따봉·흠은 Neon 이 진실이다. Firestore 카운터는 이관 시점에 멈춰 있어 여기서 갈아 끼운다
+    // — 이러지 않으면 첫 화면이 옛날 숫자로 떴다가 클라이언트 조회가 오면 확 바뀐다.
+    const posts = await applyStatsToPosts(rawPosts);
+
     // 커서는 ISO 가 아니라 seconds/nanoseconds 그대로 — ms 로 깎이면 경계 글이 빠지거나 겹칠 수 있다
     const last = snap.docs[snap.docs.length - 1]?.get('createdAt');
     const cursor: GalleryCursor | null =

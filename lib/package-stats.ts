@@ -74,3 +74,32 @@ export async function bumpPackageStats(
   `) as Row[];
   return toStats(rows[0]);
 }
+
+/**
+ * ISR 서버 페이지용 — 글 목록에 Neon 최신 집계를 입힌다.
+ *
+ * Firestore 문서의 viewCount·likeCount·sosoCount 는 2026-08-26 Neon 이관 시점 값에서 멈춰 있다.
+ * 그대로 내려보내면 첫 화면이 몇 달 전 숫자로 떴다가 클라이언트 조회가 도착할 때 확 바뀐다
+ * (숫자가 사라졌다 나오는 현상). 여기서 갈아 끼우면 HTML 이 처음부터 옳은 값을 들고 나간다.
+ *
+ * 비용: IN 쿼리 1회 — ISR 재생성 때(구간당 5분에 1번)만 돈다. 방문자당 조회는 0.
+ * 실패하면 원본을 그대로 돌려준다 — 화면은 예전과 같이 동작한다.
+ */
+export async function applyStatsToPosts<
+  T extends { id: string; viewCount?: number; likeCount?: number; sosoCount?: number },
+>(posts: T[]): Promise<T[]> {
+  if (posts.length === 0) return posts;
+  try {
+    const stats = await readPackageStats(posts.map((p) => p.id));
+    return posts.map((p) => {
+      const st = stats[p.id];
+      // updatedAt 도 같이 보낸다 — 클라이언트가 이 값을 기준으로 낡은 CDN 응답을 걸러낸다
+      return st
+        ? { ...p, viewCount: st.viewCount, likeCount: st.likeCount, sosoCount: st.sosoCount, statsUpdatedAt: st.updatedAt }
+        : p;
+    });
+  } catch (err) {
+    console.error('집계 병합 실패 — Firestore 값 유지:', err);
+    return posts;
+  }
+}

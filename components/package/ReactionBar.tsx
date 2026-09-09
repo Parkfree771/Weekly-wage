@@ -98,7 +98,8 @@ export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, s
     const target = mineRef.current;
     if (from === target) return;
     syncedRef.current = target;
-    setPending(reactionDiff(target, mineRef.current));
+    // pending 을 여기서 0 으로 만들지 않는다 — 응답이 오기 전에 지우면 방금 누른 표가
+    // 낡은 base 로 잠깐 되돌아갔다가(숫자가 사라졌다가) 응답이 오면 다시 오른다.
     // keepalive — 페이지를 떠나는 중이어도 요청은 살아남는다
     fetch('/api/package/react', {
       method: 'POST',
@@ -108,12 +109,19 @@ export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, s
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
-        if (!json?.ok) return;
+        if (!json?.ok) throw new Error('reject');
         // 서버 최신값 — 내 표(target)까지 이미 들어 있는 숫자다. 세션 캐시에 올려
         // 이 글을 그리는 다른 곳(갤러리 카드·상세)도 같은 숫자를 즉시 쓰게 한다.
-        if (json.stats) publishStats(postId, json.stats);
+        if (!json.stats) return;
+        publishStats(postId, json.stats);
+        // 서버 값에 내 표가 들어갔으니 이제 "아직 안 보낸 몫" 만 남긴다(대개 0).
+        if (mountedRef.current) setPending(reactionDiff(syncedRef.current, mineRef.current));
       })
-      .catch(() => {});
+      .catch(() => {
+        // 못 보냈다 — 보냈다고 믿지 않는다. 다음 클릭이나 언마운트 때 다시 나가고,
+        // 그동안 화면에는 내 표가 그대로 남는다(pending 유지).
+        if (syncedRef.current === target) syncedRef.current = from;
+      });
   };
 
   useEffect(() => {
@@ -143,11 +151,14 @@ export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, s
   const handleClick = (key: ReactionKey) => {
     const prev = mineRef.current;
     const next = prev === key ? null : key;
-    if (next) lottieRefs.current[key]?.play();
     mineRef.current = next;
     setMine(next);
     setPending(reactionDiff(syncedRef.current, next));
     writeMyReaction(postId, next);
+    // 로티는 알약 채움·숫자가 먼저 그려진 다음 프레임에 돌린다.
+    // 같은 프레임에 시작하면 로티 첫 프레임 계산(수십 개 도형)이 앞에 끼어들어
+    // 눌렀는데 한 박자 늦게 채워지는 것처럼 보인다(버벅임의 정체).
+    if (next) requestAnimationFrame(() => lottieRefs.current[key]?.play());
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(flush, REACT_FLUSH_MS);
   };
