@@ -12,6 +12,15 @@ export interface Guide {
 
 export const guides: Guide[] = [
   {
+    slug: 'gacha-ticket-package',
+    title: '가챠 상자와 티켓 패키지, 효율 계산이 어떻게 다른가',
+    summary:
+      '2026년 9월 9일에 올라온 가을 맞이 행운 상자와 낙원 스페셜 패키지를 예로, 확률 상자의 기댓값 계산과 거래 불가 티켓의 층 기댓값 역산을 비교했습니다. 층별 티켓 1장 기댓값 표와 서로 다른 환율로 등록된 패키지를 같은 잣대로 놓는 방법까지 정리했습니다.',
+    category: '패키지',
+    date: '2026-09-09',
+    href: '/guide/gacha-ticket-package',
+  },
+  {
     slug: 'package-value-formula',
     title: '패키지 구성품 골드 환산 공식 정리: 이득률은 어떻게 계산되나',
     summary: '환율과 블루 크리스탈 27.5원 계수, 묶음 시세 나누기, 상자별 기댓값, 시세가 없는 젬 상자·유물 코어·지옥 티켓을 대체 비용으로 역산하는 규칙까지 항목별로 정리했습니다.',
