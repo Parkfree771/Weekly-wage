@@ -31,6 +31,8 @@ import {
   getRewardData,
   getBaseRewardRows,
   TICKET_TIER_LABELS as TIER_LABELS,
+  isHellItemLevel,
+  type HellItemLevel,
 } from '@/lib/hell-reward-calc';
 
 type ModeType = 'hell' | 'narak';
@@ -87,16 +89,17 @@ const DISPLAY_NAMES: Record<string, string> = {
   '돌파석': '위대한 운명의 돌파석',
 };
 
-// 아이템 레벨 — 시즌4 데이터가 확정되면 lib/hell-reward-calc 에 레벨별 테이블을 넣고 available 만 켠다.
+// 아이템 레벨 — 표가 있는 구간만 둔다(lib/hell-reward-calc 의 HELL_ITEM_LEVELS 와 같아야 한다).
+// 새 구간은 lib 에 표를 넣은 뒤 여기에 한 줄 추가한다. 데이터가 아직 없는 구간은
+// available: false 로 두면 눌리지 않는 회색 버튼이 된다.
 const ITEM_LEVELS = [
-  { level: 1730, available: false },
+  { level: 1730, available: true },
   { level: 1750, available: true },
-  { level: 1770, available: false },
 ];
 
 export default function HellRewardCalculator() {
   const [mode, setMode] = useState<ModeType>('hell');
-  const [selectedLevel, setSelectedLevel] = useState<number>(1750);
+  const [selectedLevel, setSelectedLevel] = useState<HellItemLevel>(1750);
   const [selectedTier, setSelectedTier] = useState<number>(6);
   const [expandedReward, setExpandedReward] = useState<string | null>(null);
   const [prices, setPrices] = useState<Record<string, number>>({});
@@ -129,7 +132,14 @@ export default function HellRewardCalculator() {
     setRateText(b > 0 ? String(Math.round(2750000 / b) / 10) : '');
   };
 
-  const rewardData = getRewardData(mode);
+  // 표가 있는 레벨만 받는다 — 비활성 버튼은 disabled 지만 타입도 같이 좁혀 둔다
+  const handleLevel = (level: number) => {
+    if (!isHellItemLevel(level)) return;
+    setSelectedLevel(level);
+    setExpandedReward(null);
+  };
+
+  const rewardData = getRewardData(mode, selectedLevel);
   const rewards = Object.keys(rewardData);
   const hasPrices = Object.keys(prices).length > 0;
   const hasAbilityStone = rewards.includes('어빌리티스톤');
@@ -143,7 +153,7 @@ export default function HellRewardCalculator() {
       const raw = rewardData[name]?.[selectedTier];
       const available = !!raw && raw !== '-';
       const boxGold = available && hasPrices
-        ? calcBoxRewardGold(name, selectedTier, prices, mode, peonGoldValue, specialRefiningCost)
+        ? calcBoxRewardGold(name, selectedTier, prices, mode, peonGoldValue, specialRefiningCost, selectedLevel)
         : null;
       const box = boxGold ?? 0;
       return {
@@ -279,7 +289,7 @@ export default function HellRewardCalculator() {
                 key={level}
                 className={`${styles.segBtn} ${selectedLevel === level ? styles.segBtnActive : ''} ${!available ? styles.segBtnDisabled : ''}`}
                 disabled={!available}
-                onClick={() => { setSelectedLevel(level); setExpandedReward(null); }}
+                onClick={() => handleLevel(level)}
               >
                 {level}
               </button>

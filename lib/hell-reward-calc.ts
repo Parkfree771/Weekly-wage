@@ -1,8 +1,13 @@
-// 지옥/나락 보상 계산 공유 라이브러리 (시즌3 · 1750)
+// 지옥/나락 보상 계산 공유 라이브러리 (시즌3 · 1730 / 1750)
 
-// ─── 보상 테이블 (단계 0~10) ───
+// 표를 가진 아이템 레벨. 레벨을 안 넘기면 항상 1750 — 패키지 티켓 평가처럼 1750 고정인 곳이 그대로 돌아간다.
+export type HellItemLevel = 1730 | 1750;
+export const HELL_ITEM_LEVELS: HellItemLevel[] = [1730, 1750];
+export const isHellItemLevel = (v: number): v is HellItemLevel => (HELL_ITEM_LEVELS as number[]).includes(v);
 
-// 지옥 상자 보상
+// ─── 1750 보상 테이블 (단계 0~10) ───
+
+// 지옥 상자 보상 (1750)
 export const HELL_BOX_REWARDS_DATA: Record<string, string[]> = {
   '어빌리티스톤': ['9', '12', '18', '25', '33', '45', '60', '80', '110', '150', '220'],
   '팔찌': ['4', '6', '8', '12', '18', '24', '30', '42', '60', '90', '150'],
@@ -17,7 +22,7 @@ export const HELL_BOX_REWARDS_DATA: Record<string, string[]> = {
   '천상 도전권': ['-', '-', '-', '-', '-', '2', '4', '7', '10', '15', '20'],
 };
 
-// 나락 상자 보상
+// 나락 상자 보상 (1750)
 export const NARAK_BOX_REWARDS_DATA: Record<string, string[]> = {
   '어빌리티스톤': ['45', '60', '90', '125', '165', '225', '300', '400', '550', '750', '1,100'],
   '팔찌': ['20', '30', '40', '60', '90', '120', '150', '210', '300', '450', '750'],
@@ -30,9 +35,41 @@ export const NARAK_BOX_REWARDS_DATA: Record<string, string[]> = {
   '전설카드팩': ['-', '-', '-', '-', '-', '1', '2', '3', '4', '5', '7'],
 };
 
+// ─── 1730 보상 테이블 (단계 0~10) ───
+// 아이템 구성은 1750과 완전히 같고 수량만 다르다. 원본 Category 1015(지옥)·1019(나락).
+// 정련된 혼돈의 돌만 한섭 파일이 "상자 안 상자"를 안 풀어줘서 북미 파일(Category 1025·1125)로 교차 확인했다 —
+// 단계별 혼돈의 돌 상자는 구간과 무관하게 같은 상자라 개수가 1750과 같다.
+
+export const HELL_BOX_REWARDS_1730: Record<string, string[]> = {
+  '어빌리티스톤': ['8', '10', '15', '20', '25', '30', '45', '60', '80', '120', '200'],
+  '팔찌': ['3', '5', '7', '10', '15', '20', '25', '35', '50', '70', '120'],
+  '젬 선택 상자': ['2(희귀)', '5(희귀)', '7(희귀)', '10(희귀)', '15(희귀)', '1(영웅)', '2(영웅)', '3(영웅)', '4(영웅)', '5(영웅)', '6(영웅)'],
+  '용숨/빙숨': ['10/30', '15/45', '20/60', '25/75', '36/108', '48/144', '72/216', '96/288', '132/396', '192/576', '320/960'],
+  '특수재련': ['24', '40', '56', '70', '96', '130', '180', '260', '360', '500', '850'],
+  '상급아비도스': ['60', '90', '125', '150', '225', '300', '450', '600', '850', '1,200', '2,000'],
+  '파괴석/수호석': ['500/1,500', '600/1,800', '900/2,700', '1,200/3,600', '1,600/4,800', '2,200/6,600', '3,000/9,000', '4,500/13,500', '6,500/19,500', '9,000/27,000', '15,000/45,000'],
+  '정련된 운명/혼돈의 돌': ['7/7', '12/10', '15/15', '18/20', '27/27', '36/36', '54/54', '72/72', '100/100', '150/144', '240/250'],
+  '귀속골드': ['4,500', '7,200', '9,500', '12,000', '16,000', '22,000', '32,000', '45,000', '65,000', '95,000', '130,000'],
+  '돌파석': ['25', '36', '48', '64', '90', '130', '190', '250', '350', '500', '850'],
+  '천상 도전권': ['-', '-', '-', '-', '-', '2', '4', '7', '10', '15', '20'],
+};
+
+export const NARAK_BOX_REWARDS_1730: Record<string, string[]> = {
+  '어빌리티스톤': ['40', '50', '75', '100', '125', '150', '225', '300', '400', '600', '1,000'],
+  '팔찌': ['15', '25', '35', '50', '75', '100', '125', '175', '250', '350', '600'],
+  '젬 선택 상자': ['10(희귀)', '25(희귀)', '35(희귀)', '50(희귀)', '75(희귀)', '5(영웅)', '10(영웅)', '15(영웅)', '20(영웅)', '25(영웅)', '30(영웅)'],
+  '용숨/빙숨': ['50/150', '75/225', '100/300', '125/375', '180/540', '240/720', '360/1,080', '480/1,440', '660/1,980', '960/2,880', '1,600/4,800'],
+  '귀속 각인서 랜덤 상자': ['2', '4', '6', '8', '10', '12', '18', '24', '36', '48', '80'],
+  '정련된 운명/혼돈의 돌': ['35/35', '60/50', '75/75', '90/100', '135/135', '180/180', '270/270', '360/360', '500/500', '750/720', '1,200/1,250'],
+  '귀속골드': ['22,500', '36,000', '47,500', '60,000', '80,000', '110,000', '160,000', '225,000', '325,000', '475,000', '650,000'],
+  '귀속 보석': ['-', '-', '-', '-', '-', '-', '-', '-', '3', '4', '5'],
+  '전설카드팩': ['-', '-', '-', '-', '-', '1', '2', '3', '4', '5', '7'],
+};
+
 // ─── 층 기본 보상 (단계 0~10) ───
 // 상자(열쇠)와 별개로 층을 깰 때마다 항상 지급되는 보상. 지옥에만 있고 나락에는 없다.
 // 원본: kr_TrinityInfernoRewards.json Category 1026 의 Sub. (Plenty=풍요는 정확히 이 값의 10배)
+// 1730(Category 1015)의 Sub 는 1750과 44항목 전부 같은 값이라 표를 공유한다 — 구간을 더 늘릴 땐 반드시 다시 대조할 것.
 export const HELL_BASE_REWARDS_DATA: Record<string, string[]> = {
   '운명의 파편': ['5,200', '6,500', '7,700', '9,000', '10,000', '11,500', '13,000', '14,000', '15,500', '17,000', '18,000'],
   '파괴석 결정': ['26', '32', '38', '44', '52', '60', '70', '80', '90', '100', '110'],
@@ -49,16 +86,11 @@ export const BASE_REWARD_PRICE_MAP: Record<string, { id: string; bundle: number 
 };
 
 // 풍요(Plenty · Wealth Chest) 배수.
-// 보상 상자 하나가 풍요 상자로 바뀌는 효과이므로 그 상자에서 나오는 몫 전체가 10배가 된다
-// (기본 보상 + 상자 고유 보상 모두). 원본 Plenty = Sub × 10 은 11단계 × 4항목 전수 확인.
+// **층 기본 보상(HELL_BASE_REWARDS_DATA)에만 적용된다.** 상자 보상 목록은 풍요라고 해서
+// 10배가 되지 않는다 — 원본에서도 Plenty 배열은 Sub(기본 보상)의 정확히 10배일 뿐이고,
+// Main(상자별 보상)에는 손대지 않는다. 11단계 × 4항목 전수 확인.
+// 배수를 먹이는 곳은 getBaseRewardRows 하나뿐이다 — 상자 보상 수량에는 절대 곱하지 말 것.
 export const PLENTY_MULTIPLIER = 10;
-
-// 수량 표기 문자열의 모든 숫자에 배수를 적용한다 ('600/1,800' → '6,000/18,000', '3(희귀)' → '30(희귀)').
-// 보상 가치는 전부 수량에 비례하므로 골드는 값에 배수를 곱하면 그대로 맞는다.
-export function multiplyQtyLabel(raw: string, mul: number): string {
-  if (!raw || raw === '-' || mul === 1) return raw;
-  return raw.replace(/[\d,]+/g, (m) => (Number(m.replace(/,/g, '')) * mul).toLocaleString('en-US'));
-}
 
 export type BaseRewardRow = { name: string; qty: number; unitPrice: number; gold: number };
 
@@ -177,7 +209,8 @@ export function parseGemSelectBox(str: string): { count: number; rarity: 'rare' 
 
 // ─── 가격 계산 ───
 
-export function getRewardData(mode: 'hell' | 'narak'): Record<string, string[]> {
+export function getRewardData(mode: 'hell' | 'narak', level: HellItemLevel = 1750): Record<string, string[]> {
+  if (level === 1730) return mode === 'hell' ? HELL_BOX_REWARDS_1730 : NARAK_BOX_REWARDS_1730;
   return mode === 'hell' ? HELL_BOX_REWARDS_DATA : NARAK_BOX_REWARDS_DATA;
 }
 
@@ -237,9 +270,10 @@ export function calcBoxRewardGold(
   prices: Record<string, number>,
   mode: 'hell' | 'narak',
   peonGoldValue: number,
-  specialRefiningCost: number
+  specialRefiningCost: number,
+  level: HellItemLevel = 1750
 ): number | null {
-  const data = getRewardData(mode);
+  const data = getRewardData(mode, level);
   const rawVal = data[rewardName]?.[tier];
   if (!rawVal || rawVal === '-') return 0;
 
@@ -341,7 +375,7 @@ export const isTicketItemId = (itemId: string): boolean =>
   itemId === 'fixed_hell-legendary-ticket' || itemId === 'fixed_hell-heroic-ticket' ||
   itemId === 'fixed_naraka-legendary-ticket' || itemId === 'fixed_cube-ticket';
 
-// 티켓(열쇠) 평균 골드 가치
+// 티켓(열쇠) 평균 골드 가치 — 패키지·익스트림의 티켓 평가는 1750 표 고정이라 레벨 인자를 두지 않는다
 export function calcTicketAverage(
   mode: 'hell' | 'narak',
   tier: number,

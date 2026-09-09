@@ -16,8 +16,9 @@
 - 깃허브 웹 뷰어는 1.7MB라 잘릴 수 있으니 파싱은 raw 로 받는다.
 - 페이지 상단에 Key(지옥/나락) · iLevel(1640/1700/1730/1750) 선택기가 있고 표는 가로 스크롤이다.
 - **시즌이 끝나면 관리자가 과거 시즌을 지운다** (7/5 커밋 "removed old seasons"). 한섭 시즌3은 9/2 종료 →
-  시즌4 데이터로 갈아끼우면서 시즌3이 날아갈 수 있으므로 1750 구간만 잘라 저장해 두었다:
-  `docs/hell-reward/kr_inferno_1750_season3.json` (Category 1026·1027 전체, 약 200KB)
+  시즌4 데이터로 갈아끼우면서 시즌3이 날아갈 수 있으므로 쓰는 구간만 잘라 저장해 두었다:
+  `docs/hell-reward/kr_inferno_1750_season3.json` (Category 1026·1027, 약 200KB)
+  `docs/hell-reward/kr_inferno_1730_season3.json` (Category 1015·1019, 약 200KB — 2026-09-09 추가)
 
 ## 2. JSON 구조
 
@@ -48,7 +49,9 @@
 | 1730 | 1015 (1016은 중복) | 1019 |
 | **1750** | **1026** | **1027** |
 
-우리는 1750만 쓴다. 하위 구간은 보지 않는다.
+우리는 **1730·1750** 을 쓴다 (사이트 레벨 선택 버튼). 1700·1640 은 아이템 구성 자체가 달라 아직 안 넣었다 —
+1700 은 파괴석/수호석(결정 아님)·운명의 돌파석(위대한 아님)·아비도스(상급 아님)·순환 돌파석·희귀~영웅 젬 상자라
+행 이름과 시세 매핑을 새로 만들어야 한다.
 
 ### Main 안쪽
 
@@ -174,11 +177,12 @@
 ### 4-1. 대조 스크립트
 
 ```
-node scripts/hell-reward/verify-1750.js                # 저장해 둔 아카이브로 대조
+node scripts/hell-reward/verify-1750.js                # 저장해 둔 아카이브(1730+1750)로 대조
 node scripts/hell-reward/verify-1750.js <새로받은.json>  # 새 원본으로 대조
 ```
 
-`lib/hell-reward-calc.ts` 의 두 테이블을 그대로 읽어 원본과 한 칸씩 비교하고, 틀린 칸만 찍는다.
+`lib/hell-reward-calc.ts` 의 네 테이블(1730·1750 × 지옥·나락)을 그대로 읽어 원본과 한 칸씩 비교하고, 틀린 칸만 찍는다.
+대조할 구간은 스크립트 상단 `LEVELS` 배열에 있다 — 구간을 늘리면 여기에 한 줄 추가한다.
 (`/scripts/` 는 gitignore 대상이라 로컬 도구다.)
 
 **2026-07-30 대조 결과: 1750 지옥 11행 × 11단계, 나락 9행 × 11단계 전부 일치.** 혼돈의 돌 포함 전 항목 확인.
@@ -286,7 +290,7 @@ const j=require('./na.json'); const want=new Set([65800420]);   // 찾을 상자
    ```
    node scripts/hell-reward/verify-1750.js kr_TrinityInfernoRewards.json   # 카테고리 번호는 스크립트 상단에서 수정
    ```
-6. 새 시즌 1750 구간을 `docs/hell-reward/` 에 다시 잘라 저장하고 이 문서의 번호표를 갱신한다.
+6. 새 시즌 구간을 `docs/hell-reward/` 에 다시 잘라 저장하고 이 문서의 번호표와 `LEVELS` 배열을 갱신한다.
 
 행이 추가/삭제되면 `lib/hell-reward-calc.ts` 의 `calcBoxRewardGold`(가치 환산 분기)와
 `components/hell-reward/HellRewardCalculator.tsx` 의 `REWARD_IMAGES` · `DISPLAY_NAMES` 도 같이 손봐야 한다.
