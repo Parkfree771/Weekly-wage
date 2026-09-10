@@ -12,7 +12,6 @@ import {
   orderBy,
   limit as firestoreLimit,
   startAfter,
-  getCountFromServer,
   Timestamp,
   increment,
   serverTimestamp,
@@ -85,12 +84,6 @@ export async function getPackagePosts(options: PackageListOptions): Promise<{
       : null;
 
   return { posts, lastDoc };
-}
-
-/** 전체 게시물 수 — 갤러리 페이지네이션 표시용. count 집계라 문서를 읽어오지 않는다 */
-export async function getPackagePostCount(): Promise<number> {
-  const snapshot = await getCountFromServer(collection(db, COLLECTION));
-  return snapshot.data().count;
 }
 
 // ─── 단건 조회 ───

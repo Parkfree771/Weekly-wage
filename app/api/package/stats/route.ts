@@ -13,9 +13,13 @@ import { readPackageStats } from '@/lib/package-stats';
 //   ISR 이 내려준 값·내 표보다 낡으면(updatedAt 비교) 세션 캐시가 버린다. 숫자가 뒤로 가는 걸 막는 장치다.
 // - 내가 방금 누른 표는 react/view 응답이 세션 캐시(package-stats-client)로 즉시 반영하므로
 //   이 응답이 낡아도 화면 숫자가 되돌아가지 않는다.
-// - 한 번에 MAX_IDS 개까지(갤러리 페이지 크기 6의 여유분). 그 이상은 잘라서 남용을 막는다.
+// - 갤러리는 "보이는 6개" 가 아니라 **목록 전체 ID** 를 한 URL 로 물어본다(2026-09-10). 필터·정렬이
+//   전체를 훑게 되면서 보이는 6개가 조합마다 달라져, 예전 방식이면 URL(=캐시 키)이 끝없이 갈렸다.
+//   전체를 한 번에 물으면 모든 방문자·모든 조합이 캐시 하나를 공유한다 — 호출은 TTL 당 1회가 상한.
+// - 한 번에 MAX_IDS 개까지. 그 이상은 잘라서 남용을 막는다 — 잘린 글도 숫자는 맞다(ISR 이 Neon
+//   최신값을 이미 실어 보낸다). 글이 이 수를 넘어가면 여기와 갤러리의 STATS_MAX_IDS 를 같이 올린다.
 // - 행이 없는 글은 응답에서 빠진다 — 클라이언트는 그 글의 기존 숫자를 그대로 둔다.
-const MAX_IDS = 30;
+const MAX_IDS = 60;
 const STATS_TTL_S = 300;
 
 export async function GET(request: NextRequest) {

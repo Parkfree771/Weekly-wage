@@ -7,8 +7,8 @@ import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
 import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryCard';
-// package-service(→ Firestore SDK ~250KB)는 정적 import 하지 않는다 — 1페이지는 서버(ISR)가
-// 넘겨주므로 2페이지를 넘기거나 서버 조회가 실패했을 때만 지연 로드한다.
+// package-service(→ Firestore SDK ~250KB)는 정적 import 하지 않는다 — 목록은 서버(ISR)가
+// 통째로 넘겨주므로, 그 서버 조회가 실패했을 때만 지연 로드한다.
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import { fetchLivePrices, getCachedLivePrices } from '@/lib/live-prices-client';
 import { calculatePostEfficiency, isNewReleasePost } from '@/lib/package-shared';
@@ -73,13 +73,12 @@ const RATE_MAX = 999;
 
 const clampRate = (v: number) => (v <= 0 ? 0 : Math.max(RATE_MIN, Math.min(RATE_MAX, v)));
 
-// 모듈 스코프 페이지 캐시 — 갤러리 ↔ 상세 왕복으로 컴포넌트가 언마운트돼도 조회 결과를 유지해
-// Firestore 재조회를 막는다. 새 글 등록 직후 낡은 목록이 보이지 않게 TTL 을 두고 통째로 비운다.
-const PAGE_CACHE_TTL_MS = 60_000;
-const modulePageCache = new Map<number, PackagePost[]>();
-const moduleCursors = new Map<number, any>();
-let modulePageCacheAt = 0;
-let moduleTotalCount: number | null = null;
+// 서버(ISR)가 실패했을 때만 쓰는 예비 조회 상한 — 서버 페이지의 MAX_POSTS 와 같은 값
+const FALLBACK_MAX_POSTS = 200;
+
+// 집계를 한 번에 물어보는 글 수 상한 — /api/package/stats 의 MAX_IDS 와 같은 값.
+// 여기서 잘려 나간 오래된 글도 숫자는 맞다 — ISR 이 이미 Neon 최신값을 실어 보냈기 때문이다.
+const STATS_MAX_IDS = 60;
 
 // ─── 정렬·필터 ───
 // 전부 이미 불러온 posts 배열 위에서만 도는 화면 기준 기능이다.
@@ -112,26 +111,21 @@ const SALE_VIEWS: SaleFilter[] = ['onSale', 'ended'];
 const isSaleView = (v: GalleryView): v is Exclude<SaleFilter, 'all'> =>
   (SALE_VIEWS as string[]).includes(v);
 
-/** 2페이지 커서 — 1페이지 마지막 글의 createdAt (서버 Timestamp 를 그대로 옮긴 값) */
-export type GalleryCursor = { seconds: number; nanoseconds: number };
-
 type Props = {
-  /** 서버(ISR)가 읽어 둔 1페이지. null 이면 서버 조회 실패 — 클라이언트가 직접 읽는다 */
+  /** 서버(ISR)가 읽어 둔 글 전체. null 이면 서버 조회 실패 — 클라이언트가 직접 읽는다 */
   initialPosts: PackagePost[] | null;
-  initialCursor: GalleryCursor | null;
-  initialTotalCount: number | null;
+  /** 그 스냅샷을 만든 시각(epoch ms). 집계를 다시 받을지 판단하는 데 쓴다 */
+  statsAt: number | null;
 };
 
-export default function PackageGalleryClient({ initialPosts, initialCursor, initialTotalCount }: Props) {
-  // 1페이지는 서버가 넘겨준 것을 그대로 쓴다 — Firestore 를 브라우저에서 읽는 건 2페이지부터다.
-  // 갤러리 ↔ 상세 왕복에서도 Next 가 /package 의 ISR 결과(CDN)를 다시 받아 오므로 여기서 재조회하지 않는다.
+export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
+  // 목록은 서버가 통째로 넘겨준 것을 그대로 쓴다 — 브라우저는 Firestore 를 읽지 않는다.
+  // 갤러리 ↔ 상세 왕복에서도 Next 가 /package 의 ISR 결과(CDN)를 다시 받아 오므로 재조회가 없다.
   const [posts, setPosts] = useState<PackagePost[]>(initialPosts ?? []);
   const [loading, setLoading] = useState(!initialPosts);
-  // 페이지 번호 방식. Firestore 는 offset 점프가 안 돼 커서로만 다음 페이지를 연다 —
-  // 방문한 페이지는 캐시에 담아 재조회 없이 오가고, 안 가본 곳은 "방문한 끝 + 1"까지만 열린다.
-  // 2페이지 이후는 처음 넘어갈 때 한 번씩만 읽는다.
+  // 페이지 번호 방식 — 나누는 일은 전부 이 배열 위에서 한다(네트워크 0).
+  // 그래서 "판매중" 같은 필터가 1234 페이지 전체를 훑어 1페이지부터 다시 채운다.
   const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState<number | null>(initialTotalCount ?? moduleTotalCount);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
   // 실시간 최저가 — 갱신 버튼을 누른 뒤에만 채워진다. 평균가(latestPrices) 위에 덮어쓴다.
   const [livePrices, setLivePrices] = useState<Record<string, number> | null>(getCachedLivePrices());
@@ -192,110 +186,42 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
       .catch((err) => console.error('가격 데이터 로딩 실패:', err));
   }, []);
 
-  const goToPage = useCallback(async (n: number) => {
-    // 1페이지는 서버가 준 것 — 조회 없음. 커서만 모듈에 심어 2페이지가 이어 읽게 한다.
-    if (n === 1 && initialPosts) {
-      modulePageCache.set(1, initialPosts);
-      moduleCursors.set(1, initialCursor);
-      if (modulePageCacheAt === 0) modulePageCacheAt = Date.now();
-      setPage(1);
-      setPosts(initialPosts);
-      setLoading(false);
-      return;
-    }
-    // TTL 이 지난 모듈 캐시는 통째로 비운다 — 새 글 등록 직후 낡은 목록이 계속 보이지 않게
-    if (Date.now() - modulePageCacheAt > PAGE_CACHE_TTL_MS) {
-      modulePageCache.clear();
-      moduleCursors.clear();
-      moduleTotalCount = null;
-      // 1페이지·커서는 서버 값으로 되살린다 — 없으면 2페이지 커서가 사라져 아래에서 조용히 막힌다
-      if (initialPosts) {
-        modulePageCache.set(1, initialPosts);
-        moduleCursors.set(1, initialCursor);
-      }
-    }
-    const cached = modulePageCache.get(n);
-    if (cached) {
-      setPage(n);
-      setPosts(cached);
-      // loading 은 마운트마다 true 로 시작한다 — 캐시 히트로 조회를 건너뛸 때도 반드시 내려야
-      // 재진입 시 스켈레톤이 그대로 남는다
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { getPackagePosts } = await import('@/lib/package-service');
-      // n-1 커서가 없으면(위 TTL 청소로 체인이 끊긴 경우 — 예: 2페이지에서 60초 뒤 3 클릭)
-      // 가장 가까운 커서 확보 지점부터 순차로 이어 읽어 체인을 복구한다.
-      // 예전엔 여기서 조용히 return 해 버튼이 무반응으로 갇혔다. UI 는 여전히
-      // "방문한 끝 + 1"까지만 열어 주므로 이 루프가 읽는 양은 방문했을 때와 같다.
-      let start = n;
-      while (start > 1 && !moduleCursors.get(start - 1)) start -= 1;
-      for (let p = start; p <= n; p += 1) {
-        const cursor = p === 1 ? undefined : moduleCursors.get(p - 1);
-        if (p !== 1 && !cursor) break; // 앞 페이지가 마지막 — n페이지는 존재하지 않는다
-        const result = await getPackagePosts({
-          sortBy: 'createdAt',
-          limit: PAGE_SIZE,
-          startAfterDoc: cursor,
-        });
-        // 빈 페이지는 캐시에 담지 않는다 — 글이 줄어 사라진 페이지가 빈 화면으로 열리지 않게
-        if (result.posts.length === 0 && p !== 1) break;
-        if (modulePageCache.size === 0) modulePageCacheAt = Date.now();
-        modulePageCache.set(p, result.posts);
-        moduleCursors.set(p, result.lastDoc);
-      }
-      const target = modulePageCache.get(n);
-      if (target) {
-        setPage(n);
-        setPosts(target);
-      }
-    } catch (err) {
-      console.error('게시물 로딩 실패:', err);
-    } finally {
-      setLoading(false);
-    }
-    // latestPrices는 카드 표시용일 뿐 조회 조건이 아니다.
-    // deps에 넣으면 시세 응답 직후 재조회가 일어나 방문당 읽기가 2배가 된다.
-    // initialPosts/initialCursor 는 서버 prop 이라 마운트 뒤 바뀌지 않는다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  // 서버(ISR)가 목록을 못 읽었을 때만 도는 예비 경로. 정상 경로에서는 firebase SDK 청크조차
+  // 내려받지 않는다 — 그래서 지연 import 로 둔다.
   useEffect(() => {
-    goToPage(1);
-    // 전체 페이지 수 표시용. count 집계는 문서를 읽어오지 않아 비용이 거의 없고,
-    // 실패해도 이전/다음 버튼만으로 정상 동작한다. 모듈 캐시가 살아 있으면 재호출도 생략.
-    // 서버가 count 까지 넘겨줬으면 그것으로 끝 — 클라이언트 집계 호출 없음
-    if (initialTotalCount != null) {
-      moduleTotalCount = initialTotalCount;
-      setTotalCount(initialTotalCount);
-      return;
-    }
-    if (moduleTotalCount != null) {
-      setTotalCount(moduleTotalCount);
-      return;
-    }
-    import('@/lib/package-service')
-      .then(({ getPackagePostCount }) => getPackagePostCount())
-      .then((c) => { moduleTotalCount = c; setTotalCount(c); })
-      .catch(() => setTotalCount(null));
-    // initialTotalCount 는 서버 prop 이라 마운트 뒤 바뀌지 않는다
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [goToPage]);
+    if (initialPosts) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { getPackagePosts } = await import('@/lib/package-service');
+        const result = await getPackagePosts({ sortBy: 'createdAt', limit: FALLBACK_MAX_POSTS });
+        if (!cancelled) setPosts(result.posts);
+      } catch (err) {
+        console.error('게시물 로딩 실패:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [initialPosts]);
 
-  // 사용자가 페이지를 넘길 때 — 목록 맨 위로 되돌린다 (첫 로딩에는 안 탄다)
+  // 페이지 이동 — 목록을 이미 다 갖고 있으므로 조회 없이 잘라 보여주기만 한다
   const handlePageChange = (n: number) => {
-    if (n === page || loading) return;
-    goToPage(n);
+    if (n === page) return;
+    setPage(n);
     window.scrollTo({ top: 0 });
   };
 
-  // 상호작용 집계(조회·따봉·흠)는 Neon 에 있어 ISR 스냅샷 숫자가 낡아 있다 — 페이지의 글 ID 로
-  // /api/package/stats 를 한 번 불러 덮어쓴다. ID 를 정렬해 같은 페이지 방문자끼리 URL 이 같게
-  // (CDN 캐시 공유) 하고, 값이 실제로 바뀐 글만 갈아 끼워 불필요한 리렌더를 막는다.
-  const statsKey = posts.map((p) => p.id).filter(Boolean).sort().join(',');
+  // 상호작용 집계(조회·따봉·흠)는 Neon 에 있고 ISR 스냅샷은 최대 5분 낡을 수 있다.
+  // 목록 전체 ID 를 한 URL 로 — 예전엔 "보이는 6개" 라 페이지마다 URL(=캐시 키)이 갈렸고,
+  // 필터·정렬이 전체를 훑는 지금 그대로 뒀다면 조합마다 URL 이 갈려 CDN 캐시가 통째로 헛돌았다.
+  // 하나로 합치면 모든 방문자·모든 조합이 같은 캐시를 쓴다 — 함수 호출은 300초에 1회가 상한.
+  const statsKey = posts
+    .slice(0, STATS_MAX_IDS)
+    .map((p) => p.id)
+    .filter(Boolean)
+    .sort()
+    .join(',');
   // 다시 받게 만드는 열쇠 — 탭 복귀가 이 값을 올린다.
   const [statsEpoch, setStatsEpoch] = useState(0);
   useEffect(() => {
@@ -303,11 +229,17 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
     let cancelled = false;
     // 서버(ISR)가 내려준 값을 먼저 심는다 — 이보다 낡은 응답이 와도 숫자가 뒤로 가지 않는다.
     seedStatsFromPosts(posts);
+    // 서버가 방금 읽어 온 숫자면 조회 자체를 건너뛴다. stats 응답도 CDN 300초라 어차피 같은
+    // 신선도이고, 그걸 물어보는 만큼 함수 호출만 는다. 탭 복귀(statsEpoch)는 이 조건과 무관하게 받는다.
+    const seeded = statsAt != null && Date.now() - statsAt < STATS_REFRESH_MS;
+    if (seeded && statsEpoch === 0) return;
     // 세션 캐시를 거친다 — 방금 올린 내 표보다 낡은 응답도 같은 이유로 버려진다.
     fetchStats(statsKey.split(',')).then((got) => {
       if (got && !cancelled) setPosts((prev) => mergeKnownStats(prev));
     });
     return () => { cancelled = true; };
+    // posts·statsAt 은 조회 조건이 아니다 — 넣으면 집계가 갱신될 때마다 자기 자신을 다시 부른다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statsKey, statsEpoch]);
 
   // 다른 탭에 갔다 돌아오면 집계를 한 번 다시 받는다 — "돌아왔더니 옛날 숫자" 를 없앤다.
@@ -365,13 +297,21 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
     );
   }, [posts, saleFilter, sortBy, effectivePrices, deferredCommonRate]);
 
-  // 정렬·필터는 "지금 불러온 목록" 안에서만 도므로, 범위를 숨기지 않고 그대로 알려준다
+  // 필터를 걸었을 때 "몇 개 중 몇 개" — 이제 목록 전체가 기준이다
   const isNarrowed = saleFilter !== 'all';
 
-  const totalPages = totalCount != null ? Math.max(1, Math.ceil(totalCount / PAGE_SIZE)) : null;
-  // 커서 확보 범위: 방문한 페이지 + 그 다음 한 페이지까지만 이동 가능
-  const maxLoaded = modulePageCache.size > 0 ? Math.max(...modulePageCache.keys()) : 0;
-  const hasNext = totalPages != null ? page < totalPages : posts.length === PAGE_SIZE;
+  // 페이지는 걸러낸 결과 위에서 나눈다 — 필터를 걸면 남은 글이 1페이지부터 다시 채워진다
+  const totalPages = Math.max(1, Math.ceil(visiblePosts.length / PAGE_SIZE));
+  // 필터로 목록이 줄면 지금 페이지가 범위를 벗어날 수 있어 항상 클램프해서 쓴다
+  const curPage = Math.min(page, totalPages);
+  const hasNext = curPage < totalPages;
+  const pagedPosts = useMemo(
+    () => visiblePosts.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE),
+    [visiblePosts, curPage],
+  );
+
+  // 정렬·필터를 바꾸면 1페이지부터 다시 본다
+  useEffect(() => { setPage(1); }, [view]);
 
   // 아제나 칩 효율 — 카드와 같은 계산식, 옵션은 기본값. 공통 환율이 비어 있으면 기본 환율.
   const azenaBenefit = useMemo(() => {
@@ -591,21 +531,19 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
           </div>
         ) : (
           <>
-            {visiblePosts.length === 0 ? (
+            {pagedPosts.length === 0 ? (
               <div className={styles.emptyState}>
                 <p className={styles.emptyText}>조건에 맞는 패키지가 없습니다</p>
                 <p className={styles.emptySubtext}>
-                  {hasNext
-                    ? '다음 페이지를 넘겨보거나, 드롭다운을 "업로드순"으로 바꿔보세요'
-                    : '드롭다운을 "업로드순"으로 바꿔보세요'}
+                  드롭다운을 &quot;업로드순&quot;으로 바꿔보세요
                 </p>
               </div>
             ) : (
               <div className={styles.galleryGrid}>
-                {visiblePosts.map((post, index) => {
+                {pagedPosts.map((post, index) => {
                   // 마지막 카드 뒤에는 붙이지 않는다.
                   const adSlotIndex = AD_AFTER_CARD_INDEX.indexOf(index);
-                  const showAd = adSlotIndex !== -1 && index < visiblePosts.length - 1;
+                  const showAd = adSlotIndex !== -1 && index < pagedPosts.length - 1;
                   return (
                     <React.Fragment key={post.id}>
                       <PackageGalleryCard
@@ -663,29 +601,26 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
               </div>
             )}
 
-            {((totalPages ?? 1) > 1 || page > 1 || hasNext) && (
+            {totalPages > 1 && (
               <nav className={styles.pagination} aria-label="페이지 이동">
                 <button
                   type="button"
                   className={styles.pageBtn}
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page <= 1 || loading}
+                  onClick={() => handlePageChange(curPage - 1)}
+                  disabled={curPage <= 1}
                 >
                   이전
                 </button>
-                {/* count 실패 시(totalPages null) 번호는 방문한 범위까지만 그린다 */}
-                {buildPageList(page, totalPages ?? maxLoaded).map((p, i) =>
+                {/* 목록을 다 갖고 있으므로 어느 번호든 바로 열린다 — 예전의 "방문한 끝 + 1" 제한은 없다 */}
+                {buildPageList(curPage, totalPages).map((p, i) =>
                   p === 'gap' ? (
                     <span key={`gap-${i}`} className={styles.pageGap}>…</span>
                   ) : (
                     <button
                       type="button"
                       key={p}
-                      className={`${styles.pageBtn} ${p === page ? styles.pageBtnActive : ''}`}
+                      className={`${styles.pageBtn} ${p === curPage ? styles.pageBtnActive : ''}`}
                       onClick={() => handlePageChange(p)}
-                      // Firestore 커서 특성상 "방문한 끝 + 1"까지만 열린다 — 그 너머는 중간을
-                      // 전부 읽어야 갈 수 있어 비활성으로 막는다
-                      disabled={loading || (!modulePageCache.has(p) && p > maxLoaded + 1)}
                     >
                       {p}
                     </button>
@@ -694,8 +629,8 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
                 <button
                   type="button"
                   className={styles.pageBtn}
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={!hasNext || loading}
+                  onClick={() => handlePageChange(curPage + 1)}
+                  disabled={!hasNext}
                 >
                   다음
                 </button>
@@ -705,7 +640,7 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
             {/* 페이지 버튼 아래 320×100 — index 없이 호출하면 단일 인-콘텐츠 단위를 쓴다.
                 key={page}: 페이지를 넘길 때마다 새 광고를 받는다 (가운데 띠배너들은 글 목록이
                 갈리면서 저절로 리마운트되지만 이 자리는 페이지 버튼처럼 남는 요소라 직접 갈아줘야 한다) */}
-            <div key={`ad-bottom-${page}`} className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.belowPagerAd}`}>
+            <div key={`ad-bottom-${curPage}`} className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.belowPagerAd}`}>
               <AdBanner slot="8616653628" />
             </div>
 
@@ -715,7 +650,7 @@ export default function PackageGalleryClient({ initialPosts, initialCursor, init
             {ADFIT_ENABLED && ADFIT_UNITS.galleryBottomDesktop.unit && isMobileMd === false && (
               <div className={`d-none d-md-block ${styles.desktopAdSlot}`}>
                 <AdFitUnit
-                  key={`ad-bottom-desktop-${page}`}
+                  key={`ad-bottom-desktop-${curPage}`}
                   unit={ADFIT_UNITS.galleryBottomDesktop.unit}
                   width={ADFIT_UNITS.galleryBottomDesktop.width}
                   height={ADFIT_UNITS.galleryBottomDesktop.height}
