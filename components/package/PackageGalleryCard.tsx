@@ -6,7 +6,6 @@ import dynamic from 'next/dynamic';
 import type { PackagePost, PackageItem } from '@/types/package';
 import {
   formatNumber,
-  PRICE_BUNDLE_SIZE,
   CRYSTAL_PER_UNIT_FALLBACK,
   calculateGachaItemGold,
   getChoiceBoxBestGold,
@@ -20,11 +19,17 @@ import {
   getProcessedGemBoxUnitPrice,
   isNewReleasePost,
   getDisplayOrder,
+  peonGoldPerUnit,
+  crystalUnitGold,
+  packageItemHasPeon,
 } from '@/lib/package-shared';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
 import TrendArrow from '@/components/TrendArrow';
 import ReactionBar from '@/components/package/ReactionBar';
+import PeonBadge from '@/components/package/PeonBadge';
+import NoPeonToggle from '@/components/package/NoPeonToggle';
+import { useNoPeon } from '@/components/package/useNoPeon';
 import styles from './PackageGalleryCard.module.css';
 
 // recharts(~100KB)는 차트를 실제로 열 때만 받는다 — 갤러리 첫 로드에 섞이지 않게 동적 로드
@@ -240,6 +245,9 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
   });
 
   const goldPerWon = wonPer100Gold > 0 ? 100 / wonPer100Gold : 0;
+  // 페온 가치 제거 — 뷰어 설정. 젬·티켓·페온·어빌리티스톤 키트의 페온 몫이 한꺼번에 0이 된다
+  const [noPeon, setNoPeon] = useNoPeon();
+  const peonGold = peonGoldPerUnit(goldPerWon, noPeon);
 
   // 티켓 동적 시세 계산 (시세 변동 시 자동 반영)
   // 시세맵은 calcItemGold 에서 그대로 흘려받는다 — 평균가 기준으로 다시 돌릴 때
@@ -251,16 +259,16 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
   ): number => {
     const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
     if (PROCESSED_GEM_BOX_GEM[itemId] && Object.keys(prices).length > 0)
-      return getProcessedGemBoxUnitPrice(itemId, prices);
+      return getProcessedGemBoxUnitPrice(itemId, prices, peonGold);
     if (bcRate > 0 && Object.keys(prices).length > 0) {
       if (itemId === 'fixed_hell-legendary-ticket')
-        return calcTicketAverage('hell', 7, prices, bcRate);
+        return calcTicketAverage('hell', 7, prices, bcRate, true, noPeon);
       if (itemId === 'fixed_hell-heroic-ticket')
-        return calcTicketAverage('hell', 6, prices, bcRate);
+        return calcTicketAverage('hell', 6, prices, bcRate, true, noPeon);
       if (itemId === 'fixed_naraka-legendary-ticket')
-        return calcTicketAverage('narak', 2, prices, bcRate);
+        return calcTicketAverage('narak', 2, prices, bcRate, true, noPeon);
       if (itemId === 'fixed_cube-ticket')
-        return calcTicketAverage('hell', 6, prices, bcRate) / 6;
+        return calcTicketAverage('hell', 6, prices, bcRate, true, noPeon) / 6;
     }
     return fallback;
   };
@@ -274,27 +282,27 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
     if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
       // 현재 시세 상위 N개 조합 (저장된 선택은 등록 시점 시세라 역전될 수 있음)
       const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
-      return getChoiceBoxBestGold(item.choiceBoxCandidates, n, prices) * item.quantity;
+      return getChoiceBoxBestGold(item.choiceBoxCandidates, n, prices, peonGold) * item.quantity;
     }
     // 확률 상자: 현재 시세 기준 기댓값 (티켓 후보는 bcRate 로 동적 단가)
     if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-      return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, undefined, goldPerWon) * item.quantity;
+      return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, undefined, goldPerWon, noPeon) * item.quantity;
     }
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
-      return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
+      return crystalUnitGold(item.itemId, item.crystalPerUnit, goldPerWon, noPeon) * item.quantity;
     }
     // 기존 패키지 하위 호환
     if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
       const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
-      if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
+      if (fallback) return crystalUnitGold(item.itemId, fallback, goldPerWon, noPeon) * item.quantity;
     }
     // 묶음 주머니: 내부 아이템 시세 합산 (goldOverride 박제값 대신)
     if (item.bundleItems && item.bundleItems.length > 0) {
       return item.bundleItems.reduce(
-        (sum, bi) => sum + getItemUnitPrice(bi.itemId, prices) * bi.quantity, 0) * item.quantity;
+        (sum, bi) => sum + getItemUnitPrice(bi.itemId, prices, peonGold) * bi.quantity, 0) * item.quantity;
     }
     // 확률표 상자(expected_): 현재 시세 기준 기댓값 재계산
-    const expectedUnit = getExpectedBoxUnitPrice(item.itemId, prices);
+    const expectedUnit = getExpectedBoxUnitPrice(item.itemId, prices, peonGold);
     if (expectedUnit !== null) return expectedUnit * item.quantity;
     if (item.goldOverride != null) {
       const dynamicUnit = getTicketDynamicUnit(item.itemId, item.goldOverride, prices);
@@ -304,27 +312,25 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
     if (item.choiceOptions && item.choiceOptions.length > 0) {
       if (item.icon === FIXED_GEM_SELECT_ICON) {
         const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
-        return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, prices, goldPerWon) * qty;
+        return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, prices, goldPerWon, noPeon) * qty;
       }
-      return getChoiceBestValue(item.choiceOptions, item.itemId, prices) * item.quantity;
+      return getChoiceBestValue(item.choiceOptions, item.itemId, prices, peonGold) * item.quantity;
     }
-    const raw = prices[item.itemId] || 0;
-    const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-    return (raw / bundle) * item.quantity;
+    return getItemUnitPrice(item.itemId, prices, peonGold) * item.quantity;
   };
 
   // 아이템별 소계 (N선택 토글 로직용)
   const itemSubtotals = useMemo(
     () => post.items.map(item => calcItemGold(item)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [post.items, latestPrices, goldPerWon],
+    [post.items, latestPrices, goldPerWon, noPeon],
   );
 
   // 보너스 구성품 소계 (보너스 택N 토글 로직용)
   const bonusItemSubtotals = useMemo(
     () => (post.bonusItems || []).map(item => calcItemGold(item)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [post.bonusItems, latestPrices, goldPerWon],
+    [post.bonusItems, latestPrices, goldPerWon, noPeon],
   );
 
   // 시세 로드 후 N선택 재계산 — 표시 소계(itemSubtotals)와 동일한 값 기준 (티켓은 지옥 보상 평균 연동).
@@ -442,7 +448,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
   const gachaExpectedGold = isGacha
     ? post.items.reduce((s, item, idx) => {
         if (checkedItems[idx] === false) return s + 0 * ((item.probability || 0) / 100);
-        const gold = calculateGachaItemGold(item, latestPrices, goldPerWon, gachaBcRate);
+        const gold = calculateGachaItemGold(item, latestPrices, goldPerWon, gachaBcRate, undefined, noPeon);
         return s + gold * ((item.probability || 0) / 100);
       }, 0)
     : 0;
@@ -469,9 +475,11 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
   const gachaItemGolds = useMemo(() => {
     if (!isGacha) return [];
     return post.items.map((item) =>
-      calculateGachaItemGold(item, latestPrices, goldPerWon, gachaBcRate),
+      calculateGachaItemGold(item, latestPrices, goldPerWon, gachaBcRate, undefined, noPeon),
     );
-  }, [isGacha, post.items, latestPrices, goldPerWon, gachaBcRate]);
+  }, [isGacha, post.items, latestPrices, goldPerWon, gachaBcRate, noPeon]);
+  // 뽑기 결과용 골드 — 체크 해제한 아이템이 걸리면 0골드 (기대값과 같은 기준)
+  const gachaWonGold = (idx: number) => (checkedItems[idx] === false ? 0 : gachaItemGolds[idx]);
 
   // 가챠 1회: 확률 기반 가중 랜덤
   const selectOneWinner = (): number => {
@@ -627,7 +635,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
       const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
       return post.items.reduce((sum, item, idx) => {
         if (checkedItems[idx] === false) return sum;
-        return sum + calculateGachaItemGold(item, basePrices, goldPerWon, bcRate) * ((item.probability || 0) / 100);
+        return sum + calculateGachaItemGold(item, basePrices, goldPerWon, bcRate, undefined, noPeon) * ((item.probability || 0) / 100);
       }, 0);
     }
     return post.items.reduce((sum, item, idx) => {
@@ -635,7 +643,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
       return sum + calcItemGold(item, basePrices);
     }, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [basePrices, post.items, checkedItems, isGacha, goldPerWon]);
+  }, [basePrices, post.items, checkedItems, isGacha, goldPerWon, noPeon]);
 
   // 차트용 글 — 카드의 현재 체크 상태를 items 에 미리 걸러 담는다.
   // calculatePostEfficiency 는 자체적으로 "최고가 N개"를 다시 고르므로, 사용자가 손으로 바꾼
@@ -797,6 +805,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                 }}
               >
                 <ItemCellVisual item={item} />
+                {packageItemHasPeon(item) && <PeonBadge off={noPeon} />}
                 {isGacha && (
                   <span className={styles.itemProbBadge}>{item.probability}%</span>
                 )}
@@ -852,6 +861,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                     title={item.name}
                   >
                     <ItemCellVisual item={item} />
+                    {packageItemHasPeon(item) && <PeonBadge off={noPeon} />}
                     <span className={`${styles.itemCheckBox} ${isChecked ? styles.itemCheckBoxChecked : ''}`}>
                       {isChecked && (
                         <svg viewBox="0 0 12 10" className={styles.itemCheckIcon}>
@@ -957,7 +967,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
               {/* 1회 결과 - 컴팩트 2줄 */}
               {gachaPhase === 'result' && gachaMode === 'single' && gachaWinner >= 0 && (() => {
                 const winOrigIdx = gachaDisplayOrder[gachaWinner];
-                const wonGold = gachaItemGolds[winOrigIdx];
+                const wonGold = gachaWonGold(winOrigIdx);
                 const benefit = cashGold > 0 ? ((wonGold - cashGold) / cashGold) * 100 : 0;
                 return (
                 <div className={styles.gachaResultArea} data-nonav>
@@ -985,7 +995,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
 
               {/* 10회 최종 결과 - 컴팩트 2줄 */}
               {gachaPhase === 'result' && gachaMode === 'multi' && (() => {
-                const totalWonGold = gachaMultiResults.reduce((sum, ri) => sum + gachaItemGolds[ri], 0);
+                const totalWonGold = gachaMultiResults.reduce((sum, ri) => sum + gachaWonGold(ri), 0);
                 const totalCash = cashGold * 10;
                 const multiBenefit = totalCash > 0 ? ((totalWonGold - totalCash) / totalCash) * 100 : 0;
                 return (
@@ -1057,6 +1067,8 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                 aria-label="블루 크리스탈 100개당 골드"
               />
             </div>
+            {/* 페온 가치 제거 — 환율과 같은 "내 기준" 설정이라 환율 상자 안에 같이 둔다 */}
+            <NoPeonToggle active={noPeon} onChange={setNoPeon} compact />
           </div>
         </div>
       </div>
@@ -1081,7 +1093,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
           data-nonav: 패널 안 클릭이 카드 상세 이동으로 새지 않게 한다 */}
       {chartOpen && (
         <div className={styles.chartPanel} data-nonav>
-          <PackageValueChart post={chartPost} latestPrices={latestPrices} goldPerWon={goldPerWon} />
+          <PackageValueChart post={chartPost} latestPrices={latestPrices} goldPerWon={goldPerWon} noPeon={noPeon} />
         </div>
       )}
     </article>

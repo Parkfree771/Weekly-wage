@@ -1191,6 +1191,13 @@
   color: #fff;
 }
 
+/* 페온 가치 제거 토글 — 환율 카드 아래 한 줄 */
+.ratePeonRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
 /* 골드:현금 비율 입력 */
 .ratioRow {
   display: flex;
@@ -2151,6 +2158,21 @@
   justify-content: flex-end;
 }
 
+/* 페온 가치 제거 토글 줄 — 블크 줄처럼 한 줄을 통째로 차지하고 오른쪽 정렬 */
+.resultRatePeonRow {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 아이템 카드 그림 상자 — 페온 배지(absolute)가 그림을 따라가도록 relative 로 감싼다 */
+.itemCardIconBox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* 티켓 층 선택(TicketTierPicker) 자리 — 티켓 카드 이름 아래. 생김새는 피커 모듈 CSS 가 맡는다 */
 .itemCardTier {
   align-self: center;
@@ -2407,6 +2429,10 @@
   }
 
   .resultRateBcRow {
+    flex-basis: auto;
+  }
+
+  .resultRatePeonRow {
     flex-basis: auto;
   }
 
@@ -2714,6 +2740,13 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* 그림 상자 — 페온 배지(absolute)가 그림을 따라가도록 relative 로 감싼다 */
+.packageBoxItemIconBox {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
 }
 
 .packageBoxItemIcon {

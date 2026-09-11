@@ -1,0 +1,50 @@
+/* 페온 배지 — 아이콘 한 칸짜리 동그란 스티커. 기본 자리는 왼쪽 아래 (체크박스가 오른쪽 위에 있어서 반대편) */
+.badge {
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--card-bg, #fff);
+  border: 1px solid rgba(217, 119, 6, 0.55);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 0.12s, filter 0.12s;
+}
+
+.icon {
+  width: 11px;
+  height: 11px;
+  object-fit: contain;
+}
+
+/* 페온 가치 제거 중 — 흑백으로 죽이고 사선을 긋는다 */
+.badgeOff {
+  opacity: 0.55;
+  border-color: var(--border-color, #ccc);
+}
+
+.badgeOff .icon {
+  filter: grayscale(1);
+}
+
+.badgeOff::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 50%;
+  height: 1.5px;
+  background: var(--text-muted, #888);
+  transform: rotate(-45deg);
+}
+
+:global([data-theme="dark"]) .badge {
+  background: #1f2430;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}

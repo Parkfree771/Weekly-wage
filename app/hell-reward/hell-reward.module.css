@@ -34,12 +34,14 @@
   gap: 0.5rem;
 }
 
+/* 트랙 — 회색 판 대신 얇은 테두리 하나. 눌린 칸만 포인트색으로 차서 "지금 뭐가 선택됐는지"만 남는다 */
 .segTrack {
   display: flex;
   gap: 4px;
-  padding: 4px;
-  background: var(--bg-secondary);
-  border-radius: 11px;
+  padding: 3px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
 }
 
 .segTrackLevel {
@@ -169,25 +171,74 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 어빌리티스톤 제외 체크박스 */
-.stoneExcludeLabel {
+/* 제외 토글 줄 — 숫자 아래, 그림 달린 알약 두 개(어빌 제외 · 페온 제거) */
+.heroOpts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.exToggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: var(--text-muted);
+  gap: 0.45rem;
+  padding: 0.3rem 0.85rem 0.3rem 0.4rem;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1.5px solid var(--border-color);
+  border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
+  line-height: 1;
+}
+
+.exToggle:hover {
+  border-color: var(--color-primary);
+}
+
+.exToggleIconWrap {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.stoneExcludeCheck {
-  width: 14px;
-  height: 14px;
-  accent-color: var(--color-primary);
-  cursor: pointer;
-  flex-shrink: 0;
+.exToggleIcon {
+  width: 28px !important;
+  height: 28px !important;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+/* 켜짐 = 빼는 중. 알약이 포인트색으로 차고 그림엔 사선이 그어진다 */
+.exToggleActive {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.exToggleActive .exToggleIcon {
+  opacity: 0.55;
+}
+
+.exToggleActive .exToggleIconWrap::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 50%;
+  height: 3px;
+  background: #fff;
+  border-radius: 2px;
+  transform: rotate(-45deg);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
 }
 
 /* ─── 환율 — /package 갤러리 카드 하단(.bottomRate)과 같은 두 줄 입력, 같은 크기 ─── */
@@ -200,7 +251,7 @@
   justify-content: center;
 }
 
-/* 입력이 들어 있는 자리라 컨트롤 트랙과 같은 안쪽 표면으로 둔다 (파란 테두리 상자였던 것) */
+/* 입력이 들어 있는 자리 — 위 컨트롤 트랙과 같은 얇은 테두리 상자 (회색 판은 안 쓴다) */
 .bottomRate {
   flex: 1;
   display: flex;
@@ -208,8 +259,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  background: var(--bg-secondary);
-  border-radius: 11px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   padding: 0.55rem 0.75rem;
 }
 
@@ -345,20 +397,33 @@
   opacity: 0.35;
 }
 
+/* 줄 배열 — 머리줄(등수 · 이름 · 골드 · 화살표) 아래에 그림 한 줄. 그림이 한 장이든 세 장이든 같은 틀.
+   (그림 옆에 이름을 두던 배열은 여러 장짜리 줄에서 이름이 밀려 잘렸고, 줄마다 배열이 달라 지저분했다) */
 .rewardCardMain {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  grid-template-areas:
+    "info gold caret"
+    "visual visual visual";
+  row-gap: 0.5rem;
+  column-gap: 0.9rem;
   align-items: center;
-  gap: 0.9rem;
   padding: 0.8rem 1.1rem 0.9rem;
   cursor: pointer;
 }
 
+.rewardCardMain .rewardInfo { grid-area: info; }
+.rewardCardMain .rewardGold { grid-area: gold; }
+.rewardCardMain .expandIcon { grid-area: caret; }
+.rewardCardMain .rewardVisual { grid-area: visual; }
+.rewardCardMain > .rewardImgWrap { grid-area: visual; }
+
 /* 순위 — 골드 가치 내림차순 등수. 1·2·3위만 색을 주고 나머지는 흐린 회색.
    숫자 전용 서체(--font-num, Outfit)로 자릿수 폭을 맞춰 세로줄이 흔들리지 않게 한다. */
 .rank {
-  width: 22px;
+  min-width: 1.1em;
   flex-shrink: 0;
-  text-align: center;
+  text-align: left;
   font-family: var(--font-num), var(--font-mono), monospace;
   font-size: 0.95rem;
   font-weight: 800;
@@ -372,10 +437,54 @@
 .rank3 { color: #b45309; }
 
 /* 이미지 */
+/* 보상 그림 묶음 — 한 장이면 칸 하나, 선택/동시 지급이면 같은 크기 칸을 or · + 로 이어 붙인다 */
+.rewardVisual {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.rewardVisualPart {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 칸 사이 기호 — or(택1) 는 흐리게, +(둘 다) 는 진하게. 칸보다 작은 알약 */
+.rewardOp {
+  margin: 0 0.3rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+/* or(택1) 는 주황, +(둘 다) 는 초록 — 둘 다 흰 글씨 배지 */
+.rewardOpOr {
+  color: #fff;
+  background: #d97706;
+}
+
+.rewardOpPlus {
+  color: #fff;
+  background: #16a34a;
+}
+
+[data-theme="dark"] .rewardOpOr {
+  background: #f59e0b;
+}
+
+[data-theme="dark"] .rewardOpPlus {
+  background: #22c55e;
+}
+
+/* 칸 — 배경 없는 그림은 칸을 거의 채우게 크게 그린다 (예전 48/60 은 작아서 뭔지 잘 안 읽혔다) */
 .rewardImgWrap {
-  width: 60px;
-  height: 60px;
-  border-radius: 11px;
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
   background: var(--bg-secondary);
   display: flex;
   align-items: center;
@@ -385,20 +494,9 @@
 }
 
 .rewardImg {
-  width: 48px !important;
-  height: 48px !important;
+  width: 66px !important;
+  height: 66px !important;
   object-fit: contain;
-}
-
-.rewardImgSmall .rewardImg {
-  width: 38px !important;
-  height: 38px !important;
-}
-
-/* 배경 없는 이미지 — 칸을 꽉 채워 크게 표시 */
-.rewardImgLarge .rewardImg {
-  width: 100% !important;
-  height: 100% !important;
 }
 
 /* 자체 배경(사각 타일)이 그려진 아이콘 — 칸을 꽉 채우고 칸의 둥근 모서리로 잘라내
@@ -410,17 +508,53 @@
 .rewardImgFilled .rewardImg {
   width: 100% !important;
   height: 100% !important;
-  border-radius: 11px;
+  border-radius: 12px;
   object-fit: fill;
 }
 
+/* 합산 내역 줄의 작은 그림 — 같은 묶음 규칙을 20px 로 */
+.sumVisual {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.sumImgWrap {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sumImg {
+  width: 20px !important;
+  height: 20px !important;
+  object-fit: contain;
+}
+
+.sumImgWrap.rewardImgFilled .sumImg {
+  object-fit: fill;
+}
+
+.sumOpGlyph {
+  margin: 0 0.15rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0.05rem 0.25rem;
+  border-radius: 999px;
+}
+
 /* 정보 — 이름·수량만 */
+/* 머리줄 왼쪽 — 등수 + 이름을 한 줄에 붙인다 */
 .rewardInfo {
-  flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .rewardName {
@@ -430,16 +564,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.rewardQty {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-variant-numeric: tabular-nums;
 }
 
 /* 골드 가치 */
@@ -453,6 +577,16 @@
   white-space: nowrap;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
+}
+
+/* 0골드로 친 줄(어빌 제외·페온 제거) — 순서는 그대로, 골드만 흐리게 0 */
+.rewardGoldZero {
+  color: var(--text-muted);
+}
+
+.rewardGoldZero img {
+  filter: grayscale(1);
+  opacity: 0.5;
 }
 
 .rewardUnavailable {
@@ -577,11 +711,6 @@
   flex-shrink: 0;
 }
 
-/* 자체 배경이 있는 아이콘만 둥근 모서리 (투명 배경 아이콘은 그대로) */
-.sumImgFilled {
-  border-radius: 4px;
-}
-
 /* 덧셈 기호 자리 — 첫 줄은 비어 있어도 이름 시작점이 어긋나지 않게 폭을 고정한다 */
 .sumOp {
   display: inline-block;
@@ -683,13 +812,13 @@
   }
 
   .rewardImgWrap {
-    width: 54px;
-    height: 54px;
+    width: 64px;
+    height: 64px;
   }
 
   .rewardImg {
-    width: 44px !important;
-    height: 44px !important;
+    width: 58px !important;
+    height: 58px !important;
   }
 
   .rewardName {
@@ -732,30 +861,37 @@
 
   .rewardCardMain {
     padding: 0.7rem 0.85rem 0.8rem;
-    gap: 0.7rem;
+    column-gap: 0.7rem;
   }
 
   .rank {
-    width: 16px;
     font-size: 0.85rem;
   }
 
   .rewardImgWrap {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
   }
 
   .rewardImg {
-    width: 38px !important;
-    height: 38px !important;
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .rewardImgFilled .rewardImg {
+    border-radius: 10px;
+  }
+
+  /* 좁은 화면: 칸 사이 기호를 더 좁게 — 세 칸짜리(정련된 돌)가 이름 자리를 다 먹지 않게 */
+  .rewardOp {
+    margin: 0 0.15rem;
+    padding: 0.08rem 0.3rem;
+    font-size: 0.6rem;
   }
 
   .rewardName {
     font-size: 0.85rem;
-  }
-
-  .rewardQty {
-    font-size: 0.72rem;
   }
 
   .rewardGold {

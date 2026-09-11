@@ -174,8 +174,11 @@ export const NORMAL_REFINING_MATS = {
 export const SPECIAL_REFINING_RATE = 0.015; // 1.5%
 export const SPECIAL_REFINING_PER_ATTEMPT = 50;
 
+// 젬 선택 상자로 받은 젬을 거래소에 올릴 때 드는 페온 (등급별). 고급 젬은 지금 표(1730/1750)에 안 나온다.
+export const GEM_PEON = { advanced: 3, rare: 6, hero: 12 } as const;
+
 // 고정 단가
-export const RARE_GEM_PRICE = 2000;             // 희귀 젬 1개
+export const RARE_GEM_PRICE = 50;               // 희귀 젬 1개 — 2026-09-11 거래가 50골 수준으로 내려 2,000 → 50
 export const FATE_STONE_PRICE = 900;            // 정련된 운명의 돌 1개
 export const CHAOS_STONE_WEAPON_PRICE = 800;    // 정련된 혼돈의 돌(무기) 1개
 export const CHAOS_STONE_ARMOR_PRICE = 300;     // 정련된 혼돈의 돌(방어구) 1개
@@ -303,12 +306,12 @@ export function calcBoxRewardGold(
   // 특수재련
   if (rewardName === '특수재련') return Math.floor(parseRewardValue(rawVal) * specialRefiningCost);
 
-  // 젬 선택 상자 — 영웅: 최고가 시세 / 희귀: 고정가
+  // 젬 선택 상자 — (영웅: 최고가 시세 / 희귀: 고정가) + 등급별 페온
   if (rewardName === '젬 선택 상자') {
     const gem = parseGemSelectBox(rawVal);
     if (!gem) return 0;
     const unit = gem.rarity === 'hero' ? getHeroGemMaxPrice(prices) : RARE_GEM_PRICE;
-    return Math.floor(gem.count * unit);
+    return Math.floor(gem.count * (unit + GEM_PEON[gem.rarity] * peonGoldValue));
   }
 
   // 귀속 보석 — 8레벨 겁화 보석 시세
@@ -361,12 +364,13 @@ export function calcTicketUnitByItemId(
   prices: Record<string, number>,
   bcRate: number,
   tiers: TicketTiers = DEFAULT_TICKET_TIERS,
+  noPeon: boolean = false,
 ): number | null {
   switch (itemId) {
-    case 'fixed_hell-legendary-ticket': return calcTicketAverage('hell', tiers.hellLegendary, prices, bcRate);
-    case 'fixed_hell-heroic-ticket': return calcTicketAverage('hell', tiers.hellHeroic, prices, bcRate);
-    case 'fixed_naraka-legendary-ticket': return calcTicketAverage('narak', tiers.narakLegendary, prices, bcRate);
-    case 'fixed_cube-ticket': return calcTicketAverage('hell', tiers.hellHeroic, prices, bcRate) / 6;
+    case 'fixed_hell-legendary-ticket': return calcTicketAverage('hell', tiers.hellLegendary, prices, bcRate, true, noPeon);
+    case 'fixed_hell-heroic-ticket': return calcTicketAverage('hell', tiers.hellHeroic, prices, bcRate, true, noPeon);
+    case 'fixed_naraka-legendary-ticket': return calcTicketAverage('narak', tiers.narakLegendary, prices, bcRate, true, noPeon);
+    case 'fixed_cube-ticket': return calcTicketAverage('hell', tiers.hellHeroic, prices, bcRate, true, noPeon) / 6;
     default: return null;
   }
 }
@@ -375,28 +379,69 @@ export const isTicketItemId = (itemId: string): boolean =>
   itemId === 'fixed_hell-legendary-ticket' || itemId === 'fixed_hell-heroic-ticket' ||
   itemId === 'fixed_naraka-legendary-ticket' || itemId === 'fixed_cube-ticket';
 
-// 티켓(열쇠) 평균 골드 가치 — 패키지·익스트림의 티켓 평가는 1750 표 고정이라 레벨 인자를 두지 않는다
+// ─── 상자 기댓값 ───
+// 지옥/나락을 끝내면 그 단계 보상 목록에서 상자가 3개(히든층 '상자 +1'을 받았으면 4개) 중복 없이 뜨고,
+// 그중 1개를 고른다. 그래서 상자 하나의 기댓값은 목록 평균이 아니라 "뜬 k개 중 최고값의 기댓값"이다.
+// 진행 규칙은 docs/hell-reward/sim-rules.md.
+export const BOX_PICK_COUNT = 3;
+export const BOX_PICK_COUNT_BONUS = 4;
+
+function comb(n: number, k: number): number {
+  if (k < 0 || k > n) return 0;
+  let r = 1;
+  for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i;
+  return r;
+}
+
+/** values 에서 k개를 중복 없이 균등하게 뽑아 최고값을 고를 때의 기댓값 */
+export function calcPickBestExpected(values: number[], k: number): number {
+  const v = [...values].sort((a, b) => a - b);
+  const n = v.length;
+  if (n === 0) return 0;
+  const kk = Math.min(k, n);
+  const total = comb(n, kk);
+  let e = 0;
+  // 오름차순 i번째 값이 뽑힌 kk개 중 최고가 될 확률 = C(i, kk-1) / C(n, kk)
+  for (let i = 0; i < n; i++) e += v[i] * (comb(i, kk - 1) / total);
+  return e;
+}
+
+/**
+ * 단계 상자 기댓값 (기본 보상 제외).
+ * 어빌리티스톤 제외는 "후보 자리는 차지하되 0골드" — 뜨는 확률은 그대로고 가치만 안 친다.
+ */
+export function calcBoxExpectedGold(
+  mode: 'hell' | 'narak',
+  tier: number,
+  prices: Record<string, number>,
+  bcRate: number,
+  opts: { boxCount?: number; excludeAbilityStone?: boolean; level?: HellItemLevel; noPeon?: boolean } = {},
+): number {
+  const { boxCount = BOX_PICK_COUNT, excludeAbilityStone = true, level = 1750, noPeon = false } = opts;
+  // noPeon: 페온 가치 제거 — 팔찌·젬·어빌리티스톤에 붙는 페온 몫을 0으로 친다
+  const peonGoldValue = noPeon ? 0 : 8.5 * (bcRate / 100);
+  const specialRefiningCost = calcSpecialRefiningUnitCost(prices);
+  const data = getRewardData(mode, level);
+
+  const values: number[] = [];
+  for (const name of Object.keys(data)) {
+    const rawVal = data[name]?.[tier];
+    if (!rawVal || rawVal === '-') continue;
+    const val = calcBoxRewardGold(name, tier, prices, mode, peonGoldValue, specialRefiningCost, level);
+    if (val === null) continue;
+    values.push(excludeAbilityStone && name === '어빌리티스톤' ? 0 : val);
+  }
+  return Math.floor(calcPickBestExpected(values, boxCount));
+}
+
+// 티켓(열쇠) 1장 골드 가치 = 상자 3개 중 택1 기댓값 — 패키지·익스트림의 티켓 평가는 1750 표 고정이라 레벨 인자를 두지 않는다
 export function calcTicketAverage(
   mode: 'hell' | 'narak',
   tier: number,
   prices: Record<string, number>,
   bcRate: number,
-  excludeAbilityStone: boolean = true
+  excludeAbilityStone: boolean = true,
+  noPeon: boolean = false,
 ): number {
-  const peonGoldValue = 8.5 * (bcRate / 100);
-  const specialRefiningCost = calcSpecialRefiningUnitCost(prices);
-  const data = getRewardData(mode);
-
-  let sum = 0;
-  let count = 0;
-  for (const name of Object.keys(data)) {
-    if (excludeAbilityStone && name === '어빌리티스톤') continue;
-    const rawVal = data[name]?.[tier];
-    if (!rawVal || rawVal === '-') continue;
-    const val = calcBoxRewardGold(name, tier, prices, mode, peonGoldValue, specialRefiningCost);
-    if (val === null) continue;
-    sum += val;
-    count++;
-  }
-  return count > 0 ? Math.floor(sum / count) : 0;
+  return calcBoxExpectedGold(mode, tier, prices, bcRate, { excludeAbilityStone, noPeon });
 }

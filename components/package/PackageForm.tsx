@@ -31,7 +31,12 @@ import {
   getProbBoxExpectedGold,
   getUnitPrice,
   pickTopNCandidateIds,
+  peonGoldPerUnit,
+  addedItemHasPeon,
 } from '@/lib/package-shared';
+import PeonBadge from '@/components/package/PeonBadge';
+import NoPeonToggle from '@/components/package/NoPeonToggle';
+import { useNoPeon } from '@/components/package/useNoPeon';
 import { fromDatetimeLocalValue, toDatetimeLocalValue, fromSaleEndDateValue, toDateOnlyValue } from '@/lib/package-sale';
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import styles from '@/app/package/package.module.css';
@@ -351,8 +356,8 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     if (template.type === 'choice' && template.choices?.length) {
       // 시세상 가장 비싼 선택지를 기본 선택
       const priceOf = (itemId: string) => template.id === 'gem-hero-fixed-select'
-        ? getFixedGemSelectUnitPrice(itemId, latestPrices, goldPerWon)
-        : getItemUnitPrice(itemId, latestPrices);
+        ? getFixedGemSelectUnitPrice(itemId, latestPrices, goldPerWon, noPeon)
+        : getItemUnitPrice(itemId, latestPrices, peonGold);
       const best = template.choices.reduce((max, c) =>
         priceOf(c.itemId) > priceOf(max.itemId) ? c : max,
         template.choices[0]);
@@ -391,7 +396,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
         return {
           ...a,
           choiceBoxPickCount: pickCount,
-          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, pickCount, latestPrices),
+          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, pickCount, latestPrices, peonGold),
         };
       }),
     );
@@ -421,7 +426,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
         return {
           ...a,
           choiceBoxCandidates: candidates,
-          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, a.choiceBoxPickCount || 1, latestPrices),
+          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, a.choiceBoxPickCount || 1, latestPrices, peonGold),
         };
       }),
     );
@@ -435,7 +440,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
         return {
           ...a,
           choiceBoxCandidates: candidates,
-          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, a.choiceBoxPickCount || 1, latestPrices),
+          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, a.choiceBoxPickCount || 1, latestPrices, peonGold),
         };
       }),
     );
@@ -451,7 +456,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
         return {
           ...a,
           choiceBoxCandidates: candidates,
-          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, a.choiceBoxPickCount || 1, latestPrices),
+          choiceBoxSelectedIds: pickTopNCandidateIds(candidates, a.choiceBoxPickCount || 1, latestPrices, peonGold),
         };
       }),
     );
@@ -504,8 +509,8 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
         case 'choice': {
           // 기본 선택은 시세상 최고가 선택지 (일반 아이템 추가와 같은 규칙)
           const priceOf = (cid: string) => t.id === 'gem-hero-fixed-select'
-            ? getFixedGemSelectUnitPrice(cid, latestPrices, goldPerWon)
-            : getItemUnitPrice(cid, latestPrices);
+            ? getFixedGemSelectUnitPrice(cid, latestPrices, goldPerWon, noPeon)
+            : getItemUnitPrice(cid, latestPrices, peonGold);
           const choices = t.choices || [];
           const best = choices.reduce((max, c) => (priceOf(c.itemId) > priceOf(max.itemId) ? c : max), choices[0]);
           return {
@@ -734,6 +739,10 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   const goldPerWon = tradeMode === 'unofficial'
     ? (unofficialRate > 0 ? 100 / unofficialRate : 0)
     : (officialGold > 0 ? officialGold / 2750 : 0);
+  // 페온 가치 제거 — 갤러리·상세와 같은 뷰어 설정. 폼의 미리보기 계산에만 걸고,
+  // 저장하는 goldOverride(박제 폴백값)는 항상 페온 포함으로 둔다 (글 데이터는 뷰어 설정과 무관해야 한다)
+  const [noPeon, setNoPeon] = useNoPeon();
+  const peonGold = peonGoldPerUnit(goldPerWon, noPeon);
 
   // 블크 → 원 환산 가격 (100 BC = 2750원)
   const effectiveCashPrice = priceCurrency === 'cash'
@@ -761,12 +770,12 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
       }
       const template = TEMPLATES_MAP[added.templateId];
       if (!template) return 0;
-      const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0);
+      const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0, noPeon);
       const qty = template.type === 'gold' ? 1 : template.type === 'choice' ? getChoiceQty(added, template) : added.quantity;
       const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
       return unitPrice * qty * inner;
     });
-  }, [addedItems, latestPrices, goldPerWon, officialGold]);
+  }, [addedItems, latestPrices, goldPerWon, officialGold, noPeon]);
 
   // selectableCount > 0일 때 가장 비싼 N개 자동 선택.
   // 보너스 구성품은 확정 구성품과 별도로, bonusSelectableCount > 0이면 보너스끼리 최고가 N개만 선택된다.
@@ -881,7 +890,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     // ── 일반 아이템 ──
     const template = TEMPLATES_MAP[added.templateId];
     if (!template) return null;
-    const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0);
+    const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0, noPeon);
     const qty = template.type === 'gold' ? 1 : template.type === 'choice' ? getChoiceQty(added, template) : added.quantity;
     const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
     const subtotal = unitPrice * qty * inner;
@@ -889,14 +898,17 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     return (
       <div key={added.id} className={`${styles.packageBoxItem} ${(added.isBonus ? bonusSelectableCount > 0 : selectableCount > 0) && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
         <div className={styles.packageBoxItemMain}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img loading="lazy" decoding="async" src={template.icon} alt={template.name}
-            className={styles.packageBoxItemIcon}
-            style={{
-              ...(ICON_SIZE_BOX[template.id] ? { width: ICON_SIZE_BOX[template.id], height: ICON_SIZE_BOX[template.id] } : {}),
-              ...(ICON_POSITION[template.id] ? { objectFit: 'cover' as const, objectPosition: ICON_POSITION[template.id] } : {}),
-            }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <span className={styles.packageBoxItemIconBox}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img loading="lazy" decoding="async" src={template.icon} alt={template.name}
+              className={styles.packageBoxItemIcon}
+              style={{
+                ...(ICON_SIZE_BOX[template.id] ? { width: ICON_SIZE_BOX[template.id], height: ICON_SIZE_BOX[template.id] } : {}),
+                ...(ICON_POSITION[template.id] ? { objectFit: 'cover' as const, objectPosition: ICON_POSITION[template.id] } : {}),
+              }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            {addedItemHasPeon(added, template) && <PeonBadge off={noPeon} />}
+          </span>
           <span className={styles.packageBoxItemName}>
             {template.type === 'choiceBox' ? (added.choiceBoxName?.trim() || template.name)
               : template.type === 'probBox' ? (added.probBoxName?.trim() || template.name)
@@ -934,8 +946,8 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
             {template.choices.map((choice) => {
               const isSelected = added.selectedChoiceId === choice.itemId;
               const choicePrice = template.id === 'gem-hero-fixed-select'
-                ? getFixedGemSelectUnitPrice(choice.itemId, latestPrices, goldPerWon)
-                : getItemUnitPrice(choice.itemId, latestPrices);
+                ? getFixedGemSelectUnitPrice(choice.itemId, latestPrices, goldPerWon, noPeon)
+                : getItemUnitPrice(choice.itemId, latestPrices, peonGold);
               const perBoxQty = added.choiceQuantities?.[choice.itemId] ?? 1;
               const choiceTotalQty = added.quantity * perBoxQty;
               return (
@@ -973,8 +985,8 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               onChange={(e) => handleChoiceChange(added.id, e.target.value)}>
               {template.choices.map((choice) => {
                 const choicePrice = template.id === 'gem-hero-fixed-select'
-                  ? getFixedGemSelectUnitPrice(choice.itemId, latestPrices, goldPerWon)
-                  : getItemUnitPrice(choice.itemId, latestPrices);
+                  ? getFixedGemSelectUnitPrice(choice.itemId, latestPrices, goldPerWon, noPeon)
+                  : getItemUnitPrice(choice.itemId, latestPrices, peonGold);
                 return (
                   <option key={choice.itemId} value={choice.itemId}>
                     {choice.name} ({formatNumber(choicePrice)}G)
@@ -1029,7 +1041,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
             </div>
             {(added.choiceBoxCandidates || []).map((cand) => {
               const isTopSelected = (added.choiceBoxSelectedIds || []).includes(cand.id);
-              const candPrice = cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0);
+              const candPrice = cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices, peonGold) : (cand.goldPerUnit || 0);
               return (
                 <div key={cand.id} className={styles.innerQuantityRow}>
                   {cand.icon && (
@@ -1074,7 +1086,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                 placeholder={template.name} maxLength={30} />
             </div>
             {(added.probBoxCandidates || []).map((cand) => {
-              const candUnit = getProbBoxCandidateUnit(cand, latestPrices, officialGold || 8500, undefined, goldPerWon);
+              const candUnit = getProbBoxCandidateUnit(cand, latestPrices, officialGold || 8500, undefined, goldPerWon, noPeon);
               const isCustomCand = !cand.itemId && !cand.choiceOptions?.length;
               return (
                 <div key={cand.id}>
@@ -1149,7 +1161,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               const isOk = Math.abs(probSum - 100) < 0.01;
               return (
                 <div className={`${styles.gachaProbSum} ${isOk ? styles.gachaProbSumOk : styles.gachaProbSumError}`}>
-                  확률 합계: {probSum.toFixed(1)}% {isOk ? `· 기댓값 ${formatNumber(getProbBoxExpectedGold(added.probBoxCandidates, latestPrices, officialGold || 8500, undefined, goldPerWon))}G` : '(100%가 되어야 합니다)'}
+                  확률 합계: {probSum.toFixed(1)}% {isOk ? `· 기댓값 ${formatNumber(getProbBoxExpectedGold(added.probBoxCandidates, latestPrices, officialGold || 8500, undefined, goldPerWon, noPeon))}G` : '(100%가 되어야 합니다)'}
                 </div>
               );
             })()}
@@ -1295,8 +1307,9 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
             };
           }
           case 'expected': {
+            // 박제 폴백값은 뷰어 설정과 무관하게 페온 포함 기준 (getUnitPrice 의 기본과 같다)
             const expectedGold = (template.expectedItems || []).reduce((sum, ei) => {
-              return sum + getItemUnitPrice(ei.itemId, latestPrices) * ei.probability;
+              return sum + getItemUnitPrice(ei.itemId, latestPrices, peonGoldPerUnit(goldPerWon)) * ei.probability;
             }, 0);
             return {
               itemId: `expected_${template.id}`,
@@ -1598,6 +1611,10 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                   </div>
                 </div>
               )}
+              {/* 페온 가치 제거 — 미리보기 계산에만 적용된다 (저장값은 페온 포함) */}
+              <div className={styles.ratePeonRow}>
+                <NoPeonToggle active={noPeon} onChange={setNoPeon} />
+              </div>
               {fieldErrors.rate && <p className={styles.fieldErrorMsg}>{fieldErrors.rate}</p>}
             </div>
           </div>
@@ -1679,7 +1696,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               }
               const template = TEMPLATES_MAP[added.templateId];
               if (!template) return { itemId: '', name: '', quantity: 0, probability: 0 };
-              const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0);
+              const unitPrice = getUnitPrice(added, template, latestPrices, goldPerWon, officialGold || 0, noPeon);
               const qty = template.type === 'gold' ? 1 : added.quantity;
               const inner = template.boxItem ? (added.innerQuantity || 1) : 1;
               return { itemId: template.itemId || `fixed_${template.id}`, name: template.name, quantity: qty * inner, goldOverride: unitPrice, probability: gachaProbabilities[added.id] || 0 };

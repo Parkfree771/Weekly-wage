@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
+import { useNoPeon } from '@/components/package/useNoPeon';
 import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryCard';
 // package-service(→ Firestore SDK ~250KB)는 정적 import 하지 않는다 — 목록은 서버(ISR)가
 // 통째로 넘겨주므로, 그 서버 조회가 실패했을 때만 지연 로드한다.
@@ -156,6 +157,8 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
   // 입력은 문자열로 든다 — number state 면 "16." 같은 타이핑 중간 상태가 지워져 소수(16.5) 입력이 안 된다.
   const [commonRateText, setCommonRateText] = useState<string>('');
   const commonWonPer100Gold = clampRate(parseFloat(commonRateText) || 0);
+  // 페온 가치 제거 — 카드 안 토글로 바뀌는 뷰어 설정. 효율순 정렬이 카드 숫자와 같은 기준을 쓰도록 여기서도 읽는다
+  const [noPeon] = useNoPeon();
   // 카드 6장 재계산·재정렬은 키 입력보다 한 박자 늦게 — 입력칸 반응성은 유지하고 무거운 작업만 미룬다
   const deferredCommonRate = useDeferredValue(commonWonPer100Gold);
   // 하단 데스크톱 배너의 뷰포트 판정 (d-md-block 과 같은 768px 기준)
@@ -292,10 +295,10 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
     const rateOverride = deferredCommonRate > 0 ? 100 / deferredCommonRate : 0;
     return [...filtered].sort(
       (a, b) =>
-        calculatePostEfficiency(b, effectivePrices, rateOverride) -
-        calculatePostEfficiency(a, effectivePrices, rateOverride),
+        calculatePostEfficiency(b, effectivePrices, rateOverride, noPeon) -
+        calculatePostEfficiency(a, effectivePrices, rateOverride, noPeon),
     );
-  }, [posts, saleFilter, sortBy, effectivePrices, deferredCommonRate]);
+  }, [posts, saleFilter, sortBy, effectivePrices, deferredCommonRate, noPeon]);
 
   // 필터를 걸었을 때 "몇 개 중 몇 개" — 이제 목록 전체가 기준이다
   const isNarrowed = saleFilter !== 'all';

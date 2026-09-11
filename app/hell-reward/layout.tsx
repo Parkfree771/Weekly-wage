@@ -4,7 +4,7 @@ import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
   title: '지옥 보상 계산기',
-  description: '로스트아크 시즌3 지옥/나락 보상을 단계별로 정리하고 실시간 시세 기반으로 골드 가치를 계산합니다.',
+  description: '로스트아크 시즌4 지옥/나락 보상을 단계별로 정리하고 실시간 시세 기반으로 골드 가치를 계산합니다.',
   keywords: '로아로골, 로아 지옥 보상, 로아 나락 보상, 지옥 보상 계산, 낙원 보상 정리, 로스트아크 지옥, 나락 보상표',
   openGraph: {
     images: ['/og-image.png'],
@@ -37,7 +37,7 @@ export default function HellRewardLayout({
             "@type": "WebApplication",
             "name": "로아로골 - 지옥 보상 계산기",
             "url": `${SITE_URL}/hell-reward`,
-            "description": "로스트아크 시즌3(1750) 지옥/나락 보상을 단계별로 정리하고 실시간 시세 기반으로 골드 가치를 계산",
+            "description": "로스트아크 시즌4 지옥/나락 보상을 단계별로 정리하고 실시간 시세 기반으로 골드 가치를 계산",
             "applicationCategory": "GameApplication",
             "operatingSystem": "Any",
             "offers": {
@@ -49,8 +49,8 @@ export default function HellRewardLayout({
               "지옥/나락 단계별 보상 정리",
               "보상 항목별 실시간 거래소 시세 반영",
               "특수재련 재료 등 비거래 재화의 대체 가치 환산",
-              "단계별 평균 기댓값 계산",
-              "어빌리티스톤 제외 옵션"
+              "단계별 상자 3개 중 택1 기댓값 계산",
+              "어빌리티스톤 제외 · 페온 제거 옵션"
             ]
           })
         }}

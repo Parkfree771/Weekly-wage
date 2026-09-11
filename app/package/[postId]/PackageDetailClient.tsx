@@ -47,9 +47,15 @@ import {
   isRiftRunId,
   getRiftRunLevel,
   getRiftRunBreakdown,
+  peonGoldPerUnit,
+  crystalUnitGold,
+  packageItemHasPeon,
   type ProbBoxCandidate,
 } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
+import PeonBadge from '@/components/package/PeonBadge';
+import NoPeonToggle from '@/components/package/NoPeonToggle';
+import { useNoPeon } from '@/components/package/useNoPeon';
 import SideSquareAd from '@/components/package/SideSquareAd';
 import TicketTierPicker from '@/components/package/TicketTierPicker';
 import dynamic from 'next/dynamic';
@@ -225,31 +231,33 @@ function getPackageItemGold(
   selectedChoiceItemId?: string,
   selectedChoiceBoxIds?: string[],
   tiers: TicketTiers = DEFAULT_TICKET_TIERS,
+  noPeon: boolean = false,
 ): number {
+  const peonGold = peonGoldPerUnit(goldPerWon, noPeon);
   if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
     const selected = selectedChoiceBoxIds ?? item.choiceBoxSelectedIds;
-    return getChoiceBoxGold(item.choiceBoxCandidates, selected, prices) * item.quantity;
+    return getChoiceBoxGold(item.choiceBoxCandidates, selected, prices, peonGold) * item.quantity;
   }
   if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, tiers, goldPerWon) * item.quantity;
+    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, tiers, goldPerWon, noPeon) * item.quantity;
   }
   if (isTicketItemId(item.itemId))
-    return (bcRate > 0 ? (calcTicketUnitByItemId(item.itemId, prices, bcRate, tiers) ?? 0) : (item.goldOverride || 0)) * item.quantity;
+    return (bcRate > 0 ? (calcTicketUnitByItemId(item.itemId, prices, bcRate, tiers, noPeon) ?? 0) : (item.goldOverride || 0)) * item.quantity;
   if (PROCESSED_GEM_BOX_GEM[item.itemId])
-    return (Object.keys(prices).length > 0 ? getProcessedGemBoxUnitPrice(item.itemId, prices) : (item.goldOverride || 0)) * item.quantity;
+    return (Object.keys(prices).length > 0 ? getProcessedGemBoxUnitPrice(item.itemId, prices, peonGold) : (item.goldOverride || 0)) * item.quantity;
   if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
-    return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
+    return crystalUnitGold(item.itemId, item.crystalPerUnit, goldPerWon, noPeon) * item.quantity;
   }
   if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
     const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
-    if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
+    if (fallback) return crystalUnitGold(item.itemId, fallback, goldPerWon, noPeon) * item.quantity;
   }
   if (item.bundleItems && item.bundleItems.length > 0) {
-    const perBundleValue = item.bundleItems.reduce((sum, bi) => sum + getItemUnitPrice(bi.itemId, prices) * bi.quantity, 0);
+    const perBundleValue = item.bundleItems.reduce((sum, bi) => sum + getItemUnitPrice(bi.itemId, prices, peonGold) * bi.quantity, 0);
     return perBundleValue * item.quantity;
   }
   // 확률표 상자(expected_): 현재 시세 기준 기댓값 재계산 (goldOverride 는 등록 시점 박제값)
-  const expectedUnit = getExpectedBoxUnitPrice(item.itemId, prices);
+  const expectedUnit = getExpectedBoxUnitPrice(item.itemId, prices, peonGold);
   if (expectedUnit !== null) return expectedUnit * item.quantity;
   if (item.goldOverride != null) return item.goldOverride * item.quantity;
   if (item.choiceOptions && item.choiceOptions.length > 0) {
@@ -257,11 +265,11 @@ function getPackageItemGold(
     const effectiveId = selectedChoiceItemId || item.itemId;
     const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === effectiveId)?.quantity ?? 1);
     const unit = item.icon === FIXED_GEM_SELECT_ICON
-      ? getFixedGemSelectUnitPrice(effectiveId, prices, goldPerWon)
-      : getItemUnitPrice(effectiveId, prices);
+      ? getFixedGemSelectUnitPrice(effectiveId, prices, goldPerWon, noPeon)
+      : getItemUnitPrice(effectiveId, prices, peonGold);
     return unit * qty;
   }
-  return getItemUnitPrice(item.itemId, prices) * item.quantity;
+  return getItemUnitPrice(item.itemId, prices, peonGold) * item.quantity;
 }
 
 /**
@@ -316,6 +324,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
   // 티켓 층 — 기본은 갤러리와 같은 값. 서버 렌더와 첫 화면을 맞추려고 저장값은 마운트 뒤에 읽는다
   const [ticketTiers, setTicketTiers] = useState<TicketTiers>(DEFAULT_TICKET_TIERS);
   useEffect(() => { setTicketTiers(readTicketTiers()); }, []);
+  // 페온 가치 제거 — 갤러리 카드와 같은 뷰어 설정(localStorage). 젬·티켓·페온·어빌리티스톤 키트의 페온 몫이 0이 된다
+  const [noPeon, setNoPeon] = useNoPeon();
   const updateTicketTier = (key: keyof TicketTiers, tier: number) => {
     setTicketTiers((prev) => {
       const next = { ...prev, [key]: tier };
@@ -536,8 +546,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
         if (!item.choiceOptions?.length) return;
         const unit = (id: string) =>
           item.icon === FIXED_GEM_SELECT_ICON
-            ? getFixedGemSelectUnitPrice(id, latestPrices, detailGoldPerWon)
-            : getItemUnitPrice(id, latestPrices) * (item.choiceOptions!.find((c) => c.itemId === id)?.quantity ?? 1);
+            ? getFixedGemSelectUnitPrice(id, latestPrices, detailGoldPerWon, noPeon)
+            : getItemUnitPrice(id, latestPrices, peonGold) * (item.choiceOptions!.find((c) => c.itemId === id)?.quantity ?? 1);
         let bestId = item.itemId;
         let best = unit(bestId);
         for (const c of item.choiceOptions) {
@@ -554,7 +564,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       items.forEach((item, idx) => {
         if (!item.choiceBoxCandidates?.length) return;
         const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
-        updates[idx] = pickTopNCandidateIds(item.choiceBoxCandidates, n, latestPrices);
+        updates[idx] = pickTopNCandidateIds(item.choiceBoxCandidates, n, latestPrices, peonGold);
       });
       return updates;
     };
@@ -581,11 +591,11 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       // 선택 상자: 현재 시세 기준 최고 조합 (자동 최고가 선택 effect가 같은 조합으로 갱신하므로 표시값과 일치)
       if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
         const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
-        return { idx, value: getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity };
+        return { idx, value: getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices, peonGold) * item.quantity };
       }
       // 확률 상자: 현재 시세 기준 기댓값
       if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        return { idx, value: getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, ticketTiers, detailGoldPerWon) * item.quantity };
+        return { idx, value: getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, ticketTiers, detailGoldPerWon, noPeon) * item.quantity };
       }
       if (item.goldOverride != null) {
         // 티켓(지옥 보상 평균)·가공 젬·크리스탈 전부 표시 소계와 동일한 동적 단가로 비교
@@ -595,11 +605,11 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       if (item.choiceOptions && item.choiceOptions.length > 0) {
         if (item.icon === FIXED_GEM_SELECT_ICON) {
           const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
-          return { idx, value: getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, detailGoldPerWon) * qty };
+          return { idx, value: getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, detailGoldPerWon, noPeon) * qty };
         }
-        return { idx, value: getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity };
+        return { idx, value: getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices, peonGold) * item.quantity };
       }
-      return { idx, value: getItemUnitPrice(item.itemId, latestPrices) * item.quantity };
+      return { idx, value: getItemUnitPrice(item.itemId, latestPrices, peonGold) * item.quantity };
     });
     withValue.sort((a, b) => b.value - a.value);
     const newChecked: Record<number, boolean> = {};
@@ -618,7 +628,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
     if (Object.keys(latestPrices).length === 0) return;
     const withValue = post.bonusItems.map((item, idx) => ({
       idx,
-      value: getPackageItemGold(item, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections[idx], bonusChoiceBoxSelections[idx], ticketTiers),
+      value: getPackageItemGold(item, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections[idx], bonusChoiceBoxSelections[idx], ticketTiers, noPeon),
     }));
     withValue.sort((a, b) => b.value - a.value);
     const newChecked: Record<number, boolean> = {};
@@ -968,14 +978,16 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
 
   // 환율 기반 bcRate (100 블크 = 2750 로크)
   const bcRate = detailGoldPerWon > 0 ? detailGoldPerWon * 2750 : 0;
+  // 페온 1개의 골드 — 페온 가치 제거면 0. 젬 단가에 더해지는 페온 몫은 전부 이 값을 지난다
+  const peonGold = peonGoldPerUnit(detailGoldPerWon, noPeon);
 
   // 층별 티켓 1장 가치 — 셀렉트 항목마다 가격을 같이 보여준다. 11층 × 3종, 시세·환율이 바뀔 때만 다시 센다
   const ticketTierPrices = useMemo(() => {
     const table = (mode: 'hell' | 'narak') =>
-      TICKET_TIER_LABELS.map((_, i) => (bcRate > 0 ? calcTicketAverage(mode, i, latestPrices, bcRate) : 0));
+      TICKET_TIER_LABELS.map((_, i) => (bcRate > 0 ? calcTicketAverage(mode, i, latestPrices, bcRate, true, noPeon) : 0));
     const hell = table('hell');
     return { hellLegendary: hell, hellHeroic: hell, narakLegendary: table('narak') } as Record<keyof TicketTiers, number[]>;
-  }, [latestPrices, bcRate]);
+  }, [latestPrices, bcRate, noPeon]);
 
   // 티켓 아이템 카드 안 층 선택 — 티켓이 아니면 null. 큐브 티켓은 영웅 지옥 층을 같이 쓴다(1장 = 영웅 티켓 1/6)
   const renderTicketTierSelect = (itemId: string, itemName: string) => {
@@ -1000,35 +1012,35 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
     if (!post || post.packageType !== '가챠') return [] as number[];
     const rate = detailGoldPerWon > 0 ? detailGoldPerWon * 2750 : 0;
     return post.items.map((item) =>
-      calculateGachaItemGold(item, latestPrices, detailGoldPerWon, rate, ticketTiers),
+      calculateGachaItemGold(item, latestPrices, detailGoldPerWon, rate, ticketTiers, noPeon),
     );
-  }, [post, latestPrices, detailGoldPerWon, ticketTiers]);
+  }, [post, latestPrices, detailGoldPerWon, ticketTiers, noPeon]);
 
   // goldOverride 아이템의 실제 단가 (환율 변경 시 재계산)
   const getCrystalAdjustedUnit = (item: PackageItem): number => {
     // 확률표 상자(expected_): 현재 시세 기준 기댓값 재계산 (goldOverride 는 등록 시점 박제값)
-    const expectedUnit = getExpectedBoxUnitPrice(item.itemId, latestPrices);
+    const expectedUnit = getExpectedBoxUnitPrice(item.itemId, latestPrices, peonGold);
     if (expectedUnit !== null) return expectedUnit;
     // 묶음 주머니: 내부 아이템 시세 합산
     if (item.bundleItems && item.bundleItems.length > 0)
-      return item.bundleItems.reduce((sum, bi) => sum + getItemUnitPrice(bi.itemId, latestPrices) * bi.quantity, 0);
+      return item.bundleItems.reduce((sum, bi) => sum + getItemUnitPrice(bi.itemId, latestPrices, peonGold) * bi.quantity, 0);
     // 티켓: 환율 기반 동적 계산 (층은 상세 페이지 선택값)
     if (isTicketItemId(item.itemId))
-      return bcRate > 0 ? (calcTicketUnitByItemId(item.itemId, latestPrices, bcRate, ticketTiers) ?? 0) : (item.goldOverride || 0);
-    // 가공 완료 젬 상자: 연결 젬 실시간 시세 + 8,100골드
+      return bcRate > 0 ? (calcTicketUnitByItemId(item.itemId, latestPrices, bcRate, ticketTiers, noPeon) ?? 0) : (item.goldOverride || 0);
+    // 가공 완료 젬 상자: 연결 젬 실시간 시세(+젬 페온) + 8,100골드
     if (PROCESSED_GEM_BOX_GEM[item.itemId])
       return Object.keys(latestPrices).length > 0
-        ? getProcessedGemBoxUnitPrice(item.itemId, latestPrices)
+        ? getProcessedGemBoxUnitPrice(item.itemId, latestPrices, peonGold)
         : (item.goldOverride || 0);
-    // crystal 아이템
+    // crystal 아이템 (페온·어빌리티스톤 키트는 페온 가치 제거 시 0)
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && detailGoldPerWon > 0) {
-      return item.crystalPerUnit * detailGoldPerWon * 27.5;
+      return crystalUnitGold(item.itemId, item.crystalPerUnit, detailGoldPerWon, noPeon);
     }
     // 기존 패키지 하위 호환: crystalPerUnit 없지만 crystal_ 접두사인 경우
     if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && detailGoldPerWon > 0) {
       const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
       if (fallback) {
-        return fallback * detailGoldPerWon * 27.5;
+        return crystalUnitGold(item.itemId, fallback, detailGoldPerWon, noPeon);
       }
     }
     return item.goldOverride || 0;
@@ -1041,14 +1053,14 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
     post.items.forEach((item, idx) => {
       if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
         const selected = choiceBoxSelections[idx] ?? item.choiceBoxSelectedIds ?? [];
-        const sub = getChoiceBoxGold(item.choiceBoxCandidates, selected, latestPrices) * item.quantity;
+        const sub = getChoiceBoxGold(item.choiceBoxCandidates, selected, latestPrices, peonGold) * item.quantity;
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
         return;
       }
       // 확률 상자: 시세 × 확률 기댓값
       if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-        const sub = getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, ticketTiers, detailGoldPerWon) * item.quantity;
+        const sub = getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, ticketTiers, detailGoldPerWon, noPeon) * item.quantity;
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
         return;
@@ -1065,8 +1077,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
         if (checkedItems[idx] !== false) total += sub;
       } else {
         const unitPrice = item.icon === FIXED_GEM_SELECT_ICON
-          ? getFixedGemSelectUnitPrice(effectiveItemId, latestPrices, detailGoldPerWon)
-          : getItemUnitPrice(effectiveItemId, latestPrices);
+          ? getFixedGemSelectUnitPrice(effectiveItemId, latestPrices, detailGoldPerWon, noPeon)
+          : getItemUnitPrice(effectiveItemId, latestPrices, peonGold);
         const sub = unitPrice * effectiveQty;
         subtotals.push(sub);
         if (checkedItems[idx] !== false) total += sub;
@@ -1074,8 +1086,9 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
     });
     return { totalGold: total, itemSubtotals: subtotals };
   // ticketTiers: 티켓 단가(getCrystalAdjustedUnit)가 층을 읽는다 — 빠지면 층을 바꿔도 소계가 안 움직인다
+  // noPeon: 페온 가치 제거도 같은 이유로 넣는다
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [post, choiceSelections, choiceBoxSelections, latestPrices, checkedItems, detailGoldPerWon, ticketTiers]);
+  }, [post, choiceSelections, choiceBoxSelections, latestPrices, checkedItems, detailGoldPerWon, ticketTiers, noPeon]);
 
   // '3+보너스' 전용: 3회 구매 시 1회 지급되는 보너스 구성품 가치 (선택형 보너스는 뷰어의 선택에 따라 재계산)
   const { bonusTotalGold, bonusItemSubtotals } = useMemo(() => {
@@ -1083,7 +1096,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       return { bonusTotalGold: 0, bonusItemSubtotals: [] as number[] };
     }
     const subtotals = post.bonusItems.map((item, idx) =>
-      getPackageItemGold(item, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections[idx], bonusChoiceBoxSelections[idx], ticketTiers),
+      getPackageItemGold(item, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections[idx], bonusChoiceBoxSelections[idx], ticketTiers, noPeon),
     );
     // 보너스 택N: 뷰어가 체크한 보너스만 합산 (미설정이면 전체)
     const bonusSelectable = (post.bonusSelectableCount || 0) > 0;
@@ -1091,7 +1104,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       bonusSelectable && bonusCheckedItems[idx] === false ? s : s + v
     ), 0);
     return { bonusTotalGold: total, bonusItemSubtotals: subtotals };
-  }, [post, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections, bonusChoiceBoxSelections, bonusCheckedItems, ticketTiers]);
+  }, [post, latestPrices, detailGoldPerWon, bcRate, bonusChoiceSelections, bonusChoiceBoxSelections, bonusCheckedItems, ticketTiers, noPeon]);
 
   if (!post) {
     return (
@@ -1131,9 +1144,11 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       (s, item, i) => s + (gachaExcluded[i] ? 0 : gachaItemGolds[i]) * ((item.probability || 0) / 100), 0,
     );
     const hasExcluded = Object.values(gachaExcluded).some(Boolean);
+    // 뽑기 결과용 골드 — 제외한 아이템이 걸리면 0골드 (기대값과 같은 기준)
+    const gachaWonGold = (i: number) => (gachaExcluded[i] ? 0 : gachaItemGolds[i]);
     const gachaCashGold = post.royalCrystalPrice * detailGoldPerWon;
     const wonItem = winnerIdx >= 0 ? gachaItems[winnerIdx] : null;
-    const wonGold = winnerIdx >= 0 ? gachaItemGolds[winnerIdx] : 0;
+    const wonGold = winnerIdx >= 0 ? gachaWonGold(winnerIdx) : 0;
     const wonBenefit = gachaCashGold > 0 ? ((wonGold - gachaCashGold) / gachaCashGold) * 100 : 0;
 
     // 기대 효율 — 갤러리 카드의 가챠 표기와 같은 기준 (기대값 대비 현금 골드)
@@ -1250,6 +1265,10 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                         />
                       </div>
                     </div>
+                    {/* 페온 가치 제거 — 환율처럼 "내 기준" 설정이라 환율 상자 안에 같이 둔다 */}
+                    <div className={styles.resultRatePeonRow}>
+                      <NoPeonToggle active={noPeon} onChange={setNoPeon} />
+                    </div>
                   </div>
 
                   {isOwner && (
@@ -1344,6 +1363,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                     <img loading="lazy" decoding="async" src={item.icon} alt={item.name} className={styles.gachaItemIcon}
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   )}
+                  {packageItemHasPeon(item) && <PeonBadge off={noPeon} />}
                   <div className={styles.gachaItemName}>{item.name}</div>
                   {item.quantity > 1 && (
                     <span className={styles.gachaItemQty}>x{item.quantity}</span>
@@ -1424,7 +1444,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 <div className={styles.gachaMultiTable}>
                   {grouped.map(({ origIdx, count }) => {
                     const item = gachaItems[origIdx];
-                    const itemGold = gachaItemGolds[origIdx];
+                    const itemGold = gachaWonGold(origIdx);
                     const lineGold = itemGold * count;
                     return (
                       <div key={origIdx} className={styles.gachaMultiTableRow}>
@@ -1452,11 +1472,11 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                     <div className={styles.gachaMultiTotalRow}>
                       <span className={styles.gachaMultiTotalLabel}>합계</span>
                       <span className={styles.gachaMultiTotalGold}>
-                        {formatNumber(multiResults.reduce((sum, idx) => sum + gachaItemGolds[idx], 0))} G
+                        {formatNumber(multiResults.reduce((sum, idx) => sum + gachaWonGold(idx), 0))} G
                       </span>
                     </div>
                     {detailGoldPerWon > 0 && (() => {
-                      const totalWonGold = multiResults.reduce((sum, idx) => sum + gachaItemGolds[idx], 0);
+                      const totalWonGold = multiResults.reduce((sum, idx) => sum + gachaWonGold(idx), 0);
                       const totalCash = gachaCashGold * 10;
                       const multiBenefit = totalCash > 0 ? ((totalWonGold - totalCash) / totalCash) * 100 : 0;
                       return (
@@ -1628,6 +1648,10 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                       />
                     </div>
                   </div>
+                  {/* 페온 가치 제거 — 환율처럼 "내 기준" 설정이라 환율 상자 안에 같이 둔다 */}
+                  <div className={styles.resultRatePeonRow}>
+                    <NoPeonToggle active={noPeon} onChange={setNoPeon} />
+                  </div>
                 </div>
 
                 {isOwner && (
@@ -1673,8 +1697,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 const unitPrice = isFixed
                   ? getCrystalAdjustedUnit(item)
                   : item.icon === FIXED_GEM_SELECT_ICON
-                  ? getFixedGemSelectUnitPrice(effectiveItemId, latestPrices, detailGoldPerWon)
-                  : getItemUnitPrice(effectiveItemId, latestPrices);
+                  ? getFixedGemSelectUnitPrice(effectiveItemId, latestPrices, detailGoldPerWon, noPeon)
+                  : getItemUnitPrice(effectiveItemId, latestPrices, peonGold);
                 const subtotal = itemSubtotals[idx] || 0;
                 const hasChoices = item.choiceOptions && item.choiceOptions.length > 0;
                 const isRiftRun = !!hasChoices && isRiftRunId(item.choiceOptions![0].itemId);
@@ -1682,7 +1706,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 const choiceBoxSelected = choiceBoxSelections[idx] ?? item.choiceBoxSelectedIds ?? [];
                 const hasProbBox = !!(item.probBoxCandidates && item.probBoxCandidates.length > 0);
                 // 확률표 상자(영웅 젬 랜덤 상자 등): 내용물·확률·현재 시세를 확률 상자처럼 펼쳐 보여준다
-                const expectedRows = getExpectedBoxBreakdown(item.itemId, latestPrices);
+                const expectedRows = getExpectedBoxBreakdown(item.itemId, latestPrices, peonGold);
                 const effectiveQty = getEffectiveQty(item, choiceSelections[idx]);
 
                 const isChecked = checkedItems[idx] !== false;
@@ -1709,6 +1733,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                       </span>
                     </label>
                     <div className={styles.itemCardIconWrap}>
+                      {/* 페온 배지는 그림 위에 붙는다 — 상자를 relative 로 두어 데스크톱(가운데)·모바일(그리드) 어느 배열에서도 그림을 따라간다 */}
+                      <div className={styles.itemCardIconBox}>
                       {item.bundleItems && item.bundleItems.length > 0 ? (
                         <div className={styles.bundleIconStack}>
                           {item.bundleItems.map((bi, biIdx) => (
@@ -1725,6 +1751,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                           className={styles.itemCardIcon}
                         />
                       )}
+                      {packageItemHasPeon(item) && <PeonBadge off={noPeon} />}
+                      </div>
                     </div>
                     <div className={styles.itemCardName}>
                       {item.bundleItems && item.bundleItems.length > 0
@@ -1786,7 +1814,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                       <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
                         {item.choiceBoxCandidates!.map((cand) => {
                           const isSelected = choiceBoxSelected.includes(cand.id);
-                          const candPrice = (cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0)) * cand.quantity;
+                          const candPrice = (cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices, peonGold) : (cand.goldPerUnit || 0)) * cand.quantity;
                           return (
                             <button
                               key={cand.id}
@@ -1829,7 +1857,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                         </summary>
                         <div className={styles.itemCardProbList}>
                         {item.probBoxCandidates!.map((cand) => {
-                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers, detailGoldPerWon) * cand.quantity;
+                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers, detailGoldPerWon, noPeon) * cand.quantity;
                           const candLabel = probBoxCandLabel(cand);
                           return (
                             <div
@@ -1936,7 +1964,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
               if (item.icon === FIXED_GEM_SELECT_ICON && item.choiceOptions && item.choiceOptions.length > 0) {
                 const selId = selections[idx] || item.itemId;
                 const sel = item.choiceOptions.find((c) => c.itemId === selId);
-                const bd = getFixedGemSelectBreakdown(selId, latestPrices, detailGoldPerWon);
+                const bd = getFixedGemSelectBreakdown(selId, latestPrices, detailGoldPerWon, noPeon);
                 const fixedOpts = sel?.name.match(/\(([^)]+)\)/)?.[1];
                 rows.push(
                   <div key={`${keyPrefix}${idx}`} className={styles.gemDetailRow}>
@@ -1945,13 +1973,15 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                       선택: {sel?.name || ''} — {fixedOpts ? `${fixedOpts} 옵션이 고정된 상태로 지급` : '옵션 고정 지급'}, 초기화 가능 횟수 +1
                     </div>
                     <div className={styles.gemDetailLine}>
-                      계산: 젬 시세 {formatNumber(bd.base)}G × {bd.multiplier} (조합 확률 1/6 확정) × 2 (초기화 가능 횟수 +1) − {formatNumber(bd.ticketGold)}G (초기화권 100크리스탈) = <strong>{formatNumber(bd.total)}G</strong>
+                      계산: 젬 시세 {formatNumber(bd.base)}G × {bd.multiplier} (조합 확률 1/6 확정) × 2 (초기화 가능 횟수 +1) − {formatNumber(bd.ticketGold)}G (초기화권 100크리스탈)
+                      {noPeon ? ' (젬 페온 제거)' : ` + ${formatNumber(bd.peonGold)}G (젬 페온 12개)`} = <strong>{formatNumber(bd.total)}G</strong>
                     </div>
                   </div>,
                 );
               } else if (PROCESSED_GEM_BOX_GEM[item.itemId]) {
                 const info = PROCESSED_GEM_BOX_INFO[item.itemId];
                 const base = getItemUnitPrice(PROCESSED_GEM_BOX_GEM[item.itemId], latestPrices);
+                const gemPeon = getItemUnitPrice(PROCESSED_GEM_BOX_GEM[item.itemId], latestPrices, peonGold) - base;
                 rows.push(
                   <div key={`${keyPrefix}${idx}`} className={styles.gemDetailRow}>
                     <div className={styles.gemDetailTitle}>{item.name} ×{item.quantity.toLocaleString()}</div>
@@ -1959,7 +1989,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                       구성: {info.gemName} 확정 — {info.options}
                     </div>
                     <div className={styles.gemDetailLine}>
-                      계산: {info.gemShort} 시세 {formatNumber(base)}G + 가공 비용 {formatNumber(PROCESSED_GEM_BOX_EXTRA_GOLD)}G = <strong>{formatNumber(getProcessedGemBoxUnitPrice(item.itemId, latestPrices))}G</strong>
+                      계산: {info.gemShort} 시세 {formatNumber(base)}G{noPeon ? ' (젬 페온 제거)' : ` + 젬 페온 12개 ${formatNumber(gemPeon)}G`} + 가공 비용 {formatNumber(PROCESSED_GEM_BOX_EXTRA_GOLD)}G = <strong>{formatNumber(getProcessedGemBoxUnitPrice(item.itemId, latestPrices, peonGold))}G</strong>
                     </div>
                   </div>,
                 );
@@ -2011,7 +2041,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 const choiceBoxSelected = bonusChoiceBoxSelections[idx] ?? item.choiceBoxSelectedIds ?? [];
                 const hasProbBox = !!(item.probBoxCandidates && item.probBoxCandidates.length > 0);
                 // 확률표 상자: 내용물·확률·현재 시세 내역 (메인 구성품 카드와 동일)
-                const expectedRows = getExpectedBoxBreakdown(item.itemId, latestPrices);
+                const expectedRows = getExpectedBoxBreakdown(item.itemId, latestPrices, peonGold);
                 const effectiveChoiceId = bonusChoiceSelections[idx] || item.itemId;
                 const effectiveChoice = hasChoices
                   ? item.choiceOptions!.find((c) => c.itemId === effectiveChoiceId)
@@ -2045,6 +2075,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                       </label>
                     )}
                     <div className={styles.itemCardIconWrap}>
+                      <div className={styles.itemCardIconBox}>
                       {item.bundleItems && item.bundleItems.length > 0 ? (
                         <div className={styles.bundleIconStack}>
                           {item.bundleItems.map((bi, biIdx) => (
@@ -2061,6 +2092,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                           className={styles.itemCardIcon}
                         />
                       )}
+                      {packageItemHasPeon(item) && <PeonBadge off={noPeon} />}
+                      </div>
                     </div>
                     <div className={styles.itemCardName}>
                       {item.bundleItems && item.bundleItems.length > 0
@@ -2118,7 +2151,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                       <div className={`${styles.itemCardChoices} ${styles.itemCardChoicesWide}`}>
                         {item.choiceBoxCandidates!.map((cand) => {
                           const isSelected = choiceBoxSelected.includes(cand.id);
-                          const candPrice = (cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices) : (cand.goldPerUnit || 0)) * cand.quantity;
+                          const candPrice = (cand.itemId ? getItemUnitPrice(cand.itemId, latestPrices, peonGold) : (cand.goldPerUnit || 0)) * cand.quantity;
                           return (
                             <button
                               key={cand.id}
@@ -2161,7 +2194,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                         </summary>
                         <div className={styles.itemCardProbList}>
                         {item.probBoxCandidates!.map((cand) => {
-                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers, detailGoldPerWon) * cand.quantity;
+                          const candPrice = getProbBoxCandidateUnit(cand, latestPrices, bcRate, ticketTiers, detailGoldPerWon, noPeon) * cand.quantity;
                           const candLabel = probBoxCandLabel(cand);
                           return (
                             <div

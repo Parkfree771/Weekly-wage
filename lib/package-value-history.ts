@@ -14,6 +14,7 @@ import {
   pickTopNCandidateIds,
   getItemUnitPrice,
   getFixedGemSelectUnitPrice,
+  peonGoldPerUnit,
   FIXED_GEM_SELECT_ICON,
 } from './package-shared';
 import { toDateOnlyValue } from './package-sale';
@@ -121,11 +122,13 @@ function lockItemChoices(
   item: PackageItem,
   today: Record<string, number>,
   goldPerWon: number,
+  noPeon: boolean,
 ): PackageItem {
+  const peonGold = peonGoldPerUnit(goldPerWon, noPeon);
   // 선택 상자: 오늘 시세 상위 N개 후보만 남긴다 → 어느 날짜든 "이 N개" 조합으로 계산된다
   if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
     const n = Math.max(1, item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1);
-    const picked = new Set(pickTopNCandidateIds(item.choiceBoxCandidates, n, today));
+    const picked = new Set(pickTopNCandidateIds(item.choiceBoxCandidates, n, today, peonGold));
     const kept = item.choiceBoxCandidates.filter((c) => picked.has(c.id));
     return { ...item, choiceBoxCandidates: kept, choiceBoxPickCount: kept.length };
   }
@@ -134,8 +137,8 @@ function lockItemChoices(
     const isGemSelect = item.icon === FIXED_GEM_SELECT_ICON;
     const unitOf = (id: string, qty: number) =>
       isGemSelect
-        ? getFixedGemSelectUnitPrice(id, today, goldPerWon)
-        : getItemUnitPrice(id, today) * qty;
+        ? getFixedGemSelectUnitPrice(id, today, goldPerWon, noPeon)
+        : getItemUnitPrice(id, today, peonGold) * qty;
     let bestId = item.itemId;
     let best = unitOf(
       item.itemId,
@@ -175,6 +178,8 @@ export function buildPackageValueSeries(
   goldPerWonOverride?: number,
   /** bundle(기본): 3+1/2+1/3+보너스 묶음 보정 포함 — 갤러리 효율순 정렬과 같은 기준. single: 1개 구매 */
   basis: ValueBasis = 'bundle',
+  /** 페온 가치 제거 — 카드와 같은 설정을 넘겨야 오늘 점이 카드 숫자와 일치한다 */
+  noPeon: boolean = false,
 ): PackageValuePoint[] {
   const startDate =
     toDateOnlyValue(post.saleStartAt) || toDateOnlyValue(post.createdAt) || kstTodayKey();
@@ -203,8 +208,8 @@ export function buildPackageValueSeries(
   const effPost: PackagePost = {
     ...post,
     goldPerWon,
-    items: post.items.map((i) => lockItemChoices(i, todayNums, goldPerWon)),
-    bonusItems: post.bonusItems?.map((i) => lockItemChoices(i, todayNums, goldPerWon)),
+    items: post.items.map((i) => lockItemChoices(i, todayNums, goldPerWon, noPeon)),
+    bonusItems: post.bonusItems?.map((i) => lockItemChoices(i, todayNums, goldPerWon, noPeon)),
     // 1개 구매 기준: 묶음 배수(4/3·3/2)와 3+보너스의 보너스분을 뺀 순수 1회 구매 가치
     ...(basis === 'single' && isBundleType
       ? { packageType: '일반' as const, bonusItems: undefined }
@@ -212,7 +217,7 @@ export function buildPackageValueSeries(
   };
 
   return buildDailyValues(
-    (prices) => calculatePostEfficiency(effPost, prices),
+    (prices) => calculatePostEfficiency(effPost, prices, undefined, noPeon),
     history,
     latest,
     startDate,

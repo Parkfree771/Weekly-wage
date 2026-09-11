@@ -1,4 +1,4 @@
-import { calcTicketUnitByItemId, DEFAULT_TICKET_TIERS, type TicketTiers } from '@/lib/hell-reward-calc';
+import { calcTicketUnitByItemId, DEFAULT_TICKET_TIERS, GEM_PEON, HERO_GEM_IDS, isTicketItemId, type TicketTiers } from '@/lib/hell-reward-calc';
 import { TRACKED_ITEMS, type TrackedItem } from '@/lib/items-to-track';
 import { isSaleEnded, toSaleDate } from '@/lib/package-sale';
 import { RIFT_TIERS } from '@/data/rewardTable';
@@ -86,10 +86,43 @@ export type ProbBoxCandidate = {
   choiceOptions?: { itemId: string; name: string; icon?: string; quantity?: number }[]; // choice 후보: 선택지 목록
 };
 
+// ─── 페온 ───
+// 페온 1개 = 블크 8.5개. 골드로는 8.5 × goldPerWon × 27.5 (100블크 = 2,750원).
+// 귀속 젬·어빌리티스톤·팔찌처럼 "거래소에 올리려면 페온이 든다"는 항목은 이 값을 더한다.
+// 페온 가치 제거(noPeon)는 뷰어 설정 — 페온을 0골드로 쳐서 젬의 페온 몫, 티켓 안의 페온 몫,
+// 그리고 값 전체가 페온인 아이템(페온·어빌리티스톤 키트)을 한꺼번에 0으로 만든다.
+export const PEON_CRYSTAL = 8.5;
+
+/** 페온 1개의 골드. noPeon 이면 0 */
+export function peonGoldPerUnit(goldPerWon: number | undefined, noPeon: boolean = false): number {
+  if (noPeon || !goldPerWon || goldPerWon <= 0) return 0;
+  return PEON_CRYSTAL * goldPerWon * 27.5;
+}
+
+/** 젬 ID → 거래소 등록 페온. 시세를 추적하는 젬은 영웅 6종뿐이라 12페온만 있다 (희귀 6·고급 3은 표에 없다) */
+export const GEM_PEON_BY_ID: Record<string, number> = Object.fromEntries(
+  HERO_GEM_IDS.map((id) => [id, GEM_PEON.hero]),
+);
+
+/** 값 전체가 페온인 블크 아이템 — 페온 가치 제거 시 0골드 */
+export const PEON_CRYSTAL_ITEM_IDS = new Set(['crystal_pheon', 'crystal_ability-stone-kit']);
+
+/** 블크 아이템 개당 골드. 페온·어빌리티스톤 키트는 페온 가치 제거 시 0 */
+export function crystalUnitGold(
+  itemId: string,
+  crystalPerUnit: number | undefined,
+  goldPerWon: number | undefined,
+  noPeon: boolean = false,
+): number {
+  if (!crystalPerUnit || crystalPerUnit <= 0 || !goldPerWon || goldPerWon <= 0) return 0;
+  if (noPeon && PEON_CRYSTAL_ITEM_IDS.has(itemId)) return 0;
+  return crystalPerUnit * goldPerWon * 27.5;
+}
+
 /**
  * 확률 상자 후보 1개의 개당 골드.
  * 시세 아이템은 현재 시세, 'fixed_' 후보 중 티켓·유물코어·가공젬은 사이트 공통 동적 단가
- * (지옥 보상 평균 등, bcRate = 100블크당 골드), 그 외 fixed 는 goldPerUnit(등록 시점 고정가).
+ * (지옥 보상 기댓값 등, bcRate = 100블크당 골드), 그 외 fixed 는 goldPerUnit(등록 시점 고정가).
  * 블크·확률표·묶음·선택 후보는 각 타입 규칙대로 현재 시세로 매번 다시 계산한다.
  */
 export function getProbBoxCandidateUnit(
@@ -98,23 +131,25 @@ export function getProbBoxCandidateUnit(
   bcRate: number = 0,
   tiers: TicketTiers = DEFAULT_TICKET_TIERS,
   goldPerWon: number = 0,
+  noPeon: boolean = false,
 ): number {
   // 블크 환율: 명시값 우선, 없으면 bcRate(100블크당 골드)에서 역산 (100 BC = 2750원)
   const gpw = goldPerWon > 0 ? goldPerWon : bcRate > 0 ? bcRate / 2750 : 0;
+  const peonGold = peonGoldPerUnit(gpw, noPeon);
 
   // 블크 기반 (도약의 정수·페온·축복 등)
-  if (cand.crystalPerUnit && cand.crystalPerUnit > 0) return cand.crystalPerUnit * gpw * 27.5;
+  if (cand.crystalPerUnit && cand.crystalPerUnit > 0) return crystalUnitGold(cand.itemId || '', cand.crystalPerUnit, gpw, noPeon);
 
   // 확률표 상자 (영웅 젬 랜덤 상자 등) — Σ(시세 × 확률)
   if (cand.expectedItems && cand.expectedItems.length > 0) {
     return cand.expectedItems.reduce(
-      (sum, ei) => sum + getItemUnitPrice(ei.itemId, prices) * ei.probability, 0);
+      (sum, ei) => sum + getItemUnitPrice(ei.itemId, prices, peonGold) * ei.probability, 0);
   }
 
   // 묶음 주머니 — Σ(내부 아이템 시세 × 개수)
   if (cand.bundleItems && cand.bundleItems.length > 0) {
     return cand.bundleItems.reduce(
-      (sum, bi) => sum + getItemUnitPrice(bi.itemId, prices) * bi.quantity, 0);
+      (sum, bi) => sum + getItemUnitPrice(bi.itemId, prices, peonGold) * bi.quantity, 0);
   }
 
   // 선택 상자 — 등록자가 고른 선택지 기준 (선택지별 개수 반영).
@@ -123,8 +158,8 @@ export function getProbBoxCandidateUnit(
     const picked = cand.itemId || cand.choiceOptions[0].itemId;
     const qty = cand.choiceOptions.find((c) => c.itemId === picked)?.quantity ?? 1;
     const unit = cand.icon === FIXED_GEM_SELECT_ICON
-      ? getFixedGemSelectUnitPrice(picked, prices, gpw)
-      : getItemUnitPrice(picked, prices);
+      ? getFixedGemSelectUnitPrice(picked, prices, gpw, noPeon)
+      : getItemUnitPrice(picked, prices, peonGold);
     return unit * qty;
   }
 
@@ -132,16 +167,16 @@ export function getProbBoxCandidateUnit(
   if (cand.itemId.startsWith('fixed_')) {
     const hasPrices = Object.keys(prices).length > 0;
     if (hasPrices && bcRate > 0) {
-      const ticket = calcTicketUnitByItemId(cand.itemId, prices, bcRate, tiers);
+      const ticket = calcTicketUnitByItemId(cand.itemId, prices, bcRate, tiers, noPeon);
       if (ticket !== null) return ticket;
     }
     if (hasPrices) {
       if (cand.itemId === 'fixed_relic-core') return getRelicCoreSelectPrice(prices);
-      if (PROCESSED_GEM_BOX_GEM[cand.itemId]) return getProcessedGemBoxUnitPrice(cand.itemId, prices);
+      if (PROCESSED_GEM_BOX_GEM[cand.itemId]) return getProcessedGemBoxUnitPrice(cand.itemId, prices, peonGold);
     }
     return cand.goldPerUnit || 0;
   }
-  return getItemUnitPrice(cand.itemId, prices);
+  return getItemUnitPrice(cand.itemId, prices, peonGold);
 }
 
 /** 확률 상자 1개 기댓값 = Σ(개당 시세 × 수량 × 확률/100) — 폼·갤러리·상세 전부 여기로 계산 */
@@ -151,10 +186,11 @@ export function getProbBoxExpectedGold(
   bcRate: number = 0,
   tiers: TicketTiers = DEFAULT_TICKET_TIERS,
   goldPerWon: number = 0,
+  noPeon: boolean = false,
 ): number {
   if (!candidates || candidates.length === 0) return 0;
   return candidates.reduce((sum, c) => {
-    return sum + getProbBoxCandidateUnit(c, prices, bcRate, tiers, goldPerWon) * c.quantity * ((c.probability || 0) / 100);
+    return sum + getProbBoxCandidateUnit(c, prices, bcRate, tiers, goldPerWon, noPeon) * c.quantity * ((c.probability || 0) / 100);
   }, 0);
 }
 
@@ -163,12 +199,13 @@ export function getChoiceBoxGold(
   candidates: ChoiceBoxCandidate[] | undefined,
   selectedIds: string[] | undefined,
   prices: Record<string, number>,
+  peonGold: number = 0,
 ): number {
   if (!candidates || !selectedIds || selectedIds.length === 0) return 0;
   return candidates
     .filter((c) => selectedIds.includes(c.id))
     .reduce((sum, c) => {
-      const unit = c.itemId ? getItemUnitPrice(c.itemId, prices) : (c.goldPerUnit || 0);
+      const unit = c.itemId ? getItemUnitPrice(c.itemId, prices, peonGold) : (c.goldPerUnit || 0);
       return sum + unit * c.quantity;
     }, 0);
 }
@@ -178,10 +215,11 @@ export function pickTopNCandidateIds(
   candidates: ChoiceBoxCandidate[],
   pickCount: number,
   prices: Record<string, number>,
+  peonGold: number = 0,
 ): string[] {
   const withValue = candidates.map((c) => ({
     id: c.id,
-    value: (c.itemId ? getItemUnitPrice(c.itemId, prices) : (c.goldPerUnit || 0)) * c.quantity,
+    value: (c.itemId ? getItemUnitPrice(c.itemId, prices, peonGold) : (c.goldPerUnit || 0)) * c.quantity,
   }));
   withValue.sort((a, b) => b.value - a.value);
   return withValue.slice(0, Math.max(0, pickCount)).map((v) => v.id);
@@ -192,10 +230,11 @@ export function getChoiceBoxBestGold(
   candidates: ChoiceBoxCandidate[] | undefined,
   pickCount: number | undefined,
   prices: Record<string, number>,
+  peonGold: number = 0,
 ): number {
   if (!candidates || candidates.length === 0) return 0;
   const n = Math.max(1, pickCount || 1);
-  return getChoiceBoxGold(candidates, pickTopNCandidateIds(candidates, n, prices), prices);
+  return getChoiceBoxGold(candidates, pickTopNCandidateIds(candidates, n, prices, peonGold), prices, peonGold);
 }
 
 /** 일반 choice 아이템: 선택지 중 현재 시세 최고가 (단가 × 선택지별 수량) — 상자 1개 기준.
@@ -204,11 +243,12 @@ export function getChoiceBestValue(
   choiceOptions: { itemId: string; quantity?: number }[],
   fallbackItemId: string,
   prices: Record<string, number>,
+  peonGold: number = 0,
 ): number {
-  let best = getItemUnitPrice(fallbackItemId, prices)
+  let best = getItemUnitPrice(fallbackItemId, prices, peonGold)
     * (choiceOptions.find((c) => c.itemId === fallbackItemId)?.quantity ?? 1);
   for (const c of choiceOptions) {
-    const v = getItemUnitPrice(c.itemId, prices) * (c.quantity ?? 1);
+    const v = getItemUnitPrice(c.itemId, prices, peonGold) * (c.quantity ?? 1);
     if (v > best) best = v;
   }
   return best;
@@ -815,12 +855,12 @@ export const TEMPLATES_MAP: Record<string, TemplateItem> = Object.fromEntries(
  * 등록 시 goldOverride 에 박제된 등록 시점 기댓값 대신 항상 이 값을 먼저 쓴다 —
  * 템플릿이 사라졌거나 시세가 아직 안 왔으면 null 을 돌려주고 호출부가 goldOverride 로 폴백한다.
  */
-export function getExpectedBoxUnitPrice(itemId: string, prices: Record<string, number>): number | null {
+export function getExpectedBoxUnitPrice(itemId: string, prices: Record<string, number>, peonGold: number = 0): number | null {
   if (!itemId.startsWith('expected_')) return null;
   if (Object.keys(prices).length === 0) return null;
   const expectedItems = TEMPLATES_MAP[itemId.slice('expected_'.length)]?.expectedItems;
   if (!expectedItems || expectedItems.length === 0) return null;
-  return expectedItems.reduce((sum, ei) => sum + getItemUnitPrice(ei.itemId, prices) * ei.probability, 0);
+  return expectedItems.reduce((sum, ei) => sum + getItemUnitPrice(ei.itemId, prices, peonGold) * ei.probability, 0);
 }
 
 export type ExpectedBoxRow = {
@@ -841,7 +881,7 @@ const TRACKED_ITEMS_MAP: Map<string, TrackedItem> = new Map(TRACKED_ITEMS.map((t
  * 상세 페이지 카드에 확률 상자(probBox)처럼 펼쳐 보여줄 때 쓴다.
  * 이름·아이콘은 시세 추적 목록(TRACKED_ITEMS)에서 찾는다 — 없으면 내역을 만들지 않는다.
  */
-export function getExpectedBoxBreakdown(itemId: string, prices: Record<string, number>): ExpectedBoxRow[] | null {
+export function getExpectedBoxBreakdown(itemId: string, prices: Record<string, number>, peonGold: number = 0): ExpectedBoxRow[] | null {
   if (!itemId.startsWith('expected_')) return null;
   const expectedItems = TEMPLATES_MAP[itemId.slice('expected_'.length)]?.expectedItems;
   if (!expectedItems || expectedItems.length === 0) return null;
@@ -853,7 +893,7 @@ export function getExpectedBoxBreakdown(itemId: string, prices: Record<string, n
       icon: tracked?.icon,
       // 0.015 × 100 = 1.5000000000000002 같은 부동소수 찌꺼기 제거
       probabilityPct: parseFloat((ei.probability * 100).toFixed(2)),
-      unit: getItemUnitPrice(ei.itemId, prices),
+      unit: getItemUnitPrice(ei.itemId, prices, peonGold),
     };
   });
 }
@@ -1041,13 +1081,19 @@ export function getRiftRunGold(level: number, prices: Record<string, number>): n
   return getRiftRunBreakdown(level, prices).total;
 }
 
-export function getItemUnitPrice(itemId: string, prices: Record<string, number>): number {
+/**
+ * 시세 아이템 개당 골드.
+ * peonGold(페온 1개의 골드)를 넘기면 귀속 젬에는 거래소 등록 페온(영웅 12개)이 더해진다 —
+ * 젬을 값으로 치는 곳은 전부 여기를 지나므로 젬 페온은 이 한 곳에서만 붙인다.
+ */
+export function getItemUnitPrice(itemId: string, prices: Record<string, number>, peonGold: number = 0): number {
   if (itemId.startsWith(RIFT_RUN_ITEM_PREFIX)) {
     return getRiftRunGold(parseInt(itemId.slice(RIFT_RUN_ITEM_PREFIX.length), 10), prices);
   }
   const raw = prices[itemId] || 0;
   const bundle = PRICE_BUNDLE_SIZE[itemId] || 1;
-  return raw / bundle;
+  const gemPeon = peonGold > 0 && raw > 0 ? (GEM_PEON_BY_ID[itemId] || 0) * peonGold : 0;
+  return raw / bundle + gemPeon;
 }
 
 // 고정형 영웅 젬 선택 상자: 아이콘으로 template 식별 (choiceOptions만 저장되고 templateId는 저장 안 되므로)
@@ -1059,32 +1105,37 @@ export const FIXED_GEM_SELECT_ICON = '/fixed-hero-gem-select.webp';
 export const FIXED_GEM_COMBO_MULTIPLIER = 6; // 1 ÷ (1/6)
 export const GEM_RESET_TICKET_CRYSTAL = 100; // 젬 가공 초기화권 1장 = 100 크리스탈
 
-/** 고정형 젬 공식의 각 항 분해 (상세 페이지 공식 표시용) */
+/** 고정형 젬 공식의 각 항 분해 (상세 페이지 공식 표시용).
+    페온은 프리미엄(×6)에 곱하지 않고 마지막에 젬 1개분(12페온)만 한 번 더한다 — 결국 손에 남는 젬은 1개다 */
 export function getFixedGemSelectBreakdown(
   choiceItemId: string,
   prices: Record<string, number>,
   goldPerWon?: number,
-): { base: number; multiplier: number; comboValue: number; ticketGold: number; total: number } {
+  noPeon: boolean = false,
+): { base: number; multiplier: number; comboValue: number; ticketGold: number; peonGold: number; total: number } {
   const gemItemId = choiceItemId.split(':')[0]; // '67400003:atk' → '67400003'
   const base = getItemUnitPrice(gemItemId, prices);
   const comboValue = base * FIXED_GEM_COMBO_MULTIPLIER;
   const ticketGold = (goldPerWon || 0) * GEM_RESET_TICKET_CRYSTAL * 27.5;
+  const peonGold = base > 0 ? (GEM_PEON_BY_ID[gemItemId] || 0) * peonGoldPerUnit(goldPerWon, noPeon) : 0;
   return {
     base,
     multiplier: FIXED_GEM_COMBO_MULTIPLIER,
     comboValue,
     ticketGold,
-    total: comboValue + comboValue - ticketGold,
+    peonGold,
+    total: comboValue + comboValue - ticketGold + peonGold,
   };
 }
 
-/** 고정형 영웅 젬 선택 상자의 선택지 1개 가치 = 젬 시세 × 6 (확률 역수) + 젬 시세 (추가 초기화 1회) − 초기화권 골드 */
+/** 고정형 영웅 젬 선택 상자의 선택지 1개 가치 = 젬 시세 × 6 (확률 역수) + 젬 시세 (추가 초기화 1회) − 초기화권 골드 + 젬 페온 */
 export function getFixedGemSelectUnitPrice(
   choiceItemId: string,
   prices: Record<string, number>,
   goldPerWon?: number,
+  noPeon: boolean = false,
 ): number {
-  return getFixedGemSelectBreakdown(choiceItemId, prices, goldPerWon).total;
+  return getFixedGemSelectBreakdown(choiceItemId, prices, goldPerWon, noPeon).total;
 }
 
 /** 고정형 젬 상자: 선택지 중 현재 시세 최고가 — 뷰어 선택이 없는 곳(갤러리 소계·효율 정렬)에서 시세 변동 따라 항상 최고가로 계산 */
@@ -1093,10 +1144,11 @@ export function getFixedGemSelectBestUnitPrice(
   fallbackItemId: string,
   prices: Record<string, number>,
   goldPerWon?: number,
+  noPeon: boolean = false,
 ): number {
-  let best = getFixedGemSelectUnitPrice(fallbackItemId, prices, goldPerWon);
+  let best = getFixedGemSelectUnitPrice(fallbackItemId, prices, goldPerWon, noPeon);
   for (const c of choiceOptions || []) {
-    const v = getFixedGemSelectUnitPrice(c.itemId, prices, goldPerWon);
+    const v = getFixedGemSelectUnitPrice(c.itemId, prices, goldPerWon, noPeon);
     if (v > best) best = v;
   }
   return best;
@@ -1123,11 +1175,11 @@ export const PROCESSED_GEM_BOX_INFO: Record<string, { gemShort: string; gemName:
   },
 };
 
-/** 가공 완료 젬 상자 단가 = 연결 젬 실시간 시세 + 8,100골드 */
-export function getProcessedGemBoxUnitPrice(fixedItemId: string, prices: Record<string, number>): number {
+/** 가공 완료 젬 상자 단가 = 연결 젬 실시간 시세(+ 젬 페온) + 8,100골드 */
+export function getProcessedGemBoxUnitPrice(fixedItemId: string, prices: Record<string, number>, peonGold: number = 0): number {
   const gemId = PROCESSED_GEM_BOX_GEM[fixedItemId];
   if (!gemId) return 0;
-  return getItemUnitPrice(gemId, prices) + PROCESSED_GEM_BOX_EXTRA_GOLD;
+  return getItemUnitPrice(gemId, prices, peonGold) + PROCESSED_GEM_BOX_EXTRA_GOLD;
 }
 
 // 은총의 파편 1개 가치 = 재련 재료 상자 구성 가치 합 ÷ 60 (지평의 성당 페이지와 동일)
@@ -1157,45 +1209,106 @@ export function getUnitPrice(
   prices: Record<string, number>,
   goldPerWon?: number,
   officialGoldRate?: number,
+  noPeon: boolean = false,
 ): number {
+  const peonGold = peonGoldPerUnit(goldPerWon, noPeon);
   switch (template.type) {
     case 'simple':
-      return getItemUnitPrice(template.itemId!, prices);
+      return getItemUnitPrice(template.itemId!, prices, peonGold);
     case 'choice':
       if (!added.selectedChoiceId) return 0;
       if (template.id === 'gem-hero-fixed-select')
-        return getFixedGemSelectUnitPrice(added.selectedChoiceId, prices, goldPerWon);
-      return getItemUnitPrice(added.selectedChoiceId, prices);
+        return getFixedGemSelectUnitPrice(added.selectedChoiceId, prices, goldPerWon, noPeon);
+      return getItemUnitPrice(added.selectedChoiceId, prices, peonGold);
     case 'gold':
       return added.goldAmount || 0;
     case 'fixed': {
       const bcRate = officialGoldRate || 8500;
-      const ticket = calcTicketUnitByItemId('fixed_' + template.id, prices, bcRate);
+      const ticket = calcTicketUnitByItemId('fixed_' + template.id, prices, bcRate, undefined, noPeon);
       if (ticket !== null) return ticket;
       if (template.id === 'relic-core')
         return getRelicCoreSelectPrice(prices);
       if (PROCESSED_GEM_BOX_GEM[`fixed_${template.id}`])
-        return getProcessedGemBoxUnitPrice(`fixed_${template.id}`, prices);
+        return getProcessedGemBoxUnitPrice(`fixed_${template.id}`, prices, peonGold);
       return template.fixedGold || 0;
     }
     case 'crystal':
-      return (template.crystalPerUnit || 0) * (goldPerWon || 0) * 27.5;
+      return crystalUnitGold(`crystal_${template.id}`, template.crystalPerUnit, goldPerWon, noPeon);
     case 'expected':
       return (template.expectedItems || []).reduce((sum, ei) => {
-        return sum + getItemUnitPrice(ei.itemId, prices) * ei.probability;
+        return sum + getItemUnitPrice(ei.itemId, prices, peonGold) * ei.probability;
       }, 0);
     case 'bundle':
       return (template.bundleContents || []).reduce((sum, bc) => {
         const qty = added.bundleQuantities?.[bc.itemId] || 0;
-        return sum + getItemUnitPrice(bc.itemId, prices) * qty;
+        return sum + getItemUnitPrice(bc.itemId, prices, peonGold) * qty;
       }, 0);
     case 'choiceBox':
-      return getChoiceBoxGold(added.choiceBoxCandidates, added.choiceBoxSelectedIds, prices);
+      return getChoiceBoxGold(added.choiceBoxCandidates, added.choiceBoxSelectedIds, prices, peonGold);
     case 'probBox':
       // 티켓류 후보의 동적 단가용 bcRate — fixed 케이스와 같은 기본값 사용
-      return getProbBoxExpectedGold(added.probBoxCandidates, prices, officialGoldRate || 8500, undefined, goldPerWon);
+      return getProbBoxExpectedGold(added.probBoxCandidates, prices, officialGoldRate || 8500, undefined, goldPerWon, noPeon);
     default:
       return 0;
+  }
+}
+
+// ─── 페온 배지 판정 ───
+// "이 구성품 값에 페온이 들어 있다" — 갤러리 셀·상세 카드·폼 목록에 페온 배지를 붙일 때 쓴다.
+// 값 계산 경로와 같은 기준: 젬(영웅 6종), 페온·어빌리티스톤 키트, 지옥/나락/큐브 티켓(팔찌·젬 페온), 가공 완료 젬 상자.
+const hasGemPeonId = (itemId: string | undefined): boolean =>
+  !!itemId && (GEM_PEON_BY_ID[itemId.split(':')[0]] || 0) > 0;
+
+function expectedTemplateHasPeon(itemId: string): boolean {
+  if (!itemId.startsWith('expected_')) return false;
+  const rows = TEMPLATES_MAP[itemId.slice('expected_'.length)]?.expectedItems;
+  return !!rows && rows.some((ei) => hasGemPeonId(ei.itemId));
+}
+
+/** 확률 상자 후보 하나에 페온이 들어 있는지 */
+export function probBoxCandidateHasPeon(cand: ProbBoxCandidate): boolean {
+  if (cand.crystalPerUnit && cand.crystalPerUnit > 0) return PEON_CRYSTAL_ITEM_IDS.has(cand.itemId || '');
+  if (cand.expectedItems && cand.expectedItems.length > 0) return cand.expectedItems.some((ei) => hasGemPeonId(ei.itemId));
+  if (cand.bundleItems && cand.bundleItems.length > 0) return cand.bundleItems.some((bi) => hasGemPeonId(bi.itemId));
+  if (cand.choiceOptions && cand.choiceOptions.length > 0) return cand.choiceOptions.some((c) => hasGemPeonId(c.itemId));
+  if (!cand.itemId) return false;
+  if (isTicketItemId(cand.itemId)) return true;
+  if (PROCESSED_GEM_BOX_GEM[cand.itemId]) return true;
+  return hasGemPeonId(cand.itemId);
+}
+
+/** 저장된 구성품(PackageItem)에 페온이 들어 있는지 */
+export function packageItemHasPeon(item: {
+  itemId: string;
+  crystalPerUnit?: number;
+  choiceOptions?: { itemId: string }[];
+  bundleItems?: { itemId: string }[];
+  choiceBoxCandidates?: { itemId?: string }[];
+  probBoxCandidates?: ProbBoxCandidate[];
+}): boolean {
+  if (item.probBoxCandidates && item.probBoxCandidates.length > 0) return item.probBoxCandidates.some(probBoxCandidateHasPeon);
+  if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) return item.choiceBoxCandidates.some((c) => hasGemPeonId(c.itemId));
+  if (item.bundleItems && item.bundleItems.length > 0) return item.bundleItems.some((bi) => hasGemPeonId(bi.itemId));
+  if (item.choiceOptions && item.choiceOptions.length > 0) return item.choiceOptions.some((c) => hasGemPeonId(c.itemId));
+  if (PEON_CRYSTAL_ITEM_IDS.has(item.itemId)) return true;
+  if (isTicketItemId(item.itemId)) return true;
+  if (PROCESSED_GEM_BOX_GEM[item.itemId]) return true;
+  if (expectedTemplateHasPeon(item.itemId)) return true;
+  return hasGemPeonId(item.itemId);
+}
+
+/** 등록/수정 폼의 추가 아이템(템플릿 + 입력 상태)에 페온이 들어 있는지 */
+export function addedItemHasPeon(added: AddedItem, template: TemplateItem): boolean {
+  switch (template.type) {
+    case 'simple': return hasGemPeonId(template.itemId);
+    case 'choice': return (template.choices || []).some((c) => hasGemPeonId(c.itemId));
+    case 'fixed': return isTicketItemId(`fixed_${template.id}`) || !!PROCESSED_GEM_BOX_GEM[`fixed_${template.id}`];
+    case 'crystal': return PEON_CRYSTAL_ITEM_IDS.has(`crystal_${template.id}`);
+    case 'expected': return (template.expectedItems || []).some((ei) => hasGemPeonId(ei.itemId));
+    case 'bundle': return (template.bundleContents || []).some((bc) => hasGemPeonId(bc.itemId));
+    case 'choiceBox': return (added.choiceBoxCandidates || []).some((c) => hasGemPeonId(c.itemId));
+    case 'probBox': return (added.probBoxCandidates || []).some(probBoxCandidateHasPeon);
+    default: return false;
   }
 }
 
@@ -1206,28 +1319,30 @@ export function calculateGachaItemGold(
   goldPerWon: number,
   bcRate: number,
   tiers: TicketTiers = DEFAULT_TICKET_TIERS,
+  noPeon: boolean = false,
 ): number {
+  const peonGold = peonGoldPerUnit(goldPerWon, noPeon);
   // 크리스탈 기반 아이템
   if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
-    return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
+    return crystalUnitGold(item.itemId, item.crystalPerUnit, goldPerWon, noPeon) * item.quantity;
   }
   if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
     const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
-    if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
+    if (fallback) return crystalUnitGold(item.itemId, fallback, goldPerWon, noPeon) * item.quantity;
   }
   // 선택 상자 → 현재 시세 기준 가치 상위 N개 합
   if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
     const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
-    return getChoiceBoxBestGold(item.choiceBoxCandidates, n, prices) * item.quantity;
+    return getChoiceBoxBestGold(item.choiceBoxCandidates, n, prices, peonGold) * item.quantity;
   }
   // 확률 상자 → 현재 시세 기준 기댓값
   if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, tiers, goldPerWon) * item.quantity;
+    return getProbBoxExpectedGold(item.probBoxCandidates, prices, bcRate, tiers, goldPerWon, noPeon) * item.quantity;
   }
   // 묶음 주머니 → 내부 아이템 시세 합산 × 주머니 수량
   if (item.bundleItems && item.bundleItems.length > 0) {
     const perBundleValue = item.bundleItems.reduce((sum, bi) => {
-      return sum + getItemUnitPrice(bi.itemId, prices) * bi.quantity;
+      return sum + getItemUnitPrice(bi.itemId, prices, peonGold) * bi.quantity;
     }, 0);
     return perBundleValue * item.quantity;
   }
@@ -1236,30 +1351,28 @@ export function calculateGachaItemGold(
     if (item.icon === FIXED_GEM_SELECT_ICON) {
       let maxPrice = 0;
       for (const c of item.choiceOptions) {
-        const p = getFixedGemSelectUnitPrice(c.itemId, prices, goldPerWon);
+        const p = getFixedGemSelectUnitPrice(c.itemId, prices, goldPerWon, noPeon);
         if (p > maxPrice) maxPrice = p;
       }
       return maxPrice * item.quantity;
     }
-    return getChoiceBestValue(item.choiceOptions, item.itemId, prices) * item.quantity;
+    return getChoiceBestValue(item.choiceOptions, item.itemId, prices, peonGold) * item.quantity;
   }
   // 확률표 상자(expected_) → 현재 시세 기준 기댓값 재계산 (goldOverride 는 등록 시점 박제값)
-  const expectedUnit = getExpectedBoxUnitPrice(item.itemId, prices);
+  const expectedUnit = getExpectedBoxUnitPrice(item.itemId, prices, peonGold);
   if (expectedUnit !== null) return expectedUnit * item.quantity;
   // 동적 티켓
   if (item.goldOverride != null) {
     if (PROCESSED_GEM_BOX_GEM[item.itemId] && Object.keys(prices).length > 0)
-      return getProcessedGemBoxUnitPrice(item.itemId, prices) * item.quantity;
+      return getProcessedGemBoxUnitPrice(item.itemId, prices, peonGold) * item.quantity;
     if (bcRate > 0) {
-      const ticket = calcTicketUnitByItemId(item.itemId, prices, bcRate, tiers);
+      const ticket = calcTicketUnitByItemId(item.itemId, prices, bcRate, tiers, noPeon);
       if (ticket !== null) return ticket * item.quantity;
     }
     return item.goldOverride * item.quantity;
   }
   // 시세 아이템
-  const raw = prices[item.itemId] || 0;
-  const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-  return (raw / bundle) * item.quantity;
+  return getItemUnitPrice(item.itemId, prices, peonGold) * item.quantity;
 }
 
 /** 가챠 기대값 = Σ(아이템골드 × 확률/100) */
@@ -1268,9 +1381,10 @@ export function calculateGachaExpectedValue(
   prices: Record<string, number>,
   goldPerWon: number,
   bcRate: number,
+  noPeon: boolean = false,
 ): number {
   return items.reduce((sum, item) => {
-    const gold = calculateGachaItemGold(item, prices, goldPerWon, bcRate);
+    const gold = calculateGachaItemGold(item, prices, goldPerWon, bcRate, undefined, noPeon);
     return sum + gold * ((item.probability || 0) / 100);
   }, 0);
 }
@@ -1314,23 +1428,25 @@ export function calculatePostEfficiency(
   post: PackagePost,
   latestPrices: Record<string, number>,
   goldPerWonOverride?: number,
+  noPeon: boolean = false,
 ): number {
   const goldPerWon =
     goldPerWonOverride && goldPerWonOverride > 0 ? goldPerWonOverride : post.goldPerWon || 0;
   const bcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
   const hasPrices = Object.keys(latestPrices).length > 0;
+  const peonGold = peonGoldPerUnit(goldPerWon, noPeon);
 
   // 가챠 패키지: 기대값 기반 효율
   if (post.packageType === '가챠') {
-    const expectedGold = calculateGachaExpectedValue(post.items, latestPrices, goldPerWon, bcRate);
+    const expectedGold = calculateGachaExpectedValue(post.items, latestPrices, goldPerWon, bcRate, noPeon);
     return post.royalCrystalPrice > 0 ? expectedGold / post.royalCrystalPrice : 0;
   }
 
   const getTicketUnit = (itemId: string, fallback: number): number => {
     if (PROCESSED_GEM_BOX_GEM[itemId] && hasPrices)
-      return getProcessedGemBoxUnitPrice(itemId, latestPrices);
+      return getProcessedGemBoxUnitPrice(itemId, latestPrices, peonGold);
     if (bcRate > 0 && hasPrices) {
-      const ticket = calcTicketUnitByItemId(itemId, latestPrices, bcRate);
+      const ticket = calcTicketUnitByItemId(itemId, latestPrices, bcRate, undefined, noPeon);
       if (ticket !== null) return ticket;
     }
     return fallback;
@@ -1340,25 +1456,25 @@ export function calculatePostEfficiency(
     if (item.choiceBoxCandidates && item.choiceBoxCandidates.length > 0) {
       // 저장된 선택 대신 현재 시세 상위 N개로 계산 (등록 후 시세 역전 대응)
       const n = item.choiceBoxPickCount || item.choiceBoxSelectedIds?.length || 1;
-      return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices) * item.quantity;
+      return getChoiceBoxBestGold(item.choiceBoxCandidates, n, latestPrices, peonGold) * item.quantity;
     }
     if (item.probBoxCandidates && item.probBoxCandidates.length > 0) {
-      return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, undefined, goldPerWon) * item.quantity;
+      return getProbBoxExpectedGold(item.probBoxCandidates, latestPrices, bcRate, undefined, goldPerWon, noPeon) * item.quantity;
     }
     if (item.crystalPerUnit && item.crystalPerUnit > 0 && goldPerWon > 0) {
-      return item.crystalPerUnit * goldPerWon * 27.5 * item.quantity;
+      return crystalUnitGold(item.itemId, item.crystalPerUnit, goldPerWon, noPeon) * item.quantity;
     }
     if (!item.crystalPerUnit && item.itemId.startsWith('crystal_') && goldPerWon > 0) {
       const fallback = CRYSTAL_PER_UNIT_FALLBACK[item.itemId];
-      if (fallback) return fallback * goldPerWon * 27.5 * item.quantity;
+      if (fallback) return crystalUnitGold(item.itemId, fallback, goldPerWon, noPeon) * item.quantity;
     }
     // 묶음 주머니 → 내부 아이템 시세 합산 (goldOverride 박제값 대신)
     if (item.bundleItems && item.bundleItems.length > 0) {
       return item.bundleItems.reduce(
-        (sum, bi) => sum + getItemUnitPrice(bi.itemId, latestPrices) * bi.quantity, 0) * item.quantity;
+        (sum, bi) => sum + getItemUnitPrice(bi.itemId, latestPrices, peonGold) * bi.quantity, 0) * item.quantity;
     }
     // 확률표 상자(expected_) → 현재 시세 기준 기댓값 재계산
-    const expectedUnit = getExpectedBoxUnitPrice(item.itemId, latestPrices);
+    const expectedUnit = getExpectedBoxUnitPrice(item.itemId, latestPrices, peonGold);
     if (expectedUnit !== null) return expectedUnit * item.quantity;
     if (item.goldOverride != null) {
       return getTicketUnit(item.itemId, item.goldOverride) * item.quantity;
@@ -1367,13 +1483,11 @@ export function calculatePostEfficiency(
     if (item.choiceOptions && item.choiceOptions.length > 0) {
       if (item.icon === FIXED_GEM_SELECT_ICON) {
         const qty = item.quantity * (item.choiceOptions.find((c) => c.itemId === item.itemId)?.quantity ?? 1);
-        return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon) * qty;
+        return getFixedGemSelectBestUnitPrice(item.choiceOptions, item.itemId, latestPrices, goldPerWon, noPeon) * qty;
       }
-      return getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices) * item.quantity;
+      return getChoiceBestValue(item.choiceOptions, item.itemId, latestPrices, peonGold) * item.quantity;
     }
-    const raw = latestPrices[item.itemId] || 0;
-    const bundle = PRICE_BUNDLE_SIZE[item.itemId] || 1;
-    return (raw / bundle) * item.quantity;
+    return getItemUnitPrice(item.itemId, latestPrices, peonGold) * item.quantity;
   };
 
   const itemValues = post.items.map(itemValue);
