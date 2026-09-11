@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import NextImage from 'next/image';
 import styles from '@/app/hell-reward/hell-reward.module.css';
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import { useNoPeon } from '@/components/package/useNoPeon';
+import PeonBadge from '@/components/package/PeonBadge';
 import {
   ENGRAVING_IDS,
   TOTAL_ENGRAVINGS,
@@ -70,6 +71,9 @@ const REWARD_VISUALS: Record<string, RewardVisual> = {
   '전설카드팩': { parts: ['/legendary-cardpack.webp'], ops: [] },
 };
 
+// 값에 페온이 들어 있는 보상 — 그림 칸에 페온 배지를 단다 (패키지 구성품 배지와 같은 규칙)
+const PEON_ITEMS = new Set(['어빌리티스톤', '팔찌', '젬 선택 상자']);
+
 // 자체 배경(사각 타일)이 그려진 아이콘 — 투명 배경 아이콘과 달리 칸을 꽉 채워
 // 칸의 둥근 모서리로 잘라내야 사각 테두리가 튀어나오지 않는다.
 const FILLED_BG_IMAGES = new Set([
@@ -102,46 +106,63 @@ function getRewardVisual(rewardName: string, rawVal: string): RewardVisual | nul
   return REWARD_VISUALS[rewardName] || null;
 }
 
-/** 제외 토글 — 그림 + 라벨 알약. 켜지면 그림에 사선, 알약은 포인트색으로 찬다 (어빌 제외 · 페온 제거) */
-function ExcludeToggle({ icon, label, activeLabel, active, onChange, title }: {
-  icon: string; label: string; activeLabel: string; active: boolean; onChange: (v: boolean) => void; title: string;
+/** 제외 토글 — 아이콘 한 칸짜리 네모 버튼. 켜지면(=빼는 중) 회색으로 죽고 사선이 그어진다.
+ *  글자 알약이었을 땐 폭을 너무 먹어 옆의 총 기댓값 숫자를 밀어냈다 —
+ *  대신 올려놓으면 "무슨 버튼인지 / 누르면 어떻게 되는지"가 말풍선으로 뜬다. */
+function ExcludeToggle({ icon, name, active, onChange, iconBig = false }: {
+  icon: string; name: string; active: boolean; onChange: (v: boolean) => void; iconBig?: boolean;
 }) {
+  const label = active ? `${name} 제외 중` : `${name} 포함 중`;
+  const hint = active ? '눌러서 되돌리기' : '눌러서 제외';
   return (
     <button
       type="button"
       className={`${styles.exToggle} ${active ? styles.exToggleActive : ''}`}
       onClick={() => onChange(!active)}
       aria-pressed={active}
-      title={title}
+      aria-label={`${label} — ${hint}`}
     >
-      <span className={styles.exToggleIconWrap}>
-        <NextImage src={icon} alt="" width={28} height={28} className={styles.exToggleIcon} />
+      <span className={`${styles.exToggleIconWrap} ${iconBig ? styles.exToggleIconWrapBig : ''}`}>
+        <NextImage
+          src={icon}
+          alt=""
+          width={32}
+          height={32}
+          className={`${styles.exToggleIcon} ${iconBig ? styles.exToggleIconBig : ''}`}
+        />
       </span>
-      <span>{active ? activeLabel : label}</span>
+      <span className={styles.exToggleTip}>
+        <b>{label}</b>
+        <span>{hint}</span>
+      </span>
     </button>
   );
 }
 
-/** 보상 그림 — 칸(tile) 또는 합산 내역의 작은 줄(sum). 여러 장이면 or / + 로 이어 붙인다 */
-function RewardImages({ visual, alt, size }: { visual: RewardVisual | null; alt: string; size: 'tile' | 'sum' }) {
-  if (!visual) return <div className={size === 'tile' ? styles.rewardImgWrap : undefined} />;
-  const px = size === 'tile' ? 72 : 20;
+/** 보상 그림 — 목록 칸(tile) 또는 상세 패널(detail). 여러 장이면 or / + 로 이어 붙인다 */
+function RewardImages({ visual, alt, size }: {
+  visual: RewardVisual | null; alt: string; size: 'tile' | 'detail';
+}) {
+  const wrapCls = size === 'tile' ? styles.rewardImgWrap : styles.dImgWrap;
+  if (!visual) return <div className={wrapCls} />;
+  const px = size === 'tile' ? 72 : 52;
+  const multi = visual.parts.length > 1;
   return (
-    <div className={size === 'tile' ? styles.rewardVisual : styles.sumVisual}>
+    <div className={size === 'tile' ? `${styles.rewardVisual} ${multi ? styles.rewardVisualMulti : ''}` : styles.dVisual}>
       {visual.parts.map((src, i) => (
         <span key={src} className={styles.rewardVisualPart}>
           {i > 0 && (
-            <span className={`${size === 'tile' ? styles.rewardOp : styles.sumOpGlyph} ${visual.ops[i - 1] === 'or' ? styles.rewardOpOr : styles.rewardOpPlus}`}>
+            <span className={`${styles.rewardOp} ${visual.ops[i - 1] === 'or' ? styles.rewardOpOr : styles.rewardOpPlus}`}>
               {visual.ops[i - 1]}
             </span>
           )}
-          <span className={`${size === 'tile' ? styles.rewardImgWrap : styles.sumImgWrap} ${FILLED_BG_IMAGES.has(src) ? styles.rewardImgFilled : ''}`}>
+          <span className={`${wrapCls} ${FILLED_BG_IMAGES.has(src) ? styles.rewardImgFilled : ''}`}>
             <NextImage
               src={src}
               alt={i === 0 ? alt : ''}
               width={px}
               height={px}
-              className={size === 'tile' ? styles.rewardImg : styles.sumImg}
+              className={size === 'tile' ? styles.rewardImg : styles.dImg}
               style={imgTweakStyle(src)}
             />
           </span>
@@ -255,6 +276,26 @@ export default function HellRewardCalculator() {
       if (!b.available) return -1;
       return b.orderValue - a.orderValue;
     });
+
+  // 펼친 카드의 상세를 "그 카드가 속한 줄의 끝"에 끼우기 위한 자리 계산.
+  // 카드 자체를 한 줄로 늘리면 뒤 카드가 전부 재배치되면서 화면이 통째로 움직였다.
+  // 열 수는 CSS 와 같은 분기(768px 이하 1열, 그 위 3열)를 그대로 따라간다.
+  const [cols, setCols] = useState(3);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const apply = () => setCols(mq.matches ? 1 : 3);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
+  const expandedIdx = sortedRewards.findIndex((r) => r.name === expandedReward);
+  const expandedItem = expandedIdx >= 0 ? sortedRewards[expandedIdx] : null;
+  const expandedVisual = expandedItem ? getRewardVisual(expandedItem.name, expandedItem.rawVal) : null;
+  // 그 줄의 마지막 칸 (마지막 줄이 덜 찼으면 목록 끝)
+  const detailAfterIdx = expandedIdx >= 0
+    ? Math.min(Math.floor(expandedIdx / cols) * cols + cols - 1, sortedRewards.length - 1)
+    : -1;
 
   // 상자 기댓값 — 후보 목록에서 boxCount개가 뜨고 그중 최고를 고른다.
   // 제외·0골드 줄도 후보 자리는 그대로 두고 값만 0골드로 친다 (뜨는 확률은 안 바뀐다)
@@ -370,95 +411,98 @@ export default function HellRewardCalculator() {
     <div className={styles.wrap}>
       {/* 설정 패널 — 레벨·콘텐츠·단계·기댓값·환율을 상자 하나에 모은다 */}
       <div className={styles.panel}>
-        {/* 아이템 레벨 + 콘텐츠 */}
+        {/* 아이템 레벨 + 콘텐츠 — 컨트롤마다 라벨 달린 테두리 상자로 가른다.
+            전부 같은 얇은 테두리 트랙이었을 땐 레벨·콘텐츠·층·환율이 한 덩어리로 읽혔다 */}
         <div className={styles.controlsRow}>
-          <div className={`${styles.segTrack} ${styles.segTrackLevel}`}>
-            {ITEM_LEVELS.map(({ level, available }) => (
-              <button
-                key={level}
-                className={`${styles.segBtn} ${selectedLevel === level ? styles.segBtnActive : ''} ${!available ? styles.segBtnDisabled : ''}`}
-                disabled={!available}
-                onClick={() => handleLevel(level)}
-              >
-                {level}
-              </button>
-            ))}
+          <div className={`${styles.field} ${styles.fieldLevel}`}>
+            <div className={styles.segTrack}>
+              {ITEM_LEVELS.map(({ level, available }) => (
+                <button
+                  key={level}
+                  className={`${styles.segBtn} ${selectedLevel === level ? styles.segBtnActive : ''} ${!available ? styles.segBtnDisabled : ''}`}
+                  disabled={!available}
+                  onClick={() => handleLevel(level)}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className={`${styles.segTrack} ${styles.segTrackMode}`}>
-            <button
-              className={`${styles.segBtn} ${mode === 'hell' ? styles.segBtnActive : ''}`}
-              onClick={() => { setMode('hell'); setExpandedReward(null); }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/celtic_key_5.webp" alt="" className={styles.segIcon} />
-              <span>지옥</span>
-            </button>
-            <button
-              className={`${styles.segBtn} ${mode === 'narak' ? styles.segBtnActive : ''}`}
-              onClick={() => { setMode('narak'); setExpandedReward(null); }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/key_5.webp" alt="" className={styles.segIcon} />
-              <span>나락</span>
-            </button>
+          <div className={`${styles.field} ${styles.fieldMode}`}>
+            <div className={styles.segTrack}>
+              <button
+                className={`${styles.segBtn} ${mode === 'hell' ? styles.segBtnActive : ''}`}
+                onClick={() => { setMode('hell'); setExpandedReward(null); }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/celtic_key_5.webp" alt="" className={styles.segIcon} />
+                <span>지옥</span>
+              </button>
+              <button
+                className={`${styles.segBtn} ${mode === 'narak' ? styles.segBtnActive : ''}`}
+                onClick={() => { setMode('narak'); setExpandedReward(null); }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/key_5.webp" alt="" className={styles.segIcon} />
+                <span>나락</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* 단계 */}
-        <div className={`${styles.segTrack} ${styles.segTrackScroll}`}>
-          {TIER_LABELS.map((label, idx) => (
-            <button
-              key={idx}
-              title={`${label}층`}
-              className={`${styles.segBtn} ${styles.tierBtn} ${selectedTier === idx ? styles.segBtnActive : ''}`}
-              onClick={() => { setSelectedTier(idx); setExpandedReward(null); }}
-            >
-              {idx}
-            </button>
-          ))}
+        {/* 단계(층) */}
+        <div className={styles.field}>
+          <div className={`${styles.segTrack} ${styles.segTrackScroll}`}>
+            {TIER_LABELS.map((label, idx) => (
+              <button
+                key={idx}
+                title={`${label}층`}
+                className={`${styles.segBtn} ${styles.tierBtn} ${selectedTier === idx ? styles.segBtnActive : ''}`}
+                onClick={() => { setSelectedTier(idx); setExpandedReward(null); }}
+              >
+                {idx}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* 총 기댓값 + 환율 */}
         <div className={styles.infoRow}>
           {hasPrices && !priceLoading && (
             <div className={styles.heroCard}>
-              {/* 라벨은 "총 기댓값" 하나 — 레벨·지옥/나락·단계는 바로 위 버튼이 이미 보여준다 */}
-              <span className={styles.heroLabel}>총 기댓값</span>
-              <span className={styles.heroValue}>
-                <NextImage src="/gold.webp" alt="골드" width={24} height={24} />
-                {totalGold.toLocaleString()} G
-              </span>
-              {baseGold > 0 && (
-                <span className={styles.heroBreak}>
-                  기본 <b>{baseGold.toLocaleString()}</b> + 상자 <b>{boxExpectedGold.toLocaleString()}</b>
+              {/* 라벨은 "총 기댓값" 하나 — 레벨·지옥/나락·단계는 바로 위 버튼이 이미 보여준다.
+                  기본/상자 쪼갠 값은 각 카드를 펼치면 나오므로 여기선 합만 크게 세운다 */}
+              <div className={styles.heroMain}>
+                <span className={styles.heroLabel}>{TIER_LABELS[selectedTier]}층 기댓값</span>
+                <span className={styles.heroValue}>
+                  <NextImage src="/gold.webp" alt="골드" width={32} height={32} />
+                  {totalGold.toLocaleString()} G
                 </span>
-              )}
-              {/* 제외 토글 두 개 — 그림이 곧 라벨이다. 켜지면 그림에 사선이 그어지고 알약이 차오른다 */}
+              </div>
+              {/* 제외 토글 두 개 — 오른쪽 아래 구석. 그림이 곧 라벨이고, 켜지면 사선이 그어진다 */}
               <div className={styles.heroOpts}>
                 {hasAbilityStone && (
                   <ExcludeToggle
                     icon="/djqlfflxltmxhs.webp"
-                    label="어빌 제외"
-                    activeLabel="어빌 제외 중"
+                    name="어빌리티스톤"
                     active={excludeAbilityStone}
                     onChange={setExcludeAbilityStone}
-                    title="어빌리티스톤을 0골드로 계산 (뜨는 확률은 그대로)"
                   />
                 )}
+                {/* 페온 아이콘은 원본에 여백이 많아 같은 칸이면 어빌리티스톤보다 작아 보인다 */}
                 <ExcludeToggle
                   icon="/pheon.webp"
-                  label="페온 제거"
-                  activeLabel="페온 제거 중"
+                  name="페온"
                   active={noPeon}
                   onChange={setNoPeon}
-                  title="페온을 0골드로 계산 — 어빌리티스톤·팔찌·젬의 페온 몫이 빠진다"
+                  iconBig
                 />
               </div>
             </div>
           )}
 
           {/* 환율 — /package 갤러리 카드 하단과 똑같은 두 줄 입력 */}
-          <div className={styles.exchangeCard}>
+          <div className={`${styles.field} ${styles.exchangeCard}`}>
             <div className={styles.bottomRate}>
               <div className={styles.rateRow}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -515,28 +559,29 @@ export default function HellRewardCalculator() {
             // 등수 — 목록이 이미 골드 가치 내림차순이라 순번이 곧 등수다. 미지급 항목은 등수를 매기지 않는다.
             const rank = reward.available ? idx + 1 : null;
             return (
+              <Fragment key={reward.name}>
               <div
-                key={reward.name}
-                className={`${styles.rewardCard} ${!reward.available ? styles.rewardCardDisabled : ''} ${isExpanded ? styles.rewardCardExpanded : ''}`}
+                className={`${styles.rewardCard} ${rank && rank <= 4 ? styles[`rewardCardTop${rank}`] : ''} ${reward.zeroed ? styles.rewardCardZero : ''} ${!reward.available ? styles.rewardCardDisabled : ''} ${isExpanded ? styles.rewardCardExpanded : ''}`}
               >
                 {/* 머리줄(등수·이름·골드·화살표) + 아랫줄(그림) — 그림이 한 장이든 세 장이든 모든 줄이 같은 배열 */}
                 <div
                   className={styles.rewardCardMain}
                   onClick={() => reward.available && setExpandedReward(isExpanded ? null : reward.name)}
                 >
-                  {/* 머리줄: 등수를 이름 앞에 붙인다 (따로 세운 칸이면 그림이 그 폭만큼 안으로 밀렸다).
-                      접힌 줄엔 이름만 — 수량은 펼쳤을 때 '수량' 줄에 있다 */}
+                  {/* 등수는 타일 왼쪽 위 구석에 고정 — 3열로 깔면 순서가 좌우로 끊기는데,
+                      모든 타일의 같은 자리에 있어야 좌→우로 훑을 때 1·2·3 이 줄줄이 읽힌다 */}
+                  <span className={`${styles.rank} ${rank && rank <= 4 ? `${styles.rankTop} ${styles[`rank${rank}`]}` : ''}`}>
+                    {rank ?? '-'}
+                  </span>
                   <div className={styles.rewardInfo}>
-                    <span className={`${styles.rank} ${rank && rank <= 3 ? styles[`rank${rank}`] : ''}`}>
-                      {rank ?? '-'}
-                    </span>
                     <span className={styles.rewardName}>{getDisplayName(reward.name)}</span>
                   </div>
                   <RewardImages visual={visual} alt={reward.name} size="tile" />
                   <div className={`${styles.rewardGold} ${reward.zeroed ? styles.rewardGoldZero : ''}`}>
                     {reward.available ? (
                       <>
-                        <NextImage src="/gold.webp" alt="" width={20} height={20} />
+                        {PEON_ITEMS.has(reward.name) && <PeonBadge off={noPeon} large inline />}
+                        <NextImage src="/gold.webp" alt="" width={24} height={24} />
                         <span>{reward.goldValue.toLocaleString()}</span>
                       </>
                     ) : (
@@ -549,79 +594,88 @@ export default function HellRewardCalculator() {
                     </span>
                   )}
                 </div>
-                {isExpanded && (
+              </div>
+              {/* 상세 — 펼친 카드 자리를 옮기지 않고, 그 카드가 속한 줄이 끝나는 지점에
+                  전체 폭 띠로 끼워 넣는다. 카드를 통째로 한 줄로 늘리면 뒤 카드들이 재배치되면서
+                  화면이 통째로 움직였다. 내용은 "상자 고유 보상"과 "층 기본 보상(확정)"을 가른 두 상자다 */}
+              {detailAfterIdx === idx && expandedItem && (
                   <div className={styles.detail}>
-                    <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>가격 기준</span>
-                      <span className={styles.detailValue}>
-                        <span className={`${styles.priceBadge} ${styles[`priceBadge_${getPriceTag(reward.name)}`]}`}>
-                          {getPriceTagLabel(getPriceTag(reward.name))}
+                    {expandedItem.zeroed ? (
+                      <div className={styles.zeroNote}>
+                        <span>
+                          {expandedItem.name === '어빌리티스톤' && excludeAbilityStone ? '어빌 제외' : '페온 제거'} — 0골드로 계산 (뜨는 확률은 그대로)
                         </span>
-                      </span>
-                    </div>
-                    <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>수량</span>
-                      <span className={styles.detailValue}>{reward.rawVal}</span>
-                    </div>
-                    <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>산출</span>
-                      <span className={styles.detailValue}>{getRewardDetail(reward.name, reward.rawVal)}</span>
-                    </div>
-
-                    {/* 이 카드의 숫자가 어떻게 나왔는지 — 층마다 확정으로 받는 기본 보상 + 이 상자의 고유 보상.
-                        0골드로 친 줄(어빌 제외·페온 제거)은 기본 보상 줄 없이 "0골드로 계산" 한 줄만 */}
-                    {reward.zeroed ? (
-                      <div className={styles.sumBox}>
-                        <div className={`${styles.sumLine} ${styles.sumLineTotal}`}>
-                          <span className={styles.sumName}>
-                            {reward.name === '어빌리티스톤' && excludeAbilityStone ? '어빌 제외' : '페온 제거'} — 0골드로 계산 (뜨는 확률은 그대로)
-                          </span>
-                          <span className={styles.sumVal}>
-                            <NextImage src="/gold.webp" alt="" width={17} height={17} />
-                            0
-                          </span>
-                        </div>
+                        <span className={styles.zeroGold}>
+                          <NextImage src="/gold.webp" alt="" width={17} height={17} />
+                          0
+                        </span>
                       </div>
                     ) : (
-                    <div className={styles.sumBox}>
-                      {baseRows.map((row, i) => (
-                        <div key={row.name} className={`${styles.sumLine} ${styles.sumLineBase}`}>
-                          <span className={styles.sumName}>
-                            <span className={styles.sumOp}>{i === 0 ? '' : '+'}</span>
-                            <NextImage src={BASE_REWARD_IMAGES[row.name]} alt="" width={17} height={17} />
-                            <span className={styles.sumLabel}>{row.name}</span>
-                            <span className={styles.sumCalc}>
-                              {row.qty.toLocaleString()}개 × {fmtPrice(Math.round(row.unitPrice * 10) / 10)}G
+                      <>
+                        {/* 이 상자를 골랐을 때만 받는 몫 */}
+                        <div className={styles.dSection}>
+                          <div className={styles.dSectionHead}>
+                            <span className={styles.dTag}>상자 보상</span>
+                            <span className={`${styles.priceBadge} ${styles[`priceBadge_${getPriceTag(expandedItem.name)}`]}`}>
+                              {getPriceTagLabel(getPriceTag(expandedItem.name))}
                             </span>
-                          </span>
-                          <span className={styles.sumVal}>{row.gold.toLocaleString()}</span>
+                            <span className={styles.dSectionGold}>
+                              {PEON_ITEMS.has(expandedItem.name) && <PeonBadge off={noPeon} large inline />}
+                              <NextImage src="/gold.webp" alt="" width={17} height={17} />
+                              {expandedItem.boxGold.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className={styles.dBoxRow}>
+                            <RewardImages visual={expandedVisual} alt="" size="detail" />
+                            <div className={styles.dBoxInfo}>
+                              <span className={styles.dBoxName}>{getDisplayName(expandedItem.name)}</span>
+                              <span className={styles.dBoxQty}>{expandedItem.rawVal}</span>
+                            </div>
+                          </div>
+                          <p className={styles.dCalcNote}>{getRewardDetail(expandedItem.name, expandedItem.rawVal)}</p>
                         </div>
-                      ))}
-                      <div className={styles.sumLine}>
-                        <span className={styles.sumName}>
-                          <span className={styles.sumOp}>{baseRows.length > 0 ? '+' : ''}</span>
-                          <RewardImages visual={visual} alt="" size="sum" />
-                          <span className={styles.sumLabel}>{getDisplayName(reward.name)}</span>
-                          <span className={styles.sumTag}>고유</span>
-                          <span className={styles.sumCalc}>{reward.rawVal}</span>
-                        </span>
-                        <span className={styles.sumVal}>{reward.boxGold.toLocaleString()}</span>
-                      </div>
-                      <div className={`${styles.sumLine} ${styles.sumLineTotal}`}>
-                        <span className={styles.sumName}>
-                          <span className={styles.sumOp}>=</span>
-                          합계
-                        </span>
-                        <span className={styles.sumVal}>
-                          <NextImage src="/gold.webp" alt="" width={17} height={17} />
-                          {reward.goldValue.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
+
+                        {/* 어느 상자를 골라도 층을 깨면 확정으로 받는 몫 — 지옥만 있다 */}
+                        {baseRows.length > 0 && (
+                          <>
+                            <div className={styles.dSection}>
+                              <div className={styles.dSectionHead}>
+                                <span className={`${styles.dTag} ${styles.dTagBase}`}>층 기본 보상</span>
+                                <span className={styles.dSectionSub}>어느 상자를 골라도 확정 지급</span>
+                                <span className={styles.dSectionGold}>
+                                  <NextImage src="/gold.webp" alt="" width={17} height={17} />
+                                  {baseGold.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className={styles.dBaseGrid}>
+                                {baseRows.map((row) => (
+                                  <div
+                                    key={row.name}
+                                    className={styles.dBaseTile}
+                                    title={`${row.qty.toLocaleString()}개 × ${fmtPrice(Math.round(row.unitPrice * 10) / 10)}G`}
+                                  >
+                                    <NextImage src={BASE_REWARD_IMAGES[row.name]} alt={row.name} width={44} height={44} className={styles.dBaseImg} />
+                                    <span className={styles.dBaseName}>{row.name}</span>
+                                    <span className={styles.dBaseQty}>×{row.qty.toLocaleString()}</span>
+                                    <span className={styles.dBaseGold}>{row.gold.toLocaleString()} G</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className={styles.dTotal}>
+                              <span className={styles.dTotalName}>상자 + 기본 = 합계</span>
+                              <span className={styles.dTotalVal}>
+                                <NextImage src="/gold.webp" alt="" width={18} height={18} />
+                                {expandedItem.goldValue.toLocaleString()}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </>
                     )}
                   </div>
-                )}
-              </div>
+              )}
+              </Fragment>
             );
           })}
         </div>

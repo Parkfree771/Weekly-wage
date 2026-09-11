@@ -2239,6 +2239,17 @@ export default function RefiningCalculator({
         >
           {applied ? '✓ 최적화 적용중' : '보조재료 비용 최적화'}
         </button>
+        {/* 모바일은 hover 가 없어 적용중 재탭 = 해제라 내역을 못 본다 — 옆 "목록" 버튼으로 팝업만 연다 */}
+        {applied && isMobile && (
+          <button
+            type="button"
+            className={`${styles.groupOptBtn} ${colorCls} ${styles.groupOptListBtn}`}
+            onClick={() => setOpenBreathPopup(type)}
+            title="적용된 최적 조합 내역을 봅니다"
+          >
+            목록
+          </button>
+        )}
         {renderBreathPopup(type)}
       </span>
     );
@@ -2280,6 +2291,16 @@ export default function RefiningCalculator({
         >
           {applied ? '✓ 최적화 적용중' : '보조재료 비용 최적화'}
         </button>
+        {applied && isMobile && (
+          <button
+            type="button"
+            className={`${styles.groupOptBtn} ${colorCls} ${styles.groupOptListBtn}`}
+            onClick={() => setOpenAdvOptPopup(type)}
+            title="적용된 최적 조합 내역을 봅니다"
+          >
+            목록
+          </button>
+        )}
         {renderAdvOptPopup(type)}
       </span>
     );
@@ -2415,6 +2436,16 @@ export default function RefiningCalculator({
         >
           {applied ? '✓ 최적화 적용중' : '보조재료 비용 최적화'}
         </button>
+        {applied && isMobile && (
+          <button
+            type="button"
+            className={`${styles.groupOptBtn} ${styles.groupOptWangap} ${styles.groupOptListBtn}`}
+            onClick={() => setOpenWangapPopup(true)}
+            title="적용된 최적 조합 내역을 봅니다"
+          >
+            목록
+          </button>
+        )}
         {renderWangapOptPopup()}
       </span>
     );

@@ -27,8 +27,6 @@ import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
 import TrendArrow from '@/components/TrendArrow';
 import ReactionBar from '@/components/package/ReactionBar';
-import PeonBadge from '@/components/package/PeonBadge';
-import NoPeonToggle from '@/components/package/NoPeonToggle';
 import { useNoPeon } from '@/components/package/useNoPeon';
 import styles from './PackageGalleryCard.module.css';
 
@@ -156,9 +154,11 @@ function ItemCellVisual({ item }: { item: PackageItem }) {
     );
   }
   /* 기타(직접 입력) 항목 — 아이콘이 없다. 등록자가 넣은 축약 이름을 쓰고,
-     안 넣었으면 풀네임을 그대로 흘려 CSS 로 자른다 (툴팁에는 항상 풀네임) */
+     안 넣었으면 풀네임을 그대로 흘려 CSS 로 자른다.
+     풀네임은 칸이 띄우는 이름표(.itemTip)가 보여주므로 여기 title 은 두지 않는다 —
+     두면 브라우저 기본 툴팁과 이름표가 겹쳐 뜬다 */
   return (
-    <div className={styles.itemCellPlaceholder} title={item.name}>
+    <div className={styles.itemCellPlaceholder}>
       <span className={styles.itemCellPlaceholderText}>
         {item.shortName || item.name || '기타'}
       </span>
@@ -170,11 +170,36 @@ function ItemCellVisual({ item }: { item: PackageItem }) {
  * 이득률 — 카드에서 제일 먼저 읽혀야 하는 숫자.
  * 아제나 카드(AzenaBlessingGalleryCard)도 이걸 그대로 쓴다 — 같은 숫자는 같은 모양이어야 한다.
  */
-export function BenefitPct({ v }: { v: number }) {
+export function BenefitPct({ v, stale = false }: { v: number; stale?: boolean }) {
+  // stale = 최저가로 갱신되기 전(평균가 기준) 값. 회색으로 죽이고 빨간 사선을 긋는다
   return (
-    <span className={`${styles.benefitBadge} ${v >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown}`}>
+    <span
+      className={`${styles.benefitBadge} ${stale ? styles.benefitBadgeStale : (v >= 0 ? styles.benefitBadgeUp : styles.benefitBadgeDown)}`}
+    >
       {v >= 0 ? '+' : ''}{v.toFixed(1)}%
     </span>
+  );
+}
+
+/**
+ * 이득률 칸 — 최저가로 갱신되면 줄이 하나 늘어난다.
+ *   1줄: 라벨 + 평균가 기준 옛 이득률 (회색 + 빨간 사선)
+ *   2줄: 변동폭 → 최저가 기준 최종 이득률 (줄 전체를 써서 오른쪽 정렬)
+ * 셋을 한 줄에 두면 모바일 오른쪽 칸(154px)에 안 들어가 글자가 잘렸다 —
+ * 옛 값은 작아서 라벨과 같은 줄에 서고, 큰 최종 값만 아래 줄을 통째로 쓴다.
+ */
+function BenefitCell({ v, base, delta }: { v: number; base: number | null; delta: number | null }) {
+  if (delta === null || base === null) return <BenefitPct v={v} />;
+  return (
+    <>
+      <span className={styles.benefitStaleLine}>
+        <BenefitPct v={base} stale />
+      </span>
+      <span className={styles.benefitFinalLine}>
+        <BenefitDelta d={delta} />
+        <BenefitPct v={v} />
+      </span>
+    </>
   );
 }
 
@@ -246,7 +271,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
 
   const goldPerWon = wonPer100Gold > 0 ? 100 / wonPer100Gold : 0;
   // 페온 가치 제거 — 뷰어 설정. 젬·티켓·페온·어빌리티스톤 키트의 페온 몫이 한꺼번에 0이 된다
-  const [noPeon, setNoPeon] = useNoPeon();
+  const [noPeon] = useNoPeon();
   const peonGold = peonGoldPerUnit(goldPerWon, noPeon);
 
   // 티켓 동적 시세 계산 (시세 변동 시 자동 반영)
@@ -676,9 +701,13 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
   const singleBenefit = cashGold > 0 ? ((effectiveGold - cashGold) / cashGold) * 100 : 0;
   // 평균가 대비 변동폭(%p). 0.1%p 미만은 표시하지 않는다 — 안 움직인 카드까지 화살표가 붙으면
   // "갱신됐다" 가 아니라 "원래 그렇다" 로 읽혀 신호가 죽는다.
+  // 평균가 기준 이득률 — 최저가로 갱신됐을 때 "원래 얼마였는지" 줄에 쓴다
+  const baseBenefit = baseEffectiveGold !== null && cashGold > 0
+    ? ((baseEffectiveGold - cashGold) / cashGold) * 100
+    : null;
   const benefitDelta = (() => {
-    if (baseEffectiveGold === null || cashGold <= 0) return null;
-    const d = singleBenefit - ((baseEffectiveGold - cashGold) / cashGold) * 100;
+    if (baseBenefit === null) return null;
+    const d = singleBenefit - baseBenefit;
     return Math.abs(d) < 0.1 ? null : d;
   })();
 
@@ -797,7 +826,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
             return (
               <div
                 key={idx}
-                className={`${styles.itemCell} ${renderIdx >= 15 ? styles.itemCellHidden : ''} ${!isChecked && gachaPhase === 'idle' ? styles.itemCellUnchecked : ''} ${isGachaHighlighted ? styles.itemCellHighlight : ''} ${isGachaWon ? styles.itemCellWon : ''} ${isGachaDimmed ? styles.itemCellDimmed : ''}`}
+                className={`${styles.itemCell} ${packageItemHasPeon(item) ? (noPeon ? styles.itemCellPeonOff : styles.itemCellPeon) : ''} ${renderIdx >= 15 ? styles.itemCellHidden : ''} ${!isChecked && gachaPhase === 'idle' ? styles.itemCellUnchecked : ''} ${isGachaHighlighted ? styles.itemCellHighlight : ''} ${isGachaWon ? styles.itemCellWon : ''} ${isGachaDimmed ? styles.itemCellDimmed : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (gachaPhase !== 'idle') return;
@@ -805,10 +834,19 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                 }}
               >
                 <ItemCellVisual item={item} />
-                {packageItemHasPeon(item) && <PeonBadge off={noPeon} />}
                 {isGacha && (
                   <span className={styles.itemProbBadge}>{item.probability}%</span>
                 )}
+                {/* 올려놓으면 뜨는 이름표 — 칸이 62px 이하라 이름을 늘 띄울 자리가 없다.
+                    페온이 값에 들어간 구성품은 그 사실을 같이 알려 준다(테두리 색의 뜻) */}
+                <span className={styles.itemTip} aria-hidden="true">
+                  <b>{item.name}</b>
+                  {packageItemHasPeon(item) && (
+                    <span className={noPeon ? styles.itemTipPeonOff : styles.itemTipPeon}>
+                      {noPeon ? '페온 제거 중' : '페온 포함'}
+                    </span>
+                  )}
+                </span>
                 <span className={`${styles.itemCheckBox} ${isChecked ? styles.itemCheckBoxChecked : ''} ${isGachaWon ? styles.itemCheckBoxWon : ''}`}>
                   {(isChecked || isGachaWon) && (
                     <svg viewBox="0 0 12 10" className={styles.itemCheckIcon}>
@@ -856,12 +894,18 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                 return (
                   <div
                     key={idx}
-                    className={`${styles.bonusCell} ${isChecked ? '' : styles.bonusCellOff}`}
+                    className={`${styles.bonusCell} ${packageItemHasPeon(item) ? (noPeon ? styles.itemCellPeonOff : styles.itemCellPeon) : ''} ${isChecked ? '' : styles.bonusCellOff}`}
                     onClick={(e) => { e.stopPropagation(); handleBonusToggleCheck(idx); }}
-                    title={item.name}
                   >
                     <ItemCellVisual item={item} />
-                    {packageItemHasPeon(item) && <PeonBadge off={noPeon} />}
+                    <span className={styles.itemTip} aria-hidden="true">
+                      <b>{item.name}</b>
+                      {packageItemHasPeon(item) && (
+                        <span className={noPeon ? styles.itemTipPeonOff : styles.itemTipPeon}>
+                          {noPeon ? '페온 제거 중' : '페온 포함'}
+                        </span>
+                      )}
+                    </span>
                     <span className={`${styles.itemCheckBox} ${isChecked ? styles.itemCheckBoxChecked : ''}`}>
                       {isChecked && (
                         <svg viewBox="0 0 12 10" className={styles.itemCheckIcon}>
@@ -923,19 +967,17 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
 
           {/* 이득률 — 1개 구매 기준 (묶음 보정 없는 순수 1회) */}
           {goldPerWon > 0 && !isGacha && (
-            <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
+            <div className={`${styles.resultRow} ${styles.resultRowKey} ${benefitDelta !== null ? styles.resultRowBenefitSplit : ''}`}>
               <span className={styles.resultLabel}>이득률</span>
-              {benefitDelta !== null && <BenefitDelta d={benefitDelta} />}
-              <BenefitPct v={singleBenefit} />
+              <BenefitCell v={singleBenefit} base={baseBenefit} delta={benefitDelta} />
             </div>
           )}
 
           {/* 가챠: 기대 효율 */}
           {goldPerWon > 0 && isGacha && (
-            <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
+            <div className={`${styles.resultRow} ${styles.resultRowKey} ${benefitDelta !== null ? styles.resultRowBenefitSplit : ''}`}>
               <span className={styles.resultLabel}>기대 효율</span>
-              {benefitDelta !== null && <BenefitDelta d={benefitDelta} />}
-              <BenefitPct v={singleBenefit} />
+              <BenefitCell v={singleBenefit} base={baseBenefit} delta={benefitDelta} />
             </div>
           )}
 
@@ -1067,8 +1109,6 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                 aria-label="블루 크리스탈 100개당 골드"
               />
             </div>
-            {/* 페온 가치 제거 — 환율과 같은 "내 기준" 설정이라 환율 상자 안에 같이 둔다 */}
-            <NoPeonToggle active={noPeon} onChange={setNoPeon} compact />
           </div>
         </div>
       </div>

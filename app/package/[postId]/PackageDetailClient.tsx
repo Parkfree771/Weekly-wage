@@ -54,8 +54,8 @@ import {
 } from '@/lib/package-shared';
 import AdBanner from '@/components/ads/AdBanner';
 import PeonBadge from '@/components/package/PeonBadge';
-import NoPeonToggle from '@/components/package/NoPeonToggle';
 import { useNoPeon } from '@/components/package/useNoPeon';
+import PeonBasisButton from '@/components/package/PeonBasisButton';
 import SideSquareAd from '@/components/package/SideSquareAd';
 import TicketTierPicker from '@/components/package/TicketTierPicker';
 import dynamic from 'next/dynamic';
@@ -144,14 +144,6 @@ function shortenGemChoiceName(name: string): string {
   return rest;
 }
 
-function formatDate(timestamp: any): string {
-  if (!timestamp) return '';
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}.${m}.${d}`;
-}
 
 function getTypeBadgeClass(type: PackageType): string {
   if (type === '3+1') return styles.typeBadge31;
@@ -380,8 +372,10 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
     }
   }, [liveLoading]);
 
-  // 헤더 오른쪽 위 최저가 버튼 — 가챠·일반 상세 두 헤더가 같이 쓴다 (갤러리 버튼과 동일 UI)
+  // 헤더 오른쪽 위 계산 기준 버튼 묶음 — 최저가 + 페온 제거.
+  // 가챠·일반 상세 두 헤더가 같이 쓰고, 생김새는 갤러리 컨트롤 바와 같다.
   const renderLiveBtn = () => (
+    <div className={styles.basisGroup}>
     <button
       type="button"
       className={`${styles.liveBtn} ${styles.detailLiveBtn} ${livePrices ? styles.liveBtnOn : ''} ${liveLoading ? styles.liveSpinning : ''}`}
@@ -404,7 +398,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
         <path d="M3.5 12a8.5 8.5 0 0 0 14.6 5.9L21 15" />
         <path d="M21 20.5V15h-5.5" />
       </svg>
-      최저가
+      <span className={styles.liveLabel}>최저가</span>
       <i className={styles.liveDot} />
       <span className={styles.basisTip} aria-hidden="true">
         <strong className={styles.basisTipHead}>
@@ -413,6 +407,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
         {livePrices ? '누르면 다시 가져옵니다' : '기본은 1시간 거래 평균가'}
       </span>
     </button>
+    <PeonBasisButton active={noPeon} onChange={setNoPeon} className={styles.detailLiveBtn} />
+    </div>
   );
 
   // 참조를 고정해 환율 타이핑 등 부모 리렌더마다 CommentSection(memo)이 다시 그려지지 않게 한다
@@ -1169,14 +1165,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             <div className={styles.detailBadgeRow}>
               <span className={`${styles.typeBadge} ${styles.typeBadgeGacha}`}>가챠</span>
               {saleBadge}
-              {renderLiveBtn()}
             </div>
             <h1 className={styles.detailTitle}>{post.title}</h1>
-            <div className={styles.detailMetaRow}>
-              <span>{formatDate(post.createdAt)}</span>
-              {salePeriodFull && <span>판매 {salePeriodFull}</span>}
-              <span className={styles.viewCountText}>조회 {post.viewCount || 0}</span>
-            </div>
           </div>
 
           <div className={styles.detailSplitRow}>
@@ -1265,10 +1255,6 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                         />
                       </div>
                     </div>
-                    {/* 페온 가치 제거 — 환율처럼 "내 기준" 설정이라 환율 상자 안에 같이 둔다 */}
-                    <div className={styles.resultRatePeonRow}>
-                      <NoPeonToggle active={noPeon} onChange={setNoPeon} />
-                    </div>
                   </div>
 
                   {isOwner && (
@@ -1299,9 +1285,13 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
 
             {/* 오른쪽: 아이템 구성 + 가챠 시뮬 */}
             <section className={`${styles.itemCardsSection} ${styles.detailCard}`}>
-              <h2 className={styles.detailCardHeader}>
-                아이템 구성 ({gachaItems.length}종)
-              </h2>
+              {/* 계산 기준(최저가·페온 제거)은 구성품 값에 바로 걸리는 설정이라 이 제목 줄에 둔다 */}
+              <div className={styles.cardHeaderRow}>
+                <h2 className={styles.detailCardHeader}>
+                  아이템 구성 ({gachaItems.length}종)
+                </h2>
+                {renderLiveBtn()}
+              </div>
 
               {/* 제외 안내 */}
               {gachaPhase === 'idle' && (
@@ -1332,7 +1322,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
               return (
                 <div
                   key={idx}
-                  className={`${styles.gachaItemCard} ${isHighlight ? styles.gachaItemCardHighlight : ''} ${isWon ? styles.gachaItemCardWon : ''} ${isDimmed ? styles.gachaItemCardDimmed : ''} ${isExcluded && gachaPhase === 'idle' ? styles.gachaItemCardExcluded : ''}`}
+                  className={`${styles.gachaItemCard} ${packageItemHasPeon(item) ? (noPeon ? styles.itemCardPeonOff : styles.itemCardPeon) : ''} ${isHighlight ? styles.gachaItemCardHighlight : ''} ${isWon ? styles.gachaItemCardWon : ''} ${isDimmed ? styles.gachaItemCardDimmed : ''} ${isExcluded && gachaPhase === 'idle' ? styles.gachaItemCardExcluded : ''}`}
                   onClick={() => {
                     if (gachaPhase !== 'idle') return;
                     setGachaExcluded((prev) => ({ ...prev, [idx]: !prev[idx] }));
@@ -1363,7 +1353,6 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                     <img loading="lazy" decoding="async" src={item.icon} alt={item.name} className={styles.gachaItemIcon}
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   )}
-                  {packageItemHasPeon(item) && <PeonBadge off={noPeon} />}
                   <div className={styles.gachaItemName}>{item.name}</div>
                   {item.quantity > 1 && (
                     <span className={styles.gachaItemQty}>x{item.quantity}</span>
@@ -1372,7 +1361,14 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                     {item.probability}%
                   </span>
                   <span className={styles.gachaItemGold}>
-                    {isExcluded ? '제외' : `${formatNumber(gold)}G`}
+                    {isExcluded ? '제외' : (
+                      <>
+                        {packageItemHasPeon(item) && <PeonBadge off={noPeon} large inline />}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.itemCardGoldIcon} />
+                        {formatNumber(gold)}
+                      </>
+                    )}
                   </span>
                 </div>
               );
@@ -1543,15 +1539,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
               </span>
             )}
             {saleBadge}
-            {renderLiveBtn()}
           </div>
           <h1 className={styles.detailTitle}>{post.title}</h1>
-          {/* 메타 — 앱 상세와 같은 자리(제목 아래 한 줄). 계산 결과 카드 안에 또 넣지 않는다 */}
-          <div className={styles.detailMetaRow}>
-            <span>{formatDate(post.createdAt)}</span>
-            {salePeriodFull && <span>판매 {salePeriodFull}</span>}
-            <span className={styles.viewCountText}>조회 {post.viewCount || 0}</span>
-          </div>
         </div>
 
         <div className={styles.detailSplitRow}>
@@ -1648,10 +1637,6 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                       />
                     </div>
                   </div>
-                  {/* 페온 가치 제거 — 환율처럼 "내 기준" 설정이라 환율 상자 안에 같이 둔다 */}
-                  <div className={styles.resultRatePeonRow}>
-                    <NoPeonToggle active={noPeon} onChange={setNoPeon} />
-                  </div>
                 </div>
 
                 {isOwner && (
@@ -1682,9 +1667,13 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
 
           {/* 오른쪽: 아이템 카드 */}
           <section className={`${styles.itemCardsSection} ${styles.detailCard}`}>
-            <h2 className={styles.detailCardHeader}>
-              아이템 구성 ({post.items.length}종)
-            </h2>
+            {/* 계산 기준(최저가·페온 제거)은 구성품 값에 바로 걸리는 설정이라 이 제목 줄에 둔다 */}
+            <div className={styles.cardHeaderRow}>
+              <h2 className={styles.detailCardHeader}>
+                아이템 구성 ({post.items.length}종)
+              </h2>
+              {renderLiveBtn()}
+            </div>
             <div className={styles.itemCardsGrid}>
               {getDisplayOrder(post.items).map((idx) => {
                 const item = post.items[idx];
@@ -1714,7 +1703,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 return (
                   <div
                     key={idx}
-                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
+                    className={`${styles.itemCard} ${packageItemHasPeon(item) ? (noPeon ? styles.itemCardPeonOff : styles.itemCardPeon) : ''} ${(hasChoices || hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''} ${!isChecked ? styles.itemCardUnchecked : ''}`}
                     title={isRiftRun ? riftRunTooltip(effectiveItemId) : undefined}
                   >
                     <label className={styles.itemCardCheckLabel} onClick={(e) => e.stopPropagation()}>
@@ -1751,8 +1740,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                           className={styles.itemCardIcon}
                         />
                       )}
-                      {packageItemHasPeon(item) && <PeonBadge off={noPeon} />}
-                      </div>
+                          </div>
                     </div>
                     <div className={styles.itemCardName}>
                       {item.bundleItems && item.bundleItems.length > 0
@@ -1941,7 +1929,10 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                         </div>
                       )}
                       <div className={styles.itemCardSubtotal}>
-                        {formatNumber(subtotal)}G
+                        {packageItemHasPeon(item) && <PeonBadge off={noPeon} large inline />}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.itemCardGoldIcon} />
+                        {formatNumber(subtotal)}
                       </div>
                     </div>
                   </div>
@@ -2054,7 +2045,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 return (
                   <div
                     key={idx}
-                    className={`${styles.itemCard} ${(hasChoices || hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''} ${bonusSelectable && !isBonusChecked ? styles.itemCardUnchecked : ''}`}
+                    className={`${styles.itemCard} ${packageItemHasPeon(item) ? (noPeon ? styles.itemCardPeonOff : styles.itemCardPeon) : ''} ${(hasChoices || hasChoiceBox || hasProbBox || expectedRows) ? styles.itemCardChoice : ''} ${hasChoiceBox ? styles.itemCardFull : ''} ${bonusSelectable && !isBonusChecked ? styles.itemCardUnchecked : ''}`}
                     title={isRiftRun ? riftRunTooltip(effectiveChoiceId) : undefined}
                   >
                     {bonusSelectable && (
@@ -2092,8 +2083,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                           className={styles.itemCardIcon}
                         />
                       )}
-                      {packageItemHasPeon(item) && <PeonBadge off={noPeon} />}
-                      </div>
+                          </div>
                     </div>
                     <div className={styles.itemCardName}>
                       {item.bundleItems && item.bundleItems.length > 0
@@ -2276,7 +2266,10 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                         </div>
                       )}
                       <div className={styles.itemCardSubtotal}>
-                        {formatNumber(gold)}G
+                        {packageItemHasPeon(item) && <PeonBadge off={noPeon} large inline />}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.itemCardGoldIcon} />
+                        {formatNumber(gold)}
                       </div>
                     </div>
                   </div>

@@ -1203,6 +1203,18 @@ export function getRelicCoreSelectPrice(prices: Record<string, number>): number 
   return Math.round(getGraceUnitPrice(prices) * 100) + 50000;
 }
 
+/**
+ * 티켓 기댓값용 환율(100블크당 골드).
+ * 넘어온 값 → 패키지 환율(goldPerWon)에서 역산 → 마지막 폴백(8500) 순.
+ * goldPerWon 이 있는데 8500 으로 떨어지면 티켓값이 절반 밑으로 깎여, 같은 층인데
+ * 갤러리·상세(둘 다 goldPerWon × 2750 사용)와 숫자가 어긋난다.
+ */
+function ticketBcRate(officialGoldRate?: number, goldPerWon?: number): number {
+  if (officialGoldRate && officialGoldRate > 0) return officialGoldRate;
+  if (goldPerWon && goldPerWon > 0) return goldPerWon * 2750;
+  return 8500;
+}
+
 export function getUnitPrice(
   added: AddedItem,
   template: TemplateItem,
@@ -1223,7 +1235,11 @@ export function getUnitPrice(
     case 'gold':
       return added.goldAmount || 0;
     case 'fixed': {
-      const bcRate = officialGoldRate || 8500;
+      // 지옥/나락/큐브 티켓 기댓값에 쓰는 환율은 반드시 "이 패키지의 환율"이다 —
+      // 지옥 보상 페이지의 환율 입력(그 페이지 로컬 state)과는 아무 관계가 없다.
+      // officialGoldRate 는 폼이 넘기는 같은 값(goldPerWon × 2750)이고,
+      // 안 넘어오면 goldPerWon 에서 직접 만든다. 8500 은 환율을 아예 모를 때의 마지막 폴백.
+      const bcRate = ticketBcRate(officialGoldRate, goldPerWon);
       const ticket = calcTicketUnitByItemId('fixed_' + template.id, prices, bcRate, undefined, noPeon);
       if (ticket !== null) return ticket;
       if (template.id === 'relic-core')
@@ -1246,8 +1262,8 @@ export function getUnitPrice(
     case 'choiceBox':
       return getChoiceBoxGold(added.choiceBoxCandidates, added.choiceBoxSelectedIds, prices, peonGold);
     case 'probBox':
-      // 티켓류 후보의 동적 단가용 bcRate — fixed 케이스와 같은 기본값 사용
-      return getProbBoxExpectedGold(added.probBoxCandidates, prices, officialGoldRate || 8500, undefined, goldPerWon, noPeon);
+      // 티켓류 후보의 동적 단가용 bcRate — fixed 케이스와 같은 규칙(이 패키지의 환율)
+      return getProbBoxExpectedGold(added.probBoxCandidates, prices, ticketBcRate(officialGoldRate, goldPerWon), undefined, goldPerWon, noPeon);
     default:
       return 0;
   }

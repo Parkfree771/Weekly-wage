@@ -5,10 +5,12 @@
    transition/transform·희미한 틴트 배경은 쓰지 않는다.
    ======================================== */
 
+/* 하드 엣지 그림자가 오른쪽·아래로 최대 9px 밀려 나온다 — 간격은 그만큼 벌려야
+   아래 상자가 위 상자의 그림자를 밟지 않는다 */
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1.1rem;
 }
 
 /* ─── 설정 패널 ───
@@ -16,40 +18,71 @@
    배경과도, 서로도 구분이 되지 않았다. 전부 이 패널 하나에 담고,
    안쪽 컨트롤은 카드가 아니라 한 단계 들어간 트랙(--bg-secondary)으로 처리한다.
    화면에 남는 상자는 이 패널과 아래 보상 목록, 둘뿐이다. */
+/* 테두리·입체감은 사이트 공통 하드 엣지 오프셋 그림자(globals .shadow-hard / .item-select-btn).
+   흐린 블러 대신 파란색 판이 계단처럼 밀려 나오는 방식이라 깊이가 또렷하게 잡힌다.
+   바깥 큰 상자일수록 단을 깊게 — 패널·보상 카드는 3단, 안쪽 컨트롤 묶음은 2단. */
 .panel {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
-  padding: 0.7rem;
+  gap: 0.85rem;
+  padding: 0.75rem 0.9rem 0.9rem 0.75rem;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--color-primary);
   border-radius: 14px;
-  box-shadow: var(--shadow-sm);
+  box-shadow:
+    3px 3px 0 0 rgba(59, 80, 181, 0.28),
+    6px 6px 0 0 rgba(59, 80, 181, 0.16),
+    9px 9px 0 0 rgba(59, 80, 181, 0.07);
+}
+
+[data-theme="dark"] .panel {
+  box-shadow:
+    3px 3px 0 0 rgba(107, 126, 214, 0.3),
+    6px 6px 0 0 rgba(107, 126, 214, 0.17),
+    9px 9px 0 0 rgba(107, 126, 214, 0.08);
 }
 
 /* ─── 컨트롤 — 레벨/콘텐츠 한 줄, 단계 한 줄. 전부 같은 트랙 패턴 ─── */
 
 .controlsRow {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.85rem;
 }
 
-/* 트랙 — 회색 판 대신 얇은 테두리 하나. 눌린 칸만 포인트색으로 차서 "지금 뭐가 선택됐는지"만 남는다 */
+/* ─── 컨트롤 묶음(field) ───
+   레벨·콘텐츠·층·환율이 전부 같은 1px 테두리였을 땐 넷이 한 덩어리로 붙어 보였다.
+   패널과 같은 하드 엣지 그림자를 2단으로 — 바깥 패널(3단)보다 얕아 위계가 유지된다. */
+.field {
+  position: relative;
+  padding: 0.5rem;
+  background: var(--card-bg);
+  border: 1.5px solid var(--color-primary);
+  border-radius: 12px;
+  box-shadow:
+    2px 2px 0 0 rgba(59, 80, 181, 0.24),
+    4px 4px 0 0 rgba(59, 80, 181, 0.12);
+}
+
+[data-theme="dark"] .field {
+  box-shadow:
+    2px 2px 0 0 rgba(107, 126, 214, 0.26),
+    4px 4px 0 0 rgba(107, 126, 214, 0.13);
+}
+
+.fieldLevel {
+  flex: 1.3;
+  min-width: 0;
+}
+
+.fieldMode {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 트랙 — 묶음이 테두리를 갖고 있으니 여기선 칸만 늘어놓는다. 눌린 칸만 포인트색으로 찬다 */
 .segTrack {
   display: flex;
   gap: 4px;
-  padding: 3px;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-}
-
-.segTrackLevel {
-  flex: 1.3;
-}
-
-.segTrackMode {
-  flex: 1;
 }
 
 /* 단계 트랙 — 칸이 많아 좁은 화면에선 가로 스크롤 */
@@ -110,29 +143,30 @@
 /* 패널 안에서 컨트롤 줄과 결과 줄을 가르는 실선 하나 — 상자를 하나 더 만들지 않는다 */
 .infoRow {
   display: flex;
-  gap: 0.7rem;
+  gap: 0.85rem;
   align-items: stretch;
   margin-top: 0.15rem;
   padding-top: 0.7rem;
   border-top: 1px solid var(--border-color);
 }
 
+/* 라벨+숫자는 이 칸 세로 한가운데, 제외 토글은 오른쪽 아래 구석(흐름 밖)에 박아 둔다.
+   토글을 같은 흐름에 두면 숫자 묶음을 밀어 가운데가 어긋났다 */
 .heroCard {
+  position: relative;
   flex: 1.5;
   min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.3rem;
-  padding: 0 0.25rem;
+  padding: 0.1rem 0.25rem;
 }
 
-/* 라벨(왼쪽) + 어빌리티스톤 제외(오른쪽) 한 줄 */
-.heroTop {
+.heroMain {
+  min-width: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .heroLabel {
@@ -144,114 +178,183 @@
   text-overflow: ellipsis;
 }
 
+/* 페이지에서 제일 큰 숫자 — 이게 답이다.
+   사이트 공통 하드 엣지 오프셋(.shadow-hard)과 같은 문법을 글자에 — 금색 판이 계단으로 밀려
+   숫자가 판에서 떠오른다. 블러 그림자가 아니라 또렷한 단이라 큰 글자에서도 안 뭉갠다. */
 .heroValue {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 1.7rem;
-  font-weight: 900;
-  color: #f59e0b;
-  line-height: 1.2;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.heroBreak {
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.heroBreak b {
+  gap: 0.5rem;
+  font-size: 2.4rem;
   font-weight: 800;
-  color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
+  color: var(--gold-text);
+  line-height: 1.15;
+  white-space: nowrap;
+  text-shadow:
+    0.035em 0.035em 0 rgba(143, 106, 0, 0.32),
+    0.07em 0.07em 0 rgba(143, 106, 0, 0.16);
 }
 
-/* 제외 토글 줄 — 숫자 아래, 그림 달린 알약 두 개(어빌 제외 · 페온 제거) */
+[data-theme="dark"] .heroValue {
+  text-shadow:
+    0.035em 0.035em 0 rgba(0, 0, 0, 0.5),
+    0.07em 0.07em 0 rgba(0, 0, 0, 0.25);
+}
+
+/* 제외 토글 — 오른쪽 아래 구석. 하드 엣지 그림자가 오른쪽·아래로 4px 나가므로 그만큼 띄운다 */
 .heroOpts {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.25rem;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.35rem;
+  gap: 0.6rem;
 }
 
+/* 아이콘 한 칸짜리 네모 버튼 — 글자 없이 그림만. 뜻은 올려놓으면 뜨는 말풍선에 있다.
+   --border-color 는 거의 안 보이는 연한 파랑이라 버튼이 배경에 묻었다.
+   포인트색 테두리 + 사이트 공통 하드 엣지 그림자로 "여기 누를 것이 있다"를 세운다. */
 .exToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.3rem 0.85rem 0.3rem 0.4rem;
-  font-size: 0.86rem;
-  font-weight: 800;
-  color: var(--text-secondary);
-  background: transparent;
-  border: 1.5px solid var(--border-color);
-  border-radius: 999px;
-  cursor: pointer;
-  white-space: nowrap;
-  line-height: 1;
-}
-
-.exToggle:hover {
-  border-color: var(--color-primary);
-}
-
-.exToggleIconWrap {
   position: relative;
-  width: 28px;
-  height: 28px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: var(--card-bg);
+  border: 1.5px solid var(--color-primary);
+  border-radius: 10px;
+  cursor: pointer;
+  line-height: 1;
+  box-shadow:
+    2px 2px 0 0 rgba(59, 80, 181, 0.3),
+    4px 4px 0 0 rgba(59, 80, 181, 0.15);
 }
 
-.exToggleIcon {
-  width: 28px !important;
-  height: 28px !important;
-  object-fit: contain;
+[data-theme="dark"] .exToggle {
+  box-shadow:
+    2px 2px 0 0 rgba(107, 126, 214, 0.32),
+    4px 4px 0 0 rgba(107, 126, 214, 0.16);
+}
+
+/* 누르는 중 — 단을 한 칸 줄여 버튼이 눌려 들어간 것처럼 */
+.exToggle:active {
+  box-shadow: 1px 1px 0 0 rgba(59, 80, 181, 0.22);
+}
+
+/* 그림 칸 — 버튼에 직접 overflow 를 걸면 사선(::after)과 말풍선까지 잘린다.
+   자르는 건 이 칸이 맡는다. 버튼 안쪽 높이(42 - 테두리 3 = 39px) 안에 들어가야 한다. */
+.exToggleIconWrap {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
   border-radius: 6px;
 }
 
-/* 켜짐 = 빼는 중. 알약이 포인트색으로 차고 그림엔 사선이 그어진다 */
+.exToggleIcon {
+  width: 34px !important;
+  height: 34px !important;
+  flex-shrink: 0;
+  /* globals.css 의 `img { max-width: 100% }` 가 칸 크기로 그림을 잘라낸다 */
+  max-width: none !important;
+  object-fit: contain;
+}
+
+/* 페온 — pheon.webp 는 256x244 중 코인이 56%(144x137)뿐이고 나머지는 여백이다.
+   그대로 키우면 여백만 커진다. 1.78배(1/0.56)로 키운 뒤 위 칸이 여백을 잘라내
+   코인이 칸을 꽉 채우게 한다. 어빌리티스톤 그림은 칸을 채우는 타일이라 보정이 필요 없다. */
+.exToggleIconBig {
+  width: 61px !important;
+  height: 58px !important;
+}
+
+/* 켜짐 = 빼는 중. 회색으로 죽이고 단도 한 칸으로 낮춰 "눌려서 꺼진" 상태로 보인다.
+   (포함 중 = 파란 테두리에 2단으로 떠 있음 ↔ 제외 중 = 회색에 1단으로 내려앉음) */
 .exToggleActive {
-  color: #fff;
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--bg-secondary);
+  border-color: #94a3b8;
+  box-shadow: 2px 2px 0 0 rgba(100, 116, 139, 0.2);
+}
+
+[data-theme="dark"] .exToggleActive {
+  border-color: #64748b;
+  box-shadow: 2px 2px 0 0 rgba(148, 163, 184, 0.18);
+}
+
+.exToggleActive:active {
+  box-shadow: 1px 1px 0 0 rgba(100, 116, 139, 0.16);
 }
 
 .exToggleActive .exToggleIcon {
-  opacity: 0.55;
+  filter: grayscale(1);
+  opacity: 0.4;
 }
 
-.exToggleActive .exToggleIconWrap::after {
+.exToggleActive::after {
   content: '';
   position: absolute;
-  left: 2px;
-  right: 2px;
+  z-index: 1;
+  left: 5px;
+  right: 5px;
   top: 50%;
-  height: 3px;
-  background: #fff;
+  height: 2.5px;
+  background: var(--text-muted);
   border-radius: 2px;
   transform: rotate(-45deg);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+/* 올려놓으면 뜨는 말풍선 — 무슨 버튼인지(굵은 줄) + 누르면 어떻게 되는지(아랫줄) */
+.exToggleTip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 7px);
+  right: -2px;
+  z-index: 10;
+  padding: 0.3rem 0.55rem;
+  border-radius: 8px;
+  background: var(--text-primary);
+  color: var(--card-bg);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-align: right;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
+}
+
+.exToggle:hover .exToggleTip,
+.exToggle:focus-visible .exToggleTip {
+  display: block;
+}
+
+.exToggleTip b {
+  display: block;
+  font-weight: 800;
+}
+
+.exToggleTip span {
+  opacity: 0.75;
 }
 
 /* ─── 환율 — /package 갤러리 카드 하단(.bottomRate)과 같은 두 줄 입력, 같은 크기 ─── */
 
+/* 환율도 같은 묶음(.field) — 테두리·라벨은 .field 가 갖는다 */
 .exchangeCard {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
 }
 
-/* 입력이 들어 있는 자리 — 위 컨트롤 트랙과 같은 얇은 테두리 상자 (회색 판은 안 쓴다) */
 .bottomRate {
   flex: 1;
   display: flex;
@@ -259,10 +362,6 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 0.55rem 0.75rem;
 }
 
 .rateRow {
@@ -369,79 +468,341 @@
 
 /* ─── 보상 카드 목록 ─── */
 
-/* 앱 화면과 같은 형태 — 카드를 낱개로 띄우지 않고 하나의 목록 상자 안에 줄로 잇는다.
-   테두리·모서리·그림자는 이 상자만 갖고, 각 줄은 위쪽 실선으로만 구분한다. */
+/* 순위 목록 — 한 줄에 3개씩 타일로 깐다. 가로 줄(등수·이름 | 그림 | 골드)로 눕히면
+   오른쪽이 텅 비었다 — 타일 하나에 위에서 아래로 등수·이름 / 그림 / 골드를 쌓으면
+   빈 공간 없이 화면에 9개까지 들어온다 */
 .rewardList {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+/* flex 세로인 이유: 타일(rewardCardMain)이 flex:1 로 늘어나 옆 타일과 키가 맞고,
+   펼친 상세(.detail)는 그 아래 제 높이대로 흐른다.
+   (rewardCardMain 에 height:100% 를 주는 방식은 그리드가 준 고정 높이를 타일이 다 먹어서
+   상세가 overflow:hidden 에 잘려 안 보였다) */
+.rewardCard {
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--color-primary);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow:
+    3px 3px 0 0 rgba(59, 80, 181, 0.26),
+    6px 6px 0 0 rgba(59, 80, 181, 0.13);
 }
 
-.rewardCard {
-  position: relative;
+[data-theme="dark"] .rewardCard {
+  box-shadow:
+    3px 3px 0 0 rgba(107, 126, 214, 0.28),
+    6px 6px 0 0 rgba(107, 126, 214, 0.14);
 }
 
-.rewardCard + .rewardCard {
-  border-top: 1px solid var(--border-color);
-}
-
-.rewardCardExpanded {
-  background: rgba(245, 158, 11, 0.05);
+/* 펼친 카드 — 자리는 그대로 두고 테두리만 포인트색으로 올린다.
+   grid-column 으로 카드를 한 줄 폭까지 늘렸더니 뒤 카드가 전부 재배치돼 화면이 통째로 움직였다.
+   상세는 아래 .detail 이 그 줄 끝에 따로 끼어든다. */
+.rewardCardExpanded,
+.rewardCardExpanded.rewardCardTop1,
+.rewardCardExpanded.rewardCardTop2,
+.rewardCardExpanded.rewardCardTop3,
+.rewardCardExpanded.rewardCardTop4,
+.rewardCardExpanded.rewardCardZero {
+  border-color: var(--color-primary);
+  box-shadow:
+    inset 0 0 0 1px var(--color-primary),
+    3px 3px 0 0 rgba(59, 80, 181, 0.3),
+    6px 6px 0 0 rgba(59, 80, 181, 0.15);
 }
 
 .rewardCardDisabled {
   opacity: 0.35;
 }
 
-/* 줄 배열 — 머리줄(등수 · 이름 · 골드 · 화살표) 아래에 그림 한 줄. 그림이 한 장이든 세 장이든 같은 틀.
-   (그림 옆에 이름을 두던 배열은 여러 장짜리 줄에서 이름이 밀려 잘렸고, 줄마다 배열이 달라 지저분했다) */
+/* 0골드로 친 카드 — 어빌 제외든 페온 제거든 결과는 같으니 보이는 것도 같아야 한다.
+   메달색 대신 회색 테두리·회색 그림자로 내려앉고 그림·이름도 흑백으로 죽인다.
+   (자리는 그대로 둔다 — 뜨는 확률은 안 바뀌므로 순위에서 빼면 안 된다) */
+.rewardCardZero,
+.rewardCardZero.rewardCardTop1,
+.rewardCardZero.rewardCardTop2,
+.rewardCardZero.rewardCardTop3,
+.rewardCardZero.rewardCardTop4 {
+  border-color: var(--border-color);
+  box-shadow:
+    3px 3px 0 0 rgba(100, 116, 139, 0.16),
+    6px 6px 0 0 rgba(100, 116, 139, 0.08);
+}
+
+/* 메달 띠도 회색으로 — 제외된 카드가 1위 금색 띠를 달고 있으면 안 읽힌다 */
+.rewardCardZero::before {
+  background: var(--border-color) !important;
+}
+
+.rewardCardZero .rewardVisual,
+.rewardCardZero .rank {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+.rewardCardZero .rewardName {
+  color: var(--text-muted);
+}
+
+/* 타일 배열 — 등수·이름 / 그림 / 골드를 세로로 쌓고 전부 가운데.
+   골드는 margin-top: auto 로 바닥에 붙여 옆 타일들과 숫자 줄이 맞는다 */
 .rewardCardMain {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  grid-template-areas:
-    "info gold caret"
-    "visual visual visual";
-  row-gap: 0.5rem;
-  column-gap: 0.9rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 0.8rem 1.1rem 0.9rem;
+  gap: 0.55rem;
+  padding: 0.75rem 0.6rem 0.8rem;
+  text-align: center;
   cursor: pointer;
 }
 
-.rewardCardMain .rewardInfo { grid-area: info; }
-.rewardCardMain .rewardGold { grid-area: gold; }
-.rewardCardMain .expandIcon { grid-area: caret; }
-.rewardCardMain .rewardVisual { grid-area: visual; }
-.rewardCardMain > .rewardImgWrap { grid-area: visual; }
+.rewardCardMain .rewardGold {
+  margin-top: auto;
+}
 
-/* 순위 — 골드 가치 내림차순 등수. 1·2·3위만 색을 주고 나머지는 흐린 회색.
-   숫자 전용 서체(--font-num, Outfit)로 자릿수 폭을 맞춰 세로줄이 흔들리지 않게 한다. */
+/* 펼침 화살표 — 타일 오른쪽 위 구석 */
+.rewardCardMain .expandIcon {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.7rem;
+}
+
+/* 순위 — 골드 가치 내림차순 등수. 1~4위는 채운 메달(.rankTop), 5위 아래는 테두리만 있는 빈 칸.
+   칸 규격(1.7em 정사각)은 둘이 똑같다 — 다르면 타일마다 머리줄 높이가 달라져 그림 줄이 어긋난다.
+   숫자 전용 서체(--font-num, Outfit)로 자릿수 폭을 맞춰 두 자리(10·11)도 칸을 안 밀어낸다. */
 .rank {
-  min-width: 1.1em;
-  flex-shrink: 0;
-  text-align: left;
+  position: absolute;
+  top: 0.55rem;
+  left: 0.6rem;
+  z-index: 2;
+  min-width: 1.75em;
+  height: 1.75em;
+  padding: 0 0.25em;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
   font-family: var(--font-num), var(--font-mono), monospace;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
 }
 
-.rank1 { color: #f59e0b; }
-.rank2 { color: #94a3b8; }
-.rank3 { color: #b45309; }
+/* 1~4위 — 금/은/동/철로 채운 메달 칸. 칸 규격은 위 .rank 와 같고 채움·테두리만 바뀐다 */
+.rankTop {
+  border-color: transparent;
+  font-weight: 900;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.rank1 { background: linear-gradient(135deg, #f5ad1e, #d97706); }
+.rank2 { background: linear-gradient(135deg, #8798ae, #5b6b80); }
+.rank3 { background: linear-gradient(135deg, #bd8750, #8f5f2f); }
+.rank4 { background: linear-gradient(135deg, #93a3b8, #6b7b91); }
+
+/* 카드는 테두리로만 등수를 입는다 — 위쪽 띠 같은 장치는 빼고 1~4위가 똑같은 문법을 쓴다.
+   테두리 폭을 늘리면 안쪽 내용이 밀리므로 안쪽 그림자 1px 을 겹쳐 2px 두께로 보이게 한다.
+   색은 금 → 은 → 동 → 철 순으로 "진하기"가 단조 감소해야 한다. 은(#94a3b8)이 동(#b45309)보다
+   연해서 2등이 3등보다 못해 보였다 — 은을 더 짙게(#6b7c93), 동을 덜 튀게(#a8743f) 잡았다. */
+.rewardCardTop1 {
+  border-color: #e0930a;
+  box-shadow:
+    inset 0 0 0 1px #e0930a,
+    3px 3px 0 0 rgba(224, 147, 10, 0.34),
+    6px 6px 0 0 rgba(224, 147, 10, 0.16);
+}
+
+.rewardCardTop2 {
+  border-color: #6b7c93;
+  box-shadow:
+    inset 0 0 0 1px #6b7c93,
+    3px 3px 0 0 rgba(107, 124, 147, 0.32),
+    6px 6px 0 0 rgba(107, 124, 147, 0.15);
+}
+
+.rewardCardTop3 {
+  border-color: #a8743f;
+  box-shadow:
+    inset 0 0 0 1px #a8743f,
+    3px 3px 0 0 rgba(168, 116, 63, 0.28),
+    6px 6px 0 0 rgba(168, 116, 63, 0.13);
+}
+
+.rewardCardTop4 {
+  border-color: #93a3b8;
+  box-shadow:
+    3px 3px 0 0 rgba(147, 163, 184, 0.24),
+    6px 6px 0 0 rgba(147, 163, 184, 0.11);
+}
+
+/* 메달 띠도 회색으로 — 제외된 카드가 1위 금색 띠를 달고 있으면 안 읽힌다 */
+.rewardCardZero::before {
+  background: var(--border-color) !important;
+}
+
+.rewardCardZero .rewardVisual,
+.rewardCardZero .rank {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+.rewardCardZero .rewardName {
+  color: var(--text-muted);
+}
+
+/* 타일 배열 — 등수·이름 / 그림 / 골드를 세로로 쌓고 전부 가운데.
+   골드는 margin-top: auto 로 바닥에 붙여 옆 타일들과 숫자 줄이 맞는다 */
+.rewardCardMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.75rem 0.6rem 0.8rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.rewardCardMain .rewardGold {
+  margin-top: auto;
+}
+
+/* 펼침 화살표 — 타일 오른쪽 위 구석 */
+.rewardCardMain .expandIcon {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.7rem;
+}
+
+/* 순위 — 골드 가치 내림차순 등수. 1~4위는 채운 메달(.rankTop), 5위 아래는 테두리만 있는 빈 칸.
+   칸 규격(1.7em 정사각)은 둘이 똑같다 — 다르면 타일마다 머리줄 높이가 달라져 그림 줄이 어긋난다.
+   숫자 전용 서체(--font-num, Outfit)로 자릿수 폭을 맞춰 두 자리(10·11)도 칸을 안 밀어낸다. */
+.rank {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.6rem;
+  z-index: 2;
+  min-width: 1.75em;
+  height: 1.75em;
+  padding: 0 0.25em;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  font-family: var(--font-num), var(--font-mono), monospace;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* 1~4위 — 금/은/동/철로 채운 메달 칸. 칸 규격은 위 .rank 와 같고 채움·테두리만 바뀐다 */
+.rankTop {
+  border-color: transparent;
+  font-weight: 900;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.rank1 { background: linear-gradient(135deg, #f5ad1e, #d97706); }
+.rank2 { background: linear-gradient(135deg, #8798ae, #5b6b80); }
+.rank3 { background: linear-gradient(135deg, #bd8750, #8f5f2f); }
+.rank4 { background: linear-gradient(135deg, #93a3b8, #6b7b91); }
+
+/* 카드 자체도 등수를 입는다 — 위쪽 메달색 띠 + 메달색 테두리(안쪽 그림자로 겹쳐 2px 두께,
+   테두리 폭을 늘리면 안쪽 내용이 밀려서 이렇게 그린다). 4위는 테두리색만 */
+.rewardCardTop1,
+.rewardCardTop2,
+.rewardCardTop3 {
+  padding-top: 4px;
+}
+
+.rewardCardTop1::before,
+.rewardCardTop2::before,
+.rewardCardTop3::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  z-index: 1;
+}
+
+.rewardCardTop1 {
+  border-color: #f59e0b;
+  box-shadow:
+    inset 0 0 0 1px #f59e0b,
+    3px 3px 0 0 rgba(245, 158, 11, 0.38),
+    6px 6px 0 0 rgba(245, 158, 11, 0.18);
+}
+.rewardCardTop1::before { background: linear-gradient(90deg, #fbbf24, #d97706); }
+
+.rewardCardTop2 {
+  border-color: #94a3b8;
+  box-shadow:
+    inset 0 0 0 1px #94a3b8,
+    3px 3px 0 0 rgba(148, 163, 184, 0.38),
+    6px 6px 0 0 rgba(148, 163, 184, 0.18);
+}
+.rewardCardTop2::before { background: linear-gradient(90deg, #cbd5e1, #64748b); }
+
+.rewardCardTop3 {
+  border-color: #b45309;
+  box-shadow:
+    inset 0 0 0 1px #b45309,
+    3px 3px 0 0 rgba(180, 83, 9, 0.38),
+    6px 6px 0 0 rgba(180, 83, 9, 0.18);
+}
+.rewardCardTop3::before { background: linear-gradient(90deg, #c2703d, #92400e); }
+
+.rewardCardTop4 {
+  border-color: #64748b;
+}
 
 /* 이미지 */
-/* 보상 그림 묶음 — 한 장이면 칸 하나, 선택/동시 지급이면 같은 크기 칸을 or · + 로 이어 붙인다 */
+/* 보상 그림 묶음 — 한 장이면 칸 하나, 선택/동시 지급이면 같은 크기 칸을 or · + 로 이어 붙인다.
+   타일 폭을 넘으면 기호 뒤에서 줄을 바꾼다 */
 .rewardVisual {
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  max-width: 100%;
   flex-shrink: 0;
+}
+
+/* 여러 장짜리(택1·동시 지급)는 칸을 한 단계 줄인다 — 타일 하나 폭에 세 칸까지 들어가게 */
+.rewardVisualMulti .rewardImgWrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+}
+
+.rewardVisualMulti .rewardImg {
+  width: 47px !important;
+  height: 47px !important;
+}
+
+.rewardVisualMulti .rewardImgFilled .rewardImg {
+  border-radius: 10px;
 }
 
 .rewardVisualPart {
@@ -480,8 +841,10 @@
   background: #22c55e;
 }
 
-/* 칸 — 배경 없는 그림은 칸을 거의 채우게 크게 그린다 (예전 48/60 은 작아서 뭔지 잘 안 읽혔다) */
+/* 칸 — 배경 없는 그림은 칸을 거의 채우게 크게 그린다 (예전 48/60 은 작아서 뭔지 잘 안 읽혔다)
+   relative 는 페온 배지(absolute 스티커)의 기준 */
 .rewardImgWrap {
+  position: relative;
   width: 72px;
   height: 72px;
   border-radius: 12px;
@@ -512,49 +875,17 @@
   object-fit: fill;
 }
 
-/* 합산 내역 줄의 작은 그림 — 같은 묶음 규칙을 20px 로 */
-.sumVisual {
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.sumImgWrap {
-  width: 20px;
-  height: 20px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.sumImg {
-  width: 20px !important;
-  height: 20px !important;
-  object-fit: contain;
-}
-
-.sumImgWrap.rewardImgFilled .sumImg {
-  object-fit: fill;
-}
-
-.sumOpGlyph {
-  margin: 0 0.15rem;
-  font-size: 0.62rem;
-  font-weight: 800;
-  line-height: 1;
-  padding: 0.05rem 0.25rem;
-  border-radius: 999px;
-}
-
 /* 정보 — 이름·수량만 */
-/* 머리줄 왼쪽 — 등수 + 이름을 한 줄에 붙인다 */
+/* 타일 머리줄 — 이름만 가운데. 좌우 패딩은 구석의 등수 배지·화살표와 안 겹치게 하는 몫이고,
+   좌우를 같은 값으로 둬야 이름이 타일 한가운데에 선다 */
 .rewardInfo {
   min-width: 0;
+  max-width: 100%;
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.75rem;
+  box-sizing: border-box;
 }
 
 .rewardName {
@@ -566,17 +897,17 @@
   text-overflow: ellipsis;
 }
 
-/* 골드 가치 */
+/* 골드 가치 — 카드의 답. 패키지 효율과 같은 숫자 서체(Outfit)·같은 금색(--gold-text).
+   #f59e0b 생짜는 흰 바탕에서 대비가 안 나와 --gold-text(밝은 판 4.9:1)로 바꿨다 */
 .rewardGold {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #f59e0b;
+  gap: 0.45rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--gold-text);
   white-space: nowrap;
   flex-shrink: 0;
-  font-variant-numeric: tabular-nums;
 }
 
 /* 0골드로 친 줄(어빌 제외·페온 제거) — 순서는 그대로, 골드만 흐리게 0 */
@@ -602,39 +933,263 @@
   flex-shrink: 0;
 }
 
-/* ─── 상세 패널 ─── */
+/* ─── 상세 패널 — "상자 보상(고유)"과 "층 기본 보상(확정)"을 상자 두 개로 완전히 가른다 ─── */
 
+/* 펼친 카드는 한 줄 전체라 두 섹션(상자 보상 | 층 기본 보상)을 나란히 놓고
+   합계는 아래 전체 폭. 자식이 하나뿐이면(나락·0골드 안내) 혼자 전체 폭을 쓴다 */
 .detail {
-  padding: 0.75rem 1.1rem;
-  border-top: 1px solid var(--border-color);
+  /* 목록 그리드의 한 칸이 아니라 줄 전체를 차지하는 띠 — 펼친 카드가 속한 줄 바로 아래에 열린다 */
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  padding: 0.8rem;
   background: var(--card-bg);
+  border: 1.5px solid var(--color-primary);
+  border-radius: 12px;
+  box-shadow:
+    3px 3px 0 0 rgba(59, 80, 181, 0.26),
+    6px 6px 0 0 rgba(59, 80, 181, 0.13);
 }
 
-.detailRow {
+[data-theme="dark"] .detail {
+  box-shadow:
+    3px 3px 0 0 rgba(107, 126, 214, 0.28),
+    6px 6px 0 0 rgba(107, 126, 214, 0.14);
+}
+
+.detail > .dTotal,
+.detail > :only-child {
+  grid-column: 1 / -1;
+}
+
+/* 섹션 상자 — 상세 안에서 두 몫을 가르는 유일한 테두리 */
+.dSection {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 0.35rem 0;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
 }
 
-.detailRow:not(:last-child) {
-  border-bottom: 1px solid var(--border-color);
+/* 섹션 머리줄 — 태그 · (가격 기준) · 오른쪽 끝 골드 */
+.dSectionHead {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
-.detailLabel {
-  font-size: 0.78rem;
+.dSectionSub {
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dSectionGold {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 섹션 이름 태그 — 상자 보상(포인트색) / 층 기본 보상(초록) */
+.dTag {
+  flex-shrink: 0;
+  padding: 0.18rem 0.5rem;
+  border-radius: 6px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.dTagBase {
+  background: #16a34a;
+}
+
+[data-theme="dark"] .dTagBase {
+  background: #22c55e;
+}
+
+/* 상자 고유 보상 — 큰 그림 + 이름·수량 */
+.dBoxRow {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.dVisual {
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
 }
 
-.detailValue {
-  font-size: 0.78rem;
-  font-weight: 500;
+.dImgWrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.dImg {
+  width: 47px !important;
+  height: 47px !important;
+  object-fit: contain;
+}
+
+.rewardImgFilled .dImg {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 10px;
+  object-fit: fill;
+}
+
+.dBoxInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.dBoxName {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dBoxQty {
+  font-size: 0.95rem;
+  font-weight: 800;
   color: var(--text-secondary);
-  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 산출 근거 한 줄 — 궁금한 사람만 읽는 작은 글 */
+.dCalcNote {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.45;
   word-break: break-word;
+}
+
+/* 층 기본 보상 — 아이템 타일 4칸. 그림이 곧 내용이라 글은 이름 한 줄뿐 */
+.dBaseGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.45rem;
+}
+
+.dBaseTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  text-align: center;
+  min-width: 0;
+}
+
+.dBaseImg {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.dBaseName {
+  max-width: 100%;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dBaseQty {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.dBaseGold {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gold-text);
+}
+
+/* 합계 줄 — 섹션 두 개 아래 맨 끝 */
+.dTotal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0 0.2rem;
+}
+
+.dTotalName {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.dTotalVal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gold-text);
+}
+
+/* 0골드로 친 줄(어빌 제외·페온 제거) — 안내 한 줄만 */
+.zeroNote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.zeroGold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.zeroGold img {
+  filter: grayscale(1);
+  opacity: 0.5;
 }
 
 /* 가격 유형 뱃지 — 매트 단색 + 흰 글씨 (상세 안에서만 보여준다) */
@@ -679,112 +1234,18 @@
   background: #f59e0b;
 }
 
-/* ─── 펼쳤을 때 합산 내역 (기본 보상 + 상자 고유 = 합계) ─── */
-
-.sumBox {
-  margin-top: 0.6rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sumLine {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  font-size: 0.8rem;
-}
-
-.sumName {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  min-width: 0;
-}
-
-.sumName img {
-  flex-shrink: 0;
-}
-
-/* 덧셈 기호 자리 — 첫 줄은 비어 있어도 이름 시작점이 어긋나지 않게 폭을 고정한다 */
-.sumOp {
-  display: inline-block;
-  width: 0.8em;
-  flex-shrink: 0;
-  text-align: center;
-  font-weight: 900;
-  color: var(--color-primary);
-}
-
-.sumLabel {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* 고유 보상 표시 — 층 기본 보상과 구분 */
-.sumTag {
-  flex-shrink: 0;
-  padding: 0.08rem 0.35rem;
-  border-radius: 5px;
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 0.6rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
-
-/* 기본 보상 줄은 상자 몫보다 한 단계 죽인다 */
-.sumLineBase .sumName {
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.sumCalc {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  opacity: 0.8;
+/* ─── 숫자 서체 — 패키지 효율(.resultValueGold)과 같은 Outfit 스택 ───
+   본문 JetBrains Mono 는 코드용이라 크게 세우는 골드 숫자가 뻣뻣하게 그려졌다 */
+.heroValue,
+.rewardGold,
+.dSectionGold,
+.dTotalVal,
+.dBaseQty,
+.dBaseGold,
+.zeroGold {
+  font-family: var(--font-num), var(--font-mono), 'Noto Sans KR', system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.sumVal {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.sumLineBase .sumVal {
-  font-weight: 700;
-  color: var(--text-secondary);
-}
-
-.sumLineTotal {
-  margin-top: 4px;
-  padding-top: 5px;
-  border-top: 2px solid var(--color-primary);
-  font-size: 0.95rem;
-}
-
-.sumLineTotal .sumName {
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-.sumLineTotal .sumVal {
-  font-size: 1.05rem;
-  font-weight: 900;
-  color: #f59e0b;
+  letter-spacing: -0.01em;
 }
 
 /* ─── 반응형: 768px ─── */
@@ -797,12 +1258,67 @@
     flex-direction: column;
   }
 
-  .heroValue {
-    font-size: 1.4rem;
+  /* 기댓값 줄 — 세로로 쌓으면 칸이 낮아져 토글 구석 고정이 숫자와 겹친다.
+     숫자(왼쪽) · 토글(오른쪽)을 한 줄로 눕히고 세로 가운데로 맞춘다 */
+  .heroCard {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.15rem 0.1rem;
   }
 
-  .heroBreak {
-    white-space: normal;
+  .heroOpts {
+    position: static;
+    flex-shrink: 0;
+  }
+
+  .heroValue {
+    font-size: 1.8rem;
+  }
+
+  /* 한 줄에 하나 — 좁은 화면에서 3열 타일은 그림도 숫자도 다 작아진다 */
+  .rewardList {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .detail {
+    grid-template-columns: 1fr;
+  }
+
+  /* 한 칸이 전체 폭이면 세로 타일은 높이만 먹는다 — 가로 줄로 눕힌다.
+     DOM 순서(등수 · 이름 · 그림 · 골드 · 화살표)가 그대로 읽는 순서가 된다 */
+  .rewardCardMain {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+  }
+
+  .rank {
+    position: static;
+  }
+
+  .rewardInfo {
+    flex: 1;
+    justify-content: flex-start;
+    padding: 0;
+    text-align: left;
+  }
+
+  .rewardVisual {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+  }
+
+  .rewardCardMain .rewardGold {
+    margin-top: 0;
+  }
+
+  .rewardCardMain .expandIcon {
+    position: static;
   }
 
   .tierBtn {
@@ -826,7 +1342,7 @@
   }
 
   .rewardGold {
-    font-size: 1.1rem;
+    font-size: 1.35rem;
   }
 }
 
@@ -847,21 +1363,14 @@
     font-size: 0.85rem;
   }
 
-  .heroCard {
-    padding: 0.85rem 1rem;
-  }
-
+  /* 숫자가 토글과 부딪히지 않게 한 단계 더 줄인다 (배치는 768 블록의 가로 줄 그대로) */
   .heroValue {
-    font-size: 1.25rem;
-  }
-
-  .sumCalc {
-    display: none;
+    font-size: 1.5rem;
   }
 
   .rewardCardMain {
-    padding: 0.7rem 0.85rem 0.8rem;
-    column-gap: 0.7rem;
+    padding: 0.55rem 0.6rem;
+    gap: 0.5rem;
   }
 
   .rank {
@@ -895,6 +1404,38 @@
   }
 
   .rewardGold {
-    font-size: 1rem;
+    font-size: 1.2rem;
+  }
+
+  /* 상세 — 좁은 화면에선 여백·그림을 한 단계 줄인다 */
+  .detail {
+    padding: 0.7rem 0.85rem 0.8rem;
+  }
+
+  .dImgWrap {
+    width: 46px;
+    height: 46px;
+  }
+
+  .dImg {
+    width: 41px !important;
+    height: 41px !important;
+  }
+
+  .dBaseGrid {
+    gap: 0.35rem;
+  }
+
+  .dBaseTile {
+    padding: 0.4rem 0.15rem;
+  }
+
+  .dBaseImg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .dBaseName {
+    font-size: 0.6rem;
   }
 }

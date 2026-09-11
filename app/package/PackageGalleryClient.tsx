@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
 import { useNoPeon } from '@/components/package/useNoPeon';
+import PeonBasisButton from '@/components/package/PeonBasisButton';
 import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryCard';
 // package-service(→ Firestore SDK ~250KB)는 정적 import 하지 않는다 — 목록은 서버(ISR)가
 // 통째로 넘겨주므로, 그 서버 조회가 실패했을 때만 지연 로드한다.
@@ -158,7 +159,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
   const [commonRateText, setCommonRateText] = useState<string>('');
   const commonWonPer100Gold = clampRate(parseFloat(commonRateText) || 0);
   // 페온 가치 제거 — 카드 안 토글로 바뀌는 뷰어 설정. 효율순 정렬이 카드 숫자와 같은 기준을 쓰도록 여기서도 읽는다
-  const [noPeon] = useNoPeon();
+  const [noPeon, setNoPeon] = useNoPeon();
   // 카드 6장 재계산·재정렬은 키 입력보다 한 박자 늦게 — 입력칸 반응성은 유지하고 무거운 작업만 미룬다
   const deferredCommonRate = useDeferredValue(commonWonPer100Gold);
   // 하단 데스크톱 배너의 뷰포트 판정 (d-md-block 과 같은 768px 기준)
@@ -482,6 +483,9 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
           {/* 시세 기준 토글 + 등록하기 — 컨트롤 바 오른쪽 끝 한 묶음.
               기준 토글은 이 페이지 전역 설정이라 정렬 필터가 아니라 이쪽에 선다. */}
           <div className={styles.rightControls}>
+            {/* 계산 기준 두 개 — 최저가(어느 시세를 쓰나) · 페온 제거(페온을 값으로 치나).
+                둘 다 이 화면 전체에 걸리는 설정이라 한 묶음으로 세운다. */}
+            <div className={styles.basisGroup}>
             {/* 최저가 — 기본값(1시간 거래 평균가)과의 실제 차이는 "실시간 여부" 가 아니라
                 평균가냐 최저가냐다. 버튼은 받아올 값을 그대로 부르고,
                 지금 그게 적용 중인지는 오른쪽 점으로만 알린다. */}
@@ -508,7 +512,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                 <path d="M3.5 12a8.5 8.5 0 0 0 14.6 5.9L21 15" />
                 <path d="M21 20.5V15h-5.5" />
               </svg>
-              최저가
+              <span className={styles.liveLabel}>최저가</span>
               <i className={styles.liveDot} />
               <span className={styles.basisTip} aria-hidden="true">
                 <strong className={styles.basisTipHead}>
@@ -517,6 +521,8 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                 {livePrices ? '누르면 다시 가져옵니다' : '기본은 1시간 거래 평균가'}
               </span>
             </button>
+            <PeonBasisButton active={noPeon} onChange={setNoPeon} />
+            </div>
             <Link href="/package/register" className={styles.registerLink}>
               + 등록하기
             </Link>

@@ -327,6 +327,90 @@
   background: #fff;
 }
 
+/* ─── 페온 제거 — 최저가와 같은 "이 화면의 계산 기준" 버튼이라 .liveBtn 껍데기를 같이 쓴다 ───
+   색은 페온 아이콘 그대로 파랑(#1e7fd4 계열). 기본(페온 포함 중)이 그 파랑으로 살아 있고,
+   누르면(제거 중) 통째로 회색으로 죽는다. 채우기로 강조하면 "페온을 빼는 중"이 거꾸로 읽힌다.
+   최저가는 초록(--benefit-up)이라 색이 겹치지 않는다. */
+.peonBtn {
+  border-color: #1e7fd4;
+  color: #1565b0;
+}
+
+[data-theme="dark"] .peonBtn {
+  border-color: #4da3f0;
+  color: #74bbff;
+}
+
+/* pheon.webp 는 256x244 중 코인이 144x137(가로·세로 56%)뿐이고 나머지는 전부 여백이다.
+   그래서 그림을 28px 로 키워도 실제 보이는 코인은 16px 밖에 안 됐다.
+   그림을 1.78배(1/0.56)로 키운 뒤 칸(overflow:hidden)으로 여백을 잘라내면
+   알약 높이를 하나도 안 건드리고 코인이 칸을 꽉 채운다.
+   칸 26px = 알약 안쪽 높이(32 - 테두리 3 = 29px) 안에 들어가는 크기다. */
+.peonIconWrap {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.peonIcon {
+  width: 46px;
+  height: 44px;
+  flex-shrink: 0;
+  /* globals.css 의 `img { max-width: 100% }` 가 칸 크기로 잘라 버린다 — 반드시 풀어야 한다 */
+  max-width: none;
+  object-fit: contain;
+}
+
+.peonBtn .liveDot {
+  background: #1e7fd4;
+}
+
+[data-theme="dark"] .peonBtn .liveDot {
+  background: #4da3f0;
+}
+
+/* 켜짐 = 페온을 빼는 중. 색을 걷고 회색으로 내려앉히면 "지금 이건 안 친다"가 그대로 읽힌다 */
+.peonBtnOn,
+[data-theme="dark"] .peonBtnOn {
+  border-color: var(--border-color);
+  color: var(--text-disabled);
+}
+
+.peonBtnOn .peonIcon {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+.peonBtnOn .peonIconWrap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: var(--text-muted);
+  border-radius: 2px;
+  transform: rotate(-45deg);
+}
+
+.peonBtnOn .liveDot,
+[data-theme="dark"] .peonBtnOn .liveDot {
+  background: var(--text-disabled);
+}
+
+/* 기준 버튼 두 개 묶음 — 좁은 화면에서 .rightControls 가 display:contents 로 풀려도
+   이 둘은 한 덩어리로 붙어 있어야 같은 그리드 칸에 겹치지 않는다 */
+.basisGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 /* 설명 말풍선 — 마우스가 있는 환경에서만. 터치에서는 탭이 곧 동작이라 띄우지 않는다.
    position:absolute 라 뜨고 질 때 줄이 밀리지 않는다(고정 자리 없음). */
 .basisTip {
@@ -382,16 +466,34 @@
 }
 
 @media (max-width: 767.98px) {
+  /* 기준 버튼이 둘(최저가·페온 제거)로 늘면서 컨트롤 줄이 겹쳤다 —
+     좁은 화면에서는 글자를 접고 아이콘 + 상태 점만 남긴다. 뜻은 호버 말풍선·aria-label 에 있다 */
+  .liveLabel,
+  .peonLabel {
+    display: none;
+  }
+
+  /* 간격 0.3rem 은 커진 페온 그림이 넘쳐 나올 몫이다 — 더 좁히면 상태 점에 닿는다 */
   .liveBtn {
     height: 28px;
     padding: 0 0.45rem;
-    gap: 0.28rem;
+    gap: 0.3rem;
     font-size: 0.73rem;
   }
 
   .liveIcon {
-    width: 15px;
-    height: 15px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .peonIconWrap {
+    width: 22px;
+    height: 22px;
+  }
+
+  .peonIcon {
+    width: 39px;
+    height: 37px;
   }
 }
 
@@ -693,11 +795,15 @@
     display: contents;
   }
 
-  .liveBtn {
+  /* 기준 버튼 둘을 한 덩어리로 3번 칸에 — 각각 grid-column 을 주면 같은 칸에서 겹친다 */
+  .basisGroup {
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
+    gap: 0.3rem;
   }
+
+
 
   /* 등록하기는 폰에서 숨긴다 — 한 줄에 정렬·환율·기준 토글까지 넣을 폭이 없다.
      등록은 네비게이션으로도 갈 수 있고, 폰에서 새 패키지를 올리는 일 자체가 드물다. */
@@ -1390,17 +1496,6 @@
   line-height: 1.35;
 }
 
-/* 제목 아래 메타 한 줄 (등록일 · 판매기간 · 조회수) — 앱 상세와 같은 자리 */
-.detailMetaRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.15rem 0.75rem;
-  margin-top: 0.35rem;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
 /* 패키지 타입 뱃지 */
 .typeBadge {
   display: inline-flex;
@@ -1729,6 +1824,27 @@
   stroke-linejoin: round;
 }
 
+/* ─── 페온이 값에 들어간 구성품 — 카드 테두리로 알린다 ───
+   작은 배지 스티커는 그림을 가리면서도 안 읽혔다. 카드 테두리를 페온색(파랑)으로 바꾸면
+   크기에 비례해 항상 보이고 그림은 하나도 안 가린다.
+   갤러리 카드의 .itemCellPeon 과 같은 규칙이고, 페온 제거를 켜면 회색 점선으로 죽는다.
+   테두리 폭(2px)은 그대로 두고 색만 바꾼다 — 폭이 바뀌면 안쪽 내용이 밀린다. */
+.itemCardPeon {
+  border-color: #1e7fd4;
+  box-shadow: inset 0 0 0 1px #1e7fd4;
+}
+
+[data-theme="dark"] .itemCardPeon {
+  border-color: #4da3f0;
+  box-shadow: inset 0 0 0 1px #4da3f0;
+}
+
+.itemCardPeonOff {
+  border-color: var(--text-muted);
+  border-style: dashed;
+  box-shadow: none;
+}
+
 .itemCardIconWrap {
   width: 100%;
   height: 60px;
@@ -1802,14 +1918,34 @@
   padding-bottom: 0.4rem;
 }
 
+/* 구성품 소계 — 갤러리 카드의 골드 숫자와 같은 규칙(골드 아이콘 + --gold-text + Outfit).
+   예전엔 아이콘 없이 "123,456G" 였고 색도 --color-accent 라 같은 골드인데 다르게 보였다 */
 .itemCardSubtotal {
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gold-text);
   padding-top: 0.5rem;
   border-top: 1px solid var(--border-color);
   width: 100%;
-  font-variant-numeric: tabular-nums;
+}
+
+.itemCardGoldIcon {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+/* 골드 숫자 옆 페온 그림 — 지옥 보상 카드와 같은 자리(숫자 왼쪽).
+   페온 그림은 원본에 여백이 많아 골드 아이콘(19px)보다 키워야 크기가 맞아 보인다.
+   PeonBadge 의 large+inline 이 24px 을 주므로 여기선 자리만 잡아 준다. */
+.itemCardSubtotal > span:first-child,
+.gachaItemGold > span:first-child {
+  flex-shrink: 0;
 }
 
 /* 구성품 상세 섹션 — 젬 상자류 구성·계산 근거 (전체 폭, 줄바꿈 허용이라 글자 안 잘림) */
@@ -1948,6 +2084,30 @@
 /* 카드 헤더 — "계산 결과" / "아이템 구성 (10종)" */
 /* 밑줄을 카드 안쪽 폭 전체에 두면 바로 위 상단 그라데이션 바와 겹쳐
    헤더가 별도 '제목 칸'처럼 갇혀 보인다 — 앱 상세처럼 선 없이 굵기와 여백으로만 구분한다 */
+/* 카드 제목 줄 — 제목(왼쪽) + 계산 기준 버튼 묶음(오른쪽 끝).
+   제목이 두 줄로 넘어가도 버튼은 첫 줄 높이에 맞춰 위에 붙는다 */
+.cardHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.cardHeaderRow .detailCardHeader {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.cardHeaderRow .basisGroup {
+  flex-shrink: 0;
+}
+
+/* 제목 줄로 옮겨온 뒤로는 왼쪽 여백을 밀 필요가 없다 (묶음이 오른쪽 끝에 선다) */
+.cardHeaderRow .detailLiveBtn {
+  margin-left: 0;
+}
+
 .detailCardHeader {
   font-size: 1.05rem;
   font-weight: 800;
@@ -2006,7 +2166,14 @@
 .resultRowValue,
 .resultRowValueGold,
 .resultBenefitBadge,
-.gachaResultBenefit {
+.gachaResultBenefit,
+.resultCashNum,
+.itemCardSubtotal,
+.itemCardPriceLine,
+.itemCardQtyBadge,
+.gemDetailLine,
+.detailRateInput,
+.resultRateNumber {
   font-family: var(--font-num), var(--font-mono), 'Noto Sans KR', system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
@@ -2158,13 +2325,6 @@
   justify-content: flex-end;
 }
 
-/* 페온 가치 제거 토글 줄 — 블크 줄처럼 한 줄을 통째로 차지하고 오른쪽 정렬 */
-.resultRatePeonRow {
-  flex-basis: 100%;
-  display: flex;
-  justify-content: flex-end;
-}
-
 /* 아이템 카드 그림 상자 — 페온 배지(absolute)가 그림을 따라가도록 relative 로 감싼다 */
 .itemCardIconBox {
   position: relative;
@@ -2203,12 +2363,6 @@
 .benefitDown {
   color: var(--benefit-down-text, var(--color-danger));
   text-shadow: var(--benefit-down-lift, none);
-}
-
-/* ─── 액션 바 ─── */
-.viewCountText {
-  font-size: 0.8rem;
-  color: var(--text-muted);
 }
 
 .editBtn {
@@ -2432,10 +2586,6 @@
     flex-basis: auto;
   }
 
-  .resultRatePeonRow {
-    flex-basis: auto;
-  }
-
   .resultRateInput {
     gap: 0.25rem;
     padding: 0.32rem 0.5rem;
@@ -2457,23 +2607,10 @@
   }
 
   .resultActions {
-    padding-top: 0;
-    margin-left: auto;
-  }
-
-  .detailMetaRow {
-    font-size: 0.62rem;
-    gap: 0.1rem 0.5rem;
-  }
-
-  .resultActions {
     padding-top: 0.2rem;
+    margin-left: auto;
     flex-wrap: wrap;
     gap: 0.25rem;
-  }
-
-  .viewCountText {
-    font-size: 0.58rem;
   }
 
   .editBtn,
@@ -3364,12 +3501,20 @@
   color: var(--text-muted);
 }
 
+/* 가챠 카드 골드 — 구성품 소계(.itemCardSubtotal)와 같은 규칙:
+   (페온 그림) + 골드 아이콘 + 숫자, --gold-text, Outfit */
 .gachaItemGold {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
   margin-top: auto;
+  font-family: var(--font-num), var(--font-mono), 'Noto Sans KR', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gold-text);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 /* 확률 뱃지 */

@@ -2004,6 +2004,11 @@ button.bulkButton:disabled,
   color: #fff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
+/* 적용중 옆 "목록" 버튼(모바일 전용) — 줄 색 아웃라인에 글자도 줄 색으로 구분 */
+.groupOptListBtn {
+  margin-left: 4px;
+  color: var(--opt-c1, #10b981);
+}
 
 
 .materialsGrid {

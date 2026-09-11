@@ -1,4 +1,6 @@
-/* 페온 가치 제거 토글 — 환율 상자 옆에 서는 작은 알약 버튼 */
+/* 페온 가치 제거 토글 — 환율 상자 옆에 서는 작은 알약 버튼.
+   기본(페온 포함 중)은 페온 아이콘과 같은 파랑으로 살아 있고, 켜면(제거 중) 회색으로 죽는다.
+   페이지 컨트롤 바의 .peonBtn / 갤러리 카드의 .itemCellPeon 과 같은 방향이다. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -6,19 +8,18 @@
   padding: 0.28rem 0.6rem 0.28rem 0.45rem;
   font-size: 0.76rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: #1565b0;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  border: 1px solid #1e7fd4;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
   line-height: 1;
-  transition: color 0.12s, border-color 0.12s, background 0.12s;
 }
 
-.btn:hover {
-  border-color: rgba(217, 119, 6, 0.55);
-  color: var(--text-secondary);
+:global([data-theme="dark"]) .btn {
+  color: #74bbff;
+  border-color: #4da3f0;
 }
 
 .iconWrap {
@@ -35,14 +36,13 @@
   width: 15px;
   height: 15px;
   object-fit: contain;
-  transition: filter 0.12s, opacity 0.12s;
 }
 
 /* 켜짐 = 페온이 빠진 상태. 아이콘을 흑백으로 죽이고 사선을 그어 "이건 안 친다"를 보여준다 */
 .btnActive {
-  color: #b45309;
-  border-color: rgba(217, 119, 6, 0.6);
-  background: rgba(251, 191, 36, 0.12);
+  color: var(--text-disabled);
+  border-color: var(--border-color);
+  background: var(--bg-secondary);
 }
 
 .btnActive .icon {
@@ -57,18 +57,18 @@
   right: 1px;
   top: 50%;
   height: 2px;
-  background: #b45309;
+  background: var(--text-muted);
   transform: rotate(-45deg);
   border-radius: 2px;
 }
 
 :global([data-theme="dark"]) .btnActive {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.14);
+  color: var(--text-disabled);
+  background: var(--bg-secondary);
 }
 
 :global([data-theme="dark"]) .btnActive .iconWrap::after {
-  background: #fbbf24;
+  background: var(--text-muted);
 }
 
 /* 갤러리 카드 환율 상자용 — 한 단계 작게 */

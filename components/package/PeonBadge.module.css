@@ -8,7 +8,7 @@
   height: 16px;
   border-radius: 50%;
   background: var(--card-bg, #fff);
-  border: 1px solid rgba(217, 119, 6, 0.55);
+  border: 1px solid rgba(30, 127, 212, 0.6);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
   display: flex;
   align-items: center;
@@ -47,4 +47,53 @@
 :global([data-theme="dark"]) .badge {
   background: #1f2430;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+/* 큰 배지 — 지옥 보상처럼 그림 칸이 72px 급인 곳. 원판(동그라미) 없이 페온 그림만 크게 붙인다 */
+.badgeLarge,
+:global([data-theme="dark"]) .badgeLarge {
+  width: 28px;
+  height: 28px;
+  left: 3px;
+  bottom: 3px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.badgeLarge .icon {
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+/* 페온 제거 중 — 그림만 있어도 흑백+사선으로 "안 친다"가 보이게 */
+.badgeLarge.badgeOff .icon {
+  filter: grayscale(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.badgeLarge.badgeOff::after {
+  left: 3px;
+  right: 3px;
+  height: 2.5px;
+  border-radius: 2px;
+}
+
+/* 흐름 안(인라인) 배치 — 그림을 가리지 않고 골드 숫자 옆에 나란히 선다.
+   relative 인 이유: 사선(::after)의 기준이 배지 자신이어야 해서다 */
+.badgeInline {
+  position: relative;
+  left: auto;
+  bottom: auto;
+}
+
+.badgeLarge.badgeInline {
+  width: 24px;
+  height: 24px;
+}
+
+.badgeLarge.badgeInline .icon {
+  width: 24px;
+  height: 24px;
 }
