@@ -1274,8 +1274,19 @@
 
 .raidChecked {
   border-color: #16a34a;
-  border-width: 4px;
   box-shadow: 0 0 12px rgba(22, 163, 74, 0.5);
+}
+
+/* 테두리를 4px로 바꾸면 카드 크기는 그대로라 안쪽 이미지·글자가 2px 밀린다.
+   실제 테두리는 2px 그대로 두고, 안쪽 2px는 위에 덧그려 두께만 4px로 보이게 한다 */
+.raidChecked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid #16a34a;
+  border-radius: 6px;
+  z-index: 3;
+  pointer-events: none;
 }
 
 
