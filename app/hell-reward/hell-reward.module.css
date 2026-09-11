@@ -1287,38 +1287,53 @@
     grid-template-columns: 1fr;
   }
 
-  /* 한 칸이 전체 폭이면 세로 타일은 높이만 먹는다 — 가로 줄로 눕힌다.
-     DOM 순서(등수 · 이름 · 그림 · 골드 · 화살표)가 그대로 읽는 순서가 된다 */
+  /* 두 줄 배열 — 윗줄: 등수 · 이름 · 화살표 / 아랫줄: 그림(왼쪽 끝) · 골드(오른쪽 끝).
+     한 줄에 다 눕히면 이름과 그림·골드가 폭을 다퉈 개판이 됐다 */
   .rewardCardMain {
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "rank info caret"
+      "visual visual gold";
     align-items: center;
-    gap: 0.7rem;
-    padding: 0.6rem 0.75rem;
+    column-gap: 0.6rem;
+    row-gap: 0.55rem;
+    padding: 0.65rem 0.8rem 0.7rem;
     text-align: left;
   }
 
   .rank {
     position: static;
+    grid-area: rank;
   }
 
   .rewardInfo {
-    flex: 1;
+    grid-area: info;
     justify-content: flex-start;
     padding: 0;
     text-align: left;
   }
 
+  .rewardCardMain .expandIcon {
+    position: static;
+    grid-area: caret;
+  }
+
+  .rewardVisual,
+  .rewardCardMain > .rewardImgWrap {
+    grid-area: visual;
+    justify-self: start;
+  }
+
   .rewardVisual {
     flex-wrap: nowrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 
   .rewardCardMain .rewardGold {
+    grid-area: gold;
+    justify-self: end;
     margin-top: 0;
-  }
-
-  .rewardCardMain .expandIcon {
-    position: static;
   }
 
   .tierBtn {
