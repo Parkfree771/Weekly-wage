@@ -220,10 +220,13 @@ export default async function Page({ params }: Props) {
   }
 
   const post = await getPost(postId);
-  const comments = post ? await getComments(postId) : null;
   // 조회·따봉·흠만 Neon 최신값으로 갈아 끼운다(1행 조회). getPost 캐시 밖에서 하므로
   // generateMetadata 쪽은 그대로다. 이게 없으면 재방문자는 이관 시점에 멈춘 숫자를 계속 본다.
-  const [postWithStats] = post ? await applyStatsToPosts([post]) : [null];
+  // 댓글(Firestore)과 집계(Neon)는 서로 독립 — 병렬로 돌려 캐시 미스 렌더에서 왕복 한 번을 줄인다.
+  const [comments, statsApplied] = post
+    ? await Promise.all([getComments(postId), applyStatsToPosts([post])])
+    : [null, null];
+  const postWithStats = statsApplied ? statsApplied[0] : null;
 
   return <PackageDetailPage initialPost={postWithStats} initialComments={comments} />;
 }

@@ -734,10 +734,24 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
     router.push(`/package/${post.id}`);
   };
 
+  /**
+   * 마우스가 올라온 카드만 상세를 프리페치 — 클릭 시점의 서버 왕복을 미리 당겨온다.
+   * 화면에 보이는 카드 전부(<Link> 기본 동작)가 아니라 누를 가능성이 있는 카드만이라
+   * 요청 수가 카드 수만큼 불지 않고, 상세는 ISR 이라 대부분 CDN 캐시에 맞아 함수까지 안 간다.
+   * 터치 기기는 pointerenter 가 탭 직전에야 오므로 이득이 없다 — loading.tsx 가 대신 받친다.
+   */
+  const prefetchedRef = useRef(false);
+  const handleCardPointerEnter = () => {
+    if (prefetchedRef.current) return;
+    prefetchedRef.current = true;
+    router.prefetch(`/package/${post.id}`);
+  };
+
   return (
     <article
       className={`${styles.galleryCard} ${styles.cardStd} ${saleEnded ? styles.cardEnded : ''} ${dimmed ? styles.cardDimmed : ''}`}
       onClick={handleCardClick}
+      onPointerEnter={handleCardPointerEnter}
       style={{ cursor: 'pointer' }}
     >
       {/* 판매 종료 안내 — 흐려진 가운데(구성품·계산 결과) 위에 얹힌다.
