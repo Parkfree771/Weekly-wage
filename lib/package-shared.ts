@@ -31,6 +31,8 @@ export type TemplateItem = {
   boxItem?: boolean;
   expectedItems?: { itemId: string; probability: number }[];
   bundleContents?: BundleContent[];
+  /** 등록 화면 검색어 별칭 — 이름에 없는 줄임말(파결·수결·용숨…)로도 찾히게 한다 */
+  keywords?: string[];
 };
 
 // ─── 추가된 아이템 상태 ───
@@ -261,6 +263,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     id: 'destruction-crystal',
     icon: '/destruction-stone-crystal.webp',
     name: '운명의 파괴석 결정',
+    keywords: ['파결'],
     type: 'simple',
     itemId: '66102007',
   },
@@ -268,6 +271,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     id: 'guardian-crystal',
     icon: '/guardian-stone-crystal.webp',
     name: '운명의 수호석 결정',
+    keywords: ['수결'],
     type: 'simple',
     itemId: '66102107',
   },
@@ -276,7 +280,8 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     // 예전엔 type: 'bundle'로 잘못 구현되어 있어 둘 다 합산되는 버그가 있었음 → 'choice'로 수정.
     id: 'crystal-choice',
     icon: '/vkrhltngh.webp',
-    name: '파괴/수호 결정 선택',
+    name: '파결·수결 선택',
+    keywords: ['파괴석 결정', '수호석 결정', '결정 선택'],
     type: 'choice',
     choices: [
       { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/destruction-stone-crystal.webp' },
@@ -286,7 +291,8 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   {
     id: 'crystal-bundle',
     icon: '/vkrhltngh.webp',
-    name: '파결+수결 묶음 주머니',
+    name: '파결·수결 묶음',
+    keywords: ['파괴석 결정', '수호석 결정', '주머니', '결정 묶음'],
     type: 'bundle',
     bundleContents: [
       { itemId: '66102007', name: '운명의 파괴석 결정', icon: '/destruction-stone-crystal.webp' },
@@ -296,8 +302,10 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   {
     // 파괴석 OR 수호석 중 하나만 선택하는 주머니 (결정 아님, 일반 돌)
     id: 'stone-choice-pouch',
-    icon: '/vkrhltjrtnghtjr.webp',
-    name: '파괴석/수호석 선택 주머니',
+    // 파괴석·수호석 낱개 아이콘을 앞뒤로 겹쳐 합성한 그림 (반반 합성 이미지 vkrhltjrtnghtjr.webp 대체)
+    icon: '/stone-choice-pouch.webp',
+    name: '파괴석·수호석 선택',
+    keywords: ['파석', '수석', '주머니'],
     type: 'choice',
     choices: [
       { itemId: '66102006', name: '운명의 파괴석', icon: '/destruction-stone.webp' },
@@ -340,6 +348,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     id: 'lava-breath',
     icon: '/breath-lava5.webp',
     name: '용암의 숨결',
+    keywords: ['용숨'],
     type: 'simple',
     itemId: '66111131',
   },
@@ -347,13 +356,15 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     id: 'glacier-breath',
     icon: '/breath-glacier5.webp',
     name: '빙하의 숨결',
+    keywords: ['빙숨'],
     type: 'simple',
     itemId: '66111132',
   },
   {
     id: 'breath-choice',
     icon: '/gong-support.webp',
-    name: '용숨/빙숨 선택 상자',
+    name: '용암·빙하 숨결 선택',
+    keywords: ['용숨', '빙숨', '숨결 상자'],
     type: 'choice',
     boxItem: true,
     choices: [
@@ -366,6 +377,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     id: 'destruction-stone',
     icon: '/destruction-stone.webp',
     name: '운명의 파괴석',
+    keywords: ['파석'],
     type: 'simple',
     itemId: '66102006',
   },
@@ -373,6 +385,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     id: 'guardian-stone',
     icon: '/guardian-stone.webp',
     name: '운명의 수호석',
+    keywords: ['수석'],
     type: 'simple',
     itemId: '66102106',
   },
@@ -381,6 +394,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     id: 'superior-abidos',
     icon: '/top-abidos-fusion5.webp',
     name: '상비도스',
+    keywords: ['상급 아비도스 융화 재료', '상비'],
     type: 'simple',
     itemId: '6861013',
   },
@@ -388,6 +402,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     id: 'abidos-fusion',
     icon: '/abidos-fusion5.webp?v=4',
     name: '아비도스 융화 재료',
+    keywords: ['아비'],
     type: 'simple',
     itemId: '6861012',
   },
@@ -504,7 +519,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   {
     id: 'gem-choice',
     icon: '/duddndgmlrnl.webp',
-    name: '영웅/희귀 젬 상자',
+    name: '영웅·희귀 젬 랜덤 상자',
     type: 'expected',
     expectedItems: [
       // 영웅 10% × 개별 확률
@@ -599,6 +614,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     id: 'engraving-choice',
     icon: '/engraving.webp',
     name: '유각 선택 상자',
+    keywords: ['각인서', '유물 각인'],
     type: 'choice',
     choices: [
       { itemId: '65200505', name: '원한' },
@@ -827,6 +843,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     id: 'blue-crystal-input',
     icon: '/blue.webp',
     name: '블루 크리스탈',
+    keywords: ['블크'],
     type: 'crystal',
     crystalPerUnit: 1, // 1 블크 = 1 BC, 환율 자동 계산
   },
@@ -849,6 +866,154 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
 export const TEMPLATES_MAP: Record<string, TemplateItem> = Object.fromEntries(
   TEMPLATE_ITEMS.map((t) => [t.id, t]),
 );
+
+/* ─── 등록 화면 아이템 목록 배치 ───
+ * 위 TEMPLATE_ITEMS 는 "무엇을 계산할 수 있나"의 목록이고, 여기는 "등록 화면에 어떻게 보여 주나"다.
+ * 예전엔 목록 순서 그대로 65칸을 한 줄로 늘어놓아 결정·선택·묶음·상자가 뒤섞여 보였다 —
+ * 계열별로 칸을 나누고, 한 계열 안에서도 낱개 재료와 '선택/묶음' 변형을 따로 묶는다.
+ *
+ * · cat: 상단 필터 칩 단위 (같은 cat 이 여러 섹션에 걸칠 수 있다 — 재련 재료 낱개 / 선택·묶음)
+ * · 여기에 안 적힌 템플릿은 자동으로 '기타' 섹션에 들어간다 — 새 템플릿을 추가하고 배치를 깜빡해도 목록에서 사라지지 않는다.
+ * · 선택 상자·확률 상자(직접 구성)는 섹션이 아니라 등록 화면이 별도 줄로 그린다.
+ */
+export type CatalogCategory = 'refine' | 'craft' | 'gem' | 'ticket' | 'card' | 'buff' | 'quality' | 'currency' | 'etc';
+
+export type CatalogSection = {
+  cat: CatalogCategory;
+  title: string;
+  hint?: string;
+  ids: string[];
+};
+
+export const CATALOG_CATEGORY_LABEL: Record<CatalogCategory, string> = {
+  refine: '재련 재료',
+  craft: '야금술·재봉술',
+  gem: '젬·유각',
+  ticket: '티켓·입장권',
+  card: '카드',
+  buff: '축복·펫·편의',
+  quality: '품질·장비',
+  currency: '재화',
+  etc: '기타',
+};
+
+/** 직접 구성하는 상자 — 섹션 그리드가 아니라 별도 줄에 그린다 */
+export const CATALOG_CUSTOM_BOX_IDS = ['custom-choice-box', 'custom-prob-box'];
+
+const CATALOG_SECTIONS_BASE: CatalogSection[] = [
+  {
+    cat: 'refine', title: '재련 재료',
+    ids: [
+      'destruction-stone', 'guardian-stone', 'destruction-crystal', 'guardian-crystal',
+      'breakthrough-stone', 'great-breakthrough', 'lava-breath', 'glacier-breath',
+      'abidos-fusion', 'superior-abidos', 'destiny-shard', 'karma-stone',
+    ],
+  },
+  {
+    cat: 'refine', title: '재련 재료 — 선택 · 묶음', hint: '둘 중 하나를 고르거나, 둘을 함께 주는 주머니',
+    ids: ['stone-choice-pouch', 'crystal-choice', 'crystal-bundle', 'breath-choice'],
+  },
+  {
+    cat: 'craft', title: '야금술 · 재봉술',
+    ids: [
+      'metallurgy-karma-19-20', 'metallurgy-karma-19-20-enhanced', 'metallurgy-thrill-12-15', 'metallurgy-thrill-16-19', 'master-metallurgy-3', 'master-metallurgy-4',
+      'tailoring-karma-19-20', 'tailoring-karma-19-20-enhanced', 'tailoring-thrill-12-15', 'tailoring-thrill-16-19', 'master-tailoring-3', 'master-tailoring-4',
+    ],
+  },
+  {
+    cat: 'gem', title: '젬 · 유각 · 어빌리티 스톤',
+    ids: [
+      'gem-hero', 'gem-hero-random', 'gem-choice', 'gem-hero-fixed-select', 'gem-order-processed', 'gem-chaos-processed',
+      'gem-fear-8', 'gem-radiance-7', 'gem-reset-ticket', 'engraving-choice', 'ability-stone-kit',
+    ],
+  },
+  {
+    cat: 'ticket', title: '티켓 · 입장권',
+    ids: ['celestial-ticket', 'naraka-legendary-ticket', 'hell-legendary-ticket', 'hell-heroic-ticket', 'cube-ticket', 'resonance-energy', 'rest-potion'],
+  },
+  {
+    cat: 'card', title: '카드',
+    ids: ['cardpack-legendary', 'cardpack-rare', 'cardpack-all', 'legendary-cardpack', 'legendary-card-select'],
+  },
+  {
+    cat: 'buff', title: '축복 · 펫 · 편의',
+    ids: ['ninav-blessing', 'beatrice-blessing', 'azena-blessing', 'pet-function', 'pet-support', 'leap-essence', 'life-energy', 'battle-item-box', 'bracelet-reconversion'],
+  },
+  {
+    cat: 'quality', title: '품질 · 장비',
+    ids: ['weapon-quality', 'armor-quality', 'quality-confirm', 'relic-core'],
+  },
+  {
+    cat: 'currency', title: '재화',
+    ids: ['gold-input', 'blue-crystal-input', 'pheon', 'shilling'],
+  },
+];
+
+/**
+ * 등록 화면 목록 칸에 이름을 두 줄로 나눠 그리는 표 ("\n" 이 줄 경계).
+ * 원칙: 첫 줄 = 계열(야금술 · 영웅 젬 · 니나브의 축복), 둘째 줄 = 그 안의 구분(업화 [19-20] · 선택 상자 · (15일)).
+ * 같은 계열 칸들이 같은 자리에 같은 것을 두게 해서 훑어 읽기 쉽게 한다. 한 줄은 8자 이하 —
+ * 모바일(칸 90px, 0.7rem)에서도 한 줄이 다시 갈라지지 않는 길이다.
+ * 여기 없는 템플릿은 이름을 그대로 한 줄로 그린다 (짧은 이름은 나눌 필요가 없다).
+ * 저장되는 name 과는 무관 — 갤러리 · 상세는 이 표를 보지 않는다.
+ */
+export const CATALOG_DISPLAY_NAME: Record<string, string> = {
+  // 재련 재료
+  'destruction-crystal': '운명의 파괴석\n결정',
+  'guardian-crystal': '운명의 수호석\n결정',
+  'great-breakthrough': '위대한\n운명의 돌파석',
+  'abidos-fusion': '아비도스\n융화 재료',
+  'stone-choice-pouch': '파괴석·수호석\n선택',
+  'crystal-choice': '파결·수결\n선택',
+  'crystal-bundle': '파결·수결\n묶음',
+  'breath-choice': '용암·빙하 숨결\n선택',
+  // 야금술 · 재봉술 — 첫 줄 기술, 둘째 줄 종류와 구간
+  'metallurgy-karma-19-20': '야금술\n업화 [19-20]',
+  'metallurgy-karma-19-20-enhanced': '강화 야금술\n업화 [19-20]',
+  'metallurgy-thrill-12-15': '야금술\n전율 [12-15]',
+  'metallurgy-thrill-16-19': '야금술\n전율 [16-19]',
+  'master-metallurgy-3': '장인의 야금술\n3단계',
+  'master-metallurgy-4': '장인의 야금술\n4단계',
+  'tailoring-karma-19-20': '재봉술\n업화 [19-20]',
+  'tailoring-karma-19-20-enhanced': '강화 재봉술\n업화 [19-20]',
+  'tailoring-thrill-12-15': '재봉술\n전율 [12-15]',
+  'tailoring-thrill-16-19': '재봉술\n전율 [16-19]',
+  'master-tailoring-3': '장인의 재봉술\n3단계',
+  'master-tailoring-4': '장인의 재봉술\n4단계',
+  // 젬 · 유각
+  'gem-hero': '영웅 젬\n선택 상자',
+  'gem-hero-random': '영웅 젬\n랜덤 상자',
+  'gem-choice': '영웅·희귀 젬\n랜덤 상자',
+  'gem-hero-fixed-select': '고정형 영웅 젬\n선택 상자',
+  'gem-order-processed': '가공 완료\n질서의 젬 상자',
+  'gem-chaos-processed': '가공 완료\n혼돈의 젬 상자',
+  'gem-fear-8': '8레벨 광휘의 보석\n(귀속)',
+  'gem-radiance-7': '7레벨 광휘의 보석\n(귀속)',
+  'gem-reset-ticket': '젬 가공\n초기화권',
+  'ability-stone-kit': '어빌리티스톤\n키트',
+  // 카드
+  'cardpack-legendary': '카드팩\n(전설~영웅)',
+  'cardpack-rare': '카드팩\n(전설~희귀)',
+  // 축복 · 펫
+  'ninav-blessing': '니나브의 축복\n(15일)',
+  'beatrice-blessing': '베아트리스의 축복\n(15일)',
+  'azena-blessing': '아제나의 축복\n(28일)',
+  'pet-function': '펫 기능\n(15일)',
+  'pet-support': '펫 지원 효과\n(15일)',
+  // 품질 · 장비
+  'relic-core': '유물 코어\n(선택)',
+};
+
+export const CATALOG_SECTIONS: CatalogSection[] = (() => {
+  const placed = new Set<string>([...CATALOG_CUSTOM_BOX_IDS, ...CATALOG_SECTIONS_BASE.flatMap((s) => s.ids)]);
+  // 실제 존재하는 템플릿만 남긴다 (오타·삭제된 id 가 빈 칸으로 그려지지 않게)
+  const sections = CATALOG_SECTIONS_BASE
+    .map((s) => ({ ...s, ids: s.ids.filter((id) => TEMPLATES_MAP[id]) }))
+    .filter((s) => s.ids.length > 0);
+  const leftovers = TEMPLATE_ITEMS.filter((t) => !placed.has(t.id)).map((t) => t.id);
+  if (leftovers.length > 0) sections.push({ cat: 'etc', title: '기타', ids: leftovers });
+  return sections;
+})();
 
 /**
  * 저장된 expected_ 아이템(영웅 젬 랜덤 상자 등)의 개당 기댓값을 현재 시세로 재계산.
@@ -900,17 +1065,21 @@ export function getExpectedBoxBreakdown(itemId: string, prices: Record<string, n
 
 /* ─── 구성품 표시 순서 ───
  * 등록자가 담은 순서와 상관없이 어느 글이든 같은 배열로 보여 준다.
- * 순서 기준은 새 표를 만들지 않고 TEMPLATE_ITEMS 의 나열 순서를 그대로 쓴다 —
- * 그 목록이 이미 재료 · 젬 · 유각 · 티켓 · 상자 · 재화처럼 계열별로 묶여 있어서,
+ * 순서 기준은 새 표를 만들지 않고 등록 화면 배치(CATALOG_SECTIONS)를 그대로 쓴다 —
+ * 그 배치가 재련 재료 · 야금/재봉 · 젬 · 티켓 · 카드 · 재화처럼 계열별로 묶여 있어서,
  * 따라가기만 하면 비슷한 것끼리 모이고 어느 카드를 봐도 같은 자리에 같은 계열이 온다.
- * (순서표를 따로 두면 카탈로그에 아이템을 추가할 때마다 두 곳을 맞춰야 한다.)
+ * (등록 화면에서 보는 순서와 갤러리 카드의 순서가 같아 등록자가 결과를 예측할 수 있다.)
  *
  * 저장된 데이터는 건드리지 않는다 — 그리는 순서만 바꾸므로 이미 올라온 글도 즉시 정돈되고,
  * 수정 화면에서는 등록자가 담은 순서가 그대로 남는다.
  */
+const CATALOG_ORDER: TemplateItem[] = [
+  ...CATALOG_SECTIONS.flatMap((s) => s.ids.map((id) => TEMPLATES_MAP[id])),
+  ...CATALOG_CUSTOM_BOX_IDS.map((id) => TEMPLATES_MAP[id]),
+].filter(Boolean);
 const TEMPLATE_RANK = new Map<string, number>();   // 템플릿 id → 카탈로그 순번
 const MARKET_ID_RANK = new Map<string, number>();  // 시세 itemId → 카탈로그 순번
-TEMPLATE_ITEMS.forEach((t, i) => {
+CATALOG_ORDER.forEach((t, i) => {
   if (!TEMPLATE_RANK.has(t.id)) TEMPLATE_RANK.set(t.id, i);
   // simple 은 시세 itemId 를 그대로, choice 는 고른 선택지의 itemId 를 그대로 쓴다 —
   // 접두사가 없으므로 원래 어느 템플릿에서 나왔는지 되짚을 표가 필요하다
@@ -985,7 +1154,8 @@ export const ICON_SIZE_CATALOG: Record<string, number> = {
   'cardpack-legendary': 65, 'cardpack-rare': 65, 'cardpack-all': 65,
   'ninav-blessing': 65, 'engraving-choice': 65,
   'destruction-stone': 65, 'guardian-stone': 65,
-  'destruction-crystal': 65, 'guardian-crystal': 65, 'crystal-choice': 65, 'crystal-bundle': 65, 'stone-choice-pouch': 65,
+  'destruction-crystal': 65, 'guardian-crystal': 65, 'crystal-choice': 65, 'crystal-bundle': 65,
+  'stone-choice-pouch': 80, // 두 돌을 겹친 그림이라 낱개(65)와 같은 값이면 돌 하나가 작아 보인다
   'great-breakthrough': 65, 'breakthrough-stone': 65,
   'lava-breath': 65, 'glacier-breath': 65, 'breath-choice': 65,
   'superior-abidos': 65, 'abidos-fusion': 65,

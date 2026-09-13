@@ -126,8 +126,8 @@ export function fromDatetimeLocalValue(value: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-// ─── 판매 종료일 전용 (input type="date", 시각은 KST 오전 6시 고정) ───
-// 캐시샵 패키지는 전부 오전 6시(점검 전)에 내려가서, 폼에서는 날짜만 받는다.
+// ─── 판매 시작일 · 종료일 (input type="date", 시각 고정) ───
+// 캐시샵 패키지는 오전 10시(점검 후)에 올라오고 오전 6시(점검 전)에 내려가서, 폼에서는 날짜만 받는다.
 
 /** 저장값 → date 입력값 ("2026-01-01", 한국 시간 기준 날짜) */
 export function toDateOnlyValue(value: any): string {
@@ -135,6 +135,13 @@ export function toDateOnlyValue(value: any): string {
   if (!d) return '';
   const { y, mo, d: day } = kstParts(d);
   return `${y}-${mo}-${day}`;
+}
+
+/** date 입력값("YYYY-MM-DD") → 그 날짜 KST 오전 10시 Date (빈 값이면 null) */
+export function fromSaleStartDateValue(value: string): Date | null {
+  if (!value) return null;
+  const d = new Date(`${value}T10:00:00${KST_OFFSET}`);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 /** date 입력값("YYYY-MM-DD") → 그 날짜 KST 오전 6시 Date (빈 값이면 null) */

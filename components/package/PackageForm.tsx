@@ -10,15 +10,20 @@
 // 예전처럼 "만들고 나서 인덱스로 다시 짝짓기"를 하면 매핑에 실패해 드롭된 아이템이
 // 하나라도 있을 때 이후 확률이 전부 한 칸씩 밀린다.
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { PackageItem, PackagePost, PackageType, PriceCurrency } from '@/types/package';
 import {
   type AddedItem,
   type ChoiceBoxCandidate,
   type ProbBoxCandidate,
   type TemplateItem,
+  type CatalogCategory,
   TEMPLATE_ITEMS,
   TEMPLATES_MAP,
+  CATALOG_SECTIONS,
+  CATALOG_CATEGORY_LABEL,
+  CATALOG_CUSTOM_BOX_IDS,
+  CATALOG_DISPLAY_NAME,
   ICON_SIZE_CATALOG,
   ICON_SIZE_BOX,
   ICON_POSITION,
@@ -37,7 +42,7 @@ import {
 import PeonBadge from '@/components/package/PeonBadge';
 import NoPeonToggle from '@/components/package/NoPeonToggle';
 import { useNoPeon } from '@/components/package/useNoPeon';
-import { fromDatetimeLocalValue, toDatetimeLocalValue, fromSaleEndDateValue, toDateOnlyValue } from '@/lib/package-sale';
+import { fromSaleStartDateValue, fromSaleEndDateValue, toDateOnlyValue } from '@/lib/package-sale';
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import styles from '@/app/package/package.module.css';
 
@@ -83,6 +88,36 @@ export type PackageFormSubmitData = {
 // 확률 상자에 담을 수 없는 템플릿 타입 — 상자 안에 상자를 넣는 건 지원하지 않는다.
 // 그 외 시세·고정가·블크·확률표·묶음·선택 아이템과 '기타 항목'은 전부 담을 수 있다.
 const PROB_BOX_EXCLUDED_TYPES = new Set<TemplateItem['type']>(['choiceBox', 'probBox']);
+
+/** 검색 비교용 — 띄어쓰기·구분점·대소문자 차이를 없앤다 ("파괴석 결정" = "파괴석결정" = "파괴석·결정") */
+function normalizeSearch(s: string): string {
+  return s.toLowerCase().replace(/[\s·・/+\-_:()\[\]]/g, '');
+}
+
+/**
+ * 목록 칸 표시용 이름 — CATALOG_DISPLAY_NAME 에 정해 둔 줄나눔을 그대로 그린다.
+ * 표에 없는(새로 추가된) 템플릿은 자동 규칙: "(15일)" "(귀속)" 꼬리와 " : 4단계" 의 콜론은 앞말에 붙이고,
+ * "[16-19]" 같은 구간은 둘째 줄로 보낸다 — 표를 깜빡해도 괄호가 혼자 다음 줄로 떨어지진 않게.
+ */
+function catalogLabel(t: TemplateItem): ReactNode {
+  const preset = CATALOG_DISPLAY_NAME[t.id];
+  const lines = preset
+    ? preset.split('\n')
+    : (() => {
+      const glued = t.name.replace(/ \(/g, '\u00A0(').replace(/ :/g, '\u00A0:');
+      const m = glued.match(/^(.*) (\[[^\]]+\])$/);
+      return m ? [m[1], m[2]] : [glued];
+    })();
+  return lines.map((line, i) => (i === 0 ? line : <span key={i}><br />{line}</span>));
+}
+
+function templateMatchesQuery(t: TemplateItem, q: string): boolean {
+  if (!q) return true;
+  if (normalizeSearch(t.name).includes(q)) return true;
+  if (t.keywords?.some((k) => normalizeSearch(k).includes(q))) return true;
+  // 선택 상자는 선택지 이름으로도 찾힌다 — "원한" 을 치면 유각 선택 상자, "불변" 이면 젬 상자가 나온다
+  return !!t.choices?.some((c) => normalizeSearch(c.name).includes(q));
+}
 
 /**
  * 상자 후보 id 카운터의 시작값 — 수정 모드에서 이미 'cand_3' 까지 있는데 0부터 다시 세면
@@ -257,7 +292,7 @@ export function postToFormInitial(post: PackagePost): PackageFormInitial {
     selectableCount: post.selectableCount && post.selectableCount > 0 ? post.selectableCount : 0,
     bonusSelectableCount: post.bonusSelectableCount && post.bonusSelectableCount > 0 ? post.bonusSelectableCount : 0,
     isNewRelease: !!post.isNewRelease,
-    saleStartInput: toDatetimeLocalValue(post.saleStartAt),
+    saleStartInput: toDateOnlyValue(post.saleStartAt),
     saleEndInput: toDateOnlyValue(post.saleEndAt),
     saleClosed: post.saleClosed === true,
     addedItems: [...main, ...bonus],
@@ -311,6 +346,9 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   const [addTarget, setAddTarget] = useState<'main' | 'bonus'>('main');
   // 확률 상자 "담기 모드": 켜져 있으면 아래 아이템 목록 클릭이 새 구성품 추가 대신 이 상자의 후보로 들어간다
   const [probBoxTargetId, setProbBoxTargetId] = useState<string | null>(null);
+  // 아이템 목록 검색어 · 계열 필터 (둘 다 화면 전용 — 저장과 무관)
+  const [catalogQuery, setCatalogQuery] = useState('');
+  const [catalogCat, setCatalogCat] = useState<CatalogCategory | 'all'>('all');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -1194,10 +1232,11 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     if (priceCurrency === 'blueCrystal' && blueCrystalPrice <= 0) errors.price = '블루크리스탈 가격을 입력해주세요.';
     if (goldPerWon <= 0) errors.rate = '환율을 입력해주세요.';
     // 판매 기간은 선택 입력 — 둘 다 넣었을 때만 순서를 검사한다
-    const saleStartDate = fromDatetimeLocalValue(saleStartInput);
-    const saleEndDate = fromSaleEndDateValue(saleEndInput); // 날짜만 받고 시각은 오전 6시(KST) 고정
+    // 둘 다 날짜만 받는다 — 시각은 시작 오전 10시 · 종료 오전 6시(KST) 고정
+    const saleStartDate = fromSaleStartDateValue(saleStartInput);
+    const saleEndDate = fromSaleEndDateValue(saleEndInput);
     if (saleStartDate && saleEndDate && saleEndDate.getTime() <= saleStartDate.getTime()) {
-      errors.salePeriod = '판매 종료 일시는 시작 일시보다 뒤여야 합니다.';
+      errors.salePeriod = '판매 종료일은 시작일보다 뒤여야 합니다.';
     }
     if (packageType === '가챠') {
       // 확률은 확정 구성품(main)에만 있다 — 보너스 행을 합산에 넣으면 100% 검증이 어긋난다
@@ -1460,6 +1499,8 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                   placeholder="예: 2025 설날 패키지" maxLength={50} />
                 {fieldErrors.title && <p className={styles.fieldErrorMsg}>{fieldErrors.title}</p>}
               </div>
+              <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
+                <label className={styles.formLabel}>패키지 종류</label>
               <div className={styles.typeButtonRow}>
                 {(['일반', '2+1', '3+1', '3+보너스', '가챠'] as PackageType[]).map((t) => (
                   <button key={t} type="button"
@@ -1467,14 +1508,15 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                     onClick={() => setPackageType(t)}>{t}</button>
                 ))}
               </div>
+              </div>
               {packageType !== '가챠' && (
               <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
-                <label className={styles.formLabel} htmlFor="pkg-selectable">N선택 (0=전체)</label>
+                <label className={styles.formLabel} htmlFor="pkg-selectable">선택 개수 (비우면 전체 지급)</label>
                 <div className={styles.selectableCountRow}>
                   <input id="pkg-selectable" type="number" className={styles.selectableCountInput}
                     value={selectableCount || ''}
                     onChange={(e) => setSelectableCount(parseInt(e.target.value) || 0)}
-                    placeholder="0" min={0} />
+                    placeholder="전체" min={0} inputMode="numeric" />
                   {selectableCount > 0 && (
                     <span className={styles.selectableCountHint}>
                       {addedItems.length}개 중 {selectableCount}개 선택
@@ -1485,12 +1527,12 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               )}
               {packageType === '3+보너스' && (
               <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
-                <label className={styles.formLabel} htmlFor="pkg-bonus-selectable">보너스 N선택 (0=전체)</label>
+                <label className={styles.formLabel} htmlFor="pkg-bonus-selectable">보너스 선택 개수 (비우면 전체 지급)</label>
                 <div className={styles.selectableCountRow}>
                   <input id="pkg-bonus-selectable" type="number" className={styles.selectableCountInput}
                     value={bonusSelectableCount || ''}
                     onChange={(e) => setBonusSelectableCount(parseInt(e.target.value) || 0)}
-                    placeholder="0" min={0} />
+                    placeholder="전체" min={0} inputMode="numeric" />
                   {bonusSelectableCount > 0 && (
                     <span className={styles.selectableCountHint}>
                       보너스 {addedItems.filter((a) => a.isBonus).length}개 중 {bonusSelectableCount}개 선택
@@ -1500,20 +1542,52 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               </div>
               )}
               <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
-                <label className={styles.formLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', marginBottom: 0 }}>
-                  <input type="checkbox" checked={isNewRelease}
-                    onChange={(e) => setIsNewRelease(e.target.checked)} />
-                  신규 출시 패키지 (갤러리에 30일간 NEW 배지)
-                </label>
+                <label className={styles.formLabel}>패키지 가격 *</label>
+                <div className={styles.priceCurrencyToggle}>
+                  <button type="button"
+                    className={`${styles.priceCurrencyBtn} ${priceCurrency === 'cash' ? styles.priceCurrencyBtnActive : ''}`}
+                    onClick={() => setPriceCurrency('cash')}>현금 (원)</button>
+                  <button type="button"
+                    className={`${styles.priceCurrencyBtn} ${priceCurrency === 'blueCrystal' ? styles.priceCurrencyBtnActive : ''}`}
+                    onClick={() => setPriceCurrency('blueCrystal')}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img loading="lazy" decoding="async" src="/blue.webp" alt="" style={{ width: 16, height: 16, verticalAlign: 'middle', marginRight: 4 }} />
+                    블루크리스탈
+                  </button>
+                </div>
+                {priceCurrency === 'cash' ? (
+                  <div className={styles.priceInputWrap}>
+                    <input id="pkg-rc" type="number" className={`${styles.formInput} ${fieldErrors.price ? styles.formInputError : ''}`}
+                      value={royalCrystalPrice || ''}
+                      onChange={(e) => { setRoyalCrystalPrice(parseInt(e.target.value) || 0); if (fieldErrors.price) setFieldErrors((p) => { const n = { ...p }; delete n.price; return n; }); }}
+                      placeholder="예: 33000" min={0} inputMode="numeric" />
+                    <span className={styles.priceUnit}>원</span>
+                  </div>
+                ) : (
+                  <div className={styles.bcPriceRow}>
+                    <div className={styles.priceInputWrap}>
+                      <input id="pkg-bc" type="number" className={`${styles.formInput} ${fieldErrors.price ? styles.formInputError : ''}`}
+                        value={blueCrystalPrice || ''}
+                        onChange={(e) => { setBlueCrystalPrice(parseInt(e.target.value) || 0); if (fieldErrors.price) setFieldErrors((p) => { const n = { ...p }; delete n.price; return n; }); }}
+                        placeholder="예: 500" min={0} inputMode="numeric" />
+                      <span className={styles.priceUnit}>BC</span>
+                    </div>
+                    {effectiveCashPrice > 0 && (
+                      <span className={styles.bcPriceHint}>= {formatNumber(effectiveCashPrice)}원</span>
+                    )}
+                  </div>
+                )}
+                {fieldErrors.price && <p className={styles.fieldErrorMsg}>{fieldErrors.price}</p>}
               </div>
               <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
                 <label className={styles.formLabel}>판매 기간 (선택)</label>
-                <div className={styles.salePeriodRow}>
-                  <input type="datetime-local" className={styles.salePeriodInput}
+                <div className={styles.salePeriodGrid}>
+                  <span className={styles.salePeriodKey}>시작 (오전 10시)</span>
+                  <input type="date" className={styles.salePeriodInput}
                     value={saleStartInput}
                     onChange={(e) => { setSaleStartInput(e.target.value); if (fieldErrors.salePeriod) setFieldErrors((p) => { const n = { ...p }; delete n.salePeriod; return n; }); }}
-                    aria-label="판매 시작 일시" />
-                  <span className={styles.salePeriodSep}>~</span>
+                    aria-label="판매 시작일 (오전 10시 시작)" />
+                  <span className={styles.salePeriodKey}>종료 (오전 6시)</span>
                   <input type="date" className={styles.salePeriodInput}
                     value={saleEndInput}
                     onChange={(e) => { setSaleEndInput(e.target.value); if (fieldErrors.salePeriod) setFieldErrors((p) => { const n = { ...p }; delete n.salePeriod; return n; }); }}
@@ -1529,36 +1603,11 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                 {fieldErrors.salePeriod && <p className={styles.fieldErrorMsg}>{fieldErrors.salePeriod}</p>}
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>패키지 가격 *</label>
-                <div className={styles.priceCurrencyToggle}>
-                  <button type="button"
-                    className={`${styles.priceCurrencyBtn} ${priceCurrency === 'cash' ? styles.priceCurrencyBtnActive : ''}`}
-                    onClick={() => setPriceCurrency('cash')}>현금 (원)</button>
-                  <button type="button"
-                    className={`${styles.priceCurrencyBtn} ${priceCurrency === 'blueCrystal' ? styles.priceCurrencyBtnActive : ''}`}
-                    onClick={() => setPriceCurrency('blueCrystal')}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img loading="lazy" decoding="async" src="/blue.webp" alt="" style={{ width: 16, height: 16, verticalAlign: 'middle', marginRight: 4 }} />
-                    블루크리스탈
-                  </button>
-                </div>
-                {priceCurrency === 'cash' ? (
-                  <input id="pkg-rc" type="number" className={`${styles.formInput} ${fieldErrors.price ? styles.formInputError : ''}`}
-                    value={royalCrystalPrice || ''}
-                    onChange={(e) => { setRoyalCrystalPrice(parseInt(e.target.value) || 0); if (fieldErrors.price) setFieldErrors((p) => { const n = { ...p }; delete n.price; return n; }); }}
-                    placeholder="예: 33000" min={0} />
-                ) : (
-                  <div className={styles.bcPriceRow}>
-                    <input id="pkg-bc" type="number" className={`${styles.formInput} ${fieldErrors.price ? styles.formInputError : ''}`}
-                      value={blueCrystalPrice || ''}
-                      onChange={(e) => { setBlueCrystalPrice(parseInt(e.target.value) || 0); if (fieldErrors.price) setFieldErrors((p) => { const n = { ...p }; delete n.price; return n; }); }}
-                      placeholder="예: 500" min={0} />
-                    {effectiveCashPrice > 0 && (
-                      <span className={styles.bcPriceHint}>= {formatNumber(effectiveCashPrice)}원</span>
-                    )}
-                  </div>
-                )}
-                {fieldErrors.price && <p className={styles.fieldErrorMsg}>{fieldErrors.price}</p>}
+                <label className={styles.formLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', marginBottom: 0 }}>
+                  <input type="checkbox" checked={isNewRelease}
+                    onChange={(e) => setIsNewRelease(e.target.checked)} />
+                  신규 출시 패키지 (갤러리에 30일간 NEW 배지)
+                </label>
               </div>
             </div>
 
@@ -1622,7 +1671,23 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
 
         {/* 아이템 추가 그리드 */}
         <div className={styles.availableSection}>
-          <h2 className={styles.sectionTitle}>아이템 추가</h2>
+          <div className={styles.catalogHead}>
+            <h2 className={styles.sectionTitle}>아이템 추가</h2>
+            <div className={styles.catalogSearchWrap}>
+              <svg className={styles.catalogSearchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+              </svg>
+              <input type="search" className={styles.catalogSearch}
+                value={catalogQuery}
+                onChange={(e) => setCatalogQuery(e.target.value)}
+                placeholder="아이템 검색 (파결, 용숨, 젬, 티켓)"
+                aria-label="아이템 검색" />
+              {catalogQuery && (
+                <button type="button" className={styles.catalogSearchClear}
+                  onClick={() => setCatalogQuery('')} aria-label="검색어 지우기">&times;</button>
+              )}
+            </div>
+          </div>
           {probBoxTargetId && (() => {
             const targetBox = addedItems.find((a) => a.id === probBoxTargetId);
             const targetName = targetBox?.probBoxName?.trim() || '확률 상자';
@@ -1644,11 +1709,11 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                 onClick={() => setAddTarget('bonus')}>보너스 구성품에 추가 (3회 구매 시 1회)</button>
             </div>
           )}
-          <div className={styles.availableGrid}>
-            {TEMPLATE_ITEMS.map((template) => {
-              // 담기 모드: 상자(선택 상자·확률 상자)만 빼고 전부 클릭 가능.
-              // 강조·카운트도 (전체 추가 수 대신) 대상 상자에 담긴 수 기준
-              const targetBox = probBoxTargetId ? addedItems.find((a) => a.id === probBoxTargetId) : null;
+          {(() => {
+            // 담기 모드: 상자(선택 상자·확률 상자)만 빼고 전부 클릭 가능.
+            // 강조·카운트도 (전체 추가 수 대신) 대상 상자에 담긴 수 기준
+            const targetBox = probBoxTargetId ? addedItems.find((a) => a.id === probBoxTargetId) : null;
+            const renderCell = (template: TemplateItem) => {
               const candCount = targetBox
                 ? (targetBox.probBoxCandidates || []).filter((c) => probBoxCandFromTemplate(c, template)).length
                 : 0;
@@ -1672,17 +1737,84 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                       <span className={styles.availableItemCount}>{addedCount}</span>
                     )}
                   </div>
-                  <span className={styles.availableItemName}>{template.name}</span>
+                  <span className={styles.availableItemName}>{catalogLabel(template)}</span>
                 </button>
               );
-            })}
-            <button type="button"
-              className={`${styles.availableItem} ${styles.availableItemCustom}`}
-              onClick={handleAddCustomItem}>
-              <span className={styles.availableItemCustomPlus}>+</span>
-              <span className={styles.availableItemName}>기타 항목 추가</span>
-            </button>
-          </div>
+            };
+
+            const q = normalizeSearch(catalogQuery.trim());
+            const sections = CATALOG_SECTIONS
+              .filter((s) => catalogCat === 'all' || s.cat === catalogCat)
+              .map((s) => ({ ...s, items: s.ids.map((id) => TEMPLATES_MAP[id]).filter((t) => t && templateMatchesQuery(t, q)) }))
+              .filter((s) => s.items.length > 0);
+            const cats = Array.from(new Set(CATALOG_SECTIONS.map((s) => s.cat)));
+            // 직접 구성 줄은 검색 중엔 숨긴다 (검색 결과만 보이게) — 단, 상자 이름으로 검색했거나
+            // 아무것도 안 찾혔을 때는 보여 준다. 없는 아이템의 출구가 '기타 항목'이라서다.
+            const customBoxes = CATALOG_CUSTOM_BOX_IDS.map((id) => TEMPLATES_MAP[id]).filter((t) => t && templateMatchesQuery(t, q));
+            const showCustomBtn = !q || sections.length === 0 || normalizeSearch('기타 아이템 직접 입력').includes(q);
+            const showCustomRow = showCustomBtn || customBoxes.length > 0;
+
+            return (
+              <>
+                <div className={styles.catalogTabs} role="tablist" aria-label="아이템 분류">
+                  <button type="button" role="tab" aria-selected={catalogCat === 'all'}
+                    className={`${styles.catalogTab} ${catalogCat === 'all' ? styles.catalogTabActive : ''}`}
+                    onClick={() => setCatalogCat('all')}>전체</button>
+                  {cats.map((c) => (
+                    <button key={c} type="button" role="tab" aria-selected={catalogCat === c}
+                      className={`${styles.catalogTab} ${catalogCat === c ? styles.catalogTabActive : ''}`}
+                      onClick={() => setCatalogCat(c)}>{CATALOG_CATEGORY_LABEL[c]}</button>
+                  ))}
+                </div>
+
+                {sections.map((s) => (
+                  <div key={s.title} className={styles.catalogSection}>
+                    <div className={styles.catalogSectionHead}>
+                      <h3 className={styles.catalogSectionTitle}>{s.title}</h3>
+                      <span className={styles.catalogSectionCount}>{s.items.length}</span>
+                      {s.hint && <p className={styles.catalogSectionHint}>{s.hint}</p>}
+                    </div>
+                    <div className={styles.availableGrid}>
+                      {s.items.map(renderCell)}
+                    </div>
+                  </div>
+                ))}
+
+                {sections.length === 0 && (
+                  <div className={styles.catalogEmpty}>
+                    <p>‘{catalogQuery.trim()}’ 에 맞는 아이템이 없어요.</p>
+                    <p className={styles.catalogEmptyHint}>
+                      {catalogCat !== 'all' ? '다른 분류를 골라 보거나, ' : ''}
+                      아래 <b>기타 아이템 직접 입력</b>으로 이름과 골드를 직접 적어 넣을 수 있어요. 검색은 줄임말도 돼요 (파결, 용숨, 블크).
+                    </p>
+                    {catalogCat !== 'all' && (
+                      <button type="button" className={styles.catalogEmptyBtn} onClick={() => setCatalogCat('all')}>전체 분류에서 찾기</button>
+                    )}
+                  </div>
+                )}
+
+                {showCustomRow && (
+                  <div className={`${styles.catalogSection} ${styles.catalogSectionCustom}`}>
+                    <div className={styles.catalogSectionHead}>
+                      <h3 className={styles.catalogSectionTitle}>직접 구성</h3>
+                      <p className={styles.catalogSectionHint}>목록에 없는 상자나 아이템을 직접 만들어 넣습니다</p>
+                    </div>
+                    <div className={styles.availableGrid}>
+                      {customBoxes.map(renderCell)}
+                      {showCustomBtn && (
+                        <button type="button"
+                          className={`${styles.availableItem} ${styles.availableItemCustom}`}
+                          onClick={handleAddCustomItem}>
+                          <span className={styles.availableItemCustomPlus}>+</span>
+                          <span className={styles.availableItemName}>기타 아이템 직접 입력</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* 계산 결과 사이드바 (fixed) */}
