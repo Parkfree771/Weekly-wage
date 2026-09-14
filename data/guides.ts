@@ -12,6 +12,24 @@ export interface Guide {
 
 export const guides: Guide[] = [
   {
+    slug: 'wangap-20-25-cases',
+    title: '완갑 +20에서 +25까지, 숨결·귀속 재료 상황별 강화 비용 정리',
+    summary:
+      '9월 15일 열리는 완갑 +21~+25 강화를 숨결 없음·풀숨·최적 숨결, 귀속 숨결, 파괴석·수호석 결정 귀속으로 나눠 평균·중앙값·장인의 기운 100% 기준 골드를 계산했습니다. 숨결을 몇 번째 시도까지 넣는 게 이득인지도 정리했습니다.',
+    category: '완갑',
+    date: '2026-09-14',
+    href: '/guide/wangap-20-25-cases',
+  },
+  {
+    slug: 'wangap-special-refine-shilling',
+    title: '완갑 +20~+25 특재돌 배분과 실링 준비량 정리',
+    summary:
+      '+20에서 +25까지 성장 비용 2,715만 실링과 숨결별 강화 실링 총량, 특수 재련 한 단계에 드는 특재돌과 보유량별로 어느 단계에 쓰는 게 가장 이득인지 정리했습니다.',
+    category: '완갑',
+    date: '2026-09-14',
+    href: '/guide/wangap-special-refine-shilling',
+  },
+  {
     slug: 'gacha-ticket-package',
     title: '가챠 상자와 티켓 패키지, 효율 계산이 어떻게 다른가',
     summary:
