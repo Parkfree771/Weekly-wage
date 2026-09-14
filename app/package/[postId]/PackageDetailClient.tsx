@@ -159,6 +159,7 @@ function getTypeBadgeClass(type: PackageType): string {
   if (type === '3+1') return styles.typeBadge31;
   if (type === '2+1') return styles.typeBadge21;
   if (type === '3+보너스') return styles.typeBadge31;
+  if (type === '핫딜샵') return styles.typeBadge31;
   if (type === '가챠') return styles.typeBadgeGacha;
   return styles.typeBadgeNormal;
 }
@@ -1098,7 +1099,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
 
   // '3+보너스' 전용: 3회 구매 시 1회 지급되는 보너스 구성품 가치 (선택형 보너스는 뷰어의 선택에 따라 재계산)
   const { bonusTotalGold, bonusItemSubtotals } = useMemo(() => {
-    if (!post || post.packageType !== '3+보너스' || !post.bonusItems || post.bonusItems.length === 0) {
+    if (!post || (post.packageType !== '3+보너스' && post.packageType !== '핫딜샵') || !post.bonusItems || post.bonusItems.length === 0) {
       return { bonusTotalGold: 0, bonusItemSubtotals: [] as number[] };
     }
     const subtotals = post.bonusItems.map((item, idx) =>
@@ -1129,6 +1130,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
 
   const cashGold = post.royalCrystalPrice * detailGoldPerWon;
   const isBonusPkg = post.packageType === '3+보너스';
+  // '핫딜샵': 가격(칸 가격 합)은 글에 저장돼 있고, 전부 구매 시 칸 가치 합 + 보너스 1회
+  const isHotDeal = post.packageType === '핫딜샵';
 
   // 1개 이득률: 보너스 가정 없이 순수 1회 구매 기준 (3+1/2+1과 동일한 원칙)
   const singleBenefit = cashGold > 0 ? ((totalGold - cashGold) / cashGold) * 100 : 0;
@@ -1138,7 +1141,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
   const getCount = post.packageType === '3+1' ? 4 : post.packageType === '2+1' ? 3 : 1;
   const bundleCash = cashGold * buyCount;
   // '3+보너스': 3회 구매 시 확정 구성품 3배 + 보너스 구성품 1회(고정, 배수 아님)
-  const bundleGold = isBonusPkg ? totalGold * 3 + bonusTotalGold : totalGold * getCount;
+  const bundleGold = isBonusPkg ? totalGold * 3 + bonusTotalGold : isHotDeal ? totalGold + bonusTotalGold : totalGold * getCount;
   const bundleBenefit = bundleCash > 0 ? ((bundleGold - bundleCash) / bundleCash) * 100 : 0;
 
   // 가챠 전용 렌더링
@@ -1592,12 +1595,12 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 <>
                   <div className={styles.resultDivider} />
                   <div className={styles.resultRow}>
-                    <span className={styles.resultRowLabel}>{post.packageType} 보정</span>
+                    <span className={styles.resultRowLabel}>{isHotDeal ? '전부 구매 (보너스 포함)' : `${post.packageType} 보정`}</span>
                     <GoldValue v={bundleGold} />
                   </div>
                   {detailGoldPerWon > 0 && pricesReady && (
                     <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
-                      <span className={styles.resultRowLabel}>{post.packageType} 이득률</span>
+                      <span className={styles.resultRowLabel}>{isHotDeal ? '전부 구매 이득률' : `${post.packageType} 이득률`}</span>
                       <BenefitBadge v={bundleBenefit} />
                     </div>
                   )}
@@ -1770,6 +1773,12 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                     {/* 계산 방식은 제목에 붙이지 않고 아래 줄로 내린다 — 제목이 두 줄 클램프라
                         같은 줄에 두면 정작 상자 이름이 잘렸다 */}
                     {hasProbBox && <div className={styles.itemCardNameNote}>확률 기댓값</div>}
+                    {/* 핫딜샵: 이 칸(상품)의 가격 — 글의 통화 단위 */}
+                    {post.packageType === '핫딜샵' && (item.slotPrice || 0) > 0 && (
+                      <div className={styles.itemCardNameNote}>
+                        칸 가격 {formatNumber(item.slotPrice || 0)}{post.priceCurrency === 'blueCrystal' ? ' 블크' : '원'}
+                      </div>
+                    )}
                     {renderTicketTierSelect(item.itemId, item.name)}
 
                     {hasChoices && item.choiceOptions!.length <= 3 && !isRiftRun && (
@@ -2026,12 +2035,12 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
         })()}
 
         {/* 보너스 구성품 (3+보너스 전용, 3회 구매 시 1회 지급) */}
-        {post.packageType === '3+보너스' && post.bonusItems && post.bonusItems.length > 0 && (
+        {(post.packageType === '3+보너스' || post.packageType === '핫딜샵') && post.bonusItems && post.bonusItems.length > 0 && (
           <section className={`${styles.itemCardsSection} ${styles.detailCard}`}>
             <h2 className={styles.detailCardHeader}>
               보너스 구성품 ({post.bonusItems.length}종)
               <span className={styles.detailCardHeaderNote}>
-                3회 구매 시 1회 지급{(post.bonusSelectableCount || 0) > 0 ? ` · ${post.bonusSelectableCount}개 선택` : ''}
+                {post.packageType === '핫딜샵' ? `${post.items.length}칸 전부 구매 시 1회 지급` : '3회 구매 시 1회 지급'}{(post.bonusSelectableCount || 0) > 0 ? ` · ${post.bonusSelectableCount}개 선택` : ''}
               </span>
             </h2>
             <div className={styles.itemCardsGrid}>

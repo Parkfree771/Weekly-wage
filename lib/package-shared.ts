@@ -61,6 +61,8 @@ export type AddedItem = {
   probBoxCandidates?: ProbBoxCandidate[];
   // '3+보너스' 패키지 전용: 3개 구매 시 1회만 지급되는 보너스 구성품 여부
   isBonus?: boolean;
+  // '핫딜샵' 전용: 이 칸(상품) 하나의 가격 — 글의 통화 단위(원 또는 블크)
+  slotPrice?: number;
 };
 
 export type ChoiceBoxCandidate = {
@@ -1688,7 +1690,9 @@ export function calculatePostEfficiency(
 
   // '3+보너스': 3개 구매 시 1회만 지급되는 고정 보상. 3개 단위로 균등 배분해 개당 효율에 반영.
   // 보너스 택N이면 보너스 중 최고가 N개만 합산 (뷰어가 최고가 조합을 고른다고 가정).
-  if (post.packageType === '3+보너스') {
+  // '핫딜샵': 칸마다 값이 다른 상품을 전부 사면 보너스 1회. 갤러리 정렬 효율은 "전부 구매" 기준 —
+  // 가격(칸 가격 합)은 이미 royalCrystalPrice 에 들어 있고, 가치는 칸 가치 합 + 보너스.
+  if (post.packageType === '3+보너스' || post.packageType === '핫딜샵') {
     const bonusValues = (post.bonusItems || []).map(itemValue);
     let bonusGold: number;
     if (post.bonusSelectableCount && post.bonusSelectableCount > 0) {
@@ -1697,7 +1701,7 @@ export function calculatePostEfficiency(
     } else {
       bonusGold = bonusValues.reduce((s, v) => s + v, 0);
     }
-    const adjustedTotalGold = totalGold + bonusGold / 3;
+    const adjustedTotalGold = post.packageType === '핫딜샵' ? totalGold + bonusGold : totalGold + bonusGold / 3;
     return post.royalCrystalPrice > 0 ? adjustedTotalGold / post.royalCrystalPrice : 0;
   }
 

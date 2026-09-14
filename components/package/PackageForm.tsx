@@ -11,7 +11,7 @@
 // 하나라도 있을 때 이후 확률이 전부 한 칸씩 밀린다.
 
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
-import type { PackageItem, PackagePost, PackageType, PriceCurrency } from '@/types/package';
+import type { PackageItem, PackagePost, PackageType, PriceCurrency, PackageEventTheme } from '@/types/package';
 import {
   type AddedItem,
   type ChoiceBoxCandidate,
@@ -39,7 +39,6 @@ import {
   peonGoldPerUnit,
   addedItemHasPeon,
 } from '@/lib/package-shared';
-import PeonBadge from '@/components/package/PeonBadge';
 import NoPeonToggle from '@/components/package/NoPeonToggle';
 import { useNoPeon } from '@/components/package/useNoPeon';
 import { fromSaleStartDateValue, fromSaleEndDateValue, toDateOnlyValue } from '@/lib/package-sale';
@@ -58,6 +57,7 @@ export type PackageFormInitial = {
   selectableCount: number;
   bonusSelectableCount: number;
   isNewRelease: boolean;
+  eventTheme: PackageEventTheme | null;
   saleStartInput: string;
   saleEndInput: string;
   saleClosed: boolean;
@@ -80,6 +80,8 @@ export type PackageFormSubmitData = {
   selectableCount: number;
   bonusSelectableCount: number;
   isNewRelease: boolean;
+  /** 이벤트 테마 — null 이면 평소 카드 */
+  eventTheme: PackageEventTheme | null;
   saleStartAt: Date | null;
   saleEndAt: Date | null;
   saleClosed: boolean;
@@ -270,6 +272,8 @@ function mapItemsToAdded(
     .map((item) => {
       const mapped = mapOneItem(item, ctx);
       if (mapped && item.probability != null) probs[mapped.id] = item.probability;
+      // 핫딜샵 칸 가격 — 수정 폼에 그대로 복원
+      if (mapped && item.slotPrice != null) mapped.slotPrice = item.slotPrice;
       return mapped;
     })
     .filter(Boolean) as AddedItem[];
@@ -292,6 +296,7 @@ export function postToFormInitial(post: PackagePost): PackageFormInitial {
     selectableCount: post.selectableCount && post.selectableCount > 0 ? post.selectableCount : 0,
     bonusSelectableCount: post.bonusSelectableCount && post.bonusSelectableCount > 0 ? post.bonusSelectableCount : 0,
     isNewRelease: !!post.isNewRelease,
+    eventTheme: post.eventTheme ?? null,
     saleStartInput: toDateOnlyValue(post.saleStartAt),
     saleEndInput: toDateOnlyValue(post.saleEndAt),
     saleClosed: post.saleClosed === true,
@@ -322,6 +327,9 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
 
   const [title, setTitle] = useState(initial?.title ?? '');
   const [packageType, setPackageType] = useState<PackageType>(initial?.packageType ?? '일반');
+  // 보너스 구성품 칸이 있는 타입 — 3+보너스(3회 구매 시 1회) · 핫딜샵(칸 전부 구매 시 1회)
+  const hasBonusSlot = packageType === '3+보너스' || packageType === '핫딜샵';
+  const isHotDeal = packageType === '핫딜샵';
   const [priceCurrency, setPriceCurrency] = useState<PriceCurrency>(initial?.priceCurrency ?? 'cash');
   const [royalCrystalPrice, setRoyalCrystalPrice] = useState<number>(initial?.royalCrystalPrice ?? 0);
   const [blueCrystalPrice, setBlueCrystalPrice] = useState<number>(initial?.blueCrystalPrice ?? 0);
@@ -334,6 +342,8 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   // '3+보너스' 전용: 보너스 구성품 중 N개 선택 (0 = 전체 지급)
   const [bonusSelectableCount, setBonusSelectableCount] = useState<number>(initial?.bonusSelectableCount ?? 0);
   const [isNewRelease, setIsNewRelease] = useState<boolean>(initial?.isNewRelease ?? false); // 갤러리 NEW 배지 (30일)
+  // 이벤트 테마 — 체크한 글만 갤러리 카드가 테마 옷(추석 밤하늘)을 입는다
+  const [eventTheme, setEventTheme] = useState<PackageEventTheme | null>(initial?.eventTheme ?? null);
   // 판매 기간 (선택 — 상시 판매 패키지는 비워두면 된다)
   const [saleStartInput, setSaleStartInput] = useState<string>(initial?.saleStartInput ?? '');
   const [saleEndInput, setSaleEndInput] = useState<string>(initial?.saleEndInput ?? '');
@@ -388,7 +398,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
 
     itemCounterRef.current += 1;
     const newItem: AddedItem = { id: `${templateId}_${itemCounterRef.current}`, templateId, quantity: 1 };
-    if (packageType === '3+보너스' && addTarget === 'bonus') {
+    if (hasBonusSlot && addTarget === 'bonus') {
       newItem.isBonus = true;
     }
     if (template.type === 'choice' && template.choices?.length) {
@@ -699,6 +709,16 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     );
   };
 
+  // '핫딜샵': 칸(상품)별 가격 — 글의 통화 단위(원 또는 블크)
+  const handleSlotPriceChange = (itemId: string, price: number) => {
+    setAddedItems((prev) =>
+      prev.map((a) =>
+        a.id === itemId ? { ...a, slotPrice: Math.max(0, price) } : a,
+      ),
+    );
+    if (fieldErrors.price) setFieldErrors((p) => { const n = { ...p }; delete n.price; return n; });
+  };
+
   const handleInnerQuantityChange = (itemId: string, qty: number) => {
     setAddedItems((prev) =>
       prev.map((a) =>
@@ -720,7 +740,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
       customName: '',
       customShortName: '',
       customGoldPerUnit: 0,
-      ...(packageType === '3+보너스' && addTarget === 'bonus' ? { isBonus: true } : {}),
+      ...(hasBonusSlot && addTarget === 'bonus' ? { isBonus: true } : {}),
     }]);
   };
 
@@ -782,10 +802,16 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   const [noPeon, setNoPeon] = useNoPeon();
   const peonGold = peonGoldPerUnit(goldPerWon, noPeon);
 
+  // '핫딜샵': 패키지 가격은 손으로 넣지 않고 칸(상품) 가격의 합이다 — 통화 단위 그대로
+  const slotPriceSum = isHotDeal
+    ? addedItems.reduce((s, a) => (a.isBonus ? s : s + (a.slotPrice || 0)), 0)
+    : 0;
   // 블크 → 원 환산 가격 (100 BC = 2750원)
-  const effectiveCashPrice = priceCurrency === 'cash'
-    ? royalCrystalPrice
-    : blueCrystalPrice * 27.5;
+  const effectiveCashPrice = isHotDeal
+    ? (priceCurrency === 'cash' ? slotPriceSum : slotPriceSum * 27.5)
+    : priceCurrency === 'cash'
+      ? royalCrystalPrice
+      : blueCrystalPrice * 27.5;
 
   // choice 타입: 박스 개수(added.quantity) × 선택지별 박스당 개수 (미지정 선택지는 1배 = 기존과 동일)
   const getChoiceQty = (added: AddedItem, template: TemplateItem): number => {
@@ -876,7 +902,12 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   const buyCount = packageType === '3+1' ? 3 : packageType === '2+1' ? 2 : isBonusPkg ? 3 : 1;
   const getCount = packageType === '3+1' ? 4 : packageType === '2+1' ? 3 : 1;
   const fullCashGold = effectiveCashPrice * buyCount * goldPerWon;
-  const fullPackageGold = isBonusPkg ? totalGoldValue * 3 + bonusGoldValue : totalGoldValue * getCount;
+  // 핫딜샵: 칸 전부 구매(= 가격 합) 시 칸 가치 합 + 보너스 1회
+  const fullPackageGold = isBonusPkg
+    ? totalGoldValue * 3 + bonusGoldValue
+    : isHotDeal
+      ? totalGoldValue + bonusGoldValue
+      : totalGoldValue * getCount;
   const fullBenefit = fullCashGold > 0
     ? ((fullPackageGold - fullCashGold) / fullCashGold) * 100
     : 0;
@@ -910,6 +941,16 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               onChange={(e) => handleQuantityChange(added.id, parseInt(e.target.value) || 0)}
               min={0} />
             <span className={styles.packageBoxItemSubtotal}>{formatNumber(cSubtotal)}G</span>
+            {isHotDeal && !added.isBonus && (
+              <>
+                <input type="number" className={styles.quantityInput}
+                  value={added.slotPrice || ''}
+                  onChange={(e) => handleSlotPriceChange(added.id, parseInt(e.target.value) || 0)}
+                  placeholder="가격" style={{ width: '80px' }} min={0} inputMode="numeric"
+                  title="이 칸(상품)의 가격" />
+                <span className={styles.gachaProbUnit}>{priceCurrency === 'cash' ? '원' : '블크'}</span>
+              </>
+            )}
             {packageType === '가챠' && (
               <>
                 <input type="number" className={styles.gachaProbInput}
@@ -936,7 +977,9 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     return (
       <div key={added.id} className={`${styles.packageBoxItem} ${(added.isBonus ? bonusSelectableCount > 0 : selectableCount > 0) && !isChecked ? styles.packageBoxItemUnchecked : ''}`}>
         <div className={styles.packageBoxItemMain}>
-          <span className={styles.packageBoxItemIconBox}>
+          {/* 페온이 값에 든 구성품 — 아이콘 테두리로 표시 (갤러리 칸과 같은 규칙, 배지 스티커 없음) */}
+          <span className={`${styles.packageBoxItemIconBox} ${addedItemHasPeon(added, template) ? (noPeon ? styles.packageBoxItemIconPeonOff : styles.packageBoxItemIconPeon) : ''}`}
+            title={addedItemHasPeon(added, template) ? (noPeon ? '페온 가치 제거 중' : '페온 가치 포함') : undefined}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={template.icon} alt={template.name}
               className={styles.packageBoxItemIcon}
@@ -945,7 +988,6 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                 ...(ICON_POSITION[template.id] ? { objectFit: 'cover' as const, objectPosition: ICON_POSITION[template.id] } : {}),
               }}
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            {addedItemHasPeon(added, template) && <PeonBadge off={noPeon} />}
           </span>
           <span className={styles.packageBoxItemName}>
             {template.type === 'choiceBox' ? (added.choiceBoxName?.trim() || template.name)
@@ -967,6 +1009,16 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
             </>
           )}
           <span className={styles.packageBoxItemSubtotal}>{formatNumber(subtotal)}G</span>
+          {isHotDeal && !added.isBonus && (
+            <>
+              <input type="number" className={styles.quantityInput}
+                value={added.slotPrice || ''}
+                onChange={(e) => handleSlotPriceChange(added.id, parseInt(e.target.value) || 0)}
+                placeholder="가격" style={{ width: '80px' }} min={0} inputMode="numeric"
+                title="이 칸(상품)의 가격" />
+              <span className={styles.gachaProbUnit}>{priceCurrency === 'cash' ? '원' : '블크'}</span>
+            </>
+          )}
           {packageType === '가챠' && (
             <>
               <input type="number" className={styles.gachaProbInput}
@@ -1228,8 +1280,14 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
     const errors: Record<string, string> = {};
     if (!title.trim()) errors.title = '제목을 입력해주세요.';
     if (addedItems.filter((a) => !a.isBonus).length === 0) errors.items = '아이템을 1개 이상 추가해주세요.';
-    if (priceCurrency === 'cash' && royalCrystalPrice <= 0) errors.price = '현금 가격을 입력해주세요.';
-    if (priceCurrency === 'blueCrystal' && blueCrystalPrice <= 0) errors.price = '블루크리스탈 가격을 입력해주세요.';
+    if (isHotDeal) {
+      // 핫딜샵: 칸(상품)마다 가격이 있어야 한다 — 합이 곧 패키지 가격
+      const missing = addedItems.filter((a) => !a.isBonus && !(a.slotPrice && a.slotPrice > 0)).length;
+      if (missing > 0) errors.price = `칸 가격이 비어 있는 상품이 ${missing}개 있습니다. 구성 목록에서 각 칸의 ${priceCurrency === 'cash' ? '원' : '블크'} 가격을 넣어주세요.`;
+    } else {
+      if (priceCurrency === 'cash' && royalCrystalPrice <= 0) errors.price = '현금 가격을 입력해주세요.';
+      if (priceCurrency === 'blueCrystal' && blueCrystalPrice <= 0) errors.price = '블루크리스탈 가격을 입력해주세요.';
+    }
     if (goldPerWon <= 0) errors.rate = '환율을 입력해주세요.';
     // 판매 기간은 선택 입력 — 둘 다 넣었을 때만 순서를 검사한다
     // 둘 다 날짜만 받는다 — 시각은 시작 오전 10시 · 종료 오전 6시(KST) 고정
@@ -1406,6 +1464,8 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
           const item = buildOne(added);
           if (!item) return null;
           if (withProb) item.probability = gachaProbabilities[added.id] || 0;
+          // 핫딜샵: 칸(상품) 가격을 아이템에 싣는다 — 카드가 체크 상태에 따라 가격 합을 다시 낸다
+          if (isHotDeal && !added.isBonus) item.slotPrice = added.slotPrice || 0;
           return item;
         })
         .filter(Boolean) as PackageItem[];
@@ -1413,20 +1473,23 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
       const mainAdded = addedItems.filter((a) => !a.isBonus);
       const bonusAdded = addedItems.filter((a) => a.isBonus);
       const items = buildItems(mainAdded, packageType === '가챠');
-      const bonusItems = packageType === '3+보너스' ? buildItems(bonusAdded, false) : [];
+      const bonusItems = hasBonusSlot ? buildItems(bonusAdded, false) : [];
 
       await onSubmit({
         title: title.trim(),
         packageType,
         royalCrystalPrice: effectiveCashPrice,
         priceCurrency,
-        blueCrystalPrice,
+        // 핫딜샵 블크 결제: 블크 가격도 칸 가격 합
+        blueCrystalPrice: isHotDeal ? (priceCurrency === 'blueCrystal' ? slotPriceSum : 0) : blueCrystalPrice,
         items,
         bonusItems,
         goldPerWon,
-        selectableCount,
-        bonusSelectableCount: packageType === '3+보너스' ? bonusSelectableCount : 0,
+        // 핫딜샵은 칸 전부가 상품이라 택N 이 없다
+        selectableCount: isHotDeal ? 0 : selectableCount,
+        bonusSelectableCount: hasBonusSlot ? bonusSelectableCount : 0,
         isNewRelease,
+        eventTheme,
         saleStartAt: saleStartDate,
         saleEndAt: saleEndDate,
         saleClosed,
@@ -1461,12 +1524,12 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               ) : (
                 <div className={styles.packageBoxList}>
                   {addedItems.filter((a) => !a.isBonus).map(renderAddedRow)}
-                  {packageType === '3+보너스' && addedItems.some((a) => a.isBonus) && (
+                  {hasBonusSlot && addedItems.some((a) => a.isBonus) && (
                     <div style={{ padding: '0.6rem 0.2rem 0.3rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', borderTop: '1px dashed var(--border-color)', marginTop: '0.3rem' }}>
-                      보너스 구성품 (3회 구매 시 1회 지급{bonusSelectableCount > 0 ? ` · ${bonusSelectableCount}개 선택` : ''})
+                      보너스 구성품 ({isHotDeal ? '칸 전부 구매 시 1회 지급' : '3회 구매 시 1회 지급'}{bonusSelectableCount > 0 ? ` · ${bonusSelectableCount}개 선택` : ''})
                     </div>
                   )}
-                  {packageType === '3+보너스' && addedItems.filter((a) => a.isBonus).map(renderAddedRow)}
+                  {hasBonusSlot && addedItems.filter((a) => a.isBonus).map(renderAddedRow)}
                 </div>
               )}
             </div>
@@ -1502,14 +1565,14 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
                 <label className={styles.formLabel}>패키지 종류</label>
               <div className={styles.typeButtonRow}>
-                {(['일반', '2+1', '3+1', '3+보너스', '가챠'] as PackageType[]).map((t) => (
+                {(['일반', '2+1', '3+1', '3+보너스', '핫딜샵', '가챠'] as PackageType[]).map((t) => (
                   <button key={t} type="button"
                     className={`${styles.typeButton} ${packageType === t ? styles.typeButtonActive : ''}`}
                     onClick={() => setPackageType(t)}>{t}</button>
                 ))}
               </div>
               </div>
-              {packageType !== '가챠' && (
+              {packageType !== '가챠' && !isHotDeal && (
               <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
                 <label className={styles.formLabel} htmlFor="pkg-selectable">선택 개수 (비우면 전체 지급)</label>
                 <div className={styles.selectableCountRow}>
@@ -1525,7 +1588,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                 </div>
               </div>
               )}
-              {packageType === '3+보너스' && (
+              {hasBonusSlot && (
               <div className={styles.formGroup} style={{ marginBottom: '0.75rem' }}>
                 <label className={styles.formLabel} htmlFor="pkg-bonus-selectable">보너스 선택 개수 (비우면 전체 지급)</label>
                 <div className={styles.selectableCountRow}>
@@ -1555,7 +1618,21 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                     블루크리스탈
                   </button>
                 </div>
-                {priceCurrency === 'cash' ? (
+                {isHotDeal ? (
+                  // 핫딜샵: 가격은 칸(상품) 가격의 합 — 구성 목록의 각 칸에서 넣고 여기서는 합만 보여 준다
+                  <div className={styles.bcPriceRow}>
+                    <div className={styles.priceInputWrap}>
+                      <input type="text" className={`${styles.formInput} ${fieldErrors.price ? styles.formInputError : ''}`}
+                        value={slotPriceSum > 0 ? formatNumber(slotPriceSum) : ''} readOnly
+                        placeholder="칸 가격 합 (자동)" aria-label="칸 가격 합" />
+                      <span className={styles.priceUnit}>{priceCurrency === 'cash' ? '원' : 'BC'}</span>
+                    </div>
+                    <span className={styles.bcPriceHint}>
+                      {priceCurrency === 'blueCrystal' && effectiveCashPrice > 0 ? `= ${formatNumber(effectiveCashPrice)}원 · ` : ''}
+                      {addedItems.filter((a) => !a.isBonus).length}칸 가격 합 (각 칸은 구성 목록에서 입력)
+                    </span>
+                  </div>
+                ) : priceCurrency === 'cash' ? (
                   <div className={styles.priceInputWrap}>
                     <input id="pkg-rc" type="number" className={`${styles.formInput} ${fieldErrors.price ? styles.formInputError : ''}`}
                       value={royalCrystalPrice || ''}
@@ -1607,6 +1684,13 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                   <input type="checkbox" checked={isNewRelease}
                     onChange={(e) => setIsNewRelease(e.target.checked)} />
                   신규 출시 패키지 (갤러리에 30일간 NEW 배지)
+                </label>
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', marginBottom: 0 }}>
+                  <input type="checkbox" checked={eventTheme === 'chuseok'}
+                    onChange={(e) => setEventTheme(e.target.checked ? 'chuseok' : null)} />
+                  추석 패키지 (갤러리 카드에 추석 밤하늘 테마)
                 </label>
               </div>
             </div>
@@ -1699,14 +1783,14 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
               </div>
             );
           })()}
-          {packageType === '3+보너스' && (
+          {hasBonusSlot && (
             <div className={styles.typeButtonRow} style={{ marginBottom: '0.6rem' }}>
               <button type="button"
                 className={`${styles.typeButton} ${addTarget === 'main' ? styles.typeButtonActive : ''}`}
-                onClick={() => setAddTarget('main')}>확정 구성품에 추가</button>
+                onClick={() => setAddTarget('main')}>{isHotDeal ? '판매 칸(상품)에 추가' : '확정 구성품에 추가'}</button>
               <button type="button"
                 className={`${styles.typeButton} ${addTarget === 'bonus' ? styles.typeButtonActive : ''}`}
-                onClick={() => setAddTarget('bonus')}>보너스 구성품에 추가 (3회 구매 시 1회)</button>
+                onClick={() => setAddTarget('bonus')}>{isHotDeal ? '보너스 구성품에 추가 (칸 전부 구매 시 1회)' : '보너스 구성품에 추가 (3회 구매 시 1회)'}</button>
             </div>
           )}
           {(() => {
@@ -1858,14 +1942,14 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
           })() : addedItems.length > 0 && effectiveCashPrice > 0 && (
             <>
               <div className={styles.calcRow}>
-                <span className={styles.calcLabel}>1개 골드 가치</span>
+                <span className={styles.calcLabel}>{isHotDeal ? '칸 가치 합' : '1개 골드 가치'}</span>
                 <span className={styles.calcValue}>{formatNumber(totalGoldValue)} G</span>
               </div>
               <div className={styles.calcRow}>
-                <span className={styles.calcLabel}>패키지 가격</span>
+                <span className={styles.calcLabel}>{isHotDeal ? '칸 가격 합' : '패키지 가격'}</span>
                 <span className={styles.calcValue}>
                   {priceCurrency === 'blueCrystal'
-                    ? `${formatNumber(blueCrystalPrice)} 블크 (${formatNumber(effectiveCashPrice)}원)`
+                    ? `${formatNumber(isHotDeal ? slotPriceSum : blueCrystalPrice)} 블크 (${formatNumber(effectiveCashPrice)}원)`
                     : `${formatNumber(effectiveCashPrice)}원`}
                 </span>
               </div>
@@ -1881,7 +1965,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                     <span className={styles.calcValue}>{formatNumber(singleCashGold)} G</span>
                   </div>
                   <div className={styles.calcRow}>
-                    <span className={styles.calcLabel}>1개 구매 이득률</span>
+                    <span className={styles.calcLabel}>{isHotDeal ? '칸만 산 이득률 (보너스 제외)' : '1개 구매 이득률'}</span>
                     <span className={`${styles.calcEfficiency} ${singleBenefit >= 0 ? styles.calcPositive : styles.calcNegative}`}>
                       {singleBenefit >= 0 ? '+' : ''}{singleBenefit.toFixed(1)}%
                     </span>
@@ -1889,24 +1973,24 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                   {packageType !== '일반' && (
                     <>
                       <hr className={styles.calcDivider} />
-                      {isBonusPkg && bonusGoldValue > 0 && (
+                      {(isBonusPkg || isHotDeal) && bonusGoldValue > 0 && (
                         <div className={styles.calcRow}>
-                          <span className={styles.calcLabel}>보너스 구성품 가치 (3회당 1회, 배수 아님)</span>
+                          <span className={styles.calcLabel}>{isHotDeal ? '보너스 구성품 가치 (칸 전부 구매 시 1회)' : '보너스 구성품 가치 (3회당 1회, 배수 아님)'}</span>
                           <span className={styles.calcValue}>{formatNumber(bonusGoldValue)}G</span>
                         </div>
                       )}
                       <div className={styles.calcRow}>
-                        <span className={styles.calcLabel}>{packageType} 지출</span>
+                        <span className={styles.calcLabel}>{isHotDeal ? '전부 구매 지출' : `${packageType} 지출`}</span>
                         <span className={styles.calcValue}>
                           {formatNumber(effectiveCashPrice * buyCount)}원
                         </span>
                       </div>
                       <div className={styles.calcRow}>
-                        <span className={styles.calcLabel}>{packageType} 획득</span>
+                        <span className={styles.calcLabel}>{isHotDeal ? '전부 구매 획득' : `${packageType} 획득`}</span>
                         <span className={styles.calcValue}>{formatNumber(fullPackageGold)}G</span>
                       </div>
                       <div className={styles.calcRow}>
-                        <span className={styles.calcLabel}>{packageType} 이득률</span>
+                        <span className={styles.calcLabel}>{isHotDeal ? '전부 구매 이득률' : `${packageType} 이득률`}</span>
                         <span className={`${styles.calcEfficiency} ${fullBenefit >= 0 ? styles.calcPositive : styles.calcNegative}`}>
                           {fullBenefit >= 0 ? '+' : ''}{fullBenefit.toFixed(1)}%
                         </span>

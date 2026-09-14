@@ -28,6 +28,7 @@ import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
 import TrendArrow from '@/components/TrendArrow';
 import ReactionBar from '@/components/package/ReactionBar';
 import { useNoPeon } from '@/components/package/useNoPeon';
+import { ChuseokSky, ChuseokMoon } from '@/components/package/ChuseokSky';
 import styles from './PackageGalleryCard.module.css';
 
 // recharts(~100KB)는 차트를 실제로 열 때만 받는다 — 갤러리 첫 로드에 섞이지 않게 동적 로드
@@ -648,9 +649,22 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
   // '3+보너스' 전용: 3회 구매 시 1회 지급되는 보너스 구성품 가치.
   // 카드에서 켜 둔 보너스만 합산한다 (택N 이면 시세 기준 최고가 N개가 기본으로 켜져 있다).
   const bonusTotalGold = useMemo(() => {
-    if (post.packageType !== '3+보너스' || !post.bonusItems || post.bonusItems.length === 0) return 0;
+    if ((post.packageType !== '3+보너스' && post.packageType !== '핫딜샵') || !post.bonusItems || post.bonusItems.length === 0) return 0;
     return bonusItemSubtotals.reduce((sum, v, idx) => (bonusChecked[idx] === false ? sum : sum + v), 0);
   }, [post.packageType, post.bonusItems, bonusItemSubtotals, bonusChecked]);
+
+  // '핫딜샵': 칸(상품)마다 값이 다르고 전부 사야 보너스. 가격은 체크한 칸의 가격 합이고,
+  // 하나라도 풀면 보너스가 빠진다 — 갤러리에서 "다 사는 게 이득인지"를 체크로 바로 비교하게.
+  const isHotDeal = post.packageType === '핫딜샵';
+  const hotCheckedCount = isHotDeal ? post.items.filter((_, idx) => checkedItems[idx] !== false).length : 0;
+  const hotAllChecked = isHotDeal && hotCheckedCount === post.items.length;
+  const hotPriceRaw = isHotDeal
+    ? post.items.reduce((s, it, idx) => (checkedItems[idx] === false ? s : s + (it.slotPrice || 0)), 0)
+    : 0;
+  // 칸 가격은 글의 통화 단위 — 블크면 100블크 = 2,750원으로 원 환산 (등록 폼과 같은 기준)
+  const hotPriceWon = post.priceCurrency === 'blueCrystal' ? hotPriceRaw * 27.5 : hotPriceRaw;
+  const slotPriceGold = (it: PackageItem) =>
+    (post.priceCurrency === 'blueCrystal' ? (it.slotPrice || 0) * 27.5 : (it.slotPrice || 0)) * goldPerWon;
 
   // 평균가 기준 효율 — 같은 calcItemGold·같은 체크 상태로 시세맵만 갈아서 한 번 더 돌린다.
   // 계산 경로를 공유하므로 "표시값과 비교값이 다른 로직" 으로 어긋날 일이 없다.
@@ -663,12 +677,15 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
         return sum + calculateGachaItemGold(item, basePrices, goldPerWon, bcRate, undefined, noPeon) * ((item.probability || 0) / 100);
       }, 0);
     }
-    return post.items.reduce((sum, item, idx) => {
+    const base = post.items.reduce((sum, item, idx) => {
       if (checkedItems[idx] === false) return sum;
       return sum + calcItemGold(item, basePrices);
     }, 0);
+    // 핫딜샵 전부 구매: 보너스도 같은 평균가로 더한다 (표시값과 같은 조건)
+    if (!hotAllChecked || !post.bonusItems) return base;
+    return base + post.bonusItems.reduce((sum, item, idx) => (bonusChecked[idx] === false ? sum : sum + calcItemGold(item, basePrices)), 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [basePrices, post.items, checkedItems, isGacha, goldPerWon, noPeon]);
+  }, [basePrices, post.items, checkedItems, isGacha, goldPerWon, noPeon, hotAllChecked, post.bonusItems, bonusChecked]);
 
   // 차트용 글 — 카드의 현재 체크 상태를 items 에 미리 걸러 담는다.
   // calculatePostEfficiency 는 자체적으로 "최고가 N개"를 다시 고르므로, 사용자가 손으로 바꾼
@@ -691,13 +708,15 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
     [post.bonusItems],
   );
 
-  const cashGold = post.royalCrystalPrice * goldPerWon;
+  // 핫딜샵은 체크한 칸의 가격 합, 나머지는 글의 가격
+  const cashGold = (isHotDeal ? hotPriceWon : post.royalCrystalPrice) * goldPerWon;
   const isBundle = post.packageType === '3+1' || post.packageType === '2+1';
   const isBonusPkg = post.packageType === '3+보너스';
-  const showBonus = isBonusPkg && !!post.bonusItems && post.bonusItems.length > 0;
+  const showBonus = (isBonusPkg || isHotDeal) && !!post.bonusItems && post.bonusItems.length > 0;
 
   // '1개 구매'는 보너스 가정 없이 순수 1회 구매 기준 (3+1/2+1과 동일한 원칙)
-  const effectiveGold = isGacha ? gachaExpectedGold : totalGold;
+  // 핫딜샵은 칸 전부를 체크했을 때만 보너스가 가치에 들어간다
+  const effectiveGold = isGacha ? gachaExpectedGold : totalGold + (hotAllChecked ? bonusTotalGold : 0);
   const singleBenefit = cashGold > 0 ? ((effectiveGold - cashGold) / cashGold) * 100 : 0;
   // 평균가 대비 변동폭(%p). 0.1%p 미만은 표시하지 않는다 — 안 움직인 카드까지 화살표가 붙으면
   // "갱신됐다" 가 아니라 "원래 그렇다" 로 읽혀 신호가 죽는다.
@@ -747,13 +766,18 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
     router.prefetch(`/package/${post.id}`);
   };
 
+  // 이벤트 테마 — 등록·수정 폼에서 체크한 글만 밤하늘 옷을 입는다 (기간이 지나도 남는다)
+  const chuseok = post.eventTheme === 'chuseok';
+
   return (
     <article
-      className={`${styles.galleryCard} ${styles.cardStd} ${saleEnded ? styles.cardEnded : ''} ${dimmed ? styles.cardDimmed : ''}`}
+      className={`${styles.galleryCard} ${styles.cardStd} ${chuseok ? styles.themeChuseok : ''} ${saleEnded ? styles.cardEnded : ''} ${dimmed ? styles.cardDimmed : ''}`}
       onClick={handleCardClick}
       onPointerEnter={handleCardPointerEnter}
       style={{ cursor: 'pointer' }}
     >
+      {/* 추석 밤하늘 — 카드 뒤 전체에 깔린다(맨 앞 자식, z-index 0) */}
+      {chuseok && <ChuseokSky postId={post.id} />}
       {/* 판매 종료 안내 — 흐려진 가운데(구성품·계산 결과) 위에 얹힌다.
           '해제'를 안내 바로 아래 둔 이유: 읽은 자리에서 곧바로 누르게 하려는 것이다.
           예전처럼 머리 줄 구석에 있으면 안내와 조작이 카드 양 끝으로 갈라져 눈이 두 번 움직인다.
@@ -781,6 +805,8 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
           판매 종료 카드에서도 이 줄만은 흐려지지 않는다 — 뭐였는지는 읽히고, 내용만 죽인다. */}
       <header className={styles.cardHead}>
         <div className={styles.cardHeadLeft}>
+          {/* 추석 — NEW 와 같은 문법(상자 없이 글자). 테마 글에만 */}
+          {chuseok && <span className={styles.tagChuseok}>추석</span>}
           {/* 신규 출시 NEW — 배지가 아니라 글자로만 (판매 종료되면 isNewReleasePost 가 false 라 안 뜬다) */}
           {isNewReleasePost(post) && <span className={styles.badgeNew}>NEW</span>}
           <h3 className={styles.cardTitle}>{post.title}</h3>
@@ -818,6 +844,8 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
 
       {/* 왼쪽: 아이템 목록 (배경 이미지) */}
       <div className={styles.leftBox}>
+        {/* 추석 보름달 — 목록 오른쪽 아래 빈 자리, 아이템 칸 뒤 */}
+        {chuseok && <ChuseokMoon />}
         <div className={`${styles.itemGrid} ${isGacha ? '' : styles.itemGridCapped}`}>
           {(isGacha ? gachaDisplayOrder : itemOrder).map((idx, renderIdx) => {
             const item = post.items[idx];
@@ -837,9 +865,14 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
               (gachaMode === 'single' && gachaWinner !== displayIdx) ||
               (gachaMode === 'multi' && !gachaMultiResults.includes(idx))
             );
-            return (
+            // 핫딜샵: 칸 아래에 그 칸의 가격. 글씨 색이 그 칸 하나만의 이득률(초록 이득 · 붉은 손해)
+            const slotBenefitUp = isHotDeal && goldPerWon > 0 && (itemSubtotals[idx] || 0) >= slotPriceGold(item);
+            const slotPct = isHotDeal && goldPerWon > 0 && slotPriceGold(item) > 0
+              ? (((itemSubtotals[idx] || 0) - slotPriceGold(item)) / slotPriceGold(item)) * 100
+              : null;
+            const cell = (
               <div
-                key={idx}
+                key={isHotDeal ? undefined : idx}
                 className={`${styles.itemCell} ${packageItemHasPeon(item) ? (noPeon ? styles.itemCellPeonOff : styles.itemCellPeon) : ''} ${renderIdx >= 15 ? styles.itemCellHidden : ''} ${!isChecked && gachaPhase === 'idle' ? styles.itemCellUnchecked : ''} ${isGachaHighlighted ? styles.itemCellHighlight : ''} ${isGachaWon ? styles.itemCellWon : ''} ${isGachaDimmed ? styles.itemCellDimmed : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -860,6 +893,11 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                       {noPeon ? '페온 제거 중' : '페온 포함'}
                     </span>
                   )}
+                  {slotPct !== null && (
+                    <span className={slotBenefitUp ? styles.itemTipSlotUp : styles.itemTipSlotDown}>
+                      이 칸만 {slotPct >= 0 ? '+' : ''}{slotPct.toFixed(1)}%
+                    </span>
+                  )}
                 </span>
                 <span className={`${styles.itemCheckBox} ${isChecked ? styles.itemCheckBoxChecked : ''} ${isGachaWon ? styles.itemCheckBoxWon : ''}`}>
                   {(isChecked || isGachaWon) && (
@@ -874,6 +912,24 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                   const cnt = slice.filter(r => r === idx).length;
                   return cnt > 1 ? <span className={styles.itemMultiCount}>x{cnt}</span> : null;
                 })()}
+              </div>
+            );
+            if (!isHotDeal) return cell;
+            // 칸 + 가격 캡션을 한 그리드 칸으로 묶는다 (체크를 풀면 가격에 취소선)
+            return (
+              <div key={idx} className={`${styles.slot} ${isChecked ? '' : styles.slotOff}`}>
+                {cell}
+                <span className={`${styles.slotPrice} ${slotBenefitUp ? styles.slotPriceUp : styles.slotPriceDown}`}>
+                  {post.priceCurrency === 'blueCrystal' ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img loading="lazy" decoding="async" src="/blue.webp" alt="블크" className={styles.slotPriceIcon} />
+                      {formatNumber(item.slotPrice || 0)}
+                    </>
+                  ) : (
+                    <>{formatNumber(item.slotPrice || 0)}원</>
+                  )}
+                </span>
               </div>
             );
           })}
@@ -891,11 +947,16 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
             별도 판으로 묶어 확정 구성품과 구분한다. 셀 크기는 확정 구성품과 똑같이 둔다.
             고른 것만 살리고 안 고른 건 흑백으로 죽여 '안 받는 것'이 한눈에 보이게 한다. */}
         {showBonus && post.bonusItems && (
-          <div className={styles.bonusBlock}>
+          <div className={`${styles.bonusBlock} ${isHotDeal && !hotAllChecked ? styles.bonusBlockOff : ''}`}>
             <div className={styles.bonusBar}>
-              <span className={styles.bonusBarTitle}>보너스</span>
+              <span className={styles.bonusBarTitle}>{isHotDeal ? '전부 구매 보너스' : '보너스'}</span>
               <span className={styles.bonusBarNote}>
-                3회 구매 시 1회{(post.bonusSelectableCount || 0) > 0 ? ` · ${post.bonusSelectableCount}개 선택` : ''}
+                {isHotDeal
+                  ? (hotAllChecked
+                    ? `${post.items.length}칸 모두 사면 1회`
+                    : `${post.items.length}칸 모두 사야 받음 · 지금 ${hotCheckedCount}칸`)
+                  : '3회 구매 시 1회'}
+                {(post.bonusSelectableCount || 0) > 0 ? ` · ${post.bonusSelectableCount}개 선택` : ''}
               </span>
               {bonusTotalGold > 0 && (
                 <span className={styles.bonusBarGold}>+{formatNumber(bonusTotalGold)}G</span>
@@ -941,16 +1002,18 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
         <div className={styles.rightTop}>
           {/* 패키지 가격 */}
           <div className={styles.resultRow}>
-            <span className={styles.resultLabel}>패키지 가격</span>
+            <span className={styles.resultLabel}>
+              {isHotDeal ? (hotAllChecked ? '전부 구매 가격' : `선택 ${hotCheckedCount}칸 가격`) : '패키지 가격'}
+            </span>
             <span className={styles.resultValue}>
-              {post.priceCurrency === 'blueCrystal' && post.blueCrystalPrice ? (
+              {post.priceCurrency === 'blueCrystal' && (isHotDeal || post.blueCrystalPrice) ? (
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img loading="lazy" decoding="async" src="/blue.webp" alt="" style={{ width: 14, height: 14, verticalAlign: 'middle', marginRight: 3 }} />
-                  {formatNumber(post.blueCrystalPrice)}
+                  {formatNumber(isHotDeal ? hotPriceRaw : (post.blueCrystalPrice || 0))}
                 </>
               ) : (
-                <>{formatNumber(post.royalCrystalPrice)}원</>
+                <>{formatNumber(isHotDeal ? hotPriceWon : post.royalCrystalPrice)}원</>
               )}
             </span>
           </div>
@@ -958,7 +1021,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
           {/* 가격 줄 바로 아래: 33,000원 = [골드] 환산값 — 구성품 가치 줄과 같은 열 정렬 */}
           {goldPerWon > 0 && post.priceCurrency !== 'blueCrystal' && (
             <div className={styles.resultRow}>
-              <span className={styles.cashNum}>{formatNumber(post.royalCrystalPrice)}원</span>
+              <span className={styles.cashNum}>{formatNumber(isHotDeal ? hotPriceWon : post.royalCrystalPrice)}원</span>
               <span className={styles.resultValueGold}>
                 ={' '}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -970,12 +1033,15 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
 
           {/* 구성품 가치 / 기대값 */}
           <div className={styles.resultRow}>
-            <span className={styles.resultLabel}>{isGacha ? '기대값' : '구성품 가치'}</span>
+            <span className={styles.resultLabel}>
+              {isGacha ? '기대값' : '구성품 가치'}
+              {hotAllChecked && bonusTotalGold > 0 && <small className={styles.resultLabelNote}>보너스 포함</small>}
+            </span>
             <span className={styles.resultValueGold}>
               ={' '}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.goldIconInline} />
-              {formatNumber(isGacha ? gachaExpectedGold : totalGold)}
+              {formatNumber(effectiveGold)}
             </span>
           </div>
 

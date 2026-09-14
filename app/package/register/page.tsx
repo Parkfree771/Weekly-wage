@@ -32,6 +32,7 @@ export default function PackageRegisterPage() {
       ...(data.goldPerWon > 0 ? { goldPerWon: data.goldPerWon } : {}),
       ...(data.selectableCount > 0 ? { selectableCount: data.selectableCount } : {}),
       ...(data.isNewRelease ? { isNewRelease: true } : {}),
+      ...(data.eventTheme ? { eventTheme: data.eventTheme } : {}),
       ...(data.saleStartAt ? { saleStartAt: data.saleStartAt } : {}),
       ...(data.saleEndAt ? { saleEndAt: data.saleEndAt } : {}),
       ...(data.bonusItems.length > 0 ? { bonusItems: data.bonusItems } : {}),
@@ -53,7 +54,7 @@ export default function PackageRegisterPage() {
   // 비로그인
   if (!user) {
     return (
-      <Container fluid style={{ maxWidth: '1400px' }}>
+      <Container fluid style={{ maxWidth: '1680px' /* 등록 화면은 광고가 없어 갤러리(1400)보다 넓게 */ }}>
         <div className={styles.registerWrapper}>
           <div className={styles.pageHeader}>
             <h1 className={styles.pageTitle}>패키지 등록</h1>

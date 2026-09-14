@@ -57,6 +57,8 @@ export default function PackageEditPage() {
       ...(data.goldPerWon > 0 ? { goldPerWon: data.goldPerWon } : { goldPerWon: 0 }),
       selectableCount: data.selectableCount > 0 ? data.selectableCount : 0,
       isNewRelease: data.isNewRelease,
+      // 체크를 풀면 null 로 저장해 테마를 벗긴다
+      eventTheme: data.eventTheme ?? null,
       // 비우면 null 로 저장해 기간을 지운다 (상시 판매로 되돌리기)
       saleStartAt: data.saleStartAt,
       saleEndAt: data.saleEndAt,
@@ -77,7 +79,7 @@ export default function PackageEditPage() {
 
   if (!user) {
     return (
-      <Container fluid style={{ maxWidth: '1400px' }}>
+      <Container fluid style={{ maxWidth: '1680px' /* 등록 화면과 같은 넓은 폭 */ }}>
         <div className={styles.registerWrapper}>
           <div className={styles.pageHeader}>
             <h1 className={styles.pageTitle}>패키지 수정</h1>
