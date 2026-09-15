@@ -125,7 +125,6 @@ export default function GuideFaq({
               <Link key={g.href} href={g.href} className={styles.card}>
                 <span className={styles.cardCategory}>{g.category}</span>
                 <div className={styles.cardTitle}>{g.title}</div>
-                <p className={styles.cardSummary}>{g.summary}</p>
               </Link>
             ))}
           </div>

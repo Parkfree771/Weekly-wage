@@ -52,11 +52,9 @@ import {
   packageItemHasPeon,
   type ProbBoxCandidate,
 } from '@/lib/package-shared';
-import AdBanner from '@/components/ads/AdBanner';
 import PeonBadge from '@/components/package/PeonBadge';
 import { useNoPeon } from '@/components/package/useNoPeon';
 import PeonBasisButton from '@/components/package/PeonBasisButton';
-import SideSquareAd from '@/components/package/SideSquareAd';
 import TicketTierPicker from '@/components/package/TicketTierPicker';
 import dynamic from 'next/dynamic';
 import styles from '../package.module.css';
@@ -1285,15 +1283,6 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                   )}
                 </div>
               </div>
-
-              {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
-                  같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
-              <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-                <AdBanner slot="8616653628" index={0} />
-              </div>
-
-              {/* PC 좌측 250×250 (모바일에서는 CSS 로 숨김) */}
-              <SideSquareAd postId={postId} />
             </div>
 
             {/* 오른쪽: 아이템 구성 + 가챠 시뮬 */}
@@ -1506,11 +1495,6 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             );
           })()}
             </section>
-
-            {/* 모바일 띠배너 — 아이템 구성 아래 (index 1: 위 자리와 다른 단위) */}
-            <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-              <AdBanner slot="8616653628" index={1} />
-            </div>
           </div>
 
           {/* 댓글 */}
@@ -1522,10 +1506,6 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             likeCount={post.likeCount || 0}
             sosoCount={post.sosoCount || 0}
           />
-
-          <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-            <AdBanner slot="8616653628" />
-          </div>
         </div>
       </Container>
     );
@@ -1667,15 +1647,6 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 )}
               </div>
             </div>
-
-            {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
-                같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
-            <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-              <AdBanner slot="8616653628" index={0} />
-            </div>
-
-            {/* PC 좌측 250×250 (모바일에서는 CSS 로 숨김) */}
-            <SideSquareAd postId={postId} />
           </div>
 
           {/* 오른쪽: 아이템 카드 */}
@@ -1959,11 +1930,6 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
               })}
             </div>
           </section>
-
-          {/* 모바일 띠배너 — 아이템 구성 아래 (index 1: 위 자리와 다른 단위) */}
-          <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-            <AdBanner slot="8616653628" index={1} />
-          </div>
         </div>
 
         {/* 구성품 상세 — 젬 상자류·균열 환산 아이템(공명의 기운/휴게 물약)의 구성·계산 근거 (카드 안에 다 안 들어가는 정보를 여기에 풀어씀) */}
@@ -2309,11 +2275,6 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             sosoCount={post.sosoCount || 0}
           />
         )}
-
-        {/* 모바일 하단 광고 */}
-        <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-          <AdBanner slot="8616653628" />
-        </div>
       </div>
     </Container>
   );

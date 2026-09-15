@@ -87,16 +87,19 @@ const AD_ZOOM_COMPENSATE = 1 / DESKTOP_ZOOM;
 // 사이드 광고를 붙일 페이지 — 캐릭터 조회(자체 사이드바), 패키지 등록·수정(폼 화면, railsDisabled에서
 // 별도 제외), 직업 각인(전용 사이드바)만 빼고 대부분 페이지에 적용.
 // 이 목록에 없는 페이지는 데스크톱에서 광고가 아예 없다.
+// /extreme 은 3막·종막 출시 전 "COMING SOON" 화면이라 제외(제작 중 화면 광고 금지 정책) — 보상·상점 공개 후 다시 넣을 것.
 const RAIL_PAGES = new Set([
   '/', '/refining', '/wangap', '/package',
   '/weekly-gold', '/life-master', '/mypage', '/more-reward',
-  '/cathedral', '/cerka', '/extreme', '/belgardin', '/bracelet', '/hell-reward',
+  '/cathedral', '/cerka', '/belgardin', '/bracelet', '/hell-reward',
   '/expedition-gold',
 ]);
-// 패키지 상세(/package/[postId])는 동적 라우트라 위 Set에 못 넣으므로 startsWith로 별도 포함
-// (등록·수정은 railsDisabled가 이미 따로 걸러냄).
+// 패키지 상세는 사이트가 직접 쓴 아제나의 축복(/package/azena-blessing)만 레일을 붙인다.
+// 유저 등록 글(/package/[postId])은 본문이 제목·가격·구성품 이름뿐인 얇은 화면이라
+// "가치 낮은 화면 광고" 로 보이지 않게 광고를 전부 뺐다(PackageDetailClient 본문 광고도 제거).
+// (azena-blessing 상수는 무거운 계산 모듈을 끌고 오므로 전역 컴포넌트인 여기선 경로를 직접 적는다)
 function isRailPage(pathname: string): boolean {
-  return RAIL_PAGES.has(pathname) || pathname.startsWith('/package/');
+  return RAIL_PAGES.has(pathname) || pathname === '/package/azena-blessing';
 }
 
 // 앱 다운로드 사이드바 프로모를 붙일 페이지 — 광고 레일이 있는 페이지도 포함되며,

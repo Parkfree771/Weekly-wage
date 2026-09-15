@@ -56,17 +56,6 @@
   line-height: 1.4;
 }
 
-.cardSummary {
-  margin: 0.2rem 0 0;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
 /* 통합된 가이드 본문(components/guide/*GuideBody)이 들어가는 자리.
    guide.module.css 의 .articleBody 스타일을 그대로 쓰므로 여기서는 위 여백만 준다. */
 .article {

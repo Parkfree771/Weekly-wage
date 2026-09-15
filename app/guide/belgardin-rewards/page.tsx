@@ -117,7 +117,7 @@ export default function BelgardinRewardsGuidePage() {
         <div className={styles.articleHeader}>
           <span className={styles.articleCategory}>레이드</span>
           <h1 className={styles.articleTitle}>벨가르딘 관문별 클리어 보상과 더보기 정리</h1>
-          <span className={styles.articleDate}>2026년 8월 5일 작성</span>
+          <span className={styles.articleDate}>2026년 8월 5일 작성 · 9월 15일 보강</span>
         </div>
 
         <div className={styles.articleBody}>
@@ -151,6 +151,75 @@ export default function BelgardinRewardsGuidePage() {
             <Link href="/belgardin">벨가르딘 보상 페이지</Link>에서 확인하세요.
           </p>
 
+          <h2>난이도를 한 단계 올리면 달라지는 것</h2>
+          <p>
+            위 표의 총합(클리어와 더보기를 모두 받은 기준)을 난이도끼리 빼 보면, 한 단계 올릴 때 늘어나는 양이 생각보다 고르게 나뉩니다.
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <table className={styles.guideTable}>
+              <thead>
+                <tr>
+                  <th>항목</th>
+                  <th>노말 → 하드</th>
+                  <th>하드 → 나이트메어</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>실수령 골드</td><td>+8,160</td><td>+8,840</td></tr>
+                <tr><td>파괴석 결정</td><td>+745</td><td>+595</td></tr>
+                <tr><td>수호석 결정</td><td>+1,490</td><td>+1,190</td></tr>
+                <tr><td>위대한 돌파석</td><td>+24</td><td>+22</td></tr>
+                <tr><td>운명의 파편</td><td>+14,260</td><td>+12,830</td></tr>
+                <tr><td>코어</td><td>변화 없음 (12개)</td><td>+4</td></tr>
+                <tr><td>승급 재료</td><td>사령의 잔영 → 죽음의 손</td><td>변화 없음 (죽음의 손 60개)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            노말에서 하드로 올라갈 때 가장 큰 변화는 골드나 재료가 아니라 승급 재료의 종류입니다. 사령의 잔영은 전설·유물 승급에만 쓸 수 있고,
+            필요 개수도 죽음의 손의 두 배(전설 200개 대 100개, 유물 240개 대 120개)라서 같은 60개를 받아도 승급 속도는 절반입니다.
+            고대 승급은 죽음의 손 150개만 받기 때문에, 노말만 가는 캐릭터는 유물 완갑(+20)에서 멈춥니다.
+          </p>
+          <p>
+            하드에서 나이트메어로 올라갈 때는 승급 재료 수급이 같습니다. 대신 코어가 주 12개에서 16개로 늘고, 실수령 골드가 8,840골드 더 많습니다.
+            나이트메어 입장 레벨(1780)이 하드(1770)보다 10 높으므로, 레벨이 된다면 골드와 코어를 위해 올리는 난이도라고 보면 됩니다.
+          </p>
+
+          <h2>더보기에서 나오는 재료가 더 많다</h2>
+          <p>
+            벨가르딘은 더보기 보상이 클리어 보상보다 큽니다. 세 난이도 모두 더보기로 받는 파괴석·수호석 결정과 운명의 파편이 클리어 보상의 약 2.5배,
+            위대한 돌파석은 4.4~4.8배입니다. 코어와 승급 재료는 클리어와 더보기가 같은 수량이라, 더보기를 건너뛰면 절반만 받습니다.
+          </p>
+          <table className={styles.guideTable}>
+            <thead>
+              <tr>
+                <th>난이도</th>
+                <th>파괴석 결정 (더보기 ÷ 클리어)</th>
+                <th>위대한 돌파석 (더보기 ÷ 클리어)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>나이트메어</td><td>3,280 ÷ 1,255 = 2.6배</td><td>132 ÷ 30 = 4.4배</td></tr>
+              <tr><td>하드</td><td>2,850 ÷ 1,090 = 2.6배</td><td>115 ÷ 25 = 4.6배</td></tr>
+              <tr><td>노말</td><td>2,290 ÷ 905 = 2.5배</td><td>96 ÷ 20 = 4.8배</td></tr>
+            </tbody>
+          </table>
+          <p>
+            관문끼리 비교하면 2관 더보기가 1관보다 비용 대비 재료가 많습니다. 나이트메어 기준으로 더보기 1,000골드당 위대한 돌파석은
+            1관 약 5.1개, 2관 약 5.8개이고, 운명의 파편은 1관 약 2,730개, 2관 약 3,090개입니다. 하드(돌파석 약 5.4개 대 6.1개)와
+            노말(약 5.6개 대 6.3개)도 같은 방향입니다. 골드가 부족해 한 관문만 더보기를 산다면 2관 쪽이 재료를 더 많이 돌려받습니다.
+            다만 승급 재료는 관문당 12개와 18개로 비용에 비례해 나오므로, 승급만 보면 어느 관문이든 골드당 수량은 거의 같습니다.
+          </p>
+
+          <h2>완갑 강화량과 비교해 보면</h2>
+          <p>
+            나이트메어를 매주 더보기까지 받으면 파괴석 결정 4,535개, 수호석 결정 9,070개, 위대한 돌파석 162개가 들어옵니다.
+            완갑을 +0에서 +25까지 숨결 없이 올릴 때 평균 소모량이 파괴석 결정 373,913개, 수호석 결정 1,160,381개, 위대한 돌파석 24,382개이므로,
+            벨가르딘 한 캐릭터의 한 주 보상은 파괴석 결정 기준 약 1.2%, 위대한 돌파석 기준 약 0.7%에 해당합니다.
+            벨가르딘 보상만으로 완갑 재료를 채우는 구조가 아니라, 승급 재료(죽음의 손)가 진행 속도를 정하고 강화 재료는 대부분 거래소나 다른 콘텐츠에서 채우는 구조입니다.
+            단계별 평균 소모량은 <Link href="/guide/wangap-cost">완갑 +0에서 +25까지 강화 비용 정리</Link>에 구간별로 나눠 두었습니다.
+          </p>
+
           <div className={styles.guideCta}>
             <p>벨가르딘 더보기 손익은 실시간 거래소 시세로, 완갑 강화 비용은 완갑 시뮬레이터에서 미리 계산해 볼 수 있습니다.</p>
             <Link href="/wangap" className={styles.guideCtaLink}>
@@ -168,7 +237,7 @@ export default function BelgardinRewardsGuidePage() {
             "headline": "벨가르딘 관문별 클리어 보상과 더보기 정리",
             "description": "벨가르딘 노말·하드·나이트메어 난이도별 관문 클리어 골드, 재료 보상, 더보기 비용과 보상을 표로 정리했습니다.",
             "datePublished": "2026-08-05",
-            "dateModified": "2026-08-05",
+            "dateModified": "2026-09-15",
             "author": { "@type": "Organization", "name": "로아로골" },
             "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
             "mainEntityOfPage": `${SITE_URL}/guide/belgardin-rewards`
