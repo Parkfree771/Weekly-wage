@@ -1148,8 +1148,12 @@ export default function RefiningCalculator({
       위대한돌파석: materials.위대한돌파석 || 0,
       상급아비도스: materials.상급아비도스 || 0,
       운명파편: materials.운명파편 || 0,
-      빙하: materials.빙하 || 0, // 일반+상급+완갑 총합 (카드 합계와 동일)
-      용암: materials.용암 || 0,
+      // 숨결은 화면 소모량과 비교하면 안 된다: λ 청산 정책(clearPool)이 소모를 보유량
+      // 이하로 맞추므로 "보유 ≥ 소모"가 어중간한 보유에서도 항상 성립해, 귀속이 켜지고
+      // 풀숨으로 재수렴(소모 급증)하는 모순이 생긴다. 풀숨 상한(ownedFullNeeds) 이상일
+      // 때만 귀속 — 그 구간에선 λ=0이라 귀속과 계산 결과가 일치한다.
+      빙하: ownedFullNeeds['빙하'] || 0,
+      용암: ownedFullNeeds['용암'] || 0,
       방어구책1215: materials.방어구책1215 || 0,
       방어구책1619: materials.방어구책1619 || 0,
       무기책1215: materials.무기책1215 || 0,
@@ -1204,7 +1208,7 @@ export default function RefiningCalculator({
         return next as typeof prev;
       });
     }
-  }, [ownedFeatureActive, materials, boundMaterials, materialOptions, advancedMaterialOptions]);
+  }, [ownedFeatureActive, materials, boundMaterials, materialOptions, advancedMaterialOptions, ownedFullNeeds]);
   // 입력 핸들러(위쪽 선언)가 즉시 판정을 부를 수 있게 ref 로 연결 — 렌더마다 최신 함수 대입
   judgeAutoBoundsRef.current = judgeAutoBounds;
 
