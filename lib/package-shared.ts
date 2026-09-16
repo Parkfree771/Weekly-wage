@@ -18,6 +18,7 @@ const RENEWED_ICONS: Record<string, string> = {
   '/vkfwlwoqusghksrnjs.webp': '/bracelet-reconvert.webp', // 팔찌 재변환권
   '/slskqm.webp': '/ninav-blessing.webp',                 // 니나브의 축복
   '/vkrhltngh.webp': '/crystal-choice-pouch.webp',        // 파결·수결 선택/묶음
+  '/vkrhltjrtnghtjr.webp': '/stone-choice-pouch.webp',    // 파괴석·수호석 선택 주머니 (반반 합성 → 겹친 그림)
   '/engraving.webp': '/engraving2.webp',                  // 유물 각인서
 };
 
