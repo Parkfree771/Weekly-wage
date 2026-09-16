@@ -2060,6 +2060,241 @@ button.bulkButton:disabled,
   white-space: nowrap;
 }
 
+/* "보유로 몇 강?" — 보유 한도 시뮬 실행 버튼 (브랜드 블루 솔리드) */
+.ownedRunBtn {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: clamp(0.68rem, 1.5vw, 0.78rem);
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.35);
+  white-space: nowrap;
+}
+
+/* "보유로 몇 강까지" 결과 패널 — 세 모드 나란히 */
+.ownedRunPanel {
+  padding: clamp(0.75rem, 2vw, 1rem);
+  background-color: var(--card-body-bg-blue);
+  border-radius: 12px;
+  border-left: 4px solid var(--brand-primary);
+  margin-bottom: 1rem;
+}
+
+.ownedRunHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ownedRunTitle {
+  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.ownedRunClose {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+.ownedRunHint {
+  font-size: clamp(0.68rem, 1.6vw, 0.75rem);
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0.75rem;
+}
+
+.ownedRunModeTag {
+  font-size: clamp(0.68rem, 1.6vw, 0.75rem);
+  font-weight: 800;
+  color: #fff;
+  background: var(--brand-primary);
+  border-radius: 8px;
+  padding: 2px 8px;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.ownedRunGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.6rem;
+}
+
+/* 부위 카드 — 상단(아이콘·이름·상태 배지) / 강수 / 진행률 바 순서의 세로 구성.
+   왼쪽 라인은 상태색(달성 초록·진행 파랑·변동없음 투명)으로 통일해 한눈에 구분 */
+.ownedRunEquip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: var(--card-bg); /* 패널(--card-body-bg-blue)보다 한 단계 밝게 — 카드가 뜬다 */
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  border-left: 3px solid transparent;
+}
+
+/* 목표 달성 — 초록 */
+.ownedRunEquipDone {
+  border-left-color: #16a34a;
+}
+
+/* 진행(올랐지만 목표 미달) — 브랜드 파랑 */
+.ownedRunEquipUp {
+  border-left-color: var(--brand-primary);
+}
+
+/* 변동 없는 부위 — 흐리게 (정렬상 맨 뒤) */
+.ownedRunEquipFlat {
+  opacity: 0.55;
+}
+
+.ownedRunTopRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.ownedRunIcon {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e4e8f4;
+}
+
+[data-theme="dark"] .ownedRunIcon {
+  background: #343e58;
+}
+
+/* 아이콘 없는 장비의 대체 타일 — 장비 카드의 방어구/무기 배경과 동일 색 */
+.ownedRunIconArmor {
+  background: linear-gradient(135deg, #1d4ed8 0%, #0a101f 75%);
+}
+
+.ownedRunIconWeapon {
+  background: linear-gradient(135deg, #b91c1c 0%, #170808 75%);
+}
+
+/* 상태 배지 — 이름 오른쪽 끝에 정렬 */
+.ownedRunBadgeDone,
+.ownedRunBadgeUp,
+.ownedRunBadgeFlat {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-size: clamp(0.64rem, 1.5vw, 0.7rem);
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ownedRunBadgeDone {
+  background: #16a34a;
+  color: #fff;
+}
+
+.ownedRunBadgeUp {
+  background: var(--brand-primary);
+  color: #fff;
+}
+
+.ownedRunBadgeFlat {
+  background: #e4e8f4;
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .ownedRunBadgeFlat {
+  background: #343e58;
+}
+
+/* 목표까지 진행률 바 — 빈 트랙이 카드 배경과 확실히 구분되는 어두운 톤 */
+.ownedRunBar {
+  height: 8px;
+  border-radius: 4px;
+  background: #d5dbeb;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .ownedRunBar {
+  background: #3a4460;
+}
+
+.ownedRunBarFill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--brand-primary);
+}
+
+.ownedRunBarFillDone {
+  height: 100%;
+  border-radius: 4px;
+  background: #16a34a;
+}
+
+/* 최종 목표까지 총 부족량 요약 */
+.ownedRunShortfall {
+  margin-top: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--bg-secondary);
+  border-left: 3px solid #ef4444;
+  border-radius: 8px;
+  font-size: clamp(0.72rem, 1.7vw, 0.8rem);
+  color: var(--text-primary);
+}
+
+.ownedRunShortItem b {
+  color: #ef4444;
+  font-weight: 800;
+}
+
+.ownedRunName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(0.76rem, 1.8vw, 0.84rem);
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.ownedRunLevels {
+  font-size: clamp(0.86rem, 2vw, 1rem);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.ownedRunLevels b {
+  color: var(--brand-primary);
+  font-weight: 800;
+  font-size: 1.1em;
+}
+
+.ownedRunGoalMiss {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: clamp(0.7rem, 1.6vw, 0.78rem);
+}
+
+.ownedRunLack {
+  color: #ef4444;
+  font-weight: 700;
+  font-size: clamp(0.66rem, 1.5vw, 0.72rem);
+}
+
 .calcModeBtn:hover {
   background: var(--bg-tertiary);
   color: var(--text-primary);

@@ -6,7 +6,7 @@ import { Form, Row, Col, Card, Badge } from 'react-bootstrap';
 import Image from 'next/image';
 import { useTheme } from '../ThemeProvider';
 import { getTries, getSuccessionTries, type CalcMode } from '../../lib/refiningSimulationData';
-import { optimalBreathWithBook, triesForFixedBookPolicy, breathUsageCurve, usageAtPrice, type BreathCurvePoint, type OptimalPolicy, type PreSuccessionPolicy } from '../../lib/optimalBreath';
+import { optimalBreathWithBook, triesForFixedBookPolicy, breathUsageCurve, usageAtPrice, metricsForPolicy, type BreathCurvePoint, type OptimalPolicy, type PreSuccessionPolicy } from '../../lib/optimalBreath';
 import {
   addDelta,
   calcCombatPowerGain,
@@ -24,6 +24,20 @@ import {
 // on/off(책 토글 상태를 조건으로 한 숨결 최적화 — 실제 계산·표시용),
 // onEnhanced(강화 책 고정, 목표 19~20 전용)
 type PreOptVariants = { rec: PreSuccessionPolicy; on: PreSuccessionPolicy; off: PreSuccessionPolicy; onEnhanced?: PreSuccessionPolicy };
+
+// "보유로 몇 강까지" 패널 결과 — 모드별 × 부위별 도달 강수와 병목 재료.
+// 세 모드를 모두 계산해 두고, 표시는 현재 선택된 계산 모드(중앙값/평균값/장기백)를 따른다.
+type OwnedRunEquip = {
+  name: string; icon: string | null; type: 'armor' | 'weapon' | 'wangap';
+  from: number; reached: number; target: number;
+  blockedBy?: string; // 이 부위의 다음 스텝을 막은 재료 (부족량은 shortfall에서 목표 기준으로 집계)
+};
+type OwnedRunResult = {
+  mode: CalcMode;
+  equips: OwnedRunEquip[];
+  // 최종 목표까지 전 부위를 완주하려면 추가로 필요한 한도 재료 수량 (큰 순)
+  shortfall: { key: string; amount: number }[];
+};
 import { computeOptimalAdvancedPlan, advComboLabel, ADV_STAGE_KEYS, type AdvStageNum } from '../../lib/optimalAdvancedRefining';
 import { WANGAP_BASE_PROBABILITY } from '../../lib/wangapData';
 import {
@@ -2689,6 +2703,204 @@ export default function RefiningCalculator({
 
 // ... (컴포넌트의 다른 부분들은 동일)
 
+  // ── "보유로 몇 강까지" 시뮬 ──
+  // 입력된 보유량만 유한 자원으로 보고(미입력·귀속 재료는 무제한 취급), 지불 가능한 스텝 중
+  // 시세 환산 소모가 싼 것부터 올리는 탐욕 진행으로 각 부위가 어디서 멈추는지 구한다.
+  // 정책(숨결 N회·책 선택)은 지금 화면에 적용된 것을 고정하고, 세 모드는 그 정책의
+  // 중앙값/평균값/장기백 통계로만 평가한다 — 현재 모드의 화면 견적과 스텝 합이 일치한다.
+  // 한 부위가 재료 부족으로 멈춰도 다른 재료를 쓰는 부위는 계속 진행한다.
+  const [ownedRunResults, setOwnedRunResults] = useState<OwnedRunResult[] | null>(null);
+
+  // 입력·목표·옵션이 바뀌면 이미 계산된 패널은 낡은 값이므로 닫는다 (버튼을 다시 누르면 재계산).
+  // 계산 모드 전환은 닫지 않는다 — 세 모드가 이미 계산돼 있어 표시만 따라 바뀐다.
+  useEffect(() => {
+    setOwnedRunResults(null);
+  }, [ownedMaterials, targetLevels, equipments, materialOptions, boundMaterials, includeGrowth]);
+
+  const runOwnedLimit = useCallback(() => {
+    const toRefine = getEquipmentsToRefine().filter(eq => {
+      const t = targetLevels[eq.name];
+      return !!t?.normal && t.normal! > eq.currentLevel && (eq.isWangap || eq.isSuccession);
+    });
+    if (toRefine.length === 0) { setOwnedRunResults(null); return; }
+
+    const results: OwnedRunResult[] = (['median', 'average', 'pity'] as CalcMode[]).map(mode => {
+      // 1) 스텝(부위 × L→L+1)별 대표 소모 벡터 — calculateMaterials와 같은 경로·정책
+      type Step = { eqName: string; level: number; vec: Record<string, number> };
+      const steps: Step[] = [];
+      toRefine.forEach(eq => {
+        const t = targetLevels[eq.name]!;
+        for (let L = eq.currentLevel; L < t.normal!; L++) {
+          const vec: Record<string, number> = {};
+          // 특재 배분 단계는 강화 재료 대신 특재돌만 소모 — 재료 차감 없음 (성장비는 지불)
+          const isSpecial = !!specialPlan?.chosenKeys.has(`${eq.name}:${L}`);
+          if (eq.isWangap) {
+            if (!(WANGAP_BASE_PROBABILITY[L] ?? 0)) continue;
+            const modeOf = (o: { enabled: boolean; optimal: boolean }): WangapBreathMode =>
+              !o.enabled ? 'off' : o.optimal ? 'optimal' : 'full';
+            const wr = computeWangapAverage({
+              startLevel: L, targetLevel: L + 1,
+              startGrade: (eq.grade as WangapGrade) || '영웅', mode,
+              lavaMode: modeOf(materialOptions.wangapLava),
+              glacierMode: modeOf(materialOptions.wangapGlacier),
+              boundFlags: {
+                파괴석결정: !!boundMaterials['파괴석결정'],
+                수호석결정: !!boundMaterials['수호석결정'],
+                위대한돌파석: !!boundMaterials['위대한돌파석'],
+                상급아비도스: !!boundMaterials['상급아비도스'],
+                운명파편: !!boundMaterials['운명파편'],
+                용암: materialOptions.wangapLava.isBound,
+                빙하: materialOptions.wangapGlacier.isBound,
+              },
+              unitPrices: {
+                파괴석결정: (ownedEffPrices['66102007'] || 0),
+                수호석결정: (ownedEffPrices['66102107'] || 0),
+                위대한돌파석: (ownedEffPrices['66110226'] || 0),
+                상급아비도스: (ownedEffPrices['6861013'] || 0),
+                운명파편: (ownedEffPrices['66130143'] || 0),
+                용암: (ownedEffPrices['66111131'] || 0),
+                빙하: (ownedEffPrices['66111132'] || 0),
+              },
+            });
+            if (!isSpecial) {
+              const wt = wr.totals;
+              if (wt.파괴석결정 > 0) vec.파괴석결정 = wt.파괴석결정;
+              if (wt.수호석결정 > 0) vec.수호석결정 = wt.수호석결정;
+              if (wt.위대한돌파석 > 0) vec.위대한돌파석 = wt.위대한돌파석;
+              if (wt.상급아비도스 > 0) vec.상급아비도스 = wt.상급아비도스;
+              if (wt.운명파편 > 0) vec.운명파편 = wt.운명파편;
+              if (wt.용암 > 0) vec.용암 = wt.용암;
+              if (wt.빙하 > 0) vec.빙하 = wt.빙하;
+            }
+            if (includeGrowth) vec.운명파편 = (vec.운명파편 || 0) + wr.growth.운명파편;
+          } else {
+            const baseProb = SUCCESSION_BASE_PROBABILITY[L];
+            if (!baseProb) continue;
+            const isArmor = eq.type === 'armor';
+            const breathOpt = isArmor ? materialOptions.glacierBreath : materialOptions.lavaBreath;
+            const be = getSuccessionBreathEffect(baseProb);
+            const target = L + 1;
+            let useThrill = false; let thrillType = '';
+            if (target >= 12 && target <= 15) {
+              useThrill = isArmor ? materialOptions.tailoring1215.enabled : materialOptions.metallurgy1215.enabled;
+              thrillType = '1215';
+            } else if (target >= 16 && target <= 19) {
+              useThrill = isArmor ? materialOptions.tailoring1619.enabled : materialOptions.metallurgy1619.enabled;
+              thrillType = '1619';
+            }
+            const succVariants = breathOpt.enabled && breathOpt.optimal
+              ? (isArmor ? optimalBreathTable.armor : optimalBreathTable.weapon)[L]
+              : undefined;
+            let tries: number; let breaths: number;
+            if (succVariants) {
+              const pol = thrillType && useThrill ? succVariants.on : succVariants.off;
+              useThrill = pol.useBook;
+              // 정책(N·책)은 고정, 통계만 요청 모드로 재평가 — mode === calcMode면 pol과 동일 값
+              const m2 = metricsForPolicy(baseProb, be, pol.optimalN, mode, pol.useBook ? getSuccessionBookBonus(L) : 0);
+              tries = m2.tries; breaths = m2.breaths;
+            } else {
+              tries = getSuccessionTries(L, breathOpt.enabled, useThrill, mode);
+              breaths = breathOpt.enabled ? be.max * tries : 0;
+              useThrill = useThrill && L >= 11 && L <= 18; // getSuccessionTries의 effectiveBook 조건과 동일
+            }
+            if (tries <= 0) continue;
+            const mc = (isArmor ? SUCCESSION_ARMOR_MATERIAL_COSTS[target] : SUCCESSION_WEAPON_MATERIAL_COSTS[target]) as Record<string, number> | undefined;
+            if (!mc) continue;
+            if (!isSpecial) {
+              const stoneKey = isArmor ? '수호석결정' : '파괴석결정';
+              vec[stoneKey] = (mc[stoneKey] || 0) * tries;
+              vec.위대한돌파석 = (mc.위대한돌파석 || 0) * tries;
+              vec.상급아비도스 = (mc.상급아비도스 || 0) * tries;
+              vec.운명파편 = (mc.운명파편 || 0) * tries;
+              if (breaths > 0) vec[isArmor ? '빙하' : '용암'] = breaths;
+              if (useThrill && thrillType) vec[`${isArmor ? '방어구책' : '무기책'}${thrillType}`] = tries;
+            }
+            if (includeGrowth) vec.운명파편 = (vec.운명파편 || 0) + getGrowthCost(L, eq.type, true).운명파편;
+          }
+          steps.push({ eqName: eq.name, level: L, vec });
+        }
+      });
+      // 2) "최대한 많이" 진행 — 매 회, 지불 가능한 다음 스텝 중 한도 재료의 시세 환산 소모가
+      //    가장 싼 스텝부터 올린다. 구간에 따라 방어구/완갑/무기 순서가 자연스럽게 뒤섞이고,
+      //    총 도달 강수가 최대가 되는 쪽으로 배분된다. (시세 미로딩 시엔 낮은 단계 우선으로 폴백)
+      const stepsByEq: Record<string, Step[]> = {};
+      steps.forEach(s => { (stepsByEq[s.eqName] = stepsByEq[s.eqName] || []).push(s); });
+
+      const pool: Record<string, number> = {};
+      Object.entries(ownedMaterials).forEach(([k, v]) => { if (v > 0) pool[k] = v; });
+      const price = (k: string) => marketPrices[OWNED_PRICE_IDS[k]] || 0;
+      const stepPrice = (v: Record<string, number>) => {
+        let c = 0;
+        Object.keys(v).forEach(k => { if (pool[k] !== undefined) c += v[k] * price(k); });
+        return c;
+      };
+      const idx: Record<string, number> = {};
+      const reached: Record<string, number> = {};
+      const blocked: Record<string, string> = {};
+      toRefine.forEach(eq => { idx[eq.name] = 0; reached[eq.name] = eq.currentLevel; });
+      for (;;) {
+        let best: { eqName: string; s: Step; c: number } | null = null;
+        for (const eq of toRefine) {
+          if (blocked[eq.name]) continue;
+          const q = stepsByEq[eq.name] || [];
+          const i = idx[eq.name];
+          if (i >= q.length) continue; // 목표 도달
+          const s = q[i];
+          let lack: string | null = null;
+          for (const k of Object.keys(s.vec)) {
+            if (pool[k] !== undefined && pool[k] + 1e-9 < s.vec[k]) { lack = k; break; }
+          }
+          // 보유 풀은 줄기만 하므로 지금 못 내는 스텝은 영구히 못 낸다 → 이 부위는 여기서 중단
+          if (lack) { blocked[eq.name] = lack; continue; }
+          const c = stepPrice(s.vec);
+          if (!best || c < best.c - 1e-9 || (Math.abs(c - best.c) <= 1e-9 && s.level < best.s.level)) {
+            best = { eqName: eq.name, s, c };
+          }
+        }
+        if (!best) break;
+        Object.keys(best.s.vec).forEach(k => { if (pool[k] !== undefined) pool[k] -= best!.s.vec[k]; });
+        idx[best.eqName]++;
+        reached[best.eqName] = best.s.level + 1;
+      }
+
+      // 3) 최종 목표까지의 전체 부족량 — 남은 스텝 소모 합 − 남은 보유 (한도 재료만)
+      const remainNeed: Record<string, number> = {};
+      toRefine.forEach(eq => {
+        const q = stepsByEq[eq.name] || [];
+        for (let i = idx[eq.name]; i < q.length; i++) {
+          Object.entries(q[i].vec).forEach(([k, v]) => {
+            if (pool[k] !== undefined) remainNeed[k] = (remainNeed[k] || 0) + v;
+          });
+        }
+      });
+      const shortfall = Object.entries(remainNeed)
+        .map(([key, need]) => ({ key, amount: Math.ceil(need - (pool[key] || 0)) }))
+        .filter(s => s.amount > 0)
+        .sort((a, b) => b.amount - a.amount);
+
+      return {
+        mode,
+        equips: toRefine.map(eq => ({
+          name: eq.name,
+          icon: eq.isWangap
+            ? (WANGAP_ITEM_IMAGES[eq.grade as WangapGrade] || WANGAP_ITEM_IMAGES['영웅'])
+            : (eq.icon || null),
+          type: eq.isWangap ? 'wangap' as const : eq.type === 'weapon' ? 'weapon' as const : 'armor' as const,
+          from: eq.currentLevel,
+          reached: reached[eq.name],
+          target: targetLevels[eq.name]!.normal!,
+          ...(blocked[eq.name] && reached[eq.name] < targetLevels[eq.name]!.normal!
+            ? { blockedBy: blocked[eq.name] } : {}),
+        })),
+        shortfall,
+      };
+    });
+    setOwnedRunResults(results);
+    // getEquipmentsToRefine는 equipments·targetLevels에서만 파생되는 비메모 함수라 deps에서 제외
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [equipments, targetLevels, ownedMaterials, materialOptions, boundMaterials, ownedEffPrices,
+    marketPrices, optimalBreathTable, specialPlan, includeGrowth]);
+
   const calculateMaterials = (): Materials | null => {
     const toRefine = getEquipmentsToRefine();
     if (toRefine.length === 0) return null;
@@ -3898,6 +4110,17 @@ export default function RefiningCalculator({
                   </h5>
                   {/* 모바일에서 버튼 묶음이 한 줄에 안 들어가면 줄바꿈되도록 wrap */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  {/* 보유로 몇 강까지 — 입력된 보유량만 한도로 세 모드 동시 시뮬 */}
+                  {ownedFeatureActive && Object.keys(ownedMaterials).length > 0 && (
+                    <button
+                      type="button"
+                      className={styles.ownedRunBtn}
+                      onClick={runOwnedLimit}
+                      title="입력한 보유 재료만으로 각 부위가 몇 강까지 가는지 중앙값·평균값·장기백 세 기준으로 계산합니다 (미입력·귀속 재료는 무제한 취급)"
+                    >
+                      보유 재료로 몇 강까지 가능?
+                    </button>
+                  )}
                   {/* 보유 반영·자동 귀속은 각 줄의 "보조재료 비용 최적화" 버튼이 담당 — 여기엔 초기화만 둔다 */}
                   {/* 초기화 — 보유 입력·적용과 최적 적용(일반·상급·완갑)을 한 번에 해제.
                       해제할 것이 하나라도 있으면 보인다 */}
@@ -3940,6 +4163,94 @@ export default function RefiningCalculator({
               <Card.Body className={styles.cardBody} style={{
                 padding: isMobile ? '0.75rem 0.5rem' : undefined
               }}>
+                {/* "보유로 몇 강까지" 결과 — 위 계산 모드 선택(중앙값/평균값/장기백)을 그대로 따른다.
+                    입력·목표·옵션이 바뀌면 자동으로 닫힌다 (모드 전환은 유지).
+                    강수가 오른 부위를 앞으로·강조하고, 변동 없는 부위는 흐리게 표시 */}
+                {ownedRunResults && (() => {
+                  const run = ownedRunResults.find(x => x.mode === calcMode);
+                  if (!run) return null;
+                  const modeLabel = calcMode === 'median' ? '중앙값' : calcMode === 'average' ? '평균값' : '장기백';
+                  // 정렬: 목표 달성 → 진행(오른 강수 큰 순) → 변동 없음
+                  const rank = (e: OwnedRunEquip) => (e.reached >= e.target ? 0 : e.reached > e.from ? 1 : 2);
+                  const sorted = [...run.equips].sort(
+                    (a, b) => rank(a) - rank(b) || (b.reached - b.from) - (a.reached - a.from)
+                  );
+                  return (
+                    <div className={styles.ownedRunPanel}>
+                      <div className={styles.ownedRunHead}>
+                        <span className={styles.ownedRunTitle}>
+                          보유 재료로 몇 강까지? <span className={styles.ownedRunModeTag}>{modeLabel} 기준</span>
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.ownedRunClose}
+                          onClick={() => setOwnedRunResults(null)}
+                          aria-label="닫기"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className={styles.ownedRunHint}>
+                        입력한 보유량만 한도로 계산 — 미입력·귀속 재료는 무제한(구매/귀속) 취급 · 이득 큰 스텝부터 자동 배분(최대 강수) · 위 모드 버튼으로 기준 전환
+                      </div>
+                      <div className={styles.ownedRunGrid}>
+                        {sorted.map(e => {
+                          const gained = e.reached - e.from;
+                          const done = e.reached >= e.target;
+                          const total = e.target - e.from;
+                          const pct = total > 0 ? Math.min(100, Math.round((gained / total) * 100)) : 100;
+                          const cardCls = done
+                            ? styles.ownedRunEquipDone
+                            : gained > 0 ? styles.ownedRunEquipUp : styles.ownedRunEquipFlat;
+                          return (
+                            <div key={e.name} className={`${styles.ownedRunEquip} ${cardCls}`}>
+                              <div className={styles.ownedRunTopRow}>
+                                {e.icon ? (
+                                  <span className={styles.ownedRunIcon}>
+                                    <Image src={e.icon} alt={e.name} fill sizes="32px" style={{ objectFit: 'contain' }} unoptimized />
+                                  </span>
+                                ) : (
+                                  /* 아이콘이 없는 장비(검색 전) — 장비 카드와 같은 색 배경 타일로 대체 */
+                                  <span className={`${styles.ownedRunIcon} ${e.type === 'weapon' ? styles.ownedRunIconWeapon : styles.ownedRunIconArmor}`} />
+                                )}
+                                <span className={styles.ownedRunName}>{e.name}</span>
+                                {done
+                                  ? <span className={styles.ownedRunBadgeDone}>✓ 목표 달성</span>
+                                  : gained > 0
+                                    ? <span className={styles.ownedRunBadgeUp}>+{gained}강</span>
+                                    : <span className={styles.ownedRunBadgeFlat}>변동 없음</span>}
+                              </div>
+                              <div className={styles.ownedRunLevels}>
+                                +{e.from} → <b>+{e.reached}</b>
+                                {!done && <span className={styles.ownedRunGoalMiss}> / 목표 +{e.target}</span>}
+                              </div>
+                              {/* 목표까지 진행률 바 — 달성 초록, 진행 파랑, 정지 회색 */}
+                              <div className={styles.ownedRunBar}>
+                                <div
+                                  className={done ? styles.ownedRunBarFillDone : styles.ownedRunBarFill}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                              {!done && e.blockedBy && (
+                                <span className={styles.ownedRunLack}>{e.blockedBy} 부족으로 중단</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {run.shortfall.length > 0 && (
+                        <div className={styles.ownedRunShortfall}>
+                          <b>최종 목표까지 더 필요:</b>{' '}
+                          {run.shortfall.map((s, i) => (
+                            <span key={s.key} className={styles.ownedRunShortItem}>
+                              {i > 0 && ' · '}{s.key} <b>{s.amount.toLocaleString()}개</b>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 {(() => {
                   const requiredMats = analyzeRequiredMaterials();
                   // 특재로 아낀 수량 — 해당 재료 카드에 "원래값 −절약" 줄로 표시

@@ -202,6 +202,21 @@ export function usageAtPrice(pts: BreathCurvePoint[], price: number): number {
 }
 
 /**
+ * 임의 정책(앞 N회 풀숨 + 책 가산 확률)의 모드별 대표 시도·숨결 수.
+ * 이미 선택된 정책(optimalN·책)을 고정한 채 다른 계산 모드의 통계를 평가할 때 사용
+ * ("보유로 몇 강까지" 패널 — 정책은 하나, 중앙/평균/천장 통계만 바꿔 본다).
+ */
+export function metricsForPolicy(
+  baseProb: number,
+  be: BreathEffect,
+  N: number,
+  mode: CalcMode,
+  bookProb: number = 0
+): { tries: number; breaths: number } {
+  return metricsForN(baseProb, be, N, mode, bookProb);
+}
+
+/**
  * 고정 정책(노숨 또는 풀숨 + 임의 책 가산 확률)의 대표 시도·숨결 수
  * CASE 테이블에 없는 조합(강화 책 등)을 수동 모드에서 계산할 때 사용
  */
