@@ -1,5 +1,6 @@
 import { getAdminFirestore } from '@/lib/firebase-admin';
 import { applyStatsToPosts } from '@/lib/package-stats';
+import { renewPostIcons } from '@/lib/package-shared';
 import type { PackagePost } from '@/types/package';
 import PackageGalleryClient from './PackageGalleryClient';
 
@@ -49,7 +50,8 @@ async function loadGallery(): Promise<GalleryData | null> {
         saleStartAt: toISO(data.saleStartAt),
         saleEndAt: toISO(data.saleEndAt),
       } as PackagePost;
-    });
+    // 글에 저장된 아이콘 경로 중 그림이 바뀐 것은 새 그림으로 (renewPostIcons 주석 참조)
+    }).map(renewPostIcons);
     // 조회·따봉·흠은 Neon 이 진실이다. Firestore 카운터는 이관 시점에 멈춰 있어 여기서 갈아 끼운다
     // — 이러지 않으면 첫 화면이 옛날 숫자로 떴다가 클라이언트 조회가 오면 확 바뀐다.
     // 글 전체를 IN 쿼리 1회로 덮으므로, 이제 목록의 모든 글이 처음부터 최신 숫자를 들고 나간다.

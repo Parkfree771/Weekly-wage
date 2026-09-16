@@ -13,7 +13,7 @@ import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryC
 // 통째로 넘겨주므로, 그 서버 조회가 실패했을 때만 지연 로드한다.
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import { fetchLivePrices, getCachedLivePrices } from '@/lib/live-prices-client';
-import { calculatePostEfficiency, isNewReleasePost } from '@/lib/package-shared';
+import { calculatePostEfficiency, isNewReleasePost, renewPostIcons } from '@/lib/package-shared';
 import {
   AZENA_PRICE_WON,
   AZENA_SHORT_TITLE,
@@ -199,7 +199,8 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
       try {
         const { getPackagePosts } = await import('@/lib/package-service');
         const result = await getPackagePosts({ sortBy: 'createdAt', limit: FALLBACK_MAX_POSTS });
-        if (!cancelled) setPosts(result.posts);
+        // 서버 경로(app/package/page.tsx)와 같이 옛 아이콘을 새 그림으로 바꿔 넣는다
+        if (!cancelled) setPosts(result.posts.map(renewPostIcons));
       } catch (err) {
         console.error('게시물 로딩 실패:', err);
       } finally {

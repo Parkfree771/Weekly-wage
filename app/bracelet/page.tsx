@@ -309,7 +309,7 @@ export default function BraceletPage() {
         </div>
         {!isChancePhase && (
           <div className={styles.statusItem}>
-            <Image src="/vkfwlwoqusghksrnjs.webp" alt="재변환권" width={20} height={20} />
+            <Image src="/bracelet-reconvert.webp" alt="재변환권" width={20} height={20} />
             <span className={styles.statusValue}>{ticketsRemaining}/{MAX_TICKETS}</span>
           </div>
         )}
@@ -323,7 +323,7 @@ export default function BraceletPage() {
           onClick={handleReroll}
           disabled={isChancePhase ? chancesRemaining <= 0 : ticketsRemaining <= 0}
         >
-          {!isChancePhase && <Image src="/vkfwlwoqusghksrnjs.webp" alt="재변환권" width={20} height={20} />}
+          {!isChancePhase && <Image src="/bracelet-reconvert.webp" alt="재변환권" width={20} height={20} />}
           재변환 ({isChancePhase ? chancesRemaining : ticketsRemaining}회 남음)
         </button>
         <button className={styles.confirmButton} onClick={handleConfirm}>
@@ -380,7 +380,7 @@ export default function BraceletPage() {
                   className={styles.rerollInlineButton}
                   onClick={handleRerollNew}
                 >
-                  {!isChancePhase && <Image src="/vkfwlwoqusghksrnjs.webp" alt="재변환권" width={18} height={18} />}
+                  {!isChancePhase && <Image src="/bracelet-reconvert.webp" alt="재변환권" width={18} height={18} />}
                   {isChancePhase && '↻ '}
                   재변환 ({isChancePhase ? chancesRemaining : ticketsRemaining}회 남음)
                 </button>

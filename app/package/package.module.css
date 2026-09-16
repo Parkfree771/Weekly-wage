@@ -358,8 +358,8 @@
 }
 
 .peonIcon {
-  width: 46px;
-  height: 44px;
+  width: 42px;
+  height: 40px;
   flex-shrink: 0;
   /* globals.css 의 `img { max-width: 100% }` 가 칸 크기로 잘라 버린다 — 반드시 풀어야 한다 */
   max-width: none;
@@ -492,8 +492,8 @@
   }
 
   .peonIcon {
-    width: 39px;
-    height: 37px;
+    width: 36px;
+    height: 34px;
   }
 }
 
@@ -762,6 +762,7 @@
 }
 
 @media (max-width: 576px) {
+
   /* 셋을 한 줄에 세운다 — [필터] [− 100 : N원 +] [+ 등록하기].
      환율 상자가 두세 줄로 높아져서 start 로 두면 좌우의 필터·등록하기가 위에 떠 보인다 —
      데스크톱과 같게 아래 끝선(카드 쪽)에 맞춘다.
@@ -1601,6 +1602,11 @@
 }
 
 .detailSplitRow ~ .itemCardsSection {
+  margin-top: 1.25rem;
+}
+
+/* ─── 구성품 가치 비중 섹션 (댓글 위) — 내용은 components/package/ShareDonut ─── */
+.shareSection {
   margin-top: 1.25rem;
 }
 

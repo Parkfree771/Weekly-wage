@@ -22,6 +22,7 @@ import {
   peonGoldPerUnit,
   crystalUnitGold,
   packageItemHasPeon,
+  boxDisplayIcon,
 } from '@/lib/package-shared';
 import { calcTicketAverage } from '@/lib/hell-reward-calc';
 import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
@@ -29,6 +30,7 @@ import TrendArrow from '@/components/TrendArrow';
 import ReactionBar from '@/components/package/ReactionBar';
 import { useNoPeon } from '@/components/package/useNoPeon';
 import { ChuseokSky, ChuseokMoon } from '@/components/package/ChuseokSky';
+import { ICON_TINTS } from '@/lib/package-icon-tints';
 import styles from './PackageGalleryCard.module.css';
 
 // recharts(~100KB)는 차트를 실제로 열 때만 받는다 — 갤러리 첫 로드에 섞이지 않게 동적 로드
@@ -102,20 +104,93 @@ const GALLERY_ICON_RE: [RegExp, number][] = [
   // 원본이 800x800 정사각인데 둘레 여백이 있어 기본 42px 이면 유독 작아 보인다.
   [/^probbox_/, 56],
 ];
-function getGalleryIconSize(itemId: string, icon: string): number | undefined {
-  if (GALLERY_ICON_BY_ICON[icon]) return GALLERY_ICON_BY_ICON[icon];
-  if (GALLERY_ICON_SIZE[itemId]) return GALLERY_ICON_SIZE[itemId];
-  for (const [re, size] of GALLERY_ICON_RE) {
-    if (re.test(itemId)) return size;
-  }
-  return undefined;
+/** 위 표의 px 은 예전 62px 고정 칸 기준값이다. 칸이 열 폭(1fr)을 따라 커지게 바뀌었으므로
+ *  같은 비율이 되도록 62 로 나눠 % 로 넘긴다 — 표의 숫자·근거는 그대로 둔다. */
+const GALLERY_ICON_BASE_CELL = 62;
+function getGalleryIconSize(itemId: string, icon: string): string | undefined {
+  const px = GALLERY_ICON_BY_ICON[icon]
+    ?? GALLERY_ICON_SIZE[itemId]
+    ?? GALLERY_ICON_RE.find(([re]) => re.test(itemId))?.[1];
+  return px ? `${Math.round((px / GALLERY_ICON_BASE_CELL) * 100)}%` : undefined;
 }
 
 
-// 기존 데이터 대응: 개별 선택 아이콘 → 상자 아이콘 복원
-function getDisplayIcon(icon: string): string {
-  if (/gem-(order|chaos)-/.test(icon)) return '/gem-hero.webp';
-  return icon;
+// 기존 데이터 대응: 개별 선택 아이콘 → 상자 아이콘 복원 (상세 비중과 같은 규칙 — lib/package-shared)
+const getDisplayIcon = boxDisplayIcon;
+
+/**
+ * 원본 안에 판(배경)이 통째로 들어 있는 그림들 — 칸을 꽉 채워 그린다.
+ *
+ * 나머지 아이콘은 배경이 투명해서 칸 배경 위에 그림만 떠 보이지만, 이것들은 갈색·주황
+ * 그라데이션 판이 그림에 같이 박혀 있다. 68% 로 그리면 칸 안에 작은 판이 한 장 더 얹힌
+ * 꼴이라 칸이 커질수록 어색해진다 (칸만 크고 그림은 그대로인 것처럼 보인다).
+ *
+ * 목록은 public 의 아이콘을 알파 채널로 훑어서 뽑았다 — 네 모서리가 모두 불투명하고
+ * 불투명 픽셀이 97% 를 넘는 것 = 배경이 박힌 그림. 아이콘을 새로 넣을 때 같은 기준으로 본다.
+ * (키는 쿼리(?v=3)를 뗀 경로)
+ */
+const FULL_BLEED_ICONS = new Set([
+  '/ancient-earring.webp',
+  '/ancient-necklace.webp',
+  '/ancient-ring.webp',
+  '/azena-blessing.png',
+  '/cardpack-all.webp',
+  '/cardpack-legendary.webp',
+  '/cardpack-rare.webp',
+  '/destiny-breakthrough-stone2.webp',
+  '/destiny-destruction-stone2.webp',
+  '/destiny-guardian-stone2.webp',
+  '/djqlfflxltmxhs.webp',
+  '/dptmej.webp',
+  '/engraving2.webp',
+  '/gem-chaos-collapse.webp',
+  '/gem-chaos-distortion.webp',
+  '/gem-chaos-erosion.webp',
+  '/gem-fear-10.webp',
+  '/gem-fear-8.webp',
+  '/gem-flame-10.webp',
+  '/gem-order-immutable.webp',
+  '/gem-order-solid.webp',
+  '/gem-order-stable.webp',
+  '/master-metallurgy-1.webp',
+  '/master-metallurgy-2.webp',
+  '/master-metallurgy-3.webp',
+  '/master-metallurgy-4.webp',
+  '/master-tailoring-1.webp',
+  '/master-tailoring-2.webp',
+  '/master-tailoring-3.webp',
+  '/master-tailoring-4.webp',
+  '/metallurgy-karma.webp',
+  '/metallurgy-thrill.webp',
+  '/tailoring-karma.webp',
+  '/tailoring-thrill.webp',
+  '/vkfwl.webp',
+]);
+/**
+ * 배경 없이 그림이 프레임 밖까지 꽉 찬 것들 — 배경이랄 게 없어서 줄이면 안 된다.
+ * (줄이면 테두리에 그림이 번진 자국만 남는다. 원본 그대로 칸을 채운다)
+ */
+const NO_SHRINK_ICONS = new Set([
+  '/ancient-earring.webp',
+  '/cardpack-all.webp',
+  '/cardpack-legendary.webp',
+  '/cardpack-rare.webp',
+  '/gem-flame-10.webp',
+]);
+
+function isFullBleedIcon(icon: string): boolean {
+  return FULL_BLEED_ICONS.has(icon.split('?')[0]);
+}
+
+/**
+ * 배경 박힌 그림을 칸에 꽉 채우면 그림이 너무 커 보인다 — 배경은 그대로 두고 그림만 78% 로
+ * 줄여 둔 판이 public/icon-fill 에 있다 (tools/shrink-fill-icons.py 로 만든다).
+ * 갤러리 카드에서만 쓴다. 상세 페이지처럼 그림을 작게 그리는 곳은 원본을 그대로 쓴다.
+ */
+function fullBleedSrc(icon: string): string {
+  const base = icon.split('?')[0];
+  if (!FULL_BLEED_ICONS.has(base) || NO_SHRINK_ICONS.has(base)) return icon;
+  return `/icon-fill/${base.slice(1).replace(/\.\w+$/, '.webp')}`;
 }
 
 /**
@@ -124,6 +199,7 @@ function getDisplayIcon(icon: string): string {
  * 인라인 px 이 아니라 클래스로 잡는 이유: 모바일 셀은 크기가 화면 폭에 따라 달라져 % 로만 맞출 수 있다.
  */
 function getIconTweakClass(itemId: string, icon: string): string {
+  if (isFullBleedIcon(icon)) return styles.itemCellIconFull;
   if (itemId === 'fixed_gold-input') return styles.itemCellIconGold;
   if (itemId === 'fixed_hell-heroic-ticket') return styles.itemCellIconHell;
   if (/breath-(lava|glacier)/.test(icon)) return styles.itemCellIconBreath;
@@ -144,13 +220,14 @@ function ItemCellVisual({ item }: { item: PackageItem }) {
     );
   }
   if (item.icon) {
-    const size = getGalleryIconSize(item.itemId, getDisplayIcon(item.icon));
+    const displayIcon = getDisplayIcon(item.icon);
+    const size = isFullBleedIcon(displayIcon) ? undefined : getGalleryIconSize(item.itemId, displayIcon);
     return (
       /* eslint-disable-next-line @next/next/no-img-element */
       <img loading="lazy" decoding="async"
-        src={getDisplayIcon(item.icon)}
+        src={fullBleedSrc(displayIcon)}
         alt={item.name}
-        className={`${styles.itemCellIcon} ${getIconTweakClass(item.itemId, getDisplayIcon(item.icon))}`}
+        className={`${styles.itemCellIcon} ${getIconTweakClass(item.itemId, displayIcon)}`}
         style={size ? { width: size, height: size } : {}} />
     );
   }
@@ -468,6 +545,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
       return sum + (itemSubtotals[idx] || 0);
     }, 0);
   }, [post.items, checkedItems, itemSubtotals]);
+
   // 가챠: 기대값 계산 (체크 해제 아이템은 골드 0으로 계산, 확률은 유지)
   const isGacha = post.packageType === '가챠';
   const gachaBcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
@@ -735,6 +813,77 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
   const bundleCash = cashGold * buyCount;
   // '3+보너스': 3회 구매 시 확정 구성품 3배 + 보너스 구성품 1회(고정, 배수 아님)
   const bundleGold = isBonusPkg ? totalGold * 3 + bonusTotalGold : totalGold * getCount;
+
+  // 구성품 가치 비중 — 결과 칸의 "비중" 줄(상위 3개 + 막대)이 쓴다. 체크된 것만, 큰 순.
+  // 기준은 그 카드의 "답" 줄과 같다:
+  //   3+보너스 = 묶음(구성품 3회분 + 보너스), 핫딜 전부 구매 = 구성품 + 보너스, 그 외 = 구성품 합.
+  //   3+1 은 구성품이 배수로 늘 뿐이라 몫이 1회분과 같다.
+  // 가챠는 칸에 확률이 있고 가치가 기댓값이라 뺀다.
+  const shareSegs = useMemo(() => {
+    if (isGacha) return [];
+    const withBonus = isBonusPkg || (isHotDeal && hotAllChecked);
+    const mainMul = isBonusPkg ? 3 : 1;
+    const basis = isBonusPkg ? bundleGold : totalGold + (withBonus ? bonusTotalGold : 0);
+    if (!(basis > 0)) return [];
+    const iconOf = (it: PackageItem) => it.icon || it.bundleItems?.[0]?.icon || null;
+    const rows = post.items.map((it, idx) => ({
+      key: `m${idx}`, name: it.name, icon: iconOf(it),
+      sub: (itemSubtotals[idx] || 0) * mainMul, on: checkedItems[idx] !== false,
+    }));
+    if (withBonus && post.bonusItems) {
+      rows.push(...post.bonusItems.map((it, idx) => ({
+        key: `b${idx}`, name: `${it.name} (보너스)`, icon: iconOf(it),
+        sub: bonusItemSubtotals[idx] || 0, on: bonusChecked[idx] !== false,
+      })));
+    }
+    return rows
+      .filter((r) => r.on && r.sub > 0)
+      .map((r) => ({ ...r, pct: (r.sub / basis) * 100 }))
+      .sort((a, b) => b.sub - a.sub);
+  }, [isGacha, isBonusPkg, isHotDeal, hotAllChecked, bundleGold, totalGold, bonusTotalGold,
+      post.items, post.bonusItems, itemSubtotals, bonusItemSubtotals, checkedItems, bonusChecked]);
+
+  // "비중" 줄 — 1회 이득률 밑에, 묶음(3+1·3+보너스)이면 묶음 이득률 밑에 둔다 (그 카드의 답 바로 아래)
+  const shareRowNode = shareSegs.length >= 2 ? (() => {
+    const tintOf = (icon: string | null) => {
+      if (!icon) return undefined;
+      return ICON_TINTS[icon.split('?')[0]] ?? ICON_TINTS[getDisplayIcon(icon).split('?')[0]];
+    };
+    const tailStart = Math.min(100, shareSegs.slice(0, 3).reduce((a, r) => a + r.pct, 0));
+    return (
+      <div className={styles.shareRow}>
+        <div className={styles.resultRow}>
+          <span className={styles.resultLabel}>비중</span>
+          <span className={styles.shareTop} aria-label="구성품 가치 비중 상위 3개">
+            {shareSegs.slice(0, 3).map((r) => (
+              <span key={r.key} className={styles.shareTopItem} title={`${r.name} · ${formatNumber(r.sub)}G`}>
+                {r.icon && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img loading="lazy" decoding="async" src={fullBleedSrc(getDisplayIcon(r.icon))} alt="" className={styles.shareTopIcon} />
+                )}
+                {r.pct < 1 ? '<1' : Math.round(r.pct)}%
+              </span>
+            ))}
+          </span>
+        </div>
+        <div
+          className={styles.shareBar}
+          role="img"
+          aria-label="구성품 가치 비중"
+          style={{ ['--share-tail' as string]: `${tailStart}%` }}
+        >
+          {shareSegs.map((r) => (
+            <div
+              key={r.key}
+              className={styles.shareSeg}
+              style={{ flexBasis: `${r.pct}%`, ['--seg-color' as string]: tintOf(r.icon) }}
+              title={`${r.name} · ${formatNumber(r.sub)}G (${r.pct < 1 ? '1% 미만' : `${Math.round(r.pct)}%`})`}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  })() : null;
   const bundleBenefit = bundleCash > 0 ? ((bundleGold - bundleCash) / bundleCash) * 100 : 0;
 
   // 판매 종료 — 표시만 비활성 톤으로 내린다. 시세 연동·계산·상세 이동은 그대로 동작한다.
@@ -873,7 +1022,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
             const cell = (
               <div
                 key={isHotDeal ? undefined : idx}
-                className={`${styles.itemCell} ${packageItemHasPeon(item) ? (noPeon ? styles.itemCellPeonOff : styles.itemCellPeon) : ''} ${renderIdx >= 15 ? styles.itemCellHidden : ''} ${!isChecked && gachaPhase === 'idle' ? styles.itemCellUnchecked : ''} ${isGachaHighlighted ? styles.itemCellHighlight : ''} ${isGachaWon ? styles.itemCellWon : ''} ${isGachaDimmed ? styles.itemCellDimmed : ''}`}
+                className={`${styles.itemCell} ${packageItemHasPeon(item) ? (noPeon ? styles.itemCellPeonOff : styles.itemCellPeon) : ''} ${renderIdx >= 12 ? styles.itemCellHidden : ''} ${!isChecked && gachaPhase === 'idle' ? styles.itemCellUnchecked : ''} ${isGachaHighlighted ? styles.itemCellHighlight : ''} ${isGachaWon ? styles.itemCellWon : ''} ${isGachaDimmed ? styles.itemCellDimmed : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (gachaPhase !== 'idle') return;
@@ -934,12 +1083,12 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
             );
           })}
         </div>
-        {post.items.length > 15 && (
-          <span className={`${styles.moreText} ${styles.moreTextDesktop}`}>...외 {post.items.length - 15}개 아이템</span>
+        {post.items.length > 12 && (
+          <span className={`${styles.moreText} ${styles.moreTextDesktop}`}>...외 {post.items.length - 12}개 아이템</span>
         )}
-        {/* 모바일은 2줄(10개)까지만 보인다 — 가챠는 룰렛 칸이라 자르지 않는다 */}
-        {!isGacha && post.items.length > 10 && (
-          <span className={`${styles.moreText} ${styles.moreTextMobile}`}>...외 {post.items.length - 10}개 아이템</span>
+        {/* 모바일은 2줄(8개)까지만 보인다 — 가챠는 룰렛 칸이라 자르지 않는다 */}
+        {!isGacha && post.items.length > 8 && (
+          <span className={`${styles.moreText} ${styles.moreTextMobile}`}>...외 {post.items.length - 8}개 아이템</span>
         )}
 
         {/* 보너스 구성품 — 3회 구매 시 1회 지급.
@@ -1053,6 +1202,9 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
             </div>
           )}
 
+          {/* 비중 — 묶음 카드는 아래 묶음 이득률 밑에 둔다 */}
+          {!(isBundle || isBonusPkg) && shareRowNode}
+
           {/* 가챠: 기대 효율 */}
           {goldPerWon > 0 && isGacha && (
             <div className={`${styles.resultRow} ${styles.resultRowKey} ${benefitDelta !== null ? styles.resultRowBenefitSplit : ''}`}>
@@ -1080,6 +1232,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                   <BenefitPct v={bundleBenefit} />
                 </div>
               )}
+              {shareRowNode}
             </>
           )}
 

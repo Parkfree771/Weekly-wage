@@ -66,7 +66,7 @@ const REWARD_VISUALS: Record<string, RewardVisual> = {
   '천상 도전권': { parts: ['/cjstkd.webp'], ops: [] },
   '어빌리티스톤': { parts: ['/djqlfflxltmxhs.webp'], ops: [] },
   '팔찌': { parts: ['/vkfwl.webp'], ops: [] },
-  '귀속 각인서 랜덤 상자': { parts: ['/engraving.webp'], ops: [] },
+  '귀속 각인서 랜덤 상자': { parts: ['/engraving2.webp'], ops: [] },
   '귀속 보석': { parts: ['/gem-fear-8.webp'], ops: [] },
   '전설카드팩': { parts: ['/legendary-cardpack.webp'], ops: [] },
 };
@@ -79,7 +79,7 @@ const PEON_ITEMS = new Set(['어빌리티스톤', '팔찌', '젬 선택 상자']
 const FILLED_BG_IMAGES = new Set([
   '/djqlfflxltmxhs.webp',  // 어빌리티스톤
   '/vkfwl.webp',           // 팔찌
-  '/engraving.webp',       // 귀속 각인서 랜덤 상자
+  '/engraving2.webp',       // 귀속 각인서 랜덤 상자
   '/gem-fear-8.webp',      // 귀속 보석
 ]);
 

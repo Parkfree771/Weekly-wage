@@ -2,7 +2,66 @@ import { calcTicketUnitByItemId, DEFAULT_TICKET_TIERS, GEM_PEON, HERO_GEM_IDS, i
 import { TRACKED_ITEMS, type TrackedItem } from '@/lib/items-to-track';
 import { isSaleEnded, toSaleDate } from '@/lib/package-sale';
 import { RIFT_TIERS } from '@/data/rewardTable';
-import type { PackagePost } from '@/types/package';
+import type { PackageItem, PackagePost } from '@/types/package';
+
+// ─── 그림이 바뀐 아이콘 ───
+/**
+ * 이미 등록된 글에 저장된 옛 아이콘 경로 → 새 그림 경로.
+ *
+ * 글을 저장할 때 아이템의 icon 문자열이 같이 박힌다. 그래서 템플릿 아이콘만 바꾸면
+ * 새로 쓴 글만 새 그림이고 예전 글은 옛 그림 그대로다.
+ * 그렇다고 같은 파일 이름에 덮어쓸 수도 없다 — public 의 이미지는 1년 immutable 캐시라
+ * (next.config.js) 이미 다녀간 사람 브라우저엔 옛 그림이 그대로 남는다.
+ * 그래서 새 이름으로 파일을 두고, 읽을 때 옛 경로를 여기서 새 경로로 바꿔 준다.
+ */
+const RENEWED_ICONS: Record<string, string> = {
+  '/vkfwlwoqusghksrnjs.webp': '/bracelet-reconvert.webp', // 팔찌 재변환권
+  '/slskqm.webp': '/ninav-blessing.webp',                 // 니나브의 축복
+  '/vkrhltngh.webp': '/crystal-choice-pouch.webp',        // 파결·수결 선택/묶음
+  '/engraving.webp': '/engraving2.webp',                  // 유물 각인서
+};
+
+/**
+ * 목록·비중 같은 "구성품 한 칸" 표시용 아이콘 — 선택형 젬은 고른 젬 그림이 아니라 상자 그림으로.
+ * 옛 글은 젬 선택 상자 아이템에 고른 젬의 아이콘(gem-order-… / gem-chaos-…)이 저장돼 있다.
+ * 어떤 젬을 골랐는지는 드롭다운·상세 카드가 보여 주므로, 칸에는 "젬 선택 상자"로 한결같이 보이게 한다.
+ */
+export function boxDisplayIcon(icon: string): string {
+  if (/gem-(order|chaos)-/.test(icon)) return '/gem-hero.webp';
+  return icon;
+}
+
+/** 옛 아이콘이면 새 그림 경로로, 아니면 그대로 */
+export function renewIcon<T extends string | undefined>(icon: T): T {
+  if (!icon) return icon;
+  const [path, query] = icon.split('?');
+  const next = RENEWED_ICONS[path];
+  return (next ? (query ? `${next}?${query}` : next) : icon) as T;
+}
+
+/** 글 한 편의 아이템 아이콘을 전부 새 그림으로 (갤러리·상세가 읽기 직후에 한 번 돌린다) */
+export function renewPostIcons<T extends PackagePost>(post: T): T {
+  const item = (it: PackageItem): PackageItem => ({
+    ...it,
+    icon: renewIcon(it.icon),
+    ...(it.choiceOptions ? { choiceOptions: it.choiceOptions.map((c) => ({ ...c, icon: renewIcon(c.icon) })) } : {}),
+    ...(it.bundleItems ? { bundleItems: it.bundleItems.map((b) => ({ ...b, icon: renewIcon(b.icon) })) } : {}),
+    ...(it.choiceBoxCandidates ? { choiceBoxCandidates: it.choiceBoxCandidates.map((c) => ({ ...c, icon: renewIcon(c.icon) })) } : {}),
+    ...(it.probBoxCandidates ? {
+      probBoxCandidates: it.probBoxCandidates.map((c) => ({
+        ...c,
+        icon: renewIcon(c.icon),
+        ...(c.bundleItems ? { bundleItems: c.bundleItems.map((b) => ({ ...b, icon: renewIcon(b.icon) })) } : {}),
+        ...(c.choiceOptions ? { choiceOptions: c.choiceOptions.map((o) => ({ ...o, icon: renewIcon(o.icon) })) } : {}),
+      })),
+    } : {}),
+  });
+  return {
+    ...post,
+    items: (post.items || []).map(item),
+    ...(post.bonusItems ? { bonusItems: post.bonusItems.map(item) } : {}),
+  };
+}
 
 // ─── 선택지 옵션 ───
 export type ChoiceOption = {
@@ -281,7 +340,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
     // 파괴석 결정 OR 수호석 결정 중 하나만 선택하는 아이템.
     // 예전엔 type: 'bundle'로 잘못 구현되어 있어 둘 다 합산되는 버그가 있었음 → 'choice'로 수정.
     id: 'crystal-choice',
-    icon: '/vkrhltngh.webp',
+    icon: '/crystal-choice-pouch.webp',
     name: '파결·수결 선택',
     keywords: ['파괴석 결정', '수호석 결정', '결정 선택'],
     type: 'choice',
@@ -292,7 +351,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   },
   {
     id: 'crystal-bundle',
-    icon: '/vkrhltngh.webp',
+    icon: '/crystal-choice-pouch.webp',
     name: '파결·수결 묶음',
     keywords: ['파괴석 결정', '수호석 결정', '주머니', '결정 묶음'],
     type: 'bundle',
@@ -614,7 +673,7 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   // ── 유각 ──
   {
     id: 'engraving-choice',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     name: '유각 선택 상자',
     keywords: ['각인서', '유물 각인'],
     type: 'choice',
@@ -671,14 +730,14 @@ export const TEMPLATE_ITEMS: TemplateItem[] = [
   },
   {
     id: 'bracelet-reconversion',
-    icon: '/vkfwlwoqusghksrnjs.webp',
+    icon: '/bracelet-reconvert.webp',
     name: '팔찌 재변환권',
     type: 'fixed',
     fixedGold: 50,
   },
   {
     id: 'ninav-blessing',
-    icon: '/slskqm.webp',
+    icon: '/ninav-blessing.webp',
     name: '니나브의 축복 (15일)',
     type: 'crystal',
     crystalPerUnit: 180, // 4950원 = 9900/2, 4950/27.5 = 180 BC 환산

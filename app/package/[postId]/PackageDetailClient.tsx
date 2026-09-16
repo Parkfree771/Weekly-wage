@@ -1,5 +1,7 @@
 'use client';
 
+import { ICON_TINTS } from '@/lib/package-icon-tints';
+import SharePie from '@/components/package/SharePie';
 import { publishStats, fetchStats, seedStatsFromPosts, subscribeStats, wasViewedRecently, markViewed } from '@/lib/package-stats-client';
 import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -51,10 +53,15 @@ import {
   crystalUnitGold,
   packageItemHasPeon,
   type ProbBoxCandidate,
+  boxDisplayIcon,
 } from '@/lib/package-shared';
+import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import PeonBadge from '@/components/package/PeonBadge';
 import { useNoPeon } from '@/components/package/useNoPeon';
 import PeonBasisButton from '@/components/package/PeonBasisButton';
+import SideSquareAd from '@/components/package/SideSquareAd';
 import TicketTierPicker from '@/components/package/TicketTierPicker';
 import dynamic from 'next/dynamic';
 import styles from '../package.module.css';
@@ -1142,6 +1149,34 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
   const bundleGold = isBonusPkg ? totalGold * 3 + bonusTotalGold : isHotDeal ? totalGold + bonusTotalGold : totalGold * getCount;
   const bundleBenefit = bundleCash > 0 ? ((bundleGold - bundleCash) / bundleCash) * 100 : 0;
 
+  // 구성품 가치 비중 — 댓글 위 섹션이 쓴다. 체크·선택·페온 제거·티켓 층이 바뀌면 소계가 바뀌고
+  // 여기도 같이 바뀐다(위 useMemo 들에서 흘러온다). 기준은 이 글의 "답"과 같다:
+  //   3+보너스 = 묶음(구성품 3회분 + 보너스), 핫딜 = 칸 + 보너스, 그 외 = 구성품 합.
+  const shareBasis = isBonusPkg || isHotDeal ? bundleGold : totalGold;
+  const shareBasisLabel = isBonusPkg ? '묶음 가치 (구성품 3회 + 보너스)' : isHotDeal ? '전체 가치 (칸 + 보너스)' : '구성품 가치';
+  const shareRows = (() => {
+    if (post.packageType === '가챠' || !(shareBasis > 0)) return [];
+    const tintOf = (icon?: string | null) => (icon ? ICON_TINTS[icon.split('?')[0]] : undefined);
+    const iconOf = (it: PackageItem) => it.icon || it.bundleItems?.[0]?.icon || null;
+    const mainMul = isBonusPkg ? 3 : 1;
+    // 선택형은 고른 선택지가 아니라 상자(템플릿) 이름·그림으로 — 갤러리 칸과 같게. 뭘 골랐는지는 위 카드 드롭다운에 있다
+    const rows = post.items.map((it, idx) => ({
+      key: `m${idx}`, name: it.name, icon: (() => { const ic = iconOf(it); return ic ? boxDisplayIcon(ic) : null; })(),
+      sub: (itemSubtotals[idx] || 0) * mainMul, on: checkedItems[idx] !== false, peon: packageItemHasPeon(it),
+    }));
+    if ((isBonusPkg || isHotDeal) && post.bonusItems) {
+      const bonusSelectable = (post.bonusSelectableCount || 0) > 0;
+      rows.push(...post.bonusItems.map((it, idx) => ({
+        key: `b${idx}`, name: `${it.name} (보너스)`, icon: (() => { const ic = iconOf(it); return ic ? boxDisplayIcon(ic) : null; })(),
+        sub: bonusItemSubtotals[idx] || 0, on: !(bonusSelectable && bonusCheckedItems[idx] === false), peon: packageItemHasPeon(it),
+      })));
+    }
+    return rows
+      .filter((r) => r.on && r.sub > 0)
+      .map((r) => ({ ...r, pct: (r.sub / shareBasis) * 100, tint: tintOf(r.icon) }))
+      .sort((a, b) => b.sub - a.sub);
+  })();
+
   // 가챠 전용 렌더링
   if (post.packageType === '가챠') {
     const gachaItems = post.items;
@@ -1283,6 +1318,15 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                   )}
                 </div>
               </div>
+
+              {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
+                  같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
+              <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
+                <AdBanner slot="8616653628" index={0} />
+              </div>
+
+              {/* PC 좌측 250×250 (모바일에서는 CSS 로 숨김) */}
+              <SideSquareAd postId={postId} />
             </div>
 
             {/* 오른쪽: 아이템 구성 + 가챠 시뮬 */}
@@ -1495,6 +1539,11 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             );
           })()}
             </section>
+
+            {/* 모바일 띠배너 — 아이템 구성 아래 (index 1: 위 자리와 다른 단위) */}
+            <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
+              <AdBanner slot="8616653628" index={1} />
+            </div>
           </div>
 
           {/* 댓글 */}
@@ -1506,6 +1555,10 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             likeCount={post.likeCount || 0}
             sosoCount={post.sosoCount || 0}
           />
+
+          <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
+            <AdBanner slot="8616653628" />
+          </div>
         </div>
       </Container>
     );
@@ -1647,6 +1700,15 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 )}
               </div>
             </div>
+
+            {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
+                같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
+            <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
+              <AdBanner slot="8616653628" index={0} />
+            </div>
+
+            {/* PC 좌측 250×250 (모바일에서는 CSS 로 숨김) */}
+            <SideSquareAd postId={postId} />
           </div>
 
           {/* 오른쪽: 아이템 카드 */}
@@ -1930,6 +1992,11 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
               })}
             </div>
           </section>
+
+          {/* 모바일 띠배너 — 아이템 구성 아래 (index 1: 위 자리와 다른 단위) */}
+          <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
+            <AdBanner slot="8616653628" index={1} />
+          </div>
         </div>
 
         {/* 구성품 상세 — 젬 상자류·균열 환산 아이템(공명의 기운/휴게 물약)의 구성·계산 근거 (카드 안에 다 안 들어가는 정보를 여기에 풀어씀) */}
@@ -2264,6 +2331,22 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
           </section>
         )}
 
+        {/* 구성품 가치 비중 — 원(상위 6개 + 기타, 조각 안에 그림·%) + 범례(전부, 큰 순). 조각 색은 아이템 그림색.
+            체크·선택지·페온 제거·티켓 층을 바꾸면 위 소계가 바뀌고 여기도 같이 바뀐다. */}
+        {shareRows.length >= 2 && (
+          <section className={`${styles.detailCard} ${styles.shareSection}`} aria-label="구성품 가치 비중">
+            <h2 className={styles.detailCardHeader}>구성품 가치 비중</h2>
+            <SharePie rows={shareRows} basis={shareBasis} basisLabel={shareBasisLabel} noPeon={noPeon} />
+          </section>
+        )}
+
+        {/* 비중 섹션과 댓글 사이 — 데스크톱 728×90(공용 단위 galleryBottomDesktop 재사용, 이 페이지의
+            유일한 가로 자리라 한 페이지 한 단위 원칙에 어긋나지 않는다) + 모바일 320×50 세 번째 띠(index 2) */}
+        <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+        <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
+          <AdBanner slot="8616653628" index={2} />
+        </div>
+
         {/* 댓글 섹션 */}
         {post && (
           <CommentSection
@@ -2275,6 +2358,11 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             sosoCount={post.sosoCount || 0}
           />
         )}
+
+        {/* 모바일 하단 광고 */}
+        <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
+          <AdBanner slot="8616653628" />
+        </div>
       </div>
     </Container>
   );

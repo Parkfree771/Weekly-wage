@@ -2,6 +2,7 @@ import { cache } from 'react';
 import { Metadata } from 'next';
 import { getAdminFirestore } from '@/lib/firebase-admin';
 import { applyStatsToPosts } from '@/lib/package-stats';
+import { renewPostIcons } from '@/lib/package-shared';
 import { SITE_URL, INDEX_USER_PACKAGE_POSTS } from '@/lib/site-config';
 import type { PackagePost, PackageComment } from '@/types/package';
 import PackageDetailPage from './PackageDetailClient';
@@ -226,7 +227,8 @@ export default async function Page({ params }: Props) {
   const [comments, statsApplied] = post
     ? await Promise.all([getComments(postId), applyStatsToPosts([post])])
     : [null, null];
-  const postWithStats = statsApplied ? statsApplied[0] : null;
+  // 글에 저장된 아이콘 경로 중 그림이 바뀐 것은 새 그림으로 (renewPostIcons 주석 참조)
+  const postWithStats = statsApplied ? renewPostIcons(statsApplied[0]) : null;
 
   return <PackageDetailPage initialPost={postWithStats} initialComments={comments} />;
 }

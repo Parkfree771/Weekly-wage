@@ -94,12 +94,12 @@ const RAIL_PAGES = new Set([
   '/cathedral', '/cerka', '/belgardin', '/bracelet', '/hell-reward',
   '/expedition-gold',
 ]);
-// 패키지 상세는 사이트가 직접 쓴 아제나의 축복(/package/azena-blessing)만 레일을 붙인다.
-// 유저 등록 글(/package/[postId])은 본문이 제목·가격·구성품 이름뿐인 얇은 화면이라
-// "가치 낮은 화면 광고" 로 보이지 않게 광고를 전부 뺐다(PackageDetailClient 본문 광고도 제거).
-// (azena-blessing 상수는 무거운 계산 모듈을 끌고 오므로 전역 컴포넌트인 여기선 경로를 직접 적는다)
+// 패키지 상세(/package/[postId])는 동적 라우트라 위 Set에 못 넣으므로 startsWith로 별도 포함
+// (등록·수정은 railsDisabled가 이미 따로 걸러냄). 아제나의 축복(/package/azena-blessing)도 여기 걸린다.
+// 2026-09-15 에 유저 글 상세를 "얇은 화면"으로 보고 잠깐 뺐다가 09-16 에 되돌렸다 — 구성품 가치 비중 등
+// 계산 결과가 본문이라 얇은 화면이 아니다.
 function isRailPage(pathname: string): boolean {
-  return RAIL_PAGES.has(pathname) || pathname === '/package/azena-blessing';
+  return RAIL_PAGES.has(pathname) || pathname.startsWith('/package/');
 }
 
 // 앱 다운로드 사이드바 프로모를 붙일 페이지 — 광고 레일이 있는 페이지도 포함되며,

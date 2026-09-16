@@ -343,7 +343,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '아드레날린',
     displayName: '유물 각인서: 아드레날린',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48' // 주황색
   },
   {
@@ -351,7 +351,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '원한',
     displayName: '유물 각인서: 원한',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48'
   },
   {
@@ -359,7 +359,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '돌격대장',
     displayName: '유물 각인서: 돌격대장',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48'
   },
   {
@@ -367,7 +367,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '예리한 둔기',
     displayName: '유물 각인서: 예리한 둔기',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48'
   },
   {
@@ -375,7 +375,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '질량 증가',
     displayName: '유물 각인서: 질량 증가',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48'
   },
   {
@@ -383,7 +383,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '저주받은 인형',
     displayName: '유물 각인서: 저주받은 인형',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48'
   },
   {
@@ -391,7 +391,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '기습의 대가',
     displayName: '유물 각인서: 기습의 대가',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48'
   },
   {
@@ -399,7 +399,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '타격의 대가',
     displayName: '유물 각인서: 타격의 대가',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48'
   },
   {
@@ -407,7 +407,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '각성',
     displayName: '유물 각인서: 각성',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48'
   },
   {
@@ -415,7 +415,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '전문의',
     displayName: '유물 각인서: 전문의',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48'
   },
   {
@@ -423,7 +423,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '슈퍼차지',
     displayName: '유물 각인서: 슈퍼차지',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48'
   },
   {
@@ -431,7 +431,7 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '결투의 대가',
     displayName: '유물 각인서: 결투의 대가',
     type: 'market',
-    icon: '/engraving.webp',
+    icon: '/engraving2.webp',
     iconBorderColor: '#E11D48'
   },
 

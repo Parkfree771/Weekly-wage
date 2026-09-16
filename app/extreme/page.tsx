@@ -44,18 +44,18 @@ const SHOP_THEME_COLORS: { [key: string]: { name: string; accent: string; border
 // ─── 구성 요소 ───
 // 유물 전투 각인서 12종 (items-to-track.ts 기반)
 const ENGRAVING_COMPONENTS: { itemId: string; name: string; icon: string }[] = [
-  { itemId: '65203905', name: '아드레날린',      icon: '/engraving.webp' },
-  { itemId: '65200505', name: '원한',            icon: '/engraving.webp' },
-  { itemId: '65203305', name: '돌격대장',        icon: '/engraving.webp' },
-  { itemId: '65201005', name: '예리한 둔기',     icon: '/engraving.webp' },
-  { itemId: '65203505', name: '질량 증가',       icon: '/engraving.webp' },
-  { itemId: '65202805', name: '저주받은 인형',   icon: '/engraving.webp' },
-  { itemId: '65203005', name: '기습의 대가',     icon: '/engraving.webp' },
-  { itemId: '65203705', name: '타격의 대가',     icon: '/engraving.webp' },
-  { itemId: '65203405', name: '각성',            icon: '/engraving.webp' },
-  { itemId: '65204105', name: '전문의',          icon: '/engraving.webp' },
-  { itemId: '65200605', name: '슈퍼차지',        icon: '/engraving.webp' },
-  { itemId: '65201505', name: '결투의 대가',     icon: '/engraving.webp' },
+  { itemId: '65203905', name: '아드레날린',      icon: '/engraving2.webp' },
+  { itemId: '65200505', name: '원한',            icon: '/engraving2.webp' },
+  { itemId: '65203305', name: '돌격대장',        icon: '/engraving2.webp' },
+  { itemId: '65201005', name: '예리한 둔기',     icon: '/engraving2.webp' },
+  { itemId: '65203505', name: '질량 증가',       icon: '/engraving2.webp' },
+  { itemId: '65202805', name: '저주받은 인형',   icon: '/engraving2.webp' },
+  { itemId: '65203005', name: '기습의 대가',     icon: '/engraving2.webp' },
+  { itemId: '65203705', name: '타격의 대가',     icon: '/engraving2.webp' },
+  { itemId: '65203405', name: '각성',            icon: '/engraving2.webp' },
+  { itemId: '65204105', name: '전문의',          icon: '/engraving2.webp' },
+  { itemId: '65200605', name: '슈퍼차지',        icon: '/engraving2.webp' },
+  { itemId: '65201505', name: '결투의 대가',     icon: '/engraving2.webp' },
 ];
 
 // 영웅 젬 6종 (선택 상자용 — 확률 동일)
