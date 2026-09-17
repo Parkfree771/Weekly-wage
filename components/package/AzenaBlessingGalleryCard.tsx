@@ -14,6 +14,7 @@ import {
   AZENA_DEFAULT_OPTIONS,
   AZENA_DEFAULT_WON_PER_100_GOLD,
   calcAzenaBreakdown,
+  getAzenaShareRows,
   type AzenaOptions,
 } from '@/lib/azena-blessing';
 import { BenefitPct } from './PackageGalleryCard';
@@ -127,6 +128,10 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
 
   const cashGold = AZENA_PRICE_WON * goldPerWon;
   const benefit = cashGold > 0 ? ((breakdown.totalGold - cashGold) / cashGold) * 100 : 0;
+
+  // 구성품 가치 비중 — 일반 카드와 같은 "비중" 줄(상위 3개 + 막대). 기준은 28일 기대값
+  const shareSegs = useMemo(() => getAzenaShareRows(breakdown, options.tier), [breakdown, options.tier]);
+  const shareTailStart = Math.min(100, shareSegs.slice(0, 3).reduce((a, r) => a + r.pct, 0));
 
   const setOption = <K extends keyof AzenaOptions>(key: K, value: AzenaOptions[K]) =>
     setOptions((prev) => ({ ...prev, [key]: value }));
@@ -248,6 +253,41 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
             <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
               <span className={styles.resultLabel}>기대 효율</span>
               <BenefitPct v={benefit} />
+            </div>
+          )}
+
+          {/* 비중 — 일반 카드 shareRowNode 와 같은 마크업 */}
+          {shareSegs.length >= 2 && (
+            <div className={styles.shareRow}>
+              <div className={styles.resultRow}>
+                <span className={styles.resultLabel}>비중</span>
+                <span className={styles.shareTop} aria-label="구성품 가치 비중 상위 3개">
+                  {shareSegs.slice(0, 3).map((r) => (
+                    <span key={r.key} className={styles.shareTopItem} title={`${r.name} · ${formatNumber(r.sub)}G`}>
+                      {r.icon && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img loading="lazy" decoding="async" src={r.icon} alt="" className={styles.shareTopIcon} />
+                      )}
+                      {r.pct < 1 ? '<1' : Math.round(r.pct)}%
+                    </span>
+                  ))}
+                </span>
+              </div>
+              <div
+                className={styles.shareBar}
+                role="img"
+                aria-label="구성품 가치 비중"
+                style={{ ['--share-tail' as string]: `${shareTailStart}%` }}
+              >
+                {shareSegs.map((r) => (
+                  <div
+                    key={r.key}
+                    className={styles.shareSeg}
+                    style={{ flexBasis: `${r.pct}%`, ['--seg-color' as string]: r.tint }}
+                    title={`${r.name} · ${formatNumber(r.sub)}G (${r.pct < 1 ? '1% 미만' : `${Math.round(r.pct)}%`})`}
+                  />
+                ))}
+              </div>
             </div>
           )}
 

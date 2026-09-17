@@ -3,6 +3,7 @@
 // 패키지 수정 — 폼 본체는 등록 페이지와 공용인 PackageForm 에 있다.
 // 이 페이지는 게시물 로드(권한 확인 포함)와 "수정 저장 + ISR 재생성"만 담당한다.
 
+import { revalidatePackage } from '@/lib/revalidate-client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Container, Spinner } from 'react-bootstrap';
@@ -68,11 +69,7 @@ export default function PackageEditPage() {
     });
 
     // ISR 캐시된 상세 페이지를 즉시 재생성 (완료를 기다려야 이동 후 최신이 보인다)
-    await fetch('/api/package/revalidate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ postId }),
-    }).catch(() => {});
+    await revalidatePackage(postId);
 
     router.push(`/package/${postId}`);
   };

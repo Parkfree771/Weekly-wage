@@ -58,9 +58,14 @@ async function loadGallery(): Promise<GalleryData | null> {
     const posts = await applyStatsToPosts(rawPosts);
     return { posts, statsAt: Date.now() };
   } catch (err) {
-    // 서버 읽기가 실패하면 null — 클라이언트가 예전처럼 직접 읽어 화면은 정상 동작한다
+    // 실패는 던진다 — null 로 넘기면 "글 없는 갤러리" 가 5분 ISR 에 실리고, 그동안 방문자마다
+    // 클라이언트 예비 경로가 Firestore 를 최대 200건씩 읽는다. 던지면 Next 가 마지막으로
+    // 성공한 페이지를 그대로 내보내고 다음 요청에서 다시 시도한다 (첫 렌더부터 실패면 error.tsx).
     console.error('갤러리 서버 조회 실패:', err);
-    return null;
+    // 빌드 중 프리렌더에서만은 예전처럼 null — Firestore 한 번 삐끗했다고 배포 전체가 실패하면 안 된다.
+    // 이 빈 사본은 ISR 창(5분)이 지나면 배경 재생성으로 교체된다.
+    if (process.env.NEXT_PHASE === 'phase-production-build') return null;
+    throw err;
   }
 }
 

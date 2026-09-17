@@ -343,18 +343,40 @@ export async function getMultipleItemPriceHistory(
  * - 이미 캐시가 있으면 캐시 사용
  * - 없으면 latest만 fetch
  */
+let pendingLatest: Promise<LatestPrices> | null = null;
+let latestFailedAt = 0;
+const LATEST_FAIL_BACKOFF_MS = 60_000;
+
 export async function fetchLatestPrices(): Promise<LatestPrices> {
   const latestCacheKey = getLatestCacheKey();
 
   if (cachedLatest && lastLatestCacheKey === latestCacheKey) {
     return cachedLatest;
   }
+  // 같은 화면의 여러 컴포넌트(재련·완갑·PriceContext 등)가 동시에 부른다 — 요청은 하나만 나간다.
+  // fetchPriceData 가 이미 받아오는 중이면 그 결과에 실려 오는 latest 를 같이 쓴다.
+  if (pendingRequest) return (await pendingRequest).latest;
+  if (pendingLatest) return pendingLatest;
+  // 실패 직후엔 잠시 쉰다 — 저장소 장애 중 페이지마다 함수 호출이 줄줄이 나가지 않게
+  if (Date.now() - latestFailedAt < LATEST_FAIL_BACKOFF_MS) {
+    throw new Error('Failed to fetch latest prices (backoff)');
+  }
 
-  const res = await fetchWithTimeout('/api/price-data/latest');
-  if (!res.ok) throw new Error('Failed to fetch latest prices');
-  cachedLatest = await res.json();
-  lastLatestCacheKey = latestCacheKey;
-  return cachedLatest!;
+  pendingLatest = (async () => {
+    try {
+      const res = await fetchWithTimeout('/api/price-data/latest');
+      if (!res.ok) throw new Error('Failed to fetch latest prices');
+      cachedLatest = await res.json();
+      lastLatestCacheKey = latestCacheKey;
+      return cachedLatest!;
+    } catch (err) {
+      latestFailedAt = Date.now();
+      throw err;
+    } finally {
+      pendingLatest = null;
+    }
+  })();
+  return pendingLatest;
 }
 
 /**

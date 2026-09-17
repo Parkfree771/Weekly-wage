@@ -81,16 +81,11 @@ function getClientIp(req: NextRequest): string {
 }
 
 // ============================================================
-// 미들웨어
+// 미들웨어 — 아래 config.matcher 에 든 API 경로에서만 실행된다
 // ============================================================
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  // API 라우트만 처리
-  if (!pathname.startsWith('/api/')) {
-    return NextResponse.next();
-  }
 
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
@@ -108,19 +103,8 @@ export function proxy(req: NextRequest) {
   // 라우트별 레이트 리밋 적용
   let limit: { allowed: boolean; remaining: number };
 
-  // 크론은 GitHub Actions에서 호출 — CRON_SECRET 헤더로 인증되므로 레이트 리밋 면제
-  if (pathname.startsWith('/api/cron/')) {
-    const cronSecret = req.headers.get('authorization');
-    if (cronSecret) {
-      // 인증 헤더가 있으면 레이트 리밋 면제 (실제 인증은 각 API 핸들러에서 처리)
-      const response = NextResponse.next();
-      for (const [key, value] of Object.entries(corsHeaders)) {
-        response.headers.set(key, value);
-      }
-      return response;
-    }
-    limit = checkRateLimit(`admin:${ip}`, RATE_LIMIT_MAX_ADMIN);
-  } else if (pathname.startsWith('/api/admin/')) {
+  // (크론 라우트는 matcher 에 없다 — CRON_SECRET 으로 핸들러가 직접 인증한다)
+  if (pathname.startsWith('/api/admin/')) {
     limit = checkRateLimit(`admin:${ip}`, RATE_LIMIT_MAX_ADMIN);
   } else if (isUnknownIp) {
     // IP를 알 수 없는 경우: 모든 미식별 요청이 하나의 버킷을 공유하므로
@@ -156,6 +140,19 @@ export function proxy(req: NextRequest) {
   return response;
 }
 
+// Netlify 는 이 proxy 를 엣지 함수로 올리고, 엣지 함수는 CDN 캐시보다 먼저 실행된다.
+// 그래서 matcher 에 든 경로는 CDN 이 캐시로 답할 요청까지 매번 함수가 한 번 돈다.
+// 캐시로 끝나야 하는 GET 시세·집계 라우트(price-data, package/stats, market/live-prices)는
+// 여기서 빼고, 외부 키를 쓰거나 쓰기가 일어나는 라우트만 남긴다.
+// (레이트리밋은 인스턴스별 메모리라 느슨하다 — 진짜 보호는 각 라우트의 인증·캐시가 맡는다)
 export const config = {
-  matcher: '/api/:path*',
+  matcher: [
+    '/api/lostark/:path*',
+    '/api/package/view',
+    '/api/package/react',
+    '/api/package/revalidate',
+    '/api/feedback/:path*',
+    '/api/admin/:path*',
+    '/api/market/batch-prices',
+  ],
 };

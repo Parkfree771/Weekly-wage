@@ -6,6 +6,7 @@
 import { getItemUnitPrice, TEMPLATES_MAP } from '@/lib/package-shared';
 import { getItemsByCategory } from '@/lib/items-to-track';
 import { calcEngravingExpectedValue } from '@/lib/hell-reward-calc';
+import { ICON_TINTS } from '@/lib/package-icon-tints';
 
 export const AZENA_POST_ID = 'azena-blessing';
 export const AZENA_TITLE = '아제나의 축복 [28일]';
@@ -412,4 +413,54 @@ export function calcAzenaBreakdown(
     buff: { unitGold: AZENA_BUFF_STEAK_GOLD, count: buffCount, total: buffTotal },
     totalGold: daily.total + weeklyTotal + fragments.total + raidBoxes.total + buffTotal,
   };
+}
+
+// ─── 구성품 가치 비중 (갤러리 카드 "비중" 줄 · 상세 비중 원) ───
+// 일반 패키지의 구성품 행과 같은 모양(SharePie ShareRow)으로 28일 기대값을 여섯 조각으로 나눈다.
+// 조각 색은 ICON_TINTS 를 쓰고, 아제나 전용 그림은 자동 생성 파일에 없어서
+// tools/icon-tints.py 와 같은 식으로 뽑은 값을 여기 둔다 (자동 생성 파일은 손대지 않는다).
+export const AZENA_SHARE_TINTS: Record<string, string> = {
+  '/azena-box-art.webp': '#7c3db8',
+  '/azena-fragment.png': '#b83d3f',
+  '/herb-steak.png': '#b8603d',
+};
+
+export type AzenaShareRow = {
+  key: string;
+  name: string;
+  icon: string | null;
+  sub: number;
+  pct: number;
+  tint?: string;
+  /** 아제나 구성품에는 페온 몫이 없다 — 일반 패키지 행과 모양만 맞춘다 */
+  peon: false;
+};
+
+/** 28일 기대값의 구성품별 몫 — 0골드 조각은 빼고 큰 순 */
+export function getAzenaShareRows(b: AzenaBreakdown, tier: AzenaTier): AzenaShareRow[] {
+  if (!(b.totalGold > 0)) return [];
+  const opt = getAzenaDailyBoxOptions(tier).find((o) => o.key === b.daily.boxChoice);
+  const rows: { key: string; name: string; icon: string; sub: number }[] = [
+    {
+      key: 'daily-box',
+      name: `선택 상자 (${opt?.shortName ?? '선택'} ×${opt?.quantity ?? 0}) ×${AZENA_DAYS}`,
+      icon: opt?.icon ?? '/azena-box-art.webp',
+      sub: b.daily.boxGold,
+    },
+    { key: 'raid-box', name: `축복이 깃든 상자 ×${b.raidBoxes.count}`, icon: '/azena-box-art.webp', sub: b.raidBoxes.total },
+    { key: 'fragments', name: `축복의 편린 ×${b.fragments.expectedCount.toFixed(1)}`, icon: '/azena-fragment.png', sub: b.fragments.total },
+    { key: 'essence', name: `도약의 정수 ×${AZENA_DAYS}`, icon: '/leap-essence.webp', sub: b.daily.essenceGold },
+    { key: 'weekly', name: `천상 도전 횟수 +1 ×${AZENA_WEEKS}`, icon: '/cjstkd.webp', sub: b.weekly.total },
+    { key: 'buff', name: `전용 버프 ×${b.buff.count}`, icon: '/herb-steak.png', sub: b.buff.total },
+  ];
+  return rows
+    .filter((r) => r.sub > 0)
+    .map((r) => ({
+      ...r,
+      pct: (r.sub / b.totalGold) * 100,
+      // 색 표는 쿼리 없는 경로가 키다 ('/abidos-fusion5.webp?v=4' 같은 그림도 있다)
+      tint: ICON_TINTS[r.icon.split('?')[0]] ?? AZENA_SHARE_TINTS[r.icon.split('?')[0]],
+      peon: false as const,
+    }))
+    .sort((x, y) => y.sub - x.sub);
 }

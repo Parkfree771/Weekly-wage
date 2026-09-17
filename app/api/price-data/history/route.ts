@@ -33,9 +33,11 @@ export async function GET() {
   } catch (error) {
     console.error('[/api/price-data/history] 오류:', error);
 
+    // 503 + 짧은 s-maxage: CDN 이 5xx 를 캐시해 주면 장애 중 재요청이 함수까지 오지 않는다.
+    // (Netlify 가 5xx 를 캐시하지 않는 환경이면 헤더는 무시되고 예전과 같다 — 해로울 건 없다)
     return NextResponse.json(
       { error: 'Failed to fetch price history' },
-      { status: 500 }
+      { status: 503, headers: { 'Netlify-CDN-Cache-Control': 'public, s-maxage=30', 'Cache-Control': 'no-store' } }
     );
   }
 }

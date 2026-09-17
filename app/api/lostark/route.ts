@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { characterCdnTag, purgeCharacterCdn } from '@/lib/purge-cdn';
+import { isLostArkMaintenance } from '@/lib/lostark-maintenance';
 
 // GET 요청을 처리하는 함수
 export async function GET(request: Request) {
@@ -17,6 +18,13 @@ export async function GET(request: Request) {
 
   if (!characterName) {
     return NextResponse.json({ message: '캐릭터명을 입력해주세요.' }, { status: 400 });
+  }
+  // 수요일 점검(06:00~10:00 KST) — 로아 API 가 응답하지 않으니 부르지 않고 바로 알린다
+  if (isLostArkMaintenance()) {
+    return NextResponse.json(
+      { message: '로아 서버 점검 중(수요일 06:00~10:00)이라 캐릭터 정보를 가져올 수 없습니다.' },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } },
+    );
   }
 
   const apiKey = process.env.LOSTARK_API_KEY;
@@ -96,7 +104,8 @@ export async function GET(request: Request) {
     return NextResponse.json(responseData, {
       headers: {
         'Cache-Control': 'public, max-age=0, must-revalidate',
-        'Netlify-CDN-Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+        // durable: 엣지 노드마다 따로 캐시하지 않고 전 세계가 한 사본을 쓴다 (태그 퍼지는 그대로 동작)
+        'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=120, stale-while-revalidate=300',
         'Netlify-Vary': 'query',
         // 갱신 시 태그 퍼지로 지울 수 있도록 캐릭터별 태그를 단다
         'Netlify-Cache-Tag': characterCdnTag(characterName),

@@ -1,5 +1,6 @@
 'use client';
 
+import { revalidatePackage } from '@/lib/revalidate-client';
 import { ICON_TINTS } from '@/lib/package-icon-tints';
 import SharePie from '@/components/package/SharePie';
 import { publishStats, fetchStats, seedStatsFromPosts, subscribeStats, wasViewedRecently, markViewed } from '@/lib/package-stats-client';
@@ -13,7 +14,7 @@ import { isAdmin } from '@/lib/admin';
 // 정적 import 하면 모든 익명 방문자가 상세 첫 로드에 firestore 를 내려받는다 → 핸들러 안 동적 import
 import { isSaleEnded, formatSaleEndShort, formatSalePeriodDateOnly } from '@/lib/package-sale';
 import { fetchLatestPrices } from '@/lib/price-history-client';
-import { fetchLivePrices, getCachedLivePrices } from '@/lib/live-prices-client';
+import { fetchLivePrices, getActiveLivePrices, setLiveOn, liveErrorMessage } from '@/lib/live-prices-client';
 import type { PackagePost, PackageType, PackageItem } from '@/types/package';
 import {
   calcTicketAverage,
@@ -310,8 +311,10 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
   const [avgPrices, setAvgPrices] = useState<Record<string, number>>({});
   // 실시간 최저가 — 갤러리와 모듈 캐시(lib/live-prices-client)를 공유해,
   // 갤러리에서 최저가를 켠 채 들어오면 그대로 켜진 상태로 시작한다.
-  const [livePrices, setLivePrices] = useState<Record<string, number> | null>(getCachedLivePrices());
+  const [livePrices, setLivePrices] = useState<Record<string, number> | null>(getActiveLivePrices());
   const [liveLoading, setLiveLoading] = useState(false);
+  // 현재가 조회 실패 안내 — 몇 초 보여주고 사라진다 (점검 중이면 점검이라고 알린다)
+  const [liveError, setLiveError] = useState<string | null>(null);
   // 이 화면의 모든 계산이 쓰는 시세 — 최저가가 켜져 있으면 평균가 위에 덮는다
   const latestPrices = useMemo(
     () => (livePrices ? { ...avgPrices, ...livePrices } : avgPrices),
@@ -377,16 +380,27 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
   // 최저가 버튼 — 갤러리와 같은 동작. 쿨다운 안이면 fetchLivePrices 가 캐시를 곧바로 돌려준다
   const applyLivePrices = useCallback(async () => {
     if (liveLoading) return;
+    // 켜져 있으면 끈다(평균가로 복귀). 캐시는 그대로 남아 다시 켤 때 10분 안이면 조회하지 않는다
+    if (livePrices) {
+      setLiveOn(false);
+      setLivePrices(null);
+      return;
+    }
     setLiveLoading(true);
     try {
       const prices = await fetchLivePrices();
-      if (prices) setLivePrices(prices);
+      if (prices) {
+        setLiveOn(true);
+        setLivePrices(prices);
+      }
     } catch (err) {
-      console.error('실시간 시세 갱신 실패:', err);
+      console.error('현재가 조회 실패:', err);
+      setLiveError(liveErrorMessage(err));
+      setTimeout(() => setLiveError(null), 5000);
     } finally {
       setLiveLoading(false);
     }
-  }, [liveLoading]);
+  }, [liveLoading, livePrices]);
 
   // 헤더 오른쪽 위 계산 기준 버튼 묶음 — 최저가 + 페온 제거.
   // 가챠·일반 상세 두 헤더가 같이 쓰고, 생김새는 갤러리 컨트롤 바와 같다.
@@ -397,7 +411,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       className={`${styles.liveBtn} ${styles.detailLiveBtn} ${livePrices ? styles.liveBtnOn : ''} ${liveLoading ? styles.liveSpinning : ''}`}
       onClick={applyLivePrices}
       disabled={liveLoading}
-      aria-label="거래소 최저가로 다시 계산"
+      aria-label={livePrices ? '현재가(거래소 최저 매물가)로 계산 중 — 누르면 1시간 평균가로 돌아갑니다' : '현재가(거래소 최저 매물가)로 계산'}
     >
       <svg
         className={styles.liveIcon}
@@ -414,13 +428,13 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
         <path d="M3.5 12a8.5 8.5 0 0 0 14.6 5.9L21 15" />
         <path d="M21 20.5V15h-5.5" />
       </svg>
-      <span className={styles.liveLabel}>최저가</span>
+      <span className={styles.liveLabel}>{livePrices ? '10분 현재가' : '1시간 평균가'}</span>
       <i className={styles.liveDot} />
       <span className={styles.basisTip} aria-hidden="true">
         <strong className={styles.basisTipHead}>
-          {livePrices ? '거래소 최저가로 계산 중' : '거래소 최저가'}
+          {livePrices ? '10분 현재가' : '1시간 평균가'}
         </strong>
-        {livePrices ? '누르면 다시 가져옵니다' : '기본은 1시간 거래 평균가'}
+        {livePrices ? '거래소 최저 매물가 · 10분마다 갱신 · 누르면 1시간 평균가로 돌아갑니다' : '1시간 거래 평균가 · 누르면 현재가로 계산합니다'}
       </span>
     </button>
     <PeonBasisButton active={noPeon} onChange={setNoPeon} className={styles.detailLiveBtn} />
@@ -664,11 +678,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       await updatePackagePost(postId, { saleClosed: next });
       setPost({ ...post, saleClosed: next });
       // ISR 캐시된 상세 페이지 즉시 재생성 (다른 방문자에게도 바로 반영)
-      fetch('/api/package/revalidate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId }),
-      }).catch(() => {});
+      revalidatePackage(postId);
     } catch (err) {
       console.error('판매 종료 처리 실패:', err);
     } finally {
@@ -681,12 +691,9 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
     try {
       const { deletePackagePost } = await import('@/lib/package-service');
       await deletePackagePost(postId);
-      // ISR 캐시된 상세 페이지 즉시 무효화 (다른 방문자에게 삭제된 글이 남지 않도록)
-      fetch('/api/package/revalidate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId }),
-      }).catch(() => {});
+      // ISR 캐시된 상세 페이지 즉시 무효화 (다른 방문자에게 삭제된 글이 남지 않도록).
+      // 갤러리로 가기 전에 끝내야 한다 — 안 기다리면 방금 지운 글이 든 갤러리 사본을 받아온다
+      await revalidatePackage(postId);
       router.push('/package');
     } catch (err) {
       console.error('삭제 실패:', err);
@@ -1202,6 +1209,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
       <Container fluid style={{ maxWidth: '1100px' }}>
         {/* data-basis: 최저가 적용 중이면 버튼 채움색이 갤러리와 같은 선명한 초록이 된다 */}
         <div className={styles.detailWrapper} data-basis={livePrices ? 'live' : 'avg'}>
+        {liveError && <div className={styles.liveToast} role="status">{liveError}</div>}
           <Link href="/package" className={styles.backLink}>
             &#8592; 목록으로 돌아가기
           </Link>
@@ -1219,7 +1227,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             {/* 왼쪽: 계산 결과 */}
             <div className={styles.resultPanel}>
               <div className={styles.detailCard}>
-                <h2 className={styles.detailCardHeader}>계산 결과</h2>
+                <h2 className={styles.detailCardHeader}>계산 결과{livePrices && <span className={styles.liveBasisChip}>현재가 기준</span>}{noPeon && <span className={styles.peonExcludedChip}>페온 제외</span>}</h2>
 
                 <div className={styles.resultRow}>
                   <span className={styles.resultRowLabel}>가챠 가격</span>
@@ -1568,6 +1576,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
     <Container fluid style={{ maxWidth: '1100px' }}>
       {/* data-basis: 최저가 적용 중이면 버튼 채움색이 갤러리와 같은 선명한 초록이 된다 */}
       <div className={styles.detailWrapper} data-basis={livePrices ? 'live' : 'avg'}>
+        {liveError && <div className={styles.liveToast} role="status">{liveError}</div>}
         <Link href="/package" className={styles.backLink}>
           &#8592; 목록으로 돌아가기
         </Link>
@@ -1593,7 +1602,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
           {/* 왼쪽: 계산 결과 */}
           <div className={styles.resultPanel}>
             <div className={styles.detailCard}>
-              <h2 className={styles.detailCardHeader}>계산 결과</h2>
+              <h2 className={styles.detailCardHeader}>계산 결과{livePrices && <span className={styles.liveBasisChip}>현재가 기준</span>}{noPeon && <span className={styles.peonExcludedChip}>페온 제외</span>}</h2>
               {/* 핵심 수치 — 갤러리 카드와 같은 순서·형식으로 읽히게 맞췄다.
                   가격 → 골드 환산 → 구성품 가치 → 이득률. 환율은 아래 별도 상자로 뺐다. */}
               <div className={styles.resultRow}>

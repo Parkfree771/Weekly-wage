@@ -29,49 +29,44 @@ function toISO(value: any): string | null {
  * generateMetadata와 Page가 같은 요청에서 각각 호출되므로 cache()로 감싸
  * 요청당 Firestore 읽기를 1회로 합친다.
  */
+// 없는 글만 null. 읽기 실패는 던진다 — null 로 두면 "없는 글" 페이지가 ISR 에 실려
+// 실제로 있는 글이 5분간 사라져 보이고, 댓글은 방문자마다 클라이언트가 직접 읽게 된다.
+// 던지면 Next 가 마지막 성공 사본을 유지하고 다음 요청에서 다시 시도한다.
 const getPost = cache(async (postId: string): Promise<PackagePost | null> => {
-  try {
-    const db = getAdminFirestore();
-    const snap = await db.collection('packagePosts').doc(postId).get();
-    if (!snap.exists) return null;
-    const data = snap.data()!;
-    return {
-      ...data,
-      id: snap.id,
-      createdAt: toISO(data.createdAt),
-      updatedAt: toISO(data.updatedAt),
-      // 판매 기간도 Timestamp — 클라이언트 컴포넌트로 넘기려면 직렬화 가능한 형태여야 한다
-      saleStartAt: toISO(data.saleStartAt),
-      saleEndAt: toISO(data.saleEndAt),
-    } as PackagePost;
-  } catch {
-    return null;
-  }
+  const db = getAdminFirestore();
+  const snap = await db.collection('packagePosts').doc(postId).get();
+  if (!snap.exists) return null;
+  const data = snap.data()!;
+  return {
+    ...data,
+    id: snap.id,
+    createdAt: toISO(data.createdAt),
+    updatedAt: toISO(data.updatedAt),
+    // 판매 기간도 Timestamp — 클라이언트 컴포넌트로 넘기려면 직렬화 가능한 형태여야 한다
+    saleStartAt: toISO(data.saleStartAt),
+    saleEndAt: toISO(data.saleEndAt),
+  } as PackagePost;
 });
 
 /**
  * 댓글 — 글과 같이 ISR 로 5분 캐시. 방문자마다 클라이언트가 최대 200건을 읽던 것을 서버 1회로 줄인다.
  * 댓글 작성·삭제 직후에는 클라이언트가 /api/package/revalidate 를 불러 바로 갱신한다.
- * 실패하면 null — 클라이언트가 예전처럼 직접 읽는다.
+ * 읽기 실패는 던진다(getPost 와 같은 이유 — null 을 캐시하면 방문자마다 클라이언트가 200건씩 읽는다).
  */
 async function getComments(postId: string): Promise<PackageComment[] | null> {
-  try {
-    const db = getAdminFirestore();
-    const snap = await db
-      .collection('packagePosts').doc(postId).collection('comments')
-      .orderBy('createdAt', 'desc').limit(200).get();
-    return snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        ...data,
-        id: d.id,
-        createdAt: toISO(data.createdAt),
-        updatedAt: toISO(data.updatedAt),
-      } as PackageComment;
-    });
-  } catch {
-    return null;
-  }
+  const db = getAdminFirestore();
+  const snap = await db
+    .collection('packagePosts').doc(postId).collection('comments')
+    .orderBy('createdAt', 'desc').limit(200).get();
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      ...data,
+      id: d.id,
+      createdAt: toISO(data.createdAt),
+      updatedAt: toISO(data.updatedAt),
+    } as PackageComment;
+  });
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

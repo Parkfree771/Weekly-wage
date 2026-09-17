@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
@@ -33,9 +33,14 @@ import {
   getAzenaDailyBoxOptions,
   getAzenaDailyBoxOptionGold,
   getAzenaRefineBoxContents,
+  getAzenaShareRows,
   type AzenaOptions,
 } from '@/lib/azena-blessing';
 import { fetchLatestPrices } from '@/lib/price-history-client';
+import { fetchLivePrices, getActiveLivePrices, setLiveOn, liveErrorMessage } from '@/lib/live-prices-client';
+import { useNoPeon } from '@/components/package/useNoPeon';
+import PeonBasisButton from '@/components/package/PeonBasisButton';
+import SharePie from '@/components/package/SharePie';
 import AdBanner from '@/components/ads/AdBanner';
 import SideSquareAd from '@/components/package/SideSquareAd';
 import styles from '@/app/package/package.module.css';
@@ -213,7 +218,22 @@ function CountControl({
 }
 
 export default function AzenaBlessingDetail() {
-  const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
+  // 1시간 거래 평균가 — 기본 시세
+  const [avgPrices, setAvgPrices] = useState<Record<string, number>>({});
+  // 실시간 최저가 — 일반 상세와 같은 모듈 캐시(lib/live-prices-client)를 공유해,
+  // 갤러리에서 최저가를 켠 채 들어오면 그대로 켜진 상태로 시작한다.
+  const [livePrices, setLivePrices] = useState<Record<string, number> | null>(getActiveLivePrices());
+  const [liveLoading, setLiveLoading] = useState(false);
+  // 현재가 조회 실패 안내 — 몇 초 보여주고 사라진다 (점검 중이면 점검이라고 알린다)
+  const [liveError, setLiveError] = useState<string | null>(null);
+  // 이 화면의 모든 계산이 쓰는 시세 — 최저가가 켜져 있으면 평균가 위에 덮는다
+  const latestPrices = useMemo(
+    () => (livePrices ? { ...avgPrices, ...livePrices } : avgPrices),
+    [avgPrices, livePrices],
+  );
+  // 페온 가치 제거 — 갤러리·일반 상세와 같은 뷰어 설정. 아제나 구성품엔 페온 몫이 없어 값은 바뀌지 않지만,
+  // 다른 패키지 화면과 계산 기준 버튼을 똑같이 두려고 그대로 노출한다
+  const [noPeon, setNoPeon] = useNoPeon();
   // 환율 입력은 문자열로 든다 — number state 면 "16." 같은 타이핑 중간 상태가 지워져 소수(16.5) 입력이 안 된다
   const [rateText, setRateText] = useState<string>(String(AZENA_DEFAULT_WON_PER_100_GOLD));
   // 블크 시세(100블크당 골드) — 환율과 양방향 동기화 (100블크 = 2750원 고정)
@@ -237,9 +257,34 @@ export default function AzenaBlessingDetail() {
   useEffect(() => {
     // fetchLatestPrices 는 모듈 메모리 캐시가 있어 갤러리 ↔ 상세 왕복 시 재요청이 없다
     fetchLatestPrices()
-      .then((data) => setLatestPrices(data))
+      .then((data) => setAvgPrices(data))
       .catch((err) => console.error('가격 데이터 로딩 실패:', err));
   }, []);
+
+  // 최저가 버튼 — 일반 상세와 같은 동작. 쿨다운 안이면 fetchLivePrices 가 캐시를 곧바로 돌려준다
+  const applyLivePrices = useCallback(async () => {
+    if (liveLoading) return;
+    // 켜져 있으면 끈다(평균가로 복귀). 캐시는 그대로 남아 다시 켤 때 10분 안이면 조회하지 않는다
+    if (livePrices) {
+      setLiveOn(false);
+      setLivePrices(null);
+      return;
+    }
+    setLiveLoading(true);
+    try {
+      const prices = await fetchLivePrices();
+      if (prices) {
+        setLiveOn(true);
+        setLivePrices(prices);
+      }
+    } catch (err) {
+      console.error('현재가 조회 실패:', err);
+      setLiveError(liveErrorMessage(err));
+      setTimeout(() => setLiveError(null), 5000);
+    } finally {
+      setLiveLoading(false);
+    }
+  }, [liveLoading, livePrices]);
 
   const goldPerWon = wonPer100Gold > 0 ? 100 / wonPer100Gold : 0;
 
@@ -261,9 +306,13 @@ export default function AzenaBlessingDetail() {
   const fr = breakdown.fragments;
   const rb = breakdown.raidBoxes;
 
+  // 구성품 가치 비중 — 일반 상세 댓글 위 섹션과 같은 원. 기준은 28일 기대값
+  const shareRows = getAzenaShareRows(breakdown, options.tier);
+
   return (
     <Container fluid style={{ maxWidth: '1100px' }}>
-      <div className={styles.detailWrapper}>
+      <div className={styles.detailWrapper} data-basis={livePrices ? 'live' : 'avg'}>
+        {liveError && <div className={styles.liveToast} role="status">{liveError}</div>}
         <Link href="/package" className={styles.backLink}>
           &#8592; 목록으로 돌아가기
         </Link>
@@ -283,7 +332,7 @@ export default function AzenaBlessingDetail() {
           {/* 왼쪽: 계산 결과 */}
           <div className={styles.resultPanel}>
             <div className={styles.detailCard}>
-              <h2 className={styles.detailCardHeader}>계산 결과</h2>
+              <h2 className={styles.detailCardHeader}>계산 결과{livePrices && <span className={styles.liveBasisChip}>현재가 기준</span>}{noPeon && <span className={styles.peonExcludedChip}>페온 제외</span>}</h2>
               <div className={styles.resultRow}>
                 <span className={styles.resultRowLabel}>패키지 가격</span>
                 <span className={styles.resultRowValue}>{formatNumber(AZENA_PRICE_WON)}원</span>
@@ -364,10 +413,48 @@ export default function AzenaBlessingDetail() {
 
           {/* 오른쪽: 내 플레이 설정 + 아이템 구성 (한 카드) */}
           <section className={`${styles.itemCardsSection} ${styles.detailCard}`}>
-            <h2 className={styles.detailCardHeader}>
-              내 플레이 설정
-              <span className={styles.detailCardHeaderNote}>설정에 따라 아래 아이템 가치가 바뀝니다</span>
-            </h2>
+            {/* 계산 기준(최저가·페온 제거)은 일반 상세의 "아이템 구성" 제목 줄과 같은 자리에 둔다 */}
+            <div className={styles.cardHeaderRow}>
+              <h2 className={styles.detailCardHeader}>
+                내 플레이 설정
+                <span className={styles.detailCardHeaderNote}>설정에 따라 아래 아이템 가치가 바뀝니다</span>
+              </h2>
+              <div className={styles.basisGroup}>
+                <button
+                  type="button"
+                  className={`${styles.liveBtn} ${styles.detailLiveBtn} ${livePrices ? styles.liveBtnOn : ''} ${liveLoading ? styles.liveSpinning : ''}`}
+                  onClick={applyLivePrices}
+                  disabled={liveLoading}
+                  aria-label={livePrices ? '현재가(거래소 최저 매물가)로 계산 중 — 누르면 1시간 평균가로 돌아갑니다' : '현재가(거래소 최저 매물가)로 계산'}
+                >
+                  <svg
+                    className={styles.liveIcon}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20.5 12a8.5 8.5 0 0 0-14.6-5.9L3 9" />
+                    <path d="M3 3.5V9h5.5" />
+                    <path d="M3.5 12a8.5 8.5 0 0 0 14.6 5.9L21 15" />
+                    <path d="M21 20.5V15h-5.5" />
+                  </svg>
+                  <span className={styles.liveLabel}>{livePrices ? '10분 현재가' : '1시간 평균가'}</span>
+                  <i className={styles.liveDot} />
+                  <span className={styles.basisTip} aria-hidden="true">
+                    <strong className={styles.basisTipHead}>
+                      {livePrices ? '10분 현재가' : '1시간 평균가'}
+                    </strong>
+                    {livePrices ? '거래소 최저 매물가 · 10분마다 갱신 · 누르면 1시간 평균가로 돌아갑니다' : '1시간 거래 평균가 · 누르면 현재가로 계산합니다'}
+                  </span>
+                </button>
+                {/* 아제나엔 페온 몫이 없어 눌러도 값은 그대로 — 다른 패키지와 버튼 구성을 맞추려고 둔다 */}
+                <PeonBasisButton active={noPeon} onChange={setNoPeon} className={styles.detailLiveBtn} />
+              </div>
+            </div>
 
             {/* 설정 — 1행: 아이템 레벨 토글 / 2행: 균열 추가 입장 3종
                 (제목 없이 토글·아이콘만으로 읽히는 항목이라 행 라벨은 두지 않는다) */}
@@ -655,6 +742,14 @@ export default function AzenaBlessingDetail() {
             </div>
           </section>
         </div>
+
+        {/* 구성품 가치 비중 — 일반 상세와 같은 원(조각 안에 그림·%) + 범례. 설정·최저가를 바꾸면 같이 바뀐다 */}
+        {shareRows.length >= 2 && (
+          <section className={`${styles.detailCard} ${styles.shareSection}`} aria-label="구성품 가치 비중">
+            <h2 className={styles.detailCardHeader}>구성품 가치 비중</h2>
+            <SharePie rows={shareRows} basis={breakdown.totalGold} basisLabel={`${AZENA_DAYS}일 기대값`} noPeon={noPeon} />
+          </section>
+        )}
 
         {/* 모바일 띠배너 — FAQ 위 (index 1: 계산 결과 아래 자리와 다른 단위) */}
         <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>

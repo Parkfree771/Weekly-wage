@@ -327,19 +327,9 @@
   background: #fff;
 }
 
-/* ─── 페온 제거 — 최저가와 같은 "이 화면의 계산 기준" 버튼이라 .liveBtn 껍데기를 같이 쓴다 ───
-   색은 페온 아이콘 그대로 파랑(#1e7fd4 계열). 기본(페온 포함 중)이 그 파랑으로 살아 있고,
-   누르면(제거 중) 통째로 회색으로 죽는다. 채우기로 강조하면 "페온을 빼는 중"이 거꾸로 읽힌다.
-   최저가는 초록(--benefit-up)이라 색이 겹치지 않는다. */
-.peonBtn {
-  border-color: #1e7fd4;
-  color: #1565b0;
-}
-
-[data-theme="dark"] .peonBtn {
-  border-color: #4da3f0;
-  color: #74bbff;
-}
+/* ─── 페온 제외 — 최저가와 같은 "이 화면의 계산 기준" 버튼이라 .liveBtn 껍데기와 켜짐 규칙을 같이 쓴다 ───
+   꺼짐(기본 = 페온 포함) = 테두리만, 코인은 제 색. 켜짐(페온 제외) = 페온 파랑으로 채우고 흰 코인에 사선.
+   최저가 켜짐은 초록(--benefit-up)이라 둘이 동시에 켜져도 색이 겹치지 않는다. */
 
 /* pheon.webp 는 256x244 중 코인이 144x137(가로·세로 56%)뿐이고 나머지는 전부 여백이다.
    그래서 그림을 28px 로 키워도 실제 보이는 코인은 16px 밖에 안 됐다.
@@ -366,41 +356,97 @@
   object-fit: contain;
 }
 
-.peonBtn .liveDot {
+.peonBtnOn {
   background: #1e7fd4;
+  border-color: #1e7fd4;
+  color: #fff;
 }
 
-[data-theme="dark"] .peonBtn .liveDot {
-  background: #4da3f0;
-}
-
-/* 켜짐 = 페온을 빼는 중. 색을 걷고 회색으로 내려앉히면 "지금 이건 안 친다"가 그대로 읽힌다 */
-.peonBtnOn,
+/* 다크에서 밝은 파랑(#4da3f0)으로 채우면 흰 글자·코인이 묻힌다 — 한 단계 진한 파랑 */
 [data-theme="dark"] .peonBtnOn {
-  border-color: var(--border-color);
-  color: var(--text-disabled);
+  background: #2b7fcb;
+  border-color: #2b7fcb;
 }
 
+/* 켜짐 코인 — 흰 실루엣을 반투명으로 두고 그 위에 흰 사선을 긋는다 ("페온을 빼는 중") */
 .peonBtnOn .peonIcon {
-  filter: grayscale(1);
-  opacity: 0.4;
+  filter: brightness(0) invert(1);
+  opacity: 0.55;
 }
 
 .peonBtnOn .peonIconWrap::after {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 1px;
+  right: 1px;
   top: 50%;
   height: 2px;
-  background: var(--text-muted);
+  margin-top: -1px;
+  background: #fff;
   border-radius: 2px;
   transform: rotate(-45deg);
 }
 
-.peonBtnOn .liveDot,
-[data-theme="dark"] .peonBtnOn .liveDot {
-  background: var(--text-disabled);
+.peonBtnOn .liveDot {
+  background: #fff;
+}
+
+/* 현재가 조회 실패 안내 — 화면 아래 가운데 몇 초 떠 있다 사라진다 (페이지 흐름에 자리를 안 먹는다) */
+.liveToast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 1100;
+  transform: translateX(-50%);
+  max-width: min(92vw, 420px);
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+  word-break: keep-all;
+}
+
+/* 계산 결과 제목 옆 "현재가 기준" — 시세 기준 버튼 켜짐색(--benefit-up)을 옅게 깐다. 기본(평균가)엔 안 붙는다 */
+.liveBasisChip {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.45rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--benefit-up) 14%, transparent);
+  color: var(--benefit-up);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.3;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* 계산 결과 제목 옆 표시 — 버튼을 안 보고 숫자만 보는 사람도 "지금 값은 페온을 뺀 값"임을 알게 */
+.peonExcludedChip {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.45rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(30, 127, 212, 0.12);
+  color: #1565b0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.3;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .peonExcludedChip {
+  background: rgba(77, 163, 240, 0.16);
+  color: #74bbff;
 }
 
 /* 기준 버튼 두 개 묶음 — 좁은 화면에서 .rightControls 가 display:contents 로 풀려도

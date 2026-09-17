@@ -10,7 +10,7 @@
 // 원엔 큰 순으로 여섯 조각까지만 두고 나머지는 "기타" 한 조각으로 접는다.
 // 조각이 많아지면 가는 조각끼리 구분이 안 되고, 어차피 범례가 전부 들고 있다.
 
-import { useState } from 'react';
+import { useId, useState, type CSSProperties } from 'react';
 import PeonBadge from '@/components/package/PeonBadge';
 import { formatNumber } from '@/lib/package-shared';
 import styles from './SharePie.module.css';
@@ -35,6 +35,37 @@ type Props = {
   basisLabel: string;
   noPeon: boolean;
 };
+
+// 조각 색 — 그림색과 같은 색상(hue)을 쓰되 밝기를 확 낮춘 진한 톤.
+// 그림색 그대로 칠하면 그림이 조각에 묻혀 흰 판을 받쳐야 했다. 같은 색 계열이라 색만 봐도
+// 무슨 아이템인지는 그대로 읽히고, 밝기 차이로 그림이 판 없이 떠오른다.
+const TONE_SAT = 0.45;
+export const TONE_L_LIGHT = 0.30;
+export const TONE_L_DARK = 0.34;
+
+export function deepTone(hex: string, lightness: number): string {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (!m) return hex;
+  const r = parseInt(m[1], 16) / 255, g = parseInt(m[2], 16) / 255, b = parseInt(m[3], 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  if (d > 0) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+  }
+  h = (h * 60 + 360) % 360;
+  const l = lightness, s = TONE_SAT;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const o = l - c / 2;
+  const [r1, g1, b1] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  const to = (v: number) => Math.round((v + o) * 255).toString(16).padStart(2, '0');
+  return `#${to(r1)}${to(g1)}${to(b1)}`;
+}
+
+/** 판 대신 그림이 조금 더 크게 앉는다 — 흰 판(+3px 테두리) 몫만큼 */
+const ICON_BOOST = 1.15;
 
 const MAX_SLICES = 6;
 const OTHER_KEY = '__other';
@@ -91,6 +122,8 @@ function iconPlace(pct: number, size: number): { r: number; size: number } {
 
 export default function SharePie({ rows, basis, basisLabel, noPeon }: Props) {
   const [hover, setHover] = useState<string | null>(null);
+  // 한 화면에 원이 둘 이상이어도 필터 id 가 겹치지 않게 (useId 의 ':' 는 url(#) 에서 깨진다)
+  const brightId = `bright-${useId().replace(/:/g, '')}`;
 
   // 조각: 상위 MAX_SLICES 개 + 나머지를 접은 "기타"
   const head = rows.slice(0, MAX_SLICES);
@@ -111,6 +144,12 @@ export default function SharePie({ rows, basis, basisLabel, noPeon }: Props) {
     <div className={styles.wrap}>
       <div className={styles.chartCol}>
         <svg viewBox="0 0 200 200" className={styles.svg} role="img" aria-label={`구성품 가치 비중 — ${basisLabel} ${formatNumber(basis)}골드`}>
+          {/* 조각 안 그림 밝기 필터 — 흰 판 대신 그림 자체를 밝혀 진한 조각 위에서 띄운다 */}
+          <defs>
+            <filter id={brightId} colorInterpolationFilters="sRGB">
+              <feColorMatrix type="matrix" values="1.25 0 0 0 0.04  0 1.25 0 0 0.04  0 0 1.25 0 0.04  0 0 0 1 0" />
+            </filter>
+          </defs>
           {slices.map((s) => {
             const start = acc;
             acc += s.pct;
@@ -123,7 +162,11 @@ export default function SharePie({ rows, basis, basisLabel, noPeon }: Props) {
                 key={s.key}
                 d={d}
                 className={`${styles.slice} ${dim ? styles.sliceDim : ''} ${s.key === OTHER_KEY ? styles.sliceOther : ''}`}
-                style={s.tint ? { fill: s.tint } : undefined}
+                // 라이트/다크 톤을 둘 다 넘기고 CSS 가 테마에 맞는 쪽을 고른다 (SharePie.module.css .slice)
+                style={s.tint ? ({
+                  ['--slice-light' as string]: deepTone(s.tint, TONE_L_LIGHT),
+                  ['--slice-dark' as string]: deepTone(s.tint, TONE_L_DARK),
+                } as CSSProperties) : undefined}
                 onMouseEnter={() => setHover(s.key)}
                 onMouseLeave={() => setHover(null)}
               >
@@ -137,7 +180,7 @@ export default function SharePie({ rows, basis, basisLabel, noPeon }: Props) {
             return slices.map((s) => {
               const mid = a + s.pct / 2;
               a += s.pct;
-              const want = iconSize(s.pct);
+              const want = Math.round(iconSize(s.pct) * ICON_BOOST);
               const { r: labelR, size } = want ? iconPlace(s.pct, want) : { r: 0.6 * R, size: 0 };
               // % 글자는 그림 밑에 한 줄 더 필요하다 — 조각이 좁으면 그림만
               const showPct = s.pct >= 8;
@@ -153,13 +196,8 @@ export default function SharePie({ rows, basis, basisLabel, noPeon }: Props) {
                 <g key={`l-${s.key}`} className={`${styles.label} ${dim ? styles.labelDim : ''}`} pointerEvents="none">
                   {size > 0 && s.icon && (
                     <>
-                      {/* 그림 밑 판 — 조각 색이 그림에서 뽑은 색이라 그림이 조각에 묻힌다. 카드 배경색 판으로 띄운다
-                          (라이트는 흰색, 다크는 어두운 카드색 — 둘 다 중간 명도의 조각과 대비가 난다) */}
-                      <rect
-                        x={x - size / 2 - 3} y={iconY - 3} width={size + 6} height={size + 6}
-                        rx={Math.round(size * 0.24)} className={styles.iconPlate}
-                      />
-                      <image href={s.icon} x={x - size / 2} y={iconY} width={size} height={size} />
+                      {/* 조각이 진한 톤이라 판 없이 밝힌 그림만으로 뜬다 */}
+                      <image href={s.icon} x={x - size / 2} y={iconY} width={size} height={size} filter={`url(#${brightId})`} />
                     </>
                   )}
                   {showPct && (

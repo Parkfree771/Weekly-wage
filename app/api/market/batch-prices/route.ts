@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
+import { isLostArkMaintenance } from '@/lib/lostark-maintenance';
 
 // 단일 아이템 가격 조회 함수
 async function fetchSingleItemPrice(itemId: string, apiKey: string): Promise<{ itemId: string; price: number; statsDate?: string; error?: string }> {
@@ -60,8 +61,10 @@ async function fetchSingleItemPrice(itemId: string, apiKey: string): Promise<{ i
 }
 
 // 배치 가격 조회 함수 (rate limiting 포함)
+// 캐시 키는 인자로 만들어진다 — API 키를 인자로 넘기면 키가 캐시 저장소에 그대로 적힌다. 안에서 읽는다.
 const getBatchPrices = unstable_cache(
-  async (itemIds: string[], apiKey: string) => {
+  async (itemIds: string[]) => {
+    const apiKey = process.env.LOSTARK_API_KEY || '';
     console.log(`[Batch API] Fetching prices for ${itemIds.length} items`);
 
     const results: Array<{ itemId: string; price: number; statsDate?: string; error?: string }> = [];
@@ -87,6 +90,13 @@ const getBatchPrices = unstable_cache(
 );
 
 export async function POST(request: Request) {
+  // 수요일 점검(06:00~10:00 KST) — 로아 API 가 응답하지 않으니 부르지 않고 바로 알린다
+  if (isLostArkMaintenance()) {
+    return NextResponse.json(
+      { message: '로아 서버 점검 중(수요일 06:00~10:00)이라 시세를 가져올 수 없습니다.' },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
   try {
     const { itemIds } = await request.json();
 
@@ -113,8 +123,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // 캐시된 배치 조회
-    const results = await getBatchPrices(itemIds, apiKey);
+    // 캐시된 배치 조회 — 같은 묶음이면 순서가 달라도 한 캐시를 쓰게 정렬해서 묻고, 응답은 요청 순서로 돌려준다
+    const sortedIds = [...new Set(itemIds.map(String))].sort();
+    const cached = await getBatchPrices(sortedIds);
+    const byId = new Map(cached.map(r => [r.itemId, r]));
+    const results = itemIds.map((id: string) => byId.get(String(id)) ?? { itemId: String(id), price: 0, error: '조회 안 됨' });
 
     // 첫 번째 유효한 statsDate 추출
     const statsDate = results.find(r => r.statsDate)?.statsDate || null;

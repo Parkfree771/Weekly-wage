@@ -3,6 +3,7 @@
 // 패키지 등록 — 폼 본체는 수정 페이지와 공용인 PackageForm 에 있다.
 // 이 페이지는 로그인 게이트와 "생성 저장"만 담당한다.
 
+import { revalidatePackage } from '@/lib/revalidate-client';
 import { useRouter } from 'next/navigation';
 import { Container } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,11 +44,7 @@ export default function PackageRegisterPage() {
     const { createPackagePost } = await import('@/lib/package-service');
     const postId = await createPackagePost(postData);
     // ISR 캐시된 갤러리 1페이지를 즉시 재생성 — 기다리지 않으면 상세에서 갤러리로 돌아갔을 때 새 글이 없다
-    await fetch('/api/package/revalidate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ postId }),
-    }).catch(() => {});
+    await revalidatePackage(postId);
     router.push(`/package/${postId}`);
   };
 

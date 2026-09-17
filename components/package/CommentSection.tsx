@@ -1,5 +1,6 @@
 'use client';
 
+import { revalidatePackage } from '@/lib/revalidate-client';
 import { memo, useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdmin } from '@/lib/admin';
@@ -36,12 +37,7 @@ function keepInView(e: React.FocusEvent<HTMLTextAreaElement>) {
 
 // 댓글 작성·삭제 뒤 ISR 사본을 바로 갱신 — 다음 방문자가 5분 기다리지 않게. 실패해도 화면은 이미 반영됨
 function revalidateDetail(postId: string) {
-  fetch('/api/package/revalidate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ postId }),
-    keepalive: true,
-  }).catch(() => {});
+  revalidatePackage(postId, { keepalive: true });
 }
 
 // 아바타 — 사진이 없으니 닉네임 첫 글자. 닉네임으로 색을 정해 같은 사람은 늘 같은 색

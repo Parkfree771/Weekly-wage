@@ -907,12 +907,21 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
    * 화면에 보이는 카드 전부(<Link> 기본 동작)가 아니라 누를 가능성이 있는 카드만이라
    * 요청 수가 카드 수만큼 불지 않고, 상세는 ISR 이라 대부분 CDN 캐시에 맞아 함수까지 안 간다.
    * 터치 기기는 pointerenter 가 탭 직전에야 오므로 이득이 없다 — loading.tsx 가 대신 받친다.
+   * 200ms 머문 카드만 — 스크롤하며 스쳐 지나간 카드까지 받아오면 요청이 카드 수만큼 는다
+   * (상세 RSC 는 ISR 이라 대개 CDN 에 맞지만, 처음 열리는 글은 함수까지 간다).
    */
   const prefetchedRef = useRef(false);
+  const prefetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleCardPointerEnter = () => {
-    if (prefetchedRef.current) return;
-    prefetchedRef.current = true;
-    router.prefetch(`/package/${post.id}`);
+    if (prefetchedRef.current || prefetchTimerRef.current) return;
+    prefetchTimerRef.current = setTimeout(() => {
+      prefetchTimerRef.current = null;
+      prefetchedRef.current = true;
+      router.prefetch(`/package/${post.id}`);
+    }, 200);
+  };
+  const handleCardPointerLeave = () => {
+    if (prefetchTimerRef.current) { clearTimeout(prefetchTimerRef.current); prefetchTimerRef.current = null; }
   };
 
   // 이벤트 테마 — 등록·수정 폼에서 체크한 글만 밤하늘 옷을 입는다 (기간이 지나도 남는다)
@@ -923,6 +932,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
       className={`${styles.galleryCard} ${styles.cardStd} ${chuseok ? styles.themeChuseok : ''} ${saleEnded ? styles.cardEnded : ''} ${dimmed ? styles.cardDimmed : ''}`}
       onClick={handleCardClick}
       onPointerEnter={handleCardPointerEnter}
+      onPointerLeave={handleCardPointerLeave}
       style={{ cursor: 'pointer' }}
     >
       {/* 추석 밤하늘 — 카드 뒤 전체에 깔린다(맨 앞 자식, z-index 0) */}

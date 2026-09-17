@@ -172,6 +172,9 @@ export async function updateCharacterWeekly(
   }
 }
 
+// 마이페이지 이미지 백필에서 이 세션에 이미 조회한 캐릭터 이름
+const imageBackfillAttempted = new Set<string>();
+
 // 여러 캐릭터의 이미지를 순차적으로 가져와서 업데이트
 // preloadedProfile: 호출부가 이미 들고 있는 프로필 — 넘기면 같은 문서 getDoc 재조회를 생략한다
 export async function updateCharacterImages(
@@ -211,6 +214,10 @@ export async function updateCharacterImages(
     for (const charName of characterNames) {
       const charIndex = characters.findIndex(c => c.name === charName);
       if (charIndex === -1 || characters[charIndex].imageUrl) continue;
+      // 이 세션에서 이미 시도한 캐릭터는 다시 묻지 않는다 — 이미지가 끝내 안 오는 캐릭터(삭제·개명)가
+      // 마이페이지를 열 때마다 /api/lostark 를 태우던 것을 막는다
+      if (imageBackfillAttempted.has(charName)) continue;
+      imageBackfillAttempted.add(charName);
 
       try {
         const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(charName)}`);

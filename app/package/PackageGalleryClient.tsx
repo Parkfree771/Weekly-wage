@@ -12,7 +12,7 @@ import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryC
 // package-service(→ Firestore SDK ~250KB)는 정적 import 하지 않는다 — 목록은 서버(ISR)가
 // 통째로 넘겨주므로, 그 서버 조회가 실패했을 때만 지연 로드한다.
 import { fetchLatestPrices } from '@/lib/price-history-client';
-import { fetchLivePrices, getCachedLivePrices } from '@/lib/live-prices-client';
+import { fetchLivePrices, getActiveLivePrices, setLiveOn, liveErrorMessage } from '@/lib/live-prices-client';
 import { calculatePostEfficiency, isNewReleasePost, renewPostIcons } from '@/lib/package-shared';
 import {
   AZENA_PRICE_WON,
@@ -130,22 +130,35 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
   const [page, setPage] = useState(1);
   const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
   // 실시간 최저가 — 갱신 버튼을 누른 뒤에만 채워진다. 평균가(latestPrices) 위에 덮어쓴다.
-  const [livePrices, setLivePrices] = useState<Record<string, number> | null>(getCachedLivePrices());
+  const [livePrices, setLivePrices] = useState<Record<string, number> | null>(getActiveLivePrices());
   const [liveLoading, setLiveLoading] = useState(false);
+  // 현재가 조회 실패 안내 — 몇 초 보여주고 사라진다 (점검 중이면 점검이라고 알린다)
+  const [liveError, setLiveError] = useState<string | null>(null);
 
   const applyLivePrices = useCallback(async () => {
     if (liveLoading) return;
+    // 켜져 있으면 끈다(평균가로 복귀). 캐시는 그대로 남아 다시 켤 때 10분 안이면 조회하지 않는다
+    if (livePrices) {
+      setLiveOn(false);
+      setLivePrices(null);
+      return;
+    }
     setLiveLoading(true);
     try {
       // 쿨다운 안이면 fetchLivePrices 가 조회 없이 캐시를 곧바로 돌려준다
       const prices = await fetchLivePrices();
-      if (prices) setLivePrices(prices);
+      if (prices) {
+        setLiveOn(true);
+        setLivePrices(prices);
+      }
     } catch (err) {
-      console.error('실시간 시세 갱신 실패:', err);
+      console.error('현재가 조회 실패:', err);
+      setLiveError(liveErrorMessage(err));
+      setTimeout(() => setLiveError(null), 5000);
     } finally {
       setLiveLoading(false);
     }
-  }, [liveLoading]);
+  }, [liveLoading, livePrices]);
 
   // 카드·정렬이 실제로 쓰는 가격 — 갱신 전에는 평균가 그대로, 갱신 후에는 최저가가 덮는다
   const effectivePrices = useMemo(
@@ -370,6 +383,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
       {/* data-basis 하나로 토글 채움색과 모든 카드의 효율 배지 색이 같이 움직인다
           (색 값은 package.module.css 의 --benefit-up / --benefit-down 변수) */}
       <div className={styles.pageWrapper} data-basis={livePrices ? 'live' : 'avg'}>
+        {liveError && <div className={styles.liveToast} role="status">{liveError}</div>}
         <div className={styles.pageHeader}>
           {/* h1·소제목이 검색어를 그대로 담는다 — 메타데이터만으로는 온페이지 신호가 비어 있었다 */}
           <h1 className={styles.pageTitle}>로아 패키지 효율</h1>
@@ -487,15 +501,16 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
             {/* 계산 기준 두 개 — 최저가(어느 시세를 쓰나) · 페온 제거(페온을 값으로 치나).
                 둘 다 이 화면 전체에 걸리는 설정이라 한 묶음으로 세운다. */}
             <div className={styles.basisGroup}>
-            {/* 최저가 — 기본값(1시간 거래 평균가)과의 실제 차이는 "실시간 여부" 가 아니라
-                평균가냐 최저가냐다. 버튼은 받아올 값을 그대로 부르고,
-                지금 그게 적용 중인지는 오른쪽 점으로만 알린다. */}
+            {/* 시세 기준 — 기본 "평균가"(1시간 거래 평균), 누르면 "현재가"(거래소 최저 매물, 5분 캐시).
+                "최저가" 라 부르면 눌렀는데 값이 오를 때(매물이 평균보다 비쌀 때) 이름과 거꾸로 읽혀
+                오르내림을 암시하지 않는 이름으로 바꿨다. 글자는 지금 적용 중인 기준을 말하고,
+                켜짐은 채움색·오른쪽 점이 알린다. */}
             <button
               type="button"
               className={`${styles.liveBtn} ${livePrices ? styles.liveBtnOn : ''} ${liveLoading ? styles.liveSpinning : ''}`}
               onClick={applyLivePrices}
               disabled={liveLoading}
-              aria-label="거래소 최저가로 다시 계산"
+              aria-label={livePrices ? '현재가(거래소 최저 매물가)로 계산 중 — 누르면 1시간 평균가로 돌아갑니다' : '현재가(거래소 최저 매물가)로 계산'}
             >
               {/* 시계방향 원형 화살표 — 위 반원 끝에 오른쪽 위 화살촉, 아래 반원 끝에 왼쪽 아래 화살촉 */}
               <svg
@@ -513,13 +528,13 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                 <path d="M3.5 12a8.5 8.5 0 0 0 14.6 5.9L21 15" />
                 <path d="M21 20.5V15h-5.5" />
               </svg>
-              <span className={styles.liveLabel}>최저가</span>
+              <span className={styles.liveLabel}>{livePrices ? '10분 현재가' : '1시간 평균가'}</span>
               <i className={styles.liveDot} />
               <span className={styles.basisTip} aria-hidden="true">
                 <strong className={styles.basisTipHead}>
-                  {livePrices ? '거래소 최저가로 계산 중' : '거래소 최저가'}
+                  {livePrices ? '10분 현재가' : '1시간 평균가'}
                 </strong>
-                {livePrices ? '누르면 다시 가져옵니다' : '기본은 1시간 거래 평균가'}
+                {livePrices ? '거래소 최저 매물가 · 10분마다 갱신 · 누르면 1시간 평균가로 돌아갑니다' : '1시간 거래 평균가 · 누르면 현재가로 계산합니다'}
               </span>
             </button>
             <PeonBasisButton active={noPeon} onChange={setNoPeon} />

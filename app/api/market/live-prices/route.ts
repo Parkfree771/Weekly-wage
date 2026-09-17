@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
+import { isLostArkMaintenance } from '@/lib/lostark-maintenance';
 
 // 실시간 최저가 — 패키지 효율 페이지의 "시세 갱신" 버튼 전용.
 //
 // 기존 수집 파이프라인(cron collect-prices → latest_prices.json, 거래 평균가·1시간)과
 // 완전히 독립이다: 아무것도 저장하지 않고, 로아 검색 API 의 CurrentMinPrice 를
 // 그대로 응답한다. 공유 지점은 CDN durable 캐시 하나 —
-// TTL(300초) 안에는 몇 명이 누르든 함수 실행이 1회를 넘지 않는다.
+// TTL(600초) 안에는 몇 명이 누르든 함수 실행이 1회를 넘지 않는다.
 //
 // 단위 규약: 검색 API 의 CurrentMinPrice 는 인게임 거래소 표시가와 같은 "묶음 가격"이다
 // (실측: 파괴석 결정 Bundle=100 → 100개 묶음 가격, 주머니·책·각인서 Bundle=1 → 개당).
@@ -146,26 +147,51 @@ async function searchAuctionMin(
 // N개씩 끊어 병렬 실행 — 전 건 동시 발사는 로아 API 가 429 를 줄 수 있다.
 // deadline 을 넘기면 남은 배치는 요청하지 않고 skipped 로 채운다.
 // 건너뛴 것도 결과 배열에 남겨야 missed 집계와 "절반 미만" 판정이 정확해진다.
+// 한 배치가 통째로 실패하면(키 만료·429·점검·장애) 남은 배치를 쏘지 않는다 —
+// 안 그러면 실패 1클릭이 로아 API 42회를 그대로 태우고 분당 한도(100회)까지 갉아먹는다.
 async function inBatches<T, R>(
   items: T[],
   size: number,
   fn: (t: T) => Promise<R>,
   deadline: number,
   skipped: (t: T) => R,
+  failed: (r: R) => boolean,
 ): Promise<R[]> {
   const out: R[] = [];
+  let aborted = false;
   for (let i = 0; i < items.length; i += size) {
     const slice = items.slice(i, i + size);
-    if (Date.now() >= deadline) {
+    if (aborted || Date.now() >= deadline) {
       out.push(...slice.map(skipped));
       continue;
     }
-    out.push(...(await Promise.all(slice.map(fn))));
+    const results = await Promise.all(slice.map(fn));
+    out.push(...results);
+    if (results.length > 0 && results.every(failed)) aborted = true;
   }
   return out;
 }
 
+// 실패 응답 공통 — 200 으로 내려 CDN 에 짧게 실린다(Netlify 는 5xx 를 캐시하지 않는다).
+// 클라이언트는 prices 가 비면 실패로 본다. 이 60초 동안의 재클릭은 함수까지 오지 않는다.
+function failResponse(error: string, extra: Record<string, unknown> = {}, maxAge = 60) {
+  return NextResponse.json(
+    { error, prices: {}, fetchedAt: new Date().toISOString(), ...extra },
+    {
+      headers: {
+        'Netlify-CDN-Cache-Control': `public, durable, s-maxage=${maxAge}`,
+        'Cache-Control': 'public, max-age=0, must-revalidate',
+      },
+    },
+  );
+}
+
 export async function GET() {
+  // 수요일 점검 중엔 로아 API 가 응답하지 않는다 — 호출 자체를 하지 않고 5분 캐시로 답한다
+  if (isLostArkMaintenance()) {
+    return failResponse('로아 서버 점검 중 (수요일 06:00~10:00)', { maintenance: true }, 300);
+  }
+
   const apiKey = process.env.LOSTARK_LIVE_API_KEY || process.env.LOSTARK_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'API 키가 없습니다' }, { status: 500 });
@@ -185,14 +211,14 @@ export async function GET() {
       } catch {
         return { id: item.id, price: null };
       }
-    }, deadline, skipped),
+    }, deadline, skipped, (r) => r.price === null),
     inBatches(AUCTION_ITEMS, 2, async (item) => {
       try {
         return { id: item.id, price: await searchAuctionMin(item, apiKey) };
       } catch {
         return { id: item.id, price: null };
       }
-    }, deadline, skipped),
+    }, deadline, skipped, (r) => r.price === null),
   ]);
 
   for (const r of [...marketResults, ...auctionResults]) {
@@ -203,12 +229,9 @@ export async function GET() {
   // 한 건도 못 가져왔을 때만 실패로 본다(키 만료·API 장애 등 계통 문제).
   // 일부 결손은 실패가 아니다 — 가져온 것만 덮이고 나머지는 클라이언트에서
   // latest_prices.json 의 거래 평균가가 그대로 남는다(effectivePrices 의 스프레드 병합).
-  // 이 응답은 캐시에 싣지 않아 다음 클릭이 곧바로 다시 시도한다.
+  // 실패도 60초 캐시한다 — 예전엔 no-store 라 장애 중 클릭마다 함수 + 로아 API 호출이 그대로 나갔다.
   if (Object.keys(prices).length === 0) {
-    return NextResponse.json(
-      { error: '시세 조회 실패', missed },
-      { status: 502, headers: { 'Cache-Control': 'no-store' } },
-    );
+    return failResponse('시세 조회 실패', { missed });
   }
 
   return NextResponse.json(
@@ -216,11 +239,11 @@ export async function GET() {
     {
       headers: {
         // durable: 전 세계 공유 캐시 — TTL 안에는 몇 명이 누르든 함수 실행 1회.
-        // 300초는 기본값인 거래 평균가(1시간 주기)보다 12배 신선하면서 함수 호출을 60% 줄인다.
-        // 클라이언트 쿨다운(LIVE_COOLDOWN_MS)과 같은 값이어야 한다 — 쿨다운이 더 짧으면
+        // 600초(10분): 패키지 효율 페이지가 트래픽 대부분이라 이 함수는 시간당 최대 6회만 돈다.
+        // 클라이언트 쿨다운(LIVE_COOLDOWN_MS, 웹·앱)과 같은 값이어야 한다 — 쿨다운이 더 짧으면
         // 아직 신선한 캐시를 다시 받아 "눌렀는데 아무 변화 없음" 으로 보인다.
         // 브라우저 캐시는 0 — 버튼이 항상 CDN 까지는 가야 한다.
-        'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=300, stale-while-revalidate=600',
+        'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=600, stale-while-revalidate=600',
         'Cache-Control': 'public, max-age=0, must-revalidate',
       },
     },
