@@ -14,6 +14,15 @@ import { AZENA_POST_ID, AZENA_TITLE, AZENA_FAQ } from '@/lib/azena-blessing';
 // 시세·좋아요 상태는 클라이언트에서 실시간 조회하므로 영향 없음.
 export const revalidate = 300;
 
+// **이게 없으면 revalidate 는 무시되고 상세가 매 요청 동적 렌더가 된다** (prerender-manifest 의
+// dynamicRoutes 에 등록되지 않아 Cache-Control: private, no-store 로 나감 — 2026-09-17 실측).
+// 빌드 땐 Firestore 가 필요 없는 아제나 한 장만 미리 만들고, 나머지 글은 첫 방문 때 렌더 후 5분 캐시(on-demand ISR).
+export async function generateStaticParams() {
+  return [{ postId: AZENA_POST_ID }];
+}
+// 목록에 없는 postId 도 on-demand 로 렌더한다 (기본값이지만 뜻을 남긴다)
+export const dynamicParams = true;
+
 type Props = {
   params: Promise<{ postId: string }>;
 };
