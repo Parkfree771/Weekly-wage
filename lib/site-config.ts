@@ -21,15 +21,15 @@ export const NEW_SITE_URL = `https://${NEW_SITE_HOST}`;
 /**
  * 검색 색인에서 임시로 빼는 경로.
  *
- * - `/extreme` : 2026-09-23 출시 전까지 본문이 "COMING SOON" 뿐이다.
- *                애드센스가 "가치 없는 콘텐츠"로 잡는 대표적인 형태라 출시 전까지 뺀다.
+ * - `/extreme` : 2026-07-09 ~ 09-18 까지 본문이 "COMING SOON" 뿐이라 빠져 있었다.
+ *                GM노트(09-18)로 3막·종막 보상이 공개돼 본문을 채우고 색인에 되돌렸다.
  * - `/mypage`  : 로그인해야 자기 데이터가 보이는 개인화 페이지.
  *                봇에게는 데모 캐릭터만 렌더돼 "남의 대시보드"처럼 보인다.
  *
  * sitemap 과 각 페이지 metadata 가 전부 이 배열 하나를 본다 —
  * 되돌릴 때 여기서 경로만 빼면 두 신호가 어긋나지 않고 한 번에 원복된다.
  */
-export const NOINDEX_PATHS: readonly string[] = ['/extreme', '/mypage'];
+export const NOINDEX_PATHS: readonly string[] = ['/mypage'];
 
 export const isNoindexed = (path: string): boolean => NOINDEX_PATHS.includes(path);
 
@@ -37,8 +37,9 @@ export const isNoindexed = (path: string): boolean => NOINDEX_PATHS.includes(pat
  * 네비게이션에서 감출 경로. 색인 제외와는 별개다 —
  * noindex 는 크롤러만 막고, 이건 사람(애드센스 심사자)의 동선까지 끊는다.
  * `/mypage` 는 실제로 쓰는 기능이라 감추지 않는다 (noindex 로 충분).
+ * `/extreme` 은 코밍순 기간(2026-07-09 ~ 09-18)에만 감췄다가 보상 공개와 함께 되돌렸다.
  */
-export const NAV_HIDDEN_PATHS: readonly string[] = ['/extreme'];
+export const NAV_HIDDEN_PATHS: readonly string[] = [];
 
 /**
  * 유저가 올린 패키지 글(/package/[postId])을 검색 색인에 넣을지.

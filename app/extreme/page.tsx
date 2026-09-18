@@ -1,728 +1,584 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { Container, Row, Col, Card } from 'react-bootstrap';
-import styles from './extreme.module.css';
-import { calcTicketAverage } from '@/lib/hell-reward-calc';
+import styles from '../cathedral/cathedral.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
+import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
 
-// ─── 일정 데이터 ───
-// 3막·종막 코밍순 추정일: 벨가르딘(8/5 출시) 6주 이벤트 + 1주 브레이크 기준
-const COMING_SOON_DATE = '2026년 9월 23일 (수)';
+// ─────────────────────────────────────────────────────────────────────────
+// 카제로스 레이드 3막·종막 익스트림 — 출처: 공식 GM노트 1226 (2026-09-18)
+// https://lostark.game.onstove.com/News/GMNote/Views/1226
+// 수치는 전부 그 글의 본문·첨부 이미지에서 그대로 옮겼다. 제작소는 첨부된 제작 화면 캡쳐에서
+// 비용이 읽히는 두 항목만 싣고, 나머지는 공개되는 대로 채운다.
+// 화면 구조는 세르카·벨가르딘과 같다 — 카드 3장(난이도) → 클릭하면 아래 상세 → 상점(제작소).
+// ─────────────────────────────────────────────────────────────────────────
 
-// ─── 난이도별 보상 ───
-type Difficulty = {
+const RAID_IMAGE = '/extreme-mordum-kazeroth.webp';
+
+// ─── 막 ───
+type Act = {
+  key: 'act3' | 'final';
+  label: string;          // 3막 · 모르둠
+  period: string;
+  weeks: number;
+  coin: { name: string; short: string; icon: string };
+  /** 나이트메어 최초 클리어 전설 칭호 — 이름이 로고 그림 안에 있어 텍스트로 따로 내지 않는다 */
+  title: { name: string; logo: string };
+  /** 주간 골드 계산기·보상표(data/rewardTable)가 쓰는 그 레이드의 정사각 그림 — 칭호 옆에 붙여 막을 구분한다 */
+  raidImage: string;
+};
+
+const ACTS: Act[] = [
+  {
+    key: 'act3',
+    label: '3막 · 모르둠',
+    period: '9/23 (수) 점검 후 ~ 10/21 (수) 점검 전',
+    weeks: 4,
+    coin: { name: '뇌전의 주화', short: '뇌전', icon: '/coin-lightning.webp?v=2' },
+    title: { name: '뇌전의 군주', logo: '/extreme-title-lightning.webp?v=4' },
+    raidImage: '/ivory-tower.webp',
+  },
+  {
+    key: 'final',
+    label: '종막 · 카제로스',
+    period: '10/21 (수) 점검 후 ~ 11/18 (수) 점검 전',
+    weeks: 4,
+    coin: { name: '빛과 어둠의 주화', short: '빛과 어둠', icon: '/coin-light-dark.webp?v=2' },
+    title: { name: '파멸의 군주', logo: '/extreme-title-ruin.webp?v=4' },
+    raidImage: '/abrelshud.webp',
+  },
+];
+
+const CHAOS_COIN = { name: '혼돈의 주화', short: '혼돈', icon: '/coin-chaos.webp?v=2' };
+const TOTAL_WEEKS = ACTS.reduce((s, a) => s + a.weeks, 0);
+
+// ─── 난이도 ───
+type Stage = {
   name: string;
+  /** 카드 배지에 쓰는 짧은 난이도명 */
+  diff: string;
+  /** 사이트 공통 난이도 색 — 주간 골드(weekly-gold.module.css 난이도 배지)와 같은 값. 채운 배경 + 흰 글씨 */
+  diffColor: string;
   level: number;
+  /** 매주 원정대 1회 */
   gold: number;
-  token: number;
-  gates: number;
+  coins: number;
+  revive: string;
+  nightmare: boolean;
 };
 
-const DIFFICULTIES: Difficulty[] = [
-  { name: '나이트메어', level: 1770, gold: 45000, token: 200, gates: 1 },
-  { name: '하드', level: 1750, gold: 45000, token: 200, gates: 1 },
-  { name: '노말', level: 1720, gold: 20000, token: 150, gates: 1 },
+const STAGES: Stage[] = [
+  { name: '익스트림 나이트메어', diff: '나이트메어', diffColor: '#7e22ce',            level: 1780, gold: 50000, coins: 200, revive: '부활 불가',      nightmare: true },
+  { name: '익스트림 하드',       diff: '하드',       diffColor: 'var(--color-accent)', level: 1770, gold: 50000, coins: 200, revive: '부활 제한 없음', nightmare: false },
+  { name: '익스트림 노말',       diff: '노말',       diffColor: '#eab308',            level: 1730, gold: 20000, coins: 150, revive: '부활 제한 없음', nightmare: false },
 ];
 
-// ─── 토큰 상점 테마 색상 ───
-const SHOP_THEME_COLORS: { [key: string]: { name: string; accent: string; border: string; iconBg: string } } = {
-  engraving:  { name: 'var(--text-primary)', accent: '#b85c1e', border: 'rgba(184, 92, 30, 0.25)',  iconBg: 'rgba(184, 92, 30, 0.08)' },
-  hell:       { name: 'var(--text-primary)', accent: '#c0392b', border: 'rgba(192, 57, 43, 0.25)',  iconBg: 'rgba(192, 57, 43, 0.08)' },
-  gem:        { name: 'var(--text-primary)', accent: '#8b5cf6', border: 'rgba(139, 92, 246, 0.25)', iconBg: 'rgba(139, 92, 246, 0.08)' },
-  gemRandom:  { name: 'var(--text-primary)', accent: '#7c5cbf', border: 'rgba(124, 92, 191, 0.25)', iconBg: 'rgba(124, 92, 191, 0.08)' },
-  craft:      { name: 'var(--text-primary)', accent: '#a8893a', border: 'rgba(168, 137, 58, 0.25)', iconBg: 'rgba(168, 137, 58, 0.08)' },
-  ability:    { name: 'var(--text-primary)', accent: '#27ae60', border: 'rgba(39, 174, 96, 0.25)',  iconBg: 'rgba(39, 174, 96, 0.08)' },
-  chaosStone: { name: 'var(--text-primary)', accent: '#6a5acd', border: 'rgba(106, 90, 205, 0.25)', iconBg: 'rgba(106, 90, 205, 0.08)' },
-  abidos:     { name: 'var(--text-primary)', accent: '#2980b9', border: 'rgba(41, 128, 185, 0.25)', iconBg: 'rgba(41, 128, 185, 0.08)' },
-  refine:     { name: 'var(--text-primary)', accent: '#8b4513', border: 'rgba(139, 69, 19, 0.25)',  iconBg: 'rgba(139, 69, 19, 0.08)' },
-  silling:    { name: 'var(--text-primary)', accent: '#7f8c8d', border: 'rgba(127, 140, 141, 0.25)',iconBg: 'rgba(127, 140, 141, 0.08)' },
-};
-
-// ─── 구성 요소 ───
-// 유물 전투 각인서 12종 (items-to-track.ts 기반)
-const ENGRAVING_COMPONENTS: { itemId: string; name: string; icon: string }[] = [
-  { itemId: '65203905', name: '아드레날린',      icon: '/engraving2.webp' },
-  { itemId: '65200505', name: '원한',            icon: '/engraving2.webp' },
-  { itemId: '65203305', name: '돌격대장',        icon: '/engraving2.webp' },
-  { itemId: '65201005', name: '예리한 둔기',     icon: '/engraving2.webp' },
-  { itemId: '65203505', name: '질량 증가',       icon: '/engraving2.webp' },
-  { itemId: '65202805', name: '저주받은 인형',   icon: '/engraving2.webp' },
-  { itemId: '65203005', name: '기습의 대가',     icon: '/engraving2.webp' },
-  { itemId: '65203705', name: '타격의 대가',     icon: '/engraving2.webp' },
-  { itemId: '65203405', name: '각성',            icon: '/engraving2.webp' },
-  { itemId: '65204105', name: '전문의',          icon: '/engraving2.webp' },
-  { itemId: '65200605', name: '슈퍼차지',        icon: '/engraving2.webp' },
-  { itemId: '65201505', name: '결투의 대가',     icon: '/engraving2.webp' },
+// 최초 클리어 보상 — 난이도와 관계없이 3막·종막을 각각 처음 클리어할 때 1회.
+// 전용 주화 100개는 막마다 다르므로(뇌전/빛과 어둠) 표에서 막별로 붙인다.
+const FIRST_CLEAR_COMMON = [
+  { name: '도약의 전설 카드 선택 팩 II', icon: '/legendary-cardpack.webp', amount: 1 },
+  { name: '영웅 젬 선택 상자',           icon: '/gem-hero.webp',           amount: 1 },
+  { name: '젬 가공 초기화권',            icon: '/gem-reset-ticket.webp',   amount: 1 },
+  { name: CHAOS_COIN.name,              icon: CHAOS_COIN.icon,            amount: 1 },
 ];
+const FIRST_CLEAR_ACT_COINS = 100;
+const NIGHTMARE_TITLE_GOLD = 200000;
 
-// 영웅 젬 6종 (선택 상자용 — 확률 동일)
-const GEM_COMPONENTS: { itemId: string; name: string; icon: string }[] = [
-  { itemId: '67400003', name: '질서의 젬 : 안정',  icon: '/gem-order-stable.webp' },
-  { itemId: '67400103', name: '질서의 젬 : 견고',  icon: '/gem-order-solid.webp' },
-  { itemId: '67400203', name: '질서의 젬 : 불변',  icon: '/gem-order-immutable.webp' },
-  { itemId: '67410303', name: '혼돈의 젬 : 침식',  icon: '/gem-chaos-erosion.webp' },
-  { itemId: '67410403', name: '혼돈의 젬 : 왜곡',  icon: '/gem-chaos-distortion.webp' },
-  { itemId: '67410503', name: '혼돈의 젬 : 붕괴',  icon: '/gem-chaos-collapse.webp' },
-];
-
-// 영웅 젬 상자(랜덤) 출현 확률 — 안정/침식 30%, 견고/왜곡 15%, 불변/붕괴 5%
-const GEM_RANDOM_HERO_PROBS: { itemId: string; name: string; icon: string; probability: number }[] = [
-  { itemId: '67400003', name: '질서의 젬 : 안정',  icon: '/gem-order-stable.webp',     probability: 0.30 },
-  { itemId: '67400103', name: '질서의 젬 : 견고',  icon: '/gem-order-solid.webp',      probability: 0.15 },
-  { itemId: '67400203', name: '질서의 젬 : 불변',  icon: '/gem-order-immutable.webp',  probability: 0.05 },
-  { itemId: '67410303', name: '혼돈의 젬 : 침식',  icon: '/gem-chaos-erosion.webp',    probability: 0.30 },
-  { itemId: '67410403', name: '혼돈의 젬 : 왜곡',  icon: '/gem-chaos-distortion.webp', probability: 0.15 },
-  { itemId: '67410503', name: '혼돈의 젬 : 붕괴',  icon: '/gem-chaos-collapse.webp',   probability: 0.05 },
-];
-
-// 희귀 지옥 열쇠 Ⅲ = 1730 지옥 50층대(tier=5) 기댓값
-const HELL_TICKET_TIER = 5;
-const HELL_TICKET_LABEL = '50~59층';
-const HELL_TICKET_BC_RATE = 13750; // 블루 크리스탈 기본값 (hell-reward 페이지와 동일)
-
-// ─── 토큰 상점 데이터 ───
-type ShopCost = { name: '토큰' | '골드'; amount: number };
-type ShopLimit =
-  | { kind: 'once' }                        // 원정대 1회 (영구)
-  | { kind: 'weekly'; count: number }       // 원정대 주간 N회
-  | { kind: 'unlimited' };                  // 없음
-
-type ShopComponent = {
-  icon: string;
-  name: string;
-  count: number;
-  hasBg?: boolean;
-  itemId?: string;        // latest.json 시세 조회용 (없으면 가격 표시 생략)
-  bundleSize?: number;    // 거래소 번들 단위 (기본 1)
-};
-
+// ─── 카제로스 익스트림 제작소 — GM노트 첨부 캡쳐에서 비용이 확인된 항목 ───
 type ShopItem = {
   id: number;
   name: string;
-  qty: number;                              // 카드에 표시되는 수량 (x표기)
-  components?: ShopComponent[];             // 상자 구성품 (교환 비용 밑에 노출)
-  selectOne?: boolean;                      // true면 components 중 하나만 선택 (라디오). false/미지정이면 전체 합산.
-  requiredLevel: number | null;
+  act: Act;
   image: string;
-  theme: keyof typeof SHOP_THEME_COLORS;
-  hasBg: boolean;
-  costs: ShopCost[];
-  limit: ShopLimit | null;
+  requiredLevel: number;
+  limitLabel: string;
+  costs: { name: string; icon: string; amount: number }[];
+  gold: number;
+  note?: string;
 };
 
-const SHOP_ITEMS: ShopItem[] = [];
+const SHOP_ITEMS: ShopItem[] = [
+  {
+    id: 1,
+    name: '고대 코어 랜덤 상자',
+    act: ACTS[0],
+    image: '/rheozhdj.webp',
+    requiredLevel: 1770,
+    limitLabel: '원정대 2회',
+    costs: [{ name: '뇌전의 주화', icon: '/coin-lightning.webp?v=2', amount: 100 }],
+    gold: 50000,
+  },
+  {
+    id: 2,
+    name: '고대 코어 선택 상자',
+    act: ACTS[1],
+    image: '/rheozhdj.webp',
+    requiredLevel: 1780,
+    limitLabel: '원정대 1회',
+    costs: [
+      { name: '혼돈의 주화', icon: '/coin-chaos.webp?v=2', amount: 2 },
+      { name: '빛과 어둠의 주화', icon: '/coin-light-dark.webp?v=2', amount: 100 },
+    ],
+    gold: 200000,
+    note: '혼돈의 주화는 3막·종막 최초 클리어 때 1개씩만 나온다 — 두 막을 모두 클리어해야 2개가 모여 이 상자를 만들 수 있다.',
+  },
+];
 
-function formatLimit(l: ShopLimit | null, mode: 'short' | 'long'): string {
-  if (!l) return '미정';
-  if (l.kind === 'once')      return mode === 'short' ? '원정대 1회' : '원정대 1회';
-  if (l.kind === 'unlimited') return mode === 'short' ? '무제한' : '제한 없음';
-  return mode === 'short' ? `주간 ${l.count}회` : `원정대 주간 ${l.count}회`;
-}
+// 캡쳐의 제작 목록에 이름만 보이는 항목 (비용·제한 미공개)
+const SHOP_PENDING = [
+  { group: '특수 제작 · 3막', items: '유물 각인서 랜덤 주머니 · 유물 전투 각인서 선택 주머니' },
+  { group: '젬 제작 · 3막', items: '젬 선택 상자 등' },
+  { group: '성장 재료 제작 · 3막', items: '재련 재료 · 지옥 열쇠 등' },
+  { group: '특수 제작 · 종막', items: '고대 코어 랜덤 상자 (비용 미확인)' },
+];
+
+const COIN_EXPIRE = '2026년 11월 25일 (수) 06:00';
 
 export default function ExtremePage() {
-  // 상점
-  const [selectedShopItem, setSelectedShopItem] = useState<number | null>(null);
-  const selectedShopData = SHOP_ITEMS.find(i => i.id === selectedShopItem);
+  const [selectedStage, setSelectedStage] = useState<string | null>(null);
+  const [selectedShopItem, setSelectedShopItem] = useState<number | null>(1);
 
-  // 시세 (latest.json)
-  const [latestPrices, setLatestPrices] = useState<Record<string, number>>({});
-  const [priceLoading, setPriceLoading] = useState(true);
-
-  // 선택 상자 내에서 유저가 고른 아이템 (shopId → itemId). 미선택 시 최고가 자동 선택.
-  const [shopSelectItem, setShopSelectItem] = useState<Record<number, string>>({});
-
-  // 구성 요소 표 펼치기 상태 (shopId → boolean)
-  const [compsExpanded, setCompsExpanded] = useState<Record<number, boolean>>({});
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const { fetchLatestPrices } = await import('@/lib/price-history-client');
-        const latest = await fetchLatestPrices();
-        setLatestPrices(latest);
-      } catch (e) {
-        console.error('[extreme] latest prices fetch failed', e);
-      } finally {
-        setPriceLoading(false);
-      }
-    })();
-  }, []);
-
-  // 구성 요소 중 최고가 아이템 반환 (선택 상자의 기본값)
-  const getBestItemId = (comps: { itemId: string }[]): string => {
-    let maxPrice = -1;
-    let maxId = comps[0]?.itemId ?? '';
-    for (const c of comps) {
-      const p = latestPrices[c.itemId] || 0;
-      if (p > maxPrice) { maxPrice = p; maxId = c.itemId; }
-    }
-    return maxId;
-  };
-
-  const getSelectedInBox = (shopId: number, comps: { itemId: string }[]): string =>
-    shopSelectItem[shopId] || getBestItemId(comps);
-
-  // 영웅 젬 상자(랜덤) 기댓값 = Σ(가격 × 확률)
-  const getGemRandomAverage = (): number => {
-    if (priceLoading) return 0;
-    return GEM_RANDOM_HERO_PROBS.reduce(
-      (sum, gem) => sum + (latestPrices[gem.itemId] || 0) * gem.probability,
-      0
-    );
-  };
-
-  // 상점 아이템에서 받는 재화의 골드 가치 (가격 정보가 전무한 아이템은 null)
-  const getItemGoldValue = (item: ShopItem): number | null => {
-    if (priceLoading) return null;
-
-    if (item.theme === 'gem') {
-      const sorted = [...GEM_COMPONENTS].sort((a, b) => (latestPrices[b.itemId] || 0) - (latestPrices[a.itemId] || 0));
-      const selectedId = getSelectedInBox(item.id, sorted);
-      return Math.round((latestPrices[selectedId] || 0) * item.qty);
-    }
-    if (item.theme === 'engraving') {
-      const sorted = [...ENGRAVING_COMPONENTS].sort((a, b) => (latestPrices[b.itemId] || 0) - (latestPrices[a.itemId] || 0));
-      const selectedId = getSelectedInBox(item.id, sorted);
-      return Math.round((latestPrices[selectedId] || 0) * item.qty);
-    }
-    if (item.theme === 'gemRandom') {
-      return Math.round(getGemRandomAverage() * item.qty);
-    }
-    if (item.theme === 'hell') {
-      const perTicket = calcTicketAverage('hell', HELL_TICKET_TIER, latestPrices, HELL_TICKET_BC_RATE);
-      return Math.round(perTicket * item.qty);
-    }
-    if (item.components && item.components.length > 0) {
-      const compValues = item.components.map(c => {
-        if (!c.itemId) return null;
-        const bundlePrice = latestPrices[c.itemId] || 0;
-        const bundleSize = c.bundleSize || 1;
-        return Math.round((bundlePrice / bundleSize) * c.count);
-      });
-      if (compValues.every(v => v === null)) return null;
-      if (item.selectOne) {
-        const userPick = shopSelectItem[item.id];
-        const userPickIdx = userPick ? item.components.findIndex(c => c.itemId === userPick) : -1;
-        if (userPickIdx >= 0) return compValues[userPickIdx] ?? 0;
-        return Math.max(...compValues.map(v => v ?? 0));
-      }
-      return compValues.reduce<number>((sum, v) => sum + (v ?? 0), 0);
-    }
-    return null;
-  };
-
-  // 골드 교환 비용 (없으면 0)
-  const getGoldCost = (item: ShopItem): number =>
-    item.costs.find(c => c.name === '골드')?.amount || 0;
+  const selectedStageData = STAGES.find((s) => s.name === selectedStage);
+  const selectedShopData = SHOP_ITEMS.find((s) => s.id === selectedShopItem);
 
   return (
-    <div className={styles.pageTheme} style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
+    <div className={styles.pageThemeExtreme} style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
       <Container fluid className="mt-3 mt-md-4" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
         <Row className="justify-content-center">
           <Col xl={12} lg={12} md={12}>
-
             {/* 타이틀 */}
-            <div className="text-center mb-3">
-              <h1 className={styles.pageTitle}>익스트림</h1>
-              <p className={styles.pageSubtitle}>
-                3막 · 종막 업데이트 준비 중 — {COMING_SOON_DATE} 출시 예정
+            <div className="text-center mb-2">
+              <h1 style={{
+                fontSize: 'clamp(1.3rem, 3vw, 1.6rem)',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                marginTop: 0,
+                marginBottom: '0.5rem'
+              }}>
+                익스트림
+              </h1>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+                3막 모르둠 · 종막 카제로스 난이도별 클리어 보상과 제작소 — {ACTS[0].period.split(' 점검')[0]} ~ {ACTS[1].period.split(' ~ ')[1].split(' 점검')[0]}
               </p>
             </div>
 
-            {/* ═══════════════════════════════════════════
-                섹션: 난이도별 보상
-                ═══════════════════════════════════════════ */}
-            <div className={styles.diffSection} style={{ margin: '0 auto 1.5rem' }}>
-              <h2 className={styles.sectionTitle}>난이도별 보상</h2>
-              <div className={styles.diffGrid}>
-                {DIFFICULTIES.map((diff) => (
-                  <div key={diff.name} className={styles.diffGroup}>
-                    <div className={styles.diffCard}>
+            {/* 3개 난이도 이미지 카드 */}
+            <div className={styles.raidCardsGrid}>
+              {STAGES.map((stage, index) => {
+                const isSelected = selectedStage === stage.name;
+                return (
+                  <div
+                    key={stage.name}
+                    className={`${styles.raidCard} ${isSelected ? styles.selected : ''}`}
+                    onClick={() => setSelectedStage(isSelected ? null : stage.name)}
+                  >
+                    <div className={styles.imageWrapper}>
                       <Image
-                        src="/extreme-s3-finale.jpg"
-                        alt="익스트림 3막 · 종막"
+                        src={RAID_IMAGE}
+                        alt={stage.name}
                         fill
-                        sizes="380px"
-                        className={styles.diffImage}
+                        className={styles.raidImage}
+                        sizes="(max-width: 576px) 100vw, (max-width: 768px) 33vw, 330px"
+                        priority={index < 3}
                       />
-                      <div className={styles.diffContent}>
-                        <span className={styles.diffName}>{diff.name}</span>
-                        <span className={styles.comingSoonPill}>
-                          <span className={styles.comingSoonDot} />
-                          COMING SOON
-                        </span>
+                      <div className={styles.overlay} />
+                    </div>
+                    {/* 왼쪽 2줄: 난이도 배지 / 레벨 — 오른쪽 2줄: 골드 / 주화 (매주 원정대 1회) */}
+                    <div className={styles.exCardBar} style={{ '--ex-diff': stage.diffColor } as React.CSSProperties}>
+                      <div className={styles.exCardLeft}>
+                        <h3 className={styles.exDiffBadge}>{stage.diff}</h3>
+                        <p className={styles.exCardLevel}>Lv. {stage.level}</p>
+                      </div>
+                      <div className={styles.exCardRight}>
+                        <div className={styles.exCardGold}>
+                          <Image src="/gold.webp" alt="골드" width={16} height={16} />
+                          <span>{stage.gold.toLocaleString()}</span>
+                        </div>
+                        <div className={styles.exCardCoins}>
+                          <span className={styles.exCoinPair}>
+                            <Image src={ACTS[0].coin.icon} alt={ACTS[0].coin.name} width={16} height={16} />
+                            <Image src={ACTS[1].coin.icon} alt={ACTS[1].coin.name} width={16} height={16} />
+                          </span>
+                          <span>주화 {stage.coins}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
 
-            {/* ═══════════════════════════════════════════
-                섹션: 토큰 상점
-                ═══════════════════════════════════════════ */}
-            <div className={styles.diffSection}>
-              <h2 className={styles.sectionTitle}>토큰 상점</h2>
-              <div style={{ marginTop: '0.75rem' }}>
-                <Card className={styles.shopCard}>
-                  <Card.Header className={styles.shopCardHeader}>
-                    <h3 className={styles.shopCardTitle}>불과 얼음의 주화 상점</h3>
-                  </Card.Header>
-                  <Card.Body className="p-0">
-                    <div className={styles.shopContainer}>
-                      {/* 좌: 목록 */}
-                      <div className={styles.shopList}>
-                        <div className={styles.shopListHeader}>토큰 교환 목록</div>
-                        {SHOP_ITEMS.length === 0 && (
-                          <div className={styles.shopDetailEmpty}>상점 구성이 아직 공개되지 않았습니다</div>
-                        )}
-                        {SHOP_ITEMS.map((item) => {
-                          const tc = SHOP_THEME_COLORS[item.theme];
-                          const isActive = selectedShopItem === item.id;
-                          const itemValue = getItemGoldValue(item);
-                          const netGold = itemValue === null ? null : itemValue - getGoldCost(item);
-                          return (
-                            <div
-                              key={item.id}
-                              className={`${styles.shopItem} ${isActive ? styles.active : ''}`}
-                              onClick={() => setSelectedShopItem(isActive ? null : item.id)}
-                            >
-                              {item.hasBg ? (
-                                <div className={styles.shopItemIconFill}>
-                                  <Image src={item.image} alt="" width={52} height={52} style={{ borderRadius: '6px', objectFit: 'cover', width: '100%', height: '100%' }} />
-                                </div>
-                              ) : (
-                                <div className={styles.shopItemIcon} style={{ borderColor: tc.border, background: tc.iconBg }}>
-                                  <Image src={item.image} alt="" width={52} height={52} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                                </div>
-                              )}
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <span className={styles.shopItemName} style={{ color: tc.name, display: 'block' }}>
-                                  {item.name}{item.qty > 1 && <span style={{ color: tc.accent, fontWeight: 700 }}> x{item.qty}</span>}
-                                </span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2px' }}>
-                                  {item.requiredLevel && (
-                                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Lv.{item.requiredLevel}</span>
-                                  )}
-                                  <span
-                                    className={styles.limitBadge}
-                                    style={{
-                                      fontSize: '0.68rem',
-                                      padding: '0.1rem 0.35rem',
-                                      color: tc.accent,
-                                      background: `${tc.accent}18`,
-                                      border: `1px solid ${tc.accent}40`,
-                                    }}
-                                  >
-                                    {formatLimit(item.limit, 'short')}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className={styles.shopItemCostBadge}>
-                                {priceLoading || netGold === null ? (
-                                  <span className={styles.shopItemFree}>—</span>
-                                ) : (
-                                  <span className={styles.shopItemCostValue}>
-                                    <Image src="/gold.webp" alt="골드" width={14} height={14} />
-                                    {netGold.toLocaleString()}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+            {/* 선택한 난이도 상세 — 표 반복 대신 아이콘 타일. 3막·종막은 내용이 같아 두 번 쓰지 않고
+                주화만 막 태그(3막/종막)로 구분한다. 골드·주화·칭호가 한눈에 들어오게. */}
+            {selectedStageData && (() => {
+              const st = selectedStageData;
+              const weeklyGoldTotal = st.gold * TOTAL_WEEKS;
+              const titleGoldTotal = st.nightmare ? NIGHTMARE_TITLE_GOLD * ACTS.length : 0;
+              const finalGold = weeklyGoldTotal + titleGoldTotal;
+              const coinsPerAct = (act: Act) => st.coins * act.weeks + FIRST_CLEAR_ACT_COINS;
+              const actTag = (act: Act) => act.label.split(' · ')[0];
+
+              return (
+              <div className={styles.rewardWide}>
+              <Card className={styles.detailCard}>
+                <Card.Header className={`${styles.detailHeader} ${styles.exHeadRow}`}>
+                  <span className={styles.exHeadTitle}>
+                    <span className={styles.exHeadBadge} style={{ '--ex-diff': st.diffColor } as React.CSSProperties}>{st.diff}</span>
+                    클리어 보상
+                  </span>
+                  <span className={styles.exHeadMeta}>Lv. {st.level} · {st.revive}</span>
+                </Card.Header>
+                <Card.Body className={styles.detailBody}>
+                  {/* 막 일정 — 한 줄 */}
+                  <p className={styles.exActLine}>
+                    {ACTS.map((act, i) => (
+                      <span key={act.key}>{i > 0 && <span className={styles.exActSep}>|</span>}<b>{act.label}</b> {act.period}</span>
+                    ))}
+                  </p>
+
+                  {/* 1. 매주 클리어 */}
+                  <div className={styles.sectionTitle}>매주 클리어 <span className={styles.exSectionNote}>원정대 주 1회</span></div>
+                  <div className={styles.exTileGrid}>
+                    <div className={`${styles.exTile} ${styles.exTileGold}`}>
+                      <Image src="/gold.webp" alt="" width={44} height={44} className={styles.exTileIcon} />
+                      <span className={styles.exTileName}>골드</span>
+                      <span className={styles.exTileAmount}>{st.gold.toLocaleString()}</span>
+                    </div>
+                    {ACTS.map((act) => (
+                      <div key={`w-${act.key}`} className={styles.exTile}>
+                        <span className={styles.exTileTag}>{actTag(act)}</span>
+                        <Image src={act.coin.icon} alt="" width={44} height={44} className={`${styles.exTileIcon} ${styles.exTileIconRound}`} />
+                        <span className={styles.exTileName}>{act.coin.name}</span>
+                        <span className={styles.exTileAmount}>x{st.coins}</span>
                       </div>
+                    ))}
+                  </div>
 
-                      {/* 우: 상세 */}
-                      <div className={styles.shopDetail}>
-                        {selectedShopData ? (() => {
-                          const tc = SHOP_THEME_COLORS[selectedShopData.theme];
-                          const wide = selectedShopData.theme === 'engraving' || selectedShopData.theme === 'gem' || selectedShopData.theme === 'gemRandom';
-                          return (
-                            <div className={styles.shopDetailContent} style={wide ? { maxWidth: '560px' } : undefined}>
-                              {/* 아이콘 + 이름 */}
-                              <div className={styles.shopDetailTop}>
-                                {selectedShopData.hasBg ? (
-                                  <div className={styles.shopDetailIconFill}>
-                                    <Image src={selectedShopData.image} alt="" width={130} height={130} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
-                                  </div>
-                                ) : (
-                                  <div className={styles.shopDetailIcon} style={{ borderColor: tc.border, background: tc.iconBg }}>
-                                    <Image src={selectedShopData.image} alt="" width={110} height={110} style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
-                                  </div>
-                                )}
-                                <div className={styles.shopDetailName} style={{ color: tc.name }}>
-                                  {selectedShopData.name}{selectedShopData.qty > 1 && <span style={{ color: tc.accent }}> x{selectedShopData.qty}</span>}
-                                </div>
-                              </div>
+                  {/* 2. 최초 클리어 */}
+                  <div className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>최초 클리어 <span className={styles.exSectionNote}>막마다 1회 · 난이도 무관</span></div>
+                  <div className={styles.exTileGrid}>
+                    {FIRST_CLEAR_COMMON.map((it) => (
+                      <div key={it.name} className={styles.exTile}>
+                        <Image src={it.icon} alt="" width={44} height={44} className={`${styles.exTileIcon} ${it.icon === CHAOS_COIN.icon ? styles.exTileIconRound : ''}`} />
+                        <span className={styles.exTileName}>{it.name}</span>
+                        <span className={styles.exTileAmount}>x{it.amount}</span>
+                      </div>
+                    ))}
+                    {ACTS.map((act) => (
+                      <div key={`f-${act.key}`} className={styles.exTile}>
+                        <span className={styles.exTileTag}>{actTag(act)}</span>
+                        <Image src={act.coin.icon} alt="" width={44} height={44} className={`${styles.exTileIcon} ${styles.exTileIconRound}`} />
+                        <span className={styles.exTileName}>{act.coin.name}</span>
+                        <span className={styles.exTileAmount}>x{FIRST_CLEAR_ACT_COINS}</span>
+                      </div>
+                    ))}
+                  </div>
 
-                              {/* 레벨 + 제한 */}
-                              <div className={styles.shopCompactInfo}>
-                                {selectedShopData.requiredLevel && (
-                                  <>
-                                    <span className={styles.shopCompactItem} style={{ color: tc.accent }}>
-                                      Lv.{selectedShopData.requiredLevel}
-                                    </span>
-                                    <span className={styles.shopCompactDivider}>·</span>
-                                  </>
-                                )}
+                  {/* 3. 나이트메어 추가 */}
+                  {st.nightmare && (
+                    <>
+                      <div className={styles.sectionTitle} style={{ marginTop: '1.25rem' }}>나이트메어 추가 <span className={styles.exSectionNote}>최초 클리어 · 막마다</span></div>
+                      <div className={styles.exNmBox}>
+                      <div className={styles.exTileGrid}>
+                        {ACTS.map((act) => (
+                          <div key={`t-${act.key}`} className={`${styles.exTile} ${styles.exTileWide} ${styles.exTileTitle}`}>
+                            {/* 레이드 그림(주간 골드 계산기와 같은 파일)을 타일 가득 깔고, 아래쪽에 칭호 로고를 겹친다.
+                                막 구분은 배지 대신 이 그림으로. 칭호는 로고와 이름이 한 그림 — 이름을 따로 쓰지 않는다 */}
+                            <Image src={act.raidImage} alt={act.label} fill sizes="(max-width: 576px) 100vw, 320px" className={styles.exTileRaid} />
+                            <div className={styles.exTitleOverlay}>
+                              <Image src={act.title.logo} alt={`전설 칭호 ${act.title.name}`} width={744} height={153} className={styles.exTileLogo} />
+                            </div>
+                          </div>
+                        ))}
+                        <div className={`${styles.exTile} ${styles.exTileGold}`}>
+                          <Image src="/gold.webp" alt="" width={44} height={44} className={styles.exTileIcon} />
+                          <span className={styles.exTileName}>골드 (막마다)</span>
+                          <span className={styles.exTileAmount}>{NIGHTMARE_TITLE_GOLD.toLocaleString()}</span>
+                        </div>
+                        <div className={styles.exTile}>
+                          <span className={styles.exTileIconText}>EMO</span>
+                          <span className={styles.exTileName}>특별 이모티콘</span>
+                          <span className={styles.exTileAmount}>x1</span>
+                        </div>
+                      </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 4. 합계 */}
+                  <div className={styles.finalSection} style={{ marginTop: '1.25rem' }}>
+                    <div className={styles.finalTitle}>{TOTAL_WEEKS}주 합계 (3막 {ACTS[0].weeks}주 + 종막 {ACTS[1].weeks}주 · 같은 난이도로 진행 시)</div>
+                    <div className={styles.finalGrid}>
+                      <div className={styles.finalGridItem}>
+                        <div className={styles.finalLabel}>클리어 골드 {TOTAL_WEEKS}주</div>
+                        <div className={`${styles.finalItemValue} ${styles.exFinalVal}`} style={{ color: '#c9a84c' }}>
+                          <Image src="/gold.webp" alt="" width={16} height={16} />{weeklyGoldTotal.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className={styles.finalGridItem}>
+                        <div className={styles.finalLabel}>나메 칭호 골드 x{ACTS.length}</div>
+                        <div className={`${styles.finalItemValue} ${styles.exFinalVal}`} style={{ color: st.nightmare ? '#c9a84c' : undefined }}>
+                          {st.nightmare ? <><Image src="/gold.webp" alt="" width={16} height={16} />+{titleGoldTotal.toLocaleString()}</> : '-'}
+                        </div>
+                      </div>
+                      {ACTS.map((act) => (
+                        <div key={`sum-${act.key}`} className={styles.finalGridItem}>
+                          <div className={styles.finalLabel}>{act.coin.name}</div>
+                          <div className={`${styles.finalItemValue} ${styles.exFinalVal}`}>
+                            <Image src={act.coin.icon} alt="" width={16} height={16} style={{ borderRadius: '50%' }} />{coinsPerAct(act).toLocaleString()}개
+                          </div>
+                          <span className={styles.exFormula}>{st.coins} x {act.weeks}주 + 최초 {FIRST_CLEAR_ACT_COINS}</span>
+                        </div>
+                      ))}
+                      <div className={styles.finalGridItem} style={{ gridColumn: '1 / -1', borderTop: '2px solid rgba(201, 168, 76, 0.3)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
+                        <div className={styles.finalLabel}>총 골드 {st.nightmare ? `(클리어 ${TOTAL_WEEKS}주 + 칭호 ${ACTS.length}막)` : `(클리어 ${TOTAL_WEEKS}주)`}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+                          <Image src="/gold.webp" alt="골드" width={24} height={24} />
+                          <span className={styles.finalItemValue} style={{ color: '#c9a84c', fontSize: '1.15rem' }}>{finalGold.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+              </div>
+              );
+            })()}
+
+            {/* 카제로스 익스트림 제작소 */}
+            <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
+              <Card className={styles.shopCard}>
+                <Card.Header className={styles.shopCardHeader}>
+                  <h3 className={styles.shopCardTitle}>
+                    카제로스 익스트림 제작소
+                  </h3>
+                </Card.Header>
+                <Card.Body className="p-0">
+                  <div className={styles.shopContainer}>
+                    <div className={styles.shopList}>
+                      <div className={styles.shopListHeader}>
+                        제작 목록 (공식 캡쳐에서 확인된 항목)
+                      </div>
+                      {SHOP_ITEMS.map((item) => {
+                        const isActive = selectedShopItem === item.id;
+                        return (
+                          <div
+                            key={item.id}
+                            className={`${styles.shopItem} ${isActive ? styles.active : ''}`}
+                            onClick={() => setSelectedShopItem(isActive ? null : item.id)}
+                          >
+                            <div className={styles.shopItemIconFill}>
+                              <Image src={item.image} alt="" width={52} height={52} style={{ borderRadius: '6px', objectFit: 'cover', width: '100%', height: '100%' }} />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <span className={styles.shopItemName} style={{ display: 'block' }}>
+                                {item.name}
+                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2px', flexWrap: 'wrap' }}>
                                 <span
                                   className={styles.limitBadge}
                                   style={{
-                                    color: tc.accent,
-                                    background: `${tc.accent}18`,
-                                    border: `1px solid ${tc.accent}40`,
+                                    fontSize: '0.68rem',
+                                    padding: '0.1rem 0.35rem',
+                                    color: 'var(--rd-line)',
+                                    background: 'var(--rd-head-soft)',
+                                    border: '1px solid var(--rd-line)',
                                   }}
                                 >
-                                  {formatLimit(selectedShopData.limit, 'long')}
+                                  {item.act.label.split(' · ')[0]}
+                                </span>
+                                <span
+                                  className={styles.limitBadge}
+                                  style={{
+                                    fontSize: '0.68rem',
+                                    padding: '0.1rem 0.35rem',
+                                    color: '#3a7bb8',
+                                    background: '#3a7bb818',
+                                    border: '1px solid #3a7bb840',
+                                  }}
+                                >
+                                  {item.limitLabel}
                                 </span>
                               </div>
-
-                              {/* 교환 비용 */}
-                              <div className={styles.shopDetailSection}>
-                                <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>교환 비용</div>
-                                <div className={styles.shopDetailCostList}>
-                                  {selectedShopData.costs.length > 0 ? (
-                                    selectedShopData.costs.map((cost, idx) => (
-                                      <div key={idx} className={styles.shopDetailCostItem} style={{ borderColor: tc.border }}>
-                                        {cost.name === '토큰' && (
-                                          <Image src="/xhzms.webp" alt="토큰" width={24} height={24} />
-                                        )}
-                                        {cost.name === '골드' && (
-                                          <Image src="/gold.webp" alt="골드" width={24} height={24} />
-                                        )}
-                                        <span className={styles.costName}>{cost.name === '골드' ? '' : `${cost.name} `}</span>
-                                        <span className={styles.costShortName}>{cost.name === '토큰' ? '토큰 ' : ''}</span>
-                                        <span>{cost.amount.toLocaleString()}</span>
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className={styles.shopDetailCostItem} style={{ borderColor: tc.border }}>
-                                      <span>비용 미정</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* 구성품 (1개가 아닌 고정 구성 아이템) */}
-                              {selectedShopData.components && selectedShopData.components.length > 0 && (() => {
-                                const comps = selectedShopData.components;
-                                const selectable = !!selectedShopData.selectOne;
-                                const compValues = comps.map(c => {
-                                  if (!c.itemId) return null;
-                                  const bundlePrice = latestPrices[c.itemId] || 0;
-                                  const bundleSize = c.bundleSize || 1;
-                                  const unitPrice = bundlePrice / bundleSize;
-                                  const totalValue = Math.round(unitPrice * c.count);
-                                  return { unitPrice, totalValue };
-                                });
-                                const hasPricing = compValues.some(v => v !== null);
-
-                                // 택1 박스: 최고 가치 옵션 자동 선택 (유저 선택 있으면 그걸 우선)
-                                let selectedIdx = 0;
-                                if (selectable) {
-                                  const userPick = shopSelectItem[selectedShopData.id];
-                                  const userPickIdx = userPick ? comps.findIndex(c => c.itemId === userPick) : -1;
-                                  if (userPickIdx >= 0) {
-                                    selectedIdx = userPickIdx;
-                                  } else {
-                                    let maxV = -1;
-                                    comps.forEach((_, i) => {
-                                      const v = compValues[i]?.totalValue ?? 0;
-                                      if (v > maxV) { maxV = v; selectedIdx = i; }
-                                    });
-                                  }
-                                }
-                                const grandTotal = selectable
-                                  ? (compValues[selectedIdx]?.totalValue ?? 0)
-                                  : compValues.reduce((sum, v) => sum + (v?.totalValue ?? 0), 0);
-
-                                return (
-                                  <div className={styles.shopDetailSection} style={{ minHeight: 'auto' }}>
-                                    <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>
-                                      구성품{selectable ? ' (1개 선택)' : ''}
-                                    </div>
-                                    <div className={styles.componentList}>
-                                      {comps.map((c, idx) => {
-                                        const v = compValues[idx];
-                                        const isSelected = !selectable || idx === selectedIdx;
-                                        const onPick = selectable && c.itemId
-                                          ? () => setShopSelectItem(prev => ({ ...prev, [selectedShopData.id]: c.itemId! }))
-                                          : undefined;
-                                        return (
-                                          <div
-                                            key={idx}
-                                            className={styles.componentItem}
-                                            style={{
-                                              borderColor: tc.border,
-                                              cursor: selectable ? 'pointer' : 'default',
-                                              opacity: isSelected ? 1 : 0.45,
-                                              ...(selectable && isSelected ? { borderColor: tc.accent, background: tc.iconBg } : {}),
-                                            }}
-                                            onClick={onPick}
-                                          >
-                                            {selectable && (
-                                              <span style={{ fontSize: '1.05rem', flexShrink: 0 }}>{isSelected ? '✅' : '⬜'}</span>
-                                            )}
-                                            {c.hasBg ? (
-                                              <div className={styles.componentIconFill}>
-                                                <Image src={c.icon} alt={c.name} width={32} height={32} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                              </div>
-                                            ) : (
-                                              <div className={styles.componentIcon} style={{ borderColor: tc.border, background: tc.iconBg }}>
-                                                <Image src={c.icon} alt={c.name} width={28} height={28} style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
-                                              </div>
-                                            )}
-                                            <div className={styles.componentMain}>
-                                              <span className={styles.componentName}>{c.name}</span>
-                                              {v && (
-                                                <span className={styles.componentUnit}>
-                                                  {priceLoading ? '—' : `단가 ${v.unitPrice >= 1 ? v.unitPrice.toFixed(1) : v.unitPrice.toFixed(3)} G`}
-                                                </span>
-                                              )}
-                                            </div>
-                                            <div className={styles.componentRight}>
-                                              <span className={styles.componentCount} style={{ color: tc.accent }}>× {c.count.toLocaleString()}</span>
-                                              {v && (
-                                                <span className={styles.componentTotal}>
-                                                  <Image src="/gold.webp" alt="" width={12} height={12} />
-                                                  {priceLoading ? '—' : v.totalValue.toLocaleString()}
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                      {hasPricing && (selectable || comps.length > 1) && (
-                                        <div className={styles.componentTotalRow} style={{ borderColor: tc.border }}>
-                                          <span className={styles.componentTotalLabel}>{selectable ? '선택 옵션 가치' : '총 가치'}</span>
-                                          <span className={styles.componentTotalValue} style={{ color: tc.accent }}>
-                                            <Image src="/gold.webp" alt="" width={14} height={14} />
-                                            {priceLoading ? '—' : grandTotal.toLocaleString()}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })()}
-
-                              {/* 구성 요소 (유물 각인서 / 영웅 젬 선택) */}
-                              {(selectedShopData.theme === 'engraving' || selectedShopData.theme === 'gem') && (() => {
-                                const rawComps = selectedShopData.theme === 'engraving' ? ENGRAVING_COMPONENTS : GEM_COMPONENTS;
-                                // 가격 내림차순 정렬
-                                const comps = [...rawComps].sort((a, b) => (latestPrices[b.itemId] || 0) - (latestPrices[a.itemId] || 0));
-                                const selectedId = getSelectedInBox(selectedShopData.id, comps);
-                                const selectedPrice = latestPrices[selectedId] || 0;
-                                const totalValue = Math.round(selectedPrice * selectedShopData.qty);
-
-                                // 각인서만 상위 5개/나머지 분리. 젬(6종)은 전부 표시.
-                                const TOP_N = 5;
-                                const useToggle = selectedShopData.theme === 'engraving' && comps.length > TOP_N;
-                                const expanded = compsExpanded[selectedShopData.id] ?? false;
-                                const topRows = useToggle ? comps.slice(0, TOP_N) : comps;
-                                const restRows = useToggle ? comps.slice(TOP_N) : [];
-
-                                const renderRow = (comp: typeof comps[number]) => {
-                                  const isSelected = comp.itemId === selectedId;
-                                  const price = latestPrices[comp.itemId] || 0;
-                                  return (
-                                    <tr
-                                      key={comp.itemId}
-                                      style={{ cursor: 'pointer', opacity: isSelected ? 1 : 0.5 }}
-                                      onClick={() => setShopSelectItem(prev => ({ ...prev, [selectedShopData.id]: comp.itemId }))}
-                                    >
-                                      <td style={{ textAlign: 'center', fontSize: '1rem' }}>{isSelected ? '✅' : '⬜'}</td>
-                                      <td>
-                                        <div className={styles.materialCell}>
-                                          <Image src={comp.icon} alt={comp.name} width={28} height={28} />
-                                          <span>{comp.name.replace(/질서의 젬 : |혼돈의 젬 : /, '')}</span>
-                                        </div>
-                                      </td>
-                                      <td style={{ textAlign: 'center' }}>
-                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                          <Image src="/gold.webp" alt="" width={14} height={14} />
-                                          <span>{priceLoading ? '—' : price ? price.toLocaleString() : '-'}</span>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  );
-                                };
-
-                                return (
-                                  <div className={styles.shopDetailSection} style={{ minHeight: 'auto', maxWidth: '560px' }}>
-                                    <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>
-                                      구성 요소 (1개 선택)
-                                    </div>
-                                    <table className={styles.materialTable}>
-                                      <thead>
-                                        <tr>
-                                          <th style={{ width: '32px' }}></th>
-                                          <th>아이템 (가격 순)</th>
-                                          <th style={{ textAlign: 'center', width: '30%' }}>시세</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {topRows.map(renderRow)}
-                                        {useToggle && expanded && restRows.map(renderRow)}
-                                      </tbody>
-                                      <tfoot>
-                                        {useToggle && (
-                                          <tr
-                                            className={styles.toggleRow}
-                                            style={{ cursor: 'pointer' }}
-                                            onClick={() => setCompsExpanded(prev => ({ ...prev, [selectedShopData.id]: !expanded }))}
-                                          >
-                                            <td colSpan={3} style={{ textAlign: 'center', padding: '0.45rem', color: tc.accent, fontWeight: 700, fontSize: '0.85rem' }}>
-                                              {expanded ? `▲ 나머지 ${restRows.length}개 접기` : `▼ 나머지 ${restRows.length}개 더 보기`}
-                                            </td>
-                                          </tr>
-                                        )}
-                                        <tr className={styles.subtotalRow}>
-                                          <td colSpan={2}>선택 아이템 가치{selectedShopData.qty > 1 ? ` × ${selectedShopData.qty}` : ''}</td>
-                                          <td style={{ textAlign: 'center' }}>
-                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                              <Image src="/gold.webp" alt="" width={14} height={14} />
-                                              <span>{priceLoading ? '—' : totalValue.toLocaleString()}</span>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      </tfoot>
-                                    </table>
-                                  </div>
-                                );
-                              })()}
-
-                              {/* 영웅 젬 상자 (랜덤) — 확률 가중 기댓값 */}
-                              {selectedShopData.theme === 'gemRandom' && (() => {
-                                const avg = getGemRandomAverage();
-                                const total = Math.round(avg * selectedShopData.qty);
-                                return (
-                                  <div className={styles.shopDetailSection} style={{ minHeight: 'auto', maxWidth: '560px' }}>
-                                    <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>구성 요소 (영웅 6종 랜덤)</div>
-                                    <table className={styles.materialTable}>
-                                      <thead>
-                                        <tr>
-                                          <th>아이템</th>
-                                          <th style={{ textAlign: 'center', width: '20%' }}>확률</th>
-                                          <th style={{ textAlign: 'center', width: '30%' }}>시세</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {GEM_RANDOM_HERO_PROBS.map((comp) => {
-                                          const price = latestPrices[comp.itemId] || 0;
-                                          return (
-                                            <tr key={comp.itemId}>
-                                              <td>
-                                                <div className={styles.materialCell}>
-                                                  <Image src={comp.icon} alt={comp.name} width={28} height={28} />
-                                                  <span>{comp.name.replace(/질서의 젬 : |혼돈의 젬 : /, '')}</span>
-                                                </div>
-                                              </td>
-                                              <td style={{ textAlign: 'center' }}>{(comp.probability * 100).toFixed(0)}%</td>
-                                              <td style={{ textAlign: 'center' }}>
-                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                                  <Image src="/gold.webp" alt="" width={14} height={14} />
-                                                  <span>{priceLoading ? '—' : price ? price.toLocaleString() : '-'}</span>
-                                                </div>
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                      <tfoot>
-                                        <tr className={styles.subtotalRow}>
-                                          <td colSpan={2}>평균 기댓값{selectedShopData.qty > 1 ? ` × ${selectedShopData.qty}` : ''}</td>
-                                          <td style={{ textAlign: 'center' }}>
-                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                              <Image src="/gold.webp" alt="" width={14} height={14} />
-                                              <span>{priceLoading ? '—' : total.toLocaleString()}</span>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      </tfoot>
-                                    </table>
-                                  </div>
-                                );
-                              })()}
-
-                              {/* 지옥 열쇠 기댓값 */}
-                              {selectedShopData.theme === 'hell' && (() => {
-                                const perTicket = priceLoading ? 0 : calcTicketAverage('hell', HELL_TICKET_TIER, latestPrices, HELL_TICKET_BC_RATE);
-                                const total = Math.round(perTicket * selectedShopData.qty);
-                                return (
-                                  <div className={styles.shopDetailSection} style={{ minHeight: 'auto' }}>
-                                    <div className={styles.shopDetailSectionTitle} style={{ color: tc.name }}>
-                                      예상 가치
-                                    </div>
-                                    <div className={styles.expectedValueCard}>
-                                      <div className={styles.expectedValueRow}>
-                                        <div className={styles.expectedValueLabel}>
-                                          <Image src="/celtic_key_3.webp" alt="희귀 지옥 열쇠" width={28} height={28} style={{ borderRadius: '4px' }} />
-                                          <span>1730 지옥 {HELL_TICKET_LABEL} 평균 기댓값</span>
-                                        </div>
-                                        <div className={styles.expectedValueAmount}>
-                                          <Image src="/gold.webp" alt="골드" width={20} height={20} />
-                                          <span>{priceLoading ? '—' : total.toLocaleString()}</span>
-                                          <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>G</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })()}
                             </div>
-                          );
-                        })() : (
-                          <div className={styles.shopDetailEmpty}>목록에서 아이템을 선택하세요</div>
-                        )}
+                            <div className={`${styles.shopItemCostBadge} ${styles.exShopCosts}`}>
+                              {item.costs.map((cost) => (
+                                <span key={cost.name} className={styles.shopItemCostValue} style={{ color: 'var(--ct-text)' }}>
+                                  <Image src={cost.icon} alt={cost.name} width={14} height={14} style={{ borderRadius: '50%' }} />
+                                  {cost.amount}
+                                </span>
+                              ))}
+                              <span className={styles.shopItemCostValue}>
+                                <Image src="/gold.webp" alt="" width={14} height={14} />
+                                {item.gold.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {/* 이름만 공개된 항목 */}
+                      <div style={{ padding: '0.6rem 0.75rem', fontSize: '0.78rem', color: 'var(--ct-text-muted)', lineHeight: 1.5 }}>
+                        <div style={{ fontWeight: 700, color: 'var(--ct-text-secondary)', marginBottom: '0.2rem' }}>비용 미공개 (목록에만 보임)</div>
+                        {SHOP_PENDING.map((p) => (
+                          <div key={p.group}><strong style={{ fontWeight: 700 }}>{p.group}</strong> — {p.items}</div>
+                        ))}
                       </div>
                     </div>
-                  </Card.Body>
-                </Card>
-              </div>
+
+                    <div className={styles.shopDetail}>
+                      {selectedShopData ? (() => {
+                        const sd = selectedShopData;
+                        return (
+                          <div className={styles.shopDetailContent}>
+                            {/* 1. 아이콘 + 이름 */}
+                            <div className={styles.shopDetailTop}>
+                              <div className={styles.shopDetailIconFill}>
+                                <Image src={sd.image} alt="" width={130} height={130} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                              </div>
+                              <div className={styles.shopDetailName}>{sd.name}</div>
+                            </div>
+
+                            {/* 2. 레벨 + 한도 + 막 */}
+                            <div className={styles.shopCompactInfo}>
+                              <span className={styles.shopCompactItem} style={{ color: 'var(--rd-line)' }}>
+                                Lv.{sd.requiredLevel}
+                              </span>
+                              <span className={styles.shopCompactDivider}>·</span>
+                              <span
+                                className={styles.limitBadge}
+                                style={{ color: '#3a7bb8', background: '#3a7bb818', border: '1px solid #3a7bb840' }}
+                              >
+                                {sd.limitLabel}
+                              </span>
+                              <span className={styles.shopCompactDivider}>·</span>
+                              <span
+                                className={styles.limitBadge}
+                                style={{ color: 'var(--rd-line)', background: 'var(--rd-head-soft)', border: '1px solid var(--rd-line)' }}
+                              >
+                                {sd.act.label}
+                              </span>
+                            </div>
+
+                            {/* 3. 제작 비용 */}
+                            <div className={styles.shopDetailSection}>
+                              <div className={styles.shopDetailSectionTitle}>제작 비용</div>
+                              <div className={styles.shopDetailCostList}>
+                                {sd.costs.map((cost) => (
+                                  <div key={cost.name} className={styles.shopDetailCostItem}>
+                                    <Image src={cost.icon} alt={cost.name} width={24} height={24} style={{ borderRadius: '50%' }} />
+                                    <span className={styles.costName}>{cost.name} </span>
+                                    <span className={styles.costShortName}>{cost.name === CHAOS_COIN.name ? '혼돈 ' : cost.name === ACTS[0].coin.name ? '뇌전 ' : '빛과 어둠 '}</span>
+                                    <span>{cost.amount.toLocaleString()}</span>
+                                  </div>
+                                ))}
+                                <div className={styles.shopDetailCostItem}>
+                                  <Image src="/gold.webp" alt="골드" width={24} height={24} />
+                                  <span>{sd.gold.toLocaleString()}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* 4. 주화 모으기 — 이 상자에 필요한 주화를 어디서 몇 개 받는지 */}
+                            <div className={styles.shopDetailSection}>
+                              <div className={styles.shopDetailSectionTitle}>주화 획득</div>
+                              <table className={styles.materialTable} style={{ marginBottom: '0.5rem' }}>
+                                <thead>
+                                  <tr>
+                                    <th></th>
+                                    <th>획득 경로</th>
+                                    <th>수량</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td><Image src={sd.act.coin.icon} alt="" width={22} height={22} style={{ borderRadius: '50%', display: 'block', margin: '0 auto' }} /></td>
+                                    <td><div className={styles.materialCell}><span>{sd.act.coin.short} — 매주 클리어 (노말~나메)</span></div></td>
+                                    <td>{STAGES[2].coins} ~ {STAGES[0].coins}</td>
+                                  </tr>
+                                  <tr>
+                                    <td><Image src={sd.act.coin.icon} alt="" width={22} height={22} style={{ borderRadius: '50%', display: 'block', margin: '0 auto' }} /></td>
+                                    <td><div className={styles.materialCell}><span>{sd.act.coin.short} — 최초 클리어</span></div></td>
+                                    <td>{FIRST_CLEAR_ACT_COINS}</td>
+                                  </tr>
+                                  {sd.costs.some((c) => c.name === CHAOS_COIN.name) && (
+                                    <tr>
+                                      <td><Image src={CHAOS_COIN.icon} alt="" width={22} height={22} style={{ borderRadius: '50%', display: 'block', margin: '0 auto' }} /></td>
+                                      <td><div className={styles.materialCell}><span>{CHAOS_COIN.short} — 3막 · 종막 최초 클리어 각 1</span></div></td>
+                                      <td>2</td>
+                                    </tr>
+                                  )}
+                                </tbody>
+                              </table>
+                              <div className={styles.shopDetailInfo}>
+                                <div className={styles.shopDetailRow}>
+                                  <span className={styles.shopDetailLabel}>{sd.act.coin.name} 만료</span>
+                                  <span className={styles.shopDetailValue}>{COIN_EXPIRE}</span>
+                                </div>
+                                <div className={styles.shopDetailRow}>
+                                  <span className={styles.shopDetailLabel}>거래 · 보관</span>
+                                  <span className={styles.shopDetailValue}>거래 불가 · 원정대 보관</span>
+                                </div>
+                              </div>
+                              {sd.note && (
+                                <div className={`${styles.infoRow} ${styles.coreRow}`} style={{ marginTop: '0.6rem', display: 'block', fontSize: '0.8rem', lineHeight: 1.5, color: 'var(--ct-text-secondary)' }}>
+                                  {sd.note}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })() : (
+                        <div className={styles.shopDetailEmpty}>
+                          아이템을 선택하면 상세 정보를 확인할 수 있습니다
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
             </div>
 
-            {/* ═══════════════════════════════════════════
-                섹션: 이용 가이드 + FAQ
-                ═══════════════════════════════════════════ */}
+            {/* 모바일 인-콘텐츠 광고 — 본문 아래·가이드 위 (앱 배치와 유사) */}
+            <div className="d-block d-lg-none my-3">
+              <AdBanner slot="8616653628" />
+            </div>
+
             <GuideFaq
-              relatedGuides={['/guide/raid-rewards']}
-              guideTitle="익스트림 레이드 이용 가이드"
+              relatedGuides={['/guide/extreme-rewards', '/guide/extreme-coin-craft', '/guide/raid-rewards']}
+              guideTitle="익스트림 3막 · 종막 이용 가이드"
               sections={[
                 {
-                  heading: '난이도 구성과 보상 체계',
+                  heading: '일정과 난이도 구성',
                   paragraphs: [
-                    '익스트림 레이드는 노말(아이템 레벨 1720), 하드(1750), 나이트메어(1770) 세 난이도로 나뉘며, 난이도가 높을수록 요구 아이템 레벨과 클리어 보상이 늘어납니다. 매주 클리어할 때마다 골드와 불과 얼음의 주화(토큰)를 받는 기본 클리어 보상이 있고, 이와 별개로 캐릭터당 한 번만 받는 최초 클리어 보상이 존재합니다.',
-                    '최초 클리어 보상에는 도약의 전설 카드 선택 팩 Ⅲ, 영웅 젬 선택 상자, 젬 가공 초기화권, 불과 얼음의 주화 100개가 공통으로 포함되며, 나이트메어를 처음 클리어하면 추가로 전설 칭호를 획득합니다. 1막 기간에는 "홍염의 군주", 2막 기간에는 "혹한의 군주" 칭호가 지급됩니다.',
+                    '카제로스 레이드 익스트림은 3막(심연의 징벌자, 모르둠)과 종막(대악마, 카제로스)이 각각 4주씩 순서대로 진행됩니다. 3막 익스트림은 9월 23일 정기 점검 이후부터 10월 21일 정기 점검 전까지, 종막 익스트림은 10월 21일 정기 점검 이후부터 11월 18일 정기 점검 전까지입니다. 두 막 모두 각 레이드의 최종 관문을 기반으로 만들어졌고, 노말·하드·나이트메어 세 난이도로 나뉩니다.',
+                    '입장 아이템 레벨은 노말 1730, 하드 1770, 나이트메어 1780입니다. 노말과 하드는 부활 규칙이 조정되어 횟수 제한 없이 부활하며 도전할 수 있고, 나이트메어는 기존과 같이 부활이 불가능합니다. 익스트림에서는 일부 패턴이 새로 등장하거나 기존 패턴에 변화가 더해지며, 종막은 반복되는 구간을 덜어내 전투가 더 빠르게 이어집니다.',
+                  ],
+                },
+                {
+                  heading: '난이도별 보상 정리',
+                  paragraphs: [
+                    '보상은 매주 원정대 단위로 1회 받는 클리어 보상과, 3막·종막을 각각 처음 클리어할 때 1회 받는 최초 클리어 보상으로 나뉩니다. 매주 클리어 보상은 골드와 전용 주화이며, 3막에서는 뇌전의 주화를, 종막에서는 빛과 어둠의 주화를 받습니다. 위 카드에서 난이도를 누르면 3막·종막을 나란히 놓고 볼 수 있습니다.',
+                    '최초 클리어 보상은 난이도와 관계없이 도약의 전설 카드 선택 팩 II 1개, 영웅 젬 선택 상자 1개, 혼돈의 주화 1개, 젬 가공 초기화권 1개, 그리고 그 막의 전용 주화 100개입니다. 여기에 나이트메어를 처음 클리어하면 전설 등급 칭호(3막 뇌전의 군주, 종막 파멸의 군주)와 특별 이모티콘, 20만 골드를 추가로 받고, 3막과 종막 나이트메어를 모두 클리어하면 심볼이 포함된 유물 등급 칭호까지 획득합니다.',
                   ],
                   bullets: [
-                    '노말(1720): 클리어 골드 20,000G, 토큰 150개',
-                    '하드(1750): 클리어 골드 45,000G, 토큰 200개',
-                    '나이트메어(1770): 클리어 골드 45,000G, 토큰 200개 + 전설 칭호',
+                    '노말(1730): 매주 20,000골드 + 주화 150개 — 8주 합계 160,000골드',
+                    '하드(1770): 매주 50,000골드 + 주화 200개 — 8주 합계 400,000골드',
+                    '나이트메어(1780): 매주 50,000골드 + 주화 200개, 막마다 칭호 보상 200,000골드 — 8주 합계 800,000골드',
                   ],
                 },
                 {
-                  heading: '토큰 상점 카테고리 이해하기',
+                  heading: '주화와 제작소',
                   paragraphs: [
-                    '불과 얼음의 주화 상점은 총 21개 교환 항목으로 구성되어 있으며, 항목마다 요구 아이템 레벨과 구매 제한이 다릅니다. 구매 제한은 크게 세 가지로 나뉘는데, "원정대 1회"는 원정대 전체 기준으로 평생 한 번만 살 수 있는 항목, "주간 N회"는 매주 초기화되어 다시 구매할 수 있는 항목, "제한 없음"은 토큰이 있는 한 계속 구매 가능한 항목입니다.',
-                    '항목은 성격에 따라 유물 전투 각인서, 지옥 열쇠, 영웅 젬(선택형·랜덤형), 야금술·재봉술 숙련도 재료, 어빌리티 스톤, 정령된 혼돈의 돌, 아비도스·상급 아비도스 융화재료, 운명의 파괴석·수호석(및 결정), 실링으로 구분됩니다. 선택형 상자(야금술·재봉술, 유물 각인서, 영웅 젬 선택 상자)는 여러 구성품 중 하나만 골라서 받는 방식이라 상황에 맞는 선택이 중요합니다.',
-                  ],
-                },
-                {
-                  heading: '효율 계산기로 이득 항목 비교하기',
-                  paragraphs: [
-                    '페이지의 토큰 상점 목록에서 항목을 클릭하면 우측에 상세 정보가 표시되며, 이때 계산되는 순골드 값은 해당 항목이 지급하는 재화의 실시간 거래소 시세 합산 값에서 구매에 필요한 골드 비용을 뺀 값입니다. 유물 각인서나 영웅 젬처럼 여러 종류 중 하나를 고르는 선택형 항목은 기본적으로 시세가 가장 높은 구성품이 자동으로 선택되어 계산되며, 목록에서 원하는 항목을 직접 클릭해 다른 조합으로 비교해볼 수도 있습니다.',
-                    '영웅 젬 상자(랜덤형)의 경우 6종 젬이 서로 다른 확률로 나오기 때문에, 각 젬의 시세에 확률을 곱해 더한 기댓값으로 가치를 계산합니다. 희귀 지옥 열쇠 Ⅲ 역시 지옥 50~59층대 보상의 평균 기댓값을 기준으로 골드 가치를 환산해 보여줍니다.',
+                    '뇌전의 주화와 빛과 어둠의 주화는 거래 불가·원정대 보관이며 2026년 11월 25일 06:00에 만료됩니다. 카제로스 익스트림 제작소에서 고대 코어 랜덤 상자, 유물 각인서 상자를 비롯해 각종 재련 재료와 젬 선택 상자, 지옥 열쇠 등을 제작하는 데 씁니다.',
+                    '공식 캡쳐에서 확인된 항목은 두 가지입니다. 3막의 고대 코어 랜덤 상자는 뇌전의 주화 100개와 50,000골드로 원정대 2회까지(아이템 레벨 1770 이상), 종막의 고대 코어 선택 상자는 혼돈의 주화 2개와 빛과 어둠의 주화 100개, 200,000골드로 원정대 1회(아이템 레벨 1780 이상) 제작할 수 있습니다. 혼돈의 주화는 3막과 종막 최초 클리어 때 1개씩만 나오므로, 선택 상자를 만들려면 두 막을 모두 클리어해야 합니다.',
                   ],
                 },
               ]}
               faqs={faqData}
             />
-
           </Col>
         </Row>
       </Container>

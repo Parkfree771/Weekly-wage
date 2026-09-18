@@ -87,12 +87,13 @@ const AD_ZOOM_COMPENSATE = 1 / DESKTOP_ZOOM;
 // 사이드 광고를 붙일 페이지 — 캐릭터 조회(자체 사이드바), 패키지 등록·수정(폼 화면, railsDisabled에서
 // 별도 제외), 직업 각인(전용 사이드바)만 빼고 대부분 페이지에 적용.
 // 이 목록에 없는 페이지는 데스크톱에서 광고가 아예 없다.
-// /extreme 은 3막·종막 출시 전 "COMING SOON" 화면이라 제외(제작 중 화면 광고 금지 정책) — 보상·상점 공개 후 다시 넣을 것.
+// /extreme 은 3막·종막 출시 전 "COMING SOON" 화면이라 빠져 있었다(제작 중 화면 광고 금지 정책) —
+// 2026-09-18 GM노트로 난이도별 보상·칭호·제작소가 공개돼 본문을 채우면서 다시 넣었다.
 const RAIL_PAGES = new Set([
   '/', '/refining', '/wangap', '/package',
   '/weekly-gold', '/life-master', '/mypage', '/more-reward',
   '/cathedral', '/cerka', '/belgardin', '/bracelet', '/hell-reward',
-  '/expedition-gold',
+  '/expedition-gold', '/extreme',
 ]);
 // 패키지 상세(/package/[postId])는 동적 라우트라 위 Set에 못 넣으므로 startsWith로 별도 포함
 // (등록·수정은 railsDisabled가 이미 따로 걸러냄). 아제나의 축복(/package/azena-blessing)도 여기 걸린다.

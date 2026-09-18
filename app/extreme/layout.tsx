@@ -3,16 +3,16 @@ import { SITE_URL, isNoindexed } from '@/lib/site-config'
 import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
-  title: '익스트림 3막·종막 (모르둠·카제로스) - 코밍순',
+  title: '익스트림 3막·종막 보상 정리 (모르둠·카제로스)',
 
-  description: '로스트아크 익스트림 레이드 3막(모르둠)·종막(카제로스) 코밍순 안내. 출시 예정일, 난이도별 보상, 토큰 상점 정보를 공개되는 대로 가장 빠르게 업데이트합니다.',
+  description: '로스트아크 카제로스 레이드 익스트림 3막(모르둠)·종막(카제로스) 난이도별 클리어 보상 정리. 노말·하드·나이트메어 골드와 전용 주화, 최초 클리어 보상, 나이트메어 칭호(뇌전의 군주·파멸의 군주)와 20만 골드, 주화 제작소까지.',
 
-  keywords: '익스트림, 익스트림 레이드, 익스트림 3막, 익스트림 종막, 익스트림 모르둠, 익스트림 카제로스, 모르둠, 카제로스, 카제로스 레이드, 카제로스 익스트림, 모르둠 익스트림, 익스트림 출시일, 익스트림 코밍순, 로스트아크 익스트림, 로아 익스트림',
+  keywords: '익스트림, 익스트림 레이드, 익스트림 3막, 익스트림 종막, 익스트림 모르둠, 익스트림 카제로스, 카제로스 익스트림, 모르둠 익스트림, 익스트림 보상, 익스트림 나이트메어, 뇌전의 군주, 파멸의 군주, 뇌전의 주화, 빛과 어둠의 주화, 혼돈의 주화, 카제로스 익스트림 제작소, 로스트아크 익스트림, 로아 익스트림',
 
   openGraph: {
-    images: ['/og-image.png'],
-    title: '로아로골 | 익스트림 3막·종막 (모르둠·카제로스)',
-    description: '익스트림 3막 모르둠·종막 카제로스 코밍순 — 출시 예정일과 보상 정보를 확인하세요.',
+    images: ['/extreme-mordum-kazeroth.webp'],
+    title: '로아로골 | 익스트림 3막·종막 보상 정리',
+    description: '모르둠·카제로스 익스트림 난이도별 골드·주화·최초 클리어 보상과 나이트메어 칭호 정리.',
     url: '/extreme',
     siteName: '로아로골',
     locale: 'ko_KR',
@@ -21,16 +21,15 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/extreme',
   },
-  // 출시(2026-09-23) 전까지 본문이 'COMING SOON' 뿐이라 색인에서 뺀다.
-  // follow 는 남겨 이 페이지가 거는 내부 링크는 그대로 전달한다.
+  // NOINDEX_PATHS(lib/site-config) 에 들어 있을 때만 noindex — 2026-09-18 보상 공개로 색인 복귀.
   robots: isNoindexed('/extreme') ? { index: false, follow: true } : undefined,
 }
 
 const webPageJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
-  name: '익스트림 3막·종막 (모르둠·카제로스) 코밍순',
-  description: '로스트아크 익스트림 레이드 3막(모르둠)·종막(카제로스) 코밍순 안내. 출시 예정일과 난이도별 보상 정보.',
+  name: '익스트림 3막·종막 보상 정리 (모르둠·카제로스)',
+  description: '카제로스 레이드 익스트림 3막·종막 난이도별 클리어 보상, 최초 클리어 보상, 나이트메어 칭호, 주화 제작소 정리.',
   url: `${SITE_URL}/extreme`,
   isPartOf: {
     '@type': 'WebSite',
