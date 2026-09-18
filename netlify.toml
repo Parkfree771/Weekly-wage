@@ -95,3 +95,64 @@
 # Durable Cache 비활성화 - 배포 시 이전 캐시가 남아 페이지 갱신 안 되는 문제 방지
 [context.production.environment]
   NETLIFY_PURGE_DURABLE_CACHE = "true"
+
+# ─── public/ 정적 파일 브라우저 캐시 (2026-09-18) ───
+# Netlify 는 public/ 파일을 CDN 에서 직접 내보내므로 next.config.js 의 headers() 가 여기엔 안 먹는다
+# (실측: /gold.webp 가 max-age=0 으로 나가 /package 방문마다 아이콘·로티 40여 건을 재검증했다).
+# 1시간으로 잡는다 — 이 사이트는 이미지를 같은 파일명으로 제자리 교체하는 일이 있어(2026-08-01 232개 등)
+# 길게 잡으면 바꾼 그림이 오래 안 보인다. 1시간이면 갤러리↔상세 왕복·재방문은 캐시로 끝나고,
+# 교체한 그림도 늦어야 1시간 뒤엔 보인다. 함수·HTML·API 응답에는 적용되지 않는다(Netlify 규칙).
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*.ico"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/lottie/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/icon-fill/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/class-icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/engravings/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/app-preview/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/cldgh/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"

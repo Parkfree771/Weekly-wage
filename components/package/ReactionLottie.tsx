@@ -2,9 +2,11 @@
 
 // 패키지 카드 반응 로티(쏘쏘·오) — "hover-pinch" 계열이라 첫 프레임이 정지 아이콘이고
 // 마우스를 올리거나 누르면 한 번 재생된다. FireLottie 와 같은 경량 빌드를 동적 로드한다.
-// JSON(/lottie/react-*.json)은 브라우저 캐시를 타므로 카드마다 띄워도 요청은 한 번이다.
+// JSON(/lottie/react-*.json)은 loadLottieData 가 경로당 한 번만 받는다 — 카드마다 띄워도 요청은 한 번이다.
+// (path 로 넘기면 인스턴스마다 XHR 이 따로 나가 카드 6장 = 12건이었다.)
 
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import { loadLottieData } from '@/lib/lottie-data';
 
 export type ReactionLottieHandle = { play: () => void };
 
@@ -33,14 +35,14 @@ const ReactionLottie = forwardRef<ReactionLottieHandle, Props>(function Reaction
 
   useEffect(() => {
     let cancelled = false;
-    import('lottie-web/build/player/lottie_light').then((mod) => {
+    Promise.all([import('lottie-web/build/player/lottie_light'), loadLottieData(path)]).then(([mod, animationData]) => {
       if (cancelled || !boxRef.current) return;
       const anim = mod.default.loadAnimation({
         container: boxRef.current,
         renderer: 'svg',
         loop,
         autoplay: loop,
-        path,
+        animationData,
       });
       animRef.current = anim;
       if (recolor || strokeScale !== 1) {
@@ -62,7 +64,8 @@ const ReactionLottie = forwardRef<ReactionLottieHandle, Props>(function Reaction
           });
         });
       }
-    });
+    // 받기 실패는 예전(path 방식의 XHR 실패)과 같이 조용히 넘긴다 — 아이콘 자리만 비고 버튼은 동작한다
+    }).catch(() => {});
     return () => {
       cancelled = true;
       animRef.current?.destroy();

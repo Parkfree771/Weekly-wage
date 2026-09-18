@@ -34,6 +34,9 @@ DB를 어디에 두는지, 네트리파이 함수 호출을 어떻게 줄이는�
 | POST | 캐시 불가 | view·react·feedback·revalidate | **요청 자체를 줄인다** (아래 3) |
 
 - 브라우저 쪽은 항상 `Cache-Control: public, max-age=0, must-revalidate` — 신선도 제어권은 CDN에만 둔다.
+- 예외: `public/` 정적 파일(아이콘 webp·로티 json 등)은 브라우저 `max-age=3600` — `netlify.toml [[headers]]`.
+  next.config `headers()` 는 public/ 에 안 먹는다(Netlify 가 CDN 에서 직접 서빙). 이미지를 같은 파일명으로
+  제자리 교체하는 관행이 있어 1시간보다 길게 잡지 않는다. (2026-09-18)
 - **TTL을 300 미만으로 줄이는 것 금지.** 신선도가 더 필요하면 TTL 단축이 아니라
   "쓰기 응답에 최신값 동봉 + 세션 캐시(package-stats-client)" 패턴을 쓴다 — 내 행동은 즉시 보이고,
   남의 행동은 최대 5분 늦게 보이는 게 이 사이트의 표준 신선도다.
@@ -96,4 +99,7 @@ TTL 300 은 그대로 두되, "따봉이 사라졌다 생기는" 문제는 캐�
 1. GET인가? → `Netlify-CDN-Cache-Control: public, durable, s-maxage=300+` 필수. 갱신이 이벤트성이면 태그 퍼지.
 2. POST인가? → 사용자 행동당 1회인지 확인. 페이지뷰당 자동 POST면 생략 조건(localStorage 등)을 먼저 설계.
 3. 같은 데이터를 보는 사람끼리 URL이 같은가? (파라미터 정렬 — package/stats의 ids 정렬 참고)
+   **쿼리 파라미터로 결과가 달라지면 `Netlify-Vary: query` 필수.** 없으면 Next 런타임 기본값
+   (`Netlify-Vary: query=__nextDataReq|_rsc`)이 적용돼 파라미터가 캐시 키에서 통째로 빠진다 — 어떤 값으로
+   물어도 먼저 캐시된 응답 하나가 TTL 동안 돌아온다. (package/stats 가 이 상태였다 — 2026-09-18 실측·수정)
 4. 위 3번 표에 한 줄 추가했는가?

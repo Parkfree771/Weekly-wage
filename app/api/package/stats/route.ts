@@ -33,6 +33,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(stats, {
       headers: {
         'Netlify-CDN-Cache-Control': `public, durable, s-maxage=${STATS_TTL_S}, stale-while-revalidate=${STATS_TTL_S * 3}`,
+        // 캐시 키에 ids 를 넣는다. 이게 없으면 Next 런타임 기본값(Netlify-Vary: query=__nextDataReq|_rsc)이
+        // 적용돼 ids 가 통째로 무시된다 — 어떤 ids 로 물어도 먼저 캐시된 응답 하나가 5분간 돌아왔다
+        // (2026-09-18 실측: 없는 ID 로 요청해도 400 대신 갤러리 20개짜리 응답). /api/lostark 와 같은 처리.
+        'Netlify-Vary': 'query',
         'Cache-Control': 'public, max-age=0, must-revalidate',
       },
     });

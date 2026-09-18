@@ -3,9 +3,11 @@
 // 스트릭 불꽃 로티(주황+빨강) 공용 아이콘 — "인기" 표시용.
 // 계속 반복하지 않는다 — 첫 프레임에 멈춰 있다가 이 아이콘이 붙은 링크/버튼(없으면 아이콘 자체)을 누르면 한 번 재생.
 // lottie_light(svg 렌더러 전용 경량 빌드)를 마운트 시점에만 동적 로드한다 —
-// JSON(/lottie/streak-fire.json)은 브라우저 캐시를 타므로 여러 개 띄워도 요청은 한 번이다.
+// JSON(/lottie/streak-fire.json)은 loadLottieData 가 한 번만 받는다 — 여러 개 띄워도 요청은 한 번이다.
+// (path 로 넘기면 인스턴스마다 XHR 이 따로 나가 네비+인기박스 = 2건이었다.)
 
 import { useEffect, useRef } from 'react';
+import { loadLottieData } from '@/lib/lottie-data';
 
 type Props = {
   size?: number;
@@ -24,16 +26,17 @@ export default function FireLottie({ size = 18, title, className }: Props) {
     const host: HTMLElement | null = ref.current?.closest('a, button') ?? ref.current;
     const play = () => anim?.goToAndPlay(0, true);
     host?.addEventListener('click', play);
-    import('lottie-web/build/player/lottie_light').then((mod) => {
+    Promise.all([import('lottie-web/build/player/lottie_light'), loadLottieData('/lottie/streak-fire.json')]).then(([mod, animationData]) => {
       if (cancelled || !ref.current) return;
       anim = mod.default.loadAnimation({
         container: ref.current,
         renderer: 'svg',
         loop: false,
         autoplay: false,
-        path: '/lottie/streak-fire.json',
+        animationData,
       });
-    });
+    // 받기 실패는 예전(path 방식의 XHR 실패)과 같이 조용히 넘긴다
+    }).catch(() => {});
     return () => {
       cancelled = true;
       host?.removeEventListener('click', play);

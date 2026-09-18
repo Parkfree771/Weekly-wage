@@ -539,7 +539,9 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
             </button>
             <PeonBasisButton active={noPeon} onChange={setNoPeon} />
             </div>
-            <Link href="/package/register" className={styles.registerLink}>
+            {/* prefetch 끔: 화면에 보이는 순간 세그먼트별로 6건이 나갔다(2026-09-18 실측).
+                등록은 로그인한 사람만 가끔 누르는 링크라 마우스를 올릴 때 받는 걸로 충분하다. */}
+            <Link href="/package/register" className={styles.registerLink} prefetch={false}>
               + 등록하기
             </Link>
           </div>

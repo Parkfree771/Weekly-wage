@@ -33,16 +33,19 @@ export default function Footer() {
               [데이터, 이미지 저작권] Smilegate RPG · 공식 서비스가 아닌 팬사이트입니다
             </p>
             {/* 셋째 줄: 링크들 */}
+            {/* prefetch 끔: 푸터가 화면에 들어오면 링크 5개를 세그먼트별로 미리 받아 한 페이지에
+                ~20건이 나갔다(2026-09-18 실측). 전부 CDN 히트라 비용은 없지만 거의 안 누르는 링크다.
+                끄면 마우스를 올릴 때만 받는다. */}
             <div className="footer-links">
-              <Link href="/about">사이트 소개</Link>
+              <Link href="/about" prefetch={false}>사이트 소개</Link>
               <span className="footer-divider">|</span>
-              <Link href="/guide">가이드</Link>
+              <Link href="/guide" prefetch={false}>가이드</Link>
               <span className="footer-divider">|</span>
-              <Link href="/app">앱 다운로드</Link>
+              <Link href="/app" prefetch={false}>앱 다운로드</Link>
               <span className="footer-divider">|</span>
-              <Link href="/privacy">개인정보처리방침</Link>
+              <Link href="/privacy" prefetch={false}>개인정보처리방침</Link>
               <span className="footer-divider">|</span>
-              <Link href="/terms">이용약관</Link>
+              <Link href="/terms" prefetch={false}>이용약관</Link>
               <span className="footer-divider">|</span>
               <InquiryButton className="footer-inquiry-link">문의하기</InquiryButton>
               <span className="footer-divider">|</span>
