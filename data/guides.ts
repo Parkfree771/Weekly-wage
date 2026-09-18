@@ -12,6 +12,24 @@ export interface Guide {
 
 export const guides: Guide[] = [
   {
+    slug: 'extreme-rewards',
+    title: '익스트림 3막·종막 난이도별 보상 총정리',
+    summary:
+      '9월 23일 시작하는 카제로스 레이드 3막·종막 익스트림의 난이도별 클리어 골드와 전용 주화, 최초 클리어 보상, 나이트메어 전설 칭호와 20만 골드를 표로 정리했습니다. 8주 총 수급량과 하드·나이트메어의 실제 차이까지 계산했습니다.',
+    category: '레이드',
+    date: '2026-09-18',
+    href: '/guide/extreme-rewards',
+  },
+  {
+    slug: 'extreme-coin-craft',
+    title: '익스트림 주화 3종과 카제로스 익스트림 제작소 정리',
+    summary:
+      '뇌전의 주화·빛과 어둠의 주화·혼돈의 주화를 어디서 몇 개 받는지와 고대 코어 랜덤 상자·선택 상자의 제작 비용, 난이도별 8주 주화 수급량과 제작 후 남는 양, 11월 25일 만료까지 정리했습니다.',
+    category: '레이드',
+    date: '2026-09-18',
+    href: '/guide/extreme-coin-craft',
+  },
+  {
     slug: 'wangap-20-25-cases',
     title: '완갑 +20에서 +25까지, 숨결·귀속 재료 상황별 강화 비용 정리',
     summary:
@@ -139,5 +157,13 @@ export const relatedPages: Guide[] = [
     category: '골드',
     date: '2026-07-18',
     href: '/more-reward',
+  },
+  {
+    slug: 'extreme-tool',
+    title: '익스트림 3막·종막 보상',
+    summary: '난이도를 눌러 3막·종막 클리어 보상과 최초 클리어 보상, 나이트메어 칭호를 비교하고 주화 제작소 비용까지 확인합니다.',
+    category: '레이드',
+    date: '2026-09-18',
+    href: '/extreme',
   },
 ];
