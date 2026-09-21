@@ -1327,11 +1327,9 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                 </div>
               </div>
 
-              {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
-                  같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
-              <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-                <AdBanner slot="8616653628" index={0} />
-              </div>
+              {/* 계산 결과 ↔ 아이템 구성 사이에는 광고를 두지 않는다 (2026-09-21).
+                  모바일에서 두 카드가 바로 이어지는 자리라 광고가 끼면 한 덩어리로 읽히던 계산
+                  흐름이 끊긴다. 이 자리 몫은 아이템 구성 아래 한 자리로 합쳤다. 다시 넣지 말 것. */}
 
               {/* PC 좌측 250×250 (모바일에서는 CSS 로 숨김) */}
               <SideSquareAd postId={postId} />
@@ -1548,10 +1546,15 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
           })()}
             </section>
 
-            {/* 모바일 띠배너 — 아이템 구성 아래 (index 1: 위 자리와 다른 단위) */}
-            <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-              <AdBanner slot="8616653628" index={1} />
-            </div>
+          </div>
+
+          {/* 아이템 구성 ↔ 다음 섹션 경계 (모바일 전용, index 1).
+              분할 그리드(.detailSplitRow) 안이 아니라 밖으로 뺀다 — 그리드 안에서는 갭(모바일 0.5rem)이
+              간격을 정해 버려서 광고가 위아래 카드에 바싹 붙는다. 밖으로 빼면 일반 블록 흐름이라
+              .detailAdSlot 의 마진(1.25rem)이 그대로 먹고, 갤러리 목록과 같은 20px 리듬이 된다.
+              세로 스택이라 화면상 위치는 그대로(아이템 구성 바로 아래)다. */}
+          <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.detailAdSlot}`}>
+            <AdBanner slot="8616653628" index={1} />
           </div>
 
           {/* 댓글 */}
@@ -1564,9 +1567,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             sosoCount={post.sosoCount || 0}
           />
 
-          <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-            <AdBanner slot="8616653628" />
-          </div>
+          {/* 댓글 아래에는 광고를 두지 않는다 (2026-09-21) — 글을 다 읽고 대화로 넘어간 자리라
+              광고가 대화 흐름을 끊고, 페이지 맨 끝이라 노출 대비 값도 낮다. */}
         </div>
       </Container>
     );
@@ -1710,11 +1712,9 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
               </div>
             </div>
 
-            {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
-                같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
-            <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-              <AdBanner slot="8616653628" index={0} />
-            </div>
+            {/* 계산 결과 ↔ 아이템 구성 사이에는 광고를 두지 않는다 (2026-09-21).
+                모바일에서 두 카드가 바로 이어지는 자리라 광고가 끼면 한 덩어리로 읽히던 계산
+                흐름이 끊긴다. 이 자리 몫은 아이템 구성 아래 한 자리로 합쳤다. 다시 넣지 말 것. */}
 
             {/* PC 좌측 250×250 (모바일에서는 CSS 로 숨김) */}
             <SideSquareAd postId={postId} />
@@ -2002,10 +2002,15 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             </div>
           </section>
 
-          {/* 모바일 띠배너 — 아이템 구성 아래 (index 1: 위 자리와 다른 단위) */}
-          <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-            <AdBanner slot="8616653628" index={1} />
-          </div>
+        </div>
+
+        {/* 아이템 구성 ↔ 다음 섹션 경계 (모바일 전용, index 1).
+            분할 그리드(.detailSplitRow) 안이 아니라 밖으로 뺀다 — 그리드 안에서는 갭(모바일 0.5rem)이
+            간격을 정해 버려서 광고가 위아래 카드에 바싹 붙는다. 밖으로 빼면 일반 블록 흐름이라
+            .detailAdSlot 의 마진(1.25rem)이 그대로 먹고, 갤러리 목록과 같은 20px 리듬이 된다.
+            세로 스택이라 화면상 위치는 그대로(아이템 구성 바로 아래)다. */}
+        <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.detailAdSlot}`}>
+          <AdBanner slot="8616653628" index={1} />
         </div>
 
         {/* 구성품 상세 — 젬 상자류·균열 환산 아이템(공명의 기운/휴게 물약)의 구성·계산 근거 (카드 안에 다 안 들어가는 정보를 여기에 풀어씀) */}
@@ -2352,7 +2357,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
         {/* 비중 섹션과 댓글 사이 — 데스크톱 728×90(공용 단위 galleryBottomDesktop 재사용, 이 페이지의
             유일한 가로 자리라 한 페이지 한 단위 원칙에 어긋나지 않는다) + 모바일 320×50 세 번째 띠(index 2) */}
         <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
-        <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
+        <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.detailAdSlot}`}>
           <AdBanner slot="8616653628" index={2} />
         </div>
 
@@ -2368,10 +2373,8 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
           />
         )}
 
-        {/* 모바일 하단 광고 */}
-        <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-          <AdBanner slot="8616653628" />
-        </div>
+        {/* 댓글 아래에는 광고를 두지 않는다 (2026-09-21) — 글을 다 읽고 대화로 넘어간 자리라
+            광고가 대화 흐름을 끊고, 페이지 맨 끝이라 노출 대비 값도 낮다. */}
       </div>
     </Container>
   );
