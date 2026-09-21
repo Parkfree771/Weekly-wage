@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import styles from './belgardin.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
+import BelgardinGuideBody from '@/components/guide/BelgardinGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
 import { RAID_TABLE } from '@/data/rewardTable';
@@ -858,6 +859,7 @@ export default function BelgardinPage() {
             <GuideFaq
               relatedGuides={['/guide/belgardin-rewards', '/guide/wangap-upgrade-schedule', '/guide/raid-rewards']}
               guideTitle="벨가르딘 이용 가이드"
+              article={<BelgardinGuideBody />}
               sections={[
                 {
                   heading: '벨가르딘 보상 정보 — 출시 확정치 반영',

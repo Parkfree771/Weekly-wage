@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import styles from '../cathedral/cathedral.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
+import CerkaGuideBody from '@/components/guide/CerkaGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
 import { RAID_TABLE } from '@/data/rewardTable';
@@ -1033,6 +1034,7 @@ export default function CerkaPage() {
             <GuideFaq
               relatedGuides={['/guide/raid-rewards']}
               guideTitle="세르카 이용 가이드"
+              article={<CerkaGuideBody />}
               sections={[
                 {
                   heading: '난이도 3단계 구조와 보상 차이',

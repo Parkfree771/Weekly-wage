@@ -16,6 +16,7 @@ import {
 } from '@/lib/braceletData';
 import styles from './bracelet.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
+import BraceletGuideBody from '@/components/guide/BraceletGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
 import { faqData } from './faq-data';
 
@@ -448,6 +449,7 @@ export default function BraceletPage() {
 
         <GuideFaq
           guideTitle="팔찌 부여효과 이용 가이드"
+          article={<BraceletGuideBody />}
           sections={[
             {
               heading: '팔찌 부여효과란',

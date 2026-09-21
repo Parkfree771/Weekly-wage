@@ -7,6 +7,7 @@ import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
 import GuideFaq from '@/components/common/GuideFaq';
+import ExpeditionGoldGuideBody from '@/components/guide/ExpeditionGoldGuideBody';
 import { faqData } from './faq-data';
 // 제목·검색창·카드 톤을 주간 골드 페이지와 동일하게 맞춘다 (같은 래퍼 스타일 재사용).
 import styles from '@/app/weekly-gold/weekly-gold.module.css';
@@ -177,6 +178,7 @@ export default function ExpeditionGoldPage() {
             <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
               <GuideFaq
                 relatedGuides={['/weekly-gold', '/guide/raid-rewards']}
+                article={<ExpeditionGoldGuideBody />}
                 sections={expeditionGoldGuideSections}
                 faqs={faqData}
               />
