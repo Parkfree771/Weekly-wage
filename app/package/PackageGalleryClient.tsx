@@ -51,6 +51,11 @@ const PAGE_SIZE = 6;
 // 단위가 모자란 자리는 AdBanner 가 스스로 렌더를 건너뛴다.
 const AD_AFTER_CARD_INDEX = [1, 3, 5];
 
+// 데스크톱 갤러리 그리드 안 광고 — "이 인덱스의 카드 뒤" 한 곳에만 전체폭 줄로 들어간다.
+// 데스크톱은 2열 고정이라 카드 2개가 한 줄이고, 3 = 둘째 줄(카드 3·4) 뒤 = 패키지 4개를 지난 자리다.
+// 하나만 두는 이유는 동시 게재 상한(4개) 때문 — 좌·우 레일과 하단 300×250 을 합치면 딱 4개다.
+const DESKTOP_AD_AFTER_CARD_INDEX = 3;
+
 // 페이지 번호 목록 — 많아지면 [1 … 4 5 6 … 20] 처럼 현재 페이지 주변만 남기고 접는다
 function buildPageList(current: number, total: number): (number | 'gap')[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -581,6 +586,12 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                   // 마지막 카드 뒤에는 붙이지 않는다.
                   const adSlotIndex = AD_AFTER_CARD_INDEX.indexOf(index);
                   const showAd = adSlotIndex !== -1 && index < pagedPosts.length - 1;
+                  const showDesktopGridAd =
+                    index === DESKTOP_AD_AFTER_CARD_INDEX &&
+                    index < pagedPosts.length - 1 &&
+                    isMobileMd === false &&
+                    ADFIT_ENABLED &&
+                    !!ADFIT_UNITS.galleryBottomDesktop.unit;
                   return (
                     <React.Fragment key={post.id}>
                       <PackageGalleryCard
@@ -595,6 +606,24 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                       {showAd && (
                         <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.betweenCardsAd}`}>
                           <AdBanner slot="8616653628" index={adSlotIndex} />
+                        </div>
+                      )}
+                      {/* 데스크톱 전용(d-md-block) — 패키지 4개(2줄) 뒤 전체폭 가로 배너.
+                          전체폭 1400px 띠라 가로로 긴 728×90 이 맞는다. 정사각형에 가까운 규격은
+                          양옆이 550px 씩 비어 붕 뜨고 세로만 250px 잡아먹는다.
+                          d-none 으로 숨겨도 모바일에서 마운트·광고 요청은 나가므로
+                          뷰포트(≥768)가 확인될 때만 렌더한다. key={page}: 페이지마다 새 광고. */}
+                      {showDesktopGridAd && (
+                        <div
+                          className={`d-none d-md-block ${styles.inGridAdSlot}`}
+                          style={{ minHeight: ADFIT_UNITS.galleryBottomDesktop.height }}
+                        >
+                          <AdFitUnit
+                            key={`ad-ingrid-${curPage}`}
+                            unit={ADFIT_UNITS.galleryBottomDesktop.unit}
+                            width={ADFIT_UNITS.galleryBottomDesktop.width}
+                            height={ADFIT_UNITS.galleryBottomDesktop.height}
+                          />
                         </div>
                       )}
                     </React.Fragment>
@@ -681,16 +710,21 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
               <AdBanner slot="8616653628" />
             </div>
 
-            {/* 데스크톱 — 페이지 버튼 아래 728×90 가로 배너 (모바일은 위 320×100 이 담당).
+            {/* 데스크톱 — 페이지 버튼 아래 300×250 (모바일은 위 320×100 이 담당).
+                728×90 은 위 그리드 줄로 올라갔다. 같은 단위를 한 페이지에 두 번 넣으면
+                애드핏이 첫 자리만 채우므로 여기는 다른 단위·다른 규격이어야 한다.
                 단위 미발급 동안(unit 빈 문자열) 자리째 렌더하지 않는다. key={page}: 페이지마다 새 광고.
                 d-md-block 으로 숨겨도 모바일에서 마운트·요청은 나가므로 뷰포트(≥768)가 확인될 때만 렌더 */}
-            {ADFIT_ENABLED && ADFIT_UNITS.galleryBottomDesktop.unit && isMobileMd === false && (
-              <div className={`d-none d-md-block ${styles.desktopAdSlot}`}>
+            {ADFIT_ENABLED && ADFIT_UNITS.packageGalleryBottomSquare.unit && isMobileMd === false && (
+              <div
+                className={`d-none d-md-block ${styles.desktopAdSlot}`}
+                style={{ minHeight: ADFIT_UNITS.packageGalleryBottomSquare.height }}
+              >
                 <AdFitUnit
                   key={`ad-bottom-desktop-${curPage}`}
-                  unit={ADFIT_UNITS.galleryBottomDesktop.unit}
-                  width={ADFIT_UNITS.galleryBottomDesktop.width}
-                  height={ADFIT_UNITS.galleryBottomDesktop.height}
+                  unit={ADFIT_UNITS.packageGalleryBottomSquare.unit}
+                  width={ADFIT_UNITS.packageGalleryBottomSquare.width}
+                  height={ADFIT_UNITS.packageGalleryBottomSquare.height}
                 />
               </div>
             )}

@@ -48,21 +48,33 @@ export const ADFIT_UNITS = {
   // (홈·계산기류 본문, 패키지 갤러리 페이지 버튼 아래 등. 페이지당 한 번만 불러야 한다).
   // 한 페이지에 광고가 여러 개인 자리는 320×50 띠배너 ADFIT_INCONTENT_UNITS 를 index 로 받는다.
   mobileInContent: { unit: 'DAN-bo9jwUZBhdAH4HWn', width: 320, height: 100 },
-  // 모바일 햄버거 드로어용으로 발급했지만 현재 렌더하는 곳 없음(미사용).
-  // 갤러리가 동시 게재 4개(정책 상한)를 꽉 채워서, 이 단위를 살리려면 다른 광고를 빼야 한다.
-  mobileDrawer: { unit: 'DAN-5AUDzC6VzTXU6X8H', width: 320, height: 100 },
+  // 모바일 햄버거 드로어 자리 — 비워 둔다 (현재 드로어 광고를 렌더하는 곳이 없다).
+  //
+  // 여기 있던 DAN-5AUDzC6VzTXU6X8H(320×100)를 2026-09-21 에 패키지 갤러리 첫 인-콘텐츠로
+  // 재활용했더니 그 자리만 광고가 안 채워졌다. 같은 페이지의 나머지 세 자리는 전부 정상이었고
+  // 코드 경로도 자리마다 같으므로, 발급만 해 두고 한 번도 노출된 적 없던 그 단위 자체 문제로 보고
+  // 새 단위(DAN-HcRDLCdAdQSBLtJP)로 교체했다.
+  // → 쓰지 않고 묵혀 둔 단위를 다른 자리에 돌려쓰지 말 것. 자리를 늘릴 땐 새로 발급하는 편이 빠르다.
+  mobileDrawer: { unit: '', width: 320, height: 100 },
   sidebarLeft: { unit: 'DAN-LhB3sf1lcaZ0pCFD', width: 160, height: 600 },     // PC 레일 좌
   sidebarRight: { unit: 'DAN-cf5UrXPfQYUZYdhv', width: 160, height: 600 },    // PC 레일 우
   // 패키지 상세 PC 좌측 칼럼(340px) — 계산 결과 카드 아래 남는 공간. 모바일에서는 렌더하지 않는다.
   packageDetailSquare: { unit: 'DAN-9tfnO1mRCb1HDe0S', width: 250, height: 250 },
-  // 데스크톱 728×90 가로 배너 "목표 아래" 공용 — 패키지 갤러리(페이지 버튼 아래) ·
+  // 데스크톱 728×90 가로 배너 "목표 아래" 공용 — 패키지 갤러리(그리드 첫 줄 뒤 전체폭) ·
   // 재련 평균 시뮬(목표 카드 아래) · 완갑 평균 시뮬(여정 카드 아래) ·
-  // 더보기 효율(두 섹션 카드 사이).
-  // 페이지가 달라 같은 단위를 써도 되지만 리포트는 네 자리 합산으로 나온다.
+  // 더보기 효율(두 섹션 카드 사이) · 홈 · 마이페이지 · 패키지 상세.
+  // 페이지가 달라 같은 단위를 써도 되지만 리포트는 전 자리 합산으로 나온다.
   galleryBottomDesktop: { unit: 'DAN-Lhv3yJ7AdoJ1LBwZ', width: 728, height: 90 },
   // 데스크톱 728×90 "결과 아래" 공용 — 재련·완갑 평균 시뮬의 예상 소모 재료 카드 아래.
   // 같은 페이지의 목표 아래 자리와 함께 나가므로 별도 단위다 (같은 단위 반복이면 첫 자리만 채워짐).
   refiningResultDesktop: { unit: 'DAN-XWlARWwdT4rTl87p', width: 728, height: 90 },
+  // 패키지 갤러리 데스크톱 "페이저 아래" 300×250.
+  // 원래 이 자리에 728×90 이 있었는데, 그리드 안 줄 자리(전체폭 1400px)에 728×90 을 올리면서
+  // 자리를 맞바꿨다 — 같은 단위를 한 페이지에 두 번 넣으면 애드핏이 첫 자리만 채우기 때문이다.
+  // 정사각형에 가까운 규격은 전체폭 띠 한가운데에서는 양옆이 크게 비어 붕 뜨지만,
+  // 페이지 맨 아래에서는 밀려날 콘텐츠가 가이드 본문뿐이라 세로 250px 을 감당할 수 있다.
+  // 소재 새로고침 미설정 — 페이지 버튼을 누를 때마다 key 가 바뀌어 이미 새 광고를 받는다.
+  packageGalleryBottomSquare: { unit: 'DAN-kyVf0sEBwSwVTHcy', width: 300, height: 250 },
 };
 
 // 한 페이지에 인-콘텐츠 광고가 여러 번 들어가는 자리(패키지 갤러리: 카드 2개마다 1개)용.
@@ -84,8 +96,17 @@ export const ADFIT_UNITS = {
 // MOBILE_AD_ZOOM_COMPENSATE 역보정은 그대로 둘 것. 모바일 뷰포트가 0.8 로 축소 렌더돼서
 // 빼면 320×50 이 화면에서 256×40 으로 나간다
 // (2026-07-28 애드핏 심사 보류 사유가 정확히 이것 — 320×100 이 256×80 으로 나갔다).
+//
+// 목표 규격은 세 자리 모두 320×100 이다 (2026-09-21 결정 — 자리마다 두께가 다르면
+// 스크롤하며 카드를 비교할 때 리듬이 흔들린다). width/height 는 애드핏 콘솔에 등록된
+// 규격을 그대로 적는 값이라, 여기 숫자만 100 으로 바꾸면 규격 불일치로 광고가 안 채워진다.
+// 반드시 320×100 으로 발급한 단위 ID 로 교체할 것.
+//
+// 2026-09-21: 세 자리 모두 320×100 으로 통일 완료.
+// 자리를 내준 구 320×50 단위(DAN-Dh2QTY00kZEzZjcQ · DAN-gceZS4W9pO1EXNBI ·
+// DAN-4kNsokjK16GLvNCx)는 유휴 상태다 — 다시 쓸 일이 없으면 콘솔에서 정리할 것.
 export const ADFIT_INCONTENT_UNITS = [
-  { unit: 'DAN-Dh2QTY00kZEzZjcQ', width: 320, height: 50 },
-  { unit: 'DAN-gceZS4W9pO1EXNBI', width: 320, height: 50 },
-  { unit: 'DAN-4kNsokjK16GLvNCx', width: 320, height: 50 },
+  { unit: 'DAN-HcRDLCdAdQSBLtJP', width: 320, height: 100 },
+  { unit: 'DAN-8VBNfDsX666bO2Kg', width: 320, height: 100 },
+  { unit: 'DAN-sM9Xq1pUGzV8YekD', width: 320, height: 100 },
 ];
