@@ -25,6 +25,7 @@ import { isSaleEnded } from '@/lib/package-sale';
 import type { PackagePost } from '@/types/package';
 import AdBanner from '@/components/ads/AdBanner';
 import AdFitUnit from '@/components/ads/AdFitUnit';
+import NewLottie from '@/components/NewLottie';
 import useIsMobileViewport from '@/components/ads/useIsMobileViewport';
 import { LEFT_RAIL_SLOT_ID } from '@/components/ads/AdLayout';
 import { ADFIT_ENABLED, ADFIT_UNITS } from '@/components/ads/adConfig';
@@ -386,7 +387,16 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
         {liveError && <div className={styles.liveToast} role="status">{liveError}</div>}
         <div className={styles.pageHeader}>
           {/* h1·소제목이 검색어를 그대로 담는다 — 메타데이터만으로는 온페이지 신호가 비어 있었다 */}
-          <h1 className={styles.pageTitle}>로아 패키지 효율</h1>
+          {/* 제목 옆 "새로 등장" 로티 — /extreme·/refining 과 같은 처리.
+              inline-flex 는 이 h1 에만 인라인으로 준다 — .pageTitle 은 등록·수정 페이지와 공용이다.
+              부모(.pageHeader)가 text-align:center 라 인라인 박스가 그대로 가운데 온다. */}
+          <h1
+            className={styles.pageTitle}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+          >
+            로아 패키지 효율
+            <NewLottie size={30} />
+          </h1>
           <p className={styles.pageSubtitle}>
             실시간 시세로 계산하는 로스트아크 패키지 효율
           </p>

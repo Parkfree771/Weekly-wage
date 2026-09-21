@@ -14,6 +14,7 @@ import { parseCombatPowerBase, type CombatPowerBase } from '@/lib/combatPower';
 import dynamic from 'next/dynamic';
 import AdBanner from '@/components/ads/AdBanner';
 import GuideFaq from '@/components/common/GuideFaq';
+import NewLottie from '@/components/NewLottie';
 import RefiningGuideBody from '@/components/guide/RefiningGuideBody';
 import { faqData } from './faq-data';
 import styles from './refining.module.css';
@@ -265,16 +266,22 @@ export default function RefiningPage() {
           <Col xl={12} lg={12} md={12}>
             {/* 간소화된 헤더 */}
             <div className="text-center mb-2" style={{ marginTop: 0 }}>
+              {/* 제목 옆 "새로 등장" 로티 — /extreme·/package 와 같은 처리.
+                  부모가 text-center 라 inline-flex 로 두면 그대로 가운데 온다. */}
               <h1
                 style={{
                   fontSize: 'clamp(1.3rem, 3vw, 1.6rem)',
                   fontWeight: 700,
                   color: 'var(--text-primary)',
                   marginTop: 0,
-                  marginBottom: '0.85rem'
+                  marginBottom: '0.85rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
                 }}
               >
                 재련 시뮬레이터
+                <NewLottie size={30} />
               </h1>
             </div>
 

@@ -1,12 +1,12 @@
 'use client';
 
-// "인기 페이지" 바로가기 카드 — 순위 배지 + 불꽃 로티.
+// "인기 페이지" 바로가기 카드 — 순위 배지.
+// 제목 옆 불꽃 로티는 2026-09-21 에 뺐다 (로티는 NewLottie 하나로 통일).
 // 모바일 드로어(햄버거 메뉴)의 인기 섹션에서 쓴다.
 // (데스크톱 왼쪽 레일에도 잠깐 있었지만 상단 네비 불꽃 배지로 대체되어 빠졌다)
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import FireLottie from './FireLottie';
 import styles from './PopularPagesBox.module.css';
 
 const POPULAR_PAGES = [
@@ -22,10 +22,7 @@ export default function PopularPagesBox({ onNavigate }: { onNavigate?: () => voi
 
   return (
     <nav className={styles.card} aria-label="인기 페이지 바로가기">
-      <div className={styles.title}>
-        <FireLottie size={38} className={styles.titleIcon} />
-        인기 페이지
-      </div>
+      <div className={styles.title}>인기 페이지</div>
       {POPULAR_PAGES.map((p, i) => {
         const active = pathname === p.href || pathname.startsWith(`${p.href}/`);
         return (

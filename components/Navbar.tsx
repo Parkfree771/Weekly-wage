@@ -11,7 +11,6 @@ import ZoomControl from './ZoomControl';
 import InquiryButton from './InquiryButton';
 import AppSidebarPromo from './AppSidebarPromo';
 import PopularPagesBox from './PopularPagesBox';
-import FireLottie from './FireLottie';
 import NewLottie from './NewLottie';
 import { NAV_HIDDEN_PATHS } from '@/lib/site-config';
 
@@ -20,7 +19,6 @@ type NavItem = {
   label: string;
   badge?: string;
   badgeClass?: string; // 전용 배지 스타일 (미지정 시 badge 텍스트 기준 기본 스타일)
-  popular?: boolean;   // 인기 페이지 — 라벨 옆에 불꽃 로티 표시 (호버 시 "인기 페이지" 툴팁)
   isNew?: boolean;     // 새로 등장 — 라벨 옆에 새 불꽃 로티 표시. 콘텐츠가 자리잡으면 이 줄만 지운다
 };
 
@@ -38,7 +36,7 @@ const NAV_GROUPS: NavGroup[] = [
     colorClass: 'nav-weekly',
     items: [
       { href: '/life-master', label: '생활 제작' },
-      { href: '/package', label: '패키지 효율', popular: true },
+      { href: '/package', label: '패키지 효율', isNew: true },
       { href: '/more-reward', label: '더보기 효율 & 레이드 보상 정리' },
       { href: '/hell-reward', label: '지옥 보상' },
     ],
@@ -58,7 +56,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: '시뮬',
     colorClass: 'nav-refining',
     items: [
-      { href: '/refining', label: '재련 시뮬', popular: true },
+      { href: '/refining', label: '재련 시뮬', isNew: true },
       { href: '/wangap', label: '완갑 시뮬' },
       { href: '/bracelet', label: '팔찌 시뮬' },
       { href: '/expedition-gold', label: '원정대 수급 골드 시뮬' },
@@ -228,7 +226,6 @@ export default function Navbar() {
                     >
                       {item.label}
                       {item.badge && <span className={badgeClass(item.badge, item.badgeClass)}>{item.badge}</span>}
-                      {item.popular && <FireLottie size={26} title="인기 페이지" className="ms-1" />}
                       {item.isNew && <NewLottie size={26} className="ms-1" />}
                     </Link>
                   ))}
@@ -442,7 +439,6 @@ export default function Navbar() {
                         >
                           {item.label}
                           {item.badge && <span className={badgeClass(item.badge, item.badgeClass)}>{item.badge}</span>}
-                          {item.popular && <FireLottie size={28} title="인기 페이지" className="ms-1" />}
                           {item.isNew && <NewLottie size={28} className="ms-1" />}
                         </Link>
                       ))}

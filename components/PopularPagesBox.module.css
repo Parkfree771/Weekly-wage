@@ -35,11 +35,6 @@
   margin-bottom: 0.35rem;
 }
 
-/* 로티 불꽃 컨테이너 — 크기는 FireLottie 가 인라인으로 잡는다 */
-.titleIcon {
-  flex-shrink: 0;
-}
-
 .link {
   display: flex;
   align-items: center;
