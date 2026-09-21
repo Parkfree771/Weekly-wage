@@ -12,6 +12,7 @@ import InquiryButton from './InquiryButton';
 import AppSidebarPromo from './AppSidebarPromo';
 import PopularPagesBox from './PopularPagesBox';
 import FireLottie from './FireLottie';
+import NewLottie from './NewLottie';
 import { NAV_HIDDEN_PATHS } from '@/lib/site-config';
 
 type NavItem = {
@@ -20,6 +21,7 @@ type NavItem = {
   badge?: string;
   badgeClass?: string; // 전용 배지 스타일 (미지정 시 badge 텍스트 기준 기본 스타일)
   popular?: boolean;   // 인기 페이지 — 라벨 옆에 불꽃 로티 표시 (호버 시 "인기 페이지" 툴팁)
+  isNew?: boolean;     // 새로 등장 — 라벨 옆에 새 불꽃 로티 표시. 콘텐츠가 자리잡으면 이 줄만 지운다
 };
 
 type NavGroup = {
@@ -48,7 +50,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/weekly-gold', label: '주간 레이드' },
       { href: '/cathedral', label: '지평의 성당' },
       { href: '/cerka', label: '세르카' },
-      { href: '/extreme', label: '익스트림' },
+      { href: '/extreme', label: '익스트림', isNew: true },
       { href: '/belgardin', label: '벨가르딘' },
     ],
   },
@@ -107,6 +109,10 @@ export default function Navbar() {
   const getGroupBadge = (group: NavGroup) => {
     return group.items.find(item => item.badge);
   };
+
+  // 새 항목이 하나라도 있으면 그룹 이름(드롭다운 트리거)에도 불꽃을 단다 —
+  // 드롭다운을 열어야만 보이면 새로 생긴 걸 알 수가 없다.
+  const hasNewItem = (group: NavGroup) => group.items.some((item) => item.isNew);
 
   // 항목 전용 스타일(badgeClass) 우선, 없으면 BETA 전용 / 기본(NEW 등) 스타일
   const badgeClass = (badge: string, custom?: string) =>
@@ -203,6 +209,7 @@ export default function Navbar() {
                 >
                   {group.label}
                   {(() => { const b = getGroupBadge(group); return b?.badge ? <span className={badgeClass(b.badge, b.badgeClass)}>{b.badge}</span> : null; })()}
+                  {hasNewItem(group) && <NewLottie size={24} className="ms-1" />}
                   <svg width="10" height="10" viewBox="0 0 10 10" style={{ marginLeft: '4px', opacity: 0.6 }}>
                     <path d="M2 4L5 7L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -222,6 +229,7 @@ export default function Navbar() {
                       {item.label}
                       {item.badge && <span className={badgeClass(item.badge, item.badgeClass)}>{item.badge}</span>}
                       {item.popular && <FireLottie size={26} title="인기 페이지" className="ms-1" />}
+                      {item.isNew && <NewLottie size={26} className="ms-1" />}
                     </Link>
                   ))}
                 </div>
@@ -404,6 +412,7 @@ export default function Navbar() {
                     <span className="navbar-offcanvas-trigger-label">
                       {group.label}
                       {(() => { const b = getGroupBadge(group); return b?.badge ? <span className={badgeClass(b.badge, b.badgeClass)}>{b.badge}</span> : null; })()}
+                      {hasNewItem(group) && <NewLottie size={26} className="ms-1" />}
                     </span>
                     <svg
                       className={`navbar-offcanvas-chevron ${openMobileGroup === group.label ? 'open' : ''}`}
@@ -434,6 +443,7 @@ export default function Navbar() {
                           {item.label}
                           {item.badge && <span className={badgeClass(item.badge, item.badgeClass)}>{item.badge}</span>}
                           {item.popular && <FireLottie size={28} title="인기 페이지" className="ms-1" />}
+                          {item.isNew && <NewLottie size={28} className="ms-1" />}
                         </Link>
                       ))}
                     </div>

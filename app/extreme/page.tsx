@@ -6,6 +6,7 @@ import { Container, Row, Col, Card } from 'react-bootstrap';
 import styles from '../cathedral/cathedral.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
+import NewLottie from '@/components/NewLottie';
 import { faqData } from './faq-data';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -156,9 +157,13 @@ export default function ExtremePage() {
                 fontWeight: 700,
                 color: 'var(--text-primary)',
                 marginTop: 0,
-                marginBottom: '0.5rem'
+                marginBottom: '0.5rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
               }}>
                 익스트림
+                <NewLottie size={30} />
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 3막 모르둠 · 종막 카제로스 난이도별 클리어 보상과 제작소 — {ACTS[0].period.split(' 점검')[0]} ~ {ACTS[1].period.split(' ~ ')[1].split(' 점검')[0]}
