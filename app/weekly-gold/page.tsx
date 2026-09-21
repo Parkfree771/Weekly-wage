@@ -6,6 +6,8 @@ import { Container, Row, Col } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import type { CharacterGoldCalc } from '@/components/RaidCalculator';
 import GuideFaq from '@/components/common/GuideFaq';
 import WeeklyGoldGuideBody from '@/components/guide/WeeklyGoldGuideBody';
@@ -186,10 +188,11 @@ export default function WeeklyGoldPage() {
                 </div>
               )}
 
-              {/* 모바일 익스트림 홍보 + 광고 */}
+              {/* 주급 계산 결과 ↔ 더보기 손익 경계 광고 */}
               <div className="d-block d-lg-none my-3">
                 <AdBanner slot="8616653628" />
               </div>
+              <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
 
               {/* 더보기 손익 계산 섹션 (de-box, 주간 레이드와 너비 1180px 통일) */}
               <div style={{ maxWidth: '1180px', margin: 'clamp(2.5rem, 5vw, 3.5rem) auto 0' }}>
@@ -201,6 +204,13 @@ export default function WeeklyGoldPage() {
                 <SeeMoreCalculator />
               </div>
 
+              {/* 더보기 손익 ↔ 가이드 경계 광고 — 계산을 다 끝내고 읽을거리로 넘어가는 자리.
+                  위 자리와 반드시 다른 단위여야 한다 (같은 단위면 애드핏이 첫 자리만 채운다) */}
+              <div className="d-block d-lg-none my-3">
+                <AdBanner slot="8616653628" index={0} />
+              </div>
+              <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
+
               <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
                 <GuideFaq
                   relatedGuides={['/guide/raid-rewards', '/more-reward']}
@@ -208,6 +218,11 @@ export default function WeeklyGoldPage() {
                   sections={weeklyGoldGuideSections}
                   faqs={faqData}
                 />
+              </div>
+
+              {/* 페이지 최하단 — 가이드·FAQ 를 다 읽고 내려온 자리(세 번째 모바일 단위) */}
+              <div className="d-block d-lg-none mt-3">
+                <AdBanner slot="8616653628" index={1} />
               </div>
             </PriceProvider>
 

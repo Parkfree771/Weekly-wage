@@ -4,6 +4,9 @@ import { Container, Row, Col } from 'react-bootstrap';
 import LifeCraftCalculator from '@/components/life-master/LifeCraftCalculator';
 import GuideFaq from '@/components/common/GuideFaq';
 import LifeContentGuideBody from '@/components/guide/LifeContentGuideBody';
+import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import { faqData } from './faq-data';
 
 export default function LifeMasterPage() {
@@ -34,6 +37,14 @@ export default function LifeMasterPage() {
 
             {/* 컨텐츠 */}
             <LifeCraftCalculator />
+
+            {/* 계산기 ↔ 가이드 경계 광고 — 손익을 다 본 뒤 읽을거리로 넘어가는 자리.
+                LifeCraftCalculator 안쪽 자리가 index 없는 단일 단위를 쓰므로 여기는 index 0 이어야 한다
+                (같은 단위를 한 페이지에 두 번 넣으면 애드핏이 첫 자리만 채운다). */}
+            <div className="d-block d-lg-none my-3">
+              <AdBanner slot="8616653628" index={0} />
+            </div>
+            <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
 
             {/* 이용 가이드 + FAQ */}
             <GuideFaq
@@ -76,6 +87,12 @@ export default function LifeMasterPage() {
               ]}
               faqs={faqData}
             />
+
+            {/* 페이지 최하단 — 가이드·FAQ 를 다 읽고 내려온 자리(세 번째 모바일 단위) */}
+            <div className="d-block d-lg-none mt-3">
+              <AdBanner slot="8616653628" index={1} />
+            </div>
+            <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
           </Col>
         </Row>
 

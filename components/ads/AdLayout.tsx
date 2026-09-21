@@ -65,6 +65,15 @@ function getPageConfig(pathname: string): PageConfig {
   if (pathname === '/package') return { contentWidth: 1400, adTop: 290, appPromoTop: 8 };
   // adTop 250 = "더보기 손익 계산" 헤더와 나란히(87은 한참 부족했음 — 코드 추정이 실제보다 많이 작았음).
   if (pathname === '/more-reward') return { contentWidth: 1100, adTop: 250 };
+  // /engraving 은 자체 사이드바(유각 겹침 순위 + 정정 요청, 250px)를 본문 폭 안쪽 칸으로 들여
+  // 쓴다(page.module.css 의 .results 2칸 그리드). 그래서 본문 덩어리 = .wrap 1406px 이 전부이고
+  // 바깥으로 삐져나오는 게 없다 → main 이 1406 만 품으면 레일과 절대 안 겹친다.
+  //   main = contentWidth + AD_EXTRA(456) − 레일 실점유((220+26)×2 = 492) = contentWidth − 36
+  //   → contentWidth ≥ 1442. 여유 8px 을 얹어 1450.
+  // 사이드바를 다시 본문 바깥 절대배치로 되돌리면 그만큼(250×2) 더 키워야 한다 — 레일 노출 기준이
+  // innerWidth 1620px 에서 1824px 로 올라가고, 본문이 왼쪽으로 치우쳐 보인다. 되돌리지 말 것.
+  // adTop 400 = 검색·필터·각인 칩 목록을 지나 결과 그리드(.results) 상단 — 페이지 자체 사이드바와 같은 높이.
+  if (pathname === '/engraving') return { contentWidth: 1450, adTop: 400 };
   return { contentWidth: 1400, adTop: 60 };
 }
 
@@ -85,15 +94,17 @@ const AD_ZOOM_COMPENSATE = 1 / DESKTOP_ZOOM;
 // 데스크톱 광고는 사이드 레일이 전부 — 상단 배너·모바일 하단 앵커는 제거됨.
 // 모바일은 앱(AdMob)과 동일한 본문 인-콘텐츠(AdBanner)만 사용, 애드센스 자동광고(앵커 포함) 금지.
 // 사이드 광고를 붙일 페이지 — 캐릭터 조회(자체 사이드바), 패키지 등록·수정(폼 화면, railsDisabled에서
-// 별도 제외), 직업 각인(전용 사이드바)만 빼고 대부분 페이지에 적용.
+// 별도 제외)만 빼고 대부분 페이지에 적용.
 // 이 목록에 없는 페이지는 데스크톱에서 광고가 아예 없다.
+// /engraving 은 자체 사이드바가 좌우 여백을 다 써서 빠져 있었다 — 2026-09-21 에 유각 겹침 순위를
+// 정정 요청 위로 옮겨 오른쪽 한 칸으로 합치고, 레일은 그 바깥에 서도록 contentWidth 를 잡아 합류했다.
 // /extreme 은 3막·종막 출시 전 "COMING SOON" 화면이라 빠져 있었다(제작 중 화면 광고 금지 정책) —
 // 2026-09-18 GM노트로 난이도별 보상·칭호·제작소가 공개돼 본문을 채우면서 다시 넣었다.
 const RAIL_PAGES = new Set([
   '/', '/refining', '/wangap', '/package',
   '/weekly-gold', '/life-master', '/mypage', '/more-reward',
   '/cathedral', '/cerka', '/belgardin', '/bracelet', '/hell-reward',
-  '/expedition-gold', '/extreme',
+  '/expedition-gold', '/extreme', '/engraving',
 ]);
 // 패키지 상세(/package/[postId])는 동적 라우트라 위 Set에 못 넣으므로 startsWith로 별도 포함
 // (등록·수정은 railsDisabled가 이미 따로 걸러냄). 아제나의 축복(/package/azena-blessing)도 여기 걸린다.

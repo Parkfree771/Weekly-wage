@@ -58,7 +58,8 @@ const AUTO_REVEAL_DELAY = 0; // 자동강화는 배속이 정확히 지켜지도
 // (총 시도/성공/실패 통계는 별도 카운터로 전체 누적)
 const MAX_HISTORY = 300;
 
-export default function WangapSimulator() {
+/** adsActive — WangapAverageCalculator 와 같은 이유(숨은 탭의 광고 요청 차단). 그쪽 주석 참고. */
+export default function WangapSimulator({ adsActive = true }: { adsActive?: boolean }) {
   // === 강화 상태 ===
   const [currentLevel, setCurrentLevel] = useState(0);
   const [grade, setGrade] = useState<WangapGrade>('영웅');
@@ -572,9 +573,11 @@ export default function WangapSimulator() {
 
       {/* 모바일 띠배너 — 장비 선택 바로 아래. 같은 페이지의 다른 자리와 단위가 겹치면
           애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
-      <div className="d-block d-lg-none my-2">
-        <AdBanner slot="8616653628" index={1} />
-      </div>
+      {adsActive && (
+        <div className="d-block d-lg-none my-2">
+          <AdBanner slot="8616653628" index={1} />
+        </div>
+      )}
 
       {/* 승급 재료 상세 */}
       {openPromoInfo && (

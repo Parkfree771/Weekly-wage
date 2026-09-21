@@ -7,6 +7,8 @@ import styles from '../cathedral/cathedral.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
 import CerkaGuideBody from '@/components/guide/CerkaGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import { faqData } from './faq-data';
 import { RAID_TABLE } from '@/data/rewardTable';
 
@@ -1031,6 +1033,11 @@ export default function CerkaPage() {
               <AdBanner slot="8616653628" />
             </div>
 
+            {/* 데스크톱 728×90 — 상점 아래·가이드 위. 이 페이지의 유일한 가로 배너 자리다.
+                보상 상세 ↔ 상점 경계에도 한 자리 뒀었는데, 본문 한가운데를 끊어서 보기 안 좋다는
+                이유로 2026-09-21 제거했다. 다시 넣지 말 것. */}
+            <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
+
             <GuideFaq
               relatedGuides={['/guide/raid-rewards']}
               guideTitle="세르카 이용 가이드"
@@ -1072,6 +1079,13 @@ export default function CerkaPage() {
               ]}
               faqs={faqData}
             />
+
+            {/* 페이지 최하단 — 가이드·FAQ 를 다 읽고 내려온 자리.
+                모바일은 이 페이지에 2개 = 가이드 위(단일 단위) · 최하단(index 1).
+                위 자리와 반드시 다른 단위여야 한다. */}
+            <div className="d-block d-lg-none mt-3">
+              <AdBanner slot="8616653628" index={1} />
+            </div>
 
           </Col>
         </Row>

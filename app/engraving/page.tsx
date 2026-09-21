@@ -9,6 +9,8 @@ import ClassIcon from '@/components/tier/ClassIcon';
 import EngravingCorrectionBox from '@/components/engraving/EngravingCorrectionBox';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import { faqData } from './faq-data';
 import styles from './page.module.css';
 
@@ -450,16 +452,16 @@ export default function EngravingPage() {
         </div>
       </div>
 
-      {/* 결과 — 가나다순 평면 그리드 (+ 좌우 사이드바를 그리드 시작점에 정렬) */}
+      {/* 결과 — 가나다순 평면 그리드 (+ 오른쪽 사이드바를 그리드 시작점에 정렬) */}
       <div className={styles.results}>
-        {/* 오른쪽: 각인 정정 요청 — 익명, 관리자 의견함(/api/feedback)으로 전송 */}
+        {/* 오른쪽 칸에 둘을 쌓는다 — 유각 겹침 순위(위) + 각인 정정 요청(아래).
+            2026-09-21 까지는 순위가 왼쪽, 정정 요청이 오른쪽으로 본문 바깥에 절대배치돼 양쪽
+            여백을 다 써서 사이드 광고 레일을 세울 자리가 없었다(RAIL_PAGES 에서 제외돼 있었다).
+            지금은 둘 다 본문 폭 안쪽의 실제 칸(.results 2칸 그리드)이다 — 본문 덩어리가
+            바깥으로 삐져나오지 않으니 덩어리 전체가 가운데에 서고 좌우 광고 레일이 대칭이 된다.
+            바깥 절대배치로 되돌리면 AdLayout getPageConfig 의 /engraving contentWidth 도 같이 봐야 한다. */}
         <aside className={styles.rightSidebar}>
-          <EngravingCorrectionBox />
-        </aside>
-
-        {/* 왼쪽: 표시 중인 직업들의 각인 겹침 순위 (절대배치 — 레이아웃 안 밈) */}
-        <aside className={styles.engSidebar} aria-label="유각 겹침 순위">
-          <div className={styles.engSideBox}>
+          <div className={styles.engSideBox} aria-label="유각 겹침 순위">
             <div className={styles.engSideHead}>
               <span className={styles.engSideTitle}>유각 겹침 순위</span>
               <span className={styles.engSideBadge}>TOP 10</span>
@@ -500,6 +502,9 @@ export default function EngravingPage() {
               </ol>
             )}
           </div>
+
+          {/* 각인 정정 요청 — 익명, 관리자 의견함(/api/feedback)으로 전송 */}
+          <EngravingCorrectionBox />
         </aside>
         {shown.length === 0 ? (
         <p className={styles.empty}>조건에 맞는 직업이 없습니다.</p>
@@ -564,6 +569,9 @@ export default function EngravingPage() {
         <AdBanner slot="8616653628" />
       </div>
 
+      {/* 데스크톱 728×90 — 직업 카드 목록 아래·가이드 위. 이 페이지의 첫 데스크톱 자리 */}
+      <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+
       <GuideFaq
         intro={[
           '실제 유저 캐릭터가 장착한 각인을 집계해 직업·세팅별 대표 각인 5종과 조건부 서브 각인을 정리했습니다. 직업 검색, 역할·성별·플레이 스타일 필터, 각인 포함/제외 필터를 조합해 원하는 조건의 직업만 빠르게 추려볼 수 있습니다.',
@@ -605,6 +613,13 @@ export default function EngravingPage() {
         ]}
         faqs={faqData}
       />
+
+      {/* 페이지 최하단 — 가이드·FAQ 를 다 읽고 내려온 자리.
+          위 자리와 반드시 다른 단위여야 한다 (같은 단위면 애드핏이 첫 자리만 채운다) */}
+      <div className="d-block d-lg-none mt-3">
+        <AdBanner slot="8616653628" index={1} />
+      </div>
+      <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
     </div>
   );
 }

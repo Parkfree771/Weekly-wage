@@ -18,6 +18,8 @@ import styles from './bracelet.module.css';
 import GuideFaq from '@/components/common/GuideFaq';
 import BraceletGuideBody from '@/components/guide/BraceletGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import { faqData } from './faq-data';
 
 export default function BraceletPage() {
@@ -447,6 +449,9 @@ export default function BraceletPage() {
           <AdBanner slot="8616653628" />
         </div>
 
+        {/* 데스크톱 728×90 — 시뮬 아래·가이드 위. 이 페이지의 첫 데스크톱 자리 */}
+        <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+
         <GuideFaq
           guideTitle="팔찌 부여효과 이용 가이드"
           article={<BraceletGuideBody />}
@@ -481,6 +486,12 @@ export default function BraceletPage() {
           ]}
           faqs={faqData}
         />
+
+        {/* 페이지 최하단 — 가이드·FAQ 를 다 읽고 내려온 자리(위 자리와 다른 단위 필수) */}
+        <div className="d-block d-lg-none mt-3">
+          <AdBanner slot="8616653628" index={1} />
+        </div>
+        <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
       </Container>
     </div>
   );

@@ -2798,12 +2798,27 @@ export default function MyPage() {
                 <div className={styles.dailySideBox} aria-hidden="true" style={{ visibility: 'hidden' }} />
               )}
               </div>
-              {/* 모바일 인-콘텐츠 광고 — 앱 주간숙제(캐릭터 2개마다 1개, 1개뿐이면 그 아래)와 동일 */}
-              {(charIdx % 2 === 1 || displayCharacters.length === 1) && (
-                <div className="d-block d-lg-none my-2">
-                  <AdBanner slot="8616653628" />
-                </div>
-              )}
+              {/* 모바일 인-콘텐츠 광고 — 앱 주간숙제(캐릭터 2개마다 1개, 1개뿐이면 그 아래)와 동일.
+                  자리마다 반드시 다른 애드핏 단위를 줘야 한다. 예전엔 전부 index 없이(= 같은
+                  mobileInContent 단위) 불렀는데, 원정대가 6명이면 같은 ID 가 한 페이지에 3번
+                  들어가 애드핏이 첫 자리만 채우고 나머지는 display:none 으로 남았다.
+                  → 자리 순번(adSlot)으로 단위를 갈라 쓴다: 0·1·2 는 ADFIT_INCONTENT_UNITS,
+                    3 은 index 없는 단일 단위. 쓸 단위가 4개뿐이라 5번째 자리부터는 렌더하지 않는다
+                    (빈 자리를 남기느니 안 넣는 편이 낫고, 동시 게재 상한도 4개다). */}
+              {(() => {
+                const adSlot =
+                  displayCharacters.length === 1 ? 0
+                    : charIdx % 2 === 1 ? (charIdx - 1) / 2
+                      : -1;
+                if (adSlot < 0 || adSlot > 3) return null;
+                return (
+                  <div className="d-block d-lg-none my-2">
+                    {adSlot === 3
+                      ? <AdBanner slot="8616653628" />
+                      : <AdBanner slot="8616653628" index={adSlot} />}
+                  </div>
+                );
+              })()}
               </Fragment>
             );
           })}

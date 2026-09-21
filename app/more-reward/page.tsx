@@ -483,7 +483,10 @@ function MoreRewardInner() {
           </div>
         </div>
 
-        <AdBanner slot="8616653628" />
+        {/* 레이드 클리어 보상 섹션 아래 — 위 경계 자리(index 0)와 다른 단위(단일 단위) */}
+        <div className="d-block d-lg-none my-3">
+          <AdBanner slot="8616653628" />
+        </div>
 
         {/* 관련 도구 */}
         <div className={styles.relatedLinks}>
@@ -522,6 +525,13 @@ function MoreRewardInner() {
           ]}
           faqs={faqData}
         />
+
+        {/* 페이지 최하단 — 가이드·FAQ 를 다 읽고 내려온 자리(세 번째 모바일 단위) +
+            이 페이지의 두 번째 데스크톱 자리. 둘 다 위 자리들과 다른 단위여야 한다 */}
+        <div className="d-block d-lg-none mt-3">
+          <AdBanner slot="8616653628" index={1} />
+        </div>
+        <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
       </div>
     </Container>
   );

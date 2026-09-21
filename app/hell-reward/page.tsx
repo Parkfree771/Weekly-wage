@@ -5,6 +5,8 @@ import { Container, Row, Col } from 'react-bootstrap';
 import GuideFaq from '@/components/common/GuideFaq';
 import HellRewardGuideBody from '@/components/guide/HellRewardGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import { faqData } from './faq-data';
 
 const HellRewardCalculator = dynamic(
@@ -36,6 +38,12 @@ export default function HellRewardPage() {
             </div>
 
             <HellRewardCalculator />
+
+            {/* 계산기 ↔ 가이드 경계 광고 — 결과를 다 본 뒤 읽을거리로 넘어가는 자리 */}
+            <div className="d-block d-lg-none my-3">
+              <AdBanner slot="8616653628" index={0} />
+            </div>
+            <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
 
             <GuideFaq
               relatedGuides={['/guide/raid-rewards']}
@@ -73,10 +81,12 @@ export default function HellRewardPage() {
               faqs={faqData}
             />
 
-            {/* 모바일 인-콘텐츠 광고 — 페이지 최하단 (예전엔 콘텐츠 최상단이었다) */}
+            {/* 모바일 인-콘텐츠 광고 — 페이지 최하단 (예전엔 콘텐츠 최상단이었다).
+                위 경계 자리(index 0)와 다른 단위여야 한다 */}
             <div className="d-block d-lg-none mt-3">
               <AdBanner slot="8616653628" />
             </div>
+            <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
           </Col>
         </Row>
       </Container>

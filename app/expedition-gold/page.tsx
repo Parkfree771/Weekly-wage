@@ -6,6 +6,8 @@ import { Container, Row, Col } from 'react-bootstrap';
 import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import GuideFaq from '@/components/common/GuideFaq';
 import ExpeditionGoldGuideBody from '@/components/guide/ExpeditionGoldGuideBody';
 import { faqData } from './faq-data';
@@ -174,6 +176,12 @@ export default function ExpeditionGoldPage() {
               </div>
             )}
 
+            {/* 본문 ↔ 가이드 경계 광고 — 계산 결과를 다 본 뒤 읽을거리로 넘어가는 자리 */}
+            <div className="d-block d-lg-none my-3">
+              <AdBanner slot="8616653628" index={0} />
+            </div>
+            <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+
             {/* 이용 가이드 · FAQ — 검색 여부와 무관하게 항상 노출 */}
             <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
               <GuideFaq
@@ -184,10 +192,12 @@ export default function ExpeditionGoldPage() {
               />
             </div>
 
-            {/* 모바일 인-콘텐츠 광고 (앱 배치와 유사) */}
+            {/* 모바일 인-콘텐츠 광고 (앱 배치와 유사) — 페이지 최하단.
+                위 경계 자리(index 0)와 다른 단위여야 한다 */}
             <div className="d-block d-lg-none my-3">
               <AdBanner slot="8616653628" />
             </div>
+            <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
           </Col>
         </Row>
       </Container>

@@ -40,9 +40,6 @@ const PriceDashboard = dynamic(() => import('@/components/PriceDashboard'), {
   ssr: false
 });
 
-// 매수가 보드 — 로그인 사용자의 평단 대비 손익. 데이터는 브라우저↔Firestore 직결이라 서버 함수 부담 없음.
-const BuyOrderBoard = dynamic(() => import('@/components/BuyOrderBoard'), { ssr: false });
-
 const PriceComparisonStats = dynamic(() => import('@/components/PriceComparisonStats'), {
   loading: () => (
     <div className="text-center py-5" style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -118,18 +115,6 @@ export default function Home() {
           </div>
         </PriceChartProvider>
 
-        {/* 내 매수가 — 경계 광고 아래, 사이트 소개 위 */}
-        <div className={styles.homeBlock}>
-          <BuyOrderBoard />
-        </div>
-
-        {/* 모바일 인-콘텐츠 광고 2 — 매수가 보드 아래.
-            index 를 줘야 320×50 띠배너 배열에서 다른 단위를 꺼낸다.
-            같은 단위를 한 페이지에 두 번 넣으면 애드핏이 첫 자리만 채운다. */}
-        <div className={`${styles.homeBlock} ${styles.homeAdBlock} d-block d-lg-none`}>
-          <AdBanner slot="8616653628" index={0} />
-        </div>
-
         {/* 사이트 소개 — 홈의 유일한 h1. 2026-09-04 접기 토글 제거: 항상 노출 */}
         <div className="mt-4 mt-md-5">
           <h1 className="h4 mb-2">로아로골 - 로스트아크 주간 골드 계산기 &amp; 시세 정보</h1>
@@ -162,6 +147,15 @@ export default function Home() {
               ))}
           </div>
         </section>
+
+        {/* 모바일 인-콘텐츠 광고 3 — 최근 글 ↔ 이용 가이드 경계.
+            원래 매수가 보드 아래에 있었는데 보드를 없애면서(2026-09-21) 이리로 내렸다.
+            그냥 두면 바로 위 이벤트 대비 자리(index 1)와 광고 두 개가 연달아 붙는다.
+            index 를 줘야 띠배너 배열에서 다른 단위를 꺼낸다 — 같은 단위를 한 페이지에
+            두 번 넣으면 애드핏이 첫 자리만 채운다. */}
+        <div className={`${styles.homeBlock} ${styles.homeAdBlock} d-block d-lg-none`}>
+          <AdBanner slot="8616653628" index={0} />
+        </div>
 
         <GuideFaq
           relatedGuides={['/weekly-gold', '/refining', '/wangap', '/more-reward']}

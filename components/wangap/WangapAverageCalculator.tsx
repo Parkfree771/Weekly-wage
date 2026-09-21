@@ -60,7 +60,13 @@ type JourneyItem =
   | { kind: 'node'; grade: WangapGrade; level: number }
   | { kind: 'promo'; to: WangapPromotedGrade; level: number };
 
-export default function WangapAverageCalculator() {
+/**
+ * adsActive — 완갑 페이지는 평균·실제 시뮬을 display:none 으로 동시에 마운트한다(탭을 오가도
+ * 진행 상태가 보존되게). 그대로 두면 안 보이는 탭의 광고까지 매번 요청이 나가 아무도 못 보는
+ * 임프레션이 쌓이고, 애드핏 동시 게재 상한(4개)을 잡아먹어 보이는 자리가 오히려 안 채워진다.
+ * → 화면에 떠 있는 탭에서만 true 를 받아 그 탭의 광고만 렌더한다.
+ */
+export default function WangapAverageCalculator({ adsActive = true }: { adsActive?: boolean }) {
   const { theme } = useTheme();
 
   // === 강화 구간 ===
@@ -701,12 +707,14 @@ export default function WangapAverageCalculator() {
 
         {/* 모바일 띠배너 — 카드 사이(강화 여정 ↔ 예상 소모 재료). 같은 페이지의 다른 자리와
             단위가 겹치면 애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
-        <div className="d-block d-lg-none my-2">
-          <AdBanner slot="8616653628" index={0} />
-        </div>
+        {adsActive && (
+          <div className="d-block d-lg-none my-2">
+            <AdBanner slot="8616653628" index={0} />
+          </div>
+        )}
 
         {/* 데스크톱 728×90 — 여정(목표) 카드 아래. 재련 목표 아래와 같은 단위지만 페이지가 달라 중복 아님 */}
-        <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+        {adsActive && <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />}
 
         {/* ===== 예상 소모 재료 (재련 평균 시뮬과 동일한 카드) ===== */}
         {/* popupOverflowCard: 숨결 "최적" 팝업이 카드 위 경계를 넘어가므로 이 카드만 클리핑 해제 */}
@@ -1006,12 +1014,14 @@ export default function WangapAverageCalculator() {
         {/* 모바일 띠배너 — 결과 카드 아래. index 2 인 이유: 완갑 페이지는 평균·실제 시뮬이
             동시에 마운트되는데 index 0 은 위 여정 아래, index 1 은 실제 시뮬(WangapSimulator)이
             이미 쓴다 — 같은 단위가 한 페이지에 겹치면 애드핏이 첫 자리만 채운다 */}
-        <div className="d-block d-lg-none my-2">
-          <AdBanner slot="8616653628" index={2} />
-        </div>
+        {adsActive && (
+          <div className="d-block d-lg-none my-2">
+            <AdBanner slot="8616653628" index={2} />
+          </div>
+        )}
 
         {/* 데스크톱 728×90 — 결과 카드 아래. 같은 페이지의 목표 아래 자리와 다른 단위 필수 */}
-        <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
+        {adsActive && <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />}
       </div>
 
     </div>

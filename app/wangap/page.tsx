@@ -50,10 +50,10 @@ export default function WangapPage() {
 
         {/* 두 시뮬 모두 유지한 채 표시만 전환 — 탭을 오가도 실제 시뮬 진행 상태가 보존됨 */}
         <div style={{ display: mode === 'average' ? 'block' : 'none' }}>
-          <WangapAverageCalculator />
+          <WangapAverageCalculator adsActive={mode === 'average'} />
         </div>
         <div style={{ display: mode === 'real' ? 'block' : 'none' }}>
-          <WangapSimulator />
+          <WangapSimulator adsActive={mode === 'real'} />
         </div>
 
         {/* 모바일 인-콘텐츠 광고 — 앱 완갑(시뮬 본문 아래)과 동일 위치 */}

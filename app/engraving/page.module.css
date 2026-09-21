@@ -2,8 +2,20 @@
   max-width: 1140px;
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
-  /* 뉴비 추천 사이드바(절대위치)의 기준 컨테이너 */
   position: relative;
+}
+
+/* 사이드바가 뜨는 폭(1428px)부터는 본문 폭 자체를 사이드바 칸까지 넓힌다.
+   1406 = 카드 그리드 1108 + 간격 16 + 사이드바 250 + 좌우 패딩 32.
+   예전엔 .wrap 을 1140 으로 두고 사이드바만 바깥에 절대배치로 띄웠는데,
+   그러면 본문 덩어리가 오른쪽으로만 삐져나와 가운데 정렬이 깨진다 —
+   왼쪽에 사이드바 폭만큼 빈 공간이 남고, 좌우 광고 레일도 짝이 안 맞아 보인다.
+   사이드바를 본문 안쪽 칸으로 들여 한 덩어리로 만들면 덩어리 전체가 가운데에 서고
+   좌우 레일이 대칭이 된다. 카드 그리드 폭(1108)은 그대로다. */
+@media (min-width: 1428px) {
+  .wrap {
+    max-width: 1406px;
+  }
 }
 
 /* ── 헤더 ── */
@@ -299,20 +311,16 @@
   position: relative;
 }
 
-/* ── 왼쪽 유각 겹침 순위 사이드바 ──
-   콘텐츠 왼쪽 여백에 절대배치로 띄워 레이아웃을 절대 밀지 않고,
-   들어갈 폭이 없으면 숨김. */
-.engSidebar {
-  position: absolute;
-  top: 0;
-  right: calc(100% + 1rem);
-  width: 250px;
-  display: none;
-}
-
-/* ── 오른쪽 각인 정정 요청 사이드바 ── (왼쪽과 동일한 절대배치)
+/* ── 오른쪽 사이드바 — 유각 겹침 순위(위) + 각인 정정 요청(아래) ──
+   콘텐츠 오른쪽 여백에 절대배치로 띄워 레이아웃을 절대 밀지 않고,
+   들어갈 폭이 없으면 숨김.
    ※ body zoom(0.85)으로 콘텐츠가 작아진 만큼 기준폭도 비례해 낮춤(1680×0.85≈1428).
-      CSS zoom은 미디어쿼리 기준폭을 안 바꾸므로 여기서 직접 보정해야 함. */
+      CSS zoom은 미디어쿼리 기준폭을 안 바꾸므로 여기서 직접 보정해야 함.
+
+   2026-09-21: 유각 겹침 순위가 왼쪽(.engSidebar), 정정 요청이 오른쪽으로 나뉘어 있던 걸
+   오른쪽 한 칸에 쌓았다. 양쪽 여백을 다 쓰는 바람에 AdLayout 사이드 광고 레일을 세울 자리가
+   없어 /engraving 이 RAIL_PAGES 에서 빠져 있었기 때문이다. 왼쪽을 비워 레일을 붙였다.
+   → 다시 좌우로 나누면 AdLayout getPageConfig 의 /engraving contentWidth 도 같이 봐야 한다. */
 .rightSidebar {
   position: absolute;
   top: 0;
@@ -322,9 +330,31 @@
 }
 
 @media (min-width: 1428px) {
-  .engSidebar,
+  /* 카드 그리드(1fr) + 사이드바(250px) 두 칸. 사이드바가 절대배치를 벗어나 실제 칸을 차지하므로
+     본문 덩어리 폭에 그대로 포함되고, 그래서 .wrap 을 그만큼 넓혀 둔 것이다.
+     JSX 순서는 사이드바가 먼저라 자동 배치에 맡기면 왼쪽으로 가므로 칸을 명시한다.
+     align-items:start — 사이드바가 카드 그리드 높이만큼 늘어나지 않게. */
+  .results {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 250px;
+    gap: 1rem;
+    align-items: start;
+  }
+
   .rightSidebar {
-    display: block;
+    position: static;
+    width: auto;
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .cardGrid,
+  .empty {
+    grid-column: 1;
+    grid-row: 1;
   }
 }
 
