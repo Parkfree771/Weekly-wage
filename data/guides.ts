@@ -12,6 +12,33 @@ export interface Guide {
 
 export const guides: Guide[] = [
   {
+    slug: 'advanced-refining-ancestor',
+    title: '상급 재련 선조의 가호 구조와 숨결·책 투입 순서',
+    summary:
+      '상급 재련이 성공·실패가 아니라 경험치 누적으로 돌아가는 구조를 정리하고, 숨결과 책을 넣었을 때 시도 1회의 기대 경험치가 얼마나 오르는지 계산했습니다. 보조 재료를 일반턴과 선조턴 중 어디에 넣어야 시도 횟수가 줄어드는지 조합 16가지 평균 시도 횟수로 비교했습니다.',
+    category: '재련',
+    date: '2026-09-21',
+    href: '/guide/advanced-refining-ancestor',
+  },
+  {
+    slug: 'weekly-content-materials',
+    title: '균열·전선과 가디언 토벌 티어별 주간 재료 수급량',
+    summary:
+      '카오스 던전과 가디언 토벌을 매일 돌았을 때 티어별로 한 주에 들어오는 재료를 실측 표본 평균으로 정리했습니다. 수급이 가장 크게 뛰는 레벨 구간과, 골드 계단과 재료 계단의 위치가 어긋나는 지점을 계산했습니다.',
+    category: '골드',
+    date: '2026-09-21',
+    href: '/guide/weekly-content-materials',
+  },
+  {
+    slug: 'sandglass-rewards',
+    title: '할의 모래시계 보상 강화 단계별 수급량 정리',
+    summary:
+      '보상 강화 1~6단계에서 티어별로 받는 보석·석·숨결 수량을 정리했습니다. 티어마다 보석 등급이 달라 개수만 비교하면 순서가 뒤집히는 지점을 1레벨 환산으로 다시 계산했습니다.',
+    category: '골드',
+    date: '2026-09-21',
+    href: '/guide/sandglass-rewards',
+  },
+  {
     slug: 'extreme-rewards',
     title: '익스트림 3막·종막 난이도별 보상 총정리',
     summary:
