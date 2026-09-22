@@ -46,6 +46,15 @@ const MATERIALS = {
   sturdy: { id: '6882302', name: '튼튼한 목재', icon: '/wood4.webp' },
 };
 
+// 아이콘 배경색(게임 등급)별 테두리 - 이미지 배경이 회색/초록/파랑으로 갈림
+const GRADE_CLASS: Record<string, string> = {
+  '/wood1.webp': 'gradeRare',
+  '/wood2.webp': 'gradeNormal',
+  '/wood3.webp': 'gradeUncommon',
+  '/wood4.webp': 'gradeRare',
+};
+const gradeOf = (icon: string) => styles[GRADE_CLASS[icon]] || '';
+
 // 교환 비율 - 게임 내 교환 1회 단위 (교환창에 입력하는 숫자 = 교환 횟수)
 const EXCHANGE = {
   sturdyToNormal: { from: 5, to: 50 },   // 튼튼한 목재 5 -> 목재 50
@@ -643,7 +652,7 @@ export default function LifeCraftCalculator() {
             <span className={styles.sectionLabel}>보유 재료 입력</span>
             <div className={styles.ownedInputs}>
               <div className={styles.ownedInput}>
-                <Image src={MATERIALS.abidos.icon} alt="아비도스" width={32} height={32} />
+                <Image src={MATERIALS.abidos.icon} alt="아비도스" width={52} height={52} className={`${styles.materialIcon} ${gradeOf(MATERIALS.abidos.icon)}`} />
                 <input
                   type="number"
                   value={ownedAbidos || ''}
@@ -653,7 +662,7 @@ export default function LifeCraftCalculator() {
                 <span className={styles.requiredAmount}>/{currentItem.materials.abidos}</span>
               </div>
               <div className={styles.ownedInput}>
-                <Image src={MATERIALS.sturdy.icon} alt="튼튼한" width={32} height={32} />
+                <Image src={MATERIALS.sturdy.icon} alt="튼튼한" width={52} height={52} className={`${styles.materialIcon} ${gradeOf(MATERIALS.sturdy.icon)}`} />
                 <input
                   type="number"
                   value={ownedSturdy || ''}
@@ -663,7 +672,7 @@ export default function LifeCraftCalculator() {
                 <span className={styles.requiredAmount}>(교환용)</span>
               </div>
               <div className={styles.ownedInput}>
-                <Image src={MATERIALS.soft.icon} alt="부드러운" width={32} height={32} />
+                <Image src={MATERIALS.soft.icon} alt="부드러운" width={52} height={52} className={`${styles.materialIcon} ${gradeOf(MATERIALS.soft.icon)}`} />
                 <input
                   type="number"
                   value={ownedSoft || ''}
@@ -673,7 +682,7 @@ export default function LifeCraftCalculator() {
                 <span className={styles.requiredAmount}>/{currentItem.materials.soft}</span>
               </div>
               <div className={styles.ownedInput}>
-                <Image src={MATERIALS.normal.icon} alt="목재" width={32} height={32} />
+                <Image src={MATERIALS.normal.icon} alt="목재" width={52} height={52} className={`${styles.materialIcon} ${gradeOf(MATERIALS.normal.icon)}`} />
                 <input
                   type="number"
                   value={ownedNormal || ''}
@@ -698,7 +707,7 @@ export default function LifeCraftCalculator() {
 
             <div className={styles.materialsList}>
               <div className={styles.materialItem}>
-                <Image src={MATERIALS.abidos.icon} alt="아비도스" width={40} height={40} className={styles.materialIcon} />
+                <Image src={MATERIALS.abidos.icon} alt="아비도스" width={64} height={64} className={`${styles.materialIcon} ${gradeOf(MATERIALS.abidos.icon)}`} />
                 <div className={styles.materialInfo}>
                   <span className={styles.materialName}>아비도스 목재</span>
                   <span className={styles.materialQty}>
@@ -723,7 +732,7 @@ export default function LifeCraftCalculator() {
               </div>
 
               <div className={styles.materialItem}>
-                <Image src={MATERIALS.soft.icon} alt="부드러운" width={40} height={40} className={styles.materialIcon} />
+                <Image src={MATERIALS.soft.icon} alt="부드러운" width={64} height={64} className={`${styles.materialIcon} ${gradeOf(MATERIALS.soft.icon)}`} />
                 <div className={styles.materialInfo}>
                   <span className={styles.materialName}>부드러운 목재</span>
                   <span className={styles.materialQty}>
@@ -748,7 +757,7 @@ export default function LifeCraftCalculator() {
               </div>
 
               <div className={styles.materialItem}>
-                <Image src={MATERIALS.normal.icon} alt="목재" width={40} height={40} className={styles.materialIcon} />
+                <Image src={MATERIALS.normal.icon} alt="목재" width={64} height={64} className={`${styles.materialIcon} ${gradeOf(MATERIALS.normal.icon)}`} />
                 <div className={styles.materialInfo}>
                   <span className={styles.materialName}>목재</span>
                   <span className={styles.materialQty}>
@@ -960,7 +969,7 @@ export default function LifeCraftCalculator() {
                     className={`${styles.methodRow} ${idx === 0 ? styles.bestMethod : ''}`}
                   >
                     <div className={styles.methodInfo}>
-                      <Image src={method.icon} alt={method.name} width={40} height={40} />
+                      <Image src={method.icon} alt={method.name} width={48} height={48} className={`${styles.materialIcon} ${gradeOf(method.icon)}`} />
                       <span className={styles.methodName}>{method.name}</span>
                     </div>
                     <span className={styles.methodCost}>
@@ -1017,10 +1026,10 @@ export default function LifeCraftCalculator() {
                         <div key={step.key} className={styles.stepItem}>
                           <div className={styles.stepRow}>
                             <div className={styles.stepUnit}>
-                              <Image src={step.fromIcon} alt={step.fromLabel} width={40} height={40} />
+                              <Image src={step.fromIcon} alt={step.fromLabel} width={52} height={52} className={`${styles.stepIcon} ${gradeOf(step.fromIcon)}`} />
                               <span>{step.unit.from}</span>
                               <span className={styles.arrow}>→</span>
-                              <Image src={step.toIcon} alt={step.toLabel} width={40} height={40} />
+                              <Image src={step.toIcon} alt={step.toLabel} width={52} height={52} className={`${styles.stepIcon} ${gradeOf(step.toIcon)}`} />
                               <span>{step.unit.to}</span>
                             </div>
                             <span className={`${styles.stepTimes} ${step.times === 0 ? styles.stepTimesIdle : ''}`}>
@@ -1061,31 +1070,31 @@ export default function LifeCraftCalculator() {
                             <div className={styles.leftoverItems}>
                               {garuOptimization.extraDetail.finalLeftover.abidos > 0 && (
                                 <div className={styles.leftoverItem}>
-                                  <Image src="/wood1.webp" alt="아비도스" width={28} height={28} />
+                                  <Image src="/wood1.webp" alt="아비도스" width={40} height={40} className={`${styles.materialIcon} ${gradeOf('/wood1.webp')}`} />
                                   <span>{garuOptimization.extraDetail.finalLeftover.abidos}</span>
                                 </div>
                               )}
                               {garuOptimization.extraDetail.finalLeftover.soft > 0 && (
                                 <div className={styles.leftoverItem}>
-                                  <Image src="/wood3.webp" alt="부드러운" width={28} height={28} />
+                                  <Image src="/wood3.webp" alt="부드러운" width={40} height={40} className={`${styles.materialIcon} ${gradeOf('/wood3.webp')}`} />
                                   <span>{garuOptimization.extraDetail.finalLeftover.soft}</span>
                                 </div>
                               )}
                               {garuOptimization.extraDetail.finalLeftover.normal > 0 && (
                                 <div className={styles.leftoverItem}>
-                                  <Image src="/wood2.webp" alt="목재" width={28} height={28} />
+                                  <Image src="/wood2.webp" alt="목재" width={40} height={40} className={`${styles.materialIcon} ${gradeOf('/wood2.webp')}`} />
                                   <span>{garuOptimization.extraDetail.finalLeftover.normal}</span>
                                 </div>
                               )}
                               {garuOptimization.extraDetail.finalLeftover.sturdy > 0 && (
                                 <div className={styles.leftoverItem}>
-                                  <Image src="/wood4.webp" alt="튼튼한" width={28} height={28} />
+                                  <Image src="/wood4.webp" alt="튼튼한" width={40} height={40} className={`${styles.materialIcon} ${gradeOf('/wood4.webp')}`} />
                                   <span>{garuOptimization.extraDetail.finalLeftover.sturdy}</span>
                                 </div>
                               )}
                               {garuOptimization.extraDetail.finalLeftover.garu > 0 && (
                                 <div className={styles.leftoverItem}>
-                                  <Image src="/rkfn.webp" alt="가루" width={28} height={28} />
+                                  <Image src="/rkfn.webp" alt="가루" width={40} height={40} className={styles.materialIcon} />
                                   <span>{garuOptimization.extraDetail.finalLeftover.garu}</span>
                                 </div>
                               )}
