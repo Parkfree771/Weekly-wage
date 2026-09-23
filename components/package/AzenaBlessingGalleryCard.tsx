@@ -13,10 +13,13 @@ import {
   AZENA_DAYS,
   AZENA_DEFAULT_OPTIONS,
   AZENA_DEFAULT_WON_PER_100_GOLD,
+  AZENA_EVENT,
   calcAzenaBreakdown,
+  calcAzenaBenefit,
   getAzenaShareRows,
   type AzenaOptions,
 } from '@/lib/azena-blessing';
+import { useAzenaEventActive } from './useAzenaEvent';
 import { BenefitPct } from './PackageGalleryCard';
 import styles from './PackageGalleryCard.module.css';
 import az from './AzenaBlessingGalleryCard.module.css';
@@ -127,7 +130,11 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
   );
 
   const cashGold = AZENA_PRICE_WON * goldPerWon;
-  const benefit = cashGold > 0 ? ((breakdown.totalGold - cashGold) / cashGold) * 100 : 0;
+  const benefit = calcAzenaBenefit(breakdown.totalGold, cashGold);
+  // 한가위 1+1 — 같은 값에 28일치가 두 번. 행사 중엔 카드가 추석 옷(.themeChuseok)을 입고 2배 기대값·효율을 앞세운다
+  const eventOn = useAzenaEventActive();
+  const eventGold = breakdown.totalGold * AZENA_EVENT.mult;
+  const eventBenefit = calcAzenaBenefit(breakdown.totalGold, cashGold, AZENA_EVENT.mult);
 
   // 구성품 가치 비중 — 일반 카드와 같은 "비중" 줄(상위 3개 + 막대). 기준은 28일 기대값
   const shareSegs = useMemo(() => getAzenaShareRows(breakdown, options.tier), [breakdown, options.tier]);
@@ -153,7 +160,7 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
 
   return (
     <article
-      className={styles.galleryCard}
+      className={`${styles.galleryCard} ${eventOn ? styles.themeChuseok : ''}`}
       onClick={handleCardClick}
       style={{ cursor: 'pointer' }}
     >
@@ -175,9 +182,9 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
           <div className={az.heroHeader}>
             {/* 제목을 진짜 링크로 둔다 — 카드 클릭은 JS 이동이라 크롤러가 따라갈 수 없다.
                 (상시 유지되는 상세 페이지라 검색 유입 경로를 링크로 남겨야 한다) */}
-            <h3 className={az.heroTitle}>
+            <h3 className={`${az.heroTitle} ${eventOn ? az.heroTitleHangawi : ''}`}>
               <Link href={`/package/${AZENA_POST_ID}`} className={az.heroTitleLink}>
-                {AZENA_SHORT_TITLE}
+                {eventOn ? AZENA_EVENT.title : AZENA_SHORT_TITLE}
               </Link>
             </h3>
             {/* 아이템 레벨 토글 — 1730 이상(기본)/이하에 따라 융화 재료·재련 상자 구성이 바뀐다 */}
@@ -200,6 +207,8 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
               </button>
             </span>
           </div>
+          {/* 한가위 1+1 — 아트 왼쪽 아래 꼬리표 (기간 표시) */}
+          {eventOn && <span className={az.eventPill}>{AZENA_EVENT.label} · {AZENA_EVENT.periodText}</span>}
         </div>
       </div>
 
@@ -249,10 +258,29 @@ function AzenaBlessingGalleryCard({ latestPrices, commonWonPer100Gold = 0 }: Pro
             </span>
           </div>
 
+          {/* 1+1 기대값 — 같은 값에 두 번이라 28일 기대값의 두 배 */}
+          {eventOn && (
+            <div className={styles.resultRow}>
+              <span className={`${styles.resultLabel} ${az.eventRowLabel}`}>
+                <span className={az.eventRowTag}>{AZENA_EVENT.tag}</span>
+                {AZENA_DAYS * AZENA_EVENT.mult}일 기대값
+              </span>
+              <span className={styles.resultValueGold}>
+                ={' '}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.goldIconInline} />
+                {formatNumber(eventGold)}
+              </span>
+            </div>
+          )}
+
           {goldPerWon > 0 && (
             <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
-              <span className={styles.resultLabel}>기대 효율</span>
-              <BenefitPct v={benefit} />
+              <span className={styles.resultLabel}>
+                {eventOn ? `${AZENA_EVENT.tag} 기대 효율` : '기대 효율'}
+                {eventOn && <span className={az.singleNote}>단품 {benefit >= 0 ? '+' : ''}{benefit.toFixed(1)}%</span>}
+              </span>
+              <BenefitPct v={eventOn ? eventBenefit : benefit} />
             </div>
           )}
 

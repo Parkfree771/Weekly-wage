@@ -29,13 +29,16 @@ import {
   FRAGMENT_SELECT_PACK_P,
   LEGENDARY_PACK_GOLD,
   LEGENDARY_SELECT_PACK_GOLD,
+  AZENA_EVENT,
   calcAzenaBreakdown,
+  calcAzenaBenefit,
   getAzenaDailyBoxOptions,
   getAzenaDailyBoxOptionGold,
   getAzenaRefineBoxContents,
   getAzenaShareRows,
   type AzenaOptions,
 } from '@/lib/azena-blessing';
+import { useAzenaEventActive } from './useAzenaEvent';
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import { fetchLivePrices, getActiveLivePrices, setLiveOn, liveErrorMessage } from '@/lib/live-prices-client';
 import { useNoPeon } from '@/components/package/useNoPeon';
@@ -294,7 +297,11 @@ export default function AzenaBlessingDetail() {
   );
 
   const cashGold = AZENA_PRICE_WON * goldPerWon;
-  const benefit = cashGold > 0 ? ((breakdown.totalGold - cashGold) / cashGold) * 100 : 0;
+  const benefit = calcAzenaBenefit(breakdown.totalGold, cashGold);
+  // 한가위 1+1 — 같은 값에 28일치가 두 번. 행사 중엔 제목·계산 결과 카드가 추석 옷을 입고 2배 기대값·효율을 앞세운다
+  const eventOn = useAzenaEventActive();
+  const eventGold = breakdown.totalGold * AZENA_EVENT.mult;
+  const eventBenefit = calcAzenaBenefit(breakdown.totalGold, cashGold, AZENA_EVENT.mult);
 
   const setOption = <K extends keyof AzenaOptions>(key: K, value: AzenaOptions[K]) =>
     setOptions((prev) => ({ ...prev, [key]: value }));
@@ -319,19 +326,31 @@ export default function AzenaBlessingDetail() {
 
         {/* 헤더 — 제목 + 메타 */}
         <div className={styles.detailHeader}>
-          <h1 className={styles.detailTitle}>{AZENA_TITLE}</h1>
+          <h1 className={`${styles.detailTitle} ${eventOn ? az.titleHangawi : ''}`}>
+            {eventOn ? AZENA_EVENT.title : AZENA_TITLE}
+          </h1>
           {/* 판매 기간은 두지 않는다 — 상시 판매라 기간 표기가 오히려 낡은 정보가 된다 */}
           <div className={styles.detailMetaRow}>
             <span>{formatNumber(AZENA_ROYAL_CRYSTAL)} 로열 크리스탈 = {formatNumber(AZENA_PRICE_WON)}원</span>
             <span>캐릭터당 적용</span>
           </div>
+          {/* 한가위 1+1 안내 — 행사 기간에만. 아래 계산 결과의 1+1 줄이 무엇인지 여기서 설명한다 */}
+          {eventOn && (
+            <div className={az.eventBanner}>
+              <span className={az.eventBannerTag}>{AZENA_EVENT.tag}</span>
+              <span>
+                <b>{AZENA_EVENT.label}</b> {AZENA_EVENT.periodText} · 하나 사면 하나 더 — 같은 {formatNumber(AZENA_PRICE_WON)}원에
+                {' '}{AZENA_DAYS}일 보상을 두 번 받으므로 기대값·효율이 두 배입니다.
+              </span>
+            </div>
+          )}
           <p className={az.intro}>{AZENA_INTRO}</p>
         </div>
 
         <div className={styles.detailSplitRow}>
           {/* 왼쪽: 계산 결과 */}
           <div className={styles.resultPanel}>
-            <div className={styles.detailCard}>
+            <div className={`${styles.detailCard} ${eventOn ? az.hangawiCard : ''}`}>
               <h2 className={styles.detailCardHeader}>계산 결과{livePrices && <span className={styles.liveBasisChip}>현재가 기준</span>}{noPeon && <span className={styles.peonExcludedChip}>페온 제외</span>}</h2>
               <div className={styles.resultRow}>
                 <span className={styles.resultRowLabel}>패키지 가격</span>
@@ -350,10 +369,24 @@ export default function AzenaBlessingDetail() {
                 <GoldValue v={breakdown.totalGold} />
               </div>
 
+              {/* 1+1 기대값 — 같은 값에 두 번이라 28일 기대값의 두 배 */}
+              {eventOn && (
+                <div className={styles.resultRow}>
+                  <span className={`${styles.resultRowLabel} ${az.eventRowLabel}`}>
+                    <span className={az.eventRowTag}>{AZENA_EVENT.tag}</span>
+                    {AZENA_DAYS * AZENA_EVENT.mult}일 기대값
+                  </span>
+                  <GoldValue v={eventGold} />
+                </div>
+              )}
+
               {goldPerWon > 0 && (
                 <div className={styles.resultRow}>
-                  <span className={styles.resultRowLabel}>기대 효율</span>
-                  <BenefitBadge v={benefit} />
+                  <span className={styles.resultRowLabel}>
+                    {eventOn ? `${AZENA_EVENT.tag} 기대 효율` : '기대 효율'}
+                    {eventOn && <span className={az.singleNote}>단품 {benefit >= 0 ? '+' : ''}{benefit.toFixed(1)}%</span>}
+                  </span>
+                  <BenefitBadge v={eventOn ? eventBenefit : benefit} />
                 </div>
               )}
 

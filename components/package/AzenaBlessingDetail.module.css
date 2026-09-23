@@ -13,6 +13,96 @@
   word-break: keep-all;
 }
 
+/* ─── 한가위 1+1 (AZENA_EVENT 기간에만) — 정갈하게 ─── */
+/* 제목 — 평소 그대로. 뒤에 붙는 [28일] 없이 행사 이름만 */
+.titleHangawi {
+  color: var(--text-primary);
+}
+
+/* 안내 띠 — 평소 카드 색, 왼쪽에 색동 선 */
+.eventBanner {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0.8rem 0 0;
+  padding: 0.6rem 0.9rem 0.6rem 1.1rem;
+  max-width: 62ch;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  line-height: 1.6;
+  word-break: keep-all;
+  overflow: hidden;
+}
+.eventBanner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: repeating-linear-gradient(180deg,
+    #d5443a 0 12px, #2d6cb5 12px 24px, #e9b53a 24px 36px, #3a9a63 36px 48px, #f3ead6 48px 60px, #7a4ea8 60px 72px);
+}
+.eventBanner b { color: #d5443a; font-weight: 800; }
+:global([data-theme="dark"]) .eventBanner b { color: #ff7a6e; }
+/* 띠 앞 "1+1" — 배지 없이 큰 붉은 글자 */
+.eventBannerTag {
+  flex-shrink: 0;
+  color: #d5443a;
+  font-family: var(--font-num), system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1.1;
+  text-shadow: 0.055em 0.055em 0 rgba(120, 30, 20, 0.28);
+}
+:global([data-theme="dark"]) .eventBannerTag { color: #ff7a6e; text-shadow: 0.055em 0.055em 0 rgba(0, 0, 0, 0.5); }
+
+/* 계산 결과 카드 — 갤러리 추석 카드와 같은 윗변 색동 띠 8px (테두리·바탕은 평소 그대로) */
+.hangawiCard {
+  padding-top: calc(1.25rem + 8px) !important;
+}
+.hangawiCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  z-index: 2;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg,
+    #d5443a 0 24px, #2d6cb5 24px 48px, #e9b53a 48px 72px, #3a9a63 72px 96px, #f3ead6 96px 120px, #7a4ea8 120px 144px);
+}
+
+/* 결과 줄의 1+1 표시 — 라벨 앞 붉은 글자 */
+.eventRowLabel {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+.eventRowTag {
+  color: #d5443a;
+  font-family: var(--font-num), system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1;
+}
+:global([data-theme="dark"]) .eventRowTag { color: #ff7a6e; }
+
+/* 1+1 효율 라벨 아래 단품 효율 — 참고용이라 작고 흐리게 */
+.singleNote {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 /* ─── 자주 묻는 질문 ─── */
 .faqList {
   display: flex;

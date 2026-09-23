@@ -4422,14 +4422,18 @@
   background: none;
   cursor: pointer;
   color: var(--text-primary);
-  /* .pageWrapper 와 같은 효율 색 — 포털이라 상속을 못 받아 여기서 다시 정의한다 */
+  /* .pageWrapper 와 같은 효율 색·입체 그림자 — 포털이라 상속을 못 받아 여기서 다시 정의한다 */
   --benefit-up: #35815a;
   --benefit-down: #a04a44;
+  --benefit-up-lift: 0.055em 0.055em 0 rgba(15, 76, 45, 0.3);
+  --benefit-down-lift: 0.055em 0.055em 0 rgba(110, 26, 20, 0.3);
 }
 
 .azenaTile[data-basis='live'] {
   --benefit-up: #0ea86a;
   --benefit-down: #d8453b;
+  --benefit-up-lift: 0.055em 0.055em 0 rgba(0, 0, 0, 0.5);
+  --benefit-down-lift: 0.055em 0.055em 0 rgba(0, 0, 0, 0.5);
 }
 
 .azenaTileIcon {
@@ -4464,6 +4468,81 @@
   letter-spacing: -0.01em;
   line-height: 1;
 }
+
+/* ─── 한가위 1+1 (AZENA_EVENT 기간에만) — 정갈하게 ───
+   타일 윗변에 추석 패키지 카드와 같은 색동 띠 8px. 테두리는 평소 선 색 1px, 바탕은 평소 카드색,
+   그림자 없음. 제목 위에 "1+1" 큰 글자(띠의 붉은색)와 날짜(평소 글자색). 효율은 갤러리 카드
+   배지(.benefitBadge)와 같은 굵기·입체 그림자. 배지·알약·그림·서체·배경 그라데이션은 없다 */
+.azenaTileHangawi {
+  position: relative;
+  gap: 0.28rem;
+  padding-top: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+  overflow: hidden;
+}
+.azenaTileHangawi::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg,
+    #d5443a 0 24px, #2d6cb5 24px 48px, #e9b53a 48px 72px, #3a9a63 72px 96px, #f3ead6 96px 120px, #7a4ea8 120px 144px);
+}
+.azenaTileHangawi .azenaTileIcon { width: 72px; height: 72px; }
+
+/* "1+1  9.23 ~ 10.7" — 1+1 은 큰 붉은 숫자, 날짜는 평소 글자색으로 굵게 */
+.azenaTileEvent {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+.azenaEventBig {
+  font-family: var(--font-num), system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #d5443a;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-shadow: 0.055em 0.055em 0 rgba(120, 30, 20, 0.28);
+}
+:global([data-theme="dark"]) .azenaEventBig { color: #ff7a6e; text-shadow: 0.055em 0.055em 0 rgba(0, 0, 0, 0.5); }
+.azenaEventDate {
+  font-family: var(--font-num), system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+/* 효율 — 갤러리 카드 .benefitBadge 와 같은 1.62rem/800 + 오프셋 그림자(입체) */
+.azenaTileRateBold {
+  font-family: var(--font-num), system-ui, sans-serif;
+  font-size: 1.62rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.azenaTileRateBold.azenaChipUp { text-shadow: var(--benefit-up-lift, none); }
+.azenaTileRateBold.azenaChipDown { text-shadow: var(--benefit-down-lift, none); }
+
+/* 칩·플로팅 버튼의 숫자 앞 "1+1" — 배지 없이 붉은 글자만 */
+.azenaMiniTag {
+  display: inline-block;
+  margin-right: 0.3rem;
+  color: #d5443a;
+  font-family: var(--font-num), system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1;
+  vertical-align: baseline;
+}
+:global([data-theme="dark"]) .azenaMiniTag { color: #ff7a6e; }
 
 /* 모바일 플로팅 버튼 — 오른쪽 아래, 하단 앵커 광고가 있으면 그 위로.
    아이콘은 틀 없이 그림자만, 효율 숫자는 배경이 뭐든 읽히게 불투명 알약을 깔고 아이콘 아래에 살짝 겹친다. */

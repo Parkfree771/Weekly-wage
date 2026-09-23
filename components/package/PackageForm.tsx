@@ -342,7 +342,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
   // '3+보너스' 전용: 보너스 구성품 중 N개 선택 (0 = 전체 지급)
   const [bonusSelectableCount, setBonusSelectableCount] = useState<number>(initial?.bonusSelectableCount ?? 0);
   const [isNewRelease, setIsNewRelease] = useState<boolean>(initial?.isNewRelease ?? false); // 갤러리 NEW 배지 (30일)
-  // 이벤트 테마 — 체크한 글만 갤러리 카드가 테마 옷(추석 밤하늘)을 입는다
+  // 이벤트 테마 — 체크한 글만 갤러리 카드가 테마 옷(추석 색동 띠)을 입는다
   const [eventTheme, setEventTheme] = useState<PackageEventTheme | null>(initial?.eventTheme ?? null);
   // 판매 기간 (선택 — 상시 판매 패키지는 비워두면 된다)
   const [saleStartInput, setSaleStartInput] = useState<string>(initial?.saleStartInput ?? '');
@@ -1690,7 +1690,7 @@ export default function PackageForm({ mode, initial, onSubmit }: Props) {
                 <label className={styles.formLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', marginBottom: 0 }}>
                   <input type="checkbox" checked={eventTheme === 'chuseok'}
                     onChange={(e) => setEventTheme(e.target.checked ? 'chuseok' : null)} />
-                  추석 패키지 (갤러리 카드에 추석 밤하늘 테마)
+                  추석 패키지 (갤러리 카드에 추석 색동 테마)
                 </label>
               </div>
             </div>

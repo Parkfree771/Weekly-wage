@@ -19,8 +19,11 @@ import {
   AZENA_SHORT_TITLE,
   AZENA_DEFAULT_OPTIONS,
   AZENA_DEFAULT_WON_PER_100_GOLD,
+  AZENA_EVENT,
   calcAzenaBreakdown,
+  calcAzenaBenefit,
 } from '@/lib/azena-blessing';
+import { useAzenaEventActive } from '@/components/package/useAzenaEvent';
 import { isSaleEnded } from '@/lib/package-sale';
 import type { PackagePost } from '@/types/package';
 import AdBanner from '@/components/ads/AdBanner';
@@ -338,13 +341,15 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
   useEffect(() => { setPage(1); }, [view]);
 
   // 아제나 칩 효율 — 카드와 같은 계산식, 옵션은 기본값. 공통 환율이 비어 있으면 기본 환율.
+  // 한가위 1+1 기간엔 같은 값에 기대값이 두 배라 행사 효율을 앞에 세우고 단품 효율은 작게 곁들인다.
+  const azenaEventOn = useAzenaEventActive();
   const azenaBenefit = useMemo(() => {
     const won = deferredCommonRate > 0 ? deferredCommonRate : AZENA_DEFAULT_WON_PER_100_GOLD;
     const goldPerWon = 100 / won;
     const { totalGold } = calcAzenaBreakdown(effectivePrices, goldPerWon, AZENA_DEFAULT_OPTIONS);
     const cashGold = AZENA_PRICE_WON * goldPerWon;
-    return cashGold > 0 ? ((totalGold - cashGold) / cashGold) * 100 : 0;
-  }, [effectivePrices, deferredCommonRate]);
+    return calcAzenaBenefit(totalGold, cashGold, azenaEventOn ? AZENA_EVENT.mult : 1);
+  }, [effectivePrices, deferredCommonRate, azenaEventOn]);
 
   // 아제나 팝업 — ESC 로 닫고, 열린 동안 뒤 페이지 스크롤을 잠근다
   const [azenaOpen, setAzenaOpen] = useState(false);
@@ -362,6 +367,9 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
   }, []);
   const azenaBenefitText = `${azenaBenefit >= 0 ? '+' : ''}${azenaBenefit.toFixed(1)}%`;
   const azenaBenefitClass = azenaBenefit >= 0 ? styles.azenaChipUp : styles.azenaChipDown;
+  const azenaName = azenaEventOn ? AZENA_EVENT.title : AZENA_SHORT_TITLE;
+  // 1+1 표시 — 칩·플로팅 버튼의 숫자 앞에 붙는 작은 꼬리표
+  const azenaEventMark = azenaEventOn ? <span className={styles.azenaMiniTag}>{AZENA_EVENT.tag}</span> : null;
   useEffect(() => {
     if (!azenaOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setAzenaOpen(false); };
@@ -425,29 +433,38 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                 className={`${styles.azenaChip} ${azenaOpen ? styles.azenaChipOpen : ''}`}
                 onClick={() => setAzenaOpen((v) => !v)}
                 aria-expanded={azenaOpen}
-                aria-label={`${AZENA_SHORT_TITLE} 효율 보기`}
-                title={AZENA_SHORT_TITLE}
+                aria-label={`${azenaName} 효율 보기`}
+                title={azenaName}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/azena-icon.webp" alt="" width={44} height={44} className={styles.azenaChipIcon} />
+                {azenaEventMark}
                 <span className={azenaBenefitClass}>{azenaBenefitText}</span>
               </button>
             )}
             {railSlot && createPortal(
               <button
                 type="button"
-                className={`${styles.azenaTile} ${azenaOpen ? styles.azenaTileOpen : ''}`}
+                className={`${styles.azenaTile} ${azenaOpen ? styles.azenaTileOpen : ''} ${azenaEventOn ? styles.azenaTileHangawi : ''}`}
                 /* 포털이라 .pageWrapper 밖 — 효율 색 변수를 스스로 받으려고 basis 를 같이 단다 */
                 data-basis={livePrices ? 'live' : 'avg'}
                 onClick={() => setAzenaOpen((v) => !v)}
                 aria-expanded={azenaOpen}
-                aria-label={`${AZENA_SHORT_TITLE} 효율 보기`}
-                title={AZENA_SHORT_TITLE}
+                aria-label={`${azenaName} 효율 보기`}
+                title={azenaName}
               >
+                {/* 한가위 — 타일 윗변에 추석 카드와 같은 색동 띠(css). 제목 위에 "1+1" 큰 글자와 날짜,
+                    효율은 갤러리 카드 배지처럼 굵게 세운다. 배지·꼬리표는 없다 */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/azena-icon.webp" alt="" width={110} height={110} className={styles.azenaTileIcon} />
-                <span className={styles.azenaTileName}>{AZENA_SHORT_TITLE}</span>
-                <span className={`${styles.azenaTileRate} ${azenaBenefitClass}`}>{azenaBenefitText}</span>
+                {azenaEventOn && (
+                  <span className={styles.azenaTileEvent}>
+                    <span className={styles.azenaEventBig}>{AZENA_EVENT.tag}</span>
+                    <span className={styles.azenaEventDate}>{AZENA_EVENT.periodText}</span>
+                  </span>
+                )}
+                <span className={styles.azenaTileName}>{azenaName}</span>
+                <span className={`${styles.azenaTileRate} ${azenaBenefitClass} ${azenaEventOn ? styles.azenaTileRateBold : ''}`}>{azenaBenefitText}</span>
               </button>,
               railSlot,
             )}
@@ -639,12 +656,12 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                 type="button"
                 className={styles.azenaFab}
                 onClick={() => setAzenaOpen(true)}
-                aria-label={`${AZENA_SHORT_TITLE} 효율 보기`}
-                title={AZENA_SHORT_TITLE}
+                aria-label={`${azenaName} 효율 보기`}
+                title={azenaName}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/azena-icon.webp" alt="" width={68} height={68} className={styles.azenaFabIcon} />
-                <span className={`${styles.azenaFabRate} ${azenaBenefitClass}`}>{azenaBenefitText}</span>
+                <span className={`${styles.azenaFabRate} ${azenaBenefitClass}`}>{azenaEventMark}{azenaBenefitText}</span>
               </button>
             )}
 

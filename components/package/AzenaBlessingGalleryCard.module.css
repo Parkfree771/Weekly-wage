@@ -119,6 +119,50 @@
   text-overflow: ellipsis;
 }
 
+/* ─── 한가위 1+1 (AZENA_EVENT 기간에만, 카드는 .themeChuseok 의 윗변 색동 띠를 같이 입는다) ─── */
+/* 제목은 평소 그대로 (색·서체 안 바꾼다) */
+.heroTitleHangawi {
+  color: #fff;
+}
+
+/* 아트 왼쪽 아래 — "한가위 1+1 · 9.23 ~ 10.7" 글자만, 배지 없이 그림자로 세운다 */
+.eventPill {
+  position: absolute;
+  left: 0.9rem;
+  bottom: 0.75rem;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* 결과 줄의 1+1 표시 — 라벨 앞 붉은 글자 */
+.eventRowLabel {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+.eventRowTag {
+  color: #d5443a;
+  font-family: var(--font-num), system-ui, sans-serif;
+  font-size: 0.86rem;
+  font-weight: 900;
+  line-height: 1;
+}
+:global([data-theme="dark"]) .eventRowTag { color: #ff7a6e; }
+
+/* 1+1 효율 라벨 아래 단품 효율 — 참고용이라 작고 흐리게 */
+.singleNote {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--gc-text-muted);
+  white-space: nowrap;
+}
+
 /* ─── 아이템 레벨 토글 (1730↑ / 1730↓) — 헤더 우측의 세그먼트 버튼 ─── */
 .tierToggle {
   margin-left: auto;
@@ -353,6 +397,16 @@
 
   .heroTitle {
     font-size: 0.75rem;
+  }
+
+  .eventPill {
+    left: 0.5rem;
+    bottom: 0.45rem;
+    font-size: 0.68rem;
+  }
+
+  .singleNote {
+    font-size: 0.58rem;
   }
 }
 

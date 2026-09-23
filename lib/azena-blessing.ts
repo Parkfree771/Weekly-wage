@@ -56,6 +56,30 @@ export const AZENA_SALE_START = '25.10.01';
 // 환율 미입력 시 기본값 (100골드당 원) — 갤러리 공통 환율이 들어오면 그쪽이 우선
 export const AZENA_DEFAULT_WON_PER_100_GOLD = 15;
 
+// ─── 한가위 1+1 행사 (2026-09-23 ~ 2026-10-07, KST) ───
+// 하나 사면 하나 더 — 같은 값에 28일치 보상을 두 번 받는다. 기대값·효율은 2배 기준을 함께 보여준다.
+// 기간이 지나면 isAzenaEventActive 가 false 라 표기가 저절로 평소로 돌아간다 (코드 수정 불필요).
+export const AZENA_EVENT = {
+  title: '한가위 아제나의 축복',
+  tag: '1+1',
+  label: '한가위 1+1',
+  start: '2026-09-23',
+  end: '2026-10-07',
+  periodText: '9.23 ~ 10.7',
+  mult: 2,
+} as const;
+
+/** 오늘(KST)이 행사 기간 안인지 */
+export function isAzenaEventActive(now: Date = new Date()): boolean {
+  const ymd = new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return ymd >= AZENA_EVENT.start && ymd <= AZENA_EVENT.end;
+}
+
+/** 기대 효율(%) — mult 는 1+1 이면 2 (같은 값에 기대값이 두 배) */
+export function calcAzenaBenefit(totalGold: number, cashGold: number, mult = 1): number {
+  return cashGold > 0 ? ((totalGold * mult - cashGold) / cashGold) * 100 : 0;
+}
+
 // ─── 커스텀 옵션 ───
 export type AzenaDailyChoice = 'auto' | 'abidos' | 'lava' | 'glacier';
 

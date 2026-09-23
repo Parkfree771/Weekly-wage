@@ -1850,148 +1850,40 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   추석 테마 — 카드 전체가 한 장의 밤하늘 (post.eventTheme === 'chuseok' 인 글만)
-   별밭 svg 한 장이 카드 뒤에 깔리고 머리 줄·목록·결과판·발 줄은 투명하다.
-   결과판만 살짝 더 짙게 덮어 계산 결과가 한 덩어리로 읽힌다.
-   달은 목록 오른쪽 아래(ChuseokMoon). 별 자리·움직임은 ChuseokSky 참고.
-   평소 카드의 --gc- 변수를 이 블록에서만 바꾸므로 카드 본문 규칙은 손대지 않는다. */
+   추석 테마 (post.eventTheme === 'chuseok' 인 글만) — 머리 줄만, 정갈하게.
+   카드 윗변에 색동 띠 8px 하나, 제목 앞에 '추석' 글자(색동의 붉은색). 테두리·바탕·그림자는 평소 카드 그대로.
+   (이전 밤하늘·별밭·달 사진 버전은 svg 별 1,300개 + webp 51KB 로 무거워 걷어냈다. 61c86b2 참고)
+   띠는 absolute 로 얹는다 — 그리드 아이템으로 넣으면 머리 줄이 2행으로 밀린다. */
 .themeChuseok {
   position: relative;
-  border-color: #d9b45a;
-  --gc-shadow: 0 8px 22px -6px rgba(217, 180, 90, 0.38), var(--shadow-md);
-  --gc-text: #fbf3dc;
-  --gc-text-secondary: #d9d0b4;
-  --gc-text-muted: #a9a288;
-  --gc-border: rgba(217, 180, 90, 0.42);
-  --gc-border-light: rgba(217, 180, 90, 0.28);
-  --gc-divider: rgba(217, 180, 90, 0.3);
-  --gc-item-bg: rgba(255, 255, 255, 0.07);
-  --gc-item-border: rgba(217, 180, 90, 0.34);
-  --gc-input-bg: rgba(10, 16, 44, 0.72);
-  --gc-bg: transparent;
-  --gc-bg-alt: transparent;
-  --benefit-up-text: #8fe3ab;
-  --benefit-up-lift: 0 1px 0 rgba(0, 0, 0, 0.45);
-  --gold-text: #f5c542;
-  background: linear-gradient(160deg, #0b112e 0%, #141d48 42%, #0e1638 100%);
-  color: var(--gc-text);
 }
-
-.themeChuseok .cardHead,
-.themeChuseok .leftBox,
-.themeChuseok .rightBox,
-.themeChuseok .cardFoot,
-.themeChuseok .chartPanel {
-  position: relative;
-  z-index: 1;
-  background: transparent;
+.themeChuseok::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  z-index: 2;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg,
+    #d5443a 0 24px, #2d6cb5 24px 48px, #e9b53a 48px 72px, #3a9a63 72px 96px, #f3ead6 96px 120px, #7a4ea8 120px 144px);
 }
+.themeChuseok .cardHead { padding-top: calc(0.6rem + 8px); }
 
-.themeChuseok .cardHead { border-bottom-color: rgba(217, 180, 90, 0.22); }
-.themeChuseok .cardFoot { border-top-color: rgba(217, 180, 90, 0.22); }
-.themeChuseok .chartPanel { background: rgba(5, 9, 28, 0.5); border-top-color: rgba(217, 180, 90, 0.22); }
-
-.themeChuseok .rightBox {
-  background: rgba(5, 9, 28, 0.38);
-  border-left: 1px solid rgba(217, 180, 90, 0.32);
-  overflow: hidden;
-}
-
-.themeChuseok .leftBox { overflow: hidden; }
-.themeChuseok .leftBox > .itemGrid { position: relative; z-index: 1; }
-
-/* 판매 종료 오버레이·해제 버튼은 카드 위에 떠야 한다(하늘 svg 보다 위) */
-.themeChuseok .saleEndedOverlay { z-index: 4; }
-
-.themeChuseok .cardTitle { color: #fbf3dc; }
-.themeChuseok.cardEnded .cardTitle { color: #d9d0b4; }
-.themeChuseok .badgeNew { color: #9be7b0; text-shadow: 0.055em 0.055em 0 rgba(0, 0, 0, 0.6); }
-.themeChuseok .chartBadgeBtn,
-.themeChuseok .saleRevealBtn {
-  color: #e6dcc0;
-  border-color: rgba(217, 180, 90, 0.5);
-  background: rgba(255, 255, 255, 0.06);
-}
-.themeChuseok .chartBadgeBtnOpen { background: rgba(217, 180, 90, 0.22); }
-
-.themeChuseok .itemCell { backdrop-filter: blur(2px); }
-.themeChuseok .itemCell:hover { border-color: rgba(242, 210, 122, 0.75); background: rgba(255, 255, 255, 0.11); }
-.themeChuseok .itemCheckBox { background: rgba(10, 16, 44, 0.8); border-color: #a9a288; }
-.themeChuseok .itemCheckBoxChecked { background: var(--color-accent); border-color: var(--color-accent); }
-.themeChuseok .itemTip { background: #16204a; border-color: rgba(217, 180, 90, 0.5); color: #fbf3dc; }
-
-.themeChuseok .resultValue,
-.themeChuseok .cashNum { color: #fbf3dc; }
-.themeChuseok .resultValueGold { color: #f5c542; }
-.themeChuseok .rateInput { color: #ffd27a; }
-.themeChuseok .rateFixed,
-.themeChuseok .rateSep { color: #d9d0b4; }
-.themeChuseok .cardFootMeta { color: #a9a288; }
-.themeChuseok .cardFootMeta > span + span::before { color: rgba(217, 180, 90, 0.5); }
-.themeChuseok .metaAuthor { color: #d9d0b4; }
-
-/* 머리 줄 "추석" 표시 — NEW 와 같은 문법(상자 없이 글자 + 오프셋 그림자), 색만 금색 */
+/* 머리 줄 "추석" 표시 — NEW 와 같은 문법(상자 없이 글자 + 오프셋 그림자), 색은 띠의 붉은색 그대로 */
 .tagChuseok {
   flex-shrink: 0;
   font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   line-height: 1;
-  color: #f2d27a;
-  text-shadow: 0.055em 0.055em 0 rgba(0, 0, 0, 0.55);
+  color: #d5443a;
+  text-shadow: 0.055em 0.055em 0 rgba(120, 30, 20, 0.28);
 }
-
-/* ── 하늘 ── 카드보다 조금 크게 깔아 흐를 때 가장자리가 비지 않게 */
-.skyAll {
-  /* 고정 픽셀 별밭(1080×680)을 카드 가운데에 — 카드 폭과 무관하게 별 크기가 같다. 넘치는 부분은 카드가 자른다 */
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 0;
-  shape-rendering: geometricPrecision;
-}
-.skyFar { animation: ckDriftFar 140s linear infinite alternate; will-change: transform; }
-.skyNear { animation: ckDriftNear 90s linear infinite alternate; will-change: transform; }
-.skyStar { animation: ckTwinkle 3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.skyBright { animation: ckBigTwinkle 7s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.skyMeteor { opacity: 0; animation: ckMeteor 13s linear infinite; }
-
-@keyframes ckTwinkle { 0%, 100% { opacity: calc(var(--o, 0.8) * 0.62); } 50% { opacity: var(--o, 0.8); } }
-@keyframes ckBigTwinkle { 0%, 100% { opacity: 0.82; transform: scale(0.96); } 50% { opacity: 1; transform: scale(1.04); } }
-@keyframes ckDriftFar { from { transform: translate(0, 0); } to { transform: translate(-5px, 2px); } }
-@keyframes ckDriftNear { from { transform: translate(0, 0); } to { transform: translate(-11px, 4px); } }
-@keyframes ckMeteor {
-  0% { opacity: 0; transform: translate(var(--mx), var(--my)); }
-  1% { opacity: 1; }
-  8% { opacity: 0; transform: translate(calc(var(--mx) - 200px), calc(var(--my) + 70px)); }
-  100% { opacity: 0; transform: translate(calc(var(--mx) - 200px), calc(var(--my) + 70px)); }
-}
-
-/* ── 달 ── 목록 오른쪽 아래. 후광 svg 100px 가운데에 원반 사진 50px */
-.moonWrap {
-  position: absolute;
-  right: 18px;
-  bottom: -6px;
-  width: 100px;
-  height: 100px;
-  z-index: 0;
-  pointer-events: none;
-  line-height: 0;
-  animation: ckBreathe 9s ease-in-out infinite;
-}
-.moonHalo { position: absolute; inset: 0; width: 100%; height: 100%; }
-.moonImg { position: absolute; left: 25%; top: 25%; width: 50%; height: 50%; object-fit: contain; }
-@keyframes ckBreathe { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
-
-@media (prefers-reduced-motion: reduce) {
-  .skyFar, .skyNear, .skyStar, .skyBright, .skyMeteor, .moonWrap { animation: none; }
-  .skyMeteor { display: none; }
-}
-
-@media (max-width: 576px) {
-  .moonWrap { right: 8px; bottom: -10px; width: 84px; height: 84px; }
+:global([data-theme="dark"]) .tagChuseok {
+  color: #ff7a6e;
+  text-shadow: 0.055em 0.055em 0 rgba(0, 0, 0, 0.5);
 }
 
 /* ═══ 핫딜샵 — 칸(상품)마다 가격이 다르고 전부 사면 보너스 ═══

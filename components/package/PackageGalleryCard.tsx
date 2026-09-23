@@ -29,7 +29,6 @@ import { isSaleEnded, formatSalePeriod } from '@/lib/package-sale';
 import TrendArrow from '@/components/TrendArrow';
 import ReactionBar from '@/components/package/ReactionBar';
 import { useNoPeon } from '@/components/package/useNoPeon';
-import { ChuseokSky, ChuseokMoon } from '@/components/package/ChuseokSky';
 import { ICON_TINTS } from '@/lib/package-icon-tints';
 import styles from './PackageGalleryCard.module.css';
 
@@ -924,7 +923,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
     if (prefetchTimerRef.current) { clearTimeout(prefetchTimerRef.current); prefetchTimerRef.current = null; }
   };
 
-  // 이벤트 테마 — 등록·수정 폼에서 체크한 글만 밤하늘 옷을 입는다 (기간이 지나도 남는다)
+  // 이벤트 테마 — 등록·수정 폼에서 체크한 글만 색동 띠를 두른다 (기간이 지나도 남는다)
   const chuseok = post.eventTheme === 'chuseok';
 
   return (
@@ -935,8 +934,6 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
       onPointerLeave={handleCardPointerLeave}
       style={{ cursor: 'pointer' }}
     >
-      {/* 추석 밤하늘 — 카드 뒤 전체에 깔린다(맨 앞 자식, z-index 0) */}
-      {chuseok && <ChuseokSky postId={post.id} />}
       {/* 판매 종료 안내 — 흐려진 가운데(구성품·계산 결과) 위에 얹힌다.
           '해제'를 안내 바로 아래 둔 이유: 읽은 자리에서 곧바로 누르게 하려는 것이다.
           예전처럼 머리 줄 구석에 있으면 안내와 조작이 카드 양 끝으로 갈라져 눈이 두 번 움직인다.
@@ -1003,8 +1000,6 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
 
       {/* 왼쪽: 아이템 목록 (배경 이미지) */}
       <div className={styles.leftBox}>
-        {/* 추석 보름달 — 목록 오른쪽 아래 빈 자리, 아이템 칸 뒤 */}
-        {chuseok && <ChuseokMoon />}
         <div className={`${styles.itemGrid} ${isGacha ? '' : styles.itemGridCapped}`}>
           {(isGacha ? gachaDisplayOrder : itemOrder).map((idx, renderIdx) => {
             const item = post.items[idx];
