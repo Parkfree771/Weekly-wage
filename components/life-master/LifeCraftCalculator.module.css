@@ -1,13 +1,13 @@
 /* 컨테이너 */
 .container {
-  max-width: 1760px;
+  max-width: 2060px;
   margin: 0 auto;
   padding: 0 4px 20px;
 }
 
 @media (min-width: 768px) {
   .container {
-    padding: 0 16px 40px;
+    padding: 0 0 40px;
   }
 }
 
