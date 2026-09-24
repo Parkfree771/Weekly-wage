@@ -1371,7 +1371,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
           data-nonav: 패널 안 클릭이 카드 상세 이동으로 새지 않게 한다 */}
       {chartOpen && (
         <div className={styles.chartPanel} data-nonav>
-          <PackageValueChart post={chartPost} latestPrices={latestPrices} goldPerWon={goldPerWon} noPeon={noPeon} />
+          <PackageValueChart post={chartPost} latestPrices={latestPrices} basePrices={basePrices} goldPerWon={goldPerWon} noPeon={noPeon} />
         </div>
       )}
     </article>

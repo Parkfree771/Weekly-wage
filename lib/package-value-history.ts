@@ -48,26 +48,35 @@ export function kstTodayKey(): string {
   return `${y}-${m}-${d}`;
 }
 
+/** latest_prices.json 에는 _meta/_rawByDate 같은 비가격 키가 섞여 있다 — 숫자만 가격이다 */
+function numericPrices(src: Record<string, number>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [id, v] of Object.entries(src)) {
+    if (!id.startsWith('_') && typeof v === 'number') out[id] = v;
+  }
+  return out;
+}
+
 /**
  * 날짜별 값 시계열의 공통 코어 — compute(그날의 가격 맵)를 축 위 모든 날짜에 대해 돌린다.
  * - 결측일은 직전 값으로 채우고(캐리포워드), 첫 데이터 이전 구간은 첫 값으로 채운다
  *   (신규 추적 아이템이 과거 구간에서 0으로 급락해 보이는 것 방지)
  * - 오늘 점은 latest(화면과 같은 시세)로 덮어 카드 숫자와 어긋나지 않게 한다
  * - 히스토리가 없는 시세 키는 오늘 값으로 상수 취급 — 0으로 떨어뜨리는 것보단 낫다
+ *   (과거 날짜는 base 로 채운다 — 최저가 갱신이 과거 구간을 흔들지 않게)
  */
 function buildDailyValues(
   compute: (prices: Record<string, number>) => number,
   history: PriceHistoryData,
   latest: Record<string, number>,
   startDate: string,
+  /** 과거 날짜의 기록 없는 아이템을 채울 시세 (평균가). 없으면 latest */
+  base?: Record<string, number>,
 ): Array<{ date: string; value: number }> {
   const todayKey = kstTodayKey();
 
-  // latest_prices.json 에는 _meta/_rawByDate 같은 비가격 키가 섞여 있다 — 숫자만 가격이다
-  const latestNums: Record<string, number> = {};
-  for (const [id, v] of Object.entries(latest)) {
-    if (!id.startsWith('_') && typeof v === 'number') latestNums[id] = v;
-  }
+  const latestNums = numericPrices(latest);
+  const baseNums = base ? numericPrices(base) : latestNums;
 
   const itemIds = Object.keys(history).filter(
     (id) => !id.startsWith('_') && Array.isArray(history[id]),
@@ -101,7 +110,7 @@ function buildDailyValues(
   const out: Array<{ date: string; value: number }> = [];
   for (const d of axis) {
     const prices: Record<string, number> = {};
-    for (const [id, v] of Object.entries(latestNums)) prices[id] = v;
+    for (const [id, v] of Object.entries(d === todayKey ? latestNums : baseNums)) prices[id] = v;
     for (const id of itemIds) {
       const v = filled[id][d];
       if (v !== undefined) prices[id] = v;
@@ -116,7 +125,8 @@ function buildDailyValues(
  * calculatePostEfficiency 는 날짜마다 그날 시세로 최고 선택지를 다시 고르는데, 그러면
  * 과거 구간에서 곡선이 "그날그날 갈아탄 가정"이 되어 읽기 애매하다. 차트는 뷰어가 지금
  * 고를 조합 하나를 고정해 두고 그 조합의 가치가 어떻게 움직였는지를 보여준다.
- * (오늘 점은 오늘 최고가 = 카드 숫자 그대로라 어긋나지 않는다)
+ * 고르는 기준은 평균가다. 최저가 갱신 중 최저가 1등이 평균가 1등과 다르면 오늘 점이 카드 숫자와
+ * 조금 다를 수 있지만, 갱신 버튼 하나로 과거 선 전체가 다른 아이템 추이로 바뀌는 것보단 낫다.
  */
 function lockItemChoices(
   item: PackageItem,
@@ -180,6 +190,12 @@ export function buildPackageValueSeries(
   basis: ValueBasis = 'bundle',
   /** 페온 가치 제거 — 카드와 같은 설정을 넘겨야 오늘 점이 카드 숫자와 일치한다 */
   noPeon: boolean = false,
+  /**
+   * 평균가 시세 — latest 가 실시간 최저가로 덮인 동안에만 넘긴다.
+   * 선택지 고정을 이 값으로 해야 갱신 버튼에 따라 고정 선택지가 바뀌어 과거 선 전체가
+   * 다른 아이템의 추이로 뒤집히지 않는다. 최저가는 오늘 점에만 쓴다.
+   */
+  basePrices?: Record<string, number>,
 ): PackageValuePoint[] {
   const startDate =
     toDateOnlyValue(post.saleStartAt) || toDateOnlyValue(post.createdAt) || kstTodayKey();
@@ -195,11 +211,8 @@ export function buildPackageValueSeries(
       : fallbackWonPer100 > 0
         ? 100 / fallbackWonPer100
         : 0;
-  // 오늘 시세(카드와 같은 값)로 선택지를 박제할 때 쓸 가격 맵
-  const todayNums: Record<string, number> = {};
-  for (const [id, v] of Object.entries(latest)) {
-    if (!id.startsWith('_') && typeof v === 'number') todayNums[id] = v;
-  }
+  // 선택지를 박제할 때 쓸 가격 맵 — 평균가 기준 (최저가 갱신 중이어도 평균가)
+  const todayNums = numericPrices(basePrices ?? latest);
 
   // 환율을 글에 직접 심는다 — calculatePostEfficiency 의 override 인자는 0(미적용)일 때
   // 등록 환율로 폴백해 버려서, 카드가 % 를 숨긴 상태와 어긋난다
@@ -221,6 +234,7 @@ export function buildPackageValueSeries(
     history,
     latest,
     startDate,
+    basePrices,
   ).map(({ date, value: eff }) => ({
     date,
     gold: eff * (post.royalCrystalPrice || 0),

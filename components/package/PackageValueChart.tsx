@@ -41,6 +41,11 @@ type Props = {
   azenaOptions?: AzenaOptions;
   /** 카드가 지금 쓰는 시세(평균가 또는 최저가 덮인 상태) — 오늘 점이 카드 숫자와 일치해야 한다 */
   latestPrices: Record<string, number>;
+  /**
+   * 평균가 시세 — 시세 갱신으로 latestPrices 가 최저가로 덮인 동안에만 넘어온다.
+   * 선택지 고정·기록 없는 아이템 채우기를 이 값으로 해서, 갱신해도 과거 선은 그대로 두고 오늘 점만 움직이게 한다.
+   */
+  basePrices?: Record<string, number>;
   /** 카드가 지금 쓰는 환율 — 카드 입력칸·공통 환율을 그대로 따라간다 */
   goldPerWon: number;
   /** 페온 가치 제거 — 카드 설정 그대로 (안 넘기면 포함) */
@@ -103,7 +108,7 @@ function niceStep(raw: number): number {
   return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
 }
 
-export default function PackageValueChart({ post, azenaOptions, latestPrices, goldPerWon, noPeon = false }: Props) {
+export default function PackageValueChart({ post, azenaOptions, latestPrices, basePrices, goldPerWon, noPeon = false }: Props) {
   const { theme } = useTheme();
   const [priceHistory, setPriceHistory] = useState<PriceHistoryData | null>(null);
   const [failed, setFailed] = useState(false);
@@ -130,11 +135,11 @@ export default function PackageValueChart({ post, azenaOptions, latestPrices, go
   // 환율·체크 상태·시세(최저가 갱신 포함)가 바뀌면 즉시 다시 계산 — 오늘 점은 항상 카드 숫자와 같다
   const series = useMemo<PackageValuePoint[] | null>(() => {
     if (!priceHistory) return null;
-    if (post) return buildPackageValueSeries(post, priceHistory, latestPrices, goldPerWon, basis, noPeon);
+    if (post) return buildPackageValueSeries(post, priceHistory, latestPrices, goldPerWon, basis, noPeon, basePrices);
     if (azenaOptions)
       return buildAzenaValueSeries(priceHistory, latestPrices, goldPerWon, azenaOptions);
     return null;
-  }, [priceHistory, post, azenaOptions, latestPrices, goldPerWon, basis, noPeon]);
+  }, [priceHistory, post, azenaOptions, latestPrices, basePrices, goldPerWon, basis, noPeon]);
 
   // 이득률 축이 기본, 등록 환율이 없는 옛 글은 골드 축으로 대신 그린다
   const benefitMode = !!(series && series.length > 0 && series[0].benefitPct !== null);
