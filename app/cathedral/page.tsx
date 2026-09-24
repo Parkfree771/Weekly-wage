@@ -176,7 +176,8 @@ const SHOP_ITEMS = [
   {
     id: 4, name: '영웅 젬 선택 상자', qty: 1, requiredLevel: 1700,
     image: '/gem-hero.webp', theme: 'gem', hasBg: false,
-    costs: [], limit: '영구 캐릭터 1회', limitType: 'once' as const,
+    costs: [{ name: '은총의 파편', amount: 10 }, { name: '골드', amount: 10000 }],
+    limit: '영구 캐릭터 1회', limitType: 'once' as const,
   },
   {
     id: 5, name: '영웅 젬 선택 상자', qty: 1, requiredLevel: 1720,
@@ -187,7 +188,8 @@ const SHOP_ITEMS = [
   {
     id: 6, name: '영웅 젬 선택 상자', qty: 2, requiredLevel: 1750,
     image: '/gem-hero.webp', theme: 'gem', hasBg: false,
-    costs: [], limit: '영구 캐릭터 1회', limitType: 'once' as const,
+    costs: [{ name: '은총의 파편', amount: 10 }, { name: '골드', amount: 10000 }],
+    limit: '영구 캐릭터 1회', limitType: 'once' as const,
   },
   {
     id: 7, name: '지평의 야금술 선택 상자', qty: 1, requiredLevel: 1700,
