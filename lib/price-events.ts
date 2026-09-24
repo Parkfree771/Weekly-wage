@@ -34,6 +34,7 @@ export const PRICE_EVENTS: PriceEventInfo[] = [
   { date: '2026-06-20', label: '로아온 썸머', color: '#0284c7', darkColor: '#38bdf8' },
   // 벨가르딘 → 어두운 보라 (다크에서는 묻히므로 두 단계 올린다)
   { date: '2026-08-05', label: '벨가르딘', color: '#5b21b6', darkColor: '#a78bfa' },
+  { date: '2026-09-23', label: '익스 3막', color: '#c084fc', darkColor: '#e9d5ff' },
 ];
 
 // 차트의 특별 이벤트 점 색상 — 카테고리 선 색·수요일 보색과 모두 구분되는 제3의 강조색.
