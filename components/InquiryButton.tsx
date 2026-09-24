@@ -1,9 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { fetchInquiryLog, type InquiryLogEntry } from '@/lib/inquiry-log';
 
 const MAX_LEN = 500;
+
+const fmtDate = (d: string) => d.slice(5).replace('-', '.');
+
+const QA_MARK: React.CSSProperties = {
+  flexShrink: 0, width: '22px', height: '22px', borderRadius: '6px',
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  fontSize: '0.75rem', fontWeight: 800, marginTop: '1px',
+};
 
 type Status = 'idle' | 'sending' | 'sent' | 'error';
 
@@ -26,6 +35,19 @@ export default function InquiryButton({
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  // 최근 반영된 요청 — 모달을 열 때만 읽는다 (세션 동안 한 번)
+  const [log, setLog] = useState<InquiryLogEntry[] | null>(null);
+
+  useEffect(() => {
+    if (!open || log) return;
+    let alive = true;
+    fetchInquiryLog().then((items) => {
+      if (alive) setLog(items);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [open, log]);
 
   const close = () => {
     if (status === 'sending') return;
@@ -91,9 +113,9 @@ export default function InquiryButton({
             aria-label="문의하기"
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: '100%', maxWidth: '420px',
+              width: '100%', maxWidth: '620px', maxHeight: 'calc(100vh - 32px)', overflowY: 'auto',
               background: 'var(--card-bg)', borderRadius: '14px',
-              padding: '20px', position: 'relative',
+              padding: '24px', position: 'relative',
               boxShadow: 'var(--shadow-lg)',
             }}
           >
@@ -170,6 +192,58 @@ export default function InquiryButton({
                   <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '8px' }}>{errorMsg}</div>
                 )}
               </>
+            )}
+
+            {/* 최근 반영된 요청 — 익명 문의자가 처리 결과를 확인하고, 다른 사람도 부담 없이 요청하게 */}
+            {log && log.length > 0 && (
+            <div style={{ marginTop: '22px', paddingTop: '18px', borderTop: '1px solid var(--border-color)' }}>
+              <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                최근 반영된 요청
+              </div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                보내주신 문의는 이렇게 반영되고 있어요.
+              </div>
+              <div style={{ maxHeight: '46vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '4px' }}>
+                {log.map((e) => (
+                  <div
+                    key={e.id}
+                    style={{
+                      padding: '14px 16px', borderRadius: '10px',
+                      background: 'var(--card-header-bg)', border: '1px solid var(--border-color)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px 12px', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{e.page}</span>
+                      <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: '16px', fontVariantNumeric: 'tabular-nums' }}>
+                        <span>
+                          요청 <b style={{ color: '#3b82f6', marginLeft: '4px' }}>{fmtDate(e.requestedAt)}</b>
+                        </span>
+                        <span>
+                          처리 <b style={{ color: '#10b981', marginLeft: '4px' }}>{fmtDate(e.resolvedAt)}</b>
+                        </span>
+                      </span>
+                    </div>
+                    <div style={{ marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <span style={{ ...QA_MARK, color: '#fff', background: '#3b82f6' }}>Q</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>익명</span>
+                      </div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.55 }}>
+                        {e.request}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ ...QA_MARK, width: 'auto', padding: '0 8px', color: '#fff', background: '#10b981' }}>관리자</span>
+                      </div>
+                      <div style={{ fontSize: '0.87rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                        {e.reply}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
             )}
           </div>
         </div>

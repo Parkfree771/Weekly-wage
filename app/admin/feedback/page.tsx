@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdmin } from '@/lib/admin';
 import styles from './page.module.css';
+import InquiryLogForm from './InquiryLogForm';
+import { gameDateKey, pageLabelOf, type InquiryLogEntry, type InquiryLogInput } from '@/lib/inquiry-log';
 
 type FeedbackItem = {
   id: string;
@@ -21,6 +23,10 @@ export default function AdminFeedbackPage() {
 
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
+  // 공개 처리 내역 — 문의하기 모달 "최근 반영된 요청"
+  const [logs, setLogs] = useState<InquiryLogEntry[]>([]);
+  // 열린 폼: 'new'(직접 추가) · 'log:<id>'(내역 수정) · 'fb:<id>'(문의에서 작성·수정)
+  const [editing, setEditing] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -36,6 +42,7 @@ export default function AdminFeedbackPage() {
       }
       const data = await res.json();
       setItems((data.items as FeedbackItem[]) || []);
+      setLogs((data.logs as InquiryLogEntry[]) || []);
       setState('idle');
     } catch {
       setState('error');
@@ -106,6 +113,68 @@ export default function AdminFeedbackPage() {
     if (ok) setSavedId(item.id);
   };
 
+  // 공개 처리 내역 쓰기 — 응답에 최신 목록이 온다
+  const logRequest = async (
+    method: 'POST' | 'PATCH' | 'DELETE',
+    body?: Record<string, unknown>,
+    id?: string,
+  ): Promise<string | null> => {
+    if (!user) return '로그인이 필요합니다.';
+    const token = await user.getIdToken();
+    const res = await fetch(`/api/inquiry-log${id ? `?id=${encodeURIComponent(id)}` : ''}`, {
+      method,
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return data.message || '저장에 실패했습니다.';
+    setLogs((data.items as InquiryLogEntry[]) || []);
+    setEditing(null);
+    return null;
+  };
+
+  const saveLog = (entry: InquiryLogEntry | undefined) => (v: InquiryLogInput) =>
+    entry ? logRequest('PATCH', { ...v, id: entry.id }) : logRequest('POST', { ...v });
+
+  const deleteLog = (id: string) => async () => {
+    await logRequest('DELETE', undefined, id);
+  };
+
+  // 문의에서 공개 답변을 쓰면 처리됨도 같이 켠다
+  const saveFromFeedback =
+    (item: FeedbackItem, entry: InquiryLogEntry | undefined) => async (v: InquiryLogInput) => {
+      const err = await saveLog(entry)({ ...v, feedbackId: item.id });
+      if (!err && !item.processed) await toggleProcessed(item);
+      return err;
+    };
+
+  const newDraft = (item?: FeedbackItem): InquiryLogInput => ({
+    page: item ? pageLabelOf(item.page) : '',
+    requestedAt: gameDateKey(item ? item.createdAt : Date.now()),
+    resolvedAt: gameDateKey(Date.now()),
+    request: '',
+    reply: '',
+  });
+
+  const toInput = (e: InquiryLogEntry): InquiryLogInput => ({
+    page: e.page,
+    requestedAt: e.requestedAt,
+    resolvedAt: e.resolvedAt,
+    request: e.request,
+    reply: e.reply,
+    ...(e.feedbackId ? { feedbackId: e.feedbackId } : {}),
+  });
+
+  const smallBtn: React.CSSProperties = {
+    padding: '3px 12px',
+    borderRadius: '6px',
+    border: '1px solid var(--border-color)',
+    background: 'transparent',
+    color: 'inherit',
+    fontSize: '0.78rem',
+    cursor: 'pointer',
+  };
+
   if (loading) {
     return <div className={styles.center}>불러오는 중…</div>;
   }
@@ -133,6 +202,82 @@ export default function AdminFeedbackPage() {
           {state === 'loading' ? '새로고침 중…' : '새로고침'}
         </button>
       </div>
+
+      {/* 공개 처리 내역 */}
+      <section
+        style={{
+          marginBottom: '24px',
+          padding: '16px',
+          borderRadius: '12px',
+          border: '1px solid var(--border-color)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>공개 처리 내역 ({logs.length})</h2>
+          <button
+            className={styles.btn}
+            style={{ marginLeft: 'auto' }}
+            onClick={() => setEditing(editing === 'new' ? null : 'new')}
+          >
+            직접 추가
+          </button>
+        </div>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 10px' }}>
+          문의하기 창 &quot;최근 반영된 요청&quot;에 그대로 나갑니다. 저장하면 바로 반영됩니다.
+        </p>
+        {editing === 'new' && (
+          <InquiryLogForm initial={newDraft()} onSave={saveLog(undefined)} onCancel={() => setEditing(null)} />
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+          {logs.map((e) => (
+            <div
+              key={e.id}
+              style={{
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: 'var(--card-header-bg)',
+                border: '1px solid var(--border-color)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px 14px', fontSize: '0.78rem' }}>
+                <b>{e.page}</b>
+                <span>
+                  요청 <b style={{ color: '#3b82f6' }}>{e.requestedAt}</b>
+                </span>
+                <span>
+                  처리 <b style={{ color: '#10b981' }}>{e.resolvedAt}</b>
+                </span>
+                {!e.feedbackId && <span style={{ color: 'var(--text-muted)' }}>직접 추가</span>}
+                <button
+                  style={{ ...smallBtn, marginLeft: 'auto' }}
+                  onClick={() => setEditing(editing === `log:${e.id}` ? null : `log:${e.id}`)}
+                >
+                  수정
+                </button>
+              </div>
+              {editing === `log:${e.id}` ? (
+                <InquiryLogForm
+                  initial={toInput(e)}
+                  onSave={saveLog(e)}
+                  onCancel={() => setEditing(null)}
+                  onDelete={deleteLog(e.id)}
+                />
+              ) : (
+                <>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: '8px' }}>
+                    <span style={{ color: '#3b82f6', marginRight: '6px' }}>Q</span>
+                    {e.request}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    <span style={{ color: '#10b981', fontWeight: 700, marginRight: '6px' }}>관리자</span>
+                    {e.reply}
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
 
       {state === 'error' && (
         <p className={styles.error}>불러오기에 실패했습니다.</p>
@@ -228,6 +373,12 @@ export default function AdminFeedbackPage() {
                   </span>
                 )}
                 <button
+                  onClick={() => setEditing(editing === `fb:${item.id}` ? null : `fb:${item.id}`)}
+                  style={{ ...smallBtn, padding: '5px 14px', borderColor: '#10b981', color: '#10b981', fontWeight: 600 }}
+                >
+                  {logs.some((l) => l.feedbackId === item.id) ? '공개됨 · 수정' : '공개 답변 쓰기'}
+                </button>
+                <button
                   className={styles.deleteBtn}
                   onClick={() => remove(item.id)}
                   style={{ marginLeft: 'auto' }}
@@ -235,6 +386,17 @@ export default function AdminFeedbackPage() {
                   삭제
                 </button>
               </div>
+              {editing === `fb:${item.id}` && (() => {
+                const entry = logs.find((l) => l.feedbackId === item.id);
+                return (
+                  <InquiryLogForm
+                    initial={entry ? toInput(entry) : { ...newDraft(item), feedbackId: item.id }}
+                    onSave={saveFromFeedback(item, entry)}
+                    onCancel={() => setEditing(null)}
+                    onDelete={entry ? deleteLog(entry.id) : undefined}
+                  />
+                );
+              })()}
             </li>
           ))}
         </ul>

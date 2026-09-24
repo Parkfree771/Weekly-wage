@@ -87,6 +87,7 @@ TTL 300 은 그대로 두되, "따봉이 사라졌다 생기는" 문제는 캐�
 | POST /api/package/react | 따봉·흠 클릭 | 사용자 행동당 1회(250ms 디바운스) — 같은 표 재전송이어도 응답에 최신 stats 동봉 |
 | POST /api/package/revalidate | 글·댓글 쓰기 직후 | 쓰기 행동당 1회 |
 | POST /api/feedback | 문의·제보 제출 | 사용자 행동당 1회 |
+| GET /api/inquiry-log | 문의하기 모달을 **열 때만** (세션당 1회) | durable 30일 + `inquiry-log` 태그 — 관리자 쓰기에만 바뀌므로 관리자 쓰기(POST·PATCH·DELETE) 때 퍼지로 갱신. 데이터는 Firestore `inquiryLog` |
 | /api/cron/* | GitHub Actions 시간당 3회 + heal 일 1회 | 월 ~2,300회, 무시 가능 |
 | /api/admin/* | 수동 운영 | 무시 가능 |
 | 페이지 HTML·RSC | 모든 방문·봇 | 정적 페이지는 durable, /package·상세는 ISR 300 |

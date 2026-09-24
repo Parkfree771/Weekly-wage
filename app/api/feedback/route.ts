@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { getAdminFirestore, verifyBearerAdmin } from '@/lib/firebase-admin';
+import { readInquiryLog } from '@/lib/inquiry-log-server';
 
 // firebase-admin SDK는 Node 런타임 필요
 export const runtime = 'nodejs';
@@ -93,7 +94,9 @@ export async function GET(req: Request) {
     .limit(300)
     .get();
   const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  return NextResponse.json({ items });
+  // 공개 처리 내역도 같이 — 관리자는 CDN 캐시를 거치지 않은 최신본을 봐야 한다
+  const logs = await readInquiryLog();
+  return NextResponse.json({ items, logs });
 }
 
 // ─── 의견 처리상태/메모 수정 (관리자 전용) ───
