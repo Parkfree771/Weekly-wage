@@ -118,15 +118,6 @@ export async function deletePackagePost(postId: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTION, postId));
 }
 
-// ─── 조회수 ───
-
-/** 조회수 1 증가 */
-export async function incrementPackageViewCount(postId: string): Promise<void> {
-  await updateDoc(doc(db, COLLECTION, postId), {
-    viewCount: increment(1),
-  });
-}
-
 // ─── 댓글 ───
 
 /** 댓글 생성 → 생성된 문서 ID 반환 */

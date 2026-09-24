@@ -1274,16 +1274,3 @@ const STATS_DATA: Record<string, StatsData> = {
 export function getStatsData(fromLevel: number, breathType: BreathFilterType): StatsData | null {
   return STATS_DATA[`${fromLevel}_${breathType}`] || null;
 }
-
-export function getStatsDataForRange(
-  fromLevel: number,
-  toLevel: number,
-  breathType: BreathFilterType
-): StatsData[] {
-  const results: StatsData[] = [];
-  for (let level = fromLevel; level < toLevel; level++) {
-    const data = getStatsData(level, breathType);
-    if (data) results.push(data);
-  }
-  return results;
-}

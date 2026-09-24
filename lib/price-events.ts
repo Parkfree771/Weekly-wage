@@ -50,12 +50,6 @@ export const SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY: Record<string, string> = {
   '보석': '#f59e0b',          // 앰버 (선=핑크, 보색=청록)
 };
 
-export const SPECIAL_EVENT_DOT_FALLBACK = '#ec4899';
-
-/** 카테고리 라벨 → 차트 특별 이벤트 점 색 */
-export const getSpecialEventColor = (categoryLabel?: string): string =>
-  (categoryLabel && SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY[categoryLabel]) || SPECIAL_EVENT_DOT_FALLBACK;
-
 /** 이벤트 대비 카드용 이름 — 줄임말이면 온전한 이름으로 */
 export const getEventDisplayName = (e: PriceEventInfo): string => e.fullLabel || e.label;
 

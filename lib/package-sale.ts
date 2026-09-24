@@ -103,29 +103,6 @@ export function formatSalePeriodDateOnly(post: SaleFields | null | undefined): s
   return `~ ${fmt(end!)}`;
 }
 
-// ─── 등록/수정 폼용 (input type="datetime-local") ───
-
-/** 저장값 → datetime-local 입력값 ("2026-01-01T00:00", 한국 시간 기준) */
-export function toDatetimeLocalValue(value: any): string {
-  const d = toSaleDate(value);
-  if (!d) return '';
-  const { y, mo, d: day, h, mi } = kstParts(d);
-  return `${y}-${mo}-${day}T${h}:${mi}`;
-}
-
-/**
- * datetime-local 입력값 → Date (빈 값이면 null — Firestore 에 null 로 저장해 기간을 비운다).
- * 입력칸에 적은 값은 항상 한국 시간으로 읽는다 — 오프셋을 안 붙이면 new Date 가
- * "실행한 기기의 로컬 시간"으로 해석해서, 해외/서버 시간대 기기로 등록하면 9시간 밀린다.
- */
-export function fromDatetimeLocalValue(value: string): Date | null {
-  if (!value) return null;
-  // 브라우저는 보통 "YYYY-MM-DDTHH:mm" 을 주지만 초까지 주는 경우도 있다
-  const normalized = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? `${value}:00` : value;
-  const d = new Date(`${normalized}${KST_OFFSET}`);
-  return isNaN(d.getTime()) ? null : d;
-}
-
 // ─── 판매 시작일 · 종료일 (input type="date", 시각 고정) ───
 // 캐시샵 패키지는 오전 10시(점검 후)에 올라오고 오전 6시(점검 전)에 내려가서, 폼에서는 날짜만 받는다.
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import { MATERIAL_IDS, MATERIAL_BUNDLE_SIZES } from '@/data/raidRewards';
 

@@ -4,22 +4,14 @@ export {
   RIFT_TIERS,
   GUARDIAN_TIERS,
   EVENT_CONTENTS,
-  SAND_TABLE,
   GUARDIAN_ROTATION,
   GUARDIAN_FIXED,
   GUARDIAN_REF_WEEK,
-  RAID_CARD_IMAGES,
   findTier,
   eventTierOf,
   sandTierOf,
   getSandMaterials,
   type ContentMaterial,
-  type ContentMaterial as Material,
-  type ContentTier,
-  type EventContent,
-  type EventTierKey,
-  type SandTierKey,
-  type SandRow,
 } from '@/data/rewardTable';
 
 import {

@@ -98,12 +98,6 @@ export type PackagePost = {
 /** 게시물 생성 시 전달 데이터 */
 export type PackagePostCreateData = Omit<PackagePost, 'id' | 'viewCount' | 'likeCount' | 'sosoCount' | 'commentCount' | 'createdAt' | 'updatedAt'>;
 
-/** 좋아요 문서 */
-export type PackageLike = {
-  uid: string;
-  createdAt: Timestamp | any;
-};
-
 /** 댓글 문서 */
 export type PackageComment = {
   id: string;

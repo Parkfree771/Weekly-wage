@@ -6,7 +6,6 @@ import { RAID_TABLE } from './rewardTable';
 
 export {
   MATERIAL_IDS,
-  MATERIAL_NAMES,
   MATERIAL_BUNDLE_SIZES,
   type MaterialReward,
 } from './rewardTable';

@@ -347,28 +347,7 @@ export default function RefiningCalculator({
     };
   }), [baseEquipments, startOverrides]);
 
-  // 시작 단계 조정 (표 데이터 범위 내: 일반=계승전 10 / 계승후 11 ~ 25, 상급=0~40)
-  const adjustStart = (eq: (typeof equipments)[number], kind: 'normal' | 'advanced', delta: number) => {
-    // 완갑은 0강부터 시작, 계승(전율) 11, 계승 전 10
-    const normalMin = eq.isWangap ? 0 : eq.isSuccession ? 11 : 10;
-    const nextNormal = kind === 'normal'
-      ? Math.min(Math.max(eq.currentLevel + delta, normalMin), 25)
-      : eq.currentLevel;
-    const nextAdvanced = kind === 'advanced'
-      ? Math.min(Math.max(eq.currentAdvancedLevel + delta, 0), 40)
-      : eq.currentAdvancedLevel;
-    setStartOverrides(prev => ({
-      ...prev,
-      [eq.name]: { normal: nextNormal, advanced: nextAdvanced },
-    }));
-    // 시작 단계가 바뀌면 해당 종류의 목표는 초기화 (목표 <= 시작 방지)
-    setTargetLevels(prev => ({
-      ...prev,
-      [eq.name]: { ...(prev[eq.name] ?? { normal: null, advanced: null }), [kind]: null },
-    }));
-  };
-
-  // 시작 단계 직접 선택 (장비 카드 현재 드롭다운) — adjustStart와 동일한 규칙 + 목표 초기화
+  // 시작 단계 직접 선택 (장비 카드 현재 드롭다운) — 바뀐 종류의 목표는 초기화 (목표 <= 시작 방지)
   const setStart = (eq: (typeof equipments)[number], kind: 'normal' | 'advanced', value: number) => {
     setStartOverrides(prev => ({
       ...prev,

@@ -48,12 +48,6 @@ export function recordStats(postId: string, raw: unknown): boolean {
   return true;
 }
 
-/** GET /api/package/stats 응답 통째로 기억 */
-export function recordManyStats(stats: Record<string, unknown> | null | undefined): void {
-  if (!stats) return;
-  for (const [id, st] of Object.entries(stats)) recordStats(id, st);
-}
-
 export function getStats(postId: string): ClientStats | undefined {
   return store.get(postId);
 }

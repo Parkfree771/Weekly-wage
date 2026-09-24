@@ -84,42 +84,6 @@ function metricsForN(baseProb: number, be: BreathEffect, N: number, mode: CalcMo
 }
 
 /**
- * 최적 숨결 정책 계산 (현재 시세 기준 총 골드 최소화)
- * @param baseProb 기본 확률
- * @param be 숨결 효과(max, per)
- * @param matGoldPerTry 1회당 재료 골드값 (재료 시세 합 + 누골, 숨결 제외)
- * @param breathUnitPrice 숨결 1개 시세
- * @param mode 중앙값/평균값/장기백
- */
-export function optimalBreath(
-  baseProb: number,
-  be: BreathEffect,
-  matGoldPerTry: number,
-  breathUnitPrice: number,
-  mode: CalcMode
-): OptimalPolicy {
-  const full = metricsForN(baseProb, be, 100000, mode);
-
-  // 숨결 효과 없거나 시세 미로딩 시 풀숨으로 폴백
-  if (!be || be.max === 0 || breathUnitPrice <= 0 || matGoldPerTry <= 0) {
-    return { optimalN: 100000, tries: full.tries, breaths: full.breaths, kind: 'full' };
-  }
-
-  let best: { N: number; cost: number; tries: number; breaths: number } | null = null;
-  for (let N = 0; N <= 250; N++) {
-    const m = metricsForN(baseProb, be, N, mode);
-    const cost = m.tries * matGoldPerTry + m.breaths * breathUnitPrice;
-    if (best === null || cost < best.cost - 1e-6) best = { N, cost, tries: m.tries, breaths: m.breaths };
-  }
-  const b = best!;
-  let kind: OptimalPolicy['kind'];
-  if (b.N === 0) kind = 'none';
-  else if (Math.abs(b.breaths - full.breaths) < 1e-6) kind = 'full';
-  else kind = 'partial';
-  return { optimalN: b.N, tries: b.tries, breaths: b.breaths, kind };
-}
-
-/**
  * 계승 전 최적 정책 계산: 숨결(앞 N회) × 책 선택(후보 중 택1 또는 미사용)을 함께 탐색해 총 골드 최소화
  * @param books 허용된 책 후보 목록 (일반/강화). price 0 = 귀속(공짜) 책으로 취급.
  *              시세 미로딩 등으로 사용할 수 없는 책은 호출부에서 목록에 넣지 않아야 한다.

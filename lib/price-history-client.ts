@@ -378,13 +378,3 @@ export async function fetchLatestPrices(): Promise<LatestPrices> {
   })();
   return pendingLatest;
 }
-
-/**
- * 캐시 강제 초기화 (필요시)
- */
-export function clearPriceCache(): void {
-  cachedHistory = null;
-  cachedLatest = null;
-  lastHistoryCacheKey = '';
-  lastLatestCacheKey = '';
-}

@@ -137,20 +137,6 @@ export const WEAPON_MATERIALS: Record<StageKey, {
   '31-40': { 파괴석: 1400, 돌파석: 32, 아비도스: 30, 운명파편: 13000, 골드: 4000, 용암: 24, 실링: 70000, 책: '야금술4단' },
 };
 
-// 아이템 ID
-export const ADVANCED_MATERIAL_IDS: Record<string, number> = {
-  야금술1단: 66112711,
-  재봉술1단: 66112712,
-  야금술2단: 66112713,
-  재봉술2단: 66112714,
-  야금술3단: 66112715,
-  재봉술3단: 66112716,
-  야금술4단: 66112717,
-  재봉술4단: 66112718,
-  빙하: 66111132,
-  용암: 66111131,
-};
-
 // ============================================
 // 8. 유틸리티 함수
 // ============================================
@@ -163,23 +149,6 @@ export function getStageKey(level: number): StageKey {
   if (level < 20) return '11-20';
   if (level < 30) return '21-30';
   return '31-40';
-}
-
-/**
- * 현재 레벨에서 구간 번호 반환 (1, 2, 3, 4)
- */
-export function getStageNumber(level: number): number {
-  if (level < 10) return 1;
-  if (level < 20) return 2;
-  if (level < 30) return 3;
-  return 4;
-}
-
-/**
- * 책 사용 가능 여부 확인 (모든 구간 사용 가능)
- */
-export function canUseBook(level: number): boolean {
-  return level < 40; // 모든 구간에서 책 사용 가능
 }
 
 /**

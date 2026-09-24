@@ -87,7 +87,6 @@ export default function AdvancedRefiningSimulator({ onSearchComplete, equipments
   // 상급 재련은 업화 장비만 (계승/에스더 제외)
   const equipments = (externalEquipments || []).filter(eq => !eq.isSuccession && !eq.isEsther);
   const searched = externalSearched || false;
-  const characterInfo = externalCharacterInfo || null;
 
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
 

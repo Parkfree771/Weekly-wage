@@ -304,7 +304,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
   const params = useParams();
   const router = useRouter();
   const postId = params.postId as string;
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
 
   const [post, setPost] = useState<PackagePost | null>(initialPost);
   // 1시간 거래 평균가 — 기본 시세

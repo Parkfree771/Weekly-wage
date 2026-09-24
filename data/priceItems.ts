@@ -92,6 +92,3 @@ export const PRICE_BUNDLE_SIZE: Record<string, number> = {
   '66102107': 100,   // 운명의 수호석 결정
   '66130143': 3000,  // 운명의 파편 주머니(대)
 };
-
-/** 그 종목의 묶음 크기 (없으면 1) */
-export const bundleOf = (id: string) => PRICE_BUNDLE_SIZE[id] || 1;

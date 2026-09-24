@@ -46,16 +46,6 @@ const EQUIPMENT_NAME_MAP: Record<string, string> = {
   '무기': '무기',
 };
 
-// 아이템 레벨에서 강화 레벨 계산
-// 1640 = +10, 1645 = +11, 1650 = +12, ..., 1700 = +22, 1705 = +23, 1710 = +24, 1715 = +25
-export function getUpgradeLevelFromItemLevel(itemLevel: number): number {
-  if (itemLevel < 1640) return 9; // 1640 미만은 +9 이하
-  if (itemLevel >= 1715) return 25; // 1715 이상은 +25
-
-  // 1640부터 5씩 증가
-  return Math.floor((itemLevel - 1640) / 5) + 10;
-}
-
 // Tooltip에서 아이템 레벨 파싱
 export function parseItemLevelFromTooltip(tooltip: string): number | null {
   try {
@@ -279,17 +269,4 @@ export function parseEquipmentData(
   }
 
   return equipments;
-}
-
-// 장비 등급별 색상 반환
-export function getGradeColor(grade: string): string {
-  const gradeColors: Record<string, string> = {
-    '에스더': '#3dd2cc', // 청록색 (Esther - 최상위)
-    '고대': '#d97706', // 주황색 (Ancient)
-    '유물': '#9333ea', // 보라색 (Relic)
-    '영웅': '#3b82f6', // 파란색 (Epic)
-    '희귀': '#10b981', // 초록색 (Rare)
-  };
-
-  return gradeColors[grade] || '#6b7280'; // 기본 회색
 }

@@ -111,16 +111,6 @@ export function getBaseRewardRows(
   });
 }
 
-// 기본 보상 합계 (골드)
-export function calcBaseRewardGold(
-  mode: 'hell' | 'narak',
-  tier: number,
-  prices: Record<string, number>,
-  plenty: boolean = false
-): number {
-  return getBaseRewardRows(mode, tier, prices, plenty).reduce((sum, r) => sum + r.gold, 0);
-}
-
 // ─── 시세 연동 아이템 매핑 ───
 type PriceItemMapping = Record<string, { id: string; bundle: number; id2?: string; bundle2?: number }>;
 
@@ -384,7 +374,6 @@ export const isTicketItemId = (itemId: string): boolean =>
 // 그중 1개를 고른다. 그래서 상자 하나의 기댓값은 목록 평균이 아니라 "뜬 k개 중 최고값의 기댓값"이다.
 // 진행 규칙은 docs/hell-reward/sim-rules.md.
 export const BOX_PICK_COUNT = 3;
-export const BOX_PICK_COUNT_BONUS = 4;
 
 function comb(n: number, k: number): number {
   if (k < 0 || k > n) return 0;

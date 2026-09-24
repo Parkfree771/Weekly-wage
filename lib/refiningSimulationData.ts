@@ -1,55 +1,8 @@
-import { getSuccessionBreathEffect } from './refiningData';
-
-const JANGIN_ACCUMULATE_DIVIDER = 2.15;
 
 // ========================================
 // 계산 모드 타입
 // ========================================
 export type CalcMode = 'median' | 'average' | 'pity';
-
-// ========================================
-// 계승 후 시뮬레이션 함수
-// ========================================
-
-/**
- * 계승 후 강화 시뮬레이션 (단일 시도)
- * @param baseProb 기본 확률
- * @param useBreath 숨결 사용 여부
- * @returns 성공까지 필요한 시도 횟수
- */
-function simulateSuccessionRefining(baseProb: number, useBreath: boolean): number {
-  let jangin = 0; // 장인의 기운
-  let currentProb = baseProb; // 현재 확률 (실패 시 증가)
-  let tries = 0;
-
-  // 숨결 효과 계산 (계승 후용 테이블 사용)
-  const breathEffect = getSuccessionBreathEffect(baseProb);
-  const breathProb = useBreath ? breathEffect.max * breathEffect.per : 0;
-
-  while (true) {
-    tries++;
-
-    // 장인의 기운 100% 도달 시 무조건 성공
-    if (jangin >= 1) {
-      return tries;
-    }
-
-    // 최종 확률 계산: currentProb + breathProb (최대 100%)
-    const finalProb = Math.min(currentProb + breathProb, 1);
-
-    // 성공 판정
-    if (Math.random() < finalProb) {
-      return tries;
-    }
-
-    // 실패 시 처리
-    // 1. 장인의 기운 누적: jangin += (prob / 2.15)
-    jangin += finalProb / JANGIN_ACCUMULATE_DIVIDER;
-
-    // 2. 실패 시 기본 확률 증가: +10%, 최대 2배
-    currentProb = Math.min(currentProb + baseProb * 0.1, baseProb * 2);
-  }
-}
 
 /**
  * 계승 후 평균 시도 횟수 계산 (몬테카를로 시뮬레이션)
@@ -192,11 +145,6 @@ export const getSuccessionTries = (level: number, useBreath: boolean, useBook: b
   }
 };
 
-/** @deprecated getSuccessionTries 사용 권장 */
-export const getSuccessionAverageTries = (level: number, useBreath: boolean): number => {
-  return getSuccessionTries(level, useBreath, false, 'average');
-};
-
 // ========================================
 // 계승 전 (기존) 시뮬레이션 데이터
 // ========================================
@@ -309,9 +257,4 @@ export const getTries = (level: number, useBreath: boolean, useBook: boolean, mo
     if (mode === 'average') return CASE_1_AVG_TRIES[level] || 0;
     return CASE_1_MEDIAN_TRIES[level] || 0;
   }
-};
-
-/** @deprecated getTries 사용 권장 */
-export const getAverageTries = (level: number, useBreath: boolean, useBook: boolean): number => {
-  return getTries(level, useBreath, useBook, 'average');
 };

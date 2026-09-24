@@ -1,5 +1,5 @@
 import { useTheme } from './ThemeProvider';
-import React, { useMemo, useCallback, useContext, useState, useEffect } from 'react';
+import { useMemo, useCallback, useContext, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';

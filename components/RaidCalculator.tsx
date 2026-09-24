@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { raids, upcomingRaids, getRaidNewLabel } from '@/data/raids';
 // 코어 레이드 그룹·관문당 획득량 — 단일 원본 테이블(data/rewardTable.ts)에서 파생

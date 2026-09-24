@@ -1,25 +1,13 @@
 // 사용자 데이터 관리 서비스
 
-import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase-firestore';
 import {
   UserProfile,
   Character,
   WeeklyChecklist,
-  CharacterWeeklyState,
   createEmptyWeeklyState,
 } from '@/types/user';
-
-// 사용자 프로필 가져오기
-export async function getUserProfile(uid: string): Promise<UserProfile | null> {
-  const userRef = doc(db, 'users', uid);
-  const userSnap = await getDoc(userRef);
-
-  if (userSnap.exists()) {
-    return { uid, ...userSnap.data() } as UserProfile;
-  }
-  return null;
-}
 
 // 캐릭터 등록 (로아 API로 조회 후 저장)
 export async function registerCharacter(
@@ -139,39 +127,6 @@ export async function refreshCharacter(
   }
 }
 
-// 주간 체크리스트 저장
-export async function saveWeeklyChecklist(
-  uid: string,
-  weeklyChecklist: WeeklyChecklist
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const userRef = doc(db, 'users', uid);
-    await updateDoc(userRef, { weeklyChecklist });
-    return { success: true };
-  } catch (error) {
-    console.error('체크리스트 저장 오류:', error);
-    return { success: false, error: '저장에 실패했습니다.' };
-  }
-}
-
-// 단일 캐릭터 체크리스트 업데이트
-export async function updateCharacterWeekly(
-  uid: string,
-  characterName: string,
-  state: CharacterWeeklyState
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const userRef = doc(db, 'users', uid);
-    await updateDoc(userRef, {
-      [`weeklyChecklist.${characterName}`]: state,
-    });
-    return { success: true };
-  } catch (error) {
-    console.error('캐릭터 체크리스트 업데이트 오류:', error);
-    return { success: false, error: '저장에 실패했습니다.' };
-  }
-}
-
 // 마이페이지 이미지 백필에서 이 세션에 이미 조회한 캐릭터 이름
 const imageBackfillAttempted = new Set<string>();
 
@@ -257,48 +212,5 @@ export async function updateCharacterImages(
   } catch (error) {
     console.error('캐릭터 이미지 업데이트 오류:', error);
     return { success: false, error: '이미지 로드에 실패했습니다.' };
-  }
-}
-
-// 캐릭터 삭제
-export async function removeCharacter(
-  uid: string,
-  characterName: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-
-    if (userSnap.exists()) {
-      const userProfile = userSnap.data() as UserProfile;
-      const characters = userProfile.characters.filter(c => c.name !== characterName);
-      const weeklyChecklist = { ...userProfile.weeklyChecklist };
-      delete weeklyChecklist[characterName];
-
-      await updateDoc(userRef, {
-        characters,
-        weeklyChecklist,
-        mainCharacter: characters[0]?.name || '',
-      });
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error('캐릭터 삭제 오류:', error);
-    return { success: false, error: '삭제에 실패했습니다.' };
-  }
-}
-
-// 계정 탈퇴 (DB에서 사용자 데이터 삭제)
-export async function deleteUserAccount(
-  uid: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const userRef = doc(db, 'users', uid);
-    await deleteDoc(userRef);
-    return { success: true };
-  } catch (error) {
-    console.error('계정 삭제 오류:', error);
-    return { success: false, error: '계정 삭제에 실패했습니다.' };
   }
 }

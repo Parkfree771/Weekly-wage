@@ -96,7 +96,6 @@ export default function WeeklyGoldPage() {
   const [, setCharacterCalc] = useState<{[char: string]: CharacterGoldCalc}>({});
   const [autoSearchName, setAutoSearchName] = useState<string | undefined>(undefined);
   const saveFnRef = useRef<(() => boolean) | null>(null);
-  const [, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleGateSelectionChange = useCallback((gs: {[key: string]: {[key: string]: {[key: string]: 'none' | 'withMore' | 'withoutMore'}}}, cc: {[char: string]: CharacterGoldCalc}) => {

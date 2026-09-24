@@ -30,9 +30,6 @@ export const SUCCESSION_MAIN_STAT: Record<string, (number | undefined)[]> = {
   장갑: [, , , , , , , , , , , 116161, 119465, 122885, 126425, 130087, 133879, 137229, 140662, 144180, 147786, 151483, 155271, 159155, 163136, 167216],
 };
 
-export const MIN_REFINE_LEVEL = 11;
-export const MAX_REFINE_LEVEL = 25;
-
 /**
  * 완갑 (등급, 단계)별 능력치. 완갑은 한 항목에서 네 가지를 동시에 준다.
  *   stat     주스탯 (sqrt 안)
@@ -276,12 +273,6 @@ export function shiftCombatPowerBase(base: CombatPowerBase, delta: StatDelta): C
     baseAtkFlat: base.baseAtkFlat + delta.baseAtkFlat,
     baseAtkPct: base.baseAtkPct + delta.baseAtkPct,
   };
-}
-
-/** 해당 부위·단계가 전투력 계산 대상인지 (계승 후 장비, 11~25단계) */
-export function isCombatPowerSupported(name: string, level: number): boolean {
-  const table = SUCCESSION_MAIN_STAT[name];
-  return !!table && level >= MIN_REFINE_LEVEL && level <= MAX_REFINE_LEVEL && table[level] != null;
 }
 
 /** from → to 단계로 갈 때의 주스탯(무기는 무기 공격력) 증가량 */

@@ -21,7 +21,6 @@ const CardBgImage = memo(function CardBgImage({ src, alt, className }: { src: st
 const Image = NextImage;
 import { useAuth } from '@/contexts/AuthContext';
 import { refreshCharacter, updateCharacterImages } from '@/lib/user-service';
-import { validateNickname, checkNicknameAvailable } from '@/lib/nickname-service';
 import NicknameModal from '@/components/auth/NicknameModal';
 import GuideFaq from '@/components/common/GuideFaq';
 import AdBanner from '@/components/ads/AdBanner';
@@ -201,7 +200,7 @@ function getKSTWeekInfo() {
 }
 
 export default function MyPage() {
-  const { user, userProfile, loading, refreshUserProfile, signInWithGoogle, signInWithApple, setNickname: updateNickname } = useAuth();
+  const { user, userProfile, loading, refreshUserProfile, signInWithGoogle, signInWithApple } = useAuth();
 
   // 데모 모드 (비로그인 시)
   const isDemo = !user && !loading;
@@ -279,15 +278,6 @@ export default function MyPage() {
 
   // 난이도 설정 열린 레이드 (캐릭터명-그룹명)
   const [difficultyOpenKey, setDifficultyOpenKey] = useState<string | null>(null);
-
-  // 일일 컨텐츠 펼치기 상태 (localStorage 유지)
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>(() => {
-    if (typeof window === 'undefined') return {};
-    try {
-      const saved = localStorage.getItem('mypage-expandedCards');
-      return saved ? JSON.parse(saved) : {};
-    } catch { return {}; }
-  });
 
   // 숙제 활동 기록 (달력) — 체크할 때마다 게임일(06시 경계) 날짜별 로그.
   // 주간 초기화로 체크가 지워져도 이 기록은 남아 과거 조회가 가능하다 (앱과 동일, 원정대 1만).
@@ -438,14 +428,6 @@ export default function MyPage() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-
-  // 닉네임 변경
-  const [, setEditingNickname] = useState(false);
-  const [newNickname, setNewNickname] = useState('');
-  const [nicknameStatus, setNicknameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
-  const [, setNicknameMessage] = useState('');
-  const [, setIsSavingNickname] = useState(false);
-  const nicknameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 원정대별 데이터 추출 헬퍼
   const getExpeditionData = useCallback((profile: typeof userProfile, expIdx: 1 | 2 | 3) => {
@@ -795,11 +777,6 @@ export default function MyPage() {
       });
   }, [user, userProfile, refreshUserProfile, activeExpedition, getExpeditionData]);
 
-  // 펼침 상태 localStorage 저장
-  useEffect(() => {
-    try { localStorage.setItem('mypage-expandedCards', JSON.stringify(expandedCards)); } catch {}
-  }, [expandedCards]);
-
   // 로그인 체크 - 로그인 프롬프트를 표시하므로 리다이렉트 불필요
 
   // 창 닫을 때 변경사항 경고 (데모 모드 제외)
@@ -813,50 +790,6 @@ export default function MyPage() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasChanges, isDemo]);
-
-  // 닉네임 실시간 검증
-  useEffect(() => {
-    if (!newNickname) {
-      setNicknameStatus('idle');
-      setNicknameMessage('');
-      return;
-    }
-    // 현재 닉네임과 동일하면 스킵
-    if (userProfile?.nickname && newNickname === userProfile.nickname) {
-      setNicknameStatus('idle');
-      setNicknameMessage('현재 사용 중인 닉네임입니다.');
-      return;
-    }
-    const validation = validateNickname(newNickname);
-    if (!validation.valid) {
-      setNicknameStatus('invalid');
-      setNicknameMessage(validation.message);
-      return;
-    }
-    setNicknameStatus('checking');
-    setNicknameMessage('확인 중...');
-    if (nicknameDebounceRef.current) clearTimeout(nicknameDebounceRef.current);
-    nicknameDebounceRef.current = setTimeout(async () => {
-      try {
-        const available = await checkNicknameAvailable(newNickname);
-        if (available) {
-          setNicknameStatus('available');
-          setNicknameMessage('사용 가능한 닉네임입니다.');
-        } else {
-          setNicknameStatus('taken');
-          setNicknameMessage('이미 사용 중인 닉네임입니다.');
-        }
-      } catch {
-        setNicknameStatus('invalid');
-        setNicknameMessage('중복 확인에 실패했습니다.');
-      }
-    }, 500);
-    return () => {
-      if (nicknameDebounceRef.current) clearTimeout(nicknameDebounceRef.current);
-    };
-  }, [newNickname, userProfile?.nickname]);
-
-  // 닉네임 변경 저장
 
   // 원정대 검색 (1단계)
   const handleSearchSiblings = async () => {

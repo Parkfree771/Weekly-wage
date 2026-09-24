@@ -967,10 +967,6 @@ export default function CathedralPage() {
                                 })() : components.every(c => c.itemId !== '0') ? (() => {
                                   // 젬 선택 상자: 질서/혼돈 표 2개 나란히
                                   const selectedId = getSelectedItemId(selectedShopData.id, components);
-                                  const selectedComp = components.find(c => c.itemId === selectedId);
-                                  const selectedPrice = selectedComp ? (latestPrices[selectedComp.itemId] || 0) : 0;
-                                  const qty = selectedShopData.qty;
-                                  const totalValue = Math.round(selectedPrice * qty);
                                   const orderGems = components.slice(0, 3);
                                   const chaosGems = components.slice(3, 6);
                                   const renderGemTable = (gems: typeof components, title: string) => (
@@ -1475,7 +1471,6 @@ function GraceCalendar() {
                   <div className={styles.calWeekEmpty}>신규 교환 가능 아이템 없음</div>
                 )}
                 {w.items.map((item, idx) => {
-                  const tc = THEME_COLORS[item.theme] || THEME_COLORS.ancient;
                   return (
                     <div
                       key={`${item.id}-${idx}`}

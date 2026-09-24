@@ -178,34 +178,6 @@ export function getRaidsForLevel(itemLevel: number) {
   return raids.filter(raid => itemLevel >= raid.level);
 }
 
-// 캐릭터 레벨에 맞는 상위 3개 레이드 그룹 선택 (그룹당 가장 높은 난이도)
-export function getTop3RaidGroups(itemLevel: number) {
-  const availableRaids = getRaidsForLevel(itemLevel)
-    .sort((a, b) => b.level - a.level); // 레벨 높은 순 정렬
-
-  const selectedGroups: string[] = [];
-  const selectedRaids: typeof raids = [];
-
-  for (const raid of availableRaids) {
-    const groupName = getRaidGroupName(raid.name);
-
-    // 이미 선택된 그룹이면 건너뛰기
-    if (selectedGroups.includes(groupName)) {
-      continue;
-    }
-
-    // 최대 3개 그룹까지만
-    if (selectedGroups.length >= 3) {
-      break;
-    }
-
-    selectedGroups.push(groupName);
-    selectedRaids.push(raid);
-  }
-
-  return selectedRaids;
-}
-
 // 특정 그룹의 모든 레이드 가져오기 (난이도 선택용)
 export function getRaidsInGroup(groupName: string, itemLevel: number) {
   return raids
@@ -309,65 +281,6 @@ export function getCurrentWeekStart(): string {
   const day = String(kstDate.getUTCDate()).padStart(2, '0');
 
   return `${year}-${month}-${day}`;
-}
-
-// 공통 컨텐츠 골드 정의 (복주머니, 카오스게이트 등)
-const COMMON_CONTENT_GOLD: Record<string, number> = {
-  '카오스 게이트': 3500,
-};
-
-// 총 골드 계산 (체크리스트 기반)
-export function calculateTotalGoldFromChecklist(
-  characters: Character[],
-  weeklyChecklist: WeeklyChecklist,
-  commonContent?: CommonContentState,
-): { totalGold: number; raidGold: number; additionalGold: number; commonGold: number } {
-  let raidGold = 0;
-  let additionalGold = 0;
-  let commonGold = 0;
-
-  characters.forEach(char => {
-    const state = weeklyChecklist[char.name];
-    if (!state) return;
-
-    Object.entries(state.raids).forEach(([raidName, gates]) => {
-      const raid = raids.find(r => r.name === raidName);
-      if (raid) {
-        const receiveGold = state.raidGoldReceive?.[raidName] !== false; // 기본 true
-        const buyMore = state.raidMoreGoldExclude?.[raidName] === true;
-
-        gates.forEach((checked, i) => {
-          if (checked && raid.gates[i]) {
-            if (receiveGold) {
-              raidGold += raid.gates[i].gold;
-            }
-            if (buyMore) {
-              raidGold -= raid.gates[i].moreGold;
-            }
-          }
-        });
-      }
-    });
-
-    additionalGold += state.additionalGold || 0;
-  });
-
-  // 공통 컨텐츠 골드
-  if (commonContent) {
-    Object.entries(commonContent.checks).forEach(([key, checked]) => {
-      if (!checked) return;
-      const contentName = key.split('-').slice(1).join('-');
-      const gold = COMMON_CONTENT_GOLD[contentName] || 0;
-      commonGold += gold;
-    });
-  }
-
-  return {
-    totalGold: raidGold + additionalGold + commonGold,
-    raidGold,
-    additionalGold,
-    commonGold,
-  };
 }
 
 

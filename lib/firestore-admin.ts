@@ -4,15 +4,6 @@
 
 import { getAdminStorage } from './firebase-admin';
 
-// 가격 데이터 타입
-export type PriceEntry = {
-  itemId: string;
-  itemName?: string;
-  price: number;
-  timestamp: { seconds: number; nanoseconds: number };
-  date?: string; // YYYY-MM-DD 형식
-};
-
 // latest_prices.json 구조
 type LatestPricesJson = {
   [itemId: string]: number;
@@ -43,7 +34,6 @@ type HistoryAllJson = Record<string, Array<{ date: string; price: number }>>;
 // ============================================================
 let latestPricesCache: LatestPricesJson | null = null;
 let historyCache: HistoryAllJson | null = null;
-let cacheLoaded = false;
 
 /**
  * 날짜 계산 (오전 0시 기준, 한국 시간)
@@ -148,7 +138,6 @@ async function readLatestPrices(): Promise<LatestPricesJson> {
     const file = bucket.file('latest_prices.json');
     const [contents] = await file.download();
     latestPricesCache = JSON.parse(contents.toString());
-    cacheLoaded = true;
     console.log('[readLatestPrices] 파일 로드 완료');
     return latestPricesCache!;
   } catch (error: any) {
@@ -466,7 +455,6 @@ export async function generateAndUploadPriceJson(): Promise<void> {
     // 캐시 초기화 (다음 크론을 위해)
     latestPricesCache = null;
     historyCache = null;
-    cacheLoaded = false;
 
     console.log('[generateAndUploadPriceJson] 완료!');
   } catch (error) {
@@ -481,63 +469,5 @@ export async function generateAndUploadPriceJson(): Promise<void> {
  */
 export async function readHistorySnapshot(): Promise<HistoryAllJson> {
   return readHistoryAll();
-}
-
-/**
- * 일별 가격 히스토리 조회 (차트용)
- * - history_all.json + latest_prices.json 조합
- */
-export async function getDailyPriceHistory(
-  itemId: string,
-  days: number = 30
-): Promise<PriceEntry[]> {
-  try {
-    const history: PriceEntry[] = [];
-
-    // 1. history_all.json에서 과거 데이터
-    const historyData = await readHistoryAll();
-    const itemHistory = historyData[itemId] || [];
-
-    itemHistory.forEach((entry) => {
-      const [year, month, day] = entry.date.split('-').map(Number);
-      const utcDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-
-      history.push({
-        itemId: itemId,
-        price: entry.price,
-        timestamp: { seconds: Math.floor(utcDate.getTime() / 1000), nanoseconds: 0 },
-        date: entry.date,
-      });
-    });
-
-    // 2. latest_prices.json에서 오늘 데이터
-    const latestData = await readLatestPrices();
-    const todayPrice = latestData[itemId];
-    const todayKey = latestData._meta?.date || formatDateKey(getLostArkDate());
-
-    if (todayPrice !== undefined) {
-      const alreadyExists = history.some(entry => entry.date === todayKey);
-      if (!alreadyExists) {
-        const [year, month, day] = todayKey.split('-').map(Number);
-        const todayUtc = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-
-        history.push({
-          itemId: itemId,
-          price: todayPrice,
-          timestamp: { seconds: Math.floor(todayUtc.getTime() / 1000), nanoseconds: 0 },
-          date: todayKey,
-        });
-      }
-    }
-
-    // 날짜순 정렬
-    const sorted = history.sort((a, b) => a.timestamp.seconds - b.timestamp.seconds);
-
-    // 최근 days개만 반환
-    return sorted.slice(-days);
-  } catch (error) {
-    console.error('일별 가격 히스토리 조회 오류:', error);
-    throw error;
-  }
 }
 

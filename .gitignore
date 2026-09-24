@@ -65,3 +65,10 @@ DATA_COLLECTION.md
 
 # Local Netlify folder
 .netlify
+
+# 로컬 전용 — 작업 흔적·가격 JSON 덤프 (스크립트가 로컬에서 읽음)
+tmpclaude-*
+/history_all.json
+/history_all_after.json
+/latest_prices.json
+build-output.txt
