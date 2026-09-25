@@ -1360,7 +1360,7 @@ export function getFixedGemSelectBreakdown(
   };
 }
 
-/** 고정형 영웅 젬 선택 상자의 선택지 1개 가치 = 젬 시세 × 6 (확률 역수) + 젬 시세 (추가 초기화 1회) − 초기화권 골드 + 젬 페온 */
+/** 고정형 영웅 젬 선택 상자의 선택지 1개 가치 = 젬 시세 × 6 (확률 역수) + 젬 시세 × 6 (추가 초기화 1회) − 초기화권 골드 + 젬 페온(1개분) */
 export function getFixedGemSelectUnitPrice(
   choiceItemId: string,
   prices: Record<string, number>,

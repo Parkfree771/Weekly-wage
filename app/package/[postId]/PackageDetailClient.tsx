@@ -2027,11 +2027,23 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
                   <div key={`${keyPrefix}${idx}`} className={styles.gemDetailRow}>
                     <div className={styles.gemDetailTitle}>고정형 영웅 젬 선택 상자 ×{item.quantity.toLocaleString()}</div>
                     <div className={styles.gemDetailLine}>
-                      선택: {sel?.name || ''} — {fixedOpts ? `${fixedOpts} 옵션이 고정된 상태로 지급` : '옵션 고정 지급'}, 초기화 가능 횟수 +1
+                      {sel?.name || ''}{fixedOpts ? ` · ${fixedOpts} 고정` : ''} · 초기화 +1
                     </div>
-                    <div className={styles.gemDetailLine}>
-                      계산: 젬 시세 {formatNumber(bd.base)}G × {bd.multiplier} (조합 확률 1/6 확정) × 2 (초기화 가능 횟수 +1) − {formatNumber(bd.ticketGold)}G (초기화권 100크리스탈)
-                      {noPeon ? ' (젬 페온 제거)' : ` + ${formatNumber(bd.peonGold)}G (젬 페온 12개)`} = <strong>{formatNumber(bd.total)}G</strong>
+                    <div className={styles.gemCalcTable}>
+                      <span>원하는 조합 확정</span>
+                      <span className={styles.gemCalcNote}>시세 {formatNumber(bd.base)}G × {bd.multiplier}</span>
+                      <span className={styles.gemCalcValue}>+{formatNumber(bd.comboValue)}G</span>
+                      <span>초기화 1회 추가</span>
+                      <span className={styles.gemCalcNote}>시세 {formatNumber(bd.base)}G × {bd.multiplier}</span>
+                      <span className={styles.gemCalcValue}>+{formatNumber(bd.comboValue)}G</span>
+                      <span>초기화권 비용</span>
+                      <span className={styles.gemCalcNote}>100크리스탈</span>
+                      <span className={styles.gemCalcValue}>−{formatNumber(bd.ticketGold)}G</span>
+                      <span>젬 페온</span>
+                      <span className={styles.gemCalcNote}>12개</span>
+                      <span className={styles.gemCalcValue}>{noPeon ? '제거' : `+${formatNumber(bd.peonGold)}G`}</span>
+                      <span className={styles.gemCalcTotalLabel}>1개당 가치</span>
+                      <strong className={styles.gemCalcTotalValue}>{formatNumber(bd.total)}G</strong>
                     </div>
                   </div>,
                 );
