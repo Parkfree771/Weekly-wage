@@ -88,7 +88,7 @@ const clampRate = (v: number) => (v <= 0 ? 0 : Math.max(RATE_MIN, Math.min(RATE_
 const FALLBACK_MAX_POSTS = 200;
 
 // 집계를 한 번에 물어보는 글 수 상한 — /api/package/stats 의 MAX_IDS 와 같은 값.
-// 여기서 잘려 나간 오래된 글도 숫자는 맞다 — ISR 이 이미 Neon 최신값을 실어 보냈기 때문이다.
+// 여기서 잘려 나간 오래된 글도 숫자는 맞다 — ISR 이 이미 최신 집계를 실어 보냈기 때문이다.
 const STATS_MAX_IDS = 60;
 
 // ─── 정렬·필터 ───
@@ -239,7 +239,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
     window.scrollTo({ top: 0 });
   };
 
-  // 상호작용 집계(조회·따봉·흠)는 Neon 에 있고 ISR 스냅샷은 최대 5분 낡을 수 있다.
+  // 상호작용 집계(조회·따봉·흠)는 packageStats 문서에 따로 있고 ISR 스냅샷은 최대 5분 낡을 수 있다.
   // 목록 전체 ID 를 한 URL 로 — 예전엔 "보이는 6개" 라 페이지마다 URL(=캐시 키)이 갈렸고,
   // 필터·정렬이 전체를 훑는 지금 그대로 뒀다면 조합마다 URL 이 갈려 CDN 캐시가 통째로 헛돌았다.
   // 하나로 합치면 모든 방문자·모든 조합이 같은 캐시를 쓴다 — 함수 호출은 300초에 1회가 상한.

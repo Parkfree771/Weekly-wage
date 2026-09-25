@@ -3,7 +3,7 @@
 // 반응(따봉·흠) — 비로그인 포함 1글 1표, 둘 중 하나만. 갤러리 카드와 상세(댓글 위)가 같이 쓴다.
 //
 // 저장 구조:
-// 카운트는 Neon package_stats(/api/package/stats, react 응답의 stats). 부모가 넘기는 likeCount/sosoCount 는
+// 카운트는 Firestore packageStats/all(서버만 씀 — /api/package/stats, react 응답의 stats). 부모가 넘기는 likeCount/sosoCount 는
 // ISR 스냅샷 → 최신 집계 순으로 바뀔 수 있고, 여기서는 "가장 최근에 받은 서버 값(base)" 위에
 // "아직 서버에 안 보낸 내 표의 증감" 만 더해 그린다. 서버 값에는 이미 보낸 내 표가 들어 있으므로
 // 이 둘을 섞어도 이중 계산이 안 난다.

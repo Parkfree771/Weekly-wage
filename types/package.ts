@@ -77,15 +77,15 @@ export type PackagePost = {
   saleClosed?: boolean;                    // 작성자/관리자가 직접 처리한 판매 종료 (기간과 무관)
 
   // 통계
-  // 조회·따봉·흠 — 2026-08-26부터 진실은 Neon package_stats(/api/package/stats). 문서 필드는
+  // 조회·따봉·흠 — 2026-08-26부터 진실은 서버 집계(2026-09-25부터 Firestore packageStats/all, /api/package/stats). 문서 필드는
   // 이관 시점 값으로 멈춰 있고 ISR 스냅샷의 초기값으로만 쓰인다. 화면은 stats 로 덮어쓴다.
   viewCount: number;
   likeCount: number;
   sosoCount?: number;  // 반응 기능 이전 글엔 필드가 없다(= 0 취급)
   /**
-   * 위 세 숫자가 Neon 에서 마지막으로 바뀐 시각(epoch ms). ISR 서버 페이지가 같이 실어 보낸다.
+   * 위 세 숫자가 집계에서 마지막으로 바뀐 시각(epoch ms). ISR 서버 페이지가 같이 실어 보낸다.
    * 클라이언트가 이걸 세션 캐시에 심어 두면, 뒤늦게 도착한 낡은 CDN 응답이 숫자를 뒤로
-   * 돌리지 못한다(따봉이 사라졌다 생기는 현상 방지). Firestore 문서에는 없는 필드다.
+   * 돌리지 못한다(따봉이 사라졌다 생기는 현상 방지). 글 문서에는 없는 필드다.
    */
   statsUpdatedAt?: number;
   commentCount: number;

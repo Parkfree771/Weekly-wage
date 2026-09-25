@@ -1,6 +1,6 @@
 import { Container, Row, Col, Spinner } from 'react-bootstrap';
 
-// 상세는 ISR 이라 캐시 미스면 서버 렌더(Firestore+Neon)를 기다린다.
+// 상세는 ISR 이라 캐시 미스면 서버 렌더(Firestore)를 기다린다.
 // 이 경계가 없으면 그동안 갤러리 화면이 그대로 멈춰 있어 "눌렀는데 반응 없음" 으로 보인다.
 // 라우트 세그먼트에 loading 을 두면 클릭 즉시 이 화면으로 전환된다.
 export default function Loading() {

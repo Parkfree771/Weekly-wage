@@ -99,7 +99,7 @@ export function seedStatsFromPosts(
   posts: { id: string; viewCount?: number; likeCount?: number; sosoCount?: number; statsUpdatedAt?: number }[],
 ): void {
   for (const p of posts) {
-    // statsUpdatedAt 이 없으면 Neon 을 못 읽고 내려온 글(=Firestore 프리즈 값)이라 심지 않는다
+    // statsUpdatedAt 이 없으면 집계를 못 읽고 내려온 글(=글 문서에 멈춘 옛 값)이라 심지 않는다
     if (!p.id || typeof p.statsUpdatedAt !== 'number') continue;
     recordStats(p.id, {
       viewCount: p.viewCount ?? 0,
@@ -133,7 +133,7 @@ export async function fetchStats(ids: string[]): Promise<boolean> {
 // ─── 조회 POST 생략 (재방문자) ───
 // 서버의 조회수 중복 방지 쿠키(pv)는 httpOnly 라 클라이언트가 못 읽는다. 그래서 같은 사실을
 // localStorage 에 병행 기록해 두고, 24시간 안에 이미 본 글이면 POST /api/package/view 를
-// 아예 보내지 않는다 — 어차피 카운트되지 않는 요청이라 함수 호출·Neon 조회만 태우기 때문.
+// 아예 보내지 않는다 — 어차피 카운트되지 않는 요청이라 함수 호출·DB 읽기만 태우기 때문.
 // 생략된 방문의 숫자는 ISR 스냅샷(최대 5분 낡음) + 세션 캐시로 보인다.
 // localStorage 를 못 쓰는 환경이면 그냥 보낸다 — 서버 쿠키가 최종 중복 방어다.
 const SEEN_KEY = 'pkg-viewed';

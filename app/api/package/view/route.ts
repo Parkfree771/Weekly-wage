@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { POST_ID_RE, isBotRequest } from '@/lib/package-hit-guard';
 import { bumpPackageStats } from '@/lib/package-stats';
 
-// 조회수 — Neon package_stats. 응답에 그 글의 최신 집계(조회·따봉·흠)를 실어 보내므로
+// 조회수 — Firestore packageStats/all(lib/package-stats). 응답에 그 글의 최신 집계(조회·따봉·흠)를 실어 보내므로
 // 상세 페이지는 이 요청 하나로 ISR 스냅샷 숫자를 최신값으로 덮어쓴다(추가 조회 없음).
 //
 // 조회수 중복 방지 쿠키: 최근 본 게시물 "ID:본시각" 목록.

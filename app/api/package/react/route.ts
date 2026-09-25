@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { POST_ID_RE, isBotRequest } from '@/lib/package-hit-guard';
 import { bumpPackageStats } from '@/lib/package-stats';
 
-// 갤러리 카드 반응(따봉·흠) — 비로그인 포함 누구나 1글 1표. 카운트는 Neon package_stats.
+// 갤러리 카드 반응(따봉·흠) — 비로그인 포함 누구나 1글 1표. 카운트는 Firestore packageStats/all(lib/package-stats).
 //
 // 비용 설계:
 // - "내가 뭘 눌렀는지"는 DB 가 아니라 httpOnly 쿠키가 기억한다(투표자 테이블 없음).

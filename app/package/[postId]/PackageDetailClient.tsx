@@ -517,7 +517,7 @@ export default function PackageDetailPage({ initialPost, initialComments = null 
             fetchStats([postId]);
           } else if (viewCountedFor.current !== postId) {
             viewCountedFor.current = postId;
-            // 응답 stats = 이 글의 최신 조회·따봉·흠(Neon). ISR 스냅샷 숫자를 덮어쓴다 — 추가 조회 없음
+            // 응답 stats = 이 글의 최신 조회·따봉·흠. ISR 스냅샷 숫자를 덮어쓴다 — 추가 조회 없음
             fetch('/api/package/view', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
