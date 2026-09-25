@@ -180,13 +180,280 @@
 /* 합계 칸 값에 아이콘 */
 .pageThemeExtreme .exFinalVal { display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; }
 
-/* 제작소 목록 오른쪽: 주화 + 골드 비용을 한 줄로 (줄바꿈 금지 — 목록 칸이 400px 라 세로로 늘어지면 찡긴다) */
-.pageThemeExtreme .exShopCosts {
-  display: flex; flex-direction: row; align-items: center; justify-content: flex-end;
-  gap: 0.55rem; min-width: 0; white-space: nowrap;
-}
-.pageThemeExtreme .exShopCosts img { flex-shrink: 0; }
 .pageThemeExtreme .exTileWide { grid-column: span 2; }
+
+/* 주화 기준가 띠 — 제작소 카드 안, 목록 위 */
+.pageThemeExtreme .exCoinBasis {
+  padding: 0.6rem 1rem;
+  background: var(--ct-bg);
+  border-bottom: 2px solid var(--rd-line);
+}
+.pageThemeExtreme .exCoinBasisMain {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.pageThemeExtreme .exCoinBasisCoins { display: inline-flex; gap: 0.2rem; }
+.pageThemeExtreme .exCoinBasisCoins img { border-radius: 50%; box-shadow: 0 0 0 2px var(--rd-head); }
+.pageThemeExtreme .exCoinBasisLabel { font-size: 0.92rem; font-weight: 700; color: var(--ct-text-secondary); }
+.pageThemeExtreme .exCoinBasisValue {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 1.15rem; font-weight: 800; color: #c9a84c;
+  font-variant-numeric: tabular-nums;
+}
+/* 블크 환율 입력 — 기준가 띠 오른쪽 */
+.pageThemeExtreme .exRate {
+  display: inline-flex; align-items: center; gap: 0.35rem; margin-left: auto;
+  padding: 0.15rem 0.5rem;
+  border: 1.5px solid var(--ct-border); border-radius: 8px;
+  background: var(--ct-bg);
+}
+.pageThemeExtreme .exRate input {
+  width: 68px; border: none; background: none; outline: none;
+  font-family: var(--font-num), var(--font-mono), system-ui, sans-serif;
+  font-size: 0.88rem; font-weight: 700; color: var(--ct-text);
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.pageThemeExtreme .exRate input::-webkit-outer-spin-button,
+.pageThemeExtreme .exRate input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* 난이도 카드 — 주화 개수 뒤에 = 로 이어 붙는 골드 환산 (같은 줄) */
+.pageThemeExtreme .exCardCoinGold {
+  display: inline-flex; align-items: center; gap: 0.2rem; margin-left: 0.15rem;
+  font-size: 0.8rem; font-weight: 800; color: #ffd76a;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 1), 0 0 8px rgba(0, 0, 0, 0.7);
+}
+
+.pageThemeExtreme .exCoinBasisNote {
+  margin-top: 0.35rem;
+  font-size: 0.78rem; line-height: 1.55; color: var(--ct-text-muted);
+}
+.pageThemeExtreme .exCoinBasisNote b { color: var(--ct-text-secondary); font-weight: 700; }
+
+/* 막 구분 헤더 — 3막 묶음과 종막 묶음을 끊는 자리. 여기만 그 막 색(--ex-act)으로 채운다.
+   3막은 뇌전에서 딴 청색, 종막은 빛과 어둠에서 딴 자주색. 아래 목록은 흰 바탕 그대로다. */
+.pageThemeExtreme .exActBar {
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--ex-act);
+  border-bottom: 2px solid var(--ex-act);
+  font-size: 0.88rem; font-weight: 800; color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+.pageThemeExtreme .exActBarCoin { border-radius: 50%; flex-shrink: 0; }
+.pageThemeExtreme .exActBarName { flex: 1; min-width: 0; }
+.pageThemeExtreme .exActBarCoinName {
+  font-size: 0.74rem; font-weight: 700; color: rgba(255, 255, 255, 0.82);
+}
+
+/* 분류 머리글 — 같은 규칙. 왼쪽 선만 그 막 색을 이어받아 어디까지가 한 막인지 보인다 */
+.pageThemeExtreme .exCraftGroup {
+  display: flex; align-items: center; gap: 0.45rem; width: 100%;
+  padding: 0.45rem 0.85rem 0.45rem 0.6rem;
+  background: var(--ct-bg);
+  border: none;
+  border-left: 5px solid var(--ex-act);
+  border-bottom: 1px solid var(--ct-border);
+  font-size: 0.82rem; font-weight: 800; color: var(--ct-text);
+  text-align: left;
+  cursor: pointer;
+}
+.pageThemeExtreme .exCraftGroupCoin { border-radius: 50%; flex-shrink: 0; }
+.pageThemeExtreme .exCraftGroupName { flex: 1; min-width: 0; }
+.pageThemeExtreme .exCraftGroupAct { font-weight: 700; color: var(--ex-act); }
+.pageThemeExtreme .exCraftGroupCount { font-size: 0.8rem; font-weight: 700; color: var(--ct-text-secondary); }
+.pageThemeExtreme .exCraftGroupArrow { font-size: 0.9rem; font-weight: 800; color: var(--ct-text-secondary); width: 12px; text-align: center; }
+/* 항목 줄도 같은 세로선 안쪽에 들어오게 — 한 막 묶음이 통째로 보인다 */
+.pageThemeExtreme .exActBlock .shopItem { border-left: 5px solid var(--ex-act); }
+.pageThemeExtreme .exCraftBadges {
+  display: flex; align-items: center; gap: 0.3rem; margin-top: 2px; flex-wrap: wrap;
+}
+/* 배지는 저투명 워시 채움 없이 테두리+글자색만 — 회색 틴트 금지 */
+.pageThemeExtreme .exLvBadge {
+  font-size: 0.68rem; padding: 0.1rem 0.35rem;
+  color: var(--rd-line); background: none; border: 1px solid var(--rd-line);
+}
+.pageThemeExtreme .exLimitBadge {
+  font-size: 0.68rem; padding: 0.1rem 0.35rem;
+  color: #3a7bb8; background: none; border: 1px solid #3a7bb8;
+}
+.pageThemeExtreme .exOnlyBadge {
+  font-size: 0.68rem; padding: 0.1rem 0.35rem;
+  color: #b4552a; background: none; border: 1px solid #b4552a;
+}
+/* 효율 숫자 — /package 카드의 이득률과 같은 디자인.
+   토큰·서체·굵기·그림자를 package.module.css 의 .pageWrapper 에서 그대로 가져온다.
+   손해(빨강)는 쓰지 않는다 — 주화는 클리어로 들어오는 공짜 재화라 기준 미달이 손해가 아니다.
+   (같은 뜻의 숫자가 페이지마다 다른 꼴로 보이면 안 된다) */
+.pageThemeExtreme {
+  --benefit-up: #35815a;
+  --benefit-up-text: #2a8f5a;
+  --benefit-up-lift: 0.055em 0.055em 0 rgba(15, 76, 45, 0.3);
+}
+:global([data-theme='dark']) .pageThemeExtreme {
+  --benefit-up-text: #4ade80;
+  --benefit-up-lift: 0.055em 0.055em 0 rgba(0, 0, 0, 0.45);
+}
+
+.pageThemeExtreme .exRatioNum {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-num), var(--font-mono), 'Noto Sans KR', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.pageThemeExtreme .exRatioUp {
+  color: var(--benefit-up-text, var(--benefit-up, #35815a));
+  text-shadow: var(--benefit-up-lift, none);
+}
+/* 기준(파결·수결 100%) 아래 — 주화는 클리어로 공짜로 들어오니 '손해'가 아니다.
+   빨강을 쓰면 밑지는 교환으로 읽히므로 이득(초록)만 색을 주고 나머지는 중립 회색으로 둔다. */
+.pageThemeExtreme .exRatioFlat {
+  color: var(--ct-text-secondary);
+  text-shadow: none;
+}
+
+/* 상세 칸 — 표가 잘리던 원인이 여기였다. 기본 420px 로는 [아이콘·이름·수량·가치] 네 칸이 안 들어간다.
+   오른쪽 칸 폭을 다 쓰고, 위아래 여백도 늘려 숨통을 틔운다. */
+.pageThemeExtreme .shopDetail { padding: 1.5rem 1.35rem; }
+.pageThemeExtreme .shopDetailContent { max-width: 700px; gap: 1.1rem; }
+.pageThemeExtreme .shopDetailSection { min-height: 0; }
+
+/* 효율판 — 치르는 값 → 받는 값 → 효율. 이 카드의 답이라 제일 크게 찍는다 */
+.pageThemeExtreme .shopDetailCostList { justify-content: center; }
+.pageThemeExtreme .shopDetailSectionTitle { text-align: center; }
+/* 교환 효율·주화 가치 카드 — 위의 표가 내용 폭만큼만 잡히므로 카드도 같이 줄여 가운데.
+   700px 를 꽉 채우면 표보다 훨씬 넓어져 두 블록이 어긋나 보인다. */
+.pageThemeExtreme .graceValueCard {
+  width: fit-content; min-width: 300px; max-width: 100%; margin: 0 auto;
+  padding: 0.75rem 1.1rem;
+}
+.pageThemeExtreme .graceValueRow { gap: 1.4rem; }
+
+.pageThemeExtreme .exEffBoard {
+  display: flex; align-items: stretch; gap: 0.75rem; flex-wrap: wrap;
+  padding: 1rem 1.1rem;
+  background: var(--ct-bg);
+  border: 2.5px solid var(--rd-line);
+  border-radius: 12px;
+}
+.pageThemeExtreme .exEffSide { display: flex; flex-direction: column; gap: 0.2rem; }
+.pageThemeExtreme .exEffPay { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.pageThemeExtreme .exEffChip {
+  display: inline-flex; align-items: center; gap: 0.28rem;
+  font-family: var(--font-num), var(--font-mono), system-ui, sans-serif;
+  font-size: 1.1rem; font-weight: 800; color: var(--ct-text);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+/* 효율 막대 — 숫자 밑에 길이로 한 번 더. 가운데 눈금이 기준(100%) */
+.pageThemeExtreme .exEffBar {
+  position: relative; flex: 1; min-width: 90px; height: 9px;
+  background: var(--ct-border); border-radius: 4px; overflow: hidden;
+}
+.pageThemeExtreme .exEffBarFillUp,
+.pageThemeExtreme .exEffBarFillFlat {
+  position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px;
+}
+.pageThemeExtreme .exEffBarFillUp { background: var(--benefit-up-text, #2a8f5a); }
+.pageThemeExtreme .exEffBarFillFlat { background: var(--ct-text-secondary); }
+.pageThemeExtreme .exEffBarMark {
+  position: absolute; left: 50%; top: 0; width: 2px; height: 100%;
+  background: var(--ct-bg);
+}
+.pageThemeExtreme .exEffVs {
+  display: flex; align-items: center;
+  font-size: 1.2rem; font-weight: 800; color: var(--ct-text-muted);
+}
+.pageThemeExtreme .exEffRatio {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end;
+  justify-content: center; padding-left: 0.9rem;
+  border-left: 2px solid var(--ct-border);
+}
+.pageThemeExtreme .exEffLabel {
+  font-size: 0.76rem; font-weight: 700; color: var(--ct-text-secondary);
+  margin-bottom: 0.2rem;
+}
+.pageThemeExtreme .exEffGold {
+  justify-content: flex-start;
+  display: flex; align-items: center; gap: 0.3rem;
+  font-family: var(--font-num), var(--font-mono), system-ui, sans-serif;
+  font-size: 1.45rem; font-weight: 800; color: var(--ct-text);
+  font-variant-numeric: tabular-nums; line-height: 1.2;
+}
+.pageThemeExtreme .exEffSub {
+  margin-top: 0.15rem;
+  font-size: 0.72rem; font-weight: 600; color: var(--ct-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.pageThemeExtreme .exEffRatioValue { font-size: 1.62rem; }
+
+/* 구성 요소 제목 옆 종 수 — 같은 줄에 이어 붙는 작은 글씨 */
+.pageThemeExtreme .exFoldMeta { font-size: 0.78rem; font-weight: 700; color: var(--ct-text-muted); }
+/* 구성 요소 표 — 폭을 100% 로 늘리지 않는다. 짧은 이름(질서의 젬 : 불변)만 있는 상자에서
+   이름 칸이 400px 가까이 벌어져 표가 텅 비어 보였다.
+   대신 숫자 칸에 최소 폭 + nowrap 을 주고 이름 칸만 max-width 로 접는다 —
+   표는 내용 폭만큼만 잡혀 가운데 서고, 숫자는 어떤 값이 와도 잘리지 않는다. */
+.pageThemeExtreme .exTableWrap { width: 100%; overflow-x: hidden; overflow-y: auto; max-height: 340px; }
+.pageThemeExtreme .exTableWrap thead th { position: sticky; top: 0; z-index: 1; }
+.pageThemeExtreme .exTableWrap .materialTable { width: auto; max-width: 100%; margin: 0 auto; table-layout: auto; }
+.pageThemeExtreme .exTableWrap .materialTable th:nth-child(1),
+.pageThemeExtreme .exTableWrap .materialTable td:nth-child(1) { width: 44px; padding: 0.5rem 0.25rem; }
+.pageThemeExtreme .exTableWrap .materialTable th:nth-child(3),
+.pageThemeExtreme .exTableWrap .materialTable td:nth-child(3) { min-width: 70px; white-space: nowrap; padding: 0.5rem 0.55rem; }
+.pageThemeExtreme .exTableWrap .materialTable th:nth-child(4),
+.pageThemeExtreme .exTableWrap .materialTable td:nth-child(4) { min-width: 68px; white-space: nowrap; padding: 0.5rem 0.55rem; }
+.pageThemeExtreme .exTableWrap .materialTable th:nth-child(5),
+.pageThemeExtreme .exTableWrap .materialTable td:nth-child(5) { min-width: 112px; white-space: nowrap; padding: 0.5rem 0.7rem; }
+.pageThemeExtreme .exContentName {
+  max-width: 300px;
+  font-size: 0.86rem; font-weight: 600; line-height: 1.35;
+  white-space: normal; word-break: keep-all; overflow-wrap: anywhere;
+  padding-right: 0.6rem !important;
+}
+/* 합계 줄은 3칸을 합쳐 쓰므로 고정 폭에 걸리지 않게 풀어 준다 */
+.pageThemeExtreme .exTableWrap .materialTable tfoot td[colspan] { width: auto; }
+/* 택 1 상자에서 실제로 잡힌 선택지 표시 — 값 큰 순 정렬이라 항상 첫 줄이다 */
+.pageThemeExtreme .exPickMark {
+  display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.3rem;
+  border: 1px solid var(--benefit-up-text, #2a8f5a); border-radius: 4px;
+  font-size: 0.68rem; font-weight: 800; color: var(--benefit-up-text, #2a8f5a);
+  vertical-align: 1px;
+}
+
+.pageThemeExtreme .exGoldCell {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+.pageThemeExtreme .shopItemName { font-size: 1.02rem; }
+
+/* 목록 오른쪽 칸 — 교환 비용 대신 효율. 비용은 눌러서 상세에서 본다 */
+.pageThemeExtreme .exShopRatio {
+  display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
+  gap: 1px; flex-shrink: 0; min-width: 84px; white-space: nowrap;
+}
+/* 목록은 /package 카드의 모바일 이득률과 같은 크기 */
+.pageThemeExtreme .exShopRatioValue { font-size: 1.5rem; }
+.pageThemeExtreme .exShopRatioSub {
+  font-size: 0.7rem; font-weight: 600; color: var(--ct-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.pageThemeExtreme .exShopRatioNone {
+  font-size: 0.78rem; font-weight: 700; color: var(--ct-text-muted);
+}
+/* 상세는 카드 크기 그대로 */
+.pageThemeExtreme .exRatioValue { font-size: 1.62rem; }
+.pageThemeExtreme .exCostNote {
+  margin-top: 0.45rem; font-size: 0.76rem; line-height: 1.5; color: var(--ct-text-muted);
+}
+.pageThemeExtreme .exBound { font-size: 0.75rem; font-weight: 700; color: var(--ct-text-muted); }
+
+/* 제작 목록이 20줄 가까이 된다 — 데스크톱에선 목록 칸만 스크롤시켜 오른쪽 상세가 멀어지지 않게 */
+@media (min-width: 993px) {
+  .pageThemeExtreme .shopList { max-height: 760px; overflow-y: auto; }
+}
 
 .pageThemeExtreme .exTileTag {
   position: absolute; top: 0.4rem; left: 0.4rem;
@@ -1281,6 +1548,8 @@
   .shopItem { padding: 0.5rem 0.65rem; gap: 0.5rem; font-size: 0.88rem; }
   .shopItemIcon, .shopItemIconFill { width: 38px; height: 38px; }
   .shopItemName { font-size: 0.88rem; }
+  .pageThemeExtreme .shopItemName { font-size: 0.95rem; }
+  .pageThemeExtreme .exShopRatioValue { font-size: 1.28rem; }
   .shopDetail { padding: 0.85rem; overflow-y: visible; }
   .shopDetailIcon, .shopDetailIconFill { width: 72px; height: 72px; margin-bottom: 0.5rem; }
   .shopDetailName { font-size: 1rem; }
@@ -1345,6 +1614,10 @@
   .shopItem { padding: 0.35rem 0.5rem; gap: 0.35rem; font-size: 0.8rem; }
   .shopItemIcon, .shopItemIconFill { width: 30px; height: 30px; border-radius: 5px; }
   .shopItemName { font-size: 0.78rem; }
+  .pageThemeExtreme .shopItemName { font-size: 0.88rem; }
+  .pageThemeExtreme .exShopRatioValue { font-size: 1.15rem; }
+  .pageThemeExtreme .exEffRatioValue { font-size: 1.7rem; }
+  .pageThemeExtreme .shopDetail { padding: 1rem 0.8rem; }
   .shopItemCostBadge { min-width: 55px; }
   .shopItemCostValue { font-size: 0.75rem; gap: 2px; }
   .shopItemCostValue img { width: 12px !important; height: 12px !important; }

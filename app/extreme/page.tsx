@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import styles from '../cathedral/cathedral.module.css';
@@ -9,13 +9,17 @@ import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
 import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import NewLottie from '@/components/NewLottie';
+import { fetchPriceData } from '@/lib/price-history-client';
+import { getItemUnitPrice, getFixedGemSelectUnitPrice, TEMPLATES_MAP } from '@/lib/package-shared';
+import { HERO_GEMS, FATE_STONE_PRICE, calcEngravingExpectedValue, calcTicketAverage, TICKET_TIER_LABELS } from '@/lib/hell-reward-calc';
+import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import { faqData } from './faq-data';
 
 // ─────────────────────────────────────────────────────────────────────────
 // 카제로스 레이드 3막·종막 익스트림 — 출처: 공식 GM노트 1226 (2026-09-18)
 // https://lostark.game.onstove.com/News/GMNote/Views/1226
-// 수치는 전부 그 글의 본문·첨부 이미지에서 그대로 옮겼다. 제작소는 첨부된 제작 화면 캡쳐에서
-// 비용이 읽히는 두 항목만 싣고, 나머지는 공개되는 대로 채운다.
+// 클리어 보상·일정 수치는 전부 그 글의 본문·첨부 이미지에서 그대로 옮겼다.
+// 제작소(CRAFT_ITEMS)는 2026-09-25 인게임 제작 화면 캡쳐에서 옮겼다 — GM노트보다 이쪽이 정확하다.
 // 화면 구조는 세르카·벨가르딘과 같다 — 카드 3장(난이도) → 클릭하면 아래 상세 → 상점(제작소).
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -90,62 +94,431 @@ const FIRST_CLEAR_COMMON = [
 const FIRST_CLEAR_ACT_COINS = 100;
 const NIGHTMARE_TITLE_GOLD = 200000;
 
-// ─── 카제로스 익스트림 제작소 — GM노트 첨부 캡쳐에서 비용이 확인된 항목 ───
-type ShopItem = {
-  id: number;
+// ─── 카제로스 익스트림 제작소 ───
+// 출처: 인게임 제작 화면 캡쳐 (2026-09-25).
+// 제작소는 인게임과 같이 [분류 × 막] 6칸으로 접힌다 — 특수/젬/성장 재료 × 3막/종막.
+// 항목 구성은 3막·종막이 같지만 교환에 쓰는 주화가 다르다 (3막 뇌전 / 종막 빛과 어둠).
+// 그래서 목록 데이터(CRAFT_ITEMS)는 한 벌만 두고 막별로 주화를 갈아 끼워 그린다.
+// 고대 코어 선택 상자만 종막 목록에 하나 더 있다 (finalOnly).
+// 같은 이름이 레벨별로 여러 번 나오는 건 제작 조건(1730/1770/1780)이 다른 별개 항목이라
+// 그런 것이고, 원정대 제한 횟수도 항목마다 따로 붙는다.
+//
+// 아이콘은 전부 사이트가 이미 쓰는 그림을 그대로 가져다 쓴다 (패키지 등록 아이템 목록·성당·벨가르딘).
+// 새 파일을 만들지 말 것 — 같은 아이템이 페이지마다 다른 그림으로 보이면 안 된다.
+//   고대 코어 상자 /rheozhdj.webp(성당) · 각인서 /engraving2.webp(패키지 유각 선택 상자)
+//   비상의 돌 키트 /djqlfflxltmxhs.webp(벨가르딘) · 파수 주머니 /crystal-choice-pouch.webp(패키지 파결·수결 묶음)
+//   정련된 운명의 돌 /dnsauddmlehf.webp · 영롱한 혼돈의 돌(확정권) /quality-confirm.webp
+// 전용 그림이 없는 상자는 안에 든 것으로 대신한다 — 상급 아비도스 상자는 상급 아비도스 융화 재료 그림,
+// 야금술·재봉술 선택 상자 VI 는 구성이 8종이라 공용 상자 그림(/magic-reagent-select.webp)을 쓰고
+// 이름과 아래 '제작 결과' 표의 구성품 아이콘으로 구분한다.
+// 희귀 지옥 열쇠 교환권 /hell-rare-ticket.webp 는 인게임 아이콘(검정 테두리 제거)이다.
+type CraftGroup = 'special' | 'gem' | 'growth';
+
+const CRAFT_GROUPS: { key: CraftGroup; label: string }[] = [
+  { key: 'special', label: '특수 제작' },
+  { key: 'gem', label: '젬 제작' },
+  { key: 'growth', label: '성장 재료 제작' },
+];
+
+/**
+ * 제작 결과물 한 줄.
+ * itemId 가 있으면 latest.json 시세(개당)로, gold 가 있으면 고정가로 값을 매긴다.
+ * 둘 다 없으면 그 항목은 효율 산정에서 빠진다(= 아직 구성이 확인 안 된 상자).
+ */
+type CraftContent = { name: string; icon: string; itemId?: string; gold?: number;
+  /** 시세에서 매번 다시 구하는 값 (각인서 기댓값처럼 고정가가 아닌 것) */
+  goldOf?: (prices: Record<string, number>, bcRate: number) => number;
+  /** 개수. 아직 확인 안 됐으면 비워 둔다 — 표엔 x? 로 뜨고 효율 산정에서 빠진다 */
+  amount?: number };
+
+type CraftItem = {
+  id: string;
+  /** 정식 이름 — 상세 카드에 그대로 쓴다 */
   name: string;
-  act: Act;
+  /** 목록용 축약 이름. '익스트림' 같은 접두사는 떼고 통용 줄임말로 (고코랜·파결·수결…) */
+  short: string;
+  group: CraftGroup;
   image: string;
-  requiredLevel: number;
-  limitLabel: string;
-  costs: { name: string; icon: string; amount: number }[];
-  gold: number;
+  /** 제작 가능 아이템 레벨 */
+  level: number;
+  /** 원정대 제한 — 막 기간 중 이 항목을 만들 수 있는 총 횟수 */
+  limit: number;
+  /** 그 막의 전용 주화 수량 (3막 뇌전 / 종막 빛과 어둠) */
+  coin: number;
+  /** 혼돈의 주화 — 고대 코어 선택 상자만 쓴다 */
+  chaosCoin?: number;
+  /** 제작 비용. 0 = 제작 비용 없음, null = 캡쳐에 안 잡혀 미확인 */
+  gold: number | null;
+  /** 종막 목록에만 있는 항목 */
+  finalOnly?: boolean;
+  /** 제작 결과물 */
+  contents?: CraftContent[];
+  /** 구성품이 "이 중 하나"인 선택 상자 — 값은 최고가 하나로 잡는다 */
+  pickOne?: boolean;
+  /** 확정 조합 프리미엄 등 결과값에 곱하는 배수 (고정형 젬 상자) */
+  valueMultiplier?: number;
   note?: string;
 };
 
-const SHOP_ITEMS: ShopItem[] = [
+// 야금술·재봉술 선택 상자 VI 구성품 — 두 상자가 같은 구성이고 무기/방어구 계열만 다르다.
+// itemId 는 거래소 추적 아이템(lib/items-to-track)과 같은 ID — latest.json 키다.
+const LIFE_SELECT_CONTENTS = (kind: '야금술' | '재봉술'): CraftContent[] => {
+  const weapon = kind === '야금술';
+  const f = weapon ? 'metallurgy' : 'tailoring';
+  const id = weapon
+    ? { k11: '66112543', k15: '66112551', k19: '66112553', t12: '66112561', m1: '66112711', m2: '66112713', m3: '66112715', m4: '66112717' }
+    : { k11: '66112546', k15: '66112552', k19: '66112554', t12: '66112564', m1: '66112712', m2: '66112714', m3: '66112716', m4: '66112718' };
+  return [
+    { name: `${kind} : 업화 [11-14]`, icon: `/${f}-karma.webp`, amount: 10, itemId: id.k11 },
+    { name: `${kind} : 업화 [15-18]`, icon: `/${f}-karma.webp`, amount: 4, itemId: id.k15 },
+    { name: `${kind} : 업화 [19-20]`, icon: `/${f}-karma.webp`, amount: 2, itemId: id.k19 },
+    { name: `${kind} : 전율 [12-15]`, icon: `/${f}-thrill.webp`, amount: 1, itemId: id.t12 },
+    { name: `장인의 ${kind} : 1단계`, icon: `/master-${f}-1.webp`, amount: 20, itemId: id.m1 },
+    { name: `장인의 ${kind} : 2단계`, icon: `/master-${f}-2.webp`, amount: 10, itemId: id.m2 },
+    { name: `장인의 ${kind} : 3단계`, icon: `/master-${f}-3.webp`, amount: 4, itemId: id.m3 },
+    { name: `장인의 ${kind} : 4단계`, icon: `/master-${f}-4.webp`, amount: 2, itemId: id.m4 },
+  ];
+};
+
+const STONE_POUCH_CONTENTS: CraftContent[] = [
+  { name: '운명의 파괴석 결정', icon: '/destruction-stone-crystal.webp', amount: 1500, itemId: '66102007' },
+  { name: '운명의 수호석 결정', icon: '/guardian-stone-crystal.webp', amount: 3000, itemId: '66102107' },
+];
+
+// 익스트림 상급 아비도스 융화 재료 상자 — 1730·1770·1780 세 항목 모두 100개로 같다.
+const ABIDOS_BOX_CONTENTS: CraftContent[] = [
+  { name: '상급 아비도스 융화 재료', icon: '/top-abidos-fusion5.webp', amount: 100, itemId: '6861013' },
+];
+
+// 고대 코어 상자 — 코어(질서·혼돈의 해/달/별)는 거래 불가라 시세가 없다.
+// 대신 지평의 성당에서 같은 상자를 얻는 데 드는 골드 환산 비용을 그 상자의 값으로 쓴다(대체원가).
+//   성당: 은총의 파편 400 + 코어 정수 400 + 골드(선택 200,000 / 랜덤 100,000)
+//   은총의 파편 1개 값 = 지평의 재련 재료 상자 총 가치 ÷ 60 — 성당 화면의 그 숫자와 같은 식이다.
+//   코어 정수도 거래 불가라 성당과 똑같이 값에서 뺀다.
+const CATHEDRAL_REFINE_BOX = [
+  { itemId: '66102007', amount: 2000 },   // 운명의 파괴석 결정
+  { itemId: '66102107', amount: 4000 },   // 운명의 수호석 결정
+  { itemId: '66110226', amount: 60 },     // 위대한 운명의 돌파석
+  { itemId: '66130143', amount: 22500 },  // 운명의 파편
+];
+const CATHEDRAL_BOX_GRACE = 60;
+const CATHEDRAL_CORE_GRACE = 400;
+
+/** 은총의 파편 1개 골드 — 성당과 같은 식 */
+function graceUnitGold(prices: Record<string, number>): number {
+  const total = CATHEDRAL_REFINE_BOX.reduce(
+    (sum, c) => sum + getItemUnitPrice(c.itemId, prices) * c.amount, 0,
+  );
+  return total / CATHEDRAL_BOX_GRACE;
+}
+
+const ancientCoreContents = (cathedralGold: number, label: string): CraftContent[] => [
   {
-    id: 1,
-    name: '고대 코어 랜덤 상자',
-    act: ACTS[0],
-    image: '/rheozhdj.webp',
-    requiredLevel: 1770,
-    limitLabel: '원정대 2회',
-    costs: [{ name: '뇌전의 주화', icon: '/coin-lightning.webp?v=2', amount: 100 }],
-    gold: 50000,
-  },
-  {
-    id: 2,
-    name: '고대 코어 선택 상자',
-    act: ACTS[1],
-    image: '/rheozhdj.webp',
-    requiredLevel: 1780,
-    limitLabel: '원정대 1회',
-    costs: [
-      { name: '혼돈의 주화', icon: '/coin-chaos.webp?v=2', amount: 2 },
-      { name: '빛과 어둠의 주화', icon: '/coin-light-dark.webp?v=2', amount: 100 },
-    ],
-    gold: 200000,
-    note: '혼돈의 주화는 3막·종막 최초 클리어 때 1개씩만 나온다 — 두 막을 모두 클리어해야 2개가 모여 이 상자를 만들 수 있다.',
+    name: label,
+    icon: '/rheozhdj.webp',
+    amount: 1,
+    goldOf: (prices) => graceUnitGold(prices) * CATHEDRAL_CORE_GRACE + cathedralGold,
   },
 ];
 
-// 캡쳐의 제작 목록에 이름만 보이는 항목 (비용·제한 미공개)
-const SHOP_PENDING = [
-  { group: '특수 제작 · 3막', items: '유물 각인서 랜덤 주머니 · 유물 전투 각인서 선택 주머니' },
-  { group: '젬 제작 · 3막', items: '젬 선택 상자 등' },
-  { group: '성장 재료 제작 · 3막', items: '재련 재료 · 지옥 열쇠 등' },
-  { group: '특수 제작 · 종막', items: '고대 코어 랜덤 상자 (비용 미확인)' },
+// 비상의 돌 각인 지정 키트 — 값이 통째로 페온인 아이템이라 시세가 아니라 환율로 정해진다.
+// 패키지 등록 목록의 '어빌리티스톤 키트' 와 같은 값: 9페온 = 76.5 블루크리스탈.
+const ABILITY_STONE_KIT_CRYSTAL = 76.5;
+const STONE_KIT_CONTENTS: CraftContent[] = [
+  {
+    name: '어빌리티스톤 키트 (9페온)',
+    icon: '/djqlfflxltmxhs.webp',
+    amount: 1,
+    goldOf: (_prices, bcRate) => (ABILITY_STONE_KIT_CRYSTAL * bcRate) / 100,
+  },
 ];
 
-const COIN_EXPIRE = '2026년 11월 25일 (수) 06:00';
+// 희귀 지옥 열쇠 — 패키지가 영웅·전설 티켓을 매기는 그 함수(calcTicketAverage)를 그대로 쓴다.
+// 패키지는 영웅 6단계(60~69층)·전설 7단계(70~79층)를 기본으로 잡는데, 희귀는 그보다 낮은
+// 4단계(40~49층) 1750 지옥 평균으로 본다. 상자 3개 중 택 1 기댓값이라 목록 평균이 아니다.
+// 안에 든 젬·팔찌의 페온 몫까지 패키지와 같은 기준으로 넣는다 (아래 환율 입력값).
+const HELL_RARE_TIER = 4;
+const HELL_RARE_KEY_CONTENTS: CraftContent[] = [
+  {
+    name: `희귀 지옥 열쇠 (1750 · ${TICKET_TIER_LABELS[HELL_RARE_TIER]}층 기댓값)`,
+    icon: '/hell-rare-ticket.webp',
+    amount: 1,
+    goldOf: (prices, bcRate) => calcTicketAverage('hell', HELL_RARE_TIER, prices, bcRate, true, false),
+  },
+];
+
+// 고정형 영웅 젬 선택 상자 — 젬 6종 중 택 1. 한 종의 값은 패키지 효율 페이지가 쓰는
+// getFixedGemSelectUnitPrice 그대로다 (확정 조합 프리미엄 ×6 · 추가 초기화 1회 − 초기화권 + 젬 페온).
+// 환율(goldPerWon)은 아래 블크 입력값에서 역산해 넘긴다 — 100블크 = 2,750원.
+const FIXED_GEM_CONTENTS: CraftContent[] = HERO_GEMS.map((g) => ({
+  name: g.name,
+  icon: g.icon,
+  amount: 1,
+  goldOf: (prices, bcRate) => getFixedGemSelectUnitPrice(g.id, prices, bcRate / 2750, false),
+}));
+
+// 유물 각인서 — 값은 전부 /package · 지옥 보상 계산기가 쓰는 것과 같은 규칙이다.
+//   유각랜: 43종 랜덤이라 낱개 기댓값(calcEngravingExpectedValue) — 추적 12종 시세 + 비추적 31종 합 ÷ 43
+//   유각선: 택 1 이라 패키지 '유각 선택 상자' 템플릿의 선택지 중 latest.json 최고가
+//           (선택지 목록을 여기 베끼지 않고 TEMPLATES_MAP 을 그대로 읽는다 — 원본이 한 곳)
+const ENGRAVING_RANDOM_CONTENTS: CraftContent[] = [
+  { name: '유물 각인서 평균 기댓값', icon: '/engraving2.webp', amount: 1, goldOf: calcEngravingExpectedValue },
+];
+
+const ENGRAVING_SELECT_CONTENTS: CraftContent[] = (TEMPLATES_MAP['engraving-choice']?.choices ?? []).map((c) => ({
+  name: c.name,
+  icon: ENGRAVING_ICONS[c.name] ?? '/engraving2.webp',
+  amount: 1,
+  itemId: c.itemId,
+}));
+// 영웅 젬 선택 상자 — 6종 중 택 1. 지옥 보상 계산기와 같은 기준(최고가 젬)으로 값을 잡는다.
+const HERO_GEM_CONTENTS: CraftContent[] = HERO_GEMS.map((g) => ({
+  name: g.name, icon: g.icon, amount: 1, itemId: g.id,
+}));
+
+const CRAFT_ITEMS: CraftItem[] = [
+  // ── 특수 제작 ──
+  {
+    id: 'core-random', name: '고대 코어 랜덤 상자', short: '고대 코어 랜덤 상자', group: 'special',
+    image: '/rheozhdj.webp', level: 1770, limit: 2, coin: 50, gold: 50000,
+    contents: ancientCoreContents(100000, '고대 코어 랜덤 상자 (성당 교환 비용 환산)'),
+    note: '코어는 거래 불가라 시세가 없다. 지평의 성당에서 같은 상자를 얻는 골드 환산 비용(은총의 파편 400 + 골드 100,000)을 값으로 쓴다.',
+  },
+  {
+    id: 'core-select', name: '고대 코어 선택 상자', short: '고대 코어 선택 상자', group: 'special',
+    image: '/rheozhdj.webp', level: 1780, limit: 1, coin: 100, chaosCoin: 2, gold: 200000,
+    contents: ancientCoreContents(200000, '고대 코어 선택 상자 (성당 교환 비용 환산)'),
+    finalOnly: true,
+  },
+  {
+    id: 'engraving-random', name: '유물 각인서 랜덤 주머니', short: '유물 각인서 랜덤 주머니', group: 'special',
+    image: '/engraving2.webp', level: 1780, limit: 2, coin: 20, gold: 5000,
+    contents: ENGRAVING_RANDOM_CONTENTS,
+  },
+  {
+    id: 'engraving-select', name: '유물 전투 각인서 선택 주머니', short: '유물 전투 각인서 선택 주머니', group: 'special',
+    image: '/engraving2.webp', level: 1730, limit: 1, coin: 100, gold: 30000,
+    contents: ENGRAVING_SELECT_CONTENTS, pickOne: true,
+  },
+  {
+    id: 'stone-kit', name: '비상의 돌 각인 지정 키트 상자', short: '각인 키트', group: 'special',
+    image: '/djqlfflxltmxhs.webp', level: 1730, limit: 40, coin: 3, gold: 0,
+    contents: STONE_KIT_CONTENTS,
+    note: '값은 패키지의 어빌리티스톤 키트와 같은 9페온 기준. 제작 골드는 캡쳐에 안 잡혀 0으로 본다 — 실제 비용이 있으면 효율은 그만큼 내려간다.',
+  },
+  {
+    id: 'hell-key', name: '희귀 지옥 열쇠 교환권 (이벤트)', short: '희귀 지옥 열쇠', group: 'special',
+    image: '/hell-rare-ticket.webp', level: 1730, limit: 4, coin: 10, gold: 15000,
+    contents: HELL_RARE_KEY_CONTENTS,
+  },
+
+  // ── 젬 제작 ──
+  {
+    id: 'gem-1730', name: '영웅 젬 선택 상자', short: '영웅 젬', group: 'gem',
+    image: '/gem-hero.webp', level: 1730, limit: 2, coin: 20, gold: 10000,
+    contents: HERO_GEM_CONTENTS, pickOne: true,
+  },
+  {
+    id: 'gem-1770', name: '영웅 젬 선택 상자', short: '영웅 젬', group: 'gem',
+    image: '/gem-hero.webp', level: 1770, limit: 2, coin: 20, gold: 10000,
+    contents: HERO_GEM_CONTENTS, pickOne: true,
+  },
+  {
+    id: 'gem-fixed', name: '고정형 영웅 젬 선택 상자', short: '고정형 젬', group: 'gem',
+    image: '/fixed-hero-gem-select.webp', level: 1780, limit: 1, coin: 100, gold: 10000,
+    contents: FIXED_GEM_CONTENTS, pickOne: true,
+    note: '가공 옵션 2종이 확정이라 붙는 프리미엄까지, 패키지 효율 페이지와 같은 계산기로 값을 잡는다.',
+  },
+
+  // ── 성장 재료 제작 ──
+  {
+    id: 'stone-pouch-1770', name: '익스트림 운명의 파괴/수호석 결정 주머니', short: '파결·수결', group: 'growth',
+    image: '/crystal-choice-pouch.webp', level: 1770, limit: 4, coin: 15, gold: 3000,
+    contents: STONE_POUCH_CONTENTS,
+  },
+  {
+    id: 'stone-pouch-1780', name: '익스트림 운명의 파괴/수호석 결정 주머니', short: '파결·수결', group: 'growth',
+    image: '/crystal-choice-pouch.webp', level: 1780, limit: 4, coin: 15, gold: 3000,
+    contents: STONE_POUCH_CONTENTS,
+  },
+  {
+    id: 'abidos-1730', name: '익스트림 상급 아비도스 융화 재료 상자', short: '상비도스', group: 'growth',
+    image: '/top-abidos-fusion5.webp', level: 1730, limit: 2, coin: 10, gold: 5000,
+    contents: ABIDOS_BOX_CONTENTS,
+  },
+  {
+    id: 'abidos-1770', name: '익스트림 상급 아비도스 융화 재료 상자', short: '상비도스', group: 'growth',
+    image: '/top-abidos-fusion5.webp', level: 1770, limit: 2, coin: 10, gold: 5000,
+    contents: ABIDOS_BOX_CONTENTS,
+  },
+  {
+    id: 'abidos-1780', name: '익스트림 상급 아비도스 융화 재료 상자', short: '상비도스', group: 'growth',
+    image: '/top-abidos-fusion5.webp', level: 1780, limit: 2, coin: 10, gold: 5000,
+    contents: ABIDOS_BOX_CONTENTS,
+  },
+  {
+    id: 'metallurgy-6', name: '야금술 선택 상자 VI', short: '야금술', group: 'growth',
+    image: '/magic-reagent-select.webp', level: 1730, limit: 2, coin: 5, gold: 0,
+    contents: LIFE_SELECT_CONTENTS('야금술'), pickOne: true,
+  },
+  {
+    id: 'tailoring-6', name: '재봉술 선택 상자 VI', short: '재봉술', group: 'growth',
+    image: '/magic-reagent-select.webp', level: 1730, limit: 5, coin: 5, gold: 0,
+    contents: LIFE_SELECT_CONTENTS('재봉술'), pickOne: true,
+  },
+  {
+    id: 'fate-stone', name: '정련된 운명의 돌', short: '운명의 돌', group: 'growth',
+    image: '/dnsauddmlehf.webp', level: 1730, limit: 100, coin: 1, gold: 0,
+    contents: [{ name: '정련된 운명의 돌', icon: '/dnsauddmlehf.webp', amount: 1, gold: FATE_STONE_PRICE }],
+    note: '값은 지옥·나락 보상 계산기와 같은 고정가(1개 900골드). 제작 골드는 캡쳐에 안 잡혀 0으로 본다 — 실제 비용이 있으면 효율은 그만큼 내려간다.',
+  },
+  {
+    id: 'chaos-stone-weapon', name: '영롱한 혼돈의 돌 (무기)', short: '혼돈의 돌 (무기)', group: 'growth',
+    image: '/quality-confirm.webp', level: 1730, limit: 1, coin: 50, gold: null,
+  },
+  {
+    id: 'chaos-stone-armor', name: '영롱한 혼돈의 돌 (방어구)', short: '혼돈의 돌 (방어구)', group: 'growth',
+    image: '/quality-confirm.webp', level: 1730, limit: 2, coin: 50, gold: null,
+  },
+];
+
+// ─── 주화 가치 · 제작 효율 ───
+// 주화는 거래가 안 되니 "골드로 얼마짜리냐"를 시세에서 거꾸로 잡는다.
+//   1) 각 항목의 제작 결과를 latest.json 시세로 환산한다 (선택 상자는 최고가 하나)
+//   2) 주화 1개당 순이득 = (결과 가치 − 제작 골드) ÷ 주화 수
+//   3) 파결·수결 주머니의 주화당 순이득을 '주화 기준가'로 고정한다 (COIN_BASIS_ID)
+//      — 파괴석·수호석 결정은 거래량이 가장 두꺼운 재련 재료라 시세가 안 흔들린다.
+//        "가장 비싼 제작처"를 자동으로 고르면 야금술·재봉술처럼 물량 얇은 생활 재료가
+//        기준을 잡아 버려서, 그쪽 시세가 튈 때마다 전 항목 효율이 같이 출렁인다.
+//   4) 항목 효율 = 결과 가치 ÷ (주화 수 × 기준가 + 제작 골드)
+//      기준인 파결·수결이 정확히 100% 이고, 그보다 나으면 100% 를 넘는다.
+// 구성이 아직 확인 안 된 상자(고대 코어·각인서·아비도스 등)는 계산에서 빠진다.
+
+/** 막 색 — 그 막의 주화에서 딴다. 3막 뇌전(번개)은 청색, 종막 빛과 어둠은 자주.
+    막 구분 헤더는 이 색으로 채우고, 아래 분류 머리글·항목 줄은 같은 색 세로선만 잇는다. */
+const ACT_ACCENT: Record<Act['key'], string> = { act3: '#2b6ca8', final: '#6b3fa0' };
+
+/** 주화 기준가를 잡는 항목 — 파결·수결 주머니 (1770·1780 이 값이 같아 어느 쪽이든 같다) */
+const COIN_BASIS_ID = 'stone-pouch-1770';
+type CraftEval = { value: number; net: number | null; perCoin: number | null };
+
+/** 구성 요소 1개당 골드 — 고정가 > 시세 함수 > 거래소 단가 순 */
+function contentUnitGold(c: CraftContent, prices: Record<string, number> | null, bcRate: number): number {
+  if (c.gold !== undefined) return c.gold;
+  if (!prices) return 0;
+  if (c.goldOf) return c.goldOf(prices, bcRate);
+  return c.itemId ? getItemUnitPrice(c.itemId, prices) : 0;
+}
+
+/**
+ * 표에 그릴 구성 요소 — 전부 보여 준다. 택 1 상자만 값이 큰 순으로 세워
+ * 실제로 잡히는 선택지가 맨 위에 오게 한다. 줄이 많으면 표가 세로로 스크롤된다.
+ */
+function sortedContents(item: CraftItem, prices: Record<string, number> | null, bcRate: number): CraftContent[] {
+  const list = item.contents ?? [];
+  if (!item.pickOne) return list;
+  return [...list].sort(
+    (a, b) => contentUnitGold(b, prices, bcRate) * (b.amount ?? 0) - contentUnitGold(a, prices, bcRate) * (a.amount ?? 0),
+  );
+}
+
+function calcCraftValue(item: CraftItem, prices: Record<string, number>, bcRate: number): number | null {
+  if (!item.contents || item.contents.length === 0) return null;
+  // 시세가 안 잡히는 구성품은 0골로 친다 — 택 1 상자에선 어차피 안 뽑히고,
+  // 묶음에선 "없는 값"이 아니라 "보탤 게 없는 값"이라 합계에서 그냥 빠지면 된다.
+  // 값을 못 매기는 건 개수 자체가 미확인일 때뿐이다.
+  const unit = (c: CraftContent): number | null => {
+    if (c.amount === undefined) return null;
+    if (c.goldOf) return c.goldOf(prices, bcRate) * c.amount;
+    if (c.gold !== undefined) return c.gold * c.amount;
+    if (!c.itemId) return 0;
+    return getItemUnitPrice(c.itemId, prices) * c.amount;
+  };
+  const values = item.contents.map(unit);
+  if (item.pickOne) {
+    const usable = values.filter((v): v is number => v !== null);
+    if (usable.length === 0) return null;
+    return Math.max(...usable) * (item.valueMultiplier ?? 1);
+  }
+  if (values.some((v) => v === null)) return null;
+  return (values as number[]).reduce((s, v) => s + v, 0) * (item.valueMultiplier ?? 1);
+}
+
+function evalCraft(item: CraftItem, prices: Record<string, number> | null, bcRate: number): CraftEval | null {
+  if (!prices) return null;
+  const value = calcCraftValue(item, prices, bcRate);
+  if (value === null) return null;
+  const net = item.gold === null ? null : value - item.gold;
+  // 혼돈의 주화는 값을 0으로 본다 — 최초 클리어로 2개만 나오고 다른 데 쓸 곳이 없어
+  // 기회비용이 잡히지 않는다. 그래서 전용 주화만으로 나눈다.
+  const perCoin = net === null || item.coin <= 0 ? null : net / item.coin;
+  return { value, net, perCoin };
+}
+
 
 export default function ExtremePage() {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
-  const [selectedShopItem, setSelectedShopItem] = useState<number | null>(1);
+  // 제작소는 인게임처럼 [분류 × 막] 6칸이 각각 접힌다. 키는 `${막}:${분류}`
+  const [openCraftKeys, setOpenCraftKeys] = useState<string[]>([]);   // 처음엔 6칸 모두 접힌 채로
+  // 선택한 제작 항목 — 막마다 주화가 다르므로 `${막}:${항목}` 으로 잡는다
+  const [selectedCraftKey, setSelectedCraftKey] = useState<string | null>('act3:core-random');
+  // latest.json 시세 — 제작 효율 계산용 (차트·패키지와 같은 모듈 캐시라 추가 요청이 거의 없다)
+  const [prices, setPrices] = useState<Record<string, number> | null>(null);
+  // 블루크리스탈 100개당 골드 — 페온으로 값이 정해지는 항목(각인 키트·열쇠 속 젬·팔찌)에 쓴다.
+  // 기본값은 지옥 보상 계산기와 같다.
+  const [bcText, setBcText] = useState('18333');
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPriceData()
+      .then(({ latest }) => { if (!cancelled) setPrices(latest); })
+      .catch(() => { /* 시세를 못 받으면 효율만 빠지고 목록은 그대로 보인다 */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const bcRate = parseFloat(bcText) || 0;
 
   const selectedStageData = STAGES.find((s) => s.name === selectedStage);
-  const selectedShopData = SHOP_ITEMS.find((s) => s.id === selectedShopItem);
+
+  // 항목별 결과 가치·주화당 순이득
+  const craftEvals = useMemo(() => {
+    const m = new Map<string, CraftEval>();
+    for (const it of CRAFT_ITEMS) {
+      const e = evalCraft(it, prices, bcRate);
+      if (e) m.set(it.id, e);
+    }
+    return m;
+  }, [prices, bcRate]);
+
+  // 주화 기준가 — 파결·수결 주머니의 "주화 1개당 순이득" (COIN_BASIS_ID)
+  const coinBasis = useMemo(() => {
+    const item = CRAFT_ITEMS.find((it) => it.id === COIN_BASIS_ID);
+    const e = item ? craftEvals.get(item.id) : null;
+    if (!item || !e || e.perCoin === null || e.perCoin <= 0) return null;
+    return { perCoin: e.perCoin, item };
+  }, [craftEvals]);
+
+  const evalOf = (item: CraftItem) => craftEvals.get(item.id) ?? null;
+
+  /** 골드로 환산한 교환 비용 — 주화 × 기준가 + 제작 골드 */
+  const craftPaid = (item: CraftItem): number | null => {
+    if (!coinBasis || item.gold === null) return null;
+    return item.coin * coinBasis.perCoin + item.gold;
+  };
+
+  /** 골드로 그냥 사는 값 대비 효율 — 결과 가치 ÷ (주화 × 기준가 + 제작 골드) */
+  const craftRatio = (item: CraftItem): number | null => {
+    const e = craftEvals.get(item.id);
+    if (!e || !coinBasis || item.gold === null) return null;
+    const paid = item.coin * coinBasis.perCoin + item.gold;
+    return paid > 0 ? e.value / paid : null;
+  };
+
+  const toggleCraftGroup = (key: string) =>
+    setOpenCraftKeys((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+
+  const selectedAct = ACTS.find((a) => a.key === selectedCraftKey?.split(':')[0]) ?? null;
+  const selectedCraftData = CRAFT_ITEMS.find((it) => it.id === selectedCraftKey?.split(':')[1]) ?? null;
 
   return (
     <div className={styles.pageThemeExtreme} style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
@@ -210,6 +583,12 @@ export default function ExtremePage() {
                             <Image src={ACTS[1].coin.icon} alt={ACTS[1].coin.name} width={16} height={16} />
                           </span>
                           <span>주화 {stage.coins}</span>
+                          {coinBasis && (
+                            <span className={styles.exCardCoinGold}>
+                              = <Image src="/gold.webp" alt="" width={14} height={14} />
+                              {Math.round(stage.coins * coinBasis.perCoin).toLocaleString()}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -354,8 +733,8 @@ export default function ExtremePage() {
               </div>
               );
             })()}
-
-            {/* 카제로스 익스트림 제작소 */}
+            {/* 카제로스 익스트림 제작소 — 인게임과 같이 [분류 × 막] 6칸 아코디언.
+                항목 구성은 3막·종막이 같지만 교환 주화가 달라서 칸을 합치지 않는다. */}
             <div style={{ marginTop: 'clamp(2rem, 4vw, 2.5rem)' }}>
               <Card className={styles.shopCard}>
                 <Card.Header className={styles.shopCardHeader}>
@@ -364,80 +743,131 @@ export default function ExtremePage() {
                   </h3>
                 </Card.Header>
                 <Card.Body className="p-0">
+                  {/* 주화 기준가 — 시세로 거꾸로 매긴 주화 1개의 골드 값 */}
+                  <div className={styles.exCoinBasis}>
+                    {coinBasis ? (
+                      <>
+                        <div className={styles.exCoinBasisMain}>
+                          <span className={styles.exCoinBasisCoins}>
+                            <Image src={ACTS[0].coin.icon} alt={ACTS[0].coin.name} width={22} height={22} />
+                            <Image src={ACTS[1].coin.icon} alt={ACTS[1].coin.name} width={22} height={22} />
+                          </span>
+                          <span className={styles.exCoinBasisLabel}>주화 1개 =</span>
+                          <span className={styles.exCoinBasisValue}>
+                            <Image src="/gold.webp" alt="골드" width={18} height={18} />
+                            {Math.round(coinBasis.perCoin).toLocaleString()}
+                          </span>
+                          {/* 블크 환율 — 각인 키트처럼 값이 통째로 페온인 항목과 열쇠 속 젬·팔찌에 쓴다 */}
+                          <label className={styles.exRate}>
+                            <Image src="/blue.webp" alt="블루 크리스탈" width={18} height={18} />
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              value={bcText}
+                              onChange={(e) => setBcText(e.target.value)}
+                              aria-label="블루 크리스탈 100개당 골드"
+                            />
+                          </label>
+                        </div>
+                      </>
+                    ) : (
+                      <div className={styles.exCoinBasisNote}>
+                        {prices ? '효율을 매길 수 있는 항목의 시세를 불러오지 못했습니다.' : '시세를 불러오는 중입니다…'}
+                      </div>
+                    )}
+                  </div>
+
                   <div className={styles.shopContainer}>
                     <div className={styles.shopList}>
                       <div className={styles.shopListHeader}>
-                        제작 목록 (공식 캡쳐에서 확인된 항목)
+                        제작 목록 — 분류를 눌러 펼치기
                       </div>
-                      {SHOP_ITEMS.map((item) => {
-                        const isActive = selectedShopItem === item.id;
+                      {ACTS.map((act) => (
+                        <div key={act.key} className={styles.exActBlock} style={{ '--ex-act': ACT_ACCENT[act.key] } as React.CSSProperties}>
+                          {/* 막 구분 바 — 3막 묶음과 종막 묶음이 한 덩어리로 안 읽히게 끊어 준다.
+                              바 색과 아래 분류 머리글의 왼쪽 선이 같은 색이라 어디까지가 한 막인지 보인다 */}
+                          <div className={styles.exActBar}>
+                            <Image src={act.coin.icon} alt={act.coin.name} width={20} height={20} className={styles.exActBarCoin} />
+                            <span className={styles.exActBarName}>{act.label}</span>
+                            <span className={styles.exActBarCoinName}>{act.coin.name}</span>
+                          </div>
+                          {CRAFT_GROUPS.map((group) => {
+                        const groupKey = `${act.key}:${group.key}`;
+                        const groupItems = CRAFT_ITEMS.filter(
+                          (it) => it.group === group.key && (!it.finalOnly || act.key === 'final'),
+                        );
+                        const open = openCraftKeys.includes(groupKey);
                         return (
-                          <div
-                            key={item.id}
-                            className={`${styles.shopItem} ${isActive ? styles.active : ''}`}
-                            onClick={() => setSelectedShopItem(isActive ? null : item.id)}
-                          >
-                            <div className={styles.shopItemIconFill}>
-                              <Image src={item.image} alt="" width={52} height={52} style={{ borderRadius: '6px', objectFit: 'cover', width: '100%', height: '100%' }} />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <span className={styles.shopItemName} style={{ display: 'block' }}>
-                                {item.name}
+                          <div key={groupKey}>
+                            <button
+                              type="button"
+                              className={styles.exCraftGroup}
+                              onClick={() => toggleCraftGroup(groupKey)}
+                              aria-expanded={open}
+                            >
+                              <Image src={act.coin.icon} alt={act.coin.name} width={18} height={18} className={styles.exCraftGroupCoin} />
+                              <span className={styles.exCraftGroupName}>
+                                {group.label} <span className={styles.exCraftGroupAct}>– {act.label.split(' · ')[0]}</span>
                               </span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2px', flexWrap: 'wrap' }}>
-                                <span
-                                  className={styles.limitBadge}
-                                  style={{
-                                    fontSize: '0.68rem',
-                                    padding: '0.1rem 0.35rem',
-                                    color: 'var(--rd-line)',
-                                    background: 'var(--rd-head-soft)',
-                                    border: '1px solid var(--rd-line)',
-                                  }}
+                              <span className={styles.exCraftGroupCount}>{groupItems.length}종</span>
+                              <span className={styles.exCraftGroupArrow}>{open ? '⌃' : '⌄'}</span>
+                            </button>
+                            {open && groupItems.map((item) => {
+                              const itemKey = `${act.key}:${item.id}`;
+                              const isActive = selectedCraftKey === itemKey;
+                              const ratio = craftRatio(item);
+                              return (
+                                <div
+                                  key={itemKey}
+                                  className={`${styles.shopItem} ${isActive ? styles.active : ''}`}
+                                  onClick={() => setSelectedCraftKey(isActive ? null : itemKey)}
                                 >
-                                  {item.act.label.split(' · ')[0]}
-                                </span>
-                                <span
-                                  className={styles.limitBadge}
-                                  style={{
-                                    fontSize: '0.68rem',
-                                    padding: '0.1rem 0.35rem',
-                                    color: '#3a7bb8',
-                                    background: '#3a7bb818',
-                                    border: '1px solid #3a7bb840',
-                                  }}
-                                >
-                                  {item.limitLabel}
-                                </span>
-                              </div>
-                            </div>
-                            <div className={`${styles.shopItemCostBadge} ${styles.exShopCosts}`}>
-                              {item.costs.map((cost) => (
-                                <span key={cost.name} className={styles.shopItemCostValue} style={{ color: 'var(--ct-text)' }}>
-                                  <Image src={cost.icon} alt={cost.name} width={14} height={14} style={{ borderRadius: '50%' }} />
-                                  {cost.amount}
-                                </span>
-                              ))}
-                              <span className={styles.shopItemCostValue}>
-                                <Image src="/gold.webp" alt="" width={14} height={14} />
-                                {item.gold.toLocaleString()}
-                              </span>
-                            </div>
+                                  <div className={styles.shopItemIconFill}>
+                                    <Image src={item.image} alt="" width={52} height={52} style={{ borderRadius: '6px', objectFit: 'cover', width: '100%', height: '100%' }} />
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <span className={styles.shopItemName} style={{ display: 'block' }}>
+                                      {item.short}
+                                    </span>
+                                    <div className={styles.exCraftBadges}>
+                                      <span className={`${styles.limitBadge} ${styles.exLvBadge}`}>Lv.{item.level}</span>
+                                      <span className={`${styles.limitBadge} ${styles.exLimitBadge}`}>원정대 {item.limit}회</span>
+                                    </div>
+                                  </div>
+                                  {/* 오른쪽 칸은 효율 — 교환 비용은 눌러서 상세에서 본다 */}
+                                  <div className={styles.exShopRatio}>
+                                    {ratio !== null ? (
+                                      <>
+                                        <span className={`${styles.exRatioNum} ${styles.exShopRatioValue} ${ratio >= 1 ? styles.exRatioUp : styles.exRatioFlat}`}>
+                                          {Math.round(ratio * 100)}%
+                                        </span>
+                                        {evalOf(item)?.perCoin != null && (
+                                          <span className={styles.exShopRatioSub}>
+                                            주화당 {Math.round(evalOf(item)!.perCoin!).toLocaleString()}
+                                          </span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span className={styles.exShopRatioNone}>미산정</span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         );
-                      })}
-                      {/* 이름만 공개된 항목 */}
-                      <div style={{ padding: '0.6rem 0.75rem', fontSize: '0.78rem', color: 'var(--ct-text-muted)', lineHeight: 1.5 }}>
-                        <div style={{ fontWeight: 700, color: 'var(--ct-text-secondary)', marginBottom: '0.2rem' }}>비용 미공개 (목록에만 보임)</div>
-                        {SHOP_PENDING.map((p) => (
-                          <div key={p.group}><strong style={{ fontWeight: 700 }}>{p.group}</strong> — {p.items}</div>
-                        ))}
-                      </div>
+                          })}
+                        </div>
+                      ))}
                     </div>
 
                     <div className={styles.shopDetail}>
-                      {selectedShopData ? (() => {
-                        const sd = selectedShopData;
+                      {selectedCraftData && selectedAct ? (() => {
+                        const sd = selectedCraftData;
+                        const act = selectedAct;
+                        const ev = craftEvals.get(sd.id) ?? null;
+                        const ratio = craftRatio(sd);
+                        const paid = craftPaid(sd);
                         return (
                           <div className={styles.shopDetailContent}>
                             {/* 1. 아이콘 + 이름 */}
@@ -448,93 +878,166 @@ export default function ExtremePage() {
                               <div className={styles.shopDetailName}>{sd.name}</div>
                             </div>
 
-                            {/* 2. 레벨 + 한도 + 막 */}
+                            {/* 2. 레벨 + 한도 + 막 + 분류 */}
                             <div className={styles.shopCompactInfo}>
                               <span className={styles.shopCompactItem} style={{ color: 'var(--rd-line)' }}>
-                                Lv.{sd.requiredLevel}
+                                Lv.{sd.level}
                               </span>
                               <span className={styles.shopCompactDivider}>·</span>
-                              <span
-                                className={styles.limitBadge}
-                                style={{ color: '#3a7bb8', background: '#3a7bb818', border: '1px solid #3a7bb840' }}
-                              >
-                                {sd.limitLabel}
-                              </span>
-                              <span className={styles.shopCompactDivider}>·</span>
-                              <span
-                                className={styles.limitBadge}
-                                style={{ color: 'var(--rd-line)', background: 'var(--rd-head-soft)', border: '1px solid var(--rd-line)' }}
-                              >
-                                {sd.act.label}
-                              </span>
+                              <span className={`${styles.limitBadge} ${styles.exLimitBadge}`}>원정대 {sd.limit}회</span>
                             </div>
 
-                            {/* 3. 제작 비용 */}
+                            {/* 3. 교환 비용 — 성당·세르카와 같은 자리·같은 꼴. 주화는 기준가로 골드 환산해 합계를 낸다 */}
                             <div className={styles.shopDetailSection}>
-                              <div className={styles.shopDetailSectionTitle}>제작 비용</div>
+                              <div className={styles.shopDetailSectionTitle}>교환 비용</div>
                               <div className={styles.shopDetailCostList}>
-                                {sd.costs.map((cost) => (
-                                  <div key={cost.name} className={styles.shopDetailCostItem}>
-                                    <Image src={cost.icon} alt={cost.name} width={24} height={24} style={{ borderRadius: '50%' }} />
-                                    <span className={styles.costName}>{cost.name} </span>
-                                    <span className={styles.costShortName}>{cost.name === CHAOS_COIN.name ? '혼돈 ' : cost.name === ACTS[0].coin.name ? '뇌전 ' : '빛과 어둠 '}</span>
-                                    <span>{cost.amount.toLocaleString()}</span>
+                                {sd.chaosCoin ? (
+                                  <div className={styles.shopDetailCostItem}>
+                                    <Image src={CHAOS_COIN.icon} alt={CHAOS_COIN.name} width={24} height={24} style={{ borderRadius: '50%' }} />
+                                    <span className={styles.costName}>{CHAOS_COIN.name} </span>
+                                    <span className={styles.costShortName}>{CHAOS_COIN.short} </span>
+                                    <span>{sd.chaosCoin}</span>
                                   </div>
-                                ))}
+                                ) : null}
+                                <div className={styles.shopDetailCostItem}>
+                                  <Image src={act.coin.icon} alt={act.coin.name} width={24} height={24} style={{ borderRadius: '50%' }} />
+                                  <span className={styles.costName}>{act.coin.name} </span>
+                                  <span className={styles.costShortName}>{act.coin.short} </span>
+                                  <span>{sd.coin.toLocaleString()}</span>
+                                </div>
                                 <div className={styles.shopDetailCostItem}>
                                   <Image src="/gold.webp" alt="골드" width={24} height={24} />
-                                  <span>{sd.gold.toLocaleString()}</span>
+                                  <span>{sd.gold === null ? '미확인' : sd.gold === 0 ? '없음' : sd.gold.toLocaleString()}</span>
                                 </div>
+                                {paid !== null && (
+                                  <div className={styles.costTotalRow}>
+                                    <span className={styles.costTotalEquals}>=</span>
+                                    <Image src="/gold.webp" alt="" width={18} height={18} />
+                                    <span className={styles.costTotalValue}>{Math.round(paid).toLocaleString()}</span>
+                                  </div>
+                                )}
                               </div>
-                            </div>
-
-                            {/* 4. 주화 모으기 — 이 상자에 필요한 주화를 어디서 몇 개 받는지 */}
-                            <div className={styles.shopDetailSection}>
-                              <div className={styles.shopDetailSectionTitle}>주화 획득</div>
-                              <table className={styles.materialTable} style={{ marginBottom: '0.5rem' }}>
-                                <thead>
-                                  <tr>
-                                    <th></th>
-                                    <th>획득 경로</th>
-                                    <th>수량</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td><Image src={sd.act.coin.icon} alt="" width={22} height={22} style={{ borderRadius: '50%', display: 'block', margin: '0 auto' }} /></td>
-                                    <td><div className={styles.materialCell}><span>{sd.act.coin.short} — 매주 클리어 (노말~나메)</span></div></td>
-                                    <td>{STAGES[2].coins} ~ {STAGES[0].coins}</td>
-                                  </tr>
-                                  <tr>
-                                    <td><Image src={sd.act.coin.icon} alt="" width={22} height={22} style={{ borderRadius: '50%', display: 'block', margin: '0 auto' }} /></td>
-                                    <td><div className={styles.materialCell}><span>{sd.act.coin.short} — 최초 클리어</span></div></td>
-                                    <td>{FIRST_CLEAR_ACT_COINS}</td>
-                                  </tr>
-                                  {sd.costs.some((c) => c.name === CHAOS_COIN.name) && (
-                                    <tr>
-                                      <td><Image src={CHAOS_COIN.icon} alt="" width={22} height={22} style={{ borderRadius: '50%', display: 'block', margin: '0 auto' }} /></td>
-                                      <td><div className={styles.materialCell}><span>{CHAOS_COIN.short} — 3막 · 종막 최초 클리어 각 1</span></div></td>
-                                      <td>2</td>
-                                    </tr>
-                                  )}
-                                </tbody>
-                              </table>
-                              <div className={styles.shopDetailInfo}>
-                                <div className={styles.shopDetailRow}>
-                                  <span className={styles.shopDetailLabel}>{sd.act.coin.name} 만료</span>
-                                  <span className={styles.shopDetailValue}>{COIN_EXPIRE}</span>
-                                </div>
-                                <div className={styles.shopDetailRow}>
-                                  <span className={styles.shopDetailLabel}>거래 · 보관</span>
-                                  <span className={styles.shopDetailValue}>거래 불가 · 원정대 보관</span>
-                                </div>
-                              </div>
-                              {sd.note && (
-                                <div className={`${styles.infoRow} ${styles.coreRow}`} style={{ marginTop: '0.6rem', display: 'block', fontSize: '0.8rem', lineHeight: 1.5, color: 'var(--ct-text-secondary)' }}>
-                                  {sd.note}
-                                </div>
+                              {sd.gold === null && (
+                                <div className={styles.exCostNote}>제작 비용(골드)이 아직 확인되지 않아 골드 환산 합계를 낼 수 없다.</div>
                               )}
                             </div>
+
+                            {/* 4. 구성 요소 — 지평의 성당 재련 재료 상자 표와 같은 5칸 구성:
+                                [아이콘][아이템][수량][단가][가치] + 마지막 줄에 총 가치.
+                                줄이 많은 항목만 표 안쪽이 세로로 스크롤된다. */}
+                            {sd.contents && (() => {
+                              const rows = sortedContents(sd, prices, bcRate);
+                              return (
+                                <div className={styles.shopDetailSection}>
+                                  {/* 제목과 종 수를 한 줄로 — 따로 두면 좁아질 때 두 줄로 갈라진다 */}
+                                  <div className={styles.shopDetailSectionTitle}>
+                                    구성 요소
+                                    <span className={styles.exFoldMeta}>
+                                      {sd.pickOne ? ` · ${sd.contents.length}종 중 택 1 (최고가)` : ` · ${sd.contents.length}종`}
+                                    </span>
+                                  </div>
+                                  <div className={styles.exTableWrap}>
+                                    <table className={styles.materialTable}>
+                                      <thead>
+                                        <tr>
+                                          {/* 1열은 materialTable 이 고정해 둔 아이콘 칸 — 이름은 반드시 2열(좌측 정렬) */}
+                                          <th></th>
+                                          <th>아이템</th>
+                                          <th>수량</th>
+                                          <th>단가</th>
+                                          <th>가치</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {rows.map((c, idx) => {
+                                          const unit = contentUnitGold(c, prices, bcRate);
+                                          const total = c.amount === undefined ? null : unit * c.amount;
+                                          return (
+                                            <tr key={`${c.name}-${c.amount ?? '?'}`}>
+                                              <td>
+                                                <Image src={c.icon} alt="" width={28} height={28} style={{ borderRadius: '4px', display: 'block', margin: '0 auto' }} />
+                                              </td>
+                                              <td className={styles.exContentName}>
+                                                {c.name}
+                                                {sd.pickOne && idx === 0 && <span className={styles.exPickMark}>선택</span>}
+                                              </td>
+                                              <td>{c.amount === undefined ? '?' : c.amount.toLocaleString()}</td>
+                                              <td>{unit > 0 ? (unit >= 1 ? unit.toFixed(1) : unit.toFixed(3)) : '—'}</td>
+                                              <td>
+                                                <span className={styles.exGoldCell}>
+                                                  <Image src="/gold.webp" alt="" width={14} height={14} />
+                                                  {total === null || total <= 0 ? '—' : Math.round(total).toLocaleString()}
+                                                </span>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                      {ev !== null && (
+                                        <tfoot>
+                                          <tr className={styles.subtotalRow}>
+                                            <td colSpan={4}>{sd.pickOne ? '최고가 선택지' : '상자 총 가치'}</td>
+                                            <td>
+                                              <span className={styles.exGoldCell}>
+                                                <Image src="/gold.webp" alt="" width={14} height={14} />
+                                                {Math.round(ev.value).toLocaleString()}
+                                              </span>
+                                            </td>
+                                          </tr>
+                                        </tfoot>
+                                      )}
+                                    </table>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* 5. 주화 1개 가치 — 기준이 되는 파결·수결 상세에만. 성당의 '은총의 파편 1개 가치'와
+                                같은 자리·같은 카드다. 이 값이 나머지 항목 효율의 분모가 된다. */}
+                            {sd.id === COIN_BASIS_ID && ev !== null && ev.perCoin !== null && (
+                              <div className={styles.graceValueCard}>
+                                <div className={styles.graceValueRow}>
+                                  <div className={styles.graceValueLabel}>
+                                    <Image src={act.coin.icon} alt={act.coin.name} width={28} height={28} style={{ borderRadius: '50%' }} />
+                                    <span>{act.coin.name} 1개 가치</span>
+                                  </div>
+                                  <div className={styles.graceValueAmount}>
+                                    <Image src="/gold.webp" alt="골드" width={20} height={20} />
+                                    <span>{Math.round(ev.perCoin).toLocaleString()}</span>
+                                  </div>
+                                </div>
+                                <div className={styles.exCostNote}>
+                                  구성 요소 {Math.round(ev.value).toLocaleString()}골드 − 제작 {(sd.gold ?? 0).toLocaleString()}골드
+                                  ÷ 주화 {sd.coin}개. 제작소 전체 효율이 이 값을 기준(100%)으로 매겨진다.
+                                </div>
+                              </div>
+                            )}
+
+
+                            {/* 6. 교환 효율 — 성당의 '은총의 파편 1개 가치' 카드와 같은 꼴.
+                                왼쪽에 라벨, 오른쪽에 큰 숫자, 그 아래 계산식 한 줄. */}
+                            {paid !== null && ev !== null && ratio !== null && (
+                              <div className={styles.graceValueCard}>
+                                <div className={styles.graceValueRow}>
+                                  <div className={styles.graceValueLabel}>
+                                    <Image src={act.coin.icon} alt={act.coin.name} width={28} height={28} style={{ borderRadius: '50%' }} />
+                                    <span>교환 효율</span>
+                                  </div>
+                                  <div className={`${styles.exRatioNum} ${styles.exEffRatioValue} ${ratio >= 1 ? styles.exRatioUp : styles.exRatioFlat}`}>
+                                    {Math.round(ratio * 100)}%
+                                  </div>
+                                </div>
+                                <div className={styles.graceValueFormula}>
+                                  구성 요소 {Math.round(ev.value).toLocaleString()}G ÷ 교환 비용 {Math.round(paid).toLocaleString()}G
+                                </div>
+                              </div>
+                            )}
+
+                            {sd.note && (
+                              <div className={`${styles.infoRow} ${styles.coreRow}`} style={{ marginTop: '0.6rem', display: 'block', fontSize: '0.8rem', lineHeight: 1.5, color: 'var(--ct-text-secondary)' }}>
+                                {sd.note}
+                              </div>
+                            )}
                           </div>
                         );
                       })() : (
@@ -584,8 +1087,10 @@ export default function ExtremePage() {
                 {
                   heading: '주화와 제작소',
                   paragraphs: [
-                    '뇌전의 주화와 빛과 어둠의 주화는 거래 불가·원정대 보관이며 2026년 11월 25일 06:00에 만료됩니다. 카제로스 익스트림 제작소에서 고대 코어 랜덤 상자, 유물 각인서 상자를 비롯해 각종 재련 재료와 젬 선택 상자, 지옥 열쇠 등을 제작하는 데 씁니다.',
-                    '공식 캡쳐에서 확인된 항목은 두 가지입니다. 3막의 고대 코어 랜덤 상자는 뇌전의 주화 100개와 50,000골드로 원정대 2회까지(아이템 레벨 1770 이상), 종막의 고대 코어 선택 상자는 혼돈의 주화 2개와 빛과 어둠의 주화 100개, 200,000골드로 원정대 1회(아이템 레벨 1780 이상) 제작할 수 있습니다. 혼돈의 주화는 3막과 종막 최초 클리어 때 1개씩만 나오므로, 선택 상자를 만들려면 두 막을 모두 클리어해야 합니다.',
+                    '뇌전의 주화와 빛과 어둠의 주화는 거래 불가·원정대 보관이며 2026년 11월 25일 06:00에 만료됩니다. 카제로스 익스트림 제작소는 특수 제작·젬 제작·성장 재료 제작 세 갈래이고, 제작 목록은 3막과 종막이 똑같습니다. 필요한 주화만 3막은 뇌전의 주화, 종막은 빛과 어둠의 주화로 바뀌고, 고대 코어 선택 상자만 종막 목록에 하나 더 있습니다.',
+                    '특수 제작에는 고대 코어 랜덤 상자(주화 50개 + 50,000골드, 원정대 2회, 1770 이상), 유물 각인서 랜덤 주머니(주화 20개 + 5,000골드, 2회, 1780 이상), 유물 전투 각인서 선택 주머니(주화 100개 + 30,000골드, 1회, 1730 이상), 비상의 돌 각인 지정 키트 상자(주화 3개, 40회, 1730 이상), 희귀 지옥 열쇠 교환권(주화 10개 + 15,000골드, 4회, 1730 이상)이 있습니다. 종막의 고대 코어 선택 상자는 혼돈의 주화 2개와 빛과 어둠의 주화 100개, 200,000골드로 원정대 1회(1780 이상) 제작하는데, 혼돈의 주화는 3막과 종막 최초 클리어 때 1개씩만 나오므로 두 막을 모두 클리어해야 만들 수 있습니다.',
+                    '주화는 거래가 되지 않으므로 "골드로 얼마짜리냐"를 시세에서 거꾸로 잡습니다. 각 제작 항목의 결과물을 거래소 전일 평균가로 환산한 뒤 제작 골드를 빼면 주화 1개당 순이득이 나오고, 그중 가장 높은 값이 곧 주화 한 개를 다른 곳에 쓸 때 포기하는 값(기회비용)이므로 이를 주화 기준가로 씁니다. 각 항목의 효율은 "결과물을 거래소에서 골드로 살 때의 값 ÷ (주화 수 × 기준가 + 제작 골드)"이며, 기준가를 만든 항목이 100%가 되고 나머지는 그보다 낮게 표시됩니다. 상자 구성이 아직 확인되지 않은 항목은 효율 미산정으로 남겨 둡니다.',
+                    '젬 제작은 영웅 젬 선택 상자(주화 20개 + 10,000골드, 2회)가 1730·1770 두 항목으로 따로 있고, 1780 이상에서는 고정형 영웅 젬 선택 상자(주화 100개 + 10,000골드, 1회)를 만들 수 있습니다. 성장 재료 제작에는 익스트림 운명의 파괴/수호석 결정 주머니(주화 15개 + 3,000골드, 4회 · 1770·1780), 익스트림 상급 아비도스 융화 재료 상자(주화 10개 + 5,000골드, 2회 · 1730·1770·1780), 야금술·재봉술 선택 상자 VI(주화 5개, 제작 비용 없음), 정련된 운명의 돌(주화 1개, 100회), 영롱한 혼돈의 돌 무기·방어구(주화 50개)가 들어 있습니다. 같은 이름이 레벨별로 여러 번 보이는 것은 제작 조건이 다른 별개 항목이라 원정대 제한도 각각 따로 붙기 때문입니다.',
                   ],
                 },
               ]}
