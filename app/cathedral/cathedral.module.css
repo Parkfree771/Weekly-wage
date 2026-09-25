@@ -199,22 +199,6 @@
   font-size: 1.15rem; font-weight: 800; color: #c9a84c;
   font-variant-numeric: tabular-nums;
 }
-/* 블크 환율 입력 — 기준가 띠 오른쪽 */
-.pageThemeExtreme .exRate {
-  display: inline-flex; align-items: center; gap: 0.35rem; margin-left: auto;
-  padding: 0.15rem 0.5rem;
-  border: 1.5px solid var(--ct-border); border-radius: 8px;
-  background: var(--ct-bg);
-}
-.pageThemeExtreme .exRate input {
-  width: 68px; border: none; background: none; outline: none;
-  font-family: var(--font-num), var(--font-mono), system-ui, sans-serif;
-  font-size: 0.88rem; font-weight: 700; color: var(--ct-text);
-  text-align: right; font-variant-numeric: tabular-nums;
-}
-.pageThemeExtreme .exRate input::-webkit-outer-spin-button,
-.pageThemeExtreme .exRate input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
 /* 난이도 카드 — 주화 개수 뒤에 = 로 이어 붙는 골드 환산 (같은 줄) */
 .pageThemeExtreme .exCardCoinGold {
   display: inline-flex; align-items: center; gap: 0.2rem; margin-left: 0.15rem;

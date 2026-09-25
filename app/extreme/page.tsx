@@ -398,6 +398,14 @@ const CRAFT_ITEMS: CraftItem[] = [
     막 구분 헤더는 이 색으로 채우고, 아래 분류 머리글·항목 줄은 같은 색 세로선만 잇는다. */
 const ACT_ACCENT: Record<Act['key'], string> = { act3: '#2b6ca8', final: '#6b3fa0' };
 
+/**
+ * 환율 고정 — 100골드 = 10원.
+ * 블루크리스탈 100개 = 2,750원이므로 블크 100개당 골드 = 275,000 / 10 = 27,500.
+ * 페온으로 값이 정해지는 항목(각인 키트)과 고정형 젬의 초기화권·페온, 지옥 열쇠 속
+ * 젬·팔찌 페온이 이 값을 쓴다. 지옥 보상 계산기의 환율 칸과 같은 단위다.
+ */
+const BC_RATE = 27500;
+
 /** 주화 기준가를 잡는 항목 — 파결·수결 주머니 (1770·1780 이 값이 같아 어느 쪽이든 같다) */
 const COIN_BASIS_ID = 'stone-pouch-1770';
 type CraftEval = { value: number; net: number | null; perCoin: number | null };
@@ -464,9 +472,6 @@ export default function ExtremePage() {
   const [selectedCraftKey, setSelectedCraftKey] = useState<string | null>('act3:core-random');
   // latest.json 시세 — 제작 효율 계산용 (차트·패키지와 같은 모듈 캐시라 추가 요청이 거의 없다)
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
-  // 블루크리스탈 100개당 골드 — 페온으로 값이 정해지는 항목(각인 키트·열쇠 속 젬·팔찌)에 쓴다.
-  // 기본값은 지옥 보상 계산기와 같다.
-  const [bcText, setBcText] = useState('18333');
 
   useEffect(() => {
     let cancelled = false;
@@ -476,7 +481,7 @@ export default function ExtremePage() {
     return () => { cancelled = true; };
   }, []);
 
-  const bcRate = parseFloat(bcText) || 0;
+  const bcRate = BC_RATE;
 
   const selectedStageData = STAGES.find((s) => s.name === selectedStage);
 
@@ -757,17 +762,6 @@ export default function ExtremePage() {
                             <Image src="/gold.webp" alt="골드" width={18} height={18} />
                             {Math.round(coinBasis.perCoin).toLocaleString()}
                           </span>
-                          {/* 블크 환율 — 각인 키트처럼 값이 통째로 페온인 항목과 열쇠 속 젬·팔찌에 쓴다 */}
-                          <label className={styles.exRate}>
-                            <Image src="/blue.webp" alt="블루 크리스탈" width={18} height={18} />
-                            <input
-                              type="number"
-                              inputMode="numeric"
-                              value={bcText}
-                              onChange={(e) => setBcText(e.target.value)}
-                              aria-label="블루 크리스탈 100개당 골드"
-                            />
-                          </label>
                         </div>
                       </>
                     ) : (
