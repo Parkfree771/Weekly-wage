@@ -14,7 +14,7 @@ export default function TermsOfService() {
             </Card.Header>
             <Card.Body className="p-4">
               <div className="mb-4">
-                <p className="text-muted">최종 수정일: {new Date().toLocaleDateString('ko-KR')}</p>
+                <p className="text-muted">최종 수정일: 2026. 8. 19.</p>
               </div>
 
               <section className="mb-4">

@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
 import styles from '../guide.module.css';
 import { raids } from '@/data/raids';
+import { EVENT_CONTENTS, GUARDIAN_TIERS, RIFT_TIERS, type EventTierKey } from '@/data/rewardTable';
 
 export const metadata: Metadata = {
   title: '초보자를 위한 골드 수급 가이드',
@@ -12,6 +13,41 @@ export const metadata: Metadata = {
     '로아 초보자, 로아 골드 수급, 로아 골드 모으기, 로아 뉴비 가이드, 로아 캐릭터 육성, 로스트아크 초보, 로아 골드 획득 방법, 로아 입문 가이드',
   alternates: { canonical: '/guide/beginner-gold' },
 };
+
+// ── 표·문장 속 숫자는 전부 data/ 원본에서 계산 ──
+const RAID_ROWS = [...raids]
+  .map((r) => {
+    const gold = r.gates.reduce((s, g) => s + g.gold, 0);
+    const bound = r.gates.reduce((s, g) => s + g.boundGold, 0);
+    return { name: r.name, level: r.level, gates: r.gates.length, gold, bound, share: bound / gold };
+  })
+  .sort((a, b) => a.level - b.level || a.gold - b.gold);
+
+const MAX_RAID_GOLD = Math.max(...RAID_ROWS.map((r) => r.gold));
+const LOWEST = RAID_ROWS[0];
+const FIRST_FULL_TRADE = RAID_ROWS.find((r) => r.bound === 0);
+const HALF_BELOW = FIRST_FULL_TRADE
+  ? RAID_ROWS.filter((r) => r.level < FIRST_FULL_TRADE.level && r.share > 0 && r.share < 1)
+  : [];
+const ALL_HALF_BELOW =
+  FIRST_FULL_TRADE !== undefined &&
+  RAID_ROWS.filter((r) => r.level < FIRST_FULL_TRADE.level).every((r) => r.share === 0.5 || r.share === 1);
+
+// 카오스 게이트 — 원정대 대표 캐릭터 1명, 회당 귀속 골드
+const GATE = EVENT_CONTENTS.find((e) => e.key === 'gate')!;
+const GATE_TIERS = (Object.keys(GATE.gold) as EventTierKey[]).sort();
+
+// 균열·가디언 토벌 최저 티어 (이 사이트 계산의 시작점)
+const DAILY_START = Math.min(...RIFT_TIERS.map((t) => t.minLevel), ...GUARDIAN_TIERS.map((t) => t.minLevel));
+const EVENT_START = Math.min(...GATE_TIERS.map(Number));
+
+/** 레벨 구간별로 새로 열리는 수입원 */
+const MILESTONES = [
+  { level: LOWEST.level, title: '첫 골드 레이드', text: `${RAID_ROWS.filter((r) => r.level === LOWEST.level).map((r) => r.name).join('·')}` },
+  { level: DAILY_START, title: '일일 콘텐츠 보상 티어 시작', text: '균열·전선, 가디언 토벌' },
+  ...(FIRST_FULL_TRADE ? [{ level: FIRST_FULL_TRADE.level, title: '전액 유통 레이드', text: FIRST_FULL_TRADE.name }] : []),
+  { level: EVENT_START, title: '주간 콘텐츠 추가', text: '할의 모래시계, 카오스 게이트·필드보스(대표 1캐릭)' },
+].sort((a, b) => a.level - b.level);
 
 export default function BeginnerGoldGuidePage() {
   return (
@@ -57,8 +93,8 @@ export default function BeginnerGoldGuidePage() {
 
           <h3>3. 가디언 토벌</h3>
           <p>
-            가디언 토벌 역시 매일 진행할 수 있는 콘텐츠로, 재련 재료와 돌파석을 보상으로 제공합니다.
-            특히 돌파석은 거래소에서 비교적 높은 가격에 거래되므로, 골드 수급에 도움이 됩니다.
+            가디언 토벌 역시 매일 진행할 수 있는 콘텐츠로, 로아로골이 보상을 집계하는 {DAILY_START} 이상 구간에서는 보석을 주 보상으로 제공합니다.
+            보석은 캐릭터 성능과 직결되는 아이템이라 직접 쓰거나 판매해 골드로 바꿀 수 있습니다.
             레이드만큼 큰 보상은 아니지만 꾸준히 하면 차이가 납니다.
           </p>
 
@@ -75,6 +111,44 @@ export default function BeginnerGoldGuidePage() {
             레이드에서 획득한 불필요한 장신구, 보석, 재료 등을 거래소에 등록하여 판매하세요.
             시세를 잘 파악하면 저가 매수 후 고가 매도를 통해 시세 차익을 얻을 수도 있습니다.
           </p>
+
+          <h3>6. 카오스 게이트 (원정대 대표 캐릭터)</h3>
+          <p>
+            {EVENT_START} 이상 캐릭터가 있다면 카오스 게이트도 챙길 만합니다. 원정대 대표 캐릭터 한 명만
+            받는 보상이고, 주 {GATE.perWeek}회 열리며 회당 귀속 골드를 줍니다. 아래는 대표 캐릭터의 레벨
+            구간별 금액입니다.
+          </p>
+          <div className={styles.statGrid}>
+            {GATE_TIERS.map((t) => (
+              <div key={t} className={styles.statCard}>
+                <span className={styles.statLabel}>{t} 이상</span>
+                <span className={styles.statValue}>{(GATE.gold[t] * GATE.perWeek).toLocaleString()} G</span>
+                <span className={styles.statNote}>
+                  회당 {GATE.gold[t].toLocaleString()} × 주 {GATE.perWeek}회, 귀속
+                </span>
+              </div>
+            ))}
+          </div>
+          <p>
+            레이드처럼 캐릭터마다 받는 골드가 아니라서 원정대 전체 수입에서 비중이 크지는 않지만, 대표
+            캐릭터의 레벨만 올려 두면 추가 조건 없이 들어오는 귀속 골드입니다.
+          </p>
+
+          <h2>레벨 구간별로 열리는 수입원</h2>
+          <p>
+            처음 시작하면 무엇이 언제 열리는지부터 헷갈립니다. 로아로골 계산기가 쓰는 데이터 기준으로,
+            레벨이 오르면서 수입 구조가 바뀌는 지점을 순서대로 놓으면 다음과 같습니다.
+          </p>
+          <ol className={styles.stepFlow}>
+            {MILESTONES.map((m) => (
+              <li key={`${m.level}-${m.title}`} className={styles.stepItem}>
+                <strong>{m.level}</strong>
+                {m.title}
+                <br />
+                {m.text}
+              </li>
+            ))}
+          </ol>
 
           <h2>초보자 추천 골드 수급 루틴</h2>
           <table className={styles.guideTable}>
@@ -94,7 +168,7 @@ export default function BeginnerGoldGuidePage() {
               <tr>
                 <td style={{ fontWeight: 600 }}>매일</td>
                 <td>가디언 토벌</td>
-                <td>돌파석, 재련 재료 획득</td>
+                <td>보석 획득</td>
               </tr>
               <tr>
                 <td style={{ fontWeight: 600 }}>매일</td>
@@ -143,6 +217,7 @@ export default function BeginnerGoldGuidePage() {
             <strong>총 골드</strong>는 모든 관문을 클리어했을 때 받는 합계이고,
             그중 <strong>귀속</strong>은 거래소에서 쓸 수 없고 더보기 비용 등에 먼저 차감되는 몫입니다.
           </p>
+          <div className={styles.tableScroll}>
           <table className={styles.guideTable}>
             <thead>
               <tr>
@@ -151,26 +226,29 @@ export default function BeginnerGoldGuidePage() {
                 <th>관문</th>
                 <th>총 클리어 골드</th>
                 <th>그중 귀속</th>
+                <th>귀속 비중</th>
               </tr>
             </thead>
             <tbody>
-              {[...raids]
-                .sort((a, b) => a.level - b.level)
-                .map((r) => {
-                  const gold = r.gates.reduce((s, g) => s + g.gold, 0);
-                  const bound = r.gates.reduce((s, g) => s + g.boundGold, 0);
-                  return (
-                    <tr key={r.name}>
-                      <td>{r.name}</td>
-                      <td>{r.level.toLocaleString()}</td>
-                      <td>{r.gates.length}관문</td>
-                      <td>{gold.toLocaleString()} G</td>
-                      <td>{bound.toLocaleString()} G</td>
-                    </tr>
-                  );
-                })}
+              {RAID_ROWS.map((r) => (
+                <tr key={r.name}>
+                  <td>{r.name}</td>
+                  <td>{r.level.toLocaleString()}</td>
+                  <td>{r.gates}관문</td>
+                  <td className={styles.barCell}>
+                    <div className={styles.barTrack}>
+                      <div className={styles.barFill} style={{ width: `${(r.gold / MAX_RAID_GOLD) * 100}px` }} />
+                      <span className={styles.barText}>{r.gold.toLocaleString()} G</span>
+                    </div>
+                  </td>
+                  <td>{r.bound.toLocaleString()} G</td>
+                  <td>{Math.round(r.share * 100)}%</td>
+                </tr>
+              ))}
             </tbody>
           </table>
+          </div>
+          <p className={styles.tableCaption}>요구 레벨 순. 막대는 최고 골드 레이드 대비 길이</p>
           <p>
             표를 보면 알 수 있듯 요구 레벨이 오를수록 골드가 계단식으로 뜁니다.
             그래서 초반에는 <strong>골드를 모으는 것보다 다음 레벨 구간에 들어가는 것</strong>이
@@ -190,6 +268,19 @@ export default function BeginnerGoldGuidePage() {
             로아로골 숙제 체크는 이 둘을 나눠서 집계하므로, 재료를 사려고 모으는 중이라면
             유통 골드 쪽 숫자를 기준으로 계획하세요.
           </p>
+          {FIRST_FULL_TRADE && (
+            <div className={styles.noteBox}>
+              <p>
+                위 표에서 귀속 비중 칸을 따라 내려가 보면, 귀속이 0%인 첫 레이드는 {FIRST_FULL_TRADE.level}의{' '}
+                {FIRST_FULL_TRADE.name}입니다.
+                {ALL_HALF_BELOW
+                  ? ` 그보다 낮은 레이드는 지평의 성당(전액 귀속)을 빼면 전부 골드의 절반이 귀속입니다(${HALF_BELOW.length}개).`
+                  : ''}{' '}
+                초반 캐릭터로 번 골드의 상당 부분은 거래소에서 쓸 수 없다는 뜻이라, 거래소 구매 계획은 유통 골드만
+                따로 세어서 세우는 편이 정확합니다.
+              </p>
+            </div>
+          )}
 
           <div className={styles.tipBox}>
             <p>
@@ -216,7 +307,7 @@ export default function BeginnerGoldGuidePage() {
             "headline": "초보자를 위한 골드 수급 가이드",
             "description": "로스트아크를 시작한 초보자가 알아야 할 골드 획득 방법, 우선순위, 효율적인 캐릭터 육성법을 소개합니다.",
             "datePublished": "2026-02-06",
-            "dateModified": "2026-08-20",
+            "dateModified": "2026-09-27",
             "author": { "@type": "Organization", "name": "로아로골" },
             "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
             "mainEntityOfPage": `${SITE_URL}/guide/beginner-gold`

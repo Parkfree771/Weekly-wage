@@ -34,6 +34,8 @@ const STAGES: StageRow[] = [
 
 interface CaseRow {
   name: string;
+  /** 평균 골드 (만 단위, 막대용) */
+  avg: number;
   average: string;
   median: string;
   pity: string;
@@ -41,14 +43,16 @@ interface CaseRow {
 
 /** +20 → +25 전 구간 골드 (강화 재료 + 누르는 골드, 실링·성장 비용 제외) */
 const CASES: CaseRow[] = [
-  { name: '숨결 없이, 재료 전부 구매', average: '697만', median: '560만', pity: '1,637만' },
-  { name: '매번 풀숨, 재료·숨결 전부 구매', average: '689만', median: '544만', pity: '1,622만' },
-  { name: '최적 숨결, 재료·숨결 전부 구매', average: '674만', median: '542만', pity: '1,583만' },
-  { name: '귀속 숨결로 매번 풀숨', average: '465만', median: '366만', pity: '1,099만' },
-  { name: '파괴석 결정 귀속 + 최적 숨결', average: '509만', median: '414만', pity: '1,189만' },
-  { name: '파괴석·수호석 결정 귀속 + 최적 숨결', average: '430만', median: '351만', pity: '1,001만' },
-  { name: '숨결·파괴석·수호석 결정 모두 귀속', average: '283만', median: '223만', pity: '669만' },
+  { name: '숨결 없이, 재료 전부 구매', avg: 697, average: '697만', median: '560만', pity: '1,637만' },
+  { name: '매번 풀숨, 재료·숨결 전부 구매', avg: 689, average: '689만', median: '544만', pity: '1,622만' },
+  { name: '최적 숨결, 재료·숨결 전부 구매', avg: 674, average: '674만', median: '542만', pity: '1,583만' },
+  { name: '귀속 숨결로 매번 풀숨', avg: 465, average: '465만', median: '366만', pity: '1,099만' },
+  { name: '파괴석 결정 귀속 + 최적 숨결', avg: 509, average: '509만', median: '414만', pity: '1,189만' },
+  { name: '파괴석·수호석 결정 귀속 + 최적 숨결', avg: 430, average: '430만', median: '351만', pity: '1,001만' },
+  { name: '숨결·파괴석·수호석 결정 모두 귀속', avg: 283, average: '283만', median: '223만', pity: '669만' },
 ];
+
+const CASE_AVG_MAX = 697;
 
 export default function Wangap2025CasesGuidePage() {
   return (
@@ -71,16 +75,45 @@ export default function Wangap2025CasesGuidePage() {
             파괴석 결정이 귀속인지에 따라 드는 골드가 두 배 넘게 벌어집니다.
           </p>
           <p>
-            아래 수치는 모두 로아로골 완갑 평균 시뮬과 같은 계산식으로, 2026년 9월 14일 거래소 시세를 넣어 구했습니다.
-            시세가 바뀌면 골드 값도 달라지므로, 표는 상황끼리 비교하는 용도로 보시고 정확한 값은 시뮬레이터에서 확인하세요.
+            아래 수치는 모두 로아로골 완갑 평균 시뮬과 같은 계산식에 2026년 9월 14일 거래소 시세를 넣어 구했습니다.
           </p>
+
+          <div className={styles.statGrid}>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>한 단계 평균 시도</span>
+              <span className={styles.statValue}>32.4회</span>
+              <span className={styles.statNote}>매번 풀숨이면 21.6회</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>재료 전부 구매 (평균)</span>
+              <span className={styles.statValue}>674만~697만</span>
+              <span className={styles.statNote}>+20 → +25, 숨결 방식별</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>귀속 숨결로 풀숨</span>
+              <span className={styles.statValue}>465만</span>
+              <span className={styles.statNote}>재료만 구매할 때 평균</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>숨결·결정 모두 귀속</span>
+              <span className={styles.statValue}>283만</span>
+              <span className={styles.statNote}>나머지 재료만 구매</span>
+            </div>
+          </div>
+
+          <div className={styles.noteBox}>
+            <p>
+              골드 값은 모두 9월 14일 시세 기준이라 시세가 바뀌면 함께 달라집니다. 표는 상황끼리 비교하는 용도로 보시고,
+              오늘 값은 시뮬레이터에서 확인하세요. +20 이후 숨결 상한(용암·빙하 각 30개)은 인게임 실측이 아닌 제보 기준입니다.
+            </p>
+          </div>
 
           <h2>+20 이후 한 번 누를 때 드는 재료</h2>
           <p>
             다섯 단계 모두 기본 성공 확률은 1.5%입니다. 실패할 때마다 확률이 기본값의 10%씩 올라 3%까지 오르고,
             장인의 기운이 100%가 되면 다음 시도는 반드시 성공합니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -110,15 +143,16 @@ export default function Wangap2025CasesGuidePage() {
               </tbody>
             </table>
           </div>
+          <p className={styles.tableCaption}>재료는 공식 데이터, 1회 골드 환산은 9월 14일 시세로 재료를 모두 사고 누르는 골드를 더한 값</p>
           <p>
-            1회 골드 환산은 재료를 모두 사고 누르는 골드까지 더한 값입니다. 오늘 시세에서는 파괴석 결정이 한 번에 약 1.1만~1.3만 골드,
-            상급 아비도스가 약 1만~1.2만 골드로 가장 큰 몫을 차지합니다. 수호석 결정은 개수는 가장 많지만 개당 1.3골드라 비중이 작습니다.
+            한 번 누를 때 약 4만~4.7만 골드가 들고, 그중 파괴석 결정(약 1.1만~1.3만 골드)과 상급 아비도스(약 1만~1.2만 골드)가 가장 큰 몫입니다.
+            수호석 결정은 개수로는 가장 많지만 개당 1.3골드라 비중이 작습니다.
           </p>
 
           <h2>숨결을 넣으면 몇 번 만에 끝나나</h2>
           <p>
-            +20 이후 구간은 용암의 숨결과 빙하의 숨결을 각각 30개까지, 합쳐서 60개 넣을 수 있습니다(제보 기준).
-            60개를 다 넣으면 기본 확률이 1.5%에서 3%로 두 배가 됩니다.
+            +20 이후 구간은 용암의 숨결과 빙하의 숨결을 각각 30개까지, 합쳐서 60개 넣을 수 있고, 다 넣으면 기본 확률이 1.5%에서 3%로 두 배가 됩니다.
+            이 글에서 궁금한 것은 확률 자체보다 &quot;숨결을 몇 개 준비해야 하나&quot;입니다.
           </p>
           <table className={styles.guideTable}>
             <thead>
@@ -145,7 +179,7 @@ export default function Wangap2025CasesGuidePage() {
             아래 표는 강화 재료와 누르는 골드를 합친 값입니다. 실링과 단계마다 한 번 내는 성장 비용은 빠져 있습니다.
             귀속이라고 표시한 재료는 이미 갖고 있어 골드가 들지 않는다고 보고 계산했습니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -159,7 +193,12 @@ export default function Wangap2025CasesGuidePage() {
                 {CASES.map((c) => (
                   <tr key={c.name}>
                     <td>{c.name}</td>
-                    <td>{c.average}</td>
+                    <td className={styles.barCell}>
+                      <div className={styles.barTrack}>
+                        <div className={styles.barFill} style={{ width: `${(c.avg / CASE_AVG_MAX) * 100}px` }} />
+                        <span className={styles.barText}>{c.average}</span>
+                      </div>
+                    </td>
                     <td>{c.median}</td>
                     <td>{c.pity}</td>
                   </tr>
@@ -167,9 +206,10 @@ export default function Wangap2025CasesGuidePage() {
               </tbody>
             </table>
           </div>
+          <p className={styles.tableCaption}>+20 → +25 강화 재료 + 누르는 골드, 실링·성장 비용 제외 · 9월 14일 시세</p>
           <p>
-            눈에 띄는 점은 숨결을 사서 넣어도 골드는 거의 줄지 않는다는 것입니다. 숨결 없이 697만, 매번 풀숨이 689만으로 차이가 8만 골드뿐입니다.
-            숨결 값만큼 재료 값이 줄어 서로 상쇄되기 때문입니다. 반대로 귀속 숨결이 있으면 465만으로 230만 골드 넘게 줄어듭니다.
+            위 세 줄은 막대 길이가 거의 같습니다. 숨결 없이 697만, 매번 풀숨이 689만으로 차이가 8만 골드뿐인데, 숨결에 쓴 골드만큼 재료 값이 줄어
+            서로 상쇄되기 때문입니다. 막대가 확 짧아지는 건 귀속 재료가 생길 때입니다. 귀속 숨결만 있어도 465만으로 230만 골드 넘게 줄어듭니다.
           </p>
 
           <h2>숨결 상황별로 이렇게 넣으면 됩니다</h2>
@@ -241,7 +281,7 @@ export default function Wangap2025CasesGuidePage() {
             description:
               '완갑 +21~+25 강화를 숨결 사용 여부, 귀속 숨결, 파괴석·수호석 결정 귀속 여부로 나눠 평균·중앙값·장인의 기운 100% 기준 골드와 최적 숨결 투입 시점을 정리했습니다.',
             datePublished: '2026-09-14',
-            dateModified: '2026-09-14',
+            dateModified: '2026-09-27',
             author: { '@type': 'Organization', name: '로아로골' },
             publisher: { '@type': 'Organization', name: '로아로골', url: SITE_URL },
             mainEntityOfPage: `${SITE_URL}/guide/wangap-20-25-cases`,

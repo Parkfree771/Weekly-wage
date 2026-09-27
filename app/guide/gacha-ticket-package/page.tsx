@@ -55,6 +55,10 @@ const TICKET_TIERS: TicketRow[] = [
   { tier: '10', floor: '100층', hell: '227,438', narak: '1,215,435' },
 ];
 
+const GACHA_PROB_MAX = Math.max(...GACHA_ITEMS.map((it) => Number(it.prob)));
+const toNum = (s: string) => Number(s.replace(/,/g, ''));
+const HELL_MAX = toNum(TICKET_TIERS[TICKET_TIERS.length - 1].hell);
+
 export default function GachaTicketPackageGuidePage() {
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
@@ -71,19 +75,42 @@ export default function GachaTicketPackageGuidePage() {
 
         <div className={styles.articleBody}>
           <p>
-            같은 &quot;패키지&quot;라고 불러도 안에 무엇이 들어 있느냐에 따라 값을 매기는 방법이 완전히 달라집니다.
-            파괴석이나 숨결처럼 거래소에 시세가 찍히는 재료라면 개수에 시세를 곱하면 끝이지만,
-            확률로 하나만 뽑아 주는 상자나 아예 거래가 되지 않는 입장 티켓은 그렇게 계산할 수가 없습니다.
+            같은 &quot;패키지&quot;라도 안에 무엇이 들었느냐에 따라 값을 매기는 방법이 완전히 달라집니다.
+            파괴석이나 숨결처럼 거래소 시세가 있는 재료는 개수에 시세를 곱하면 끝이지만,
+            확률로 하나만 뽑아 주는 상자나 아예 거래되지 않는 입장 티켓은 그렇게 계산할 수 없습니다.
           </p>
           <p>
-            2026년 9월 9일에 로아로골 패키지 게시판에 올라온 두 패키지가 마침 이 두 유형을 하나씩 대표합니다.
-            하나는 열한 가지 중 하나만 나오는 가챠 상자이고, 다른 하나는 지옥·나락 입장 티켓만 다섯 장 들어 있는 묶음입니다.
-            이 글에서는 두 패키지를 예로 들어 각각 어떤 규칙으로 골드 가치를 매기는지,
-            그리고 서로 다른 유형을 같은 잣대로 비교하려면 무엇을 맞춰야 하는지 정리합니다.
+            2026년 9월 9일 로아로골 패키지 게시판에 올라온 두 패키지가 마침 이 두 유형을 하나씩 대표합니다.
+            하나는 열한 가지 중 하나만 나오는 가챠 상자이고, 다른 하나는 지옥·나락 입장 티켓이 중심인 묶음입니다.
+            이 글은 두 패키지를 예로 각각 어떤 규칙으로 골드 가치를 매기는지, 그리고 서로 다른 유형을 같은 잣대로
+            비교하려면 무엇을 맞춰야 하는지 정리합니다.
           </p>
 
+          <div className={styles.statGrid}>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>가챠 상자 구성</span>
+              <span className={styles.statValue}>11칸 중 1칸</span>
+              <span className={styles.statNote}>확률 합 100%, 빈 칸 없음</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>계산상 0골드 칸</span>
+              <span className={styles.statValue}>7.5%</span>
+              <span className={styles.statNote}>실링 200만</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>티켓 5장 가치</span>
+              <span className={styles.statValue}>약 33만 골드</span>
+              <span className={styles.statNote}>기본 층 기준, 9월 9일 시세</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>0층대 vs 100층</span>
+              <span className={styles.statValue}>30배 이상</span>
+              <span className={styles.statNote}>지옥 30배, 나락 32배</span>
+            </div>
+          </div>
+
           <h2>이번에 올라온 두 패키지</h2>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -110,17 +137,15 @@ export default function GachaTicketPackageGuidePage() {
             </table>
           </div>
           <p>
-            둘 다 판매 기간은 9월 23일 오전 6시까지로 같습니다.
-            가격 차이가 여섯 배가 넘지만, 그렇다고 비싼 쪽이 여섯 배 이득이라는 뜻은 전혀 아닙니다.
-            애초에 두 패키지는 &quot;확실한 것을 사는 쪽&quot;과 &quot;확률을 사는 쪽&quot;으로 성격이 다르기 때문입니다.
+            판매 기간은 둘 다 9월 23일 오전 6시까지입니다. 가격은 여섯 배 넘게 차이 나지만, 비싼 쪽이 여섯 배 이득이라는 뜻은 아닙니다.
+            두 패키지는 &quot;확실한 것을 사는 쪽&quot;과 &quot;확률을 사는 쪽&quot;으로 성격부터 다릅니다.
           </p>
 
           <h2>가챠 상자: 열한 칸 중 한 칸만 열린다</h2>
           <p>
-            가을 맞이 행운 상자는 아래 열한 가지 중 정확히 하나가 나오는 구조입니다.
-            확률의 합이 100퍼센트로 딱 맞아떨어지므로 빈손으로 끝나는 칸은 없습니다.
+            가을 맞이 행운 상자는 아래 열한 가지 중 정확히 하나가 나옵니다. 확률의 합이 100퍼센트라 빈손으로 끝나는 칸은 없습니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -135,7 +160,15 @@ export default function GachaTicketPackageGuidePage() {
                   <tr key={it.name}>
                     <td>{it.name}</td>
                     <td>{it.qty}</td>
-                    <td>{it.prob}%</td>
+                    <td className={styles.barCell}>
+                      <div className={styles.barTrack}>
+                        <div
+                          className={styles.barFill}
+                          style={{ width: `${(Number(it.prob) / GACHA_PROB_MAX) * 100}px` }}
+                        />
+                        <span className={styles.barText}>{it.prob}%</span>
+                      </div>
+                    </td>
                     <td>{it.note}</td>
                   </tr>
                 ))}
@@ -152,11 +185,10 @@ export default function GachaTicketPackageGuidePage() {
             </p>
           </div>
           <p>
-            표를 보면 계산 방법이 칸마다 다르다는 것을 알 수 있습니다.
-            숨결이나 상급 아비도스 융화 재료는 거래소 시세를 그대로 쓰지만,
+            표의 오른쪽 칸처럼 계산 방법은 칸마다 다릅니다. 숨결이나 상급 아비도스 융화 재료는 거래소 시세를 그대로 쓰지만,
             페온·젬 가공 초기화권·생명의 기운·어빌리티스톤 키트는 거래소에 올라오지 않는 크리스탈 상품이라
             &quot;크리스탈 몇 개짜리인가&quot;를 골드로 환산해 값을 매깁니다.
-            그래서 이 칸들의 가치는 거래소 시세가 아니라 여러분이 입력한 환율에 따라 움직입니다.
+            그래서 이 칸들의 가치는 거래소 시세가 아니라 입력한 환율에 따라 움직입니다.
           </p>
           <p>
             눈여겨볼 칸이 두 군데 있습니다.
@@ -172,18 +204,18 @@ export default function GachaTicketPackageGuidePage() {
             수호석 3,000개가 파괴석 1,000개보다 쌀 수도 있기 때문에 개수까지 곱해서 비교합니다.
           </p>
           <p>
-            그리고 가챠에서 가장 중요한 것은 기댓값이 <strong>여러 번 샀을 때의 평균</strong>이라는 점입니다.
+            가챠에서 가장 중요한 것은 기댓값이 <strong>여러 번 샀을 때의 평균</strong>이라는 점입니다.
             골드 10만 칸은 확률이 3퍼센트로 가장 낮은데, 기댓값에는 이 칸도 평평하게 섞여 들어갑니다.
             한 번만 사는 사람에게 실제로 일어나는 일은 기댓값이 아니라 위 확률표 그대로입니다.
-            표에서 확률이 높은 순서대로 보면 젬 가공 초기화권과 영웅 젬이 각 12.5퍼센트로 가장 자주 나오고,
-            이 둘만 합쳐도 네 번에 한 번입니다. 기댓값보다 이 줄을 먼저 보는 편이 체감에 가깝습니다.
+            막대가 긴 위쪽 두 줄, 젬 가공 초기화권과 영웅 젬이 각 12.5퍼센트로 가장 자주 나오고 둘만 합쳐도 네 번에 한 번입니다.
+            기댓값보다 이 줄을 먼저 보는 편이 체감에 가깝습니다.
           </p>
 
           <h2>티켓 패키지: 시세가 없는 물건에 값을 매기는 법</h2>
           <p>
-            낙원 스페셜 패키지는 확률이 전혀 없습니다. 다음 다섯 종류가 확정으로 들어 있습니다.
+            낙원 스페셜 패키지에는 확률이 없습니다. 지옥·나락 티켓 다섯 장과 천상 도전권 세 장이 확정으로 들어 있습니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -224,7 +256,7 @@ export default function GachaTicketPackageGuidePage() {
           <p>
             여기서 층을 몇 층으로 잡느냐가 결정적입니다. 아래는 2026년 9월 9일 시세 기준으로 계산한 티켓 1장의 기댓값입니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -239,17 +271,25 @@ export default function GachaTicketPackageGuidePage() {
                   <tr key={t.tier}>
                     <td>{t.tier}</td>
                     <td>{t.floor}</td>
-                    <td>{t.hell}G</td>
+                    <td className={styles.barCell}>
+                      <div className={styles.barTrack}>
+                        <div className={styles.barFill} style={{ width: `${(toNum(t.hell) / HELL_MAX) * 100}px` }} />
+                        <span className={styles.barText}>{t.hell}G</span>
+                      </div>
+                    </td>
                     <td>{t.narak}G</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <p className={styles.tableCaption}>
+            1750 보상표, 2026년 9월 9일 시세, 블루 크리스탈 100개 = 18,333골드, 어빌리티스톤 제외(사이트 기본 설정)
+          </p>
           <p>
-            0층대와 100층의 차이가 지옥은 서른 배, 나락은 서른두 배입니다.
-            같은 티켓 한 장인데 &quot;몇 층을 돌 사람이냐&quot;에 따라 가치가 이렇게 벌어집니다.
-            그래서 층을 고르지 않고 티켓 패키지의 이득률을 말하는 것은 사실상 의미가 없습니다.
+            0층대와 100층의 차이가 지옥은 서른 배, 나락은 서른두 배입니다. 막대에서 보듯 층이 오를수록 값이 가파르게 불어나,
+            지옥 티켓은 60~69층에서 100층까지만 가도 약 네 배가 됩니다. 같은 티켓 한 장이 &quot;몇 층을 돌 사람이냐&quot;에 따라 이만큼 벌어지니,
+            층을 정하지 않고 티켓 패키지의 이득률을 말하는 것은 사실상 의미가 없습니다.
           </p>
           <p>
             로아로골은 기본값으로 지옥 전설 70~79층, 지옥 영웅 60~69층, 나락 전설 20~29층을 씁니다.
@@ -265,17 +305,17 @@ export default function GachaTicketPackageGuidePage() {
               패키지의 티켓 평가는 현재 최고 구간인 1750 표를 기준으로 합니다.
             </p>
           </div>
-          <p>
-            제목에 붙은 &quot;시즌4 보상 반영x&quot;는 이 지점을 짚은 것입니다.
-            티켓 가치는 지금 시점의 보상표로 계산한 값이라, 시즌이 바뀌어 보상 구성이 달라지면 같은 티켓의 가치도 달라집니다.
-            판매 기간이 시즌 경계에 걸쳐 있다면 이 부분을 감안하고 봐야 합니다.
-          </p>
+          <div className={styles.noteBox}>
+            <p>
+              게시글 제목에 붙은 &quot;시즌4 보상 반영x&quot;는 이 지점을 짚은 것입니다. 티켓 가치는 작성 시점의 보상표로 계산한 값이라,
+              시즌이 바뀌어 보상 구성이 달라지면 같은 티켓의 가치도 달라집니다. 판매 기간이 시즌 경계에 걸쳐 있다면 감안하고 봐야 합니다.
+            </p>
+          </div>
 
           <h2>가격이 다른 두 패키지를 같은 잣대로 놓기</h2>
           <p>
-            여기까지 오면 두 패키지 모두 구성품 가치를 골드로 구할 수 있습니다.
-            그런데 가격은 원 단위입니다. 3,300원과 22,000원을 골드로 옮겨야 비교가 되는데,
-            이때 쓰는 환율은 사람마다 다릅니다.
+            이제 두 패키지 모두 구성품 가치를 골드로 구할 수 있습니다. 그런데 가격은 원 단위라, 3,300원과 22,000원을 골드로 옮겨야
+            비교가 되고 이때 쓰는 환율은 사람마다 다릅니다.
           </p>
           <p>
             실제로 이번 두 글은 등록자가 서로 다른 환율을 넣었습니다.
@@ -293,7 +333,7 @@ export default function GachaTicketPackageGuidePage() {
           <p>
             마지막으로 이 두 유형을 볼 때 각각 짚어야 할 지점을 정리하면 다음과 같습니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -347,7 +387,7 @@ export default function GachaTicketPackageGuidePage() {
             description:
               '2026년 9월 9일 등록된 가을 맞이 행운 상자와 낙원 스페셜 패키지를 예로, 확률 상자의 기댓값 계산과 거래 불가 티켓의 층 기댓값 역산 방식을 비교해 정리했습니다.',
             datePublished: '2026-09-09',
-            dateModified: '2026-09-09',
+            dateModified: '2026-09-27',
             author: { '@type': 'Organization', name: '로아로골' },
             publisher: { '@type': 'Organization', name: '로아로골', url: SITE_URL },
             mainEntityOfPage: `${SITE_URL}/guide/gacha-ticket-package`,

@@ -1,0 +1,216 @@
+'use client';
+
+import dynamic from 'next/dynamic';
+import { preload } from 'react-dom';
+import type { ReactNode } from 'react';
+import { Container } from 'react-bootstrap';
+import { guides } from '@/data/guides';
+import guideStyles from './guide/guide.module.css';
+import Link from 'next/link';
+import GuideFaq from '@/components/common/GuideFaq';
+import AdBanner from '@/components/ads/AdBanner';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
+import { ADFIT_UNITS } from '@/components/ads/adConfig';
+import styles from './page.module.css';
+
+const HOME_FAQS = [
+  {
+    q: '로아로골은 무료로 이용할 수 있나요?',
+    a: '네, 로아로골의 모든 계산기와 시세 정보는 회원가입이나 로그인 없이 무료로 이용할 수 있습니다. 마이페이지처럼 개인화된 숙제 체크나 즐겨찾기 기능만 로그인이 필요하며, 그 외 주간 골드 계산, 재련 시뮬레이터, 지옥의 나락 보상, 시세 조회 등 핵심 기능은 누구나 바로 사용할 수 있습니다.',
+  },
+  {
+    q: '거래소 시세는 얼마나 자주 갱신되나요?',
+    a: '로스트아크 공식 오픈 API를 통해 매시 정각마다 자동으로 거래소·경매장 시세를 갱신합니다. 수동으로 가격을 입력하는 방식이 아니라 서버가 정기적으로 공식 API를 조회해 최신 가격을 반영하므로, 실시간에 가까운 시세로 골드 손익을 계산할 수 있습니다.',
+  },
+  {
+    q: '캐릭터 정보는 어떻게 불러오나요?',
+    a: '캐릭터명을 입력하면 로스트아크 공식 Open API(developer-lostark.game.onstove.com)를 통해 아이템 레벨, 직업, 원정대 캐릭터 목록 등을 조회합니다. 비공식적으로 수집한 데이터가 아니라 공식 API 응답을 그대로 사용하기 때문에 인게임 정보와 항상 동일합니다.',
+  },
+  {
+    q: '더보기(모험의 서약) 선택 기준을 어떻게 판단하나요?',
+    a: '더보기 효율은 "추가로 받는 재화의 거래소 환산 골드"와 "더보기 소모 재화의 골드 가치"를 비교해 계산합니다. 계산 결과가 초록색으로 표시되면 더보기를 선택하는 쪽이 이득이고, 빨간색이면 기본 보상을 받는 쪽이 유리하다는 뜻입니다. 시세는 매시 갱신되므로 같은 레이드라도 시점에 따라 유불리가 바뀔 수 있습니다.',
+  },
+  {
+    q: '이 사이트는 스마일게이트와 관련이 있나요?',
+    a: '아닙니다. 로아로골은 스마일게이트 RPG의 공식 서비스가 아닌 개인이 운영하는 비영리 팬사이트입니다. 로스트아크 관련 상표권과 게임 데이터의 저작권은 스마일게이트 RPG에 있으며, 자세한 내용은 사이트 소개 페이지에서 확인할 수 있습니다.',
+  },
+];
+
+const PriceDashboard = dynamic(() => import('@/components/PriceDashboard'), {
+  loading: () => <div style={{ minHeight: '320px' }} />,
+  ssr: false
+});
+
+const PriceComparisonStats = dynamic(() => import('@/components/PriceComparisonStats'), {
+  loading: () => (
+    <div className="text-center py-5" style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="spinner-border text-secondary" role="status">
+        <span className="visually-hidden">차트 로딩중...</span>
+      </div>
+    </div>
+  ),
+  ssr: false
+});
+
+// 특별 이벤트 대비 현재가 — 차트 컨텍스트를 읽으므로 PriceChartProvider 안에서만 산다
+const PriceEventCompare = dynamic(() => import('@/components/PriceEventCompare'), { ssr: false });
+
+const PriceChartProvider = dynamic(
+  () => import('@/components/PriceChartContainer').then(mod => ({ default: mod.PriceChartProvider })),
+  {
+    loading: () => <div style={{ minHeight: '650px' }} />,
+    ssr: false
+  }
+);
+
+
+/**
+ * 홈 화면 본체 (클라이언트). app/page.tsx(서버)가 감싸면서 historySection 으로
+ * 서버에서 계산한 과거 시세 분석을 넘겨준다 — 아카이브 JSON 이 방문자 번들에 들어가지 않게.
+ */
+export default function HomeClient({ historySection }: { historySection?: ReactNode }) {
+  // 가격 히스토리 preload — 메인 시세 차트 전용이라 루트 레이아웃이 아닌 여기서만.
+  // fetch URL과 정확히 일치해야 브라우저가 preload를 재사용함(price-history-client.ts).
+  preload('/data/history_archive.json', { as: 'fetch', crossOrigin: 'anonymous' });
+  preload('/api/price-data/history', { as: 'fetch', crossOrigin: 'anonymous' });
+
+  return (
+    <div className={styles.mainContainer}>
+      <Container fluid className="mt-2 mt-md-3" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* 오늘의 시세 + 가격 추이 차트 */}
+        {/* 광고와 이벤트 대비 카드까지 Provider 안에 둔다 — Provider 는 children 을 차트 바로 뒤에
+            그대로 내보내므로 화면 순서는 그대로이고, 카드가 차트 컨텍스트(선택 아이템)를 읽을 수 있다 */}
+        {/* 아래 블록들은 간격을 styles.homeBlock 한 곳에서만 준다 — 콘텐츠·광고가 번갈아 나오는
+            구간이라 사이 간격이 제각각이면 광고가 어느 콘텐츠에 딸린 건지 안 읽힌다. */}
+        <PriceChartProvider dashboard={<div className="mb-3"><PriceDashboard /></div>}>
+          {/* 가격 분석 통계 */}
+          <div className={styles.homeBlock}>
+            <PriceComparisonStats />
+          </div>
+
+          {/* 데스크톱 728×90 — 통계 바와 이벤트 대비 카드 사이. 콘텐츠가 바뀌는 경계라 자연스럽다.
+              홈에서는 galleryBottomDesktop 을 여기서만 쓰므로 한 페이지 한 단위 원칙에 어긋나지 않는다. */}
+          <div className={`${styles.homeBlock} ${styles.homeAdBlock} d-none d-lg-block`}>
+            <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+          </div>
+
+          {/* 모바일 인-콘텐츠 광고 — 앱 홈(통계 바 아래)과 동일 위치 */}
+          <div className={`${styles.homeBlock} ${styles.homeAdBlock} d-block d-lg-none`}>
+            <AdBanner slot="8616653628" />
+          </div>
+
+          {/* 특별 이벤트 대비 현재가 — 위 차트가 보고 있는 아이템을 그대로 따라간다 */}
+          <div className={styles.homeBlock}>
+            <PriceEventCompare />
+          </div>
+
+          {/* 이벤트 대비 카드 ↔ 매수가 보드 경계 광고 (데스크톱·모바일 각각).
+              위아래 콘텐츠가 서로 다른 이야기라 경계로 자연스럽고, 앞뒤로 광고가 붙지 않는다.
+
+              데스크톱 728×90 — 이 페이지 위쪽 자리가 이미 galleryBottomDesktop 을 쓰므로
+              반드시 다른 단위여야 한다. 같은 단위를 한 페이지에 두 번 넣으면 애드핏이 첫 자리만 채운다. */}
+          <div className={`${styles.homeBlock} ${styles.homeAdBlock} d-none d-lg-block`}>
+            <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
+          </div>
+
+          {/* 모바일 320×50 — 홈의 세 번째 인-콘텐츠 자리. index 0 은 아래 보드 밑 자리가 쓰고 있어 1 을 준다
+              (index 마다 다른 단위를 꺼내야 애드핏이 두 자리 다 채운다). */}
+          <div className={`${styles.homeBlock} ${styles.homeAdBlock} d-block d-lg-none`}>
+            <AdBanner slot="8616653628" index={1} />
+          </div>
+        </PriceChartProvider>
+
+        {/* 사이트 소개 — 홈의 유일한 h1. 2026-09-04 접기 토글 제거: 항상 노출 */}
+        <div className="mt-4 mt-md-5">
+          <h1 className="h4 mb-2">로아로골 - 로스트아크 주간 골드 계산기 &amp; 시세 정보</h1>
+          <div className="d-flex flex-wrap gap-2">
+            <Link href="/package" className="btn btn-sm btn-outline-primary">패키지 효율 계산기</Link>
+            <Link href="/weekly-gold" className="btn btn-sm btn-outline-primary">주간 골드 계산기</Link>
+            <Link href="/refining" className="btn btn-sm btn-outline-primary">재련 계산기</Link>
+            <Link href="/hell-reward" className="btn btn-sm btn-outline-primary">지옥의 나락 보상</Link>
+            <Link href="/life-master" className="btn btn-sm btn-outline-primary">생활의 달인</Link>
+          </div>
+        </div>
+
+        {/* 최근 글 — data/guides.ts 의 가이드 글을 최신 수정순으로. 글이 늘어나면 자동 반영 */}
+        <section className="mt-4">
+          <div className="d-flex align-items-baseline justify-content-between mb-2">
+            <h2 className="h5 mb-0">최근 글</h2>
+            <Link href="/guide" className="small text-decoration-none">가이드 전체 보기</Link>
+          </div>
+          <div className={guideStyles.guideGrid}>
+            {[...guides]
+              .sort((a, b) => (b.updated ?? b.date).localeCompare(a.updated ?? a.date))
+              .slice(0, 6)
+              .map((g) => (
+                <Link key={g.slug} href={g.href} className={guideStyles.guideCard}>
+                  <span className={guideStyles.guideCardCategory}>{g.category}</span>
+                  <h3 className={guideStyles.guideCardTitle}>{g.title}</h3>
+                  <p className={guideStyles.guideCardSummary}>{g.summary}</p>
+                  <span className={guideStyles.guideCardDate}>{g.updated ?? g.date} 업데이트</span>
+                </Link>
+              ))}
+          </div>
+        </section>
+
+        {/* 모바일 인-콘텐츠 광고 3 — 최근 글 ↔ 이용 가이드 경계.
+            원래 매수가 보드 아래에 있었는데 보드를 없애면서(2026-09-21) 이리로 내렸다.
+            그냥 두면 바로 위 이벤트 대비 자리(index 1)와 광고 두 개가 연달아 붙는다.
+            index 를 줘야 띠배너 배열에서 다른 단위를 꺼낸다 — 같은 단위를 한 페이지에
+            두 번 넣으면 애드핏이 첫 자리만 채운다. */}
+        <div className={`${styles.homeBlock} ${styles.homeAdBlock} d-block d-lg-none`}>
+          <AdBanner slot="8616653628" index={0} />
+        </div>
+
+        <GuideFaq
+          relatedGuides={['/weekly-gold', '/refining', '/wangap', '/more-reward']}
+          guideTitle="로아로골 이용 가이드"
+          intro={[
+            '로아로골은 로스트아크 캐시샵 패키지 효율을 실시간 시세로 계산하고, 원정대의 주간 레이드 골드 수익과 거래소·경매장 시세를 한눈에 보여주는 무료 계산기 모음 사이트입니다. 패키지에 담긴 재료의 골드 가치를 실시간 거래소 가격으로 환산해 가격 대비 효율을 바로 비교할 수 있으며, 벨가르딘, 지평의 성당, 세르카, 카제로스 등 최신 레이드의 클리어 골드와 더보기(모험의 서약) 손익, T4 재련 비용 시뮬레이터, 지옥의 나락 보상 계산기, 생활의 달인 손익 계산, 아크그리드 팔찌·각인 조합 조회 등 원정대 운영에 필요한 도구를 한 곳에서 제공합니다.',
+            '모든 시세 데이터는 로스트아크 공식 Open API를 매시 정각 자동 조회해 갱신하며, 캐릭터 정보 역시 수동 입력이 아닌 공식 API 응답을 그대로 사용합니다. 회원가입 없이 캐릭터명만 입력하면 바로 결과를 확인할 수 있습니다.',
+          ]}
+          sections={[
+            {
+              heading: '패키지 효율 실시간 계산',
+              paragraphs: [
+                '캐시샵 패키지에 포함된 재료·아이템의 골드 가치를 실시간 거래소 시세로 환산해, 판매 가격 대비 효율을 즉시 비교합니다. PC방 패키지와 로열 크리스탈 기준 가치도 함께 확인할 수 있습니다.',
+              ],
+              bullets: [
+                '패키지 구성품 골드 가치를 실시간 시세로 자동 환산',
+                '가격 대비 효율(%)로 살 만한 패키지인지 즉시 판단',
+                '신규 패키지 출시 시 빠르게 반영',
+              ],
+            },
+            {
+              heading: '주간 골드 · 더보기 계산',
+              paragraphs: [
+                '원정대 캐릭터들이 클리어한 레이드를 선택하면 벨가르딘, 지평의 성당, 세르카, 카제로스 등 레이드별 클리어 골드와 더보기 보상의 손익을 실시간 거래소 시세로 자동 계산합니다.',
+              ],
+              bullets: [
+                '캐릭터별·레이드별 주간 골드 수익 합산',
+                '더보기 선택 시 이득/손해 여부를 색상으로 즉시 표시',
+                '신규 레이드 추가 시 빠르게 반영',
+              ],
+            },
+            {
+              heading: '재련 비용 계산 · 강화 시뮬레이터',
+              paragraphs: [
+                '목표 아이템 레벨까지 필요한 재료 수량과 예상 골드 비용을 계산하고, 실제 확률 기반 강화 시뮬레이션으로 재화 소모량 분포를 미리 확인할 수 있습니다.',
+              ],
+            },
+            {
+              heading: '지옥의 나락 · 생활의 달인 · 아크그리드',
+              paragraphs: [
+                '지옥의 나락 보상 계산기로 층별 기대 수익을 확인하고, 생활의 달인에서는 아비도스 융화재료 등 생활 콘텐츠 손익을 분석합니다. 팔찌·각인·아크그리드 페이지에서는 조합별 옵션과 효율을 조회할 수 있습니다.',
+              ],
+            },
+          ]}
+          faqs={HOME_FAQS}
+        />
+
+        {historySection}
+
+      </Container>
+    </div>
+  );
+}

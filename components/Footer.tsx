@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Container, Row, Col, Collapse } from 'react-bootstrap';
-import InquiryButton from './InquiryButton';
 
 export default function Footer() {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +46,7 @@ export default function Footer() {
               <span className="footer-divider">|</span>
               <Link href="/terms" prefetch={false}>이용약관</Link>
               <span className="footer-divider">|</span>
-              <InquiryButton className="footer-inquiry-link">문의하기</InquiryButton>
+              <Link href="/contact" prefetch={false}>문의하기</Link>
               <span className="footer-divider">|</span>
               <button
                 className="footer-toggle"

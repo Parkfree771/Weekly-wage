@@ -76,6 +76,8 @@ const BOX_RULES: BoxRow[] = [
   },
 ];
 
+const CRYSTAL_MAX = Math.max(...CRYSTAL_ITEMS.map((r) => Number(r.crystal)));
+
 export default function PackageValueFormulaGuidePage() {
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
@@ -92,27 +94,48 @@ export default function PackageValueFormulaGuidePage() {
 
         <div className={styles.articleBody}>
           <p>
-            패키지가 이득인지 아닌지를 따지는 일은 결국 &quot;이 상자에 들어 있는 것을 전부 골드로 바꾸면 얼마인가&quot;를
-            구하는 문제입니다. 파괴석이나 돌파석처럼 거래소에 시세가 그대로 찍히는 재료만 들어 있다면 어렵지 않지만,
-            실제 패키지에는 묶음 단위로만 거래되는 재료, 크리스탈로 사는 아이템, 열어봐야 아는 상자,
-            아예 거래가 안 되는 티켓과 입장권이 뒤섞여 있습니다. 종류마다 계산 규칙이 다를 수밖에 없습니다.
+            패키지가 이득인지 따지는 일은 결국 &quot;이 상자에 든 것을 전부 골드로 바꾸면 얼마인가&quot;를 구하는 문제입니다.
+            파괴석이나 돌파석처럼 거래소 시세가 그대로 찍히는 재료만 있다면 어렵지 않지만, 실제 패키지에는 묶음 단위로만
+            거래되는 재료, 크리스탈로 사는 아이템, 열어 봐야 아는 상자, 아예 거래가 안 되는 티켓과 입장권이 섞여 있어
+            종류마다 계산 규칙이 다를 수밖에 없습니다.
           </p>
           <p>
-            이 글은 로아로골 패키지 효율 페이지가 구성품 하나하나를 어떤 식으로 골드로 바꾸는지,
-            그 규칙을 항목별로 정리한 것입니다. 이득률 숫자가 어디서 나온 것인지 알고 보면
-            &quot;이 패키지는 왜 이득률이 이렇게 높게 잡히지&quot; 같은 의문도 스스로 판단할 수 있습니다.
+            이 글은 로아로골 패키지 효율 페이지가 구성품 하나하나를 어떤 식으로 골드로 바꾸는지 항목별로 정리한 것입니다.
+            이득률이 어디서 나온 숫자인지 알면 &quot;이 패키지는 왜 이렇게 높게 잡히지&quot; 같은 의문도 스스로 판단할 수 있습니다.
             패키지 유형(3+1, 2+1, 가챠)별 배수 계산은 <Link href="/package">패키지 효율 페이지 하단 가이드</Link>에
-            정리되어 있으니, 여기서는 구성품 한 칸의 가치를 구하는 부분만 다룹니다.
+            있으니, 여기서는 구성품 한 칸의 가치를 구하는 부분만 다룹니다.
           </p>
+
+          <div className={styles.statGrid}>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>블루 크리스탈 1개</span>
+              <span className={styles.statValue}>27.5원</span>
+              <span className={styles.statNote}>100개 = 2,750원 고정</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>고정형 젬 확정 조합</span>
+              <span className={styles.statValue}>시세 × 6</span>
+              <span className={styles.statNote}>원하는 조합 확률 6분의 1의 역수</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>은총의 파편 1개</span>
+              <span className={styles.statValue}>상자 ÷ 60</span>
+              <span className={styles.statNote}>재련 재료 상자 교환 비율</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>지옥 티켓 1장</span>
+              <span className={styles.statValue}>상자 3개 중 최고</span>
+              <span className={styles.statNote}>기본 층의 기댓값</span>
+            </div>
+          </div>
 
           <h2>모든 계산의 기준선: 원을 골드로 바꾸는 환율</h2>
           <p>
-            패키지 가격은 원 단위이고 구성품 가치는 골드 단위입니다. 둘을 비교하려면 한쪽을 다른 쪽 단위로 옮겨야 하는데,
-            로아로골은 가격을 골드로 옮깁니다. 기준은 사용자가 직접 입력하는 환율 한 줄이고,
-            표기는 &quot;골드 100 : 로열 크리스탈 N원&quot; 형태입니다.
-            즉 100골드를 얻는 데 N원이 든다는 뜻이고, 여기서 1원당 골드는 다음과 같이 나옵니다.
+            패키지 가격은 원 단위, 구성품 가치는 골드 단위라 한쪽을 다른 쪽으로 옮겨야 비교가 됩니다. 로아로골은 가격을 골드로 옮기고,
+            기준은 사용자가 입력하는 환율 한 줄입니다. 표기는 &quot;골드 100 : 로열 크리스탈 N원&quot;, 즉 100골드를 얻는 데 N원이 든다는 뜻이고,
+            나머지 값은 여기서 이렇게 나옵니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -141,12 +164,11 @@ export default function PackageValueFormulaGuidePage() {
             </table>
           </div>
           <p>
-            환율이 계산의 출발점이라는 점이 중요합니다. 같은 패키지라도 환율을 바꾸면 결제 금액의 골드 환산값이 달라지고,
-            뒤에 나오는 크리스탈 계열 구성품의 가치까지 함께 움직입니다. 그래서 이득률은 고정된 숫자가 아니라
-            &quot;지금 내가 쓰는 환율 기준&quot;의 숫자입니다. 카드마다 환율 입력칸을 따로 둔 이유가 이것입니다.
+            환율을 바꾸면 결제 금액의 골드 환산값만이 아니라 뒤에 나오는 크리스탈 계열 구성품의 가치까지 함께 움직입니다.
+            이득률은 고정된 숫자가 아니라 &quot;지금 내가 쓰는 환율 기준&quot;의 숫자이고, 카드마다 환율 입력칸을 따로 둔 이유도 이것입니다.
           </p>
 
-          <h2>블루 크리스탈은 27.5원 고정 계수로 지난다</h2>
+          <h2>블루 크리스탈은 27.5원 고정 계수를 거친다</h2>
           <p>
             페온이나 도약의 정수처럼 블루 크리스탈로 사는 아이템은 시세가 골드로 찍히지 않습니다.
             대신 블루 크리스탈은 로열 크리스탈로 살 때의 가격이 정해져 있어서, 원 단위를 한 번 거쳐 골드로 옮길 수 있습니다.
@@ -173,9 +195,9 @@ export default function PackageValueFormulaGuidePage() {
           </table>
           <p>
             아래는 패키지에 자주 들어가는 크리스탈 계열 아이템의 개당 소요 크리스탈입니다.
-            이 수치에 27.5를 곱하고 원당 골드를 곱하면 그 아이템의 골드 가치가 됩니다.
+            이 수치에 27.5와 원당 골드를 곱하면 그 아이템의 골드 가치가 됩니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -188,13 +210,22 @@ export default function PackageValueFormulaGuidePage() {
                 {CRYSTAL_ITEMS.map((r) => (
                   <tr key={r.name}>
                     <td>{r.name}</td>
-                    <td>{r.crystal}</td>
+                    <td className={styles.barCell}>
+                      <div className={styles.barTrack}>
+                        <div
+                          className={styles.barFill}
+                          style={{ width: `${(Number(r.crystal) / CRYSTAL_MAX) * 100}px` }}
+                        />
+                        <span className={styles.barText}>{r.crystal}</span>
+                      </div>
+                    </td>
                     <td>{r.note || '-'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <p className={styles.tableCaption}>골드 가치 = 개당 블루 크리스탈 × 27.5 × 원당 골드</p>
           <p>
             페온이 8.5개로 잡히는 것이 눈에 띌 텐데, 이 값은 뒤에서 다룰 티켓 보상 환산에도 그대로 쓰입니다.
             지옥 상자에서 나오는 어빌리티스톤이나 팔찌, 그리고 귀속 젬처럼 &quot;거래소에 올리려면 페온이 든다&quot;는 항목을
@@ -232,10 +263,9 @@ export default function PackageValueFormulaGuidePage() {
 
           <h2>상자류: 확정이 아닌 것을 숫자 하나로 만드는 규칙</h2>
           <p>
-            패키지 구성품의 상당수는 상자입니다. 상자는 어떤 방식으로 열리느냐에 따라 계산이 갈립니다.
-            로아로골은 상자를 아래처럼 나눠 다르게 계산합니다.
+            패키지 구성품의 상당수는 상자이고, 어떤 방식으로 열리느냐에 따라 계산이 갈립니다. 로아로골은 상자를 다섯 가지로 나눠 계산합니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -272,10 +302,8 @@ export default function PackageValueFormulaGuidePage() {
 
           <h2>시세가 없는 구성품은 대체 비용으로 역산한다</h2>
           <p>
-            여기부터가 패키지 계산에서 가장 논쟁이 되는 영역입니다.
-            거래가 불가능하거나 거래소에 종목 자체가 없는 구성품은 시세를 가져올 수 없으니,
-            &quot;같은 것을 골드로 손에 넣으려면 얼마가 드는가&quot;를 계산해서 대신 씁니다.
-            항목별로 근거가 다르므로 하나씩 보겠습니다.
+            여기부터가 패키지 계산에서 가장 논쟁이 되는 영역입니다. 거래가 불가능하거나 거래소에 종목 자체가 없는 구성품은
+            시세를 가져올 수 없으니, &quot;같은 것을 골드로 손에 넣으려면 얼마가 드는가&quot;를 계산해 대신 씁니다. 항목마다 근거가 다릅니다.
           </p>
 
           <h3>고정형 영웅 젬 선택 상자</h3>
@@ -337,11 +365,22 @@ export default function PackageValueFormulaGuidePage() {
           <h3>지옥과 나락 티켓</h3>
           <p>
             지옥 티켓은 무엇이 나올지 정해져 있지 않고, 어느 층에서 쓰느냐에 따라 보상이 달라집니다.
-            지옥을 끝내면 해당 층의 보상 목록에서 상자 3개가 뜨고 그중 하나를 고르므로, 티켓 한 장의 가치는
-            <strong> 상자 3개 중 가장 비싼 것을 고를 때의 기댓값</strong>으로 계산합니다.
-            보상 하나하나는 앞에서 설명한 규칙(묶음 나누기, 페온 환산, 특수 재련 비용 환산 등)을 거쳐 골드로 바뀌고,
-            어빌리티스톤은 0골드로 둡니다.
+            그래서 티켓 한 장의 값은 아래 순서로 구합니다.
           </p>
+          <ol className={styles.stepFlow}>
+            <li className={styles.stepItem}>
+              <strong>층 정하기</strong>
+              티켓 종류별 기본 평가 층(아래 표)
+            </li>
+            <li className={styles.stepItem}>
+              <strong>보상 환산</strong>
+              그 층 보상 하나하나를 묶음 나누기·페온 환산·특수 재련 비용 환산으로 골드화, 어빌리티스톤은 0골드
+            </li>
+            <li className={styles.stepItem}>
+              <strong>상자 3개 중 1개</strong>
+              지옥을 끝내면 상자 3개가 뜨고 하나를 고르므로, 가장 비싼 것을 고를 때의 기댓값
+            </li>
+          </ol>
           <table className={styles.guideTable}>
             <thead>
               <tr>
@@ -380,11 +419,9 @@ export default function PackageValueFormulaGuidePage() {
 
           <h2>등록 시점 값과 조회 시점 값</h2>
           <p>
-            지금까지의 규칙에는 하나의 원칙이 공통으로 흐르고 있습니다.
-            다시 계산할 수 있는 것은 항상 다시 계산한다는 것입니다.
-            글을 등록할 때 계산된 값이 데이터베이스에 남아 있더라도,
-            상자 내용물이나 선택지처럼 현재 시세로 재계산이 가능한 항목은 저장된 값을 쓰지 않고 매번 새로 구합니다.
-            저장된 값은 시세를 아직 받아오지 못했거나 항목 정보가 사라진 경우의 대비책으로만 씁니다.
+            지금까지의 규칙에 공통으로 흐르는 원칙은 하나입니다. <strong>다시 계산할 수 있는 것은 항상 다시 계산한다.</strong>{' '}
+            글을 등록할 때 계산된 값이 저장되어 있어도, 상자 내용물이나 선택지처럼 현재 시세로 재계산할 수 있는 항목은
+            매번 새로 구합니다. 저장된 값은 시세를 아직 받아오지 못했거나 항목 정보가 사라진 경우의 대비책으로만 씁니다.
           </p>
           <p>
             그래서 같은 패키지 글이라도 어제와 오늘의 이득률이 다릅니다.
@@ -411,13 +448,13 @@ export default function PackageValueFormulaGuidePage() {
             이득률 40퍼센트짜리 패키지의 구성품이 전부 지금 쓰지 않는 재료라면 실질 가치는 그만큼 되지 않고,
             반대로 이득률이 낮아도 당장 재련에 막힌 재료가 들어 있다면 체감 가치는 표시값보다 높습니다.
           </p>
-          <p>
-            또 대체 비용으로 역산하는 항목들은 &quot;그 아이템을 골드로 사려면 이 정도&quot;라는 계산이지,
-            누군가 그 값에 실제로 사 준다는 보장은 아닙니다.
-            젬 상자의 6배 계수나 티켓의 층 평균은 특히 가정이 많이 들어간 값이므로,
-            그런 구성품 비중이 큰 패키지는 이득률을 하나의 참고치로만 보고
-            구성품 목록을 직접 확인하는 편이 안전합니다.
-          </p>
+          <div className={styles.noteBox}>
+            <p>
+              대체 비용으로 역산하는 항목은 &quot;그 아이템을 골드로 사려면 이 정도&quot;라는 계산이지, 누군가 그 값에 실제로 사 준다는
+              보장은 아닙니다. 젬 상자의 6배 계수나 티켓의 층 평균은 특히 가정이 많이 들어간 값이라, 그런 구성품 비중이 큰 패키지는
+              이득률을 참고치로만 보고 구성품 목록을 직접 확인하는 편이 안전합니다.
+            </p>
+          </div>
 
           <div className={styles.tipBox}>
             <p>
@@ -444,7 +481,7 @@ export default function PackageValueFormulaGuidePage() {
             "headline": "패키지 구성품 골드 환산 공식 정리: 이득률은 어떻게 계산되나",
             "description": "로아로골 패키지 효율의 이득률 계산 규칙을 항목별로 정리했습니다. 원-골드 환율, 블루 크리스탈 27.5원 계수, 묶음 시세 나누기, 상자별 기댓값, 시세 없는 구성품의 대체 비용 역산까지 다룹니다.",
             "datePublished": "2026-09-07",
-            "dateModified": "2026-09-07",
+            "dateModified": "2026-09-27",
             "author": { "@type": "Organization", "name": "로아로골" },
             "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
             "mainEntityOfPage": `${SITE_URL}/guide/package-value-formula`

@@ -8,6 +8,7 @@ import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import ClassIcon from '@/components/tier/ClassIcon';
 import EngravingCorrectionBox from '@/components/engraving/EngravingCorrectionBox';
 import GuideFaq from '@/components/common/GuideFaq';
+import EngravingGuideBody from '@/components/guide/EngravingGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
 import { ADFIT_UNITS } from '@/components/ads/adConfig';
@@ -604,13 +605,14 @@ export default function EngravingPage() {
             ],
           },
           {
-            heading: '유각 겹침 순위와 뉴비 추천 사이드바',
+            heading: '유각 겹침 순위와 각인 정정 요청',
             paragraphs: [
-              '왼쪽 사이드바의 "유각 겹침 순위"는 현재 필터로 걸러진 직업들만 놓고, 그 직업들이 가장 많이 공유하는 각인을 상위 10개까지 보여줍니다. 항목을 클릭하면 그 각인을 쓰는 카드 칸에 테두리가 표시되어, 어떤 직업들이 같은 각인서를 공유하는지 한눈에 파악할 수 있습니다.',
-              '뉴비 추천 직업 사이드바는 구글 로그인 후 참여하는 실시간 투표 결과로, 신규·복귀 유저에게 추천하고 싶은 직업을 유저들이 직접 고른 순위입니다. 이미 참여한 뒤에도 선택을 바꿔 다시 제출할 수 있고, 각인 정보가 실제와 다르다고 느껴지면 익명 정정 요청 기능으로 의견을 남길 수 있습니다.',
+              '오른쪽 칸의 "유각 겹침 순위"는 현재 필터로 걸러진 직업들만 놓고, 그 직업들이 가장 많이 공유하는 각인을 상위 10개까지 보여줍니다. 항목을 클릭하면 그 각인을 쓰는 카드 칸에 테두리가 표시되어, 어떤 직업들이 같은 각인서를 공유하는지 한눈에 파악할 수 있습니다.',
+              '순위 아래의 각인 정정 요청 창에서는 직업을 고르고 실제와 다른 부분을 적어 익명으로 보낼 수 있습니다. 표본이 적은 세팅은 한두 명의 선택으로 자동 집계가 흔들릴 수 있어서, 이렇게 들어온 정정 요청을 확인해 수동 보정에 반영합니다.',
             ],
           },
         ]}
+        article={<EngravingGuideBody />}
         faqs={faqData}
       />
 

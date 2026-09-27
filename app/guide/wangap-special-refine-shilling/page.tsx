@@ -33,16 +33,36 @@ interface SpecialPlanRow {
   stages: string;
   used: string;
   saved: string;
+  /** 아끼는 골드 (만 단위, 막대용) */
+  savedNum: number;
 }
 
 /** 보유 특재돌별 배분 (평균 기준, 최적 숨결·재료 전부 구매일 때의 일반 강화 비용과 비교) */
 const SPECIAL_PLANS: SpecialPlanRow[] = [
-  { owned: '3,500개', stages: '배분 없음 (평균 4,667개가 필요해 한 단계도 못 채움)', used: '0개', saved: '0' },
-  { owned: '5,000개', stages: '+24 → +25', used: '약 4,667개', saved: '약 143만' },
-  { owned: '10,000개', stages: '+23 → +24, +24 → +25', used: '약 9,333개', saved: '약 283만' },
-  { owned: '15,000개', stages: '+22 → +25 세 단계', used: '약 14,000개', saved: '약 418만' },
-  { owned: '25,000개', stages: '+20 → +25 다섯 단계 전부', used: '약 23,333개', saved: '약 674만' },
+  { owned: '3,500개', stages: '배분 없음 (평균 4,667개가 필요해 한 단계도 못 채움)', used: '0개', saved: '0', savedNum: 0 },
+  { owned: '5,000개', stages: '+24 → +25', used: '약 4,667개', saved: '약 143만', savedNum: 143 },
+  { owned: '10,000개', stages: '+23 → +24, +24 → +25', used: '약 9,333개', saved: '약 283만', savedNum: 283 },
+  { owned: '15,000개', stages: '+22 → +25 세 단계', used: '약 14,000개', saved: '약 418만', savedNum: 418 },
+  { owned: '25,000개', stages: '+20 → +25 다섯 단계 전부', used: '약 23,333개', saved: '약 674만', savedNum: 674 },
 ];
+
+/** +20 → +25 실링 총량 (성장 비용 + 강화 실링, 만 단위) */
+const SHILLING_TOTALS = [
+  { name: '숨결 없음', avg: 5977, average: '5,977만', median: '5,336만', pity: '1억 376만' },
+  { name: '최적 숨결 (시세 기준)', avg: 5197, average: '5,197만', median: '4,664만', pity: '8,739만' },
+  { name: '매번 풀숨', avg: 4890, average: '4,890만', median: '4,429만', pity: '7,856만' },
+];
+
+function Bar({ value, max, label }: { value: number; max: number; label: string }) {
+  return (
+    <td className={styles.barCell}>
+      <div className={styles.barTrack}>
+        <div className={styles.barFill} style={{ width: `${(value / max) * 100}px` }} />
+        <span className={styles.barText}>{label}</span>
+      </div>
+    </td>
+  );
+}
 
 export default function WangapSpecialRefineShillingGuidePage() {
   return (
@@ -71,11 +91,35 @@ export default function WangapSpecialRefineShillingGuidePage() {
             아래 수치도 같은 계산식과 2026년 9월 14일 거래소 시세를 사용했습니다.
           </p>
 
+          <div className={styles.statGrid}>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>성장 비용 (고정)</span>
+              <span className={styles.statValue}>2,715만 실링</span>
+              <span className={styles.statNote}>+20 → +25 다섯 단계 합계</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>실링 총량 평균</span>
+              <span className={styles.statValue}>4,890만~5,977만</span>
+              <span className={styles.statNote}>매번 풀숨 ~ 숨결 없음</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>넉넉한 준비량</span>
+              <span className={styles.statValue}>8,000만~1억</span>
+              <span className={styles.statNote}>장인의 기운 100% 대비</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>특수 재련 한 단계</span>
+              <span className={styles.statValue}>평균 4,667개</span>
+              <span className={styles.statNote}>1회 70개 가정</span>
+            </div>
+          </div>
+
           <h2>실링은 두 군데서 나갑니다</h2>
           <p>
             완갑 강화의 실링은 단계를 시작할 때 한 번 내는 성장 비용과, 누를 때마다 내는 강화 실링으로 나뉩니다.
             성장 비용은 몇 번 만에 성공하든 똑같고, 강화 실링은 시도 횟수에 비례합니다.
           </p>
+          <div className={styles.tableScroll}>
           <table className={styles.guideTable}>
             <thead>
               <tr>
@@ -96,28 +140,39 @@ export default function WangapSpecialRefineShillingGuidePage() {
               ))}
             </tbody>
           </table>
+          </div>
+          <p className={styles.tableCaption}>강화 실링은 매번 풀숨일 때 한 단계 평균 시도 21.6회 기준</p>
           <p>
             성장 비용만 다섯 단계 합계 2,715만 실링이고, 운명의 파편도 271만 5천 개가 따로 듭니다. 이 부분은 특수 재련으로 성공해도 똑같이 냅니다.
             +23부터는 1회 강화 실링이 24만으로 올라, 강화 실링이 성장 비용과 비슷한 규모가 됩니다.
           </p>
 
           <h2>+20 → +25 실링 총량</h2>
-          <p>성장 비용과 강화 실링을 합친 값입니다. 숨결을 얼마나 넣느냐에 따라 시도 횟수가 달라져 강화 실링이 크게 변합니다.</p>
-          <table className={styles.guideTable}>
-            <thead>
-              <tr>
-                <th>숨결</th>
-                <th>평균</th>
-                <th>중앙값</th>
-                <th>장인의 기운 100%</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>숨결 없음</td><td>5,977만</td><td>5,336만</td><td>1억 376만</td></tr>
-              <tr><td>최적 숨결 (시세 기준)</td><td>5,197만</td><td>4,664만</td><td>8,739만</td></tr>
-              <tr><td>매번 풀숨</td><td>4,890만</td><td>4,429만</td><td>7,856만</td></tr>
-            </tbody>
-          </table>
+          <p>
+            성장 비용과 강화 실링을 합친 값입니다. 성장 비용 2,715만은 어느 줄이나 똑같고, 숨결에 따라 시도 횟수가 달라지면서 강화 실링만 변합니다.
+          </p>
+          <div className={styles.tableScroll}>
+            <table className={styles.guideTable}>
+              <thead>
+                <tr>
+                  <th>숨결</th>
+                  <th>평균</th>
+                  <th>중앙값</th>
+                  <th>장인의 기운 100%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SHILLING_TOTALS.map((r) => (
+                  <tr key={r.name}>
+                    <td>{r.name}</td>
+                    <Bar value={r.avg} max={5977} label={r.average} />
+                    <td>{r.median}</td>
+                    <td>{r.pity}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <p>
             매번 풀숨으로 가면 숨결 없이 가는 것보다 평균 약 1,090만, 운이 나쁜 경우 약 2,520만 실링을 아낍니다.
             골드 기준으로는 숨결을 사서 넣어도 차이가 거의 없었지만, 실링 기준으로는 숨결이 확실히 이득입니다.
@@ -136,11 +191,13 @@ export default function WangapSpecialRefineShillingGuidePage() {
             특수 재련은 강화 재료·실링·골드를 쓰지 않고 특재돌만 소모합니다. 확률은 일반 강화의 기본 확률과 같은 1.5%로 고정이며,
             실패해도 확률이 오르지 않고 장인의 기운도 쌓이지 않습니다. 그래서 운이 나쁘면 끝없이 돌이 들어갈 수 있습니다.
           </p>
-          <p>
-            +20 이후 한 번 누를 때 드는 특재돌은 70개로 계산했습니다. 확인된 구간이 15% 50개, 10% 55개, 3%(+15~+20) 65개로
-            확률 구간이 한 단계 내려갈 때마다 5개씩 늘었고, 그 규칙을 이어 붙인 값입니다. +21 이후는 아직 실측 전이라,
-            실제 개수가 다르면 아래 수치도 그 비율만큼 달라집니다.
-          </p>
+          <div className={styles.noteBox}>
+            <p>
+              +20 이후 한 번 누를 때 드는 특재돌은 70개로 계산했습니다. 확인된 구간이 15% 50개, 10% 55개, 3%(+15~+20) 65개로
+              확률 구간이 한 단계 내려갈 때마다 5개씩 늘었고, 그 규칙을 이어 붙인 예상값입니다. +21 이후는 아직 실측 전이라,
+              실제 개수가 다르면 아래 특재돌 수치도 그 비율만큼 달라집니다.
+            </p>
+          </div>
           <table className={styles.guideTable}>
             <thead>
               <tr>
@@ -165,6 +222,7 @@ export default function WangapSpecialRefineShillingGuidePage() {
             특재돌을 어느 단계에 쓸지는 돌 1개가 아껴 주는 일반 강화 비용으로 정합니다. 뒤 단계일수록 한 번 누르는 재료가 많아
             같은 돌로 더 많은 골드를 아낍니다. 최적 숨결로 재료를 모두 사는 경우와 비교한 평균 기준 순위는 다음과 같습니다.
           </p>
+          <div className={styles.tableScroll}>
           <table className={styles.guideTable}>
             <thead>
               <tr>
@@ -182,33 +240,39 @@ export default function WangapSpecialRefineShillingGuidePage() {
               <tr><td>+20 → +21</td><td>약 126만</td><td>약 270골드</td><td>약 359만</td></tr>
             </tbody>
           </table>
+          </div>
+          <p className={styles.tableCaption}>최적 숨결·재료 전부 구매일 때의 일반 강화 평균과 비교, 돌 1개당 값 큰 순</p>
           <p>
             차이가 크지는 않지만 순서는 분명합니다. +20부터 차례로 올라가야 하니, 앞 단계는 일반 강화로 넘기고 돌은 +24 → +25까지 모아 두는 것이 가장 이득입니다.
             +23 이후는 1회 강화 실링이 24만이라 특수 재련이 아껴 주는 실링도 가장 많습니다.
           </p>
 
           <h2>보유 특재돌별로 쓸 단계</h2>
-          <p>평균 필요량 기준으로 보유한 돌을 효율이 높은 단계부터 채운 결과입니다.</p>
-          <table className={styles.guideTable}>
-            <thead>
-              <tr>
-                <th>보유량</th>
-                <th>특수 재련할 단계</th>
-                <th>평균 사용량</th>
-                <th>아끼는 골드</th>
-              </tr>
-            </thead>
-            <tbody>
-              {SPECIAL_PLANS.map((p) => (
-                <tr key={p.owned}>
-                  <td>{p.owned}</td>
-                  <td>{p.stages}</td>
-                  <td>{p.used}</td>
-                  <td>{p.saved}</td>
+          <p>
+            평균 필요량 기준으로, 보유한 돌을 위 표에서 효율이 높은 단계부터 채운 결과입니다. 돌이 늘수록 아끼는 골드는 거의 한 단계 몫씩 계단처럼 늘어납니다.
+          </p>
+          <div className={styles.tableScroll}>
+            <table className={styles.guideTable}>
+              <thead>
+                <tr>
+                  <th>보유량</th>
+                  <th>특수 재련할 단계</th>
+                  <th>평균 사용량</th>
+                  <th>아끼는 골드</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {SPECIAL_PLANS.map((p) => (
+                  <tr key={p.owned}>
+                    <td>{p.owned}</td>
+                    <td>{p.stages}</td>
+                    <td>{p.used}</td>
+                    <Bar value={p.savedNum} max={674} label={p.saved} />
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <p>
             평균이 아니라 중앙값(절반이 성공하는 지점)으로 잡으면 3,500개로도 +24 → +25 한 단계를 노려볼 수 있고, 이때 약 115만 골드를 아낍니다.
             다만 중앙값은 절반 가까이가 3,220개 안에 끝나지 않는다는 뜻이라, 돌이 모자랄 가능성을 감안하고 선택하세요.
@@ -240,7 +304,7 @@ export default function WangapSpecialRefineShillingGuidePage() {
             description:
               '완갑 +21~+25 구간의 성장 비용·강화 실링 총량을 숨결별로 계산하고, 특수 재련 한 단계에 필요한 특재돌과 보유량별 최적 배분 단계를 정리했습니다.',
             datePublished: '2026-09-14',
-            dateModified: '2026-09-14',
+            dateModified: '2026-09-27',
             author: { '@type': 'Organization', name: '로아로골' },
             publisher: { '@type': 'Organization', name: '로아로골', url: SITE_URL },
             mainEntityOfPage: `${SITE_URL}/guide/wangap-special-refine-shilling`,

@@ -52,6 +52,10 @@ const triesOf = (table: Record<string, number>, normal: MaterialCombo, bonus: Ma
 
 const STAGE_KEYS = ['1-10', '11-20', '21-30', '31-40'] as const;
 
+const MAX_EXP = expectedExp('both');
+const MAX_DESTRUCTION = WEAPON_MATERIALS['31-40'].파괴석;
+const pct1 = (v: number) => `${(v * 100).toFixed(1)}%`;
+
 export default function AdvancedRefiningAncestorGuidePage() {
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
@@ -68,16 +72,44 @@ export default function AdvancedRefiningAncestorGuidePage() {
 
         <div className={styles.articleBody}>
           <p>
-            상급 재련은 일반 재련과 완전히 다른 방식으로 돌아갑니다. 일반 재련이 확률에 걸어 성공하면
-            한 단계가 오르고 실패하면 장인의 기운만 쌓이는 구조라면, 상급 재련에는 실패가 없습니다.
-            누르면 반드시 경험치가 들어오고, 그 경험치가 쌓여 단계가 오릅니다. 그래서 &quot;몇 퍼센트짜리를
-            뚫는다&quot;는 감각이 아니라 &quot;경험치를 얼마나 싸게 채우느냐&quot;의 문제가 됩니다.
+            상급 재련에는 실패가 없습니다. 일반 재련은 확률에 걸어 성공하면 한 단계가 오르고 실패하면 장인의 기운만
+            쌓이지만, 상급 재련은 누를 때마다 반드시 경험치가 들어오고 그 경험치가 쌓여 단계가 오릅니다. 그래서
+            질문도 &quot;몇 퍼센트짜리를 뚫느냐&quot;가 아니라 &quot;경험치를 얼마나 싸게 채우느냐&quot;로 바뀝니다.
+            이 글은 경험치가 들어오는 규칙, 숨결과 책이 그 값을 얼마나 끌어올리는지, 보조 재료를 일반턴과 선조턴 중
+            어디에 넣어야 시도가 더 줄어드는지를 차례로 봅니다.
           </p>
-          <p>
-            이 글에서는 경험치가 어떤 규칙으로 들어오는지, 숨결과 책이 그 값을 얼마나 끌어올리는지,
-            그리고 보조 재료를 일반턴과 선조턴 중 어디에 넣어야 전체 시도 횟수가 줄어드는지를
-            정리합니다.
-          </p>
+
+          <div className={styles.statGrid}>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>시도 1회 기대 경험치</span>
+              <span className={styles.statValue}>
+                {BASE_EXP.toFixed(0)} → {MAX_EXP.toFixed(0)}
+              </span>
+              <span className={styles.statNote}>숨결 + 책, {(MAX_EXP / BASE_EXP).toFixed(2)}배</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>선조턴 비중</span>
+              <span className={styles.statValue}>
+                {pct1(TURN_RATIO_1_20.bonus)} → {pct1(TURN_RATIO_21_40.bonus)}
+              </span>
+              <span className={styles.statNote}>1~20단계 → 21~40단계</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>1~20단계 평균 시도</span>
+              <span className={styles.statValue}>
+                {triesOf(AVERAGE_TRIES_1_20, 'none', 'none').toFixed(1)} →{' '}
+                {triesOf(AVERAGE_TRIES_1_20, 'both', 'both').toFixed(1)}회
+              </span>
+              <span className={styles.statNote}>보조 재료 없음 → 양쪽 풀투입</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>무기 21단계 진입 시 파괴석</span>
+              <span className={styles.statValue}>
+                {(WEAPON_MATERIALS['21-30'].파괴석 / WEAPON_MATERIALS['11-20'].파괴석).toFixed(1)}배
+              </span>
+              <span className={styles.statNote}>11~20단계 대비 1회 소모량</span>
+            </div>
+          </div>
 
           <h2>한 단계는 경험치 {EXP_PER_LEVEL}, 한 구간은 {EXP_PER_STAGE}</h2>
           <p>
@@ -86,7 +118,7 @@ export default function AdvancedRefiningAncestorGuidePage() {
             때마다 성공·대성공·초대성공 중 하나가 뜨고, 등급에 따라 들어오는 경험치가 다릅니다.
           </p>
 
-          <div style={{ overflowX: 'auto' }}>
+          <div>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -122,7 +154,7 @@ export default function AdvancedRefiningAncestorGuidePage() {
             등급 확률이고, 여기에 등급별 경험치를 곱하면 시도 1회의 기대 경험치가 나옵니다.
           </p>
 
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -144,7 +176,12 @@ export default function AdvancedRefiningAncestorGuidePage() {
                       <td>{(r.success * 100).toFixed(0)}%</td>
                       <td>{(r.great * 100).toFixed(0)}%</td>
                       <td>{(r.super * 100).toFixed(0)}%</td>
-                      <td>{exp.toFixed(1)}</td>
+                      <td className={styles.barCell}>
+                        <div className={styles.barTrack}>
+                          <div className={styles.barFill} style={{ width: `${(exp / MAX_EXP) * 100}px` }} />
+                          <span className={styles.barText}>{exp.toFixed(1)}</span>
+                        </div>
+                      </td>
                       <td>{(exp / BASE_EXP).toFixed(2)}배</td>
                     </tr>
                   );
@@ -154,10 +191,9 @@ export default function AdvancedRefiningAncestorGuidePage() {
           </div>
 
           <p>
-            아무것도 넣지 않으면 시도당 기대 경험치가 {BASE_EXP.toFixed(0)}입니다. 숨결과 책을 함께
-            넣으면 {expectedExp('both').toFixed(0)}으로, 정확히{' '}
-            {(expectedExp('both') / BASE_EXP).toFixed(2)}배가 됩니다. 눈에 띄는 것은 둘 다 넣었을 때
-            일반 성공 확률이 0%가 된다는 점입니다. 반드시 대성공 이상이 뜹니다.
+            아무것도 넣지 않으면 시도당 기대 경험치가 {BASE_EXP.toFixed(0)}이고, 숨결과 책을 함께 넣으면{' '}
+            {expectedExp('both').toFixed(0)}으로 {(expectedExp('both') / BASE_EXP).toFixed(2)}배가 됩니다. 둘 다
+            넣으면 일반 성공 확률이 0%가 되어, 반드시 대성공 이상이 뜹니다.
           </p>
           <p>
             책만 넣는 쪽({expectedExp('book').toFixed(0)})이 숨결만 넣는 쪽(
@@ -168,8 +204,27 @@ export default function AdvancedRefiningAncestorGuidePage() {
 
           <h2>선조턴은 몇 번에 한 번 오나</h2>
           <p>
-            상급 재련에는 일반턴과 선조턴이 있습니다. 일반턴을 한 번 쓸 때마다 선조의 가호 기운이{' '}
-            {GAHO_CHARGE_PER_TURN}칸씩 차고, {TURNS_FOR_BONUS}칸이 되면 다음 시도가 선조턴이 됩니다.
+            상급 재련의 시도는 일반턴과 선조턴으로 나뉘고, 둘은 아래 순서로 돌아갑니다.
+          </p>
+          <ol className={styles.stepFlow}>
+            <li className={styles.stepItem}>
+              <strong>일반턴</strong>
+              등급에 따라 경험치 {SUCCESS_EXP.success}~{SUCCESS_EXP.super}, 선조의 가호 기운 +{GAHO_CHARGE_PER_TURN}칸
+            </li>
+            <li className={styles.stepItem}>
+              <strong>가호 {TURNS_FOR_BONUS}칸</strong>
+              일반턴 {TURNS_FOR_BONUS / GAHO_CHARGE_PER_TURN}번이면 가득 참
+            </li>
+            <li className={styles.stepItem}>
+              <strong>선조턴</strong>
+              선조 카드 한 장이 뽑혀 경험치를 불리거나 더함
+            </li>
+            <li className={styles.stepItem}>
+              <strong>다시 일반턴</strong>
+              카드에 따라 가호 재충전·다음 시도 무료
+            </li>
+          </ol>
+          <p>
             산술적으로는 일반턴 {TURNS_FOR_BONUS / GAHO_CHARGE_PER_TURN}번마다 선조턴 1번입니다.
           </p>
           <p>
@@ -178,7 +233,7 @@ export default function AdvancedRefiningAncestorGuidePage() {
             로아로골은 조합별로 100만 회씩 시뮬레이션을 돌려 이 비율을 실측했습니다.
           </p>
 
-          <div style={{ overflowX: 'auto' }}>
+          <div>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -215,7 +270,7 @@ export default function AdvancedRefiningAncestorGuidePage() {
             다릅니다.
           </p>
 
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -254,13 +309,14 @@ export default function AdvancedRefiningAncestorGuidePage() {
 
           <h2>보조 재료는 일반턴에 먼저 넣는다</h2>
           <p>
-            여기가 이 글의 핵심입니다. 숨결과 책을 일반턴에만 넣을지, 선조턴에만 넣을지, 양쪽 다
-            넣을지에 따라 구간 하나를 끝내는 데 필요한 평균 유료 시도 횟수가 달라집니다. 아래는
-            조합별 평균 시도 횟수를 정리한 표입니다. 가로가 선조턴 투입, 세로가 일반턴 투입입니다.
+            숨결과 책을 일반턴에만 넣을지, 선조턴에만 넣을지, 양쪽 다 넣을지에 따라 구간 하나를 끝내는
+            데 필요한 평균 유료 시도 횟수가 달라집니다. 아래 표는 16가지 조합을 모두 적은 것으로,
+            가로가 선조턴 투입, 세로가 일반턴 투입입니다. 왼쪽 위(아무것도 안 넣음)에서 오른쪽 아래(양쪽 다
+            숨결 + 책)로 갈수록 시도가 줄어듭니다.
           </p>
 
           <h3>1~20단계</h3>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -284,7 +340,7 @@ export default function AdvancedRefiningAncestorGuidePage() {
           </div>
 
           <h3>21~40단계</h3>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -306,15 +362,18 @@ export default function AdvancedRefiningAncestorGuidePage() {
               </tbody>
             </table>
           </div>
+          <p className={styles.tableCaption}>
+            값은 구간(10단계) 완료까지 재료를 쓰는 평균 시도 수 · 무료 시도 제외 · 조합별 시뮬레이션 결과
+          </p>
 
           <p>
             표에서 두 칸만 비교하면 결론이 바로 나옵니다. 1~20단계에서 보조 재료를 일반턴에만 넣으면
             평균 {triesOf(AVERAGE_TRIES_1_20, 'both', 'none').toFixed(1)}회, 선조턴에만 넣으면{' '}
-            {triesOf(AVERAGE_TRIES_1_20, 'none', 'both').toFixed(1)}회입니다. 같은 양을 쓰는데도
-            일반턴 쪽이 {(
+            {triesOf(AVERAGE_TRIES_1_20, 'none', 'both').toFixed(1)}회로 일반턴 쪽이 {(
               triesOf(AVERAGE_TRIES_1_20, 'none', 'both') - triesOf(AVERAGE_TRIES_1_20, 'both', 'none')
             ).toFixed(1)}회 적습니다. 일반턴이 전체 시도의{' '}
-            {(TURN_RATIO_1_20.normal * 100).toFixed(1)}%를 차지하니 당연한 결과입니다.
+            {(TURN_RATIO_1_20.normal * 100).toFixed(1)}%를 차지하니, 같은 재료라도 더 자주 쓰이는 쪽에 넣는 편이
+            효과가 큽니다.
           </p>
           <p>
             21~40단계에서는 {triesOf(AVERAGE_TRIES_21_40, 'both', 'none').toFixed(1)}회 대{' '}
@@ -344,12 +403,12 @@ export default function AdvancedRefiningAncestorGuidePage() {
 
           <h2>구간별 재료 소모량</h2>
           <p>
-            시도 1회에 드는 재료는 구간이 올라갈수록 가파르게 늘어납니다. 21단계를 넘어가는 순간
-            소모량이 크게 뛰므로, 위 평균 시도 횟수와 곱해 예산을 잡아야 합니다.
+            평균 시도 횟수는 구간마다 크게 다르지 않지만, 시도 1회에 드는 재료는 21단계를 넘는 순간 크게
+            뜁니다. 예산은 아래 1회 소모량에 위 평균 시도 횟수를 곱해 잡으면 됩니다.
           </p>
 
           <h3>무기</h3>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -368,7 +427,15 @@ export default function AdvancedRefiningAncestorGuidePage() {
                   return (
                     <tr key={k}>
                       <td><strong>{k}단계</strong></td>
-                      <td>{w.파괴석.toLocaleString()}</td>
+                      <td className={styles.barCell}>
+                        <div className={styles.barTrack}>
+                          <div
+                            className={styles.barFill}
+                            style={{ width: `${(w.파괴석 / MAX_DESTRUCTION) * 100}px` }}
+                          />
+                          <span className={styles.barText}>{w.파괴석.toLocaleString()}</span>
+                        </div>
+                      </td>
                       <td>{w.돌파석}</td>
                       <td>{w.아비도스}</td>
                       <td>{w.운명파편.toLocaleString()}</td>
@@ -382,7 +449,7 @@ export default function AdvancedRefiningAncestorGuidePage() {
           </div>
 
           <h3>방어구</h3>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -413,14 +480,16 @@ export default function AdvancedRefiningAncestorGuidePage() {
               </tbody>
             </table>
           </div>
+          <p className={styles.tableCaption}>시도 1회 소모량 · 책은 넣을 때 쓰는 등급</p>
 
           <p>
             무기 21~30단계는 한 번 누를 때 파괴석{' '}
             {WEAPON_MATERIALS['21-30'].파괴석.toLocaleString()}개가 나갑니다. 11~20단계(
             {WEAPON_MATERIALS['11-20'].파괴석.toLocaleString()}개)의 약{' '}
-            {(WEAPON_MATERIALS['21-30'].파괴석 / WEAPON_MATERIALS['11-20'].파괴석).toFixed(1)}배입니다.
-            평균 시도 횟수가 구간마다 크게 다르지 않다는 점을 생각하면, 21단계 진입이 실질적인
-            비용 분기점입니다.
+            {(WEAPON_MATERIALS['21-30'].파괴석 / WEAPON_MATERIALS['11-20'].파괴석).toFixed(1)}배이고,
+            운명의 파편은 {WEAPON_MATERIALS['11-20'].운명파편.toLocaleString()}개에서{' '}
+            {WEAPON_MATERIALS['21-30'].운명파편.toLocaleString()}개로 더 크게 늘어납니다. 시도 횟수는 비슷한데 한 번의
+            값이 몇 배가 되니, 21단계 진입이 실질적인 비용 분기점입니다.
           </p>
 
           <h2>정리</h2>
@@ -453,6 +522,7 @@ export default function AdvancedRefiningAncestorGuidePage() {
             "headline": "상급 재련 선조의 가호 구조와 숨결·책 투입 순서",
             "description": "상급 재련의 경험치 누적 구조와 선조 카드 확률, 숨결·책 조합별 기대 경험치와 평균 시도 횟수를 정리했습니다.",
             "datePublished": "2026-09-21",
+            "dateModified": "2026-09-27",
             "author": { "@type": "Organization", "name": "로아로골" },
             "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
             "mainEntityOfPage": `${SITE_URL}/guide/advanced-refining-ancestor`

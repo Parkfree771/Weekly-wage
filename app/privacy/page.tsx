@@ -15,7 +15,7 @@ export default function PrivacyPolicy() {
             </Card.Header>
             <Card.Body className="p-4">
               <div className="mb-4">
-                <p className="text-muted">최종 수정일: {new Date().toLocaleDateString('ko-KR')}</p>
+                <p className="text-muted">최종 수정일: 2026. 9. 27.</p>
               </div>
 
               <section className="mb-4">
@@ -100,7 +100,7 @@ export default function PrivacyPolicy() {
                 <div className="bg-light p-3 rounded mt-3">
                   <h6 className="fw-semibold">개인정보보호 책임자</h6>
                   <ul className="mb-0">
-                    <li>사이트명: 로스트아크 골드 계산기</li>
+                    <li>사이트명: 로아로골</li>
                     <li>웹사이트: {SITE_URL}</li>
                     <li>운영목적: 로스트아크 게임 정보 제공 및 계산 도구 서비스</li>
                   </ul>
@@ -252,7 +252,7 @@ export default function PrivacyPolicy() {
 
               <div className="alert alert-info">
                 <strong>문의사항:</strong> 개인정보 처리방침에 대한 문의사항이 있으시면,
-                웹사이트 하단의 연락처를 통해 문의해 주시기 바랍니다.
+                <Link href="/contact">문의하기 페이지</Link>를 통해 문의해 주시기 바랍니다.
               </div>
 
               <div className="text-center mt-5">

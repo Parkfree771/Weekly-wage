@@ -12,6 +12,14 @@ export const metadata: Metadata = {
   alternates: { canonical: '/guide/extreme-rewards' },
 };
 
+/** 8주(3막 4주 + 종막 4주) 같은 난이도로 진행했을 때 */
+const EIGHT_WEEKS = [
+  { diff: '노말', clear: '160,000', title: '-', total: 160000, perAct: '600', withFirst: '700' },
+  { diff: '하드', clear: '400,000', title: '-', total: 400000, perAct: '800', withFirst: '900' },
+  { diff: '나이트메어', clear: '400,000', title: '+400,000', total: 800000, perAct: '800', withFirst: '900' },
+];
+const EIGHT_WEEKS_MAX = 800000;
+
 export default function ExtremeRewardsGuidePage() {
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '3rem' }}>
@@ -28,18 +36,39 @@ export default function ExtremeRewardsGuidePage() {
 
         <div className={styles.articleBody}>
           <p>
-            9월 23일 정기 점검 이후부터 카제로스 레이드 3막과 종막에 익스트림이 추가됩니다.
-            3막에서는 심연의 징벌자 모르둠, 종막에서는 대악마 카제로스에 다시 도전하게 되고,
-            두 레이드 모두 각 레이드의 최종 관문을 기반으로 만들어진 콘텐츠입니다.
-            보상은 매주 반복되는 클리어 보상과 막마다 한 번만 받는 최초 클리어 보상으로 나뉘며,
-            나이트메어에는 전설 등급 칭호와 20만 골드가 따로 붙습니다.
+            9월 23일 정기 점검부터 카제로스 레이드 3막과 종막에 익스트림이 추가됩니다. 3막은 심연의 징벌자 모르둠,
+            종막은 대악마 카제로스를 각 레이드의 최종 관문 기반으로 다시 만든 콘텐츠입니다. 보상은 매주 반복되는 클리어 보상과
+            막마다 한 번만 받는 최초 클리어 보상으로 나뉘고, 나이트메어에는 전설 등급 칭호와 20만 골드가 따로 붙습니다.
           </p>
+
+          <div className={styles.statGrid}>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>매주 클리어 골드</span>
+              <span className={styles.statValue}>50,000</span>
+              <span className={styles.statNote}>하드·나이트메어 동일, 원정대 1회</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>8주 총 골드 (나이트메어)</span>
+              <span className={styles.statValue}>800,000</span>
+              <span className={styles.statNote}>하드 400,000 · 노말 160,000</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>막당 전용 주화</span>
+              <span className={styles.statValue}>최대 900개</span>
+              <span className={styles.statNote}>매주 200 × 4주 + 최초 100</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>혼돈의 주화</span>
+              <span className={styles.statValue}>2개</span>
+              <span className={styles.statNote}>막별 최초 클리어로만</span>
+            </div>
+          </div>
 
           <h2>일정과 입장 조건</h2>
           <p>
             3막이 먼저 4주, 이어서 종막이 4주 진행됩니다. 두 막이 겹치는 기간은 없고, 전체 기간은 8주입니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -67,10 +96,9 @@ export default function ExtremeRewardsGuidePage() {
           </div>
           <p>
             난이도는 세 단계이고, 입장 아이템 레벨과 부활 규칙이 다릅니다.
-            노말과 하드는 익스트림에서 부활 규칙이 조정되어 횟수 제한 없이 부활하며 도전을 이어갈 수 있고,
-            나이트메어만 기존과 동일하게 부활이 불가능합니다.
+            노말과 하드는 익스트림용으로 부활 규칙이 조정되어 횟수 제한 없이 부활할 수 있고, 나이트메어만 기존처럼 부활이 불가능합니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -97,7 +125,7 @@ export default function ExtremeRewardsGuidePage() {
             일반 레이드처럼 캐릭터 수만큼 곱해지지 않습니다. 3막 기간에는 뇌전의 주화가, 종막 기간에는 빛과 어둠의 주화가 지급되고
             골드와 주화 수량은 두 막이 같습니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -116,8 +144,8 @@ export default function ExtremeRewardsGuidePage() {
             </table>
           </div>
           <p>
-            표에서 바로 보이듯 <strong>하드와 나이트메어의 매주 보상은 완전히 같습니다.</strong> 골드도 50,000으로 동일하고 주화도 200개로 같습니다.
-            노말만 골드가 20,000으로 30,000 적고, 주화가 150개로 50개 적습니다.
+            <strong>하드와 나이트메어의 매주 보상은 완전히 같습니다.</strong> 골드 50,000, 주화 200개로 한 자리도 다르지 않습니다.
+            차이는 노말에만 있어서, 골드가 30,000 적은 20,000이고 주화가 50개 적은 150개입니다.
           </p>
 
           <h2>최초 클리어 보상</h2>
@@ -125,7 +153,7 @@ export default function ExtremeRewardsGuidePage() {
             난이도와 관계없이 3막 익스트림과 종막 익스트림을 각각 처음 클리어하면 받는 보상입니다.
             노말로 클리어해도 같은 구성을 받습니다. 두 막에서 각각 한 번씩이므로 전체 기간에 두 번 받게 됩니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -155,7 +183,7 @@ export default function ExtremeRewardsGuidePage() {
           <p>
             나이트메어 난이도를 처음 클리어하면 위의 최초 클리어 보상과 <strong>별개로</strong> 다음을 추가로 받습니다. 막마다 한 번씩입니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -181,7 +209,7 @@ export default function ExtremeRewardsGuidePage() {
             3막 4주와 종막 4주를 같은 난이도로 계속 진행했다고 가정한 총량입니다.
             골드는 매주 클리어 골드 8회분에 나이트메어의 칭호 보상 골드(막마다 20만, 2막이면 40만)를 더한 값입니다.
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -198,31 +226,36 @@ export default function ExtremeRewardsGuidePage() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>노말</td>
-                  <td>160,000</td><td>-</td><td><strong>160,000</strong></td>
-                  <td>600</td><td>700</td>
-                </tr>
-                <tr>
-                  <td>하드</td>
-                  <td>400,000</td><td>-</td><td><strong>400,000</strong></td>
-                  <td>800</td><td>900</td>
-                </tr>
-                <tr>
-                  <td><strong>나이트메어</strong></td>
-                  <td>400,000</td><td>+400,000</td><td><strong>800,000</strong></td>
-                  <td>800</td><td>900</td>
-                </tr>
+                {EIGHT_WEEKS.map((r) => (
+                  <tr key={r.diff}>
+                    <td>{r.diff === '나이트메어' ? <strong>{r.diff}</strong> : r.diff}</td>
+                    <td>{r.clear}</td>
+                    <td>{r.title}</td>
+                    <td className={styles.barCell}>
+                      <div className={styles.barTrack}>
+                        <div className={styles.barFill} style={{ width: `${(r.total / EIGHT_WEEKS_MAX) * 100}px` }} />
+                        <span className={styles.barText}>{r.total.toLocaleString()}</span>
+                      </div>
+                    </td>
+                    <td>{r.perAct}</td>
+                    <td>{r.withFirst}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
+          <p className={styles.tableCaption}>3막 4주 + 종막 4주를 같은 난이도로 매주 클리어한 경우</p>
           <p>
             주화는 막마다 따로 계산해야 합니다. 3막에서 뇌전의 주화를, 종막에서 빛과 어둠의 주화를 받으므로
             나이트메어 기준으로 뇌전의 주화 900개와 빛과 어둠의 주화 900개를 각각 모으게 됩니다. 두 주화는 서로 바꿔 쓸 수 없습니다.
           </p>
 
           <h2>난이도를 한 단계 올리면 달라지는 것</h2>
-          <div style={{ overflowX: 'auto' }}>
+          <p>
+            위 표의 막대를 보면 두 번의 계단이 성격이 다릅니다. 노말에서 하드로 갈 때는 매주 받는 몫이 커지고,
+            하드에서 나이트메어로 갈 때는 한 번뿐인 칭호 보상만 붙습니다.
+          </p>
+          <div className={styles.tableScroll}>
             <table className={styles.guideTable}>
               <thead>
                 <tr>
@@ -245,24 +278,27 @@ export default function ExtremeRewardsGuidePage() {
 
           <h3>노말에서 하드로: 반복 보상이 늘어난다</h3>
           <p>
-            노말과 하드의 차이는 전부 매주 반복되는 쪽에 있습니다. 주당 골드가 20,000에서 50,000으로 2.5배가 되고 주화도 150에서 200으로 늘어납니다.
-            8주를 채우면 골드 차이만 240,000이고, 막당 주화도 200개 더 쌓입니다.
-            입장 레벨이 1730에서 1770으로 40이나 벌어져 있어 진입 자체가 쉽지는 않지만, 올라갈 수 있다면 매주 돌아오는 이득이 그만큼 큽니다.
+            노말과 하드의 차이는 전부 매주 반복되는 쪽에 있습니다. 주당 골드가 20,000에서 50,000으로 2.5배, 주화가 150에서 200으로 늘어,
+            8주를 채우면 골드 240,000과 막당 주화 200개가 벌어집니다. 입장 레벨이 1730에서 1770으로 40이나 높아 진입이 쉽지는 않지만,
+            올라갈 수 있다면 매주 돌아오는 이득이 그만큼 큽니다.
           </p>
 
           <h3>하드에서 나이트메어로: 반복 보상은 그대로, 한 번뿐인 보상만 늘어난다</h3>
           <p>
-            이 구간은 성격이 다릅니다. <strong>매주 받는 골드와 주화가 완전히 같기 때문에</strong>, 나이트메어를 매주 도는 것과
-            하드를 매주 도는 것은 반복 수익이 동일합니다. 나이트메어에만 있는 것은 최초 클리어 한 번에 붙는
-            전설 칭호, 이모티콘, 그리고 20만 골드입니다.
+            <strong>매주 받는 골드와 주화가 완전히 같기 때문에</strong>, 나이트메어를 매주 도는 것과 하드를 매주 도는 것은 반복 수익이 같습니다.
+            나이트메어에만 있는 것은 최초 클리어 한 번에 붙는 전설 칭호, 이모티콘, 20만 골드입니다.
           </p>
           <p>
             뒤집어 말하면 <strong>나이트메어는 막마다 한 번만 클리어하면 받을 것을 다 받습니다.</strong>
             3막 기간에 나이트메어를 한 번 뚫어 칭호와 20만 골드를 챙긴 뒤, 남은 주차는 하드로 돌아도 손해가 없습니다.
-            나이트메어는 부활이 불가능해 시도 부담이 크므로, 공격대 사정에 따라 &ldquo;첫 주에 나이트메어 한 번, 이후 하드&rdquo;라는 선택이
-            보상 손실 없이 가능하다는 점은 알아두면 좋습니다. 다만 두 막의 나이트메어를 모두 클리어해야 유물 등급 칭호가 나오므로,
-            칭호를 노린다면 3막과 종막 양쪽에서 각각 한 번씩은 뚫어야 합니다.
+            나이트메어는 부활이 불가능해 시도 부담이 크니, 공격대 사정에 따라 &ldquo;나이트메어 한 번, 이후 하드&rdquo;로 가도 보상 손실이 없습니다.
           </p>
+          <div className={styles.noteBox}>
+            <p>
+              유물 등급 칭호는 두 막의 나이트메어를 모두 클리어해야 나옵니다. 칭호를 노린다면 3막과 종막 양쪽에서 각각 한 번씩은
+              나이트메어를 뚫어야 하고, 3막은 10월 21일 점검 전에 끝나므로 그 전에 클리어해 두어야 합니다.
+            </p>
+          </div>
 
           <h2>다른 레이드와 비교하면</h2>
           <p>
@@ -318,7 +354,7 @@ export default function ExtremeRewardsGuidePage() {
             "headline": "익스트림 3막·종막 난이도별 보상 총정리",
             "description": "카제로스 레이드 3막·종막 익스트림의 난이도별 클리어 골드와 전용 주화, 최초 클리어 보상, 나이트메어 전설 칭호와 20만 골드를 표로 정리했습니다.",
             "datePublished": "2026-09-18",
-            "dateModified": "2026-09-18",
+            "dateModified": "2026-09-27",
             "author": { "@type": "Organization", "name": "로아로골" },
             "publisher": { "@type": "Organization", "name": "로아로골", "url": SITE_URL },
             "mainEntityOfPage": `${SITE_URL}/guide/extreme-rewards`

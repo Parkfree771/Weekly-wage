@@ -37,6 +37,7 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
     lastModified: g.updated ?? g.date,
   })),
   { path: '/about',              changeFrequency: 'monthly', priority: 0.6 },
+  { path: '/contact',            changeFrequency: 'monthly', priority: 0.5 },
   { path: '/privacy',            changeFrequency: 'monthly', priority: 0.5 },
   { path: '/terms',              changeFrequency: 'monthly', priority: 0.5 },
 ];
