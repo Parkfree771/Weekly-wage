@@ -42,6 +42,10 @@ export default function ContactPage() {
               로그인 없이 익명으로 전송되고 운영자만 열람합니다. 한 번에 500자까지, 5분에 한 번 보낼 수 있습니다.
               답장을 받을 연락처가 필요하면 본문에 함께 적어주세요.
             </p>
+            <p className="small mt-2 mb-0">
+              이메일로 보내실 수도 있습니다:{' '}
+              <a href="mailto:dbfh1498@gmail.com">dbfh1498@gmail.com</a>
+            </p>
           </section>
 
           <div className={styles.articleBody}>

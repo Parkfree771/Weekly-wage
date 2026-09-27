@@ -215,6 +215,7 @@ export default function AboutPage() {
                     기능 제안, 버그 신고, 데이터 오류 제보, 기타 문의사항이 있으시면
                     <Link href="/contact"><strong> 문의하기 페이지</strong></Link>를 이용해 주세요.
                     모든 페이지 하단(푸터)에도 링크가 있습니다.
+                    이메일(<a href="mailto:dbfh1498@gmail.com">dbfh1498@gmail.com</a>)로도 받습니다.
                   </p>
                   <ul className="mb-2 small">
                     <li><strong>기능 제안:</strong> 새로운 기능이나 개선 아이디어 환영합니다</li>
