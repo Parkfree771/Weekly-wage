@@ -183,7 +183,7 @@ export function pickedMaterials(picked: PickedRaid[]): MaterialCounts {
 //
 // 수치는 lib/daily-content.ts 공용 테이블을 그대로 쓴다.
 // 콘텐츠 표의 짧은 라벨('파괴석 결정', '용숨' 등)을 레이드 테이블과 같은 정식 명칭으로 맞춘다.
-const CONTENT_LABEL_TO_NAME: Record<string, string> = {
+export const CONTENT_LABEL_TO_NAME: Record<string, string> = {
   '파괴석 결정': '운명의 파괴석 결정',
   '수호석 결정': '운명의 수호석 결정',
   '위대한 돌파석': '위대한 운명의 돌파석',

@@ -110,7 +110,17 @@ import { eventTierOf, SAND_GEM_TO_LV1 } from '@/data/rewardTable';
 import dynamic from 'next/dynamic';
 const WeeklyGoldChart = dynamic(() => import('@/components/WeeklyGoldChart'), { ssr: false });
 const HomeworkCalendar = dynamic(() => import('@/components/HomeworkCalendar'), { ssr: false });
+const ContentValueModal = dynamic(() => import('@/components/ContentValueModal'), { ssr: false });
+import type { ContentValueTarget } from '@/components/ContentValueModal';
 import styles from './mypage.module.css';
+
+// 카드 i 버튼 아이콘 — 글자 i 는 폰트마다 원 안에서 위치가 어긋나 SVG 로 그린다(점+기둥이 상하 중앙)
+const INFO_ICON = (
+  <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+    <circle cx="6" cy="2.5" r="1.25" fill="currentColor" />
+    <rect x="5" y="5" width="2" height="5.75" rx="1" fill="currentColor" />
+  </svg>
+);
 
 // 레이드 그룹별 가능한 난이도 가져오기
 function getAvailableDifficulties(groupName: string, itemLevel: number) {
@@ -222,6 +232,9 @@ export default function MyPage() {
 
   // 데모 로그인 유도 모달
   const [demoLoginPrompt, setDemoLoginPrompt] = useState(false);
+  // 카던·가토·카게·필보 카드 i 버튼 → 1회 수급 재료·시세 환산 팝업
+  const [valueInfo, setValueInfo] = useState<ContentValueTarget | null>(null);
+  const closeValueInfo = useCallback(() => setValueInfo(null), []);
   const [showAllCharacters, setShowAllCharacters] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   // 프로필 로드 이펙트가 미저장 변경을 덮어쓰지 않도록 하는 최신값 참조 (deps 추가 없이 읽음)
@@ -2237,6 +2250,7 @@ export default function MyPage() {
                           <div className={`${styles.raidCard} ${chaosVal > 0 ? MULTI_CARD_COLORS[chaosVal] : ''}`} onClick={() => { if (gameDayIdx === null) return; toggleDailyCheck(char.name, 'chaosDungeon', gameDayIdx); }}>
                             <CardBgImage src={char.itemLevel >= 1730 ? '/zkejs.webp' : '/wjstjs.webp'} alt="" className={styles.raidImage} />
                             <div className={styles.raidOverlay} />
+                            {char.itemLevel >= 1680 && <button type="button" className={styles.contentInfoBtn} aria-label="1회 수급 가치" onClick={(e) => { e.stopPropagation(); setValueInfo({ type: 'rift', level: char.itemLevel }); }}>{INFO_ICON}</button>}
                             <div className={styles.raidInfo}>
                               <span className={styles.raidName}>{char.itemLevel >= 1730 ? '균열' : '전선'}</span>
                               <span className={styles.raidLevel}>Lv.{getChaosTierLabel(char.itemLevel)}</span>
@@ -2264,6 +2278,7 @@ export default function MyPage() {
                           <div className={`${styles.raidCard} ${guardVal > 0 ? MULTI_CARD_COLORS[guardVal] : ''}`} onClick={() => { if (gameDayIdx === null) return; toggleDailyCheck(char.name, 'guardianRaid', gameDayIdx); }}>
                             {guardian.image ? <CardBgImage src={guardian.image} alt={guardian.name} className={styles.raidImage} /> : <div className={styles.guardianCardPlaceholder} />}
                             <div className={styles.raidOverlay} />
+                            {char.itemLevel >= 1680 && <button type="button" className={styles.contentInfoBtn} aria-label="1회 수급 가치" onClick={(e) => { e.stopPropagation(); setValueInfo({ type: 'guardian', level: char.itemLevel }); }}>{INFO_ICON}</button>}
                             <div className={styles.raidInfo}>
                               <span className={styles.raidName}>{guardian.name}</span>
                               {guardian.element && <span className={styles.raidDifficulty}>{guardian.element}</span>}
@@ -2286,6 +2301,7 @@ export default function MyPage() {
                           <div className={`${styles.raidCard} ${charState.sandOfTime ? styles.raidChecked : ''}`} onClick={() => toggleExtra(char.name, 'sandOfTime')}>
                             <CardBgImage src="/gkf.webp" alt="할의 모래시계" className={styles.raidImage} />
                             <div className={styles.raidOverlay} />
+                            <button type="button" className={styles.contentInfoBtn} aria-label="1회 수급 가치" onClick={(e) => { e.stopPropagation(); setValueInfo({ type: 'sand', level: char.itemLevel, enhance: charState.sandOfTimeLevel || 0 }); }}>{INFO_ICON}</button>
                             <div className={styles.sandTimeLevels} onClick={(e) => e.stopPropagation()}>
                               <span className={styles.sandTimeLevelLabel}>보상강화</span>
                               <div className={styles.sandTimeBtns}>
@@ -2329,6 +2345,7 @@ export default function MyPage() {
                                 <div className={`${styles.raidCard} ${checked ? styles.raidChecked : ''} ${isToday ? '' : styles.commonInactive}`} onClick={() => { if (!isToday || gameDayOfWeek === null) return; toggleCommonContent(gameDayOfWeek, content.name); }}>
                                   <div className={styles.commonCardBg} style={{ background: content.color }}><CardBgImage src={content.image} alt={content.name} className={styles.raidImage} /></div>
                                   <div className={styles.raidOverlay} />
+                                  <button type="button" className={styles.contentInfoBtn} aria-label="1회 수급 가치" onClick={(e) => { e.stopPropagation(); setValueInfo({ type: 'event', name: content.name, level: content.level }); }}>{INFO_ICON}</button>
                                   <div className={styles.raidInfo}>
                                     <span className={styles.raidName}>{content.level} {content.shortName}</span>
                                     {content.gold > 0 && <span className={styles.raidLevel}>{content.gold.toLocaleString()}G</span>}
@@ -3203,6 +3220,7 @@ export default function MyPage() {
         />
 
       </Container>
+      {valueInfo && <ContentValueModal target={valueInfo} onClose={closeValueInfo} />}
     </div>
   );
 }

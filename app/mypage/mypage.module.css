@@ -3644,3 +3644,28 @@
   cursor: pointer;
   margin-right: auto;
 }
+
+/* 카던·가토·카게·필보 카드 — 1회 수급 가치 팝업 버튼 (좌상단, 우상단은 체크 배지) */
+.contentInfoBtn {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 10;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.55);
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.contentInfoBtn:hover {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: #fff;
+}

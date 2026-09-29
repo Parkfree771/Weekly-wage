@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { fetchLatestPrices } from '@/lib/price-history-client';
 import { MATERIAL_IDS, MATERIAL_BUNDLE_SIZES } from '@/data/raidRewards';
+import { FIXED_PRICES } from '@/data/rewardTable';
 
 type LatestPrices = Record<string, number>;
 type UnitPrices = { [itemId: number]: number };
@@ -152,4 +153,33 @@ export function usePriceData(): PriceContextType {
     throw new Error('usePriceData must be used within a PriceProvider');
   }
   return context;
+}
+
+// 거래소 시세를 직접 쓰는 재화 (묶음 단위 1)
+const LAVA_BREATH_ID = '66111131';
+const GLACIER_BREATH_ID = '66111132';
+
+// 재료 정식 명칭 → 개당 골드. 거래소에 없는 재화는 위 환산 단가·테이블 고정가를 쓴다.
+// 원정대 수급 골드 시뮬과 숙제체크 1회 가치 팝업이 같은 기준을 쓰도록 여기 한 곳에서 만든다.
+export function useMaterialPrices(): Record<string, number> {
+  const { unitPrices, graceUnitPrice, thornUnitPrice, gemUnitPrice, latestPrices } = usePriceData();
+  return useMemo(
+    () => ({
+      '운명의 파괴석 결정': unitPrices[MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL] ?? 0,
+      '운명의 수호석 결정': unitPrices[MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL] ?? 0,
+      '위대한 운명의 돌파석': unitPrices[MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE] ?? 0,
+      '운명의 파괴석': unitPrices[MATERIAL_IDS.FATE_DESTRUCTION_STONE] ?? 0,
+      '운명의 수호석': unitPrices[MATERIAL_IDS.FATE_GUARDIAN_STONE] ?? 0,
+      '운명의 돌파석': unitPrices[MATERIAL_IDS.FATE_BREAKTHROUGH_STONE] ?? 0,
+      '운명의 파편': unitPrices[MATERIAL_IDS.FATE_FRAGMENT] ?? 0,
+      '은총의 파편': graceUnitPrice,
+      '고통의 가시': thornUnitPrice,
+      '용암의 숨결': latestPrices[LAVA_BREATH_ID] ?? 0,
+      '빙하의 숨결': latestPrices[GLACIER_BREATH_ID] ?? 0,
+      '1레벨 보석': gemUnitPrice,
+      // 거래소에 없는 재화는 테이블의 고정가를 쓴다
+      ...FIXED_PRICES,
+    }),
+    [unitPrices, graceUnitPrice, thornUnitPrice, gemUnitPrice, latestPrices],
+  );
 }

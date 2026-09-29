@@ -18,8 +18,7 @@ import {
   type MaterialPrices,
   type SortBasis,
 } from '@/lib/gold-projection';
-import { FIXED_PRICES, MATERIAL_IDS } from '@/data/rewardTable';
-import { usePriceData } from '@/contexts/PriceContext';
+import { useMaterialPrices } from '@/contexts/PriceContext';
 import styles from './GoldProjection.module.css';
 
 // 귀속 골드 아이콘 (사이트 공통 — gold.webp 에 색만 돌려 쓴다)
@@ -64,10 +63,6 @@ const MATERIAL_SHORT: Record<string, string> = {
   '1레벨 보석': '1레벨 보석',
   '천상 입장권': '천상 입장권',
 };
-
-// 거래소 시세를 직접 쓰는 재화 (묶음 단위 1)
-const LAVA_BREATH_ID = '66111131';
-const GLACIER_BREATH_ID = '66111132';
 
 // 보석은 3개 → 상위 1개로 합성된다(무손실). 원정대 전체 1레벨 수급량을 실제 합성 결과로 환산.
 const MAX_GEM_LEVEL = 10;
@@ -365,28 +360,8 @@ export default function GoldProjection({
   // 골드 인정 캐릭터 — 기본은 레벨 상위 6, 사용자가 직접 바꿀 수 있다
   const [included, setIncluded] = useState<string[] | null>(null);
 
-  const { unitPrices, graceUnitPrice, thornUnitPrice, gemUnitPrice, latestPrices } = usePriceData();
-
-  // 재료명 → 개당 골드. 거래소에 없는 재화는 PriceContext 의 환산 단가를 쓴다.
-  const prices = useMemo<MaterialPrices>(
-    () => ({
-      '운명의 파괴석 결정': unitPrices[MATERIAL_IDS.FATE_DESTRUCTION_STONE_CRYSTAL] ?? 0,
-      '운명의 수호석 결정': unitPrices[MATERIAL_IDS.FATE_GUARDIAN_STONE_CRYSTAL] ?? 0,
-      '위대한 운명의 돌파석': unitPrices[MATERIAL_IDS.GREAT_FATE_BREAKTHROUGH_STONE] ?? 0,
-      '운명의 파괴석': unitPrices[MATERIAL_IDS.FATE_DESTRUCTION_STONE] ?? 0,
-      '운명의 수호석': unitPrices[MATERIAL_IDS.FATE_GUARDIAN_STONE] ?? 0,
-      '운명의 돌파석': unitPrices[MATERIAL_IDS.FATE_BREAKTHROUGH_STONE] ?? 0,
-      '운명의 파편': unitPrices[MATERIAL_IDS.FATE_FRAGMENT] ?? 0,
-      '은총의 파편': graceUnitPrice,
-      '고통의 가시': thornUnitPrice,
-      '용암의 숨결': latestPrices[LAVA_BREATH_ID] ?? 0,
-      '빙하의 숨결': latestPrices[GLACIER_BREATH_ID] ?? 0,
-      '1레벨 보석': gemUnitPrice,
-      // 거래소에 없는 재화는 테이블의 고정가를 쓴다
-      ...FIXED_PRICES,
-    }),
-    [unitPrices, graceUnitPrice, thornUnitPrice, gemUnitPrice, latestPrices],
-  );
+  // 재료명 → 개당 골드 (숙제체크 1회 가치 팝업과 같은 기준)
+  const prices: MaterialPrices = useMaterialPrices();
 
   // 원정대 전체 (레벨 내림차순). 전체 목록이 없으면 검색에서 체크한 캐릭터로 대체.
   const pool = useMemo(() => {
